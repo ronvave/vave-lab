@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prof. Ron Vave — Vave Lab | University of Hawaiʻi at Mānoa</title>
+  <meta name="description" content="Ron Vave is an iTaukei (indigenous Fijian) Assistant Professor in Ocean Governance & Marine Resource Management at the University of Hawaiʻi at Mānoa, researching indigenous marine resource management, culturally protected water bodies, and Pacific socioecology." />
+  <meta property="og:title" content="Prof. Ron Vave — Ocean Governance & Marine Resource Management" />
+  <meta property="og:description" content="Indigenous Fijian scholar researching ocean governance, LMMA networks, and cultural ecosystem services across the Pacific." />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <style>
+    /* ── HERO ─────────────────────────────── */
+    .hero {
+      position: relative;
+      min-height: 90vh;
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      background: #002a30;
+    }
+
+    .hero__bg {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          160deg,
+          oklch(0.2 0.08 220 / 0.95) 0%,
+          oklch(0.15 0.06 200 / 0.8) 40%,
+          oklch(0.12 0.04 190 / 0.7) 100%
+        ),
+        url('img/hero-artwork.jpg') center/cover no-repeat;
+    }
+
+    /* Decorative Pacific wave pattern */
+    .hero__pattern {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='20' viewBox='0 0 100 20'%3E%3Cpath d='M0 10 Q25 0 50 10 Q75 20 100 10' fill='none' stroke='%23ffffff' stroke-width='0.8' stroke-opacity='0.06'/%3E%3C/svg%3E");
+      background-repeat: repeat;
+      background-size: 200px 40px;
+    }
+
+    .hero__content {
+      position: relative;
+      z-index: 2;
+      padding-block: clamp(var(--space-16), 10vw, var(--space-32));
+      width: 100%;
+    }
+
+    .hero__eyebrow {
+      font-size: var(--text-xs);
+      font-family: var(--font-body);
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--color-gold);
+      margin-bottom: var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .hero__eyebrow::before {
+      content: '';
+      display: block;
+      width: 2.5rem;
+      height: 2px;
+      background: var(--color-gold);
+      border-radius: 2px;
+    }
+
+    .hero__name {
+      font-size: var(--text-hero);
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: #fff;
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      margin-bottom: var(--space-5);
+    }
+
+    .hero__title {
+      font-size: var(--text-lg);
+      font-family: var(--font-body);
+      font-weight: 400;
+      color: oklch(0.88 0.04 200);
+      max-width: 48ch;
+      line-height: 1.5;
+      margin-bottom: var(--space-8);
+    }
+
+    .hero__cta {
+      display: flex;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .hero__scroll {
+      position: absolute;
+      bottom: var(--space-8);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      color: oklch(0.75 0.04 200);
+      font-size: var(--text-xs);
+      font-family: var(--font-body);
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      animation: scrollBounce 2s ease-in-out infinite;
+    }
+
+    .hero__scroll svg { animation: scrollArrow 2s ease-in-out infinite; }
+
+    @keyframes scrollArrow {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(6px); }
+    }
+
+    /* ── BIO SECTION ──────────────────────── */
+    .bio-section {
+      padding-block: clamp(var(--space-16), 10vw, var(--space-32));
+    }
+
+    .bio-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: clamp(var(--space-10), 5vw, var(--space-20));
+      align-items: start;
+    }
+
+    .bio-photo-wrap {
+      position: relative;
+    }
+
+    .bio-photo {
+      width: 100%;
+      aspect-ratio: 3/4;
+      object-fit: cover;
+      border-radius: var(--radius-xl);
+      display: block;
+    }
+
+    .bio-photo-placeholder {
+      width: 100%;
+      aspect-ratio: 3/4;
+      border-radius: var(--radius-xl);
+      background: linear-gradient(160deg, var(--color-primary) 0%, var(--color-primary-active) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .bio-photo-initials {
+      font-family: var(--font-display);
+      font-size: clamp(4rem, 8vw, 7rem);
+      font-weight: 600;
+      color: rgba(255,255,255,0.85);
+      letter-spacing: -0.03em;
+    }
+
+    .bio-photo-badge {
+      position: absolute;
+      bottom: -1rem;
+      right: -1rem;
+      background: var(--color-accent);
+      color: #fff;
+      padding: var(--space-4) var(--space-5);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-family: var(--font-body);
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .bio-content__title {
+      font-size: var(--text-2xl);
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+      letter-spacing: -0.02em;
+    }
+
+    .bio-content__subtitle {
+      font-size: var(--text-base);
+      color: var(--color-primary);
+      font-weight: 500;
+      margin-bottom: var(--space-2);
+      font-family: var(--font-body);
+    }
+
+    .bio-content__dept {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-6);
+    }
+
+    .bio-content__dept a {
+      color: var(--color-text-muted);
+      text-decoration: underline;
+    }
+
+    .bio-text {
+      font-size: var(--text-base);
+      line-height: 1.8;
+      color: var(--color-text);
+      max-width: 68ch;
+    }
+
+    .bio-text p + p { margin-top: var(--space-4); }
+
+    .bio-text a {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
+
+    .bio-text em { font-style: italic; color: var(--color-accent); }
+
+    .bio-content__links {
+      margin-top: var(--space-8);
+    }
+
+    @media (max-width: 860px) {
+      .bio-grid {
+        grid-template-columns: 1fr;
+      }
+      .bio-photo-wrap {
+        max-width: 260px;
+      }
+    }
+
+    /* ── RESEARCH AREAS ───────────────────── */
+    .areas-section {
+      background: var(--color-surface);
+      padding-block: clamp(var(--space-16), 10vw, var(--space-24));
+    }
+
+    .areas-header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: var(--space-8);
+      margin-bottom: var(--space-10);
+    }
+
+    .area-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-5);
+    }
+
+    .area-card {
+      background: var(--color-bg);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      transition: box-shadow var(--transition-interactive), transform var(--transition-interactive), border-color var(--transition-interactive);
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .area-card:hover {
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-4px);
+      border-color: var(--color-primary);
+    }
+
+    .area-card__icon {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-primary-highlight);
+      color: var(--color-primary);
+      flex-shrink: 0;
+    }
+
+    .area-card__title {
+      font-size: var(--text-lg);
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: var(--color-text);
+      line-height: 1.3;
+    }
+
+    .area-card__desc {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      flex: 1;
+    }
+
+    .area-card__arrow {
+      color: var(--color-primary);
+      transition: transform var(--transition-interactive);
+      align-self: flex-start;
+    }
+
+    .area-card:hover .area-card__arrow {
+      transform: translateX(4px);
+    }
+
+    @media (max-width: 640px) {
+      .area-cards { grid-template-columns: 1fr; }
+      .areas-header { grid-template-columns: 1fr; }
+    }
+
+    /* ── STATS BANNER ─────────────────────── */
+    .stats-banner {
+      background: linear-gradient(135deg, var(--color-primary-active) 0%, var(--color-primary) 100%);
+      padding-block: clamp(var(--space-12), 6vw, var(--space-20));
+      color: #fff;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-8);
+      text-align: center;
+    }
+
+    .stat-item__number {
+      font-size: var(--text-2xl);
+      font-family: var(--font-display);
+      font-weight: 600;
+      color: #fff;
+      line-height: 1;
+    }
+
+    .stat-item__label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-primary-highlight);
+      margin-top: var(--space-2);
+      font-family: var(--font-body);
+    }
+
+    @media (max-width: 700px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* ── RECENT PUBS (home preview) ──────── */
+    .recent-pubs {
+      padding-block: clamp(var(--space-16), 10vw, var(--space-24));
+    }
+
+    .recent-pubs__header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-6);
+      margin-bottom: var(--space-10);
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ HEADER ════════════════════════════════════════ -->
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <!-- SVG Logo: stylized wave + V mark -->
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="currentColor" opacity="0.12"/>
+          <path d="M6 22 Q10 14 14 22 Q18 30 22 22 Q26 14 30 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M12 10 L18 20 L24 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Prof. Ron Vave
+      </a>
+
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode">
+          <!-- filled by JS -->
+        </button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="publications.html">Publications</a>
+      <a href="supervision.html">Supervision</a>
+      <a href="teaching.html">Teaching</a>
+      <a href="service.html">Service</a>
+      <a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ HERO ══════════════════════════════════════════ -->
+<section class="hero" aria-label="Introduction">
+  <div class="hero__bg" aria-hidden="true"></div>
+  <div class="hero__pattern" aria-hidden="true"></div>
+
+  <div class="hero__content container">
+    <p class="hero__eyebrow">Vave Lab · University of Hawaiʻi at Mānoa</p>
+    <h1 class="hero__name">Ron<br>Vave</h1>
+    <p class="hero__title">
+      Assistant Professor in Ocean Governance &amp; Marine Resource Management<br>
+      <strong style="font-weight:500;color:var(--color-gold)">Department of Pacific Islands Studies</strong>
+    </p>
+    <div class="hero__cta">
+      <a href="research.html" class="btn btn--primary">Explore Research</a>
+      <a href="publications.html" class="btn btn--ghost" style="color:#fff;border-color:rgba(255,255,255,0.4)">View Publications</a>
+    </div>
+  </div>
+
+  <div class="hero__scroll" aria-hidden="true">
+    <span style="font-size:0.65rem">Scroll</span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+<!-- ═══ BIO ════════════════════════════════════════════ -->
+<section class="bio-section" aria-labelledby="bio-heading">
+  <div class="container">
+    <div class="bio-grid">
+      <div class="bio-photo-wrap reveal">
+        <div class="bio-photo-placeholder">
+          <span class="bio-photo-initials">RV</span>
+        </div>
+        <div class="bio-photo-badge">
+          iTaukei<br>Fijian Scholar
+        </div>
+      </div>
+
+      <div class="bio-content reveal reveal-delay-1">
+        <h2 class="bio-content__title" id="bio-heading">Ron Vave</h2>
+        <p class="bio-content__subtitle">Assistant Professor in Ocean Governance &amp; Marine Resource Management</p>
+        <p class="bio-content__dept">
+          <a href="https://hawaii.edu/cpis/" target="_blank" rel="noopener">Department of Pacific Islands Studies</a>,
+          University of Hawaiʻi at Mānoa
+        </p>
+
+        <div class="divider" aria-hidden="true"></div>
+
+        <div class="bio-text">
+          <p>
+            I am an <em>iTaukei</em> (indigenous Fijian) who was born and raised in Fiji. I worked for 14 years at the University of the South Pacific in Fiji, including research across six countries within the Indo-Pacific region as part of the
+            <a href="https://sites.google.com/hawaii.edu/ronvave/home/lmmas" target="_blank" rel="noopener">Locally Managed Marine Area (LMMA) network</a>.
+          </p>
+          <p>
+            My foundational academic background is in Biology &amp; Chemistry, then Marine Biology. This diversified during PhD research into interdisciplinary socioecology, with a focus on the human dimensions of fisheries management and place-based traditional practices of indigenous peoples — spanning human ecology, cultural anthropology, and economics.
+          </p>
+          <p>
+            My research and publications appear in <em>Conservation Biology</em>, <em>Ecosystem Services</em>, <em>World Development Sustainability</em>, <em>Ambio</em>, <em>Nature Ecology &amp; Evolution</em>, and <em>Asia Pacific Journal of Public Health</em>, among others.
+          </p>
+        </div>
+
+        <div class="bio-content__links">
+          <div class="profile-links">
+            <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ&hl=en&oi=ao" target="_blank" rel="noopener" class="profile-link">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 24a7 7 0 1 1 0-14 7 7 0 0 1 0 14zm0-24L0 9.5l4.838 3.94A8 8 0 0 1 12 9a8 8 0 0 1 7.162 4.44L24 9.5z"/></svg>
+              Scholar
+            </a>
+            <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener" class="profile-link">ORCID</a>
+            <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener" class="profile-link">ResearchGate</a>
+            <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener" class="profile-link">LinkedIn</a>
+            <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener" class="profile-link">UH Profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATS ══════════════════════════════════════════ -->
+<section class="stats-banner" aria-label="Research impact statistics">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="reveal">
+        <div class="stat-item__number">11+</div>
+        <div class="stat-item__label">Journal Articles</div>
+      </div>
+      <div class="reveal reveal-delay-1">
+        <div class="stat-item__number">8</div>
+        <div class="stat-item__label">Graduate Students</div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="stat-item__number">24</div>
+        <div class="stat-item__label">Manuscripts Reviewed</div>
+      </div>
+      <div class="reveal reveal-delay-3">
+        <div class="stat-item__number">5+</div>
+        <div class="stat-item__label">Editorial Roles</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RESEARCH AREAS ════════════════════════════════ -->
+<section class="areas-section" aria-labelledby="areas-heading">
+  <div class="container">
+    <div class="areas-header">
+      <div>
+        <p class="section__label">Focus Areas</p>
+        <h2 class="section__title" id="areas-heading">Research &amp; Methods</h2>
+      </div>
+      <a href="research.html" class="btn btn--outline">All Research →</a>
+    </div>
+
+    <div class="area-cards">
+      <a href="https://sites.google.com/hawaii.edu/ronvave/home/ecological-surveys" target="_blank" rel="noopener" class="area-card reveal">
+        <div class="area-card__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <h3 class="area-card__title">Ecological Surveys</h3>
+        <p class="area-card__desc">Diver-operated video (DOV) methodology to assess fish behavioral change in funerary protected areas and culturally managed marine sites.</p>
+        <span class="area-card__arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="https://sites.google.com/hawaii.edu/ronvave/home/community-workshops-surveys" target="_blank" rel="noopener" class="area-card reveal reveal-delay-1">
+        <div class="area-card__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <h3 class="area-card__title">Community Workshops &amp; Surveys</h3>
+        <p class="area-card__desc">Ethnographic and participatory research with indigenous and local communities across Oceania, documenting socioecological resilience and traditional knowledge.</p>
+        <span class="area-card__arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="https://sites.google.com/hawaii.edu/ronvave/home/lmmas" target="_blank" rel="noopener" class="area-card reveal reveal-delay-2">
+        <div class="area-card__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        </div>
+        <h3 class="area-card__title">LMMA Network</h3>
+        <p class="area-card__desc">14 years working with the Locally Managed Marine Area network across six Indo-Pacific nations — co-producing conservation knowledge with communities.</p>
+        <span class="area-card__arrow" aria-hidden="true">→</span>
+      </a>
+
+      <a href="https://sites.google.com/hawaii.edu/ronvave/home/data-analysis-visualizations" target="_blank" rel="noopener" class="area-card reveal reveal-delay-3">
+        <div class="area-card__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        </div>
+        <h3 class="area-card__title">Data Analysis &amp; Visualization</h3>
+        <p class="area-card__desc">Mixed-methods quantitative &amp; qualitative analysis using RStudio, QGIS, Qualtrics, NVivo, TATOR, and MAXQDA for ecological and social datasets.</p>
+        <span class="area-card__arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RECENT PUBLICATIONS PREVIEW ═══════════════════ -->
+<section class="recent-pubs" aria-labelledby="pubs-heading">
+  <div class="container">
+    <div class="recent-pubs__header">
+      <div>
+        <p class="section__label">Scholarship</p>
+        <h2 class="section__title" id="pubs-heading">Recent Publications</h2>
+      </div>
+      <a href="publications.html" class="btn btn--outline">All Publications →</a>
+    </div>
+
+    <ul class="pub-list" role="list">
+      <li class="pub-item reveal">
+        <p class="pub-year">2025</p>
+        <p class="pub-title">
+          <a href="https://doi.org/10.1071/PC25011" target="_blank" rel="noopener">Increasing Pacific Islander research and authorship in the academic literature</a>
+        </p>
+        <p class="pub-authors"><strong>Mangubhai, S., Vave, R.</strong>, Begg, S.S., Chung, M., et al.</p>
+        <p class="pub-journal">Pacific Conservation Biology, 31(4)</p>
+      </li>
+      <li class="pub-item reveal reveal-delay-1">
+        <p class="pub-year">2024</p>
+        <p class="pub-title">
+          <a href="https://doi.org/10.1111/cobi.14403" target="_blank" rel="noopener">Cultural ecosystem services and the conservation challenges for an Indigenous people's aquatic protected area practice</a>
+        </p>
+        <p class="pub-authors"><strong>Vave, R.</strong>, Friedlander, A.M., Kittinger, J.N., &amp; Ticktin, T.</p>
+        <p class="pub-journal">Conservation Biology, 38(6), e14403</p>
+      </li>
+      <li class="pub-item reveal reveal-delay-2">
+        <p class="pub-year">2024</p>
+        <p class="pub-title">
+          <a href="https://doi.org/10.1016/j.ecoser.2024.101661" target="_blank" rel="noopener">Impacts of commercial and subsistence fishing on marine and cultural ecosystem services important to the wellbeing of an Indigenous community in Hawaiʻi</a>
+        </p>
+        <p class="pub-authors"><strong>Vave, R.</strong>, Heck, N., Narayan, S., Carrizales, S., Kenison, D., &amp; Paytan, A.</p>
+        <p class="pub-journal">Ecosystem Services, 69, 101661</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═════════════════════════════════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">
+          Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.
+        </p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>
+          Department of Pacific Islands Studies<br>
+          University of Hawaiʻi at Mānoa<br>
+          1890 East-West Road<br>
+          Moore Hall 214<br>
+          Honolulu, Hawaiʻi, U.S.A.<br><br>
+          Office: <a href="tel:+18089560229">(808) 956-0229</a><br>
+          Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+        </address>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">
+        &copy; 2026 Ron Vave · University of Hawaiʻi at Mānoa
+      </p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener" style="font-size:var(--text-xs);color:var(--color-primary-highlight);opacity:0.7;text-decoration:none;">UH Faculty Profile ↗</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/main.js"></script>
+<script data-pplx-inline-edit>
+(function(){
+  if(window===window.top)return;
+  function inlineAll(orig,clone){
+    if(orig.nodeType!==1)return;
+    try{
+      var cs=getComputedStyle(orig);
+      var t='';
+      for(var i=0;i<cs.length;i++){t+=cs[i]+':'+cs.getPropertyValue(cs[i])+';';}
+      clone.style.cssText=t;
+    }catch(e){}
+    var oc=orig.children,cc=clone.children;
+    for(var j=0;j<oc.length&&j<cc.length;j++){inlineAll(oc[j],cc[j]);}
+  }
+  function stripExternal(clone){
+    var imgs=clone.querySelectorAll('img');
+    for(var i=0;i<imgs.length;i++){
+      var s=imgs[i].getAttribute('src');
+      if(s&&!s.startsWith('data:'))imgs[i].removeAttribute('src');
+    }
+    var all=clone.querySelectorAll('*');
+    for(var i=0;i<all.length;i++){
+      var st=all[i].style.cssText;
+      if(st&&st.indexOf('url(')>=0){
+        all[i].style.cssText=st.replace(/url\(["']?(?!data:)[^)"']*["']?\)/gi,'none');
+      }
+    }
+  }
+  window.addEventListener('message',function(e){
+    if(!e.data||e.data.type!=='INLINE_EDIT_CAPTURE_REQUEST')return;
+    var scrollX=window.scrollX||window.pageXOffset||0;
+    var scrollY=window.scrollY||window.pageYOffset||0;
+    var w=window.innerWidth,h=window.innerHeight;
+    try{
+      var clone=document.documentElement.cloneNode(true);
+      var rm=clone.querySelectorAll('script,link[rel="stylesheet"],style');
+      for(var i=0;i<rm.length;i++){rm[i].remove();}
+      inlineAll(document.documentElement,clone);
+      stripExternal(clone);
+      var html=new XMLSerializer().serializeToString(clone);
+      var svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'" height="'+h+'">'
+        +'<foreignObject width="100%" height="100%">'
+        +'<div xmlns="http://www.w3.org/1999/xhtml" style="width:'+w+'px;height:'+h+'px;overflow:hidden">'
+        +'<div style="transform:translate(-'+scrollX+'px,-'+scrollY+'px);transform-origin:top left">'
+        +html+'</div></div></foreignObject></svg>';
+      var svgUrl='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+      var img=new Image();
+      img.onload=function(){
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0);
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:c.toDataURL('image/png'),scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.onerror=function(){
+        window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+      };
+      img.src=svgUrl;
+    }catch(err){
+      window.parent.postMessage({type:'INLINE_EDIT_SCREENSHOT_RESULT',dataUrl:null,scrollX:scrollX,scrollY:scrollY},'*');
+    }
+  });
+})();
+</script></body>
+</html>
