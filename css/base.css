@@ -1008,3 +1008,30 @@ a:hover { color: var(--color-primary-hover); }
 @media (max-width: 560px) {
   .three-col { grid-template-columns: 1fr; }
 }
+
+/* ── SECTION HEADING BAR ─────────────────────── */
+.section-heading-bar {
+  background: #062f35;
+  padding: var(--space-5) var(--space-8);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-8);
+  display: inline-block;
+  width: 100%;
+}
+
+.section-heading-bar .section__label {
+  color: #c8a84b;
+  opacity: 1;
+  margin-bottom: var(--space-2);
+}
+
+.section-heading-bar .section__title {
+  color: #e8e4dc;
+  margin-bottom: 0;
+}
+
+.section-heading-bar .divider {
+  background: var(--color-gold);
+  margin-top: var(--space-4);
+  margin-bottom: 0;
+}
