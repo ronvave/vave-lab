@@ -30,13 +30,53 @@
       </a>
       <nav aria-label="Main navigation">
         <ul class="nav-links" role="list">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="research.html">Research</a></li>
-          <li><a href="publications.html">Publications</a></li>
-          <li><a href="supervision.html">Supervision</a></li>
-          <li><a href="teaching.html" class="active">Teaching</a></li>
-          <li><a href="service.html">Service</a></li>
-          <li><a href="media.html">Media</a></li>
+          <li class="nav-dropdown"><a href="index.html">Home</a>
+            <div class="nav-dropdown__menu">
+              <a href="index.html#bio">About</a>
+              <a href="index.html#areas-heading">Research & Methods</a>
+              <a href="index.html#pubs-heading">Recent Publications</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="research.html">Research</a>
+            <div class="nav-dropdown__menu">
+              <a href="research.html#research-philosophy">Research Philosophy</a>
+              <a href="research.html#current-projects">Current Projects</a>
+              <a href="research.html#intl-projects">International Projects</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="publications.html">Publications</a>
+            <div class="nav-dropdown__menu">
+              <a href="publications.html#journal-articles">Journal Articles</a>
+              <a href="publications.html#book-chapters">Book Chapters & Reports</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="supervision.html">Supervision</a>
+            <div class="nav-dropdown__menu">
+              <a href="supervision.html#uh-students">UH Students</a>
+              <a href="supervision.html#non-uh-students">Non-UH Students</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="teaching.html" class="active">Teaching</a>
+            <div class="nav-dropdown__menu">
+              <a href="teaching.html#new-courses">New Courses</a>
+              <a href="teaching.html#existing-courses">Existing Courses</a>
+              <a href="teaching.html#past-courses">Past Courses</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="service.html">Service</a>
+            <div class="nav-dropdown__menu">
+              <a href="service.html#editorial-roles">Editorial Roles</a>
+              <a href="service.html#thesis-exam">Thesis Examination</a>
+              <a href="service.html#peer-review">Peer Review</a>
+              <a href="service.html#guest-lectures">Guest Lectures</a>
+            </div>
+          </li>
+          <li class="nav-dropdown"><a href="media.html">Media</a>
+            <div class="nav-dropdown__menu">
+              <a href="media.html#video">Video</a>
+              <a href="media.html#news">News & Articles</a>
+            </div>
+          </li>
         </ul>
       </nav>
       <div class="nav-actions">
@@ -61,7 +101,7 @@
   <div class="container">
     <div class="section-heading-bar reveal mb-10">
       <p class="section__label">New Courses</p>
-      <h2 class="section__title">Courses Developed &amp; Taught</h2>
+      <h2 class="section__title" id="new-courses">Courses Developed &amp; Taught</h2>
       <div class="divider"></div>
     </div>
     <div class="course-grid">
@@ -78,7 +118,8 @@
         <h3 class="course-card__title">Reviewing Oceania: Introduction to Systematic Literature Review</h3>
         <div class="course-card__tags">
           <span class="tag tag--primary">Graduate</span>
-          <span class="tag tag--accent">New &middot; Spring 2026</span>
+          <span class="tag tag--accent">New &middot; Fall 2026</span>
+          <span class="tag tag--gold">Honors</span>
         </div>
       </article>
       <article class="course-card reveal reveal-delay-2">
@@ -90,9 +131,9 @@
         </div>
       </article>
     </div>
-    <div class="reveal mt-12 mb-8">
+    <div class="section-heading-bar reveal mt-12 mb-8">
       <p class="section__label">Existing Courses</p>
-      <h2 class="section__title">Courses Taught</h2>
+      <h2 class="section__title" id="existing-courses">Courses Taught</h2>
       <div class="divider"></div>
     </div>
     <div class="course-grid">
@@ -104,9 +145,9 @@
         </div>
       </article>
     </div>
-    <div class="reveal mt-12 mb-8">
+    <div class="section-heading-bar reveal mt-12 mb-8">
       <p class="section__label">Previous Teaching</p>
-      <h2 class="section__title">Past Courses</h2>
+      <h2 class="section__title" id="past-courses">Past Courses</h2>
       <div class="divider"></div>
     </div>
     <div class="course-grid">
