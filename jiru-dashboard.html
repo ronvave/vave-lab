@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jiru Coverage Dashboard — Vave Lab</title>
+  <meta name="description" content="Track community survey data on jiru — indigenous funerary protected areas across the Solomon Islands.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    /* ===== PAGE-SPECIFIC STYLES ===== */
+    :root {
+      --jiru-primary: #002a30;
+      --jiru-primary-light: #003d45;
+      --jiru-accent: #c9a227;
+      --jiru-accent-light: #e0c05a;
+      --jiru-green: #2a7d5f;
+      --jiru-green-light: #d4edda;
+      --jiru-gold: #c9a227;
+      --jiru-gold-light: #fff3cd;
+      --jiru-gray: #94a3b8;
+      --jiru-gray-light: #f1f5f9;
+      --jiru-red: #dc3545;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: #1e293b;
+      background: #f8fafc;
+      line-height: 1.6;
+    }
+
+    /* Page Banner */
+    .page-banner {
+      background: var(--jiru-primary);
+      color: #fff;
+      padding: 3rem 0 2.5rem;
+      text-align: center;
+    }
+    .page-banner .eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--jiru-accent);
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    .page-banner h1 {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+      font-weight: 700;
+      line-height: 1.15;
+      color: #fff;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* Stats Banner */
+    .stats-banner {
+      background: var(--jiru-primary);
+      padding: 2rem 0;
+      border-bottom: 3px solid var(--jiru-accent);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.5rem;
+      text-align: center;
+    }
+    .stat-item {
+      color: #fff;
+    }
+    .stat-item .stat-number {
+      font-family: var(--font-display);
+      font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--jiru-accent);
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+    .stat-item .stat-label {
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.7);
+      margin-top: 0.3rem;
+      font-weight: 500;
+    }
+
+    /* Section */
+    .section {
+      padding: clamp(2rem, 4vw, 4rem) 0;
+    }
+    .section-title {
+      font-family: var(--font-display);
+      font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+      font-weight: 700;
+      color: var(--jiru-primary);
+      margin-bottom: 1.5rem;
+    }
+    .section-subtitle {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 2rem;
+      max-width: 60ch;
+    }
+
+    /* Province Grid */
+    .province-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .province-card {
+      background: #fff;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      border: 1px solid #e2e8f0;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .province-card:hover {
+      box-shadow: 0 4px 20px rgba(0,42,48,0.08);
+      transform: translateY(-2px);
+    }
+    .province-card .status-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+    .province-card .status-bar.active { background: var(--jiru-green); }
+    .province-card .status-bar.mixed { background: var(--jiru-gold); }
+    .province-card .status-bar.nodata { background: #e2e8f0; }
+
+    .province-name {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--jiru-primary);
+      margin-bottom: 0.4rem;
+    }
+    .province-count {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 0.75rem;
+    }
+    .province-status {
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .province-status .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.green { background: var(--jiru-green); }
+    .dot.gold { background: var(--jiru-gold); }
+    .dot.gray { background: #cbd5e1; }
+
+    .badge-needs-data {
+      display: inline-block;
+      background: #fef3cd;
+      color: #856404;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      margin-top: 0.5rem;
+    }
+
+    /* Map */
+    .map-container {
+      background: #fff;
+      border-radius: 0.75rem;
+      border: 1px solid #e2e8f0;
+      overflow: hidden;
+    }
+    #jiru-map {
+      height: 500px;
+      width: 100%;
+    }
+    .map-legend {
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: #64748b;
+      border-top: 1px solid #e2e8f0;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* CTA Section */
+    .cta-section {
+      background: linear-gradient(135deg, #fef9e7 0%, #fff8e1 100%);
+      border: 2px solid var(--jiru-accent);
+      border-radius: 0.75rem;
+      padding: 2rem 2.5rem;
+    }
+    .cta-section h3 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--jiru-primary);
+      margin-bottom: 0.5rem;
+    }
+    .cta-section .missing-provinces {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 1rem 0 1.5rem;
+    }
+    .province-tag {
+      background: rgba(201,162,39,0.15);
+      color: #7a6512;
+      font-size: 0.8rem;
+      font-weight: 600;
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+    }
+
+    .cta-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+    .btn-primary {
+      background: var(--jiru-primary);
+      color: #fff;
+      padding: 0.75rem 1.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-primary:hover { background: var(--jiru-primary-light); }
+
+    .btn-outline {
+      background: #fff;
+      color: var(--jiru-primary);
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: 2px solid var(--jiru-primary);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-outline:hover { background: #f0f9ff; }
+
+    .btn-whatsapp {
+      background: #25d366;
+      color: #fff;
+      padding: 0.65rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+    .btn-whatsapp:hover { background: #1da851; }
+
+    .share-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 1.5rem;
+    }
+
+    .qr-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      flex-wrap: wrap;
+    }
+    #qrcode {
+      background: #fff;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      border: 1px solid #e2e8f0;
+    }
+    .qr-text {
+      font-size: 0.85rem;
+      color: #64748b;
+      max-width: 30ch;
+    }
+
+    /* About */
+    .about-content {
+      max-width: 72ch;
+    }
+    .about-content p {
+      margin-bottom: 1rem;
+      color: #475569;
+    }
+    .about-content a {
+      color: var(--jiru-primary);
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--jiru-primary);
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: 0.5rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 9999;
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      color: #64748b;
+      font-size: 0.9rem;
+    }
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #e2e8f0;
+      border-top-color: var(--jiru-primary);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 0.75rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+      .province-grid { grid-template-columns: 1fr; }
+      #jiru-map { height: 350px; }
+      .cta-section { padding: 1.5rem; }
+      .map-legend { flex-direction: column; gap: 0.5rem; }
+    }
+
+    @media (max-width: 480px) {
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .cta-actions { flex-direction: column; align-items: stretch; }
+      .btn-primary, .btn-outline, .btn-whatsapp { text-align: center; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SITE HEADER -->
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <img src="img/avatar.jpg" alt="Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:0.6rem;" onerror="this.style.display='none'">
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li class="nav-dropdown"><a href="index.html">Home</a><div class="nav-dropdown__menu"><a href="index.html#bio">About</a><a href="index.html#areas-heading">Research &amp; Methods</a><a href="index.html#pubs-heading">Recent Publications</a></div></li>
+          <li class="nav-dropdown"><a href="research.html" class="active">Research</a><div class="nav-dropdown__menu"><a href="research.html#research-philosophy">Research Philosophy</a><a href="research.html#current-projects">Current Projects</a><a href="research.html#intl-projects">International Projects</a></div></li>
+          <li class="nav-dropdown"><a href="publications.html">Publications</a><div class="nav-dropdown__menu"><a href="publications.html#journal-articles">Journal Articles</a><a href="publications.html#book-chapters">Book Chapters &amp; Reports</a></div></li>
+          <li class="nav-dropdown"><a href="supervision.html">Supervision</a><div class="nav-dropdown__menu"><a href="supervision.html#uh-students">UH Students</a><a href="supervision.html#non-uh-students">Non-UH Students</a></div></li>
+          <li class="nav-dropdown"><a href="teaching.html">Teaching</a><div class="nav-dropdown__menu"><a href="teaching.html#new-courses">New Courses</a><a href="teaching.html#existing-courses">Existing Courses</a><a href="teaching.html#past-courses">Past Courses</a></div></li>
+          <li class="nav-dropdown"><a href="service.html">Service</a><div class="nav-dropdown__menu"><a href="service.html#editorial-roles">Editorial Roles</a><a href="service.html#thesis-exam">Thesis Examination</a><a href="service.html#peer-review">Peer Review</a><a href="service.html#guest-lectures">Guest Lectures</a></div></li>
+          <li class="nav-dropdown"><a href="media.html">Media</a><div class="nav-dropdown__menu"><a href="media.html#video">Video</a><a href="media.html#news">News &amp; Articles</a></div></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a><a href="research.html">Research</a><a href="publications.html">Publications</a><a href="supervision.html">Supervision</a><a href="teaching.html">Teaching</a><a href="service.html">Service</a><a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<!-- PAGE BANNER -->
+<div class="page-banner">
+  <div class="container">
+    <p class="eyebrow">Vave Lab · Solomon Islands Research</p>
+    <h1>Jiru Coverage Dashboard</h1>
+  </div>
+</div>
+
+<!-- STATS BANNER -->
+<section class="stats-banner" id="stats-banner" aria-label="Summary statistics">
+  <div class="container">
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-number" id="stat-total">—</div>
+        <div class="stat-label">Total Responses</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="stat-provinces">—</div>
+        <div class="stat-label">Provinces with Data</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="stat-jiru">—</div>
+        <div class="stat-label">Jiru Confirmed</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-number" id="stat-updated">—</div>
+        <div class="stat-label">Last Updated</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MAIN CONTENT -->
+<main>
+
+  <!-- PROVINCE COVERAGE GRID -->
+  <section class="section" aria-labelledby="province-heading">
+    <div class="container">
+      <h2 class="section-title" id="province-heading">Province Coverage</h2>
+      <p class="section-subtitle">Survey coverage across all nine provinces of the Solomon Islands. Help us fill in the gaps.</p>
+      <div class="province-grid" id="province-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section class="section" aria-labelledby="map-heading" style="padding-top:0;">
+    <div class="container">
+      <h2 class="section-title" id="map-heading">Survey Locations</h2>
+      <p class="section-subtitle">Each marker represents a community that has responded to the jiru survey.</p>
+      <div class="map-container">
+        <div id="jiru-map"></div>
+        <div class="map-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#2a7d5f;"></span> Active jiru</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#c9a227;"></span> Jiru in the past</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span> No jiru / Unsure</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PROVINCES NEEDING DATA -->
+  <section class="section" aria-labelledby="cta-heading" style="padding-top:0;">
+    <div class="container">
+      <div class="cta-section">
+        <h3 id="cta-heading">These provinces have no data yet — can you help?</h3>
+        <p style="color:#64748b;font-size:0.9rem;">We need survey responses from every province in the Solomon Islands to understand the full extent of jiru practices.</p>
+        <div class="missing-provinces" id="missing-provinces">
+          <!-- populated by JS -->
+        </div>
+
+        <div class="cta-actions">
+          <a href="jiru-survey.html" class="btn-primary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Take the Survey
+          </a>
+          <button class="btn-outline" onclick="copyLink()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Link
+          </button>
+          <a href="https://wa.me/?text=Help%20us%20map%20jiru%20practices%20across%20the%20Solomon%20Islands!%20Take%20the%20survey%3A%20https%3A%2F%2Fronvave.github.io%2Fvave-lab%2Fjiru-survey.html" target="_blank" rel="noopener" class="btn-whatsapp">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            Share via WhatsApp
+          </a>
+        </div>
+
+        <div class="qr-wrapper">
+          <div id="qrcode"></div>
+          <div class="qr-text">
+            Scan this QR code or forward the survey link to anyone from the Solomon Islands — especially those from provinces without data.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" aria-labelledby="about-heading" style="padding-top:0;">
+    <div class="container">
+      <h2 class="section-title" id="about-heading">About the Jiru Research</h2>
+      <div class="about-content">
+        <p>
+          <strong>Jiru</strong> is an indigenous funerary practice found in parts of the Solomon Islands. When a person passes away, their community declares a protected area — which may include marine reefs, freshwater systems, or terrestrial forests — during the period of mourning. These culturally-governed closures can last from several months to many years, effectively creating temporary or semi-permanent protected areas with significant conservation benefits.
+        </p>
+        <p>
+          This research, led by <strong>Prof. Ron Vave</strong> at the University of Hawaiʻi at Mānoa, seeks to document and map jiru practices across all provinces of the Solomon Islands. By understanding where jiru is still actively practiced, where it existed in the past, and where it has never been observed, we can better appreciate the role of indigenous governance systems in marine and terrestrial conservation. The data shown on this dashboard comes from community surveys — if you or anyone you know is from the Solomon Islands, please <a href="jiru-survey.html">take the survey</a> to help build a more complete picture.
+        </p>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SITE FOOTER -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, LMMA networks, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener" class="footer-social__link">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener" class="footer-social__link">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener" class="footer-social__link">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener" class="footer-social__link">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li><li><a href="research.html">Research</a></li><li><a href="publications.html">Publications</a></li><li><a href="supervision.html">Supervision</a></li><li><a href="teaching.html">Teaching</a></li><li><a href="service.html">Service</a></li><li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>Department of Pacific Islands Studies<br>University of Hawaiʻi at Mānoa<br>1890 East-West Road, Moore Hall 214<br>Honolulu, Hawaiʻi, U.S.A.<br>Office: <a href="tel:+18089560229">(808) 956-0229</a><br>Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a></address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener">UH Faculty Profile ↗</a>
+    </div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+
+<!-- LIBRARIES -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<script>
+// ===== CONFIG =====
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
+const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
+
+// ===== DEMO DATA =====
+const DEMO_DATA = {
+  total_submissions: 12,
+  last_updated: '2026-04-06T10:00:00Z',
+  provinces: [
+    { name: 'Choiseul',           count: 2, jiru_yes: 2, jiru_past: 0, jiru_no: 0 },
+    { name: 'Western',            count: 4, jiru_yes: 2, jiru_past: 2, jiru_no: 0 },
+    { name: 'Isabel',             count: 1, jiru_yes: 0, jiru_past: 0, jiru_no: 1 },
+    { name: 'Central',            count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Guadalcanal',        count: 2, jiru_yes: 0, jiru_past: 0, jiru_no: 2 },
+    { name: 'Malaita',            count: 1, jiru_yes: 0, jiru_past: 0, jiru_no: 1 },
+    { name: 'Makira-Ulawa',       count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Rennell and Bellona', count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Temotu',             count: 1, jiru_yes: 0, jiru_past: 1, jiru_no: 0 }
+  ]
+};
+
+const DEMO_MARKERS = [
+  { village: 'Boe Village', island: 'Choiseul Island', province: 'Choiseul', status: 'active', lat: -6.71, lng: 156.95 },
+  { village: 'Sasamugga Village', island: 'Choiseul Island', province: 'Choiseul', status: 'active', lat: -6.73, lng: 156.80 },
+  { village: 'Haimatua', island: 'Guadalcanal', province: 'Guadalcanal', status: 'never', lat: -9.43, lng: 160.05 },
+  { village: 'Buala', island: 'Guadalcanal', province: 'Guadalcanal', status: 'never', lat: -9.50, lng: 160.15 },
+  { village: 'Taumako', island: 'Duff Islands', province: 'Temotu', status: 'past', lat: -9.88, lng: 167.06 },
+  { village: 'Iriqila', island: 'Vella Lavella', province: 'Western', status: 'active', lat: -7.73, lng: 156.63 },
+  { village: 'Vonunu', island: 'Vella Lavella', province: 'Western', status: 'active', lat: -7.78, lng: 156.68 },
+  { village: 'Mbilua', island: 'Vella Lavella', province: 'Western', status: 'past', lat: -7.72, lng: 156.55 },
+  { village: 'Supato', island: 'Vella Lavella', province: 'Western', status: 'past', lat: -7.80, lng: 156.60 },
+  { village: 'Kia', island: 'Santa Isabel', province: 'Isabel', status: 'unsure', lat: -7.45, lng: 158.22 },
+  { village: 'Malu\'u', island: 'North Malaita', province: 'Malaita', status: 'never', lat: -8.31, lng: 160.72 },
+  { village: 'Gizo Town', island: 'Ghizo', province: 'Western', status: 'active', lat: -8.10, lng: 156.84 }
+];
+
+// ===== LOAD DATA =====
+async function loadData() {
+  let data = null;
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=summary');
+    if (resp.ok) data = await resp.json();
+  } catch (e) {
+    // fall through to demo
+  }
+  if (!data || !data.provinces) data = DEMO_DATA;
+  renderDashboard(data);
+}
+
+// ===== RENDER =====
+function renderDashboard(data) {
+  // Stats
+  const provincesWithData = data.provinces.filter(p => p.count > 0).length;
+  const jiruConfirmed = data.provinces.reduce((s, p) => s + p.jiru_yes, 0);
+  const updated = new Date(data.last_updated);
+  const dateStr = updated.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+
+  document.getElementById('stat-total').textContent = data.total_submissions;
+  document.getElementById('stat-provinces').textContent = provincesWithData + ' of 9';
+  document.getElementById('stat-jiru').textContent = jiruConfirmed;
+  document.getElementById('stat-updated').textContent = dateStr;
+
+  // Province Cards
+  const grid = document.getElementById('province-grid');
+  grid.innerHTML = '';
+  data.provinces.forEach(p => {
+    const hasActive = p.jiru_yes > 0;
+    const hasPast = p.jiru_past > 0;
+    const hasData = p.count > 0;
+    let statusClass, statusText;
+    if (hasActive) {
+      statusClass = 'active';
+      statusText = `Jiru confirmed in ${p.jiru_yes} communit${p.jiru_yes > 1 ? 'ies' : 'y'}`;
+    } else if (hasPast) {
+      statusClass = 'mixed';
+      statusText = 'Jiru practiced in the past';
+    } else if (hasData) {
+      statusClass = 'mixed';
+      statusText = 'No jiru reported';
+    } else {
+      statusClass = 'nodata';
+      statusText = 'No data yet';
+    }
+
+    let dotClass = hasActive ? 'green' : (hasPast ? 'gold' : (hasData ? 'gray' : 'gray'));
+
+    const card = document.createElement('div');
+    card.className = 'province-card';
+    card.innerHTML = `
+      <div class="status-bar ${statusClass}"></div>
+      <div class="province-name">${p.name}</div>
+      <div class="province-count">${p.count} response${p.count !== 1 ? 's' : ''}</div>
+      <div class="province-status"><span class="dot ${dotClass}"></span> ${statusText}</div>
+      ${!hasData ? '<span class="badge-needs-data">Needs data</span>' : ''}
+    `;
+    grid.appendChild(card);
+  });
+
+  // Missing provinces
+  const missing = data.provinces.filter(p => p.count === 0);
+  const missingEl = document.getElementById('missing-provinces');
+  missingEl.innerHTML = '';
+  missing.forEach(p => {
+    const tag = document.createElement('span');
+    tag.className = 'province-tag';
+    tag.textContent = p.name;
+    missingEl.appendChild(tag);
+  });
+
+  // Map
+  initMap();
+}
+
+// ===== MAP =====
+function initMap() {
+  const map = L.map('jiru-map').setView([-8.5, 160.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(map);
+
+  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#94a3b8', unsure: '#94a3b8' };
+  const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
+
+  DEMO_MARKERS.forEach(m => {
+    const circle = L.circleMarker([m.lat, m.lng], {
+      radius: 8,
+      fillColor: colors[m.status],
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.85
+    }).addTo(map);
+
+    circle.bindPopup(`
+      <div style="font-family:'DM Sans',sans-serif;min-width:160px;">
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${m.village}</strong><br>
+        <span style="color:#64748b;font-size:0.8rem;">${m.island}, ${m.province}</span><br>
+        <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;background:${colors[m.status]}20;color:${colors[m.status]};">${labels[m.status]}</span>
+      </div>
+    `);
+  });
+}
+
+// ===== QR CODE =====
+function initQR() {
+  const qrEl = document.getElementById('qrcode');
+  if (qrEl && typeof QRCode !== 'undefined') {
+    new QRCode(qrEl, {
+      text: SURVEY_URL,
+      width: 120,
+      height: 120,
+      colorDark: '#002a30',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+  }
+}
+
+// ===== COPY LINK =====
+function copyLink() {
+  navigator.clipboard.writeText(SURVEY_URL).then(() => {
+    showToast('Survey link copied to clipboard!');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = SURVEY_URL;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Survey link copied!');
+  });
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  loadData();
+  initQR();
+});
+</script>
+</body>
+</html>

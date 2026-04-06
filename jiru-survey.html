@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jiru Survey — Funerary Protected Areas | Vave Lab</title>
+  <meta name="description" content="Help document jiru — funerary protected areas practised in the Solomon Islands. Share your knowledge of this indigenous conservation tradition.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
+  <!-- Site styles -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- QR Code -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    /* =============================================
+       SURVEY-SPECIFIC STYLES
+       ============================================= */
+
+    .survey-intro {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: var(--space-10) 0 var(--space-6);
+    }
+
+    .survey-intro__title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-6);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .survey-intro__text {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.8;
+      margin-bottom: var(--space-4);
+    }
+
+    .survey-intro__text a {
+      color: var(--color-accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .survey-intro__text a:hover {
+      text-decoration: underline;
+    }
+
+    .survey-intro__privacy {
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .survey-intro__privacy strong {
+      color: var(--color-text);
+    }
+
+    /* FORM CONTAINER */
+    .survey-form-wrapper {
+      max-width: 780px;
+      margin: 0 auto;
+      padding-bottom: var(--space-16);
+    }
+
+    .survey-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-8) var(--space-8) var(--space-10);
+      position: relative;
+    }
+
+    @media (max-width: 600px) {
+      .survey-card {
+        padding: var(--space-5) var(--space-4) var(--space-8);
+      }
+    }
+
+    /* PROGRESS BAR */
+    .survey-progress-bar {
+      height: 4px;
+      background: var(--color-surface-offset);
+      border-radius: 2px;
+      margin-bottom: var(--space-8);
+      overflow: hidden;
+    }
+
+    .survey-progress-bar__fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* STEP INDICATORS */
+    .survey-steps {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-10);
+      position: relative;
+      padding: 0 var(--space-2);
+    }
+
+    .survey-steps::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 24px;
+      right: 24px;
+      height: 2px;
+      background: var(--color-surface-offset-2);
+      z-index: 0;
+    }
+
+    .survey-step-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      z-index: 1;
+      cursor: default;
+      flex: 0 0 auto;
+    }
+
+    .survey-step-indicator__circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      font-family: var(--font-body);
+      background: var(--color-surface-offset);
+      color: var(--color-text-faint);
+      border: 2px solid var(--color-surface-offset-2);
+      transition: all 0.3s ease;
+    }
+
+    .survey-step-indicator.active .survey-step-indicator__circle {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+      box-shadow: 0 2px 12px oklch(from var(--color-primary) l c h / 0.3);
+    }
+
+    .survey-step-indicator.completed .survey-step-indicator__circle {
+      background: var(--color-primary-highlight);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+
+    .survey-step-indicator__label {
+      font-size: 0.65rem;
+      font-family: var(--font-body);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-faint);
+      text-align: center;
+      max-width: 80px;
+      line-height: 1.3;
+    }
+
+    .survey-step-indicator.active .survey-step-indicator__label {
+      color: var(--color-primary);
+    }
+
+    .survey-step-indicator.completed .survey-step-indicator__label {
+      color: var(--color-text-muted);
+    }
+
+    @media (max-width: 600px) {
+      .survey-step-indicator__label {
+        display: none;
+      }
+      .survey-step-indicator__circle {
+        width: 28px;
+        height: 28px;
+        font-size: 0.7rem;
+      }
+    }
+
+    /* STEP CONTENT */
+    .survey-step {
+      display: none;
+    }
+
+    .survey-step.active {
+      display: block;
+      animation: fadeInUp 0.35s ease forwards;
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .survey-step__title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+      letter-spacing: -0.01em;
+    }
+
+    .survey-step__subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-8);
+      line-height: 1.6;
+    }
+
+    /* FORM FIELDS */
+    .form-group {
+      margin-bottom: var(--space-6);
+    }
+
+    .form-group--tight {
+      margin-bottom: var(--space-4);
+    }
+
+    .form-label {
+      display: block;
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+      line-height: 1.4;
+    }
+
+    .form-label .required {
+      color: var(--color-error);
+      margin-left: 2px;
+    }
+
+    .form-helper {
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      margin-top: var(--space-1);
+      line-height: 1.5;
+    }
+
+    .form-note {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+      line-height: 1.5;
+      font-style: italic;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      background: var(--color-surface-2);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+      line-height: 1.5;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px oklch(from var(--color-primary) l c h / 0.12);
+    }
+
+    .form-input::placeholder,
+    .form-textarea::placeholder {
+      color: var(--color-text-faint);
+    }
+
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+
+    .form-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%236b6d76' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right var(--space-3) center;
+      padding-right: var(--space-10);
+      cursor: pointer;
+    }
+
+    .form-error-msg {
+      font-size: var(--text-xs);
+      color: var(--color-error);
+      margin-top: var(--space-1);
+      display: none;
+    }
+
+    .form-group.has-error .form-input,
+    .form-group.has-error .form-select,
+    .form-group.has-error .form-textarea {
+      border-color: var(--color-error);
+    }
+
+    .form-group.has-error .form-error-msg {
+      display: block;
+    }
+
+    /* CUSTOM RADIO & CHECKBOX */
+    .form-radio-group,
+    .form-check-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+    }
+
+    .form-radio,
+    .form-check {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      cursor: pointer;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      border: 1.5px solid transparent;
+      transition: background var(--transition-interactive), border-color var(--transition-interactive);
+    }
+
+    .form-radio:hover,
+    .form-check:hover {
+      background: var(--color-surface-offset);
+    }
+
+    .form-radio input[type="radio"],
+    .form-check input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--color-border);
+      flex-shrink: 0;
+      margin-top: 1px;
+      transition: all var(--transition-interactive);
+      cursor: pointer;
+      background: var(--color-surface-2);
+    }
+
+    .form-radio input[type="radio"] {
+      border-radius: 50%;
+    }
+
+    .form-check input[type="checkbox"] {
+      border-radius: 4px;
+    }
+
+    .form-radio input[type="radio"]:checked {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      box-shadow: inset 0 0 0 3px var(--color-surface);
+    }
+
+    .form-check input[type="checkbox"]:checked {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 12px;
+    }
+
+    .form-radio input[type="radio"]:focus-visible,
+    .form-check input[type="checkbox"]:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .form-radio__label,
+    .form-check__label {
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      line-height: 1.5;
+      cursor: pointer;
+    }
+
+    .form-radio.selected,
+    .form-check.selected {
+      background: var(--color-primary-highlight);
+      border-color: oklch(from var(--color-primary) l c h / 0.25);
+    }
+
+    .other-specify {
+      margin-top: var(--space-2);
+      margin-left: 32px;
+      display: none;
+    }
+
+    .other-specify.visible {
+      display: block;
+    }
+
+    /* SECTION DIVIDER */
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--color-divider);
+      margin: var(--space-8) 0;
+    }
+
+    /* MAP */
+    .map-container {
+      width: 100%;
+      height: 350px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--color-border);
+      overflow: hidden;
+      margin-top: var(--space-3);
+    }
+
+    .map-instruction {
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+      margin-top: var(--space-2);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .map-instruction svg {
+      flex-shrink: 0;
+      width: 14px;
+      height: 14px;
+      color: var(--color-primary);
+    }
+
+    .map-coords {
+      font-size: var(--text-xs);
+      color: var(--color-primary);
+      font-weight: 600;
+      margin-top: var(--space-2);
+      font-family: var(--font-body);
+    }
+
+    /* FILE UPLOAD */
+    .file-upload-zone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-8) var(--space-6);
+      text-align: center;
+      cursor: pointer;
+      transition: border-color var(--transition-interactive), background var(--transition-interactive);
+      background: var(--color-surface-2);
+    }
+
+    .file-upload-zone:hover,
+    .file-upload-zone.dragover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-highlight);
+    }
+
+    .file-upload-zone__icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto var(--space-3);
+      color: var(--color-text-faint);
+    }
+
+    .file-upload-zone__text {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-1);
+    }
+
+    .file-upload-zone__hint {
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+    }
+
+    .file-upload-zone input[type="file"] {
+      display: none;
+    }
+
+    .file-list {
+      margin-top: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .file-list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-sm);
+      font-size: var(--text-xs);
+      color: var(--color-text-muted);
+    }
+
+    .file-list-item__remove {
+      color: var(--color-error);
+      cursor: pointer;
+      font-weight: 600;
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      transition: background var(--transition-interactive);
+    }
+
+    .file-list-item__remove:hover {
+      background: oklch(from var(--color-error) l c h / 0.1);
+    }
+
+    /* CTA BOX */
+    .cta-share-box {
+      background: var(--color-gold-light);
+      border: 1.5px solid var(--color-gold);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-top: var(--space-8);
+      text-align: center;
+    }
+
+    .cta-share-box__title {
+      font-family: var(--font-display);
+      font-size: var(--text-lg);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-3);
+    }
+
+    .cta-share-box__text {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-5);
+      line-height: 1.6;
+    }
+
+    .share-buttons {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 600;
+      font-family: var(--font-body);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-interactive);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+    }
+
+    .share-btn--whatsapp {
+      background: #25D366;
+      color: #fff;
+      border: none;
+    }
+
+    .share-btn--whatsapp:hover {
+      background: #1ea952;
+      color: #fff;
+    }
+
+    .share-btn--copy {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1.5px solid var(--color-border);
+    }
+
+    .share-btn--copy:hover {
+      background: var(--color-surface-offset);
+      color: var(--color-text);
+    }
+
+    /* NAV BUTTONS */
+    .survey-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: var(--space-10);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--color-divider);
+      gap: var(--space-4);
+    }
+
+    .survey-nav .btn {
+      min-width: 120px;
+      justify-content: center;
+    }
+
+    .btn--prev {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1.5px solid var(--color-border);
+    }
+
+    .btn--prev:hover {
+      background: var(--color-surface-offset);
+      color: var(--color-text);
+    }
+
+    .btn--submit {
+      background: var(--color-gold);
+      color: #fff;
+    }
+
+    .btn--submit:hover {
+      background: #a88e20;
+      color: #fff;
+      box-shadow: 0 4px 16px oklch(from var(--color-gold) l c h / 0.3);
+    }
+
+    /* CONDITIONAL SECTIONS */
+    .conditional-section {
+      display: none;
+    }
+
+    .conditional-section.visible {
+      display: block;
+    }
+
+    /* REVIEW STEP */
+    .review-section {
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      margin-bottom: var(--space-5);
+    }
+
+    .review-section__title {
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-primary);
+      margin-bottom: var(--space-3);
+    }
+
+    .review-row {
+      display: flex;
+      gap: var(--space-4);
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--color-divider);
+      font-size: var(--text-sm);
+    }
+
+    .review-row:last-child {
+      border-bottom: none;
+    }
+
+    .review-row__label {
+      flex: 0 0 40%;
+      color: var(--color-text-muted);
+      font-weight: 500;
+    }
+
+    .review-row__value {
+      flex: 1;
+      color: var(--color-text);
+      word-break: break-word;
+    }
+
+    .review-edit-btn {
+      font-size: var(--text-xs);
+      color: var(--color-primary);
+      cursor: pointer;
+      font-weight: 600;
+      float: right;
+      background: none;
+      border: none;
+      font-family: var(--font-body);
+    }
+
+    .review-edit-btn:hover {
+      text-decoration: underline;
+    }
+
+    /* LOADING / SUCCESS / ERROR OVERLAYS */
+    .survey-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      background: var(--color-bg);
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-8);
+    }
+
+    .survey-overlay.active {
+      display: flex;
+    }
+
+    .survey-overlay__inner {
+      max-width: 560px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid var(--color-surface-offset-2);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto var(--space-6);
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .survey-overlay__title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-4);
+    }
+
+    .survey-overlay__text {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      margin-bottom: var(--space-6);
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: var(--color-primary-highlight);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-6);
+    }
+
+    .success-icon svg {
+      width: 36px;
+      height: 36px;
+      color: var(--color-primary);
+    }
+
+    .error-icon {
+      width: 72px;
+      height: 72px;
+      background: oklch(from var(--color-error) l c h / 0.12);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-6);
+    }
+
+    .error-icon svg {
+      width: 36px;
+      height: 36px;
+      color: var(--color-error);
+    }
+
+    #success-qr {
+      margin: var(--space-6) auto;
+      display: inline-block;
+    }
+
+    #success-qr canvas,
+    #success-qr img {
+      border-radius: var(--radius-md);
+    }
+
+    .success-links {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-4);
+      align-items: center;
+      margin-top: var(--space-6);
+    }
+
+    /* Inline checkbox (e.g. island-level toggle) */
+    .inline-check {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-top: var(--space-2);
+    }
+
+    .inline-check input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--color-border);
+      border-radius: 4px;
+      flex-shrink: 0;
+      cursor: pointer;
+      background: var(--color-surface-2);
+      transition: all var(--transition-interactive);
+    }
+
+    .inline-check input[type="checkbox"]:checked {
+      border-color: var(--color-primary);
+      background: var(--color-primary);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white' viewBox='0 0 16 16'%3E%3Cpath d='M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 12px;
+    }
+
+    .inline-check label {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      cursor: pointer;
+    }
+
+    /* Section sub-heading within a step */
+    .form-section-heading {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-5);
+      padding-bottom: var(--space-3);
+      border-bottom: 2px solid var(--color-primary-highlight);
+    }
+
+    /* Two-column on desktop */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-5);
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Leaflet fix for z-index */
+    .leaflet-pane { z-index: 1; }
+    .leaflet-top, .leaflet-bottom { z-index: 2; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════ -->
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <img src="img/avatar.jpg" alt="Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:0.6rem;" onerror="this.style.display='none'">
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li class="nav-dropdown"><a href="index.html">Home</a><div class="nav-dropdown__menu"><a href="index.html#bio">About</a><a href="index.html#areas-heading">Research & Methods</a><a href="index.html#pubs-heading">Recent Publications</a></div></li>
+          <li class="nav-dropdown"><a href="research.html" class="active">Research</a><div class="nav-dropdown__menu"><a href="research.html#research-philosophy">Research Philosophy</a><a href="research.html#current-projects">Current Projects</a><a href="research.html#intl-projects">International Projects</a></div></li>
+          <li class="nav-dropdown"><a href="publications.html">Publications</a><div class="nav-dropdown__menu"><a href="publications.html#journal-articles">Journal Articles</a><a href="publications.html#book-chapters">Book Chapters & Reports</a></div></li>
+          <li class="nav-dropdown"><a href="supervision.html">Supervision</a><div class="nav-dropdown__menu"><a href="supervision.html#uh-students">UH Students</a><a href="supervision.html#non-uh-students">Non-UH Students</a></div></li>
+          <li class="nav-dropdown"><a href="teaching.html">Teaching</a><div class="nav-dropdown__menu"><a href="teaching.html#new-courses">New Courses</a><a href="teaching.html#existing-courses">Existing Courses</a><a href="teaching.html#past-courses">Past Courses</a></div></li>
+          <li class="nav-dropdown"><a href="service.html">Service</a><div class="nav-dropdown__menu"><a href="service.html#editorial-roles">Editorial Roles</a><a href="service.html#thesis-exam">Thesis Examination</a><a href="service.html#peer-review">Peer Review</a><a href="service.html#guest-lectures">Guest Lectures</a></div></li>
+          <li class="nav-dropdown"><a href="media.html">Media</a><div class="nav-dropdown__menu"><a href="media.html#video">Video</a><a href="media.html#news">News & Articles</a></div></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a> <a href="research.html">Research</a>
+      <a href="publications.html">Publications</a> <a href="supervision.html">Supervision</a>
+      <a href="teaching.html">Teaching</a> <a href="service.html">Service</a> <a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════
+     PAGE BANNER
+     ═══════════════════════════════════════════ -->
+<section class="page-banner">
+  <div class="container page-banner__inner">
+    <p class="page-banner__eyebrow">Vave Lab &middot; Solomon Islands Research</p>
+    <h1 class="page-banner__title">Jiru Survey</h1>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     MAIN CONTENT
+     ═══════════════════════════════════════════ -->
+<main class="section">
+  <div class="container">
+
+    <!-- INTRO SECTION -->
+    <div class="survey-intro">
+      <h2 class="survey-intro__title">Help us document jiru &mdash; Solomon Islands funerary protected areas</h2>
+
+      <p class="survey-intro__text">
+        <strong>Jiru</strong> is a funerary protection practice observed in parts of the Solomon Islands. When someone in a community dies, certain marine areas (reefs, lagoons), freshwater resources (rivers, streams), or land areas (forests, gardens) may be placed under a customary taboo for a period of mourning. After the protection period ends, a communal harvest takes place &mdash; often as a feast honouring the deceased.
+      </p>
+
+      <p class="survey-intro__text">
+        This indigenous conservation practice is deeply interwoven with cultural identity, resource management, and ecological resilience. However, jiru and similar funerary protected areas (FPAs) remain under-documented and are increasingly at risk as modern conservation programmes and socioeconomic changes reshape traditional governance systems.
+      </p>
+
+      <p class="survey-intro__text">
+        <strong>Who should fill this out?</strong> Anyone with knowledge of jiru or similar mourning-related resource protection practices in the Solomon Islands &mdash; community members, leaders, researchers, and NGO workers. Whether your community currently practises jiru, used to practise it, or has never done so, your response is valuable.
+      </p>
+
+      <p class="survey-intro__text">
+        This research builds on published work by Prof. Ron Vave and collaborators. For more context, see: <a href="https://doi.org/10.1007/s13280-021-01620-z" target="_blank" rel="noopener">Vave &amp; Ataria (2021) in <em>Ambio</em></a> and <a href="https://conbio.onlinelibrary.wiley.com/doi/abs/10.1111/cobi.14403" target="_blank" rel="noopener">Vave et al. in <em>Conservation Biology</em></a>.
+      </p>
+
+      <div class="survey-intro__privacy">
+        <strong>Privacy &amp; Data Use:</strong> Your responses are used for academic research only. Your name and general location are collected to help map the distribution of jiru practices and for potential follow-up. Your email address will never be shared. All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.
+      </div>
+    </div>
+
+    <!-- SURVEY FORM -->
+    <div class="survey-form-wrapper">
+      <div class="survey-card">
+
+        <!-- Progress bar -->
+        <div class="survey-progress-bar">
+          <div class="survey-progress-bar__fill" id="progressFill" style="width: 16.67%"></div>
+        </div>
+
+        <!-- Step indicators -->
+        <div class="survey-steps" id="stepIndicators">
+          <div class="survey-step-indicator active" data-step="1">
+            <div class="survey-step-indicator__circle">1</div>
+            <div class="survey-step-indicator__label">About You</div>
+          </div>
+          <div class="survey-step-indicator" data-step="2">
+            <div class="survey-step-indicator__circle">2</div>
+            <div class="survey-step-indicator__label">Location</div>
+          </div>
+          <div class="survey-step-indicator" data-step="3">
+            <div class="survey-step-indicator__circle">3</div>
+            <div class="survey-step-indicator__label">Jiru Practice</div>
+          </div>
+          <div class="survey-step-indicator" data-step="4">
+            <div class="survey-step-indicator__circle">4</div>
+            <div class="survey-step-indicator__label">Details</div>
+          </div>
+          <div class="survey-step-indicator" data-step="5">
+            <div class="survey-step-indicator__circle">5</div>
+            <div class="survey-step-indicator__label">Resources</div>
+          </div>
+          <div class="survey-step-indicator" data-step="6">
+            <div class="survey-step-indicator__circle">6</div>
+            <div class="survey-step-indicator__label">Review</div>
+          </div>
+        </div>
+
+        <form id="jiruSurvey" novalidate>
+
+          <!-- ═══════════ STEP 1: About You ═══════════ -->
+          <div class="survey-step active" data-step="1">
+            <h3 class="survey-step__title">About You</h3>
+            <p class="survey-step__subtitle">Tell us a little about yourself so we can understand your connection to this community.</p>
+
+            <div class="form-group">
+              <label class="form-label" for="first_name">Your First Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="first_name" name="first_name" required autocomplete="given-name" placeholder="Enter your first name">
+              <p class="form-error-msg">Please enter your first name.</p>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="email">Email Address</label>
+              <input type="email" class="form-input" id="email" name="email" autocomplete="email" placeholder="your.email@example.com">
+              <p class="form-note">Only provide if you are open to being contacted for follow-up.</p>
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="form-group">
+              <label class="form-label">How are you connected to this community? <span class="required">*</span></label>
+              <div class="form-radio-group" id="connectionGroup">
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Direct community member" required>
+                  <span class="form-radio__label">Direct community member</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Community leader">
+                  <span class="form-radio__label">Community leader</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Researcher/Academic">
+                  <span class="form-radio__label">Researcher / Academic</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Non-government organisation">
+                  <span class="form-radio__label">Non-government organisation</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Other">
+                  <span class="form-radio__label">Other (specify)</span>
+                </label>
+              </div>
+              <div class="other-specify" id="connectionOther">
+                <input type="text" class="form-input" id="connection_other_text" placeholder="Please specify">
+              </div>
+              <p class="form-error-msg">Please select how you are connected.</p>
+            </div>
+
+            <div class="survey-nav">
+              <div></div>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 2: Your Location ═══════════ -->
+          <div class="survey-step" data-step="2">
+            <h3 class="survey-step__title">Your Location</h3>
+            <p class="survey-step__subtitle">Help us locate the community you are providing information about.</p>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="province">Province <span class="required">*</span></label>
+                <select class="form-select" id="province" name="province" required>
+                  <option value="">Select a province</option>
+                  <option value="Choiseul">Choiseul</option>
+                  <option value="Western">Western</option>
+                  <option value="Isabel">Isabel</option>
+                  <option value="Central">Central</option>
+                  <option value="Guadalcanal">Guadalcanal</option>
+                  <option value="Malaita">Malaita</option>
+                  <option value="Makira-Ulawa">Makira-Ulawa</option>
+                  <option value="Rennell and Bellona">Rennell and Bellona</option>
+                  <option value="Temotu">Temotu</option>
+                </select>
+                <p class="form-error-msg">Please select a province.</p>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="island">Island <span class="required">*</span></label>
+                <input type="text" class="form-input" id="island" name="island" required placeholder="e.g. Choiseul Island, Vella Lavella, Guadalcanal">
+                <p class="form-error-msg">Please enter the island name.</p>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="ward">Ward</label>
+                <input type="text" class="form-input" id="ward" name="ward" placeholder="Optional">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="village">Village Name</label>
+                <input type="text" class="form-input" id="village" name="village" placeholder="Enter village name">
+                <div class="inline-check">
+                  <input type="checkbox" id="island_level" name="island_level">
+                  <label for="island_level">I am providing information at the island level (not a specific village)</label>
+                </div>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="form-group">
+              <label class="form-label">Map Location</label>
+              <p class="map-instruction">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                Click on the map to mark the location of the village or island you are reporting about.
+              </p>
+              <div class="map-container" id="locationMap"></div>
+              <p class="map-coords" id="mapCoords"></p>
+              <input type="hidden" id="lat" name="lat">
+              <input type="hidden" id="lng" name="lng">
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 3: Jiru Practice ═══════════ -->
+          <div class="survey-step" data-step="3">
+            <h3 class="survey-step__title">Jiru in Your Community</h3>
+            <p class="survey-step__subtitle">We want to understand whether jiru or a similar funerary protection practice exists in your community.</p>
+
+            <div class="form-group">
+              <label class="form-label" for="local_jiru_name">What is jiru, or a similar funerary/mourning protection practice, called in your place?</label>
+              <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. jiru, tabu, other local name">
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="form-group">
+              <label class="form-label">To your knowledge, does your community practise jiru or a similar funerary protection? <span class="required">*</span></label>
+              <div class="form-radio-group" id="jiruStatusGroup">
+                <label class="form-radio">
+                  <input type="radio" name="jiru_status" value="yes_current" required>
+                  <span class="form-radio__label">Yes &mdash; we currently practise this</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="jiru_status" value="yes_past">
+                  <span class="form-radio__label">Yes &mdash; we practised this in the past, but no longer</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="jiru_status" value="no">
+                  <span class="form-radio__label">No &mdash; we have never practised this, to my knowledge</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="jiru_status" value="unsure">
+                  <span class="form-radio__label">Unsure / I don&rsquo;t know</span>
+                </label>
+              </div>
+              <p class="form-error-msg">Please select an option.</p>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 4: Jiru Details (conditional) ═══════════ -->
+          <div class="survey-step" data-step="4">
+
+            <!-- YES (current or past) — Detail questions -->
+            <div class="conditional-section" id="jiruDetailsYes">
+              <h3 class="survey-step__title">Tell us more about jiru in <span id="villageName">your community</span></h3>
+              <p class="survey-step__subtitle">Share as much or as little as you know. Every detail helps us understand this practice.</p>
+
+              <div class="form-section-heading">Most Recent Jiru</div>
+
+              <div class="form-group">
+                <label class="form-label">When was the jiru approximately established?</label>
+                <div class="form-radio-group" id="jiruRecencyGroup">
+                  <label class="form-radio">
+                    <input type="radio" name="jiru_recency" value="past_year">
+                    <span class="form-radio__label">In the past year (2025&ndash;2026)</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="jiru_recency" value="last_5_years">
+                    <span class="form-radio__label">Within the last 5 years (2020&ndash;2025)</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="jiru_recency" value="last_20_years">
+                    <span class="form-radio__label">Within the last 20 years (2000&ndash;2020)</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="jiru_recency" value="before_2000">
+                    <span class="form-radio__label">Before 2000</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="jiru_recency" value="unknown">
+                    <span class="form-radio__label">I don&rsquo;t know when</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="jiru_year_approx">If you know the approximate year or decade, please enter it:</label>
+                <input type="text" class="form-input" id="jiru_year_approx" name="jiru_year_approx" placeholder="e.g. 2018, 1990s, 1960s">
+              </div>
+
+              <hr class="form-divider">
+
+              <div class="form-section-heading">What Was Protected</div>
+
+              <div class="form-group">
+                <label class="form-label">What was protected during the jiru? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="jiruProtectedGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Marine/sea area (reef, lagoon, open water)">
+                    <span class="form-check__label">Marine / sea area (reef, lagoon, open water)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="River or stream (freshwater)">
+                    <span class="form-check__label">River or stream (freshwater)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Land (forest, garden, inland area)">
+                    <span class="form-check__label">Land (forest, garden, inland area)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Specific marine species">
+                    <span class="form-check__label">Specific marine species (e.g. particular fish, shellfish)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Specific terrestrial species">
+                    <span class="form-check__label">Specific terrestrial species (e.g. animals, plants)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="protectedOther">
+                  <input type="text" class="form-input" id="jiru_protected_other_text" placeholder="Please specify what was protected">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="jiru_habitat_description">Please describe the habitat or area protected:</label>
+                <textarea class="form-textarea" id="jiru_habitat_description" name="jiru_habitat_description" placeholder="e.g. the reef in front of our village, the river at the eastern end of the island"></textarea>
+              </div>
+
+              <hr class="form-divider">
+
+              <div class="form-section-heading">Harvest &amp; Duration</div>
+
+              <div class="form-group">
+                <label class="form-label" for="jiru_duration">How long did the jiru protection last?</label>
+                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="e.g. 3 months, 1 year, until the next planting season">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="jiru_harvested">What was harvested when the jiru was lifted?</label>
+                <textarea class="form-textarea" id="jiru_harvested" name="jiru_harvested" placeholder="e.g. fish, clams, crayfish, turtles, etc."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Who participated in the harvest? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="jiruParticipantsGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased only">
+                    <span class="form-check__label">Immediate family of the deceased only</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Extended family / clan">
+                    <span class="form-check__label">Extended family / clan</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Whole village">
+                    <span class="form-check__label">Whole village</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Invited guests from other villages">
+                    <span class="form-check__label">Invited guests from other villages</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="participantsOther">
+                  <input type="text" class="form-input" id="jiru_participants_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">What was the catch or harvest used for? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="jiruCatchGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Community/village feast">
+                    <span class="form-check__label">Community / village feast</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Ceremony or cultural event">
+                    <span class="form-check__label">Ceremony or cultural event</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Divided among households">
+                    <span class="form-check__label">Divided among households</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Sold or traded">
+                    <span class="form-check__label">Sold or traded</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="catchOther">
+                  <input type="text" class="form-input" id="jiru_catch_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <hr class="form-divider">
+
+              <div class="form-group">
+                <label class="form-label" for="jiru_additional">Any additional details about this jiru:</label>
+                <textarea class="form-textarea" id="jiru_additional" name="jiru_additional" placeholder="e.g. who it was done for, how it was decided, any challenges faced"></textarea>
+                <p class="form-helper">For example: who the jiru was established for, who made the decision, any challenges or changes over time.</p>
+              </div>
+
+              <!-- Extra question for PAST only -->
+              <div class="conditional-section" id="jiruWhyStoppedSection">
+                <hr class="form-divider">
+                <div class="form-group">
+                  <label class="form-label" for="jiru_why_stopped">Why is jiru no longer practised in your community?</label>
+                  <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="e.g. the practice was lost after resettlement, younger generations are not aware of it, etc."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- NO or UNSURE — Alternative questions -->
+            <div class="conditional-section" id="jiruDetailsNo">
+              <h3 class="survey-step__title">Other Conservation Practices</h3>
+              <p class="survey-step__subtitle">Even if jiru is not practised in your community, your knowledge of other practices and nearby communities is valuable.</p>
+
+              <div class="form-group">
+                <label class="form-label">Does your community have any other customary or traditional practices for protecting natural resources (marine, freshwater, or terrestrial areas)?</label>
+                <div class="form-radio-group" id="otherPracticesGroup">
+                  <label class="form-radio">
+                    <input type="radio" name="other_practices" value="Yes">
+                    <span class="form-radio__label">Yes</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="other_practices" value="No">
+                    <span class="form-radio__label">No</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="other_practices" value="Unsure">
+                    <span class="form-radio__label">Unsure</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="conditional-section" id="otherPracticesDescSection">
+                <div class="form-group">
+                  <label class="form-label" for="other_practices_desc">Please describe these practices:</label>
+                  <textarea class="form-textarea" id="other_practices_desc" name="other_practices_desc" placeholder="Describe the traditional resource protection practices in your community"></textarea>
+                </div>
+              </div>
+
+              <hr class="form-divider">
+
+              <div class="form-group">
+                <label class="form-label">Do you know of jiru being practised in nearby villages or islands?</label>
+                <div class="form-radio-group" id="nearbyJiruGroup">
+                  <label class="form-radio">
+                    <input type="radio" name="knows_nearby_jiru" value="Yes">
+                    <span class="form-radio__label">Yes</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="knows_nearby_jiru" value="No">
+                    <span class="form-radio__label">No</span>
+                  </label>
+                  <label class="form-radio">
+                    <input type="radio" name="knows_nearby_jiru" value="Unsure">
+                    <span class="form-radio__label">Unsure</span>
+                  </label>
+                </div>
+              </div>
+
+              <div class="conditional-section" id="nearbyJiruDescSection">
+                <div class="form-group">
+                  <label class="form-label" for="nearby_jiru_desc">Please share what you know:</label>
+                  <textarea class="form-textarea" id="nearby_jiru_desc" name="nearby_jiru_desc" placeholder="e.g. which villages or islands, what you have heard about their practices"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 5: Resources & Knowledge ═══════════ -->
+          <div class="survey-step" data-step="5">
+            <h3 class="survey-step__title">Resources &amp; Knowledge</h3>
+            <p class="survey-step__subtitle">Do you have access to any documentation about jiru or similar practices?</p>
+
+            <div class="form-group">
+              <label class="form-label">Do you have access to photos, reports, social media posts, news articles, theses, or any other resources that mention jiru or similar practices either in your community or elsewhere?</label>
+              <div class="form-radio-group" id="hasResourcesGroup">
+                <label class="form-radio">
+                  <input type="radio" name="has_resources" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="has_resources" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="conditional-section" id="resourcesSection">
+              <hr class="form-divider">
+
+              <div class="form-group">
+                <label class="form-label" for="resource_links">Paste links to online resources (one per line):</label>
+                <textarea class="form-textarea" id="resource_links" name="resource_links" placeholder="https://..." rows="4"></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Upload files (photos, documents, etc.):</label>
+                <div class="file-upload-zone" id="fileUploadZone">
+                  <div class="file-upload-zone__icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  </div>
+                  <p class="file-upload-zone__text">Click to upload or drag files here</p>
+                  <p class="file-upload-zone__hint">Photos, documents, videos &middot; Max 10 MB total</p>
+                  <input type="file" id="fileUpload" multiple accept="image/*,.pdf,.doc,.docx,.mp4,.mov">
+                </div>
+                <div class="file-list" id="fileList"></div>
+                <p class="form-note">Alternatively, you can email files directly to <a href="mailto:ronvave@hawaii.edu?subject=Jiru%20Documentation" style="color:var(--color-primary);font-weight:500;">ronvave@hawaii.edu</a> with subject line &ldquo;Jiru Documentation &mdash; [your village name]&rdquo;</p>
+              </div>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 6: Review & Submit ═══════════ -->
+          <div class="survey-step" data-step="6">
+            <h3 class="survey-step__title">Review &amp; Submit</h3>
+            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section.</p>
+
+            <div class="form-group">
+              <label class="form-label" for="general_comments">Any other information about jiru or customary protected areas in your community that you would like to share:</label>
+              <textarea class="form-textarea" id="general_comments" name="general_comments" placeholder="Share any additional thoughts, stories, or context..."></textarea>
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="form-group">
+              <label class="form-label">How did you hear about this survey?</label>
+              <div class="form-radio-group" id="heardViaGroup">
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Social media">
+                  <span class="form-radio__label">Social media</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Word of mouth">
+                  <span class="form-radio__label">Word of mouth</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="University of Hawaii">
+                  <span class="form-radio__label">University of Hawai&#699;i</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Community leader">
+                  <span class="form-radio__label">Community leader</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Researcher">
+                  <span class="form-radio__label">Researcher</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Other">
+                  <span class="form-radio__label">Other</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Are you willing to be contacted for a follow-up interview about jiru?</label>
+              <div class="form-radio-group" id="willingFollowupGroup">
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="Maybe">
+                  <span class="form-radio__label">Maybe</span>
+                </label>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Review summary -->
+            <div id="reviewSummary"></div>
+
+            <!-- Share CTA -->
+            <div class="cta-share-box">
+              <h4 class="cta-share-box__title">Help us fill the map!</h4>
+              <p class="cta-share-box__text">After submitting, please share this survey with others from the Solomon Islands &mdash; especially from provinces where jiru documentation is sparse.</p>
+              <div class="share-buttons">
+                <a class="share-btn share-btn--whatsapp" href="https://wa.me/?text=Help%20document%20jiru%20%E2%80%94%20funerary%20protected%20areas%20in%20the%20Solomon%20Islands.%20Take%20the%20survey%3A%20https%3A%2F%2Fronvave.github.io%2Fvave-lab%2Fjiru-survey.html" target="_blank" rel="noopener">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                  Share on WhatsApp
+                </a>
+                <button type="button" class="share-btn share-btn--copy" onclick="copyShareLink()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                  Copy Link
+                </button>
+              </div>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--submit" onclick="submitSurvey()">Submit Survey</button>
+            </div>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════
+     OVERLAYS
+     ═══════════════════════════════════════════ -->
+
+<!-- Loading -->
+<div class="survey-overlay" id="loadingOverlay">
+  <div class="survey-overlay__inner">
+    <div class="spinner"></div>
+    <h2 class="survey-overlay__title">Submitting your response&hellip;</h2>
+    <p class="survey-overlay__text">Thank you for your patience. We are securely sending your data.</p>
+  </div>
+</div>
+
+<!-- Success -->
+<div class="survey-overlay" id="successOverlay">
+  <div class="survey-overlay__inner">
+    <div class="success-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h2 class="survey-overlay__title">Thank you!</h2>
+    <p class="survey-overlay__text">
+      Your response has been recorded. Every piece of knowledge helps preserve the documentation of jiru and funerary protected areas in the Solomon Islands.
+    </p>
+
+    <div id="success-qr"></div>
+    <p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:var(--space-2);">Scan to share the survey</p>
+
+    <div class="success-links">
+      <a href="jiru-dashboard.html" class="btn btn--primary">View the Jiru Dashboard</a>
+      <div class="share-buttons" style="margin-top:var(--space-4);">
+        <a class="share-btn share-btn--whatsapp" href="https://wa.me/?text=I%20just%20contributed%20to%20the%20Jiru%20Survey%20%E2%80%94%20documenting%20funerary%20protected%20areas%20in%20the%20Solomon%20Islands.%20You%20can%20too%3A%20https%3A%2F%2Fronvave.github.io%2Fvave-lab%2Fjiru-survey.html" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Share on WhatsApp
+        </a>
+        <button type="button" class="share-btn share-btn--copy" onclick="copyShareLink()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+          Copy Link
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Error -->
+<div class="survey-overlay" id="errorOverlay">
+  <div class="survey-overlay__inner">
+    <div class="error-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+    </div>
+    <h2 class="survey-overlay__title">Something went wrong</h2>
+    <p class="survey-overlay__text" id="errorMessage">
+      We were unable to submit your response. Please try again or email your responses directly.
+    </p>
+    <div class="success-links">
+      <button class="btn btn--primary" onclick="retrySubmit()">Try Again</button>
+      <a href="mailto:ronvave@hawaii.edu?subject=Jiru%20Survey%20Response" class="btn btn--outline">Email Directly</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════ -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, LMMA networks, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener" class="footer-social__link">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener" class="footer-social__link">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener" class="footer-social__link">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener" class="footer-social__link">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>
+          Department of Pacific Islands Studies<br>
+          University of Hawai&#699;i at M&#257;noa<br>
+          1890 East-West Road, Moore Hall 214<br>
+          Honolulu, Hawai&#699;i, U.S.A.<br>
+          Office: <a href="tel:+18089560229">(808) 956-0229</a><br>
+          Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+        </address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawai&#699;i at M&#257;noa</p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener">UH Faculty Profile &#8599;</a>
+    </div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+
+<!-- ═══════════════════════════════════════════
+     SURVEY JAVASCRIPT
+     ═══════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+
+  // ── Configuration ──────────────────────────────
+  const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
+  const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
+  const TOTAL_STEPS = 6;
+
+  let currentStep = 1;
+  let map = null;
+  let marker = null;
+  let uploadedFiles = [];
+
+  // ── Initialization ─────────────────────────────
+  document.addEventListener('DOMContentLoaded', init);
+
+  function init() {
+    setupRadioHighlights();
+    setupCheckboxHighlights();
+    setupConditionalFields();
+    setupFileUpload();
+    updateStepUI();
+  }
+
+  // ── Step Navigation ────────────────────────────
+  window.nextStep = function() {
+    if (!validateCurrentStep()) return;
+    if (currentStep < TOTAL_STEPS) {
+      currentStep++;
+      // Skip step 4 adjustment based on jiru_status
+      updateStepUI();
+      scrollToForm();
+    }
+  };
+
+  window.prevStep = function() {
+    if (currentStep > 1) {
+      currentStep--;
+      updateStepUI();
+      scrollToForm();
+    }
+  };
+
+  window.goToStep = function(step) {
+    if (step >= 1 && step <= TOTAL_STEPS) {
+      currentStep = step;
+      updateStepUI();
+      scrollToForm();
+    }
+  };
+
+  function scrollToForm() {
+    const card = document.querySelector('.survey-card');
+    if (card) {
+      const top = card.getBoundingClientRect().top + window.scrollY - 100;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+  }
+
+  function updateStepUI() {
+    // Update progress bar
+    const fill = document.getElementById('progressFill');
+    fill.style.width = ((currentStep / TOTAL_STEPS) * 100) + '%';
+
+    // Update step indicators
+    const indicators = document.querySelectorAll('.survey-step-indicator');
+    indicators.forEach((ind, i) => {
+      const step = i + 1;
+      ind.classList.remove('active', 'completed');
+      if (step === currentStep) ind.classList.add('active');
+      else if (step < currentStep) ind.classList.add('completed');
+    });
+
+    // Show active step content
+    const steps = document.querySelectorAll('.survey-step');
+    steps.forEach(s => s.classList.remove('active'));
+    const activeStep = document.querySelector('.survey-step[data-step="' + currentStep + '"]');
+    if (activeStep) activeStep.classList.add('active');
+
+    // Step-specific logic
+    if (currentStep === 2) initMap();
+    if (currentStep === 4) updateStep4Visibility();
+    if (currentStep === 6) buildReviewSummary();
+  }
+
+  // ── Validation ─────────────────────────────────
+  function validateCurrentStep() {
+    clearErrors();
+
+    switch (currentStep) {
+      case 1: return validateStep1();
+      case 2: return validateStep2();
+      case 3: return validateStep3();
+      default: return true;
+    }
+  }
+
+  function clearErrors() {
+    document.querySelectorAll('.form-group.has-error').forEach(g => g.classList.remove('has-error'));
+  }
+
+  function showError(el) {
+    const group = el.closest('.form-group');
+    if (group) {
+      group.classList.add('has-error');
+      group.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
+  function validateStep1() {
+    const name = document.getElementById('first_name');
+    if (!name.value.trim()) { showError(name); return false; }
+
+    const connection = document.querySelector('input[name="connection"]:checked');
+    if (!connection) {
+      showError(document.querySelector('#connectionGroup'));
+      return false;
+    }
+    return true;
+  }
+
+  function validateStep2() {
+    const province = document.getElementById('province');
+    if (!province.value) { showError(province); return false; }
+
+    const island = document.getElementById('island');
+    if (!island.value.trim()) { showError(island); return false; }
+
+    return true;
+  }
+
+  function validateStep3() {
+    const status = document.querySelector('input[name="jiru_status"]:checked');
+    if (!status) {
+      showError(document.querySelector('#jiruStatusGroup'));
+      return false;
+    }
+    return true;
+  }
+
+  // ── Radio/Checkbox Highlight ───────────────────
+  function setupRadioHighlights() {
+    document.querySelectorAll('.form-radio input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const group = this.closest('.form-radio-group');
+        if (group) {
+          group.querySelectorAll('.form-radio').forEach(r => r.classList.remove('selected'));
+          this.closest('.form-radio').classList.add('selected');
+        }
+      });
+    });
+  }
+
+  function setupCheckboxHighlights() {
+    document.querySelectorAll('.form-check input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', function() {
+        this.closest('.form-check').classList.toggle('selected', this.checked);
+      });
+    });
+  }
+
+  // ── Conditional Fields ─────────────────────────
+  function setupConditionalFields() {
+    // Connection "Other"
+    document.querySelectorAll('input[name="connection"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const other = document.getElementById('connectionOther');
+        other.classList.toggle('visible', r.value === 'Other' && r.checked);
+      });
+    });
+
+    // Jiru protected "Other"
+    document.querySelectorAll('#jiruProtectedGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#jiruProtectedGroup input[value="Other"]');
+        document.getElementById('protectedOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
+    // Participants "Other"
+    document.querySelectorAll('#jiruParticipantsGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#jiruParticipantsGroup input[value="Other"]');
+        document.getElementById('participantsOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
+    // Catch used "Other"
+    document.querySelectorAll('#jiruCatchGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#jiruCatchGroup input[value="Other"]');
+        document.getElementById('catchOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
+    // Other practices description
+    document.querySelectorAll('input[name="other_practices"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="other_practices"]:checked');
+        document.getElementById('otherPracticesDescSection').classList.toggle('visible', val && val.value === 'Yes');
+      });
+    });
+
+    // Nearby jiru description
+    document.querySelectorAll('input[name="knows_nearby_jiru"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="knows_nearby_jiru"]:checked');
+        document.getElementById('nearbyJiruDescSection').classList.toggle('visible', val && val.value === 'Yes');
+      });
+    });
+
+    // Resources
+    document.querySelectorAll('input[name="has_resources"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="has_resources"]:checked');
+        document.getElementById('resourcesSection').classList.toggle('visible', val && val.value === 'Yes');
+      });
+    });
+  }
+
+  function updateStep4Visibility() {
+    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const val = status ? status.value : '';
+    const yesSection = document.getElementById('jiruDetailsYes');
+    const noSection = document.getElementById('jiruDetailsNo');
+    const whyStoppedSection = document.getElementById('jiruWhyStoppedSection');
+
+    // Update the village name in the heading
+    const village = document.getElementById('village').value.trim();
+    const villagePlaceholder = document.getElementById('villageName');
+    villagePlaceholder.textContent = village || 'your community';
+
+    if (val === 'yes_current' || val === 'yes_past') {
+      yesSection.classList.add('visible');
+      noSection.classList.remove('visible');
+      whyStoppedSection.classList.toggle('visible', val === 'yes_past');
+    } else {
+      yesSection.classList.remove('visible');
+      noSection.classList.add('visible');
+    }
+  }
+
+  // ── Leaflet Map ────────────────────────────────
+  function initMap() {
+    if (map) {
+      setTimeout(() => map.invalidateSize(), 200);
+      return;
+    }
+
+    const container = document.getElementById('locationMap');
+    if (!container) return;
+
+    map = L.map('locationMap', {
+      center: [-8.5, 160.5],
+      zoom: 7,
+      scrollWheelZoom: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      maxZoom: 18
+    }).addTo(map);
+
+    // Restore marker if coords already set
+    const existLat = document.getElementById('lat').value;
+    const existLng = document.getElementById('lng').value;
+    if (existLat && existLng) {
+      const latlng = L.latLng(parseFloat(existLat), parseFloat(existLng));
+      marker = L.marker(latlng, { draggable: true }).addTo(map);
+      marker.on('dragend', onMarkerDrag);
+      updateCoords(latlng.lat, latlng.lng);
+    }
+
+    map.on('click', function(e) {
+      if (marker) {
+        marker.setLatLng(e.latlng);
+      } else {
+        marker = L.marker(e.latlng, { draggable: true }).addTo(map);
+        marker.on('dragend', onMarkerDrag);
+      }
+      updateCoords(e.latlng.lat, e.latlng.lng);
+    });
+
+    setTimeout(() => map.invalidateSize(), 300);
+  }
+
+  function onMarkerDrag(e) {
+    const pos = e.target.getLatLng();
+    updateCoords(pos.lat, pos.lng);
+  }
+
+  function updateCoords(lat, lng) {
+    document.getElementById('lat').value = lat.toFixed(6);
+    document.getElementById('lng').value = lng.toFixed(6);
+    document.getElementById('mapCoords').textContent = 'Location: ' + lat.toFixed(4) + ', ' + lng.toFixed(4);
+  }
+
+  // ── File Upload ────────────────────────────────
+  function setupFileUpload() {
+    const zone = document.getElementById('fileUploadZone');
+    const input = document.getElementById('fileUpload');
+    if (!zone || !input) return;
+
+    zone.addEventListener('click', () => input.click());
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('dragover');
+    });
+
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    input.addEventListener('change', () => {
+      handleFiles(input.files);
+      input.value = '';
+    });
+  }
+
+  function handleFiles(filesList) {
+    const maxTotal = 10 * 1024 * 1024; // 10MB
+    let currentTotal = uploadedFiles.reduce((sum, f) => sum + f.size, 0);
+
+    for (const file of filesList) {
+      if (currentTotal + file.size > maxTotal) {
+        alert('Total file size exceeds 10 MB. Please reduce file sizes or email files directly to ronvave@hawaii.edu.');
+        break;
+      }
+      uploadedFiles.push(file);
+      currentTotal += file.size;
+    }
+
+    renderFileList();
+  }
+
+  function renderFileList() {
+    const list = document.getElementById('fileList');
+    list.innerHTML = '';
+
+    uploadedFiles.forEach((file, i) => {
+      const item = document.createElement('div');
+      item.className = 'file-list-item';
+
+      const name = document.createElement('span');
+      const sizeMB = (file.size / 1024 / 1024).toFixed(2);
+      name.textContent = file.name + ' (' + sizeMB + ' MB)';
+
+      const remove = document.createElement('span');
+      remove.className = 'file-list-item__remove';
+      remove.textContent = 'Remove';
+      remove.addEventListener('click', () => {
+        uploadedFiles.splice(i, 1);
+        renderFileList();
+      });
+
+      item.appendChild(name);
+      item.appendChild(remove);
+      list.appendChild(item);
+    });
+  }
+
+  // ── Review Summary ─────────────────────────────
+  function buildReviewSummary() {
+    const container = document.getElementById('reviewSummary');
+    container.innerHTML = '';
+
+    // About You
+    container.innerHTML += buildReviewSection('About You', 1, [
+      ['Name', getVal('first_name')],
+      ['Email', getVal('email') || '(not provided)'],
+      ['Connection', getRadioVal('connection') + (getRadioVal('connection') === 'Other' ? ' — ' + getVal('connection_other_text') : '')]
+    ]);
+
+    // Location
+    container.innerHTML += buildReviewSection('Location', 2, [
+      ['Province', getVal('province')],
+      ['Island', getVal('island')],
+      ['Ward', getVal('ward') || '(not provided)'],
+      ['Village', document.getElementById('island_level').checked ? '(Island level)' : (getVal('village') || '(not provided)')],
+      ['Coordinates', getVal('lat') ? getVal('lat') + ', ' + getVal('lng') : '(not set)']
+    ]);
+
+    // Jiru Practice
+    const status = getRadioVal('jiru_status');
+    const statusLabels = {
+      'yes_current': 'Yes — currently practised',
+      'yes_past': 'Yes — practised in the past',
+      'no': 'No — never practised',
+      'unsure': 'Unsure'
+    };
+    container.innerHTML += buildReviewSection('Jiru Practice', 3, [
+      ['Local name', getVal('local_jiru_name') || '(not provided)'],
+      ['Status', statusLabels[status] || '(not selected)']
+    ]);
+
+    // Details (if applicable)
+    if (status === 'yes_current' || status === 'yes_past') {
+      const protectedVals = getCheckboxVals('jiru_protected');
+      const participantVals = getCheckboxVals('jiru_participants');
+      const catchVals = getCheckboxVals('jiru_catch_used');
+
+      const detailRows = [
+        ['Recency', getRadioLabel('jiru_recency')],
+        ['Approximate year', getVal('jiru_year_approx') || '(not provided)'],
+        ['Protected areas', protectedVals.join(', ') || '(none selected)'],
+        ['Habitat description', getVal('jiru_habitat_description') || '(not provided)'],
+        ['Duration', getVal('jiru_duration') || '(not provided)'],
+        ['Harvested', getVal('jiru_harvested') || '(not provided)'],
+        ['Participants', participantVals.join(', ') || '(none selected)'],
+        ['Catch used for', catchVals.join(', ') || '(none selected)'],
+        ['Additional details', getVal('jiru_additional') || '(not provided)']
+      ];
+
+      if (status === 'yes_past') {
+        detailRows.push(['Why stopped', getVal('jiru_why_stopped') || '(not provided)']);
+      }
+
+      container.innerHTML += buildReviewSection('Jiru Details', 4, detailRows);
+    }
+
+    // Resources
+    const hasRes = getRadioVal('has_resources');
+    const resRows = [['Has resources', hasRes || '(not selected)']];
+    if (hasRes === 'Yes') {
+      resRows.push(['Links', getVal('resource_links') || '(none)']);
+      resRows.push(['Files', uploadedFiles.length ? uploadedFiles.map(f => f.name).join(', ') : '(none)']);
+    }
+    container.innerHTML += buildReviewSection('Resources', 5, resRows);
+  }
+
+  function buildReviewSection(title, step, rows) {
+    let html = '<div class="review-section">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;">';
+    html += '<div class="review-section__title">' + title + '</div>';
+    html += '<button type="button" class="review-edit-btn" onclick="goToStep(' + step + ')">Edit</button>';
+    html += '</div>';
+    rows.forEach(([label, value]) => {
+      html += '<div class="review-row"><div class="review-row__label">' + label + '</div><div class="review-row__value">' + escapeHtml(value || '') + '</div></div>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ── Helpers ────────────────────────────────────
+  function getVal(id) {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : '';
+  }
+
+  function getRadioVal(name) {
+    const checked = document.querySelector('input[name="' + name + '"]:checked');
+    return checked ? checked.value : '';
+  }
+
+  function getRadioLabel(name) {
+    const checked = document.querySelector('input[name="' + name + '"]:checked');
+    if (!checked) return '(not selected)';
+    const label = checked.closest('.form-radio');
+    if (label) {
+      const span = label.querySelector('.form-radio__label');
+      return span ? span.textContent.trim() : checked.value;
+    }
+    return checked.value;
+  }
+
+  function getCheckboxVals(name) {
+    const checked = document.querySelectorAll('input[name="' + name + '"]:checked');
+    const vals = [];
+    checked.forEach(cb => {
+      if (cb.value === 'Other') {
+        // Try to get the "other" text
+        const group = cb.closest('.form-check-group');
+        if (group) {
+          const otherSection = group.parentElement.querySelector('.other-specify input');
+          const otherText = otherSection ? otherSection.value.trim() : '';
+          vals.push('Other' + (otherText ? ': ' + otherText : ''));
+        } else {
+          vals.push('Other');
+        }
+      } else {
+        vals.push(cb.value);
+      }
+    });
+    return vals;
+  }
+
+  // ── File to Base64 ─────────────────────────────
+  function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ name: file.name, type: file.type, size: file.size, data: reader.result });
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ── Submit ─────────────────────────────────────
+  window.submitSurvey = async function() {
+    showOverlay('loadingOverlay');
+
+    try {
+      // Convert files to base64
+      const filesData = await Promise.all(uploadedFiles.map(fileToBase64));
+
+      const data = {
+        timestamp: new Date().toISOString(),
+        first_name: getVal('first_name'),
+        email: getVal('email'),
+        connection: getRadioVal('connection') === 'Other'
+          ? 'Other: ' + getVal('connection_other_text')
+          : getRadioVal('connection'),
+        province: getVal('province'),
+        island: getVal('island'),
+        ward: getVal('ward'),
+        village: getVal('village'),
+        island_level: document.getElementById('island_level').checked,
+        lat: getVal('lat') ? parseFloat(getVal('lat')) : null,
+        lng: getVal('lng') ? parseFloat(getVal('lng')) : null,
+        local_jiru_name: getVal('local_jiru_name'),
+        jiru_status: getRadioVal('jiru_status'),
+        jiru_recency: getRadioVal('jiru_recency'),
+        jiru_year_approx: getVal('jiru_year_approx'),
+        jiru_protected: getCheckboxVals('jiru_protected'),
+        jiru_habitat_description: getVal('jiru_habitat_description'),
+        jiru_duration: getVal('jiru_duration'),
+        jiru_harvested: getVal('jiru_harvested'),
+        jiru_participants: getCheckboxVals('jiru_participants'),
+        jiru_catch_used: getCheckboxVals('jiru_catch_used'),
+        jiru_additional: getVal('jiru_additional'),
+        jiru_why_stopped: getVal('jiru_why_stopped'),
+        other_practices: getRadioVal('other_practices'),
+        other_practices_desc: getVal('other_practices_desc'),
+        knows_nearby_jiru: getRadioVal('knows_nearby_jiru'),
+        nearby_jiru_desc: getVal('nearby_jiru_desc'),
+        has_resources: getRadioVal('has_resources'),
+        resource_links: getVal('resource_links'),
+        files: filesData,
+        general_comments: getVal('general_comments'),
+        heard_via: getRadioVal('heard_via'),
+        willing_followup: getRadioVal('willing_followup')
+      };
+
+      const response = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      // no-cors means we can't read the response — treat as success
+      hideOverlay('loadingOverlay');
+      showOverlay('successOverlay');
+      generateQRCode();
+
+    } catch (err) {
+      hideOverlay('loadingOverlay');
+      document.getElementById('errorMessage').textContent =
+        'We were unable to submit your response. Error: ' + err.message + '. Please try again or email your responses directly to ronvave@hawaii.edu.';
+      showOverlay('errorOverlay');
+    }
+  };
+
+  window.retrySubmit = function() {
+    hideOverlay('errorOverlay');
+    submitSurvey();
+  };
+
+  // ── QR Code ────────────────────────────────────
+  function generateQRCode() {
+    const container = document.getElementById('success-qr');
+    if (container && container.children.length === 0) {
+      try {
+        new QRCode(container, {
+          text: SURVEY_URL,
+          width: 160,
+          height: 160,
+          colorDark: '#005f6b',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } catch(e) {
+        // QR library not loaded — silently skip
+      }
+    }
+  }
+
+  // ── Share ──────────────────────────────────────
+  window.copyShareLink = function() {
+    navigator.clipboard.writeText(SURVEY_URL).then(() => {
+      const btn = event.target.closest('.share-btn--copy');
+      if (btn) {
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Copied!';
+        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
+      }
+    });
+  };
+
+  // ── Overlay Helpers ────────────────────────────
+  function showOverlay(id) {
+    document.getElementById(id).classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function hideOverlay(id) {
+    document.getElementById(id).classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jiru Admin Dashboard — Vave Lab</title>
+  <meta name="description" content="Admin dashboard for managing jiru survey data — Solomon Islands funerary protected areas research.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <style>
+    :root {
+      --jiru-primary: #002a30;
+      --jiru-primary-light: #003d45;
+      --jiru-accent: #c9a227;
+      --jiru-accent-light: #e0c05a;
+      --jiru-green: #2a7d5f;
+      --jiru-gold: #c9a227;
+      --jiru-gray: #94a3b8;
+      --jiru-red: #dc3545;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+    }
+    body { font-family: var(--font-body); color: #1e293b; background: #f1f5f9; line-height: 1.6; }
+
+    /* Banner */
+    .page-banner { background: var(--jiru-primary); color: #fff; padding: 2.5rem 0 2rem; text-align: center; }
+    .page-banner .eyebrow { font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--jiru-accent); margin-bottom: 0.4rem; font-weight: 600; }
+    .page-banner h1 { font-family: var(--font-display); font-size: clamp(1.75rem, 1.3rem + 2vw, 2.75rem); font-weight: 700; line-height: 1.15; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Login Gate */
+    .login-gate { min-height: 60vh; display: flex; align-items: center; justify-content: center; padding: 4rem 1rem; }
+    .login-card { background: #fff; border-radius: 1rem; padding: 3rem 2.5rem; max-width: 420px; width: 100%; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 4px 24px rgba(0,42,48,0.06); }
+    .login-card h2 { font-family: var(--font-display); font-size: 1.75rem; color: var(--jiru-primary); margin-bottom: 0.5rem; font-weight: 700; }
+    .login-card p { font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; }
+    .login-card input[type="password"] { width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; font-size: 0.95rem; margin-bottom: 1rem; transition: border-color 0.2s; }
+    .login-card input[type="password"]:focus { border-color: var(--jiru-primary); outline: none; }
+    .login-card .btn-login { width: 100%; padding: 0.75rem; background: var(--jiru-primary); color: #fff; border: none; border-radius: 0.5rem; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: background 0.2s; }
+    .login-card .btn-login:hover { background: var(--jiru-primary-light); }
+    .login-error { color: var(--jiru-red); font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+
+    /* Dashboard */
+    .dashboard { display: none; }
+    .dashboard.visible { display: block; }
+    .section { padding: clamp(1.5rem, 3vw, 3rem) 0; }
+    .section-title { font-family: var(--font-display); font-size: clamp(1.3rem, 1rem + 1vw, 1.75rem); font-weight: 700; color: var(--jiru-primary); margin-bottom: 1rem; }
+
+    /* Stats cards */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: #fff; border-radius: 0.75rem; padding: 1.5rem; border: 1px solid #e2e8f0; text-align: center; }
+    .stat-card .stat-number { font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 1.5vw, 2.75rem); font-weight: 700; color: var(--jiru-primary); line-height: 1; font-variant-numeric: tabular-nums lining-nums; }
+    .stat-card .stat-label { font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; margin-top: 0.3rem; font-weight: 600; }
+
+    /* Filters */
+    .filters-bar { background: #fff; border-radius: 0.75rem; padding: 1rem 1.5rem; border: 1px solid #e2e8f0; display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; position: sticky; top: 0; z-index: 100; margin-bottom: 1.5rem; }
+    .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .filter-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .filter-group select, .filter-group input[type="date"] { padding: 0.5rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 0.4rem; font-size: 0.85rem; background: #fff; min-width: 140px; }
+    .filter-group select:focus, .filter-group input:focus { border-color: var(--jiru-primary); outline: none; }
+    .btn-reset { padding: 0.5rem 1rem; background: #f1f5f9; color: #64748b; border: 1.5px solid #e2e8f0; border-radius: 0.4rem; font-size: 0.85rem; cursor: pointer; font-weight: 500; align-self: end; }
+    .btn-reset:hover { background: #e2e8f0; }
+
+    /* Charts row */
+    .charts-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+    .chart-card { background: #fff; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #e2e8f0; }
+    .chart-card h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.75rem; }
+    .chart-card canvas { max-height: 320px; }
+
+    /* Map */
+    .map-card { background: #fff; border-radius: 0.75rem; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 1.5rem; }
+    .map-card h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--jiru-primary); padding: 1.25rem 1.25rem 0; }
+    #admin-map { height: 450px; }
+    .map-legend-admin { padding: 0.75rem 1.25rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.8rem; color: #64748b; border-top: 1px solid #e2e8f0; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Timeline */
+    .timeline-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+    .timeline-card { background: #fff; border-radius: 0.75rem; padding: 1.25rem; border: 1px solid #e2e8f0; }
+    .timeline-card h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.75rem; }
+    .timeline-card canvas { max-height: 280px; }
+
+    /* Historical timeline */
+    .historical-timeline { padding: 1rem 0; }
+    .timeline-event { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-left: 3px solid var(--jiru-accent); padding-left: 1rem; margin-bottom: 0.5rem; }
+    .timeline-year { font-family: var(--font-display); font-size: 1.2rem; font-weight: 700; color: var(--jiru-primary); min-width: 50px; }
+    .timeline-desc { font-size: 0.82rem; color: #475569; }
+
+    /* Data table */
+    .table-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; }
+    .search-input { padding: 0.5rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 0.4rem; font-size: 0.85rem; min-width: 250px; }
+    .search-input:focus { border-color: var(--jiru-primary); outline: none; }
+    .btn-export { padding: 0.5rem 1rem; background: var(--jiru-primary); color: #fff; border: none; border-radius: 0.4rem; font-size: 0.85rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; }
+    .btn-export:hover { background: var(--jiru-primary-light); }
+
+    .data-table-wrap { background: #fff; border-radius: 0.75rem; border: 1px solid #e2e8f0; overflow-x: auto; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .data-table thead { position: sticky; top: 0; z-index: 5; }
+    .data-table th { background: var(--jiru-primary); color: #fff; padding: 0.75rem 1rem; text-align: left; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; cursor: pointer; white-space: nowrap; user-select: none; }
+    .data-table th:hover { background: var(--jiru-primary-light); }
+    .data-table th .sort-arrow { margin-left: 0.3rem; opacity: 0.5; font-size: 0.7rem; }
+    .data-table th.sorted .sort-arrow { opacity: 1; }
+    .data-table td { padding: 0.65rem 1rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .data-table tbody tr:nth-child(even) { background: #fafbfc; }
+    .data-table tbody tr:hover { background: #f0f9ff; cursor: pointer; }
+    .data-table tbody tr.expanded-row { background: #f8fafc; }
+    .row-detail { display: none; padding: 1rem 1.5rem; background: #f8fafc; border-bottom: 2px solid #e2e8f0; }
+    .row-detail.visible { display: table-row; }
+    .row-detail td { padding: 1rem 1.5rem; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem; }
+    .detail-item { display: flex; flex-direction: column; }
+    .detail-label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; }
+    .detail-value { color: #1e293b; }
+
+    .status-badge { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+    .status-badge.active { background: #d4edda; color: #155724; }
+    .status-badge.past { background: #fff3cd; color: #856404; }
+    .status-badge.never { background: #fee2e2; color: #991b1b; }
+    .status-badge.unsure { background: #f1f5f9; color: #64748b; }
+
+    /* AI Section */
+    .ai-section { background: #fff; border-radius: 0.75rem; padding: 2rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
+    .ai-section h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.5rem; }
+    .ai-section .ai-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; max-width: 72ch; }
+    .ai-input-row { display: flex; gap: 0.75rem; align-items: end; flex-wrap: wrap; margin-bottom: 1rem; }
+    .ai-input-row .input-group { flex: 1; min-width: 250px; }
+    .ai-input-row label { display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; margin-bottom: 0.3rem; }
+    .ai-input-row input { width: 100%; padding: 0.6rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 0.4rem; font-size: 0.9rem; }
+    .ai-input-row input:focus { border-color: var(--jiru-primary); outline: none; }
+    .btn-generate { padding: 0.6rem 1.5rem; background: var(--jiru-accent); color: #fff; border: none; border-radius: 0.4rem; font-weight: 600; font-size: 0.9rem; cursor: pointer; white-space: nowrap; }
+    .btn-generate:hover { background: var(--jiru-accent-light); color: var(--jiru-primary); }
+    .word-count { font-size: 0.8rem; color: #94a3b8; }
+    .ai-output { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.5rem; padding: 1.5rem; margin-top: 1rem; display: none; }
+    .ai-output.visible { display: block; }
+    .ai-output .summary-content { font-size: 0.9rem; line-height: 1.7; color: #334155; }
+    .ai-output .summary-content h1, .ai-output .summary-content h2, .ai-output .summary-content h3 { font-family: var(--font-display); color: var(--jiru-primary); margin: 1rem 0 0.5rem; }
+    .ai-output .summary-content h2 { font-size: 1.2rem; }
+    .ai-output .summary-content h3 { font-size: 1.05rem; }
+    .ai-output .summary-content ul, .ai-output .summary-content ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+    .ai-output .summary-content strong { color: var(--jiru-primary); }
+    .ai-actions { display: flex; gap: 0.75rem; margin-top: 1rem; }
+    .btn-sm { padding: 0.4rem 1rem; border-radius: 0.4rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1.5px solid #e2e8f0; background: #fff; color: #475569; display: inline-flex; align-items: center; gap: 0.3rem; }
+    .btn-sm:hover { background: #f1f5f9; }
+
+    .ai-loading { display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
+    .ai-loading.visible { display: flex; }
+
+    /* Export section */
+    .export-section { display: flex; gap: 1rem; flex-wrap: wrap; padding-bottom: 2rem; }
+
+    /* Spinner */
+    .spinner { width: 20px; height: 20px; border: 3px solid #e2e8f0; border-top-color: var(--jiru-primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--jiru-primary); color: #fff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 500; z-index: 9999; opacity: 0; transition: transform 0.3s ease, opacity 0.3s ease; pointer-events: none; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    /* Responsive */
+    @media (max-width: 900px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .charts-row { grid-template-columns: 1fr; }
+      .timeline-row { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .stats-row { grid-template-columns: 1fr 1fr; }
+      .filters-bar { flex-direction: column; align-items: stretch; }
+      .filter-group select, .filter-group input[type="date"] { min-width: auto; width: 100%; }
+      #admin-map { height: 300px; }
+      .ai-input-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SITE HEADER -->
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <img src="img/avatar.jpg" alt="Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;margin-right:0.6rem;" onerror="this.style.display='none'">
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li class="nav-dropdown"><a href="index.html">Home</a><div class="nav-dropdown__menu"><a href="index.html#bio">About</a><a href="index.html#areas-heading">Research &amp; Methods</a><a href="index.html#pubs-heading">Recent Publications</a></div></li>
+          <li class="nav-dropdown"><a href="research.html" class="active">Research</a><div class="nav-dropdown__menu"><a href="research.html#research-philosophy">Research Philosophy</a><a href="research.html#current-projects">Current Projects</a><a href="research.html#intl-projects">International Projects</a></div></li>
+          <li class="nav-dropdown"><a href="publications.html">Publications</a><div class="nav-dropdown__menu"><a href="publications.html#journal-articles">Journal Articles</a><a href="publications.html#book-chapters">Book Chapters &amp; Reports</a></div></li>
+          <li class="nav-dropdown"><a href="supervision.html">Supervision</a><div class="nav-dropdown__menu"><a href="supervision.html#uh-students">UH Students</a><a href="supervision.html#non-uh-students">Non-UH Students</a></div></li>
+          <li class="nav-dropdown"><a href="teaching.html">Teaching</a><div class="nav-dropdown__menu"><a href="teaching.html#new-courses">New Courses</a><a href="teaching.html#existing-courses">Existing Courses</a><a href="teaching.html#past-courses">Past Courses</a></div></li>
+          <li class="nav-dropdown"><a href="service.html">Service</a><div class="nav-dropdown__menu"><a href="service.html#editorial-roles">Editorial Roles</a><a href="service.html#thesis-exam">Thesis Examination</a><a href="service.html#peer-review">Peer Review</a><a href="service.html#guest-lectures">Guest Lectures</a></div></li>
+          <li class="nav-dropdown"><a href="media.html">Media</a><div class="nav-dropdown__menu"><a href="media.html#video">Video</a><a href="media.html#news">News &amp; Articles</a></div></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a><a href="research.html">Research</a><a href="publications.html">Publications</a><a href="supervision.html">Supervision</a><a href="teaching.html">Teaching</a><a href="service.html">Service</a><a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<!-- PAGE BANNER -->
+<div class="page-banner">
+  <div class="container">
+    <p class="eyebrow">Vave Lab · Admin</p>
+    <h1>Jiru Research Dashboard</h1>
+  </div>
+</div>
+
+<main>
+  <!-- LOGIN GATE -->
+  <div class="login-gate" id="login-gate">
+    <div class="login-card">
+      <h2>Admin Access</h2>
+      <p>Enter the admin password to view the full research dashboard and survey data.</p>
+      <input type="password" id="password-input" placeholder="Enter password" autofocus>
+      <button class="btn-login" onclick="attemptLogin()">Access Dashboard</button>
+      <p class="login-error" id="login-error">Incorrect password. Please try again.</p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD (hidden until login) -->
+  <div class="dashboard" id="dashboard">
+
+    <!-- STATS ROW -->
+    <section class="section">
+      <div class="container">
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-number" id="admin-total">12</div><div class="stat-label">Total Submissions</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-provinces">6</div><div class="stat-label">Provinces Represented</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-active">5</div><div class="stat-label">Active Jiru Communities</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-latest">Apr 5</div><div class="stat-label">Latest Submission</div></div>
+        </div>
+
+        <!-- FILTERS -->
+        <div class="filters-bar" id="filters-bar">
+          <div class="filter-group">
+            <label for="filter-province">Province</label>
+            <select id="filter-province"><option value="">All Provinces</option></select>
+          </div>
+          <div class="filter-group">
+            <label for="filter-status">Jiru Status</label>
+            <select id="filter-status">
+              <option value="">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="past">Past</option>
+              <option value="never">Never</option>
+              <option value="unsure">Unsure</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="filter-from">From</label>
+            <input type="date" id="filter-from">
+          </div>
+          <div class="filter-group">
+            <label for="filter-to">To</label>
+            <input type="date" id="filter-to">
+          </div>
+          <button class="btn-reset" onclick="resetFilters()">Reset</button>
+        </div>
+
+        <!-- CHARTS -->
+        <div class="charts-row">
+          <div class="chart-card"><h3>Province Distribution</h3><canvas id="chart-province"></canvas></div>
+          <div class="chart-card"><h3>Jiru Practice Status</h3><canvas id="chart-status"></canvas></div>
+          <div class="chart-card"><h3>What Was Protected</h3><canvas id="chart-protected"></canvas></div>
+        </div>
+
+        <!-- MAP -->
+        <div class="map-card">
+          <h3>Submission Locations</h3>
+          <div id="admin-map"></div>
+          <div class="map-legend-admin">
+            <div class="legend-item"><span class="legend-dot" style="background:#2a7d5f;"></span> Active jiru</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#c9a227;"></span> Past jiru</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#dc3545;"></span> Never</div>
+            <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span> Unsure</div>
+          </div>
+        </div>
+
+        <!-- TIMELINE -->
+        <div class="timeline-row">
+          <div class="timeline-card">
+            <h3>Submissions Over Time</h3>
+            <canvas id="chart-timeline"></canvas>
+          </div>
+          <div class="timeline-card">
+            <h3>Historical Jiru Events</h3>
+            <div class="historical-timeline" id="historical-timeline"></div>
+          </div>
+        </div>
+
+        <!-- DATA TABLE -->
+        <section class="section" style="padding-top:0;">
+          <h2 class="section-title">Survey Responses</h2>
+          <div class="table-controls">
+            <input type="text" class="search-input" id="table-search" placeholder="Search responses...">
+            <button class="btn-export" onclick="exportCSV()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export CSV
+            </button>
+          </div>
+          <div class="data-table-wrap">
+            <table class="data-table" id="data-table">
+              <thead>
+                <tr>
+                  <th data-col="date">Date <span class="sort-arrow">↕</span></th>
+                  <th data-col="name">Name <span class="sort-arrow">↕</span></th>
+                  <th data-col="province">Province <span class="sort-arrow">↕</span></th>
+                  <th data-col="island">Island <span class="sort-arrow">↕</span></th>
+                  <th data-col="village">Village <span class="sort-arrow">↕</span></th>
+                  <th data-col="status">Jiru Status <span class="sort-arrow">↕</span></th>
+                  <th data-col="local_name">Local Name <span class="sort-arrow">↕</span></th>
+                  <th data-col="protected">What Protected <span class="sort-arrow">↕</span></th>
+                </tr>
+              </thead>
+              <tbody id="table-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- AI SUMMARY -->
+        <div class="ai-section" id="ai-section">
+          <h3>AI Analysis of Community Responses</h3>
+          <p class="ai-desc">Enter your OpenAI API key below to generate an AI summary of all text responses, comments, and notes collected in this survey. Your key is stored locally and never sent to our servers.</p>
+          <div class="ai-input-row">
+            <div class="input-group">
+              <label for="openai-key">OpenAI API Key</label>
+              <input type="password" id="openai-key" placeholder="sk-...">
+            </div>
+            <button class="btn-generate" onclick="generateSummary()">Generate Summary</button>
+          </div>
+          <p class="word-count" id="word-count"></p>
+          <div class="ai-loading" id="ai-loading">
+            <div class="spinner"></div>
+            Analyzing responses with GPT-4o-mini...
+          </div>
+          <div class="ai-output" id="ai-output">
+            <div class="summary-content" id="summary-content"></div>
+            <div class="ai-actions">
+              <button class="btn-sm" onclick="copySummary()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Summary
+              </button>
+              <button class="btn-sm" onclick="printSummary()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                Download as PDF
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- EXPORT & ACTIONS -->
+        <div class="export-section">
+          <button class="btn-export" onclick="exportCSV()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export All Data as CSV
+          </button>
+          <button class="btn-export" onclick="printSummaryReport()" style="background:var(--jiru-accent);color:var(--jiru-primary);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Export Summary Report as PDF
+          </button>
+          <button class="btn-export" onclick="sendReminder()" style="background:#fff;color:var(--jiru-primary);border:2px solid var(--jiru-primary);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Send Survey Reminder
+          </button>
+        </div>
+
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- SITE FOOTER -->
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, LMMA networks, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener" class="footer-social__link">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener" class="footer-social__link">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener" class="footer-social__link">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener" class="footer-social__link">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li><li><a href="research.html">Research</a></li><li><a href="publications.html">Publications</a></li><li><a href="supervision.html">Supervision</a></li><li><a href="teaching.html">Teaching</a></li><li><a href="service.html">Service</a></li><li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>Department of Pacific Islands Studies<br>University of Hawaiʻi at Mānoa<br>1890 East-West Road, Moore Hall 214<br>Honolulu, Hawaiʻi, U.S.A.<br>Office: <a href="tel:+18089560229">(808) 956-0229</a><br>Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a></address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener">UH Faculty Profile ↗</a>
+    </div>
+  </div>
+</footer>
+<script src="js/main.js"></script>
+
+<!-- LIBRARIES -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+// ===== CONFIG =====
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
+const ADMIN_PASSWORD = 'JiruAdmin2026';
+
+// ===== DEMO DATA (12 records) =====
+const DEMO_DATA = [
+  {
+    id: 1, date: '2026-03-15', name: 'Jimmy Kereseka', province: 'Choiseul', island: 'Choiseul Island', village: 'Boe Village',
+    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, shellfish, sea cucumbers',
+    lat: -6.71, lng: 156.95, jiru_year_approx: 2024,
+    general_comments: 'Jiru is still very much practiced in our community. When an elder dies, the chief declares a jiru over the reef area near the village. Nobody is allowed to fish there during mourning.',
+    jiru_additional: 'The jiru can last from 6 months to several years depending on the status of the deceased.',
+    jiru_habitat_description: 'Coral reef area extending about 500m from shore, including seagrass beds.',
+    jiru_why_stopped: '', nearby_jiru_desc: 'Neighboring villages also practice jiru but sometimes with different local names.', other_practices_desc: ''
+  },
+  {
+    id: 2, date: '2026-03-16', name: 'Jimmy Kereseka', province: 'Choiseul', island: 'Choiseul Island', village: 'Sasamugga Village',
+    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Trochus, clam, reef fish',
+    lat: -6.73, lng: 156.80, jiru_year_approx: 2023,
+    general_comments: 'Sasamugga has maintained jiru for generations. The reef here is very healthy because of this custom.',
+    jiru_additional: 'There is a strong belief that breaking jiru will bring sickness to the family.', jiru_habitat_description: 'Fringing reef with abundant coral cover.',
+    jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: ''
+  },
+  {
+    id: 3, date: '2026-03-18', name: 'Tarcisius Kabutaulaka', province: 'Guadalcanal', island: 'Guadalcanal', village: 'Haimatua',
+    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
+    lat: -9.43, lng: 160.05, jiru_year_approx: null,
+    general_comments: 'We do not have jiru here. I think it is more of a Western Province and Choiseul practice. In Guadalcanal we have other customs but not jiru specifically.',
+    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have tambu areas but these are different from jiru.'
+  },
+  {
+    id: 4, date: '2026-03-19', name: 'Peter Kenilorea Jr.', province: 'Guadalcanal', island: 'Guadalcanal', village: 'Kakabona',
+    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
+    lat: -9.44, lng: 159.93, jiru_year_approx: null,
+    general_comments: 'Not practiced in our area. We have heard of it from people in Western Province who moved here.',
+    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'Tambu sites exist for ancestral reasons, not linked to deaths.'
+  },
+  {
+    id: 5, date: '2026-03-22', name: 'Simon Salopuka', province: 'Temotu', island: 'Duff Islands', village: 'Taumako',
+    jiru_status: 'past', local_name: 'Tapua', what_protected: 'Land', resources: 'Garden areas, coconut groves',
+    lat: -9.88, lng: 167.06, jiru_year_approx: 1965,
+    general_comments: 'My grandmother told me about this practice. When her mother died in the 1960s, a large garden area was closed off. Nobody could enter or harvest for about 2 years.',
+    jiru_additional: 'We called it tapua in our language, not jiru. But the concept is the same.', jiru_habitat_description: 'Inland garden areas with fruit trees and root crops.',
+    jiru_why_stopped: 'Christianity and changes in governance made these practices less common. The church discouraged it.', nearby_jiru_desc: '', other_practices_desc: ''
+  },
+  {
+    id: 6, date: '2026-03-25', name: 'Martha Lavea', province: 'Western', island: 'Vella Lavella', village: 'Iriqila',
+    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, crayfish, octopus',
+    lat: -7.73, lng: 156.63, jiru_year_approx: 2025,
+    general_comments: 'Jiru is central to our mourning practice. The most recent jiru was declared in early 2025 when a respected elder passed. The reef in front of our village is now under jiru.',
+    jiru_additional: 'Women are particularly involved in enforcing jiru.', jiru_habitat_description: 'Shallow reef and mangrove area.',
+    jiru_why_stopped: '', nearby_jiru_desc: 'Other villages on Vella Lavella also practice jiru, especially along the western coast.', other_practices_desc: ''
+  },
+  {
+    id: 7, date: '2026-03-27', name: 'Jacob Suri', province: 'Western', island: 'Vella Lavella', village: 'Vonunu',
+    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine, Freshwater', resources: 'Reef fish, freshwater prawns, eels',
+    lat: -7.78, lng: 156.68, jiru_year_approx: 2024,
+    general_comments: 'We have both marine and freshwater jiru. The river near our village was also put under jiru along with the reef.',
+    jiru_additional: 'The freshwater jiru is less common but our community has maintained it.', jiru_habitat_description: 'Coral reef extending 300m offshore and a freshwater stream running through the village area.',
+    jiru_why_stopped: '', nearby_jiru_desc: 'Iriqila village nearby also has active jiru.', other_practices_desc: ''
+  },
+  {
+    id: 8, date: '2026-03-28', name: 'Ruth Pitu', province: 'Western', island: 'Vella Lavella', village: 'Mbilua',
+    jiru_status: 'past', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, giant clams',
+    lat: -7.72, lng: 156.55, jiru_year_approx: 2010,
+    general_comments: 'We used to practice jiru but the last one was around 2010. Young people are less interested and the church has taken over mourning practices.',
+    jiru_additional: '', jiru_habitat_description: 'Fringing reef on the western side of the island.',
+    jiru_why_stopped: 'Church influence and urbanization. Many young people move to Gizo for work.', nearby_jiru_desc: 'Villages further south still practice it.', other_practices_desc: ''
+  },
+  {
+    id: 9, date: '2026-04-01', name: 'Gabriel Toli', province: 'Western', island: 'Vella Lavella', village: 'Supato',
+    jiru_status: 'past', local_name: 'Jiru', what_protected: 'Marine, Land', resources: 'Reef fish, garden produce, megapode nesting sites',
+    lat: -7.80, lng: 156.60, jiru_year_approx: 2015,
+    general_comments: 'The last jiru was about 10 years ago. It covered both the reef and a section of bush where megapode birds nest. Very effective for conservation.',
+    jiru_additional: 'Elders say the reef fish populations noticeably increased during jiru periods.', jiru_habitat_description: 'Coral reef, mangroves, and adjacent lowland forest.',
+    jiru_why_stopped: 'The chief who was most active in maintaining jiru passed away and nobody took over that role.', nearby_jiru_desc: '', other_practices_desc: ''
+  },
+  {
+    id: 10, date: '2026-04-02', name: 'Andrew Firiga', province: 'Isabel', island: 'Santa Isabel', village: 'Kia',
+    jiru_status: 'unsure', local_name: '', what_protected: '', resources: '',
+    lat: -7.45, lng: 158.22, jiru_year_approx: null,
+    general_comments: 'I have heard the word jiru but I am not sure if we practice it in the same way. We have some customary restrictions on fishing areas but they may not be connected to funerals.',
+    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have tambu reefs that are closed seasonally by the chief, but these are not specifically for mourning.'
+  },
+  {
+    id: 11, date: '2026-04-03', name: 'John Fidia', province: 'Malaita', island: 'North Malaita', village: "Malu'u",
+    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
+    lat: -8.31, lng: 160.72, jiru_year_approx: null,
+    general_comments: 'No, we do not have jiru in Malaita. We have different customs. When someone dies there are feasts and exchanges but we do not close off areas.',
+    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have abu (taboo) places but these are permanent sacred sites, not temporary closures after death.'
+  },
+  {
+    id: 12, date: '2026-04-05', name: 'Selina Bako', province: 'Western', island: 'Ghizo', village: 'Gizo Town',
+    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, shellfish',
+    lat: -8.10, lng: 156.84, jiru_year_approx: 2026,
+    general_comments: 'Even in Gizo town, some families still practice jiru on their customary reef areas. A jiru was just declared last month for an elder from Vella Lavella who passed away here.',
+    jiru_additional: 'The jiru covers a section of reef near Kennedy Island.', jiru_habitat_description: 'Coral reef and lagoon area near Kennedy Island.',
+    jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: ''
+  }
+];
+
+// ===== AUTH =====
+function attemptLogin() {
+  const input = document.getElementById('password-input');
+  const pw = input.value.trim();
+  if (pw === ADMIN_PASSWORD) {
+    window.__jiruAuth = true;
+    showDashboard();
+  } else {
+    document.getElementById('login-error').style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-gate').style.display !== 'none') attemptLogin();
+});
+
+function showDashboard() {
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('dashboard').classList.add('visible');
+  initDashboard();
+}
+
+// ===== DATA =====
+let allData = [];
+let filteredData = [];
+let sortCol = 'date';
+let sortDir = -1;
+let adminMap = null;
+let mapMarkers = [];
+
+async function loadAdminData() {
+  let data = null;
+  try {
+    const pw = ADMIN_PASSWORD;
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=admin&password=' + pw);
+    if (resp.ok) data = await resp.json();
+  } catch (e) {}
+  if (!data || !Array.isArray(data) || data.length === 0) data = DEMO_DATA;
+  allData = data;
+  filteredData = [...data];
+  return data;
+}
+
+// ===== INIT DASHBOARD =====
+async function initDashboard() {
+  await loadAdminData();
+  populateFilters();
+  updateStats();
+  renderCharts();
+  renderMap();
+  renderTimeline();
+  renderHistoricalTimeline();
+  renderTable();
+  updateWordCount();
+
+  // Restore API key
+  if (window.__jiruApiKey) document.getElementById('openai-key').value = window.__jiruApiKey;
+
+  // Filter listeners
+  document.getElementById('filter-province').addEventListener('change', applyFilters);
+  document.getElementById('filter-status').addEventListener('change', applyFilters);
+  document.getElementById('filter-from').addEventListener('change', applyFilters);
+  document.getElementById('filter-to').addEventListener('change', applyFilters);
+  document.getElementById('table-search').addEventListener('input', applyFilters);
+}
+
+function populateFilters() {
+  const provinces = [...new Set(allData.map(d => d.province))].sort();
+  const sel = document.getElementById('filter-province');
+  provinces.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    sel.appendChild(opt);
+  });
+}
+
+function applyFilters() {
+  const province = document.getElementById('filter-province').value;
+  const status = document.getElementById('filter-status').value;
+  const from = document.getElementById('filter-from').value;
+  const to = document.getElementById('filter-to').value;
+  const search = document.getElementById('table-search').value.toLowerCase();
+
+  filteredData = allData.filter(d => {
+    if (province && d.province !== province) return false;
+    if (status && d.jiru_status !== status) return false;
+    if (from && d.date < from) return false;
+    if (to && d.date > to) return false;
+    if (search) {
+      const hay = [d.name, d.province, d.island, d.village, d.local_name, d.general_comments].join(' ').toLowerCase();
+      if (!hay.includes(search)) return false;
+    }
+    return true;
+  });
+
+  updateStats();
+  renderCharts();
+  renderMapMarkers();
+  renderTable();
+}
+
+function resetFilters() {
+  document.getElementById('filter-province').value = '';
+  document.getElementById('filter-status').value = '';
+  document.getElementById('filter-from').value = '';
+  document.getElementById('filter-to').value = '';
+  document.getElementById('table-search').value = '';
+  filteredData = [...allData];
+  updateStats();
+  renderCharts();
+  renderMapMarkers();
+  renderTable();
+}
+
+// ===== STATS =====
+function updateStats() {
+  document.getElementById('admin-total').textContent = filteredData.length;
+  document.getElementById('admin-provinces').textContent = new Set(filteredData.map(d => d.province)).size;
+  document.getElementById('admin-active').textContent = filteredData.filter(d => d.jiru_status === 'active').length;
+  const latest = filteredData.reduce((max, d) => d.date > max ? d.date : max, '');
+  document.getElementById('admin-latest').textContent = latest ? new Date(latest).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+}
+
+// ===== CHARTS =====
+let chartProvince, chartStatus, chartProtected, chartTimeline;
+
+function renderCharts() {
+  renderProvinceChart();
+  renderStatusChart();
+  renderProtectedChart();
+}
+
+function renderProvinceChart() {
+  const counts = {};
+  filteredData.forEach(d => { counts[d.province] = (counts[d.province] || 0) + 1; });
+  const labels = Object.keys(counts).sort();
+  const values = labels.map(l => counts[l]);
+
+  if (chartProvince) chartProvince.destroy();
+  chartProvince = new Chart(document.getElementById('chart-province'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Submissions', data: values, backgroundColor: '#002a30', borderRadius: 4, barThickness: 24 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: "'DM Sans'" } }, grid: { color: '#f1f5f9' } },
+        y: { ticks: { font: { family: "'DM Sans'", size: 12 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderStatusChart() {
+  const counts = { active: 0, past: 0, never: 0, unsure: 0 };
+  filteredData.forEach(d => { if (counts[d.jiru_status] !== undefined) counts[d.jiru_status]++; });
+  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#dc3545', unsure: '#94a3b8' };
+  const labels = ['Active', 'Past', 'Never', 'Unsure'];
+  const keys = ['active', 'past', 'never', 'unsure'];
+
+  if (chartStatus) chartStatus.destroy();
+  chartStatus = new Chart(document.getElementById('chart-status'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data: keys.map(k => counts[k]), backgroundColor: keys.map(k => colors[k]), borderWidth: 2, borderColor: '#fff' }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '55%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, font: { family: "'DM Sans'", size: 12 }, usePointStyle: true, pointStyleWidth: 10 } }
+      }
+    }
+  });
+}
+
+function renderProtectedChart() {
+  const counts = {};
+  filteredData.forEach(d => {
+    if (d.what_protected) {
+      d.what_protected.split(',').map(s => s.trim()).filter(Boolean).forEach(p => {
+        counts[p] = (counts[p] || 0) + 1;
+      });
+    }
+  });
+  const labels = Object.keys(counts).sort();
+  const values = labels.map(l => counts[l]);
+
+  if (chartProtected) chartProtected.destroy();
+  chartProtected = new Chart(document.getElementById('chart-protected'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label: 'Count', data: values, backgroundColor: '#c9a227', borderRadius: 4, barThickness: 24 }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { beginAtZero: true, ticks: { stepSize: 1, font: { family: "'DM Sans'" } }, grid: { color: '#f1f5f9' } },
+        y: { ticks: { font: { family: "'DM Sans'", size: 12 } }, grid: { display: false } }
+      }
+    }
+  });
+}
+
+function renderTimeline() {
+  const byMonth = {};
+  allData.forEach(d => {
+    const m = d.date.substring(0, 7);
+    byMonth[m] = (byMonth[m] || 0) + 1;
+  });
+  const labels = Object.keys(byMonth).sort();
+  const values = labels.map(l => byMonth[l]);
+  const cumulative = [];
+  let sum = 0;
+  values.forEach(v => { sum += v; cumulative.push(sum); });
+
+  if (chartTimeline) chartTimeline.destroy();
+  chartTimeline = new Chart(document.getElementById('chart-timeline'), {
+    type: 'line',
+    data: {
+      labels: labels.map(l => {
+        const [y, m] = l.split('-');
+        return new Date(y, m - 1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+      }),
+      datasets: [
+        { label: 'New', data: values, borderColor: '#c9a227', backgroundColor: 'rgba(201,162,39,0.1)', fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#c9a227' },
+        { label: 'Cumulative', data: cumulative, borderColor: '#002a30', backgroundColor: 'transparent', borderDash: [5, 3], tension: 0.3, pointRadius: 4, pointBackgroundColor: '#002a30' }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: "'DM Sans'", size: 12 }, usePointStyle: true } } },
+      scales: {
+        x: { ticks: { font: { family: "'DM Sans'", size: 11 } }, grid: { color: '#f1f5f9' } },
+        y: { beginAtZero: true, ticks: { stepSize: 2, font: { family: "'DM Sans'" } }, grid: { color: '#f1f5f9' } }
+      }
+    }
+  });
+}
+
+function renderHistoricalTimeline() {
+  const events = allData
+    .filter(d => d.jiru_year_approx)
+    .map(d => ({ year: d.jiru_year_approx, village: d.village, province: d.province, status: d.jiru_status }))
+    .sort((a, b) => a.year - b.year);
+
+  const el = document.getElementById('historical-timeline');
+  el.innerHTML = '';
+  if (events.length === 0) {
+    el.innerHTML = '<p style="font-size:0.85rem;color:#94a3b8;">No historical dates recorded.</p>';
+    return;
+  }
+  events.forEach(ev => {
+    const div = document.createElement('div');
+    div.className = 'timeline-event';
+    div.innerHTML = `
+      <span class="timeline-year">${ev.year}</span>
+      <span class="timeline-desc"><strong>${ev.village}</strong>, ${ev.province} — ${ev.status === 'active' ? 'Active jiru' : 'Jiru established'}</span>
+    `;
+    el.appendChild(div);
+  });
+}
+
+// ===== MAP =====
+function renderMap() {
+  adminMap = L.map('admin-map').setView([-8.5, 160.5], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    maxZoom: 18
+  }).addTo(adminMap);
+  renderMapMarkers();
+}
+
+function renderMapMarkers() {
+  mapMarkers.forEach(m => adminMap.removeLayer(m));
+  mapMarkers = [];
+  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#dc3545', unsure: '#94a3b8' };
+  const labels = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
+
+  filteredData.forEach(d => {
+    if (!d.lat || !d.lng) return;
+    const marker = L.circleMarker([d.lat, d.lng], {
+      radius: 9,
+      fillColor: colors[d.jiru_status],
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.85
+    }).addTo(adminMap);
+
+    marker.bindPopup(`
+      <div style="font-family:'DM Sans',sans-serif;min-width:180px;">
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${d.name}</strong><br>
+        <span style="color:#64748b;font-size:0.8rem;">${d.village}, ${d.island}</span><br>
+        <span style="color:#64748b;font-size:0.8rem;">${d.province} Province</span><br>
+        <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.72rem;font-weight:600;background:${colors[d.jiru_status]}20;color:${colors[d.jiru_status]};">Jiru: ${labels[d.jiru_status]}</span>
+        ${d.local_name ? `<br><span style="font-size:0.8rem;color:#475569;margin-top:0.3rem;display:inline-block;">Local name: <em>${d.local_name}</em></span>` : ''}
+        <br><span style="font-size:0.75rem;color:#94a3b8;">${new Date(d.date).toLocaleDateString()}</span>
+      </div>
+    `);
+    mapMarkers.push(marker);
+  });
+}
+
+// ===== TABLE =====
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  tbody.innerHTML = '';
+
+  const sorted = [...filteredData].sort((a, b) => {
+    let va = a[sortCol] || '', vb = b[sortCol] || '';
+    if (sortCol === 'status') { va = a.jiru_status; vb = b.jiru_status; }
+    if (sortCol === 'protected') { va = a.what_protected; vb = b.what_protected; }
+    if (va < vb) return -1 * sortDir;
+    if (va > vb) return 1 * sortDir;
+    return 0;
+  });
+
+  sorted.forEach((d, i) => {
+    const statusLabel = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</td>
+      <td><strong>${d.name}</strong></td>
+      <td>${d.province}</td>
+      <td>${d.island}</td>
+      <td>${d.village}</td>
+      <td><span class="status-badge ${d.jiru_status}">${statusLabel[d.jiru_status] || d.jiru_status}</span></td>
+      <td>${d.local_name || '—'}</td>
+      <td>${d.what_protected || '—'}</td>
+    `;
+    tr.addEventListener('click', () => toggleDetail(d, tr));
+    tbody.appendChild(tr);
+  });
+
+  // Header sort
+  document.querySelectorAll('.data-table th').forEach(th => {
+    th.onclick = () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortDir *= -1;
+      else { sortCol = col; sortDir = 1; }
+      document.querySelectorAll('.data-table th').forEach(h => h.classList.remove('sorted'));
+      th.classList.add('sorted');
+      th.querySelector('.sort-arrow').textContent = sortDir === 1 ? '↑' : '↓';
+      renderTable();
+    };
+  });
+}
+
+function toggleDetail(d, tr) {
+  const existing = tr.nextElementSibling;
+  if (existing && existing.classList.contains('row-detail')) {
+    existing.remove();
+    tr.classList.remove('expanded-row');
+    return;
+  }
+  // Close others
+  document.querySelectorAll('.row-detail').forEach(r => r.remove());
+  document.querySelectorAll('.expanded-row').forEach(r => r.classList.remove('expanded-row'));
+
+  tr.classList.add('expanded-row');
+  const detail = document.createElement('tr');
+  detail.className = 'row-detail visible';
+  detail.innerHTML = `<td colspan="8">
+    <div class="detail-grid">
+      <div class="detail-item"><span class="detail-label">Full Name</span><span class="detail-value">${d.name}</span></div>
+      <div class="detail-item"><span class="detail-label">Date Submitted</span><span class="detail-value">${d.date}</span></div>
+      <div class="detail-item"><span class="detail-label">Province</span><span class="detail-value">${d.province}</span></div>
+      <div class="detail-item"><span class="detail-label">Island</span><span class="detail-value">${d.island}</span></div>
+      <div class="detail-item"><span class="detail-label">Village</span><span class="detail-value">${d.village}</span></div>
+      <div class="detail-item"><span class="detail-label">Jiru Status</span><span class="detail-value">${d.jiru_status}</span></div>
+      <div class="detail-item"><span class="detail-label">Local Name</span><span class="detail-value">${d.local_name || '—'}</span></div>
+      <div class="detail-item"><span class="detail-label">What Protected</span><span class="detail-value">${d.what_protected || '—'}</span></div>
+      <div class="detail-item"><span class="detail-label">Resources</span><span class="detail-value">${d.resources || '—'}</span></div>
+      <div class="detail-item"><span class="detail-label">Approx. Year</span><span class="detail-value">${d.jiru_year_approx || '—'}</span></div>
+      <div class="detail-item" style="grid-column:1/-1;"><span class="detail-label">Comments</span><span class="detail-value">${d.general_comments || '—'}</span></div>
+      ${d.jiru_additional ? `<div class="detail-item" style="grid-column:1/-1;"><span class="detail-label">Additional Info</span><span class="detail-value">${d.jiru_additional}</span></div>` : ''}
+      ${d.jiru_habitat_description ? `<div class="detail-item" style="grid-column:1/-1;"><span class="detail-label">Habitat Description</span><span class="detail-value">${d.jiru_habitat_description}</span></div>` : ''}
+      ${d.jiru_why_stopped ? `<div class="detail-item" style="grid-column:1/-1;"><span class="detail-label">Why Stopped</span><span class="detail-value">${d.jiru_why_stopped}</span></div>` : ''}
+      ${d.other_practices_desc ? `<div class="detail-item" style="grid-column:1/-1;"><span class="detail-label">Other Practices</span><span class="detail-value">${d.other_practices_desc}</span></div>` : ''}
+    </div>
+  </td>`;
+  tr.after(detail);
+}
+
+// ===== EXPORT CSV =====
+function exportCSV() {
+  const headers = ['Date', 'Name', 'Province', 'Island', 'Village', 'Jiru Status', 'Local Name', 'What Protected', 'Resources', 'Year Approx', 'Comments', 'Additional', 'Habitat', 'Why Stopped', 'Nearby Jiru', 'Other Practices'];
+  const rows = filteredData.map(d => [
+    d.date, d.name, d.province, d.island, d.village, d.jiru_status, d.local_name, d.what_protected, d.resources,
+    d.jiru_year_approx || '', d.general_comments, d.jiru_additional, d.jiru_habitat_description, d.jiru_why_stopped, d.nearby_jiru_desc, d.other_practices_desc
+  ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`));
+
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `jiru-data-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported successfully');
+}
+
+// ===== AI SUMMARY =====
+function updateWordCount() {
+  const texts = allData.map(d => [d.general_comments, d.jiru_additional, d.jiru_habitat_description, d.jiru_why_stopped, d.nearby_jiru_desc, d.other_practices_desc].filter(Boolean).join(' ')).join(' ');
+  const wc = texts.split(/\s+/).filter(Boolean).length;
+  document.getElementById('word-count').textContent = `Input text: ${wc} words from ${allData.length} responses`;
+}
+
+async function generateSummary() {
+  const keyInput = document.getElementById('openai-key');
+  const key = keyInput.value.trim();
+  if (!key) { showToast('Please enter your OpenAI API key'); return; }
+
+  window.__jiruApiKey = key;
+
+  const texts = allData.map(d => {
+    const parts = [d.general_comments, d.jiru_additional, d.jiru_habitat_description, d.jiru_why_stopped, d.nearby_jiru_desc, d.other_practices_desc].filter(Boolean);
+    if (parts.length === 0) return null;
+    return `[${d.village}, ${d.province} — ${d.jiru_status}]: ${parts.join(' | ')}`;
+  }).filter(Boolean).join('\n\n');
+
+  document.getElementById('ai-loading').classList.add('visible');
+  document.getElementById('ai-output').classList.remove('visible');
+
+  try {
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a research assistant helping analyze community survey responses about jiru — indigenous funerary protected area practices in the Solomon Islands. Summarize the key themes, patterns, and insights from these responses. Focus on: (1) nature of jiru practices described, (2) areas/habitats protected, (3) reasons for decline or cessation, (4) conservation significance, (5) gaps in knowledge. Write in academic but accessible language suitable for a research briefing. Be specific and cite patterns across multiple responses.'
+          },
+          {
+            role: 'user',
+            content: `Please analyze the following ${allData.length} survey responses about jiru practices:\n\n${texts}`
+          }
+        ],
+        temperature: 0.4,
+        max_tokens: 2000
+      })
+    });
+
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const summary = data.choices[0].message.content;
+    document.getElementById('summary-content').innerHTML = marked.parse(summary);
+    document.getElementById('ai-output').classList.add('visible');
+  } catch (e) {
+    showToast('Error: ' + e.message);
+  } finally {
+    document.getElementById('ai-loading').classList.remove('visible');
+  }
+}
+
+function copySummary() {
+  const text = document.getElementById('summary-content').innerText;
+  navigator.clipboard.writeText(text).then(() => showToast('Summary copied!')).catch(() => showToast('Failed to copy'));
+}
+
+function printSummary() {
+  const content = document.getElementById('summary-content').innerHTML;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Jiru AI Analysis</title><style>body{font-family:'DM Sans',sans-serif;max-width:800px;margin:2rem auto;padding:0 2rem;color:#1e293b;line-height:1.7;}h1,h2,h3{font-family:'Cormorant Garamond',serif;color:#002a30;}h1{border-bottom:3px solid #c9a227;padding-bottom:0.5rem;}</style></head><body><h1>Jiru AI Analysis Report</h1><p style="color:#64748b;">Generated ${new Date().toLocaleDateString()} · Vave Lab, University of Hawaiʻi at Mānoa</p>${content}</body></html>`);
+  win.document.close();
+  win.print();
+}
+
+function printSummaryReport() {
+  const stats = `Total: ${filteredData.length} | Provinces: ${new Set(filteredData.map(d => d.province)).size} | Active: ${filteredData.filter(d => d.jiru_status === 'active').length}`;
+  const win = window.open('', '_blank');
+  win.document.write(`<!DOCTYPE html><html><head><title>Jiru Summary Report</title><style>body{font-family:'DM Sans',sans-serif;max-width:800px;margin:2rem auto;padding:0 2rem;color:#1e293b;line-height:1.7;}h1,h2{font-family:'Cormorant Garamond',serif;color:#002a30;}h1{border-bottom:3px solid #c9a227;padding-bottom:0.5rem;}table{width:100%;border-collapse:collapse;margin:1rem 0;}th,td{padding:0.5rem;border-bottom:1px solid #e2e8f0;text-align:left;font-size:0.85rem;}th{background:#002a30;color:#fff;}</style></head><body><h1>Jiru Research Summary Report</h1><p style="color:#64748b;">Generated ${new Date().toLocaleDateString()} · Vave Lab</p><p><strong>${stats}</strong></p><h2>Data Overview</h2><table><tr><th>Date</th><th>Name</th><th>Province</th><th>Village</th><th>Status</th><th>Protected</th></tr>${filteredData.map(d => `<tr><td>${d.date}</td><td>${d.name}</td><td>${d.province}</td><td>${d.village}</td><td>${d.jiru_status}</td><td>${d.what_protected || '—'}</td></tr>`).join('')}</table></body></html>`);
+  win.document.close();
+  win.print();
+}
+
+function sendReminder() {
+  const subject = encodeURIComponent('Help map jiru practices across the Solomon Islands');
+  const body = encodeURIComponent(`Dear colleague,\n\nWe are conducting research on jiru — indigenous funerary protected areas in the Solomon Islands. If you or anyone you know is from the Solomon Islands, we would greatly appreciate a few minutes to complete our community survey.\n\nSurvey link: https://ronvave.github.io/vave-lab/jiru-survey.html\n\nYour responses will help us understand the distribution, nature, and conservation significance of jiru practices across all provinces.\n\nThank you for your support.\n\nProf. Ron Vave\nDepartment of Pacific Islands Studies\nUniversity of Hawaiʻi at Mānoa\nronvave@hawaii.edu`);
+  window.open(`mailto:?subject=${subject}&body=${body}`);
+}
+
+// ===== TOAST =====
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.__jiruAuth === true) {
+    showDashboard();
+  }
+});
+</script>
+</body>
+</html>
