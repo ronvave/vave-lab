@@ -424,7 +424,7 @@
 
 <script>
 // ===== CONFIG =====
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
 const ADMIN_PASSWORD = 'JiruAdmin2026';
 
 // ===== DEMO DATA (12 records) =====
@@ -804,10 +804,17 @@ function renderHistoricalTimeline() {
 
 // ===== MAP =====
 function renderMap() {
-  adminMap = L.map('admin-map').setView([-8.5, 160.5], 6);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-    maxZoom: 18
+  adminMap = L.map('admin-map').setView([-8.5, 160.5], 7);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19
+  }).addTo(adminMap);
+
+  // Village name labels overlay
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '',
+    maxZoom: 19,
+    opacity: 0.9
   }).addTo(adminMap);
   renderMapMarkers();
 }
