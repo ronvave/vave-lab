@@ -579,9 +579,10 @@
       <div class="map-container">
         <div id="jiru-map"></div>
         <div class="map-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#2a7d5f;"></span> Active jiru</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#c9a227;"></span> Jiru in the past</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#C2C2C2;"></span> No jiru / Unsure</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#07AD03;"></span> Active jiru</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#FF8700;"></span> Jiru in the past</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#B82100;"></span> Never done jiru</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#C2C2C2;"></span> Unsure</div>
         </div>
       </div>
     </div>
@@ -800,7 +801,7 @@ function initMap() {
     opacity: 0.9
   }).addTo(map);
 
-  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#94a3b8', unsure: '#94a3b8' };
+  const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#C2C2C2' };
   const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
 
   // Markers populated from real survey data only

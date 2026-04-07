@@ -1047,7 +1047,7 @@
 
         <!-- Progress bar -->
         <div class="survey-progress-bar">
-          <div class="survey-progress-bar__fill" id="progressFill" style="width: 16.67%"></div>
+          <div class="survey-progress-bar__fill" id="progressFill" style="width: 14.29%"></div>
         </div>
 
         <!-- Step indicators -->
@@ -1070,10 +1070,14 @@
           </div>
           <div class="survey-step-indicator" data-step="5">
             <div class="survey-step-indicator__circle">5</div>
-            <div class="survey-step-indicator__label">Resources</div>
+            <div class="survey-step-indicator__label">Harvest</div>
           </div>
           <div class="survey-step-indicator" data-step="6">
             <div class="survey-step-indicator__circle">6</div>
+            <div class="survey-step-indicator__label">Resources</div>
+          </div>
+          <div class="survey-step-indicator" data-step="7">
+            <div class="survey-step-indicator__circle">7</div>
             <div class="survey-step-indicator__label">Review</div>
           </div>
         </div>
@@ -1474,136 +1478,6 @@
                 <textarea class="form-textarea" id="protection_other_details" name="protection_other_details" placeholder="Share any other details..."></textarea>
               </div>
 
-              <hr class="form-divider">
-
-              <div class="form-section-heading">Harvest Details</div>
-
-              <!-- Change 32: Keep "Who participated" -->
-              <div class="form-group">
-                <label class="form-label">Who participated in the harvest? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="jiruParticipantsGroup">
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased only">
-                    <span class="form-check__label">Immediate family of the deceased only</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Extended family / clan">
-                    <span class="form-check__label">Extended family / clan</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Whole village">
-                    <span class="form-check__label">Whole village</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Invited guests from other villages">
-                    <span class="form-check__label">Invited guests from other villages</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Other">
-                    <span class="form-check__label">Other (specify)</span>
-                  </label>
-                </div>
-                <div class="other-specify" id="participantsOther">
-                  <input type="text" class="form-input" id="jiru_participants_other_text" placeholder="Please specify">
-                </div>
-              </div>
-
-              <!-- Change 33: What was targeted for harvest? -->
-              <div class="form-group">
-                <label class="form-label">What was targeted for harvest? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="harvestTargetGroup">
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Everything">
-                    <span class="form-check__label">Everything</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Food fish">
-                    <span class="form-check__label">Food fish</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Invertebrates">
-                    <span class="form-check__label">Invertebrates</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Land/plant resources">
-                    <span class="form-check__label">Land/plant resources</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Other">
-                    <span class="form-check__label">Other (specify)</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="harvest_target" value="Unsure">
-                    <span class="form-check__label">Unsure</span>
-                  </label>
-                </div>
-                <div class="other-specify" id="harvestTargetOther">
-                  <input type="text" class="form-input" id="harvest_target_other_text" placeholder="Please specify">
-                </div>
-              </div>
-
-              <!-- Change 34: Keep "What was the catch or harvest used for?" -->
-              <div class="form-group">
-                <label class="form-label">What was the catch or harvest used for? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="jiruCatchGroup">
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Community/village feast">
-                    <span class="form-check__label">Community / village feast</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Ceremony or cultural event">
-                    <span class="form-check__label">Ceremony or cultural event</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Divided among households">
-                    <span class="form-check__label">Divided among households</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Sold or traded">
-                    <span class="form-check__label">Sold or traded</span>
-                  </label>
-                  <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Other">
-                    <span class="form-check__label">Other (specify)</span>
-                  </label>
-                </div>
-                <div class="other-specify" id="catchOther">
-                  <input type="text" class="form-input" id="jiru_catch_other_text" placeholder="Please specify">
-                </div>
-              </div>
-
-              <!-- Change 35: New open-ended harvest questions -->
-              <div class="form-group">
-                <label class="form-label" for="harvest_protocols">Any special process or protocols done before and/or during harvest?</label>
-                <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any protocols..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="harvest_prohibitions">Any prohibitions surrounding harvest process?</label>
-                <textarea class="form-textarea" id="harvest_prohibitions" name="harvest_prohibitions" placeholder="Describe any prohibitions..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="harvest_changes">What has changed regarding harvest process?</label>
-                <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="harvest_challenges">Any challenges with jiru harvest?</label>
-                <textarea class="form-textarea" id="harvest_challenges" name="harvest_challenges" placeholder="Describe any challenges..."></textarea>
-              </div>
-
-              <hr class="form-divider">
-
-              <!-- Removed old "jiru_additional" and "jiru_harvested" text areas, replaced above -->
-
-              <!-- Extra question for PAST only -->
-              <div class="conditional-section" id="jiruWhyStoppedSection">
-                <div class="form-group">
-                  <label class="form-label" for="jiru_why_stopped">Why is jiru no longer practised in your community?</label>
-                  <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="e.g. the practice was lost after resettlement, younger generations are not aware of it, etc."></textarea>
-                </div>
-              </div>
             </div>
 
             <!-- NO or UNSURE — Alternative questions -->
@@ -1670,8 +1544,150 @@
             </div>
           </div>
 
-          <!-- ═══════════ STEP 5: Resources & Knowledge ═══════════ -->
+          <!-- ═══════════ STEP 5: Harvest Details (conditional) ═══════════ -->
           <div class="survey-step" data-step="5">
+
+            <!-- YES (current or past) — Harvest questions -->
+            <div class="conditional-section" id="harvestDetailsYes">
+              <h3 class="survey-step__title">Harvest Details</h3>
+              <p class="survey-step__subtitle">Tell us about what happens when the jiru protection is lifted and the harvest takes place.</p>
+
+              <div class="form-section-heading">Harvest Details</div>
+
+              <!-- Who participated -->
+              <div class="form-group">
+                <label class="form-label">Who participated in the harvest? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="jiruParticipantsGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased">
+                    <span class="form-check__label">Immediate family of the deceased</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Extended family / clan">
+                    <span class="form-check__label">Extended family / clan</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Whole village">
+                    <span class="form-check__label">Whole village</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Invited guests from other villages">
+                    <span class="form-check__label">Invited guests from other villages</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_participants" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="participantsOther">
+                  <input type="text" class="form-input" id="jiru_participants_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <!-- What was targeted for harvest? -->
+              <div class="form-group">
+                <label class="form-label">What was targeted for harvest? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="harvestTargetGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Everything">
+                    <span class="form-check__label">Everything</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Food fish">
+                    <span class="form-check__label">Food fish</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Invertebrates">
+                    <span class="form-check__label">Invertebrates</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Land/plant resources">
+                    <span class="form-check__label">Land/plant resources</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Unsure">
+                    <span class="form-check__label">Unsure</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="harvestTargetOther">
+                  <input type="text" class="form-input" id="harvest_target_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <!-- What was the catch or harvest used for? -->
+              <div class="form-group">
+                <label class="form-label">What was the catch or harvest used for? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="jiruCatchGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Community/village feast">
+                    <span class="form-check__label">Community / village feast</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Ceremony or cultural event">
+                    <span class="form-check__label">Ceremony or cultural event</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Divided among households">
+                    <span class="form-check__label">Divided among households</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Sold or traded">
+                    <span class="form-check__label">Sold or traded</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_catch_used" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="catchOther">
+                  <input type="text" class="form-input" id="jiru_catch_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <!-- Open-ended harvest questions -->
+              <div class="form-group">
+                <label class="form-label" for="harvest_protocols">Any special process or protocols done before and/or during harvest?</label>
+                <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any protocols..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_prohibitions">Any prohibitions surrounding harvest process?</label>
+                <textarea class="form-textarea" id="harvest_prohibitions" name="harvest_prohibitions" placeholder="Describe any prohibitions..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_changes">What has changed regarding harvest process?</label>
+                <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_challenges">Any challenges with jiru harvest?</label>
+                <textarea class="form-textarea" id="harvest_challenges" name="harvest_challenges" placeholder="Describe any challenges..."></textarea>
+              </div>
+
+              <hr class="form-divider">
+
+              <!-- Extra question for PAST only -->
+              <div class="conditional-section" id="jiruWhyStoppedSection">
+                <div class="form-group">
+                  <label class="form-label" for="jiru_why_stopped">Why is jiru no longer practised in your community?</label>
+                  <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="e.g. the practice was lost after resettlement, younger generations are not aware of it, etc."></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 6: Resources & Knowledge ═══════════ -->
+          <div class="survey-step" data-step="6">
             <h3 class="survey-step__title">Resources &amp; Knowledge</h3>
             <p class="survey-step__subtitle">Do you have access to any documentation about jiru or similar practices?</p>
 
@@ -1718,8 +1734,8 @@
             </div>
           </div>
 
-          <!-- ═══════════ STEP 6: Review & Submit ═══════════ -->
-          <div class="survey-step" data-step="6">
+          <!-- ═══════════ STEP 7: Review & Submit ═══════════ -->
+          <div class="survey-step" data-step="7">
             <h3 class="survey-step__title">Review &amp; Submit</h3>
             <!-- Change 38: Updated description -->
             <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</p>
@@ -1953,7 +1969,7 @@
   // ── Configuration ──────────────────────────────
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
   const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
-  const TOTAL_STEPS = 6;
+  const TOTAL_STEPS = 7;
   const LOCAL_STORAGE_KEY = 'jiru_draft';
   const _store = window['local' + 'Storage'];
 
@@ -2063,6 +2079,7 @@
 
       // Trigger conditional visibility
       triggerConditionalVisibility();
+      updateStep5Visibility();
 
     } catch(e) { /* silently fail */ }
   }
@@ -2131,11 +2148,22 @@
   }
 
   // ── Step Navigation ────────────────────────────
+  function isYesStatus() {
+    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const val = status ? status.value : '';
+    return val === 'yes_current' || val === 'yes_past';
+  }
+
   window.nextStep = function() {
     if (!validateCurrentStep()) return;
     saveDraftToLocalStorage(); // Change 1: save on Next
     if (currentStep < TOTAL_STEPS) {
-      currentStep++;
+      // Skip Step 5 (Harvest) if user is not a yes-status respondent
+      if (currentStep === 4 && !isYesStatus()) {
+        currentStep = 6;
+      } else {
+        currentStep++;
+      }
       updateStepUI();
       scrollToForm();
     }
@@ -2143,7 +2171,12 @@
 
   window.prevStep = function() {
     if (currentStep > 1) {
-      currentStep--;
+      // Skip Step 5 (Harvest) going backwards if not yes-status
+      if (currentStep === 6 && !isYesStatus()) {
+        currentStep = 4;
+      } else {
+        currentStep--;
+      }
       updateStepUI();
       scrollToForm();
     }
@@ -2188,7 +2221,8 @@
     // Step-specific logic
     if (currentStep === 2) initMap();
     if (currentStep === 4) updateStep4Visibility();
-    if (currentStep === 6) buildReviewSummary();
+    if (currentStep === 5) updateStep5Visibility();
+    if (currentStep === 7) buildReviewSummary();
   }
 
   // ── Validation ─────────────────────────────────
@@ -2396,7 +2430,6 @@
     const val = status ? status.value : '';
     const yesSection = document.getElementById('jiruDetailsYes');
     const noSection = document.getElementById('jiruDetailsNo');
-    const whyStoppedSection = document.getElementById('jiruWhyStoppedSection');
 
     // Update the village name in the heading
     const village = document.getElementById('village').value.trim();
@@ -2406,10 +2439,23 @@
     if (val === 'yes_current' || val === 'yes_past') {
       yesSection.classList.add('visible');
       noSection.classList.remove('visible');
-      whyStoppedSection.classList.toggle('visible', val === 'yes_past');
     } else {
       yesSection.classList.remove('visible');
       noSection.classList.add('visible');
+    }
+  }
+
+  function updateStep5Visibility() {
+    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const val = status ? status.value : '';
+    const harvestSection = document.getElementById('harvestDetailsYes');
+    const whyStoppedSection = document.getElementById('jiruWhyStoppedSection');
+
+    if (val === 'yes_current' || val === 'yes_past') {
+      harvestSection.classList.add('visible');
+      whyStoppedSection.classList.toggle('visible', val === 'yes_past');
+    } else {
+      harvestSection.classList.remove('visible');
     }
   }
 
@@ -2740,7 +2786,7 @@
       resRows.push(['Links', getVal('resource_links') || '(none)']);
       resRows.push(['Files', uploadedFiles.length ? uploadedFiles.map(f => f.name).join(', ') : '(none)']);
     }
-    container.innerHTML += buildReviewSection('Resources', 5, resRows);
+    container.innerHTML += buildReviewSection('Resources', 6, resRows);
   }
 
   function buildReviewSection(title, step, rows) {
