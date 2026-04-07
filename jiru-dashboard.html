@@ -358,10 +358,11 @@
     .jiru-quote {
       border-left: 4px solid #c9a227;
       margin: 0;
-      padding: 1.2rem 1.6rem;
+      padding: 1.8rem 2.4rem;
       background: #f8f5ee;
       border-radius: 0 8px 8px 0;
-      max-width: 72ch;
+      width: 100%;
+      text-align: center;
       transition: background 0.2s;
     }
     .jiru-quote-link:hover .jiru-quote {
@@ -369,17 +370,19 @@
     }
     .jiru-quote p {
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: 1.15rem;
+      font-size: 2.3rem;
       font-style: italic;
-      line-height: 1.7;
+      line-height: 1.5;
       color: #002a30;
-      margin: 0 0 0.5rem 0;
+      margin: 0 0 0.75rem 0;
     }
     .jiru-quote cite {
-      font-size: 0.8rem;
+      display: block;
+      font-size: 0.85rem;
       font-style: normal;
       color: #6b7280;
       letter-spacing: 0.02em;
+      text-align: center;
     }
 
     /* Jiru tooltip */
@@ -546,11 +549,11 @@
 <main>
 
   <!-- JIRU QUOTE -->
-  <section class="section" style="padding-bottom:0;">
+  <section class="section" style="padding-bottom:0; padding-top: clamp(1rem,2vw,2rem);">
     <div class="container">
       <a href="https://atrium.lib.uoguelph.ca/bitstream/10214/24928/1/Woodley_Ellen_PhD.pdf" target="_blank" rel="noopener" class="jiru-quote-link">
         <blockquote class="jiru-quote">
-          <p>&ldquo;Traditionally, jiru was applied to areas after the death of a prominent chief. From six months to one year, after the person died, the restriction would be lifted, and a large feast would be held to honour the deceased person.&rdquo;</p>
+          <p>&ldquo;Traditionally, <strong>jiru</strong> was applied to areas after the death of a prominent chief. From six months to one year, after the person died, the restriction would be lifted, and a large feast would be held to honour the deceased person.&rdquo;</p>
           <cite>Woodley (2002) p. 354, PhD Thesis</cite>
         </blockquote>
       </a>
@@ -558,7 +561,7 @@
   </section>
 
   <!-- PROVINCE COVERAGE GRID -->
-  <section class="section" aria-labelledby="province-heading">
+  <section class="section" aria-labelledby="province-heading" style="padding: clamp(1rem,2vw,2rem) 0;">
     <div class="container">
       <h2 class="section-title" id="province-heading">Province Coverage</h2>
       <p class="section-subtitle">Survey coverage across all nine provinces of the Solomon Islands. Help us fill in the gaps.</p>
@@ -569,7 +572,7 @@
   </section>
 
   <!-- MAP -->
-  <section class="section" aria-labelledby="map-heading" style="padding-top:0;">
+  <section class="section" aria-labelledby="map-heading" style="padding-top:0.5rem;">
     <div class="container">
       <h2 class="section-title" id="map-heading">Survey Locations</h2>
       <p class="section-subtitle">Each marker represents a community that has responded to the jiru survey.</p>
