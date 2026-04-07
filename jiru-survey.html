@@ -20,6 +20,10 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
+  <!-- Leaflet Fullscreen Plugin (Change 12) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/3.0.2/leaflet.fullscreen.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/3.0.2/Leaflet.fullscreen.min.js"></script>
+
   <!-- QR Code -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
@@ -875,6 +879,86 @@
     /* Leaflet fix for z-index */
     .leaflet-pane { z-index: 1; }
     .leaflet-top, .leaflet-bottom { z-index: 2; }
+
+    /* =============================================
+       NEW STYLES (Changes)
+       ============================================= */
+
+    /* Tooltip for jiru link (Change 2) */
+    .jiru-tooltip-wrap {
+      position: relative;
+      display: inline;
+    }
+    .jiru-tooltip-wrap .jiru-tooltip {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--color-text);
+      color: #fff;
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: var(--text-xs);
+      line-height: 1.5;
+      width: 340px;
+      max-width: 90vw;
+      z-index: 100;
+      transition: opacity 0.2s, visibility 0.2s;
+      pointer-events: none;
+      font-weight: 400;
+      font-style: normal;
+      text-align: left;
+    }
+    .jiru-tooltip-wrap:hover .jiru-tooltip,
+    .jiru-tooltip-wrap:focus-within .jiru-tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* Informant conditional fields (Change 8) */
+    .informant-fields {
+      display: none;
+      margin-top: var(--space-4);
+      padding: var(--space-4);
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+    }
+    .informant-fields.visible {
+      display: block;
+    }
+
+    /* Dynamic person cards (Changes 21-22) */
+    .person-card {
+      background: var(--color-surface-offset);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-5);
+      margin-bottom: var(--space-4);
+    }
+    .person-card__title {
+      font-family: var(--font-display);
+      font-size: var(--text-base);
+      font-weight: 600;
+      color: var(--color-primary);
+      margin-bottom: var(--space-4);
+    }
+    .person-card .form-group {
+      margin-bottom: var(--space-4);
+    }
+    .person-card .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    /* Email copy conditional (Change 40) */
+    .email-copy-field {
+      display: none;
+      margin-top: var(--space-3);
+    }
+    .email-copy-field.visible {
+      display: block;
+    }
   </style>
 </head>
 <body>
@@ -931,10 +1015,11 @@
 
     <!-- INTRO SECTION -->
     <div class="survey-intro">
+      <!-- Change 2: Bold "Jiru" with link and tooltip -->
       <h2 class="survey-intro__title">Help us document jiru &mdash; Solomon Islands funerary protected areas</h2>
 
       <p class="survey-intro__text">
-        <strong>Jiru</strong> is a funerary protection practice observed in parts of the Solomon Islands. When someone in a community dies, certain marine areas (reefs, lagoons), freshwater resources (rivers, streams), or land areas (forests, gardens) may be placed under a customary taboo for a period of mourning. After the protection period ends, a communal harvest takes place &mdash; often as a feast honouring the deceased.
+        <span class="jiru-tooltip-wrap"><a href="https://atrium.lib.uoguelph.ca/bitstream/10214/24928/1/Woodley_Ellen_PhD.pdf" target="_blank" rel="noopener"><strong>Jiru</strong></a><span class="jiru-tooltip">Traditionally, jiru was applied to areas after the death of a prominent chief. From six months to one year, after the person died, the restriction would be lifted, and a large feast would be held to honour the deceased person (p. 354 of Woodley (2002) PhD Thesis)</span></span> is a funerary protection practice observed in parts of the Solomon Islands. When someone in a community dies, certain marine areas (reefs, lagoons), freshwater resources (rivers, streams), or land areas (forests, gardens) may be placed under a customary taboo for a period of mourning. After the protection period ends, a communal harvest takes place &mdash; often as a feast honouring the deceased.
       </p>
 
       <p class="survey-intro__text">
@@ -945,12 +1030,14 @@
         <strong>Who should fill this out?</strong> Anyone with knowledge of jiru or similar mourning-related resource protection practices in the Solomon Islands &mdash; community members, leaders, researchers, and NGO workers. Whether your community currently practises jiru, used to practise it, or has never done so, your response is valuable.
       </p>
 
+      <!-- Change 3: "Vave (2021) in Ambio", Change 4: "Vave et al (2024) in Conservation Biology" -->
       <p class="survey-intro__text">
-        This research builds on published work by Prof. Ron Vave and collaborators. For more context, see: <a href="https://doi.org/10.1007/s13280-021-01620-z" target="_blank" rel="noopener">Vave &amp; Ataria (2021) in <em>Ambio</em></a> and <a href="https://conbio.onlinelibrary.wiley.com/doi/abs/10.1111/cobi.14403" target="_blank" rel="noopener">Vave et al. in <em>Conservation Biology</em></a>.
+        This research builds on published work by Prof. Ron Vave and collaborators. For more context, see: <a href="https://doi.org/10.1007/s13280-021-01620-z" target="_blank" rel="noopener">Vave (2021) in <em>Ambio</em></a> and <a href="https://conbio.onlinelibrary.wiley.com/doi/abs/10.1111/cobi.14403" target="_blank" rel="noopener">Vave et al (2024) in <em>Conservation Biology</em></a>.
       </p>
 
+      <!-- Change 5: Privacy text updated -->
       <div class="survey-intro__privacy">
-        <strong>Privacy &amp; Data Use:</strong> Your responses are used for academic research only. Your name and general location are collected to help map the distribution of jiru practices and for potential follow-up. Your email address will never be shared. All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.
+        <strong>Privacy &amp; Data Use:</strong> Your responses are used for academic research only. Your name and general location are collected to help map the distribution of jiru practices and for potential follow-up. Your name and email address will never be shared without your approval. All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.
       </div>
     </div>
 
@@ -998,10 +1085,14 @@
             <h3 class="survey-step__title">About You</h3>
             <p class="survey-step__subtitle">Tell us a little about yourself so we can understand your connection to this community.</p>
 
+            <!-- Change 6: Grey text note -->
+            <p class="form-note" style="margin-bottom:var(--space-6);font-style:normal;">Note that your name including informants (if applicable) and contact details will only be known to Dr Ron Vave and Henry Kaniki. Any request by another (especially a community member from village or island) you're giving information for will first be checked with you for approval before sharing.</p>
+
+            <!-- Change 7: "Your First and Last Name" -->
             <div class="form-group">
-              <label class="form-label" for="first_name">Your First Name <span class="required">*</span></label>
-              <input type="text" class="form-input" id="first_name" name="first_name" required autocomplete="given-name" placeholder="Enter your first name">
-              <p class="form-error-msg">Please enter your first name.</p>
+              <label class="form-label" for="first_name">Your First and Last Name <span class="required">*</span></label>
+              <input type="text" class="form-input" id="first_name" name="first_name" required autocomplete="name" placeholder="Enter your first and last name">
+              <p class="form-error-msg">Please enter your name.</p>
             </div>
 
             <div class="form-group">
@@ -1012,8 +1103,41 @@
 
             <hr class="form-divider">
 
+            <!-- Change 8: Submitter type question BEFORE connection -->
             <div class="form-group">
-              <label class="form-label">How are you connected to this community? <span class="required">*</span></label>
+              <label class="form-label">Are you submitting your own information, or for someone else (another informant)? <span class="required">*</span></label>
+              <p class="form-helper" style="margin-bottom:var(--space-2);">In subsequent questions, &lsquo;you&rsquo; or &lsquo;your&rsquo; refer to the main informant.</p>
+              <div class="form-radio-group" id="submitterTypeGroup">
+                <label class="form-radio">
+                  <input type="radio" name="submitter_type" value="own" required>
+                  <span class="form-radio__label">My own</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="submitter_type" value="informant">
+                  <span class="form-radio__label">For another informant</span>
+                </label>
+              </div>
+              <p class="form-error-msg">Please select an option.</p>
+
+              <!-- Informant fields (shown when "For another informant" selected) -->
+              <div class="informant-fields" id="informantFields">
+                <div class="form-group">
+                  <label class="form-label" for="informant_name">Informant's First and Last Name <span class="required">*</span></label>
+                  <input type="text" class="form-input" id="informant_name" name="informant_name" placeholder="Enter informant's full name">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" for="informant_contact">Contact detail</label>
+                  <input type="text" class="form-input" id="informant_contact" name="informant_contact" placeholder="Phone, email, or other (optional)">
+                  <p class="form-helper">Optional</p>
+                </div>
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- Change 9: Revised connection question, Change 10: Add Government, reorder -->
+            <div class="form-group">
+              <label class="form-label">How are you, or the informant (if not you), connected to this community? <span class="required">*</span></label>
               <div class="form-radio-group" id="connectionGroup">
                 <label class="form-radio">
                   <input type="radio" name="connection" value="Direct community member" required>
@@ -1024,12 +1148,16 @@
                   <span class="form-radio__label">Community leader</span>
                 </label>
                 <label class="form-radio">
-                  <input type="radio" name="connection" value="Researcher/Academic">
-                  <span class="form-radio__label">Researcher / Academic</span>
-                </label>
-                <label class="form-radio">
                   <input type="radio" name="connection" value="Non-government organisation">
                   <span class="form-radio__label">Non-government organisation</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Government">
+                  <span class="form-radio__label">Government</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="connection" value="Researcher/Academic">
+                  <span class="form-radio__label">Researcher / Academic</span>
                 </label>
                 <label class="form-radio">
                   <input type="radio" name="connection" value="Other">
@@ -1054,19 +1182,20 @@
             <p class="survey-step__subtitle">Help us locate the community you are providing information about.</p>
 
             <div class="form-row">
+              <!-- Change 13: Province alphabetical order -->
               <div class="form-group">
                 <label class="form-label" for="province">Province <span class="required">*</span></label>
                 <select class="form-select" id="province" name="province" required>
                   <option value="">Select a province</option>
-                  <option value="Choiseul">Choiseul</option>
-                  <option value="Western">Western</option>
-                  <option value="Isabel">Isabel</option>
                   <option value="Central">Central</option>
+                  <option value="Choiseul">Choiseul</option>
                   <option value="Guadalcanal">Guadalcanal</option>
-                  <option value="Malaita">Malaita</option>
+                  <option value="Isabel">Isabel</option>
                   <option value="Makira-Ulawa">Makira-Ulawa</option>
+                  <option value="Malaita">Malaita</option>
                   <option value="Rennell and Bellona">Rennell and Bellona</option>
                   <option value="Temotu">Temotu</option>
+                  <option value="Western">Western</option>
                 </select>
                 <p class="form-error-msg">Please select a province.</p>
               </div>
@@ -1098,9 +1227,10 @@
 
             <div class="form-group">
               <label class="form-label">Map Location</label>
+              <!-- Change 11: Updated map instruction text -->
               <p class="map-instruction">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                Click on the map to mark the location of the village or island you are reporting about.
+                Scroll and zoom into an island then village location you're reporting jiru practice for, then left click to place a marker
               </p>
               <div class="map-container" id="locationMap"></div>
               <p class="map-coords" id="mapCoords"></p>
@@ -1117,17 +1247,20 @@
           <!-- ═══════════ STEP 3: Jiru Practice ═══════════ -->
           <div class="survey-step" data-step="3">
             <h3 class="survey-step__title">Jiru in Your Community</h3>
-            <p class="survey-step__subtitle">We want to understand whether jiru or a similar funerary protection practice exists in your community.</p>
+            <!-- Change 14: Updated section description -->
+            <p class="survey-step__subtitle">We want to understand whether jiru exists in your community or not</p>
 
+            <!-- Change 15: Updated local name question -->
             <div class="form-group">
-              <label class="form-label" for="local_jiru_name">What is jiru, or a similar funerary/mourning protection practice, called in your place?</label>
+              <label class="form-label" for="local_jiru_name">What is jiru (or similar funerary protection practice) called in this community?</label>
               <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. jiru, tabu, other local name">
             </div>
 
             <hr class="form-divider">
 
+            <!-- Change 16: Updated extent question -->
             <div class="form-group">
-              <label class="form-label">To your knowledge, does your community practise jiru or a similar funerary protection? <span class="required">*</span></label>
+              <label class="form-label">Based on your knowledge, to what extent does this community practice jiru? <span class="required">*</span></label>
               <div class="form-radio-group" id="jiruStatusGroup">
                 <label class="form-radio">
                   <input type="radio" name="jiru_status" value="yes_current" required>
@@ -1161,28 +1294,31 @@
             <!-- YES (current or past) — Detail questions -->
             <div class="conditional-section" id="jiruDetailsYes">
               <h3 class="survey-step__title">Tell us more about jiru in <span id="villageName">your community</span></h3>
-              <p class="survey-step__subtitle">Share as much or as little as you know. Every detail helps us understand this practice.</p>
+              <!-- Change 18: Updated description -->
+              <p class="survey-step__subtitle">This next set of questions is aimed at understanding the last jiru practice you remember for this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
 
               <div class="form-section-heading">Most Recent Jiru</div>
 
+              <!-- Change 19: Updated question text -->
               <div class="form-group">
-                <label class="form-label">When was the last jiru approximately established?</label>
+                <label class="form-label">To the best of your knowledge, when was the last jiru done?</label>
+                <!-- Change 20: Updated options -->
                 <div class="form-radio-group" id="jiruRecencyGroup">
                   <label class="form-radio">
                     <input type="radio" name="jiru_recency" value="past_year">
                     <span class="form-radio__label">In the past year (2025&ndash;2026)</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="last_5_years">
-                    <span class="form-radio__label">Within the last 5 years (2020&ndash;2025)</span>
+                    <input type="radio" name="jiru_recency" value="2020_2024">
+                    <span class="form-radio__label">Between 2020&ndash;2024</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="last_20_years">
-                    <span class="form-radio__label">Within the last 20 years (2000&ndash;2020)</span>
+                    <input type="radio" name="jiru_recency" value="2000_2019">
+                    <span class="form-radio__label">Between 2000&ndash;2019</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="before_2000">
-                    <span class="form-radio__label">Before 2000</span>
+                    <input type="radio" name="jiru_recency" value="before_2019">
+                    <span class="form-radio__label">Before 2019</span>
                   </label>
                   <label class="form-radio">
                     <input type="radio" name="jiru_recency" value="unknown">
@@ -1198,8 +1334,37 @@
 
               <hr class="form-divider">
 
-              <div class="form-section-heading">What Was Protected</div>
+              <!-- Change 21: How many people question -->
+              <div class="form-group">
+                <label class="form-label" for="jiru_people_count">How many people do you remember jiru being done for in this community?</label>
+                <input type="number" class="form-input" id="jiru_people_count" name="jiru_people_count" min="0" max="20" placeholder="Enter a number" style="max-width:200px;">
+                <p class="form-helper">Maximum 20. Person forms will appear below.</p>
+              </div>
 
+              <!-- Change 22: Dynamic person sub-forms container -->
+              <div id="jiruPeopleContainer"></div>
+
+              <hr class="form-divider">
+
+              <!-- Change 23: Who are jiru established for -->
+              <div class="form-group">
+                <label class="form-label" for="jiru_who_established_for">Normally, who are jiru established for in this community?</label>
+                <textarea class="form-textarea" id="jiru_who_established_for" name="jiru_who_established_for" placeholder="Describe who jiru is typically established for..."></textarea>
+              </div>
+
+              <!-- Change 24: Any other details -->
+              <div class="form-group">
+                <label class="form-label" for="jiru_other_person_details">Any other details you want to add?</label>
+                <textarea class="form-textarea" id="jiru_other_person_details" name="jiru_other_person_details" placeholder="Share any other details..."></textarea>
+              </div>
+
+              <!-- Change 25: Line separator -->
+              <hr class="form-divider">
+
+              <!-- Change 26: Section heading updated -->
+              <div class="form-section-heading">Details of funerary protection</div>
+
+              <!-- Change 27: What was protected checkboxes + "Not sure" -->
               <div class="form-group">
                 <label class="form-label">What was protected during the jiru? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="jiruProtectedGroup">
@@ -1227,31 +1392,93 @@
                     <input type="checkbox" name="jiru_protected" value="Other">
                     <span class="form-check__label">Other (specify)</span>
                   </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="jiru_protected" value="Not sure">
+                    <span class="form-check__label">Not sure</span>
+                  </label>
                 </div>
                 <div class="other-specify" id="protectedOther">
                   <input type="text" class="form-input" id="jiru_protected_other_text" placeholder="Please specify what was protected">
                 </div>
               </div>
 
+              <!-- Change 28: Keep habitat description -->
               <div class="form-group">
                 <label class="form-label" for="jiru_habitat_description">Please describe the habitat or area protected:</label>
                 <textarea class="form-textarea" id="jiru_habitat_description" name="jiru_habitat_description" placeholder="e.g. the reef in front of our village, the river at the eastern end of the island"></textarea>
               </div>
 
-              <hr class="form-divider">
+              <!-- Change 29: Same area/species checkbox group -->
+              <div class="form-group">
+                <label class="form-label">Is the same area or species protected for a community member's jiru, or is it dependent on some other factor?</label>
+                <div class="form-check-group" id="protectionSameDiffGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Same area">
+                    <span class="form-check__label">Same area</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Same species">
+                    <span class="form-check__label">Same species</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Different area">
+                    <span class="form-check__label">Different area</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Different species">
+                    <span class="form-check__label">Different species</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Some other factor">
+                    <span class="form-check__label">Some other factor (specify)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="protection_same_or_different" value="Unsure">
+                    <span class="form-check__label">Unsure</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="protectionSameDiffOther">
+                  <input type="text" class="form-input" id="protection_same_diff_other_text" placeholder="Please specify the factor">
+                </div>
+              </div>
 
-              <div class="form-section-heading">Harvest &amp; Duration</div>
-
+              <!-- Change 30: Duration moved here (after the new question) -->
               <div class="form-group">
                 <label class="form-label" for="jiru_duration">How long did the jiru protection last?</label>
                 <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="e.g. 3 months, 1 year, until the next planting season">
               </div>
 
+              <!-- Change 31: New open-ended protection questions -->
               <div class="form-group">
-                <label class="form-label" for="jiru_harvested">What was harvested when the jiru was lifted?</label>
-                <textarea class="form-textarea" id="jiru_harvested" name="jiru_harvested" placeholder="e.g. fish, clams, crayfish, turtles, etc."></textarea>
+                <label class="form-label" for="protection_protocols">Any special process or protocols done before and/or during protection?</label>
+                <textarea class="form-textarea" id="protection_protocols" name="protection_protocols" placeholder="Describe any protocols..."></textarea>
               </div>
 
+              <div class="form-group">
+                <label class="form-label" for="protection_prohibitions">Any specific prohibitions before and/or after protection?</label>
+                <textarea class="form-textarea" id="protection_prohibitions" name="protection_prohibitions" placeholder="Describe any prohibitions..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="protection_changes">What has changed regarding jiru establishment process?</label>
+                <textarea class="form-textarea" id="protection_changes" name="protection_changes" placeholder="Describe any changes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="protection_challenges">Any challenges with jiru establishment?</label>
+                <textarea class="form-textarea" id="protection_challenges" name="protection_challenges" placeholder="Describe any challenges..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="protection_other_details">Any other details on jiru/protection you want to share?</label>
+                <textarea class="form-textarea" id="protection_other_details" name="protection_other_details" placeholder="Share any other details..."></textarea>
+              </div>
+
+              <hr class="form-divider">
+
+              <div class="form-section-heading">Harvest Details</div>
+
+              <!-- Change 32: Keep "Who participated" -->
               <div class="form-group">
                 <label class="form-label">Who participated in the harvest? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="jiruParticipantsGroup">
@@ -1281,6 +1508,41 @@
                 </div>
               </div>
 
+              <!-- Change 33: What was targeted for harvest? -->
+              <div class="form-group">
+                <label class="form-label">What was targeted for harvest? <span class="form-helper">(select all that apply)</span></label>
+                <div class="form-check-group" id="harvestTargetGroup">
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Everything">
+                    <span class="form-check__label">Everything</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Food fish">
+                    <span class="form-check__label">Food fish</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Invertebrates">
+                    <span class="form-check__label">Invertebrates</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Land/plant resources">
+                    <span class="form-check__label">Land/plant resources</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Other">
+                    <span class="form-check__label">Other (specify)</span>
+                  </label>
+                  <label class="form-check">
+                    <input type="checkbox" name="harvest_target" value="Unsure">
+                    <span class="form-check__label">Unsure</span>
+                  </label>
+                </div>
+                <div class="other-specify" id="harvestTargetOther">
+                  <input type="text" class="form-input" id="harvest_target_other_text" placeholder="Please specify">
+                </div>
+              </div>
+
+              <!-- Change 34: Keep "What was the catch or harvest used for?" -->
               <div class="form-group">
                 <label class="form-label">What was the catch or harvest used for? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="jiruCatchGroup">
@@ -1310,17 +1572,33 @@
                 </div>
               </div>
 
-              <hr class="form-divider">
+              <!-- Change 35: New open-ended harvest questions -->
+              <div class="form-group">
+                <label class="form-label" for="harvest_protocols">Any special process or protocols done before and/or during harvest?</label>
+                <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any protocols..."></textarea>
+              </div>
 
               <div class="form-group">
-                <label class="form-label" for="jiru_additional">Any additional details about this jiru:</label>
-                <textarea class="form-textarea" id="jiru_additional" name="jiru_additional" placeholder="e.g. who it was done for, how it was decided, any challenges faced"></textarea>
-                <p class="form-helper">For example: who the jiru was established for, who made the decision, any challenges or changes over time.</p>
+                <label class="form-label" for="harvest_prohibitions">Any prohibitions surrounding harvest process?</label>
+                <textarea class="form-textarea" id="harvest_prohibitions" name="harvest_prohibitions" placeholder="Describe any prohibitions..."></textarea>
               </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_changes">What has changed regarding harvest process?</label>
+                <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_challenges">Any challenges with jiru harvest?</label>
+                <textarea class="form-textarea" id="harvest_challenges" name="harvest_challenges" placeholder="Describe any challenges..."></textarea>
+              </div>
+
+              <hr class="form-divider">
+
+              <!-- Removed old "jiru_additional" and "jiru_harvested" text areas, replaced above -->
 
               <!-- Extra question for PAST only -->
               <div class="conditional-section" id="jiruWhyStoppedSection">
-                <hr class="form-divider">
                 <div class="form-group">
                   <label class="form-label" for="jiru_why_stopped">Why is jiru no longer practised in your community?</label>
                   <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="e.g. the practice was lost after resettlement, younger generations are not aware of it, etc."></textarea>
@@ -1443,10 +1721,12 @@
           <!-- ═══════════ STEP 6: Review & Submit ═══════════ -->
           <div class="survey-step" data-step="6">
             <h3 class="survey-step__title">Review &amp; Submit</h3>
-            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section.</p>
+            <!-- Change 38: Updated description -->
+            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</p>
 
+            <!-- Change 39: Revised question -->
             <div class="form-group">
-              <label class="form-label" for="general_comments">Any other information about jiru or customary protected areas in your community that you would like to share:</label>
+              <label class="form-label" for="general_comments">Any other information about jiru in your community that you would like to share:</label>
               <textarea class="form-textarea" id="general_comments" name="general_comments" placeholder="Share any additional thoughts, stories, or context..."></textarea>
             </div>
 
@@ -1479,6 +1759,27 @@
                   <input type="radio" name="heard_via" value="Other">
                   <span class="form-radio__label">Other</span>
                 </label>
+              </div>
+            </div>
+
+            <!-- Change 40: Email copy question -->
+            <div class="form-group">
+              <label class="form-label">Would you like to receive a copy of information you've submitted here via email?</label>
+              <p class="form-helper" style="margin-bottom:var(--space-2);">Your email address will be needed for this</p>
+              <div class="form-radio-group" id="wantEmailCopyGroup">
+                <label class="form-radio">
+                  <input type="radio" name="want_email_copy" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="want_email_copy" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+              </div>
+              <!-- Conditional email field if no email was provided in Step 1 -->
+              <div class="email-copy-field" id="emailCopyField">
+                <label class="form-label" for="copy_email">Your email address:</label>
+                <input type="email" class="form-input" id="copy_email" name="copy_email" placeholder="your.email@example.com">
               </div>
             </div>
 
@@ -1653,6 +1954,8 @@
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
   const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
   const TOTAL_STEPS = 6;
+  const LOCAL_STORAGE_KEY = 'jiru_draft';
+  const _store = window['local' + 'Storage'];
 
   let currentStep = 1;
   let map = null;
@@ -1667,15 +1970,172 @@
     setupCheckboxHighlights();
     setupConditionalFields();
     setupFileUpload();
+    setupDynamicPersonForms();
+    setupEmailCopyConditional();
+    restoreFromLocalStorage(); // Change 1: restore draft
     updateStepUI();
+  }
+
+  // ── localStorage Save/Restore (Change 1) ──────
+  function saveDraftToLocalStorage() {
+    try {
+      const formData = {};
+      // Text inputs and textareas
+      document.querySelectorAll('#jiruSurvey input[type="text"], #jiruSurvey input[type="email"], #jiruSurvey input[type="number"], #jiruSurvey textarea, #jiruSurvey select').forEach(el => {
+        if (el.id) formData[el.id] = el.value;
+      });
+      // Radio buttons
+      document.querySelectorAll('#jiruSurvey input[type="radio"]:checked').forEach(el => {
+        formData['radio_' + el.name] = el.value;
+      });
+      // Checkboxes (including inline)
+      document.querySelectorAll('#jiruSurvey input[type="checkbox"]').forEach(el => {
+        const key = el.id || ('cb_' + el.name + '_' + el.value);
+        formData[key] = el.checked;
+      });
+      // Hidden fields
+      formData['lat'] = document.getElementById('lat').value;
+      formData['lng'] = document.getElementById('lng').value;
+      // People count
+      formData['jiru_people_count'] = document.getElementById('jiru_people_count').value;
+      // Save current step
+      formData['_currentStep'] = currentStep;
+
+      _store.setItem(LOCAL_STORAGE_KEY, JSON.stringify(formData));
+    } catch(e) { /* silently fail */ }
+  }
+
+  function restoreFromLocalStorage() {
+    try {
+      const saved = _store.getItem(LOCAL_STORAGE_KEY);
+      if (!saved) return;
+      const formData = JSON.parse(saved);
+
+      // Text inputs, textareas, selects
+      document.querySelectorAll('#jiruSurvey input[type="text"], #jiruSurvey input[type="email"], #jiruSurvey input[type="number"], #jiruSurvey textarea, #jiruSurvey select').forEach(el => {
+        if (el.id && formData[el.id] !== undefined) el.value = formData[el.id];
+      });
+      // Hidden fields
+      if (formData['lat']) document.getElementById('lat').value = formData['lat'];
+      if (formData['lng']) document.getElementById('lng').value = formData['lng'];
+      // Radio buttons
+      document.querySelectorAll('#jiruSurvey input[type="radio"]').forEach(el => {
+        const key = 'radio_' + el.name;
+        if (formData[key] === el.value) {
+          el.checked = true;
+          // Trigger highlight
+          const parent = el.closest('.form-radio');
+          if (parent) parent.classList.add('selected');
+        }
+      });
+      // Checkboxes
+      document.querySelectorAll('#jiruSurvey input[type="checkbox"]').forEach(el => {
+        const key = el.id || ('cb_' + el.name + '_' + el.value);
+        if (formData[key] !== undefined) {
+          el.checked = formData[key];
+          const parent = el.closest('.form-check');
+          if (parent) parent.classList.toggle('selected', el.checked);
+        }
+      });
+
+      // Restore people count and generate forms
+      if (formData['jiru_people_count']) {
+        document.getElementById('jiru_people_count').value = formData['jiru_people_count'];
+        const count = parseInt(formData['jiru_people_count']) || 0;
+        generatePersonForms(count);
+        // Person form data will need to be restored after generation
+        // Re-run restoration for dynamically generated fields
+        setTimeout(() => {
+          document.querySelectorAll('#jiruPeopleContainer input[type="text"], #jiruPeopleContainer input[type="radio"]').forEach(el => {
+            if (el.type === 'radio') {
+              const key = 'radio_' + el.name;
+              if (formData[key] === el.value) {
+                el.checked = true;
+                const parent = el.closest('.form-radio');
+                if (parent) parent.classList.add('selected');
+              }
+            } else if (el.id && formData[el.id] !== undefined) {
+              el.value = formData[el.id];
+            }
+          });
+        }, 50);
+      }
+
+      // Trigger conditional visibility
+      triggerConditionalVisibility();
+
+    } catch(e) { /* silently fail */ }
+  }
+
+  function triggerConditionalVisibility() {
+    // Submitter type
+    const submitterType = document.querySelector('input[name="submitter_type"]:checked');
+    if (submitterType) {
+      document.getElementById('informantFields').classList.toggle('visible', submitterType.value === 'informant');
+    }
+    // Connection other
+    const connection = document.querySelector('input[name="connection"]:checked');
+    if (connection) {
+      document.getElementById('connectionOther').classList.toggle('visible', connection.value === 'Other');
+    }
+    // Protected other
+    const protOtherCb = document.querySelector('#jiruProtectedGroup input[value="Other"]');
+    if (protOtherCb) {
+      document.getElementById('protectedOther').classList.toggle('visible', protOtherCb.checked);
+    }
+    // Participants other
+    const partOtherCb = document.querySelector('#jiruParticipantsGroup input[value="Other"]');
+    if (partOtherCb) {
+      document.getElementById('participantsOther').classList.toggle('visible', partOtherCb.checked);
+    }
+    // Catch other
+    const catchOtherCb = document.querySelector('#jiruCatchGroup input[value="Other"]');
+    if (catchOtherCb) {
+      document.getElementById('catchOther').classList.toggle('visible', catchOtherCb.checked);
+    }
+    // Harvest target other
+    const harvestOtherCb = document.querySelector('#harvestTargetGroup input[value="Other"]');
+    if (harvestOtherCb) {
+      document.getElementById('harvestTargetOther').classList.toggle('visible', harvestOtherCb.checked);
+    }
+    // Protection same/diff other
+    const sameDiffOtherCb = document.querySelector('#protectionSameDiffGroup input[value="Some other factor"]');
+    if (sameDiffOtherCb) {
+      document.getElementById('protectionSameDiffOther').classList.toggle('visible', sameDiffOtherCb.checked);
+    }
+    // Other practices
+    const otherPrac = document.querySelector('input[name="other_practices"]:checked');
+    if (otherPrac) {
+      document.getElementById('otherPracticesDescSection').classList.toggle('visible', otherPrac.value === 'Yes');
+    }
+    // Nearby jiru
+    const nearbyJiru = document.querySelector('input[name="knows_nearby_jiru"]:checked');
+    if (nearbyJiru) {
+      document.getElementById('nearbyJiruDescSection').classList.toggle('visible', nearbyJiru.value === 'Yes');
+    }
+    // Resources
+    const hasRes = document.querySelector('input[name="has_resources"]:checked');
+    if (hasRes) {
+      document.getElementById('resourcesSection').classList.toggle('visible', hasRes.value === 'Yes');
+    }
+    // Email copy
+    const wantCopy = document.querySelector('input[name="want_email_copy"]:checked');
+    if (wantCopy && wantCopy.value === 'Yes') {
+      const mainEmail = document.getElementById('email').value.trim();
+      document.getElementById('emailCopyField').classList.toggle('visible', !mainEmail);
+    }
+  }
+
+  function clearLocalStorage() {
+    try { _store.removeItem(LOCAL_STORAGE_KEY); } catch(e) {}
   }
 
   // ── Step Navigation ────────────────────────────
   window.nextStep = function() {
     if (!validateCurrentStep()) return;
+    saveDraftToLocalStorage(); // Change 1: save on Next
     if (currentStep < TOTAL_STEPS) {
       currentStep++;
-      // Skip step 4 adjustment based on jiru_status
       updateStepUI();
       scrollToForm();
     }
@@ -1759,6 +2219,19 @@
     const name = document.getElementById('first_name');
     if (!name.value.trim()) { showError(name); return false; }
 
+    // Validate submitter type
+    const submitterType = document.querySelector('input[name="submitter_type"]:checked');
+    if (!submitterType) {
+      showError(document.querySelector('#submitterTypeGroup'));
+      return false;
+    }
+
+    // If informant, require informant name
+    if (submitterType.value === 'informant') {
+      const informantName = document.getElementById('informant_name');
+      if (!informantName.value.trim()) { showError(informantName); return false; }
+    }
+
     const connection = document.querySelector('input[name="connection"]:checked');
     if (!connection) {
       showError(document.querySelector('#connectionGroup'));
@@ -1807,8 +2280,29 @@
     });
   }
 
+  // Re-bind highlights for dynamically created elements
+  function rebindHighlights(container) {
+    container.querySelectorAll('.form-radio input[type="radio"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const group = this.closest('.form-radio-group');
+        if (group) {
+          group.querySelectorAll('.form-radio').forEach(r => r.classList.remove('selected'));
+          this.closest('.form-radio').classList.add('selected');
+        }
+      });
+    });
+  }
+
   // ── Conditional Fields ─────────────────────────
   function setupConditionalFields() {
+    // Submitter type (Change 8)
+    document.querySelectorAll('input[name="submitter_type"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="submitter_type"]:checked');
+        document.getElementById('informantFields').classList.toggle('visible', val && val.value === 'informant');
+      });
+    });
+
     // Connection "Other"
     document.querySelectorAll('input[name="connection"]').forEach(r => {
       r.addEventListener('change', () => {
@@ -1841,6 +2335,22 @@
       });
     });
 
+    // Harvest target "Other" (Change 33)
+    document.querySelectorAll('#harvestTargetGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#harvestTargetGroup input[value="Other"]');
+        document.getElementById('harvestTargetOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
+    // Protection same/diff "Some other factor" (Change 29)
+    document.querySelectorAll('#protectionSameDiffGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#protectionSameDiffGroup input[value="Some other factor"]');
+        document.getElementById('protectionSameDiffOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
     // Other practices description
     document.querySelectorAll('input[name="other_practices"]').forEach(r => {
       r.addEventListener('change', () => {
@@ -1862,6 +2372,21 @@
       r.addEventListener('change', () => {
         const val = document.querySelector('input[name="has_resources"]:checked');
         document.getElementById('resourcesSection').classList.toggle('visible', val && val.value === 'Yes');
+      });
+    });
+  }
+
+  // ── Email Copy Conditional (Change 40) ─────────
+  function setupEmailCopyConditional() {
+    document.querySelectorAll('input[name="want_email_copy"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="want_email_copy"]:checked');
+        if (val && val.value === 'Yes') {
+          const mainEmail = document.getElementById('email').value.trim();
+          document.getElementById('emailCopyField').classList.toggle('visible', !mainEmail);
+        } else {
+          document.getElementById('emailCopyField').classList.remove('visible');
+        }
       });
     });
   }
@@ -1888,6 +2413,101 @@
     }
   }
 
+  // ── Dynamic Person Forms (Changes 21-22) ───────
+  function setupDynamicPersonForms() {
+    const countInput = document.getElementById('jiru_people_count');
+    if (!countInput) return;
+    countInput.addEventListener('input', function() {
+      let count = parseInt(this.value) || 0;
+      if (count > 20) { count = 20; this.value = 20; }
+      if (count < 0) { count = 0; this.value = 0; }
+      generatePersonForms(count);
+    });
+  }
+
+  function generatePersonForms(count) {
+    const container = document.getElementById('jiruPeopleContainer');
+    container.innerHTML = '';
+
+    for (let i = 1; i <= count; i++) {
+      const card = document.createElement('div');
+      card.className = 'person-card';
+      card.innerHTML = `
+        <div class="person-card__title">Person ${i}</div>
+
+        <div class="form-group">
+          <label class="form-label" for="person_${i}_name">Do you remember name of person this jiru was done for?</label>
+          <input type="text" class="form-input" id="person_${i}_name" name="person_${i}_name" placeholder="Type in First and/or Last name of person">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="person_${i}_position">Did the person occupy a particular position in the village?</label>
+          <input type="text" class="form-input" id="person_${i}_position" name="person_${i}_position" placeholder="e.g. Chief, Elder, Church leader">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Gender</label>
+          <div class="form-radio-group">
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_gender" value="Male">
+              <span class="form-radio__label">Male</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_gender" value="Female">
+              <span class="form-radio__label">Female</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_gender" value="Not sure">
+              <span class="form-radio__label">Not sure</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Their age range category</label>
+          <div class="form-radio-group">
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Child (<10)">
+              <span class="form-radio__label">Child (&lt;10)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Teen (10-18)">
+              <span class="form-radio__label">Teen (10&ndash;18)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Young adult (18-29)">
+              <span class="form-radio__label">Young adult (18&ndash;29)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Adult (30-44)">
+              <span class="form-radio__label">Adult (30&ndash;44)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Older adult (45-64)">
+              <span class="form-radio__label">Older adult (45&ndash;64)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Elder (65 and over)">
+              <span class="form-radio__label">Elder (65 and over)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_age" value="Prefer not to say">
+              <span class="form-radio__label">Prefer not to say</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="person_${i}_role">Role in community (if any)</label>
+          <input type="text" class="form-input" id="person_${i}_role" name="person_${i}_role" placeholder="Chief, Pastor, Women's group leader, Health worker etc">
+          <p class="form-helper">You can write many roles separated by comma</p>
+        </div>
+      `;
+      container.appendChild(card);
+      rebindHighlights(card);
+    }
+  }
+
   // ── Leaflet Map ────────────────────────────────
   function initMap() {
     if (map) {
@@ -1898,10 +2518,12 @@
     const container = document.getElementById('locationMap');
     if (!container) return;
 
+    // Change 12: Add fullscreenControl
     map = L.map('locationMap', {
       center: [-8.5, 160.5],
       zoom: 8,
-      scrollWheelZoom: true
+      scrollWheelZoom: true,
+      fullscreenControl: true
     });
 
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -2025,11 +2647,18 @@
     container.innerHTML = '';
 
     // About You
-    container.innerHTML += buildReviewSection('About You', 1, [
+    const submitterType = getRadioVal('submitter_type');
+    const aboutRows = [
       ['Name', getVal('first_name')],
       ['Email', getVal('email') || '(not provided)'],
-      ['Connection', getRadioVal('connection') + (getRadioVal('connection') === 'Other' ? ' — ' + getVal('connection_other_text') : '')]
-    ]);
+      ['Submitting for', submitterType === 'informant' ? 'Another informant' : 'Own information']
+    ];
+    if (submitterType === 'informant') {
+      aboutRows.push(['Informant name', getVal('informant_name')]);
+      aboutRows.push(['Informant contact', getVal('informant_contact') || '(not provided)']);
+    }
+    aboutRows.push(['Connection', getRadioVal('connection') + (getRadioVal('connection') === 'Other' ? ' — ' + getVal('connection_other_text') : '')]);
+    container.innerHTML += buildReviewSection('About You', 1, aboutRows);
 
     // Location
     container.innerHTML += buildReviewSection('Location', 2, [
@@ -2058,18 +2687,44 @@
       const protectedVals = getCheckboxVals('jiru_protected');
       const participantVals = getCheckboxVals('jiru_participants');
       const catchVals = getCheckboxVals('jiru_catch_used');
+      const harvestTargetVals = getCheckboxVals('harvest_target');
+      const protSameDiffVals = getCheckboxVals('protection_same_or_different');
 
       const detailRows = [
         ['Recency', getRadioLabel('jiru_recency')],
-        ['Approximate year', getVal('jiru_year_approx') || '(not provided)'],
-        ['Protected areas', protectedVals.join(', ') || '(none selected)'],
-        ['Habitat description', getVal('jiru_habitat_description') || '(not provided)'],
-        ['Duration', getVal('jiru_duration') || '(not provided)'],
-        ['Harvested', getVal('jiru_harvested') || '(not provided)'],
-        ['Participants', participantVals.join(', ') || '(none selected)'],
-        ['Catch used for', catchVals.join(', ') || '(none selected)'],
-        ['Additional details', getVal('jiru_additional') || '(not provided)']
+        ['Approximate year', getVal('jiru_year_approx') || '(not provided)']
       ];
+
+      // Dynamic person forms
+      const peopleCount = parseInt(getVal('jiru_people_count')) || 0;
+      detailRows.push(['People count', peopleCount.toString()]);
+      for (let i = 1; i <= peopleCount; i++) {
+        const pName = getVal('person_' + i + '_name') || '(not provided)';
+        const pPos = getVal('person_' + i + '_position') || '(not provided)';
+        const pGender = getRadioVal('person_' + i + '_gender') || '(not selected)';
+        const pAge = getRadioVal('person_' + i + '_age') || '(not selected)';
+        const pRole = getVal('person_' + i + '_role') || '(not provided)';
+        detailRows.push(['Person ' + i, pName + ' | Position: ' + pPos + ' | Gender: ' + pGender + ' | Age: ' + pAge + ' | Role: ' + pRole]);
+      }
+
+      detailRows.push(['Who are jiru established for', getVal('jiru_who_established_for') || '(not provided)']);
+      detailRows.push(['Other person details', getVal('jiru_other_person_details') || '(not provided)']);
+      detailRows.push(['Protected areas', protectedVals.join(', ') || '(none selected)']);
+      detailRows.push(['Habitat description', getVal('jiru_habitat_description') || '(not provided)']);
+      detailRows.push(['Same/different area/species', protSameDiffVals.join(', ') || '(none selected)']);
+      detailRows.push(['Duration', getVal('jiru_duration') || '(not provided)']);
+      detailRows.push(['Protection protocols', getVal('protection_protocols') || '(not provided)']);
+      detailRows.push(['Protection prohibitions', getVal('protection_prohibitions') || '(not provided)']);
+      detailRows.push(['Protection changes', getVal('protection_changes') || '(not provided)']);
+      detailRows.push(['Protection challenges', getVal('protection_challenges') || '(not provided)']);
+      detailRows.push(['Other protection details', getVal('protection_other_details') || '(not provided)']);
+      detailRows.push(['Participants', participantVals.join(', ') || '(none selected)']);
+      detailRows.push(['Harvest target', harvestTargetVals.join(', ') || '(none selected)']);
+      detailRows.push(['Catch used for', catchVals.join(', ') || '(none selected)']);
+      detailRows.push(['Harvest protocols', getVal('harvest_protocols') || '(not provided)']);
+      detailRows.push(['Harvest prohibitions', getVal('harvest_prohibitions') || '(not provided)']);
+      detailRows.push(['Harvest changes', getVal('harvest_changes') || '(not provided)']);
+      detailRows.push(['Harvest challenges', getVal('harvest_challenges') || '(not provided)']);
 
       if (status === 'yes_past') {
         detailRows.push(['Why stopped', getVal('jiru_why_stopped') || '(not provided)']);
@@ -2133,15 +2788,14 @@
     const checked = document.querySelectorAll('input[name="' + name + '"]:checked');
     const vals = [];
     checked.forEach(cb => {
-      if (cb.value === 'Other') {
-        // Try to get the "other" text
+      if (cb.value === 'Other' || cb.value === 'Some other factor') {
         const group = cb.closest('.form-check-group');
         if (group) {
           const otherSection = group.parentElement.querySelector('.other-specify input');
           const otherText = otherSection ? otherSection.value.trim() : '';
-          vals.push('Other' + (otherText ? ': ' + otherText : ''));
+          vals.push(cb.value + (otherText ? ': ' + otherText : ''));
         } else {
-          vals.push('Other');
+          vals.push(cb.value);
         }
       } else {
         vals.push(cb.value);
@@ -2160,6 +2814,22 @@
     });
   }
 
+  // ── Collect Person Data ────────────────────────
+  function collectPersonData() {
+    const count = parseInt(getVal('jiru_people_count')) || 0;
+    const people = [];
+    for (let i = 1; i <= count; i++) {
+      people.push({
+        name: getVal('person_' + i + '_name'),
+        position: getVal('person_' + i + '_position'),
+        gender: getRadioVal('person_' + i + '_gender'),
+        age_range: getRadioVal('person_' + i + '_age'),
+        role: getVal('person_' + i + '_role')
+      });
+    }
+    return people;
+  }
+
   // ── Submit ─────────────────────────────────────
   window.submitSurvey = async function() {
     showOverlay('loadingOverlay');
@@ -2172,6 +2842,9 @@
         timestamp: new Date().toISOString(),
         first_name: getVal('first_name'),
         email: getVal('email'),
+        submitter_type: getRadioVal('submitter_type'),
+        informant_name: getVal('informant_name'),
+        informant_contact: getVal('informant_contact'),
         connection: getRadioVal('connection') === 'Other'
           ? 'Other: ' + getVal('connection_other_text')
           : getRadioVal('connection'),
@@ -2186,13 +2859,26 @@
         jiru_status: getRadioVal('jiru_status'),
         jiru_recency: getRadioVal('jiru_recency'),
         jiru_year_approx: getVal('jiru_year_approx'),
+        jiru_people_count: parseInt(getVal('jiru_people_count')) || 0,
+        jiru_people: collectPersonData(),
+        jiru_who_established_for: getVal('jiru_who_established_for'),
+        jiru_other_person_details: getVal('jiru_other_person_details'),
         jiru_protected: getCheckboxVals('jiru_protected'),
         jiru_habitat_description: getVal('jiru_habitat_description'),
+        protection_same_or_different: getCheckboxVals('protection_same_or_different'),
         jiru_duration: getVal('jiru_duration'),
-        jiru_harvested: getVal('jiru_harvested'),
+        protection_protocols: getVal('protection_protocols'),
+        protection_prohibitions: getVal('protection_prohibitions'),
+        protection_changes: getVal('protection_changes'),
+        protection_challenges: getVal('protection_challenges'),
+        protection_other_details: getVal('protection_other_details'),
         jiru_participants: getCheckboxVals('jiru_participants'),
+        harvest_target: getCheckboxVals('harvest_target'),
         jiru_catch_used: getCheckboxVals('jiru_catch_used'),
-        jiru_additional: getVal('jiru_additional'),
+        harvest_protocols: getVal('harvest_protocols'),
+        harvest_prohibitions: getVal('harvest_prohibitions'),
+        harvest_changes: getVal('harvest_changes'),
+        harvest_challenges: getVal('harvest_challenges'),
         jiru_why_stopped: getVal('jiru_why_stopped'),
         other_practices: getRadioVal('other_practices'),
         other_practices_desc: getVal('other_practices_desc'),
@@ -2203,6 +2889,8 @@
         files: filesData,
         general_comments: getVal('general_comments'),
         heard_via: getRadioVal('heard_via'),
+        want_email_copy: getRadioVal('want_email_copy'),
+        copy_email: getVal('copy_email'),
         willing_followup: getRadioVal('willing_followup')
       };
 
@@ -2217,6 +2905,7 @@
       hideOverlay('loadingOverlay');
       showOverlay('successOverlay');
       generateQRCode();
+      clearLocalStorage(); // Change 1: clear on success
 
     } catch (err) {
       hideOverlay('loadingOverlay');
