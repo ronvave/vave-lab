@@ -726,7 +726,7 @@ function renderDashboard(data) {
   const provincesWithData = data.provinces.filter(p => p.count > 0).length;
   const jiruConfirmed = data.provinces.reduce((s, p) => s + p.jiru_yes, 0);
   const updated = data.last_updated ? new Date(data.last_updated) : null;
-  const dateStr = updated.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const dateStr = updated ? updated.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   document.getElementById('stat-total').textContent = data.total_submissions;
   document.getElementById('stat-provinces').textContent = provincesWithData + ' of 9';
