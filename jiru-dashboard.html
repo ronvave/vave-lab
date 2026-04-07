@@ -350,6 +350,44 @@
       text-underline-offset: 2px;
     }
 
+    /* Jiru tooltip */
+    .jiru-tooltip-link {
+      position: relative;
+      display: inline;
+      text-decoration: underline;
+      text-decoration-style: dotted;
+      text-underline-offset: 3px;
+      cursor: help;
+    }
+    .jiru-tooltip {
+      display: none;
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 0;
+      width: 320px;
+      background: #002a30;
+      color: #fff;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      padding: 0.7rem 0.9rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      z-index: 100;
+      pointer-events: none;
+    }
+    .jiru-tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 16px;
+      border: 6px solid transparent;
+      border-top-color: #002a30;
+    }
+    .jiru-tooltip-link:hover .jiru-tooltip,
+    .jiru-tooltip-link:focus .jiru-tooltip {
+      display: block;
+    }
+
     /* Toast */
     .toast {
       position: fixed;
@@ -543,10 +581,10 @@
       <h2 class="section-title" id="about-heading">About the Jiru Research</h2>
       <div class="about-content">
         <p>
-          <strong>Jiru</strong> is an indigenous funerary practice found in parts of the Solomon Islands. When a person passes away, their community declares a protected area — which may include marine reefs, freshwater systems, or terrestrial forests — during the period of mourning. These culturally-governed closures can last from several months to many years, effectively creating temporary or semi-permanent protected areas with significant conservation benefits.
+          <a href="https://atrium.lib.uoguelph.ca/bitstream/10214/24928/1/Woodley_Ellen_PhD.pdf" target="_blank" rel="noopener" class="jiru-tooltip-link"><strong>Jiru</strong><span class="jiru-tooltip">Traditionally, jiru was applied to areas after the death of a prominent chief. From six months to one year, after the person died, the restriction would be lifted, and a large feast would be held to honour the deceased person (p. 354 of Woodley (2002) PhD Thesis).</span></a> is an indigenous funerary practice found in parts of the Solomon Islands. When a person passes away, their community declares a protected area during the period of mourning — which may include marine areas, freshwater systems, and/or terrestrial areas. These culturally-governed closures can last from several months to a year, effectively creating temporary or semi-permanent protected areas with significant conservation benefits.
         </p>
         <p>
-          This research, led by <strong>Prof. Ron Vave</strong> at the University of Hawaiʻi at Mānoa, seeks to document and map jiru practices across all provinces of the Solomon Islands. By understanding where jiru is still actively practiced, where it existed in the past, and where it has never been observed, we can better appreciate the role of indigenous governance systems in marine and terrestrial conservation. The data shown on this dashboard comes from community surveys — if you or anyone you know is from the Solomon Islands, please <a href="jiru-survey.html">take the survey</a> to help build a more complete picture.
+          This research, led by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Dr Ron Vave</a> at the University of Hawaiʻi at Manoa and Henry Kaniki of <a href="https://www.wwfpacific.org/priority_places/solomon_islands/" target="_blank" rel="noopener">WWF Solomon Islands</a>, seeks to document and map jiru practices across all provinces of the Solomon Islands. By better understanding the extent to which jiru is practiced including the benefits and the challenges it faces, we can better appreciate the role and benefits of indigenous governance systems in marine and terrestrial conservation. The data shown on this dashboard comes from community surveys — if you or anyone you know is from the Solomon Islands, please <a href="https://ronvave.github.io/vave-lab/jiru-survey.html">take the survey</a> to help build a more complete picture.
         </p>
       </div>
     </div>
