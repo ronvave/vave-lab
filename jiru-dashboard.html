@@ -681,7 +681,7 @@
 
 <script>
 // ===== CONFIG =====
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
 const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
 
 // ===== DEMO DATA =====
@@ -780,7 +780,8 @@ function renderDashboard(data) {
     missingEl.appendChild(tag);
   });
 
-  // Map
+  // Map — pass markers from API data
+  window._mapMarkerData = data.markers || [];
   initMap();
 }
 
