@@ -601,19 +601,20 @@ const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
 
 // ===== DEMO DATA =====
 const DEMO_DATA = {
-  total_submissions: 12,
-  last_updated: '2026-04-06T10:00:00Z',
+  total_submissions: 0,
+  jiru_confirmed: 0,
   provinces: [
-    { name: 'Choiseul',           count: 2, jiru_yes: 2, jiru_past: 0, jiru_no: 0 },
-    { name: 'Western',            count: 4, jiru_yes: 2, jiru_past: 2, jiru_no: 0 },
-    { name: 'Isabel',             count: 1, jiru_yes: 0, jiru_past: 0, jiru_no: 1 },
-    { name: 'Central',            count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
-    { name: 'Guadalcanal',        count: 2, jiru_yes: 0, jiru_past: 0, jiru_no: 2 },
-    { name: 'Malaita',            count: 1, jiru_yes: 0, jiru_past: 0, jiru_no: 1 },
-    { name: 'Makira-Ulawa',       count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Choiseul',            count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Western',             count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Isabel',              count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Central',             count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Guadalcanal',         count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Malaita',             count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
+    { name: 'Makira-Ulawa',        count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
     { name: 'Rennell and Bellona', count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 },
-    { name: 'Temotu',             count: 1, jiru_yes: 0, jiru_past: 1, jiru_no: 0 }
-  ]
+    { name: 'Temotu',              count: 0, jiru_yes: 0, jiru_past: 0, jiru_no: 0 }
+  ],
+  last_updated: null
 };
 
 
@@ -635,13 +636,13 @@ function renderDashboard(data) {
   // Stats
   const provincesWithData = data.provinces.filter(p => p.count > 0).length;
   const jiruConfirmed = data.provinces.reduce((s, p) => s + p.jiru_yes, 0);
-  const updated = new Date(data.last_updated);
+  const updated = data.last_updated ? new Date(data.last_updated) : null;
   const dateStr = updated.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
   document.getElementById('stat-total').textContent = data.total_submissions;
   document.getElementById('stat-provinces').textContent = provincesWithData + ' of 9';
   document.getElementById('stat-jiru').textContent = jiruConfirmed;
-  document.getElementById('stat-updated').textContent = dateStr;
+  document.getElementById('stat-updated').textContent = updated ? dateStr : '—';
 
   // Province Cards
   const grid = document.getElementById('province-grid');
