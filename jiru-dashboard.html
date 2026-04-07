@@ -697,32 +697,17 @@ function renderDashboard(data) {
 // ===== MAP =====
 function initMap() {
   const map = L.map('jiru-map').setView([-8.5, 160.5], 7);
-  // Satellite layer (Esri imagery + place labels)
-  const satellite = L.layerGroup([
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
-      maxZoom: 19
-    }),
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 19, opacity: 0.9
-    })
-  ]);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
+    maxZoom: 19
+  }).addTo(map);
 
-  // Street/detail layer — shows village names clearly (CartoDB Voyager)
-  const streets = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
-    subdomains: 'abcd',
-    maxZoom: 20
-  });
-
-  satellite.addTo(map);
-
-  // Layer toggle control
-  L.control.layers(
-    { 'Satellite': satellite, 'Street (village names)': streets },
-    {},
-    { position: 'topright', collapsed: false }
-  ).addTo(map);
+  // Village name labels overlay
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    attribution: '',
+    maxZoom: 19,
+    opacity: 0.9
+  }).addTo(map);
 
   const colors = { active: '#2a7d5f', past: '#c9a227', never: '#94a3b8', unsure: '#94a3b8' };
   const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
