@@ -425,7 +425,7 @@
 <script>
 // ===== CONFIG =====
 const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
-const ADMIN_PASSWORDS = ['Zoopilus1!', 'HenryJ1ru'];
+const ADMIN_PASSWORDS = ['Zoopilus1!', 'HenryJ1ru']; // Replace with your passwords array
 
 // ===== DEMO DATA (12 records) =====
 const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
@@ -434,7 +434,7 @@ const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
 function attemptLogin() {
   const input = document.getElementById('password-input');
   const pw = input.value.trim();
-if (!ADMIN_PASSWORDS.includes(enteredPassword)) {
+  if ((Array.isArray(ADMIN_PASSWORDS) ? ADMIN_PASSWORDS.includes(pw) : pw === ADMIN_PASSWORDS)) {
     window.__jiruAuth = true;
     showDashboard();
   } else {
@@ -465,7 +465,7 @@ let mapMarkers = [];
 async function loadAdminData() {
   let data = null;
   try {
-    const pw = ADMIN_PASSWORD;
+    const pw = Array.isArray(ADMIN_PASSWORDS) ? ADMIN_PASSWORDS[0] : ADMIN_PASSWORDS;
     const resp = await fetch(APPS_SCRIPT_URL + '?action=admin&password=' + pw);
     if (resp.ok) data = await resp.json();
   } catch (e) {}
