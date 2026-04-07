@@ -425,7 +425,7 @@
 <script>
 // ===== CONFIG =====
 const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
-const ADMIN_PASSWORDS = ['Zoopilus1!', 'HenryJ1ru'];
+const ADMIN_PASSWORD = 'JiruAdmin2026';
 
 // ===== DEMO DATA (12 records) =====
 const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
@@ -434,7 +434,7 @@ const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
 function attemptLogin() {
   const input = document.getElementById('password-input');
   const pw = input.value.trim();
-if (!ADMIN_PASSWORDS.includes(enteredPassword)) {
+  if (pw === ADMIN_PASSWORD) {
     window.__jiruAuth = true;
     showDashboard();
   } else {
@@ -711,17 +711,32 @@ function renderHistoricalTimeline() {
 // ===== MAP =====
 function renderMap() {
   adminMap = L.map('admin-map').setView([-8.5, 160.5], 7);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-    attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
-    maxZoom: 19
-  }).addTo(adminMap);
+  // Satellite layer (Esri imagery + place labels)
+  const satellite = L.layerGroup([
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
+      maxZoom: 19
+    }),
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19, opacity: 0.9
+    })
+  ]);
 
-  // Village name labels overlay
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-    attribution: '',
-    maxZoom: 19,
-    opacity: 0.9
-  }).addTo(adminMap);
+  // Street/detail layer — shows village names clearly (CartoDB Voyager)
+  const streets = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 20
+  });
+
+  satellite.addTo(adminMap);
+
+  // Layer toggle control
+  L.control.layers(
+    { 'Satellite': satellite, 'Street (village names)': streets },
+    {},
+    { position: 'topright', collapsed: false }
+  ).addTo(adminMap);
   renderMapMarkers();
 }
 
