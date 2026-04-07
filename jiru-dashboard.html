@@ -350,6 +350,38 @@
       text-underline-offset: 2px;
     }
 
+    /* Jiru quote */
+    .jiru-quote-link {
+      display: block;
+      text-decoration: none;
+    }
+    .jiru-quote {
+      border-left: 4px solid #c9a227;
+      margin: 0;
+      padding: 1.2rem 1.6rem;
+      background: #f8f5ee;
+      border-radius: 0 8px 8px 0;
+      max-width: 72ch;
+      transition: background 0.2s;
+    }
+    .jiru-quote-link:hover .jiru-quote {
+      background: #f0ead8;
+    }
+    .jiru-quote p {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.15rem;
+      font-style: italic;
+      line-height: 1.7;
+      color: #002a30;
+      margin: 0 0 0.5rem 0;
+    }
+    .jiru-quote cite {
+      font-size: 0.8rem;
+      font-style: normal;
+      color: #6b7280;
+      letter-spacing: 0.02em;
+    }
+
     /* Jiru tooltip */
     .jiru-tooltip-link {
       position: relative;
@@ -512,6 +544,18 @@
 
 <!-- MAIN CONTENT -->
 <main>
+
+  <!-- JIRU QUOTE -->
+  <section class="section" style="padding-bottom:0;">
+    <div class="container">
+      <a href="https://atrium.lib.uoguelph.ca/bitstream/10214/24928/1/Woodley_Ellen_PhD.pdf" target="_blank" rel="noopener" class="jiru-quote-link">
+        <blockquote class="jiru-quote">
+          <p>&ldquo;Traditionally, jiru was applied to areas after the death of a prominent chief. From six months to one year, after the person died, the restriction would be lifted, and a large feast would be held to honour the deceased person.&rdquo;</p>
+          <cite>Woodley (2002) p. 354, PhD Thesis</cite>
+        </blockquote>
+      </a>
+    </div>
+  </section>
 
   <!-- PROVINCE COVERAGE GRID -->
   <section class="section" aria-labelledby="province-heading">
