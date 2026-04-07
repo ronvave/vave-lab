@@ -707,10 +707,14 @@ const DEMO_DATA = {
 async function loadData() {
   let data = null;
   try {
-    const resp = await fetch(APPS_SCRIPT_URL + '?action=summary');
-    if (resp.ok) data = await resp.json();
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=summary', {
+      redirect: 'follow',
+      cache: 'no-cache'
+    });
+    const text = await resp.text();
+    data = JSON.parse(text);
   } catch (e) {
-    // fall through to demo
+    console.warn('Dashboard fetch failed:', e);
   }
   if (!data || !data.provinces) data = DEMO_DATA;
   renderDashboard(data);
