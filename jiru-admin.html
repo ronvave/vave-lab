@@ -425,110 +425,16 @@
 <script>
 // ===== CONFIG =====
 const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
-const ADMIN_PASSWORD = 'JiruAdmin2026';
+const ADMIN_PASSWORDS = ['Zoopilus1!', 'HenryJ1ru'];
 
 // ===== DEMO DATA (12 records) =====
-const DEMO_DATA = [
-  {
-    id: 1, date: '2026-03-15', name: 'Jimmy Kereseka', province: 'Choiseul', island: 'Choiseul Island', village: 'Boe Village',
-    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, shellfish, sea cucumbers',
-    lat: -6.71, lng: 156.95, jiru_year_approx: 2024,
-    general_comments: 'Jiru is still very much practiced in our community. When an elder dies, the chief declares a jiru over the reef area near the village. Nobody is allowed to fish there during mourning.',
-    jiru_additional: 'The jiru can last from 6 months to several years depending on the status of the deceased.',
-    jiru_habitat_description: 'Coral reef area extending about 500m from shore, including seagrass beds.',
-    jiru_why_stopped: '', nearby_jiru_desc: 'Neighboring villages also practice jiru but sometimes with different local names.', other_practices_desc: ''
-  },
-  {
-    id: 2, date: '2026-03-16', name: 'Jimmy Kereseka', province: 'Choiseul', island: 'Choiseul Island', village: 'Sasamugga Village',
-    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Trochus, clam, reef fish',
-    lat: -6.73, lng: 156.80, jiru_year_approx: 2023,
-    general_comments: 'Sasamugga has maintained jiru for generations. The reef here is very healthy because of this custom.',
-    jiru_additional: 'There is a strong belief that breaking jiru will bring sickness to the family.', jiru_habitat_description: 'Fringing reef with abundant coral cover.',
-    jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: ''
-  },
-  {
-    id: 3, date: '2026-03-18', name: 'Tarcisius Kabutaulaka', province: 'Guadalcanal', island: 'Guadalcanal', village: 'Haimatua',
-    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
-    lat: -9.43, lng: 160.05, jiru_year_approx: null,
-    general_comments: 'We do not have jiru here. I think it is more of a Western Province and Choiseul practice. In Guadalcanal we have other customs but not jiru specifically.',
-    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have tambu areas but these are different from jiru.'
-  },
-  {
-    id: 4, date: '2026-03-19', name: 'Peter Kenilorea Jr.', province: 'Guadalcanal', island: 'Guadalcanal', village: 'Kakabona',
-    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
-    lat: -9.44, lng: 159.93, jiru_year_approx: null,
-    general_comments: 'Not practiced in our area. We have heard of it from people in Western Province who moved here.',
-    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'Tambu sites exist for ancestral reasons, not linked to deaths.'
-  },
-  {
-    id: 5, date: '2026-03-22', name: 'Simon Salopuka', province: 'Temotu', island: 'Duff Islands', village: 'Taumako',
-    jiru_status: 'past', local_name: 'Tapua', what_protected: 'Land', resources: 'Garden areas, coconut groves',
-    lat: -9.88, lng: 167.06, jiru_year_approx: 1965,
-    general_comments: 'My grandmother told me about this practice. When her mother died in the 1960s, a large garden area was closed off. Nobody could enter or harvest for about 2 years.',
-    jiru_additional: 'We called it tapua in our language, not jiru. But the concept is the same.', jiru_habitat_description: 'Inland garden areas with fruit trees and root crops.',
-    jiru_why_stopped: 'Christianity and changes in governance made these practices less common. The church discouraged it.', nearby_jiru_desc: '', other_practices_desc: ''
-  },
-  {
-    id: 6, date: '2026-03-25', name: 'Martha Lavea', province: 'Western', island: 'Vella Lavella', village: 'Iriqila',
-    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, crayfish, octopus',
-    lat: -7.73, lng: 156.63, jiru_year_approx: 2025,
-    general_comments: 'Jiru is central to our mourning practice. The most recent jiru was declared in early 2025 when a respected elder passed. The reef in front of our village is now under jiru.',
-    jiru_additional: 'Women are particularly involved in enforcing jiru.', jiru_habitat_description: 'Shallow reef and mangrove area.',
-    jiru_why_stopped: '', nearby_jiru_desc: 'Other villages on Vella Lavella also practice jiru, especially along the western coast.', other_practices_desc: ''
-  },
-  {
-    id: 7, date: '2026-03-27', name: 'Jacob Suri', province: 'Western', island: 'Vella Lavella', village: 'Vonunu',
-    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine, Freshwater', resources: 'Reef fish, freshwater prawns, eels',
-    lat: -7.78, lng: 156.68, jiru_year_approx: 2024,
-    general_comments: 'We have both marine and freshwater jiru. The river near our village was also put under jiru along with the reef.',
-    jiru_additional: 'The freshwater jiru is less common but our community has maintained it.', jiru_habitat_description: 'Coral reef extending 300m offshore and a freshwater stream running through the village area.',
-    jiru_why_stopped: '', nearby_jiru_desc: 'Iriqila village nearby also has active jiru.', other_practices_desc: ''
-  },
-  {
-    id: 8, date: '2026-03-28', name: 'Ruth Pitu', province: 'Western', island: 'Vella Lavella', village: 'Mbilua',
-    jiru_status: 'past', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, giant clams',
-    lat: -7.72, lng: 156.55, jiru_year_approx: 2010,
-    general_comments: 'We used to practice jiru but the last one was around 2010. Young people are less interested and the church has taken over mourning practices.',
-    jiru_additional: '', jiru_habitat_description: 'Fringing reef on the western side of the island.',
-    jiru_why_stopped: 'Church influence and urbanization. Many young people move to Gizo for work.', nearby_jiru_desc: 'Villages further south still practice it.', other_practices_desc: ''
-  },
-  {
-    id: 9, date: '2026-04-01', name: 'Gabriel Toli', province: 'Western', island: 'Vella Lavella', village: 'Supato',
-    jiru_status: 'past', local_name: 'Jiru', what_protected: 'Marine, Land', resources: 'Reef fish, garden produce, megapode nesting sites',
-    lat: -7.80, lng: 156.60, jiru_year_approx: 2015,
-    general_comments: 'The last jiru was about 10 years ago. It covered both the reef and a section of bush where megapode birds nest. Very effective for conservation.',
-    jiru_additional: 'Elders say the reef fish populations noticeably increased during jiru periods.', jiru_habitat_description: 'Coral reef, mangroves, and adjacent lowland forest.',
-    jiru_why_stopped: 'The chief who was most active in maintaining jiru passed away and nobody took over that role.', nearby_jiru_desc: '', other_practices_desc: ''
-  },
-  {
-    id: 10, date: '2026-04-02', name: 'Andrew Firiga', province: 'Isabel', island: 'Santa Isabel', village: 'Kia',
-    jiru_status: 'unsure', local_name: '', what_protected: '', resources: '',
-    lat: -7.45, lng: 158.22, jiru_year_approx: null,
-    general_comments: 'I have heard the word jiru but I am not sure if we practice it in the same way. We have some customary restrictions on fishing areas but they may not be connected to funerals.',
-    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have tambu reefs that are closed seasonally by the chief, but these are not specifically for mourning.'
-  },
-  {
-    id: 11, date: '2026-04-03', name: 'John Fidia', province: 'Malaita', island: 'North Malaita', village: "Malu'u",
-    jiru_status: 'never', local_name: '', what_protected: '', resources: '',
-    lat: -8.31, lng: 160.72, jiru_year_approx: null,
-    general_comments: 'No, we do not have jiru in Malaita. We have different customs. When someone dies there are feasts and exchanges but we do not close off areas.',
-    jiru_additional: '', jiru_habitat_description: '', jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: 'We have abu (taboo) places but these are permanent sacred sites, not temporary closures after death.'
-  },
-  {
-    id: 12, date: '2026-04-05', name: 'Selina Bako', province: 'Western', island: 'Ghizo', village: 'Gizo Town',
-    jiru_status: 'active', local_name: 'Jiru', what_protected: 'Marine', resources: 'Reef fish, shellfish',
-    lat: -8.10, lng: 156.84, jiru_year_approx: 2026,
-    general_comments: 'Even in Gizo town, some families still practice jiru on their customary reef areas. A jiru was just declared last month for an elder from Vella Lavella who passed away here.',
-    jiru_additional: 'The jiru covers a section of reef near Kennedy Island.', jiru_habitat_description: 'Coral reef and lagoon area near Kennedy Island.',
-    jiru_why_stopped: '', nearby_jiru_desc: '', other_practices_desc: ''
-  }
-];
+const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
 
 // ===== AUTH =====
 function attemptLogin() {
   const input = document.getElementById('password-input');
   const pw = input.value.trim();
-  if (pw === ADMIN_PASSWORD) {
+if (!ADMIN_PASSWORDS.includes(enteredPassword)) {
     window.__jiruAuth = true;
     showDashboard();
   } else {

@@ -616,20 +616,6 @@ const DEMO_DATA = {
   ]
 };
 
-const DEMO_MARKERS = [
-  { village: 'Boe Village', island: 'Choiseul Island', province: 'Choiseul', status: 'active', lat: -6.71, lng: 156.95 },
-  { village: 'Sasamugga Village', island: 'Choiseul Island', province: 'Choiseul', status: 'active', lat: -6.73, lng: 156.80 },
-  { village: 'Haimatua', island: 'Guadalcanal', province: 'Guadalcanal', status: 'never', lat: -9.43, lng: 160.05 },
-  { village: 'Buala', island: 'Guadalcanal', province: 'Guadalcanal', status: 'never', lat: -9.50, lng: 160.15 },
-  { village: 'Taumako', island: 'Duff Islands', province: 'Temotu', status: 'past', lat: -9.88, lng: 167.06 },
-  { village: 'Iriqila', island: 'Vella Lavella', province: 'Western', status: 'active', lat: -7.73, lng: 156.63 },
-  { village: 'Vonunu', island: 'Vella Lavella', province: 'Western', status: 'active', lat: -7.78, lng: 156.68 },
-  { village: 'Mbilua', island: 'Vella Lavella', province: 'Western', status: 'past', lat: -7.72, lng: 156.55 },
-  { village: 'Supato', island: 'Vella Lavella', province: 'Western', status: 'past', lat: -7.80, lng: 156.60 },
-  { village: 'Kia', island: 'Santa Isabel', province: 'Isabel', status: 'unsure', lat: -7.45, lng: 158.22 },
-  { village: 'Malu\'u', island: 'North Malaita', province: 'Malaita', status: 'never', lat: -8.31, lng: 160.72 },
-  { village: 'Gizo Town', island: 'Ghizo', province: 'Western', status: 'active', lat: -8.10, lng: 156.84 }
-];
 
 // ===== LOAD DATA =====
 async function loadData() {
@@ -726,23 +712,28 @@ function initMap() {
   const colors = { active: '#2a7d5f', past: '#c9a227', never: '#94a3b8', unsure: '#94a3b8' };
   const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
 
-  DEMO_MARKERS.forEach(m => {
-    const circle = L.circleMarker([m.lat, m.lng], {
-      radius: 8,
-      fillColor: colors[m.status],
-      color: '#fff',
-      weight: 2,
-      fillOpacity: 0.85
-    }).addTo(map);
-
-    circle.bindPopup(`
-      <div style="font-family:'DM Sans',sans-serif;min-width:160px;">
-        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${m.village}</strong><br>
-        <span style="color:#64748b;font-size:0.8rem;">${m.island}, ${m.province}</span><br>
-        <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;background:${colors[m.status]}20;color:${colors[m.status]};">${labels[m.status]}</span>
-      </div>
-    `);
-  });
+  // Markers populated from real survey data only
+  // Call addMapMarkers(markersArray) with data from the Apps Script API
+  if (window._mapMarkerData && window._mapMarkerData.length > 0) {
+    window._mapMarkerData.forEach(m => {
+      if (!m.lat || !m.lng) return;
+      const status = m.status || 'unsure';
+      const circle = L.circleMarker([parseFloat(m.lat), parseFloat(m.lng)], {
+        radius: 8,
+        fillColor: colors[status] || '#94a3b8',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(map);
+      circle.bindPopup(`
+        <div style="font-family:'DM Sans',sans-serif;min-width:160px;">
+          <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${m.village || m.island || 'Unknown'}</strong><br>
+          <span style="color:#64748b;font-size:0.8rem;">${m.island || ''}, ${m.province || ''}</span><br>
+          <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;background:${(colors[status]||'#94a3b8')}20;color:${colors[status]||'#94a3b8'};">${labels[status] || 'Unknown'}</span>
+        </div>
+      `);
+    });
+  }
 }
 
 // ===== QR CODE =====
