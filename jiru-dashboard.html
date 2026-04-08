@@ -623,7 +623,7 @@
           <div class="status-card__number" id="stat-never">0</div>
           <div class="status-card__label">Never Done Jiru</div>
         </div>
-        <div class="status-card" style="background:#C2C2C2;">
+        <div class="status-card" style="background:#3B3B3B;">
           <div class="status-card__number" id="stat-unsure">0</div>
           <div class="status-card__label">Unsure</div>
         </div>
@@ -635,7 +635,7 @@
   <section class="section" aria-labelledby="province-heading" style="padding: clamp(1rem,2vw,2rem) 0;">
     <div class="container">
       <h2 class="section-title" id="province-heading">Province Coverage</h2>
-      <p class="section-subtitle">Survey coverage across all nine provinces of the Solomon Islands. Help us fill in the gaps.</p>
+      <p class="section-subtitle">Survey coverage across all nine provinces of the Solomon Islands. Help us fill in the gaps.<br>Clicking on any Province below with info will zoom map to its data point(s).</p>
       <div class="province-grid" id="province-grid">
         <!-- populated by JS -->
       </div>
@@ -653,7 +653,7 @@
           <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#07AD03;width:20px;height:20px;"></span> Active jiru</div>
           <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#FF8700;width:20px;height:20px;"></span> Jiru in the past</div>
           <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#B82100;width:20px;height:20px;"></span> Never done jiru</div>
-          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#C2C2C2;width:20px;height:20px;"></span> Unsure</div>
+          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#3B3B3B;width:20px;height:20px;"></span> Unsure</div>
         </div>
       </div>
     </div>
@@ -891,7 +891,7 @@ function initMap() {
     opacity: 0.9
   }).addTo(map);
 
-  const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#C2C2C2' };
+  const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#3B3B3B' };
   const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
 
   window.jiruMapMarkers = [];
