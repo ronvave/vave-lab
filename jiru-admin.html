@@ -388,14 +388,13 @@
               </select>
             </div>
             <div class="filter-group">
-              <label for="pdf-filter-extent">Jiru Extent</label>
-              <select id="pdf-filter-extent" onchange="updatePdfSelection()">
-                <option value="">All</option>
-                <option value="active">Yes - still</option>
-                <option value="past">Yes - no more</option>
-                <option value="never">Never</option>
-                <option value="unsure">Unsure</option>
-              </select>
+              <label>Jiru Extent</label>
+              <div style="display:flex;flex-wrap:wrap;gap:0.5rem 1rem;margin-top:0.3rem;">
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;"><input type="checkbox" class="pdf-extent-cb" value="active" onchange="updatePdfSelection()"> Yes - still</label>
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;"><input type="checkbox" class="pdf-extent-cb" value="past" onchange="updatePdfSelection()"> Yes - no more</label>
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;"><input type="checkbox" class="pdf-extent-cb" value="never" onchange="updatePdfSelection()"> Never</label>
+                <label style="display:flex;align-items:center;gap:0.3rem;font-size:0.85rem;cursor:pointer;"><input type="checkbox" class="pdf-extent-cb" value="unsure" onchange="updatePdfSelection()"> Unsure</label>
+              </div>
             </div>
           </div>
 
@@ -1168,12 +1167,13 @@ function updatePdfSelection() {
 
   const statusLabel = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
 
-  const extent = document.getElementById('pdf-filter-extent').value;
+  const extentCbs = document.querySelectorAll('.pdf-extent-cb:checked');
+  const extents = Array.from(extentCbs).map(cb => cb.value);
 
   let pool = allData;
   if (province) pool = pool.filter(d => d.province === province);
   if (island) pool = pool.filter(d => d.island === island);
-  if (extent) pool = pool.filter(d => d.jiru_status === extent);
+  if (extents.length > 0) pool = pool.filter(d => extents.includes(d.jiru_status));
 
   if (pool.length === 0) {
     container.innerHTML = '<p style="padding:1.25rem;color:#94a3b8;font-style:italic;font-size:0.88rem;">No responses match the selected filters.</p>';
