@@ -423,6 +423,37 @@
       display: block;
     }
 
+
+    /* Status summary cards */
+    .status-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+    .status-card {
+      border-radius: 10px;
+      padding: 1.2rem 1rem;
+      text-align: center;
+      color: #fff;
+    }
+    .status-card__number {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 2.2rem;
+      font-weight: 600;
+      line-height: 1;
+      margin-bottom: 0.3rem;
+    }
+    .status-card__label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0.95;
+    }
+    @media (max-width: 600px) {
+      .status-cards { grid-template-columns: repeat(2, 1fr); }
+    }
     /* Toast */
     .toast {
       position: fixed;
@@ -539,7 +570,7 @@
       </div>
       <div class="stat-item">
         <div class="stat-number" id="stat-jiru">—</div>
-        <div class="stat-label">Jiru Confirmed</div>
+        <div class="stat-label">Active Jiru</div>
       </div>
       <div class="stat-item">
         <div class="stat-number" id="stat-updated">—</div>
@@ -561,6 +592,31 @@
           <cite>Woodley (2002) p. 354, PhD Thesis</cite>
         </blockquote>
       </a>
+    </div>
+  </section>
+
+
+  <!-- JIRU STATUS SUMMARY -->
+  <section class="section" style="padding: clamp(0.5rem,1vw,1rem) 0;">
+    <div class="container">
+      <div class="status-cards">
+        <div class="status-card" style="background:#07AD03;">
+          <div class="status-card__number" id="stat-active">0</div>
+          <div class="status-card__label">Active Jiru</div>
+        </div>
+        <div class="status-card" style="background:#FF8700;">
+          <div class="status-card__number" id="stat-past">0</div>
+          <div class="status-card__label">Jiru in the Past</div>
+        </div>
+        <div class="status-card" style="background:#B82100;">
+          <div class="status-card__number" id="stat-never">0</div>
+          <div class="status-card__label">Never Done Jiru</div>
+        </div>
+        <div class="status-card" style="background:#C2C2C2;">
+          <div class="status-card__number" id="stat-unsure">0</div>
+          <div class="status-card__label">Unsure</div>
+        </div>
+      </div>
     </div>
   </section>
 
@@ -736,6 +792,16 @@ function renderDashboard(data) {
   document.getElementById('stat-total').textContent = data.total_submissions;
   document.getElementById('stat-provinces').textContent = provincesWithData + ' of 9';
   document.getElementById('stat-jiru').textContent = jiruConfirmed;
+
+  // Status breakdown cards
+  const totalActive = data.provinces.reduce((s, p) => s + (p.jiru_yes || 0), 0);
+  const totalPast = data.provinces.reduce((s, p) => s + (p.jiru_past || 0), 0);
+  const totalNever = data.provinces.reduce((s, p) => s + (p.jiru_no || 0), 0);
+  const totalUnsure = data.provinces.reduce((s, p) => s + (p.jiru_unsure || 0), 0);
+  document.getElementById('stat-active').textContent = totalActive;
+  document.getElementById('stat-past').textContent = totalPast;
+  document.getElementById('stat-never').textContent = totalNever;
+  document.getElementById('stat-unsure').textContent = totalUnsure;
   document.getElementById('stat-updated').textContent = updated ? dateStr : '—';
 
   // Province Cards
