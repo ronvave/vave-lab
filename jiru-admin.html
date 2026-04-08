@@ -856,15 +856,27 @@ function renderStatusChart() {
 }
 
 function renderProtectedChart() {
+  // Map raw values to 6 main categories
+  const categoryMap = {
+    'Marine area': /marine.*area|reef|lagoon|open water|sea area/i,
+    'Freshwater area': /river|stream|freshwater/i,
+    'Land area': /land|forest|garden|inland/i,
+    'Select marine spp': /marine species|specific marine/i,
+    'Select freshwater spp': /terrestrial species|specific terrestrial/i,
+    'Other': /other|not sure/i
+  };
+  const catOrder = ['Marine area', 'Freshwater area', 'Land area', 'Select marine spp', 'Select freshwater spp', 'Other'];
   const counts = {};
+  catOrder.forEach(c => counts[c] = 0);
   filteredData.forEach(d => {
     if (d.what_protected) {
-      d.what_protected.split(',').map(s => s.trim()).filter(Boolean).forEach(p => {
-        counts[p] = (counts[p] || 0) + 1;
+      const raw = d.what_protected;
+      catOrder.forEach(cat => {
+        if (categoryMap[cat].test(raw)) counts[cat]++;
       });
     }
   });
-  const labels = Object.keys(counts).sort();
+  const labels = catOrder.filter(c => counts[c] > 0);
   const values = labels.map(l => counts[l]);
 
   if (chartProtected) chartProtected.destroy();
