@@ -201,11 +201,12 @@
       width: 100%;
     }
     .map-legend {
-      padding: 1rem 1.5rem;
+      padding: 1.2rem 1.5rem;
       display: flex;
-      gap: 1.5rem;
+      gap: 2rem;
       flex-wrap: wrap;
-      font-size: 0.8rem;
+      justify-content: center;
+      font-size: 1rem;
       color: #64748b;
       border-top: 1px solid #e2e8f0;
     }
@@ -454,6 +455,16 @@
     @media (max-width: 600px) {
       .status-cards { grid-template-columns: repeat(2, 1fr); }
     }
+    /* Clickable province cards */
+    .province-card[data-has-data="true"] {
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .province-card[data-has-data="true"]:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
     /* Toast */
     .toast {
       position: fixed;
@@ -639,10 +650,10 @@
       <div class="map-container">
         <div id="jiru-map"></div>
         <div class="map-legend">
-          <div class="legend-item"><span class="legend-dot" style="background:#07AD03;"></span> Active jiru</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#FF8700;"></span> Jiru in the past</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#B82100;"></span> Never done jiru</div>
-          <div class="legend-item"><span class="legend-dot" style="background:#C2C2C2;"></span> Unsure</div>
+          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#07AD03;width:20px;height:20px;"></span> Active jiru</div>
+          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#FF8700;width:20px;height:20px;"></span> Jiru in the past</div>
+          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#B82100;width:20px;height:20px;"></span> Never done jiru</div>
+          <div class="legend-item" style="font-size:1rem;gap:0.5rem;"><span class="legend-dot" style="background:#C2C2C2;width:20px;height:20px;"></span> Unsure</div>
         </div>
       </div>
     </div>
@@ -830,6 +841,14 @@ function renderDashboard(data) {
 
     const card = document.createElement('div');
     card.className = 'province-card';
+    card.setAttribute('data-has-data', p.count > 0 ? 'true' : 'false');
+    card.setAttribute('data-province', p.name);
+    if (p.count > 0) {
+      card.addEventListener('click', function() {
+        const provName = this.getAttribute('data-province');
+        zoomToProvince(provName);
+      });
+    }
     card.innerHTML = `
       <div class="status-bar ${statusClass}"></div>
       <div class="province-name">${p.name}</div>
@@ -858,7 +877,8 @@ function renderDashboard(data) {
 
 // ===== MAP =====
 function initMap() {
-  const map = L.map('jiru-map').setView([-8.5, 160.5], 7);
+  window.jiruMap = L.map('jiru-map').setView([-8.5, 160.5], 7);
+  const map = window.jiruMap;
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
     maxZoom: 19
@@ -874,6 +894,7 @@ function initMap() {
   const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#C2C2C2' };
   const labels = { active: 'Jiru actively practiced', past: 'Jiru practiced in the past', never: 'No jiru reported', unsure: 'Unsure about jiru' };
 
+  window.jiruMapMarkers = [];
   // Markers populated from real survey data only
   // Call addMapMarkers(markersArray) with data from the Apps Script API
   if (window._mapMarkerData && window._mapMarkerData.length > 0) {
@@ -887,6 +908,7 @@ function initMap() {
         weight: 2,
         fillOpacity: 0.85
       }).addTo(map);
+      window.jiruMapMarkers.push({ marker: circle, province: m.province, lat: parseFloat(m.lat), lng: parseFloat(m.lng) });
       circle.bindPopup(`
         <div style="font-family:'DM Sans',sans-serif;min-width:160px;">
           <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${m.village || m.island || 'Unknown'}</strong><br>
@@ -934,6 +956,28 @@ function showToast(msg) {
   toast.textContent = msg;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+
+// Zoom map to show all markers for a province
+function zoomToProvince(provinceName) {
+  if (!window.jiruMap || !window.jiruMapMarkers) return;
+  
+  const markers = window.jiruMapMarkers.filter(m => m.province === provinceName);
+  if (markers.length === 0) return;
+  
+  // Scroll to the map first
+  document.getElementById('jiru-map').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  setTimeout(() => {
+    if (markers.length === 1) {
+      window.jiruMap.setView([markers[0].lat, markers[0].lng], 12);
+      markers[0].marker.openPopup();
+    } else {
+      const bounds = L.latLngBounds(markers.map(m => [m.lat, m.lng]));
+      window.jiruMap.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+    }
+  }, 400);
 }
 
 // ===== INIT =====
