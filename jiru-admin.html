@@ -152,23 +152,6 @@
     .ai-loading { display: none; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #64748b; margin-top: 0.5rem; }
     .ai-loading.visible { display: flex; }
 
-
-    /* Response viewer */
-    .response-viewer { background: #fff; border-radius: 0.75rem; padding: 2rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
-    .response-viewer h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.3rem; }
-    .response-viewer-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
-    .response-viewer-nav .counter { font-size: 0.9rem; color: #64748b; font-weight: 500; }
-    .response-viewer-nav button { padding: 0.5rem 1.2rem; border-radius: 6px; border: 1px solid #d4d1ca; background: #fff; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--jiru-primary); transition: all 0.15s; }
-    .response-viewer-nav button:hover:not(:disabled) { background: var(--jiru-primary); color: #fff; }
-    .response-viewer-nav button:disabled { opacity: 0.4; cursor: default; }
-    .response-card { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 2rem; }
-    .response-card .field { padding: 0.6rem 0; border-bottom: 1px solid #f1f0ec; }
-    .response-card .field-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; margin-bottom: 0.15rem; }
-    .response-card .field-value { font-size: 0.92rem; color: #1e293b; line-height: 1.5; word-break: break-word; }
-    .response-card .field-value:empty::after { content: '—'; color: #d4d1ca; }
-    .response-card .field.full-width { grid-column: 1 / -1; }
-    @media (max-width: 700px) { .response-card { grid-template-columns: 1fr; } }
-
     /* PDF Builder Section */
     .pdf-builder { background: #fff; border-radius: 0.75rem; padding: 2rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
     .pdf-builder h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.3rem; }
@@ -292,10 +275,10 @@
     <section class="section">
       <div class="container">
         <div class="stats-row">
-          <div class="stat-card"><div class="stat-number" id="admin-total">12</div><div class="stat-label">Total Submissions</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-provinces">6</div><div class="stat-label">Provinces Represented</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-active">5</div><div class="stat-label">Active Jiru Communities</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-latest">Apr 5</div><div class="stat-label">Latest Submission</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-total">—</div><div class="stat-label">Total Submissions</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-provinces">—</div><div class="stat-label">Provinces Represented</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-active">—</div><div class="stat-label">Active Jiru Communities</div></div>
+          <div class="stat-card"><div class="stat-number" id="admin-latest">—</div><div class="stat-label">Latest Submission</div></div>
         </div>
 
         <!-- FILTERS -->
@@ -386,20 +369,6 @@
         </section>
 
         <!-- AI SUMMARY -->
-
-        <!-- RESPONSE VIEWER -->
-        <div class="response-viewer" id="response-viewer">
-          <h3>Response Viewer</h3>
-          <div class="response-viewer-nav">
-            <button onclick="viewerPrev()" id="viewer-prev" disabled>← Previous</button>
-            <span class="counter" id="viewer-counter">Response 1 of 0</span>
-            <button onclick="viewerNext()" id="viewer-next" disabled>Next →</button>
-          </div>
-          <div class="response-card" id="viewer-card">
-            <p style="color:#94a3b8;font-style:italic;">No responses to display.</p>
-          </div>
-        </div>
-
         <!-- PDF REPORT BUILDER -->
         <div class="pdf-builder" id="pdf-builder">
           <h3>PDF Report Builder</h3>
@@ -416,6 +385,16 @@
               <label for="pdf-filter-island">Filter by Island</label>
               <select id="pdf-filter-island" onchange="updatePdfSelection()">
                 <option value="">All Islands</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="pdf-filter-extent">Jiru Extent</label>
+              <select id="pdf-filter-extent" onchange="updatePdfSelection()">
+                <option value="">All</option>
+                <option value="active">Yes - still</option>
+                <option value="past">Yes - no more</option>
+                <option value="never">Never</option>
+                <option value="unsure">Unsure</option>
               </select>
             </div>
           </div>
@@ -537,7 +516,7 @@
 <script>
 // ===== CONFIG =====
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
-const ADMIN_PASSWORDS = ['Zoopilus1!', 'HenryJ1ru'];  // ⚠️ CHANGE: Add your passwords here // Replace with your passwords array
+const ADMIN_PASSWORDS = ['Zoopilus1!', 'Henryj1ru'];  // ⚠️ CHANGE: Add your passwords here // Replace with your passwords array
 
 // ===== DEMO DATA (12 records) =====
 const DEMO_DATA = []; // Demo data removed — waiting for real survey responses
@@ -651,8 +630,6 @@ async function loadAdminData() {
 // ===== INIT DASHBOARD =====
 async function initDashboard() {
   await loadAdminData();
-  viewerIndex = 0;
-  renderViewer();
   populateFilters();
   updateStats();
   renderCharts();
@@ -708,8 +685,6 @@ function applyFilters() {
   renderCharts();
   renderMapMarkers();
   renderTable();
-  viewerIndex = 0;
-  renderViewer();
 }
 
 function resetFilters() {
@@ -722,8 +697,6 @@ function resetFilters() {
   updateStats();
   renderCharts();
   renderMapMarkers();
-  viewerIndex = 0;
-  renderViewer();
   renderTable();
 }
 
@@ -1017,89 +990,6 @@ function toggleDetail(d, tr) {
 }
 
 
-// ===== RESPONSE VIEWER =====
-let viewerIndex = 0;
-
-function renderViewer() {
-  const data = filteredData;
-  const total = data.length;
-  document.getElementById('viewer-counter').textContent = total > 0 ? `Response ${viewerIndex + 1} of ${total}` : 'No responses';
-  document.getElementById('viewer-prev').disabled = viewerIndex <= 0;
-  document.getElementById('viewer-next').disabled = viewerIndex >= total - 1;
-  
-  if (total === 0) {
-    document.getElementById('viewer-card').innerHTML = '<p style="color:#94a3b8;font-style:italic;">No responses to display.</p>';
-    return;
-  }
-  
-  const d = data[viewerIndex];
-  const fields = [
-    ['Date', d.date],
-    ['Name', d.name],
-    ['Email', d.email],
-    ['Connection', d.connection],
-    ['Submitter Type', d.submitter_type],
-    ['Informant Name', d.informant_name],
-    ['Informant Contact', d.informant_contact],
-    ['Province', d.province],
-    ['Island', d.island],
-    ['Ward', d.ward],
-    ['Village', d.village],
-    ['Latitude', d.lat],
-    ['Longitude', d.lng],
-    ['Local Jiru Name', d.local_name],
-    ['Jiru Status', d.jiru_status],
-    ['Most Recent Jiru', d.jiru_recency],
-    ['Approximate Year', d.jiru_year_approx],
-    ['People Count', d.jiru_people_count],
-    ['_full', 'People Details', d.jiru_people_details],
-    ['_full', 'Who Established For', d.who_established_for],
-    ['_full', 'What Was Protected', d.what_protected],
-    ['_full', 'Habitat Description', d.habitat],
-    ['Protection Same/Different', d.protection_same_diff],
-    ['Duration', d.duration],
-    ['_full', 'Protection Protocols', d.protection_protocols],
-    ['_full', 'Protection Prohibitions', d.protection_prohibitions],
-    ['_full', 'Protection Changes', d.protection_changes],
-    ['_full', 'Protection Challenges', d.protection_challenges],
-    ['_full', 'Protection Other Details', d.protection_other],
-    ['_full', 'Who Participated', d.participants],
-    ['Harvest Target', d.harvest_target],
-    ['Catch Used For', d.catch_used],
-    ['_full', 'Harvest Protocols', d.harvest_protocols],
-    ['_full', 'Harvest Prohibitions', d.harvest_prohibitions],
-    ['_full', 'Harvest Changes', d.harvest_changes],
-    ['_full', 'Harvest Challenges', d.harvest_challenges],
-    ['_full', 'Additional Details', d.additional],
-    ['_full', 'Why Stopped', d.why_stopped],
-    ['Other Practices', d.other_practices],
-    ['_full', 'Other Practices Description', d.other_practices_desc],
-    ['Nearby Jiru', d.nearby_jiru],
-    ['_full', 'Nearby Jiru Description', d.nearby_jiru_desc],
-    ['Has Resources', d.has_resources],
-    ['_full', 'Resource Links', d.resources],
-    ['_full', 'General Comments', d.general_comments],
-    ['Heard Via', d.heard_via],
-    ['Want Email Copy', d.want_email_copy],
-    ['Willing Followup', d.willing_followup],
-  ];
-  
-  let html = '';
-  fields.forEach(f => {
-    if (f[0] === '_full') {
-      html += `<div class="field full-width"><div class="field-label">${f[1]}</div><div class="field-value">${f[2] || ''}</div></div>`;
-    } else {
-      html += `<div class="field"><div class="field-label">${f[0]}</div><div class="field-value">${f[1] || ''}</div></div>`;
-    }
-  });
-  document.getElementById('viewer-card').innerHTML = html;
-}
-
-function viewerPrev() {
-  if (viewerIndex > 0) { viewerIndex--; renderViewer(); }
-}
-function viewerNext() {
-  if (viewerIndex < filteredData.length - 1) { viewerIndex++; renderViewer(); }
 }
 
 // ===== EXPORT CSV =====
@@ -1268,9 +1158,12 @@ function updatePdfSelection() {
 
   const statusLabel = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
 
+  const extent = document.getElementById('pdf-filter-extent').value;
+
   let pool = allData;
   if (province) pool = pool.filter(d => d.province === province);
   if (island) pool = pool.filter(d => d.island === island);
+  if (extent) pool = pool.filter(d => d.jiru_status === extent);
 
   if (pool.length === 0) {
     container.innerHTML = '<p style="padding:1.25rem;color:#94a3b8;font-style:italic;font-size:0.88rem;">No responses match the selected filters.</p>';
