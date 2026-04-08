@@ -906,6 +906,19 @@ function renderMapMarkers() {
     `);
     mapMarkers.push(marker);
   });
+
+  // Auto-fit map to show all markers with padding
+  if (mapMarkers.length > 0) {
+    setTimeout(() => {
+      if (!adminMap) return;
+      adminMap.invalidateSize();
+      const latlngs = filteredData.filter(d => d.lat && d.lng).map(d => [parseFloat(d.lat), parseFloat(d.lng)]);
+      if (latlngs.length > 0) {
+        const bounds = L.latLngBounds(latlngs);
+        adminMap.fitBounds(bounds.pad(0.1), { maxZoom: 10, animate: false });
+      }
+    }, 1000);
+  }
 }
 
 // ===== TABLE =====
