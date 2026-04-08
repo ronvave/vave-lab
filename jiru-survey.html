@@ -959,6 +959,117 @@
     .email-copy-field.visible {
       display: block;
     }
+
+    /* RANKING / DRAG-AND-DROP UI */
+    .ranking-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+    @media (max-width: 600px) {
+      .ranking-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .ranking-column-header {
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+    }
+    .ranking-source {
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      min-height: 120px;
+    }
+    .ranking-target {
+      min-height: 120px;
+    }
+    .ranking-dropzone {
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      min-height: 200px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .ranking-dropzone.dragover {
+      border-color: var(--color-primary);
+      background: var(--color-primary-highlight);
+    }
+    .ranking-placeholder {
+      font-size: var(--text-sm);
+      color: var(--color-text-faint);
+      text-align: center;
+      padding: var(--space-6) 0;
+      pointer-events: none;
+    }
+    .ranking-item {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: var(--space-2) var(--space-3);
+      margin-bottom: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      cursor: grab;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      transition: box-shadow 0.15s, opacity 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .ranking-item:active {
+      cursor: grabbing;
+    }
+    .ranking-item.dragging {
+      opacity: 0.5;
+    }
+    .ranking-dropzone .ranking-item {
+      position: relative;
+      padding-left: var(--space-8);
+    }
+    .ranking-dropzone .ranking-item::before {
+      content: attr(data-rank);
+      position: absolute;
+      left: var(--space-2);
+      top: 50%;
+      transform: translateY(-50%);
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .drag-handle {
+      color: var(--color-text-faint);
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .ranking-item .remove-ranked {
+      margin-left: auto;
+      color: var(--color-text-faint);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 0 var(--space-1);
+      display: none;
+    }
+    .ranking-dropzone .ranking-item .remove-ranked {
+      display: block;
+    }
+    .ranking-dropzone .ranking-item .remove-ranked:hover {
+      color: var(--color-error);
+    }
   </style>
 </head>
 <body>
@@ -1188,6 +1299,9 @@
           <div class="survey-step" data-step="2">
             <h3 class="survey-step__title">Your Location</h3>
 
+            <p class="survey-step__subtitle"><strong>Note that, to keep things simple, the term jiru will be used throughout this survey to refer to an area (land, marine or freshwater) or species being protected as a result of a funeral.</strong></p>
+            <p class="survey-step__subtitle"><strong>For this part, regardless of whether your community practices funerary jiru (in the Past, Now, or Never), please help us locate the community you&rsquo;ll be providing information for (even if it&rsquo;s to say that your community does not practice jiru).</strong></p>
+
             <div class="form-row">
               <!-- Change 13: Province alphabetical order -->
               <div class="form-group">
@@ -1237,7 +1351,7 @@
               <!-- Change 11: Updated map instruction text -->
               <p class="map-instruction">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                Scroll and zoom into an island then village location you're reporting for, then left click to place a marker
+                Scroll and zoom into an island then village location you're providing information for, then left click to place a marker
               </p>
               <div class="map-container" id="locationMap"></div>
               <p class="map-coords" id="mapCoords"></p>
@@ -1254,18 +1368,11 @@
           <!-- ═══════════ STEP 3: Jiru Practice ═══════════ -->
           <div class="survey-step" data-step="3">
             <h3 class="survey-step__title">Jiru in Your Community</h3>
+            <p class="survey-step__subtitle">We want to understand whether jiru is or was done in your community or not</p>
 
-            <!-- Change 15: Updated local name question -->
+            <!-- Q1 (was Q2): Extent/practice question — REQUIRED -->
             <div class="form-group">
-              <label class="form-label" for="local_jiru_name">What is jiru (or similar funerary protection practice) called in this community?</label>
-              <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. jiru, tabu, other local name">
-            </div>
-
-            <hr class="form-divider">
-
-            <!-- Change 16: Updated extent question -->
-            <div class="form-group">
-              <label class="form-label">Based on your knowledge, to what extent does this community practice jiru? <span class="required">*</span></label>
+              <label class="form-label">Based on your knowledge, to what extent does your community protect land, waters or species for a loved one&rsquo;s funeral? <span class="required">*</span></label>
               <div class="form-radio-group" id="jiruStatusGroup">
                 <label class="form-radio">
                   <input type="radio" name="jiru_status" value="yes_current" required>
@@ -1287,8 +1394,14 @@
               <p class="form-error-msg">Please select an option.</p>
             </div>
 
-            <!-- Who are jiru established for — only show if Yes (current or past) -->
-            <div class="form-group" id="jiruWhoEstablishedGroup" style="display:none;">
+            <!-- Q2 (was Q1): Local name — conditional on Yes answers -->
+            <div class="form-group conditional-step3-yes" id="localJiruNameGroup" style="display:none;">
+              <label class="form-label" for="local_jiru_name">What is the practice of protecting lands, waters, and/or species called in your community?</label>
+              <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. jiru, tabu">
+            </div>
+
+            <!-- Q3: Who are jiru established for — conditional on Yes answers -->
+            <div class="form-group conditional-step3-yes" id="jiruWhoEstablishedGroup" style="display:none;">
               <label class="form-label" for="jiru_who_established_for">Who are jiru normally established for in this community?</label>
               <textarea class="form-textarea" id="jiru_who_established_for" name="jiru_who_established_for" placeholder="Describe who jiru is typically established for..."></textarea>
             </div>
@@ -1305,7 +1418,7 @@
             <!-- YES (current or past) — Detail questions -->
             <div class="conditional-section" id="jiruDetailsYes">
               <h3 class="survey-step__title">Tell us more about jiru in <span id="villageName">your community</span></h3>
-              <p class="survey-step__subtitle">This next set of questions is aimed at understanding the last jiru you remember for this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
+              <p class="survey-step__subtitle">This next set of questions is aimed at understanding jiru practices in this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
 
               <!-- Change 19: Updated question text -->
               <div class="form-group">
@@ -1325,8 +1438,8 @@
                     <span class="form-radio__label">Between 2000&ndash;2019</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="before_2019">
-                    <span class="form-radio__label">Before 2019</span>
+                    <input type="radio" name="jiru_recency" value="before_2000">
+                    <span class="form-radio__label">Before 2000</span>
                   </label>
                   <label class="form-radio">
                     <input type="radio" name="jiru_recency" value="unknown">
@@ -1344,7 +1457,7 @@
 
               <!-- Change 21: How many people question -->
               <div class="form-group">
-                <label class="form-label" for="jiru_people_count">How many people do you remember jiru being done for in this community that you can provide details?</label>
+                <label class="form-label" for="jiru_people_count">How many people do you remember the jiru being done for in this community that you can provide details for?</label>
                 <input type="number" class="form-input" id="jiru_people_count" name="jiru_people_count" min="0" max="20" placeholder="Enter a number" style="max-width:200px;">
                 <p class="form-helper">Maximum 20. Person forms will appear below.</p>
               </div>
@@ -1365,7 +1478,7 @@
               <hr class="form-divider">
 
               <!-- Change 26: Section heading updated -->
-              <div class="form-section-heading">Details of funerary protection</div>
+              <div class="form-section-heading">Knowledge of jiru to date</div>
 
               <!-- Change 27: What was protected checkboxes + "Not sure" -->
               <div class="form-group">
@@ -1413,7 +1526,7 @@
 
               <!-- Change 29: Same area/species checkbox group -->
               <div class="form-group">
-                <label class="form-label">Select all that apply</label>
+                <label class="form-label">Is it the same area or species that is protected for a community member&rsquo;s jiru? Or is it dependent on some other factor?</label>
                 <div class="form-check-group" id="protectionSameDiffGroup">
                   <label class="form-check">
                     <input type="checkbox" name="protection_same_or_different" value="Same area">
@@ -1448,22 +1561,17 @@
               <!-- Change 30: Duration moved here (after the new question) -->
               <div class="form-group">
                 <label class="form-label" for="jiru_duration">How long did the jiru protection last?</label>
-                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="">
+                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="e.g. 100 days, 1 year">
               </div>
 
               <!-- Change 31: New open-ended protection questions -->
               <div class="form-group">
-                <label class="form-label" for="protection_protocols">Any special process or protocols done before and/or during protection?</label>
+                <label class="form-label" for="protection_protocols">Are there any specific taboo (for example, on people) before and/or during jiru protection?</label>
                 <textarea class="form-textarea" id="protection_protocols" name="protection_protocols" placeholder="Describe any protocols..."></textarea>
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="protection_changes">What has changed regarding jiru establishment process?</label>
-                <textarea class="form-textarea" id="protection_changes" name="protection_changes" placeholder="Describe any changes..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="protection_other_details">Any other details on jiru/protection you want to share?</label>
+                <label class="form-label" for="protection_other_details">Any changes or challenges with jiru establishment?</label>
                 <textarea class="form-textarea" id="protection_other_details" name="protection_other_details" placeholder="Share any other details..."></textarea>
               </div>
 
@@ -1545,7 +1653,7 @@
 
               <!-- Who participated -->
               <div class="form-group">
-                <label class="form-label">Who participated? <span class="form-helper">(select all that apply)</span></label>
+                <label class="form-label">Who participated in the harvest of the jiru? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="jiruParticipantsGroup">
                   <label class="form-check">
                     <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased">
@@ -1575,7 +1683,7 @@
 
               <!-- What was targeted for harvest? -->
               <div class="form-group">
-                <label class="form-label">What was targeted? <span class="form-helper">(select all that apply)</span></label>
+                <label class="form-label">What was targeted for harvest from the jiru? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="harvestTargetGroup">
                   <label class="form-check">
                     <input type="checkbox" name="harvest_target" value="Everything">
@@ -1639,8 +1747,19 @@
 
               <!-- Open-ended harvest questions -->
               <div class="form-group">
-                <label class="form-label" for="harvest_protocols">Any special process or protocols done before and/or during harvest?</label>
-                <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any protocols..."></textarea>
+                <label class="form-label" for="harvest_protocols">Any taboo surrounding harvest process?</label>
+                <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any taboo..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="harvest_changes">Any changes or challenges during jiru harvest?</label>
+                <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes or challenges..."></textarea>
+              </div>
+
+              <!-- Past-only question: shown only when jiru_status is yes_past -->
+              <div class="form-group" id="jiruNoLongerPractisedGroup" style="display:none;">
+                <label class="form-label" for="jiru_no_longer_reasons">What are reasons why the jiru is no longer practised in your community?</label>
+                <textarea class="form-textarea" id="jiru_no_longer_reasons" name="jiru_no_longer_reasons" placeholder="Describe the reasons..."></textarea>
               </div>
 
             </div>
@@ -1680,8 +1799,7 @@
             <div class="form-section-heading">Consequences of Decline</div>
 
             <div class="form-group">
-              <label class="form-label" for="consequences_decline">What do you think would happen if jiru was no longer practised in your community?</label>
-              <p class="form-helper">Think about effects on community life, the environment, cultural identity, food security, etc.</p>
+              <label class="form-label" for="consequences_decline">What do you think would happen if jiru continues to erode until no longer practiced in your community or in the Solomon Islands?</label>
               <textarea class="form-textarea" id="consequences_decline" name="consequences_decline" rows="4"></textarea>
             </div>
 
@@ -1777,48 +1895,33 @@
             <div class="form-section-heading">Revitalization &amp; Stakeholders</div>
 
             <div class="form-group">
-              <label class="form-label">Who should be involved in supporting jiru practice? <span class="form-helper">(select all that apply)</span></label>
-              <div class="form-check-group" id="revitalizationStakeholderGroup">
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Community elders and chiefs">
-                  <span class="form-check__label">Community elders and chiefs</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Church leaders">
-                  <span class="form-check__label">Church leaders</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Youth and schools">
-                  <span class="form-check__label">Youth and schools</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Women's groups">
-                  <span class="form-check__label">Women&rsquo;s groups</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Provincial government">
-                  <span class="form-check__label">Provincial government</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="National government">
-                  <span class="form-check__label">National government</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Researchers and universities">
-                  <span class="form-check__label">Researchers and universities</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Community-based organisations">
-                  <span class="form-check__label">Community-based organisations</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="revitalization_stakeholders" value="Other">
-                  <span class="form-check__label">Other (specify)</span>
-                </label>
+              <label class="form-label">If community members want to revitalize the funerary jiru practice, who should be engaged and involved?</label>
+              <p class="form-helper" style="margin-bottom:var(--space-3);">Drag stakeholders from the left to the right column, ordering them from most important (top) to least important (bottom)</p>
+              <div class="ranking-container" id="stakeholderRanking">
+                <div class="ranking-source" id="rankingSource">
+                  <div class="ranking-column-header">Available Stakeholders</div>
+                  <div class="ranking-item" draggable="true" data-value="Community elders and chiefs"><span class="drag-handle">&#9776;</span> Community elders and chiefs</div>
+                  <div class="ranking-item" draggable="true" data-value="Church leaders"><span class="drag-handle">&#9776;</span> Church leaders</div>
+                  <div class="ranking-item" draggable="true" data-value="Youth and schools"><span class="drag-handle">&#9776;</span> Youth and schools</div>
+                  <div class="ranking-item" draggable="true" data-value="Women's groups"><span class="drag-handle">&#9776;</span> Women&rsquo;s groups</div>
+                  <div class="ranking-item" draggable="true" data-value="Provincial government"><span class="drag-handle">&#9776;</span> Provincial government</div>
+                  <div class="ranking-item" draggable="true" data-value="National government"><span class="drag-handle">&#9776;</span> National government</div>
+                  <div class="ranking-item" draggable="true" data-value="Conservation NGOs"><span class="drag-handle">&#9776;</span> Conservation NGOs</div>
+                  <div class="ranking-item" draggable="true" data-value="Researchers and universities"><span class="drag-handle">&#9776;</span> Researchers and universities</div>
+                  <div class="ranking-item" draggable="true" data-value="Community-based organisations"><span class="drag-handle">&#9776;</span> Community-based organisations</div>
+                  <div class="ranking-item" draggable="true" data-value="Other"><span class="drag-handle">&#9776;</span> Other (specify)</div>
+                </div>
+                <div class="ranking-target" id="rankingTarget">
+                  <div class="ranking-column-header">Ranked (most important first)</div>
+                  <div class="ranking-dropzone" id="rankingDropzone">
+                    <p class="ranking-placeholder">Drag stakeholders here in order of importance</p>
+                  </div>
+                </div>
               </div>
               <div class="other-specify" id="stakeholderOther">
                 <input type="text" class="form-input" id="revitalization_stakeholders_other_text" placeholder="Please specify">
               </div>
+              <input type="hidden" id="revitalization_stakeholders_ranked" name="revitalization_stakeholders_ranked" value="">
             </div>
 
             <div class="form-group">
@@ -1957,7 +2060,7 @@
           <div class="survey-step" data-step="8">
             <h3 class="survey-step__title">Review &amp; Submit</h3>
             <!-- Change 38: Updated description -->
-            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</p>
+            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. <strong>After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</strong></p>
 
             <!-- Change 39: Revised question -->
             <div class="form-group">
@@ -2093,6 +2196,9 @@
     <p class="survey-overlay__text">
       Your response has been recorded. Every piece of knowledge helps preserve the documentation of jiru and funerary protected areas in the Solomon Islands.
     </p>
+    <p class="survey-overlay__text" id="emailCopyNote" style="display:none; font-style:italic;">
+      A copy of your responses will be emailed to you shortly.
+    </p>
 
     <div id="success-qr"></div>
     <p style="font-size:var(--text-xs);color:var(--color-text-faint);margin-top:var(--space-2);">Scan to share the survey</p>
@@ -2207,6 +2313,7 @@
     setupFileUpload();
     setupDynamicPersonForms();
     setupEmailCopyConditional();
+    setupRankingUI();
     restoreFromLocalStorage(); // Change 1: restore draft
     updateStepUI();
   }
@@ -2304,6 +2411,14 @@
   }
 
   function triggerConditionalVisibility() {
+    // Jiru status — Step 3 conditional Q2 & Q3
+    const jiruStatus = document.querySelector('input[name="jiru_status"]:checked');
+    if (jiruStatus) {
+      const showYes = jiruStatus.value === 'yes_current' || jiruStatus.value === 'yes_past';
+      document.querySelectorAll('.conditional-step3-yes').forEach(el => {
+        el.style.display = showYes ? '' : 'none';
+      });
+    }
     // Submitter type
     const submitterType = document.querySelector('input[name="submitter_type"]:checked');
     if (submitterType) {
@@ -2359,11 +2474,7 @@
     if (challengesOtherCb) {
       document.getElementById('challengesThreatOther').classList.toggle('visible', challengesOtherCb.checked);
     }
-    // Step 6: stakeholders other
-    const stakeholderOtherCb = document.querySelector('#revitalizationStakeholderGroup input[value="Other"]');
-    if (stakeholderOtherCb) {
-      document.getElementById('stakeholderOther').classList.toggle('visible', stakeholderOtherCb.checked);
-    }
+    // Step 6: stakeholders — now handled by ranking UI
     // Email copy
     const wantCopy = document.querySelector('input[name="want_email_copy"]:checked');
     if (wantCopy && wantCopy.value === 'Yes') {
@@ -2566,12 +2677,14 @@
       });
     });
 
-    // Jiru status — show/hide "Who are jiru established for" in Step 3
+    // Jiru status — show/hide Q2 and Q3 in Step 3 (local name + who established for)
     document.querySelectorAll('input[name="jiru_status"]').forEach(r => {
       r.addEventListener('change', () => {
         const val = document.querySelector('input[name="jiru_status"]:checked');
         const show = val && (val.value === 'yes_current' || val.value === 'yes_past');
-        document.getElementById('jiruWhoEstablishedGroup').style.display = show ? '' : 'none';
+        document.querySelectorAll('.conditional-step3-yes').forEach(el => {
+          el.style.display = show ? '' : 'none';
+        });
       });
     });
 
@@ -2655,13 +2768,7 @@
       });
     });
 
-    // Step 6: Revitalization Stakeholders "Other"
-    document.querySelectorAll('#revitalizationStakeholderGroup input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => {
-        const otherCb = document.querySelector('#revitalizationStakeholderGroup input[value="Other"]');
-        document.getElementById('stakeholderOther').classList.toggle('visible', otherCb && otherCb.checked);
-      });
-    });
+    // Step 6: Revitalization Stakeholders — now handled by ranking UI
   }
 
   // ── Email Copy Conditional (Change 40) ─────────
@@ -2703,11 +2810,17 @@
     const status = document.querySelector('input[name="jiru_status"]:checked');
     const val = status ? status.value : '';
     const harvestSection = document.getElementById('harvestDetailsYes');
+    const noLongerGroup = document.getElementById('jiruNoLongerPractisedGroup');
 
     if (val === 'yes_current' || val === 'yes_past') {
       harvestSection.classList.add('visible');
     } else {
       harvestSection.classList.remove('visible');
+    }
+
+    // Show "no longer practised" question only for past
+    if (noLongerGroup) {
+      noLongerGroup.style.display = (val === 'yes_past') ? '' : 'none';
     }
   }
 
@@ -2754,6 +2867,10 @@
               <input type="radio" name="person_${i}_gender" value="Female">
               <span class="form-radio__label">Female</span>
             </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_gender" value="Prefer not to say">
+              <span class="form-radio__label">Prefer not to say</span>
+            </label>
           </div>
         </div>
 
@@ -2765,8 +2882,8 @@
               <span class="form-radio__label">Child (&lt;10)</span>
             </label>
             <label class="form-radio">
-              <input type="radio" name="person_${i}_age" value="Teen (10-18)">
-              <span class="form-radio__label">Teen (10&ndash;18)</span>
+              <input type="radio" name="person_${i}_age" value="Teen (10-17)">
+              <span class="form-radio__label">Teen (10&ndash;17)</span>
             </label>
             <label class="form-radio">
               <input type="radio" name="person_${i}_age" value="Young adult (18-29)">
@@ -2800,6 +2917,143 @@
       container.appendChild(card);
       rebindHighlights(card);
     }
+  }
+
+
+  // ── Ranking / Drag-and-Drop UI ───────────────
+  function setupRankingUI() {
+    const source = document.getElementById('rankingSource');
+    const dropzone = document.getElementById('rankingDropzone');
+    const otherSpecify = document.getElementById('stakeholderOther');
+    if (!source || !dropzone) return;
+
+    let draggedItem = null;
+
+    function updateRankedHidden() {
+      const items = dropzone.querySelectorAll('.ranking-item');
+      const values = [];
+      items.forEach((item, i) => {
+        item.setAttribute('data-rank', i + 1);
+        values.push(item.getAttribute('data-value'));
+      });
+      document.getElementById('revitalization_stakeholders_ranked').value = values.join(', ');
+      // Show placeholder if empty
+      const placeholder = dropzone.querySelector('.ranking-placeholder');
+      if (placeholder) placeholder.style.display = items.length ? 'none' : '';
+      // Show/hide other specify
+      const hasOther = Array.from(items).some(item => item.getAttribute('data-value') === 'Other');
+      if (otherSpecify) otherSpecify.classList.toggle('visible', hasOther);
+    }
+
+    function addDragListeners(item) {
+      item.addEventListener('dragstart', function(e) {
+        draggedItem = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', '');
+      });
+      item.addEventListener('dragend', function() {
+        this.classList.remove('dragging');
+        draggedItem = null;
+      });
+    }
+
+    // Add remove button to items
+    function addRemoveBtn(item) {
+      if (item.querySelector('.remove-ranked')) return;
+      const btn = document.createElement('span');
+      btn.className = 'remove-ranked';
+      btn.innerHTML = '&times;';
+      btn.title = 'Remove';
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const val = item.getAttribute('data-value');
+        item.removeAttribute('data-rank');
+        item.querySelector('.remove-ranked')?.remove();
+        source.appendChild(item);
+        updateRankedHidden();
+      });
+      item.appendChild(btn);
+    }
+
+    // Source items
+    source.querySelectorAll('.ranking-item').forEach(addDragListeners);
+
+    // Dropzone events
+    dropzone.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      this.classList.add('dragover');
+
+      // Determine insertion point within dropzone
+      const afterElement = getDragAfterElement(dropzone, e.clientY);
+      if (draggedItem) {
+        if (afterElement == null) {
+          dropzone.appendChild(draggedItem);
+        } else {
+          dropzone.insertBefore(draggedItem, afterElement);
+        }
+      }
+    });
+
+    dropzone.addEventListener('dragleave', function(e) {
+      // Only remove dragover if actually leaving the dropzone
+      if (!this.contains(e.relatedTarget)) {
+        this.classList.remove('dragover');
+      }
+    });
+
+    dropzone.addEventListener('drop', function(e) {
+      e.preventDefault();
+      this.classList.remove('dragover');
+      if (draggedItem) {
+        addRemoveBtn(draggedItem);
+        // Item may already be in dropzone from dragover positioning
+        if (!dropzone.contains(draggedItem)) {
+          dropzone.appendChild(draggedItem);
+        }
+        updateRankedHidden();
+      }
+    });
+
+    // Also allow source to accept drops back
+    source.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+    });
+    source.addEventListener('drop', function(e) {
+      e.preventDefault();
+      if (draggedItem) {
+        draggedItem.removeAttribute('data-rank');
+        draggedItem.querySelector('.remove-ranked')?.remove();
+        source.appendChild(draggedItem);
+        updateRankedHidden();
+      }
+    });
+
+    function getDragAfterElement(container, y) {
+      const items = [...container.querySelectorAll('.ranking-item:not(.dragging)')];
+      return items.reduce((closest, child) => {
+        const box = child.getBoundingClientRect();
+        const offset = y - box.top - box.height / 2;
+        if (offset < 0 && offset > closest.offset) {
+          return { offset: offset, element: child };
+        } else {
+          return closest;
+        }
+      }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Mobile: tap to move (for touch devices that don't support drag well)
+    source.addEventListener('click', function(e) {
+      const item = e.target.closest('.ranking-item');
+      if (item && source.contains(item)) {
+        addRemoveBtn(item);
+        dropzone.appendChild(item);
+        addDragListeners(item);
+        updateRankedHidden();
+      }
+    });
   }
 
   // ── Leaflet Map ────────────────────────────────
@@ -3008,19 +3262,20 @@
       detailRows.push(['Same/different area/species', protSameDiffVals.join(', ') || '(none selected)']);
       detailRows.push(['Duration', getVal('jiru_duration') || '(not provided)']);
       detailRows.push(['Protection protocols', getVal('protection_protocols') || '(not provided)']);
-      detailRows.push(['Protection changes', getVal('protection_changes') || '(not provided)']);
-      detailRows.push(['Other protection details', getVal('protection_other_details') || '(not provided)']);
+      detailRows.push(['Changes/challenges with establishment', getVal('protection_other_details') || '(not provided)']);
       detailRows.push(['Participants', participantVals.join(', ') || '(none selected)']);
       detailRows.push(['Harvest target', harvestTargetVals.join(', ') || '(none selected)']);
       detailRows.push(['Catch used for', catchVals.join(', ') || '(none selected)']);
       detailRows.push(['Harvest protocols', getVal('harvest_protocols') || '(not provided)']);
+      detailRows.push(['Harvest changes/challenges', getVal('harvest_changes') || '(not provided)']);
+      detailRows.push(['Reasons no longer practised', getVal('jiru_no_longer_reasons') || '(not provided)']);
 
       container.innerHTML += buildReviewSection('Jiru Details', 4, detailRows);
     }
 
     // Value & Future of Jiru (Step 6)
     const challengesThreatVals = getCheckboxVals('challenges_threats');
-    const stakeholderVals = getCheckboxVals('revitalization_stakeholders');
+    const stakeholderVals = getVal('revitalization_stakeholders_ranked');
     const valueFutureRows = [
       ['Social benefits', getVal('social_benefits') || '(not provided)'],
       ['Ecological benefits', getVal('ecological_benefits') || '(not provided)'],
@@ -3030,7 +3285,7 @@
       ['Challenges explanation', getVal('challenges_explain') || '(not provided)'],
       ['Conservation program effect', getRadioVal('conservation_program_effect') || '(not selected)'],
       ['Conservation program explanation', getVal('conservation_program_explain') || '(not provided)'],
-      ['Stakeholders', stakeholderVals.join(', ') || '(none selected)'],
+      ['Stakeholders (ranked)', stakeholderVals || '(none ranked)'],
       ['Revitalization ideas', getVal('revitalization_ideas') || '(not provided)'],
       ['Cultural importance', getRadioVal('cultural_importance') || '(not selected)'],
       ['Government recognition', getRadioVal('government_recognition') || '(not selected)'],
@@ -3176,12 +3431,13 @@
         protection_same_or_different: getCheckboxVals('protection_same_or_different'),
         jiru_duration: getVal('jiru_duration'),
         protection_protocols: getVal('protection_protocols'),
-        protection_changes: getVal('protection_changes'),
         protection_other_details: getVal('protection_other_details'),
         jiru_participants: getCheckboxVals('jiru_participants'),
         harvest_target: getCheckboxVals('harvest_target'),
         jiru_catch_used: getCheckboxVals('jiru_catch_used'),
         harvest_protocols: getVal('harvest_protocols'),
+        harvest_changes: getVal('harvest_changes'),
+        jiru_no_longer_reasons: getVal('jiru_no_longer_reasons'),
         social_benefits: getVal('social_benefits'),
         ecological_benefits: getVal('ecological_benefits'),
         economic_benefits: getVal('economic_benefits'),
@@ -3190,7 +3446,7 @@
         challenges_explain: getVal('challenges_explain'),
         conservation_program_effect: getRadioVal('conservation_program_effect'),
         conservation_program_explain: getVal('conservation_program_explain'),
-        revitalization_stakeholders: getCheckboxVals('revitalization_stakeholders'),
+        revitalization_stakeholders: getVal('revitalization_stakeholders_ranked'),
         revitalization_ideas: getVal('revitalization_ideas'),
         cultural_importance: getRadioVal('cultural_importance'),
         government_recognition: getRadioVal('government_recognition'),
@@ -3223,6 +3479,12 @@
       hideOverlay('loadingOverlay');
       showOverlay('successOverlay');
       generateQRCode();
+      // Show email copy note if user opted in
+      const wantCopy = getRadioVal('want_email_copy');
+      const emailCopyNote = document.getElementById('emailCopyNote');
+      if (emailCopyNote && wantCopy === 'Yes') {
+        emailCopyNote.style.display = '';
+      }
       clearLocalStorage(); // Change 1: clear on success
 
     } catch (err) {
