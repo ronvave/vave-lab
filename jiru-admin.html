@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/animations.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
   <style>
     :root {
       --jiru-primary: #002a30;
@@ -167,6 +168,44 @@
     .response-card .field-value:empty::after { content: '—'; color: #d4d1ca; }
     .response-card .field.full-width { grid-column: 1 / -1; }
     @media (max-width: 700px) { .response-card { grid-template-columns: 1fr; } }
+
+    /* PDF Builder Section */
+    .pdf-builder { background: #fff; border-radius: 0.75rem; padding: 2rem; border: 1px solid #e2e8f0; margin-bottom: 1.5rem; }
+    .pdf-builder h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 700; color: var(--jiru-primary); margin-bottom: 0.3rem; }
+    .pdf-builder .pdf-desc { font-size: 0.9rem; color: #64748b; margin-bottom: 1.5rem; max-width: 72ch; }
+    .pdf-filters { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; margin-bottom: 1.25rem; }
+    .pdf-filters .filter-group { display: flex; flex-direction: column; gap: 0.25rem; }
+    .pdf-filters .filter-group label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
+    .pdf-filters .filter-group select { padding: 0.5rem 0.75rem; border: 1.5px solid #e2e8f0; border-radius: 0.4rem; font-size: 0.85rem; background: #fff; min-width: 160px; }
+    .pdf-filters .filter-group select:focus { border-color: var(--jiru-primary); outline: none; }
+    .pdf-selection-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+    .pdf-selection-header span { font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.07em; color: #64748b; }
+    .pdf-selection-actions { display: flex; gap: 0.5rem; }
+    .btn-sel { padding: 0.3rem 0.75rem; border-radius: 0.35rem; border: 1.5px solid #e2e8f0; background: #f8fafc; color: #475569; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .btn-sel:hover { background: #e2e8f0; }
+    .pdf-checkbox-list { max-height: 300px; overflow-y: auto; border: 1.5px solid #e2e8f0; border-radius: 0.5rem; margin-bottom: 1.25rem; }
+    .pdf-checkbox-list:empty::after { content: 'No responses match the selected filters.'; display: block; padding: 1.25rem; color: #94a3b8; font-size: 0.88rem; font-style: italic; }
+    .pdf-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem; border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; font-size: 0.875rem; color: #1e293b; }
+    .pdf-row:last-child { border-bottom: none; }
+    .pdf-row:nth-child(even) { background: #fafbfc; }
+    .pdf-row:hover { background: #f0f9ff; }
+    .pdf-row input[type="checkbox"] { accent-color: var(--jiru-primary); width: 15px; height: 15px; flex-shrink: 0; cursor: pointer; }
+    .pdf-row.checked { background: #e8f4f0; }
+    .pdf-row.checked:nth-child(even) { background: #e1f0eb; }
+    .pdf-row label { cursor: pointer; line-height: 1.4; flex: 1; }
+    .pdf-row label .pdf-status { font-size: 0.72rem; font-weight: 600; padding: 0.1rem 0.4rem; border-radius: 999px; margin-left: 0.3rem; }
+    .pdf-row label .pdf-status.active { background: #d4edda; color: #155724; }
+    .pdf-row label .pdf-status.past { background: #fff3cd; color: #856404; }
+    .pdf-row label .pdf-status.never { background: #fee2e2; color: #991b1b; }
+    .pdf-row label .pdf-status.unsure { background: #f1f5f9; color: #64748b; }
+    .pdf-export-btns { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .btn-pdf { padding: 0.6rem 1.4rem; border: none; border-radius: 0.4rem; font-weight: 600; font-size: 0.88rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.45rem; transition: background 0.2s, color 0.2s; }
+    .btn-pdf-sep { background: var(--jiru-primary); color: #fff; }
+    .btn-pdf-sep:hover { background: var(--jiru-primary-light); }
+    .btn-pdf-combined { background: var(--jiru-accent); color: var(--jiru-primary); }
+    .btn-pdf-combined:hover { background: var(--jiru-accent-light); }
+    .btn-pdf:disabled { opacity: 0.5; cursor: not-allowed; }
+    .pdf-count-note { font-size: 0.82rem; color: #94a3b8; align-self: center; }
 
     /* Export section */
     .export-section { display: flex; gap: 1rem; flex-wrap: wrap; padding-bottom: 2rem; }
@@ -358,6 +397,48 @@
           </div>
           <div class="response-card" id="viewer-card">
             <p style="color:#94a3b8;font-style:italic;">No responses to display.</p>
+          </div>
+        </div>
+
+        <!-- PDF REPORT BUILDER -->
+        <div class="pdf-builder" id="pdf-builder">
+          <h3>PDF Report Builder</h3>
+          <p class="pdf-desc">Generate PDF questionnaire reports for individual or multiple responses.</p>
+
+          <div class="pdf-filters">
+            <div class="filter-group">
+              <label for="pdf-filter-province">Filter by Province</label>
+              <select id="pdf-filter-province" onchange="updatePdfIslandFilter()">
+                <option value="">All Provinces</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="pdf-filter-island">Filter by Island</label>
+              <select id="pdf-filter-island" onchange="updatePdfSelection()">
+                <option value="">All Islands</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="pdf-selection-header">
+            <span>Select Responses</span>
+            <div class="pdf-selection-actions">
+              <button class="btn-sel" onclick="pdfSelectAll()">Select All</button>
+              <button class="btn-sel" onclick="pdfDeselectAll()">Deselect All</button>
+            </div>
+          </div>
+          <div class="pdf-checkbox-list" id="pdf-checkbox-list"></div>
+
+          <div class="pdf-export-btns">
+            <button class="btn-pdf btn-pdf-sep" onclick="exportSeparatePdfs()" id="btn-export-sep">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              Export as Separate PDFs
+            </button>
+            <button class="btn-pdf btn-pdf-combined" onclick="exportCombinedPdf()" id="btn-export-combined">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              Export as Single PDF
+            </button>
+            <span class="pdf-count-note" id="pdf-count-note">0 responses selected</span>
           </div>
         </div>
 
@@ -580,6 +661,7 @@ async function initDashboard() {
   renderHistoricalTimeline();
   renderTable();
   updateWordCount();
+  initPdfFilters();
 
   // Restore API key
   if (window.__jiruApiKey) document.getElementById('openai-key').value = window.__jiruApiKey;
@@ -1144,6 +1226,422 @@ function sendReminder() {
   const subject = encodeURIComponent('Help map jiru practices across the Solomon Islands');
   const body = encodeURIComponent(`Dear colleague,\n\nWe are conducting research on jiru — indigenous funerary protected areas in the Solomon Islands. If you or anyone you know is from the Solomon Islands, we would greatly appreciate a few minutes to complete our community survey.\n\nSurvey link: https://ronvave.github.io/vave-lab/jiru-survey.html\n\nYour responses will help us understand the distribution, nature, and conservation significance of jiru practices across all provinces.\n\nThank you for your support.\n\nProf. Ron Vave\nDepartment of Pacific Islands Studies\nUniversity of Hawaiʻi at Mānoa\nronvave@hawaii.edu`);
   window.open(`mailto:?subject=${subject}&body=${body}`);
+}
+
+// ===== PDF REPORT BUILDER =====
+
+// Populate province dropdown in PDF builder from allData
+function initPdfFilters() {
+  const provSel = document.getElementById('pdf-filter-province');
+  const provinces = [...new Set(allData.map(d => d.province).filter(Boolean))].sort();
+  provSel.innerHTML = '<option value="">All Provinces</option>';
+  provinces.forEach(p => {
+    const opt = document.createElement('option');
+    opt.value = p;
+    opt.textContent = p;
+    provSel.appendChild(opt);
+  });
+  updatePdfIslandFilter();
+}
+
+// Update island dropdown based on selected province
+function updatePdfIslandFilter() {
+  const province = document.getElementById('pdf-filter-province').value;
+  const islSel = document.getElementById('pdf-filter-island');
+  const source = province ? allData.filter(d => d.province === province) : allData;
+  const islands = [...new Set(source.map(d => d.island).filter(Boolean))].sort();
+  islSel.innerHTML = '<option value="">All Islands</option>';
+  islands.forEach(i => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = i;
+    islSel.appendChild(opt);
+  });
+  updatePdfSelection();
+}
+
+// Populate the response checkbox list based on active filters
+function updatePdfSelection() {
+  const province = document.getElementById('pdf-filter-province').value;
+  const island = document.getElementById('pdf-filter-island').value;
+  const container = document.getElementById('pdf-checkbox-list');
+
+  const statusLabel = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
+
+  let pool = allData;
+  if (province) pool = pool.filter(d => d.province === province);
+  if (island) pool = pool.filter(d => d.island === island);
+
+  if (pool.length === 0) {
+    container.innerHTML = '<p style="padding:1.25rem;color:#94a3b8;font-style:italic;font-size:0.88rem;">No responses match the selected filters.</p>';
+    updatePdfCountNote();
+    return;
+  }
+
+  container.innerHTML = '';
+  pool.forEach((d, i) => {
+    const id = `pdf-cb-${i}`;
+    const label = `${d.name || '(unnamed)'} — ${[d.province, d.island, d.village].filter(Boolean).join(', ')}`;
+    const statusCls = d.jiru_status || 'unsure';
+    const statusText = statusLabel[d.jiru_status] || d.jiru_status || 'Unknown';
+
+    const row = document.createElement('div');
+    row.className = 'pdf-row';
+    row.dataset.idx = allData.indexOf(d);
+    row.innerHTML = `
+      <input type="checkbox" id="${id}" data-idx="${allData.indexOf(d)}" onchange="onPdfCheckChange(this)">
+      <label for="${id}">${label} <span class="pdf-status ${statusCls}">${statusText}</span></label>
+    `;
+    row.addEventListener('click', function(e) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'LABEL') return;
+      const cb = this.querySelector('input[type="checkbox"]');
+      cb.checked = !cb.checked;
+      onPdfCheckChange(cb);
+    });
+    container.appendChild(row);
+  });
+  updatePdfCountNote();
+}
+
+function onPdfCheckChange(cb) {
+  const row = cb.closest('.pdf-row');
+  if (cb.checked) {
+    row.classList.add('checked');
+  } else {
+    row.classList.remove('checked');
+  }
+  updatePdfCountNote();
+}
+
+function pdfSelectAll() {
+  document.querySelectorAll('#pdf-checkbox-list input[type="checkbox"]').forEach(cb => {
+    cb.checked = true;
+    cb.closest('.pdf-row').classList.add('checked');
+  });
+  updatePdfCountNote();
+}
+
+function pdfDeselectAll() {
+  document.querySelectorAll('#pdf-checkbox-list input[type="checkbox"]').forEach(cb => {
+    cb.checked = false;
+    cb.closest('.pdf-row').classList.remove('checked');
+  });
+  updatePdfCountNote();
+}
+
+function updatePdfCountNote() {
+  const count = document.querySelectorAll('#pdf-checkbox-list input[type="checkbox"]:checked').length;
+  const note = document.getElementById('pdf-count-note');
+  note.textContent = `${count} response${count !== 1 ? 's' : ''} selected`;
+  const disabled = count === 0;
+  document.getElementById('btn-export-sep').disabled = disabled;
+  document.getElementById('btn-export-combined').disabled = disabled;
+}
+
+// Get selected data records
+function getSelectedPdfData() {
+  const checked = document.querySelectorAll('#pdf-checkbox-list input[type="checkbox"]:checked');
+  const indices = [...checked].map(cb => parseInt(cb.dataset.idx, 10));
+  return indices.map(i => allData[i]).filter(Boolean);
+}
+
+// Helper: wrap text into lines for jsPDF
+function pdfWrapText(doc, text, x, y, maxWidth, lineHeight) {
+  if (!text) return y;
+  const lines = doc.splitTextToSize(String(text), maxWidth);
+  lines.forEach(line => {
+    if (y > 272) { // near bottom of A4 (297mm - 25mm margin)
+      doc.addPage();
+      y = 20;
+    }
+    doc.text(line, x, y);
+    y += lineHeight;
+  });
+  return y;
+}
+
+// Helper: add a section heading
+function pdfSectionHeading(doc, title, y, pageWidth, marginL) {
+  if (y > 260) { doc.addPage(); y = 20; }
+  doc.setFillColor(42, 125, 95); // teal #2a7d5f
+  doc.rect(marginL, y - 4, pageWidth - marginL * 2, 7, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(9);
+  doc.setTextColor(255, 255, 255);
+  doc.text(title.toUpperCase(), marginL + 2, y + 0.5);
+  doc.setTextColor(30, 41, 59);
+  return y + 9;
+}
+
+// Helper: add a label/value row pair
+function pdfField(doc, label, value, x, y, maxWidth, lineHeight) {
+  const val = (value !== undefined && value !== null && value !== '') ? String(value) : '\u2014';
+  if (y > 270) { doc.addPage(); y = 20; }
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.5);
+  doc.setTextColor(100, 116, 139);
+  doc.text(label.toUpperCase(), x, y);
+  y += 4;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(30, 41, 59);
+  y = pdfWrapText(doc, val, x, y, maxWidth, 5);
+  y += 2;
+  return y;
+}
+
+// Helper: two-column field row
+function pdfFieldRow(doc, left, right, marginL, y, colW, lineHeight) {
+  const startY = y;
+  // left column
+  let yL = startY;
+  if (left) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(left[0].toUpperCase(), marginL, yL);
+    yL += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    const lVal = (left[1] !== undefined && left[1] !== null && left[1] !== '') ? String(left[1]) : '\u2014';
+    const lLines = doc.splitTextToSize(lVal, colW - 4);
+    lLines.forEach(line => { doc.text(line, marginL, yL); yL += lineHeight; });
+    yL += 2;
+  }
+  // right column
+  let yR = startY;
+  if (right) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text(right[0].toUpperCase(), marginL + colW, yR);
+    yR += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(30, 41, 59);
+    const rVal = (right[1] !== undefined && right[1] !== null && right[1] !== '') ? String(right[1]) : '\u2014';
+    const rLines = doc.splitTextToSize(rVal, colW - 4);
+    rLines.forEach(line => { doc.text(line, marginL + colW, yR); yR += lineHeight; });
+    yR += 2;
+  }
+  return Math.max(yL, yR);
+}
+
+// Generate a jsPDF doc object for a single response
+function generateResponsePdf(d) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const marginL = 20;
+  const marginR = 20;
+  const pageWidth = 210;
+  const contentWidth = pageWidth - marginL - marginR;
+  const colW = contentWidth / 2;
+  const lineH = 5;
+  let y = 15;
+
+  // --- HEADER ---
+  doc.setFillColor(0, 42, 48); // jiru-primary #002a30
+  doc.rect(0, 0, pageWidth, 28, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(15);
+  doc.setTextColor(255, 255, 255);
+  doc.text('Jiru Survey Response', marginL, y + 2);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(201, 162, 39); // jiru-accent #c9a227
+  doc.text('Vave Lab \u00B7 University of Hawai\u02BBi at M\u0101noa', marginL, y + 9);
+  doc.setTextColor(148, 163, 184);
+  doc.setFontSize(8);
+  doc.text(`Generated ${new Date().toLocaleDateString()}`, pageWidth - marginR, y + 9, { align: 'right' });
+
+  y = 38;
+
+  // Status badge strip
+  const statusColors = { active: [42, 125, 95], past: [201, 162, 39], never: [220, 53, 69], unsure: [148, 163, 184] };
+  const sc = statusColors[d.jiru_status] || statusColors.unsure;
+  doc.setFillColor(...sc);
+  doc.roundedRect(marginL, y - 4, 38, 7, 2, 2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  const statusLabel = { active: 'ACTIVE JIRU', past: 'PAST JIRU', never: 'NEVER', unsure: 'UNSURE' };
+  doc.text(statusLabel[d.jiru_status] || (d.jiru_status || 'UNKNOWN').toUpperCase(), marginL + 3, y + 0.5);
+  doc.setTextColor(30, 41, 59);
+
+  y += 10;
+
+  // --- SECTION 1: About the Respondent ---
+  y = pdfSectionHeading(doc, 'About the Respondent', y, pageWidth, marginL);
+  y = pdfFieldRow(doc, ['Full Name', d.name], ['Email', d.email], marginL, y, colW, lineH);
+  y = pdfFieldRow(doc, ['Connection to Location', d.connection], ['Submitter Type', d.submitter_type], marginL, y, colW, lineH);
+  y = pdfFieldRow(doc, ['Informant Name', d.informant_name], ['Informant Contact', d.informant_contact], marginL, y, colW, lineH);
+  y += 2;
+
+  // --- SECTION 2: Location ---
+  y = pdfSectionHeading(doc, 'Location', y, pageWidth, marginL);
+  y = pdfFieldRow(doc, ['Province', d.province], ['Island', d.island], marginL, y, colW, lineH);
+  y = pdfFieldRow(doc, ['Ward', d.ward], ['Village', d.village], marginL, y, colW, lineH);
+  if (d.lat || d.lng) {
+    y = pdfFieldRow(doc, ['Latitude', d.lat], ['Longitude', d.lng], marginL, y, colW, lineH);
+  }
+  if (d.island_level) {
+    y = pdfField(doc, 'Island-Level Details', d.island_level, marginL, y, contentWidth, lineH);
+  }
+  y += 2;
+
+  // --- SECTION 3: Jiru Practice ---
+  y = pdfSectionHeading(doc, 'Jiru Practice', y, pageWidth, marginL);
+  y = pdfFieldRow(doc, ['Local Name for Jiru', d.local_name], ['Jiru Status', statusLabel[d.jiru_status] || d.jiru_status], marginL, y, colW, lineH);
+  y = pdfField(doc, 'Who Was Jiru Established For', d.who_established_for, marginL, y, contentWidth, lineH);
+  y += 2;
+
+  // --- SECTION 4: Details ---
+  y = pdfSectionHeading(doc, 'Details', y, pageWidth, marginL);
+  y = pdfFieldRow(doc, ['Most Recent Jiru', d.jiru_recency], ['Approximate Year', d.jiru_year_approx], marginL, y, colW, lineH);
+  y = pdfFieldRow(doc, ['Number of People', d.jiru_people_count], ['Duration', d.duration], marginL, y, colW, lineH);
+  y = pdfField(doc, 'People Details', d.jiru_people_details, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'What Was Protected', d.what_protected, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Habitat Description', d.habitat, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Protection Protocols', d.protection_protocols, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Protection Prohibitions', d.protection_prohibitions, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Protection Changes', d.protection_changes, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Protection Challenges', d.protection_challenges, marginL, y, contentWidth, lineH);
+  if (d.protection_other) y = pdfField(doc, 'Other Protection Details', d.protection_other, marginL, y, contentWidth, lineH);
+  if (d.why_stopped) y = pdfField(doc, 'Why Jiru Stopped', d.why_stopped, marginL, y, contentWidth, lineH);
+  y += 2;
+
+  // --- SECTION 5: Harvest ---
+  y = pdfSectionHeading(doc, 'Harvest', y, pageWidth, marginL);
+  y = pdfField(doc, 'Who Participated in Harvest', d.participants, marginL, y, contentWidth, lineH);
+  y = pdfFieldRow(doc, ['Harvest Target', d.harvest_target], ['Catch Used For', d.catch_used], marginL, y, colW, lineH);
+  y = pdfField(doc, 'Harvest Protocols', d.harvest_protocols, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Harvest Prohibitions', d.harvest_prohibitions, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Harvest Changes', d.harvest_changes, marginL, y, contentWidth, lineH);
+  y = pdfField(doc, 'Harvest Challenges', d.harvest_challenges, marginL, y, contentWidth, lineH);
+  y += 2;
+
+  // --- SECTION 6: Resources ---
+  y = pdfSectionHeading(doc, 'Resources', y, pageWidth, marginL);
+  y = pdfFieldRow(doc, ['Has Resources', d.has_resources], ['Uploaded Files', d.files], marginL, y, colW, lineH);
+  y = pdfField(doc, 'Resource Links', d.resources, marginL, y, contentWidth, lineH);
+  y += 2;
+
+  // --- SECTION 7: Additional ---
+  y = pdfSectionHeading(doc, 'Additional Information', y, pageWidth, marginL);
+  y = pdfField(doc, 'General Comments', d.general_comments, marginL, y, contentWidth, lineH);
+  if (d.additional) y = pdfField(doc, 'Additional Details', d.additional, marginL, y, contentWidth, lineH);
+  if (d.jiru_additional) y = pdfField(doc, 'Jiru Additional Notes', d.jiru_additional, marginL, y, contentWidth, lineH);
+  if (d.other_practices) y = pdfField(doc, 'Other Practices', d.other_practices, marginL, y, contentWidth, lineH);
+  if (d.other_practices_desc) y = pdfField(doc, 'Other Practices Description', d.other_practices_desc, marginL, y, contentWidth, lineH);
+  if (d.nearby_jiru) y = pdfField(doc, 'Nearby Jiru', d.nearby_jiru, marginL, y, contentWidth, lineH);
+  if (d.nearby_jiru_desc) y = pdfField(doc, 'Nearby Jiru Description', d.nearby_jiru_desc, marginL, y, contentWidth, lineH);
+  y = pdfFieldRow(doc, ['Heard Via', d.heard_via], ['Willing to Follow Up', d.willing_followup], marginL, y, colW, lineH);
+  y += 2;
+
+  // Footer on each page
+  const totalPages = doc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    doc.setPage(p);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(148, 163, 184);
+    doc.text(`Jiru Survey \u00B7 Vave Lab, University of Hawai\u02BBi at M\u0101noa \u00B7 Page ${p} of ${totalPages}`, pageWidth / 2, 292, { align: 'center' });
+  }
+
+  return doc;
+}
+
+// Build bookmark label from a data record
+function pdfBookmarkLabel(d) {
+  return [d.province, d.island, d.village, d.jiru_status]
+    .map(v => (v || '').replace(/[^a-zA-Z0-9\u0020\u0027\u2019-]/g, '').trim())
+    .filter(Boolean)
+    .join('-');
+}
+
+// Merge all pages from srcDoc into destDoc, starting at destPageCount+1
+function mergePdfPages(destDoc, srcDoc) {
+  // jsPDF doesn't natively merge — we must re-render each page using internal methods
+  // We use the srcDoc's raw page content directly
+  const srcPages = srcDoc.internal.pages;
+  const destInternal = destDoc.internal;
+  for (let p = 1; p < srcPages.length; p++) {
+    destDoc.addPage();
+    const destPageIdx = destInternal.pages.length - 1;
+    destInternal.pages[destPageIdx] = srcPages[p];
+  }
+}
+
+// Export selected responses as individual PDF files
+function exportSeparatePdfs() {
+  const selected = getSelectedPdfData();
+  if (selected.length === 0) { showToast('No responses selected.'); return; }
+  if (!window.jspdf) { showToast('jsPDF library not loaded. Please refresh and try again.'); return; }
+  selected.forEach(d => {
+    const doc = generateResponsePdf(d);
+    const slug = [d.province, d.island, d.village, d.jiru_status]
+      .map(v => (v || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')).filter(Boolean).join('_');
+    const filename = `jiru-response_${slug || 'unknown'}_${(d.date || '').slice(0, 10)}.pdf`;
+    doc.save(filename);
+  });
+  showToast(`Downloaded ${selected.length} PDF${selected.length !== 1 ? 's' : ''}.`);
+}
+
+// Export selected responses as a single combined PDF with bookmarks
+function exportCombinedPdf() {
+  const selected = getSelectedPdfData();
+  if (selected.length === 0) { showToast('No responses selected.'); return; }
+  if (!window.jspdf) { showToast('jsPDF library not loaded. Please refresh and try again.'); return; }
+
+  const { jsPDF } = window.jspdf;
+
+  // Build combined doc by generating each response doc and appending pages
+  let combinedDoc = null;
+  let currentPageNum = 1;
+
+  selected.forEach((d, i) => {
+    const responseDoc = generateResponsePdf(d);
+    const responsePageCount = responseDoc.internal.getNumberOfPages();
+    const bookmarkLabel = pdfBookmarkLabel(d) || `Response ${i + 1}`;
+
+    if (i === 0) {
+      combinedDoc = responseDoc;
+      // Add bookmark for first response at page 1
+      try {
+        combinedDoc.outline.add(null, bookmarkLabel, { pageNumber: 1 });
+      } catch(e) { /* outline API may not be available */ }
+    } else {
+      // Get the raw pages from the response doc and append to combinedDoc
+      const srcPages = responseDoc.internal.pages;
+      for (let p = 1; p <= responsePageCount; p++) {
+        combinedDoc.addPage();
+        currentPageNum++;
+        // Copy page content from src to dest
+        const destIdx = combinedDoc.internal.pages.length - 1;
+        combinedDoc.internal.pages[destIdx] = srcPages[p];
+      }
+      // Add bookmark pointing to the first page of this response
+      try {
+        combinedDoc.outline.add(null, bookmarkLabel, { pageNumber: currentPageNum - responsePageCount + 1 });
+      } catch(e) { /* outline API may not be available */ }
+    }
+    currentPageNum = combinedDoc.internal.getNumberOfPages();
+  });
+
+  // Update footers with correct total page count across all pages
+  const totalPages = combinedDoc.internal.getNumberOfPages();
+  for (let p = 1; p <= totalPages; p++) {
+    combinedDoc.setPage(p);
+    combinedDoc.setFont('helvetica', 'normal');
+    combinedDoc.setFontSize(7.5);
+    combinedDoc.setTextColor(148, 163, 184);
+    combinedDoc.text(`Jiru Survey \u00B7 Vave Lab, University of Hawai\u02BBi at M\u0101noa \u00B7 Page ${p} of ${totalPages}`, 105, 292, { align: 'center' });
+  }
+
+  const dateStr = new Date().toISOString().split('T')[0];
+  combinedDoc.save(`jiru-responses_combined_${dateStr}.pdf`);
+  showToast(`Combined PDF with ${selected.length} response${selected.length !== 1 ? 's' : ''} downloaded.`);
 }
 
 // ===== TOAST =====
