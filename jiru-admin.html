@@ -570,6 +570,8 @@ async function loadAdminData() {
 // ===== INIT DASHBOARD =====
 async function initDashboard() {
   await loadAdminData();
+  viewerIndex = 0;
+  renderViewer();
   populateFilters();
   updateStats();
   renderCharts();
@@ -624,6 +626,8 @@ function applyFilters() {
   renderCharts();
   renderMapMarkers();
   renderTable();
+  viewerIndex = 0;
+  renderViewer();
 }
 
 function resetFilters() {
@@ -636,6 +640,8 @@ function resetFilters() {
   updateStats();
   renderCharts();
   renderMapMarkers();
+  viewerIndex = 0;
+  renderViewer();
   renderTable();
 }
 
