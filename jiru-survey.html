@@ -1047,7 +1047,7 @@
 
         <!-- Progress bar -->
         <div class="survey-progress-bar">
-          <div class="survey-progress-bar__fill" id="progressFill" style="width: 14.29%"></div>
+          <div class="survey-progress-bar__fill" id="progressFill" style="width: 12.5%"></div>
         </div>
 
         <!-- Step indicators -->
@@ -1074,10 +1074,14 @@
           </div>
           <div class="survey-step-indicator" data-step="6">
             <div class="survey-step-indicator__circle">6</div>
-            <div class="survey-step-indicator__label">Resources</div>
+            <div class="survey-step-indicator__label">Value &amp; Future</div>
           </div>
           <div class="survey-step-indicator" data-step="7">
             <div class="survey-step-indicator__circle">7</div>
+            <div class="survey-step-indicator__label">Resources</div>
+          </div>
+          <div class="survey-step-indicator" data-step="8">
+            <div class="survey-step-indicator__circle">8</div>
             <div class="survey-step-indicator__label">Review</div>
           </div>
         </div>
@@ -1183,7 +1187,6 @@
           <!-- ═══════════ STEP 2: Your Location ═══════════ -->
           <div class="survey-step" data-step="2">
             <h3 class="survey-step__title">Your Location</h3>
-            <p class="survey-step__subtitle">Help us locate the community you are providing information about.</p>
 
             <div class="form-row">
               <!-- Change 13: Province alphabetical order -->
@@ -1234,7 +1237,7 @@
               <!-- Change 11: Updated map instruction text -->
               <p class="map-instruction">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                Scroll and zoom into an island then village location you're reporting jiru practice for, then left click to place a marker
+                Scroll and zoom into an island then village location you're reporting for, then left click to place a marker
               </p>
               <div class="map-container" id="locationMap"></div>
               <p class="map-coords" id="mapCoords"></p>
@@ -1251,8 +1254,6 @@
           <!-- ═══════════ STEP 3: Jiru Practice ═══════════ -->
           <div class="survey-step" data-step="3">
             <h3 class="survey-step__title">Jiru in Your Community</h3>
-            <!-- Change 14: Updated section description -->
-            <p class="survey-step__subtitle">We want to understand whether jiru exists in your community or not</p>
 
             <!-- Change 15: Updated local name question -->
             <div class="form-group">
@@ -1304,10 +1305,7 @@
             <!-- YES (current or past) — Detail questions -->
             <div class="conditional-section" id="jiruDetailsYes">
               <h3 class="survey-step__title">Tell us more about jiru in <span id="villageName">your community</span></h3>
-              <!-- Change 18: Updated description -->
-              <p class="survey-step__subtitle">This next set of questions is aimed at understanding the last jiru practice you remember for this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
-
-              <div class="form-section-heading">Most Recent Jiru</div>
+              <p class="survey-step__subtitle">This next set of questions is aimed at understanding the last jiru you remember for this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
 
               <!-- Change 19: Updated question text -->
               <div class="form-group">
@@ -1346,7 +1344,7 @@
 
               <!-- Change 21: How many people question -->
               <div class="form-group">
-                <label class="form-label" for="jiru_people_count">How many people do you remember jiru being done for in this community that you can provide details for?</label>
+                <label class="form-label" for="jiru_people_count">How many people do you remember jiru being done for in this community that you can provide details?</label>
                 <input type="number" class="form-input" id="jiru_people_count" name="jiru_people_count" min="0" max="20" placeholder="Enter a number" style="max-width:200px;">
                 <p class="form-helper">Maximum 20. Person forms will appear below.</p>
               </div>
@@ -1415,7 +1413,7 @@
 
               <!-- Change 29: Same area/species checkbox group -->
               <div class="form-group">
-                <label class="form-label">Is the same area or species protected for a community member's jiru, or is it dependent on some other factor?</label>
+                <label class="form-label">Select all that apply</label>
                 <div class="form-check-group" id="protectionSameDiffGroup">
                   <label class="form-check">
                     <input type="checkbox" name="protection_same_or_different" value="Same area">
@@ -1450,7 +1448,7 @@
               <!-- Change 30: Duration moved here (after the new question) -->
               <div class="form-group">
                 <label class="form-label" for="jiru_duration">How long did the jiru protection last?</label>
-                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="e.g. 3 months, 1 year, until the next planting season">
+                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="">
               </div>
 
               <!-- Change 31: New open-ended protection questions -->
@@ -1460,18 +1458,8 @@
               </div>
 
               <div class="form-group">
-                <label class="form-label" for="protection_prohibitions">Any specific prohibitions before and/or after protection?</label>
-                <textarea class="form-textarea" id="protection_prohibitions" name="protection_prohibitions" placeholder="Describe any prohibitions..."></textarea>
-              </div>
-
-              <div class="form-group">
                 <label class="form-label" for="protection_changes">What has changed regarding jiru establishment process?</label>
                 <textarea class="form-textarea" id="protection_changes" name="protection_changes" placeholder="Describe any changes..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="protection_challenges">Any challenges with jiru establishment?</label>
-                <textarea class="form-textarea" id="protection_challenges" name="protection_challenges" placeholder="Describe any challenges..."></textarea>
               </div>
 
               <div class="form-group">
@@ -1557,7 +1545,7 @@
 
               <!-- Who participated -->
               <div class="form-group">
-                <label class="form-label">Who participated in the harvest? <span class="form-helper">(select all that apply)</span></label>
+                <label class="form-label">Who participated? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="jiruParticipantsGroup">
                   <label class="form-check">
                     <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased">
@@ -1587,7 +1575,7 @@
 
               <!-- What was targeted for harvest? -->
               <div class="form-group">
-                <label class="form-label">What was targeted for harvest? <span class="form-helper">(select all that apply)</span></label>
+                <label class="form-label">What was targeted? <span class="form-helper">(select all that apply)</span></label>
                 <div class="form-check-group" id="harvestTargetGroup">
                   <label class="form-check">
                     <input type="checkbox" name="harvest_target" value="Everything">
@@ -1655,30 +1643,6 @@
                 <textarea class="form-textarea" id="harvest_protocols" name="harvest_protocols" placeholder="Describe any protocols..."></textarea>
               </div>
 
-              <div class="form-group">
-                <label class="form-label" for="harvest_prohibitions">Any prohibitions surrounding harvest process?</label>
-                <textarea class="form-textarea" id="harvest_prohibitions" name="harvest_prohibitions" placeholder="Describe any prohibitions..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="harvest_changes">What has changed regarding harvest process?</label>
-                <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes..."></textarea>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="harvest_challenges">Any challenges with jiru harvest?</label>
-                <textarea class="form-textarea" id="harvest_challenges" name="harvest_challenges" placeholder="Describe any challenges..."></textarea>
-              </div>
-
-              <hr class="form-divider">
-
-              <!-- Extra question for PAST only -->
-              <div class="conditional-section" id="jiruWhyStoppedSection">
-                <div class="form-group">
-                  <label class="form-label" for="jiru_why_stopped">Why is jiru no longer practised in your community?</label>
-                  <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="e.g. the practice was lost after resettlement, younger generations are not aware of it, etc."></textarea>
-                </div>
-              </div>
             </div>
 
             <div class="survey-nav">
@@ -1687,8 +1651,262 @@
             </div>
           </div>
 
-          <!-- ═══════════ STEP 6: Resources & Knowledge ═══════════ -->
+          <!-- ═══════════ STEP 6: Value & Future of Jiru ═══════════ -->
           <div class="survey-step" data-step="6">
+            <h3 class="survey-step__title">Value &amp; Future of Jiru</h3>
+            <p class="survey-step__subtitle">These questions help us understand the importance of jiru and what is needed to sustain it. Whether your community currently practises jiru or not, your views are valuable.</p>
+
+            <!-- GROUP A: Benefits & Value -->
+            <div class="form-section-heading">Benefits &amp; Value</div>
+
+            <div class="form-group">
+              <label class="form-label" for="social_benefits">In your view, what are the social or community benefits of jiru?</label>
+              <textarea class="form-textarea" id="social_benefits" name="social_benefits" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="ecological_benefits">What are the ecological or environmental benefits of jiru?</label>
+              <textarea class="form-textarea" id="ecological_benefits" name="ecological_benefits" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="economic_benefits">Are there any economic benefits from jiru?</label>
+              <textarea class="form-textarea" id="economic_benefits" name="economic_benefits" rows="4"></textarea>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- GROUP B: Consequences of Decline -->
+            <div class="form-section-heading">Consequences of Decline</div>
+
+            <div class="form-group">
+              <label class="form-label" for="consequences_decline">What do you think would happen if jiru was no longer practised in your community?</label>
+              <p class="form-helper">Think about effects on community life, the environment, cultural identity, food security, etc.</p>
+              <textarea class="form-textarea" id="consequences_decline" name="consequences_decline" rows="4"></textarea>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- GROUP C: Challenges & Threats -->
+            <div class="form-section-heading">Challenges &amp; Threats</div>
+
+            <div class="form-group">
+              <label class="form-label">What are the main challenges or threats to jiru practice in your community? <span class="form-helper">(select all that apply)</span></label>
+              <div class="form-check-group" id="challengesThreatGroup">
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Loss of traditional knowledge (elders passing without transmitting knowledge)">
+                  <span class="form-check__label">Loss of traditional knowledge (elders passing without transmitting knowledge)</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Younger generation not interested or not aware">
+                  <span class="form-check__label">Younger generation not interested or not aware</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Church or religious influence discouraging the practice">
+                  <span class="form-check__label">Church or religious influence discouraging the practice</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Government or NGO conservation programs creating overlapping restrictions">
+                  <span class="form-check__label">Government or NGO conservation programs creating overlapping restrictions</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Population growth and increased pressure on resources">
+                  <span class="form-check__label">Population growth and increased pressure on resources</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Changes in land or sea tenure/ownership">
+                  <span class="form-check__label">Changes in land or sea tenure/ownership</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Climate change affecting resources or habitats">
+                  <span class="form-check__label">Climate change affecting resources or habitats</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Migration or urbanization (people leaving villages)">
+                  <span class="form-check__label">Migration or urbanization (people leaving villages)</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="challenges_threats" value="Other">
+                  <span class="form-check__label">Other (specify)</span>
+                </label>
+              </div>
+              <div class="other-specify" id="challengesThreatOther">
+                <input type="text" class="form-input" id="challenges_threats_other_text" placeholder="Please specify">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="challenges_explain">Please explain or give examples:</label>
+              <textarea class="form-textarea" id="challenges_explain" name="challenges_explain" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Has any outside conservation program (e.g. marine protected areas, community-based resource management) affected jiru practice in your community?</label>
+              <div class="form-radio-group" id="conservationEffectGroup">
+                <label class="form-radio">
+                  <input type="radio" name="conservation_program_effect" value="Yes positively">
+                  <span class="form-radio__label">Yes positively</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="conservation_program_effect" value="Yes negatively">
+                  <span class="form-radio__label">Yes negatively</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="conservation_program_effect" value="Both positive and negative effects">
+                  <span class="form-radio__label">Both positive and negative effects</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="conservation_program_effect" value="No effect">
+                  <span class="form-radio__label">No effect</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="conservation_program_effect" value="Unsure">
+                  <span class="form-radio__label">Unsure</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="conservation_program_explain">Please explain:</label>
+              <textarea class="form-textarea" id="conservation_program_explain" name="conservation_program_explain" rows="3"></textarea>
+            </div>
+
+            <hr class="form-divider">
+
+            <!-- GROUP D: Revitalization & Stakeholders -->
+            <div class="form-section-heading">Revitalization &amp; Stakeholders</div>
+
+            <div class="form-group">
+              <label class="form-label">Who should be involved in supporting jiru practice? <span class="form-helper">(select all that apply)</span></label>
+              <div class="form-check-group" id="revitalizationStakeholderGroup">
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Community elders and chiefs">
+                  <span class="form-check__label">Community elders and chiefs</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Church leaders">
+                  <span class="form-check__label">Church leaders</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Youth and schools">
+                  <span class="form-check__label">Youth and schools</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Women's groups">
+                  <span class="form-check__label">Women&rsquo;s groups</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Provincial government">
+                  <span class="form-check__label">Provincial government</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="National government">
+                  <span class="form-check__label">National government</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Researchers and universities">
+                  <span class="form-check__label">Researchers and universities</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Community-based organisations">
+                  <span class="form-check__label">Community-based organisations</span>
+                </label>
+                <label class="form-check">
+                  <input type="checkbox" name="revitalization_stakeholders" value="Other">
+                  <span class="form-check__label">Other (specify)</span>
+                </label>
+              </div>
+              <div class="other-specify" id="stakeholderOther">
+                <input type="text" class="form-input" id="revitalization_stakeholders_other_text" placeholder="Please specify">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="revitalization_ideas">What would help strengthen or revitalize jiru in your community?</label>
+              <textarea class="form-textarea" id="revitalization_ideas" name="revitalization_ideas" rows="4"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">How important is jiru to your community&rsquo;s cultural identity?</label>
+              <div class="form-radio-group" id="culturalImportanceGroup">
+                <label class="form-radio">
+                  <input type="radio" name="cultural_importance" value="Very important">
+                  <span class="form-radio__label">Very important</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="cultural_importance" value="Important">
+                  <span class="form-radio__label">Important</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="cultural_importance" value="Somewhat important">
+                  <span class="form-radio__label">Somewhat important</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="cultural_importance" value="Not important">
+                  <span class="form-radio__label">Not important</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="cultural_importance" value="Unsure">
+                  <span class="form-radio__label">Unsure</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Do you think jiru should be formally recognized in government conservation or resource management plans?</label>
+              <div class="form-radio-group" id="governmentRecognitionGroup">
+                <label class="form-radio">
+                  <input type="radio" name="government_recognition" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="government_recognition" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="government_recognition" value="Unsure">
+                  <span class="form-radio__label">Unsure</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="government_recognition_why">Why or why not?</label>
+              <textarea class="form-textarea" id="government_recognition_why" name="government_recognition_why" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Have you seen or heard of any community that has successfully revived jiru or a similar practice after it had stopped?</label>
+              <div class="form-radio-group" id="jiruRevivalSeenGroup">
+                <label class="form-radio">
+                  <input type="radio" name="jiru_revival_seen" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="jiru_revival_seen" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="jiru_revival_desc">If yes, please describe:</label>
+              <textarea class="form-textarea" id="jiru_revival_desc" name="jiru_revival_desc" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="value_future_other">Is there anything else you would like to share about the value or future of jiru?</label>
+              <textarea class="form-textarea" id="value_future_other" name="value_future_other" rows="4"></textarea>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 7: Resources & Knowledge ═══════════ -->
+          <div class="survey-step" data-step="7">
             <h3 class="survey-step__title">Resources &amp; Knowledge</h3>
             <p class="survey-step__subtitle">Do you have access to any documentation about jiru or similar practices?</p>
 
@@ -1735,8 +1953,8 @@
             </div>
           </div>
 
-          <!-- ═══════════ STEP 7: Review & Submit ═══════════ -->
-          <div class="survey-step" data-step="7">
+          <!-- ═══════════ STEP 8: Review & Submit ═══════════ -->
+          <div class="survey-step" data-step="8">
             <h3 class="survey-step__title">Review &amp; Submit</h3>
             <!-- Change 38: Updated description -->
             <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</p>
@@ -1970,7 +2188,7 @@
   // ── Configuration ──────────────────────────────
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
   const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
-  const TOTAL_STEPS = 7;
+  const TOTAL_STEPS = 8;
   const LOCAL_STORAGE_KEY = 'jiru_draft';
   const _store = window['local' + 'Storage'];
 
@@ -2136,6 +2354,16 @@
     if (hasRes) {
       document.getElementById('resourcesSection').classList.toggle('visible', hasRes.value === 'Yes');
     }
+    // Step 6: challenges threats other
+    const challengesOtherCb = document.querySelector('#challengesThreatGroup input[value="Other"]');
+    if (challengesOtherCb) {
+      document.getElementById('challengesThreatOther').classList.toggle('visible', challengesOtherCb.checked);
+    }
+    // Step 6: stakeholders other
+    const stakeholderOtherCb = document.querySelector('#revitalizationStakeholderGroup input[value="Other"]');
+    if (stakeholderOtherCb) {
+      document.getElementById('stakeholderOther').classList.toggle('visible', stakeholderOtherCb.checked);
+    }
     // Email copy
     const wantCopy = document.querySelector('input[name="want_email_copy"]:checked');
     if (wantCopy && wantCopy.value === 'Yes') {
@@ -2159,8 +2387,8 @@
     if (!validateCurrentStep()) return;
     saveDraftToLocalStorage(); // Change 1: save on Next
     if (currentStep < TOTAL_STEPS) {
-      // Skip Step 5 (Harvest) if user is not a yes-status respondent
-      if (currentStep === 4 && !isYesStatus()) {
+      // Skip Steps 4 and 5 (Details + Harvest) if user is not a yes-status respondent
+      if (currentStep === 3 && !isYesStatus()) {
         currentStep = 6;
       } else {
         currentStep++;
@@ -2172,9 +2400,9 @@
 
   window.prevStep = function() {
     if (currentStep > 1) {
-      // Skip Step 5 (Harvest) going backwards if not yes-status
+      // Skip Steps 4 and 5 (Details + Harvest) going backwards if not yes-status
       if (currentStep === 6 && !isYesStatus()) {
-        currentStep = 4;
+        currentStep = 3;
       } else {
         currentStep--;
       }
@@ -2223,7 +2451,7 @@
     if (currentStep === 2) initMap();
     if (currentStep === 4) updateStep4Visibility();
     if (currentStep === 5) updateStep5Visibility();
-    if (currentStep === 7) buildReviewSummary();
+    if (currentStep === 8) buildReviewSummary();
   }
 
   // ── Validation ─────────────────────────────────
@@ -2418,6 +2646,22 @@
         document.getElementById('resourcesSection').classList.toggle('visible', val && val.value === 'Yes');
       });
     });
+
+    // Step 6: Challenges & Threats "Other"
+    document.querySelectorAll('#challengesThreatGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#challengesThreatGroup input[value="Other"]');
+        document.getElementById('challengesThreatOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
+
+    // Step 6: Revitalization Stakeholders "Other"
+    document.querySelectorAll('#revitalizationStakeholderGroup input[type="checkbox"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const otherCb = document.querySelector('#revitalizationStakeholderGroup input[value="Other"]');
+        document.getElementById('stakeholderOther').classList.toggle('visible', otherCb && otherCb.checked);
+      });
+    });
   }
 
   // ── Email Copy Conditional (Change 40) ─────────
@@ -2459,11 +2703,9 @@
     const status = document.querySelector('input[name="jiru_status"]:checked');
     const val = status ? status.value : '';
     const harvestSection = document.getElementById('harvestDetailsYes');
-    const whyStoppedSection = document.getElementById('jiruWhyStoppedSection');
 
     if (val === 'yes_current' || val === 'yes_past') {
       harvestSection.classList.add('visible');
-      whyStoppedSection.classList.toggle('visible', val === 'yes_past');
     } else {
       harvestSection.classList.remove('visible');
     }
@@ -2511,10 +2753,6 @@
             <label class="form-radio">
               <input type="radio" name="person_${i}_gender" value="Female">
               <span class="form-radio__label">Female</span>
-            </label>
-            <label class="form-radio">
-              <input type="radio" name="person_${i}_gender" value="Not sure">
-              <span class="form-radio__label">Not sure</span>
             </label>
           </div>
         </div>
@@ -2770,24 +3008,38 @@
       detailRows.push(['Same/different area/species', protSameDiffVals.join(', ') || '(none selected)']);
       detailRows.push(['Duration', getVal('jiru_duration') || '(not provided)']);
       detailRows.push(['Protection protocols', getVal('protection_protocols') || '(not provided)']);
-      detailRows.push(['Protection prohibitions', getVal('protection_prohibitions') || '(not provided)']);
       detailRows.push(['Protection changes', getVal('protection_changes') || '(not provided)']);
-      detailRows.push(['Protection challenges', getVal('protection_challenges') || '(not provided)']);
       detailRows.push(['Other protection details', getVal('protection_other_details') || '(not provided)']);
       detailRows.push(['Participants', participantVals.join(', ') || '(none selected)']);
       detailRows.push(['Harvest target', harvestTargetVals.join(', ') || '(none selected)']);
       detailRows.push(['Catch used for', catchVals.join(', ') || '(none selected)']);
       detailRows.push(['Harvest protocols', getVal('harvest_protocols') || '(not provided)']);
-      detailRows.push(['Harvest prohibitions', getVal('harvest_prohibitions') || '(not provided)']);
-      detailRows.push(['Harvest changes', getVal('harvest_changes') || '(not provided)']);
-      detailRows.push(['Harvest challenges', getVal('harvest_challenges') || '(not provided)']);
-
-      if (status === 'yes_past') {
-        detailRows.push(['Why stopped', getVal('jiru_why_stopped') || '(not provided)']);
-      }
 
       container.innerHTML += buildReviewSection('Jiru Details', 4, detailRows);
     }
+
+    // Value & Future of Jiru (Step 6)
+    const challengesThreatVals = getCheckboxVals('challenges_threats');
+    const stakeholderVals = getCheckboxVals('revitalization_stakeholders');
+    const valueFutureRows = [
+      ['Social benefits', getVal('social_benefits') || '(not provided)'],
+      ['Ecological benefits', getVal('ecological_benefits') || '(not provided)'],
+      ['Economic benefits', getVal('economic_benefits') || '(not provided)'],
+      ['Consequences of decline', getVal('consequences_decline') || '(not provided)'],
+      ['Challenges & threats', challengesThreatVals.join(', ') || '(none selected)'],
+      ['Challenges explanation', getVal('challenges_explain') || '(not provided)'],
+      ['Conservation program effect', getRadioVal('conservation_program_effect') || '(not selected)'],
+      ['Conservation program explanation', getVal('conservation_program_explain') || '(not provided)'],
+      ['Stakeholders', stakeholderVals.join(', ') || '(none selected)'],
+      ['Revitalization ideas', getVal('revitalization_ideas') || '(not provided)'],
+      ['Cultural importance', getRadioVal('cultural_importance') || '(not selected)'],
+      ['Government recognition', getRadioVal('government_recognition') || '(not selected)'],
+      ['Government recognition — why', getVal('government_recognition_why') || '(not provided)'],
+      ['Jiru revival seen', getRadioVal('jiru_revival_seen') || '(not selected)'],
+      ['Jiru revival description', getVal('jiru_revival_desc') || '(not provided)'],
+      ['Other comments', getVal('value_future_other') || '(not provided)']
+    ];
+    container.innerHTML += buildReviewSection('Value &amp; Future of Jiru', 6, valueFutureRows);
 
     // Resources
     const hasRes = getRadioVal('has_resources');
@@ -2796,7 +3048,7 @@
       resRows.push(['Links', getVal('resource_links') || '(none)']);
       resRows.push(['Files', uploadedFiles.length ? uploadedFiles.map(f => f.name).join(', ') : '(none)']);
     }
-    container.innerHTML += buildReviewSection('Resources', 6, resRows);
+    container.innerHTML += buildReviewSection('Resources', 7, resRows);
   }
 
   function buildReviewSection(title, step, rows) {
@@ -2924,18 +3176,28 @@
         protection_same_or_different: getCheckboxVals('protection_same_or_different'),
         jiru_duration: getVal('jiru_duration'),
         protection_protocols: getVal('protection_protocols'),
-        protection_prohibitions: getVal('protection_prohibitions'),
         protection_changes: getVal('protection_changes'),
-        protection_challenges: getVal('protection_challenges'),
         protection_other_details: getVal('protection_other_details'),
         jiru_participants: getCheckboxVals('jiru_participants'),
         harvest_target: getCheckboxVals('harvest_target'),
         jiru_catch_used: getCheckboxVals('jiru_catch_used'),
         harvest_protocols: getVal('harvest_protocols'),
-        harvest_prohibitions: getVal('harvest_prohibitions'),
-        harvest_changes: getVal('harvest_changes'),
-        harvest_challenges: getVal('harvest_challenges'),
-        jiru_why_stopped: getVal('jiru_why_stopped'),
+        social_benefits: getVal('social_benefits'),
+        ecological_benefits: getVal('ecological_benefits'),
+        economic_benefits: getVal('economic_benefits'),
+        consequences_decline: getVal('consequences_decline'),
+        challenges_threats: getCheckboxVals('challenges_threats'),
+        challenges_explain: getVal('challenges_explain'),
+        conservation_program_effect: getRadioVal('conservation_program_effect'),
+        conservation_program_explain: getVal('conservation_program_explain'),
+        revitalization_stakeholders: getCheckboxVals('revitalization_stakeholders'),
+        revitalization_ideas: getVal('revitalization_ideas'),
+        cultural_importance: getRadioVal('cultural_importance'),
+        government_recognition: getRadioVal('government_recognition'),
+        government_recognition_why: getVal('government_recognition_why'),
+        jiru_revival_seen: getRadioVal('jiru_revival_seen'),
+        jiru_revival_desc: getVal('jiru_revival_desc'),
+        value_future_other: getVal('value_future_other'),
         other_practices: getRadioVal('other_practices'),
         other_practices_desc: getVal('other_practices_desc'),
         knows_nearby_jiru: getRadioVal('knows_nearby_jiru'),
