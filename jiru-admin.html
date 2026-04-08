@@ -895,7 +895,7 @@ function renderMapMarkers() {
 
     marker.bindPopup(`
       <div style="font-family:'DM Sans',sans-serif;min-width:180px;">
-        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${d.name}</strong><br>
+        <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${(d.submitter_type === 'informant' && d.informant_name) ? d.informant_name : d.name}</strong><br>
         <span style="color:#64748b;font-size:0.8rem;">${d.village}, ${d.island}</span><br>
         <span style="color:#64748b;font-size:0.8rem;">${d.province} Province</span><br>
         <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.72rem;font-weight:600;background:${colors[d.jiru_status]}20;color:${colors[d.jiru_status]};">Jiru: ${labels[d.jiru_status]}</span>
