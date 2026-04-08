@@ -29,9 +29,24 @@
     body { font-family: var(--font-body); color: #1e293b; background: #f1f5f9; line-height: 1.6; }
 
     /* Banner */
-    .page-banner { background: var(--jiru-primary); color: #fff; padding: 2.5rem 0 2rem; text-align: center; }
+    .page-banner { background: var(--jiru-primary); color: #fff; padding: 3rem 0 0; text-align: center; }
     .page-banner .eyebrow { font-family: var(--font-body); font-size: 0.8rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--jiru-accent); margin-bottom: 0.4rem; font-weight: 600; }
-    .page-banner h1 { font-family: var(--font-display); font-size: clamp(1.75rem, 1.3rem + 2vw, 2.75rem); font-weight: 700; line-height: 1.15; }
+    .page-banner h1 { font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 2vw, 3rem); font-weight: 700; line-height: 1.15; color: #fff; margin: 0; }
+
+    /* Stats Banner (inside page-banner) */
+    .stats-banner { background: var(--jiru-primary); padding: 2rem 0; border-bottom: 3px solid var(--jiru-accent); }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; text-align: center; }
+    .stat-item { color: #fff; }
+    .stat-item .stat-number { font-family: var(--font-display); font-size: clamp(2rem, 1.5rem + 2vw, 3rem); font-weight: 700; line-height: 1; color: var(--jiru-accent); font-variant-numeric: tabular-nums lining-nums; }
+    .stat-item .stat-label { font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.7); margin-top: 0.3rem; font-weight: 500; }
+
+    /* Status summary cards */
+    .status-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem; }
+    .status-card { border-radius: 10px; padding: 1.2rem 1rem; text-align: center; color: #fff; }
+    .status-card__number { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 2.2rem; font-weight: 600; line-height: 1; margin-bottom: 0.3rem; }
+    .status-card__label { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; opacity: 0.95; }
+    .status-card__desc { font-size: 1.07rem; color: #64748b; line-height: 1.4; margin: 0.5rem 0 0 0; }
+    @media (max-width: 600px) { .status-cards { grid-template-columns: repeat(2, 1fr); } }
 
     .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 
@@ -77,9 +92,9 @@
     .map-card { background: #fff; border-radius: 0.75rem; border: 1px solid #e2e8f0; overflow: hidden; margin-bottom: 1.5rem; }
     .map-card h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; color: var(--jiru-primary); padding: 1.25rem 1.25rem 0; }
     #admin-map { height: 450px; }
-    .map-legend-admin { padding: 0.75rem 1.25rem; display: flex; gap: 1.5rem; flex-wrap: wrap; font-size: 0.8rem; color: #64748b; border-top: 1px solid #e2e8f0; }
+    .map-legend-admin { padding: 1.2rem 1.5rem; display: flex; gap: 2rem; flex-wrap: wrap; justify-content: center; font-size: 1rem; color: #64748b; border-top: 1px solid #e2e8f0; }
     .legend-item { display: flex; align-items: center; gap: 0.4rem; }
-    .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+    .legend-dot { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; }
 
     /* Timeline */
     .timeline-row { display: grid; grid-template-columns: 2fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
@@ -251,8 +266,34 @@
 <!-- PAGE BANNER -->
 <div class="page-banner">
   <div class="container">
-    <p class="eyebrow">Vave Lab · Admin</p>
-    <h1>Jiru Research Dashboard</h1>
+    <div style="display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-bottom:1.5rem;">
+      <img src="img/Left%20white%20UH%20logo.png" alt="University of Hawaiʻi at Mānoa" style="height:60px;width:auto;object-fit:contain;">
+      <h1>Jiru Research Dashboard</h1>
+      <img src="img/White_DPIS%20logo_6Dec2024.png" alt="Department of Pacific Islands Studies" style="height:60px;width:auto;object-fit:contain;">
+    </div>
+  </div>
+  <!-- STATS BANNER (inside dark banner) -->
+  <div class="stats-banner">
+    <div class="container">
+      <div class="stats-grid">
+        <div class="stat-item">
+          <div class="stat-number" id="admin-total">—</div>
+          <div class="stat-label">Total Submissions</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="admin-provinces">—</div>
+          <div class="stat-label">Provinces Represented</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="admin-active">—</div>
+          <div class="stat-label">Active Jiru Communities</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="admin-latest">—</div>
+          <div class="stat-label">Latest Submission</div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -271,14 +312,38 @@
   <!-- DASHBOARD (hidden until login) -->
   <div class="dashboard" id="dashboard">
 
-    <!-- STATS ROW -->
-    <section class="section">
+    <!-- STATUS CARDS -->
+    <section class="section" style="padding: clamp(0.5rem,1vw,1rem) 0;">
       <div class="container">
-        <div class="stats-row">
-          <div class="stat-card"><div class="stat-number" id="admin-total">—</div><div class="stat-label">Total Submissions</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-provinces">—</div><div class="stat-label">Provinces Represented</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-active">—</div><div class="stat-label">Active Jiru Communities</div></div>
-          <div class="stat-card"><div class="stat-number" id="admin-latest">—</div><div class="stat-label">Latest Submission</div></div>
+        <div class="status-cards">
+          <div style="text-align:center;">
+            <div class="status-card" id="stat-active" style="background:#07AD03;">
+              <div class="status-card__number">0</div>
+              <div class="status-card__label">Active Jiru</div>
+            </div>
+            <p class="status-card__desc">Jiru is actively practiced in the present</p>
+          </div>
+          <div style="text-align:center;">
+            <div class="status-card" id="stat-past" style="background:#FF8700;">
+              <div class="status-card__number">0</div>
+              <div class="status-card__label">Jiru in the Past</div>
+            </div>
+            <p class="status-card__desc">Jiru was done in the past. Now no more.</p>
+          </div>
+          <div style="text-align:center;">
+            <div class="status-card" id="stat-never" style="background:#B82100;">
+              <div class="status-card__number">0</div>
+              <div class="status-card__label">Never Done Jiru</div>
+            </div>
+            <p class="status-card__desc">Jiru was never practiced in these communities</p>
+          </div>
+          <div style="text-align:center;">
+            <div class="status-card" id="stat-unsure" style="background:#3B3B3B;">
+              <div class="status-card__number">0</div>
+              <div class="status-card__label">Unsure</div>
+            </div>
+            <p class="status-card__desc">&nbsp;</p>
+          </div>
         </div>
 
         <!-- FILTERS -->
@@ -320,10 +385,22 @@
           <h3>Submission Locations</h3>
           <div id="admin-map"></div>
           <div class="map-legend-admin">
-            <div class="legend-item"><span class="legend-dot" style="background:#2a7d5f;"></span> Active jiru</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#c9a227;"></span> Past jiru</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#dc3545;"></span> Never</div>
-            <div class="legend-item"><span class="legend-dot" style="background:#94a3b8;"></span> Unsure</div>
+            <label class="legend-item" style="font-size:1rem;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" class="legend-cb" value="active" checked onchange="filterMapByStatus()">
+              <span class="legend-dot" style="background:#07AD03;width:20px;height:20px;"></span> Active jiru
+            </label>
+            <label class="legend-item" style="font-size:1rem;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" class="legend-cb" value="past" checked onchange="filterMapByStatus()">
+              <span class="legend-dot" style="background:#FF8700;width:20px;height:20px;"></span> Past jiru
+            </label>
+            <label class="legend-item" style="font-size:1rem;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" class="legend-cb" value="never" checked onchange="filterMapByStatus()">
+              <span class="legend-dot" style="background:#B82100;width:20px;height:20px;"></span> Never
+            </label>
+            <label class="legend-item" style="font-size:1rem;gap:0.5rem;cursor:pointer;">
+              <input type="checkbox" class="legend-cb" value="unsure" checked onchange="filterMapByStatus()">
+              <span class="legend-dot" style="background:#3B3B3B;width:20px;height:20px;"></span> Unsure
+            </label>
           </div>
         </div>
 
@@ -706,6 +783,16 @@ function updateStats() {
   document.getElementById('admin-active').textContent = filteredData.filter(d => d.jiru_status === 'active').length;
   const latest = filteredData.reduce((max, d) => d.date > max ? d.date : max, '');
   document.getElementById('admin-latest').textContent = latest ? new Date(latest).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+
+  // Status cards (update the number child inside each card wrapper)
+  const cardActive = document.getElementById('stat-active');
+  const cardPast   = document.getElementById('stat-past');
+  const cardNever  = document.getElementById('stat-never');
+  const cardUnsure = document.getElementById('stat-unsure');
+  if (cardActive) cardActive.querySelector('.status-card__number').textContent = filteredData.filter(d => d.jiru_status === 'active').length;
+  if (cardPast)   cardPast.querySelector('.status-card__number').textContent   = filteredData.filter(d => d.jiru_status === 'past').length;
+  if (cardNever)  cardNever.querySelector('.status-card__number').textContent  = filteredData.filter(d => d.jiru_status === 'never').length;
+  if (cardUnsure) cardUnsure.querySelector('.status-card__number').textContent = filteredData.filter(d => d.jiru_status === 'unsure').length;
 }
 
 // ===== CHARTS =====
@@ -903,6 +990,7 @@ function renderMapMarkers() {
         <br><span style="font-size:0.75rem;color:#94a3b8;">${new Date(d.date).toLocaleDateString()}</span>
       </div>
     `);
+    marker._jiruStatus = d.jiru_status;
     mapMarkers.push(marker);
   });
 
@@ -918,6 +1006,18 @@ function renderMapMarkers() {
       }
     }, 1000);
   }
+}
+
+// ===== MAP FILTER BY STATUS =====
+function filterMapByStatus() {
+  const checked = Array.from(document.querySelectorAll('.legend-cb:checked')).map(cb => cb.value);
+  mapMarkers.forEach(m => {
+    if (checked.includes(m._jiruStatus)) {
+      if (!adminMap.hasLayer(m)) adminMap.addLayer(m);
+    } else {
+      if (adminMap.hasLayer(m)) adminMap.removeLayer(m);
+    }
+  });
 }
 
 // ===== TABLE =====
