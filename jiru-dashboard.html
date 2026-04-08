@@ -923,7 +923,7 @@ function initMap() {
       setTimeout(() => {
         window.jiruMap.invalidateSize();
         const bounds = L.latLngBounds(window.jiruMapMarkers.map(m => [m.lat, m.lng]));
-        window.jiruMap.fitBounds(bounds.pad(0.3), { maxZoom: 10 });
+        window.jiruMap.fitBounds(bounds.pad(0.1), { maxZoom: 10 });
       }, 500);
     }
   }
