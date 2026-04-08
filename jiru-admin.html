@@ -466,9 +466,17 @@ async function loadAdminData() {
   let data = null;
   try {
     const pw = ADMIN_PASSWORDS[0];
-    const resp = await fetch(APPS_SCRIPT_URL + '?action=admin&password=' + pw);
-    if (resp.ok) data = await resp.json();
-  } catch (e) {}
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=admin&password=' + pw, {
+      redirect: 'follow',
+      cache: 'no-cache'
+    });
+    const text = await resp.text();
+    const parsed = JSON.parse(text);
+    // API returns {success, data, total} — extract the array
+    data = parsed.data || parsed;
+  } catch (e) {
+    console.warn('Admin fetch failed:', e);
+  }
   if (!data || !Array.isArray(data) || data.length === 0) data = DEMO_DATA;
   allData = data;
   filteredData = [...data];
