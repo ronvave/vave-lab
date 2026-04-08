@@ -917,6 +917,15 @@ function initMap() {
         </div>
       `);
     });
+
+    // Auto-fit map to show all markers with padding
+    if (window.jiruMapMarkers.length > 0) {
+      setTimeout(() => {
+        window.jiruMap.invalidateSize();
+        const bounds = L.latLngBounds(window.jiruMapMarkers.map(m => [m.lat, m.lng]));
+        window.jiruMap.fitBounds(bounds.pad(0.3), { maxZoom: 10 });
+      }, 500);
+    }
   }
 }
 
