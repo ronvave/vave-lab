@@ -898,10 +898,33 @@ function toggleDetail(d, tr) {
 
 // ===== EXPORT CSV =====
 function exportCSV() {
-  const headers = ['Date', 'Name', 'Province', 'Island', 'Village', 'Jiru Status', 'Local Name', 'What Protected', 'Resources', 'Year Approx', 'Comments', 'Additional', 'Habitat', 'Why Stopped', 'Nearby Jiru', 'Other Practices'];
+  const headers = [
+    'Date', 'Name', 'Email', 'Connection', 'Submitter Type', 'Informant Name', 'Informant Contact',
+    'Province', 'Island', 'Ward', 'Village', 'Island Level', 'Latitude', 'Longitude',
+    'Local Name', 'Jiru Status', 'Most Recent Jiru', 'Approx Year',
+    'People Count', 'People Details', 'Who Established For',
+    'What Protected', 'Habitat Description', 'Protection Same/Different', 'Duration',
+    'Protection Protocols', 'Protection Prohibitions', 'Protection Changes', 'Protection Challenges', 'Protection Other Details',
+    'Who Participated', 'Harvest Target', 'Catch Used For',
+    'Harvest Protocols', 'Harvest Prohibitions', 'Harvest Changes', 'Harvest Challenges',
+    'Additional Details', 'Why Stopped',
+    'Other Practices', 'Other Practices Description', 'Nearby Jiru', 'Nearby Jiru Description',
+    'Has Resources', 'Resource Links', 'Uploaded Files',
+    'General Comments', 'Heard Via', 'Want Email Copy', 'Willing Followup'
+  ];
   const rows = filteredData.map(d => [
-    d.date, d.name, d.province, d.island, d.village, d.jiru_status, d.local_name, d.what_protected, d.resources,
-    d.jiru_year_approx || '', d.general_comments, d.jiru_additional, d.jiru_habitat_description, d.jiru_why_stopped, d.nearby_jiru_desc, d.other_practices_desc
+    d.date, d.name, d.email, d.connection, d.submitter_type, d.informant_name, d.informant_contact,
+    d.province, d.island, d.ward, d.village, d.island_level, d.lat, d.lng,
+    d.local_name, d.jiru_status, d.jiru_recency, d.jiru_year_approx,
+    d.jiru_people_count, d.jiru_people_details, d.who_established_for,
+    d.what_protected, d.habitat, d.protection_same_diff, d.duration,
+    d.protection_protocols, d.protection_prohibitions, d.protection_changes, d.protection_challenges, d.protection_other,
+    d.participants, d.harvest_target, d.catch_used,
+    d.harvest_protocols, d.harvest_prohibitions, d.harvest_changes, d.harvest_challenges,
+    d.additional, d.why_stopped,
+    d.other_practices, d.other_practices_desc, d.nearby_jiru, d.nearby_jiru_desc,
+    d.has_resources, d.resources, d.files,
+    d.general_comments, d.heard_via, d.want_email_copy, d.willing_followup
   ].map(v => `"${(v || '').toString().replace(/"/g, '""')}"`));
 
   const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
