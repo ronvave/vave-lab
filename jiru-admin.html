@@ -472,8 +472,60 @@ async function loadAdminData() {
     });
     const text = await resp.text();
     const parsed = JSON.parse(text);
-    // API returns {success, data, total} — extract the array
-    data = parsed.data || parsed;
+    // API returns {success, data, total} — extract and map fields
+    const raw = parsed.data || parsed;
+    data = (Array.isArray(raw) ? raw : []).map(r => ({
+      date: r['Timestamp'] || '',
+      name: r['First Name'] || '',
+      email: r['Email'] || '',
+      connection: r['Connection to Community'] || '',
+      submitter_type: r['Submitter Type'] || '',
+      informant_name: r['Informant Name'] || '',
+      informant_contact: r['Informant Contact'] || '',
+      province: r['Province'] || '',
+      island: r['Island'] || '',
+      ward: r['Ward'] || '',
+      village: r['Village'] || '',
+      island_level: r['Island Level?'] || '',
+      lat: r['Latitude'] || null,
+      lng: r['Longitude'] || null,
+      local_name: r['Local Jiru Name'] || '',
+      jiru_status: (r['Jiru Status'] || '').replace('yes_current','active').replace('yes_past','past').replace('no_never','never'),
+      jiru_recency: r['Most Recent Jiru'] || '',
+      jiru_year_approx: r['Approx Year'] || '',
+      jiru_people_count: r['Jiru People Count'] || '',
+      jiru_people_details: r['Jiru People Details'] || '',
+      who_established_for: r['Who Established For'] || '',
+      what_protected: r['What Was Protected'] || '',
+      habitat: r['Habitat Description'] || '',
+      protection_same_diff: r['Protection Same/Different'] || '',
+      duration: r['Duration'] || '',
+      protection_protocols: r['Protection Protocols'] || '',
+      protection_prohibitions: r['Protection Prohibitions'] || '',
+      protection_changes: r['Protection Changes'] || '',
+      protection_challenges: r['Protection Challenges'] || '',
+      protection_other: r['Protection Other Details'] || '',
+      participants: r['Who Participated'] || '',
+      harvest_target: r['Harvest Target'] || '',
+      catch_used: r['Catch Used For'] || '',
+      harvest_protocols: r['Harvest Protocols'] || '',
+      harvest_prohibitions: r['Harvest Prohibitions'] || '',
+      harvest_changes: r['Harvest Changes'] || '',
+      harvest_challenges: r['Harvest Challenges'] || '',
+      additional: r['Additional Jiru Details'] || '',
+      why_stopped: r['Why Stopped'] || '',
+      other_practices: r['Other Practices?'] || '',
+      other_practices_desc: r['Other Practices Description'] || '',
+      nearby_jiru: r['Nearby Jiru?'] || '',
+      nearby_jiru_desc: r['Nearby Jiru Description'] || '',
+      has_resources: r['Has Resources?'] || '',
+      resources: r['Resource Links'] || '',
+      files: r['Uploaded Files'] || '',
+      general_comments: r['General Comments'] || '',
+      heard_via: r['Heard Via'] || '',
+      want_email_copy: r['Want Email Copy'] || '',
+      willing_followup: r['Willing Followup'] || ''
+    }));
   } catch (e) {
     console.warn('Admin fetch failed:', e);
   }
