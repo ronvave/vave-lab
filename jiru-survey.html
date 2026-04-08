@@ -1286,6 +1286,12 @@
               <p class="form-error-msg">Please select an option.</p>
             </div>
 
+            <!-- Who are jiru established for — only show if Yes (current or past) -->
+            <div class="form-group" id="jiruWhoEstablishedGroup" style="display:none;">
+              <label class="form-label" for="jiru_who_established_for">Who are jiru normally established for in this community?</label>
+              <textarea class="form-textarea" id="jiru_who_established_for" name="jiru_who_established_for" placeholder="Describe who jiru is typically established for..."></textarea>
+            </div>
+
             <div class="survey-nav">
               <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
               <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
@@ -1350,11 +1356,6 @@
 
               <hr class="form-divider">
 
-              <!-- Change 23: Who are jiru established for -->
-              <div class="form-group">
-                <label class="form-label" for="jiru_who_established_for">Normally, who are jiru established for in this community?</label>
-                <textarea class="form-textarea" id="jiru_who_established_for" name="jiru_who_established_for" placeholder="Describe who jiru is typically established for..."></textarea>
-              </div>
 
               <!-- Change 24: Any other details -->
               <div class="form-group">
@@ -2334,6 +2335,15 @@
       r.addEventListener('change', () => {
         const val = document.querySelector('input[name="submitter_type"]:checked');
         document.getElementById('informantFields').classList.toggle('visible', val && val.value === 'informant');
+      });
+    });
+
+    // Jiru status — show/hide "Who are jiru established for" in Step 3
+    document.querySelectorAll('input[name="jiru_status"]').forEach(r => {
+      r.addEventListener('change', () => {
+        const val = document.querySelector('input[name="jiru_status"]:checked');
+        const show = val && (val.value === 'yes_current' || val.value === 'yes_past');
+        document.getElementById('jiruWhoEstablishedGroup').style.display = show ? '' : 'none';
       });
     });
 
