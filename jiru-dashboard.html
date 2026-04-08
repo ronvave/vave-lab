@@ -452,6 +452,12 @@
       text-transform: uppercase;
       opacity: 0.95;
     }
+    .status-card__desc {
+      font-size: 0.82rem;
+      color: #64748b;
+      line-height: 1.4;
+      margin: 0.5rem 0 0 0;
+    }
     @media (max-width: 600px) {
       .status-cards { grid-template-columns: repeat(2, 1fr); }
     }
@@ -611,21 +617,33 @@
   <section class="section" style="padding: clamp(0.5rem,1vw,1rem) 0;">
     <div class="container">
       <div class="status-cards">
-        <div class="status-card" style="background:#07AD03;">
-          <div class="status-card__number" id="stat-active">0</div>
-          <div class="status-card__label">Active Jiru</div>
+        <div style="text-align:center;">
+          <div class="status-card" style="background:#07AD03;">
+            <div class="status-card__number" id="stat-active">0</div>
+            <div class="status-card__label">Active Jiru</div>
+          </div>
+          <p class="status-card__desc">Jiru is actively practiced in the present</p>
         </div>
-        <div class="status-card" style="background:#FF8700;">
-          <div class="status-card__number" id="stat-past">0</div>
-          <div class="status-card__label">Jiru in the Past</div>
+        <div style="text-align:center;">
+          <div class="status-card" style="background:#FF8700;">
+            <div class="status-card__number" id="stat-past">0</div>
+            <div class="status-card__label">Jiru in the Past</div>
+          </div>
+          <p class="status-card__desc">Jiru was done in the past. Now no more.</p>
         </div>
-        <div class="status-card" style="background:#B82100;">
-          <div class="status-card__number" id="stat-never">0</div>
-          <div class="status-card__label">Never Done Jiru</div>
+        <div style="text-align:center;">
+          <div class="status-card" style="background:#B82100;">
+            <div class="status-card__number" id="stat-never">0</div>
+            <div class="status-card__label">Never Done Jiru</div>
+          </div>
+          <p class="status-card__desc">Jiru was never practiced in these communities</p>
         </div>
-        <div class="status-card" style="background:#3B3B3B;">
-          <div class="status-card__number" id="stat-unsure">0</div>
-          <div class="status-card__label">Unsure</div>
+        <div style="text-align:center;">
+          <div class="status-card" style="background:#3B3B3B;">
+            <div class="status-card__number" id="stat-unsure">0</div>
+            <div class="status-card__label">Unsure</div>
+          </div>
+          <p class="status-card__desc">&nbsp;</p>
         </div>
       </div>
     </div>
@@ -753,7 +771,7 @@
 
 <script>
 // ===== CONFIG =====
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby19VE50MFkSFM86tkMvFaS6Nz4SQnCAYzYK8In8N_TZ9me5AYK0RxJFmE6fEIp0RyD/exec';
+const APPS_SCRIPT_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL';
 const SURVEY_URL = 'https://ronvave.github.io/vave-lab/jiru-survey.html';
 
 // ===== DEMO DATA =====
