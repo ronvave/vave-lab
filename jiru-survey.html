@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/animations.css">
 
   <!-- Leaflet -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -1160,7 +1161,7 @@
         <ul style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin:0 0 0.8rem 1.2rem;padding:0;">
           <li>Your responses will be used for academic research purposes only.</li>
           <li>Your <strong>name and general location</strong> are collected solely to help map the distribution of jiru practices and for potential follow-up by the research team. This information will be held securely and will only be known to Dr. Vave and Henry Kaniki.</li>
-          <li>Your <strong>email address</strong> is optional. It is only needed if you would like a copy of your responses emailed to you after submission. Other than potential follow up email for additional details, it will never be used for any other purpose or shared without your explicit approval.</li>
+          <li>Your <strong>email address</strong> is optional. It is only needed if you are open to follow up where additional details are needed. It will never be used for any other purpose or shared without your explicit approval.</li>
           <li>Community-level findings will (1) initially be shared anonymously through a publicly accessible dashboard following form submission, and (2) in a journal article. No individual will be identified in any public output without their explicit consent.</li>
           <li>All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.</li>
         </ul>
@@ -2076,29 +2077,24 @@
               </div>
             </div>
 
-            <!-- Change 40: Email copy question -->
+            <!-- PDF download question -->
             <div class="form-group">
-              <label class="form-label">Would you like to receive a copy of information you've submitted here via email?</label>
-              <p class="form-helper" style="margin-bottom:var(--space-2);">Your email address will be needed for this</p>
-              <div class="form-radio-group" id="wantEmailCopyGroup">
+              <label class="form-label">Would you like to receive a PDF of information you've submitted immediately after submission?</label>
+              <div class="form-radio-group" id="wantPdfGroup">
                 <label class="form-radio">
-                  <input type="radio" name="want_email_copy" value="Yes">
+                  <input type="radio" name="want_pdf_copy" value="Yes">
                   <span class="form-radio__label">Yes</span>
                 </label>
                 <label class="form-radio">
-                  <input type="radio" name="want_email_copy" value="No">
+                  <input type="radio" name="want_pdf_copy" value="No">
                   <span class="form-radio__label">No</span>
                 </label>
-              </div>
-              <!-- Conditional email field if no email was provided in Step 1 -->
-              <div class="email-copy-field" id="emailCopyField">
-                <label class="form-label" for="copy_email">Your email address:</label>
-                <input type="email" class="form-input" id="copy_email" name="copy_email" placeholder="your.email@example.com">
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Are you willing to be contacted for a follow-up interview about jiru?</label>
+              <p class="form-helper" style="margin-bottom:var(--space-2);">Your email address will be needed for this.</p>
               <div class="form-radio-group" id="willingFollowupGroup">
                 <label class="form-radio">
                   <input type="radio" name="willing_followup" value="Yes">
@@ -2112,6 +2108,11 @@
                   <input type="radio" name="willing_followup" value="Maybe">
                   <span class="form-radio__label">Maybe</span>
                 </label>
+              </div>
+              <!-- Conditional email field if no email was provided in Step 1 -->
+              <div class="email-copy-field" id="followupEmailField" style="display:none;">
+                <label class="form-label" for="followup_email">Your email address (for follow-up):</label>
+                <input type="email" class="form-input" id="followup_email" name="followup_email" placeholder="your.email@example.com">
               </div>
             </div>
 
@@ -2297,6 +2298,153 @@
       label.style.borderColor = '#d4d1ca';
     }
   }
+
+
+  // Generate and download PDF of responses
+  window.generateResponsePdf = function(data) {
+    if (!window.jspdf) return;
+    var doc = new window.jspdf.jsPDF();
+    var y = 20;
+    var leftMargin = 20;
+    var pageWidth = 170;
+    
+    function addTitle(text) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 42, 48);
+      doc.text(text, leftMargin, y);
+      y += 8;
+      doc.setDrawColor(201, 162, 39);
+      doc.setLineWidth(0.5);
+      doc.line(leftMargin, y, leftMargin + pageWidth, y);
+      y += 8;
+    }
+    
+    function addSection(text) {
+      checkPage(14);
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 42, 48);
+      y += 4;
+      doc.text(text, leftMargin, y);
+      y += 2;
+      doc.setDrawColor(226, 232, 240);
+      doc.line(leftMargin, y, leftMargin + pageWidth, y);
+      y += 6;
+    }
+    
+    function addField(label, value) {
+      if (!value || String(value).trim() === '') return;
+      var val = String(value).trim();
+      if (Array.isArray(value)) val = value.join(', ');
+      checkPage(12);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(71, 85, 105);
+      doc.text(label + ':', leftMargin, y);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(30, 41, 59);
+      var lines = doc.splitTextToSize(val, pageWidth - 45);
+      doc.text(lines, leftMargin + 45, y);
+      y += Math.max(lines.length * 4.5, 6);
+    }
+    
+    function checkPage(needed) {
+      if (y + needed > 280) {
+        doc.addPage();
+        y = 20;
+      }
+    }
+    
+    addTitle('Jiru Survey Response');
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text('Vave Lab - University of Hawai\u02bbi at Manoa', leftMargin, y);
+    y += 5;
+    doc.text('Submitted: ' + (data.timestamp || new Date().toISOString()), leftMargin, y);
+    y += 10;
+    
+    addSection('About You');
+    addField('Name', data.first_name);
+    addField('Email', data.email);
+    addField('Submitter Type', data.submitter_type);
+    addField('Informant Name', data.informant_name);
+    addField('Connection', data.connection);
+    
+    addSection('Location');
+    addField('Province', data.province);
+    addField('Island', data.island);
+    addField('Ward', data.ward);
+    addField('Village', data.village);
+    
+    addSection('Jiru Practice');
+    addField('Status', data.jiru_status);
+    addField('Local Name', data.local_jiru_name);
+    addField('Who Established For', data.jiru_who_established_for);
+    
+    if (data.jiru_status && data.jiru_status.indexOf('yes') > -1) {
+      addSection('Jiru Details');
+      addField('People Count', data.jiru_people_count);
+      var people = data.jiru_people || [];
+      if (Array.isArray(people)) {
+        for (var i = 0; i < people.length; i++) {
+          var p = people[i] || {};
+          checkPage(20);
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Person ' + (i+1), leftMargin + 2, y);
+          y += 5;
+          addField('  Name', p.name);
+          addField('  Timeframe', p.timeframe);
+          addField('  Position', p.position);
+          addField('  Gender', p.gender);
+          addField('  Age Range', p.age_range);
+        }
+      }
+      addField('What Protected', data.jiru_protected);
+      addField('Habitat', data.jiru_habitat_description);
+      addField('Duration', data.jiru_duration);
+      addField('Protocols', data.protection_protocols);
+      addField('Taboo', data.protection_prohibitions);
+      addField('Changes/Challenges', data.protection_challenges);
+      
+      addSection('Harvest');
+      addField('Participants', data.jiru_participants);
+      addField('Target', data.harvest_target);
+      addField('Catch Used For', data.jiru_catch_used);
+      addField('Protocols', data.harvest_protocols);
+      addField('Taboo', data.harvest_prohibitions);
+      addField('Changes/Challenges', data.harvest_challenges);
+    }
+    
+    addField('Why Stopped', data.jiru_why_stopped);
+    
+    addSection('Value & Future');
+    addField('Social Benefits', data.social_benefits);
+    addField('Ecological Benefits', data.ecological_benefits);
+    addField('Economic Benefits', data.economic_benefits);
+    addField('Consequences', data.consequences_decline);
+    addField('Challenges', data.challenges_threats);
+    addField('Conservation Effect', data.conservation_program_effect);
+    addField('Stakeholders', data.revitalization_stakeholders);
+    addField('Ideas', data.revitalization_ideas);
+    addField('Cultural Importance', data.cultural_importance);
+    addField('Govt Recognition', data.government_recognition);
+    
+    addSection('Additional');
+    addField('Resources', data.resource_links);
+    addField('Comments', data.general_comments);
+    
+    doc.setFontSize(8);
+    doc.setTextColor(148, 163, 184);
+    checkPage(10);
+    y += 5;
+    doc.text('Vave Lab, University of Hawai\u02bbi at Manoa | ronvave@hawaii.edu', leftMargin, y);
+    
+    var filename = 'Jiru-Response-' + (data.province || 'Unknown') + '-' + (data.village || 'Unknown') + '.pdf';
+    doc.save(filename);
+  };
 
   window.startSurvey = function() {
     if (!document.getElementById('irb-consent').checked) return;
@@ -2774,9 +2922,9 @@
 
   // ── Email Copy Conditional (Change 40) ─────────
   function setupEmailCopyConditional() {
-    document.querySelectorAll('input[name="want_email_copy"]').forEach(r => {
+    document.querySelectorAll('input[name="willing_followup"]').forEach(r => {
       r.addEventListener('change', () => {
-        const val = document.querySelector('input[name="want_email_copy"]:checked');
+        const val = document.querySelector('input[name="willing_followup"]:checked');
         if (val && val.value === 'Yes') {
           const mainEmail = document.getElementById('email').value.trim();
           document.getElementById('emailCopyField').classList.toggle('visible', !mainEmail);
@@ -3495,8 +3643,8 @@
         files: filesData,
         general_comments: getVal('general_comments'),
         heard_via: getRadioVal('heard_via'),
-        want_email_copy: getRadioVal('want_email_copy'),
-        copy_email: getVal('copy_email'),
+        want_pdf_copy: getRadioVal('want_pdf_copy'),
+        followup_email: getVal('followup_email'),
         willing_followup: getRadioVal('willing_followup')
       };
 
