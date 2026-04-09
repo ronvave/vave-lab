@@ -1788,47 +1788,27 @@
             <div class="form-section-heading">Challenges &amp; Threats</div>
 
             <div class="form-group">
-              <label class="form-label">What are the main challenges or threats to jiru practice in your community? <span class="form-helper">(select all that apply)</span></label>
-              <div class="form-check-group" id="challengesThreatGroup">
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Loss of traditional knowledge (elders passing without transmitting knowledge)">
-                  <span class="form-check__label">Loss of traditional knowledge (elders passing without transmitting knowledge)</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Younger generation not interested or not aware">
-                  <span class="form-check__label">Younger generation not interested or not aware</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Church or religious influence discouraging the practice">
-                  <span class="form-check__label">Church or religious influence discouraging the practice</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Government or NGO conservation programs creating overlapping restrictions">
-                  <span class="form-check__label">Government or NGO conservation programs creating overlapping restrictions</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Population growth and increased pressure on resources">
-                  <span class="form-check__label">Population growth and increased pressure on resources</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Changes in land or sea tenure/ownership">
-                  <span class="form-check__label">Changes in land or sea tenure/ownership</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Climate change affecting resources or habitats">
-                  <span class="form-check__label">Climate change affecting resources or habitats</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Migration or urbanization (people leaving villages)">
-                  <span class="form-check__label">Migration or urbanization (people leaving villages)</span>
-                </label>
-                <label class="form-check">
-                  <input type="checkbox" name="challenges_threats" value="Other">
-                  <span class="form-check__label">Other (specify)</span>
-                </label>
+              <label class="form-label">What are the main challenges or threats to jiru practice in your community?</label>
+              <p class="form-helper">Drag challenges from the left to the right column, ordering them from biggest challenge (top) to least (bottom). You don't have to use all challenges from left column if not appropriate.</p>
+              <div class="ranking-container" id="challenges-ranking">
+                <div class="ranking-source" id="challenges-source">
+                  <div class="ranking-item" draggable="true" data-value="Loss of traditional knowledge">Loss of traditional knowledge</div>
+                  <div class="ranking-item" draggable="true" data-value="Younger generation not interested">Younger generation not interested</div>
+                  <div class="ranking-item" draggable="true" data-value="Church or religious influence">Church or religious influence</div>
+                  <div class="ranking-item" draggable="true" data-value="Government/NGO conservation overlap">Government/NGO conservation overlap</div>
+                  <div class="ranking-item" draggable="true" data-value="Population growth and resource pressure">Population growth and resource pressure</div>
+                  <div class="ranking-item" draggable="true" data-value="Land or sea tenure changes">Land or sea tenure changes</div>
+                  <div class="ranking-item" draggable="true" data-value="Climate change">Climate change</div>
+                  <div class="ranking-item" draggable="true" data-value="Migration or urbanization">Migration or urbanization</div>
+                  <div class="ranking-item" draggable="true" data-value="Other">Other (specify below)</div>
+                </div>
+                <div class="ranking-target" id="challenges-target">
+                  <p class="ranking-placeholder">Drag challenges here in order of importance</p>
+                </div>
               </div>
-              <div class="other-specify" id="challengesThreatOther">
-                <input type="text" class="form-input" id="challenges_threats_other_text" placeholder="Please specify">
+              <div class="form-group" style="margin-top:0.75rem;">
+                <input type="text" class="form-input" id="challenges_threats_other_text" placeholder="If 'Other' selected, please specify">
+              <input type="hidden" id="challenges_threats_ranked" name="challenges_threats_ranked" value="">
               </div>
             </div>
 
@@ -2934,9 +2914,15 @@
 
   // ── Ranking / Drag-and-Drop UI ───────────────
   function setupRankingUI() {
-    const source = document.getElementById('rankingSource');
-    const dropzone = document.getElementById('rankingDropzone');
-    const otherSpecify = document.getElementById('stakeholderOther');
+    // Initialize both ranking UIs
+    initRankingPair('rankingSource', 'rankingDropzone', 'revitalization_stakeholders_ranked', 'stakeholderOther');
+    initRankingPair('challenges-source', 'challenges-target', 'challenges_threats_ranked', null);
+  }
+
+  function initRankingPair(sourceId, dropzoneId, hiddenId, otherSpecifyId) {
+    const source = document.getElementById(sourceId);
+    const dropzone = document.getElementById(dropzoneId);
+    const otherSpecify = otherSpecifyId ? document.getElementById(otherSpecifyId) : null;
     if (!source || !dropzone) return;
 
     let draggedItem = null;
@@ -2948,7 +2934,7 @@
         item.setAttribute('data-rank', i + 1);
         values.push(item.getAttribute('data-value'));
       });
-      document.getElementById('revitalization_stakeholders_ranked').value = values.join(', ');
+      document.getElementById(hiddenId).value = values.join(', ');
       // Show placeholder if empty
       const placeholder = dropzone.querySelector('.ranking-placeholder');
       if (placeholder) placeholder.style.display = items.length ? 'none' : '';
