@@ -1139,7 +1139,7 @@
 
       <!-- Change 3: "Vave (2021) in Ambio", Change 4: "Vave et al (2024) in Conservation Biology" -->
       <p class="survey-intro__text">
-        This research builds on published work by Prof. Ron Vave and collaborators. For more context, see: <a href="https://doi.org/10.1007/s13280-021-01620-z" target="_blank" rel="noopener">Vave (2021) in <em>Ambio</em></a> and <a href="https://conbio.onlinelibrary.wiley.com/doi/abs/10.1111/cobi.14403" target="_blank" rel="noopener">Vave et al (2024) in <em>Conservation Biology</em></a>.
+        This research builds on published work by indigenous Fijian scholar, Dr. Ron Vave, on funerary protected areas in Fiji. For more context, see this <a href="https://news.mongabay.com/2025/02/funerary-practices-in-fiji-protect-marine-areas-while-honoring-the-deceased/" target="_blank" rel="noopener">online news article</a>, or more this journal articles on <a href="https://doi.org/10.1111/cobi.14403" target="_blank" rel="noopener">Fiji&rsquo;s funerary protected areas</a>, or their <a href="https://link.springer.com/article/10.1007/s13280-021-01620-z" target="_blank" rel="noopener">five (5) culturally protected water body practices</a>.
       </p>
 
       <!-- IRB CONSENT SECTION -->
@@ -1148,11 +1148,11 @@
       <div style="background:#f8f7f3;border:1px solid #e2e8f0;border-radius:8px;padding:1.5rem;margin-bottom:1rem;">
         <h3 style="font-family:'Cormorant Garamond',Georgia,serif;font-size:1.3rem;color:#002a30;margin:0 0 1rem 0;">Before you begin &mdash; please read this carefully</h3>
 
-        <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;">You are being invited to participate in a research study conducted by Dr. Ron Vave (University of Hawai&#699;i at M&#257;noa) and Henry Kaniki (WWF Pacific). This study is approved by the University of Hawai&#699;i Institutional Review Board (IRB).</p>
+        <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;">You are being invited to participate in a research study conducted by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener" style="color:#002a30;">Dr. Ron Vave</a> (University of Hawai&#699;i at M&#257;noa) and Henry Kaniki (WWF Pacific). This study is approved by the University of Hawai&#699;i Institutional Review Board (IRB).</p>
 
         <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;"><strong>Purpose:</strong> This study documents jiru and similar funerary resource protection practices across the Solomon Islands to better understand their distribution, cultural significance, and conservation value.</p>
 
-        <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;"><strong>What participation involves:</strong> You will be asked questions about your knowledge of and experience with jiru practices in your community. The survey takes approximately <strong>10&ndash;15 minutes</strong> to complete.</p>
+        <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;"><strong>What participation involves:</strong> You will be asked questions about your knowledge of and experience with jiru practices in your community. The survey takes approximately <strong>30 minutes</strong> to complete.</p>
 
         <p style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin-bottom:0.8rem;"><strong>Voluntary participation:</strong> Your participation is entirely voluntary. You may skip any question you are not comfortable answering, and you may stop at any time without consequence.</p>
 
@@ -1160,8 +1160,8 @@
         <ul style="font-size:0.88rem;line-height:1.7;color:#1e293b;margin:0 0 0.8rem 1.2rem;padding:0;">
           <li>Your responses will be used for academic research purposes only.</li>
           <li>Your <strong>name and general location</strong> are collected solely to help map the distribution of jiru practices and for potential follow-up by the research team. This information will be held securely and will only be known to Dr. Vave and Henry Kaniki.</li>
-          <li>Your <strong>email address</strong> is optional. It is only needed if you would like a copy of your responses sent to you after submission. It will never be used for any other purpose or shared without your explicit approval.</li>
-          <li>Community-level findings will be shared publicly in aggregated, <strong>anonymous form</strong> (e.g., on a research dashboard). No individual will be identified in any public output without their explicit consent.</li>
+          <li>Your <strong>email address</strong> is optional. It is only needed if you would like a copy of your responses emailed to you after submission. Other than potential follow up email for additional details, it will never be used for any other purpose or shared without your explicit approval.</li>
+          <li>Community-level findings will (1) initially be shared anonymously through a publicly accessible dashboard following form submission, and (2) in a journal article. No individual will be identified in any public output without their explicit consent.</li>
           <li>All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.</li>
         </ul>
 
@@ -2280,8 +2280,8 @@
   let uploadedFiles = [];
 
   // ── Initialization ─────────────────────────────
-  // IRB Consent handling
-  function toggleConsentNext() {
+  // IRB Consent handling — exposed globally for onclick/onchange
+  window.toggleConsentNext = function() {
     var cb = document.getElementById('irb-consent');
     var btn = document.getElementById('consent-next-btn');
     var label = document.getElementById('consent-label');
@@ -2298,12 +2298,12 @@
     }
   }
 
-  function startSurvey() {
+  window.startSurvey = function() {
     if (!document.getElementById('irb-consent').checked) return;
     document.querySelector('.survey-form-wrapper').style.display = 'block';
     document.getElementById('consent-btn-wrap').style.display = 'none';
     document.querySelector('.survey-form-wrapper').scrollIntoView({ behavior: 'smooth' });
-  }
+  };
 
   document.addEventListener('DOMContentLoaded', init);
 
