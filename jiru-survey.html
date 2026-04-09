@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jiru Survey — Funerary Protected Areas | Vave Lab</title>
+  <title>Funerary Protected Area (Jiru) Survey in the Solomon Islands</title>
   <meta name="description" content="Help document jiru — funerary protected areas practised in the Solomon Islands. Share your knowledge of this indigenous conservation tradition.">
 
   <!-- Fonts -->
@@ -1114,7 +1114,7 @@
 <section class="page-banner">
   <div class="container page-banner__inner">
     <p class="page-banner__eyebrow">Vave Lab &middot; Solomon Islands Research</p>
-    <h1 class="page-banner__title">Jiru Survey</h1>
+    <h1 class="page-banner__title">Funerary Protected Area (Jiru) Survey in the Solomon Islands</h1>
   </div>
 </section>
 
@@ -1150,6 +1150,12 @@
       <div class="survey-intro__privacy">
         <strong>Privacy &amp; Data Use:</strong> Your responses are used for academic research only. Your name and general location are collected to help map the distribution of jiru practices and for potential follow-up. Your name and email address will never be shared without your approval. All data is stored securely by the Vave Lab at the University of Hawai&#699;i at M&#257;noa.
       </div>
+
+      <p style="color:#64748b;font-size:0.9rem;line-height:1.6;">
+        <strong>Research contacts:</strong><br>
+        Dr Ron Vave &mdash; <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a><br>
+        Henry Kaniki &mdash; <a href="mailto:hkaniki@wwfpacific.org">hkaniki@wwfpacific.org</a>
+      </p>
     </div>
 
     <!-- SURVEY FORM -->
@@ -1299,8 +1305,8 @@
           <div class="survey-step" data-step="2">
             <h3 class="survey-step__title">Your Location</h3>
 
-            <p class="survey-step__subtitle"><strong>Note that, to keep things simple, the term jiru will be used throughout this survey to refer to an area (land, marine or freshwater) or species being protected as a result of a funeral.</strong></p>
-            <p class="survey-step__subtitle"><strong>For this part, regardless of whether your community practices funerary jiru (in the Past, Now, or Never), please help us locate the community you&rsquo;ll be providing information for (even if it&rsquo;s to say that your community does not practice jiru).</strong></p>
+            <p class="survey-step__subtitle">Note that, to keep things simple, the term jiru will be used throughout this survey to refer to an area (land, marine or freshwater) or species being protected as a result of a funeral.</p>
+            <p class="survey-step__subtitle">For this part, regardless of whether your community practices funerary jiru (in the Past, Now, or Never), please help us locate the community you&rsquo;ll be providing information for (even if it&rsquo;s to say that your community does not practice jiru).</p>
 
             <div class="form-row">
               <!-- Change 13: Province alphabetical order -->
@@ -1396,7 +1402,7 @@
 
             <!-- Q2 (was Q1): Local name — conditional on Yes answers -->
             <div class="form-group conditional-step3-yes" id="localJiruNameGroup" style="display:none;">
-              <label class="form-label" for="local_jiru_name">What is the practice of protecting lands, waters, and/or species called in your community?</label>
+              <label class="form-label" for="local_jiru_name">What is the practice of protecting lands, waters and/or species for someone's funeral called in your community?</label>
               <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. jiru, tabu">
             </div>
 
@@ -1419,39 +1425,6 @@
             <div class="conditional-section" id="jiruDetailsYes">
               <h3 class="survey-step__title">Tell us more about jiru in <span id="villageName">your community</span></h3>
               <p class="survey-step__subtitle">This next set of questions is aimed at understanding jiru practices in this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
-
-              <!-- Change 19: Updated question text -->
-              <div class="form-group">
-                <label class="form-label">To the best of your knowledge, when was the last jiru done?</label>
-                <!-- Change 20: Updated options -->
-                <div class="form-radio-group" id="jiruRecencyGroup">
-                  <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="past_year">
-                    <span class="form-radio__label">In the past year (2025&ndash;2026)</span>
-                  </label>
-                  <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="2020_2024">
-                    <span class="form-radio__label">Between 2020&ndash;2024</span>
-                  </label>
-                  <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="2000_2019">
-                    <span class="form-radio__label">Between 2000&ndash;2019</span>
-                  </label>
-                  <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="before_2000">
-                    <span class="form-radio__label">Before 2000</span>
-                  </label>
-                  <label class="form-radio">
-                    <input type="radio" name="jiru_recency" value="unknown">
-                    <span class="form-radio__label">I don&rsquo;t know when</span>
-                  </label>
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="jiru_year_approx">If you know the approximate year or decade, please enter it:</label>
-                <input type="text" class="form-input" id="jiru_year_approx" name="jiru_year_approx" placeholder="e.g. 2018, 1990s, 1960s">
-              </div>
 
               <hr class="form-divider">
 
@@ -1583,7 +1556,8 @@
               <p class="survey-step__subtitle">Even if jiru is not practised in your community, your knowledge of other practices and nearby communities is valuable.</p>
 
               <div class="form-group">
-                <label class="form-label">Does your community have any other customary or traditional practices for protecting natural resources (marine, freshwater, or terrestrial areas)?</label>
+                <label class="form-label">Does your community have any other cultural practices or ceremonies associated with protecting environment and species?</label>
+                <p class="form-helper">For example, Fiji has culturally protected areas for conception of 1st child, circumcision, chiefly installation, and funeral. See <a href="https://link.springer.com/article/10.1007/s13280-021-01620-z" target="_blank" rel="noopener" style="color:#002a30;text-decoration:underline;">Vave (2022)</a>.</p>
                 <div class="form-radio-group" id="otherPracticesGroup">
                   <label class="form-radio">
                     <input type="radio" name="other_practices" value="Yes">
@@ -1610,7 +1584,7 @@
               <hr class="form-divider">
 
               <div class="form-group">
-                <label class="form-label">Do you know of jiru being practised in nearby villages or islands?</label>
+                <label class="form-label">Do you know of funerary protected areas (jiru) on land or water being done in nearby villages or islands?</label>
                 <div class="form-radio-group" id="nearbyJiruGroup">
                   <label class="form-radio">
                     <input type="radio" name="knows_nearby_jiru" value="Yes">
@@ -2848,7 +2822,33 @@
 
         <div class="form-group">
           <label class="form-label" for="person_${i}_name">Do you remember name of person this jiru was done for?</label>
-          <input type="text" class="form-input" id="person_${i}_name" name="person_${i}_name" placeholder="Type in First and/or Last name of person">
+          <input type="text" class="form-input" id="person_${i}_name" name="person_${i}_name" placeholder="Type in First and/or Last name of person" oninput="updatePersonTimeframeLabel(${i}, this.value)">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" id="person_${i}_timeframe_label">To the best of your knowledge, what time frame below was jiru done for <em>this person</em>?</label>
+          <div class="form-radio-group">
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_timeframe" value="past_year">
+              <span class="form-radio__label">In the past year (2025&ndash;2026)</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_timeframe" value="2020_2024">
+              <span class="form-radio__label">Between 2020&ndash;2024</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_timeframe" value="2000_2019">
+              <span class="form-radio__label">Between 2000&ndash;2019</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_timeframe" value="before_2000">
+              <span class="form-radio__label">Before 2000</span>
+            </label>
+            <label class="form-radio">
+              <input type="radio" name="person_${i}_timeframe" value="unknown">
+              <span class="form-radio__label">I don&rsquo;t know when</span>
+            </label>
+          </div>
         </div>
 
         <div class="form-group">
@@ -2917,6 +2917,13 @@
       container.appendChild(card);
       rebindHighlights(card);
     }
+  }
+
+  function updatePersonTimeframeLabel(index, nameVal) {
+    const label = document.getElementById('person_' + index + '_timeframe_label');
+    if (!label) return;
+    const personRef = nameVal && nameVal.trim() ? '<strong>' + nameVal.trim() + '</strong>' : '<em>this person</em>';
+    label.innerHTML = 'To the best of your knowledge, what time frame below was jiru done for ' + personRef + '?';
   }
 
 
@@ -3238,21 +3245,19 @@
       const harvestTargetVals = getCheckboxVals('harvest_target');
       const protSameDiffVals = getCheckboxVals('protection_same_or_different');
 
-      const detailRows = [
-        ['Recency', getRadioLabel('jiru_recency')],
-        ['Approximate year', getVal('jiru_year_approx') || '(not provided)']
-      ];
+      const detailRows = [];
 
       // Dynamic person forms
       const peopleCount = parseInt(getVal('jiru_people_count')) || 0;
       detailRows.push(['People count', peopleCount.toString()]);
       for (let i = 1; i <= peopleCount; i++) {
         const pName = getVal('person_' + i + '_name') || '(not provided)';
+        const pTimeframe = getRadioVal('person_' + i + '_timeframe') || '(not selected)';
         const pPos = getVal('person_' + i + '_position') || '(not provided)';
         const pGender = getRadioVal('person_' + i + '_gender') || '(not selected)';
         const pAge = getRadioVal('person_' + i + '_age') || '(not selected)';
         const pRole = getVal('person_' + i + '_role') || '(not provided)';
-        detailRows.push(['Person ' + i, pName + ' | Position: ' + pPos + ' | Gender: ' + pGender + ' | Age: ' + pAge + ' | Role: ' + pRole]);
+        detailRows.push(['Person ' + i, pName + ' | Timeframe: ' + pTimeframe + ' | Position: ' + pPos + ' | Gender: ' + pGender + ' | Age: ' + pAge + ' | Role: ' + pRole]);
       }
 
       detailRows.push(['Who are jiru established for', getVal('jiru_who_established_for') || '(not provided)']);
@@ -3384,6 +3389,7 @@
     for (let i = 1; i <= count; i++) {
       people.push({
         name: getVal('person_' + i + '_name'),
+        timeframe: getRadioVal('person_' + i + '_timeframe'),
         position: getVal('person_' + i + '_position'),
         gender: getRadioVal('person_' + i + '_gender'),
         age_range: getRadioVal('person_' + i + '_age'),
@@ -3420,8 +3426,6 @@
         lng: getVal('lng') ? parseFloat(getVal('lng')) : null,
         local_jiru_name: getVal('local_jiru_name'),
         jiru_status: getRadioVal('jiru_status'),
-        jiru_recency: getRadioVal('jiru_recency'),
-        jiru_year_approx: getVal('jiru_year_approx'),
         jiru_people_count: parseInt(getVal('jiru_people_count')) || 0,
         jiru_people: collectPersonData(),
         jiru_who_established_for: getVal('jiru_who_established_for'),
