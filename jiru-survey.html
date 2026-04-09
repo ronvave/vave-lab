@@ -1609,7 +1609,15 @@
               </div>
             </div>
 
-            <div class="survey-nav">
+            
+              <!-- Why jiru stopped - only for past respondents -->
+              <div class="form-group" id="jiruWhyStoppedSection" style="display:none;">
+                <hr class="form-divider">
+                <label class="form-label">What are reasons why the jiru is no longer practised in your community?</label>
+                <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="Describe the reasons..."></textarea>
+              </div>
+
+<div class="survey-nav">
               <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
               <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
             </div>
@@ -1731,10 +1739,7 @@
               </div>
 
               <!-- Past-only question: shown only when jiru_status is yes_past -->
-              <div class="form-group" id="jiruNoLongerPractisedGroup" style="display:none;">
-                <label class="form-label" for="jiru_no_longer_reasons">What are reasons why the jiru is no longer practised in your community?</label>
-                <textarea class="form-textarea" id="jiru_no_longer_reasons" name="jiru_no_longer_reasons" placeholder="Describe the reasons..."></textarea>
-              </div>
+              
 
             </div>
 
@@ -1870,7 +1875,7 @@
 
             <div class="form-group">
               <label class="form-label">If community members want to revitalize the funerary jiru practice, who should be engaged and involved?</label>
-              <p class="form-helper" style="margin-bottom:var(--space-3);">Drag stakeholders from the left to the right column, ordering them from most important (top) to least important (bottom)</p>
+              <p class="form-helper" style="margin-bottom:var(--space-3);">Drag stakeholders from the left to the right column, ordering them from most important (top) to least important (bottom). You don't have to use all stakeholders from left column if not appropriate</p>
               <div class="ranking-container" id="stakeholderRanking">
                 <div class="ranking-source" id="rankingSource">
                   <div class="ranking-column-header">Available Stakeholders</div>
