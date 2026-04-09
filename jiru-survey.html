@@ -1262,11 +1262,11 @@
 
             <!-- Change 9: Revised connection question, Change 10: Add Government, reorder -->
             <div class="form-group">
-              <label class="form-label">How are you, or the informant (if not you), connected to this community? <span class="required">*</span></label>
+              <label class="form-label">How are you, or the informant (if not you), connected to the community you'll be giving information for? <span class="required">*</span></label>
               <div class="form-radio-group" id="connectionGroup">
                 <label class="form-radio">
-                  <input type="radio" name="connection" value="Direct community member" required>
-                  <span class="form-radio__label">Direct community member</span>
+                  <input type="radio" name="connection" value="Community member" required>
+                  <span class="form-radio__label">Community member</span>
                 </label>
                 <label class="form-radio">
                   <input type="radio" name="connection" value="Community leader">
@@ -2826,7 +2826,7 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" id="person_${i}_timeframe_label">To the best of your knowledge, what time frame below was jiru done for <em>this person</em>?</label>
+          <label class="form-label" id="person_${i}_timeframe_label">To the best of your knowledge, when was jiru done for <em>this person</em>?</label>
           <div class="form-radio-group">
             <label class="form-radio">
               <input type="radio" name="person_${i}_timeframe" value="past_year">
@@ -2923,7 +2923,7 @@
     const label = document.getElementById('person_' + index + '_timeframe_label');
     if (!label) return;
     const personRef = nameVal && nameVal.trim() ? '<strong>' + nameVal.trim() + '</strong>' : '<em>this person</em>';
-    label.innerHTML = 'To the best of your knowledge, what time frame below was jiru done for ' + personRef + '?';
+    label.innerHTML = 'To the best of your knowledge, when was jiru done for ' + personRef + '?';
   }
 
 
