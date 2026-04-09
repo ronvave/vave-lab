@@ -30,8 +30,25 @@ h1, h2, h3, h4, h5, h6 { text-wrap: balance; line-height: 1.2; font-family: var(
 p, li { text-wrap: pretty; }
 button { cursor: pointer; background: none; border: none; }
 table { border-collapse: collapse; width: 100%; }
-a { color: #0000FF; text-decoration: none; }
-a:hover { color: #0000CC; }
+a { color: #0E7490; text-decoration: underline; }
+a:hover { color: #0B5E75; text-decoration: underline; }
+
+/* UI links: no underline */
+.nav-links a,
+.mobile-menu a,
+.footer-nav-list a,
+.footer-social a,
+.footer-section address a,
+.nav-dropdown__menu a,
+.tag,
+a.tag,
+.guest-lecture-logo,
+.stat-card a { text-decoration: none; }
+.nav-links a:hover,
+.mobile-menu a:hover,
+.footer-nav-list a:hover,
+.footer-social a:hover,
+.nav-dropdown__menu a:hover { text-decoration: none; }
 
 ::selection {
   background: oklch(from var(--color-primary) l c h / 0.22);
@@ -1175,4 +1192,20 @@ a:hover { color: #0000CC; }
     height: 100px;
     padding: var(--space-3);
   }
+}
+
+/* ── DARK MODE LINK COLORS ──────────── */
+[data-theme="dark"] a {
+  color: #67E8F9;
+}
+[data-theme="dark"] a:hover {
+  color: #A5F3FC;
+}
+[data-theme="dark"] .nav-links a,
+[data-theme="dark"] .mobile-menu a {
+  color: var(--color-text);
+}
+[data-theme="dark"] .nav-links a:hover,
+[data-theme="dark"] .mobile-menu a:hover {
+  color: var(--color-primary);
 }
