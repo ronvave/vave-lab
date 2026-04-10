@@ -3603,12 +3603,13 @@
       hideOverlay('loadingOverlay');
       showOverlay('successOverlay');
       generateQRCode();
-      // Show email copy note if user opted in
-      const wantCopy = getRadioVal('want_email_copy');
-      const emailCopyNote = document.getElementById('emailCopyNote');
-      if (emailCopyNote && wantCopy === 'Yes') {
-        emailCopyNote.style.display = '';
+
+      // Generate PDF download if requested
+      var wantPdf = getRadioVal('want_pdf_copy');
+      if (wantPdf === 'Yes') {
+        try { window.generateResponsePdf(data); } catch(pdfErr) { console.warn('PDF generation error:', pdfErr); }
       }
+
       clearLocalStorage(); // Change 1: clear on success
 
     } catch (err) {
