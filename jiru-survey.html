@@ -2246,8 +2246,17 @@
 
   // Generate and download PDF of responses
   window.generateResponsePdf = function(data) {
-    if (!window.jspdf) return;
-    var doc = new window.jspdf.jsPDF();
+    var jsPDFClass = null;
+    if (window.jspdf && window.jspdf.jsPDF) {
+      jsPDFClass = window.jspdf.jsPDF;
+    } else if (window.jsPDF) {
+      jsPDFClass = window.jsPDF;
+    }
+    if (!jsPDFClass) {
+      alert('PDF library could not be loaded. Your responses have been submitted successfully, but the PDF could not be generated.');
+      return;
+    }
+    var doc = new jsPDFClass();
     var y = 20;
     var leftMargin = 20;
     var pageWidth = 170;
@@ -3607,7 +3616,14 @@
       // Generate PDF download if requested
       var wantPdf = getRadioVal('want_pdf_copy');
       if (wantPdf === 'Yes') {
-        try { window.generateResponsePdf(data); } catch(pdfErr) { console.warn('PDF generation error:', pdfErr); }
+        setTimeout(function() {
+          try {
+            window.generateResponsePdf(data);
+          } catch(pdfErr) {
+            console.error('PDF generation error:', pdfErr);
+            alert('Your responses were submitted successfully, but the PDF could not be generated. Error: ' + pdfErr.message);
+          }
+        }, 1000);
       }
 
       clearLocalStorage(); // Change 1: clear on success
