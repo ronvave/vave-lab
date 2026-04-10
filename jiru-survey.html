@@ -1352,7 +1352,7 @@
 
               <div class="form-group">
                 <label class="form-label" for="island">Island <span class="required">*</span></label>
-                <input type="text" class="form-input" id="island" name="island" required placeholder="e.g. Choiseul Island, Vella Lavella, Guadalcanal">
+                <input type="text" class="form-input" id="island" name="island" required placeholder="e.g. Gizo Island or Gizo Is">
                 <p class="form-error-msg">Please enter the island name.</p>
               </div>
             </div>
@@ -1365,7 +1365,7 @@
 
               <div class="form-group">
                 <label class="form-label" for="village">Village Name</label>
-                <input type="text" class="form-input" id="village" name="village" placeholder="Enter village name">
+                <input type="text" class="form-input" id="village" name="village" placeholder="e.g. Saeragi village, or Saeragi vlg">
                 <div class="inline-check">
                   <input type="checkbox" id="island_level" name="island_level">
                   <label for="island_level">I am providing information at the island level (not a specific village)</label>
@@ -3277,8 +3277,8 @@
 
     // Change 12: Add fullscreenControl
     map = L.map('locationMap', {
-      center: [-8.5, 160.5],
-      zoom: 8,
+      center: [-8.5, 159.5],
+      zoom: 6,
       scrollWheelZoom: true,
       fullscreenControl: true
     });
@@ -3326,28 +3326,56 @@
       provinceSel.addEventListener('change', function() {
         var province = this.value;
         if (!province || !map) return;
-        var center = PROVINCE_CENTERS[province];
-        if (center) {
-          map.setView([center.lat, center.lng], center.zoom);
-        }
         loadProvinceVillages(province);
       });
     }
+
+    // Dynamic marker sizing on zoom
+    map.on('zoomend', function() {
+      updateVillageMarkerSize();
+    });
   }
 
   function loadProvinceVillages(province) {
     if (!villageLayer) return;
     villageLayer.clearLayers();
     var vList = SI_VILLAGES[province] || [];
+    if (vList.length === 0) return;
+    var zoom = map.getZoom();
+    var radius = getVillageRadius(zoom);
+    var bounds = L.latLngBounds();
     vList.forEach(function(v) {
       var m = L.circleMarker([v.lat, v.lng], {
-        radius: 3,
+        radius: radius,
         fillColor: '#c9a227',
         color: '#fff',
         weight: 1,
         fillOpacity: 0.7
       }).bindTooltip(v.n, {permanent: false, direction: 'top', offset: [0, -5]});
       villageLayer.addLayer(m);
+      bounds.extend([v.lat, v.lng]);
+    });
+    // Fit map to show all village points with padding
+    if (bounds.isValid()) {
+      map.fitBounds(bounds.pad(0.1), {maxZoom: 13});
+    }
+  }
+
+  function getVillageRadius(zoom) {
+    if (zoom <= 7) return 2;
+    if (zoom <= 9) return 3;
+    if (zoom <= 11) return 5;
+    if (zoom <= 13) return 7;
+    if (zoom <= 15) return 10;
+    return 12;
+  }
+
+  function updateVillageMarkerSize() {
+    if (!villageLayer) return;
+    var zoom = map.getZoom();
+    var radius = getVillageRadius(zoom);
+    villageLayer.eachLayer(function(layer) {
+      if (layer.setRadius) layer.setRadius(radius);
     });
   }
 
