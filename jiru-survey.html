@@ -1954,6 +1954,144 @@
               <label class="form-label" for="government_recognition_why">Why or why not?</label>
               <textarea class="form-textarea" id="government_recognition_why" name="government_recognition_why" rows="3"></textarea>
             </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 7: Resources & Knowledge ═══════════ -->
+          <div class="survey-step" data-step="7">
+            <h3 class="survey-step__title">Resources &amp; Knowledge</h3>
+            <p class="survey-step__subtitle">Do you have access to any documentation about jiru or similar practices?</p>
+
+            <div class="form-group">
+              <label class="form-label">Do you have access to photos, reports, social media posts, news articles, theses, or any other resources that mention jiru or similar practices either in your community or elsewhere?</label>
+              <div class="form-radio-group" id="hasResourcesGroup">
+                <label class="form-radio">
+                  <input type="radio" name="has_resources" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="has_resources" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="conditional-resources" id="resourceFields" style="display:none;">
+              <div class="form-group">
+                <label class="form-label" for="resource_links">Paste links to online resources (one per line):</label>
+                <textarea class="form-textarea" id="resource_links" name="resource_links" rows="3" placeholder="https://..."></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Upload files <span class="form-helper">(photos, documents, videos &mdash; max 10 MB total)</span></label>
+                <div class="file-upload-zone" id="fileUploadZone">
+                  <p>Drag files here or click to browse</p>
+                  <input type="file" id="fileInput" multiple accept="image/*,.pdf,.doc,.docx,.mp4,.mov" style="display:none;">
+                </div>
+                <div id="fileList"></div>
+                <p class="form-helper">Alternatively, email files directly to <strong>ronvave@hawaii.edu</strong> with subject line "Jiru Documentation &mdash; [your village name]"</p>
+              </div>
+            </div>
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+            </div>
+          </div>
+
+          <!-- ═══════════ STEP 8: Review & Submit ═══════════ -->
+          <div class="survey-step" data-step="8">
+            <h3 class="survey-step__title">Review &amp; Submit</h3>
+            <p class="survey-step__subtitle">Please review your responses before submitting. You can go back to edit any section. <strong>After you've submitted your information, you will be able to view the Dashboard with the latest results (including your input).</strong></p>
+
+            <div class="form-group">
+              <label class="form-label" for="general_comments">Any other information you would like to share:</label>
+              <textarea class="form-textarea" id="general_comments" name="general_comments" rows="3" placeholder="Share any additional thoughts, stories, or context..."></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">How did you hear about this survey?</label>
+              <div class="form-radio-group" id="heardViaGroup">
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Social media">
+                  <span class="form-radio__label">Social media</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Word of mouth">
+                  <span class="form-radio__label">Word of mouth</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="University of Hawaii">
+                  <span class="form-radio__label">University of Hawaii</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Community leader">
+                  <span class="form-radio__label">Community leader</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Researcher">
+                  <span class="form-radio__label">Researcher</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="heard_via" value="Other">
+                  <span class="form-radio__label">Other</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- PDF download question -->
+            <div class="form-group">
+              <label class="form-label">Would you like to receive a PDF of information you've submitted immediately after submission?</label>
+              <div class="form-radio-group" id="wantPdfGroup">
+                <label class="form-radio">
+                  <input type="radio" name="want_pdf_copy" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="want_pdf_copy" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Are you willing to be contacted for a follow-up interview about jiru?</label>
+              <p class="form-helper" style="margin-bottom:var(--space-2);">Your email address will be needed for this.</p>
+              <div class="form-radio-group" id="willingFollowupGroup">
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="Yes">
+                  <span class="form-radio__label">Yes</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="No">
+                  <span class="form-radio__label">No</span>
+                </label>
+                <label class="form-radio">
+                  <input type="radio" name="willing_followup" value="Maybe">
+                  <span class="form-radio__label">Maybe</span>
+                </label>
+              </div>
+              <div class="email-copy-field" id="followupEmailField" style="display:none;">
+                <label class="form-label" for="followup_email">Your email address (for follow-up):</label>
+                <input type="email" class="form-input" id="followup_email" name="followup_email" placeholder="your.email@example.com">
+              </div>
+            </div>
+
+            <hr class="form-divider">
+
+            <div class="survey-nav">
+              <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+              <button type="button" class="btn btn--primary btn--submit" onclick="submitForm()">Submit Survey</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
 </main>
 
 <!-- ═══════════════════════════════════════════
