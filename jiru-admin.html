@@ -657,7 +657,7 @@ async function loadAdminData() {
       lat: r['Latitude'] || null,
       lng: r['Longitude'] || null,
       local_name: r['Local Jiru Name'] || '',
-      jiru_status: (r['Jiru Status'] || '').replace('yes_current','active').replace('yes_past','past').replace('no_never','never'),
+      jiru_status: (function(s) { s = s || ''; if (s === 'yes_current') return 'active'; if (s === 'yes_past') return 'past'; if (s === 'no_never' || s === 'no') return 'never'; if (s === 'unsure') return 'unsure'; return s; })(r['Jiru Status']),
       jiru_recency: r['Most Recent Jiru'] || '',
       jiru_year_approx: r['Approx Year'] || '',
       jiru_people_count: r['Jiru People Count'] || '',
