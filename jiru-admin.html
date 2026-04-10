@@ -833,7 +833,7 @@ function renderProvinceChart() {
 function renderStatusChart() {
   const counts = { active: 0, past: 0, never: 0, unsure: 0 };
   filteredData.forEach(d => { if (counts[d.jiru_status] !== undefined) counts[d.jiru_status]++; });
-  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#dc3545', unsure: '#C2C2C2' };
+  const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#3B3B3B' };
   const labels = ['Active', 'Past', 'Never', 'Unsure'];
   const keys = ['active', 'past', 'never', 'unsure'];
 
@@ -979,7 +979,7 @@ function renderMap() {
 function renderMapMarkers() {
   mapMarkers.forEach(m => adminMap.removeLayer(m));
   mapMarkers = [];
-  const colors = { active: '#2a7d5f', past: '#c9a227', never: '#dc3545', unsure: '#C2C2C2' };
+  const colors = { active: '#07AD03', past: '#FF8700', never: '#B82100', unsure: '#3B3B3B' };
   const labels = { active: 'Active', past: 'Past', never: 'Never', unsure: 'Unsure' };
 
   filteredData.forEach(d => {
