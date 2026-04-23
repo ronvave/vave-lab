@@ -31,14 +31,32 @@
       background:
         linear-gradient(
           90deg,
-          rgba(6, 47, 53, 0.90) 0%,
-          rgba(6, 47, 53, 0.78) 50%,
+          rgba(6, 47, 53, 0.92) 0%,
+          rgba(6, 47, 53, 0.85) 55%,
+          rgba(6, 47, 53, 0.50) 78%,
           rgba(6, 47, 53, 0.00) 100%
         ),
         url('img/hero-artwork.jpg');
       background-size: cover;
-      background-position: center;
+      background-position: 80% center;
       background-repeat: no-repeat;
+    }
+
+    @media (max-width: 768px) {
+      .hero__bg {
+        background:
+          linear-gradient(
+            180deg,
+            rgba(6, 47, 53, 0.30) 0%,
+            rgba(6, 47, 53, 0.55) 40%,
+            rgba(6, 47, 53, 0.88) 65%,
+            rgba(6, 47, 53, 0.94) 100%
+          ),
+          url('img/hero-artwork.jpg');
+        background-size: cover;
+        background-position: 95% top;
+        background-repeat: no-repeat;
+      }
     }
 
     /* Decorative Pacific wave pattern */
