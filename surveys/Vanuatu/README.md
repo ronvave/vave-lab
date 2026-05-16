@@ -1,31 +1,25 @@
 # Vanuatu CPWB Survey
 
-Trilingual (English / Bislama / French) web survey suite documenting **Culturally Protected Water Bodies (CPWBs)** in Vanuatu. Part of the Vave Lab Pacific CPWB / FPA survey series.
+Public survey documenting **Culturally Protected Water Bodies (CPWBs)** including funerary protected areas (FPAs) in Vanuatu. Part of the Vave Lab Pacific CPWB / FPA survey series.
+
+Mirrored from the [Solomon Islands Jiru survey](https://ronvave.github.io/vave-lab/jiru-survey.html) with only the country name and image references changed. All consent text, questions, and survey logic are preserved from the Jiru source — to be adapted to Vanuatu vocabulary and context in follow-up edits.
 
 ## Files
 
 | File | Role |
 |---|---|
-| `van-cpwb-survey.html` | Public trilingual survey (EN / BI / FR), branching for chiefs vs. community |
-| `van-cpwb-dashboard.html` | Live response viewer — KPIs, Chart.js charts, clustered Leaflet map |
-| `van-cpwb-admin.html` | Password-gated CRUD (SHA-256), CSV/JSON export |
-| `van-cpwb-backend.gs` | Google Apps Script backend (doPost + doGet) |
-| `van-cpwb-questionnaire.pdf` | 35-page printable trilingual field form |
+| `van-cpwb-survey.html` | Public survey form |
 
-## CPWB types covered
+The dashboard, admin, backend, and printable questionnaire will be built only after this survey is reviewed and approved.
 
-FPA (Funerary), CIPA (Chiefly Installation), CircPA (Circumcision), MecPA (Medicinal), ConcPA (Conception) — adapted from the Fiji CPWB framework with Vanuatu vocabulary (*kastom*, *jif*, *nakamal*, *ples tabu*).
+## Images
 
-## Setup
-
-See the top-level [surveys/README.md](../README.md) for the full 10-step setup checklist that applies to every Pacific country survey in this folder. Vanuatu-specific values to plug in:
-
-- **Google Sheet name (exact):** `Vanuatu CPWB survey form results`
-- **Apps Script project name:** `Vanuatu project`
-- **Village dataset:** 2,099 villages across 73 islands, inlined in `van-cpwb-survey.html`
-- **Provinces:** Torba, Sanma, Penama, Malampa, Shefa, Tafea
+Header and CPWB-type images are referenced from `../../img/online-surveys/vanuatu/` (i.e. `vave-lab/img/online-surveys/vanuatu/`). These are placeholder copies of the Solomon Islands survey images, to be replaced with Vanuatu-specific artwork.
 
 ## Items to review before launch
 
-- Bislama strings marked with `<!-- review -->` — needs native-speaker pass
-- IRB protocol number — currently placeholder `[University of Hawaii at Manoa IRB Protocol #TBD]`
+- All visible "Solomon Islands" → "Vanuatu" substitutions (a few read as "the Vanuatu" — grammar artifact of the literal find/replace, to be smoothed in a follow-up)
+- All Jiru-specific content (the word "jiru", the WWF Solomon Islands collaborator block, the Pidjin language reference, the `go.hawaii.edu/Fbi` short URL) — kept verbatim from the source per request
+- IRB protocol number — placeholder from the source (`#TBD`)
+- Village map data — currently still the Solomon Islands dataset; will be replaced with the Vanuatu shapefile (Torba, Sanma, Penama, Malampa, Shefa, Tafea)
+- Header images in `img/online-surveys/vanuatu/` — placeholder Solomon Islands artwork, to be replaced with Vanuatu versions
