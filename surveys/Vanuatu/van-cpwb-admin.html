@@ -1,0 +1,2408 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vanuatu CPWB Survey — Admin</title>
+  <meta name="description" content="Admin dashboard for the Vanuatu Culturally Protected Water Bodies (CPWB) Survey — Vave Lab.">
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Fonts (same as survey) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
+  <style>
+    /* =============================================================================
+       DESIGN TOKENS — copied exactly from vanuatu-cpwb-survey.html
+       ============================================================================= */
+    :root {
+      --font-body: 'DM Sans', system-ui, sans-serif;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+
+      --color-bg: #f5f3ee;
+      --color-surface: #ffffff;
+      --color-surface-2: #fafaf8;
+      --color-surface-offset: #f0ede6;
+      --color-surface-offset-2: #e4e0d8;
+      --color-border: #ddd8ce;
+      --color-divider: #e8e4dc;
+      --color-text: #1a1a2e;
+      --color-text-muted: #4a4a5e;
+      --color-text-faint: #8a8a9a;
+      --color-primary: #005f6b;
+      --color-primary-highlight: #e0f2f4;
+      --color-accent: #005f6b;
+      --color-gold: #c9a227;
+      --color-gold-light: #fdf8ea;
+      --color-error: #c0392b;
+      --color-success: #27ae60;
+
+      --radius-sm: 4px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-full: 9999px;
+
+      --shadow-md: 0 4px 24px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 40px rgba(0,0,0,0.14);
+
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-16: 4rem;
+
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --text-base: 1rem;
+      --text-lg: 1.25rem;
+      --text-xl: 1.6rem;
+
+      --transition-interactive: 0.2s ease;
+    }
+
+    /* BASE RESET */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--color-bg);
+      color: var(--color-text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    a { color: var(--color-primary); }
+
+    /* =============================================================================
+       HEADER — matches survey
+       ============================================================================= */
+    .site-header {
+      background: var(--color-surface);
+      border-bottom: 1px solid var(--color-border);
+      padding: var(--space-4) 0;
+      position: sticky;
+      top: 0;
+      z-index: 200;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-5);
+      flex-wrap: wrap;
+    }
+    .nav-logo {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-text);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+    .nav-logo__badge {
+      background: var(--color-primary);
+      color: #fff;
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+    }
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    .user-badge__dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--color-success);
+    }
+
+    /* LANG TOGGLE (in header on login screen; in banner on admin screen) */
+    .lang-toggle-header {
+      display: flex;
+      gap: 0;
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-full);
+      padding: 3px;
+    }
+    .lang-btn-header {
+      background: transparent;
+      border: none;
+      color: var(--color-text-muted);
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn-header.active {
+      background: var(--color-primary);
+      color: #fff;
+    }
+    .lang-btn-header:hover:not(.active) {
+      background: var(--color-surface-offset-2);
+      color: var(--color-text);
+    }
+
+    /* PAGE BANNER — matches survey gradient */
+    .page-banner {
+      background: linear-gradient(135deg, #002a30 0%, #005f6b 60%, #007a6b 100%);
+      color: #fff;
+      padding: var(--space-8) 0 var(--space-6);
+    }
+    .page-banner__inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-5);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: var(--space-6);
+      flex-wrap: wrap;
+    }
+    .page-banner__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      opacity: 0.75;
+      margin-bottom: var(--space-2);
+    }
+    .page-banner__title {
+      font-family: var(--font-display);
+      font-size: clamp(1.3rem, 3vw, 1.9rem);
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .lang-toggle-banner {
+      display: flex;
+      gap: 0;
+      background: rgba(255,255,255,0.15);
+      border-radius: var(--radius-full);
+      padding: 3px;
+      align-self: flex-start;
+      margin-top: var(--space-1);
+    }
+    .lang-btn-banner {
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.75);
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      padding: 5px 14px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .lang-btn-banner.active {
+      background: #fff;
+      color: var(--color-primary);
+    }
+    .lang-btn-banner:hover:not(.active) {
+      color: #fff;
+      background: rgba(255,255,255,0.2);
+    }
+
+    /* =============================================================================
+       FOOTER — matches survey
+       ============================================================================= */
+    .site-footer {
+      background: #002a30;
+      color: rgba(255,255,255,0.6);
+      text-align: center;
+      padding: var(--space-6) var(--space-4);
+      font-size: var(--text-xs);
+    }
+    .site-footer a { color: rgba(255,255,255,0.8); }
+
+    /* =============================================================================
+       BUTTON SYSTEM
+       ============================================================================= */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-5);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      border: none;
+      cursor: pointer;
+      transition: all var(--transition-interactive);
+      text-decoration: none;
+      letter-spacing: 0.02em;
+      white-space: nowrap;
+    }
+    .btn--primary { background: var(--color-primary); color: #fff; }
+    .btn--primary:hover { background: #004a53; box-shadow: 0 4px 16px rgba(0,95,107,0.3); }
+    .btn--ghost {
+      background: transparent;
+      color: var(--color-text-muted);
+      border: 1.5px solid var(--color-border);
+    }
+    .btn--ghost:hover { background: var(--color-surface-offset); color: var(--color-text); }
+    .btn--danger { background: var(--color-error); color: #fff; }
+    .btn--danger:hover { background: #a93226; }
+    .btn--success { background: var(--color-success); color: #fff; }
+    .btn--success:hover { background: #1e8449; }
+    .btn--sm { padding: 0.35rem 0.85rem; font-size: var(--text-xs); }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* =============================================================================
+       LOGIN SCREEN
+       ============================================================================= */
+    #login-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    #login-screen .login-body {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8) var(--space-5);
+    }
+    .login-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-10) var(--space-8);
+      width: 100%;
+      max-width: 420px;
+    }
+    .login-card__eyebrow {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--color-primary);
+      margin-bottom: var(--space-3);
+    }
+    .login-card__title {
+      font-family: var(--font-display);
+      font-size: var(--text-xl);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+      line-height: 1.2;
+    }
+    .login-card__subtitle {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-8);
+    }
+    .login-field { margin-bottom: var(--space-5); }
+    .login-field label {
+      display: block;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .login-field input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: var(--text-base);
+      color: var(--color-text);
+      background: var(--color-surface);
+      transition: border-color var(--transition-interactive), box-shadow var(--transition-interactive);
+    }
+    .login-field input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-highlight);
+    }
+    .login-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: var(--radius-md);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-sm);
+      color: var(--color-error);
+      margin-bottom: var(--space-5);
+      display: none;
+    }
+    .login-error.visible { display: block; }
+    .login-btn-wrap { margin-top: var(--space-6); }
+    .login-btn-wrap .btn { width: 100%; justify-content: center; padding: var(--space-4); font-size: var(--text-base); }
+
+    /* Shake animation for wrong password */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15%       { transform: translateX(-8px); }
+      30%       { transform: translateX(8px); }
+      45%       { transform: translateX(-6px); }
+      60%       { transform: translateX(6px); }
+      75%       { transform: translateX(-4px); }
+      90%       { transform: translateX(4px); }
+    }
+    .shake { animation: shake 0.45s ease; }
+
+    /* =============================================================================
+       ADMIN SCREEN (hidden until login)
+       ============================================================================= */
+    #admin-screen { display: none; }
+    #admin-screen.visible { display: block; }
+
+    /* =============================================================================
+       DEMO BANNER
+       ============================================================================= */
+    .demo-banner {
+      background: #fff8e1;
+      border-bottom: 2px solid var(--color-gold);
+      padding: var(--space-3) var(--space-5);
+      text-align: center;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: #7d5a00;
+      display: none;
+    }
+    .demo-banner.visible { display: block; }
+    .demo-banner span { font-weight: 400; }
+
+    /* =============================================================================
+       TOOLBAR
+       ============================================================================= */
+    .admin-toolbar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-5) var(--space-5) 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+      align-items: flex-end;
+    }
+    .toolbar-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: flex-end;
+    }
+    .toolbar-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .toolbar-field label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .toolbar-input {
+      height: 36px;
+      padding: 0 var(--space-3);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      background: var(--color-surface);
+      transition: border-color var(--transition-interactive);
+      min-width: 140px;
+    }
+    .toolbar-input:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px var(--color-primary-highlight);
+    }
+    #search-input { min-width: 220px; }
+    .toolbar-spacer { flex: 1; }
+    .toolbar-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      align-items: center;
+    }
+
+    /* =============================================================================
+       STATS BAR
+       ============================================================================= */
+    .stats-bar {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: var(--space-3) var(--space-5);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    .stats-bar strong { color: var(--color-text); }
+    .bulk-actions {
+      display: none;
+      align-items: center;
+      gap: var(--space-2);
+      margin-left: auto;
+    }
+    .bulk-actions.visible { display: flex; }
+
+    /* =============================================================================
+       TABLE
+       ============================================================================= */
+    .table-wrap {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 var(--space-5) var(--space-5);
+      overflow-x: auto;
+    }
+    .responses-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: var(--text-sm);
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      min-width: 900px;
+    }
+    .responses-table thead {
+      position: sticky;
+      top: 64px;
+      z-index: 10;
+    }
+    .responses-table th {
+      background: var(--color-primary);
+      color: #fff;
+      padding: var(--space-3) var(--space-4);
+      text-align: left;
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+      cursor: pointer;
+      user-select: none;
+      transition: background var(--transition-interactive);
+    }
+    .responses-table th:hover { background: #004a53; }
+    .responses-table th.sorted-asc::after { content: ' ↑'; opacity: 0.8; }
+    .responses-table th.sorted-desc::after { content: ' ↓'; opacity: 0.8; }
+    .responses-table th:first-child,
+    .responses-table th:last-child { cursor: default; }
+    .responses-table th:first-child:hover,
+    .responses-table th:last-child:hover { background: var(--color-primary); }
+    .responses-table td {
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-divider);
+      color: var(--color-text);
+      vertical-align: middle;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .responses-table tr:last-child td { border-bottom: none; }
+    .responses-table tbody tr:hover td { background: var(--color-primary-highlight); }
+    .responses-table tbody tr.selected td { background: #e8f5e9; }
+    .row-num {
+      font-size: var(--text-xs);
+      color: var(--color-text-faint);
+      font-weight: 700;
+    }
+    .row-actions {
+      display: flex;
+      gap: var(--space-1);
+      white-space: nowrap;
+    }
+    .empty-state {
+      text-align: center;
+      padding: var(--space-16) var(--space-8);
+      color: var(--color-text-faint);
+    }
+    .empty-state__icon { font-size: 2.5rem; margin-bottom: var(--space-4); }
+    .empty-state__title { font-size: var(--text-lg); font-weight: 600; color: var(--color-text-muted); margin-bottom: var(--space-2); }
+
+    /* Highlight matching text */
+    mark { background: #fef08a; border-radius: 2px; padding: 0 2px; }
+
+    /* =============================================================================
+       PAGINATION
+       ============================================================================= */
+    .pagination {
+      max-width: 1400px;
+      margin: 0 auto var(--space-6);
+      padding: 0 var(--space-5);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: var(--space-3);
+    }
+    .pagination__info {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+    }
+    .pagination__controls {
+      display: flex;
+      gap: var(--space-1);
+      align-items: center;
+    }
+    .page-btn {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      cursor: pointer;
+      transition: all var(--transition-interactive);
+      font-family: var(--font-body);
+    }
+    .page-btn:hover:not(:disabled) { border-color: var(--color-primary); color: var(--color-primary); background: var(--color-primary-highlight); }
+    .page-btn.active { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* =============================================================================
+       MODAL / SIDE PANEL
+       ============================================================================= */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,20,25,0.55);
+      z-index: 500;
+      display: none;
+      align-items: flex-start;
+      justify-content: flex-end;
+    }
+    .modal-overlay.active { display: flex; }
+    .side-panel {
+      background: var(--color-surface);
+      width: 100%;
+      max-width: 580px;
+      height: 100vh;
+      overflow-y: auto;
+      box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+      animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      display: flex;
+      flex-direction: column;
+    }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to   { transform: translateX(0);    opacity: 1; }
+    }
+    .side-panel__header {
+      padding: var(--space-5) var(--space-6);
+      border-bottom: 1px solid var(--color-border);
+      position: sticky;
+      top: 0;
+      background: var(--color-surface);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-4);
+    }
+    .side-panel__title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: var(--color-text);
+    }
+    .side-panel__close {
+      width: 36px; height: 36px;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-full);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      transition: all var(--transition-interactive);
+      flex-shrink: 0;
+    }
+    .side-panel__close:hover { background: var(--color-error); color: #fff; border-color: var(--color-error); }
+    .side-panel__actions {
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--color-divider);
+      display: flex;
+      gap: var(--space-2);
+      flex-wrap: wrap;
+    }
+    .side-panel__body { padding: var(--space-5) var(--space-6); flex: 1; }
+    .detail-section { margin-bottom: var(--space-6); }
+    .detail-section__title {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-primary);
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-2);
+      border-bottom: 1.5px solid var(--color-primary-highlight);
+    }
+    .detail-field {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      gap: var(--space-2) var(--space-4);
+      align-items: start;
+      padding: var(--space-2) 0;
+      border-bottom: 1px solid var(--color-divider);
+    }
+    .detail-field:last-child { border-bottom: none; }
+    .detail-field__label {
+      font-size: var(--text-xs);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      padding-top: 2px;
+    }
+    .detail-field__value {
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      word-break: break-word;
+    }
+    .detail-field__value.empty { color: var(--color-text-faint); font-style: italic; }
+    /* Edit mode */
+    .detail-field input,
+    .detail-field textarea {
+      width: 100%;
+      padding: var(--space-2) var(--space-3);
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-family: var(--font-body);
+      font-size: var(--text-sm);
+      color: var(--color-text);
+      background: var(--color-surface);
+      transition: border-color var(--transition-interactive);
+    }
+    .detail-field input:focus,
+    .detail-field textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 2px var(--color-primary-highlight);
+    }
+    .detail-field textarea { resize: vertical; min-height: 64px; }
+    @media (max-width: 600px) {
+      .detail-field { grid-template-columns: 1fr; }
+      .side-panel { max-width: 100%; }
+    }
+
+    /* =============================================================================
+       CONFIRM DIALOG
+       ============================================================================= */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10,20,25,0.65);
+      z-index: 600;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-5);
+    }
+    .confirm-overlay.active { display: flex; }
+    .confirm-dialog {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-lg);
+      padding: var(--space-8);
+      max-width: 420px;
+      width: 100%;
+    }
+    .confirm-dialog__icon {
+      font-size: 2rem;
+      margin-bottom: var(--space-4);
+    }
+    .confirm-dialog__title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: var(--space-3);
+    }
+    .confirm-dialog__body {
+      font-size: var(--text-sm);
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-6);
+    }
+    .confirm-dialog__actions { display: flex; gap: var(--space-3); justify-content: flex-end; }
+
+    /* =============================================================================
+       AUDIT LOG PANEL
+       ============================================================================= */
+    .audit-section {
+      max-width: 1400px;
+      margin: 0 auto var(--space-8);
+      padding: 0 var(--space-5);
+    }
+    .audit-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--text-sm);
+      font-weight: 600;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      user-select: none;
+      padding: var(--space-3) 0;
+      border-top: 1px solid var(--color-divider);
+    }
+    .audit-toggle:hover { color: var(--color-text); }
+    .audit-toggle__icon { transition: transform 0.2s ease; font-size: 0.75rem; }
+    .audit-toggle__icon.open { transform: rotate(90deg); }
+    .audit-panel {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      display: none;
+      margin-top: var(--space-2);
+    }
+    .audit-panel.visible { display: block; }
+    .audit-panel__header {
+      background: #002a30;
+      color: rgba(255,255,255,0.7);
+      padding: var(--space-3) var(--space-4);
+      font-size: var(--text-xs);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-family: monospace;
+    }
+    .audit-log {
+      max-height: 280px;
+      overflow-y: auto;
+      padding: var(--space-3);
+      background: #0d1f22;
+    }
+    .audit-entry {
+      font-family: 'Courier New', monospace;
+      font-size: var(--text-xs);
+      color: #7ee8b4;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .audit-entry:last-child { border-bottom: none; }
+    .audit-entry .ts { color: rgba(255,255,255,0.35); }
+    .audit-entry .action-delete { color: #ff6b6b; }
+    .audit-entry .action-edit { color: #ffd93d; }
+    .audit-entry .action-export { color: #74b9ff; }
+    .audit-entry .action-login { color: #a8e6cf; }
+
+    /* Toast notification */
+    .toast {
+      position: fixed;
+      bottom: var(--space-6);
+      right: var(--space-6);
+      background: var(--color-text);
+      color: #fff;
+      padding: var(--space-3) var(--space-5);
+      border-radius: var(--radius-md);
+      font-size: var(--text-sm);
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(12px);
+      transition: all 0.25s ease;
+      max-width: 320px;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast--success { background: var(--color-success); }
+    .toast--error { background: var(--color-error); }
+
+    /* Loading spinner */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(245,243,238,0.85);
+      z-index: 400;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: var(--space-4);
+    }
+    .loading-overlay.active { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--color-primary-highlight);
+      border-top-color: var(--color-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 768px) {
+      .admin-toolbar { flex-direction: column; align-items: stretch; }
+      .toolbar-group { flex-direction: column; }
+      .toolbar-input { min-width: unset; width: 100%; }
+      #search-input { min-width: unset; }
+      .toolbar-actions { flex-wrap: wrap; }
+      .responses-table thead { top: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOADING OVERLAY
+     ============================================================ -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <p id="loading-msg" style="font-size:var(--text-sm);color:var(--color-text-muted);">Loading responses…</p>
+</div>
+
+<!-- ============================================================
+     TOAST
+     ============================================================ -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================================
+     CONFIRM DIALOG
+     ============================================================ -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-dialog">
+    <div class="confirm-dialog__icon">⚠️</div>
+    <div class="confirm-dialog__title" id="confirm-title">Confirm action</div>
+    <div class="confirm-dialog__body" id="confirm-body">Are you sure?</div>
+    <div class="confirm-dialog__actions">
+      <button class="btn btn--ghost" id="confirm-cancel">Cancel</button>
+      <button class="btn btn--danger" id="confirm-ok">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     LOGIN SCREEN
+     ============================================================ -->
+<div id="login-screen">
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        Vave Lab · University of Hawaiʻi at Mānoa
+        <span class="nav-logo__badge" data-i18n="adminBadge">Admin</span>
+      </a>
+      <div class="nav-right">
+        <div class="lang-toggle-header" role="group" aria-label="Language">
+          <button class="lang-btn-header active" data-lang="en">EN</button>
+          <button class="lang-btn-header" data-lang="bi">BI</button>
+          <button class="lang-btn-header" data-lang="fr">FR</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="login-body">
+    <div class="login-card">
+      <p class="login-card__eyebrow" data-i18n="loginEyebrow">Restricted Access</p>
+      <h1 class="login-card__title" data-i18n="loginTitle">CPWB Survey Admin</h1>
+      <p class="login-card__subtitle" data-i18n="loginSubtitle">Enter your team password to access the response dashboard.</p>
+
+      <div class="login-error" id="login-error">
+        <span data-i18n="loginError">Incorrect password. Please try again.</span>
+      </div>
+
+      <div class="login-field">
+        <label for="pw-input" data-i18n="passwordLabel">Password</label>
+        <input type="password" id="pw-input" autocomplete="current-password" data-i18n-placeholder="passwordPlaceholder" placeholder="Enter password…">
+      </div>
+
+      <div class="login-btn-wrap">
+        <button class="btn btn--primary" id="login-btn" data-i18n="loginBtn">Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Vave Lab · University of Hawaiʻi at Mānoa · In partnership with Vanuatu communities · 2026</p>
+    <p style="margin-top:0.4rem;">Contact: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> · IRB Protocol: University of Hawaii at Mānoa IRB Protocol #TBD</p>
+  </footer>
+</div>
+
+<!-- ============================================================
+     ADMIN SCREEN (visible after login)
+     ============================================================ -->
+<div id="admin-screen">
+  <!-- DEMO BANNER -->
+  <div class="demo-banner" id="demo-banner">
+    ⚠ <span data-i18n="demoBannerText">DEMO MODE — backend not yet connected. Showing sample data only.</span>
+    <span style="margin-left:8px;font-size:0.7rem;opacity:0.7;">// DEMO_DATA — remove when backend is live</span>
+  </div>
+
+  <!-- HEADER -->
+  <header class="site-header">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">
+        Vave Lab · University of Hawaiʻi at Mānoa
+        <span class="nav-logo__badge" data-i18n="adminBadge">Admin</span>
+      </a>
+      <div class="nav-right">
+        <div class="user-badge" id="user-badge">
+          <div class="user-badge__dot"></div>
+          <span data-i18n="loggedInAs">Logged in as</span> <strong id="user-name-display">—</strong>
+        </div>
+        <button class="btn btn--ghost btn--sm" id="logout-btn" data-i18n="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- PAGE BANNER -->
+  <div class="page-banner">
+    <div class="page-banner__inner">
+      <div>
+        <p class="page-banner__eyebrow" data-i18n="bannerEyebrow">Vave Lab · Vanuatu Research · 2026</p>
+        <h1 class="page-banner__title" data-i18n="bannerTitle">CPWB Survey — Response Dashboard</h1>
+      </div>
+      <div class="lang-toggle-banner" role="group" aria-label="Language">
+        <button class="lang-btn-banner active" data-lang="en">EN</button>
+        <button class="lang-btn-banner" data-lang="bi">BI</button>
+        <button class="lang-btn-banner" data-lang="fr">FR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="admin-toolbar">
+    <div class="toolbar-group">
+      <div class="toolbar-field">
+        <label for="search-input" data-i18n="searchLabel">Search all columns</label>
+        <input type="search" id="search-input" class="toolbar-input" data-i18n-placeholder="searchPlaceholder" placeholder="Search…">
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-province" data-i18n="filterProvince">Province</label>
+        <select id="filter-province" class="toolbar-input">
+          <option value="" data-i18n="filterAll">All</option>
+        </select>
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-island" data-i18n="filterIsland">Island</label>
+        <select id="filter-island" class="toolbar-input">
+          <option value="" data-i18n="filterAll">All</option>
+        </select>
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-role" data-i18n="filterRole">Respondent Role</label>
+        <select id="filter-role" class="toolbar-input">
+          <option value="" data-i18n="filterAll">All</option>
+        </select>
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-lang" data-i18n="filterLang">Language</label>
+        <select id="filter-lang" class="toolbar-input">
+          <option value="" data-i18n="filterAll">All</option>
+        </select>
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-date-from" data-i18n="filterDateFrom">From date</label>
+        <input type="date" id="filter-date-from" class="toolbar-input">
+      </div>
+      <div class="toolbar-field">
+        <label for="filter-date-to" data-i18n="filterDateTo">To date</label>
+        <input type="date" id="filter-date-to" class="toolbar-input">
+      </div>
+    </div>
+    <div class="toolbar-spacer"></div>
+    <div class="toolbar-actions">
+      <button class="btn btn--ghost btn--sm" id="refresh-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span data-i18n="refreshBtn">Refresh</span>
+      </button>
+      <button class="btn btn--ghost btn--sm" id="export-csv-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="exportCsvBtn">Export CSV</span>
+      </button>
+      <button class="btn btn--ghost btn--sm" id="export-json-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="exportJsonBtn">Export JSON</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar">
+    <span><strong id="stat-total">0</strong> <span data-i18n="statTotal">total responses</span></span>
+    <span>·</span>
+    <span><strong id="stat-filtered">0</strong> <span data-i18n="statFiltered">shown</span></span>
+    <div class="bulk-actions" id="bulk-actions">
+      <span id="bulk-count-label"></span>
+      <button class="btn btn--ghost btn--sm" id="bulk-export-btn" data-i18n="bulkExport">Export selected</button>
+      <button class="btn btn--danger btn--sm" id="bulk-delete-btn" data-i18n="bulkDelete">Delete selected</button>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrap">
+    <table class="responses-table" id="responses-table">
+      <thead>
+        <tr id="table-head-row"></tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </div>
+
+  <!-- PAGINATION -->
+  <div class="pagination">
+    <div class="pagination__info" id="pagination-info"></div>
+    <div class="pagination__controls" id="pagination-controls"></div>
+  </div>
+
+  <!-- AUDIT LOG -->
+  <div class="audit-section">
+    <div class="audit-toggle" id="audit-toggle">
+      <span class="audit-toggle__icon" id="audit-icon">▶</span>
+      <span data-i18n="auditToggle">Session audit log</span>
+      <span id="audit-count-badge" style="margin-left:8px;background:var(--color-primary-highlight);color:var(--color-primary);font-size:0.65rem;font-weight:700;padding:2px 8px;border-radius:var(--radius-full);">0</span>
+    </div>
+    <div class="audit-panel" id="audit-panel">
+      <div class="audit-panel__header">Session Log — cleared on tab close</div>
+      <div class="audit-log" id="audit-log"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="site-footer">
+    <p>Vave Lab · University of Hawaiʻi at Mānoa · In partnership with Vanuatu communities · 2026</p>
+    <p style="margin-top:0.4rem;">Contact: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> · IRB Protocol: University of Hawaii at Mānoa IRB Protocol #TBD</p>
+  </footer>
+</div>
+
+<!-- ============================================================
+     SIDE PANEL MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true">
+  <div class="side-panel" id="side-panel">
+    <div class="side-panel__header">
+      <div class="side-panel__title" id="panel-title">Response Detail</div>
+      <button class="side-panel__close" id="panel-close" aria-label="Close">✕</button>
+    </div>
+    <div class="side-panel__actions" id="panel-actions"></div>
+    <div class="side-panel__body" id="panel-body"></div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MAIN SCRIPT
+     ============================================================ -->
+<script>
+(function() {
+'use strict';
+
+// =============================================================================
+// PASSWORD CONFIGURATION
+//
+// Generate hashes by opening the browser console and running:
+//
+// (async () => {
+//   const e = new TextEncoder().encode("your-password");
+//   const h = await crypto.subtle.digest("SHA-256", e);
+//   console.log([...new Uint8Array(h)].map(b => b.toString(16).padStart(2,"0")).join(""));
+// })();
+//
+// Then paste the printed hash as the value below.
+// =============================================================================
+const VALID_PASSWORD_HASHES = {
+  "ron":   "PASTE_SHA256_HASH_HERE",  // Dr. Ron Vave (replace)
+  "team1": "PASTE_SHA256_HASH_HERE",  // (replace)
+  "team2": "PASTE_SHA256_HASH_HERE",  // (replace)
+  "field": "PASTE_SHA256_HASH_HERE",  // field enumerator (replace)
+};
+
+// =============================================================================
+// Apps Script URL — replace with your deployed web app URL
+// =============================================================================
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/REPLACE_WITH_DEPLOYMENT_ID/exec";
+
+// Session key
+const SESSION_KEY = "cpwb_admin_session";
+
+// =============================================================================
+// FIELD MAP — all 69 columns from backend.gs
+// =============================================================================
+const FIELD_MAP = [
+  { key: "timestamp",              label: "Timestamp",                     section: "Meta" },
+  { key: "language_used",          label: "Language Used",                 section: "Meta" },
+  { key: "resp_name",              label: "Respondent Name",               section: "Respondent Profile" },
+  { key: "resp_email",             label: "Email",                         section: "Respondent Profile" },
+  { key: "respondent_role",        label: "Respondent Role",               section: "Respondent Profile" },
+  { key: "resp_age",               label: "Age Range",                     section: "Respondent Profile" },
+  { key: "resp_gender",            label: "Gender",                        section: "Respondent Profile" },
+  { key: "resp_years_residence",   label: "Years of Residence",            section: "Respondent Profile" },
+  { key: "resp_lang",              label: "Preferred Survey Language",     section: "Respondent Profile" },
+  { key: "province",               label: "Province",                      section: "Location" },
+  { key: "selected_island",        label: "Selected Island",               section: "Location" },
+  { key: "selected_village_name",  label: "Selected Village Name",         section: "Location" },
+  { key: "selected_village_id",    label: "Selected Village ID",           section: "Location" },
+  { key: "island_other",           label: "Island Other (free text)",      section: "Location" },
+  { key: "village_other",          label: "Village Other (free text)",     section: "Location" },
+  { key: "tabu_area_name",         label: "Tabu Area Local Name",          section: "Location" },
+  { key: "lat",                    label: "Latitude",                      section: "Location" },
+  { key: "lon",                    label: "Longitude",                     section: "Location" },
+  { key: "aware_general",          label: "Aware of Tabu Areas",           section: "Awareness" },
+  { key: "cpwb_types_known",       label: "CPWB Types Known",              section: "Awareness" },
+  { key: "cpwb_other_type_text",   label: "Other CPWB Type (described)",   section: "Awareness" },
+  { key: "cpwb_local_terms",       label: "Local Terms for Tabu Areas",    section: "Awareness" },
+  { key: "fpa_status",             label: "FPA Status",                    section: "FPA" },
+  { key: "fpa_declared_for",       label: "FPA Declared For",              section: "FPA" },
+  { key: "fpa_who_declares",       label: "FPA Who Declares",              section: "FPA" },
+  { key: "fpa_duration",           label: "FPA Duration",                  section: "FPA" },
+  { key: "fpa_water_type",         label: "FPA Water Types",               section: "FPA" },
+  { key: "fpa_rules",              label: "FPA Rules",                     section: "FPA" },
+  { key: "fpa_sanctions",          label: "FPA Sanctions",                 section: "FPA" },
+  { key: "fpa_additional",         label: "FPA Additional Info",           section: "FPA" },
+  { key: "cipa_status",            label: "CIPA Status",                   section: "CIPA" },
+  { key: "cipa_who_declares",      label: "CIPA Who Declares",             section: "CIPA" },
+  { key: "cipa_duration",          label: "CIPA Duration",                 section: "CIPA" },
+  { key: "cipa_water_type",        label: "CIPA Water Types",              section: "CIPA" },
+  { key: "cipa_sanctions",         label: "CIPA Sanctions",                section: "CIPA" },
+  { key: "cipa_additional",        label: "CIPA Additional Info",          section: "CIPA" },
+  { key: "circpa_status",          label: "CircPA Status",                 section: "CircPA" },
+  { key: "circpa_who_declares",    label: "CircPA Who Declares",           section: "CircPA" },
+  { key: "circpa_duration",        label: "CircPA Duration",               section: "CircPA" },
+  { key: "circpa_water_type",      label: "CircPA Water Types",            section: "CircPA" },
+  { key: "circpa_additional",      label: "CircPA Additional Info",        section: "CircPA" },
+  { key: "mecpa_status",           label: "MecPA Status",                  section: "MecPA" },
+  { key: "mecpa_species",          label: "MecPA Species/Resources",       section: "MecPA" },
+  { key: "mecpa_who_declares",     label: "MecPA Who Declares",            section: "MecPA" },
+  { key: "mecpa_duration",         label: "MecPA Duration",                section: "MecPA" },
+  { key: "mecpa_additional",       label: "MecPA Additional Info",         section: "MecPA" },
+  { key: "concpa_status",          label: "ConcPA Status",                 section: "ConcPA" },
+  { key: "concpa_context",         label: "ConcPA Context",                section: "ConcPA" },
+  { key: "concpa_who_declares",    label: "ConcPA Who Declares",           section: "ConcPA" },
+  { key: "concpa_duration",        label: "ConcPA Duration",               section: "ConcPA" },
+  { key: "concpa_additional",      label: "ConcPA Additional Info",        section: "ConcPA" },
+  { key: "chief_declared",         label: "Chief Declared Closure",        section: "Chief / Governance" },
+  { key: "chief_process",          label: "Chief Declaration Process",     section: "Chief / Governance" },
+  { key: "chief_mpa_recognition",  label: "Chief MPA Recognition",         section: "Chief / Governance" },
+  { key: "chief_mpa_conflict",     label: "Chief MPA Conflict",            section: "Chief / Governance" },
+  { key: "chief_conflict_desc",    label: "Chief MPA Conflict Description",section: "Chief / Governance" },
+  { key: "chief_support_needs",    label: "Chief Support Needs",           section: "Chief / Governance" },
+  { key: "chief_additional",       label: "Chief Additional Comments",     section: "Chief / Governance" },
+  { key: "community_compliance",   label: "Community Compliance Level",    section: "Community" },
+  { key: "compliance_factors",     label: "Compliance Factors",            section: "Community" },
+  { key: "perceived_effectiveness",label: "Perceived Effectiveness",       section: "Community" },
+  { key: "ecological_changes",     label: "Ecological Changes Observed",   section: "Community" },
+  { key: "ecological_changes_desc",label: "Ecological Changes Description",section: "Community" },
+  { key: "willing_documentation",  label: "Willing to Support Documentation", section: "Community" },
+  { key: "community_additional",   label: "Community Additional Comments", section: "Community" },
+  { key: "open_feedback",          label: "Open Feedback",                 section: "Open Feedback" },
+  { key: "heard_via",              label: "Heard Via",                     section: "Open Feedback" },
+  { key: "want_pdf",               label: "Want PDF Copy",                 section: "Open Feedback" },
+  { key: "willing_followup",       label: "Willing for Follow-up",         section: "Open Feedback" },
+  { key: "followup_contact",       label: "Follow-up Contact",             section: "Open Feedback" },
+];
+
+// TABLE COLUMNS — abbreviated set shown in main table (full set in detail panel)
+const TABLE_COLUMNS = [
+  "timestamp", "resp_name", "respondent_role", "province",
+  "selected_island", "selected_village_name", "language_used",
+  "aware_general", "fpa_status", "willing_followup"
+];
+
+// =============================================================================
+// DEMO DATA (10 rows) — DEMO_DATA — remove when backend is live
+// =============================================================================
+const DEMO_DATA = [
+  {
+    id: "DEMO-001", timestamp: "2026-03-15T08:23:11Z", language_used: "English",
+    resp_name: "Sela Kaltak", resp_email: "sela@example.vu", respondent_role: "Chief",
+    resp_age: "45-54", resp_gender: "Male", resp_years_residence: "20+", resp_lang: "English",
+    province: "Shefa", selected_island: "Efate", selected_village_name: "Mele",
+    selected_village_id: "SHE-EFA-001", island_other: "", village_other: "",
+    tabu_area_name: "Nambawan Tabu", lat: "-17.7349", lon: "168.3188",
+    aware_general: "Yes", cpwb_types_known: "FPA, CIPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "Tabu solwota",
+    fpa_status: "Active", fpa_declared_for: "Fish aggregation season", fpa_who_declares: "Council of chiefs",
+    fpa_duration: "3 months", fpa_water_type: "Reef, Lagoon", fpa_rules: "No fishing within 200m",
+    fpa_sanctions: "Community fine", fpa_additional: "Enforced since 2018",
+    cipa_status: "Active", cipa_who_declares: "Chief", cipa_duration: "7 days", cipa_water_type: "Freshwater creek",
+    cipa_sanctions: "Kastom payment", cipa_additional: "",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Inactive", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Not applicable", concpa_context: "", concpa_who_declares: "", concpa_duration: "", concpa_additional: "",
+    chief_declared: "Yes", chief_process: "Kastom ceremony with chiefs", chief_mpa_recognition: "Aware but limited engagement",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "Legal recognition, mapping tools",
+    chief_additional: "Strong community support for documentation",
+    community_compliance: "High", compliance_factors: "Respect for kastom, elder authority",
+    perceived_effectiveness: "Very effective", ecological_changes: "Yes",
+    ecological_changes_desc: "More fish observed near tabu zones since 2020",
+    willing_documentation: "Yes", community_additional: "",
+    open_feedback: "Important to document before knowledge is lost", heard_via: "Community meeting",
+    want_pdf: "Yes", willing_followup: "Yes", followup_contact: "sela@example.vu"
+  },
+  {
+    id: "DEMO-002", timestamp: "2026-03-16T10:45:00Z", language_used: "Bislama",
+    resp_name: "Maria Tari", resp_email: "", respondent_role: "Community member",
+    resp_age: "25-34", resp_gender: "Female", resp_years_residence: "10-20", resp_lang: "Bislama",
+    province: "Sanma", selected_island: "Santo", selected_village_name: "Luganville",
+    selected_village_id: "SAN-STO-002", island_other: "", village_other: "",
+    tabu_area_name: "Tabu fis ples", lat: "-15.5213", lon: "167.1754",
+    aware_general: "Yes", cpwb_types_known: "FPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "Ples tabu",
+    fpa_status: "Active", fpa_declared_for: "Coral spawning", fpa_who_declares: "Village chief",
+    fpa_duration: "2 months", fpa_water_type: "Reef", fpa_rules: "No spearfishing",
+    fpa_sanctions: "Kastom fine", fpa_additional: "",
+    cipa_status: "Not applicable", cipa_who_declares: "", cipa_duration: "", cipa_water_type: "", cipa_sanctions: "", cipa_additional: "",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Not applicable", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Active", concpa_context: "Post-birth period", concpa_who_declares: "Family elder",
+    concpa_duration: "40 days", concpa_additional: "Women not permitted to fish",
+    chief_declared: "Yes", chief_process: "Oral declaration at nakamal",
+    chief_mpa_recognition: "Not aware of MPA", chief_mpa_conflict: "No",
+    chief_conflict_desc: "", chief_support_needs: "Community education",
+    chief_additional: "",
+    community_compliance: "Medium", compliance_factors: "Younger generation less aware",
+    perceived_effectiveness: "Moderately effective", ecological_changes: "Unsure",
+    ecological_changes_desc: "", willing_documentation: "Yes", community_additional: "Need language support",
+    open_feedback: "Bislama resources important", heard_via: "Radio",
+    want_pdf: "No", willing_followup: "No", followup_contact: ""
+  },
+  {
+    id: "DEMO-003", timestamp: "2026-03-17T14:02:30Z", language_used: "French",
+    resp_name: "Jean-Pierre Molé", resp_email: "jpm@example.vu", respondent_role: "Fisheries officer",
+    resp_age: "35-44", resp_gender: "Male", resp_years_residence: "5-10", resp_lang: "French",
+    province: "Tafea", selected_island: "Tanna", selected_village_name: "White Grass",
+    selected_village_id: "TAF-TAN-001", island_other: "", village_other: "",
+    tabu_area_name: "Zone interdite côtière", lat: "-19.5186", lon: "169.4412",
+    aware_general: "Yes", cpwb_types_known: "FPA, MecPA, CircPA", cpwb_other_type_text: "Tabu de pluie",
+    cpwb_local_terms: "Ples tabu, Zone protégée",
+    fpa_status: "Active", fpa_declared_for: "Sea turtle nesting season", fpa_who_declares: "Council of chiefs",
+    fpa_duration: "4 months", fpa_water_type: "Beach, Shallow reef", fpa_rules: "No beach access at night",
+    fpa_sanctions: "Community shaming, kastom fine", fpa_additional: "Annual declaration",
+    cipa_status: "Active", cipa_who_declares: "Chief", cipa_duration: "14 days", cipa_water_type: "Freshwater",
+    cipa_sanctions: "Kastom payment", cipa_additional: "After major chief burial",
+    circpa_status: "Active", circpa_who_declares: "Family head", circpa_duration: "7 days",
+    circpa_water_type: "River, Coast", circpa_additional: "Boys not allowed near water",
+    mecpa_status: "Active", mecpa_species: "Dugong, sea cucumber", mecpa_who_declares: "Chief",
+    mecpa_duration: "Permanent", mecpa_additional: "Enforced by nakamal",
+    concpa_status: "Active", concpa_context: "Pregnancy and birth period", concpa_who_declares: "Elder women",
+    concpa_duration: "Until naming ceremony", concpa_additional: "",
+    chief_declared: "Yes", chief_process: "Formal kastom ceremony",
+    chief_mpa_recognition: "Actively engaged with DEUA",
+    chief_mpa_conflict: "Yes", chief_conflict_desc: "Overlap with commercial fishing licence area",
+    chief_support_needs: "Legal support, GPS mapping, government recognition",
+    chief_additional: "Request for official gazette notice",
+    community_compliance: "High", compliance_factors: "Strong kastom authority",
+    perceived_effectiveness: "Very effective", ecological_changes: "Yes",
+    ecological_changes_desc: "Dugong sightings increased near tabu zone",
+    willing_documentation: "Yes", community_additional: "",
+    open_feedback: "Government must recognise kastom MPA formally", heard_via: "University researcher",
+    want_pdf: "Yes", willing_followup: "Yes", followup_contact: "jpm@example.vu"
+  },
+  {
+    id: "DEMO-004", timestamp: "2026-03-18T09:17:55Z", language_used: "English",
+    resp_name: "Rose Naupa", resp_email: "", respondent_role: "Teacher",
+    resp_age: "25-34", resp_gender: "Female", resp_years_residence: "5-10", resp_lang: "English",
+    province: "Malampa", selected_island: "Malekula", selected_village_name: "Lamap",
+    selected_village_id: "MAL-MAL-003", island_other: "", village_other: "",
+    tabu_area_name: "Nepele tabu", lat: "-16.4441", lon: "167.8249",
+    aware_general: "Yes", cpwb_types_known: "CIPA, ConcPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "Tabu river",
+    fpa_status: "Inactive", fpa_declared_for: "", fpa_who_declares: "", fpa_duration: "",
+    fpa_water_type: "", fpa_rules: "", fpa_sanctions: "", fpa_additional: "No active FPA here",
+    cipa_status: "Active", cipa_who_declares: "Chief", cipa_duration: "10 days",
+    cipa_water_type: "River", cipa_sanctions: "Community shaming", cipa_additional: "",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Not applicable", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Active", concpa_context: "After birth", concpa_who_declares: "Mother's family",
+    concpa_duration: "30 days", concpa_additional: "",
+    chief_declared: "No", chief_process: "", chief_mpa_recognition: "Not aware",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "More information needed",
+    chief_additional: "",
+    community_compliance: "Medium", compliance_factors: "Mixed adherence among youth",
+    perceived_effectiveness: "Somewhat effective", ecological_changes: "No",
+    ecological_changes_desc: "", willing_documentation: "Yes", community_additional: "",
+    open_feedback: "Would like printed materials in local language", heard_via: "School",
+    want_pdf: "Yes", willing_followup: "Yes", followup_contact: "rose.naupa@school.vu"
+  },
+  {
+    id: "DEMO-005", timestamp: "2026-03-19T11:33:40Z", language_used: "Bislama",
+    resp_name: "Kalo Bule", resp_email: "", respondent_role: "Elder",
+    resp_age: "65+", resp_gender: "Male", resp_years_residence: "20+", resp_lang: "Bislama",
+    province: "Penama", selected_island: "Ambae", selected_village_name: "Ndui Ndui",
+    selected_village_id: "PEN-AMB-001", island_other: "", village_other: "",
+    tabu_area_name: "Dansu tabu ples", lat: "-15.3344", lon: "167.9978",
+    aware_general: "Yes", cpwb_types_known: "FPA, CIPA, MecPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "Tabu solwota, Ples tabu",
+    fpa_status: "Active", fpa_declared_for: "Fish breeding season", fpa_who_declares: "Council of chiefs",
+    fpa_duration: "6 months", fpa_water_type: "Lake, River", fpa_rules: "No fishing in designated zones",
+    fpa_sanctions: "Kastom fine, Spiritual consequences", fpa_additional: "Lake Vui area",
+    cipa_status: "Active", cipa_who_declares: "Council of chiefs", cipa_duration: "3 days",
+    cipa_water_type: "Lake", cipa_sanctions: "Community fine", cipa_additional: "",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Active", mecpa_species: "Freshwater eel", mecpa_who_declares: "Chief",
+    mecpa_duration: "Permanent", mecpa_additional: "Sacred species not to be harvested",
+    concpa_status: "Not applicable", concpa_context: "", concpa_who_declares: "", concpa_duration: "", concpa_additional: "",
+    chief_declared: "Yes", chief_process: "Kastom ceremony + community meeting",
+    chief_mpa_recognition: "Aware, some dialogue with DEUA",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "Training, mapping, legal recognition",
+    chief_additional: "Long-standing tradition over 200 years",
+    community_compliance: "High", compliance_factors: "Deep respect for kastom, elder enforcement",
+    perceived_effectiveness: "Very effective", ecological_changes: "Yes",
+    ecological_changes_desc: "Eel populations maintained; water clarity improved",
+    willing_documentation: "Yes", community_additional: "Elder knowledge at risk — urgent documentation",
+    open_feedback: "This knowledge must be recorded now while elders are alive",
+    heard_via: "Community leader", want_pdf: "Yes", willing_followup: "Yes", followup_contact: ""
+  },
+  {
+    id: "DEMO-006", timestamp: "2026-03-20T07:58:22Z", language_used: "English",
+    resp_name: "Alice Vira", resp_email: "avira@example.vu", respondent_role: "NGO worker",
+    resp_age: "35-44", resp_gender: "Female", resp_years_residence: "1-5", resp_lang: "English",
+    province: "Shefa", selected_island: "Efate", selected_village_name: "Port Vila",
+    selected_village_id: "SHE-EFA-PVL", island_other: "", village_other: "",
+    tabu_area_name: "", lat: "", lon: "",
+    aware_general: "Yes", cpwb_types_known: "FPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "",
+    fpa_status: "Unknown", fpa_declared_for: "", fpa_who_declares: "", fpa_duration: "",
+    fpa_water_type: "", fpa_rules: "", fpa_sanctions: "", fpa_additional: "Documenting for NGO report",
+    cipa_status: "Unknown", cipa_who_declares: "", cipa_duration: "", cipa_water_type: "", cipa_sanctions: "", cipa_additional: "",
+    circpa_status: "Unknown", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Unknown", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Unknown", concpa_context: "", concpa_who_declares: "", concpa_duration: "", concpa_additional: "",
+    chief_declared: "Unsure", chief_process: "", chief_mpa_recognition: "Not sure",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "Coordination support",
+    chief_additional: "",
+    community_compliance: "Unknown", compliance_factors: "",
+    perceived_effectiveness: "Unknown", ecological_changes: "Unsure",
+    ecological_changes_desc: "", willing_documentation: "Yes", community_additional: "",
+    open_feedback: "Coordination between NGOs and researchers needed",
+    heard_via: "Colleague", want_pdf: "No", willing_followup: "Yes", followup_contact: "avira@example.vu"
+  },
+  {
+    id: "DEMO-007", timestamp: "2026-03-21T13:20:05Z", language_used: "French",
+    resp_name: "Théodore Lini", resp_email: "", respondent_role: "Farmer / land owner",
+    resp_age: "55-64", resp_gender: "Male", resp_years_residence: "20+", resp_lang: "French",
+    province: "Torba", selected_island: "Vanua Lava", selected_village_name: "Sola",
+    selected_village_id: "TOR-VNL-001", island_other: "", village_other: "",
+    tabu_area_name: "Maubon tabu", lat: "-13.8602", lon: "167.5242",
+    aware_general: "Yes", cpwb_types_known: "CircPA, ConcPA", cpwb_other_type_text: "Tabu lande (dry land tabu affecting waterways)",
+    cpwb_local_terms: "Tabu rive",
+    fpa_status: "Not applicable", fpa_declared_for: "", fpa_who_declares: "", fpa_duration: "",
+    fpa_water_type: "", fpa_rules: "", fpa_sanctions: "", fpa_additional: "",
+    cipa_status: "Not applicable", cipa_who_declares: "", cipa_duration: "", cipa_water_type: "", cipa_sanctions: "", cipa_additional: "",
+    circpa_status: "Active", circpa_who_declares: "Father of initiate",
+    circpa_duration: "10 days", circpa_water_type: "River, Springs",
+    circpa_additional: "No swimming or water collection during ceremony",
+    mecpa_status: "Not applicable", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Active", concpa_context: "Before birth during last trimester",
+    concpa_who_declares: "Village midwife / elder", concpa_duration: "Until birth + 7 days",
+    concpa_additional: "Husband must not fish near birthing waters",
+    chief_declared: "Yes", chief_process: "Nakamal declaration",
+    chief_mpa_recognition: "Not aware of formal MPA",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "Recognition in national law",
+    chief_additional: "",
+    community_compliance: "High", compliance_factors: "Strong spiritual belief, fear of consequences",
+    perceived_effectiveness: "Very effective", ecological_changes: "Yes",
+    ecological_changes_desc: "Springs still flowing strong; fish abundant near tabu river",
+    willing_documentation: "Yes", community_additional: "",
+    open_feedback: "The French state should engage more with customary law",
+    heard_via: "Government officer", want_pdf: "Yes", willing_followup: "No", followup_contact: ""
+  },
+  {
+    id: "DEMO-008", timestamp: "2026-03-22T15:44:18Z", language_used: "English",
+    resp_name: "Samuel Napuat", resp_email: "snapuat@example.vu", respondent_role: "Researcher",
+    resp_age: "35-44", resp_gender: "Male", resp_years_residence: "1-5", resp_lang: "English",
+    province: "Malampa", selected_island: "Ambrym", selected_village_name: "Olal",
+    selected_village_id: "MAL-AMB-002", island_other: "", village_other: "",
+    tabu_area_name: "Wuro tabu", lat: "-16.2500", lon: "168.1167",
+    aware_general: "Yes", cpwb_types_known: "FPA, CIPA, CircPA, MecPA, ConcPA",
+    cpwb_other_type_text: "Volcanic spirit protection zone",
+    cpwb_local_terms: "Tabu solwota, Ples holi",
+    fpa_status: "Active", fpa_declared_for: "All fishing seasons", fpa_who_declares: "High chief",
+    fpa_duration: "Permanent", fpa_water_type: "Coastal, Reef", fpa_rules: "Only traditional methods allowed",
+    fpa_sanctions: "Spiritual curse, community exile", fpa_additional: "Near active volcano",
+    cipa_status: "Active", cipa_who_declares: "Council of chiefs", cipa_duration: "7 days",
+    cipa_water_type: "Hot springs, Coastal", cipa_sanctions: "Spiritual consequences",
+    cipa_additional: "After major volcanic event",
+    circpa_status: "Active", circpa_who_declares: "Family",
+    circpa_duration: "7 days", circpa_water_type: "All water bodies near village",
+    circpa_additional: "",
+    mecpa_status: "Active", mecpa_species: "Hawk-billed turtle, flying fox",
+    mecpa_who_declares: "Chief", mecpa_duration: "Permanent",
+    mecpa_additional: "Totemic species",
+    concpa_status: "Active", concpa_context: "Pregnancy",
+    concpa_who_declares: "Elder women", concpa_duration: "Full pregnancy",
+    concpa_additional: "Mother avoids certain fish",
+    chief_declared: "Yes", chief_process: "Elaborate kastom ceremony",
+    chief_mpa_recognition: "Strong relationship with DEUA and SPC",
+    chief_mpa_conflict: "Yes", chief_conflict_desc: "Tourism operator operating within tabu zone",
+    chief_support_needs: "Legal enforcement, fencing, tourism guidelines",
+    chief_additional: "Requesting urgent intervention",
+    community_compliance: "High", compliance_factors: "Fear of volcano spirits, strong kastom",
+    perceived_effectiveness: "Very effective", ecological_changes: "Yes",
+    ecological_changes_desc: "Turtle nesting sites recovering; coral cover improved",
+    willing_documentation: "Yes", community_additional: "Ambrym documentation critically important",
+    open_feedback: "Collaboration with university essential for scientific documentation",
+    heard_via: "University researcher", want_pdf: "Yes",
+    willing_followup: "Yes", followup_contact: "snapuat@example.vu"
+  },
+  {
+    id: "DEMO-009", timestamp: "2026-03-23T08:05:44Z", language_used: "Bislama",
+    resp_name: "Nelly Toa", resp_email: "", respondent_role: "Community member",
+    resp_age: "18-24", resp_gender: "Female", resp_years_residence: "Less than 1 year", resp_lang: "Bislama",
+    province: "Sanma", selected_island: "Santo", selected_village_name: "Matevulu",
+    selected_village_id: "SAN-STO-003", island_other: "", village_other: "",
+    tabu_area_name: "Matevulu riva tabu", lat: "-15.4433", lon: "167.2010",
+    aware_general: "Yes", cpwb_types_known: "FPA", cpwb_other_type_text: "",
+    cpwb_local_terms: "Tabu wota",
+    fpa_status: "Active", fpa_declared_for: "Fish spawning season", fpa_who_declares: "Chief",
+    fpa_duration: "1 month", fpa_water_type: "River", fpa_rules: "No fishing at river bend",
+    fpa_sanctions: "Community fine", fpa_additional: "",
+    cipa_status: "Not applicable", cipa_who_declares: "", cipa_duration: "", cipa_water_type: "", cipa_sanctions: "", cipa_additional: "",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Not applicable", mecpa_species: "", mecpa_who_declares: "", mecpa_duration: "", mecpa_additional: "",
+    concpa_status: "Not applicable", concpa_context: "", concpa_who_declares: "", concpa_duration: "", concpa_additional: "",
+    chief_declared: "Yes", chief_process: "Verbal declaration at village meeting",
+    chief_mpa_recognition: "Not aware",
+    chief_mpa_conflict: "No", chief_conflict_desc: "", chief_support_needs: "Information materials",
+    chief_additional: "",
+    community_compliance: "Medium", compliance_factors: "Limited enforcement capacity",
+    perceived_effectiveness: "Somewhat effective", ecological_changes: "Unsure",
+    ecological_changes_desc: "", willing_documentation: "Yes", community_additional: "",
+    open_feedback: "Survey questions should include more Bislama options",
+    heard_via: "Social media", want_pdf: "No",
+    willing_followup: "No", followup_contact: ""
+  },
+  {
+    id: "DEMO-010", timestamp: "2026-03-24T16:30:00Z", language_used: "English",
+    resp_name: "Peter Vatoko", resp_email: "peter.v@example.vu", respondent_role: "Chief",
+    resp_age: "55-64", resp_gender: "Male", resp_years_residence: "20+", resp_lang: "English",
+    province: "Tafea", selected_island: "Aneityum", selected_village_name: "Anelgauhat",
+    selected_village_id: "TAF-ANE-001", island_other: "", village_other: "",
+    tabu_area_name: "Naome bay tabu", lat: "-20.2500", lon: "169.7850",
+    aware_general: "Yes", cpwb_types_known: "FPA, MecPA",
+    cpwb_other_type_text: "", cpwb_local_terms: "Tabu place",
+    fpa_status: "Active", fpa_declared_for: "Year-round conservation",
+    fpa_who_declares: "Community council", fpa_duration: "Permanent",
+    fpa_water_type: "Bay, Reef, Mangrove", fpa_rules: "No commercial fishing; traditional subsistence only",
+    fpa_sanctions: "Community exclusion, kastom payment",
+    fpa_additional: "Model for other islands; Aneityum success story",
+    cipa_status: "Active", cipa_who_declares: "Chief",
+    cipa_duration: "5 days", cipa_water_type: "Bay",
+    cipa_sanctions: "Community fine", cipa_additional: "After major death",
+    circpa_status: "Not applicable", circpa_who_declares: "", circpa_duration: "", circpa_water_type: "", circpa_additional: "",
+    mecpa_status: "Active", mecpa_species: "Coconut crab, green turtle",
+    mecpa_who_declares: "Community council", mecpa_duration: "Permanent",
+    mecpa_additional: "Breeding populations recovering",
+    concpa_status: "Not applicable", concpa_context: "", concpa_who_declares: "", concpa_duration: "", concpa_additional: "",
+    chief_declared: "Yes", chief_process: "Formal community assembly + kastom",
+    chief_mpa_recognition: "Fully integrated with DEUA community conservation area",
+    chief_mpa_conflict: "No", chief_conflict_desc: "",
+    chief_support_needs: "Monitoring equipment, patrolling support, legal backing",
+    chief_additional: "Aneityum community conservation = 26 years of success",
+    community_compliance: "Very high", compliance_factors: "Whole-community ownership and management",
+    perceived_effectiveness: "Extremely effective", ecological_changes: "Yes",
+    ecological_changes_desc: "Dramatic recovery of fish stocks and turtle population since 2000",
+    willing_documentation: "Yes", community_additional: "Happy to host researchers",
+    open_feedback: "Community-led conservation works — government should replicate this model nationally",
+    heard_via: "Direct invitation from researcher", want_pdf: "Yes",
+    willing_followup: "Yes", followup_contact: "peter.v@example.vu"
+  }
+];
+
+// =============================================================================
+// TRANSLATIONS
+// =============================================================================
+const TRANSLATIONS = {
+  en: {
+    adminBadge: "Admin",
+    loginEyebrow: "Restricted Access",
+    loginTitle: "CPWB Survey Admin",
+    loginSubtitle: "Enter your team password to access the response dashboard.",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Enter password…",
+    loginBtn: "Sign In",
+    loginError: "Incorrect password. Please try again.",
+    demoBannerText: "DEMO MODE — backend not yet connected. Showing sample data only.",
+    bannerEyebrow: "Vave Lab · Vanuatu Research · 2026",
+    bannerTitle: "CPWB Survey — Response Dashboard",
+    loggedInAs: "Logged in as",
+    logoutBtn: "Logout",
+    searchLabel: "Search all columns",
+    searchPlaceholder: "Search…",
+    filterProvince: "Province",
+    filterIsland: "Island",
+    filterRole: "Respondent Role",
+    filterLang: "Language",
+    filterDateFrom: "From date",
+    filterDateTo: "To date",
+    filterAll: "All",
+    refreshBtn: "Refresh",
+    exportCsvBtn: "Export CSV",
+    exportJsonBtn: "Export JSON",
+    statTotal: "total responses",
+    statFiltered: "shown",
+    bulkExport: "Export selected",
+    bulkDelete: "Delete selected",
+    auditToggle: "Session audit log",
+    viewBtn: "View",
+    editBtn: "Edit",
+    deleteBtn: "Delete",
+    saveBtn: "Save changes",
+    cancelBtn: "Cancel",
+    confirmDeleteTitle: "Delete response?",
+    confirmDeleteBody: "This will permanently remove the response. This action cannot be undone.",
+    confirmBulkDeleteTitle: "Delete selected responses?",
+    confirmBulkDeleteBody: "You are about to permanently delete {n} responses. This cannot be undone.",
+    confirmDeleteOk: "Delete",
+    confirmCancel: "Cancel",
+    noResults: "No responses match your current filters.",
+    noResultsHint: "Try clearing the search or adjusting filters.",
+    responseDetail: "Response Detail",
+    editResponse: "Edit Response",
+    pageInfo: "Showing {from}–{to} of {total}",
+    selectedRows: "{n} selected"
+  },
+  bi: {
+    adminBadge: "Admin",
+    loginEyebrow: "Ples Seket",
+    loginTitle: "Admin blong Sarvei CPWB",
+    loginSubtitle: "Putum password blong tim blong yu blong luk dashboard.",
+    passwordLabel: "Password",
+    passwordPlaceholder: "Putum password…",
+    loginBtn: "Saen In",
+    loginError: "Password i no stret. Plis traem agen.",
+    demoBannerText: "MOD DEMO — backend i no konetem yet. Shioem semple data nomo.",
+    bannerEyebrow: "Vave Lab · Ristasi blong Vanuatu · 2026",
+    bannerTitle: "Sarvei CPWB — Dashboard blong Ansa",
+    loggedInAs: "Yu logedin olsem",
+    logoutBtn: "Logaot",
+    searchLabel: "Sošem evri kolom",
+    searchPlaceholder: "Sošem…",
+    filterProvince: "Provins",
+    filterIsland: "Aeland",
+    filterRole: "Rol blong respondent",
+    filterLang: "Lanwis",
+    filterDateFrom: "From det",
+    filterDateTo: "Kasem det",
+    filterAll: "Evriwan",
+    refreshBtn: "Freşim",
+    exportCsvBtn: "Exportem CSV",
+    exportJsonBtn: "Exportem JSON",
+    statTotal: "ansa evriwan",
+    statFiltered: "shioem",
+    bulkExport: "Exportem ol we yu selektem",
+    bulkDelete: "Deletem ol we yu selektem",
+    auditToggle: "Log blong sesion",
+    viewBtn: "Luk",
+    editBtn: "Editim",
+    deleteBtn: "Deletem",
+    saveBtn: "Seivim",
+    cancelBtn: "Kanselem",
+    confirmDeleteTitle: "Deletem ansa ia?",
+    confirmDeleteBody: "Ansa ia bae i go finis. Yu no save anandem.",
+    confirmBulkDeleteTitle: "Deletem ansa yu selektem?",
+    confirmBulkDeleteBody: "Yu bae deletem {n} ansa. Yu no save anandem.",
+    confirmDeleteOk: "Deletem",
+    confirmCancel: "Kanselem",
+    noResults: "No gat ansa blong filter blong yu.",
+    noResultsHint: "Plis kliarem sošem o jenisim filter.",
+    responseDetail: "Detail blong Ansa",
+    editResponse: "Editim Ansa",
+    pageInfo: "Shioem {from}–{to} long {total}",
+    selectedRows: "{n} selektem"
+  },
+  fr: {
+    adminBadge: "Admin",
+    loginEyebrow: "Accès Restreint",
+    loginTitle: "Administration CPWB",
+    loginSubtitle: "Entrez le mot de passe de votre équipe pour accéder au tableau de bord.",
+    passwordLabel: "Mot de passe",
+    passwordPlaceholder: "Entrez le mot de passe…",
+    loginBtn: "Se connecter",
+    loginError: "Mot de passe incorrect. Veuillez réessayer.",
+    demoBannerText: "MODE DÉMO — serveur non connecté. Affichage de données exemples uniquement.",
+    bannerEyebrow: "Vave Lab · Recherche Vanuatu · 2026",
+    bannerTitle: "Enquête CPWB — Tableau de bord",
+    loggedInAs: "Connecté en tant que",
+    logoutBtn: "Déconnexion",
+    searchLabel: "Rechercher toutes les colonnes",
+    searchPlaceholder: "Rechercher…",
+    filterProvince: "Province",
+    filterIsland: "Île",
+    filterRole: "Rôle du répondant",
+    filterLang: "Langue",
+    filterDateFrom: "Date de début",
+    filterDateTo: "Date de fin",
+    filterAll: "Tous",
+    refreshBtn: "Actualiser",
+    exportCsvBtn: "Exporter CSV",
+    exportJsonBtn: "Exporter JSON",
+    statTotal: "réponses au total",
+    statFiltered: "affichées",
+    bulkExport: "Exporter la sélection",
+    bulkDelete: "Supprimer la sélection",
+    auditToggle: "Journal de session",
+    viewBtn: "Voir",
+    editBtn: "Modifier",
+    deleteBtn: "Supprimer",
+    saveBtn: "Enregistrer",
+    cancelBtn: "Annuler",
+    confirmDeleteTitle: "Supprimer la réponse ?",
+    confirmDeleteBody: "Cette réponse sera définitivement supprimée. Cette action est irréversible.",
+    confirmBulkDeleteTitle: "Supprimer les réponses sélectionnées ?",
+    confirmBulkDeleteBody: "Vous êtes sur le point de supprimer {n} réponses. Cette action est irréversible.",
+    confirmDeleteOk: "Supprimer",
+    confirmCancel: "Annuler",
+    noResults: "Aucune réponse ne correspond à vos filtres.",
+    noResultsHint: "Effacez la recherche ou ajustez les filtres.",
+    responseDetail: "Détail de la réponse",
+    editResponse: "Modifier la réponse",
+    pageInfo: "Affichage {from}–{to} sur {total}",
+    selectedRows: "{n} sélectionnée(s)"
+  }
+};
+
+// =============================================================================
+// STATE
+// =============================================================================
+let currentLang = 'en';
+let currentUser = null;
+let allData = [];         // raw data from backend or demo
+let filteredData = [];    // after search/filter
+let sortKey = null;
+let sortDir = 'asc';
+let currentPage = 1;
+const PAGE_SIZE = 25;
+let selectedIds = new Set();
+let auditLog = [];
+let isDemo = false;
+let editingRowId = null;  // row currently open in panel
+
+// =============================================================================
+// UTILS
+// =============================================================================
+function t(key, vars) {
+  let str = (TRANSLATIONS[currentLang] || TRANSLATIONS.en)[key] || key;
+  if (vars) Object.entries(vars).forEach(([k, v]) => { str = str.replace('{' + k + '}', v); });
+  return str;
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function fmt(val) {
+  if (val === null || val === undefined || val === '') return '';
+  return String(val);
+}
+
+function nowTime() {
+  return new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function dateStr() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function showToast(msg, type) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' toast--' + type : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => { el.className = 'toast'; }, 3200);
+}
+
+// =============================================================================
+// AUDIT LOG
+// =============================================================================
+function addAudit(msg, cls) {
+  auditLog.unshift({ msg, cls, ts: nowTime() });
+  renderAudit();
+}
+
+function renderAudit() {
+  const log = document.getElementById('audit-log');
+  const badge = document.getElementById('audit-count-badge');
+  if (!log) return;
+  log.innerHTML = auditLog.map(e =>
+    `<div class="audit-entry"><span class="ts">[${e.ts}]</span> <span class="${e.cls || ''}">${escapeHtml(e.msg)}</span></div>`
+  ).join('');
+  badge.textContent = auditLog.length;
+}
+
+// =============================================================================
+// TRANSLATIONS APPLICATION
+// =============================================================================
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    el.textContent = t(key);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+  });
+}
+
+// =============================================================================
+// LANGUAGE TOGGLE
+// =============================================================================
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn-header, .lang-btn-banner').forEach(btn => {
+    btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+  });
+  applyTranslations();
+  // Re-render table and panel if open
+  applyFilters();
+  if (document.getElementById('modal-overlay').classList.contains('active') && editingRowId) {
+    const row = allData.find(r => r.id === editingRowId);
+    if (row) openDetailPanel(row, false);
+  }
+}
+
+document.querySelectorAll('[data-lang]').forEach(btn => {
+  btn.addEventListener('click', () => setLang(btn.getAttribute('data-lang')));
+});
+
+// =============================================================================
+// PASSWORD HASHING
+// =============================================================================
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// =============================================================================
+// LOGIN
+// =============================================================================
+async function attemptLogin() {
+  const pw = document.getElementById('pw-input').value;
+  if (!pw) return;
+
+  const hash = await hashPassword(pw);
+  const match = Object.entries(VALID_PASSWORD_HASHES).find(([, h]) => h === hash);
+
+  if (match) {
+    currentUser = match[0];
+    sessionStorage.setItem(SESSION_KEY, currentUser);
+    showAdminScreen();
+  } else {
+    // Shake animation
+    const card = document.querySelector('.login-card');
+    const errEl = document.getElementById('login-error');
+    errEl.classList.add('visible');
+    card.classList.remove('shake');
+    void card.offsetWidth; // reflow
+    card.classList.add('shake');
+    setTimeout(() => card.classList.remove('shake'), 500);
+  }
+}
+
+document.getElementById('login-btn').addEventListener('click', attemptLogin);
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') attemptLogin();
+});
+
+// =============================================================================
+// SHOW ADMIN
+// =============================================================================
+function showAdminScreen() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').classList.add('visible');
+  document.getElementById('user-name-display').textContent = currentUser;
+  addAudit('Logged in as ' + currentUser, 'action-login');
+  loadData();
+}
+
+// =============================================================================
+// LOGOUT
+// =============================================================================
+document.getElementById('logout-btn').addEventListener('click', () => {
+  sessionStorage.removeItem(SESSION_KEY);
+  currentUser = null;
+  allData = [];
+  filteredData = [];
+  selectedIds.clear();
+  auditLog = [];
+  document.getElementById('admin-screen').classList.remove('visible');
+  document.getElementById('login-screen').style.display = '';
+  document.getElementById('pw-input').value = '';
+  document.getElementById('login-error').classList.remove('visible');
+});
+
+// =============================================================================
+// DATA LOADING
+// =============================================================================
+function showLoading(msg) {
+  document.getElementById('loading-msg').textContent = msg || 'Loading…';
+  document.getElementById('loading-overlay').classList.add('active');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('active');
+}
+
+async function loadData() {
+  showLoading(t('statTotal') ? 'Loading responses…' : 'Loading…');
+  try {
+    const resp = await fetch(APPS_SCRIPT_URL + '?action=list', { signal: AbortSignal.timeout(8000) });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const json = await resp.json();
+    const rows = Array.isArray(json) ? json : (json.data || json.rows || []);
+    allData = rows.map((r, i) => ({ id: r.id || ('ROW-' + (i + 1)), ...r }));
+    isDemo = false;
+    document.getElementById('demo-banner').classList.remove('visible');
+    addAudit('Loaded ' + allData.length + ' responses from backend', 'action-login');
+  } catch {
+    // Fall back to demo data
+    allData = DEMO_DATA.map(r => ({ ...r }));
+    isDemo = true;
+    document.getElementById('demo-banner').classList.add('visible');
+    addAudit('Backend unreachable — loaded demo data (' + allData.length + ' rows)', 'action-export');
+  }
+  hideLoading();
+  populateFilterDropdowns();
+  applyFilters();
+  renderTable();
+}
+
+// =============================================================================
+// FILTER DROPDOWNS
+// =============================================================================
+function populateFilterDropdowns() {
+  const allText = t('filterAll');
+  function fill(selectId, key) {
+    const sel = document.getElementById(selectId);
+    const existing = sel.value;
+    const vals = [...new Set(allData.map(r => r[key] || '').filter(Boolean))].sort();
+    sel.innerHTML = `<option value="">${allText}</option>` +
+      vals.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    sel.value = existing;
+  }
+  fill('filter-province', 'province');
+  fill('filter-island', 'selected_island');
+  fill('filter-role', 'respondent_role');
+  fill('filter-lang', 'language_used');
+}
+
+// =============================================================================
+// SEARCH + FILTER
+// =============================================================================
+let searchDebounce;
+function applyFilters() {
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const province = document.getElementById('filter-province')?.value || '';
+  const island = document.getElementById('filter-island')?.value || '';
+  const role = document.getElementById('filter-role')?.value || '';
+  const lang = document.getElementById('filter-lang')?.value || '';
+  const dateFrom = document.getElementById('filter-date-from')?.value || '';
+  const dateTo = document.getElementById('filter-date-to')?.value || '';
+
+  filteredData = allData.filter(row => {
+    if (province && row.province !== province) return false;
+    if (island && row.selected_island !== island) return false;
+    if (role && row.respondent_role !== role) return false;
+    if (lang && row.language_used !== lang) return false;
+    if (dateFrom && row.timestamp && row.timestamp.slice(0, 10) < dateFrom) return false;
+    if (dateTo   && row.timestamp && row.timestamp.slice(0, 10) > dateTo)   return false;
+    if (q) {
+      const combined = FIELD_MAP.map(f => fmt(row[f.key])).join(' ').toLowerCase();
+      if (!combined.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Apply sort
+  if (sortKey) {
+    filteredData.sort((a, b) => {
+      const av = fmt(a[sortKey]).toLowerCase();
+      const bv = fmt(b[sortKey]).toLowerCase();
+      return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    });
+  }
+
+  currentPage = 1;
+  document.getElementById('stat-total').textContent = allData.length;
+  document.getElementById('stat-filtered').textContent = filteredData.length;
+  renderTable();
+}
+
+// Attach filter listeners
+['search-input','filter-province','filter-island','filter-role','filter-lang','filter-date-from','filter-date-to'].forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(applyFilters, 180);
+  });
+  el.addEventListener('change', () => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(applyFilters, 0);
+  });
+});
+
+// =============================================================================
+// TABLE RENDERING
+// =============================================================================
+function buildTableHead() {
+  const tr = document.getElementById('table-head-row');
+  // Checkbox column
+  tr.innerHTML = `<th style="width:40px;"><input type="checkbox" id="select-all-cb" aria-label="Select all" style="cursor:pointer;"></th>`;
+  TABLE_COLUMNS.forEach(key => {
+    const f = FIELD_MAP.find(x => x.key === key);
+    const label = f ? f.label : key;
+    const cls = sortKey === key ? (sortDir === 'asc' ? 'sorted-asc' : 'sorted-desc') : '';
+    tr.innerHTML += `<th data-sort="${key}" class="${cls}">${escapeHtml(label)}</th>`;
+  });
+  tr.innerHTML += `<th style="min-width:150px;cursor:default;">Actions</th>`;
+
+  // Sort listeners
+  tr.querySelectorAll('th[data-sort]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.getAttribute('data-sort');
+      if (sortKey === key) { sortDir = sortDir === 'asc' ? 'desc' : 'asc'; }
+      else { sortKey = key; sortDir = 'asc'; }
+      applyFilters();
+    });
+  });
+
+  // Select-all
+  document.getElementById('select-all-cb').addEventListener('change', e => {
+    const pageIds = pagedData().map(r => r.id);
+    pageIds.forEach(id => e.target.checked ? selectedIds.add(id) : selectedIds.delete(id));
+    renderTable();
+    updateBulkBar();
+  });
+}
+
+function pagedData() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  return filteredData.slice(start, start + PAGE_SIZE);
+}
+
+function highlightText(text, q) {
+  if (!q) return escapeHtml(text);
+  const escaped = escapeHtml(text);
+  if (!q) return escaped;
+  const re = new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+  return escaped.replace(re, '<mark>$1</mark>');
+}
+
+function renderTable() {
+  buildTableHead();
+  const body = document.getElementById('table-body');
+  const rows = pagedData();
+  const q = (document.getElementById('search-input')?.value || '').toLowerCase();
+
+  if (rows.length === 0) {
+    body.innerHTML = `
+      <tr><td colspan="${TABLE_COLUMNS.length + 2}">
+        <div class="empty-state">
+          <div class="empty-state__icon">🔍</div>
+          <div class="empty-state__title">${escapeHtml(t('noResults'))}</div>
+          <div style="font-size:var(--text-sm);color:var(--color-text-faint);margin-top:4px;">${escapeHtml(t('noResultsHint'))}</div>
+        </div>
+      </td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  const globalIdx = (currentPage - 1) * PAGE_SIZE;
+  body.innerHTML = rows.map((row, i) => {
+    const rowNum = globalIdx + i + 1;
+    const checked = selectedIds.has(row.id) ? 'checked' : '';
+    const selCls = selectedIds.has(row.id) ? 'selected' : '';
+    const cells = TABLE_COLUMNS.map(key => {
+      const val = fmt(row[key]);
+      const disp = val.length > 60 ? val.slice(0, 60) + '…' : val;
+      return `<td title="${escapeHtml(val)}">${highlightText(disp, q)}</td>`;
+    }).join('');
+    return `
+      <tr class="${selCls}" data-id="${escapeHtml(row.id)}">
+        <td><span class="row-num">${rowNum}</span><br>
+          <input type="checkbox" data-row-id="${escapeHtml(row.id)}" ${checked} style="cursor:pointer;margin-top:4px;">
+        </td>
+        ${cells}
+        <td>
+          <div class="row-actions">
+            <button class="btn btn--ghost btn--sm" data-action="view" data-id="${escapeHtml(row.id)}">${escapeHtml(t('viewBtn'))}</button>
+            <button class="btn btn--ghost btn--sm" data-action="edit" data-id="${escapeHtml(row.id)}">${escapeHtml(t('editBtn'))}</button>
+            <button class="btn btn--danger btn--sm" data-action="delete" data-id="${escapeHtml(row.id)}">${escapeHtml(t('deleteBtn'))}</button>
+          </div>
+        </td>
+      </tr>`;
+  }).join('');
+
+  // Row checkboxes
+  body.querySelectorAll('input[data-row-id]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const id = e.target.getAttribute('data-row-id');
+      e.target.checked ? selectedIds.add(id) : selectedIds.delete(id);
+      const tr = e.target.closest('tr');
+      tr.classList.toggle('selected', e.target.checked);
+      updateBulkBar();
+    });
+  });
+
+  // Action buttons
+  body.querySelectorAll('button[data-action]').forEach(btn => {
+    btn.addEventListener('click', e => {
+      const action = btn.getAttribute('data-action');
+      const id = btn.getAttribute('data-id');
+      const row = allData.find(r => r.id === id);
+      if (!row) return;
+      if (action === 'view') openDetailPanel(row, false);
+      else if (action === 'edit') openDetailPanel(row, true);
+      else if (action === 'delete') confirmDeleteRow(id);
+    });
+  });
+
+  renderPagination();
+}
+
+function updateBulkBar() {
+  const bar = document.getElementById('bulk-actions');
+  const n = selectedIds.size;
+  if (n > 0) {
+    bar.classList.add('visible');
+    document.getElementById('bulk-count-label').textContent = t('selectedRows', { n });
+  } else {
+    bar.classList.remove('visible');
+  }
+}
+
+// =============================================================================
+// PAGINATION
+// =============================================================================
+function renderPagination() {
+  const total = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const from = total === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const to   = Math.min(currentPage * PAGE_SIZE, total);
+
+  document.getElementById('pagination-info').textContent =
+    t('pageInfo', { from, to, total });
+
+  const ctrl = document.getElementById('pagination-controls');
+  ctrl.innerHTML = '';
+
+  // Prev
+  const prev = document.createElement('button');
+  prev.className = 'page-btn';
+  prev.textContent = '‹';
+  prev.disabled = currentPage === 1;
+  prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
+  ctrl.appendChild(prev);
+
+  // Page numbers (show up to 7)
+  let start = Math.max(1, currentPage - 3);
+  let end   = Math.min(totalPages, start + 6);
+  start = Math.max(1, end - 6);
+
+  for (let p = start; p <= end; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'page-btn' + (p === currentPage ? ' active' : '');
+    btn.textContent = p;
+    btn.addEventListener('click', (pp => () => { currentPage = pp; renderTable(); })(p));
+    ctrl.appendChild(btn);
+  }
+
+  // Next
+  const next = document.createElement('button');
+  next.className = 'page-btn';
+  next.textContent = '›';
+  next.disabled = currentPage === totalPages;
+  next.addEventListener('click', () => { if (currentPage < totalPages) { currentPage++; renderTable(); } });
+  ctrl.appendChild(next);
+}
+
+// =============================================================================
+// DETAIL PANEL
+// =============================================================================
+function openDetailPanel(row, editMode) {
+  editingRowId = row.id;
+  const overlay = document.getElementById('modal-overlay');
+  const title   = document.getElementById('panel-title');
+  const actions = document.getElementById('panel-actions');
+  const body    = document.getElementById('panel-body');
+
+  title.textContent = editMode ? t('editResponse') + ' — #' + row.id : t('responseDetail') + ' — #' + row.id;
+
+  // Actions
+  if (editMode) {
+    actions.innerHTML = `
+      <button class="btn btn--primary" id="panel-save-btn">${escapeHtml(t('saveBtn'))}</button>
+      <button class="btn btn--ghost" id="panel-cancel-edit-btn">${escapeHtml(t('cancelBtn'))}</button>
+      <button class="btn btn--danger" id="panel-delete-btn2">${escapeHtml(t('deleteBtn'))}</button>`;
+  } else {
+    actions.innerHTML = `
+      <button class="btn btn--primary" id="panel-edit-btn">${escapeHtml(t('editBtn'))}</button>
+      <button class="btn btn--danger" id="panel-delete-btn">${escapeHtml(t('deleteBtn'))}</button>`;
+  }
+
+  // Group fields by section
+  const sections = {};
+  FIELD_MAP.forEach(f => {
+    if (!sections[f.section]) sections[f.section] = [];
+    sections[f.section].push(f);
+  });
+
+  body.innerHTML = Object.entries(sections).map(([sec, fields]) => {
+    const fieldsHtml = fields.map(f => {
+      const val = fmt(row[f.key]);
+      if (editMode) {
+        const isLong = val.length > 80 || f.key.includes('desc') || f.key.includes('additional') || f.key.includes('feedback');
+        const input = isLong
+          ? `<textarea name="${escapeHtml(f.key)}" rows="3">${escapeHtml(val)}</textarea>`
+          : `<input type="text" name="${escapeHtml(f.key)}" value="${escapeHtml(val)}">`;
+        return `<div class="detail-field">
+          <div class="detail-field__label">${escapeHtml(f.label)}</div>
+          ${input}
+        </div>`;
+      } else {
+        const displayVal = val || `<em class="empty" style="color:var(--color-text-faint);font-style:italic;">(empty)</em>`;
+        return `<div class="detail-field">
+          <div class="detail-field__label">${escapeHtml(f.label)}</div>
+          <div class="detail-field__value">${escapeHtml(val) || '<em style="color:var(--color-text-faint);font-style:italic;">(empty)</em>'}</div>
+        </div>`;
+      }
+    }).join('');
+    return `<div class="detail-section">
+      <div class="detail-section__title">${escapeHtml(sec)}</div>
+      ${fieldsHtml}
+    </div>`;
+  }).join('');
+
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+
+  // Bind actions
+  if (editMode) {
+    document.getElementById('panel-save-btn').addEventListener('click', () => saveRow(row.id));
+    document.getElementById('panel-cancel-edit-btn').addEventListener('click', () => openDetailPanel(row, false));
+    document.getElementById('panel-delete-btn2').addEventListener('click', () => confirmDeleteRow(row.id));
+  } else {
+    document.getElementById('panel-edit-btn').addEventListener('click', () => openDetailPanel(row, true));
+    document.getElementById('panel-delete-btn').addEventListener('click', () => confirmDeleteRow(row.id));
+  }
+}
+
+document.getElementById('panel-close').addEventListener('click', closePanel);
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closePanel();
+});
+
+function closePanel() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+  editingRowId = null;
+}
+
+// =============================================================================
+// SAVE ROW (Edit)
+// =============================================================================
+async function saveRow(id) {
+  const panel = document.getElementById('panel-body');
+  const updated = {};
+  panel.querySelectorAll('input[name], textarea[name]').forEach(el => {
+    updated[el.name] = el.value;
+  });
+
+  // Update local copy
+  const idx = allData.findIndex(r => r.id === id);
+  if (idx >= 0) Object.assign(allData[idx], updated);
+
+  // Attempt POST to backend
+  try {
+    await fetch(APPS_SCRIPT_URL + '?action=update&id=' + encodeURIComponent(id), {
+      method: 'POST',
+      body: JSON.stringify(updated),
+      headers: { 'Content-Type': 'application/json' },
+      signal: AbortSignal.timeout(8000)
+    });
+  } catch { /* offline / demo */ }
+
+  addAudit('Edited response #' + id, 'action-edit');
+  closePanel();
+  applyFilters();
+  showToast('Response saved.', 'success');
+}
+
+// =============================================================================
+// DELETE ROW
+// =============================================================================
+function confirmDeleteRow(id) {
+  showConfirm(
+    t('confirmDeleteTitle'),
+    t('confirmDeleteBody'),
+    t('confirmDeleteOk'),
+    async () => {
+      await deleteRow(id);
+    }
+  );
+}
+
+async function deleteRow(id) {
+  const idx = allData.findIndex(r => r.id === id);
+  if (idx >= 0) allData.splice(idx, 1);
+  selectedIds.delete(id);
+
+  try {
+    await fetch(APPS_SCRIPT_URL + '?action=delete&id=' + encodeURIComponent(id), {
+      method: 'POST', signal: AbortSignal.timeout(8000)
+    });
+  } catch { /* offline / demo */ }
+
+  addAudit('Deleted response #' + id, 'action-delete');
+  closePanel();
+  populateFilterDropdowns();
+  applyFilters();
+  showToast('Response deleted.', 'success');
+}
+
+// =============================================================================
+// BULK ACTIONS
+// =============================================================================
+document.getElementById('bulk-delete-btn').addEventListener('click', () => {
+  const n = selectedIds.size;
+  if (!n) return;
+  showConfirm(
+    t('confirmBulkDeleteTitle'),
+    t('confirmBulkDeleteBody', { n }),
+    t('confirmDeleteOk'),
+    async () => {
+      const ids = [...selectedIds];
+      for (const id of ids) await deleteRow(id);
+      selectedIds.clear();
+      updateBulkBar();
+      showToast(`Deleted ${n} response(s).`, 'success');
+    }
+  );
+});
+
+document.getElementById('bulk-export-btn').addEventListener('click', () => {
+  const rows = allData.filter(r => selectedIds.has(r.id));
+  exportCsv(rows);
+  addAudit('Exported ' + rows.length + ' selected rows as CSV', 'action-export');
+});
+
+// =============================================================================
+// EXPORT
+// =============================================================================
+function exportCsv(rows) {
+  rows = rows || filteredData;
+  const headers = FIELD_MAP.map(f => f.label);
+  function escCsv(v) {
+    const s = fmt(v);
+    if (s.includes(',') || s.includes('"') || s.includes('\n')) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+  const lines = [
+    headers.map(escCsv).join(','),
+    ...rows.map(r => FIELD_MAP.map(f => escCsv(r[f.key])).join(','))
+  ];
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, `vanuatu-cpwb-responses_${dateStr()}.csv`);
+  addAudit('Exported ' + rows.length + ' rows as CSV', 'action-export');
+  showToast('CSV exported (' + rows.length + ' rows).', 'success');
+}
+
+function exportJson(rows) {
+  rows = rows || filteredData;
+  const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
+  downloadBlob(blob, `vanuatu-cpwb-responses_${dateStr()}.json`);
+  addAudit('Exported ' + rows.length + ' rows as JSON', 'action-export');
+  showToast('JSON exported (' + rows.length + ' rows).', 'success');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+document.getElementById('export-csv-btn').addEventListener('click', () => exportCsv(filteredData));
+document.getElementById('export-json-btn').addEventListener('click', () => exportJson(filteredData));
+document.getElementById('refresh-btn').addEventListener('click', () => {
+  selectedIds.clear();
+  updateBulkBar();
+  loadData();
+  showToast('Data refreshed.', 'success');
+});
+
+// =============================================================================
+// CONFIRM DIALOG
+// =============================================================================
+let confirmCallback = null;
+function showConfirm(title, body, okLabel, cb) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-body').textContent = body;
+  document.getElementById('confirm-ok').textContent = okLabel;
+  confirmCallback = cb;
+  document.getElementById('confirm-overlay').classList.add('active');
+}
+
+document.getElementById('confirm-ok').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  if (confirmCallback) confirmCallback();
+  confirmCallback = null;
+});
+document.getElementById('confirm-cancel').addEventListener('click', () => {
+  document.getElementById('confirm-overlay').classList.remove('active');
+  confirmCallback = null;
+});
+
+// =============================================================================
+// AUDIT TOGGLE
+// =============================================================================
+document.getElementById('audit-toggle').addEventListener('click', () => {
+  const panel = document.getElementById('audit-panel');
+  const icon  = document.getElementById('audit-icon');
+  panel.classList.toggle('visible');
+  icon.classList.toggle('open');
+});
+
+// =============================================================================
+// SESSION RESTORE
+// =============================================================================
+const savedUser = sessionStorage.getItem(SESSION_KEY);
+if (savedUser && savedUser in VALID_PASSWORD_HASHES) {
+  currentUser = savedUser;
+  showAdminScreen();
+} else {
+  // Show login
+  applyTranslations();
+}
+
+})();
+</script>
+
+</body>
+</html>
