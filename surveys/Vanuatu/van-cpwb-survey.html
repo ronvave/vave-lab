@@ -2895,9 +2895,12 @@
 
   window.startSurvey = function() {
     if (!document.getElementById('irb-consent').checked) return;
-    document.querySelector('.survey-form-wrapper').style.display = 'block';
+    // Hide the consent/intro page entirely so the survey starts on a clean page
+    var intro = document.querySelector('.survey-intro');
+    if (intro) intro.style.display = 'none';
     document.getElementById('consent-btn-wrap').style.display = 'none';
-    document.querySelector('.survey-form-wrapper').scrollIntoView({ behavior: 'smooth' });
+    document.querySelector('.survey-form-wrapper').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'auto' });
   };
 
   document.addEventListener('DOMContentLoaded', init);
