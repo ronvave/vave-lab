@@ -1369,10 +1369,10 @@
 
               <div class="form-group">
                 <label class="form-label" for="island">Island <span class="required">*</span></label>
-                <select class="form-select" id="island" name="island" required disabled>
-                  <option value="">Select a province first</option>
-                </select>
-                <p class="form-error-msg">Please select an island.</p>
+                <input type="text" class="form-input" id="island" name="island" list="islandList" required disabled placeholder="Select a province first" autocomplete="off">
+                <datalist id="islandList"></datalist>
+                <p class="form-helper">Pick from the list, or type your island name if it&rsquo;s not listed.</p>
+                <p class="form-error-msg">Please select or type an island.</p>
               </div>
             </div>
 
@@ -1384,9 +1384,9 @@
 
               <div class="form-group">
                 <label class="form-label" for="village">Village Name</label>
-                <select class="form-select" id="village" name="village" disabled>
-                  <option value="">Select an island first</option>
-                </select>
+                <input type="text" class="form-input" id="village" name="village" list="villageList" disabled placeholder="Select an island first" autocomplete="off">
+                <datalist id="villageList"></datalist>
+                <p class="form-helper">Pick from the list, or type your village name if it&rsquo;s not listed. Picking a village will drop a marker on the map.</p>
                 <div class="inline-check">
                   <input type="checkbox" id="island_level" name="island_level">
                   <label for="island_level">I am providing information at the island level (not a specific village)</label>
@@ -1401,7 +1401,7 @@
               <!-- Change 11: Updated map instruction text -->
               <p class="map-instruction">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                Scroll and zoom into an island then village location you're providing information for, then left click to place a marker. Village locations will appear when you select an island above.
+                Scroll and zoom into an island then village location you&rsquo;re providing information for, then left-click to place a marker. Village dots will appear when you select an island above &mdash; click a dot to select that village in the dropdown, or pick a village from the dropdown to drop the marker on it.
               </p>
               <div class="map-container" id="locationMap"></div>
               <p class="map-coords" id="mapCoords"></p>
@@ -3819,42 +3819,47 @@
     // Village layer (sits below the user-placed marker)
     villageLayer = L.layerGroup().addTo(map);
 
-    // Set up Province → Island → Village cascade handlers
+    // Set up Province → Island → Village cascade handlers.
+    // Note: #island and #village are <input list="…"> elements backed by
+    // <datalist>, so users can pick from the suggestions OR type a custom
+    // name that is not in our dataset.
     var provinceSel = document.getElementById('province');
     var islandSel = document.getElementById('island');
     var villageSel = document.getElementById('village');
+    var islandList = document.getElementById('islandList');
+    var villageList = document.getElementById('villageList');
+
+    function setDatalist(listEl, items) {
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      items.forEach(function(v) {
+        var o = document.createElement('option');
+        o.value = v;
+        listEl.appendChild(o);
+      });
+    }
 
     if (provinceSel) {
       provinceSel.addEventListener('change', function() {
         var province = this.value;
-        // Reset island dropdown
-        islandSel.innerHTML = '';
-        var optI = document.createElement('option');
-        optI.value = '';
-        optI.textContent = province ? 'Select an island' : 'Select a province first';
-        islandSel.appendChild(optI);
-        // Reset village dropdown
-        villageSel.innerHTML = '';
-        var optV = document.createElement('option');
-        optV.value = '';
-        optV.textContent = 'Select an island first';
-        villageSel.appendChild(optV);
+        // Reset island input + datalist
+        islandSel.value = '';
+        setDatalist(islandList, []);
+        islandSel.placeholder = province ? 'Select or type an island' : 'Select a province first';
+        // Reset village input + datalist
+        villageSel.value = '';
+        setDatalist(villageList, []);
+        villageSel.placeholder = 'Select an island first';
         villageSel.disabled = true;
         if (!province) {
           islandSel.disabled = true;
           if (villageLayer) villageLayer.clearLayers();
           return;
         }
-        // Populate islands for this province (alphabetical)
+        // Populate island suggestions for this province (alphabetical)
         var islands = SI_VILLAGES[province] ? Object.keys(SI_VILLAGES[province]).sort() : [];
-        islands.forEach(function(isle) {
-          var o = document.createElement('option');
-          o.value = isle;
-          o.textContent = isle;
-          islandSel.appendChild(o);
-        });
+        setDatalist(islandList, islands);
         islandSel.disabled = false;
-        // Clear village markers until an island is selected
         if (villageLayer) villageLayer.clearLayers();
         // Fit map to all villages in the province so the user can see the province extent
         fitProvinceBounds(province);
@@ -3862,45 +3867,64 @@
     }
 
     if (islandSel) {
-      islandSel.addEventListener('change', function() {
+      // 'change' fires when the user picks a datalist suggestion OR blurs after typing.
+      // 'input' fires on every keystroke — we use it so the village list updates
+      // immediately the moment a known island is matched.
+      var handleIslandChange = function() {
         var province = provinceSel.value;
-        var island = this.value;
-        // Reset village dropdown
-        villageSel.innerHTML = '';
-        var optV = document.createElement('option');
-        optV.value = '';
-        optV.textContent = island ? 'Select a village (optional)' : 'Select an island first';
-        villageSel.appendChild(optV);
+        var island = islandSel.value.trim();
+        // Reset village suggestions
+        villageSel.value = '';
+        setDatalist(villageList, []);
+        villageSel.placeholder = island ? 'Select or type a village (optional)' : 'Select an island first';
         if (!island) {
           villageSel.disabled = true;
           if (villageLayer) villageLayer.clearLayers();
           return;
         }
-        var vList = (SI_VILLAGES[province] && SI_VILLAGES[province][island]) || [];
-        vList.forEach(function(v) {
-          var o = document.createElement('option');
-          o.value = v.n;
-          o.textContent = v.n;
-          villageSel.appendChild(o);
+        // Look up villages for the typed/picked island (case-insensitive)
+        var provData = SI_VILLAGES[province] || {};
+        var canonicalIsland = Object.keys(provData).find(function(k) {
+          return k.toLowerCase() === island.toLowerCase();
         });
-        villageSel.disabled = vList.length === 0;
-        // Render markers for this island only and fit map to its bounds
-        loadIslandVillages(province, island);
-      });
+        if (canonicalIsland) {
+          // Known island — show village suggestions and render dots
+          var vList = provData[canonicalIsland] || [];
+          setDatalist(villageList, vList.map(function(v) { return v.n; }));
+          villageSel.disabled = false;
+          loadIslandVillages(province, canonicalIsland);
+        } else {
+          // Custom/typed island we don't have data for — still allow free-text village entry
+          villageSel.disabled = false;
+          if (villageLayer) villageLayer.clearLayers();
+        }
+      };
+      islandSel.addEventListener('change', handleIslandChange);
+      islandSel.addEventListener('input', handleIslandChange);
     }
 
     if (villageSel) {
-      villageSel.addEventListener('change', function() {
+      // When the user picks a village from the suggestions (or types a known name),
+      // drop the marker on that village's coordinates and zoom in.
+      var handleVillageChange = function() {
         var province = provinceSel.value;
-        var island = islandSel.value;
-        var villageName = this.value;
+        var island = islandSel.value.trim();
+        var villageName = villageSel.value.trim();
         if (!villageName || !province || !island) return;
-        var vList = (SI_VILLAGES[province] && SI_VILLAGES[province][island]) || [];
-        var v = vList.find(function(x) { return x.n === villageName; });
+        var provData = SI_VILLAGES[province] || {};
+        var canonicalIsland = Object.keys(provData).find(function(k) {
+          return k.toLowerCase() === island.toLowerCase();
+        });
+        if (!canonicalIsland) return; // typed an unknown island — nothing to match against
+        var vList = provData[canonicalIsland] || [];
+        var v = vList.find(function(x) { return x.n.toLowerCase() === villageName.toLowerCase(); });
         if (v) {
-          map.setView([v.lat, v.lng], 14);
+          placeMarkerAt(v.lat, v.lng, 14);
         }
-      });
+      };
+      villageSel.addEventListener('change', handleVillageChange);
+      // Also listen to input so picking via datalist click works on all browsers
+      villageSel.addEventListener('input', handleVillageChange);
     }
 
     // Dynamic marker sizing on zoom
@@ -3938,12 +3962,49 @@
         weight: 1,
         fillOpacity: 0.7
       }).bindTooltip(v.n, {permanent: false, direction: 'top', offset: [0, -5]});
+      // Clicking a village dot selects it in the dropdown and drops the marker on it.
+      // L.DomEvent.stopPropagation prevents the underlying map click handler from firing.
+      m.on('click', function(ev) {
+        L.DomEvent.stopPropagation(ev);
+        selectVillageFromMap(v);
+      });
       villageLayer.addLayer(m);
       bounds.extend([v.lat, v.lng]);
     });
     if (bounds.isValid()) {
       map.fitBounds(bounds.pad(0.1), {maxZoom: 13});
     }
+  }
+
+  // Helper: drop / move the user's location marker to a given lat/lng.
+  function placeMarkerAt(lat, lng, zoomLevel) {
+    if (!map) return;
+    var latlng = L.latLng(lat, lng);
+    if (marker) {
+      marker.setLatLng(latlng);
+    } else {
+      marker = L.marker(latlng, { draggable: true }).addTo(map);
+      marker.on('dragend', onMarkerDrag);
+    }
+    updateCoords(latlng.lat, latlng.lng);
+    if (typeof zoomLevel === 'number') {
+      map.setView(latlng, Math.max(map.getZoom(), zoomLevel));
+    } else {
+      map.panTo(latlng);
+    }
+  }
+
+  // Called when the user clicks a village dot on the map. Syncs the village
+  // dropdown to that village and drops the user's marker on it.
+  function selectVillageFromMap(v) {
+    var villageInput = document.getElementById('village');
+    if (villageInput) {
+      villageInput.value = v.n;
+      // Fire a 'change' event so any other listeners (e.g. <span id="villageName">
+      // in Step 4) stay in sync if they exist now or in the future.
+      villageInput.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    placeMarkerAt(v.lat, v.lng, 14);
   }
 
   function getVillageRadius(zoom) {
