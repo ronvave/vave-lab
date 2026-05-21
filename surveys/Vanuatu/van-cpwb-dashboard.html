@@ -925,11 +925,17 @@ function initMap() {
         fillOpacity: 0.85
       }).addTo(map);
       window.jiruMapMarkers.push({ marker: circle, province: m.province, lat: parseFloat(m.lat), lng: parseFloat(m.lng) });
+      const heading = m.village || m.island || m.local_jiru_name || m.province || '';
+      const locParts = [m.island, m.province].filter(Boolean);
+      const locLine = locParts.join(', ');
+      const localName = (m.local_jiru_name && m.local_jiru_name !== heading)
+        ? `<br><span style="color:#64748b;font-size:0.8rem;font-style:italic;">Local name: ${m.local_jiru_name}</span>` : '';
       circle.bindPopup(`
         <div style="font-family:'DM Sans',sans-serif;min-width:160px;">
-          <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${m.village || m.island || 'Unknown'}</strong><br>
-          <span style="color:#64748b;font-size:0.8rem;">${m.island || ''}, ${m.province || ''}</span><br>
-          <span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;background:${(colors[status]||'#94a3b8')}20;color:${colors[status]||'#94a3b8'};">${labels[status] || 'Unknown'}</span>
+          <strong style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#002a30;">${heading}</strong>
+          ${locLine ? `<br><span style="color:#64748b;font-size:0.8rem;">${locLine}</span>` : ''}
+          ${localName}
+          <br><span style="display:inline-block;margin-top:0.4rem;padding:0.15rem 0.5rem;border-radius:999px;font-size:0.75rem;font-weight:600;background:${(colors[status]||'#94a3b8')}20;color:${colors[status]||'#94a3b8'};">${labels[status] || 'Unknown'}</span>
         </div>
       `);
     });
