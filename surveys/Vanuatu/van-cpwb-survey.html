@@ -1239,7 +1239,7 @@
           </div>
         </div>
 
-        <form id="jiruSurvey" novalidate>
+        <form id="fpaSurvey" novalidate>
 
           <!-- ═══════════ STEP 1: About You ═══════════ -->
           <div class="survey-step active" data-step="1">
@@ -1435,21 +1435,21 @@
             <!-- Q1 (was Q2): Extent/practice question — REQUIRED -->
             <div class="form-group">
               <label class="form-label">Based on your knowledge, to what extent does your community protect land, waters or species for a loved one&rsquo;s funeral? <span class="required">*</span></label>
-              <div class="form-radio-group" id="jiruStatusGroup">
+              <div class="form-radio-group" id="fpaStatusGroup">
                 <label class="form-radio">
-                  <input type="radio" name="jiru_status" value="yes_current" required>
+                  <input type="radio" name="fpa_status" value="yes_current" required>
                   <span class="form-radio__label">Yes &mdash; we currently practise this</span>
                 </label>
                 <label class="form-radio">
-                  <input type="radio" name="jiru_status" value="yes_past">
+                  <input type="radio" name="fpa_status" value="yes_past">
                   <span class="form-radio__label">Yes &mdash; we practised this in the past, but no longer</span>
                 </label>
                 <label class="form-radio">
-                  <input type="radio" name="jiru_status" value="no">
+                  <input type="radio" name="fpa_status" value="no">
                   <span class="form-radio__label">No &mdash; we have never practised this, to my knowledge</span>
                 </label>
                 <label class="form-radio">
-                  <input type="radio" name="jiru_status" value="unsure">
+                  <input type="radio" name="fpa_status" value="unsure">
                   <span class="form-radio__label">Unsure / I don&rsquo;t know</span>
                 </label>
               </div>
@@ -1457,15 +1457,15 @@
             </div>
 
             <!-- Q2 (was Q1): Local name — conditional on Yes answers -->
-            <div class="form-group conditional-step3-yes" id="localJiruNameGroup" style="display:none;">
-              <label class="form-label" for="local_jiru_name">What is the practice of protecting lands, waters and/or species for someone's funeral called in your community?</label>
-              <input type="text" class="form-input" id="local_jiru_name" name="local_jiru_name" placeholder="e.g. tabu area, tabu">
+            <div class="form-group conditional-step3-yes" id="localFpaNameGroup" style="display:none;">
+              <label class="form-label" for="local_fpa_name">What is the practice of protecting lands, waters and/or species for someone's funeral called in your community?</label>
+              <input type="text" class="form-input" id="local_fpa_name" name="local_fpa_name" placeholder="e.g. tabu area, tabu">
             </div>
 
             <!-- Q3: Who are tabu areas established for — conditional on Yes answers -->
-            <div class="form-group conditional-step3-yes" id="jiruWhoEstablishedGroup" style="display:none;">
-              <label class="form-label" for="jiru_who_established_for">Who are <strong>funerary tabu areas</strong> normally established for in this community?</label>
-              <textarea class="form-textarea" id="jiru_who_established_for" name="jiru_who_established_for" placeholder="Describe who funerary tabu areas are typically established for..."></textarea>
+            <div class="form-group conditional-step3-yes" id="fpaWhoEstablishedGroup" style="display:none;">
+              <label class="form-label" for="fpa_who_established_for">Who are <strong>funerary tabu areas</strong> normally established for in this community?</label>
+              <textarea class="form-textarea" id="fpa_who_established_for" name="fpa_who_established_for" placeholder="Describe who funerary tabu areas are typically established for..."></textarea>
             </div>
 
             <div class="survey-nav">
@@ -1478,7 +1478,7 @@
           <div class="survey-step" data-step="4">
 
             <!-- YES (current or past) — Detail questions -->
-            <div class="conditional-section" id="jiruDetailsYes">
+            <div class="conditional-section" id="fpaDetailsYes">
               <h3 class="survey-step__title">Tell us more about <strong>funerary tabu area</strong> in <span id="villageName">your community</span></h3>
               <p class="survey-step__subtitle">This next set of questions is aimed at understanding <strong>funerary tabu area</strong> practices for funerals in this community. Share as much or as little as you know. Every detail helps us better understand this practice.</p>
 
@@ -1486,21 +1486,21 @@
 
               <!-- Change 21: How many people question -->
               <div class="form-group">
-                <label class="form-label" for="jiru_people_count"><strong>How many people from your community do you remember a tabu area on sea, river or land was established and can provide details for?</strong></label>
-                <input type="number" class="form-input" id="jiru_people_count" name="jiru_people_count" min="0" max="20" placeholder="Enter a number" style="max-width:200px;">
+                <label class="form-label" for="fpa_people_count"><strong>How many people from your community do you remember a tabu area on sea, river or land was established and can provide details for?</strong></label>
+                <input type="number" class="form-input" id="fpa_people_count" name="fpa_people_count" min="0" max="20" placeholder="Enter a number" style="max-width:200px;">
                 <p class="form-helper">Maximum 20. Person forms will appear below.</p>
               </div>
 
               <!-- Change 22: Dynamic person sub-forms container -->
-              <div id="jiruPeopleContainer"></div>
+              <div id="fpaPeopleContainer"></div>
 
               <hr class="form-divider">
 
 
               <!-- Change 24: Any other details -->
               <div class="form-group">
-                <label class="form-label" for="jiru_other_person_details">Any other details you want to add?</label>
-                <textarea class="form-textarea" id="jiru_other_person_details" name="jiru_other_person_details" placeholder="Share any other details..."></textarea>
+                <label class="form-label" for="fpa_other_person_details">Any other details you want to add?</label>
+                <textarea class="form-textarea" id="fpa_other_person_details" name="fpa_other_person_details" placeholder="Share any other details..."></textarea>
               </div>
 
               <!-- Change 25: Line separator -->
@@ -1512,45 +1512,45 @@
               <!-- Change 27: What was protected checkboxes + "Not sure" -->
               <div class="form-group">
                 <label class="form-label">What was protected during the <strong>funerary tabu area</strong>? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="jiruProtectedGroup">
+                <div class="form-check-group" id="fpaProtectedGroup">
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Marine/sea area (reef, lagoon, open water)">
+                    <input type="checkbox" name="fpa_protected" value="Marine/sea area (reef, lagoon, open water)">
                     <span class="form-check__label">Marine / sea area (reef, lagoon, open water)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="River or stream (freshwater)">
+                    <input type="checkbox" name="fpa_protected" value="River or stream (freshwater)">
                     <span class="form-check__label">River or stream (freshwater)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Land (forest, garden, inland area)">
+                    <input type="checkbox" name="fpa_protected" value="Land (forest, garden, inland area)">
                     <span class="form-check__label">Land (forest, garden, inland area)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Specific marine species">
+                    <input type="checkbox" name="fpa_protected" value="Specific marine species">
                     <span class="form-check__label">Specific marine species (e.g. particular fish, shellfish)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Specific terrestrial species">
+                    <input type="checkbox" name="fpa_protected" value="Specific terrestrial species">
                     <span class="form-check__label">Specific terrestrial species (e.g. animals, plants)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Other">
+                    <input type="checkbox" name="fpa_protected" value="Other">
                     <span class="form-check__label">Other (specify)</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_protected" value="Not sure">
+                    <input type="checkbox" name="fpa_protected" value="Not sure">
                     <span class="form-check__label">Not sure</span>
                   </label>
                 </div>
                 <div class="other-specify" id="protectedOther">
-                  <input type="text" class="form-input" id="jiru_protected_other_text" placeholder="Please specify what was protected">
+                  <input type="text" class="form-input" id="fpa_protected_other_text" placeholder="Please specify what was protected">
                 </div>
               </div>
 
               <!-- Change 28: Keep habitat description -->
               <div class="form-group">
-                <label class="form-label" for="jiru_habitat_description">Please describe the habitat or area being protected for the funeral:</label>
-                <textarea class="form-textarea" id="jiru_habitat_description" name="jiru_habitat_description" placeholder="e.g. the reef in front of our village, the river at the eastern end of the island"></textarea>
+                <label class="form-label" for="fpa_habitat_description">Please describe the habitat or area being protected for the funeral:</label>
+                <textarea class="form-textarea" id="fpa_habitat_description" name="fpa_habitat_description" placeholder="e.g. the reef in front of our village, the river at the eastern end of the island"></textarea>
               </div>
 
               <!-- Change 29: Same area/species checkbox group -->
@@ -1589,8 +1589,8 @@
 
               <!-- Change 30: Duration moved here (after the new question) -->
               <div class="form-group">
-                <label class="form-label" for="jiru_duration">How long did the <strong>funerary tabu area</strong> last?</label>
-                <input type="text" class="form-input" id="jiru_duration" name="jiru_duration" placeholder="e.g. 100 days, 1 year">
+                <label class="form-label" for="fpa_duration">How long did the <strong>funerary tabu area</strong> last?</label>
+                <input type="text" class="form-input" id="fpa_duration" name="fpa_duration" placeholder="e.g. 100 days, 1 year">
               </div>
 
               <!-- Change 31: New open-ended protection questions -->
@@ -1607,7 +1607,7 @@
             </div>
 
             <!-- NO or UNSURE — Alternative questions -->
-            <div class="conditional-section" id="jiruDetailsNo">
+            <div class="conditional-section" id="fpaDetailsNo">
               <h3 class="survey-step__title">Other Conservation Practices</h3>
               <p class="survey-step__subtitle">Even if tabu areas are not practised in your community, your knowledge of other practices and nearby communities is valuable.</p>
 
@@ -1641,36 +1641,36 @@
 
               <div class="form-group">
                 <label class="form-label">Do you know of funerary protected areas (tabu area) on land or water being done in nearby villages or islands?</label>
-                <div class="form-radio-group" id="nearbyJiruGroup">
+                <div class="form-radio-group" id="nearbyFpaGroup">
                   <label class="form-radio">
-                    <input type="radio" name="knows_nearby_jiru" value="Yes">
+                    <input type="radio" name="knows_nearby_fpa" value="Yes">
                     <span class="form-radio__label">Yes</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="knows_nearby_jiru" value="No">
+                    <input type="radio" name="knows_nearby_fpa" value="No">
                     <span class="form-radio__label">No</span>
                   </label>
                   <label class="form-radio">
-                    <input type="radio" name="knows_nearby_jiru" value="Unsure">
+                    <input type="radio" name="knows_nearby_fpa" value="Unsure">
                     <span class="form-radio__label">Unsure</span>
                   </label>
                 </div>
               </div>
 
-              <div class="conditional-section" id="nearbyJiruDescSection">
+              <div class="conditional-section" id="nearbyFpaDescSection">
                 <div class="form-group">
-                  <label class="form-label" for="nearby_jiru_desc">Please share what you know:</label>
-                  <textarea class="form-textarea" id="nearby_jiru_desc" name="nearby_jiru_desc" placeholder="e.g. which villages or islands, what you have heard about their practices"></textarea>
+                  <label class="form-label" for="nearby_fpa_desc">Please share what you know:</label>
+                  <textarea class="form-textarea" id="nearby_fpa_desc" name="nearby_fpa_desc" placeholder="e.g. which villages or islands, what you have heard about their practices"></textarea>
                 </div>
               </div>
             </div>
 
             
               <!-- Why tabu area stopped - only for past respondents -->
-              <div class="form-group" id="jiruWhyStoppedSection" style="display:none;">
+              <div class="form-group" id="fpaWhyStoppedSection" style="display:none;">
                 <hr class="form-divider">
                 <label class="form-label">What are reasons why tabu areas are no longer practised in your community?</label>
-                <textarea class="form-textarea" id="jiru_why_stopped" name="jiru_why_stopped" placeholder="Describe the reasons..."></textarea>
+                <textarea class="form-textarea" id="fpa_why_stopped" name="fpa_why_stopped" placeholder="Describe the reasons..."></textarea>
               </div>
 
 <div class="survey-nav">
@@ -1696,30 +1696,30 @@
               <!-- Who participated -->
               <div class="form-group">
                 <label class="form-label">Who participated in the harvest of the <strong>funerary tabu areas</strong>? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="jiruParticipantsGroup">
+                <div class="form-check-group" id="fpaParticipantsGroup">
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Immediate family of the deceased">
+                    <input type="checkbox" name="fpa_participants" value="Immediate family of the deceased">
                     <span class="form-check__label">Immediate family of the deceased</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Extended family / clan">
+                    <input type="checkbox" name="fpa_participants" value="Extended family / clan">
                     <span class="form-check__label">Extended family / clan</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Whole village">
+                    <input type="checkbox" name="fpa_participants" value="Whole village">
                     <span class="form-check__label">Whole village</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Invited guests from other villages">
+                    <input type="checkbox" name="fpa_participants" value="Invited guests from other villages">
                     <span class="form-check__label">Invited guests from other villages</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_participants" value="Other">
+                    <input type="checkbox" name="fpa_participants" value="Other">
                     <span class="form-check__label">Other (specify)</span>
                   </label>
                 </div>
                 <div class="other-specify" id="participantsOther">
-                  <input type="text" class="form-input" id="jiru_participants_other_text" placeholder="Please specify">
+                  <input type="text" class="form-input" id="fpa_participants_other_text" placeholder="Please specify">
                 </div>
               </div>
 
@@ -1760,30 +1760,30 @@
               <!-- What was the catch or harvest used for? -->
               <div class="form-group">
                 <label class="form-label">What was the catch or harvest used for? <span class="form-helper">(select all that apply)</span></label>
-                <div class="form-check-group" id="jiruCatchGroup">
+                <div class="form-check-group" id="fpaCatchGroup">
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Community/village feast">
+                    <input type="checkbox" name="fpa_catch_used" value="Community/village feast">
                     <span class="form-check__label">Community / village feast</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Ceremony or cultural event">
+                    <input type="checkbox" name="fpa_catch_used" value="Ceremony or cultural event">
                     <span class="form-check__label">Ceremony or cultural event</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Divided among households">
+                    <input type="checkbox" name="fpa_catch_used" value="Divided among households">
                     <span class="form-check__label">Divided among households</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Sold or traded">
+                    <input type="checkbox" name="fpa_catch_used" value="Sold or traded">
                     <span class="form-check__label">Sold or traded</span>
                   </label>
                   <label class="form-check">
-                    <input type="checkbox" name="jiru_catch_used" value="Other">
+                    <input type="checkbox" name="fpa_catch_used" value="Other">
                     <span class="form-check__label">Other (specify)</span>
                   </label>
                 </div>
                 <div class="other-specify" id="catchOther">
-                  <input type="text" class="form-input" id="jiru_catch_other_text" placeholder="Please specify">
+                  <input type="text" class="form-input" id="fpa_catch_other_text" placeholder="Please specify">
                 </div>
               </div>
 
@@ -1798,7 +1798,7 @@
                 <textarea class="form-textarea" id="harvest_changes" name="harvest_changes" placeholder="Describe any changes or challenges..."></textarea>
               </div>
 
-              <!-- Past-only question: shown only when jiru_status is yes_past -->
+              <!-- Past-only question: shown only when fpa_status is yes_past -->
               
 
             </div>
@@ -2554,7 +2554,7 @@
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyTbZ7DGuuZ0nNGgphKKDKl8wziRTFPUwKs7OtAnfLgwFOEsNp282euO2GxoVWR2dcr/exec';
   const SURVEY_URL = 'https://ronvave.github.io/vave-lab/surveys/Vanuatu/van-cpwb-survey.html';
   const TOTAL_STEPS = 9;
-  const LOCAL_STORAGE_KEY = 'jiru_draft';
+  const LOCAL_STORAGE_KEY = 'fpa_draft';
   const _store = window['local' + 'Storage'];
 
   // ── Village Data ───────────────────────────────
@@ -2714,15 +2714,15 @@
     if (data.lat && data.lng) addField('Coordinates', data.lat + ', ' + data.lng);
     
     addSection('Tabu Area Practice');
-    addField('Status', data.jiru_status);
-    addField('Local Name', data.local_jiru_name);
-    addField('Who Established For', data.jiru_who_established_for);
+    addField('Status', data.fpa_status);
+    addField('Local Name', data.local_fpa_name);
+    addField('Who Established For', data.fpa_who_established_for);
     
-    var status = String(data.jiru_status || '').toLowerCase();
+    var status = String(data.fpa_status || '').toLowerCase();
     if (status.indexOf('yes') > -1) {
       addSection('Tabu Area Details');
-      addField('People Count', data.jiru_people_count);
-      var people = data.jiru_people || [];
+      addField('People Count', data.fpa_people_count);
+      var people = data.fpa_people || [];
       if (Array.isArray(people)) {
         for (var i = 0; i < people.length; i++) {
           var p = people[i] || {};
@@ -2741,32 +2741,32 @@
           addField('  Age Range', p.age_range);
         }
       }
-      addField('What Protected', data.jiru_protected);
-      addField('Habitat', data.jiru_habitat_description);
+      addField('What Protected', data.fpa_protected);
+      addField('Habitat', data.fpa_habitat_description);
       addField('Same/Different', data.protection_same_or_different);
-      addField('Duration', data.jiru_duration);
+      addField('Duration', data.fpa_duration);
       addField('Protocols', data.protection_protocols);
       addField('Taboo', data.protection_prohibitions);
       addField('Changes/Challenges', data.protection_challenges);
       addField('Other Details', data.protection_other_details);
       
       addSection('Harvest Details');
-      addField('Participants', data.jiru_participants);
+      addField('Participants', data.fpa_participants);
       addField('Target', data.harvest_target);
-      addField('Catch Used For', data.jiru_catch_used);
+      addField('Catch Used For', data.fpa_catch_used);
       addField('Protocols', data.harvest_protocols);
       addField('Taboo', data.harvest_prohibitions);
       addField('Changes/Challenges', data.harvest_challenges);
     }
     
-    if (data.jiru_why_stopped || data.jiru_no_longer_reasons) {
-      addField('Why No Longer Practised', data.jiru_why_stopped || data.jiru_no_longer_reasons);
+    if (data.fpa_why_stopped || data.fpa_no_longer_reasons) {
+      addField('Why No Longer Practised', data.fpa_why_stopped || data.fpa_no_longer_reasons);
     }
     
     if (data.other_practices) addField('Other Practices', data.other_practices);
     if (data.other_practices_desc) addField('Other Practices Details', data.other_practices_desc);
-    if (data.knows_nearby_jiru) addField('Nearby Tabu Area', data.knows_nearby_jiru);
-    if (data.nearby_jiru_desc) addField('Nearby Tabu Area Details', data.nearby_jiru_desc);
+    if (data.knows_nearby_fpa) addField('Nearby Tabu Area', data.knows_nearby_fpa);
+    if (data.nearby_fpa_desc) addField('Nearby Tabu Area Details', data.nearby_fpa_desc);
     
     addSection('Value & Future of Tabu Area');
     addField('Social Benefits', data.social_benefits);
@@ -2928,15 +2928,15 @@
     try {
       const formData = {};
       // Text inputs and textareas
-      document.querySelectorAll('#jiruSurvey input[type="text"], #jiruSurvey input[type="email"], #jiruSurvey input[type="number"], #jiruSurvey textarea, #jiruSurvey select').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="text"], #fpaSurvey input[type="email"], #fpaSurvey input[type="number"], #fpaSurvey textarea, #fpaSurvey select').forEach(el => {
         if (el.id) formData[el.id] = el.value;
       });
       // Radio buttons
-      document.querySelectorAll('#jiruSurvey input[type="radio"]:checked').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="radio"]:checked').forEach(el => {
         formData['radio_' + el.name] = el.value;
       });
       // Checkboxes (including inline)
-      document.querySelectorAll('#jiruSurvey input[type="checkbox"]').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="checkbox"]').forEach(el => {
         const key = el.id || ('cb_' + el.name + '_' + el.value);
         formData[key] = el.checked;
       });
@@ -2944,7 +2944,7 @@
       formData['lat'] = document.getElementById('lat').value;
       formData['lng'] = document.getElementById('lng').value;
       // People count
-      formData['jiru_people_count'] = document.getElementById('jiru_people_count').value;
+      formData['fpa_people_count'] = document.getElementById('fpa_people_count').value;
       // Save current step
       formData['_currentStep'] = currentStep;
 
@@ -2959,14 +2959,14 @@
       const formData = JSON.parse(saved);
 
       // Text inputs, textareas, selects
-      document.querySelectorAll('#jiruSurvey input[type="text"], #jiruSurvey input[type="email"], #jiruSurvey input[type="number"], #jiruSurvey textarea, #jiruSurvey select').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="text"], #fpaSurvey input[type="email"], #fpaSurvey input[type="number"], #fpaSurvey textarea, #fpaSurvey select').forEach(el => {
         if (el.id && formData[el.id] !== undefined) el.value = formData[el.id];
       });
       // Hidden fields
       if (formData['lat']) document.getElementById('lat').value = formData['lat'];
       if (formData['lng']) document.getElementById('lng').value = formData['lng'];
       // Radio buttons
-      document.querySelectorAll('#jiruSurvey input[type="radio"]').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="radio"]').forEach(el => {
         const key = 'radio_' + el.name;
         if (formData[key] === el.value) {
           el.checked = true;
@@ -2976,7 +2976,7 @@
         }
       });
       // Checkboxes
-      document.querySelectorAll('#jiruSurvey input[type="checkbox"]').forEach(el => {
+      document.querySelectorAll('#fpaSurvey input[type="checkbox"]').forEach(el => {
         const key = el.id || ('cb_' + el.name + '_' + el.value);
         if (formData[key] !== undefined) {
           el.checked = formData[key];
@@ -2986,14 +2986,14 @@
       });
 
       // Restore people count and generate forms
-      if (formData['jiru_people_count']) {
-        document.getElementById('jiru_people_count').value = formData['jiru_people_count'];
-        const count = parseInt(formData['jiru_people_count']) || 0;
+      if (formData['fpa_people_count']) {
+        document.getElementById('fpa_people_count').value = formData['fpa_people_count'];
+        const count = parseInt(formData['fpa_people_count']) || 0;
         generatePersonForms(count);
         // Person form data will need to be restored after generation
         // Re-run restoration for dynamically generated fields
         setTimeout(() => {
-          document.querySelectorAll('#jiruPeopleContainer input[type="text"], #jiruPeopleContainer input[type="radio"]').forEach(el => {
+          document.querySelectorAll('#fpaPeopleContainer input[type="text"], #fpaPeopleContainer input[type="radio"]').forEach(el => {
             if (el.type === 'radio') {
               const key = 'radio_' + el.name;
               if (formData[key] === el.value) {
@@ -3017,9 +3017,9 @@
 
   function triggerConditionalVisibility() {
     // Tabu area status — Step 3 conditional Q2 & Q3
-    const jiruStatus = document.querySelector('input[name="jiru_status"]:checked');
-    if (jiruStatus) {
-      const showYes = jiruStatus.value === 'yes_current' || jiruStatus.value === 'yes_past';
+    const fpaStatus = document.querySelector('input[name="fpa_status"]:checked');
+    if (fpaStatus) {
+      const showYes = fpaStatus.value === 'yes_current' || fpaStatus.value === 'yes_past';
       document.querySelectorAll('.conditional-step3-yes').forEach(el => {
         el.style.display = showYes ? '' : 'none';
       });
@@ -3035,17 +3035,17 @@
       document.getElementById('connectionOther').classList.toggle('visible', connection.value === 'Other');
     }
     // Protected other
-    const protOtherCb = document.querySelector('#jiruProtectedGroup input[value="Other"]');
+    const protOtherCb = document.querySelector('#fpaProtectedGroup input[value="Other"]');
     if (protOtherCb) {
       document.getElementById('protectedOther').classList.toggle('visible', protOtherCb.checked);
     }
     // Participants other
-    const partOtherCb = document.querySelector('#jiruParticipantsGroup input[value="Other"]');
+    const partOtherCb = document.querySelector('#fpaParticipantsGroup input[value="Other"]');
     if (partOtherCb) {
       document.getElementById('participantsOther').classList.toggle('visible', partOtherCb.checked);
     }
     // Catch other
-    const catchOtherCb = document.querySelector('#jiruCatchGroup input[value="Other"]');
+    const catchOtherCb = document.querySelector('#fpaCatchGroup input[value="Other"]');
     if (catchOtherCb) {
       document.getElementById('catchOther').classList.toggle('visible', catchOtherCb.checked);
     }
@@ -3065,9 +3065,9 @@
       document.getElementById('otherPracticesDescSection').classList.toggle('visible', otherPrac.value === 'Yes');
     }
     // Nearby tabu area
-    const nearbyJiru = document.querySelector('input[name="knows_nearby_jiru"]:checked');
-    if (nearbyJiru) {
-      document.getElementById('nearbyJiruDescSection').classList.toggle('visible', nearbyJiru.value === 'Yes');
+    const nearbyFpa = document.querySelector('input[name="knows_nearby_fpa"]:checked');
+    if (nearbyFpa) {
+      document.getElementById('nearbyFpaDescSection').classList.toggle('visible', nearbyFpa.value === 'Yes');
     }
     // Resources
     const hasRes = document.querySelector('input[name="has_resources"]:checked');
@@ -3110,7 +3110,7 @@
 
   // ── Step Navigation ────────────────────────────
   function isYesStatus() {
-    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const status = document.querySelector('input[name="fpa_status"]:checked');
     const val = status ? status.value : '';
     return val === 'yes_current' || val === 'yes_past';
   }
@@ -3266,9 +3266,9 @@
   }
 
   function validateStep3() {
-    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const status = document.querySelector('input[name="fpa_status"]:checked');
     if (!status) {
-      showError(document.querySelector('#jiruStatusGroup'));
+      showError(document.querySelector('#fpaStatusGroup'));
       return false;
     }
     return true;
@@ -3319,9 +3319,9 @@
     });
 
     // Tabu area status — show/hide Q2 and Q3 in Step 3 (local name + who established for)
-    document.querySelectorAll('input[name="jiru_status"]').forEach(r => {
+    document.querySelectorAll('input[name="fpa_status"]').forEach(r => {
       r.addEventListener('change', () => {
-        const val = document.querySelector('input[name="jiru_status"]:checked');
+        const val = document.querySelector('input[name="fpa_status"]:checked');
         const show = val && (val.value === 'yes_current' || val.value === 'yes_past');
         document.querySelectorAll('.conditional-step3-yes').forEach(el => {
           el.style.display = show ? '' : 'none';
@@ -3338,25 +3338,25 @@
     });
 
     // Tabu area protected "Other"
-    document.querySelectorAll('#jiruProtectedGroup input[type="checkbox"]').forEach(cb => {
+    document.querySelectorAll('#fpaProtectedGroup input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
-        const otherCb = document.querySelector('#jiruProtectedGroup input[value="Other"]');
+        const otherCb = document.querySelector('#fpaProtectedGroup input[value="Other"]');
         document.getElementById('protectedOther').classList.toggle('visible', otherCb && otherCb.checked);
       });
     });
 
     // Participants "Other"
-    document.querySelectorAll('#jiruParticipantsGroup input[type="checkbox"]').forEach(cb => {
+    document.querySelectorAll('#fpaParticipantsGroup input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
-        const otherCb = document.querySelector('#jiruParticipantsGroup input[value="Other"]');
+        const otherCb = document.querySelector('#fpaParticipantsGroup input[value="Other"]');
         document.getElementById('participantsOther').classList.toggle('visible', otherCb && otherCb.checked);
       });
     });
 
     // Catch used "Other"
-    document.querySelectorAll('#jiruCatchGroup input[type="checkbox"]').forEach(cb => {
+    document.querySelectorAll('#fpaCatchGroup input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
-        const otherCb = document.querySelector('#jiruCatchGroup input[value="Other"]');
+        const otherCb = document.querySelector('#fpaCatchGroup input[value="Other"]');
         document.getElementById('catchOther').classList.toggle('visible', otherCb && otherCb.checked);
       });
     });
@@ -3386,10 +3386,10 @@
     });
 
     // Nearby tabu area description
-    document.querySelectorAll('input[name="knows_nearby_jiru"]').forEach(r => {
+    document.querySelectorAll('input[name="knows_nearby_fpa"]').forEach(r => {
       r.addEventListener('change', () => {
-        const val = document.querySelector('input[name="knows_nearby_jiru"]:checked');
-        document.getElementById('nearbyJiruDescSection').classList.toggle('visible', val && val.value === 'Yes');
+        const val = document.querySelector('input[name="knows_nearby_fpa"]:checked');
+        document.getElementById('nearbyFpaDescSection').classList.toggle('visible', val && val.value === 'Yes');
       });
     });
 
@@ -3450,10 +3450,10 @@
   }
 
   function updateStep4Visibility() {
-    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const status = document.querySelector('input[name="fpa_status"]:checked');
     const val = status ? status.value : '';
-    const yesSection = document.getElementById('jiruDetailsYes');
-    const noSection = document.getElementById('jiruDetailsNo');
+    const yesSection = document.getElementById('fpaDetailsYes');
+    const noSection = document.getElementById('fpaDetailsNo');
 
     // Update the village name in the heading
     const village = document.getElementById('village').value.trim();
@@ -3470,10 +3470,10 @@
   }
 
   function updateStep5Visibility() {
-    const status = document.querySelector('input[name="jiru_status"]:checked');
+    const status = document.querySelector('input[name="fpa_status"]:checked');
     const val = status ? status.value : '';
     const harvestSection = document.getElementById('harvestDetailsYes');
-    const noLongerGroup = document.getElementById('jiruNoLongerPractisedGroup');
+    const noLongerGroup = document.getElementById('fpaNoLongerPractisedGroup');
 
     if (val === 'yes_current' || val === 'yes_past') {
       harvestSection.classList.add('visible');
@@ -3489,7 +3489,7 @@
 
   // ── Dynamic Person Forms (Changes 21-22) ───────
   function setupDynamicPersonForms() {
-    const countInput = document.getElementById('jiru_people_count');
+    const countInput = document.getElementById('fpa_people_count');
     if (!countInput) return;
     countInput.addEventListener('input', function() {
       let count = parseInt(this.value) || 0;
@@ -3500,7 +3500,7 @@
   }
 
   function generatePersonForms(count) {
-    const container = document.getElementById('jiruPeopleContainer');
+    const container = document.getElementById('fpaPeopleContainer');
     container.innerHTML = '';
 
     for (let i = 1; i <= count; i++) {
@@ -4134,7 +4134,7 @@
     ]);
 
     // Tabu area Practice
-    const status = getRadioVal('jiru_status');
+    const status = getRadioVal('fpa_status');
     const statusLabels = {
       'yes_current': 'Yes — currently practised',
       'yes_past': 'Yes — practised in the past',
@@ -4142,22 +4142,22 @@
       'unsure': 'Unsure'
     };
     container.innerHTML += buildReviewSection('Tabu Area Practice', 3, [
-      ['Local name', getVal('local_jiru_name') || '(not provided)'],
+      ['Local name', getVal('local_fpa_name') || '(not provided)'],
       ['Status', statusLabels[status] || '(not selected)']
     ]);
 
     // Details (if applicable)
     if (status === 'yes_current' || status === 'yes_past') {
-      const protectedVals = getCheckboxVals('jiru_protected');
-      const participantVals = getCheckboxVals('jiru_participants');
-      const catchVals = getCheckboxVals('jiru_catch_used');
+      const protectedVals = getCheckboxVals('fpa_protected');
+      const participantVals = getCheckboxVals('fpa_participants');
+      const catchVals = getCheckboxVals('fpa_catch_used');
       const harvestTargetVals = getCheckboxVals('harvest_target');
       const protSameDiffVals = getCheckboxVals('protection_same_or_different');
 
       const detailRows = [];
 
       // Dynamic person forms
-      const peopleCount = parseInt(getVal('jiru_people_count')) || 0;
+      const peopleCount = parseInt(getVal('fpa_people_count')) || 0;
       detailRows.push(['People count', peopleCount.toString()]);
       for (let i = 1; i <= peopleCount; i++) {
         const pName = getVal('person_' + i + '_name') || '(not provided)';
@@ -4169,12 +4169,12 @@
         detailRows.push(['Person ' + i, pName + ' | Timeframe: ' + pTimeframe + ' | Position: ' + pPos + ' | Gender: ' + pGender + ' | Age: ' + pAge + ' | Role: ' + pRole]);
       }
 
-      detailRows.push(['Who are tabu areas established for', getVal('jiru_who_established_for') || '(not provided)']);
-      detailRows.push(['Other person details', getVal('jiru_other_person_details') || '(not provided)']);
+      detailRows.push(['Who are tabu areas established for', getVal('fpa_who_established_for') || '(not provided)']);
+      detailRows.push(['Other person details', getVal('fpa_other_person_details') || '(not provided)']);
       detailRows.push(['Protected areas', protectedVals.join(', ') || '(none selected)']);
-      detailRows.push(['Habitat description', getVal('jiru_habitat_description') || '(not provided)']);
+      detailRows.push(['Habitat description', getVal('fpa_habitat_description') || '(not provided)']);
       detailRows.push(['Same/different area/species', protSameDiffVals.join(', ') || '(none selected)']);
-      detailRows.push(['Duration', getVal('jiru_duration') || '(not provided)']);
+      detailRows.push(['Duration', getVal('fpa_duration') || '(not provided)']);
       detailRows.push(['Protection protocols', getVal('protection_protocols') || '(not provided)']);
       detailRows.push(['Changes/challenges with establishment', getVal('protection_other_details') || '(not provided)']);
       detailRows.push(['Participants', participantVals.join(', ') || '(none selected)']);
@@ -4182,7 +4182,7 @@
       detailRows.push(['Catch used for', catchVals.join(', ') || '(none selected)']);
       detailRows.push(['Harvest protocols', getVal('harvest_protocols') || '(not provided)']);
       detailRows.push(['Harvest changes/challenges', getVal('harvest_changes') || '(not provided)']);
-      detailRows.push(['Reasons no longer practised', getVal('jiru_no_longer_reasons') || '(not provided)']);
+      detailRows.push(['Reasons no longer practised', getVal('fpa_no_longer_reasons') || '(not provided)']);
 
       container.innerHTML += buildReviewSection('Tabu Area Details', 4, detailRows);
     }
@@ -4204,8 +4204,8 @@
       ['Cultural importance', getRadioVal('cultural_importance') || '(not selected)'],
       ['Government recognition', getRadioVal('government_recognition') || '(not selected)'],
       ['Government recognition — why', getVal('government_recognition_why') || '(not provided)'],
-      ['Tabu area revival seen', getRadioVal('jiru_revival_seen') || '(not selected)'],
-      ['Tabu area revival description', getVal('jiru_revival_desc') || '(not provided)'],
+      ['Tabu area revival seen', getRadioVal('fpa_revival_seen') || '(not selected)'],
+      ['Tabu area revival description', getVal('fpa_revival_desc') || '(not provided)'],
       ['Other comments', getVal('value_future_other') || '(not provided)']
     ];
     container.innerHTML += buildReviewSection('Value &amp; Future of Tabu Area', 6, valueFutureRows);
@@ -4313,7 +4313,7 @@
 
   // ── Collect Person Data ────────────────────────
   function collectPersonData() {
-    const count = parseInt(getVal('jiru_people_count')) || 0;
+    const count = parseInt(getVal('fpa_people_count')) || 0;
     const people = [];
     for (let i = 1; i <= count; i++) {
       people.push({
@@ -4353,24 +4353,24 @@
         island_level: document.getElementById('island_level').checked,
         lat: getVal('lat') ? parseFloat(getVal('lat')) : null,
         lng: getVal('lng') ? parseFloat(getVal('lng')) : null,
-        local_jiru_name: getVal('local_jiru_name'),
-        jiru_status: getRadioVal('jiru_status'),
-        jiru_people_count: parseInt(getVal('jiru_people_count')) || 0,
-        jiru_people: collectPersonData(),
-        jiru_who_established_for: getVal('jiru_who_established_for'),
-        jiru_other_person_details: getVal('jiru_other_person_details'),
-        jiru_protected: getCheckboxVals('jiru_protected'),
-        jiru_habitat_description: getVal('jiru_habitat_description'),
+        local_fpa_name: getVal('local_fpa_name'),
+        fpa_status: getRadioVal('fpa_status'),
+        fpa_people_count: parseInt(getVal('fpa_people_count')) || 0,
+        fpa_people: collectPersonData(),
+        fpa_who_established_for: getVal('fpa_who_established_for'),
+        fpa_other_person_details: getVal('fpa_other_person_details'),
+        fpa_protected: getCheckboxVals('fpa_protected'),
+        fpa_habitat_description: getVal('fpa_habitat_description'),
         protection_same_or_different: getCheckboxVals('protection_same_or_different'),
-        jiru_duration: getVal('jiru_duration'),
+        fpa_duration: getVal('fpa_duration'),
         protection_protocols: getVal('protection_protocols'),
         protection_other_details: getVal('protection_other_details'),
-        jiru_participants: getCheckboxVals('jiru_participants'),
+        fpa_participants: getCheckboxVals('fpa_participants'),
         harvest_target: getCheckboxVals('harvest_target'),
-        jiru_catch_used: getCheckboxVals('jiru_catch_used'),
+        fpa_catch_used: getCheckboxVals('fpa_catch_used'),
         harvest_protocols: getVal('harvest_protocols'),
         harvest_changes: getVal('harvest_changes'),
-        jiru_no_longer_reasons: getVal('jiru_no_longer_reasons'),
+        fpa_no_longer_reasons: getVal('fpa_no_longer_reasons'),
         social_benefits: getVal('social_benefits'),
         ecological_benefits: getVal('ecological_benefits'),
         economic_benefits: getVal('economic_benefits'),
@@ -4384,13 +4384,13 @@
         cultural_importance: getRadioVal('cultural_importance'),
         government_recognition: getRadioVal('government_recognition'),
         government_recognition_why: getVal('government_recognition_why'),
-        jiru_revival_seen: getRadioVal('jiru_revival_seen'),
-        jiru_revival_desc: getVal('jiru_revival_desc'),
+        fpa_revival_seen: getRadioVal('fpa_revival_seen'),
+        fpa_revival_desc: getVal('fpa_revival_desc'),
         value_future_other: getVal('value_future_other'),
         other_practices: getRadioVal('other_practices'),
         other_practices_desc: getVal('other_practices_desc'),
-        knows_nearby_jiru: getRadioVal('knows_nearby_jiru'),
-        nearby_jiru_desc: getVal('nearby_jiru_desc'),
+        knows_nearby_fpa: getRadioVal('knows_nearby_fpa'),
+        nearby_fpa_desc: getVal('nearby_fpa_desc'),
         cpwb_conception: getRadioVal('cpwb_conception'),
         cpwb_conception_areas: getCheckboxVals('cpwb_conception_areas'),
         cpwb_conception_other_info: getVal('cpwb_conception_other_info'),
