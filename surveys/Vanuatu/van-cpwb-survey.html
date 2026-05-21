@@ -2394,7 +2394,7 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Are you willing to be contacted for a follow-up interview about tabu area?</label>
+              <label class="form-label">Are you willing to be contacted for a follow-up interview about the information you've submitted?</label>
               <p class="form-helper" style="margin-bottom:var(--space-2);">Your email address will be needed for this.</p>
               <div class="form-radio-group" id="willingFollowupGroup">
                 <label class="form-radio">
@@ -2611,7 +2611,9 @@
   })();
 
   // Generate and download PDF of responses
-  window.generateResponsePdf = function(data) {
+  window.generateResponsePdf = function(data, options) {
+    // options: { returnBase64: true } -> returns { base64, filename } instead of saving
+    options = options || {};
     var jsPDFClass = null;
     if (window.jspdf && window.jspdf.jsPDF) jsPDFClass = window.jspdf.jsPDF;
     else if (window.jsPDF) jsPDFClass = window.jsPDF;
@@ -2896,6 +2898,12 @@
     doc.text('Ron Vave (UH Manoa) & Rocky Kaku (Vanuatu Fisheries Department)', lm, y);
     
     var filename = 'TabuArea-Response-' + (data.province || 'Unknown') + '-' + (data.village || 'Unknown') + '.pdf';
+    if (options.returnBase64) {
+      // jsPDF datauristring is 'data:application/pdf;filename=...;base64,XXXX'
+      var dataUri = doc.output('datauristring');
+      var base64 = dataUri.substring(dataUri.indexOf('base64,') + 7);
+      return { base64: base64, filename: filename };
+    }
     doc.save(filename);
   };
 
@@ -3096,11 +3104,18 @@
       document.getElementById('challengesThreatOther').classList.toggle('visible', challengesOtherCb.checked);
     }
     // Step 6: stakeholders — now handled by ranking UI
-    // Email copy
-    const wantCopy = document.querySelector('input[name="want_email_copy"]:checked');
+    // Email copy — follow-up
+    const wantCopy = document.querySelector('input[name="willing_followup"]:checked');
     if (wantCopy && wantCopy.value === 'Yes') {
       const mainEmail = document.getElementById('email').value.trim();
-      document.getElementById('emailCopyField').classList.toggle('visible', !mainEmail);
+      const fEl = document.getElementById('followupEmailField');
+      if (fEl) {
+        fEl.classList.toggle('visible', !mainEmail);
+        fEl.style.display = !mainEmail ? 'block' : 'none';
+      }
+    } else {
+      const fEl = document.getElementById('followupEmailField');
+      if (fEl) { fEl.classList.remove('visible'); fEl.style.display = 'none'; }
     }
   }
 
@@ -3436,17 +3451,30 @@
 
   // ── Email Copy Conditional (Change 40) ─────────
   function setupEmailCopyConditional() {
+    function refreshFollowupEmailField() {
+      const fEl = document.getElementById('followupEmailField');
+      if (!fEl) return;
+      const val = document.querySelector('input[name="willing_followup"]:checked');
+      if (val && val.value === 'Yes') {
+        const mainEmail = document.getElementById('email').value.trim();
+        const show = !mainEmail;
+        fEl.classList.toggle('visible', show);
+        fEl.style.display = show ? 'block' : 'none';
+      } else {
+        fEl.classList.remove('visible');
+        fEl.style.display = 'none';
+      }
+    }
     document.querySelectorAll('input[name="willing_followup"]').forEach(r => {
-      r.addEventListener('change', () => {
-        const val = document.querySelector('input[name="willing_followup"]:checked');
-        if (val && val.value === 'Yes') {
-          const mainEmail = document.getElementById('email').value.trim();
-          document.getElementById('emailCopyField').classList.toggle('visible', !mainEmail);
-        } else {
-          document.getElementById('emailCopyField').classList.remove('visible');
-        }
-      });
+      r.addEventListener('change', refreshFollowupEmailField);
     });
+    const emailInput = document.getElementById('email');
+    if (emailInput) {
+      emailInput.addEventListener('input', refreshFollowupEmailField);
+      emailInput.addEventListener('blur', refreshFollowupEmailField);
+    }
+    // run once on load in case state was restored from local storage
+    refreshFollowupEmailField();
   }
 
   function updateStep4Visibility() {
@@ -4336,6 +4364,8 @@
       // Convert files to base64
       const filesData = await Promise.all(uploadedFiles.map(fileToBase64));
 
+      // Build the data payload first (without PDF) so we can run it through
+      // the PDF generator, then attach the PDF base64 to send to the backend.
       const data = {
         timestamp: new Date().toISOString(),
         first_name: getVal('first_name'),
@@ -4415,6 +4445,18 @@
         willing_followup: getRadioVal('willing_followup')
       };
 
+      // Generate PDF server-attachment copy (always, so Ron gets emailed a PDF)
+      var pdfPayload = null;
+      try {
+        pdfPayload = window.generateResponsePdf(data, { returnBase64: true });
+      } catch(pdfBuildErr) {
+        console.error('PDF build error (continuing submission):', pdfBuildErr);
+      }
+      if (pdfPayload && pdfPayload.base64) {
+        data.pdf_base64 = pdfPayload.base64;
+        data.pdf_filename = pdfPayload.filename;
+      }
+
       const response = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
@@ -4427,12 +4469,16 @@
       showOverlay('successOverlay');
       generateQRCode();
 
-      // Generate PDF download if requested
+      // Generate PDF download for the respondent if requested
       var wantPdf = getRadioVal('want_pdf_copy');
       if (wantPdf === 'Yes') {
         setTimeout(function() {
           try {
-            window.generateResponsePdf(data);
+            // Strip the pdf_base64 from data so it doesn't appear in the downloaded copy
+            var dlData = Object.assign({}, data);
+            delete dlData.pdf_base64;
+            delete dlData.pdf_filename;
+            window.generateResponsePdf(dlData);
           } catch(pdfErr) {
             console.error('PDF generation error:', pdfErr);
             alert('Your responses were submitted successfully, but the PDF could not be generated. Error: ' + pdfErr.message);
