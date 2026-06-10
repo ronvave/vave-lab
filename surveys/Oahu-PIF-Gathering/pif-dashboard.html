@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pacific Islander Faculty Beach Gathering — Live Dashboard</title>
+  <meta name="description" content="Live anonymized results for the Pacific Islander Faculty Beach Gathering planning survey.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="../../css/tokens.css">
+  <link rel="stylesheet" href="../../css/base.css">
+
+  <style>
+    :root {
+      --pif-primary: #005f6b;
+      --pif-primary-light: #007a87;
+      --pif-accent: #c9552a;
+      --pif-gold: #c9a227;
+      --pif-success: #3a7a22;
+      --pif-gray: #94a3b8;
+      --pif-gray-light: #f1f5f9;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-body: 'DM Sans', 'Helvetica Neue', sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      color: #1e293b;
+      background: #f8fafc;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    /* ─── Gate ─── */
+    .gate {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+      background: linear-gradient(135deg, #002a30 0%, #005f6b 100%);
+    }
+    .gate__card {
+      max-width: 480px;
+      width: 100%;
+      background: #fff;
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+      text-align: center;
+    }
+    .gate__title {
+      font-family: var(--font-display);
+      font-size: 1.7rem;
+      color: var(--pif-primary);
+      margin: 0 0 0.6rem;
+      font-weight: 700;
+    }
+    .gate__subtitle {
+      color: #475569;
+      font-size: 0.95rem;
+      margin: 0 0 1.5rem;
+      line-height: 1.6;
+    }
+    .gate__form { display: flex; flex-direction: column; gap: 0.7rem; }
+    .gate__form input {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      font-family: inherit;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+    }
+    .gate__form input:focus { outline: none; border-color: var(--pif-primary); }
+    .gate__form button {
+      padding: 0.75rem 1rem;
+      background: var(--pif-primary);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .gate__form button:hover { background: var(--pif-primary-light); }
+    .gate__hint {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin-top: 1rem;
+    }
+    .gate__error {
+      color: #dc2626;
+      font-size: 0.88rem;
+      margin: 0.3rem 0 0;
+      min-height: 1.2rem;
+    }
+
+    /* ─── Page ─── */
+    .page-banner {
+      background: var(--pif-primary);
+      color: #fff;
+      padding: 2.5rem 0 2rem;
+      text-align: center;
+    }
+    .page-banner .eyebrow {
+      font-size: 0.78rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--pif-gold);
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+    }
+    .page-banner h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 1.2rem + 1.5vw, 2.4rem);
+      font-weight: 700;
+      margin: 0;
+      color: #fff;
+      line-height: 1.2;
+    }
+    .page-banner p {
+      color: rgba(255,255,255,0.85);
+      font-size: 0.95rem;
+      margin: 0.5rem auto 0;
+      max-width: 700px;
+      padding: 0 1rem;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .stats-banner {
+      background: var(--pif-primary);
+      padding: 0 0 2rem;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    @media (max-width: 720px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    .stat {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 1rem 1.1rem;
+      color: #fff;
+      text-align: left;
+    }
+    .stat__label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--pif-gold);
+      font-weight: 600;
+    }
+    .stat__value {
+      font-family: var(--font-display);
+      font-size: 2.1rem;
+      font-weight: 700;
+      line-height: 1.1;
+      margin: 0.25rem 0 0;
+    }
+    .stat__sub {
+      font-size: 0.78rem;
+      color: rgba(255,255,255,0.75);
+      margin-top: 0.2rem;
+    }
+
+    .panels {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.25rem;
+      margin: 2rem 0;
+    }
+    @media (max-width: 880px) { .panels { grid-template-columns: 1fr; } }
+    .panel {
+      background: #fff;
+      border-radius: 12px;
+      padding: 1.25rem 1.25rem 1.5rem;
+      box-shadow: 0 2px 8px rgba(15,23,42,0.06);
+      border: 1px solid #e2e8f0;
+    }
+    .panel--wide { grid-column: 1 / -1; }
+    .panel__head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+    }
+    .panel__title {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--pif-primary);
+      margin: 0;
+    }
+    .panel__sub {
+      font-size: 0.82rem;
+      color: #64748b;
+      margin: 0;
+    }
+    .chart-wrap { position: relative; height: 280px; }
+    .chart-wrap--tall { height: 320px; }
+
+    #map { height: 460px; border-radius: 8px; }
+
+    .empty {
+      text-align: center;
+      padding: 1.5rem;
+      color: #94a3b8;
+      font-size: 0.9rem;
+      font-style: italic;
+    }
+
+    .meta {
+      text-align: center;
+      color: #94a3b8;
+      font-size: 0.8rem;
+      padding: 1.5rem 0 3rem;
+    }
+    .meta a { color: var(--pif-primary); }
+
+    .refresh-btn {
+      background: var(--pif-gold);
+      color: #1e293b;
+      border: none;
+      padding: 0.45rem 0.9rem;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .refresh-btn:hover { background: #b8951f; }
+
+    .needs-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    .needs-table th, .needs-table td {
+      text-align: left;
+      padding: 0.55rem 0.65rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .needs-table th {
+      background: var(--pif-gray-light);
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .responses-feed {
+      max-height: 320px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .response-row {
+      padding: 0.7rem 0.85rem;
+      background: var(--pif-gray-light);
+      border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    .response-row__head {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      color: var(--pif-primary);
+      margin-bottom: 0.2rem;
+    }
+    .response-row__body { color: #475569; font-size: 0.82rem; }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Email gate ─── -->
+  <div class="gate" id="gate">
+    <div class="gate__card">
+      <h1 class="gate__title">Beach Gathering Dashboard</h1>
+      <p class="gate__subtitle">This dashboard is shared only with Pacific Islander faculty from BYU–Hawaiʻi and UH Mānoa. Please enter your institutional email to continue.</p>
+      <form class="gate__form" onsubmit="event.preventDefault();verifyEmail();">
+        <input type="email" id="gateEmail" placeholder="you@hawaii.edu or you@byuh.edu" autocomplete="email" required>
+        <button type="submit">Open Dashboard</button>
+      </form>
+      <p class="gate__error" id="gateError"></p>
+      <p class="gate__hint">Only <code>@hawaii.edu</code> and <code>@byuh.edu</code> emails can access. Questions? <a href="mailto:ronvave@hawaii.edu" style="color:var(--pif-primary);">ronvave@hawaii.edu</a></p>
+    </div>
+  </div>
+
+  <!-- ─── Dashboard ─── -->
+  <main id="dashboard" style="display:none;">
+    <div class="page-banner">
+      <div class="container">
+        <p class="eyebrow">BYU–Hawaiʻi · UH Mānoa</p>
+        <h1>Pacific Islander Faculty Beach Gathering</h1>
+        <p>Live, anonymized results from the planning survey. Refreshes when new responses come in.</p>
+      </div>
+    </div>
+
+    <div class="stats-banner">
+      <div class="container">
+        <div class="stats-grid">
+          <div class="stat">
+            <p class="stat__label">Total Responses</p>
+            <p class="stat__value" id="statTotal">—</p>
+            <p class="stat__sub" id="statTotalSub">faculty &amp; staff</p>
+          </div>
+          <div class="stat">
+            <p class="stat__label">Top Date</p>
+            <p class="stat__value" id="statTopDate" style="font-size:1.4rem;">—</p>
+            <p class="stat__sub" id="statTopDateSub">most preferred</p>
+          </div>
+          <div class="stat">
+            <p class="stat__label">Top Side</p>
+            <p class="stat__value" id="statTopSide" style="font-size:1.4rem;">—</p>
+            <p class="stat__sub">of the island</p>
+          </div>
+          <div class="stat">
+            <p class="stat__label">Beach Suggestions</p>
+            <p class="stat__value" id="statBeachCount">—</p>
+            <p class="stat__sub">map markers</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin:1.5rem 0 0;">
+        <p style="margin:0;color:#64748b;font-size:0.85rem;">Last updated: <span id="lastUpdated">—</span></p>
+        <button class="refresh-btn" onclick="loadResponses(true)">↻ Refresh</button>
+      </div>
+
+      <div class="panels">
+
+        <!-- Preferred date histogram -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Preferred Date (weighted)</h2>
+              <p class="panel__sub">3 points = 1st choice, 2 = 2nd, 1 = 3rd</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartDate"></canvas></div>
+        </div>
+
+        <!-- Side of island -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Side of the Island</h2>
+              <p class="panel__sub">Q6 — where to gather</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartSide"></canvas></div>
+        </div>
+
+        <!-- Food format -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Food Format</h2>
+              <p class="panel__sub">Q8 — how we'll eat</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartFood"></canvas></div>
+        </div>
+
+        <!-- Faculty vs family -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Who Should Come</h2>
+              <p class="panel__sub">Q10 — faculty only or family-friendly</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartWho"></canvas></div>
+        </div>
+
+        <!-- Time of day -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Time of Day</h2>
+              <p class="panel__sub">Q5 — which slots people picked (multi-select)</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartTime"></canvas></div>
+        </div>
+
+        <!-- Activities -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Interest in Activities</h2>
+              <p class="panel__sub">Q12 — games &amp; activities (multi-select)</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartActivities"></canvas></div>
+        </div>
+
+        <!-- Institution -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Institutions Represented</h2>
+              <p class="panel__sub">Q2 — affiliation</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartInst"></canvas></div>
+        </div>
+
+        <!-- Help -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Willingness to Help Plan</h2>
+              <p class="panel__sub">Q14 — planning support</p>
+            </div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartHelp"></canvas></div>
+        </div>
+
+        <!-- Beach map -->
+        <div class="panel panel--wide">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Beach Suggestions on Oʻahu</h2>
+              <p class="panel__sub">Q7 — markers placed by respondents (cluster + hover for name/details)</p>
+            </div>
+          </div>
+          <div id="map"></div>
+        </div>
+
+        <!-- Top beaches list -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Most-Suggested Beaches</h2>
+              <p class="panel__sub">Grouped by name + parking/restroom flags</p>
+            </div>
+          </div>
+          <table class="needs-table" id="beachesTable">
+            <thead><tr><th>Beach</th><th>Mentions</th><th>Restroom</th><th>Parking</th><th>Reservation</th></tr></thead>
+            <tbody><tr><td colspan="5" class="empty">Loading…</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- Needs / suggestions feed -->
+        <div class="panel">
+          <div class="panel__head">
+            <div>
+              <h2 class="panel__title">Accessibility &amp; Dietary Notes</h2>
+              <p class="panel__sub">From Q16 — anonymized</p>
+            </div>
+          </div>
+          <div class="responses-feed" id="needsFeed"><p class="empty">Loading…</p></div>
+        </div>
+
+      </div>
+
+      <p class="meta">
+        Maintained by <a href="mailto:ronvave@hawaii.edu">Dr. Ron Vave</a> · University of Hawaiʻi at Mānoa<br>
+        Questions or suggestions? <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+      </p>
+    </div>
+  </main>
+
+<script>
+  // ═══════════════════════════════════════════════════
+  // CONFIG
+  // ═══════════════════════════════════════════════════
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/REPLACE_WITH_DEPLOYMENT_ID/exec';
+
+  // ═══════════════════════════════════════════════════
+  // EMAIL GATE
+  // ═══════════════════════════════════════════════════
+  function verifyEmail() {
+    const email = document.getElementById('gateEmail').value.trim().toLowerCase();
+    const errEl = document.getElementById('gateError');
+    errEl.textContent = '';
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errEl.textContent = 'Please enter a valid email address.';
+      return;
+    }
+    const domain = email.split('@')[1];
+    const allowed = ['hawaii.edu', 'byuh.edu'];
+    const ok = allowed.some(d => domain === d || domain.endsWith('.' + d));
+    if (!ok) {
+      errEl.textContent = 'Sorry — only @hawaii.edu and @byuh.edu emails can access this dashboard.';
+      return;
+    }
+    sessionStorage.setItem('pif_dash_email', email);
+    showDashboard();
+  }
+
+  function showDashboard() {
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('dashboard').style.display = 'block';
+    loadResponses();
+  }
+
+  // Auto-unlock if already verified this session
+  if (sessionStorage.getItem('pif_dash_email')) {
+    showDashboard();
+  }
+
+  // ═══════════════════════════════════════════════════
+  // DATA LOADING
+  // ═══════════════════════════════════════════════════
+  let charts = {};
+  let leafletMap = null;
+  let markerCluster = null;
+
+  async function loadResponses(force = false) {
+    try {
+      const url = APPS_SCRIPT_URL + '?action=list&t=' + Date.now();
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'unknown');
+      render(data.responses || []);
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+    } catch (err) {
+      console.error('Load error:', err);
+      document.getElementById('lastUpdated').textContent = 'unable to load (' + err.message + ')';
+      render([]); // render empty state
+    }
+  }
+
+  function render(rows) {
+    // KPIs
+    document.getElementById('statTotal').textContent = rows.length;
+
+    // ── Preferred date weighted score
+    const dateScores = {};
+    rows.forEach(r => {
+      [r.q4_ranking_1, r.q4_ranking_2, r.q4_ranking_3].forEach((d, i) => {
+        if (!d) return;
+        const w = 3 - i; // 3, 2, 1
+        dateScores[d] = (dateScores[d] || 0) + w;
+      });
+      if (r.q4_other_date) {
+        const k = '✎ ' + r.q4_other_date;
+        dateScores[k] = (dateScores[k] || 0) + 2; // give other dates a moderate weight
+      }
+    });
+    const dateLabels = Object.keys(dateScores).sort((a, b) => dateScores[b] - dateScores[a]);
+    const dateData = dateLabels.map(l => dateScores[l]);
+    document.getElementById('statTopDate').textContent = dateLabels[0] || '—';
+    document.getElementById('statTopDateSub').textContent = dateLabels[0] ? (dateScores[dateLabels[0]] + ' weighted pts') : 'most preferred';
+
+    drawBar('chartDate', dateLabels, dateData, '#005f6b');
+
+    // ── Side
+    const sideCounts = countBy(rows, 'q6_side');
+    const sideLabels = Object.keys(sideCounts).sort((a, b) => sideCounts[b] - sideCounts[a]);
+    const sideData = sideLabels.map(l => sideCounts[l]);
+    document.getElementById('statTopSide').textContent = sideLabels[0] ? sideLabels[0].replace(/ ?\(.*\)/, '').split('/')[0].trim() : '—';
+    drawBar('chartSide', sideLabels, sideData, '#c9552a', true);
+
+    // ── Food
+    const foodCounts = countBy(rows, 'q8_food');
+    drawPie('chartFood', Object.keys(foodCounts), Object.values(foodCounts));
+
+    // ── Who (faculty/family)
+    const whoCounts = countBy(rows, 'q10_who');
+    drawPie('chartWho', Object.keys(whoCounts), Object.values(whoCounts));
+
+    // ── Time (multi-select; values separated by '; ')
+    const timeCounts = countMulti(rows, 'q5_time');
+    const timeLabels = Object.keys(timeCounts);
+    drawBar('chartTime', timeLabels, timeLabels.map(l => timeCounts[l]), '#005f6b', true);
+
+    // ── Activities (multi-select)
+    const actCounts = countMulti(rows, 'q12_activities');
+    const actLabels = Object.keys(actCounts).sort((a, b) => actCounts[b] - actCounts[a]);
+    drawBar('chartActivities', actLabels, actLabels.map(l => actCounts[l]), '#c9a227', true);
+
+    // ── Institution
+    const instCounts = countBy(rows, 'q2_institution');
+    drawPie('chartInst', Object.keys(instCounts), Object.values(instCounts));
+
+    // ── Help
+    const helpCounts = countBy(rows, 'q14_help');
+    drawBar('chartHelp', Object.keys(helpCounts), Object.values(helpCounts), '#3a7a22', true);
+
+    // ── Map markers
+    const allMarkers = [];
+    rows.forEach(r => {
+      try {
+        const arr = JSON.parse(r.q7_markers || '[]');
+        arr.forEach(m => {
+          if (typeof m.lat === 'number' && typeof m.lng === 'number') {
+            allMarkers.push(m);
+          }
+        });
+      } catch (e) { /* skip */ }
+    });
+    document.getElementById('statBeachCount').textContent = allMarkers.length;
+    renderMap(allMarkers);
+
+    // ── Top beaches table
+    renderBeachesTable(allMarkers);
+
+    // ── Needs feed
+    const needs = rows.map(r => r.q17_needs).filter(s => s && s.trim());
+    const feed = document.getElementById('needsFeed');
+    if (needs.length === 0) {
+      feed.innerHTML = '<p class="empty">No accessibility or dietary notes yet.</p>';
+    } else {
+      feed.innerHTML = needs.slice(-30).reverse().map((n, i) => `
+        <div class="response-row">
+          <div class="response-row__head"><span>Response #${needs.length - i}</span></div>
+          <div class="response-row__body">${escapeHtml(n)}</div>
+        </div>`).join('');
+    }
+  }
+
+  function countBy(rows, key) {
+    const out = {};
+    rows.forEach(r => {
+      const v = (r[key] || '').toString().trim();
+      if (!v) return;
+      out[v] = (out[v] || 0) + 1;
+    });
+    return out;
+  }
+  function countMulti(rows, key) {
+    const out = {};
+    rows.forEach(r => {
+      const v = (r[key] || '').toString();
+      if (!v.trim()) return;
+      v.split(';').map(s => s.trim()).filter(Boolean).forEach(s => {
+        out[s] = (out[s] || 0) + 1;
+      });
+    });
+    return out;
+  }
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function drawBar(id, labels, data, color, horizontal) {
+    const ctx = document.getElementById(id).getContext('2d');
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data, backgroundColor: color, borderRadius: 6 }]
+      },
+      options: {
+        indexAxis: horizontal ? 'y' : 'x',
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#475569', autoSkip: false, maxRotation: 30 }, grid: { color: '#f1f5f9' } },
+          y: { ticks: { color: '#475569', precision: 0 }, grid: { color: '#f1f5f9' }, beginAtZero: true }
+        }
+      }
+    });
+  }
+
+  function drawPie(id, labels, data) {
+    const ctx = document.getElementById(id).getContext('2d');
+    if (charts[id]) charts[id].destroy();
+    const palette = ['#005f6b', '#c9552a', '#c9a227', '#3a7a22', '#7c3aed', '#0e7490', '#dc2626', '#9333ea'];
+    charts[id] = new Chart(ctx, {
+      type: 'doughnut',
+      data: { labels, datasets: [{ data, backgroundColor: palette.slice(0, labels.length), borderWidth: 2, borderColor: '#fff' }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { font: { size: 11 }, boxWidth: 12 } } }
+      }
+    });
+  }
+
+  function renderMap(allMarkers) {
+    if (!leafletMap) {
+      leafletMap = L.map('map', { scrollWheelZoom: true }).setView([21.475, -157.97], 10);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Imagery &copy; Esri',
+        maxZoom: 19
+      }).addTo(leafletMap);
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        attribution: '', maxZoom: 19, opacity: 0.9
+      }).addTo(leafletMap);
+    }
+    if (markerCluster) { leafletMap.removeLayer(markerCluster); }
+    markerCluster = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 35 });
+
+    allMarkers.forEach(m => {
+      const popup = `
+        <strong>${escapeHtml(m.name || 'Unnamed beach')}</strong><br>
+        Restroom: ${m.restroom ? '✓' : '—'}<br>
+        Parking: ${m.parking ? '✓' : '—'}<br>
+        Reservation: ${m.reservation || 'unknown'}
+      `;
+      const mk = L.marker([m.lat, m.lng]).bindPopup(popup);
+      markerCluster.addLayer(mk);
+    });
+    leafletMap.addLayer(markerCluster);
+    setTimeout(() => leafletMap.invalidateSize(), 200);
+  }
+
+  function renderBeachesTable(allMarkers) {
+    const groups = {};
+    allMarkers.forEach(m => {
+      const key = (m.name || 'Unnamed').trim().toLowerCase();
+      const display = (m.name || 'Unnamed').trim();
+      if (!groups[key]) groups[key] = { name: display, n: 0, restroom: 0, parking: 0, resYes: 0, resNo: 0, resUnk: 0 };
+      groups[key].n++;
+      if (m.restroom) groups[key].restroom++;
+      if (m.parking) groups[key].parking++;
+      if (m.reservation === 'yes') groups[key].resYes++;
+      else if (m.reservation === 'no') groups[key].resNo++;
+      else groups[key].resUnk++;
+    });
+    const arr = Object.values(groups).sort((a, b) => b.n - a.n).slice(0, 15);
+    const tbody = document.querySelector('#beachesTable tbody');
+    if (arr.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty">No beach suggestions yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = arr.map(g => `
+      <tr>
+        <td>${escapeHtml(g.name)}</td>
+        <td>${g.n}</td>
+        <td>${g.restroom}/${g.n}</td>
+        <td>${g.parking}/${g.n}</td>
+        <td>${g.resYes ? g.resYes + ' yes' : ''}${g.resNo ? ' / ' + g.resNo + ' no' : ''}${g.resUnk ? ' / ' + g.resUnk + ' n.s.' : ''}</td>
+      </tr>
+    `).join('');
+  }
+
+  // Expose
+  window.verifyEmail = verifyEmail;
+  window.loadResponses = loadResponses;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1410 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pacific Islander Faculty Beach Gathering — Interest &amp; Planning Form</title>
+  <meta name="description" content="Help us plan a Pacific Islander faculty beach gathering on Oʻahu for BYU–Hawaiʻi and UH Mānoa colleagues.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+
+  <!-- Site styles -->
+  <link rel="stylesheet" href="../../css/tokens.css">
+  <link rel="stylesheet" href="../../css/base.css">
+  <link rel="stylesheet" href="../../css/animations.css">
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/3.0.2/leaflet.fullscreen.css" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.fullscreen/3.0.2/Leaflet.fullscreen.min.js"></script>
+
+  <!-- SortableJS for drag ranking -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+  <style>
+    /* =============================================
+       PIF SURVEY — STYLES
+       ============================================= */
+
+    body {
+      font-family: var(--font-body);
+      color: var(--color-text);
+      background: var(--color-bg);
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .pif-hero {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: var(--space-6) var(--space-4) 0;
+    }
+
+    .pif-hero img {
+      width: 100%;
+      border-radius: var(--radius-lg);
+      display: block;
+      box-shadow: var(--shadow-md);
+    }
+
+    .survey-intro {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: var(--space-8) var(--space-4) var(--space-4);
+    }
+
+    .survey-intro__eyebrow {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-accent);
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+
+    .survey-intro__title {
+      font-family: var(--font-display);
+      font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.4rem);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0 0 var(--space-5) 0;
+      line-height: 1.2;
+    }
+
+    .survey-intro__text {
+      font-size: 1rem;
+      color: var(--color-text-muted);
+      line-height: 1.75;
+      margin-bottom: var(--space-4);
+    }
+
+    .survey-intro__contact {
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      padding: var(--space-4) var(--space-5);
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      line-height: 1.7;
+      border-left: 3px solid var(--color-primary);
+      margin-top: var(--space-5);
+    }
+
+    .survey-intro__contact a {
+      color: var(--color-primary);
+      font-weight: 500;
+      text-decoration: none;
+    }
+    .survey-intro__contact a:hover { text-decoration: underline; }
+
+    /* FORM CONTAINER */
+    .survey-form-wrapper {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 0 var(--space-4) var(--space-12);
+    }
+
+    .survey-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-6) var(--space-6) var(--space-8);
+    }
+
+    @media (max-width: 600px) {
+      .survey-card { padding: var(--space-5) var(--space-4); }
+    }
+
+    /* PROGRESS BAR */
+    .survey-progress-bar {
+      height: 4px;
+      background: var(--color-surface-offset);
+      border-radius: 2px;
+      margin-bottom: var(--space-6);
+      overflow: hidden;
+    }
+    .survey-progress-bar__fill {
+      height: 100%;
+      background: var(--color-primary);
+      border-radius: 2px;
+      transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* STEP INDICATORS */
+    .survey-steps {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: var(--space-8);
+      position: relative;
+      padding: 0 var(--space-2);
+    }
+    .survey-steps::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 24px;
+      right: 24px;
+      height: 2px;
+      background: var(--color-surface-offset-2);
+      z-index: 0;
+    }
+    .survey-step-indicator {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      z-index: 1;
+      flex: 0 0 auto;
+    }
+    .survey-step-indicator__circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: var(--color-surface-offset);
+      color: var(--color-text-faint);
+      border: 2px solid var(--color-surface-offset-2);
+      transition: all 0.3s ease;
+    }
+    .survey-step-indicator.active .survey-step-indicator__circle {
+      background: var(--color-primary);
+      color: #fff;
+      border-color: var(--color-primary);
+      box-shadow: 0 2px 12px rgba(0, 95, 107, 0.3);
+    }
+    .survey-step-indicator.completed .survey-step-indicator__circle {
+      background: var(--color-primary-highlight);
+      color: var(--color-primary);
+      border-color: var(--color-primary);
+    }
+    .survey-step-indicator__label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-text-faint);
+      text-align: center;
+      max-width: 90px;
+      line-height: 1.3;
+    }
+    .survey-step-indicator.active .survey-step-indicator__label { color: var(--color-primary); }
+    .survey-step-indicator.completed .survey-step-indicator__label { color: var(--color-text-muted); }
+
+    @media (max-width: 600px) {
+      .survey-step-indicator__label { display: none; }
+      .survey-step-indicator__circle { width: 28px; height: 28px; font-size: 0.7rem; }
+    }
+
+    /* STEP CONTENT */
+    .survey-step { display: none; }
+    .survey-step.active { display: block; animation: fadeInUp 0.35s ease forwards; }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .survey-step__title {
+      font-family: var(--font-display);
+      font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem);
+      font-weight: 600;
+      color: var(--color-text);
+      margin: 0 0 var(--space-2) 0;
+      line-height: 1.25;
+    }
+    .survey-step__subtitle {
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-5);
+      line-height: 1.7;
+    }
+
+    /* FORM ELEMENTS */
+    .form-group { margin-bottom: var(--space-5); }
+    .form-label {
+      display: block;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--color-text);
+      margin-bottom: var(--space-2);
+    }
+    .form-label .required { color: var(--color-error); margin-left: 0.2rem; }
+    .form-help {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      margin: -0.25rem 0 var(--space-3) 0;
+      font-style: italic;
+    }
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 0.65rem 0.85rem;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--color-text);
+      background: #fff;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      transition: border-color 0.15s, box-shadow 0.15s;
+      box-sizing: border-box;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--color-primary);
+      box-shadow: 0 0 0 3px rgba(0, 95, 107, 0.12);
+    }
+    .form-textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
+    .form-error-msg {
+      display: none;
+      color: var(--color-error);
+      font-size: 0.82rem;
+      margin-top: 0.35rem;
+    }
+    .form-group.has-error .form-input,
+    .form-group.has-error .form-select,
+    .form-group.has-error .form-textarea { border-color: var(--color-error); }
+    .form-group.has-error .form-error-msg { display: block; }
+
+    /* RADIO & CHECKBOX */
+    .option-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .option-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.7rem;
+      padding: 0.7rem 0.9rem;
+      background: #fff;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .option-row:hover { border-color: var(--color-primary); background: #fcfbf9; }
+    .option-row input[type="radio"], .option-row input[type="checkbox"] {
+      margin-top: 3px;
+      width: 17px;
+      height: 17px;
+      accent-color: var(--color-primary);
+      flex-shrink: 0;
+    }
+    .option-row__label {
+      font-size: 0.95rem;
+      color: var(--color-text);
+      line-height: 1.5;
+      flex: 1;
+    }
+    .option-row input[type="radio"]:checked ~ .option-row__label,
+    .option-row input[type="checkbox"]:checked ~ .option-row__label { font-weight: 500; }
+
+    .other-input {
+      margin-top: 0.5rem;
+      padding-left: 2.2rem;
+    }
+
+    /* RANKING (Q4) */
+    .rank-img-wrap {
+      margin: 0 0 var(--space-5) 0;
+      overflow: hidden;
+      border-radius: var(--radius-md);
+    }
+    .rank-img-wrap img { width: 100%; display: block; }
+    .rank-img-caption {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      text-align: center;
+      margin-top: 0.4rem;
+      font-style: italic;
+    }
+    .rank-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 var(--space-3) 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .rank-item {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      padding: 0.85rem 1rem;
+      background: #fff;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      cursor: grab;
+      transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+      user-select: none;
+    }
+    .rank-item:hover { border-color: var(--color-primary); box-shadow: var(--shadow-sm); }
+    .rank-item.sortable-ghost { opacity: 0.4; background: var(--color-primary-highlight); }
+    .rank-item.sortable-chosen { cursor: grabbing; }
+    .rank-item.sortable-drag { box-shadow: var(--shadow-lg); }
+    .rank-handle {
+      color: var(--color-text-faint);
+      flex-shrink: 0;
+    }
+    .rank-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .rank-label {
+      flex: 1;
+      font-size: 0.95rem;
+      color: var(--color-text);
+      font-weight: 500;
+    }
+
+    .rank-suggest-wrap {
+      margin-top: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+    }
+    .rank-suggest-wrap label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--color-text-muted);
+      margin-bottom: 0.4rem;
+      font-weight: 500;
+    }
+
+    /* TIME-OF-DAY INFO BOX (Q5) */
+    .info-box {
+      padding: var(--space-4) var(--space-5);
+      background: var(--color-primary-highlight);
+      border-left: 4px solid var(--color-primary);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      margin-bottom: var(--space-4);
+    }
+    .info-box__title {
+      font-weight: 600;
+      color: var(--color-primary);
+      margin: 0 0 0.4rem 0;
+      font-size: 0.95rem;
+    }
+    .info-box__text {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--color-text);
+      line-height: 1.65;
+    }
+
+    /* MAP (Q7) */
+    .map-instruction {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      font-size: 0.88rem;
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-3);
+      line-height: 1.6;
+    }
+    .map-instruction svg { flex-shrink: 0; width: 18px; height: 18px; color: var(--color-primary); margin-top: 1px; }
+
+    .map-search-wrap {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .map-search-wrap input {
+      flex: 1;
+      padding: 0.55rem 0.8rem;
+      font-size: 0.9rem;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+    }
+    .map-search-wrap input:focus { outline: none; border-color: var(--color-primary); }
+    .map-search-wrap button {
+      padding: 0.55rem 1rem;
+      background: var(--color-primary);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-weight: 500;
+      font-size: 0.9rem;
+    }
+    .map-search-wrap button:hover { background: var(--color-primary-hover); }
+    .map-search-msg {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+      margin: 0.2rem 0 0.5rem 0;
+      min-height: 1.1rem;
+    }
+    .map-container {
+      height: 460px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1.5px solid var(--color-border);
+      margin-bottom: var(--space-3);
+    }
+    .markers-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: var(--space-3);
+    }
+    .marker-card {
+      background: #fff;
+      border: 1.5px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 0.8rem 0.9rem;
+    }
+    .marker-card__head {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-bottom: 0.5rem;
+    }
+    .marker-card__num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: var(--color-accent);
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.78rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .marker-card__name {
+      font-weight: 600;
+      flex: 1;
+      font-size: 0.92rem;
+      color: var(--color-text);
+    }
+    .marker-card__remove {
+      background: none;
+      border: none;
+      color: var(--color-error);
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 0.2rem 0.4rem;
+    }
+    .marker-card__checks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
+      color: var(--color-text);
+    }
+    .marker-card__checks label {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      cursor: pointer;
+    }
+    .marker-card__checks input[type="checkbox"] {
+      width: 15px; height: 15px;
+      accent-color: var(--color-primary);
+    }
+    .marker-card__coords {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      margin-top: 0.3rem;
+    }
+
+    /* NAV BUTTONS */
+    .survey-nav {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-3);
+      margin-top: var(--space-6);
+      padding-top: var(--space-5);
+      border-top: 1px solid var(--color-divider);
+    }
+    .btn {
+      padding: 0.7rem 1.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      border: 1.5px solid transparent;
+    }
+    .btn--primary {
+      background: var(--color-primary);
+      color: #fff;
+    }
+    .btn--primary:hover { background: var(--color-primary-hover); }
+    .btn--prev {
+      background: transparent;
+      color: var(--color-text-muted);
+      border-color: var(--color-border);
+    }
+    .btn--prev:hover { border-color: var(--color-primary); color: var(--color-primary); }
+    .btn--submit { background: var(--color-accent); }
+    .btn--submit:hover { background: var(--color-accent-hover); }
+
+    /* SUCCESS / ERROR STATE */
+    .survey-success, .survey-error {
+      display: none;
+      max-width: 720px;
+      margin: var(--space-10) auto;
+      padding: var(--space-8);
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-border);
+      text-align: center;
+      box-shadow: var(--shadow-md);
+    }
+    .survey-success__icon, .survey-error__icon {
+      width: 56px; height: 56px;
+      margin: 0 auto var(--space-4);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .survey-success__icon { background: #d4edda; color: var(--color-success); }
+    .survey-error__icon { background: #f8d7da; color: var(--color-error); }
+    .survey-success h2, .survey-error h2 {
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      margin: 0 0 var(--space-3) 0;
+    }
+    .survey-success p, .survey-error p {
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-4);
+    }
+
+    /* SECTION HEADING within a step */
+    .section-heading {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--color-primary);
+      margin: var(--space-5) 0 var(--space-2) 0;
+      padding-bottom: 0.4rem;
+      border-bottom: 1.5px solid var(--color-primary-highlight);
+    }
+
+    .form-divider {
+      border: none;
+      border-top: 1px solid var(--color-divider);
+      margin: var(--space-5) 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero photo from 1st meeting -->
+  <div class="pif-hero">
+    <img src="img/1st-meeting.jpg" alt="Pacific Islander faculty at the first meeting at Hūnānāniho Beach Park, Waimanalo — Sunday, 31 May 2026">
+  </div>
+
+  <!-- Intro -->
+  <div class="survey-intro">
+    <p class="survey-intro__eyebrow">BYU–Hawaiʻi · UH Mānoa</p>
+    <h1 class="survey-intro__title">Pacific Islander Faculty Beach Gathering — Interest &amp; Planning Form</h1>
+    <p class="survey-intro__text"><em>Aloha kākou,</em></p>
+    <p class="survey-intro__text">We are exploring the possibility of hosting an informal beach gathering for Pacific Islander faculty from BYU–Hawaiʻi and UH Mānoa. The purpose is simply to connect, relax, build relationships, and create space for Pacific faculty across institutions to meet one another outside of formal university settings.</p>
+    <p class="survey-intro__text">The gathering will likely be held on a Saturday in late July or early August on Oʻahu. Please complete this short form to help us decide the best date, location, format, and activities.</p>
+    <div class="survey-intro__contact">
+      <strong>Questions or suggestions?</strong> Contact <strong>Ron Vave</strong> — <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+    </div>
+  </div>
+
+  <!-- Survey form -->
+  <div class="survey-form-wrapper" id="formWrapper">
+    <div class="survey-card">
+
+      <!-- Progress bar -->
+      <div class="survey-progress-bar">
+        <div class="survey-progress-bar__fill" id="progressFill" style="width: 20%"></div>
+      </div>
+
+      <!-- Step indicators (5 sections) -->
+      <div class="survey-steps">
+        <div class="survey-step-indicator active" data-step="1">
+          <div class="survey-step-indicator__circle">1</div>
+          <div class="survey-step-indicator__label">About You</div>
+        </div>
+        <div class="survey-step-indicator" data-step="2">
+          <div class="survey-step-indicator__circle">2</div>
+          <div class="survey-step-indicator__label">Date &amp; Time</div>
+        </div>
+        <div class="survey-step-indicator" data-step="3">
+          <div class="survey-step-indicator__circle">3</div>
+          <div class="survey-step-indicator__label">Location</div>
+        </div>
+        <div class="survey-step-indicator" data-step="4">
+          <div class="survey-step-indicator__circle">4</div>
+          <div class="survey-step-indicator__label">Food &amp; Family</div>
+        </div>
+        <div class="survey-step-indicator" data-step="5">
+          <div class="survey-step-indicator__circle">5</div>
+          <div class="survey-step-indicator__label">Activities &amp; Help</div>
+        </div>
+      </div>
+
+      <form id="pifSurvey" novalidate>
+
+        <!-- ═══════════ STEP 1: About You ═══════════ -->
+        <div class="survey-step active" data-step="1">
+          <h3 class="survey-step__title">About You</h3>
+          <p class="survey-step__subtitle">A few basics so we can stay in touch with you about the gathering.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="q1_name">1. Name <span class="required">*</span></label>
+            <input type="text" class="form-input" id="q1_name" name="q1_name" required placeholder="Your full name">
+            <p class="form-error-msg">Please enter your name.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">2. Institution / Affiliation <span class="required">*</span></label>
+            <div class="option-list" id="q2_group">
+              <label class="option-row">
+                <input type="radio" name="q2_institution" value="BYU–Hawaiʻi" required>
+                <span class="option-row__label">BYU–Hawaiʻi</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q2_institution" value="UH Mānoa" required>
+                <span class="option-row__label">UH Mānoa</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q2_institution" value="Other" required>
+                <span class="option-row__label">Other</span>
+              </label>
+            </div>
+            <input type="text" class="form-input other-input" id="q2_other" name="q2_other" placeholder="Please specify" style="display:none;">
+            <p class="form-error-msg">Please choose an institution.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q3_email">3. Email address <span class="required">*</span></label>
+            <input type="email" class="form-input" id="q3_email" name="q3_email" required placeholder="you@hawaii.edu or you@byuh.edu">
+            <p class="form-error-msg">Please enter a valid email address.</p>
+          </div>
+
+          <div class="survey-nav">
+            <span></span>
+            <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STEP 2: Date & Time ═══════════ -->
+        <div class="survey-step" data-step="2">
+          <h3 class="survey-step__title">Date &amp; Time</h3>
+          <p class="survey-step__subtitle">Help us settle on the day and time that works best for everyone.</p>
+
+          <div class="form-group">
+            <label class="form-label">4. Which Saturday works best for you? <span class="required">*</span></label>
+            <p class="form-help">Drag the dates to rank them — the topmost is your most preferred. Use the field below to suggest another date if none of these work.</p>
+
+            <div class="rank-img-wrap">
+              <img src="img/beach-park.jpg" alt="Hūnānāniho Beach Park, Waimanalo">
+              <p class="rank-img-caption">Hūnānāniho Beach Park, Waimanalo — site of our first gathering</p>
+            </div>
+
+            <ul class="rank-list" id="rankList">
+              <li class="rank-item" data-value="Saturday, July 25">
+                <span class="rank-handle" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                </span>
+                <span class="rank-num">1</span>
+                <span class="rank-label">Saturday, July 25</span>
+              </li>
+              <li class="rank-item" data-value="Saturday, August 1">
+                <span class="rank-handle" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                </span>
+                <span class="rank-num">2</span>
+                <span class="rank-label">Saturday, August 1</span>
+              </li>
+              <li class="rank-item" data-value="Saturday, August 8">
+                <span class="rank-handle" aria-hidden="true">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                </span>
+                <span class="rank-num">3</span>
+                <span class="rank-label">Saturday, August 8</span>
+              </li>
+            </ul>
+
+            <div class="rank-suggest-wrap">
+              <label for="q4_other_date">Suggest another date (optional)</label>
+              <input type="text" class="form-input" id="q4_other_date" name="q4_other_date" placeholder="e.g. Saturday, August 15">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">5. Time of day <span class="required">*</span></label>
+            <div class="info-box">
+              <p class="info-box__title">The gathering runs 10:00 am – 6:00 pm, with lunch around 1:00 pm.</p>
+              <p class="info-box__text">People can come and go as they please. Please let us know roughly when you'd plan to be there so we can plan food and activities accordingly.</p>
+            </div>
+            <div class="option-list" id="q5_group">
+              <label class="option-row">
+                <input type="checkbox" name="q5_time" value="Stay for most of the day (10 am–6 pm)">
+                <span class="option-row__label">Stay for most of the day (10 am–6 pm)</span>
+              </label>
+              <label class="option-row">
+                <input type="checkbox" name="q5_time" value="Morning only (10 am–1 pm)">
+                <span class="option-row__label">Morning only (10 am–1 pm)</span>
+              </label>
+              <label class="option-row">
+                <input type="checkbox" name="q5_time" value="Lunch and afternoon (1 pm–6 pm)">
+                <span class="option-row__label">Lunch and afternoon (1 pm–6 pm)</span>
+              </label>
+              <label class="option-row">
+                <input type="checkbox" name="q5_time" value="Just lunch (around 1 pm)">
+                <span class="option-row__label">Just lunch (around 1 pm)</span>
+              </label>
+              <label class="option-row">
+                <input type="checkbox" name="q5_time" value="Flexible — I'll come when I can">
+                <span class="option-row__label">Flexible — I'll come when I can</span>
+              </label>
+            </div>
+            <p class="form-error-msg">Please choose at least one option.</p>
+          </div>
+
+          <div class="survey-nav">
+            <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+            <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STEP 3: Location ═══════════ -->
+        <div class="survey-step" data-step="3">
+          <h3 class="survey-step__title">Location on Oʻahu</h3>
+          <p class="survey-step__subtitle">Tell us which side of the island works best and pin any beach suggestions on the map.</p>
+
+          <div class="form-group">
+            <label class="form-label">6. Which side of the island would you prefer for the gathering? <span class="required">*</span></label>
+            <div class="option-list" id="q6_group">
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="Lāʻie / North Shore side" required>
+                <span class="option-row__label">Lāʻie / North Shore side</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="Waimānalo / Windward side" required>
+                <span class="option-row__label">Waimānalo / Windward side</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="Honolulu / South Shore side" required>
+                <span class="option-row__label">Honolulu / South Shore side</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="West / Leeward side" required>
+                <span class="option-row__label">West / Leeward side</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="Either location is fine" required>
+                <span class="option-row__label">Either location is fine</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q6_side" value="Other" required>
+                <span class="option-row__label">Other suggestion</span>
+              </label>
+            </div>
+            <input type="text" class="form-input other-input" id="q6_other" name="q6_other" placeholder="Please specify" style="display:none;">
+            <p class="form-error-msg">Please choose a side of the island.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">7. Specific beach suggestion(s) on Oʻahu</label>
+            <p class="map-instruction">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+              Search for a beach name, or scroll and zoom into Oʻahu and click anywhere to drop a marker. You can mark several locations. Please make sure the beach has restrooms close by and many parking spaces — and tell us if it requires a reservation.
+            </p>
+
+            <div class="map-search-wrap">
+              <input type="text" id="beachSearch" placeholder="Search beach name (e.g. Hūnānāniho, Kailua, Lāʻie)" onkeydown="if(event.key==='Enter'){event.preventDefault();searchBeach();}">
+              <button type="button" onclick="searchBeach()">Search</button>
+            </div>
+            <p class="map-search-msg" id="beachSearchMsg"></p>
+
+            <div class="map-container" id="oahuMap"></div>
+
+            <div class="markers-list" id="markersList"></div>
+            <input type="hidden" id="q7_markers" name="q7_markers">
+          </div>
+
+          <div class="survey-nav">
+            <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+            <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STEP 4: Food & Family ═══════════ -->
+        <div class="survey-step" data-step="4">
+          <h3 class="survey-step__title">Food &amp; Family</h3>
+          <p class="survey-step__subtitle">How should we handle food, and who should be invited to this first gathering?</p>
+
+          <div class="form-group">
+            <label class="form-label">8. What should the food format be? <span class="required">*</span></label>
+            <div class="option-list" id="q8_group">
+              <label class="option-row">
+                <input type="radio" name="q8_food" value="BBQ" required>
+                <span class="option-row__label">BBQ</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q8_food" value="Potluck" required>
+                <span class="option-row__label">Potluck</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q8_food" value="Combination of BBQ and potluck" required>
+                <span class="option-row__label">Combination of BBQ and potluck</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q8_food" value="Bring your own food" required>
+                <span class="option-row__label">Bring your own food</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q8_food" value="Other" required>
+                <span class="option-row__label">Other</span>
+              </label>
+            </div>
+            <input type="text" class="form-input other-input" id="q8_other" name="q8_other" placeholder="Please specify" style="display:none;">
+            <p class="form-error-msg">Please choose a food format.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q9_bring">9. If we do a potluck or BBQ/potluck combination, what might you be able to bring?</label>
+            <p class="form-help">Examples: rice, salad, meat, fish, vegetarian dish, dessert, drinks, paper plates, utensils, cooler, ice, grill, charcoal, etc.</p>
+            <textarea class="form-textarea" id="q9_bring" name="q9_bring" placeholder="Optional — we'll share a sign-up spreadsheet once date and location are confirmed."></textarea>
+          </div>
+
+          <hr class="form-divider">
+
+          <div class="form-group">
+            <label class="form-label">10. Should this first gathering be faculty only, or family-friendly? <span class="required">*</span></label>
+            <div class="option-list" id="q10_group">
+              <label class="option-row">
+                <input type="radio" name="q10_who" value="Faculty only for the first gathering" required>
+                <span class="option-row__label">Faculty only for the first gathering</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q10_who" value="Faculty plus spouse/partner" required>
+                <span class="option-row__label">Faculty plus spouse/partner</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q10_who" value="Faculty plus family/children" required>
+                <span class="option-row__label">Faculty plus family/children</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q10_who" value="Either is fine" required>
+                <span class="option-row__label">Either is fine</span>
+              </label>
+              <label class="option-row">
+                <input type="radio" name="q10_who" value="Other" required>
+                <span class="option-row__label">Other</span>
+              </label>
+            </div>
+            <input type="text" class="form-input other-input" id="q10_other" name="q10_other" placeholder="Please specify" style="display:none;">
+            <p class="form-error-msg">Please choose one.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q11_family_count">11. If family-friendly, how many people might attend with you?</label>
+            <input type="text" class="form-input" id="q11_family_count" name="q11_family_count" placeholder="e.g. 2 adults + 3 children">
+          </div>
+
+          <div class="survey-nav">
+            <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+            <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
+          </div>
+        </div>
+
+        <!-- ═══════════ STEP 5: Activities, Help & Notes ═══════════ -->
+        <div class="survey-step" data-step="5">
+          <h3 class="survey-step__title">Activities, Help &amp; Notes</h3>
+          <p class="survey-step__subtitle">Last section — activities, equipment, planning help, and any other suggestions.</p>
+
+          <div class="section-heading">Activities &amp; Equipment</div>
+
+          <div class="form-group">
+            <label class="form-label">12. Would you be interested in games or activities?</label>
+            <div class="option-list">
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Volleyball"><span class="option-row__label">Volleyball</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Beach soccer"><span class="option-row__label">Beach soccer</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Swimming"><span class="option-row__label">Swimming</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Canoe/paddle activity, if available"><span class="option-row__label">Canoe/paddle activity, if available</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Children's games"><span class="option-row__label">Children's games</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Talanoa / informal conversation only"><span class="option-row__label">Talanoa / informal conversation only</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="No organized activities needed"><span class="option-row__label">No organized activities needed</span></label>
+              <label class="option-row"><input type="checkbox" name="q12_activities" value="Other" id="q12_other_check"><span class="option-row__label">Other</span></label>
+            </div>
+            <input type="text" class="form-input other-input" id="q12_other" name="q12_other" placeholder="Please specify" style="display:none;">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q13_equipment">13. Do you have any equipment you could bring?</label>
+            <p class="form-help">Examples: volleyball, net, soccer ball, canopy/tent, beach chairs, mats, cooler, portable grill, speaker, children's games, etc.</p>
+            <textarea class="form-textarea" id="q13_equipment" name="q13_equipment" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="section-heading">Planning &amp; Suggestions</div>
+
+          <div class="form-group">
+            <label class="form-label">14. Would you be willing to help with planning? <span class="required">*</span></label>
+            <div class="option-list" id="q14_group">
+              <label class="option-row"><input type="radio" name="q14_help" value="Yes, I'd be happy to help" required><span class="option-row__label">Yes, I'd be happy to help</span></label>
+              <label class="option-row"><input type="radio" name="q14_help" value="Maybe, depending on what is needed" required><span class="option-row__label">Maybe, depending on what is needed</span></label>
+              <label class="option-row"><input type="radio" name="q14_help" value="Not this time, but I'm happy to attend" required><span class="option-row__label">Not this time, but I'm happy to attend</span></label>
+            </div>
+            <p class="form-error-msg">Please choose one.</p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q16_invite">15. Are there particular Pacific Islander faculty from BYU–Hawaiʻi or UH Mānoa you would like to meet or invite?</label>
+            <textarea class="form-textarea" id="q16_invite" name="q16_invite" placeholder="Optional — names or departments"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q17_needs">16. Are there any accessibility, dietary, or family needs we should consider?</label>
+            <p class="form-help">Examples: vegetarian/vegan, allergies, shade, seating, bathrooms, parking, child-friendly beach, mobility access, etc.</p>
+            <textarea class="form-textarea" id="q17_needs" name="q17_needs" placeholder="Optional"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="q18_other">17. Any other suggestions?</label>
+            <textarea class="form-textarea" id="q18_other" name="q18_other" placeholder="Optional"></textarea>
+          </div>
+
+          <p style="text-align:center;font-family:var(--font-display);font-style:italic;font-size:1.1rem;color:var(--color-primary);margin-top:var(--space-6);">
+            Vinaka vakalevu &middot; Mahalo nui &middot; Thank you!
+          </p>
+
+          <div class="survey-nav">
+            <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
+            <button type="button" class="btn btn--submit" id="submitBtn" onclick="submitSurvey()">Submit Response</button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Success state -->
+  <div class="survey-success" id="successState">
+    <div class="survey-success__icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <h2>Mahalo for your response</h2>
+    <p>Your input helps us decide the date, location, food plan, and format for the gathering. Once responses are in, we'll confirm details with everyone.</p>
+    <p>You can view the live, anonymized results on the dashboard once your BYUH or UH email is verified.</p>
+    <p><a href="pif-dashboard.html" class="btn btn--primary" style="display:inline-block;text-decoration:none;margin-top:0.5rem;">View live dashboard</a></p>
+    <p style="margin-top:1.5rem;font-size:0.85rem;color:var(--color-text-muted);">Questions? Contact Ron Vave at <a href="mailto:ronvave@hawaii.edu" style="color:var(--color-primary);">ronvave@hawaii.edu</a></p>
+  </div>
+
+  <!-- Error state -->
+  <div class="survey-error" id="errorState">
+    <div class="survey-error__icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </div>
+    <h2>Something went wrong</h2>
+    <p id="errorMessage">We weren't able to submit your response. Please try again, or email Ron Vave at <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>.</p>
+    <button class="btn btn--primary" onclick="retrySubmit()">Try Again</button>
+  </div>
+
+<script>
+  // ═══════════════════════════════════════════════════
+  // CONFIG
+  // ═══════════════════════════════════════════════════
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/REPLACE_WITH_DEPLOYMENT_ID/exec';
+  const TOTAL_STEPS = 5;
+
+  let currentStep = 1;
+  let map = null;
+  let markers = []; // {id, lat, lng, name, restroom, parking, reservation}
+  let markerCounter = 0;
+  let pendingPayload = null;
+
+  // ═══════════════════════════════════════════════════
+  // RANKING (SortableJS)
+  // ═══════════════════════════════════════════════════
+  function refreshRankNumbers() {
+    const items = document.querySelectorAll('#rankList .rank-item');
+    items.forEach((el, i) => {
+      const num = el.querySelector('.rank-num');
+      if (num) num.textContent = (i + 1);
+    });
+  }
+  document.addEventListener('DOMContentLoaded', function() {
+    const rankEl = document.getElementById('rankList');
+    if (rankEl && window.Sortable) {
+      Sortable.create(rankEl, {
+        animation: 180,
+        handle: '.rank-item',
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onEnd: refreshRankNumbers
+      });
+    }
+
+    // "Other" inputs reveal
+    setupOtherToggle('q2_group', 'q2_other', 'radio', 'Other');
+    setupOtherToggle('q6_group', 'q6_other', 'radio', 'Other');
+    setupOtherToggle('q8_group', 'q8_other', 'radio', 'Other');
+    setupOtherToggle('q10_group', 'q10_other', 'radio', 'Other');
+
+    // Q12 "other" checkbox toggle
+    const q12Other = document.getElementById('q12_other_check');
+    if (q12Other) {
+      q12Other.addEventListener('change', function() {
+        document.getElementById('q12_other').style.display = this.checked ? 'block' : 'none';
+      });
+    }
+  });
+
+  function setupOtherToggle(groupId, otherInputId, inputType, otherValue) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    const otherInput = document.getElementById(otherInputId);
+    group.querySelectorAll('input[type="' + inputType + '"]').forEach(input => {
+      input.addEventListener('change', function() {
+        const shouldShow = (this.value === otherValue && this.checked);
+        otherInput.style.display = shouldShow ? 'block' : 'none';
+        if (!shouldShow) otherInput.value = '';
+      });
+    });
+  }
+
+  // ═══════════════════════════════════════════════════
+  // STEP NAVIGATION
+  // ═══════════════════════════════════════════════════
+  function updateProgress() {
+    document.getElementById('progressFill').style.width = (currentStep / TOTAL_STEPS * 100) + '%';
+    document.querySelectorAll('.survey-step-indicator').forEach(el => {
+      const s = parseInt(el.dataset.step);
+      el.classList.remove('active', 'completed');
+      if (s < currentStep) el.classList.add('completed');
+      else if (s === currentStep) el.classList.add('active');
+    });
+    document.querySelectorAll('.survey-step').forEach(el => {
+      el.classList.toggle('active', parseInt(el.dataset.step) === currentStep);
+    });
+    window.scrollTo({ top: document.querySelector('.survey-card').offsetTop - 20, behavior: 'smooth' });
+  }
+
+  function validateStep(step) {
+    let ok = true;
+    // Clear errors first
+    document.querySelectorAll('.survey-step[data-step="' + step + '"] .form-group').forEach(g => g.classList.remove('has-error'));
+
+    if (step === 1) {
+      const name = document.getElementById('q1_name');
+      if (!name.value.trim()) { name.closest('.form-group').classList.add('has-error'); ok = false; }
+      const inst = document.querySelector('input[name="q2_institution"]:checked');
+      if (!inst) { document.getElementById('q2_group').closest('.form-group').classList.add('has-error'); ok = false; }
+      const email = document.getElementById('q3_email');
+      const emailVal = email.value.trim();
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal);
+      if (!emailOk) { email.closest('.form-group').classList.add('has-error'); ok = false; }
+    }
+    else if (step === 2) {
+      const checks = document.querySelectorAll('input[name="q5_time"]:checked');
+      if (checks.length === 0) {
+        document.querySelector('input[name="q5_time"]').closest('.form-group').classList.add('has-error'); ok = false;
+      }
+    }
+    else if (step === 3) {
+      const side = document.querySelector('input[name="q6_side"]:checked');
+      if (!side) { document.getElementById('q6_group').closest('.form-group').classList.add('has-error'); ok = false; }
+    }
+    else if (step === 4) {
+      const food = document.querySelector('input[name="q8_food"]:checked');
+      if (!food) { document.getElementById('q8_group').closest('.form-group').classList.add('has-error'); ok = false; }
+      const who = document.querySelector('input[name="q10_who"]:checked');
+      if (!who) { document.getElementById('q10_group').closest('.form-group').classList.add('has-error'); ok = false; }
+    }
+    else if (step === 5) {
+      const help = document.querySelector('input[name="q14_help"]:checked');
+      if (!help) { document.getElementById('q14_group').closest('.form-group').classList.add('has-error'); ok = false; }
+    }
+    return ok;
+  }
+
+  function nextStep() {
+    if (!validateStep(currentStep)) return;
+    if (currentStep < TOTAL_STEPS) {
+      currentStep++;
+      updateProgress();
+      // Initialize map when entering step 3
+      if (currentStep === 3) {
+        setTimeout(initOahuMap, 200);
+      }
+    }
+  }
+  function prevStep() {
+    if (currentStep > 1) {
+      currentStep--;
+      updateProgress();
+    }
+  }
+
+  // ═══════════════════════════════════════════════════
+  // OAHU MAP (Q7)
+  // ═══════════════════════════════════════════════════
+  // Approximate Oahu bounding box
+  const OAHU_BOUNDS = L.latLngBounds(L.latLng(21.21, -158.32), L.latLng(21.74, -157.62));
+
+  function initOahuMap() {
+    if (map) { setTimeout(() => map.invalidateSize(), 200); return; }
+    const container = document.getElementById('oahuMap');
+    if (!container) return;
+
+    map = L.map('oahuMap', {
+      center: [21.475, -157.97],
+      zoom: 10,
+      minZoom: 9,
+      maxBounds: OAHU_BOUNDS.pad(0.25),
+      scrollWheelZoom: true,
+      fullscreenControl: true
+    });
+
+    // Satellite imagery base
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Imagery &copy; Esri',
+      maxZoom: 19
+    }).addTo(map);
+
+    // Place name labels overlay
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '',
+      maxZoom: 19,
+      opacity: 0.9
+    }).addTo(map);
+
+    map.fitBounds(OAHU_BOUNDS);
+
+    map.on('click', function(e) {
+      addMarker(e.latlng.lat, e.latlng.lng, '');
+    });
+
+    setTimeout(() => map.invalidateSize(), 300);
+  }
+
+  function addMarker(lat, lng, name) {
+    // Constrain to Oahu bounds (with small buffer for offshore picks)
+    if (!OAHU_BOUNDS.pad(0.1).contains([lat, lng])) {
+      setMsg('That spot is outside Oʻahu — please pick somewhere on the island.');
+      return;
+    }
+    markerCounter++;
+    const id = markerCounter;
+    const m = L.marker([lat, lng]).addTo(map);
+    m.bindTooltip(name || ('Marker ' + id), { permanent: false, direction: 'top' });
+    markers.push({
+      id, lat, lng,
+      name: name || '',
+      restroom: false,
+      parking: false,
+      reservation: 'unknown',
+      _leaflet: m
+    });
+    renderMarkersList();
+  }
+
+  function removeMarker(id) {
+    const idx = markers.findIndex(m => m.id === id);
+    if (idx === -1) return;
+    if (markers[idx]._leaflet) map.removeLayer(markers[idx]._leaflet);
+    markers.splice(idx, 1);
+    // Renumber
+    markers.forEach((m, i) => {
+      m._leaflet.unbindTooltip();
+      m._leaflet.bindTooltip(m.name || ('Marker ' + (i + 1)), { permanent: false, direction: 'top' });
+    });
+    renderMarkersList();
+  }
+
+  function renderMarkersList() {
+    const list = document.getElementById('markersList');
+    if (markers.length === 0) { list.innerHTML = ''; return; }
+    list.innerHTML = markers.map((m, i) => `
+      <div class="marker-card" data-id="${m.id}">
+        <div class="marker-card__head">
+          <span class="marker-card__num">${i + 1}</span>
+          <input type="text" class="form-input marker-card__name" data-id="${m.id}" value="${escapeAttr(m.name)}" placeholder="Beach name (e.g. Hūnānāniho)" style="margin:0;padding:0.4rem 0.6rem;font-size:0.9rem;">
+          <button type="button" class="marker-card__remove" onclick="removeMarker(${m.id})">Remove</button>
+        </div>
+        <div class="marker-card__checks">
+          <label><input type="checkbox" data-field="restroom" data-id="${m.id}" ${m.restroom ? 'checked' : ''}> Restrooms close by</label>
+          <label><input type="checkbox" data-field="parking" data-id="${m.id}" ${m.parking ? 'checked' : ''}> Many parking spaces</label>
+          <label style="margin-top:0.2rem;">Reservation required?
+            <select data-field="reservation" data-id="${m.id}" style="margin-left:0.4rem;padding:0.2rem 0.4rem;font-size:0.85rem;border:1.5px solid var(--color-border);border-radius:6px;">
+              <option value="unknown" ${m.reservation === 'unknown' ? 'selected' : ''}>Not sure</option>
+              <option value="no" ${m.reservation === 'no' ? 'selected' : ''}>No</option>
+              <option value="yes" ${m.reservation === 'yes' ? 'selected' : ''}>Yes</option>
+            </select>
+          </label>
+        </div>
+        <p class="marker-card__coords">${m.lat.toFixed(5)}, ${m.lng.toFixed(5)}</p>
+      </div>
+    `).join('');
+
+    // Wire up inputs
+    list.querySelectorAll('input.marker-card__name').forEach(inp => {
+      inp.addEventListener('input', function() {
+        const id = parseInt(this.dataset.id);
+        const m = markers.find(x => x.id === id);
+        if (m) {
+          m.name = this.value;
+          m._leaflet.unbindTooltip();
+          m._leaflet.bindTooltip(this.value || ('Marker ' + id), { permanent: false, direction: 'top' });
+        }
+      });
+    });
+    list.querySelectorAll('input[type="checkbox"][data-field]').forEach(inp => {
+      inp.addEventListener('change', function() {
+        const id = parseInt(this.dataset.id);
+        const m = markers.find(x => x.id === id);
+        if (m) m[this.dataset.field] = this.checked;
+      });
+    });
+    list.querySelectorAll('select[data-field]').forEach(sel => {
+      sel.addEventListener('change', function() {
+        const id = parseInt(this.dataset.id);
+        const m = markers.find(x => x.id === id);
+        if (m) m[this.dataset.field] = this.value;
+      });
+    });
+  }
+
+  function escapeAttr(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  // Beach name search via Nominatim, constrained to Oahu bounding box
+  async function searchBeach() {
+    const q = document.getElementById('beachSearch').value.trim();
+    if (!q) return;
+    setMsg('Searching…');
+    try {
+      // viewbox = lon1,lat1,lon2,lat2 (left,top,right,bottom) — note Nominatim's order
+      const url = 'https://nominatim.openstreetmap.org/search'
+        + '?format=json&limit=5&countrycodes=us'
+        + '&viewbox=-158.32,21.74,-157.62,21.21'
+        + '&bounded=1'
+        + '&q=' + encodeURIComponent(q + ' Oahu Hawaii');
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const data = await res.json();
+      const oahuHit = data.find(r => {
+        const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+        return OAHU_BOUNDS.pad(0.05).contains([lat, lon]);
+      });
+      if (!oahuHit) { setMsg('No match on Oʻahu — try a different name, or click on the map to drop a pin.'); return; }
+      const lat = parseFloat(oahuHit.lat), lon = parseFloat(oahuHit.lon);
+      map.flyTo([lat, lon], 14, { duration: 0.8 });
+      addMarker(lat, lon, oahuHit.display_name.split(',')[0]);
+      setMsg('Found: ' + oahuHit.display_name.split(',').slice(0, 2).join(','));
+    } catch (err) {
+      setMsg('Search failed — try clicking on the map instead.');
+    }
+  }
+  function setMsg(text) { document.getElementById('beachSearchMsg').textContent = text; }
+
+  // ═══════════════════════════════════════════════════
+  // SUBMIT
+  // ═══════════════════════════════════════════════════
+  function collectPayload() {
+    // Ranking
+    const ranking = Array.from(document.querySelectorAll('#rankList .rank-item')).map(el => el.dataset.value);
+
+    // Time-of-day checkboxes
+    const q5 = Array.from(document.querySelectorAll('input[name="q5_time"]:checked')).map(c => c.value);
+
+    // Activities
+    const q12 = Array.from(document.querySelectorAll('input[name="q12_activities"]:checked')).map(c => c.value);
+
+    const inst = document.querySelector('input[name="q2_institution"]:checked');
+    const side = document.querySelector('input[name="q6_side"]:checked');
+    const food = document.querySelector('input[name="q8_food"]:checked');
+    const who = document.querySelector('input[name="q10_who"]:checked');
+    const help = document.querySelector('input[name="q14_help"]:checked');
+
+    return {
+      timestamp: new Date().toISOString(),
+      q1_name: document.getElementById('q1_name').value.trim(),
+      q2_institution: inst ? inst.value : '',
+      q2_other: document.getElementById('q2_other').value.trim(),
+      q3_email: document.getElementById('q3_email').value.trim(),
+      q4_ranking_1: ranking[0] || '',
+      q4_ranking_2: ranking[1] || '',
+      q4_ranking_3: ranking[2] || '',
+      q4_other_date: document.getElementById('q4_other_date').value.trim(),
+      q5_time: q5.join('; '),
+      q6_side: side ? side.value : '',
+      q6_other: document.getElementById('q6_other').value.trim(),
+      q7_markers: JSON.stringify(markers.map(m => ({
+        name: m.name, lat: m.lat, lng: m.lng,
+        restroom: !!m.restroom, parking: !!m.parking, reservation: m.reservation
+      }))),
+      q8_food: food ? food.value : '',
+      q8_other: document.getElementById('q8_other').value.trim(),
+      q9_bring: document.getElementById('q9_bring').value.trim(),
+      q10_who: who ? who.value : '',
+      q10_other: document.getElementById('q10_other').value.trim(),
+      q11_family_count: document.getElementById('q11_family_count').value.trim(),
+      q12_activities: q12.join('; '),
+      q12_other: document.getElementById('q12_other').value.trim(),
+      q13_equipment: document.getElementById('q13_equipment').value.trim(),
+      q14_help: help ? help.value : '',
+      q16_invite: document.getElementById('q16_invite').value.trim(),
+      q17_needs: document.getElementById('q17_needs').value.trim(),
+      q18_other: document.getElementById('q18_other').value.trim()
+    };
+  }
+
+  async function submitSurvey() {
+    if (!validateStep(currentStep)) return;
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Submitting…';
+    pendingPayload = collectPayload();
+
+    try {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        body: JSON.stringify(pendingPayload),
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+      });
+      // no-cors → opaque response, assume success
+      document.getElementById('formWrapper').style.display = 'none';
+      document.getElementById('successState').style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error(err);
+      document.getElementById('formWrapper').style.display = 'none';
+      document.getElementById('errorState').style.display = 'block';
+    }
+  }
+
+  function retrySubmit() {
+    document.getElementById('errorState').style.display = 'none';
+    document.getElementById('formWrapper').style.display = 'block';
+    document.getElementById('submitBtn').disabled = false;
+    document.getElementById('submitBtn').textContent = 'Submit Response';
+  }
+
+  // Expose for inline onclicks
+  window.nextStep = nextStep;
+  window.prevStep = prevStep;
+  window.submitSurvey = submitSurvey;
+  window.retrySubmit = retrySubmit;
+  window.removeMarker = removeMarker;
+  window.searchBeach = searchBeach;
+</script>
+
+</body>
+</html>
