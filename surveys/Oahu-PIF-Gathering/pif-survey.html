@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pacific Islander Faculty Beach Gathering — Interest &amp; Planning Form</title>
+  <title>Pacific Islander Faculty Beach Gathering [August 2026] — Interest &amp; Planning Form</title>
   <meta name="description" content="Help us plan a Pacific Islander faculty beach gathering on Oʻahu for BYU–Hawaiʻi and UH Mānoa colleagues.">
 
   <!-- Fonts -->
@@ -325,10 +325,86 @@
     .rank-list {
       list-style: none;
       padding: 0;
-      margin: 0 0 var(--space-3) 0;
+      margin: 0;
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      min-height: 80px;
+    }
+
+    /* Two-column ranking layout (Q4/Q5) */
+    .rank-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      margin-bottom: var(--space-3);
+    }
+    @media (max-width: 600px) {
+      .rank-columns { grid-template-columns: 1fr; }
+    }
+    .rank-col {
+      background: var(--color-surface-offset);
+      border-radius: var(--radius-md);
+      padding: var(--space-3);
+      border: 1.5px solid var(--color-border);
+      display: flex;
+      flex-direction: column;
+    }
+    .rank-col__head {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+      padding-bottom: 0.55rem;
+      margin-bottom: 0.6rem;
+      border-bottom: 1.5px dashed var(--color-border);
+    }
+    .rank-col__title {
+      font-weight: 700;
+      font-size: 0.88rem;
+      letter-spacing: 0.02em;
+    }
+    .rank-col__head--bank .rank-col__title { color: var(--color-text-muted); }
+    .rank-col__head--ranked .rank-col__title { color: var(--color-primary); }
+    .rank-col__hint {
+      font-size: 0.75rem;
+      color: var(--color-text-muted);
+      font-style: italic;
+      line-height: 1.4;
+    }
+    .rank-list--ranked {
+      position: relative;
+      counter-reset: rankCount;
+      flex: 1;
+    }
+    .rank-list--ranked:empty::before {
+      content: attr(data-empty);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 110px;
+      color: var(--color-text-faint);
+      font-size: 0.85rem;
+      font-style: italic;
+      border: 2px dashed var(--color-border);
+      border-radius: var(--radius-md);
+      text-align: center;
+      padding: var(--space-3);
+    }
+    .rank-list--ranked .rank-item { counter-increment: rankCount; }
+    .rank-list--ranked .rank-item::before {
+      content: counter(rankCount);
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--color-primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+      order: -1;
     }
     .rank-item {
       display: flex;
@@ -343,6 +419,8 @@
       user-select: none;
     }
     .rank-item:hover { border-color: var(--color-primary); box-shadow: var(--shadow-sm); }
+    .rank-list--bank .rank-item { opacity: 0.85; }
+    .rank-list--bank .rank-item:hover { opacity: 1; }
     .rank-item.sortable-ghost { opacity: 0.4; background: var(--color-primary-highlight); }
     .rank-item.sortable-chosen { cursor: grabbing; }
     .rank-item.sortable-drag { box-shadow: var(--shadow-lg); }
@@ -612,9 +690,9 @@
   <!-- Intro -->
   <div class="survey-intro">
     <p class="survey-intro__eyebrow">BYU–Hawaiʻi · UH Mānoa</p>
-    <h1 class="survey-intro__title">Pacific Islander Faculty Beach Gathering — Interest &amp; Planning Form</h1>
+    <h1 class="survey-intro__title">Pacific Islander Faculty Beach Gathering [August 2026] — Interest &amp; Planning Form</h1>
     <p class="survey-intro__text"><em>Aloha kākou,</em></p>
-    <p class="survey-intro__text">We are exploring the possibility of hosting an informal beach gathering for Pacific Islander faculty from BYU–Hawaiʻi and UH Mānoa. The purpose is simply to connect, relax, build relationships, and create space for Pacific faculty across institutions to meet one another outside of formal university settings.</p>
+    <p class="survey-intro__text">Following a mini-meet on Sunday 31st May 2026, we are exploring the possibility of hosting an informal beach gathering for Pacific Islander faculty from BYU–Hawaiʻi and UH Mānoa. The purpose is simply to connect, relax, build relationships, and create space for Pacific faculty across institutions to meet one another outside of formal university settings.</p>
     <p class="survey-intro__text">The gathering will likely be held on a Saturday in late July or early August on Oʻahu. Please complete this short form to help us decide the best date, location, format, and activities.</p>
     <div class="survey-intro__contact">
       <strong>Questions or suggestions?</strong> Contact <strong>Ron Vave</strong> — <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
@@ -693,6 +771,11 @@
             <p class="form-error-msg">Please enter a valid email address.</p>
           </div>
 
+          <div class="form-group">
+            <label class="form-label" for="q3b_department">4. Department</label>
+            <input type="text" class="form-input" id="q3b_department" name="q3b_department" placeholder="e.g. Natural Sciences, Pacific Islands Studies, Social Work">
+          </div>
+
           <div class="survey-nav">
             <span></span>
             <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
@@ -705,37 +788,49 @@
           <p class="survey-step__subtitle">Help us settle on the day and time that works best for everyone.</p>
 
           <div class="form-group">
-            <label class="form-label">4. Which Saturday works best for you? <span class="required">*</span></label>
-            <p class="form-help">Drag the dates to rank them — the topmost is your most preferred. Use the field below to suggest another date if none of these work.</p>
+            <label class="form-label">5. Which Saturday works best for you? <span class="required">*</span></label>
+            <p class="form-help">Drag the dates you're available for from the left column over to the right, ordered with your most-preferred date at the top. Any date you leave on the left counts as "not available". Use the field below to suggest another date if none of these work.</p>
 
             <div class="rank-img-wrap">
               <img src="img/beach-park.jpg" alt="Hūnānāniho Beach Park, Waimanalo">
               <p class="rank-img-caption">Hūnānāniho Beach Park, Waimanalo — site of our first gathering</p>
             </div>
 
-            <ul class="rank-list" id="rankList">
-              <li class="rank-item" data-value="Saturday, July 25">
-                <span class="rank-handle" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
-                </span>
-                <span class="rank-num">1</span>
-                <span class="rank-label">Saturday, July 25</span>
-              </li>
-              <li class="rank-item" data-value="Saturday, August 1">
-                <span class="rank-handle" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
-                </span>
-                <span class="rank-num">2</span>
-                <span class="rank-label">Saturday, August 1</span>
-              </li>
-              <li class="rank-item" data-value="Saturday, August 8">
-                <span class="rank-handle" aria-hidden="true">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
-                </span>
-                <span class="rank-num">3</span>
-                <span class="rank-label">Saturday, August 8</span>
-              </li>
-            </ul>
+            <div class="rank-columns">
+              <div class="rank-col">
+                <div class="rank-col__head rank-col__head--bank">
+                  <span class="rank-col__title">Not available</span>
+                  <span class="rank-col__hint">Leave dates here if you can't make them</span>
+                </div>
+                <ul class="rank-list rank-list--bank" id="dateBank">
+                  <li class="rank-item" data-value="Saturday, July 25">
+                    <span class="rank-handle" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                    </span>
+                    <span class="rank-label">Saturday, July 25</span>
+                  </li>
+                  <li class="rank-item" data-value="Saturday, August 1">
+                    <span class="rank-handle" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                    </span>
+                    <span class="rank-label">Saturday, August 1</span>
+                  </li>
+                  <li class="rank-item" data-value="Saturday, August 8">
+                    <span class="rank-handle" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="15" cy="18" r="1.2"/></svg>
+                    </span>
+                    <span class="rank-label">Saturday, August 8</span>
+                  </li>
+                </ul>
+              </div>
+              <div class="rank-col">
+                <div class="rank-col__head rank-col__head--ranked">
+                  <span class="rank-col__title">Available — most preferred at top</span>
+                  <span class="rank-col__hint">Drag dates here and reorder by preference</span>
+                </div>
+                <ul class="rank-list rank-list--ranked" id="rankList" data-empty="Drop dates you're available for here"></ul>
+              </div>
+            </div>
 
             <div class="rank-suggest-wrap">
               <label for="q4_other_date">Suggest another date (optional)</label>
@@ -744,34 +839,34 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">5. Time of day <span class="required">*</span></label>
+            <label class="form-label">6. Time of day <span class="required">*</span></label>
             <div class="info-box">
               <p class="info-box__title">The gathering runs 10:00 am – 6:00 pm, with lunch around 1:00 pm.</p>
               <p class="info-box__text">People can come and go as they please. Please let us know roughly when you'd plan to be there so we can plan food and activities accordingly.</p>
             </div>
             <div class="option-list" id="q5_group">
               <label class="option-row">
-                <input type="checkbox" name="q5_time" value="Stay for most of the day (10 am–6 pm)">
+                <input type="radio" name="q5_time" value="Stay for most of the day (10 am–6 pm)" required>
                 <span class="option-row__label">Stay for most of the day (10 am–6 pm)</span>
               </label>
               <label class="option-row">
-                <input type="checkbox" name="q5_time" value="Morning only (10 am–1 pm)">
+                <input type="radio" name="q5_time" value="Morning only (10 am–1 pm)" required>
                 <span class="option-row__label">Morning only (10 am–1 pm)</span>
               </label>
               <label class="option-row">
-                <input type="checkbox" name="q5_time" value="Lunch and afternoon (1 pm–6 pm)">
+                <input type="radio" name="q5_time" value="Lunch and afternoon (1 pm–6 pm)" required>
                 <span class="option-row__label">Lunch and afternoon (1 pm–6 pm)</span>
               </label>
               <label class="option-row">
-                <input type="checkbox" name="q5_time" value="Just lunch (around 1 pm)">
+                <input type="radio" name="q5_time" value="Just lunch (around 1 pm)" required>
                 <span class="option-row__label">Just lunch (around 1 pm)</span>
               </label>
               <label class="option-row">
-                <input type="checkbox" name="q5_time" value="Flexible — I'll come when I can">
+                <input type="radio" name="q5_time" value="Flexible — I'll come when I can" required>
                 <span class="option-row__label">Flexible — I'll come when I can</span>
               </label>
             </div>
-            <p class="form-error-msg">Please choose at least one option.</p>
+            <p class="form-error-msg">Please choose one option.</p>
           </div>
 
           <div class="survey-nav">
@@ -786,7 +881,7 @@
           <p class="survey-step__subtitle">Tell us which side of the island works best and pin any beach suggestions on the map.</p>
 
           <div class="form-group">
-            <label class="form-label">6. Which side of the island would you prefer for the gathering? <span class="required">*</span></label>
+            <label class="form-label">7. Which side of the island would you prefer for the gathering? <span class="required">*</span></label>
             <div class="option-list" id="q6_group">
               <label class="option-row">
                 <input type="radio" name="q6_side" value="Lāʻie / North Shore side" required>
@@ -795,14 +890,6 @@
               <label class="option-row">
                 <input type="radio" name="q6_side" value="Waimānalo / Windward side" required>
                 <span class="option-row__label">Waimānalo / Windward side</span>
-              </label>
-              <label class="option-row">
-                <input type="radio" name="q6_side" value="Honolulu / South Shore side" required>
-                <span class="option-row__label">Honolulu / South Shore side</span>
-              </label>
-              <label class="option-row">
-                <input type="radio" name="q6_side" value="West / Leeward side" required>
-                <span class="option-row__label">West / Leeward side</span>
               </label>
               <label class="option-row">
                 <input type="radio" name="q6_side" value="Either location is fine" required>
@@ -912,7 +999,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q11_family_count">11. If family-friendly, how many people might attend with you?</label>
+            <label class="form-label" for="q11_family_count">12. If family-friendly, how many people including yourself might attend?</label>
             <input type="text" class="form-input" id="q11_family_count" name="q11_family_count" placeholder="e.g. 2 adults + 3 children">
           </div>
 
@@ -930,12 +1017,10 @@
           <div class="section-heading">Activities &amp; Equipment</div>
 
           <div class="form-group">
-            <label class="form-label">12. Would you be interested in games or activities?</label>
+            <label class="form-label">13. Would you be interested in games or activities?</label>
             <div class="option-list">
               <label class="option-row"><input type="checkbox" name="q12_activities" value="Volleyball"><span class="option-row__label">Volleyball</span></label>
-              <label class="option-row"><input type="checkbox" name="q12_activities" value="Beach soccer"><span class="option-row__label">Beach soccer</span></label>
               <label class="option-row"><input type="checkbox" name="q12_activities" value="Swimming"><span class="option-row__label">Swimming</span></label>
-              <label class="option-row"><input type="checkbox" name="q12_activities" value="Canoe/paddle activity, if available"><span class="option-row__label">Canoe/paddle activity, if available</span></label>
               <label class="option-row"><input type="checkbox" name="q12_activities" value="Children's games"><span class="option-row__label">Children's games</span></label>
               <label class="option-row"><input type="checkbox" name="q12_activities" value="Talanoa / informal conversation only"><span class="option-row__label">Talanoa / informal conversation only</span></label>
               <label class="option-row"><input type="checkbox" name="q12_activities" value="No organized activities needed"><span class="option-row__label">No organized activities needed</span></label>
@@ -945,7 +1030,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q13_equipment">13. Do you have any equipment you could bring?</label>
+            <label class="form-label" for="q13_equipment">14. Do you have any equipment you could bring?</label>
             <p class="form-help">Examples: volleyball, net, soccer ball, canopy/tent, beach chairs, mats, cooler, portable grill, speaker, children's games, etc.</p>
             <textarea class="form-textarea" id="q13_equipment" name="q13_equipment" placeholder="Optional"></textarea>
           </div>
@@ -953,7 +1038,7 @@
           <div class="section-heading">Planning &amp; Suggestions</div>
 
           <div class="form-group">
-            <label class="form-label">14. Would you be willing to help with planning? <span class="required">*</span></label>
+            <label class="form-label">15. Would you be willing to help with planning? <span class="required">*</span></label>
             <div class="option-list" id="q14_group">
               <label class="option-row"><input type="radio" name="q14_help" value="Yes, I'd be happy to help" required><span class="option-row__label">Yes, I'd be happy to help</span></label>
               <label class="option-row"><input type="radio" name="q14_help" value="Maybe, depending on what is needed" required><span class="option-row__label">Maybe, depending on what is needed</span></label>
@@ -963,18 +1048,18 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q16_invite">15. Are there particular Pacific Islander faculty from BYU–Hawaiʻi or UH Mānoa you would like to meet or invite?</label>
+            <label class="form-label" for="q16_invite">16. Are there particular Pacific Islander faculty from BYU–Hawaiʻi or UH Mānoa you would like to meet or invite?</label>
             <textarea class="form-textarea" id="q16_invite" name="q16_invite" placeholder="Optional — names or departments"></textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q17_needs">16. Are there any accessibility, dietary, or family needs we should consider?</label>
+            <label class="form-label" for="q17_needs">17. Are there any accessibility, dietary, or family needs we should consider?</label>
             <p class="form-help">Examples: vegetarian/vegan, allergies, shade, seating, bathrooms, parking, child-friendly beach, mobility access, etc.</p>
             <textarea class="form-textarea" id="q17_needs" name="q17_needs" placeholder="Optional"></textarea>
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q18_other">17. Any other suggestions?</label>
+            <label class="form-label" for="q18_other">18. Any other suggestions?</label>
             <textarea class="form-textarea" id="q18_other" name="q18_other" placeholder="Optional"></textarea>
           </div>
 
@@ -1030,24 +1115,20 @@
   // ═══════════════════════════════════════════════════
   // RANKING (SortableJS)
   // ═══════════════════════════════════════════════════
-  function refreshRankNumbers() {
-    const items = document.querySelectorAll('#rankList .rank-item');
-    items.forEach((el, i) => {
-      const num = el.querySelector('.rank-num');
-      if (num) num.textContent = (i + 1);
-    });
-  }
   document.addEventListener('DOMContentLoaded', function() {
     const rankEl = document.getElementById('rankList');
-    if (rankEl && window.Sortable) {
-      Sortable.create(rankEl, {
+    const bankEl = document.getElementById('dateBank');
+    if (rankEl && bankEl && window.Sortable) {
+      const sortableOpts = {
+        group: 'dates',
         animation: 180,
         handle: '.rank-item',
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
-        onEnd: refreshRankNumbers
-      });
+        dragClass: 'sortable-drag'
+      };
+      Sortable.create(bankEl, sortableOpts);
+      Sortable.create(rankEl, sortableOpts);
     }
 
     // "Other" inputs reveal
@@ -1111,8 +1192,8 @@
       if (!emailOk) { email.closest('.form-group').classList.add('has-error'); ok = false; }
     }
     else if (step === 2) {
-      const checks = document.querySelectorAll('input[name="q5_time"]:checked');
-      if (checks.length === 0) {
+      const time = document.querySelector('input[name="q5_time"]:checked');
+      if (!time) {
         document.querySelector('input[name="q5_time"]').closest('.form-group').classList.add('has-error'); ok = false;
       }
     }
@@ -1317,11 +1398,12 @@
   // SUBMIT
   // ═══════════════════════════════════════════════════
   function collectPayload() {
-    // Ranking
+    // Ranking — only dates moved to the right (#rankList) count; left bank = not available
     const ranking = Array.from(document.querySelectorAll('#rankList .rank-item')).map(el => el.dataset.value);
+    const notAvailable = Array.from(document.querySelectorAll('#dateBank .rank-item')).map(el => el.dataset.value);
 
-    // Time-of-day checkboxes
-    const q5 = Array.from(document.querySelectorAll('input[name="q5_time"]:checked')).map(c => c.value);
+    // Time-of-day (single radio)
+    const q5el = document.querySelector('input[name="q5_time"]:checked');
 
     // Activities
     const q12 = Array.from(document.querySelectorAll('input[name="q12_activities"]:checked')).map(c => c.value);
@@ -1338,11 +1420,13 @@
       q2_institution: inst ? inst.value : '',
       q2_other: document.getElementById('q2_other').value.trim(),
       q3_email: document.getElementById('q3_email').value.trim(),
+      q3b_department: document.getElementById('q3b_department').value.trim(),
       q4_ranking_1: ranking[0] || '',
       q4_ranking_2: ranking[1] || '',
       q4_ranking_3: ranking[2] || '',
+      q4_not_available: notAvailable.join('; '),
       q4_other_date: document.getElementById('q4_other_date').value.trim(),
-      q5_time: q5.join('; '),
+      q5_time: q5el ? q5el.value : '',
       q6_side: side ? side.value : '',
       q6_other: document.getElementById('q6_other').value.trim(),
       q7_markers: JSON.stringify(markers.map(m => ({
