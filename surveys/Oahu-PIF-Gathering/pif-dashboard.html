@@ -715,7 +715,16 @@
     drawBar('chartActivities', actLabels, actLabels.map(l => actCounts[l]), '#c9a227', true);
 
     // ── Institution (single radio)
-    const INST_CHOICES = ['BYU–Hawaiʻi', 'UH Mānoa', 'Other'];
+    const INST_CHOICES = [
+      'BYU–Hawaiʻi',
+      'UH Mānoa',
+      'UH West Oʻahu (UHWO)',
+      'Honolulu Community College (HCC)',
+      'Kapiʻolani Community College (KCC)',
+      'Leeward Community College (LCC)',
+      'Windward Community College (WCC)',
+      'Other'
+    ];
     const instCounts = countByCanonical(rows, 'q2_institution', INST_CHOICES);
     const instLabels = INST_CHOICES.filter(c => instCounts[c] > 0);
     drawPie('chartInst', instLabels, instLabels.map(l => instCounts[l]));
