@@ -549,6 +549,14 @@
     document.getElementById('statTotal').textContent = rows.length;
 
     // ── Preferred date weighted score
+    // Canonical date order (chronological) + short display labels
+    const DATE_ORDER = [
+      { key: 'Saturday, July 25',  short: 'Sat (Jul 25th)', ord: 0 },
+      { key: 'Saturday, August 1', short: 'Sat (Aug 1st)',  ord: 1 },
+      { key: 'Saturday, August 8', short: 'Sat (Aug 8th)',  ord: 2 }
+    ];
+    const dateMap = Object.fromEntries(DATE_ORDER.map(d => [d.key, d]));
+
     const dateScores = {};
     rows.forEach(r => {
       [r.q4_ranking_1, r.q4_ranking_2, r.q4_ranking_3].forEach((d, i) => {
@@ -561,12 +569,25 @@
         dateScores[k] = (dateScores[k] || 0) + 2; // give other dates a moderate weight
       }
     });
-    const dateLabels = Object.keys(dateScores).sort((a, b) => dateScores[b] - dateScores[a]);
-    const dateData = dateLabels.map(l => dateScores[l]);
-    document.getElementById('statTopDate').textContent = dateLabels[0] || '—';
-    document.getElementById('statTopDateSub').textContent = dateLabels[0] ? (dateScores[dateLabels[0]] + ' weighted pts') : 'most preferred';
 
-    drawBar('chartDate', dateLabels, dateData, '#005f6b');
+    // Sort: canonical dates first in chronological order, then any "other" suggestions by score
+    const canonicalKeys = DATE_ORDER.map(d => d.key);
+    const dateLabels = [
+      ...canonicalKeys,
+      ...Object.keys(dateScores)
+        .filter(k => !canonicalKeys.includes(k))
+        .sort((a, b) => (dateScores[b] || 0) - (dateScores[a] || 0))
+    ];
+    const dateData = dateLabels.map(l => dateScores[l] || 0);
+    const dateDisplayLabels = dateLabels.map(l => (dateMap[l] && dateMap[l].short) || l);
+
+    // Top date by score (still highlight the highest, not the first chronologically)
+    const topDate = Object.keys(dateScores).sort((a, b) => dateScores[b] - dateScores[a])[0];
+    const topDateShort = topDate && dateMap[topDate] ? dateMap[topDate].short : (topDate || '—');
+    document.getElementById('statTopDate').textContent = topDateShort;
+    document.getElementById('statTopDateSub').textContent = topDate ? (dateScores[topDate] + ' weighted pts') : 'most preferred';
+
+    drawBar('chartDate', dateDisplayLabels, dateData, '#005f6b');
 
     // ── Side
     const sideCounts = countBy(rows, 'q6_side');
