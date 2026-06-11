@@ -398,7 +398,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Side of the Island</h2>
-              <p class="panel__sub">Q6 — where to gather</p>
+              <p class="panel__sub">Q7 — where to gather</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartSide"></canvas></div>
@@ -409,7 +409,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Food Format</h2>
-              <p class="panel__sub">Q8 — how we'll eat</p>
+              <p class="panel__sub">Q9 — how we'll eat</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartFood"></canvas></div>
@@ -420,7 +420,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Who Should Come</h2>
-              <p class="panel__sub">Q10 — faculty only or family-friendly</p>
+              <p class="panel__sub">Q11 — faculty only or family-friendly</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartWho"></canvas></div>
@@ -431,7 +431,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Time of Day</h2>
-              <p class="panel__sub">Q5 — which slots people picked (multi-select)</p>
+              <p class="panel__sub">Q6 — preferred time slot</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartTime"></canvas></div>
@@ -442,7 +442,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Interest in Activities</h2>
-              <p class="panel__sub">Q12 — games &amp; activities (multi-select)</p>
+              <p class="panel__sub">Q13 — games &amp; activities (multi-select)</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartActivities"></canvas></div>
@@ -464,7 +464,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Willingness to Help Plan</h2>
-              <p class="panel__sub">Q14 — planning support</p>
+              <p class="panel__sub">Q15 — planning support</p>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartHelp"></canvas></div>
@@ -475,7 +475,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Beach Suggestions on Oʻahu</h2>
-              <p class="panel__sub">Q7 — markers placed by respondents (cluster + hover for name/details)</p>
+              <p class="panel__sub">Q7 — pins placed by respondents (cluster + hover for name/details)</p>
             </div>
           </div>
           <div id="map"></div>
@@ -500,7 +500,7 @@
           <div class="panel__head">
             <div>
               <h2 class="panel__title">Accessibility &amp; Dietary Notes</h2>
-              <p class="panel__sub">From Q16 — anonymized</p>
+              <p class="panel__sub">From Q17 — anonymized</p>
             </div>
           </div>
           <div class="responses-feed" id="needsFeed"><p class="empty">Loading…</p></div>
@@ -655,38 +655,80 @@
 
     drawBar('chartDate', dateDisplayLabels, dateData, '#005f6b');
 
-    // ── Side
-    const sideCounts = countBy(rows, 'q6_side');
-    const sideLabels = Object.keys(sideCounts).sort((a, b) => sideCounts[b] - sideCounts[a]);
+    // Every other chart below uses canonical answer sets so stray values from
+    // legacy test rows or column-shifted submissions are silently ignored.
+
+    // ── Side of island (single radio)
+    const SIDE_CHOICES = [
+      'Lāʻie / North Shore side',
+      'Waimānalo / Windward side',
+      'Either location is fine',
+      'Other'
+    ];
+    const sideCounts = countByCanonical(rows, 'q6_side', SIDE_CHOICES);
+    const sideLabels = SIDE_CHOICES.filter(c => sideCounts[c] > 0).sort((a, b) => sideCounts[b] - sideCounts[a]);
     const sideData = sideLabels.map(l => sideCounts[l]);
     document.getElementById('statTopSide').textContent = sideLabels[0] ? sideLabels[0].replace(/ ?\(.*\)/, '').split('/')[0].trim() : '—';
     drawBar('chartSide', sideLabels, sideData, '#c9552a', true);
 
-    // ── Food
-    const foodCounts = countBy(rows, 'q8_food');
-    drawPie('chartFood', Object.keys(foodCounts), Object.values(foodCounts));
+    // ── Food (single radio)
+    const FOOD_CHOICES = ['BBQ', 'Potluck', 'Combination of BBQ and potluck', 'Bring your own food', 'Other'];
+    const foodCounts = countByCanonical(rows, 'q8_food', FOOD_CHOICES);
+    const foodLabels = FOOD_CHOICES.filter(c => foodCounts[c] > 0);
+    drawPie('chartFood', foodLabels, foodLabels.map(l => foodCounts[l]));
 
-    // ── Who (faculty/family)
-    const whoCounts = countBy(rows, 'q10_who');
-    drawPie('chartWho', Object.keys(whoCounts), Object.values(whoCounts));
+    // ── Who: faculty / family (single radio)
+    const WHO_CHOICES = [
+      'Faculty only for the first gathering',
+      'Faculty plus spouse/partner',
+      'Faculty plus family/children',
+      'Either is fine',
+      'Other'
+    ];
+    const whoCounts = countByCanonical(rows, 'q10_who', WHO_CHOICES);
+    const whoLabels = WHO_CHOICES.filter(c => whoCounts[c] > 0);
+    drawPie('chartWho', whoLabels, whoLabels.map(l => whoCounts[l]));
 
-    // ── Time (multi-select; values separated by '; ')
-    const timeCounts = countMulti(rows, 'q5_time');
-    const timeLabels = Object.keys(timeCounts);
+    // ── Time of day (single radio; field name is historic "q5_time")
+    const TIME_CHOICES = [
+      'Stay for most of the day (10 am–6 pm)',
+      'Morning only (10 am–1 pm)',
+      'Lunch and afternoon (1 pm–6 pm)',
+      'Just lunch (around 1 pm)',
+      'Flexible — I\'ll come when I can'
+    ];
+    const timeCounts = countByCanonical(rows, 'q5_time', TIME_CHOICES);
+    const timeLabels = TIME_CHOICES.filter(c => timeCounts[c] > 0);
     drawBar('chartTime', timeLabels, timeLabels.map(l => timeCounts[l]), '#005f6b', true);
 
-    // ── Activities (multi-select)
-    const actCounts = countMulti(rows, 'q12_activities');
-    const actLabels = Object.keys(actCounts).sort((a, b) => actCounts[b] - actCounts[a]);
+    // ── Activities (multi-select checkboxes; values joined by '; ')
+    const ACTIVITY_CHOICES = [
+      'Volleyball',
+      'Swimming',
+      "Children's games",
+      'Talanoa / informal conversation only',
+      'No organized activities needed',
+      'Other'
+    ];
+    const actCounts = countMultiCanonical(rows, 'q12_activities', ACTIVITY_CHOICES);
+    const actLabels = ACTIVITY_CHOICES.filter(c => actCounts[c] > 0).sort((a, b) => actCounts[b] - actCounts[a]);
     drawBar('chartActivities', actLabels, actLabels.map(l => actCounts[l]), '#c9a227', true);
 
-    // ── Institution
-    const instCounts = countBy(rows, 'q2_institution');
-    drawPie('chartInst', Object.keys(instCounts), Object.values(instCounts));
+    // ── Institution (single radio)
+    const INST_CHOICES = ['BYU–Hawaiʻi', 'UH Mānoa', 'Other'];
+    const instCounts = countByCanonical(rows, 'q2_institution', INST_CHOICES);
+    const instLabels = INST_CHOICES.filter(c => instCounts[c] > 0);
+    drawPie('chartInst', instLabels, instLabels.map(l => instCounts[l]));
 
-    // ── Help
-    const helpCounts = countBy(rows, 'q14_help');
-    drawBar('chartHelp', Object.keys(helpCounts), Object.values(helpCounts), '#3a7a22', true);
+    // ── Help (single radio)
+    const HELP_CHOICES = [
+      "Yes, I'd be happy to help",
+      'Maybe, depending on what is needed',
+      "Not this time, but I'm happy to attend"
+    ];
+    const helpCounts = countByCanonical(rows, 'q14_help', HELP_CHOICES);
+    const helpLabels = HELP_CHOICES.filter(c => helpCounts[c] > 0);
+    drawBar('chartHelp', helpLabels, helpLabels.map(l => helpCounts[l]), '#3a7a22', true);
 
     // ── Map markers
     const allMarkers = [];
@@ -736,6 +778,50 @@
       if (!v.trim()) return;
       v.split(';').map(s => s.trim()).filter(Boolean).forEach(s => {
         out[s] = (out[s] || 0) + 1;
+      });
+    });
+    return out;
+  }
+
+  // Normalize a string for fuzzy matching against canonical option lists
+  // (lowercase, strip diacritics, collapse whitespace and dash variants).
+  function normalizeChoice(s) {
+    return String(s == null ? '' : s)
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // strip diacritics
+      .replace(/[\u2013\u2014\u2212]/g, '-')             // en/em dash → hyphen
+      .replace(/[\u2018\u2019\u02bb\u02bc]/g, "'")       // smart quotes / okina → '
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+
+  // Count occurrences of a single-value field, restricted to a canonical list.
+  function countByCanonical(rows, key, choices) {
+    const out = {};
+    choices.forEach(c => { out[c] = 0; });
+    const norm = choices.map(c => normalizeChoice(c));
+    rows.forEach(r => {
+      const raw = (r[key] || '').toString().trim();
+      if (!raw) return;
+      const n = normalizeChoice(raw);
+      const idx = norm.indexOf(n);
+      if (idx >= 0) out[choices[idx]] += 1;
+      // Non-canonical values are intentionally ignored.
+    });
+    return out;
+  }
+
+  // Count occurrences of a multi-value (';'-separated) field, canonical only.
+  function countMultiCanonical(rows, key, choices) {
+    const out = {};
+    choices.forEach(c => { out[c] = 0; });
+    const norm = choices.map(c => normalizeChoice(c));
+    rows.forEach(r => {
+      const raw = (r[key] || '').toString();
+      if (!raw.trim()) return;
+      raw.split(';').map(s => s.trim()).filter(Boolean).forEach(s => {
+        const idx = norm.indexOf(normalizeChoice(s));
+        if (idx >= 0) out[choices[idx]] += 1;
       });
     });
     return out;
