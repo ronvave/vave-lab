@@ -506,6 +506,10 @@
       <a href="https://hawaii.edu/cpis/" target="_blank" rel="noopener" style="font-weight:500;color:var(--color-gold);display:block;">¹Department of Pacific Islands Studies</a>
       <a href="https://manoa.hawaii.edu/fisheries/" target="_blank" rel="noopener" style="font-weight:500;color:var(--color-gold);display:block;">²Fisheries Graduate Program</a>
     </p>
+    <p style="margin: var(--space-4) 0 var(--space-6); display: flex; align-items: center; gap: 0.55em; color: #fff;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex-shrink:0;"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-10 6L2 7"></path></svg>
+      <a href="mailto:ronvave@hawaii.edu" style="color:#fff;text-decoration:underline;font-weight:500;">ronvave@hawaii.edu</a>
+    </p>
     <div class="hero__cta">
       <a href="research.html" class="btn btn--primary">Explore Research</a>
       <a href="publications.html" class="btn btn--ghost" style="color:#fff;border-color:rgba(255,255,255,0.4)">View Publications</a>
@@ -655,30 +659,31 @@
       <a href="publications.html" class="btn btn--outline">All Publications →</a>
     </div>
 
-    <ul class="pub-list" role="list">
+    <ul class="pub-list" role="list" id="home-recent-pubs" data-recent-count="3">
+      <!-- Items are auto-loaded from publications.html on page load. Items below are a fallback if the fetch fails. -->
       <li class="pub-item reveal">
-        <p class="pub-year">2025</p>
+        <p class="pub-year">2026</p>
         <p class="pub-title">
-          <a href="https://doi.org/10.1071/PC25011" target="_blank" rel="noopener">Increasing Pacific Islander research and authorship in the academic literature</a>
+          <a href="https://woa.un.org/sites/default/files/2026-05/SubSection5AChapter1SubChapter1B.pdf" target="_blank" rel="noopener">Subsection 5A, Subchapter 1B: Small-scale fishing, including subsistence fishing</a>
         </p>
-        <p class="pub-authors"><strong>Mangubhai, S., Vave, R.</strong>, Begg, S.S., Chung, M., et al.</p>
-        <p class="pub-journal">Pacific Conservation Biology, 31(4)</p>
+        <p class="pub-authors">Armitage, D., Aheto, D., Campbell, D., …, <strong>Vave, R.</strong>, Yagi, N., &amp; Zhang, C.-I.</p>
+        <p class="pub-journal">Book Chapter · The third World Ocean Assessment (WOA III)</p>
       </li>
       <li class="pub-item reveal reveal-delay-1">
-        <p class="pub-year">2024</p>
+        <p class="pub-year">2026</p>
         <p class="pub-title">
-          <a href="https://doi.org/10.1111/cobi.14403" target="_blank" rel="noopener">Cultural ecosystem services and the conservation challenges for an Indigenous people's aquatic protected area practice</a>
+          <a href="https://woa.un.org/sites/default/files/2026-05/SubSection5AChapter1SubChapter1A.pdf" target="_blank" rel="noopener">Subsection 5A, Subchapter 1A: Medium- and large-scale fishing</a>
         </p>
-        <p class="pub-authors"><strong>Vave, R.</strong>, Friedlander, A.M., Kittinger, J.N., &amp; Ticktin, T.</p>
-        <p class="pub-journal">Conservation Biology, 38(6), e14403</p>
+        <p class="pub-authors">Sumaila, R., Ahmad, F., Akintola, S.L., …, <strong>Vave, R.</strong>, Villasante, S., Voges, E., White, E., &amp; Zhang, C.-I.</p>
+        <p class="pub-journal">Book Chapter · The third World Ocean Assessment (WOA III)</p>
       </li>
       <li class="pub-item reveal reveal-delay-2">
-        <p class="pub-year">2024</p>
+        <p class="pub-year">2026</p>
         <p class="pub-title">
-          <a href="https://doi.org/10.1016/j.ecoser.2024.101661" target="_blank" rel="noopener">Impacts of commercial and subsistence fishing on marine and cultural ecosystem services important to the wellbeing of an Indigenous community in Hawaiʻi</a>
+          <a href="https://doi.org/10.21463/jmic.2026.15.1.03" target="_blank" rel="noopener">Cultural Diversity and Marine Biodiversity: Bridging what is already connected</a>
         </p>
-        <p class="pub-authors"><strong>Vave, R.</strong>, Heck, N., Narayan, S., Carrizales, S., Kenison, D., &amp; Paytan, A.</p>
-        <p class="pub-journal">Ecosystem Services, 69, 101661</p>
+        <p class="pub-authors">Breckwoldt, A., &amp; <strong>Vave, R.</strong></p>
+        <p class="pub-journal">Journal of Marine and Island Cultures</p>
       </li>
     </ul>
   </div>
@@ -738,5 +743,87 @@
 </footer>
 
 <script src="js/main.js"></script>
+<script>
+/* Auto-sync the homepage's Recent Publications preview with publications.html.
+   Fetches the live publications page, extracts the top N items in their current
+   order, and renders simplified cards on the homepage. Falls back silently to
+   the static markup if the fetch fails (e.g. opened from the file:// scheme). */
+(function () {
+  var container = document.getElementById('home-recent-pubs');
+  if (!container || !window.fetch) return;
+  var count = parseInt(container.getAttribute('data-recent-count') || '3', 10);
+
+  fetch('publications.html', { credentials: 'same-origin' })
+    .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.text(); })
+    .then(function (html) {
+      var doc = new DOMParser().parseFromString(html, 'text/html');
+      var items = doc.querySelectorAll('[data-pub-list] .pub-item');
+      if (!items.length) return;
+
+      var typeLabel = { journal: 'Journal Article', chapter: 'Book Chapter', report: 'Report' };
+      var picked = Array.prototype.slice.call(items, 0, count);
+      var html_out = picked.map(function (li, i) {
+        var year = li.getAttribute('data-year') || '';
+        var type = li.getAttribute('data-type') || '';
+
+        // Title (preserve the <a> if any)
+        var titleEl = li.querySelector('.pub-title');
+        var titleHtml = titleEl ? titleEl.innerHTML.trim() : '';
+
+        // Authors — bold Vave, R. on first match
+        var authorsEl = li.querySelector('.pub-authors');
+        var authorsHtml = '';
+        if (authorsEl) {
+          // Clone, replace Vave pill span with <strong>Vave, R.</strong>
+          var clone = authorsEl.cloneNode(true);
+          clone.querySelectorAll('span').forEach(function (s) {
+            if (s.textContent.trim() === 'Vave, R.') {
+              var st = document.createElement('strong');
+              st.textContent = 'Vave, R.';
+              s.replaceWith(st);
+            }
+          });
+          authorsHtml = clone.innerHTML.trim();
+        }
+
+        // Journal / source line
+        var sourceLine = '';
+        if (type === 'journal') {
+          // The journal-name pill is the last styled tag with the maroon background. Grab the *.tag with text not equal to year/type.
+          var tags = li.querySelectorAll('span.tag');
+          var journalName = '';
+          tags.forEach(function (t) {
+            var txt = t.textContent.trim();
+            if (!/^\d{4}$/.test(txt) && txt !== 'Journal Article' && txt !== 'Book Chapter' && txt !== 'Report' && txt !== 'Vave, R.') {
+              journalName = txt;
+            }
+          });
+          sourceLine = journalName || 'Journal Article';
+        } else if (type === 'chapter') {
+          var meta = li.querySelector('.pub-meta');
+          var metaTxt = meta ? meta.textContent.trim() : '';
+          // Extract the book title (italicized inside the meta line) if present
+          var bookMatch = metaTxt.match(/(?:In [^,]+,\s*)?([A-Z][^.]+?)(?:\s*\(pp\.|\s*\.|\s*$)/);
+          sourceLine = 'Book Chapter' + (bookMatch ? ' \u00b7 ' + bookMatch[1].trim() : '');
+        } else if (type === 'report') {
+          sourceLine = 'Report';
+        }
+
+        var delay = i === 0 ? '' : ' reveal-delay-' + i;
+        return (
+          '<li class="pub-item reveal revealed' + delay + '">' +
+          '<p class="pub-year">' + year + '</p>' +
+          '<p class="pub-title">' + titleHtml + '</p>' +
+          '<p class="pub-authors">' + authorsHtml + '</p>' +
+          (sourceLine ? '<p class="pub-journal">' + sourceLine + '</p>' : '') +
+          '</li>'
+        );
+      }).join('');
+
+      container.innerHTML = html_out;
+    })
+    .catch(function () { /* silent fallback to static markup */ });
+})();
+</script>
 </body>
 </html>
