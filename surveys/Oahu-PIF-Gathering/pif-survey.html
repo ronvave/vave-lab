@@ -1403,30 +1403,77 @@
     return (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
-  // Beach name search via Nominatim, constrained to Oahu bounding box
+  // Beach name search via Esri World Geocoder, constrained to Oʻahu.
+  // Esri is keyless for low-volume use, supports Hawaiian diacritics, and avoids
+  // the rate-limiting / CORS issues we saw with Nominatim.
   async function searchBeach() {
-    const q = document.getElementById('beachSearch').value.trim();
-    if (!q) return;
+    const qRaw = document.getElementById('beachSearch').value.trim();
+    if (!qRaw) return;
     setMsg('Searching…');
+
+    // Strip diacritics so "Waimanalo" matches "Waimānalo" and vice-versa.
+    const stripDia = (s) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const q = qRaw;
+
+    // Esri findAddressCandidates: searchExtent biases (and largely restricts) results to Oʻahu
+    // bbox = xmin,ymin,xmax,ymax in WGS84
+    const bbox = '-158.32,21.21,-157.62,21.74';
+    const url = 'https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates'
+      + '?f=json&maxLocations=8&outFields=Match_addr,Place_addr,Type'
+      + '&searchExtent=' + encodeURIComponent(bbox)
+      + '&category=' + encodeURIComponent('Beach,Park,Populated Place,Point of Interest,Landmark,Land Features')
+      + '&singleLine=' + encodeURIComponent(q + ', Oahu, Hawaii');
+
     try {
-      // viewbox = lon1,lat1,lon2,lat2 (left,top,right,bottom) — note Nominatim's order
-      const url = 'https://nominatim.openstreetmap.org/search'
-        + '?format=json&limit=5&countrycodes=us'
-        + '&viewbox=-158.32,21.74,-157.62,21.21'
-        + '&bounded=1'
-        + '&q=' + encodeURIComponent(q + ' Oahu Hawaii');
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const res = await fetch(url);
       const data = await res.json();
-      const oahuHit = data.find(r => {
-        const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
-        return OAHU_BOUNDS.pad(0.05).contains([lat, lon]);
+      const candidates = (data && data.candidates) || [];
+
+      // Filter to Oʻahu bbox and prefer the highest-scoring candidate.
+      const onOahu = candidates.filter(c => {
+        const lat = c.location && c.location.y, lon = c.location && c.location.x;
+        return lat != null && lon != null && OAHU_BOUNDS.pad(0.05).contains([lat, lon]);
       });
-      if (!oahuHit) { setMsg('No match on Oʻahu — try a different name, or click on the map to drop a pin.'); return; }
-      const lat = parseFloat(oahuHit.lat), lon = parseFloat(oahuHit.lon);
+      onOahu.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      let hit = onOahu[0];
+
+      // Fallback: if Esri returned nothing, try Nominatim as a backup.
+      if (!hit) {
+        const nomUrl = 'https://nominatim.openstreetmap.org/search'
+          + '?format=json&limit=5'
+          + '&viewbox=-158.32,21.74,-157.62,21.21&bounded=1'
+          + '&q=' + encodeURIComponent(stripDia(q) + ' Oahu Hawaii');
+        try {
+          const nRes = await fetch(nomUrl, { headers: { 'Accept': 'application/json' } });
+          const nData = await nRes.json();
+          const nHit = (nData || []).find(r => {
+            const lat = parseFloat(r.lat), lon = parseFloat(r.lon);
+            return OAHU_BOUNDS.pad(0.05).contains([lat, lon]);
+          });
+          if (nHit) {
+            hit = {
+              location: { x: parseFloat(nHit.lon), y: parseFloat(nHit.lat) },
+              address: nHit.display_name.split(',')[0],
+              attributes: { Place_addr: nHit.display_name }
+            };
+          }
+        } catch (_) { /* ignore fallback failure */ }
+      }
+
+      if (!hit) {
+        setMsg('No match on Oʻahu — try a different name, or click on the map to drop a pin.');
+        return;
+      }
+
+      const lat = hit.location.y, lon = hit.location.x;
+      const name = hit.address || ((hit.attributes && hit.attributes.Match_addr) || '').split(',')[0] || qRaw;
+      const fullAddr = (hit.attributes && hit.attributes.Place_addr) || hit.address || name;
       map.flyTo([lat, lon], 14, { duration: 0.8 });
-      addMarker(lat, lon, oahuHit.display_name.split(',')[0]);
-      setMsg('Found: ' + oahuHit.display_name.split(',').slice(0, 2).join(','));
+      addMarker(lat, lon, name);
+      setMsg('Found: ' + fullAddr);
     } catch (err) {
+      console.error('Beach search error:', err);
       setMsg('Search failed — try clicking on the map instead.');
     }
   }
