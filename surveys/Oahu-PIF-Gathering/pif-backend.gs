@@ -29,6 +29,7 @@ const COLUMNS = [
   "q5_time",
   "q6_side", "q6_other",
   "q7_markers",
+  "q7b_location_notes",
   "q8_food", "q8_other",
   "q9_bring",
   "q10_who", "q10_other",

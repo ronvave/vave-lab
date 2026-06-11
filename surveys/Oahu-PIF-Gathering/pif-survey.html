@@ -956,6 +956,11 @@
             <input type="hidden" id="q7_markers" name="q7_markers">
           </div>
 
+          <div class="form-group">
+            <label class="form-label" for="q7b_location_notes">8. Any other info you'd like to add re beach or gathering location?</label>
+            <textarea class="form-textarea" id="q7b_location_notes" name="q7b_location_notes" placeholder="e.g. For BYUH team to choose"></textarea>
+          </div>
+
           <div class="survey-nav">
             <button type="button" class="btn btn--prev" onclick="prevStep()">Previous</button>
             <button type="button" class="btn btn--primary" onclick="nextStep()">Next</button>
@@ -968,7 +973,7 @@
           <p class="survey-step__subtitle">How should we handle food, and who should be invited to this first gathering?</p>
 
           <div class="form-group">
-            <label class="form-label">8. What should the food format be? <span class="required">*</span></label>
+            <label class="form-label">9. What should the food format be? <span class="required">*</span></label>
             <div class="option-list" id="q8_group">
               <label class="option-row">
                 <input type="radio" name="q8_food" value="BBQ" required>
@@ -996,7 +1001,7 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label" for="q9_bring">9. If we do a potluck or BBQ/potluck combination, what might you be able to bring?</label>
+            <label class="form-label" for="q9_bring">10. If we do a potluck or BBQ/potluck combination, what might you be able to bring?</label>
             <p class="form-help">Examples: rice, salad, meat, fish, vegetarian dish, dessert, drinks, paper plates, utensils, cooler, ice, grill, charcoal, etc.</p>
             <textarea class="form-textarea" id="q9_bring" name="q9_bring" placeholder="Optional — we'll share a sign-up spreadsheet once date and location are confirmed."></textarea>
           </div>
@@ -1004,7 +1009,7 @@
           <hr class="form-divider">
 
           <div class="form-group">
-            <label class="form-label">10. Should this first gathering be faculty only, or family-friendly? <span class="required">*</span></label>
+            <label class="form-label">11. Should this first gathering be faculty only, or family-friendly? <span class="required">*</span></label>
             <div class="option-list" id="q10_group">
               <label class="option-row">
                 <input type="radio" name="q10_who" value="Faculty only for the first gathering" required>
@@ -1466,6 +1471,7 @@
         name: m.name, lat: m.lat, lng: m.lng,
         restroom: !!m.restroom, parking: !!m.parking, reservation: m.reservation
       }))),
+      q7b_location_notes: document.getElementById('q7b_location_notes').value.trim(),
       q8_food: food ? food.value : '',
       q8_other: document.getElementById('q8_other').value.trim(),
       q9_bring: document.getElementById('q9_bring').value.trim(),
