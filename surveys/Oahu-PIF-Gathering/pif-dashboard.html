@@ -549,43 +549,65 @@
     document.getElementById('statTotal').textContent = rows.length;
 
     // ── Preferred date weighted score
-    // Canonical date order (chronological) + short display labels
-    const DATE_ORDER = [
-      { key: 'Saturday, July 25',  short: 'Sat (Jul 25th)', ord: 0 },
-      { key: 'Saturday, August 1', short: 'Sat (Aug 1st)',  ord: 1 },
-      { key: 'Saturday, August 8', short: 'Sat (Aug 8th)',  ord: 2 }
+    // Canonical date order (chronological) + short display labels.
+    // Each bucket has multiple matchers because Google Sheets may have
+    // auto-converted "Saturday, July 25" to a real date (which JSON-serializes
+    // as e.g. "2026-07-25T00:00:00.000Z" or "2026-07-24T..." depending on TZ).
+    const DATE_BUCKETS = [
+      { short: 'Sat (Jul 25th)', matchers: ['saturday, july 25',   'jul 25', 'july 25',   '2026-07-25', '2026-07-24'] },
+      { short: 'Sat (Aug 1st)',  matchers: ['saturday, august 1',  'aug 1',  'august 1',  '2026-08-01', '2026-07-31'] },
+      { short: 'Sat (Aug 8th)',  matchers: ['saturday, august 8',  'aug 8',  'august 8',  '2026-08-08', '2026-08-07'] }
     ];
-    const dateMap = Object.fromEntries(DATE_ORDER.map(d => [d.key, d]));
 
-    const dateScores = {};
+    function bucketIndex(raw) {
+      if (!raw) return -1;
+      const s = String(raw).toLowerCase().trim();
+      for (let i = 0; i < DATE_BUCKETS.length; i++) {
+        if (DATE_BUCKETS[i].matchers.some(m => s.includes(m))) return i;
+      }
+      return -1;
+    }
+
+    // Bucketed weighted scores (always one slot per bucket, even if zero)
+    const bucketScores = DATE_BUCKETS.map(() => 0);
+    // Free-text "other" suggestions go in their own object
+    const otherScores = {};
+
     rows.forEach(r => {
       [r.q4_ranking_1, r.q4_ranking_2, r.q4_ranking_3].forEach((d, i) => {
         if (!d) return;
         const w = 3 - i; // 3, 2, 1
-        dateScores[d] = (dateScores[d] || 0) + w;
+        const bi = bucketIndex(d);
+        if (bi >= 0) bucketScores[bi] += w;
+        else {
+          const k = String(d).trim();
+          otherScores[k] = (otherScores[k] || 0) + w;
+        }
       });
       if (r.q4_other_date) {
-        const k = '✎ ' + r.q4_other_date;
-        dateScores[k] = (dateScores[k] || 0) + 2; // give other dates a moderate weight
+        const k = '✎ ' + String(r.q4_other_date).trim();
+        otherScores[k] = (otherScores[k] || 0) + 2;
       }
     });
 
-    // Sort: canonical dates first in chronological order, then any "other" suggestions by score
-    const canonicalKeys = DATE_ORDER.map(d => d.key);
-    const dateLabels = [
-      ...canonicalKeys,
-      ...Object.keys(dateScores)
-        .filter(k => !canonicalKeys.includes(k))
-        .sort((a, b) => (dateScores[b] || 0) - (dateScores[a] || 0))
+    // Canonical buckets first (chronological), then any "other" suggestions by score
+    const dateDisplayLabels = [
+      ...DATE_BUCKETS.map(b => b.short),
+      ...Object.keys(otherScores).sort((a, b) => otherScores[b] - otherScores[a])
     ];
-    const dateData = dateLabels.map(l => dateScores[l] || 0);
-    const dateDisplayLabels = dateLabels.map(l => (dateMap[l] && dateMap[l].short) || l);
+    const dateData = [
+      ...bucketScores,
+      ...Object.keys(otherScores).sort((a, b) => otherScores[b] - otherScores[a]).map(k => otherScores[k])
+    ];
 
-    // Top date by score (still highlight the highest, not the first chronologically)
-    const topDate = Object.keys(dateScores).sort((a, b) => dateScores[b] - dateScores[a])[0];
-    const topDateShort = topDate && dateMap[topDate] ? dateMap[topDate].short : (topDate || '—');
-    document.getElementById('statTopDate').textContent = topDateShort;
-    document.getElementById('statTopDateSub').textContent = topDate ? (dateScores[topDate] + ' weighted pts') : 'most preferred';
+    // Top date by score across canonical buckets + others
+    const allScored = [
+      ...DATE_BUCKETS.map((b, i) => ({ label: b.short, score: bucketScores[i] })),
+      ...Object.keys(otherScores).map(k => ({ label: k, score: otherScores[k] }))
+    ].filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+    const top = allScored[0];
+    document.getElementById('statTopDate').textContent = top ? top.label : '—';
+    document.getElementById('statTopDateSub').textContent = top ? (top.score + ' weighted pts') : 'most preferred';
 
     drawBar('chartDate', dateDisplayLabels, dateData, '#005f6b');
 
