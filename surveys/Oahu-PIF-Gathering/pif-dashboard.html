@@ -606,10 +606,14 @@
     // Each bucket has multiple matchers because Google Sheets may have
     // auto-converted "Saturday, July 25" to a real date (which JSON-serializes
     // as e.g. "2026-07-25T00:00:00.000Z" or "2026-07-24T..." depending on TZ).
+    // Only ever show these three canonical buckets on the chart.
+    // Matchers cover: human-readable strings, ISO date-only, ISO datetime
+    // (with/without TZ off-by-one because Sheets sometimes serializes as UTC
+    // midnight which can roll back to the previous day in HST).
     const DATE_BUCKETS = [
-      { short: 'Sat (Jul 25th)', matchers: ['saturday, july 25',   'jul 25', 'july 25',   '2026-07-25', '2026-07-24'] },
-      { short: 'Sat (Aug 1st)',  matchers: ['saturday, august 1',  'aug 1',  'august 1',  '2026-08-01', '2026-07-31'] },
-      { short: 'Sat (Aug 8th)',  matchers: ['saturday, august 8',  'aug 8',  'august 8',  '2026-08-08', '2026-08-07'] }
+      { short: 'Sat (Jul 25th)', matchers: ['saturday, july 25', 'jul 25', 'july 25', '2026-07-25', '2026-07-24'] },
+      { short: 'Sat (Aug 1st)',  matchers: ['saturday, august 1', 'aug 1',  'august 1', '2026-08-01', '2026-07-31'] },
+      { short: 'Sat (Aug 8th)',  matchers: ['saturday, august 8', 'aug 8',  'august 8', '2026-08-08', '2026-08-07'] }
     ];
 
     function bucketIndex(raw) {
@@ -623,8 +627,6 @@
 
     // Bucketed weighted scores (always one slot per bucket, even if zero)
     const bucketScores = DATE_BUCKETS.map(() => 0);
-    // Free-text "other" suggestions go in their own object
-    const otherScores = {};
 
     rows.forEach(r => {
       [r.q4_ranking_1, r.q4_ranking_2, r.q4_ranking_3].forEach((d, i) => {
@@ -632,32 +634,21 @@
         const w = 3 - i; // 3, 2, 1
         const bi = bucketIndex(d);
         if (bi >= 0) bucketScores[bi] += w;
-        else {
-          const k = String(d).trim();
-          otherScores[k] = (otherScores[k] || 0) + w;
-        }
+        // Anything that doesn't match a canonical date is intentionally ignored
+        // (e.g. department text accidentally landing in this column, or free-text
+        // "other date" suggestions, which are tracked separately in the sheet).
       });
-      if (r.q4_other_date) {
-        const k = '✎ ' + String(r.q4_other_date).trim();
-        otherScores[k] = (otherScores[k] || 0) + 2;
-      }
     });
 
-    // Canonical buckets first (chronological), then any "other" suggestions by score
-    const dateDisplayLabels = [
-      ...DATE_BUCKETS.map(b => b.short),
-      ...Object.keys(otherScores).sort((a, b) => otherScores[b] - otherScores[a])
-    ];
-    const dateData = [
-      ...bucketScores,
-      ...Object.keys(otherScores).sort((a, b) => otherScores[b] - otherScores[a]).map(k => otherScores[k])
-    ];
+    // Show only the three canonical buckets, chronological order.
+    const dateDisplayLabels = DATE_BUCKETS.map(b => b.short);
+    const dateData          = bucketScores.slice();
 
-    // Top date by score across canonical buckets + others
-    const allScored = [
-      ...DATE_BUCKETS.map((b, i) => ({ label: b.short, score: bucketScores[i] })),
-      ...Object.keys(otherScores).map(k => ({ label: k, score: otherScores[k] }))
-    ].filter(x => x.score > 0).sort((a, b) => b.score - a.score);
+    // Top date by score across canonical buckets only
+    const allScored = DATE_BUCKETS
+      .map((b, i) => ({ label: b.short, score: bucketScores[i] }))
+      .filter(x => x.score > 0)
+      .sort((a, b) => b.score - a.score);
     const top = allScored[0];
     document.getElementById('statTopDate').textContent = top ? top.label : '—';
     document.getElementById('statTopDateSub').textContent = top ? (top.score + ' weighted pts') : 'most preferred';
