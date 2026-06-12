@@ -18,8 +18,24 @@
 const SHEET_ID    = "REPLACE_WITH_SHEET_ID";
 const SHEET_NAME  = "Responses";
 
-// Email notifications: every new submission is emailed here with a PDF attachment.
-const NOTIFY_EMAIL = "ronvave@hawaii.edu";
+// ─── Email notifications ────────────────────────────────
+// On every submission, we email a PDF copy of the responses to:
+//   - The submitter themselves (q3_email from the form)
+//   - With BCC to the organizers listed below
+// If the submitter didn't provide a valid email, we fall back to sending
+// only to the BCC list so a copy is never lost.
+const NOTIFY_BCC = [
+  "ronvave@hawaii.edu",
+  "Inoke.Hafoka@byuh.edu",
+  "Sione.Funaki@byuh.edu",
+  "tammy8@hawaii.edu"
+];
+// Used as fallback recipient when the submitter has no email address.
+const NOTIFY_FALLBACK = "ronvave@hawaii.edu";
+
+// Public-facing URLs included in every confirmation email
+const DASHBOARD_URL = "https://ronvave.github.io/vave-lab/surveys/Oahu-PIF-Gathering/pif-dashboard.html";
+const SIGNUP_URL    = "https://go.hawaii.edu/7Hi";
 
 // Column order written to the sheet (also used as keys when returning JSON)
 const COLUMNS = [
@@ -216,35 +232,74 @@ function buildSubmissionHtml_(body) {
     '</body></html>';
 }
 
-function sendSubmissionEmail_(body) {
-  if (!NOTIFY_EMAIL) return;
+// Loose email validator (good enough to avoid sending to obviously bad addresses).
+function isValidEmail_(s) {
+  if (!s) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(s).trim());
+}
 
+function buildConfirmationHtml_(body, answersHtml) {
+  var firstName = String(body.q1_name || "").trim().split(/\s+/)[0] || "there";
+  return '<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#1f2328;line-height:1.5;">' +
+    '<p>Aloha ' + escapeHtml_(firstName) + ',</p>' +
+    '<p>Thank you for completing the <strong>Pacific Islander Faculty Beach Gathering</strong> planning form. ' +
+      'A copy of your responses is attached as a PDF for your records.</p>' +
+    '<p style="margin:1.2em 0 0.4em 0;"><strong>Live results dashboard</strong><br>' +
+      'You can check the latest summary of everyone’s responses any time at:<br>' +
+      '<a href="' + DASHBOARD_URL + '">' + DASHBOARD_URL + '</a></p>' +
+    '<p style="margin:1.2em 0 0.4em 0;"><strong>Sign-up sheet for contributions</strong><br>' +
+      'If you indicated you can bring food, drinks, or equipment, please also add your name and item to the shared sign-up sheet so we avoid duplicates:<br>' +
+      '<a href="' + SIGNUP_URL + '">' + SIGNUP_URL + '</a></p>' +
+    '<p>Mahalo nui loa,<br>Dr. Ron Vave</p>' +
+    '<hr style="margin:1.5em 0;border:none;border-top:1px solid #d0d7de;">' +
+    '<h2 style="font-size:14px;margin:0 0 8px 0;color:#57606a;">Your responses</h2>' +
+    answersHtml +
+    '</body></html>';
+}
+
+function sendSubmissionEmail_(body) {
   var name        = body.q1_name        || "(no name)";
   var institution = body.q2_institution || body.q2_other || "(not provided)";
   var department  = body.q3b_department || "(not provided)";
+  var submitterEmail = String(body.q3_email || "").trim();
 
-  var html = buildSubmissionHtml_(body);
+  // Build the answers table (used both for the email body and the PDF).
+  var answersHtml = buildSubmissionHtml_(body);
 
-  // Convert HTML to a PDF blob.
+  // PDF attachment
   var safeName = String(name).replace(/[^A-Za-z0-9\-_]+/g, "_").slice(0, 40) || "submission";
   var datePart = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "Pacific/Honolulu", "yyyyMMdd-HHmmss");
-  var pdfBlob  = Utilities.newBlob(html, "text/html", "submission.html")
+  var pdfBlob  = Utilities.newBlob(answersHtml, "text/html", "submission.html")
                           .getAs("application/pdf")
                           .setName("PIF-Submission-" + safeName + "-" + datePart + ".pdf");
 
-  var subject = "PIF survey submission — " + name + " (" + institution + ")";
-  var plain   = "New PIF Beach Gathering survey submission\n\n" +
-                "Name: "        + name        + "\n" +
-                "Institution: " + institution + "\n" +
-                "Department: "  + department  + "\n\n" +
-                "Full responses are attached as a PDF.";
+  // Decide recipient: submitter if valid, otherwise fallback to organizer.
+  var toAddress = isValidEmail_(submitterEmail) ? submitterEmail : NOTIFY_FALLBACK;
+
+  // Build the friendly confirmation HTML body for the email itself.
+  var emailHtml = buildConfirmationHtml_(body, answersHtml);
+
+  var subject = "Your PIF Beach Gathering survey response — " + name + " (" + institution + ")";
+  var plain   =
+    "Aloha,\n\n" +
+    "Thank you for completing the Pacific Islander Faculty Beach Gathering planning form. " +
+    "A copy of your responses is attached as a PDF.\n\n" +
+    "Live results dashboard:\n" + DASHBOARD_URL + "\n\n" +
+    "Sign-up sheet for contributions (food, drinks, equipment):\n" + SIGNUP_URL + "\n\n" +
+    "Submission summary:\n" +
+    "  Name: "        + name        + "\n" +
+    "  Institution: " + institution + "\n" +
+    "  Department: "  + department  + "\n\n" +
+    "Mahalo nui loa,\nDr. Ron Vave";
 
   MailApp.sendEmail({
-    to:          NOTIFY_EMAIL,
+    to:          toAddress,
+    bcc:         NOTIFY_BCC.join(","),
     subject:     subject,
     body:        plain,
-    htmlBody:    html,
+    htmlBody:    emailHtml,
     attachments: [pdfBlob],
-    name:        "PIF Beach Gathering Survey"
+    name:        "PIF Beach Gathering Survey",
+    replyTo:     NOTIFY_FALLBACK
   });
 }
