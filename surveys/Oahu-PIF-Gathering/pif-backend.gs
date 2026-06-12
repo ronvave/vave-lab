@@ -250,7 +250,7 @@ function buildConfirmationHtml_(body, answersHtml) {
     '<p style="margin:1.2em 0 0.4em 0;"><strong>Sign-up sheet for contributions</strong><br>' +
       'If you indicated you can bring food, drinks, or equipment, please also add your name and item to the shared sign-up sheet so we avoid duplicates:<br>' +
       '<a href="' + SIGNUP_URL + '">' + SIGNUP_URL + '</a></p>' +
-    '<p>Mahalo nui loa,<br>Dr. Ron Vave</p>' +
+    '<p>Mahalo nui loa,<br>Ron Vave (on behalf of planning team: Inoke &amp; ʻUlise from BYUH, and Tammy from UHM)</p>' +
     '<hr style="margin:1.5em 0;border:none;border-top:1px solid #d0d7de;">' +
     '<h2 style="font-size:14px;margin:0 0 8px 0;color:#57606a;">Your responses</h2>' +
     answersHtml +
@@ -290,7 +290,7 @@ function sendSubmissionEmail_(body) {
     "  Name: "        + name        + "\n" +
     "  Institution: " + institution + "\n" +
     "  Department: "  + department  + "\n\n" +
-    "Mahalo nui loa,\nDr. Ron Vave";
+    "Mahalo nui loa,\nRon Vave (on behalf of planning team: Inoke & ʻUlise from BYUH, and Tammy from UHM)";
 
   MailApp.sendEmail({
     to:          toAddress,
