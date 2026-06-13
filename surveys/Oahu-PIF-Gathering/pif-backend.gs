@@ -257,21 +257,25 @@ function buildConfirmationHtml_(body, answersHtml) {
     '</body></html>';
 }
 
+// Build greeting "Aloha Dr. <Last>" using the last token in q1_name as the surname.
+// Falls back to "Aloha" if no usable name is provided.
+function buildGreeting_(rawName) {
+  var name = String(rawName || "").trim();
+  if (!name) return "Aloha";
+  var tokens = name.split(/\s+/).filter(function (t) { return t.length > 0; });
+  if (tokens.length === 0) return "Aloha";
+  var last = tokens[tokens.length - 1];
+  return "Aloha Dr. " + last;
+}
+
 function sendSubmissionEmail_(body) {
   var name        = body.q1_name        || "(no name)";
   var institution = body.q2_institution || body.q2_other || "(not provided)";
   var department  = body.q3b_department || "(not provided)";
   var submitterEmail = String(body.q3_email || "").trim();
 
-  // Build the answers table (used both for the email body and the PDF).
+  // Build the answers table (inline in the email — no PDF attachment).
   var answersHtml = buildSubmissionHtml_(body);
-
-  // PDF attachment
-  var safeName = String(name).replace(/[^A-Za-z0-9\-_]+/g, "_").slice(0, 40) || "submission";
-  var datePart = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || "Pacific/Honolulu", "yyyyMMdd-HHmmss");
-  var pdfBlob  = Utilities.newBlob(answersHtml, "text/html", "submission.html")
-                          .getAs("application/pdf")
-                          .setName("PIF-Submission-" + safeName + "-" + datePart + ".pdf");
 
   // Decide recipient: submitter if valid, otherwise fallback to organizer.
   var toAddress = isValidEmail_(submitterEmail) ? submitterEmail : NOTIFY_FALLBACK;
@@ -279,11 +283,12 @@ function sendSubmissionEmail_(body) {
   // Build the friendly confirmation HTML body for the email itself.
   var emailHtml = buildConfirmationHtml_(body, answersHtml);
 
-  var subject = "Your PIF Beach Gathering survey response — " + name + " (" + institution + ")";
+  // Plain-text fallback body that mirrors the HTML structure.
+  var greeting = buildGreeting_(name);
   var plain   =
-    "Aloha,\n\n" +
+    greeting + ",\n\n" +
     "Thank you for completing the Pacific Islander Faculty Beach Gathering planning form. " +
-    "A copy of your responses is attached as a PDF.\n\n" +
+    "This is a follow-up acknowledgement email confirming your submission — a summary of your responses is included below for your records.\n\n" +
     "Live results dashboard:\n" + DASHBOARD_URL + "\n\n" +
     "Sign-up sheet for contributions (food, drinks, equipment):\n" + SIGNUP_URL + "\n\n" +
     "Submission summary:\n" +
@@ -292,13 +297,14 @@ function sendSubmissionEmail_(body) {
     "  Department: "  + department  + "\n\n" +
     "Mahalo nui loa,\nRon Vave (on behalf of planning team: Inoke & ʻUlise from BYUH, and Tammy from UHM)";
 
+  var subject = "Your PIF Beach Gathering survey response — " + name + " (" + institution + ")";
+
   MailApp.sendEmail({
     to:          toAddress,
     bcc:         NOTIFY_BCC.join(","),
     subject:     subject,
     body:        plain,
     htmlBody:    emailHtml,
-    attachments: [pdfBlob],
     name:        "PIF Beach Gathering Survey",
     replyTo:     NOTIFY_FALLBACK
   });
