@@ -239,11 +239,11 @@ function isValidEmail_(s) {
 }
 
 function buildConfirmationHtml_(body, answersHtml) {
-  var firstName = String(body.q1_name || "").trim().split(/\s+/)[0] || "there";
+  var greeting = buildGreeting_(body.q1_name);
   return '<!doctype html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#1f2328;line-height:1.5;">' +
-    '<p>Aloha ' + escapeHtml_(firstName) + ',</p>' +
+    '<p>' + escapeHtml_(greeting) + ',</p>' +
     '<p>Thank you for completing the <strong>Pacific Islander Faculty Beach Gathering</strong> planning form. ' +
-      'A copy of your responses is attached as a PDF for your records.</p>' +
+      'This is a follow-up acknowledgement email confirming your submission — a summary of your responses is included below for your records.</p>' +
     '<p style="margin:1.2em 0 0.4em 0;"><strong>Live results dashboard</strong><br>' +
       'You can check the latest summary of everyone’s responses any time at:<br>' +
       '<a href="' + DASHBOARD_URL + '">' + DASHBOARD_URL + '</a></p>' +
