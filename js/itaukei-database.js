@@ -169,7 +169,8 @@
     }
 
     // ---- Per-item derived tag indexes ----
-    // Build iTaukei last-name set from scholar leaderboard names ("Last, First" → "Last")
+    // Build iTaukei last-name set from the scholar leaderboard ("Last, First" → "Last").
+    // Used to identify iTaukei lead-authored items via first-creator surname match.
     const itaukeiLastNames = new Set();
     state.scholarKeyByName.forEach((_, fullName) => {
       const last = fullName.split(',')[0].trim().toLowerCase();
@@ -198,24 +199,40 @@
     });
   }
 
+  // Match a Zotero creator string ("Ron Vave", "R. Vave", "Nabobo-Baba, Unaisi", etc.)
+  // against the set of known iTaukei scholar surnames.
+  function creatorIsItaukei(name) {
+    if (!name) return false;
+    const lastNames = state.itaukeiLastNames;
+    if (!lastNames || !lastNames.size) return false;
+    // Handle "Last, First" form
+    let candidate = name;
+    if (name.includes(',')) candidate = name.split(',')[0].trim();
+    const cleaned = candidate.toLowerCase().replace(/[.]/g, '').trim();
+    const tokens = cleaned.split(/\s+/);
+    if (!tokens.length) return false;
+    // Try last single token, last two joined, last two hyphenated
+    if (lastNames.has(tokens[tokens.length - 1])) return true;
+    if (tokens.length >= 2) {
+      if (lastNames.has(tokens.slice(-2).join(' '))) return true;
+      if (lastNames.has(tokens.slice(-2).join('-'))) return true;
+    }
+    return false;
+  }
+
   // Classify item authorship w.r.t. iTaukei scholars
-  //   returns 'lead'   — iTaukei author is listed first
-  //           'coauth' — iTaukei author present but not first
+  //   returns 'lead'   — first-listed creator is iTaukei
+  //           'coauth' — an iTaukei author is present but not first
   //           'none'   — no iTaukei author on the record
   function itaukeiAuthorship(item) {
-    if (!isItaukei(item)) return 'none';
     const creators = item.creators || [];
-    if (!creators.length) return 'coauth';
-    const firstLast = creators[0].split(/\s+/).pop().toLowerCase().replace(/[.,]/g, '');
-    if (state.itaukeiLastNames.has(firstLast)) return 'lead';
-    // Compound surnames — also try last two tokens
-    const tokens = creators[0].toLowerCase().replace(/[.,]/g, '').split(/\s+/);
-    if (tokens.length >= 2) {
-      const compound = tokens.slice(-2).join(' ');
-      const hyphen = tokens.slice(-2).join('-');
-      if (state.itaukeiLastNames.has(compound) || state.itaukeiLastNames.has(hyphen)) return 'lead';
+    if (creators.length && creatorIsItaukei(creators[0])) return 'lead';
+    if (isItaukei(item)) return 'coauth';
+    // Fall-back: creator-name match for items that are NOT in an iTaukei Zotero collection
+    for (let i = 1; i < creators.length; i++) {
+      if (creatorIsItaukei(creators[i])) return 'coauth';
     }
-    return 'coauth';
+    return 'none';
   }
 
   async function fetchJson(url) {
@@ -224,8 +241,13 @@
     return r.json();
   }
 
+  // Broad definition: item is "iTaukei-authored" if it belongs to any iTaukei
+  // Zotero collection, OR any of its creators' surnames match a known iTaukei
+  // scholar (this catches the ~21 items authored by iTaukei scholars that were
+  // not tagged into a collection).
   function isItaukei(item) {
-    return (item.collections || []).some(k => state.itaukeiKeys.has(k));
+    if ((item.collections || []).some(k => state.itaukeiKeys.has(k))) return true;
+    return (item.creators || []).some(creatorIsItaukei);
   }
 
   // ============ URL SYNC ============
@@ -483,21 +505,21 @@
 
     const items = state.snapshot.items;
     const provOfItem = state.provincesByItem;
-    // Confederacy tallies — sum of province-row totals within each confederacy,
-    // matching Panel D. Items linked to two provinces in the same confederacy count twice
-    // (once per province), same as the ranked-bar / small-multiples views.
+    // Confederacy tallies — total = sum of province-row totals (matches Panel D).
+    // iTaukei column = strictly iTaukei lead-authored items only (first creator is iTaukei),
+    // as specified in the revision notes.
     const byConf = { Burebasaga: {total:0, itaukei:0}, Kubuna: {total:0, itaukei:0}, Tovata: {total:0, itaukei:0} };
     const confByProv = new Map();
     state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
     items.forEach(it => {
       const provs = provOfItem.get(it.key);
       if (!provs || !provs.size) return;
-      const iTa = isItaukei(it);
+      const isLead = itaukeiAuthorship(it) === 'lead';
       provs.forEach(p => {
         const c = confByProv.get(p);
         if (c && byConf[c]) {
           byConf[c].total += 1;
-          if (iTa) byConf[c].itaukei += 1;
+          if (isLead) byConf[c].itaukei += 1;
         }
       });
     });
