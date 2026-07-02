@@ -45,10 +45,19 @@
   // Filter keys we serialize to the URL
   const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'province', 'paternal', 'university', 'year', 'scholar'];
 
+  const TYPE_COLOR = {
+    thesis: '#6b3e26', journalArticle: '#0e7490', bookSection: '#7a1419',
+    book: '#7a1419', report: '#1e40af', conferencePaper: '#92400e', preprint: '#6b7280',
+    document: '#9ca3af'
+  };
+  const TYPE_ORDER = ['thesis','journalArticle','bookSection','book','report','conferencePaper','preprint'];
+
   const state = {
     snapshot: null,
     provinces: null,
     universities: null,
+    mapView: 'all',                      // 'all' | 'lead' | 'coauth'
+    typeSet: new Set(TYPE_ORDER),        // which types are shown in panels B, C, D
     filter: {
       q: '',
       itemType: '',
@@ -160,6 +169,14 @@
     }
 
     // ---- Per-item derived tag indexes ----
+    // Build iTaukei last-name set from scholar leaderboard names ("Last, First" → "Last")
+    const itaukeiLastNames = new Set();
+    state.scholarKeyByName.forEach((_, fullName) => {
+      const last = fullName.split(',')[0].trim().toLowerCase();
+      if (last) itaukeiLastNames.add(last);
+    });
+    state.itaukeiLastNames = itaukeiLastNames;
+
     snap.items.forEach(it => {
       const disc = new Set();
       const provs = new Set();
@@ -179,6 +196,26 @@
       state.paternalByItem.set(it.key, paternal);
       state.scholarByItem.set(it.key, scholars);
     });
+  }
+
+  // Classify item authorship w.r.t. iTaukei scholars
+  //   returns 'lead'   — iTaukei author is listed first
+  //           'coauth' — iTaukei author present but not first
+  //           'none'   — no iTaukei author on the record
+  function itaukeiAuthorship(item) {
+    if (!isItaukei(item)) return 'none';
+    const creators = item.creators || [];
+    if (!creators.length) return 'coauth';
+    const firstLast = creators[0].split(/\s+/).pop().toLowerCase().replace(/[.,]/g, '');
+    if (state.itaukeiLastNames.has(firstLast)) return 'lead';
+    // Compound surnames — also try last two tokens
+    const tokens = creators[0].toLowerCase().replace(/[.,]/g, '').split(/\s+/);
+    if (tokens.length >= 2) {
+      const compound = tokens.slice(-2).join(' ');
+      const hyphen = tokens.slice(-2).join('-');
+      if (state.itaukeiLastNames.has(compound) || state.itaukeiLastNames.has(hyphen)) return 'lead';
+    }
+    return 'coauth';
   }
 
   async function fetchJson(url) {
@@ -234,6 +271,7 @@
     renderHistogram();
     renderLeaders();          // to update active scholar highlight
     renderDonutLegendActive();
+    renderPanelB();           // re-render bar chart to update active-province highlight
     updateClearAllButton();
   }
   function updateClearAllButton() {
@@ -311,34 +349,29 @@
   function initMap() {
     try {
       const map = L.map('db-map', {
-        center: [-17.7, 178.3],
+        center: [-17.6, 178.5],
         zoom: 7,
-        minZoom: 2,
-        maxZoom: 12,
-        worldCopyJump: true,
-        scrollWheelZoom: true
+        minZoom: 6,
+        maxZoom: 10,
+        zoomControl: true,
+        attributionControl: false,
+        scrollWheelZoom: false
       });
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Imagery &copy; Esri &mdash; Esri, Maxar, Earthstar Geographics',
-        maxZoom: 18
-      }).addTo(map);
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '', maxZoom: 18, opacity: 0.6
-      }).addTo(map);
+      map.getContainer().style.background = '#d6ecf0';
       state.map = map;
+      renderChoropleth();
 
-      renderProvincesOnMap();
-      renderUniversitiesOnMap();
-
+      // Panel A mapview toggle
       $$('.db-map-toggle button').forEach(btn => {
         btn.addEventListener('click', () => {
           $$('.db-map-toggle button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
           btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
-          state.view = btn.dataset.view;
-          applyMapView();
+          state.mapView = btn.dataset.mapview;
+          renderPanelA();
         });
       });
-      applyMapView();
+
+      map.fitBounds([[-19.3, 176.8], [-16.0, 180.5]], { padding: [6, 6] });
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
@@ -348,15 +381,23 @@
     }
   }
 
-  function provinceBreakdown(view) {
-    const geo = state.provinces;
+  // Filter items by the current map-view authorship criterion (used only in Panel A)
+  function itemsForMapView() {
     const items = state.snapshot.items;
+    if (state.mapView === 'all') return items;
+    if (state.mapView === 'lead')   return items.filter(it => itaukeiAuthorship(it) === 'lead');
+    if (state.mapView === 'coauth') return items.filter(it => itaukeiAuthorship(it) === 'coauth');
+    return items;
+  }
+
+  // Province publication breakdown (Panel A choropleth + confederacy legend numbers).
+  // Uses provinces-researched collection membership.
+  function provinceBreakdown(items) {
+    const geo = state.provinces;
     const result = new Map();
     geo.features.forEach(f => {
       const p = f.properties;
-      const key = view === 'paternal'
-        ? p.zoteroCollectionKey_paternalProvince
-        : p.zoteroCollectionKey_publicationLocation;
+      const key = p.zoteroCollectionKey_publicationLocation;
       const bucket = { total: 0, journalArticle: 0, thesis: 0, bookSection: 0, book: 0, conferencePaper: 0, report: 0, preprint: 0, document: 0 };
       if (key) {
         items.forEach(it => {
@@ -371,71 +412,52 @@
     return result;
   }
 
-  function renderProvincesOnMap() {
+  function choroFill(n) {
+    if (n === 0) return '#e8f2f3';
+    if (n <= 3) return '#a9d3d8';
+    if (n <= 6) return '#5fa6ae';
+    if (n <= 9) return '#0e7490';
+    return '#062f35';
+  }
+
+  function renderChoropleth() {
+    if (!state.map) return;
     if (state.provinceLayer) state.map.removeLayer(state.provinceLayer);
-    if (state.provinceHaloLayer) state.map.removeLayer(state.provinceHaloLayer);
-    if (state.provincePinsLayer) state.map.removeLayer(state.provincePinsLayer);
     const geo = state.provinces;
-    const view = state.view;
-    const counts = provinceBreakdown(view);
-
-    state.provinceHaloLayer = L.geoJSON(geo, {
-      style: () => ({ fillOpacity: 0, color: 'rgba(0,0,0,0.55)', weight: 7, opacity: 0.7, lineJoin: 'round' }),
-      interactive: false
-    }).addTo(state.map);
-
+    const filteredItems = itemsForMapView();
+    const counts = provinceBreakdown(filteredItems);
     state.provinceLayer = L.geoJSON(geo, {
-      style: (feature) => ({
-        fillOpacity: 0,
-        color: CONF_COLORS[feature.properties.confederacy],
-        weight: 3.5, opacity: 1, lineJoin: 'round', lineCap: 'round'
-      }),
+      style: (feature) => {
+        const n = (counts.get(feature.properties.name) || { total: 0 }).total;
+        return {
+          fillColor: choroFill(n),
+          fillOpacity: 0.92,
+          color: CONF_COLORS[feature.properties.confederacy] || '#333',
+          weight: 2.5, opacity: 1, lineJoin: 'round'
+        };
+      },
       onEachFeature: (feature, layer) => {
         const p = feature.properties;
         const b = counts.get(p.name) || { total: 0 };
-        layer.bindPopup(makeProvincePopup(p, b, view), { maxWidth: 260 });
-        layer.on('click', () => setProvinceFilterFromMap(p.name, view));
+        layer.bindPopup(makeProvincePopup(p, b), { maxWidth: 260 });
+        layer.on('mouseover', () => layer.setStyle({ weight: 4 }));
+        layer.on('mouseout', () => layer.setStyle({ weight: 2.5 }));
+        layer.on('click', () => setProvinceFilterFromMap(p.name));
       }
     }).addTo(state.map);
-
-    const pins = [];
-    geo.features.forEach(f => {
-      const p = f.properties;
-      const b = counts.get(p.name) || { total: 0 };
-      const meta = state.provinceMetaByName.get(p.name);
-      let lat = meta.centroid[0], lng = meta.centroid[1];
-      if (lng < 0) lng += 360;
-      const offset = PIN_OFFSETS[p.name];
-      if (offset) { lat += offset[0]; lng += offset[1]; }
-      const border = CONF_COLORS[p.confederacy];
-      const html = `
-        <div class="db-prov-pin" style="border-color:${border};">
-          <div class="db-prov-pin__name">${p.name}</div>
-          <div class="db-prov-pin__total" style="color:${border};">${b.total}</div>
-        </div>`;
-      const icon = L.divIcon({ className: 'db-prov-pin-wrap', html, iconSize: [72, 46], iconAnchor: [36, 46] });
-      const m = L.marker([lat, lng], { icon, riseOnHover: true });
-      m.bindPopup(makeProvincePopup(p, b, view), { maxWidth: 260, offset: [0, -38] });
-      m.on('click', () => setProvinceFilterFromMap(p.name, view));
-      pins.push(m);
-    });
-    state.provincePinsLayer = L.layerGroup(pins).addTo(state.map);
   }
 
-  function setProvinceFilterFromMap(name, view) {
-    if (view === 'paternal') {
-      state.filter.paternal = state.filter.paternal === name ? '' : name;
-      state.filter.province = '';
-    } else {
-      state.filter.province = state.filter.province === name ? '' : name;
-      state.filter.paternal = '';
-    }
+  function setProvinceFilterFromMap(name) {
+    state.filter.province = state.filter.province === name ? '' : name;
+    state.filter.paternal = '';
     state.shown = state.pageSize;
     afterFilterChange();
   }
 
-  function makeProvincePopup(p, b, view) {
-    const label = view === 'paternal' ? 'iTaukei 1st-author from' : 'Research on';
+  function makeProvincePopup(p, b) {
+    const viewLabel = state.mapView === 'lead'
+      ? 'iTaukei lead-authored'
+      : (state.mapView === 'coauth' ? 'Co-authored with iTaukei' : 'All publications on');
     const rows = [];
     const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.confederacy]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
     push(b.journalArticle,  'Journal Article' + (b.journalArticle === 1 ? '' : 's'));
@@ -445,54 +467,224 @@
     push(b.conferencePaper, 'Conference Paper' + (b.conferencePaper === 1 ? '' : 's'));
     push(b.report,          'Report' + (b.report === 1 ? '' : 's'));
     push(b.preprint,        'Preprint' + (b.preprint === 1 ? '' : 's'));
-    const rowsHtml = rows.length ? `<table style="border-collapse:collapse;margin-top:6px;">${rows.join('')}</table>` : '<p class="db-popup-meta" style="opacity:0.6;">No items yet</p>';
+    const rowsHtml = rows.length ? `<table style="border-collapse:collapse;margin-top:6px;">${rows.join('')}</table>` : '<p class="db-popup-meta" style="opacity:0.6;">No items in this view</p>';
     return `
       <div class="db-popup-title">${p.name} Province</div>
       <p class="db-popup-meta">${p.confederacy} Confederacy &middot; ${p.mainArea}</p>
-      <p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;">${b.total}</span> total publications</p>
-      <p class="db-popup-meta" style="font-size:0.75rem;font-style:italic;">${label} ${p.name}</p>
+      <p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;">${b.total}</span> ${viewLabel} ${p.name}</p>
       ${rowsHtml}
       <p class="db-popup-meta" style="margin-top:8px;font-size:0.78rem;color:#0e7490;">Click to filter items below ↓</p>
     `;
   }
 
-  function renderUniversitiesOnMap() {
-    if (state.universityLayer) state.map.removeLayer(state.universityLayer);
-    const unis = state.universities.universities;
-    const layers = unis.map(u => {
-      const r = 4 + 3 * Math.log2(u.thesisCount + 1);
-      const m = L.circleMarker([u.location[0], u.location[1]], {
-        radius: r, fillColor: '#062f35', color: '#ffffff', weight: 1.5, fillOpacity: 0.85
+  // ============ PANEL A — map + legend + confederacy tallies + sync ============
+  function renderPanelA() {
+    renderChoropleth();
+
+    const items = state.snapshot.items;
+    const provOfItem = state.provincesByItem;
+    // Confederacy tallies — sum of province-row totals within each confederacy,
+    // matching Panel D. Items linked to two provinces in the same confederacy count twice
+    // (once per province), same as the ranked-bar / small-multiples views.
+    const byConf = { Burebasaga: {total:0, itaukei:0}, Kubuna: {total:0, itaukei:0}, Tovata: {total:0, itaukei:0} };
+    const confByProv = new Map();
+    state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
+    items.forEach(it => {
+      const provs = provOfItem.get(it.key);
+      if (!provs || !provs.size) return;
+      const iTa = isItaukei(it);
+      provs.forEach(p => {
+        const c = confByProv.get(p);
+        if (c && byConf[c]) {
+          byConf[c].total += 1;
+          if (iTa) byConf[c].itaukei += 1;
+        }
       });
-      m.bindPopup(`
-        <div class="db-popup-title">${u.name}</div>
-        <p class="db-popup-meta">${u.city}, ${u.country}</p>
-        <p class="db-popup-meta"><span class="db-popup-count">${u.thesisCount}</span> ${u.thesisCount === 1 ? 'thesis' : 'theses'} by iTaukei scholar${u.thesisCount === 1 ? '' : 's'}</p>
-        <p class="db-popup-meta" style="margin-top:6px;">Click to filter items below</p>
-      `);
-      m.on('click', () => {
-        state.filter.university = state.filter.university === u.name ? '' : u.name;
+    });
+    Object.keys(byConf).forEach(name => {
+      const cell = document.querySelector(`[data-conf="${name}"]`);
+      if (cell) cell.innerHTML = `${byConf[name].total} <span style="color:var(--color-text-muted);font-weight:400;">|</span> <em>${byConf[name].itaukei}</em>`;
+    });
+
+    // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
+    let nonFiji = 0;
+    items.forEach(it => {
+      if (!isItaukei(it)) return;
+      const p = provOfItem.get(it.key);
+      if (!p || !p.size) nonFiji += 1;
+    });
+    const nfEl = $('[data-db-nonfiji]');
+    if (nfEl) nfEl.textContent = nonFiji;
+
+    // Sync inline
+    const inline = $('[data-db-sync-inline]');
+    if (inline && state.snapshot) {
+      const iso = state.snapshot.generatedAt;
+      const d = new Date(iso);
+      inline.textContent = `${relativeTime(iso)} · ${d.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}`;
+    }
+  }
+
+  // ============ PANEL B — ranked bar chart ============
+  function renderPanelB() {
+    const host = $('[data-db-bars]');
+    if (!host) return;
+    host.innerHTML = '';
+    const provs = state.provinces.features.map(f => f.properties);
+    const byProv = new Map();
+    provs.forEach(p => {
+      byProv.set(p.name, {
+        conf: p.confederacy,
+        total: 0,
+        types: {}
+      });
+    });
+    state.snapshot.items.forEach(it => {
+      if (!state.typeSet.has(it.itemType)) return;
+      const ps = state.provincesByItem.get(it.key);
+      if (!ps) return;
+      ps.forEach(name => {
+        const bucket = byProv.get(name);
+        if (bucket) {
+          bucket.total += 1;
+          bucket.types[it.itemType] = (bucket.types[it.itemType] || 0) + 1;
+        }
+      });
+    });
+    const rows = provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
+                       .sort((a,b) => b.total - a.total);
+    const maxTotal = Math.max(1, ...rows.map(r => r.total));
+    rows.forEach(r => {
+      const label = document.createElement('div');
+      label.className = 'db-bars__prov';
+      if (state.filter.province === r.name) label.classList.add('is-active');
+      label.title = `${r.conf} Confederacy`;
+      label.innerHTML = `<span>${r.name}</span><span class="db-bars__prov-dot" style="background:${CONF_COLORS[r.conf]};"></span>`;
+      label.addEventListener('click', () => {
+        state.filter.province = state.filter.province === r.name ? '' : r.name;
+        state.filter.paternal = '';
         state.shown = state.pageSize;
         afterFilterChange();
       });
-      return m;
+      host.appendChild(label);
+
+      const rowWrap = document.createElement('div');
+      const row = document.createElement('div');
+      row.className = 'db-bars__row';
+      row.style.width = `${(r.total / maxTotal) * 100}%`;
+      row.style.background = 'transparent';
+      row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
+      row.title = `${r.name} · ${r.total} items · ${r.conf}`;
+      TYPE_ORDER.forEach(t => {
+        const n = r.types[t] || 0;
+        if (n > 0) {
+          const seg = document.createElement('span');
+          seg.className = 'db-bars__seg';
+          seg.style.width = `${(n / r.total) * 100}%`;
+          seg.style.background = TYPE_COLOR[t];
+          seg.title = `${n} × ${TYPE_LABELS[t]}`;
+          row.appendChild(seg);
+        }
+      });
+      row.addEventListener('click', () => {
+        state.filter.province = state.filter.province === r.name ? '' : r.name;
+        state.filter.paternal = '';
+        state.shown = state.pageSize;
+        afterFilterChange();
+      });
+      rowWrap.appendChild(row);
+      host.appendChild(rowWrap);
+
+      const num = document.createElement('div');
+      num.className = 'db-bars__total';
+      num.textContent = r.total;
+      host.appendChild(num);
     });
-    state.universityLayer = L.layerGroup(layers);
   }
 
-  function applyMapView() {
-    if (!state.map) return;
-    if (state.view === 'universities') {
-      if (state.provinceLayer) state.map.removeLayer(state.provinceLayer);
-      if (state.provinceHaloLayer) state.map.removeLayer(state.provinceHaloLayer);
-      if (state.provincePinsLayer) state.map.removeLayer(state.provincePinsLayer);
-      state.universityLayer.addTo(state.map);
-      state.map.setView([15, 100], 2);
-    } else {
-      if (state.universityLayer) state.map.removeLayer(state.universityLayer);
-      renderProvincesOnMap();
-      state.map.setView([-17.7, 179.4], 7);
-    }
+  // ============ PANEL D — confederacy small multiples ============
+  function renderPanelD() {
+    const host = $('[data-db-conf-grid]');
+    if (!host) return;
+    host.innerHTML = '';
+    const confs = ['Burebasaga','Kubuna','Tovata'];
+    const provs = state.provinces.features.map(f => f.properties);
+    const perProvTotal = new Map();
+    provs.forEach(p => perProvTotal.set(p.name, 0));
+    state.snapshot.items.forEach(it => {
+      if (!state.typeSet.has(it.itemType)) return;
+      const ps = state.provincesByItem.get(it.key);
+      if (!ps) return;
+      ps.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
+    });
+    confs.forEach(cf => {
+      const provInCf = provs.filter(p => p.confederacy === cf)
+        .map(p => ({ name: p.name, total: perProvTotal.get(p.name) || 0 }))
+        .sort((a,b) => b.total - a.total);
+      const sub = provInCf.reduce((a,p) => a + p.total, 0);
+      const max = Math.max(1, ...provInCf.map(p => p.total));
+      const panel = document.createElement('div');
+      panel.className = 'db-conf-panel';
+      panel.innerHTML = `
+        <div class="db-conf-panel__head">
+          <p class="db-conf-panel__name">${cf}</p>
+          <p class="db-conf-panel__total">${sub}</p>
+        </div>
+        <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
+        <div class="db-conf-panel__provs"></div>
+        <p class="db-conf-panel__foot">${provInCf.length} provinces · ${sub} publications</p>
+      `;
+      const inner = panel.querySelector('.db-conf-panel__provs');
+      provInCf.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'db-conf-mini';
+        row.innerHTML = `
+          <span class="db-conf-mini__name" data-prov="${escapeAttr(p.name)}">${p.name}</span>
+          <span class="db-conf-mini__bar"><span class="db-conf-mini__fill" style="width:${(p.total/max)*100}%;background:${CONF_COLORS[cf]};"></span></span>
+          <span class="db-conf-mini__n">${p.total}</span>
+        `;
+        row.querySelector('.db-conf-mini__name').addEventListener('click', () => {
+          state.filter.province = state.filter.province === p.name ? '' : p.name;
+          state.filter.paternal = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+        inner.appendChild(row);
+      });
+      host.appendChild(panel);
+    });
+  }
+
+  // ============ Type-filter checkbox wiring ============
+  function wireTypeFilter() {
+    const host = $('[data-db-type-filter]');
+    if (!host) return;
+    const boxes = host.querySelectorAll('input[type="checkbox"]');
+    const syncChecked = () => {
+      state.typeSet = new Set(Array.from(boxes).filter(b => b.checked).map(b => b.value));
+      boxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
+      renderPanelB();
+      renderPanelD();
+      renderHistogram();
+    };
+    boxes.forEach(b => b.addEventListener('change', syncChecked));
+    const allBtn = host.querySelector('[data-db-type-all]');
+    const noneBtn = host.querySelector('[data-db-type-none]');
+    if (allBtn)  allBtn.addEventListener('click',  () => { boxes.forEach(b => b.checked = true);  syncChecked(); });
+    if (noneBtn) noneBtn.addEventListener('click', () => { boxes.forEach(b => b.checked = false); syncChecked(); });
+    syncChecked();
+  }
+
+  // ============ Panel C legend (item-type colour key) ============
+  function renderHistLegend() {
+    const host = $('[data-db-hist-legend]');
+    if (!host) return;
+    host.innerHTML = '';
+    TYPE_ORDER.forEach(t => {
+      const s = document.createElement('span');
+      s.innerHTML = `<i style="background:${TYPE_COLOR[t]};"></i> ${TYPE_LABELS[t]}`;
+      host.appendChild(s);
+    });
   }
 
   // ============ DISCIPLINE DONUT ============
@@ -509,6 +701,7 @@
     disciplineEntries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
     const total = disciplineEntries.reduce((a,[,n]) => a+n, 0);
     const svg = $('#db-donut');
+    if (!svg) return; // Donut removed from layout — populate dropdown only
     svg.innerHTML = '';
     const cx = 120, cy = 120, R = 100, r = 60;
     let a0 = -Math.PI/2;
@@ -557,6 +750,7 @@
     svg.appendChild(tt2);
 
     const leg = $('#db-donut-legend');
+    if (!leg) return;
     leg.innerHTML = '';
     disciplineEntries.forEach(([name, n], i) => {
       const row = el('div', {
@@ -584,16 +778,29 @@
     });
   }
 
-  // ============ YEAR HISTOGRAM ============
+  // ============ YEAR HISTOGRAM — filtered by typeSet ============
   function renderHistogram() {
     const items = state.snapshot.items;
     const byYear = new Map();
-    items.forEach(i => { if (i.year) byYear.set(i.year, (byYear.get(i.year)||0)+1); });
+    items.forEach(i => {
+      if (!i.year) return;
+      if (state.typeSet && !state.typeSet.has(i.itemType)) return;
+      byYear.set(i.year, (byYear.get(i.year)||0)+1);
+    });
     const years = Array.from(byYear.keys()).sort((a,b) => a-b);
-    if (!years.length) return;
-    const y0 = years[0], y1 = years[years.length-1];
     const svg = $('#db-histogram');
+    if (!svg) return;
     svg.innerHTML = '';
+    if (!years.length) {
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', 320); t.setAttribute('y', 110);
+      t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','DM Sans');
+      t.setAttribute('font-size','13'); t.setAttribute('fill','#6b7280');
+      t.textContent = 'No items match the current type selection.';
+      svg.appendChild(t);
+      return;
+    }
+    const y0 = years[0], y1 = years[years.length-1];
     const W = 640, H = 220, PAD = 30;
     const range = y1 - y0 + 1;
     const bw = (W - PAD*2) / range;
@@ -977,16 +1184,20 @@
     renderStats();
     renderDonut();
     populateDisciplineSelect();
+    renderHistLegend();
+    renderPanelB();
+    renderPanelD();
     renderHistogram();
     renderLeaders();
     wire();
+    wireTypeFilter();
     renderItems();
     renderFilterChips();
     updateClearAllButton();
 
-    // Init map once Leaflet has loaded
+    // Init map once Leaflet has loaded, then paint Panel A tallies + sync
     const initMapWhenReady = () => {
-      if (window.L) initMap();
+      if (window.L) { initMap(); renderPanelA(); }
       else setTimeout(initMapWhenReady, 100);
     };
     initMapWhenReady();
