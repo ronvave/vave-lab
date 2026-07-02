@@ -681,28 +681,54 @@
   function wireTypeFilter() {
     const host = $('[data-db-type-filter]');
     if (!host) return;
-    const boxes = host.querySelectorAll('input[type="checkbox"]');
+
+    // Count items per type in the current snapshot
+    const typeCounts = new Map();
+    state.snapshot.items.forEach(it => {
+      typeCounts.set(it.itemType, (typeCounts.get(it.itemType) || 0) + 1);
+    });
+
+    // Hide checkboxes for types with zero items and drop them from typeSet.
+    // The container uses flex-wrap, so surviving labels reflow to fill the row.
+    const boxes = Array.from(host.querySelectorAll('input[type="checkbox"]'));
+    const visibleBoxes = [];
+    boxes.forEach(b => {
+      const n = typeCounts.get(b.value) || 0;
+      const label = b.closest('label');
+      if (n === 0) {
+        if (label) label.style.display = 'none';
+        b.checked = false;
+        state.typeSet.delete(b.value);
+      } else {
+        visibleBoxes.push(b);
+      }
+    });
+
     const syncChecked = () => {
-      state.typeSet = new Set(Array.from(boxes).filter(b => b.checked).map(b => b.value));
-      boxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
+      state.typeSet = new Set(visibleBoxes.filter(b => b.checked).map(b => b.value));
+      visibleBoxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
       renderPanelB();
       renderPanelD();
       renderHistogram();
     };
-    boxes.forEach(b => b.addEventListener('change', syncChecked));
+    visibleBoxes.forEach(b => b.addEventListener('change', syncChecked));
     const allBtn = host.querySelector('[data-db-type-all]');
     const noneBtn = host.querySelector('[data-db-type-none]');
-    if (allBtn)  allBtn.addEventListener('click',  () => { boxes.forEach(b => b.checked = true);  syncChecked(); });
-    if (noneBtn) noneBtn.addEventListener('click', () => { boxes.forEach(b => b.checked = false); syncChecked(); });
+    if (allBtn)  allBtn.addEventListener('click',  () => { visibleBoxes.forEach(b => b.checked = true);  syncChecked(); });
+    if (noneBtn) noneBtn.addEventListener('click', () => { visibleBoxes.forEach(b => b.checked = false); syncChecked(); });
     syncChecked();
   }
 
   // ============ Panel C legend (item-type colour key) ============
+  // Skip types with zero items in the current snapshot so the legend stays clean.
   function renderHistLegend() {
     const host = $('[data-db-hist-legend]');
     if (!host) return;
+    const counts = new Map();
+    state.snapshot.items.forEach(it => counts.set(it.itemType, (counts.get(it.itemType) || 0) + 1));
     host.innerHTML = '';
     TYPE_ORDER.forEach(t => {
+      if ((counts.get(t) || 0) === 0) return;
       const s = document.createElement('span');
       s.innerHTML = `<i style="background:${TYPE_COLOR[t]};"></i> ${TYPE_LABELS[t]}`;
       host.appendChild(s);

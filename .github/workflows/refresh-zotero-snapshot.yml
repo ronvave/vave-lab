@@ -1,0 +1,134 @@
+name: Refresh iTaukei Zotero snapshot
+
+# Runs every 3 hours and any time you want to trigger manually from the
+# Actions tab. Regenerates data/itaukei-zotero-snapshot.json from the public
+# Zotero API, compares against the version in the repo, and commits + pushes
+# only if any critical total (total items, journalArticle, thesis, bookSection,
+# report, book, Burebasaga, Kubuna, Tovata, non-Fiji iTaukei) has shifted by
+# MORE than 2%. Small drift is ignored so we don't spam commits.
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # every 3 hours, UTC
+  workflow_dispatch:        # manual "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write            # required to push commits back to main
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Regenerate snapshot from Zotero API
+        run: |
+          python3 data/refresh-zotero-snapshot.py
+
+      - name: Compare vs previous snapshot & decide whether to commit
+        id: diff
+        run: |
+          python3 - <<'PY'
+          """
+          Diff the newly regenerated snapshot against the git-tracked version.
+          Emit `should_commit=true` only if any tracked total has moved by
+          more than 2%. Also print the delta table so the run log is useful.
+          """
+          import json, os, subprocess, sys
+
+          NEW_PATH = "data/itaukei-zotero-snapshot.json"
+
+          # 1. Load the freshly written snapshot (working tree)
+          with open(NEW_PATH, "r") as f:
+              new = json.load(f)
+
+          # 2. Load the previous version from git (HEAD)
+          try:
+              prev_raw = subprocess.check_output(
+                  ["git", "show", f"HEAD:{NEW_PATH}"], text=True
+              )
+              prev = json.loads(prev_raw)
+          except subprocess.CalledProcessError:
+              # No prior snapshot in git -- commit unconditionally
+              print("No previous snapshot in git; will commit.")
+              with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+                  f.write("should_commit=true\n")
+              sys.exit(0)
+
+          # 3. Load geo file to compute confederacy tallies
+          with open("data/fiji-provinces.geojson") as f:
+              geo = json.load(f)
+          prov_conf = {}
+          for feat in geo["features"]:
+              p = feat["properties"]
+              key = p.get("zoteroCollectionKey_publicationLocation")
+              if key:
+                  prov_conf[key] = p["confederacy"]
+
+          # Helper: compute the totals we care about from any snapshot
+          def totals(snap):
+              items = snap["items"]
+              out = {"items": len(items)}
+              # Item-type breakdown
+              from collections import Counter
+              tc = Counter(i.get("itemType", "?") for i in items)
+              for t in ("journalArticle", "thesis", "bookSection", "book", "report"):
+                  out[f"type:{t}"] = tc.get(t, 0)
+              # Confederacy totals (sum of province-row totals)
+              conf = {"Burebasaga": 0, "Kubuna": 0, "Tovata": 0}
+              for it in items:
+                  for k in it.get("collections", []):
+                      c = prov_conf.get(k)
+                      if c:
+                          conf[c] += 1
+              for c, n in conf.items():
+                  out[f"conf:{c}"] = n
+              return out
+
+          prev_t = totals(prev)
+          new_t  = totals(new)
+
+          # 4. Compare with a 2% threshold
+          THRESHOLD_PCT = 2.0
+          rows = []
+          should_commit = False
+          for key in sorted(set(prev_t) | set(new_t)):
+              a = prev_t.get(key, 0)
+              b = new_t.get(key, 0)
+              denom = max(1, a)  # avoid divide-by-zero
+              pct = abs(b - a) / denom * 100.0
+              flag = "*" if pct > THRESHOLD_PCT and b != a else " "
+              if flag == "*":
+                  should_commit = True
+              rows.append(f"  {flag} {key:20s}  prev={a:>4}  new={b:>4}  delta={b-a:+d}  ({pct:5.2f}%)")
+
+          print("=== Snapshot delta ===")
+          print("\n".join(rows))
+          print(f"=== Threshold: {THRESHOLD_PCT}% ===")
+          print(f"=== should_commit: {should_commit} ===")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"should_commit={'true' if should_commit else 'false'}\n")
+          PY
+
+      - name: Commit and push (only if a total shifted by more than 2%)
+        if: steps.diff.outputs.should_commit == 'true'
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/itaukei-zotero-snapshot.json
+          git commit -m "Auto-refresh Zotero snapshot ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
+
+          One or more tracked totals moved by >2% since the last snapshot.
+          Run: ${{ github.run_id }}"
+          git push origin HEAD:${{ github.ref_name }}
+
+      - name: Report no-op
+        if: steps.diff.outputs.should_commit != 'true'
+        run: echo "No significant change (all totals within 2%). No commit needed."
