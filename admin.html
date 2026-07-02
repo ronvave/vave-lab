@@ -201,6 +201,41 @@
     margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   }
 
+  /* ==== photo drop zone ==== */
+  .photo-row {
+    display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: stretch;
+  }
+  .photo-preview {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: #f1f5f9 center/cover no-repeat;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 0.7rem; text-align: center; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .photo-dz {
+    border: 2px dashed #cbd5e1; border-radius: 10px;
+    padding: 14px 16px; background: #f8fafc;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    min-height: 96px;
+  }
+  .photo-dz:hover { border-color: var(--teal); background: #f0fdfa; }
+  .photo-dz.is-dragover { border-color: var(--teal); background: #ccfbf1; }
+  .photo-dz .dz-title { font-weight: 600; color: var(--teal-dark); font-size: 0.9rem; }
+  .photo-dz .dz-sub { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+  .photo-actions {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .photo-actions button {
+    padding: 5px 10px; font-size: 0.78rem; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: #fff; color: var(--teal-dark); cursor: pointer;
+  }
+  .photo-actions button:hover { background: #f0fdfa; border-color: var(--teal); }
+  .photo-actions button.danger { color: #b91c1c; }
+  .photo-actions button.danger:hover { background: #fef2f2; border-color: #fca5a5; }
+
   /* ==== save output modal ==== */
   #save-output {
     background: #0f172a; color: #e5e7eb; font-family: ui-monospace, monospace;
@@ -380,9 +415,24 @@
           <input type="url" id="pf-scholar-url" placeholder="https://scholar.google.com/citations?user=…" />
         </div>
         <div class="full">
-          <label for="pf-photo">Profile photo URL</label>
-          <input type="url" id="pf-photo" placeholder="https://…/photo.jpg" />
-          <small>Direct image URL. Google Drive share links won't work — use a hosted image (ResearchGate profile pic, institution page, imgur, etc.). Direct upload to the repo is a future enhancement.</small>
+          <label>Profile photo</label>
+          <div class="photo-row">
+            <div class="photo-preview" id="pf-photo-preview" aria-label="Profile photo preview">no photo</div>
+            <div>
+              <div class="photo-dz" id="pf-photo-dz" tabindex="0" role="button" aria-label="Drop profile photo here or click to browse">
+                <div class="dz-title">Drag &amp; drop a photo here</div>
+                <div class="dz-sub">or click to browse — JPEG/PNG, auto-cropped to a 400×400 square</div>
+              </div>
+              <input type="file" id="pf-photo-file" accept="image/*" style="display:none;" />
+              <div class="photo-actions">
+                <button type="button" id="pf-photo-download" title="Download the resized photo so you can drop it into img/scholars/ in the repo">Download for repo</button>
+                <button type="button" id="pf-photo-url-toggle" title="Paste a hosted image URL instead">Paste URL instead</button>
+                <button type="button" class="danger" id="pf-photo-clear">Clear photo</button>
+              </div>
+            </div>
+          </div>
+          <input type="url" id="pf-photo" placeholder="https://…/photo.jpg  or  img/scholars/first-last.jpg" style="margin-top:10px; display:none;" />
+          <small>Drop an image or paste a URL. Dropped images are embedded as base64 in the exported JSON. Use “Download for repo” to save the resized file, drop it into <code>img/scholars/</code>, then commit — the exported JSON will reference that path automatically.</small>
         </div>
       </div>
       <div class="modal-actions">

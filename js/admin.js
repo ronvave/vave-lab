@@ -336,11 +336,159 @@
     $('#pf-institution-url').value = p.institutionUrl || '';
     $('#pf-scholar-url').value = p.googleScholarUrl || '';
     $('#pf-photo').value = p.photo || '';
+    setPhotoPreview(p.photo || '');
     $('#profile-modal').classList.add('is-visible');
+  }
+
+  // ==================== photo drop zone ====================
+  // Holds the most-recently dropped image (Blob) so "Download for repo" works
+  // even after the field has been overwritten with a repo path.
+  let lastDroppedBlob = null;
+
+  function setPhotoPreview(src) {
+    const el = $('#pf-photo-preview');
+    if (!el) return;
+    if (src && src.trim()) {
+      el.style.backgroundImage = `url(${JSON.stringify(src)})`;
+      el.textContent = '';
+    } else {
+      el.style.backgroundImage = '';
+      el.textContent = 'no photo';
+    }
+  }
+
+  // Resize an image file to a square JPEG (cover-cropped, centered)
+  function fileToSquareJpeg(file, size = 400, quality = 0.85) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('read failed'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('image load failed'));
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(0, 0, size, size);
+          const scale = Math.max(size / img.width, size / img.height);
+          const w = img.width * scale, h = img.height * scale;
+          ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+          canvas.toBlob(blob => {
+            if (!blob) return reject(new Error('encode failed'));
+            const r2 = new FileReader();
+            r2.onload = () => resolve({ dataUrl: r2.result, blob });
+            r2.onerror = () => reject(new Error('read encoded failed'));
+            r2.readAsDataURL(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handlePhotoFile(file) {
+    if (!file || !file.type.startsWith('image/')) {
+      toast('Please drop an image file (JPEG or PNG).');
+      return;
+    }
+    try {
+      const { dataUrl, blob } = await fileToSquareJpeg(file);
+      lastDroppedBlob = blob;
+      $('#pf-photo').value = dataUrl;
+      setPhotoPreview(dataUrl);
+      const kb = Math.round(blob.size / 1024);
+      toast(`Photo added (≈${kb} KB, 400 × 400 JPEG).`);
+    } catch (err) {
+      console.error(err);
+      toast('Couldn’t process that image.');
+    }
+  }
+
+  function wirePhotoDropzone() {
+    const dz = $('#pf-photo-dz');
+    const fileInput = $('#pf-photo-file');
+    const urlInput = $('#pf-photo');
+    if (!dz || !fileInput || !urlInput) return;
+
+    // Click / keyboard opens file picker
+    dz.addEventListener('click', () => fileInput.click());
+    dz.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); fileInput.click(); }
+    });
+
+    // File picker
+    fileInput.addEventListener('change', ev => {
+      const f = ev.target.files && ev.target.files[0];
+      if (f) handlePhotoFile(f);
+      fileInput.value = '';
+    });
+
+    // Drag & drop
+    ['dragenter', 'dragover'].forEach(evt => {
+      dz.addEventListener(evt, ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        dz.classList.add('is-dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(evt => {
+      dz.addEventListener(evt, ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        dz.classList.remove('is-dragover');
+      });
+    });
+    dz.addEventListener('drop', ev => {
+      const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+      if (f) handlePhotoFile(f);
+    });
+
+    // Manual URL toggle — reveals the hidden URL input for pasting
+    $('#pf-photo-url-toggle').addEventListener('click', () => {
+      const hidden = urlInput.style.display === 'none';
+      urlInput.style.display = hidden ? 'block' : 'none';
+      if (hidden) urlInput.focus();
+    });
+    urlInput.addEventListener('input', () => setPhotoPreview(urlInput.value.trim()));
+
+    // Clear
+    $('#pf-photo-clear').addEventListener('click', () => {
+      urlInput.value = '';
+      lastDroppedBlob = null;
+      setPhotoPreview('');
+      toast('Photo cleared.');
+    });
+
+    // Download for repo — saves the resized JPEG, then swaps the field to img/scholars/<slug>.jpg
+    $('#pf-photo-download').addEventListener('click', () => {
+      if (!lastDroppedBlob) {
+        toast('Drop or select a photo first.');
+        return;
+      }
+      if (!editingAuthor) return;
+      const [last, first] = editingAuthor.name.split(',').map(s => s.trim());
+      const existing = state.profilesByKey.get(editingAuthor.name) || {};
+      const slug = existing.slug || slugify(`${first}-${last}`);
+      const filename = `${slug}.jpg`;
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(lastDroppedBlob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
+      // Swap the stored value to the repo path so JSON stays lean once you commit the file
+      const repoPath = `img/scholars/${filename}`;
+      urlInput.value = repoPath;
+      toast(`Downloaded ${filename}. Field now points to ${repoPath} — add the file to img/scholars/ and commit.`);
+    });
   }
   function closeEdit() {
     $('#profile-modal').classList.remove('is-visible');
     editingAuthor = null;
+    lastDroppedBlob = null;
+    // Re-hide the URL fallback input for the next open
+    const urlInput = $('#pf-photo');
+    if (urlInput) urlInput.style.display = 'none';
   }
 
   function wireControls() {
@@ -378,6 +526,7 @@
     });
 
     // Profile modal
+    wirePhotoDropzone();
     $('#pf-cancel').addEventListener('click', closeEdit);
     $('#pf-clear').addEventListener('click', () => {
       if (!editingAuthor) return;
