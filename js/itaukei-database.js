@@ -109,17 +109,21 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
       fetchJson('data/fiji-provinces.json'),
       // Optional — enrichment file. Absence is fine (all cards will show placeholders).
-      fetchJson('data/scholar-profiles.json').catch(() => ({ scholars: [] }))
+      fetchJson('data/scholar-profiles.json').catch(() => ({ scholars: [] })),
+      // Optional — heartbeat written by the GitHub Actions refresh workflow.
+      // Absence is fine; badge falls back to snapshot.generatedAt.
+      fetchJson('data/last-sync.json').catch(() => null)
     ]);
     state.snapshot = snap;
     state.provinces = geo;
     state.universities = unis;
+    state.lastSync = sync;
 
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
@@ -415,19 +419,30 @@
     stats.querySelector('[data-stat="universities"]').textContent = state.universities.totalUniversities;
     stats.querySelector('[data-stat="countries"]').textContent = state.universities.totalCountries;
 
-    // Sync badge — set from snapshot generatedAt
-    const ago = relativeTime(snap.generatedAt);
-    const iso = new Date(snap.generatedAt).toISOString();
-    const daysOld = (Date.now() - new Date(snap.generatedAt).getTime()) / 86400000;
-    const status = daysOld > 45 ? 'stale' : 'ok';
+    // Sync badge — prefer the workflow heartbeat (advances every run) over the
+    // snapshot's generatedAt (only advances when data materially changes).
+    const sync = state.lastSync;
+    const checkedIso = (sync && sync.lastChecked) || snap.generatedAt;
+    const changedIso = (sync && sync.lastChanged) || snap.generatedAt;
+    const ago = relativeTime(checkedIso);
+    const daysOldChecked = (Date.now() - new Date(checkedIso).getTime()) / 86400000;
+    const status = daysOldChecked > 2 ? 'stale' : 'ok';
     setSyncBadge(status,
-      `Synced ${ago}`,
-      status === 'stale' ? 'Snapshot is over 45 days old — refresh pending' : ''
+      `Checked ${ago}`,
+      status === 'stale' ? 'Sync heartbeat is over 48h old — GitHub Action may be paused' : ''
     );
     const badge = $('[data-db-sync]');
-    if (badge) badge.setAttribute('title', `Snapshot generated ${iso}`);
+    if (badge) {
+      const tip = sync && sync.summary
+        ? `Last checked ${new Date(checkedIso).toISOString()} — ${sync.summary}`
+        : `Snapshot generated ${new Date(snap.generatedAt).toISOString()}`;
+      badge.setAttribute('title', tip);
+    }
 
-    $('[data-db-updated]').textContent = `Snapshot generated ${new Date(snap.generatedAt).toLocaleString()} · ${snap.items.length} items indexed`;
+    // Footer line: always show the data-change timestamp so it's clear when the numbers actually moved
+    const dataChangedAt = new Date(changedIso).toLocaleString();
+    $('[data-db-updated]').textContent =
+      `Sync checked ${new Date(checkedIso).toLocaleString()} · last data change ${dataChangedAt} · ${snap.items.length} items indexed`;
   }
 
   // ============ MAP ============
@@ -609,12 +624,23 @@
     const nfEl = $('[data-db-nonfiji]');
     if (nfEl) nfEl.textContent = nonFiji;
 
-    // Sync inline
+    // Sync inline — prefer the heartbeat timestamp so it advances every run
     const inline = $('[data-db-sync-inline]');
-    if (inline && state.snapshot) {
-      const iso = state.snapshot.generatedAt;
-      const d = new Date(iso);
-      inline.textContent = `${relativeTime(iso)} · ${d.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'})}`;
+    if (inline) {
+      const sync = state.lastSync;
+      const checked = sync && sync.lastChecked;
+      const changed = sync && sync.lastChanged;
+      const iso = checked || (state.snapshot && state.snapshot.generatedAt);
+      if (iso) {
+        const d = new Date(iso);
+        const dateStr = d.toLocaleDateString(undefined,{month:'short', day:'numeric', year:'numeric'});
+        let text = `${relativeTime(iso)} · ${dateStr}`;
+        if (changed && changed !== checked) {
+          text += ` · last data change ${relativeTime(changed)}`;
+        }
+        inline.textContent = text;
+        if (sync && sync.summary) inline.title = sync.summary;
+      }
     }
   }
 
