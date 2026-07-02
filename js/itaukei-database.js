@@ -897,26 +897,35 @@
     });
   }
 
-  // ============ SOURCE-TYPE HISTOGRAM (Panel C) — filtered by typeSet ============
-  // One bar per item type. Reflects the checkboxes in Panel B.
+  // ============ STACKED-BY-TYPE YEAR HISTOGRAM (Panel C) ============
+  // Bars per year, stacked bottom-up by item type. Reflects Panel B checkboxes.
   function renderHistogram() {
     const items = state.snapshot.items;
-    // Total items per type (all in the snapshot; we grey-out types not in typeSet)
-    const byType = new Map();
-    items.forEach(i => byType.set(i.itemType, (byType.get(i.itemType) || 0) + 1));
-    // Only include types that (a) exist in the data and (b) are currently enabled
-    const visible = TYPE_ORDER.filter(t => (byType.get(t) || 0) > 0 && state.typeSet.has(t));
 
-    // Keep the item-list decade dropdown populated (was a side effect of the old
-    // year histogram). Populate here from the item snapshot instead.
-    const yearsAll = items.map(i => i.year).filter(y => y);
+    // Aggregate: year -> { itemType: n } and keep list of years present in data
+    const perYear = new Map();
+    const yearsAll = [];
+    items.forEach(it => {
+      if (!it.year) return;
+      yearsAll.push(it.year);
+      if (!state.typeSet.has(it.itemType)) return;
+      let bucket = perYear.get(it.year);
+      if (!bucket) { bucket = {}; perYear.set(it.year, bucket); }
+      bucket[it.itemType] = (bucket[it.itemType] || 0) + 1;
+    });
+
+    // Keep decade dropdown populated for the item-list filter
     if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
 
     const svg = $('#db-source-histogram');
     if (!svg) return;
     svg.innerHTML = '';
 
-    if (!visible.length) {
+    // Which item types are enabled AND actually appear in the data
+    const typesInData = new Set(items.map(i => i.itemType));
+    const visibleTypes = TYPE_ORDER.filter(t => state.typeSet.has(t) && typesInData.has(t));
+
+    if (!visibleTypes.length || !perYear.size) {
       const t = document.createElementNS('http://www.w3.org/2000/svg','text');
       t.setAttribute('x', 450); t.setAttribute('y', 170);
       t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','DM Sans');
@@ -926,51 +935,134 @@
       return;
     }
 
+    // Layout constants
     const W = 900, H = 340;
-    const PAD_LEFT = 190, PAD_RIGHT = 90, PAD_TOP = 20, PAD_BOTTOM = 20;
-    const rowH = (H - PAD_TOP - PAD_BOTTOM) / visible.length;
-    const barH = Math.min(38, rowH - 12);
-    const maxN = Math.max(...visible.map(t => byType.get(t) || 0));
-    const scale = (W - PAD_LEFT - PAD_RIGHT) / maxN;
+    const PAD_LEFT = 44, PAD_RIGHT = 20, PAD_TOP = 44, PAD_BOTTOM = 46;
+    const plotW = W - PAD_LEFT - PAD_RIGHT;
+    const plotH = H - PAD_TOP - PAD_BOTTOM;
 
-    visible.forEach((t, i) => {
-      const n = byType.get(t) || 0;
-      const y = PAD_TOP + i * rowH + (rowH - barH) / 2;
-      // Row label
-      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-      label.setAttribute('x', PAD_LEFT - 12);
-      label.setAttribute('y', y + barH / 2 + 4);
-      label.setAttribute('text-anchor','end');
-      label.setAttribute('font-family','DM Sans');
-      label.setAttribute('font-size','14');
-      label.setAttribute('font-weight','600');
-      label.setAttribute('fill','#1a1a1a');
-      label.textContent = TYPE_LABELS[t] || t;
-      svg.appendChild(label);
-      // Bar
-      const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-      rect.setAttribute('x', PAD_LEFT);
-      rect.setAttribute('y', y);
-      rect.setAttribute('width', Math.max(2, n * scale));
-      rect.setAttribute('height', barH);
-      rect.setAttribute('fill', TYPE_COLOR[t]);
-      rect.setAttribute('rx', 3);
-      const ttl = document.createElementNS('http://www.w3.org/2000/svg','title');
-      ttl.textContent = `${TYPE_LABELS[t] || t} · ${n} publication${n===1?'':'s'}`;
-      rect.appendChild(ttl);
-      svg.appendChild(rect);
-      // Count label at bar end
-      const num = document.createElementNS('http://www.w3.org/2000/svg','text');
-      num.setAttribute('x', PAD_LEFT + n * scale + 10);
-      num.setAttribute('y', y + barH / 2 + 5);
-      num.setAttribute('text-anchor','start');
-      num.setAttribute('font-family','Cormorant Garamond, serif');
-      num.setAttribute('font-size','20');
-      num.setAttribute('font-weight','600');
-      num.setAttribute('fill','#062f35');
-      num.textContent = n;
-      svg.appendChild(num);
+    // Year range: earliest publication -> most recent
+    const yMin = Math.min(...yearsAll);
+    const yMax = Math.max(...yearsAll);
+    const yearCount = yMax - yMin + 1;
+    const bandW = plotW / yearCount;
+    const barW = Math.max(1.5, Math.min(14, bandW * 0.78));
+    const bandGap = (bandW - barW) / 2;
+
+    // Y scale: max stacked total in any single year (across enabled types)
+    let maxStack = 0;
+    perYear.forEach(b => {
+      const total = visibleTypes.reduce((a,t) => a + (b[t] || 0), 0);
+      if (total > maxStack) maxStack = total;
     });
+    if (maxStack === 0) maxStack = 1;
+    // Nice round tick above maxStack
+    const niceMax = Math.ceil(maxStack / 5) * 5;
+
+    const yScale = n => plotH * (n / niceMax);
+    const yZero = PAD_TOP + plotH; // bottom of plot
+
+    // Legend inside the SVG so the caption sits directly over the chart
+    const legendY = PAD_TOP - 26;
+    let legendX = PAD_LEFT;
+    visibleTypes.forEach(t => {
+      const sw = document.createElementNS('http://www.w3.org/2000/svg','rect');
+      sw.setAttribute('x', legendX);
+      sw.setAttribute('y', legendY);
+      sw.setAttribute('width', 12); sw.setAttribute('height', 12);
+      sw.setAttribute('rx', 2);
+      sw.setAttribute('fill', TYPE_COLOR[t]);
+      svg.appendChild(sw);
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lbl.setAttribute('x', legendX + 17);
+      lbl.setAttribute('y', legendY + 10);
+      lbl.setAttribute('font-family','DM Sans');
+      lbl.setAttribute('font-size','12');
+      lbl.setAttribute('fill','#1a1a1a');
+      lbl.textContent = TYPE_LABELS[t] || t;
+      svg.appendChild(lbl);
+      legendX += 17 + measureTextWidth(TYPE_LABELS[t] || t, 12) + 20;
+    });
+
+    // Gridlines + Y axis ticks (0, niceMax/2, niceMax)
+    const ticks = [0, niceMax / 2, niceMax];
+    ticks.forEach(v => {
+      const y = yZero - yScale(v);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', PAD_LEFT); line.setAttribute('x2', W - PAD_RIGHT);
+      line.setAttribute('y1', y);        line.setAttribute('y2', y);
+      line.setAttribute('stroke', '#d1d5db');
+      line.setAttribute('stroke-dasharray', v === 0 ? '0' : '2 3');
+      line.setAttribute('stroke-width', v === 0 ? '1' : '0.7');
+      svg.appendChild(line);
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', PAD_LEFT - 6);
+      label.setAttribute('y', y + 4);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('font-family','DM Sans');
+      label.setAttribute('font-size','10');
+      label.setAttribute('fill','#6b7280');
+      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
+      svg.appendChild(label);
+    });
+
+    // Stacked bars per year
+    for (let year = yMin; year <= yMax; year++) {
+      const bucket = perYear.get(year);
+      if (!bucket) continue;
+      const xLeft = PAD_LEFT + (year - yMin) * bandW + bandGap;
+      let stackTop = 0; // running total from bottom up
+      visibleTypes.forEach(t => {
+        const n = bucket[t] || 0;
+        if (n === 0) return;
+        const h = yScale(n);
+        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+        rect.setAttribute('x', xLeft);
+        rect.setAttribute('y', yZero - yScale(stackTop) - h);
+        rect.setAttribute('width', barW);
+        rect.setAttribute('height', h);
+        rect.setAttribute('fill', TYPE_COLOR[t]);
+        rect.style.cursor = 'pointer';
+        const total = visibleTypes.reduce((a,tt) => a + (bucket[tt] || 0), 0);
+        const parts = visibleTypes.filter(tt => (bucket[tt] || 0) > 0)
+          .map(tt => `${bucket[tt]} × ${TYPE_LABELS[tt] || tt}`).join(', ');
+        const ttl = document.createElementNS('http://www.w3.org/2000/svg','title');
+        ttl.textContent = `${year} · ${total} publication${total===1?'':'s'} (${parts})`;
+        rect.appendChild(ttl);
+        rect.addEventListener('click', () => {
+          state.filter.year = state.filter.year === year ? '' : year;
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+        svg.appendChild(rect);
+        stackTop += n;
+      });
+    }
+
+    // X-axis year labels every 10 years
+    for (let year = Math.ceil(yMin / 10) * 10; year <= yMax; year += 10) {
+      const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', x);
+      txt.setAttribute('y', H - PAD_BOTTOM + 20);
+      txt.setAttribute('text-anchor','middle');
+      txt.setAttribute('font-family','DM Sans');
+      txt.setAttribute('font-size','12');
+      txt.setAttribute('fill','#6b7280');
+      txt.textContent = year;
+      svg.appendChild(txt);
+      // Tick mark
+      const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
+      tick.setAttribute('x1', x); tick.setAttribute('x2', x);
+      tick.setAttribute('y1', yZero); tick.setAttribute('y2', yZero + 4);
+      tick.setAttribute('stroke', '#9ca3af');
+      svg.appendChild(tick);
+    }
+  }
+
+  // Rough text width for SVG legend layout (DM Sans 12px ≈ 6.4 char width)
+  function measureTextWidth(text, fontPx) {
+    return String(text).length * fontPx * 0.55;
   }
   function populateDecadeSelect(y0, y1) {
     const sel = $('[data-db-filter="decade"]');
