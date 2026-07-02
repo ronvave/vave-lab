@@ -134,30 +134,6 @@
     }
     .db-dashboard > .db-panel { width: 100%; }
 
-    /* Panel A — narrower map, generous legend column with larger, easier-to-read type */
-    .db-map-a-wrap { grid-template-columns: 1.15fr 1fr; }
-    @media (max-width: 640px) { .db-map-a-wrap { grid-template-columns: 1fr; } }
-    #db-map { height: 520px; }
-    .db-map-legend-panel {
-      font-size: 1rem;
-      padding: var(--space-4);
-      gap: var(--space-4);
-    }
-    .db-map-legend-panel h4 { font-size: 0.85rem; letter-spacing: 0.08em; }
-    .db-choro-scale { height: 16px; }
-    .db-choro-scale-labels { font-size: 0.85rem; margin-top: 5px; }
-    .db-conf-row {
-      font-size: 1.05rem;
-      grid-template-columns: 18px 1fr auto;
-      gap: 10px; padding: 6px 0;
-    }
-    .db-conf-row__sw { width: 18px; height: 18px; border-radius: 4px; }
-    .db-conf-row__nums { font-size: 1.05rem; }
-    .db-nonfiji { padding: 12px 14px; }
-    .db-nonfiji__num { font-size: 2.3rem; }
-    .db-nonfiji__label { font-size: 0.92rem; }
-    .db-sync-inline { font-size: 0.88rem; padding-top: 10px; }
-
     /* Panel B — label column wide enough that 'Nadroga/Navosa' fits without clipping */
     .db-bars { grid-template-columns: 200px 1fr 44px; row-gap: 7px; }
     .db-bars__row { height: 24px; }
@@ -247,12 +223,13 @@
       cursor: pointer; color: var(--color-primary); font-weight: 600;
     }
     .db-map-toggle button.is-active { background: var(--color-primary); color: #fff; }
+    /* Panel A layout — narrower map on the left, generous legend column on the right */
     .db-map-a-wrap {
-      display: grid; grid-template-columns: 1fr 220px; gap: var(--space-3);
+      display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--space-3);
       align-items: stretch;
     }
     @media (max-width: 640px) { .db-map-a-wrap { grid-template-columns: 1fr; } }
-    #db-map { height: 420px; width: 100%; border-radius: var(--radius-md); background: #d6ecf0; }
+    #db-map { height: 520px; width: 100%; border-radius: var(--radius-md); background: #d6ecf0; }
     .db-map-error {
       display: none;
       padding: var(--space-4); text-align: center; color: var(--color-text-muted);
@@ -261,44 +238,44 @@
     .db-map-legend-panel {
       background: var(--color-primary-highlight);
       border-radius: var(--radius-md);
-      padding: var(--space-3);
-      font-size: 0.8rem; color: var(--color-text);
-      display: flex; flex-direction: column; gap: var(--space-3);
+      padding: var(--space-4);
+      font-size: 1rem; color: var(--color-text);
+      display: flex; flex-direction: column; gap: var(--space-4);
     }
     .db-map-legend-panel h4 {
-      margin: 0 0 4px; font-size: 0.68rem; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted);
+      margin: 0 0 6px; font-size: 0.85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text-muted);
     }
-    .db-choro-scale { display: flex; height: 12px; border-radius: 3px; overflow: hidden; }
+    .db-choro-scale { display: flex; height: 16px; border-radius: 3px; overflow: hidden; }
     .db-choro-scale span { flex: 1; }
     .db-choro-scale-labels {
       display: flex; justify-content: space-between;
-      font-size: 0.7rem; color: var(--color-text-muted);
-      margin-top: 3px; font-variant-numeric: tabular-nums;
+      font-size: 0.85rem; color: var(--color-text-muted);
+      margin-top: 5px; font-variant-numeric: tabular-nums;
     }
     .db-conf-row {
-      display: grid; grid-template-columns: 12px 1fr auto; gap: 6px; align-items: center;
-      font-size: 0.78rem; padding: 3px 0;
+      display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center;
+      font-size: 1.05rem; padding: 6px 0;
     }
-    .db-conf-row__sw { width: 12px; height: 12px; border-radius: 3px; }
+    .db-conf-row__sw { width: 18px; height: 18px; border-radius: 4px; }
     .db-conf-row__name { color: var(--color-text); }
     .db-conf-row__nums {
       font-variant-numeric: tabular-nums; font-weight: 600;
-      font-size: 0.78rem; color: var(--color-text);
+      font-size: 1.05rem; color: var(--color-text);
     }
     .db-conf-row__nums em { font-style: normal; color: #3d5a35; font-weight: 700; }
     .db-nonfiji {
-      padding: 8px 10px;
+      padding: 12px 14px;
       background: rgba(61,90,53,0.08); border-radius: var(--radius-md);
-      font-size: 0.78rem;
+      font-size: 0.95rem;
     }
     .db-nonfiji__num {
-      font-family: var(--font-display); font-weight: 700; font-size: 1.4rem;
+      font-family: var(--font-display); font-weight: 700; font-size: 2.3rem;
       color: #3d5a35; line-height: 1; display: block;
     }
-    .db-nonfiji__label { color: var(--color-text-muted); font-size: 0.72rem; }
+    .db-nonfiji__label { color: var(--color-text-muted); font-size: 0.92rem; }
     .db-sync-inline {
-      font-size: 0.72rem; color: var(--color-text-muted); padding-top: 6px;
+      font-size: 0.88rem; color: var(--color-text-muted); padding-top: 10px;
       border-top: 1px dashed var(--color-border);
     }
     .db-sync-inline b { color: var(--color-text); font-weight: 600; }

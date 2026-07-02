@@ -508,15 +508,20 @@
     geo.features.forEach(f => {
       const p = f.properties;
       const key = p.zoteroCollectionKey_publicationLocation;
-      const bucket = { total: 0, journalArticle: 0, thesis: 0, bookSection: 0, book: 0, conferencePaper: 0, report: 0, preprint: 0, document: 0 };
+      const scholarSet = new Set();
+      const bucket = { total: 0, journalArticle: 0, thesis: 0, bookSection: 0, book: 0, conferencePaper: 0, report: 0, preprint: 0, document: 0, scholars: 0 };
       if (key) {
         items.forEach(it => {
           if ((it.collections || []).includes(key)) {
             bucket.total += 1;
             if (bucket[it.itemType] != null) bucket[it.itemType] += 1;
+            // Count unique iTaukei leaderboard scholars tied to this province
+            const scholarsForItem = state.scholarByItem.get(it.key);
+            if (scholarsForItem) scholarsForItem.forEach(s => scholarSet.add(s));
           }
         });
       }
+      bucket.scholars = scholarSet.size;
       result.set(p.name, bucket);
     });
     return result;
@@ -558,11 +563,36 @@
   }
 
   function setProvinceFilterFromMap(name) {
+    // Toggle behaviour used by polygon clicks
     state.filter.province = state.filter.province === name ? '' : name;
     state.filter.paternal = '';
     state.shown = state.pageSize;
     afterFilterChange();
   }
+
+  function filterAndScrollToProvince(name) {
+    // Always SETS (does not toggle) — used by the popup pill
+    state.filter.province = name;
+    state.filter.paternal = '';
+    state.shown = state.pageSize;
+    afterFilterChange();
+    const target = document.querySelector('.db-items');
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Delegated click handler for the "Filter items below" pill inside Leaflet popups.
+  // We register this once, globally, because Leaflet destroys and rebuilds popup
+  // DOM every time a popup opens, so listeners bound at popup-render time would leak.
+  document.addEventListener('click', ev => {
+    const link = ev.target && ev.target.closest && ev.target.closest('.db-popup-filter-link');
+    if (!link) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    const name = link.getAttribute('data-province');
+    if (!name) return;
+    if (state.map) state.map.closePopup();
+    filterAndScrollToProvince(name);
+  });
 
   function makeProvincePopup(p, b) {
     const viewLabel = state.mapView === 'lead'
@@ -570,20 +600,27 @@
       : (state.mapView === 'coauth' ? 'Co-authored with iTaukei' : 'All publications on');
     const rows = [];
     const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.confederacy]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
-    push(b.journalArticle,  'Journal Article' + (b.journalArticle === 1 ? '' : 's'));
-    push(b.thesis,          'Thesis' + (b.thesis === 1 ? '' : 'es'));
-    push(b.bookSection,     'Book Chapter' + (b.bookSection === 1 ? '' : 's'));
-    push(b.book,            'Book' + (b.book === 1 ? '' : 's'));
-    push(b.conferencePaper, 'Conference Paper' + (b.conferencePaper === 1 ? '' : 's'));
-    push(b.report,          'Report' + (b.report === 1 ? '' : 's'));
-    push(b.preprint,        'Preprint' + (b.preprint === 1 ? '' : 's'));
+    push(b.journalArticle,  b.journalArticle === 1 ? 'Journal Article' : 'Journal Articles');
+    push(b.thesis,          b.thesis === 1 ? 'Thesis' : 'Theses');
+    push(b.bookSection,     b.bookSection === 1 ? 'Book Chapter' : 'Book Chapters');
+    push(b.book,            b.book === 1 ? 'Book' : 'Books');
+    push(b.conferencePaper, b.conferencePaper === 1 ? 'Conference Paper' : 'Conference Papers');
+    push(b.report,          b.report === 1 ? 'Report' : 'Reports');
+    push(b.preprint,        b.preprint === 1 ? 'Preprint' : 'Preprints');
     const rowsHtml = rows.length ? `<table style="border-collapse:collapse;margin-top:6px;">${rows.join('')}</table>` : '<p class="db-popup-meta" style="opacity:0.6;">No items in this view</p>';
+    const scholarLine = b.scholars > 0
+      ? `<p class="db-popup-meta" style="margin-top:8px;padding-top:6px;border-top:1px dashed #cbd5e1;"><span style="font-weight:700;color:${CONF_COLORS[p.confederacy]};font-variant-numeric:tabular-nums;">${b.scholars}</span> iTaukei scholar${b.scholars === 1 ? '' : 's'} on this map</p>`
+      : '';
+    // The filter link needs data-province so a delegated click handler can
+    // pick it up — Leaflet re-renders popups on every open, so inline
+    // onclick / direct listeners on this node don't survive.
     return `
       <div class="db-popup-title">${p.name} Province</div>
       <p class="db-popup-meta">${p.confederacy} Confederacy &middot; ${p.mainArea}</p>
       <p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;">${b.total}</span> ${viewLabel} ${p.name}</p>
       ${rowsHtml}
-      <p class="db-popup-meta" style="margin-top:8px;font-size:0.78rem;color:#0e7490;">Click to filter items below ↓</p>
+      ${scholarLine}
+      <p style="margin:8px 0 0;"><a href="#" class="db-popup-filter-link" data-province="${p.name}" style="display:inline-block;font-size:0.82rem;color:#fff;background:#0e7490;padding:5px 10px;border-radius:999px;text-decoration:none;font-weight:600;">Filter items below ↓</a></p>
     `;
   }
 
