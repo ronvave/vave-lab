@@ -298,12 +298,15 @@
           <button class="btn ghost" id="reload-btn">Reload from source</button>
         </div>
       </h2>
-      <p class="subtitle">Public database reads scholar profiles from a Google Sheet published as CSV. Paste the CSV URL here — it's stored in your browser only, not committed to the repo.</p>
+      <p class="subtitle">Public database reads scholar profiles from a Google Sheet. Paste the sheet’s URL here — stored in your browser only, not committed to the repo.</p>
       <div class="config-row">
-        <label for="sheet-url">Google Sheet CSV URL</label>
-        <input type="url" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" />
+        <label for="sheet-url">Google Sheet URL</label>
+        <input type="url" id="sheet-url" placeholder="Paste any sheet URL — /pub?output=csv or a plain /edit link" />
         <button class="btn" id="sheet-save">Save URL</button>
       </div>
+      <p class="subtitle" style="margin-top:8px; font-size:0.82rem;">
+        <b>Sharing setup:</b> the plain “Anyone with the link — Viewer” setting is <i>not</i> enough &mdash; browsers get a sign-in redirect. Instead, open the sheet in Google &rsaquo; <b>File &rsaquo; Share &rsaquo; Publish to web</b> &rsaquo; choose <b>Comma-separated values (.csv)</b> &rsaquo; Publish, then paste that link. The document itself can stay private; “Publish to web” exposes a read-only CSV snapshot.
+      </p>
       <div class="config-row">
         <label>Local fallback</label>
         <input type="text" value="data/scholar-profiles.json" readonly />

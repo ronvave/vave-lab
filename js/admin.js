@@ -113,6 +113,42 @@
     render();
   }
 
+  // Accept any of the common Google Sheets URL shapes and return a URL that
+  // returns raw CSV to fetch():
+  //  - Published-to-web  https://docs.google.com/spreadsheets/d/e/<PUBID>/pub?output=csv  → pass through
+  //  - Published-to-web  https://docs.google.com/spreadsheets/d/e/<PUBID>/pubhtml         → replace pubhtml with pub?output=csv
+  //  - Edit link         https://docs.google.com/spreadsheets/d/<SHEETID>/edit?...        → /export?format=csv[&gid=]
+  //  - Anything else     → return as-is
+  function normalizeSheetUrl(url) {
+    const s = (url || '').trim();
+    if (!s) return s;
+    try {
+      const u = new URL(s);
+      // Published-to-web format already: keep as-is, but force output=csv
+      const pubMatch = u.pathname.match(/\/spreadsheets\/d\/e\/([^/]+)\/(pub|pubhtml)/);
+      if (pubMatch) {
+        u.pathname = `/spreadsheets/d/e/${pubMatch[1]}/pub`;
+        u.searchParams.set('output', 'csv');
+        return u.toString();
+      }
+      // Plain edit link → export?format=csv (preserves gid if present)
+      const editMatch = u.pathname.match(/\/spreadsheets\/d\/([^/]+)/);
+      if (editMatch) {
+        let gid = null;
+        if (u.hash) {
+          const m = u.hash.match(/gid=(\d+)/);
+          if (m) gid = m[1];
+        }
+        gid = gid || u.searchParams.get('gid');
+        const out = new URL(`https://docs.google.com/spreadsheets/d/${editMatch[1]}/export`);
+        out.searchParams.set('format', 'csv');
+        if (gid) out.searchParams.set('gid', gid);
+        return out.toString();
+      }
+    } catch (_) { /* not a URL — fall through */ }
+    return s;
+  }
+
   // ==================== data load ====================
   async function loadData() {
     const [snap, profilesJson] = await Promise.all([
@@ -126,12 +162,23 @@
     $('#sheet-url').value = sheetUrl || '';
     let sheetScholars = [];
     if (sheetUrl) {
+      const csvUrl = normalizeSheetUrl(sheetUrl);
       try {
-        const csv = await fetch(sheetUrl, { cache: 'no-cache' }).then(r => r.text());
+        const resp = await fetch(csvUrl, { cache: 'no-cache' });
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const csv = await resp.text();
+        // If Google redirected us to a sign-in page, the response is HTML, not CSV
+        if (/^\s*<(!doctype|html)/i.test(csv)) {
+          throw new Error('sheet is not publicly readable');
+        }
         sheetScholars = parseCsv(csv);
         toast(`Loaded ${sheetScholars.length} rows from Google Sheet.`);
       } catch (e) {
-        toast('Could not load Google Sheet CSV \u2014 using local fallback.', 'error');
+        console.warn('Sheet load failed:', e);
+        toast(
+          'Couldn\u2019t load Google Sheet CSV \u2014 using local fallback. Open the sheet in Google, then File \u203a Share \u203a "Publish to web" \u203a select "Comma-separated values (.csv)" \u203a Publish, and paste that /pub?output=csv link here. (Simple "Anyone with the link" viewer sharing is not enough for fetch \u2014 the sheet must be published.)',
+          'error'
+        );
       }
     }
 
