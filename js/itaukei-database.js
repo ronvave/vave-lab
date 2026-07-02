@@ -58,6 +58,8 @@
     universities: null,
     mapView: 'all',                      // 'all' | 'lead' | 'coauth'
     typeSet: new Set(TYPE_ORDER),        // which types are shown in panels B, C, D
+    // Panel C x-axis range — null means "use full data range" (default: All)
+    histRange: { start: null, end: null, preset: 'all' },
     filter: {
       q: '',
       itemType: '',
@@ -925,6 +927,7 @@
 
   // ============ STACKED-BY-TYPE YEAR HISTOGRAM (Panel C) ============
   // Bars per year, stacked bottom-up by item type. Reflects Panel B checkboxes.
+  // The x-axis window is controlled by state.histRange (start/end year).
   function renderHistogram() {
     const items = state.snapshot.items;
 
@@ -967,23 +970,48 @@
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
 
-    // Year range: earliest publication -> most recent
-    const yMin = Math.min(...yearsAll);
-    const yMax = Math.max(...yearsAll);
+    // Data range (full)
+    const dataMin = Math.min(...yearsAll);
+    const dataMax = Math.max(...yearsAll);
+
+    // Apply the user-selected window. Clamp to data range so out-of-band values are ignored.
+    let yMin = state.histRange.start != null ? state.histRange.start : dataMin;
+    let yMax = state.histRange.end   != null ? state.histRange.end   : dataMax;
+    if (yMin > yMax) [yMin, yMax] = [yMax, yMin];
+    yMin = Math.max(dataMin, Math.min(dataMax, yMin));
+    yMax = Math.max(dataMin, Math.min(dataMax, yMax));
+
+    // Sync the input boxes to the resolved range (in case caller passed nulls
+    // or preset changed the range).
+    const startEl = $('[data-hist-start]');
+    const endEl   = $('[data-hist-end]');
+    if (startEl) {
+      startEl.min = dataMin; startEl.max = dataMax;
+      if (document.activeElement !== startEl) startEl.value = yMin;
+    }
+    if (endEl) {
+      endEl.min = dataMin; endEl.max = dataMax;
+      if (document.activeElement !== endEl) endEl.value = yMax;
+    }
+
     const yearCount = yMax - yMin + 1;
+    // Bars widen or narrow to fill the plot width equally at all zoom levels.
     const bandW = plotW / yearCount;
-    const barW = Math.max(1.5, Math.min(14, bandW * 0.78));
+    const barW = Math.max(1.5, Math.min(40, bandW * 0.78));
     const bandGap = (bandW - barW) / 2;
 
-    // Y scale: max stacked total in any single year (across enabled types)
+    // Y scale: max stacked total in any single year WITHIN THE VISIBLE WINDOW.
+    // Recomputing here means the y-axis tightens automatically when the user
+    // zooms into a narrower time range.
     let maxStack = 0;
-    perYear.forEach(b => {
+    perYear.forEach((b, yr) => {
+      if (yr < yMin || yr > yMax) return;
       const total = visibleTypes.reduce((a,t) => a + (b[t] || 0), 0);
       if (total > maxStack) maxStack = total;
     });
     if (maxStack === 0) maxStack = 1;
     // Nice round tick above maxStack
-    const niceMax = Math.ceil(maxStack / 5) * 5;
+    const niceMax = niceCeil(maxStack);
 
     const yScale = n => plotH * (n / niceMax);
     const yZero = PAD_TOP + plotH; // bottom of plot
@@ -1032,7 +1060,7 @@
       svg.appendChild(label);
     });
 
-    // Stacked bars per year
+    // Stacked bars per year (only within the visible window)
     for (let year = yMin; year <= yMax; year++) {
       const bucket = perYear.get(year);
       if (!bucket) continue;
@@ -1065,8 +1093,15 @@
       });
     }
 
-    // X-axis year labels every 10 years
-    for (let year = Math.ceil(yMin / 10) * 10; year <= yMax; year += 10) {
+    // X-axis year labels — tick interval adapts to visible window
+    const span = yMax - yMin + 1;
+    let tickStep;
+    if (span <= 8)       tickStep = 1;
+    else if (span <= 20) tickStep = 2;
+    else if (span <= 40) tickStep = 5;
+    else                 tickStep = 10;
+    const firstTick = Math.ceil(yMin / tickStep) * tickStep;
+    for (let year = firstTick; year <= yMax; year += tickStep) {
       const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
       const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
       txt.setAttribute('x', x);
@@ -1084,11 +1119,85 @@
       tick.setAttribute('stroke', '#9ca3af');
       svg.appendChild(tick);
     }
+
+    // Reflect active preset button (if any) in the controls row
+    $$('[data-hist-presets] button').forEach(btn => {
+      btn.classList.toggle('is-active', btn.dataset.preset === state.histRange.preset);
+    });
   }
 
   // Rough text width for SVG legend layout (DM Sans 12px ≈ 6.4 char width)
   function measureTextWidth(text, fontPx) {
     return String(text).length * fontPx * 0.55;
+  }
+
+  // Pick a nice round upper bound for a Y axis (e.g. 47 -> 50, 173 -> 200)
+  function niceCeil(n) {
+    if (n <= 5)   return 5;
+    if (n <= 10)  return 10;
+    if (n <= 20)  return 20;
+    if (n <= 50)  return Math.ceil(n / 5) * 5;
+    if (n <= 100) return Math.ceil(n / 10) * 10;
+    return Math.ceil(n / 20) * 20;
+  }
+
+  // ============ Panel C x-axis range controls ============
+  function wireHistControls() {
+    const startEl = $('[data-hist-start]');
+    const endEl   = $('[data-hist-end]');
+    if (!startEl || !endEl) return;
+
+    // Data range for input clamping
+    const years = state.snapshot.items.map(i => i.year).filter(y => y);
+    const dataMin = years.length ? Math.min(...years) : new Date().getFullYear() - 10;
+    const dataMax = years.length ? Math.max(...years) : new Date().getFullYear();
+
+    startEl.min = dataMin; startEl.max = dataMax; startEl.value = dataMin;
+    endEl.min   = dataMin; endEl.max   = dataMax; endEl.value   = dataMax;
+
+    let debounce = null;
+    const applyFromInputs = () => {
+      const s = parseInt(startEl.value, 10);
+      const e = parseInt(endEl.value, 10);
+      if (isNaN(s) || isNaN(e)) return;
+      state.histRange.start = Math.max(dataMin, Math.min(dataMax, s));
+      state.histRange.end   = Math.max(dataMin, Math.min(dataMax, e));
+      state.histRange.preset = '';  // custom range
+      renderHistogram();
+    };
+    [startEl, endEl].forEach(el => {
+      el.addEventListener('input', () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(applyFromInputs, 200);
+      });
+      el.addEventListener('change', applyFromInputs);
+    });
+
+    // Preset chips (All / Last 25 / 10 / 5)
+    const currentYear = dataMax;
+    $$('[data-hist-presets] button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = btn.dataset.preset;
+        if (p === 'all') {
+          state.histRange = { start: null, end: null, preset: 'all' };
+        } else {
+          const yrs = parseInt(p, 10);
+          state.histRange = {
+            start: Math.max(dataMin, currentYear - yrs + 1),
+            end: currentYear,
+            preset: p
+          };
+        }
+        renderHistogram();
+      });
+    });
+
+    // Reset link
+    const resetBtn = $('[data-hist-reset]');
+    if (resetBtn) resetBtn.addEventListener('click', () => {
+      state.histRange = { start: null, end: null, preset: 'all' };
+      renderHistogram();
+    });
   }
   function populateDecadeSelect(y0, y1) {
     const sel = $('[data-db-filter="decade"]');
@@ -1594,6 +1703,7 @@
     renderLeaders();
     wire();
     wireTypeFilter();
+    wireHistControls();
     renderItems();
     renderFilterChips();
     updateClearAllButton();

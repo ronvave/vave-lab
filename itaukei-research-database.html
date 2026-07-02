@@ -150,8 +150,48 @@
     .db-bars__prov > span:first-child { overflow: visible; }
     .db-bars__total { font-size: 1.15rem; }
 
-    /* Panel C — source-type histogram */
-    #db-source-histogram { max-height: 340px; width: 100%; }
+    /* Panel C — stacked-by-type histogram */
+    #db-source-histogram { max-height: 340px; width: 100%; display: block; }
+    .db-hist-controls {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      margin: var(--space-2) 0 var(--space-3); padding-top: var(--space-2);
+      border-top: 1px dashed var(--color-border);
+      font-size: 0.82rem;
+    }
+    .db-hist-controls label {
+      display: inline-flex; align-items: center; gap: 6px;
+      color: var(--color-text-muted); font-weight: 600;
+    }
+    .db-hist-controls input[type="number"] {
+      width: 82px; padding: 5px 8px; font: inherit; font-size: 0.85rem;
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      background: var(--color-surface); color: var(--color-text);
+      font-variant-numeric: tabular-nums;
+    }
+    .db-hist-controls input[type="number"]:focus {
+      outline: 2px solid var(--color-primary); outline-offset: 1px; border-color: var(--color-primary);
+    }
+    .db-hist-controls .db-hist-presets {
+      display: inline-flex; gap: 4px; margin-left: var(--space-2);
+    }
+    .db-hist-controls .db-hist-presets button {
+      background: var(--color-primary-highlight); color: var(--color-primary);
+      border: 1px solid transparent; border-radius: 999px;
+      padding: 4px 10px; font: inherit; font-size: 0.75rem; font-weight: 600;
+      cursor: pointer;
+    }
+    .db-hist-controls .db-hist-presets button:hover {
+      background: var(--color-primary); color: #fff;
+    }
+    .db-hist-controls .db-hist-presets button.is-active {
+      background: var(--color-primary); color: #fff;
+    }
+    .db-hist-controls .db-hist-reset {
+      margin-left: auto; background: transparent; border: none;
+      color: var(--color-text-muted); font: inherit; font-size: 0.78rem;
+      cursor: pointer; padding: 4px 6px;
+    }
+    .db-hist-controls .db-hist-reset:hover { color: var(--color-primary); text-decoration: underline; }
     .db-panel {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -964,8 +1004,19 @@
       <div class="db-panel reveal" data-panel="C">
         <span class="db-panel__label">C</span>
         <h2 class="db-panel__title">Publications over time, by source type</h2>
-        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown for that year. Hover a segment for the exact split. Click to filter items below to that year. Reflects the item types enabled in panel B.</p>
+        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Reflects the item types enabled in panel B.</p>
         <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
+        <div class="db-hist-controls" data-db-hist-controls>
+          <label>From <input type="number" data-hist-start step="1" /></label>
+          <label>To <input type="number" data-hist-end step="1" /></label>
+          <span class="db-hist-presets" data-hist-presets>
+            <button type="button" data-preset="all">All</button>
+            <button type="button" data-preset="25">Last 25 yrs</button>
+            <button type="button" data-preset="10">Last 10 yrs</button>
+            <button type="button" data-preset="5">Last 5 yrs</button>
+          </span>
+          <button type="button" class="db-hist-reset" data-hist-reset>Reset</button>
+        </div>
       </div>
 
       <!-- Panel D — confederacy multiples -->
