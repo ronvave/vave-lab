@@ -125,14 +125,33 @@
     }
     @media (max-width: 720px) { .db-about-grid { grid-template-columns: 1fr; gap: var(--space-3); } }
 
-    /* ============ Where-the-research-is 2×2 dashboard ============ */
+    /* ============ Where-the-research-is dashboard — four stacked full-width panels ============ */
     .db-dashboard {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      display: flex;
+      flex-direction: column;
       gap: var(--space-4);
       margin-top: var(--space-6);
     }
-    @media (max-width: 960px) { .db-dashboard { grid-template-columns: 1fr; } }
+    .db-dashboard > .db-panel { width: 100%; }
+
+    /* Panel A — larger map with wider legend column */
+    .db-map-a-wrap { grid-template-columns: 1fr 300px; }
+    @media (max-width: 640px) { .db-map-a-wrap { grid-template-columns: 1fr; } }
+    #db-map { height: 560px; }
+    .db-map-legend-panel { font-size: 0.88rem; }
+    .db-map-legend-panel h4 { font-size: 0.72rem; }
+    .db-conf-row { font-size: 0.88rem; }
+    .db-nonfiji__num { font-size: 1.75rem; }
+
+    /* Panel B — label column wide enough that 'Nadroga/Navosa' fits without clipping */
+    .db-bars { grid-template-columns: 200px 1fr 44px; row-gap: 7px; }
+    .db-bars__row { height: 24px; }
+    .db-bars__prov { font-size: 0.92rem; white-space: nowrap; }
+    .db-bars__prov > span:first-child { overflow: visible; }
+    .db-bars__total { font-size: 1.15rem; }
+
+    /* Panel C — source-type histogram */
+    #db-source-histogram { max-height: 340px; width: 100%; }
     .db-panel {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -332,7 +351,7 @@
       font-size: 0.7rem; color: var(--color-text-muted);
     }
 
-    /* Leaderboard */
+    /* ============ Scholar cards (paginated) ============ */
     .db-leaderboard {
       background: var(--color-surface); border: 1px solid var(--color-border);
       border-radius: var(--radius-xl); padding: var(--space-5);
@@ -343,33 +362,123 @@
       font-family: var(--font-body); font-weight: 700; font-size: 1rem;
       text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted);
     }
-    .db-leader-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: var(--space-2);
+    .db-scholars-grid {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: var(--space-4); margin-top: var(--space-3);
     }
-    .db-leader {
-      display: flex; align-items: baseline; justify-content: space-between;
-      padding: 8px 12px; border-radius: var(--radius-md);
-      font-size: 0.9rem; cursor: pointer; background: var(--color-primary-highlight);
-      border: 1px solid transparent;
-      transition: transform .12s ease, box-shadow .12s ease;
-      font: inherit; text-align: left; width: 100%;
+    @media (max-width: 820px) { .db-scholars-grid { grid-template-columns: 1fr; } }
+    .db-scholar-card {
+      position: relative;
+      display: grid; grid-template-columns: 150px 1fr; gap: var(--space-3);
+      background: #E5D6BF;
+      border: 1px solid #C7B49A;
+      border-radius: var(--radius-lg);
+      padding: var(--space-3);
+      box-shadow: var(--shadow-sm);
+      transition: transform .15s ease, box-shadow .15s ease;
+      cursor: pointer;
+      overflow: hidden;
     }
-    .db-leader:hover {
-      background: var(--color-primary); color: #fff;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 10px rgba(6,47,53,0.15);
+    .db-scholar-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(6,47,53,0.12);
     }
-    .db-leader:hover .db-leader__name,
-    .db-leader:hover .db-leader__count { color: #fff; }
-    .db-leader.is-active { background: var(--color-primary); }
-    .db-leader.is-active .db-leader__name,
-    .db-leader.is-active .db-leader__count { color: #fff; }
-    .db-leader__name { color: var(--color-text); font-weight: 600; }
-    .db-leader__count {
-      font-family: var(--font-display); font-weight: 700;
-      color: var(--color-primary); margin-left: var(--space-2);
+    .db-scholar-card.is-active {
+      outline: 3px solid var(--color-primary);
+      outline-offset: -1px;
     }
+    .db-scholar-card__photo {
+      width: 150px; height: 180px;
+      background: #d9d9d9 center/cover no-repeat;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      color: #888;
+      overflow: hidden;
+    }
+    .db-scholar-card__photo svg { width: 90px; height: 110px; }
+    .db-scholar-card__body {
+      display: flex; flex-direction: column; gap: 4px; min-width: 0;
+    }
+    .db-scholar-card__row {
+      display: flex; gap: 6px; align-items: baseline; font-size: 0.95rem;
+      color: var(--color-text);
+    }
+    .db-scholar-card__key {
+      font-weight: 700;
+      font-style: italic;
+      color: #062f35;
+      font-family: 'DM Sans', serif;
+    }
+    .db-scholar-card__val {
+      font-style: italic;
+      color: #062f35;
+    }
+    .db-scholar-card__val--empty {
+      color: #888; font-style: italic; font-size: 0.85rem;
+    }
+    .db-scholar-card__institution {
+      font-weight: 700; font-style: italic;
+      color: #062f35;
+      margin: 4px 0 6px;
+      font-size: 0.98rem;
+      line-height: 1.25;
+    }
+    .db-scholar-card__institution a { color: inherit; text-decoration: none; }
+    .db-scholar-card__institution a:hover { text-decoration: underline; }
+    .db-scholar-card__totals {
+      font-size: 0.95rem;
+      color: #6b3e26;
+      font-weight: 600;
+      margin: 4px 0 2px;
+    }
+    .db-scholar-card__totals--num-total { color: #b23a48; }
+    .db-scholar-card__totals--num-first { color: #0e7490; }
+    .db-scholar-card__types {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 3px 12px;
+      font-size: 0.9rem; color: #6b3e26;
+      font-weight: 600;
+      margin-top: 3px;
+    }
+    .db-scholar-card__types span { display: flex; gap: 4px; }
+    .db-scholar-card__types em { font-style: normal; color: #062f35; }
+    .db-scholar-card__scholar {
+      position: absolute; top: 12px; right: 12px;
+      display: inline-flex; flex-direction: column; align-items: center;
+      gap: 2px;
+      text-decoration: none;
+      color: #4285f4;
+      font-size: 0.7rem; font-weight: 700;
+      line-height: 1;
+      opacity: 0.9;
+      transition: opacity .12s, transform .12s;
+    }
+    .db-scholar-card__scholar:hover { opacity: 1; transform: scale(1.06); }
+    .db-scholar-card__scholar img { width: 36px; height: 36px; }
+    .db-scholar-card__scholar span:first-child { margin-bottom: 2px; }
+    .db-scholar-card__scholar.is-missing {
+      opacity: 0.35; cursor: not-allowed; pointer-events: none;
+    }
+
+    /* Pagination controls */
+    .db-pager {
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px; margin-top: var(--space-4); flex-wrap: wrap;
+    }
+    .db-pager button {
+      background: transparent; border: 1px solid var(--color-border);
+      border-radius: var(--radius-md); padding: 5px 11px;
+      font: inherit; font-size: 0.85rem; font-weight: 600;
+      color: var(--color-text); cursor: pointer;
+      transition: background .12s, color .12s, border-color .12s;
+    }
+    .db-pager button:hover:not(:disabled) {
+      background: var(--color-primary-highlight); border-color: var(--color-primary); color: var(--color-primary);
+    }
+    .db-pager button.is-active {
+      background: var(--color-primary); color: #fff; border-color: var(--color-primary);
+    }
+    .db-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .db-pager__info { color: var(--color-text-muted); font-size: 0.82rem; margin: 0 8px; }
 
     /* Items — cards */
     .db-items {
@@ -786,7 +895,7 @@
     <div class="db-dashboard">
 
       <!-- Panel A — choropleth map -->
-      <div class="db-panel reveal">
+      <div class="db-panel reveal" data-panel="A">
         <span class="db-panel__label">A</span>
         <h2 class="db-panel__title">Where the research is</h2>
         <div class="db-map-toggle" role="tablist" aria-label="Map view">
@@ -831,7 +940,7 @@
       </div>
 
       <!-- Panel B — ranked bar chart -->
-      <div class="db-panel reveal">
+      <div class="db-panel reveal" data-panel="B">
         <span class="db-panel__label">B</span>
         <h2 class="db-panel__title">Publications on Fiji, by province</h2>
         <p class="db-panel__hint">Bars are colour-coded by item type. Dot beside each province shows confederacy. Click a bar to filter the item list below.</p>
@@ -851,29 +960,29 @@
         </div>
       </div>
 
-      <!-- Panel C — histogram -->
-      <div class="db-panel reveal">
+      <!-- Panel C — source-type histogram -->
+      <div class="db-panel reveal" data-panel="C">
         <span class="db-panel__label">C</span>
-        <h2 class="db-panel__title">Publications over time</h2>
-        <p class="db-panel__hint">Reflects the item types you’ve enabled in panel B. Click a bar to filter items below to that year.</p>
-        <div class="db-hist-legend" data-db-hist-legend></div>
-        <svg id="db-histogram" viewBox="0 0 640 220" width="100%" height="220" aria-label="Publications by year histogram"></svg>
+        <h2 class="db-panel__title">Publications by source type</h2>
+        <p class="db-panel__hint">Total records by item type across the whole database. Reflects the item types you have enabled in panel B.</p>
+        <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Publications by source type histogram"></svg>
       </div>
 
       <!-- Panel D — confederacy multiples -->
-      <div class="db-panel reveal">
+      <div class="db-panel reveal" data-panel="D">
         <span class="db-panel__label">D</span>
-        <h2 class="db-panel__title">By chiefly confederacy</h2>
+        <h2 class="db-panel__title">By confederacy</h2>
         <p class="db-panel__hint">Ranked within each confederacy. Reflects your item-type selection in panel B.</p>
         <div class="db-conf-grid" data-db-conf-grid></div>
       </div>
 
     </div>
 
-    <!-- Leaderboard -->
+    <!-- iTaukei scholars — paginated profile cards -->
     <div class="db-leaderboard reveal">
-      <h3>iTaukei scholars with 3+ papers <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--color-text-muted);font-size:0.75rem;">· click a scholar to see their papers</span></h3>
-      <div class="db-leader-grid" data-db-leaders>Loading…</div>
+      <h3>iTaukei scholars with 3+ papers <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--color-text-muted);font-size:0.75rem;">· click a card to see that scholar’s papers below</span></h3>
+      <div class="db-scholars-grid" data-db-leaders>Loading…</div>
+      <div class="db-pager" data-db-pager></div>
     </div>
 
     <!-- Items list -->

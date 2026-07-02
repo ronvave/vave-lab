@@ -109,15 +109,38 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
-      fetchJson('data/fiji-provinces.json')
+      fetchJson('data/fiji-provinces.json'),
+      // Optional — enrichment file. Absence is fine (all cards will show placeholders).
+      fetchJson('data/scholar-profiles.json').catch(() => ({ scholars: [] }))
     ]);
     state.snapshot = snap;
     state.provinces = geo;
     state.universities = unis;
+
+    // Build the scholar-name look-up. Starts with the local JSON snapshot, then
+    // overlays Google Sheet CSV if the admin has configured one (URL stored in
+    // localStorage under 'vavelab_scholar_sheet_url').
+    state.scholarProfilesByName = new Map();
+    (profiles.scholars || []).forEach(p => {
+      const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
+      if (name) state.scholarProfilesByName.set(name, p);
+    });
+    const sheetUrl = localStorage.getItem('vavelab_scholar_sheet_url');
+    if (sheetUrl) {
+      try {
+        const csvText = await fetch(sheetUrl, { cache: 'no-cache' }).then(r => r.text());
+        parseCsvToScholars(csvText).forEach(p => {
+          const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
+          if (name) state.scholarProfilesByName.set(name, Object.assign({}, state.scholarProfilesByName.get(name) || {}, p));
+        });
+      } catch (e) {
+        console.warn('Google Sheet CSV fetch failed; using local snapshot only.', e);
+      }
+    }
 
     state.provinceMetaByName = new Map();
     provFlat.provinces.forEach(p => state.provinceMetaByName.set(p.name, p));
@@ -239,6 +262,46 @@
     const r = await fetch(url, { cache: 'no-cache' });
     if (!r.ok) throw new Error(`Fetch failed: ${url} (${r.status})`);
     return r.json();
+  }
+
+  // Small CSV parser tuned to what the admin dashboard exports; matches the
+  // header row it writes so a paste from Google Sheets rehydrates cleanly.
+  function parseCsvToScholars(text) {
+    const rows = [];
+    let cur = '', row = [], inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i], next = text[i+1];
+      if (inQuotes) {
+        if (ch === '"' && next === '"') { cur += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else cur += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',') { row.push(cur); cur = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur); cur = '';
+          if (row.length && row.some(v => v !== '')) rows.push(row);
+          row = [];
+        } else cur += ch;
+      }
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    if (!rows.length) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (r[i] || '').trim(); });
+      // Nest types.* back into a types object for compatibility with local JSON
+      const types = {};
+      Object.keys(obj).forEach(k => {
+        if (k.startsWith('types.')) { types[k.slice(6)] = parseInt(obj[k], 10) || 0; delete obj[k]; }
+      });
+      obj.types = types;
+      obj.total = parseInt(obj.total, 10) || 0;
+      obj.firstAuthored = parseInt(obj.firstAuthored, 10) || 0;
+      return obj;
+    });
   }
 
   // Broad definition: item is "iTaukei-authored" if it belongs to any iTaukei
@@ -374,12 +437,17 @@
         center: [-17.6, 178.5],
         zoom: 7,
         minZoom: 6,
-        maxZoom: 10,
+        maxZoom: 12,
         zoomControl: true,
-        attributionControl: false,
+        attributionControl: true,
         scrollWheelZoom: false
       });
-      map.getContainer().style.background = '#d6ecf0';
+      // Esri World Imagery (attributed "Esri — Esri, Maxar, Earthstar Geographics,
+      // and the GIS User Community"). Sits under the choropleth polygons.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+        maxZoom: 18
+      }).addTo(map);
       state.map = map;
       renderChoropleth();
 
@@ -393,7 +461,10 @@
         });
       });
 
-      map.fitBounds([[-19.3, 176.8], [-16.0, 180.5]], { padding: [6, 6] });
+      // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
+      // three confederacies (Viti Levu + Vanua Levu + Lau) without wasting
+      // vertical whitespace above Vanua Levu or below Kadavu.
+      map.fitBounds([[-19.7, 176.4], [-15.6, 180.8]], { padding: [8, 8] });
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
@@ -826,69 +897,80 @@
     });
   }
 
-  // ============ YEAR HISTOGRAM — filtered by typeSet ============
+  // ============ SOURCE-TYPE HISTOGRAM (Panel C) — filtered by typeSet ============
+  // One bar per item type. Reflects the checkboxes in Panel B.
   function renderHistogram() {
     const items = state.snapshot.items;
-    const byYear = new Map();
-    items.forEach(i => {
-      if (!i.year) return;
-      if (state.typeSet && !state.typeSet.has(i.itemType)) return;
-      byYear.set(i.year, (byYear.get(i.year)||0)+1);
-    });
-    const years = Array.from(byYear.keys()).sort((a,b) => a-b);
-    const svg = $('#db-histogram');
+    // Total items per type (all in the snapshot; we grey-out types not in typeSet)
+    const byType = new Map();
+    items.forEach(i => byType.set(i.itemType, (byType.get(i.itemType) || 0) + 1));
+    // Only include types that (a) exist in the data and (b) are currently enabled
+    const visible = TYPE_ORDER.filter(t => (byType.get(t) || 0) > 0 && state.typeSet.has(t));
+
+    // Keep the item-list decade dropdown populated (was a side effect of the old
+    // year histogram). Populate here from the item snapshot instead.
+    const yearsAll = items.map(i => i.year).filter(y => y);
+    if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
+
+    const svg = $('#db-source-histogram');
     if (!svg) return;
     svg.innerHTML = '';
-    if (!years.length) {
+
+    if (!visible.length) {
       const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x', 320); t.setAttribute('y', 110);
+      t.setAttribute('x', 450); t.setAttribute('y', 170);
       t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','DM Sans');
-      t.setAttribute('font-size','13'); t.setAttribute('fill','#6b7280');
-      t.textContent = 'No items match the current type selection.';
+      t.setAttribute('font-size','15'); t.setAttribute('fill','#6b7280');
+      t.textContent = 'No item types selected — check at least one in panel B.';
       svg.appendChild(t);
       return;
     }
-    const y0 = years[0], y1 = years[years.length-1];
-    const W = 640, H = 220, PAD = 30;
-    const range = y1 - y0 + 1;
-    const bw = (W - PAD*2) / range;
-    const maxN = Math.max(...byYear.values());
-    for (let y = y0; y <= y1; y++) {
-      const n = byYear.get(y) || 0;
-      const h = n ? (H - PAD*2) * (n / maxN) : 0;
-      const x = PAD + (y - y0) * bw;
-      const isFocus = state.filter.year === y;
-      const decadeStart = state.filter.decade ? parseInt(state.filter.decade, 10) : null;
-      const inDecade = decadeStart != null && y >= decadeStart && y < decadeStart + 10;
+
+    const W = 900, H = 340;
+    const PAD_LEFT = 190, PAD_RIGHT = 90, PAD_TOP = 20, PAD_BOTTOM = 20;
+    const rowH = (H - PAD_TOP - PAD_BOTTOM) / visible.length;
+    const barH = Math.min(38, rowH - 12);
+    const maxN = Math.max(...visible.map(t => byType.get(t) || 0));
+    const scale = (W - PAD_LEFT - PAD_RIGHT) / maxN;
+
+    visible.forEach((t, i) => {
+      const n = byType.get(t) || 0;
+      const y = PAD_TOP + i * rowH + (rowH - barH) / 2;
+      // Row label
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', PAD_LEFT - 12);
+      label.setAttribute('y', y + barH / 2 + 4);
+      label.setAttribute('text-anchor','end');
+      label.setAttribute('font-family','DM Sans');
+      label.setAttribute('font-size','14');
+      label.setAttribute('font-weight','600');
+      label.setAttribute('fill','#1a1a1a');
+      label.textContent = TYPE_LABELS[t] || t;
+      svg.appendChild(label);
+      // Bar
       const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-      rect.setAttribute('x', x + 0.5);
-      rect.setAttribute('y', H - PAD - h);
-      rect.setAttribute('width', Math.max(1, bw - 1));
-      rect.setAttribute('height', h);
-      rect.setAttribute('fill', isFocus ? '#B23A48' : (inDecade ? '#c8a84b' : '#0e7490'));
-      rect.setAttribute('opacity', n ? '0.85' : '0');
-      rect.style.cursor = 'pointer';
-      rect.addEventListener('click', () => {
-        state.filter.year = state.filter.year === y ? '' : y;
-        state.shown = state.pageSize;
-        afterFilterChange();
-      });
-      const t = document.createElementNS('http://www.w3.org/2000/svg','title');
-      t.textContent = `${y} · ${n} publication${n===1?'':'s'}`;
-      rect.appendChild(t);
+      rect.setAttribute('x', PAD_LEFT);
+      rect.setAttribute('y', y);
+      rect.setAttribute('width', Math.max(2, n * scale));
+      rect.setAttribute('height', barH);
+      rect.setAttribute('fill', TYPE_COLOR[t]);
+      rect.setAttribute('rx', 3);
+      const ttl = document.createElementNS('http://www.w3.org/2000/svg','title');
+      ttl.textContent = `${TYPE_LABELS[t] || t} · ${n} publication${n===1?'':'s'}`;
+      rect.appendChild(ttl);
       svg.appendChild(rect);
-    }
-    for (let y = Math.ceil(y0/10)*10; y <= y1; y += 10) {
-      const x = PAD + (y - y0) * bw;
-      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-      txt.setAttribute('x', x); txt.setAttribute('y', H - PAD + 14);
-      txt.setAttribute('font-family','DM Sans'); txt.setAttribute('font-size','10');
-      txt.setAttribute('fill','#6b7280'); txt.setAttribute('text-anchor','middle');
-      txt.textContent = y;
-      svg.appendChild(txt);
-    }
-    // Populate decade dropdown once
-    populateDecadeSelect(y0, y1);
+      // Count label at bar end
+      const num = document.createElementNS('http://www.w3.org/2000/svg','text');
+      num.setAttribute('x', PAD_LEFT + n * scale + 10);
+      num.setAttribute('y', y + barH / 2 + 5);
+      num.setAttribute('text-anchor','start');
+      num.setAttribute('font-family','Cormorant Garamond, serif');
+      num.setAttribute('font-size','20');
+      num.setAttribute('font-weight','600');
+      num.setAttribute('fill','#062f35');
+      num.textContent = n;
+      svg.appendChild(num);
+    });
   }
   function populateDecadeSelect(y0, y1) {
     const sel = $('[data-db-filter="decade"]');
@@ -916,34 +998,189 @@
     if (state.filter.discipline) sel.value = state.filter.discipline;
   }
 
-  // ============ LEADERBOARD ============
+  // ============ SCHOLAR CARDS (paginated, image-4 style) ============
+  const SCHOLAR_PAGE_SIZE = 10;
+  state.scholarPage = 1;
+
+  // Placeholder silhouette shown when no photo is provided
+  const PHOTO_PLACEHOLDER_SVG = `
+    <svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="50" cy="40" r="22" fill="#b6bcc2"/>
+      <path d="M12 120 C 12 85, 88 85, 88 120 Z" fill="#b6bcc2"/>
+    </svg>`;
+
   function renderLeaders() {
+    const grid = $('[data-db-leaders]');
+    if (!grid) return;
+
+    // Build the sorted, enriched scholar list. Enrichment comes from
+    // data/scholar-profiles.json (loaded once during init). If a profile row is
+    // missing we still render the card using derived counts.
+    const derived = deriveScholarRows();
+    const enrichedByName = state.scholarProfilesByName || new Map();
+    const rows = derived
+      .map(r => Object.assign({}, r, enrichedByName.get(r.name) || {}))
+      .sort((a, b) => b.total - a.total);
+
+    // Pagination state (10 per page)
+    const totalPages = Math.max(1, Math.ceil(rows.length / SCHOLAR_PAGE_SIZE));
+    if (state.scholarPage > totalPages) state.scholarPage = totalPages;
+    const start = (state.scholarPage - 1) * SCHOLAR_PAGE_SIZE;
+    const pageRows = rows.slice(start, start + SCHOLAR_PAGE_SIZE);
+
+    grid.innerHTML = '';
+    pageRows.forEach(r => grid.appendChild(renderScholarCard(r)));
+    renderScholarPager(rows.length, totalPages);
+  }
+
+  // Derive scholar rows from the Zotero snapshot (independent of the enrichment JSON).
+  // Returns [{ name ("Last, First"), key, total, firstAuthored, types }]
+  function deriveScholarRows() {
     const cols = state.snapshot.collections;
     const root = cols.find(c => c.name === 'iTaukei authors (>3 papers)');
-    if (!root) return;
-    const authors = cols.filter(c => c.parent === root.key)
-      .map(c => ({ name: c.name, count: c.numItems, key: c.key }))
-      .sort((a,b) => b.count - a.count);
-    const grid = $('[data-db-leaders]');
-    grid.innerHTML = '';
-    authors.forEach(a => {
-      const active = state.filter.scholar === a.name;
-      const item = el('button', {
-        className: 'db-leader' + (active ? ' is-active' : ''),
-        type: 'button',
-        title: `Filter items to papers in ${a.name}'s bucket`,
-        onclick: () => {
-          state.filter.scholar = state.filter.scholar === a.name ? '' : a.name;
-          state.shown = state.pageSize;
-          afterFilterChange();
-          $('.db-items').scrollIntoView({behavior:'smooth', block:'start'});
+    if (!root) return [];
+    const subs = cols.filter(c => c.parent === root.key);
+    return subs.map(c => {
+      const last = c.name.split(',')[0].trim().toLowerCase();
+      const types = { journalArticle: 0, thesis: 0, bookSection: 0, book: 0, report: 0 };
+      let firstAuthored = 0;
+      state.snapshot.items.forEach(it => {
+        if (!(it.collections || []).includes(c.key)) return;
+        if (types[it.itemType] != null) types[it.itemType] += 1;
+        const creators = it.creators || [];
+        if (creators.length) {
+          const lastTok = (creators[0].includes(',') ? creators[0].split(',')[0].trim()
+                                                    : creators[0].trim().split(/\s+/).pop()).toLowerCase();
+          if (lastTok === last) firstAuthored += 1;
         }
-      },
-        el('span', { className: 'db-leader__name' }, a.name),
-        el('span', { className: 'db-leader__count' }, String(a.count))
-      );
-      grid.appendChild(item);
+      });
+      return { name: c.name, key: c.key, total: c.numItems, firstAuthored, types };
     });
+  }
+
+  function renderScholarCard(r) {
+    const active = state.filter.scholar === r.name;
+    const salutation = r.salutation || '';
+    const first = r.first || (r.name.includes(',') ? r.name.split(',')[1].trim() : '');
+    const last  = r.last  || (r.name.includes(',') ? r.name.split(',')[0].trim() : r.name);
+    const displayName = `${salutation ? salutation + ' ' : ''}${first} ${last}`.trim();
+    const village = r.village || '';
+    const paternal = r.paternalProvince || '';
+    const villageLine = (village || paternal)
+      ? `${village}${village && paternal ? ', ' : ''}${paternal ? paternal + ' Province' : ''}`
+      : '';
+    const institution = r.institution || '';
+    const t = r.types || {};
+
+    const card = document.createElement('article');
+    card.className = 'db-scholar-card' + (active ? ' is-active' : '');
+    card.title = `Click to filter items to ${r.name}’s papers`;
+    card.addEventListener('click', ev => {
+      // Ignore clicks on the Google Scholar link
+      if (ev.target.closest('.db-scholar-card__scholar')) return;
+      state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
+      state.shown = state.pageSize;
+      afterFilterChange();
+      $('.db-items').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+
+    // Photo
+    const photoBox = document.createElement('div');
+    photoBox.className = 'db-scholar-card__photo';
+    if (r.photo) photoBox.style.backgroundImage = `url('${escapeAttr(r.photo)}')`;
+    else photoBox.innerHTML = PHOTO_PLACEHOLDER_SVG;
+    card.appendChild(photoBox);
+
+    // Body
+    const body = document.createElement('div');
+    body.className = 'db-scholar-card__body';
+    body.innerHTML = `
+      <div class="db-scholar-card__row">
+        <span class="db-scholar-card__key">Name:</span>
+        <span class="db-scholar-card__val">${escapeHtml(displayName || (first + ' ' + last).trim())}</span>
+      </div>
+      <div class="db-scholar-card__row">
+        <span class="db-scholar-card__key">Village:</span>
+        <span class="${villageLine ? 'db-scholar-card__val' : 'db-scholar-card__val--empty'}">${villageLine ? escapeHtml(villageLine) : 'Village &amp; Province name'}</span>
+      </div>
+      <div class="db-scholar-card__institution">${institution
+          ? (r.institutionUrl
+              ? `<a href="${escapeAttr(r.institutionUrl)}" target="_blank" rel="noopener">${escapeHtml(institution)}</a>`
+              : escapeHtml(institution))
+          : '<span class="db-scholar-card__val--empty">Institution name</span>'}</div>
+      <div class="db-scholar-card__totals">
+        Total: <span class="db-scholar-card__totals--num-total">${r.total} Publication${r.total === 1 ? '' : 's'}</span> &nbsp;|&nbsp; <span class="db-scholar-card__totals--num-first">${r.firstAuthored} First authored</span>
+      </div>
+      <div class="db-scholar-card__types">
+        <span>Journal articles: <em>${t.journalArticle || 0}</em></span>
+        <span>Reports: <em>${t.report || 0}</em></span>
+        <span>Books: <em>${t.book || 0}</em></span>
+        <span>Book chapters: <em>${t.bookSection || 0}</em></span>
+      </div>
+    `;
+    card.appendChild(body);
+
+    // Google Scholar link (top right)
+    const scholarBtn = document.createElement('a');
+    scholarBtn.className = 'db-scholar-card__scholar' + (r.googleScholarUrl ? '' : ' is-missing');
+    scholarBtn.href = r.googleScholarUrl || '#';
+    if (r.googleScholarUrl) { scholarBtn.target = '_blank'; scholarBtn.rel = 'noopener'; }
+    scholarBtn.title = r.googleScholarUrl ? 'Open Google Scholar profile' : 'Google Scholar profile not yet linked';
+    scholarBtn.innerHTML = `<img src="img/icons/google-scholar.png" alt="Google Scholar" />`;
+    card.appendChild(scholarBtn);
+
+    return card;
+  }
+
+  function renderScholarPager(totalItems, totalPages) {
+    const pager = $('[data-db-pager]');
+    if (!pager) return;
+    pager.innerHTML = '';
+    if (totalPages <= 1) return;
+
+    const btn = (label, onClick, opts = {}) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = label;
+      if (opts.active) b.classList.add('is-active');
+      if (opts.disabled) b.disabled = true;
+      if (!opts.disabled) b.addEventListener('click', onClick);
+      return b;
+    };
+    const goto = n => {
+      state.scholarPage = Math.min(Math.max(1, n), totalPages);
+      renderLeaders();
+      $('.db-leaderboard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    pager.appendChild(btn('‹ Prev', () => goto(state.scholarPage - 1), { disabled: state.scholarPage === 1 }));
+
+    // Show a windowed page range: 1, current-1, current, current+1, totalPages
+    const seen = new Set();
+    const pages = [];
+    const add = n => { if (n >= 1 && n <= totalPages && !seen.has(n)) { seen.add(n); pages.push(n); } };
+    add(1);
+    for (let d = -1; d <= 1; d++) add(state.scholarPage + d);
+    add(totalPages);
+    pages.sort((a,b) => a - b);
+    let prev = 0;
+    pages.forEach(n => {
+      if (prev && n - prev > 1) {
+        const gap = document.createElement('span');
+        gap.textContent = '…';
+        gap.style.color = 'var(--color-text-muted)';
+        gap.style.padding = '0 4px';
+        pager.appendChild(gap);
+      }
+      pager.appendChild(btn(String(n), () => goto(n), { active: n === state.scholarPage }));
+      prev = n;
+    });
+
+    pager.appendChild(btn('Next ›', () => goto(state.scholarPage + 1), { disabled: state.scholarPage === totalPages }));
+    const info = document.createElement('span');
+    info.className = 'db-pager__info';
+    info.textContent = `${totalItems} scholars · page ${state.scholarPage} of ${totalPages}`;
+    pager.appendChild(info);
   }
 
   // ============ ITEMS FILTER + CARDS ============

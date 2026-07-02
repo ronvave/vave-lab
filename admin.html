@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Vave Lab · Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --teal: #0e7490;
+    --teal-dark: #062f35;
+    --coral: #b23a48;
+    --gold: #c8a84b;
+    --cream: #f9f6ee;
+    --border: #e2e0d4;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --success: #16a34a;
+    --warning: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--cream); color: var(--text); line-height: 1.5;
+  }
+  h1, h2, h3 { font-family: 'Cormorant Garamond', serif; font-weight: 500; margin: 0 0 8px; }
+  a { color: var(--teal); }
+
+  /* ==== login gate ==== */
+  #login {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  #login-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 16px;
+    padding: 40px; max-width: 420px; width: 100%;
+    box-shadow: 0 10px 40px rgba(6,47,53,0.10);
+  }
+  #login-card h1 { font-size: 1.8rem; color: var(--teal-dark); margin-bottom: 4px; }
+  #login-card .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+  #login-card label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--teal-dark); }
+  #login-card input[type="password"] {
+    width: 100%; padding: 11px 14px; font: inherit; font-size: 1rem;
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; background: #fff;
+  }
+  #login-card input[type="password"]:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  #login-card button {
+    width: 100%; padding: 12px; font: inherit; font-weight: 600; font-size: 1rem;
+    background: var(--teal-dark); color: #fff; border: none; border-radius: 8px; cursor: pointer;
+  }
+  #login-card button:hover { background: var(--teal); }
+  #login-error {
+    margin-top: 10px; padding: 8px 12px; background: #fef2f2; color: #991b1b;
+    border-radius: 6px; font-size: 0.85rem; display: none;
+  }
+  #login-error.is-visible { display: block; }
+
+  /* ==== dashboard shell ==== */
+  #dashboard { display: none; }
+  #dashboard.is-visible { display: block; }
+  header.top {
+    background: var(--teal-dark); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    position: sticky; top: 0; z-index: 50;
+  }
+  header.top h1 { color: #fff; font-size: 1.4rem; margin: 0; }
+  header.top .badge {
+    display: inline-block; background: var(--gold); color: var(--teal-dark);
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; margin-left: 12px; vertical-align: middle;
+  }
+  header.top nav a {
+    color: rgba(255,255,255,0.85); text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; margin-left: 20px;
+  }
+  header.top nav a:hover { color: #fff; }
+  header.top nav button {
+    background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 12px; border-radius: 6px; font: inherit; font-size: 0.85rem;
+    cursor: pointer; margin-left: 16px;
+  }
+  header.top nav button:hover { color: #fff; border-color: #fff; }
+
+  main.wrap { max-width: 1300px; margin: 0 auto; padding: 24px; }
+
+  /* ==== overview stats ==== */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+  }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+  }
+  .stat .num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; line-height: 1; color: var(--teal-dark); }
+  .stat .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px; }
+  .stat.alert .num { color: var(--warning); }
+
+  /* ==== panels ==== */
+  .panel {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(6,47,53,0.04);
+  }
+  .panel h2 {
+    color: var(--teal-dark); font-size: 1.4rem; margin: 0 0 4px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .panel .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+  .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  button.btn {
+    background: var(--teal); color: #fff; border: none; padding: 8px 14px;
+    border-radius: 6px; font: inherit; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button.btn:hover { background: var(--teal-dark); }
+  button.btn.ghost { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+  button.btn.ghost:hover { background: var(--teal); color: #fff; }
+  button.btn.danger { background: transparent; color: var(--coral); border: 1px solid var(--coral); }
+  button.btn.danger:hover { background: var(--coral); color: #fff; }
+
+  /* ==== data source config ==== */
+  .config-row {
+    display: grid; grid-template-columns: 200px 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px;
+  }
+  .config-row label { font-weight: 600; color: var(--teal-dark); font-size: 0.9rem; }
+  .config-row input[type="text"], .config-row input[type="url"] {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 0.9rem;
+  }
+  @media (max-width: 720px) { .config-row { grid-template-columns: 1fr; } }
+
+  /* ==== authors table ==== */
+  .filters {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .filters input[type="search"] {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; min-width: 260px;
+  }
+  .filters select {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; background: #fff;
+  }
+
+  table.authors {
+    width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  }
+  table.authors th, table.authors td {
+    padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.authors th {
+    background: #f5f2e8; color: var(--teal-dark);
+    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+    position: sticky; top: 0;
+  }
+  table.authors tr:hover { background: #fafafa; }
+  table.authors tr.is-new { background: rgba(217,119,6,0.06); }
+  table.authors tr.is-itaukei { background: rgba(14,116,144,0.04); }
+  table.authors tr.is-itaukei:hover { background: rgba(14,116,144,0.08); }
+  table.authors .name-col { font-weight: 600; }
+  table.authors .status-col { width: 90px; }
+  table.authors .count-col { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
+  table.authors .action-col { width: 90px; text-align: right; }
+  .flag {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .flag.new { background: rgba(217,119,6,0.12); color: #92400e; }
+  .flag.itaukei { background: rgba(14,116,144,0.12); color: var(--teal); }
+  .flag.filled { background: rgba(22,163,74,0.12); color: var(--success); }
+  .flag.pending { background: #f3f4f6; color: var(--muted); }
+
+  /* ==== profile form modal ==== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(6,47,53,0.55); z-index: 100;
+    display: none; align-items: flex-start; justify-content: center; padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.is-visible { display: flex; }
+  .modal {
+    background: #fff; border-radius: 12px; max-width: 680px; width: 100%;
+    padding: 28px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    max-height: calc(100vh - 80px); overflow-y: auto;
+  }
+  .modal h2 { color: var(--teal-dark); margin-bottom: 6px; }
+  .modal .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+  .form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-grid label { display: block; font-weight: 600; font-size: 0.82rem; color: var(--teal-dark); margin-bottom: 4px; }
+  .form-grid input, .form-grid select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; background: #fff;
+  }
+  .form-grid small { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 3px; }
+  .modal-actions {
+    margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+
+  /* ==== save output modal ==== */
+  #save-output {
+    background: #0f172a; color: #e5e7eb; font-family: ui-monospace, monospace;
+    font-size: 0.78rem; padding: 14px; border-radius: 8px; max-height: 260px; overflow: auto;
+    white-space: pre; margin-top: 10px;
+  }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--teal-dark); color: #fff;
+    padding: 12px 18px; border-radius: 8px; font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25); z-index: 200;
+    opacity: 0; transform: translateY(10px); transition: all 0.2s ease;
+  }
+  .toast.is-visible { opacity: 1; transform: translateY(0); }
+  .toast.error { background: var(--coral); }
+</style>
+</head>
+<body>
+
+<!-- ==== Login gate ==== -->
+<section id="login">
+  <div id="login-card">
+    <h1>Vave Lab · Admin</h1>
+    <p class="subtitle">Enter the admin password to continue.</p>
+    <form id="login-form" autocomplete="off">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" required autofocus />
+      <button type="submit">Sign in</button>
+      <div id="login-error">Wrong password. Try again.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ==== Dashboard ==== -->
+<div id="dashboard">
+  <header class="top">
+    <div>
+      <h1>Vave Lab · Admin Dashboard <span class="badge">iTaukei scholars</span></h1>
+    </div>
+    <nav>
+      <a href="itaukei-research-database.html" target="_blank" rel="noopener">Public database ↗</a>
+      <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener">Zotero library ↗</a>
+      <button id="logout">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+
+    <!-- Overview stats -->
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-total">—</div><div class="label">Total unique authors</div></div>
+      <div class="stat"><div class="num" id="stat-itaukei">—</div><div class="label">Marked as iTaukei</div></div>
+      <div class="stat"><div class="num" id="stat-enriched">—</div><div class="label">Profiles filled in</div></div>
+      <div class="stat alert"><div class="num" id="stat-new">—</div><div class="label">New authors to triage</div></div>
+    </div>
+
+    <!-- Data source config -->
+    <div class="panel">
+      <h2>Data source
+        <div class="panel-actions">
+          <button class="btn ghost" id="reload-btn">Reload from source</button>
+        </div>
+      </h2>
+      <p class="subtitle">Public database reads scholar profiles from a Google Sheet published as CSV. Paste the CSV URL here — it's stored in your browser only, not committed to the repo.</p>
+      <div class="config-row">
+        <label for="sheet-url">Google Sheet CSV URL</label>
+        <input type="url" id="sheet-url" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv" />
+        <button class="btn" id="sheet-save">Save URL</button>
+      </div>
+      <div class="config-row">
+        <label>Local fallback</label>
+        <input type="text" value="data/scholar-profiles.json" readonly />
+        <span style="color:var(--muted);font-size:0.82rem;">Used until you set a sheet URL</span>
+      </div>
+    </div>
+
+    <!-- Authors panel -->
+    <div class="panel">
+      <h2>Authors extracted from Zotero
+        <div class="panel-actions">
+          <button class="btn ghost" id="export-csv">Copy all as CSV</button>
+          <button class="btn ghost" id="export-json">Copy all as JSON</button>
+        </div>
+      </h2>
+      <p class="subtitle">Every unique author across the 531 publications, ranked by publication count. Toggle "iTaukei" per person; only iTaukei rows are editable and included in your Google Sheet.</p>
+
+      <div class="filters">
+        <input type="search" id="filter-search" placeholder="Search author name…" />
+        <select id="filter-status">
+          <option value="all">All authors</option>
+          <option value="itaukei">iTaukei only</option>
+          <option value="new">New (needs triage)</option>
+          <option value="enriched">Profile filled in</option>
+          <option value="pending">iTaukei · profile blank</option>
+        </select>
+        <span id="filter-count" style="color:var(--muted);font-size:0.85rem;margin-left:auto;"></span>
+      </div>
+
+      <div style="max-height: 640px; overflow-y: auto; border-top: 1px solid var(--border);">
+        <table class="authors">
+          <thead>
+            <tr>
+              <th class="name-col">Author</th>
+              <th class="count-col">Total</th>
+              <th class="count-col">First</th>
+              <th class="status-col">iTaukei</th>
+              <th class="status-col">Status</th>
+              <th class="action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="authors-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="panel">
+      <h2>How to sync your profile changes to the public site</h2>
+      <ol style="color:var(--muted); font-size:0.9rem; padding-left:20px;">
+        <li><strong>Set up your Google Sheet</strong> — Create a sheet with columns matching the CSV export below (name, slug, salutation, village, paternalProvince, institution, institutionUrl, googleScholarUrl, photo).</li>
+        <li><strong>Fill in a scholar's profile</strong> here using the "Edit" button next to each iTaukei author.</li>
+        <li><strong>Copy the CSV or JSON</strong> using the buttons above, then paste into your Google Sheet (or into <code>data/scholar-profiles.json</code> for the local fallback).</li>
+        <li><strong>Publish the sheet as CSV</strong> (File → Share → Publish to web → CSV format) and paste that URL in the Data source section above.</li>
+        <li>The public page fetches the sheet on every visit, so changes propagate immediately.</li>
+      </ol>
+    </div>
+  </main>
+</div>
+
+<!-- ==== Profile edit modal ==== -->
+<div class="modal-backdrop" id="profile-modal">
+  <div class="modal">
+    <h2 id="profile-modal-title">Edit scholar profile</h2>
+    <p class="subtitle" id="profile-modal-subtitle"></p>
+    <form id="profile-form" autocomplete="off">
+      <div class="form-grid">
+        <div>
+          <label for="pf-salutation">Salutation</label>
+          <select id="pf-salutation">
+            <option value="">(none)</option>
+            <option>Dr.</option>
+            <option>Prof.</option>
+            <option>Mr.</option>
+            <option>Mrs.</option>
+            <option>Ms.</option>
+          </select>
+        </div>
+        <div>
+          <label for="pf-village">Village</label>
+          <input type="text" id="pf-village" placeholder="e.g. Tubou" />
+        </div>
+        <div>
+          <label for="pf-paternal-province">Paternal Province</label>
+          <select id="pf-paternal-province">
+            <option value="">(select)</option>
+            <optgroup label="Burebasaga">
+              <option>Kadavu</option><option>Nadroga/Navosa</option><option>Namosi</option><option>Rewa</option><option>Serua</option>
+            </optgroup>
+            <optgroup label="Kubuna">
+              <option>Ba</option><option>Lomaiviti</option><option>Naitasiri</option><option>Ra</option><option>Tailevu</option>
+            </optgroup>
+            <optgroup label="Tovata">
+              <option>Bua</option><option>Cakaudrove</option><option>Lau</option><option>Macuata</option>
+            </optgroup>
+          </select>
+          <small>Confederacy is derived automatically.</small>
+        </div>
+        <div class="full">
+          <label for="pf-institution">Institution name</label>
+          <input type="text" id="pf-institution" placeholder="e.g. University of Tasmania, Australia" />
+        </div>
+        <div class="full">
+          <label for="pf-institution-url">Institution / faculty profile URL</label>
+          <input type="url" id="pf-institution-url" placeholder="https://…" />
+        </div>
+        <div class="full">
+          <label for="pf-scholar-url">Google Scholar profile URL</label>
+          <input type="url" id="pf-scholar-url" placeholder="https://scholar.google.com/citations?user=…" />
+        </div>
+        <div class="full">
+          <label for="pf-photo">Profile photo URL</label>
+          <input type="url" id="pf-photo" placeholder="https://…/photo.jpg" />
+          <small>Direct image URL. Google Drive share links won't work — use a hosted image (ResearchGate profile pic, institution page, imgur, etc.). Direct upload to the repo is a future enhancement.</small>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="pf-cancel">Cancel</button>
+        <div>
+          <button type="button" class="btn ghost" id="pf-clear">Clear iTaukei flag</button>
+          <button type="submit" class="btn">Save changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==== Copy-output modal ==== -->
+<div class="modal-backdrop" id="output-modal">
+  <div class="modal">
+    <h2 id="output-modal-title">Copy this data to your Google Sheet</h2>
+    <p class="subtitle" id="output-modal-subtitle">Ctrl / Cmd + A to select all, then Ctrl / Cmd + C to copy.</p>
+    <textarea id="save-output" readonly style="width:100%;min-height:260px;background:#0f172a;color:#e5e7eb;font-family:ui-monospace,monospace;font-size:0.8rem;padding:14px;border-radius:8px;border:none;"></textarea>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="output-copy">Copy to clipboard</button>
+      <button type="button" class="btn ghost" id="output-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==== Toast ==== -->
+<div class="toast" id="toast"></div>
+
+<script src="js/admin.js" defer></script>
+</body>
+</html>

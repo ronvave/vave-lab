@@ -1,0 +1,432 @@
+/*
+ * Vave Lab Admin Dashboard
+ *
+ * Client-side admin surface that reads:
+ *   - data/itaukei-zotero-snapshot.json   (all authors extracted from Zotero)
+ *   - data/scholar-profiles.json          (existing iTaukei enrichment)
+ *   - optional: Google Sheet CSV URL     (persisted in localStorage)
+ *
+ * Provides:
+ *   - Password gate (SHA-256 hash of the admin password)
+ *   - Author list ranked by publication count with iTaukei toggle
+ *   - Profile edit form for iTaukei authors
+ *   - CSV / JSON export (paste into Google Sheet or data/scholar-profiles.json)
+ *   - Highlights authors that appear in Zotero but not yet in the profile file
+ *
+ * No secrets in the browser: writes are copy-paste; the password hash below is
+ * not a secret (it's a client-side deterrent, not a security boundary).
+ */
+(function () {
+  'use strict';
+
+  // SHA-256 of the admin password. Change here + in memory to update.
+  const PASSWORD_HASH = '801e61f51a774fc3b896ec5b4ae80d2bea4972145678a144598766ccc57cee54';
+  const SESSION_KEY = 'vavelab_admin_session';
+  const SHEET_URL_KEY = 'vavelab_scholar_sheet_url';
+
+  const CONFEDERACY_BY_PROVINCE = {
+    'Burebasaga': ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
+    'Kubuna':     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
+    'Tovata':     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
+  };
+  function confederacyOf(prov) {
+    for (const [conf, list] of Object.entries(CONFEDERACY_BY_PROVINCE)) {
+      if (list.includes(prov)) return conf;
+    }
+    return '';
+  }
+
+  const state = {
+    snapshot: null,
+    profilesByKey: new Map(),  // key = "Last, First"
+    authors: [],               // all unique authors (sorted by total desc)
+    filter: { q: '', status: 'all' }
+  };
+
+  // ==================== helpers ====================
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  function toast(msg, type) {
+    const t = $('#toast');
+    t.textContent = msg;
+    t.classList.toggle('error', type === 'error');
+    t.classList.add('is-visible');
+    clearTimeout(t._to);
+    t._to = setTimeout(() => t.classList.remove('is-visible'), 2500);
+  }
+
+  function slugify(fullname) {
+    return fullname.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  }
+
+  // Convert Zotero creator string to canonical "Last, First"
+  function canonicalName(creator) {
+    if (!creator) return null;
+    if (creator.includes(',')) return creator.trim();
+    const parts = creator.trim().split(/\s+/);
+    if (parts.length < 2) return null;
+    const last = parts[parts.length - 1];
+    const first = parts.slice(0, -1).join(' ');
+    return `${last}, ${first}`;
+  }
+  function surnameOf(creator) {
+    if (!creator) return '';
+    const name = creator.trim();
+    if (name.includes(',')) return name.split(',')[0].trim().toLowerCase();
+    return name.split(/\s+/).pop().toLowerCase();
+  }
+
+  // ==================== login flow ====================
+  document.addEventListener('DOMContentLoaded', () => {
+    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+      showDashboard();
+    }
+    $('#login-form').addEventListener('submit', async ev => {
+      ev.preventDefault();
+      const pw = $('#pw').value;
+      const hash = await sha256(pw);
+      if (hash === PASSWORD_HASH) {
+        sessionStorage.setItem(SESSION_KEY, '1');
+        showDashboard();
+      } else {
+        $('#login-error').classList.add('is-visible');
+        $('#pw').value = '';
+      }
+    });
+    $('#logout').addEventListener('click', () => {
+      sessionStorage.removeItem(SESSION_KEY);
+      location.reload();
+    });
+  });
+
+  async function showDashboard() {
+    $('#login').style.display = 'none';
+    $('#dashboard').classList.add('is-visible');
+    await loadData();
+    wireControls();
+    render();
+  }
+
+  // ==================== data load ====================
+  async function loadData() {
+    const [snap, profilesJson] = await Promise.all([
+      fetch('data/itaukei-zotero-snapshot.json', { cache: 'no-cache' }).then(r => r.json()),
+      fetch('data/scholar-profiles.json', { cache: 'no-cache' }).then(r => r.json()).catch(() => ({ scholars: [] }))
+    ]);
+    state.snapshot = snap;
+
+    // Try to enrich from Google Sheet CSV if user has configured it
+    const sheetUrl = localStorage.getItem(SHEET_URL_KEY);
+    $('#sheet-url').value = sheetUrl || '';
+    let sheetScholars = [];
+    if (sheetUrl) {
+      try {
+        const csv = await fetch(sheetUrl, { cache: 'no-cache' }).then(r => r.text());
+        sheetScholars = parseCsv(csv);
+        toast(`Loaded ${sheetScholars.length} rows from Google Sheet.`);
+      } catch (e) {
+        toast('Could not load Google Sheet CSV \u2014 using local fallback.', 'error');
+      }
+    }
+
+    // Merge: local JSON first, then sheet overrides local
+    const merged = new Map();
+    (profilesJson.scholars || []).forEach(p => {
+      const key = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
+      if (key) merged.set(key, p);
+    });
+    sheetScholars.forEach(p => {
+      const key = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
+      if (key) merged.set(key, Object.assign({}, merged.get(key) || {}, p));
+    });
+    state.profilesByKey = merged;
+
+    // Build unique-author list from Zotero items
+    const authorMap = new Map();
+    snap.items.forEach(it => {
+      const creators = it.creators || [];
+      creators.forEach((c, idx) => {
+        const canonical = canonicalName(c);
+        if (!canonical) return;
+        if (!authorMap.has(canonical)) {
+          authorMap.set(canonical, { name: canonical, total: 0, firstAuthored: 0, types: {} });
+        }
+        const rec = authorMap.get(canonical);
+        rec.total += 1;
+        if (idx === 0) rec.firstAuthored += 1;
+        rec.types[it.itemType] = (rec.types[it.itemType] || 0) + 1;
+      });
+    });
+    state.authors = Array.from(authorMap.values()).sort((a, b) => b.total - a.total);
+  }
+
+  // Very small CSV parser (handles quoted fields with embedded commas + newlines)
+  function parseCsv(text) {
+    const rows = [];
+    let cur = '', row = [], inQuotes = false;
+    for (let i = 0; i < text.length; i++) {
+      const ch = text[i], next = text[i+1];
+      if (inQuotes) {
+        if (ch === '"' && next === '"') { cur += '"'; i++; }
+        else if (ch === '"') { inQuotes = false; }
+        else cur += ch;
+      } else {
+        if (ch === '"') inQuotes = true;
+        else if (ch === ',') { row.push(cur); cur = ''; }
+        else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && next === '\n') i++;
+          row.push(cur); cur = '';
+          if (row.length && row.some(v => v !== '')) rows.push(row);
+          row = [];
+        } else cur += ch;
+      }
+    }
+    if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+    if (!rows.length) return [];
+    const headers = rows[0].map(h => h.trim());
+    return rows.slice(1).map(r => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = (r[i] || '').trim(); });
+      return obj;
+    });
+  }
+
+  function toCsv(rows) {
+    if (!rows.length) return '';
+    const headers = ['name','slug','last','first','salutation','village','paternalProvince','confederacy',
+                     'institution','institutionUrl','googleScholarUrl','photo','total','firstAuthored',
+                     'types.journalArticle','types.thesis','types.bookSection','types.book','types.report'];
+    const esc = v => {
+      if (v == null) return '';
+      const s = String(v);
+      if (/[,"\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    };
+    const lines = [headers.join(',')];
+    rows.forEach(r => {
+      const t = r.types || {};
+      lines.push([
+        r.name || '', r.slug || '', r.last || '', r.first || '',
+        r.salutation || '', r.village || '', r.paternalProvince || '',
+        confederacyOf(r.paternalProvince) || '',
+        r.institution || '', r.institutionUrl || '', r.googleScholarUrl || '', r.photo || '',
+        r.total ?? '', r.firstAuthored ?? '',
+        t.journalArticle ?? 0, t.thesis ?? 0, t.bookSection ?? 0, t.book ?? 0, t.report ?? 0
+      ].map(esc).join(','));
+    });
+    return lines.join('\n');
+  }
+
+  // ==================== render ====================
+  function isItaukei(author) {
+    return state.profilesByKey.has(author.name);
+  }
+  function isEnriched(author) {
+    const p = state.profilesByKey.get(author.name);
+    if (!p) return false;
+    return !!(p.paternalProvince || p.institution || p.googleScholarUrl);
+  }
+  function statusFlag(author) {
+    if (!isItaukei(author)) return 'none';
+    return isEnriched(author) ? 'filled' : 'pending';
+  }
+
+  function passesFilter(author) {
+    const f = state.filter;
+    if (f.q) {
+      if (!author.name.toLowerCase().includes(f.q.toLowerCase())) return false;
+    }
+    if (f.status === 'itaukei' && !isItaukei(author)) return false;
+    if (f.status === 'enriched' && statusFlag(author) !== 'filled') return false;
+    if (f.status === 'pending'  && statusFlag(author) !== 'pending') return false;
+    if (f.status === 'new') {
+      // "New" = author with 2+ publications but no iTaukei profile yet. Simple heuristic.
+      if (isItaukei(author)) return false;
+      if (author.total < 2) return false;
+    }
+    return true;
+  }
+
+  function render() {
+    const authors = state.authors.filter(passesFilter);
+    const body = $('#authors-body');
+    body.innerHTML = '';
+    authors.slice(0, 500).forEach(a => {
+      const iT = isItaukei(a);
+      const stat = statusFlag(a);
+      const p = state.profilesByKey.get(a.name);
+      const displayName = p && p.salutation ? `${p.salutation} ${a.name}` : a.name;
+      const tr = document.createElement('tr');
+      if (iT) tr.classList.add('is-itaukei');
+      if (state.filter.status === 'new' || (!iT && a.total >= 3)) tr.classList.add('is-new');
+      tr.innerHTML = `
+        <td class="name-col">${displayName}</td>
+        <td class="count-col">${a.total}</td>
+        <td class="count-col">${a.firstAuthored}</td>
+        <td class="status-col">
+          <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" data-toggle-itaukei ${iT ? 'checked' : ''} />
+          </label>
+        </td>
+        <td class="status-col">${
+          !iT ? (a.total >= 3 ? '<span class="flag new">Untriaged</span>' : '<span class="flag pending">\u2014</span>')
+              : (stat === 'filled' ? '<span class="flag filled">Filled</span>'
+                                   : '<span class="flag pending">Blank</span>')
+        }</td>
+        <td class="action-col">
+          <button class="btn ghost" data-edit ${!iT ? 'disabled style="opacity:0.35;cursor:not-allowed;"' : ''}>Edit</button>
+        </td>
+      `;
+      tr.querySelector('[data-toggle-itaukei]').addEventListener('change', ev => {
+        toggleItaukei(a, ev.target.checked);
+      });
+      const editBtn = tr.querySelector('[data-edit]');
+      editBtn.addEventListener('click', () => { if (!editBtn.disabled) openEdit(a); });
+      body.appendChild(tr);
+    });
+    // Filter count text
+    $('#filter-count').textContent = `${authors.length} of ${state.authors.length} authors shown`;
+    // Stats
+    const total = state.authors.length;
+    const itaukei = Array.from(state.profilesByKey.keys()).length;
+    const enriched = state.authors.filter(a => statusFlag(a) === 'filled').length;
+    const newC = state.authors.filter(a => !isItaukei(a) && a.total >= 3).length;
+    $('#stat-total').textContent = total;
+    $('#stat-itaukei').textContent = itaukei;
+    $('#stat-enriched').textContent = enriched;
+    $('#stat-new').textContent = newC;
+  }
+
+  function toggleItaukei(author, on) {
+    if (on) {
+      if (!state.profilesByKey.has(author.name)) {
+        const [last, first] = author.name.split(',').map(s => s.trim());
+        state.profilesByKey.set(author.name, {
+          name: author.name, slug: slugify(`${first}-${last}`),
+          last, first, salutation: '', village: '', paternalProvince: '',
+          institution: '', institutionUrl: '', googleScholarUrl: '', photo: '',
+          total: author.total, firstAuthored: author.firstAuthored, types: author.types
+        });
+        toast(`Marked ${author.name} as iTaukei. Click "Edit" to add their profile.`);
+      }
+    } else {
+      state.profilesByKey.delete(author.name);
+      toast(`Removed ${author.name} from iTaukei list.`);
+    }
+    render();
+  }
+
+  // ==================== edit modal ====================
+  let editingAuthor = null;
+  function openEdit(author) {
+    editingAuthor = author;
+    const p = state.profilesByKey.get(author.name) || {};
+    $('#profile-modal-title').textContent = `Edit profile: ${author.name}`;
+    $('#profile-modal-subtitle').textContent = `${author.total} publications, ${author.firstAuthored} first-authored.`;
+    $('#pf-salutation').value = p.salutation || '';
+    $('#pf-village').value = p.village || '';
+    $('#pf-paternal-province').value = p.paternalProvince || '';
+    $('#pf-institution').value = p.institution || '';
+    $('#pf-institution-url').value = p.institutionUrl || '';
+    $('#pf-scholar-url').value = p.googleScholarUrl || '';
+    $('#pf-photo').value = p.photo || '';
+    $('#profile-modal').classList.add('is-visible');
+  }
+  function closeEdit() {
+    $('#profile-modal').classList.remove('is-visible');
+    editingAuthor = null;
+  }
+
+  function wireControls() {
+    // Search + status filters
+    let searchTimer;
+    $('#filter-search').addEventListener('input', ev => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => { state.filter.q = ev.target.value.trim(); render(); }, 150);
+    });
+    $('#filter-status').addEventListener('change', ev => { state.filter.status = ev.target.value; render(); });
+
+    // Sheet URL config
+    $('#sheet-save').addEventListener('click', () => {
+      const url = $('#sheet-url').value.trim();
+      if (url) localStorage.setItem(SHEET_URL_KEY, url);
+      else localStorage.removeItem(SHEET_URL_KEY);
+      toast('Google Sheet URL saved. Reloading data\u2026');
+      setTimeout(() => loadData().then(render), 300);
+    });
+    $('#reload-btn').addEventListener('click', () => { loadData().then(render); });
+
+    // Export buttons
+    $('#export-csv').addEventListener('click', () => {
+      const rows = Array.from(state.profilesByKey.values());
+      openOutput('Copy this CSV into your Google Sheet', 'Ctrl / Cmd + A to select all, then paste into your published Google Sheet.', toCsv(rows));
+    });
+    $('#export-json').addEventListener('click', () => {
+      const rows = Array.from(state.profilesByKey.values());
+      const json = JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        source: 'admin dashboard export',
+        scholars: rows
+      }, null, 2);
+      openOutput('Copy this JSON into data/scholar-profiles.json', 'Replace the entire contents of data/scholar-profiles.json in the repo, then commit.', json);
+    });
+
+    // Profile modal
+    $('#pf-cancel').addEventListener('click', closeEdit);
+    $('#pf-clear').addEventListener('click', () => {
+      if (!editingAuthor) return;
+      state.profilesByKey.delete(editingAuthor.name);
+      toast(`${editingAuthor.name} removed from iTaukei list.`);
+      closeEdit();
+      render();
+    });
+    $('#profile-form').addEventListener('submit', ev => {
+      ev.preventDefault();
+      if (!editingAuthor) return;
+      const p = state.profilesByKey.get(editingAuthor.name) || {};
+      const [last, first] = editingAuthor.name.split(',').map(s => s.trim());
+      Object.assign(p, {
+        name: editingAuthor.name,
+        slug: p.slug || slugify(`${first}-${last}`),
+        last, first,
+        salutation: $('#pf-salutation').value,
+        village: $('#pf-village').value.trim(),
+        paternalProvince: $('#pf-paternal-province').value,
+        institution: $('#pf-institution').value.trim(),
+        institutionUrl: $('#pf-institution-url').value.trim(),
+        googleScholarUrl: $('#pf-scholar-url').value.trim(),
+        photo: $('#pf-photo').value.trim(),
+        total: editingAuthor.total,
+        firstAuthored: editingAuthor.firstAuthored,
+        types: editingAuthor.types
+      });
+      state.profilesByKey.set(editingAuthor.name, p);
+      toast(`Saved profile for ${editingAuthor.name}.`);
+      closeEdit();
+      render();
+    });
+
+    // Output modal
+    $('#output-close').addEventListener('click', () => $('#output-modal').classList.remove('is-visible'));
+    $('#output-copy').addEventListener('click', () => {
+      const t = $('#save-output');
+      t.select();
+      document.execCommand('copy');
+      toast('Copied to clipboard.');
+    });
+  }
+
+  function openOutput(title, subtitle, content) {
+    $('#output-modal-title').textContent = title;
+    $('#output-modal-subtitle').textContent = subtitle;
+    $('#save-output').value = content;
+    $('#output-modal').classList.add('is-visible');
+  }
+
+})();
