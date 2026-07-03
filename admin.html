@@ -420,12 +420,18 @@
           <input type="text" id="pf-institution" placeholder="e.g. University of Tasmania, Australia" />
         </div>
         <div class="full">
-          <label for="pf-institution-url">Institution / faculty profile URL</label>
-          <input type="url" id="pf-institution-url" placeholder="https://…" />
+          <label for="pf-institution-url">Institution website URL</label>
+          <input type="url" id="pf-institution-url" placeholder="https://www.utas.edu.au" />
+          <small>Homepage of the institution. Linked from the institution name on the public card.</small>
         </div>
         <div>
           <label for="pf-title">Professional title</label>
           <input type="text" id="pf-title" placeholder="e.g. Senior Lecturer, Professor, Postdoctoral Fellow" />
+        </div>
+        <div>
+          <label for="pf-profile-url">Faculty profile URL</label>
+          <input type="url" id="pf-profile-url" placeholder="https://… (their faculty page)" />
+          <small>Personal / faculty profile page. Linked from the professional title on the public card.</small>
         </div>
         <div>
           <label for="pf-scholar-url">Google Scholar profile URL</label>
@@ -484,6 +490,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260703-10" defer></script>
+<script src="js/admin.js?v=20260703-11" defer></script>
 </body>
 </html>

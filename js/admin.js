@@ -438,6 +438,7 @@
     $('#pf-paternal-province').value = p.paternalProvince || '';
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
+    $('#pf-profile-url').value = p.profileUrl || '';
     $('#pf-title').value = p.title || '';
     $('#pf-scholar-url').value = p.googleScholarUrl || '';
     $('#pf-orcid-url').value = p.orcidUrl || '';
@@ -574,24 +575,29 @@
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28'
     };
-    // Get the CURRENT sha (cache-busted). GitHub's contents API can return a stale sha
-    // if a CDN caches the GET response — which causes a 409 conflict on PUT.
-    // 404 = file is new (no sha needed). Other errors are surfaced so the caller
-    // can distinguish "can't reach GitHub" from "sha is unavailable".
+    // Fetch the CURRENT sha of the file. Returns a diagnostic object so the caller
+    // can include the exact fetch outcome in error messages — no need to open DevTools.
+    // Cache-busted with a query param only. We deliberately do NOT set Cache-Control
+    // in the request headers because that header is not on the CORS-safelist and can
+    // trigger unwanted preflight behaviour with some proxies.
     async function fetchCurrentSha() {
       const url = `${apiUrl}?ref=${GH_BRANCH}&_=${Date.now()}`;
-      const head = await fetch(url, {
-        headers: Object.assign({}, headers, { 'Cache-Control': 'no-cache' }),
-        cache: 'no-store'
-      });
-      if (head.status === 404) return undefined; // file is new
+      let head;
+      try {
+        head = await fetch(url, { headers, cache: 'no-store' });
+      } catch (netErr) {
+        return { sha: undefined, status: 0, error: 'network: ' + (netErr.message || netErr) };
+      }
+      if (head.status === 404) return { sha: undefined, status: 404, note: 'file-is-new' };
       if (!head.ok) {
         const errText = await head.text().catch(() => '');
-        console.warn('[admin] fetchCurrentSha non-OK:', head.status, errText.slice(0, 200));
-        return undefined; // will trigger 422 retry path below
+        return { sha: undefined, status: head.status, error: errText.slice(0, 150) };
       }
-      const j = await head.json();
-      return j.sha;
+      const j = await head.json().catch(() => null);
+      if (!j || typeof j.sha !== 'string') {
+        return { sha: undefined, status: head.status, error: 'response has no sha field' };
+      }
+      return { sha: j.sha, status: head.status };
     }
     const base64 = (content instanceof Blob) ? await blobToBase64(content) : utf8ToBase64(content);
 
@@ -601,27 +607,30 @@
       return fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
     }
 
-    let sha;
-    try { sha = await fetchCurrentSha(); }
-    catch (e) { console.warn('[admin] initial sha fetch threw', e); sha = undefined; }
-    let put = await attemptPut(sha);
+    let shaRes = await fetchCurrentSha();
+    let put = await attemptPut(shaRes.sha);
 
-    // Retry once on:
+    // Retry once if:
     //   409 = sha we sent is stale (file changed between GET and PUT)
     //   422 = sha wasn't supplied but the file exists (our GET returned undefined)
     if (put.status === 409 || put.status === 422) {
-      let freshSha;
-      try { freshSha = await fetchCurrentSha(); }
-      catch (e) { console.warn('[admin] retry sha fetch threw', e); }
-      if (freshSha) {
-        put = await attemptPut(freshSha);
+      const retryRes = await fetchCurrentSha();
+      if (retryRes.sha) {
+        put = await attemptPut(retryRes.sha);
+        shaRes = retryRes; // record the retry outcome for diagnostics
+      } else {
+        // Retry SHA fetch also failed — surface both failures
+        shaRes = { sha: undefined, status: retryRes.status, error: 'retry: ' + (retryRes.error || 'no sha') };
       }
     }
 
     if (!put.ok) {
       const errBody = await put.text();
       const short = errBody.length > 200 ? errBody.slice(0, 200) + '…' : errBody;
-      throw new Error(`GitHub upload failed (${put.status}): ${short}`);
+      const shaDiag = shaRes.sha
+        ? `sha=${shaRes.sha.slice(0, 8)}…`
+        : `sha-fetch=${shaRes.status}${shaRes.error ? ' (' + shaRes.error + ')' : ''}`;
+      throw new Error(`GitHub PUT failed ${put.status}. ${shaDiag}. ${short}`);
     }
     return path;
   }
@@ -861,6 +870,7 @@
         paternalProvince: $('#pf-paternal-province').value,
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
+        profileUrl: $('#pf-profile-url').value.trim(),
         title: $('#pf-title').value.trim(),
         googleScholarUrl: $('#pf-scholar-url').value.trim(),
         orcidUrl: $('#pf-orcid-url').value.trim(),

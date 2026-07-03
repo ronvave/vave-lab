@@ -1435,12 +1435,12 @@
 
     // Meta line: village · paternal province
     const metaBits = [];
-    if (village) metaBits.push(escapeHtml(village) + ' village');
+    if (village) metaBits.push(escapeHtml(village));
     else metaBits.push('<span class="db-scholar-card__meta--empty">Village not yet added</span>');
     if (paternal) metaBits.push(escapeHtml(paternal) + ' Province');
     const metaHtml = metaBits.join('<span class="sep">·</span>');
 
-    // Institution
+    // Institution: linked to r.institutionUrl (institution homepage) if present
     let institutionHtml;
     if (institution) {
       institutionHtml = r.institutionUrl
@@ -1448,6 +1448,13 @@
         : escapeHtml(institution);
     } else {
       institutionHtml = '<span class="db-scholar-card__institution--empty">Institution not yet added</span>';
+    }
+    // Professional title: linked to r.profileUrl (faculty profile page) if present
+    let titleHtml = '';
+    if (title) {
+      titleHtml = r.profileUrl
+        ? `<a href="${escapeAttr(r.profileUrl)}" target="_blank" rel="noopener">${escapeHtml(title)}</a>`
+        : escapeHtml(title);
     }
 
     // Type chips (only non-zero, in CHIP_ORDER)
@@ -1494,7 +1501,7 @@
           <h3 class="db-scholar-card__name">${escapeHtml(displayName || (first + ' ' + last).trim())}</h3>
           <div class="db-scholar-card__meta">${metaHtml}</div>
           <div class="db-scholar-card__institution">${institutionHtml}</div>
-          ${title ? `<div class="db-scholar-card__title">${escapeHtml(title)}</div>` : ''}
+          ${title ? `<div class="db-scholar-card__title">${titleHtml}</div>` : ''}
           ${lastUpdate ? `<div class="db-scholar-card__updated">Last update: <em>${escapeHtml(lastUpdate)}</em></div>` : ''}
         </div>
       </div>
