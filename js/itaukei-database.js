@@ -72,8 +72,10 @@
     document:       '#9ca3af'
   };
   // Order determines stacked-chart segment order (bottom → top) and legend order.
-  // PhD, Masters, unknown — grouped as the "thesis family" first.
-  const TYPE_ORDER = ['thesisPhd','thesisMasters','thesisUnknown','journalArticle','bookSection','book','report','conferencePaper','preprint'];
+  // PhD + Masters only — unclassified theses ('thesisUnknown') are intentionally
+  // excluded from Panels B/C counts and legend per Ron's request. They still
+  // appear individually in the item list at the bottom.
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','conferencePaper','preprint'];
 
   // Convert a Zotero item to its display-type key (splits `thesis` →
   // thesisPhd / thesisMasters / thesisUnknown based on `thesisLevel`).
@@ -90,6 +92,10 @@
     snapshot: null,
     provinces: null,
     universities: null,
+    graduateStudies: null,               // data/itaukei-graduate-studies.json
+    mapScope: 'fiji',                    // 'fiji' | 'world' (Ron's 2nd tab set)
+    worldView: 'study',                  // 'study' | 'publish'
+    worldLayer: null,                    // Leaflet layer holding world-map markers
     mapView: 'all',                      // 'all' | 'lead' | 'coauth'
     typeSet: new Set(TYPE_ORDER),        // which types are shown in panels B, C, D
     // Panel C x-axis range — null means "use full data range" (default: All)
@@ -145,7 +151,7 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles, sync] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync, grad] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
@@ -154,12 +160,16 @@
       fetchJson('data/scholar-profiles.json').catch(() => ({ scholars: [] })),
       // Optional — heartbeat written by the GitHub Actions refresh workflow.
       // Absence is fine; badge falls back to snapshot.generatedAt.
-      fetchJson('data/last-sync.json').catch(() => null)
+      fetchJson('data/last-sync.json').catch(() => null),
+      // Optional — iTaukei graduate-studies extracted from Zotero theses.
+      // Absence is fine; the world-map tab just falls back to an empty state.
+      fetchJson('data/itaukei-graduate-studies.json').catch(() => ({ scholars: {}, worldPoints: [] }))
     ]);
     state.snapshot = snap;
     state.provinces = geo;
     state.universities = unis;
     state.lastSync = sync;
+    state.graduateStudies = grad;
 
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
@@ -493,13 +503,14 @@
   function initMap() {
     try {
       const map = L.map('db-map', {
-        center: [-17.6, 178.5],
+        center: [-17.8, 178.0],
         zoom: 7,
         minZoom: 6,
         maxZoom: 12,
         zoomControl: true,
         attributionControl: true,
-        scrollWheelZoom: false
+        scrollWheelZoom: true,
+        wheelPxPerZoomLevel: 100
       });
       // Esri World Imagery (attributed "Esri — Esri, Maxar, Earthstar Geographics,
       // and the GIS User Community"). Sits under the choropleth polygons.
@@ -510,20 +521,54 @@
       state.map = map;
       renderChoropleth();
 
-      // Panel A mapview toggle
-      $$('.db-map-toggle button').forEach(btn => {
+      // Panel A mapview toggle (Fiji sub-tabs)
+      $$('[data-mapscope-panel="fiji"] button').forEach(btn => {
         btn.addEventListener('click', () => {
-          $$('.db-map-toggle button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
+          $$('[data-mapscope-panel="fiji"] button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
           btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
           state.mapView = btn.dataset.mapview;
           renderPanelA();
+        });
+      });
+      // World-view sub-tabs (Where iTaukei graduates study / have published)
+      $$('[data-mapscope-panel="world"] button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.disabled) return;
+          $$('[data-mapscope-panel="world"] button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
+          btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
+          state.worldView = btn.dataset.worldview;
+          renderWorldMap();
+        });
+      });
+      // TOP-level scope toggle: Fiji ↔ World
+      $$('.db-map-scope button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          $$('.db-map-scope button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
+          btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
+          state.mapScope = btn.dataset.mapscope;
+          // Show/hide the corresponding sub-tab row and note
+          $$('[data-mapscope-panel]').forEach(p => { p.style.display = (p.dataset.mapscopePanel === state.mapScope) ? '' : 'none'; });
+          $$('[data-mapscope-note]').forEach(n => { n.style.display = (n.dataset.mapscopeNote === state.mapScope) ? '' : 'none'; });
+          if (state.mapScope === 'world') {
+            renderWorldMap();
+          } else {
+            // Restore Fiji view
+            if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
+            state.map.setMinZoom(6);
+            state.map.setMaxZoom(12);
+            state.map.fitBounds(state.mapDefaultBounds || [[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
+            renderPanelA();
+          }
         });
       });
 
       // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
       // three confederacies (Viti Levu + Vanua Levu + Lau) without wasting
       // vertical whitespace above Vanua Levu or below Kadavu.
-      map.fitBounds([[-19.7, 176.4], [-15.6, 180.8]], { padding: [8, 8] });
+      // Tighter Fiji-focused framing (Ron's image-4 reference): Vanua Levu +
+      // Viti Levu + Lau grouped without wasted margins.
+      map.fitBounds([[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
+      state.mapDefaultBounds = [[-19.6, 176.8], [-15.9, 180.9]];
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
@@ -570,12 +615,82 @@
     return result;
   }
 
+  // Warm palette — contrasts against the dark blue satellite ocean. Ron's
+  // feedback was that the previous teal-on-teal scale blended into the water.
+  // These are the YlOrRd-style ColorBrewer stops adjusted for Fiji imagery.
   function choroFill(n) {
-    if (n === 0) return '#e8f2f3';
-    if (n <= 3) return '#a9d3d8';
-    if (n <= 6) return '#5fa6ae';
-    if (n <= 9) return '#0e7490';
-    return '#062f35';
+    if (n === 0) return '#fff5eb';
+    if (n <= 3) return '#fdd0a2';
+    if (n <= 6) return '#fd8d3c';
+    if (n <= 9) return '#e6550d';
+    return '#a63603';
+  }
+
+  // ============ WORLD MAP (Ron's 2nd tab set) ============
+  // Renders circle markers for universities where iTaukei scholars have
+  // completed graduate studies. Size + colour indicate scholar counts.
+  // Data comes from data/itaukei-graduate-studies.json (see refresh-graduate-studies.py).
+  function renderWorldMap() {
+    if (!state.map) return;
+    // Remove any Fiji choropleth to avoid cluttering the wider view
+    if (state.provinceLayer) { state.map.removeLayer(state.provinceLayer); state.provinceLayer = null; }
+    // Clear previous world layer
+    if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
+
+    state.map.setMinZoom(2);
+    state.map.setMaxZoom(10);
+
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const points = grad.worldPoints || [];
+
+    if (state.worldView === 'publish') {
+      // Placeholder — publication-country tagging is a follow-up feature.
+      state.worldLayer = L.layerGroup([]).addTo(state.map);
+      state.map.fitBounds([[-45, 100], [50, -100]], { padding: [30, 30] });
+      return;
+    }
+
+    // Where iTaukei graduates study
+    const markers = points.map(p => {
+      const total = (p.phdScholars.length + p.mastersScholars.length);
+      const radius = Math.min(28, 6 + total * 3);
+      const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
+      const m = L.circleMarker([p.lat, p.lng], {
+        radius,
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.85
+      });
+      const phdList = p.phdScholars.length
+        ? `<div style="margin-top:6px;"><strong style="color:#228B22;">PhD (${p.phdScholars.length}):</strong> ${p.phdScholars.join(', ')}</div>`
+        : '';
+      const mastersList = p.mastersScholars.length
+        ? `<div style="margin-top:4px;"><strong style="color:#5f9c5f;">Masters (${p.mastersScholars.length}):</strong> ${p.mastersScholars.join(', ')}</div>`
+        : '';
+      m.bindPopup(
+        `<div class="db-popup-title">${p.university}</div>` +
+        `<p class="db-popup-meta">${p.country}</p>` +
+        `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
+        phdList + mastersList,
+        { maxWidth: 320 }
+      );
+      m.on('mouseover', () => m.openPopup());
+      return m;
+    });
+
+    state.worldLayer = L.layerGroup(markers).addTo(state.map);
+
+    // Fit to points — but with a comfortable margin so single-country data isn't too zoomed.
+    if (points.length > 0) {
+      const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
+      const minLat = Math.min(...lats) - 8, maxLat = Math.max(...lats) + 8;
+      const minLng = Math.min(...lngs) - 8, maxLng = Math.max(...lngs) + 8;
+      state.map.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [20, 20] });
+    } else {
+      state.map.setView([0, 160], 2);
+    }
   }
 
   function renderChoropleth() {
@@ -597,10 +712,23 @@
       onEachFeature: (feature, layer) => {
         const p = feature.properties;
         const b = counts.get(p.name) || { total: 0 };
-        layer.bindPopup(makeProvincePopup(p, b), { maxWidth: 260 });
-        layer.on('mouseover', () => layer.setStyle({ weight: 4 }));
-        layer.on('mouseout', () => layer.setStyle({ weight: 2.5 }));
-        layer.on('click', () => setProvinceFilterFromMap(p.name));
+        // Bind popup so click still works, and also open the popup on hover for
+        // a live preview (Ron wants hover-to-preview, click-to-filter).
+        layer.bindPopup(makeProvincePopup(p, b), { maxWidth: 260, autoPan: false });
+        layer.on('mouseover', () => {
+          layer.setStyle({ weight: 4 });
+          // Delay opening slightly to avoid flicker when panning over polygons
+          layer.openPopup();
+        });
+        layer.on('mouseout', () => {
+          layer.setStyle({ weight: 2.5 });
+          // Only close the hover-preview popup; leave click-opened ones alone.
+          if (!state.stickyPopup || state.stickyPopup !== p.name) layer.closePopup();
+        });
+        layer.on('click', () => {
+          state.stickyPopup = p.name;
+          setProvinceFilterFromMap(p.name);
+        });
       }
     }).addTo(state.map);
   }
@@ -695,7 +823,11 @@
     });
     Object.keys(byConf).forEach(name => {
       const cell = document.querySelector(`[data-conf="${name}"]`);
-      if (cell) cell.innerHTML = `${byConf[name].total} <span style="color:var(--color-text-muted);font-weight:400;">|</span> <em>${byConf[name].itaukei}</em>`;
+      if (!cell) return;
+      const t = byConf[name].total, k = byConf[name].itaukei;
+      cell.innerHTML =
+        `<span class="db-conf-row__stat"><strong>${t}</strong> Total publications</span>` +
+        `<span class="db-conf-row__stat db-conf-row__stat--lead">[<strong>${k}</strong> with iTaukei as Lead author]</span>`;
     });
 
     // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
@@ -1314,7 +1446,7 @@
   }
 
   // ============ SCHOLAR CARDS (paginated, image-4 style) ============
-  const SCHOLAR_PAGE_SIZE = 10;
+  const SCHOLAR_PAGE_SIZE = 20;
   state.scholarPage = 1;
 
   // Placeholder silhouette shown when no photo is provided
@@ -1466,7 +1598,10 @@
     }).join('');
 
     const card = document.createElement('article');
-    card.className = 'db-scholar-card' + (active ? ' is-active' : '');
+    const isNeutral = !confederacy || !CONF_GRADIENT[confederacy];
+    card.className = 'db-scholar-card'
+      + (active ? ' is-active' : '')
+      + (isNeutral ? ' db-scholar-card--neutral' : '');
     card.title = `Click to filter items to ${r.name}’s papers`;
     card.style.setProperty('--conf-from', gradient.from);
     card.style.setProperty('--conf-to', gradient.to);

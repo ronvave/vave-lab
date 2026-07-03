@@ -212,6 +212,20 @@
     }
 
     /* Panel A — map */
+    .db-map-scope {
+      display: flex; gap: 6px; margin-bottom: 8px;
+      background: rgba(14,116,144,0.08); border-radius: 999px; padding: 4px;
+      align-self: flex-start;
+    }
+    .db-map-scope button {
+      appearance: none; border: 0; background: transparent;
+      padding: 6px 14px; border-radius: 999px; cursor: pointer;
+      font: 600 0.9rem 'Source Sans Pro', sans-serif; color: var(--color-text);
+      transition: background 0.15s, color 0.15s;
+    }
+    .db-map-scope button.is-active {
+      background: var(--color-primary); color: #fff;
+    }
     .db-map-toggle {
       display: inline-flex; background: var(--color-primary-highlight);
       border-radius: 999px; padding: 3px; gap: 2px; flex-wrap: wrap;
@@ -254,16 +268,27 @@
       margin-top: 5px; font-variant-numeric: tabular-nums;
     }
     .db-conf-row {
-      display: grid; grid-template-columns: 18px 1fr auto; gap: 10px; align-items: center;
-      font-size: 1.05rem; padding: 6px 0;
+      display: grid;
+      grid-template-columns: 18px 1fr;
+      grid-template-rows: auto auto;
+      column-gap: 10px; row-gap: 2px;
+      font-size: 0.98rem; padding: 8px 0;
     }
-    .db-conf-row__sw { width: 18px; height: 18px; border-radius: 4px; }
-    .db-conf-row__name { color: var(--color-text); }
+    .db-conf-row__sw { width: 18px; height: 18px; border-radius: 4px; grid-row: 1 / 3; align-self: center; }
+    .db-conf-row__name {
+      color: var(--color-text); font-weight: 600;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.15rem;
+    }
     .db-conf-row__nums {
-      font-variant-numeric: tabular-nums; font-weight: 600;
-      font-size: 1.05rem; color: var(--color-text);
+      font-variant-numeric: tabular-nums;
+      color: var(--color-text);
+      display: flex; flex-direction: column; gap: 2px;
+      font-size: 0.9rem; line-height: 1.35;
     }
-    .db-conf-row__nums em { font-style: normal; color: #3d5a35; font-weight: 700; }
+    .db-conf-row__stat { color: #334155; }
+    .db-conf-row__stat--lead { color: #3d5a35; }
+    .db-conf-row__stat strong { color: #0f172a; font-weight: 700; font-size: 1.05rem; }
     .db-nonfiji {
       padding: 12px 14px;
       background: rgba(61,90,53,0.08); border-radius: var(--radius-md);
@@ -429,8 +454,10 @@
       font-family: 'Cormorant Garamond', serif;
       font-size: 1.15rem; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
-      color: #fff;
+      color: #111;
     }
+    /* Neutral banner ("ITAUKEI SCHOLAR") uses white text for contrast on the dark teal gradient */
+    .db-scholar-card--neutral .db-scholar-card__conf-label { color: #fff; }
     /* Body row: avatar + info */
     .db-scholar-card__body {
       padding: 18px 22px 20px;
@@ -979,11 +1006,22 @@
       <div class="db-panel reveal" data-panel="A">
         <span class="db-panel__label">A</span>
         <h2 class="db-panel__title">Where the research is</h2>
-        <div class="db-map-toggle" role="tablist" aria-label="Map view">
+        <div class="db-map-scope" role="tablist" aria-label="Map scope">
+          <button type="button" class="is-active" data-mapscope="fiji" aria-selected="true">Fiji — by province</button>
+          <button type="button" data-mapscope="world" aria-selected="false">World — iTaukei graduate studies</button>
+        </div>
+        <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
           <button type="button" class="is-active" data-mapview="all" aria-selected="true">All publications on Fiji</button>
           <button type="button" data-mapview="lead" aria-selected="false">By iTaukei lead-author</button>
           <button type="button" data-mapview="coauth" aria-selected="false">Co-authored with iTaukei</button>
         </div>
+        <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world" style="display:none;">
+          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>
+          <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where iTaukei have published</button>
+        </div>
+        <p class="db-map-scope-note" data-mapscope-note="world" style="display:none;font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
+          <strong>Note:</strong> Only theses that appear in a scholar's iTaukei sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
+        </p>
         <div class="db-map-a-wrap">
           <div>
             <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
@@ -993,20 +1031,32 @@
             <div>
               <h4>Publications by province</h4>
               <div class="db-choro-scale">
-                <span style="background:#e8f2f3;"></span>
-                <span style="background:#a9d3d8;"></span>
-                <span style="background:#5fa6ae;"></span>
-                <span style="background:#0e7490;"></span>
-                <span style="background:#062f35;"></span>
+                <span style="background:#fff5eb;border:1px solid #f2d9b8;"></span>
+                <span style="background:#fdd0a2;"></span>
+                <span style="background:#fd8d3c;"></span>
+                <span style="background:#e6550d;"></span>
+                <span style="background:#a63603;"></span>
               </div>
               <div class="db-choro-scale-labels"><span>0</span><span>3</span><span>6</span><span>9</span><span>13+</span></div>
             </div>
             <div>
-              <h4>Confederacy · total · iTaukei lead‑authored</h4>
+              <h4>Confederacy total <span style="opacity:0.7;">[iTaukei lead-authored]</span></h4>
               <div data-db-conf-legend>
-                <div class="db-conf-row"><span class="db-conf-row__sw" style="background:#FF5A6E;"></span><span class="db-conf-row__name">Burebasaga</span><span class="db-conf-row__nums" data-conf="Burebasaga">—</span></div>
-                <div class="db-conf-row"><span class="db-conf-row__sw" style="background:#4ECDE6;"></span><span class="db-conf-row__name">Kubuna</span><span class="db-conf-row__nums" data-conf="Kubuna">—</span></div>
-                <div class="db-conf-row"><span class="db-conf-row__sw" style="background:#FFD84A;"></span><span class="db-conf-row__name">Tovata</span><span class="db-conf-row__nums" data-conf="Tovata">—</span></div>
+                <div class="db-conf-row">
+                  <span class="db-conf-row__sw" style="background:#FF5A6E;"></span>
+                  <span class="db-conf-row__name">Burebasaga</span>
+                  <span class="db-conf-row__nums" data-conf="Burebasaga">—</span>
+                </div>
+                <div class="db-conf-row">
+                  <span class="db-conf-row__sw" style="background:#4ECDE6;"></span>
+                  <span class="db-conf-row__name">Kubuna</span>
+                  <span class="db-conf-row__nums" data-conf="Kubuna">—</span>
+                </div>
+                <div class="db-conf-row">
+                  <span class="db-conf-row__sw" style="background:#FFD84A;"></span>
+                  <span class="db-conf-row__name">Tovata</span>
+                  <span class="db-conf-row__nums" data-conf="Tovata">—</span>
+                </div>
               </div>
             </div>
             <div class="db-nonfiji">
@@ -1074,7 +1124,7 @@
 
     <!-- iTaukei scholars — paginated profile cards -->
     <div class="db-leaderboard reveal">
-      <h3>iTaukei scholars with 3+ papers <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--color-text-muted);font-size:0.75rem;">· click a card to see that scholar’s papers below</span></h3>
+      <h3>iTaukei scholars with 3+ publications <span style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--color-text-muted);font-size:0.75rem;">· click a card to see that scholar’s papers below</span></h3>
       <div class="db-scholars-grid" data-db-leaders>Loading…</div>
       <div class="db-pager" data-db-pager></div>
     </div>
@@ -1178,6 +1228,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260703-08" defer></script>
+<script src="js/itaukei-database.js?v=20260703-09" defer></script>
 </body>
 </html>

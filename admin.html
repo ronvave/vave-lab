@@ -442,6 +442,31 @@
           <input type="url" id="pf-orcid-url" placeholder="https://orcid.org/0000-0000-0000-0000" />
           <small>Paste the scholar’s ORCID URL (usually <code>https://orcid.org/</code> followed by their 16-digit iD). Leave blank if not linked yet.</small>
         </div>
+
+        <!-- Graduate studies -->
+        <div class="full" style="margin-top:8px;padding-top:16px;border-top:1px dashed #cbd5e1;">
+          <h4 style="margin:0 0 4px;font-size:0.92rem;text-transform:uppercase;letter-spacing:0.05em;color:#334155;">Graduate studies</h4>
+          <small style="display:block;margin-bottom:8px;color:#64748b;">
+            Auto-detected from thesis items in this scholar’s Zotero collection. Edit or override as needed. Used for the “Where iTaukei graduates study” world map (not shown on the scholar’s public card).
+          </small>
+          <div class="pf-detected" data-detected-grad style="display:none;font-size:0.85rem;color:#0e7490;background:#e6f3f5;padding:8px 12px;border-radius:6px;margin-bottom:10px;"></div>
+        </div>
+        <div>
+          <label for="pf-masters-uni">Masters — University</label>
+          <input type="text" id="pf-masters-uni" placeholder="e.g. University of the South Pacific" />
+        </div>
+        <div>
+          <label for="pf-masters-country">Masters — Country</label>
+          <input type="text" id="pf-masters-country" placeholder="e.g. Fiji" />
+        </div>
+        <div>
+          <label for="pf-phd-uni">PhD — University</label>
+          <input type="text" id="pf-phd-uni" placeholder="e.g. University of Hawaiʻi at Mānoa" />
+        </div>
+        <div>
+          <label for="pf-phd-country">PhD — Country</label>
+          <input type="text" id="pf-phd-country" placeholder="e.g. USA" />
+        </div>
         <div class="full">
           <label>Profile photo</label>
           <div class="photo-row">
@@ -490,6 +515,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260703-11" defer></script>
+<script src="js/admin.js?v=20260703-12" defer></script>
 </body>
 </html>

@@ -75,6 +75,12 @@
     return fullname.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
   }
 
+  function escapeHtml(s) {
+    return (s == null ? '' : String(s))
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
   // Convert Zotero creator string to canonical "Last, First"
   function canonicalName(creator) {
     if (!creator) return null;
@@ -161,13 +167,16 @@
 
   // ==================== data load ====================
   async function loadData() {
-    const [snap, profilesJson] = await Promise.all([
+    const [snap, profilesJson, graduate] = await Promise.all([
       // Cache-bust query string forces fresh fetch every time so admin never
       // shows a stale copy of the JSON right after a save/push.
       fetch(`data/itaukei-zotero-snapshot.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
-      fetch(`data/scholar-profiles.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: [] }))
+      fetch(`data/scholar-profiles.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: [] })),
+      fetch(`data/itaukei-graduate-studies.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: {} }))
     ]);
     state.snapshot = snap;
+    // Look-up for the edit form's auto-detected graduate-studies hints.
+    state.graduateStudiesByName = new Map(Object.entries((graduate && graduate.scholars) || {}));
 
     // Try to enrich from Google Sheet CSV if user has configured it.
     // BUT: if a GitHub token is set, ignore the sheet entirely — the JSON
@@ -439,6 +448,35 @@
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
     $('#pf-profile-url').value = p.profileUrl || '';
+    $('#pf-masters-uni').value = (p.masters && p.masters.university) || '';
+    $('#pf-masters-country').value = (p.masters && p.masters.country) || '';
+    $('#pf-phd-uni').value = (p.phd && p.phd.university) || '';
+    $('#pf-phd-country').value = (p.phd && p.phd.country) || '';
+    // Show auto-detected suggestions from Zotero snapshot if we haven't already saved them
+    const detected = state.graduateStudiesByName && state.graduateStudiesByName.get(p.name);
+    const hint = $('[data-detected-grad]');
+    if (hint) {
+      if (detected && (detected.masters || detected.phd)) {
+        const bits = [];
+        if (detected.masters) bits.push(`<strong>Masters:</strong> ${escapeHtml(detected.masters.university || '')} · ${escapeHtml(detected.masters.country || 'unknown country')}`);
+        if (detected.phd) bits.push(`<strong>PhD:</strong> ${escapeHtml(detected.phd.university || '')} · ${escapeHtml(detected.phd.country || 'unknown country')}`);
+        hint.innerHTML = '<strong style="color:#0e7490;">Auto-detected from Zotero theses:</strong> ' + bits.join(' &middot; ') + '. Click a suggestion to prefill.';
+        hint.style.display = '';
+        hint.style.cursor = 'pointer';
+        hint.onclick = () => {
+          if (detected.masters) {
+            $('#pf-masters-uni').value = detected.masters.university || '';
+            $('#pf-masters-country').value = detected.masters.country || '';
+          }
+          if (detected.phd) {
+            $('#pf-phd-uni').value = detected.phd.university || '';
+            $('#pf-phd-country').value = detected.phd.country || '';
+          }
+        };
+      } else {
+        hint.style.display = 'none';
+      }
+    }
     $('#pf-title').value = p.title || '';
     $('#pf-scholar-url').value = p.googleScholarUrl || '';
     $('#pf-orcid-url').value = p.orcidUrl || '';
@@ -871,6 +909,14 @@
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
         profileUrl: $('#pf-profile-url').value.trim(),
+        masters: (function(){
+          const u = $('#pf-masters-uni').value.trim(), c = $('#pf-masters-country').value.trim();
+          return (u || c) ? { university: u, country: c } : null;
+        })(),
+        phd: (function(){
+          const u = $('#pf-phd-uni').value.trim(), c = $('#pf-phd-country').value.trim();
+          return (u || c) ? { university: u, country: c } : null;
+        })(),
         title: $('#pf-title').value.trim(),
         googleScholarUrl: $('#pf-scholar-url').value.trim(),
         orcidUrl: $('#pf-orcid-url').value.trim(),
