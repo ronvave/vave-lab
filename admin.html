@@ -312,6 +312,15 @@
         <input type="text" value="data/scholar-profiles.json" readonly />
         <span style="color:var(--muted);font-size:0.82rem;">Used until you set a sheet URL</span>
       </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;" />
+      <p class="subtitle" style="margin-top:0;"><b>GitHub upload (optional):</b> paste a Personal Access Token here so dropped profile photos upload directly to <code>img/scholars/</code> in the repo instead of embedding as base64. Stored in your browser only, never committed.</p>
+      <div class="config-row">
+        <label for="gh-token">GitHub PAT</label>
+        <input type="password" id="gh-token" placeholder="github_pat_… or ghp_… (needs contents:write on ronvave/vave-lab)" autocomplete="off" />
+        <button class="btn" id="gh-token-save">Save token</button>
+      </div>
+      <p class="subtitle" style="margin-top:6px;font-size:0.82rem;">Create a <b>fine-grained</b> token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <b>ronvave</b> → Repository access: <b>Only select → ronvave/vave-lab</b> → Repository permissions → <b>Contents: Read and write</b>. That’s it — no other scopes needed. Set an expiration you’re comfortable with (e.g. 90 days). Without a token, dropped photos fall back to inline base64 + “Download for repo”.</p>
     </div>
 
     <!-- Authors panel -->
@@ -437,7 +446,7 @@
               </div>
               <input type="file" id="pf-photo-file" accept="image/*" style="display:none;" />
               <div class="photo-actions">
-                <button type="button" id="pf-photo-download" title="Download the resized photo so you can drop it into img/scholars/ in the repo">Download for repo</button>
+                <button type="button" id="pf-photo-download" title="Uploads directly to img/scholars/ in the repo if a GitHub token is set. Otherwise downloads the file so you can drop it in manually.">Upload to repo</button>
                 <button type="button" id="pf-photo-url-toggle" title="Paste a hosted image URL instead">Paste URL instead</button>
                 <button type="button" class="danger" id="pf-photo-clear">Clear photo</button>
               </div>

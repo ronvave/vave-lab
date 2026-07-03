@@ -23,6 +23,11 @@
   const PASSWORD_HASH = '801e61f51a774fc3b896ec5b4ae80d2bea4972145678a144598766ccc57cee54';
   const SESSION_KEY = 'vavelab_admin_session';
   const SHEET_URL_KEY = 'vavelab_scholar_sheet_url';
+  const GH_TOKEN_KEY  = 'vavelab_gh_token';
+  const GH_OWNER = 'ronvave';
+  const GH_REPO  = 'vave-lab';
+  const GH_BRANCH = 'main';
+  const GH_PHOTO_DIR = 'img/scholars';
 
   const CONFEDERACY_BY_PROVINCE = {
     'Burebasaga': ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
@@ -448,14 +453,81 @@
     try {
       const { dataUrl, blob } = await fileToSquareJpeg(file);
       lastDroppedBlob = blob;
-      $('#pf-photo').value = dataUrl;
-      setPhotoPreview(dataUrl);
       const kb = Math.round(blob.size / 1024);
-      toast(`Photo added (≈${kb} KB, 400 × 400 JPEG).`);
+
+      // Show the preview immediately from the resized blob
+      setPhotoPreview(dataUrl);
+
+      const token = localStorage.getItem(GH_TOKEN_KEY);
+      if (token && editingAuthor) {
+        // Direct upload to GitHub — photo field stores the repo path, not base64
+        const [last, first] = editingAuthor.name.split(',').map(s => s.trim());
+        const existing = state.profilesByKey.get(editingAuthor.name) || {};
+        const slug = existing.slug || slugify(`${first}-${last}`);
+        const path = `${GH_PHOTO_DIR}/${slug}.jpg`;
+        toast(`Uploading ${slug}.jpg to GitHub…`);
+        try {
+          await githubUploadPhoto(path, blob, `admin: update profile photo for ${editingAuthor.name}`);
+          $('#pf-photo').value = path;
+          toast(`Uploaded to ${path} (≈${kb} KB). Photo field now points there.`);
+          return;
+        } catch (err) {
+          console.error(err);
+          toast('GitHub upload failed — falling back to inline base64. ' + err.message);
+        }
+      }
+
+      // Fallback: store as inline base64 (works immediately, bloats JSON)
+      $('#pf-photo').value = dataUrl;
+      const hint = token ? '' : ' Add a GitHub token in Data source to upload directly to img/scholars/ instead.';
+      toast(`Photo added inline (≈${kb} KB, 400 × 400 JPEG).` + hint);
     } catch (err) {
       console.error(err);
       toast('Couldn’t process that image.');
     }
+  }
+
+  // Convert a Blob to base64 without the leading "data:...;base64," prefix
+  function blobToBase64(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => {
+        const s = r.result || '';
+        const i = s.indexOf(',');
+        resolve(i >= 0 ? s.slice(i + 1) : s);
+      };
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+  }
+
+  // Upload a Blob to the GitHub repo at `path` via the Contents API.
+  // Requires a Personal Access Token in localStorage under GH_TOKEN_KEY.
+  async function githubUploadPhoto(path, blob, message) {
+    const token = localStorage.getItem(GH_TOKEN_KEY);
+    if (!token) throw new Error('no-token');
+    const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Accept': 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    };
+    // If the file already exists we need its SHA for the update
+    let sha;
+    try {
+      const head = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, { headers });
+      if (head.ok) { const j = await head.json(); sha = j.sha; }
+    } catch (_) { /* file is new — no SHA needed */ }
+    const content = await blobToBase64(blob);
+    const body = { message, content, branch: GH_BRANCH };
+    if (sha) body.sha = sha;
+    const put = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+    if (!put.ok) {
+      const errBody = await put.text();
+      const short = errBody.length > 200 ? errBody.slice(0, 200) + '…' : errBody;
+      throw new Error(`GitHub upload failed (${put.status}): ${short}`);
+    }
+    return path;
   }
 
   function wirePhotoDropzone() {
@@ -511,8 +583,10 @@
       toast('Photo cleared.');
     });
 
-    // Download for repo — saves the resized JPEG, then swaps the field to img/scholars/<slug>.jpg
-    $('#pf-photo-download').addEventListener('click', () => {
+    // "Upload/Download for repo" — if a GitHub token is set, uploads directly
+    // to img/scholars/<slug>.jpg via the API; otherwise falls back to a browser
+    // download so you can drop the file into the repo manually.
+    $('#pf-photo-download').addEventListener('click', async () => {
       if (!lastDroppedBlob) {
         toast('Drop or select a photo first.');
         return;
@@ -522,14 +596,29 @@
       const existing = state.profilesByKey.get(editingAuthor.name) || {};
       const slug = existing.slug || slugify(`${first}-${last}`);
       const filename = `${slug}.jpg`;
+      const repoPath = `img/scholars/${filename}`;
+
+      if (localStorage.getItem(GH_TOKEN_KEY)) {
+        // Direct upload path
+        toast(`Uploading ${filename} to GitHub…`);
+        try {
+          await githubUploadPhoto(repoPath, lastDroppedBlob, `admin: update profile photo for ${editingAuthor.name}`);
+          urlInput.value = repoPath;
+          toast(`Uploaded to ${repoPath}. Photo field now points there.`);
+          return;
+        } catch (err) {
+          console.error(err);
+          toast('GitHub upload failed — falling back to browser download. ' + err.message);
+        }
+      }
+
+      // Fallback: trigger a browser download and point the field at the expected repo path
       const a = document.createElement('a');
       a.href = URL.createObjectURL(lastDroppedBlob);
       a.download = filename;
       document.body.appendChild(a);
       a.click();
       setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 200);
-      // Swap the stored value to the repo path so JSON stays lean once you commit the file
-      const repoPath = `img/scholars/${filename}`;
       urlInput.value = repoPath;
       toast(`Downloaded ${filename}. Field now points to ${repoPath} — add the file to img/scholars/ and commit.`);
     });
@@ -561,6 +650,21 @@
       setTimeout(() => loadData().then(render), 300);
     });
     $('#reload-btn').addEventListener('click', () => { loadData().then(render); });
+
+    // GitHub token (for direct photo uploads)
+    const ghInput = $('#gh-token');
+    if (ghInput) ghInput.value = localStorage.getItem(GH_TOKEN_KEY) || '';
+    const ghSaveBtn = $('#gh-token-save');
+    if (ghSaveBtn) ghSaveBtn.addEventListener('click', () => {
+      const t = ($('#gh-token').value || '').trim();
+      if (t) {
+        localStorage.setItem(GH_TOKEN_KEY, t);
+        toast('GitHub token saved to this browser. Dropped photos will now upload directly to img/scholars/.');
+      } else {
+        localStorage.removeItem(GH_TOKEN_KEY);
+        toast('GitHub token cleared. Dropped photos will embed inline as base64.');
+      }
+    });
 
     // Export buttons
     $('#export-csv').addEventListener('click', () => {
