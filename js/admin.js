@@ -574,16 +574,38 @@
       'Accept': 'application/vnd.github+json',
       'X-GitHub-Api-Version': '2022-11-28'
     };
-    // If the file already exists we need its SHA for the update
-    let sha;
-    try {
-      const head = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, { headers });
-      if (head.ok) { const j = await head.json(); sha = j.sha; }
-    } catch (_) { /* file is new — no SHA needed */ }
+    // Get the CURRENT sha (cache-busted). GitHub's contents API can return a stale sha
+    // if a CDN caches the GET response — which causes a 409 conflict on PUT.
+    async function fetchCurrentSha() {
+      try {
+        const head = await fetch(`${apiUrl}?ref=${GH_BRANCH}&_=${Date.now()}`, {
+          headers: Object.assign({}, headers, { 'Cache-Control': 'no-cache' }),
+          cache: 'no-store'
+        });
+        if (head.ok) { const j = await head.json(); return j.sha; }
+      } catch (_) { /* file is new — no SHA needed */ }
+      return undefined;
+    }
     const base64 = (content instanceof Blob) ? await blobToBase64(content) : utf8ToBase64(content);
-    const body = { message, content: base64, branch: GH_BRANCH };
-    if (sha) body.sha = sha;
-    const put = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+
+    async function attemptPut(sha) {
+      const body = { message, content: base64, branch: GH_BRANCH };
+      if (sha) body.sha = sha;
+      return fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
+    }
+
+    let sha = await fetchCurrentSha();
+    let put = await attemptPut(sha);
+
+    // 409 = sha stale. GitHub responded with the current sha in the error message;
+    // simplest: refetch sha (fresh, cache-busted) and retry once.
+    if (put.status === 409) {
+      const freshSha = await fetchCurrentSha();
+      if (freshSha && freshSha !== sha) {
+        put = await attemptPut(freshSha);
+      }
+    }
+
     if (!put.ok) {
       const errBody = await put.text();
       const short = errBody.length > 200 ? errBody.slice(0, 200) + '…' : errBody;
