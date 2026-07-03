@@ -773,7 +773,8 @@
         firstAuthored: editingAuthor.firstAuthored,
         types: editingAuthor.types
       });
-      state.profilesByKey.set(editingAuthor.name, p);
+      const savedName = editingAuthor.name;   // capture before closeEdit() nulls it
+      state.profilesByKey.set(savedName, p);
       closeEdit();
       render();
 
@@ -782,14 +783,14 @@
       if (localStorage.getItem(GH_TOKEN_KEY)) {
         toast(`Saved locally. Pushing to GitHub…`);
         try {
-          await pushProfilesToGitHub(editingAuthor.name);
+          await pushProfilesToGitHub(savedName);
           toast(`Saved & pushed to GitHub. Public site updates within ~1 min.`);
         } catch (err) {
           console.error(err);
           toast('Saved locally, but GitHub push failed: ' + err.message);
         }
       } else {
-        toast(`Saved profile for ${editingAuthor.name}. Set a GitHub token in Data source to sync automatically.`);
+        toast(`Saved profile for ${savedName}. Set a GitHub token in Data source to sync automatically.`);
       }
     });
 
