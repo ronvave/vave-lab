@@ -650,12 +650,16 @@
       return;
     }
 
-    // Where iTaukei graduates study
+    // Where iTaukei graduates study.
+    // We plot Americas/Europe longitudes shifted by +360 so all points sit on
+    // the same side of a Pacific-centric map, keeping Fiji + Hawaii + UK
+    // visible without the map jumping across the antimeridian.
     const markers = points.map(p => {
       const total = (p.phdScholars.length + p.mastersScholars.length);
       const radius = Math.min(28, 6 + total * 3);
       const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
-      const m = L.circleMarker([p.lat, p.lng], {
+      const displayLng = p.lng < 0 ? p.lng + 360 : p.lng;
+      const m = L.circleMarker([p.lat, displayLng], {
         radius,
         fillColor: color,
         color: '#fff',
@@ -682,14 +686,25 @@
 
     state.worldLayer = L.layerGroup(markers).addTo(state.map);
 
-    // Fit to points — but with a comfortable margin so single-country data isn't too zoomed.
+    // Pacific-centric framing: the vast majority of iTaukei graduate work is in
+    // Fiji, NZ, Australia, USA (Hawaii). Manually center the view so Fiji sits
+    // near the middle instead of on the map edge, and include Europe (UK,
+    // Bremen). Longitudes crossing the antimeridian are handled by shifting
+    // any negative-longitude points (Americas/Europe) into the 0–360 range,
+    // then computing the bounds in that shifted space.
     if (points.length > 0) {
-      const lats = points.map(p => p.lat), lngs = points.map(p => p.lng);
-      const minLat = Math.min(...lats) - 8, maxLat = Math.max(...lats) + 8;
-      const minLng = Math.min(...lngs) - 8, maxLng = Math.max(...lngs) + 8;
+      const shifted = points.map(p => ({ lat: p.lat, lng: (p.lng < 0 ? p.lng + 360 : p.lng) }));
+      const lats = shifted.map(p => p.lat);
+      const lngs = shifted.map(p => p.lng);
+      const minLat = Math.min(...lats) - 8;
+      const maxLat = Math.max(...lats) + 8;
+      const minLng = Math.min(...lngs) - 12;
+      const maxLng = Math.max(...lngs) + 12;
+      // Leaflet accepts longitudes > 180 (it wraps them). Using the shifted
+      // range keeps Fiji + Hawaii + UK visible in one continuous frame.
       state.map.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [20, 20] });
     } else {
-      state.map.setView([0, 160], 2);
+      state.map.setView([10, 160], 2);
     }
   }
 
