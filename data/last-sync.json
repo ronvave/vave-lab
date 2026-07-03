@@ -1,32 +1,46 @@
 {
-  "lastChecked": "2026-07-02T22:05:27Z",
-  "lastChanged": "2026-07-02T22:05:27Z",
+  "lastChecked": "2026-07-03T02:40:32Z",
+  "lastChanged": "2026-07-03T02:40:32Z",
   "dataChangedThisRun": true,
-  "totalItems": 1437,
+  "totalItems": 1404,
   "movedMetrics": [
     {
+      "metric": "conf:Burebasaga",
+      "prev": 41,
+      "new": 107,
+      "delta": 66,
+      "pct": 160.98
+    },
+    {
       "metric": "conf:Kubuna",
-      "prev": 46,
-      "new": 47,
-      "delta": 1,
-      "pct": 2.17
+      "prev": 47,
+      "new": 77,
+      "delta": 30,
+      "pct": 63.83
+    },
+    {
+      "metric": "conf:Tovata",
+      "prev": 21,
+      "new": 42,
+      "delta": 21,
+      "pct": 100.0
     },
     {
       "metric": "items",
-      "prev": 531,
-      "new": 1437,
-      "delta": 906,
-      "pct": 170.62
+      "prev": 1437,
+      "new": 1404,
+      "delta": -33,
+      "pct": 2.3
     },
     {
       "metric": "type:thesis",
-      "prev": 173,
-      "new": 1080,
-      "delta": 907,
-      "pct": 524.28
+      "prev": 1080,
+      "new": 1047,
+      "delta": -33,
+      "pct": 3.06
     }
   ],
-  "summary": "Changes: conf:Kubuna 46\u219247, items 531\u21921437, type:thesis 173\u21921080",
+  "summary": "Changes: conf:Burebasaga 41\u2192107, conf:Kubuna 47\u219277, conf:Tovata 21\u219242, items 1437\u21921404, type:thesis 1080\u21921047",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28624499733"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28634792793"
 }
