@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T18:25:51.179Z",
+  "generatedAt": "2026-07-03T18:31:06.747Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -561,32 +561,31 @@
       "slug": "rosiana-lagi",
       "last": "Lagi",
       "first": "Rosiana",
-      "total": "10",
-      "firstAuthored": "3",
+      "total": 9,
+      "firstAuthored": 2,
       "types": {
-        "journalArticle": 8,
-        "thesis": 1,
         "bookSection": 1,
-        "book": 0,
-        "report": 0
+        "journalArticle": 7,
+        "thesis": 1
       },
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "paternalProvince": "Lomaiviti",
+      "institution": "University of the South Pacific (USP), Fiji",
+      "institutionUrl": "www.usp.ac.fj",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=AP22paAAAAAJ",
+      "photo": "img/scholars/rosiana-lagi.jpg",
       "name": "Lagi, Rosiana",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Deputy Head (Learning, Teaching and Quality)",
+      "orcidUrl": "https://orcid.org/0000-0003-1440-8886",
+      "lastUpdate": "2026-07-03T18:31:06.737Z",
       "types.journalArticle": "8",
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://www.usp.ac.fj/usp-space/research-innovation-and-postgraduate-affairs-copy-3/"
     },
     {
       "slug": "jimaima-lako",
