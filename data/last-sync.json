@@ -1,46 +1,10 @@
 {
-  "lastChecked": "2026-07-03T05:40:44Z",
+  "lastChecked": "2026-07-03T05:45:56Z",
   "lastChanged": "2026-07-03T05:40:44Z",
-  "dataChangedThisRun": true,
+  "dataChangedThisRun": false,
   "totalItems": 1405,
-  "movedMetrics": [
-    {
-      "metric": "conf:Burebasaga",
-      "prev": 41,
-      "new": 107,
-      "delta": 66,
-      "pct": 160.98
-    },
-    {
-      "metric": "conf:Kubuna",
-      "prev": 46,
-      "new": 77,
-      "delta": 31,
-      "pct": 67.39
-    },
-    {
-      "metric": "conf:Tovata",
-      "prev": 21,
-      "new": 42,
-      "delta": 21,
-      "pct": 100.0
-    },
-    {
-      "metric": "items",
-      "prev": 531,
-      "new": 1405,
-      "delta": 874,
-      "pct": 164.6
-    },
-    {
-      "metric": "type:thesis",
-      "prev": 173,
-      "new": 1047,
-      "delta": 874,
-      "pct": 505.2
-    }
-  ],
-  "summary": "Changes: conf:Burebasaga 41\u2192107, conf:Kubuna 46\u219277, conf:Tovata 21\u219242, items 531\u21921405, type:thesis 173\u21921047",
+  "movedMetrics": [],
+  "summary": "No tracked total moved by more than 2.0%.",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28640910725"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28641104231"
 }
