@@ -161,16 +161,25 @@
   // ==================== data load ====================
   async function loadData() {
     const [snap, profilesJson] = await Promise.all([
-      fetch('data/itaukei-zotero-snapshot.json', { cache: 'no-cache' }).then(r => r.json()),
-      fetch('data/scholar-profiles.json', { cache: 'no-cache' }).then(r => r.json()).catch(() => ({ scholars: [] }))
+      // Cache-bust query string forces fresh fetch every time so admin never
+      // shows a stale copy of the JSON right after a save/push.
+      fetch(`data/itaukei-zotero-snapshot.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
+      fetch(`data/scholar-profiles.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: [] }))
     ]);
     state.snapshot = snap;
 
-    // Try to enrich from Google Sheet CSV if user has configured it
+    // Try to enrich from Google Sheet CSV if user has configured it.
+    // BUT: if a GitHub token is set, ignore the sheet entirely — the JSON
+    // pushed from the admin dashboard is the source of truth. Otherwise the
+    // sheet's empty cells will silently wipe fields the user just edited.
     const sheetUrl = localStorage.getItem(SHEET_URL_KEY);
+    const hasGhToken = !!localStorage.getItem(GH_TOKEN_KEY);
     $('#sheet-url').value = sheetUrl || '';
     let sheetScholars = [];
-    if (sheetUrl) {
+    if (sheetUrl && hasGhToken) {
+      console.log('[admin] Google Sheet URL is set but ignored because a GitHub token is active. GitHub JSON is the source of truth.');
+    }
+    if (sheetUrl && !hasGhToken) {
       const csvUrl = normalizeSheetUrl(sheetUrl);
       try {
         const resp = await fetch(csvUrl, { cache: 'no-cache' });
@@ -203,7 +212,14 @@
     });
     sheetScholars.forEach(p => {
       const key = keyFor(p);
-      if (key) merged.set(key, withName(Object.assign({}, merged.get(key) || {}, p)));
+      if (!key) return;
+      // NEVER let an empty sheet cell wipe a non-empty local value. Only
+      // merge in fields that have actual content.
+      const cleanSheet = {};
+      for (const [k, v] of Object.entries(p)) {
+        if (v !== undefined && v !== null && v !== '') cleanSheet[k] = v;
+      }
+      merged.set(key, withName(Object.assign({}, merged.get(key) || {}, cleanSheet)));
     });
     state.profilesByKey = merged;
 
