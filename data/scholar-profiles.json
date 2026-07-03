@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-03T09:54:02.029Z",
-  "source": "admin-dashboard",
+  "generatedAt": "2026-07-03T10:28:01.596Z",
+  "source": "restore-script",
   "scholars": [
     {
       "slug": "apo-aporosa",
@@ -282,33 +282,31 @@
       "types.report": "0"
     },
     {
-      "slug": "mereia-fong-lomavatu",
-      "last": "Fong-Lomavatu",
-      "first": "Mereia",
-      "total": "5",
-      "firstAuthored": "2",
+      "slug": "glenn-finau",
+      "last": "Finau",
+      "first": "Glenn",
+      "total": 16,
+      "firstAuthored": 12,
       "types": {
-        "journalArticle": 4,
         "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "bookSection": 3,
+        "journalArticle": 12
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Fong-Lomavatu, Mereia",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "4",
+      "salutation": "Dr.",
+      "village": "Tubou vlg, Lakeba Is",
+      "paternalProvince": "Lau",
+      "institution": "University of Tasmania, Australia",
+      "institutionUrl": "https://www.utas.edu.au/profiles/staff/tsbe/glenn-finau",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=Glenn-Finau",
+      "photo": "img/scholars/glenn-finau.jpg",
+      "title": "Senior Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0002-9080-6862",
+      "lastUpdate": "2026-07-03T09:19:19.931Z",
+      "name": "Finau, Glenn",
+      "confederacy": "Tovata",
+      "types.journalArticle": "27",
       "types.thesis": "1",
-      "types.bookSection": "0",
+      "types.bookSection": "4",
       "types.book": "0",
       "types.report": "0"
     },
@@ -371,6 +369,37 @@
       "types.journalArticle": "3",
       "types.thesis": "0",
       "types.bookSection": "1",
+      "types.book": "0",
+      "types.report": "0"
+    },
+    {
+      "slug": "mereia-fong-lomavatu",
+      "last": "Fong-Lomavatu",
+      "first": "Mereia",
+      "total": "5",
+      "firstAuthored": "2",
+      "types": {
+        "journalArticle": 4,
+        "thesis": 1,
+        "bookSection": 0,
+        "book": 0,
+        "report": 0
+      },
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "name": "Fong-Lomavatu, Mereia",
+      "confederacy": "",
+      "title": "",
+      "orcidUrl": "",
+      "lastUpdate": "",
+      "types.journalArticle": "4",
+      "types.thesis": "1",
+      "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
     },
@@ -809,37 +838,6 @@
       "types.report": "0"
     },
     {
-      "slug": "litea-meo-sewabu",
-      "last": "Meo-Sewabu",
-      "first": "Litea",
-      "total": "12",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 8,
-        "thesis": 1,
-        "bookSection": 2,
-        "book": 0,
-        "report": 1
-      },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Meo-Sewabu, Litea",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "8",
-      "types.thesis": "1",
-      "types.bookSection": "2",
-      "types.book": "0",
-      "types.report": "1"
-    },
-    {
       "slug": "semisi-meo",
       "last": "Meo",
       "first": "Semisi",
@@ -869,6 +867,37 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "slug": "litea-meo-sewabu",
+      "last": "Meo-Sewabu",
+      "first": "Litea",
+      "total": "12",
+      "firstAuthored": "4",
+      "types": {
+        "journalArticle": 8,
+        "thesis": 1,
+        "bookSection": 2,
+        "book": 0,
+        "report": 1
+      },
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "name": "Meo-Sewabu, Litea",
+      "confederacy": "",
+      "title": "",
+      "orcidUrl": "",
+      "lastUpdate": "",
+      "types.journalArticle": "8",
+      "types.thesis": "1",
+      "types.bookSection": "2",
+      "types.book": "0",
+      "types.report": "1"
     },
     {
       "slug": "unaisi-nabobo-baba",
@@ -1336,6 +1365,37 @@
       "types.report": "0"
     },
     {
+      "slug": "amerita-ravuvu",
+      "last": "Ravuvu",
+      "first": "Amerita",
+      "total": "21",
+      "firstAuthored": "5",
+      "types": {
+        "journalArticle": 19,
+        "thesis": 1,
+        "bookSection": 1,
+        "book": 0,
+        "report": 0
+      },
+      "salutation": "Dr.",
+      "village": "Nakorosule",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "name": "Ravuvu, Amerita",
+      "confederacy": "",
+      "title": "",
+      "orcidUrl": "",
+      "lastUpdate": "",
+      "types.journalArticle": "19",
+      "types.thesis": "1",
+      "types.bookSection": "1",
+      "types.book": "0",
+      "types.report": "0"
+    },
+    {
       "slug": "asesela-ravuvu",
       "last": "Ravuvu",
       "first": "Asesela",
@@ -1770,6 +1830,35 @@
       "types.report": "0"
     },
     {
+      "slug": "ron-vave",
+      "last": "Vave",
+      "first": "Ron",
+      "total": 15,
+      "firstAuthored": 7,
+      "types": {
+        "bookSection": 3,
+        "journalArticle": 10,
+        "thesis": 2
+      },
+      "salutation": "Prof.",
+      "village": "Sawana vlg, Vanua balavu Is",
+      "paternalProvince": "Lau",
+      "institution": "University of Hawai\u02bbi at M\u0101noa",
+      "institutionUrl": "https://hawaii.edu/cpis/people/core-faculty/ron-vave/",
+      "googleScholarUrl": "",
+      "photo": "img/scholars/ron-vave.jpg",
+      "name": "Vave, Ron",
+      "confederacy": "",
+      "title": "Assistant Professor",
+      "orcidUrl": "https://orcid.org/0000-0001-6137-3685",
+      "lastUpdate": "2026-07-03T08:41:35.252Z",
+      "types.journalArticle": "12",
+      "types.thesis": "2",
+      "types.bookSection": "3",
+      "types.book": "0",
+      "types.report": "0"
+    },
+    {
       "slug": "joeli-veitayaki",
       "last": "Veitayaki",
       "first": "Joeli",
@@ -2017,9 +2106,5 @@
       "types.report": "0"
     }
   ],
-  "hiddenScholars": [
-    "Finau, Glenn",
-    "Ravuvu, Amerita",
-    "Vave, Ron"
-  ]
+  "hiddenScholars": []
 }
