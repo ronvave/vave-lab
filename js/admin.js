@@ -187,15 +187,19 @@
       }
     }
 
-    // Merge: local JSON first, then sheet overrides local
+    // Merge: local JSON first, then sheet overrides local. Always back-fill the
+    // canonical `name` field (`Last, First`) so downstream exports have it —
+    // some legacy seed records had name:null even though last/first were set.
+    const keyFor = p => (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
+    const withName = p => Object.assign({}, p, { name: p.name || keyFor(p) });
     const merged = new Map();
     (profilesJson.scholars || []).forEach(p => {
-      const key = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
-      if (key) merged.set(key, p);
+      const key = keyFor(p);
+      if (key) merged.set(key, withName(p));
     });
     sheetScholars.forEach(p => {
-      const key = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
-      if (key) merged.set(key, Object.assign({}, merged.get(key) || {}, p));
+      const key = keyFor(p);
+      if (key) merged.set(key, withName(Object.assign({}, merged.get(key) || {}, p)));
     });
     state.profilesByKey = merged;
 
