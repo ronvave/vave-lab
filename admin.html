@@ -382,7 +382,7 @@
   <div class="modal">
     <h2 id="profile-modal-title">Edit scholar profile</h2>
     <p class="subtitle" id="profile-modal-subtitle"></p>
-    <form id="profile-form" autocomplete="off">
+    <form id="profile-form" autocomplete="off" novalidate>
       <div class="form-grid">
         <div>
           <label for="pf-salutation">Salutation</label>
@@ -453,7 +453,7 @@
               </div>
             </div>
           </div>
-          <input type="url" id="pf-photo" placeholder="https://…/photo.jpg  or  img/scholars/first-last.jpg" style="margin-top:10px; display:none;" />
+          <input type="text" id="pf-photo" placeholder="https://…/photo.jpg  or  img/scholars/first-last.jpg" style="margin-top:10px; display:none;" />
           <small>Drop an image or paste a URL. Dropped images are embedded as base64 in the exported JSON. Use “Download for repo” to save the resized file, drop it into <code>img/scholars/</code>, then commit — the exported JSON will reference that path automatically.</small>
         </div>
       </div>
@@ -484,6 +484,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260703-05" defer></script>
+<script src="js/admin.js?v=20260703-06" defer></script>
 </body>
 </html>
