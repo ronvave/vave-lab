@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T20:32:04.760Z",
+  "generatedAt": "2026-07-03T20:36:05.078Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1272,32 +1272,41 @@
       "slug": "steven-ratuva",
       "last": "Ratuva",
       "first": "Steven",
-      "total": "17",
-      "firstAuthored": "16",
+      "total": 21,
+      "firstAuthored": 17,
       "types": {
-        "journalArticle": 10,
-        "thesis": 2,
-        "bookSection": 4,
+        "thesis": 3,
+        "report": 1,
+        "bookSection": 6,
         "book": 1,
-        "report": 0
+        "journalArticle": 10
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "salutation": "Prof.",
+      "village": "Yale vlg, Kadavu Is",
+      "paternalProvince": "Kadavu",
+      "institution": "University of Canterbury (New Zealand)",
+      "institutionUrl": "https://profiles.canterbury.ac.nz/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/steven-ratuva.jpg",
       "name": "Ratuva, Steven",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Professor",
+      "orcidUrl": "https://orcid.org/0000-0002-2393-4581",
+      "lastUpdate": "2026-07-03T20:36:05.068Z",
       "types.journalArticle": "10",
       "types.thesis": "2",
       "types.bookSection": "4",
       "types.book": "1",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://profiles.canterbury.ac.nz/Steven-Ratuva",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "University of Sussex",
+        "country": "UK"
+      }
     },
     {
       "slug": "kaliova-ravuiwasa",
