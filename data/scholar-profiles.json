@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T20:22:11.621Z",
+  "generatedAt": "2026-07-03T20:26:29.810Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1928,32 +1928,38 @@
       "slug": "suliasi-vunibola",
       "last": "Vunibola",
       "first": "Suliasi",
-      "total": "17",
-      "firstAuthored": "7",
+      "total": 19,
+      "firstAuthored": 7,
       "types": {
+        "report": 2,
+        "bookSection": 6,
         "journalArticle": 9,
-        "thesis": 1,
-        "bookSection": 5,
         "book": 1,
-        "report": 1
+        "thesis": 1
       },
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "institution": "Lincoln University (New Zealand)",
+      "institutionUrl": "https://researchers.lincoln.ac.nz/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=3VMou-4AAAAJ",
+      "photo": "img/scholars/suliasi-vunibola.jpg",
       "name": "Vunibola, Suliasi",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Senior Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0003-0453-9452",
+      "lastUpdate": "2026-07-03T20:26:29.800Z",
       "types.journalArticle": "9",
       "types.thesis": "1",
       "types.bookSection": "5",
       "types.book": "1",
-      "types.report": "1"
+      "types.report": "1",
+      "profileUrl": "https://researchers.lincoln.ac.nz/suliasi.vunibola",
+      "masters": null,
+      "phd": {
+        "university": "Massey University",
+        "country": "New Zealand"
+      }
     },
     {
       "slug": "tarisi-vunidilo",
