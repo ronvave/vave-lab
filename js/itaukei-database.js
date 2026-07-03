@@ -2015,6 +2015,166 @@
     };
     initMapWhenReady();
 
+    wireImpactView();
+
     backgroundRefresh();
   });
+
+  // ============ IMPACT VIEW (Ron's presentation overlay) ============
+  // Publications grouped by paternal confederacy of the iTaukei lead author,
+  // split by whether the item is Fiji-focused (has a Fiji-province tag) or
+  // international-focused. Toggle filters restrict to PhD / Masters theses.
+  function computeImpactData(filter) {
+    const conf = { Burebasaga: {fiji:0, intl:0, scholars:new Set()},
+                   Kubuna:     {fiji:0, intl:0, scholars:new Set()},
+                   Tovata:     {fiji:0, intl:0, scholars:new Set()} };
+    const confByProv = new Map();
+    state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
+
+    // Look up each iTaukei scholar's paternal confederacy from their filled
+    // profile. Empty confederacy = we can't attribute their work to a group.
+    const scholarConf = new Map();
+    (state.scholarProfilesByName || new Map()).forEach((prof, name) => {
+      const c = confByProv.get(prof.paternalProvince || '');
+      if (c) scholarConf.set(name, c);
+    });
+
+    let unattributed = 0;
+    state.snapshot.items.forEach(it => {
+      // Filter to just theses of the requested level when the user picked one
+      if (filter === 'phd' && it.thesisLevel !== 'phd') return;
+      if (filter === 'masters' && it.thesisLevel !== 'masters') return;
+      // Determine the paternal confederacy from the lead iTaukei author. We
+      // check the first creator first, then fall back to any iTaukei author.
+      const creators = it.creators || [];
+      let attributed = null, attributedName = null;
+      for (let i = 0; i < creators.length; i++) {
+        const cn = canonicalNameFromCreator(creators[i]);
+        if (cn && scholarConf.has(cn)) {
+          attributed = scholarConf.get(cn);
+          attributedName = cn;
+          if (i === 0) break; // strong preference for lead
+        }
+      }
+      if (!attributed) { unattributed += 1; return; }
+      const provSet = state.provincesByItem.get(it.key);
+      const isFiji = provSet && provSet.size > 0;
+      const bucket = conf[attributed];
+      if (!bucket) return;
+      if (isFiji) bucket.fiji += 1; else bucket.intl += 1;
+      bucket.scholars.add(attributedName);
+    });
+
+    return { conf, unattributed };
+  }
+
+  // Local helper — same logic as admin.js canonicalName but limited scope.
+  function canonicalNameFromCreator(creator) {
+    if (!creator) return null;
+    if (typeof creator !== 'string') creator = String(creator);
+    if (creator.includes(',')) return creator.trim();
+    const parts = creator.trim().split(/\s+/);
+    if (parts.length < 2) return null;
+    const last = parts[parts.length - 1];
+    const first = parts.slice(0, -1).join(' ');
+    return `${last}, ${first}`;
+  }
+
+  function renderImpactView(filter) {
+    const data = computeImpactData(filter);
+    const chart = $('[data-impact-chart]');
+    if (!chart) return;
+
+    // Headline numbers
+    const total = ['Burebasaga','Kubuna','Tovata'].reduce((s, c) => s + data.conf[c].fiji + data.conf[c].intl, 0);
+    const fiji = ['Burebasaga','Kubuna','Tovata'].reduce((s, c) => s + data.conf[c].fiji, 0);
+    const intl = total - fiji;
+    const allScholars = new Set();
+    ['Burebasaga','Kubuna','Tovata'].forEach(c => data.conf[c].scholars.forEach(n => allScholars.add(n)));
+    $('[data-impact-total]').textContent = total.toLocaleString();
+    $('[data-impact-fiji]').textContent = fiji.toLocaleString();
+    $('[data-impact-intl]').textContent = intl.toLocaleString();
+    $('[data-impact-scholars]').textContent = allScholars.size.toLocaleString();
+
+    // Find max across all conf x scope for bar scaling
+    const allValues = [];
+    ['Burebasaga','Kubuna','Tovata'].forEach(c => { allValues.push(data.conf[c].fiji, data.conf[c].intl); });
+    const max = Math.max(1, ...allValues);
+    const MAX_H = 220; // pixels
+
+    const confs = [
+      { name: 'Burebasaga', color: '#FF5A6E' },
+      { name: 'Kubuna',     color: '#4ECDE6' },
+      { name: 'Tovata',     color: '#FFD84A' }
+    ];
+
+    chart.innerHTML = confs.map(c => {
+      const d = data.conf[c.name];
+      const total = d.fiji + d.intl;
+      const scholarList = Array.from(d.scholars).sort().join('&#10;'); // linebreak-separated in tooltip
+      return `
+        <div class="impact-conf" style="border-top-color:${c.color};">
+          <div class="impact-conf__title">${c.name}</div>
+          <div class="impact-conf__total">${total} Publication${total === 1 ? '' : 's'} · ${d.scholars.size} scholar${d.scholars.size === 1 ? '' : 's'}</div>
+          <div class="impact-conf__bars">
+            <div class="impact-bar">
+              <div class="impact-bar__value">${d.fiji}</div>
+              <div class="impact-bar__col impact-bar__col--fiji" style="height:${Math.max(4, (d.fiji / max) * MAX_H)}px;" data-tooltip="${d.fiji} Fiji-focused item${d.fiji === 1 ? '' : 's'}"></div>
+              <div class="impact-bar__label">Fiji-focused</div>
+            </div>
+            <div class="impact-bar">
+              <div class="impact-bar__value">${d.intl}</div>
+              <div class="impact-bar__col impact-bar__col--intl" style="height:${Math.max(4, (d.intl / max) * MAX_H)}px;" data-tooltip="${d.intl} international-focused item${d.intl === 1 ? '' : 's'}"></div>
+              <div class="impact-bar__label">International</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Footnote text with methodology so viewers in the presentation understand.
+    const filterLabel = filter === 'phd' ? 'PhD theses only'
+                       : filter === 'masters' ? 'Masters theses only'
+                       : 'all publication types';
+    let note = `Showing ${filterLabel}. “Fiji-focused” means the item is tagged to at least one Fijian province in Zotero; “International” means it isn’t. Confederacy is attributed via the lead iTaukei author’s paternal province.`;
+    if (data.unattributed > 0) {
+      note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal province hasn’t been filled in the admin dashboard yet.`;
+    }
+    $('[data-impact-footnote]').textContent = note;
+  }
+
+  function wireImpactView() {
+    const overlay = $('[data-impact-overlay]');
+    const openBtn = $('[data-impact-open]');
+    const closeBtn = $('[data-impact-close]');
+    if (!overlay || !openBtn) return;
+
+    const open = () => {
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      renderImpactView(state.impactFilter || 'all');
+    };
+    const close = () => {
+      overlay.hidden = true;
+      document.body.style.overflow = '';
+    };
+
+    openBtn.addEventListener('click', open);
+    closeBtn.addEventListener('click', close);
+    // Click backdrop to close (but not clicks inside the modal)
+    overlay.addEventListener('click', ev => { if (ev.target === overlay) close(); });
+    // ESC to close
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape' && !overlay.hidden) close();
+    });
+    // Filter tabs
+    $$('.impact-filters button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        $$('.impact-filters button').forEach(b => b.classList.remove('is-active'));
+        btn.classList.add('is-active');
+        state.impactFilter = btn.dataset.impactFilter;
+        renderImpactView(state.impactFilter);
+      });
+    });
+  }
 })();

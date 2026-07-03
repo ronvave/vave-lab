@@ -837,6 +837,182 @@
     .db-popup-title { font-weight: 700; margin: 0 0 4px; color: var(--color-text); font-family: var(--font-display); font-size: 1.05rem; }
     .db-popup-meta  { margin: 0; color: var(--color-text-muted); font-size: 0.82rem; }
     .db-popup-count { font-weight: 700; color: var(--color-primary); }
+
+    /* ============ Present-view CTA button ============ */
+    .db-present-cta { margin-top: var(--space-4); }
+    .db-present-cta__btn {
+      appearance: none; border: 0; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 14px;
+      padding: 14px 22px;
+      background: linear-gradient(135deg, #0e7490 0%, #062f35 100%);
+      color: #fff; border-radius: 999px;
+      font: 400 1rem 'Source Sans Pro', sans-serif;
+      box-shadow: 0 4px 14px rgba(6,47,53,0.28);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .db-present-cta__btn:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(6,47,53,0.35); }
+    .db-present-cta__btn strong { display: block; font-weight: 700; font-size: 1.05rem; letter-spacing: 0.01em; }
+    .db-present-cta__btn em { display: block; font-style: normal; opacity: 0.85; font-size: 0.85rem; }
+    .db-present-cta__icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 34px; height: 34px; border-radius: 50%;
+      background: rgba(255,255,255,0.18); font-size: 0.9rem;
+    }
+
+    /* ============ Impact View overlay ============ */
+    .impact-overlay {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(6, 47, 53, 0.88); backdrop-filter: blur(6px);
+      overflow-y: auto;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 32px 20px;
+      animation: impact-fade-in 0.25s ease-out;
+    }
+    .impact-overlay[hidden] { display: none; }
+    @keyframes impact-fade-in { from { opacity: 0; } to { opacity: 1; } }
+    .impact-modal {
+      position: relative;
+      background: #fbf9f4;
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      width: 100%; max-width: 1180px;
+      padding: 44px 52px 36px;
+      font-family: 'Source Sans Pro', sans-serif;
+    }
+    @media (max-width: 720px) { .impact-modal { padding: 32px 22px 28px; } }
+    .impact-close {
+      position: absolute; top: 16px; right: 20px;
+      appearance: none; background: transparent; border: 0;
+      font-size: 2rem; line-height: 1; color: #94a3b8; cursor: pointer;
+      padding: 4px 10px;
+      transition: color 0.15s;
+    }
+    .impact-close:hover { color: #062f35; }
+    .impact-header { text-align: center; margin-bottom: 24px; }
+    .impact-header__eyebrow {
+      font-size: 0.85rem; letter-spacing: 0.14em; text-transform: uppercase;
+      color: #0e7490; font-weight: 600; margin-bottom: 8px;
+    }
+    .impact-header__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2rem, 4vw, 3rem); line-height: 1.1;
+      color: #062f35; margin: 0 0 12px;
+    }
+    .impact-header__title span { color: #0e7490; font-style: italic; }
+    .impact-header__sub {
+      font-size: 1.02rem; color: #334155; margin: 0 auto;
+      max-width: 780px; line-height: 1.55;
+    }
+    .impact-header__sub em { font-style: italic; color: #0e7490; }
+
+    .impact-filters {
+      display: inline-flex; gap: 6px;
+      margin: 24px auto; padding: 5px;
+      background: rgba(14,116,144,0.10); border-radius: 999px;
+      align-items: center; justify-content: center;
+      display: flex; width: fit-content;
+    }
+    .impact-filters button {
+      appearance: none; border: 0; background: transparent;
+      padding: 10px 20px; border-radius: 999px; cursor: pointer;
+      font: 600 0.95rem 'Source Sans Pro', sans-serif;
+      color: #334155; transition: background 0.15s, color 0.15s;
+    }
+    .impact-filters button.is-active {
+      background: #062f35; color: #fff;
+    }
+
+    .impact-headline {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 16px; margin: 30px 0 40px;
+    }
+    @media (max-width: 780px) { .impact-headline { grid-template-columns: repeat(2, 1fr); } }
+    .impact-headline__stat {
+      background: #fff; border-radius: 12px;
+      padding: 22px 20px; text-align: center;
+      border: 1px solid rgba(14,116,144,0.15);
+      box-shadow: 0 4px 12px rgba(6,47,53,0.06);
+    }
+    .impact-headline__num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem; font-weight: 700;
+      color: #062f35; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .impact-headline__label {
+      font-size: 0.85rem; color: #64748b; margin-top: 8px;
+      text-transform: uppercase; letter-spacing: 0.07em;
+    }
+
+    /* Grouped bar chart per confederacy */
+    .impact-chart {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 22px; margin: 30px 0 24px;
+      min-height: 300px;
+    }
+    @media (max-width: 780px) { .impact-chart { grid-template-columns: 1fr; } }
+    .impact-conf {
+      background: #fff; border-radius: 14px;
+      padding: 22px 20px;
+      border-top: 4px solid;
+      box-shadow: 0 6px 16px rgba(6,47,53,0.07);
+      display: flex; flex-direction: column;
+    }
+    .impact-conf__title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.55rem; font-weight: 700;
+      margin: 0 0 4px; color: #062f35;
+    }
+    .impact-conf__total {
+      font-size: 0.85rem; color: #64748b; margin-bottom: 20px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .impact-conf__bars {
+      display: flex; align-items: flex-end; justify-content: center;
+      gap: 24px; flex: 1; min-height: 200px;
+      position: relative; padding-top: 10px;
+    }
+    .impact-bar {
+      display: flex; flex-direction: column; align-items: center;
+      width: 78px;
+    }
+    .impact-bar__value {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.4rem; font-weight: 700; color: #062f35;
+      margin-bottom: 6px; font-variant-numeric: tabular-nums;
+    }
+    .impact-bar__col {
+      width: 100%; border-radius: 6px 6px 0 0;
+      transition: height 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: default;
+      position: relative;
+    }
+    .impact-bar__col--fiji { background: linear-gradient(180deg, #0e7490, #075366); }
+    .impact-bar__col--intl { background: linear-gradient(180deg, #c2410c, #7c2d12); }
+    .impact-bar__label {
+      margin-top: 8px; font-size: 0.8rem;
+      color: #475569; text-align: center; line-height: 1.25;
+    }
+    .impact-bar__col:hover::after {
+      content: attr(data-tooltip);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      background: #062f35; color: #fff; font-size: 0.75rem;
+      padding: 6px 10px; border-radius: 4px; white-space: pre; z-index: 2;
+      pointer-events: none; margin-bottom: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    }
+    .impact-legend {
+      display: flex; justify-content: center; gap: 30px; margin: 8px 0 22px;
+      font-size: 0.92rem; color: #334155;
+    }
+    .impact-legend__sw {
+      display: inline-block; width: 14px; height: 14px; border-radius: 3px;
+      margin-right: 6px; vertical-align: middle;
+    }
+    .impact-footnote {
+      font-size: 0.82rem; color: #64748b; text-align: center;
+      margin: 8px auto 0; max-width: 820px; line-height: 1.5;
+    }
   </style>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -954,6 +1130,17 @@
         <div class="db-stat"><div class="db-stat__num" data-stat="universities">—</div><div class="db-stat__label">Universities</div></div>
         <div class="db-stat"><div class="db-stat__num" data-stat="countries">—</div><div class="db-stat__label">Countries</div></div>
         <div class="db-stat"><div class="db-stat__num" data-stat="provinces">14</div><div class="db-stat__label">Provinces</div></div>
+      </div>
+
+      <!-- Impact View trigger — opens a presentation-ready overlay -->
+      <div class="db-present-cta">
+        <button type="button" class="db-present-cta__btn" data-impact-open aria-haspopup="dialog">
+          <span class="db-present-cta__icon">▶</span>
+          <span>
+            <strong>iTaukei Research Impact view</strong>
+            <em>Presentation-ready overlay for departmental meetings</em>
+          </span>
+        </button>
       </div>
     </div>
 
@@ -1183,6 +1370,55 @@
 </section>
 </main>
 
+<!-- ============ Impact View overlay (Ron's presentation view) ============ -->
+<div class="impact-overlay" data-impact-overlay role="dialog" aria-labelledby="impact-title" aria-modal="true" hidden>
+  <div class="impact-modal">
+    <button type="button" class="impact-close" data-impact-close aria-label="Close impact view">×</button>
+
+    <header class="impact-header">
+      <div class="impact-header__eyebrow">Presentation view · iTaukei Scholarly Research Database</div>
+      <h2 id="impact-title" class="impact-header__title">iTaukei research impact <span>across the Pacific</span></h2>
+      <p class="impact-header__sub">Publications grouped by paternal <em>confederacy</em>, split by whether the research is <strong>Fiji-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
+    </header>
+
+    <div class="impact-filters" role="tablist" aria-label="Filter">
+      <button type="button" class="is-active" data-impact-filter="all">All publications</button>
+      <button type="button" data-impact-filter="phd">PhD theses only</button>
+      <button type="button" data-impact-filter="masters">Masters theses only</button>
+    </div>
+
+    <div class="impact-headline" data-impact-headline>
+      <div class="impact-headline__stat">
+        <div class="impact-headline__num" data-impact-total>—</div>
+        <div class="impact-headline__label">Total items in view</div>
+      </div>
+      <div class="impact-headline__stat">
+        <div class="impact-headline__num" data-impact-fiji>—</div>
+        <div class="impact-headline__label">Fiji-focused</div>
+      </div>
+      <div class="impact-headline__stat">
+        <div class="impact-headline__num" data-impact-intl>—</div>
+        <div class="impact-headline__label">International-focused</div>
+      </div>
+      <div class="impact-headline__stat">
+        <div class="impact-headline__num" data-impact-scholars>—</div>
+        <div class="impact-headline__label">iTaukei scholars represented</div>
+      </div>
+    </div>
+
+    <div class="impact-chart" data-impact-chart>
+      <!-- Populated by JS: three grouped column pairs (Fiji vs Intl) per confederacy -->
+    </div>
+
+    <div class="impact-legend">
+      <span><span class="impact-legend__sw" style="background:#0e7490;"></span>Fiji-focused research</span>
+      <span><span class="impact-legend__sw" style="background:#c2410c;"></span>International-focused research</span>
+    </div>
+
+    <p class="impact-footnote" data-impact-footnote></p>
+  </div>
+</div>
+
 <footer class="site-footer" role="contentinfo">
   <div class="container">
     <div class="footer-grid">
@@ -1228,6 +1464,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260703-11" defer></script>
+<script src="js/itaukei-database.js?v=20260703-12" defer></script>
 </body>
 </html>
