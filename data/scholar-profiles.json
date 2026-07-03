@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T09:50:27.962Z",
+  "generatedAt": "2026-07-03T09:54:02.029Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -278,35 +278,6 @@
       "types.journalArticle": "2",
       "types.thesis": "0",
       "types.bookSection": "1",
-      "types.book": "0",
-      "types.report": "0"
-    },
-    {
-      "slug": "glenn-finau",
-      "last": "Finau",
-      "first": "Glenn",
-      "total": "32",
-      "firstAuthored": "12",
-      "types": {
-        "thesis": 1,
-        "bookSection": 3,
-        "journalArticle": 12
-      },
-      "salutation": "Dr.",
-      "village": "Tubou vlg, Lakeba Is",
-      "paternalProvince": "Lau",
-      "institution": "University of Tasmania, Australia",
-      "institutionUrl": "https://www.utas.edu.au/profiles/staff/tsbe/glenn-finau",
-      "googleScholarUrl": "https://scholar.google.com/citations?user=Glenn-Finau",
-      "photo": "img/scholars/glenn-finau.jpg",
-      "title": "Senior Lecturer",
-      "orcidUrl": "https://orcid.org/0000-0002-9080-6862",
-      "lastUpdate": "2026-07-03T09:19:19.931Z",
-      "name": "Finau, Glenn",
-      "confederacy": "Tovata",
-      "types.journalArticle": "27",
-      "types.thesis": "1",
-      "types.bookSection": "4",
       "types.book": "0",
       "types.report": "0"
     },
@@ -2047,6 +2018,7 @@
     }
   ],
   "hiddenScholars": [
+    "Finau, Glenn",
     "Ravuvu, Amerita",
     "Vave, Ron"
   ]
