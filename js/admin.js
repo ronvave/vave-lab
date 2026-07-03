@@ -63,7 +63,11 @@
     t.classList.toggle('error', type === 'error');
     t.classList.add('is-visible');
     clearTimeout(t._to);
-    t._to = setTimeout(() => t.classList.remove('is-visible'), 2500);
+    // Error toasts hang around longer so you can actually read them
+    const isErr = type === 'error' || /fail|error|couldn/i.test(msg);
+    t._to = setTimeout(() => t.classList.remove('is-visible'), isErr ? 10000 : 3000);
+    // Also mirror to console so we always have a record
+    (isErr ? console.warn : console.log)('[admin toast]', msg);
   }
 
   function slugify(fullname) {
@@ -752,7 +756,19 @@
     });
     $('#profile-form').addEventListener('submit', async ev => {
       ev.preventDefault();
-      if (!editingAuthor) return;
+      try {
+        await onSaveProfile();
+      } catch (err) {
+        console.error('Save failed:', err);
+        toast('Save failed: ' + (err && err.message || String(err)) + ' (see console for details)');
+      }
+    });
+
+    async function onSaveProfile() {
+      if (!editingAuthor) {
+        toast('No author is being edited — close and reopen the modal.');
+        return;
+      }
       const p = state.profilesByKey.get(editingAuthor.name) || {};
       const [last, first] = editingAuthor.name.split(',').map(s => s.trim());
       Object.assign(p, {
@@ -792,7 +808,7 @@
       } else {
         toast(`Saved profile for ${savedName}. Set a GitHub token in Data source to sync automatically.`);
       }
-    });
+    }
 
     // Output modal
     $('#output-close').addEventListener('click', () => $('#output-modal').classList.remove('is-visible'));
