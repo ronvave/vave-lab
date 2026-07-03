@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T19:59:15.345Z",
+  "generatedAt": "2026-07-03T20:04:20.770Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1375,7 +1375,7 @@
       "salutation": "Dr.",
       "village": "Nakorosule",
       "paternalProvince": "Naitasiri",
-      "institution": "The Pacific Community (SPC)",
+      "institution": "The Pacific Community (SPC), Fiji",
       "institutionUrl": "https://www.spc.int/",
       "googleScholarUrl": "",
       "photo": "img/scholars/amerita-ravuvu.jpg",
@@ -1383,7 +1383,7 @@
       "confederacy": "",
       "title": "NCD Policy and Planning Adviser (Public Health Division)",
       "orcidUrl": "https://orcid.org/0000-0001-8135-0560",
-      "lastUpdate": "2026-07-03T17:51:45.808Z",
+      "lastUpdate": "2026-07-03T20:04:20.760Z",
       "types.journalArticle": "19",
       "types.thesis": "1",
       "types.bookSection": "1",
