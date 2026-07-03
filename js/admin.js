@@ -249,6 +249,11 @@
     });
   }
 
+  // We output TAB-separated values instead of comma-separated because Google
+  // Sheets’ default paste splits on commas without honouring CSV quoting.
+  // Names like "Finau, Glenn" would get chopped into two cells and shift every
+  // other value one column to the right. Tabs never appear in author fields, so
+  // no escaping is needed and the paste is bulletproof.
   function toCsv(rows) {
     if (!rows.length) return '';
     const headers = ['name','slug','last','first','salutation','village','paternalProvince','confederacy',
@@ -257,11 +262,10 @@
                      'types.journalArticle','types.thesis','types.bookSection','types.book','types.report'];
     const esc = v => {
       if (v == null) return '';
-      const s = String(v);
-      if (/[,"\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-      return s;
+      // Strip any stray tabs/newlines that would corrupt the row layout
+      return String(v).replace(/[\t\r\n]+/g, ' ').trim();
     };
-    const lines = [headers.join(',')];
+    const lines = [headers.join('\t')];
     rows.forEach(r => {
       const t = r.types || {};
       lines.push([
@@ -273,7 +277,7 @@
         r.lastUpdate || '',
         r.total ?? '', r.firstAuthored ?? '',
         t.journalArticle ?? 0, t.thesis ?? 0, t.bookSection ?? 0, t.book ?? 0, t.report ?? 0
-      ].map(esc).join(','));
+      ].map(esc).join('\t'));
     });
     return lines.join('\n');
   }
@@ -669,7 +673,9 @@
     // Export buttons
     $('#export-csv').addEventListener('click', () => {
       const rows = Array.from(state.profilesByKey.values());
-      openOutput('Copy this CSV into your Google Sheet', 'Ctrl / Cmd + A to select all, then paste into your published Google Sheet.', toCsv(rows));
+      openOutput('Copy this table into your Google Sheet',
+        'Ctrl / Cmd + A to select all, then paste into cell A1 of your Google Sheet. This is tab-separated \u2014 Sheets pastes each column into its own cell natively, so names with commas (e.g. \u201cFinau, Glenn\u201d) stay in one cell.',
+        toCsv(rows));
     });
     $('#export-json').addEventListener('click', () => {
       const rows = Array.from(state.profilesByKey.values());
