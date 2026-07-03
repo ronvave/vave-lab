@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T17:51:45.819Z",
+  "generatedAt": "2026-07-03T17:57:57.825Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -500,32 +500,31 @@
       "slug": "isoa-korovulavula",
       "last": "Korovulavula",
       "first": "Isoa",
-      "total": "11",
-      "firstAuthored": "3",
+      "total": 11,
+      "firstAuthored": 3,
       "types": {
         "journalArticle": 9,
-        "thesis": 1,
         "bookSection": 1,
-        "book": 0,
-        "report": 0
+        "thesis": 1
       },
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "paternalProvince": "Kadavu",
+      "institution": "University of the South Pacific (USP)",
+      "institutionUrl": "https://www.usp.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=UG27_hUAAAAJ&hl=en&oi=ao",
+      "photo": "img/scholars/isoa-korovulavula.jpg",
       "name": "Korovulavula, Isoa",
       "confederacy": "",
-      "title": "",
+      "title": "Acting Director (Institute of Applied Science)",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-03T17:57:57.815Z",
       "types.journalArticle": "9",
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://www.usp.ac.fj/the-institute-of-applied-sciences/our-team/management-team/dr-isoa-korovulavula/"
     },
     {
       "slug": "ilisapeci-kubuabola",
