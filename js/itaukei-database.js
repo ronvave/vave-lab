@@ -299,7 +299,10 @@
   }
 
   async function fetchJson(url) {
-    const r = await fetch(url, { cache: 'no-cache' });
+    // Append a unique query string every time so browsers + CDNs can never
+    // serve a stale cached response for admin-edited data files.
+    const busted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+    const r = await fetch(busted, { cache: 'no-store' });
     if (!r.ok) throw new Error(`Fetch failed: ${url} (${r.status})`);
     return r.json();
   }
