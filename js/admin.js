@@ -247,7 +247,8 @@
   function toCsv(rows) {
     if (!rows.length) return '';
     const headers = ['name','slug','last','first','salutation','village','paternalProvince','confederacy',
-                     'institution','institutionUrl','googleScholarUrl','photo','total','firstAuthored',
+                     'institution','institutionUrl','title','googleScholarUrl','orcidUrl','photo',
+                     'lastUpdate','total','firstAuthored',
                      'types.journalArticle','types.thesis','types.bookSection','types.book','types.report'];
     const esc = v => {
       if (v == null) return '';
@@ -262,7 +263,9 @@
         r.name || '', r.slug || '', r.last || '', r.first || '',
         r.salutation || '', r.village || '', r.paternalProvince || '',
         confederacyOf(r.paternalProvince) || '',
-        r.institution || '', r.institutionUrl || '', r.googleScholarUrl || '', r.photo || '',
+        r.institution || '', r.institutionUrl || '', r.title || '',
+        r.googleScholarUrl || '', r.orcidUrl || '', r.photo || '',
+        r.lastUpdate || '',
         r.total ?? '', r.firstAuthored ?? '',
         t.journalArticle ?? 0, t.thesis ?? 0, t.bookSection ?? 0, t.book ?? 0, t.report ?? 0
       ].map(esc).join(','));
@@ -277,7 +280,7 @@
   function isEnriched(author) {
     const p = state.profilesByKey.get(author.name);
     if (!p) return false;
-    return !!(p.paternalProvince || p.institution || p.googleScholarUrl);
+    return !!(p.paternalProvince || p.institution || p.googleScholarUrl || p.orcidUrl || p.title);
   }
   function statusFlag(author) {
     if (!isItaukei(author)) return 'none';
@@ -381,7 +384,9 @@
     $('#pf-paternal-province').value = p.paternalProvince || '';
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
+    $('#pf-title').value = p.title || '';
     $('#pf-scholar-url').value = p.googleScholarUrl || '';
+    $('#pf-orcid-url').value = p.orcidUrl || '';
     $('#pf-photo').value = p.photo || '';
     setPhotoPreview(p.photo || '');
     $('#profile-modal').classList.add('is-visible');
@@ -596,8 +601,11 @@
         paternalProvince: $('#pf-paternal-province').value,
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
+        title: $('#pf-title').value.trim(),
         googleScholarUrl: $('#pf-scholar-url').value.trim(),
+        orcidUrl: $('#pf-orcid-url').value.trim(),
         photo: $('#pf-photo').value.trim(),
+        lastUpdate: new Date().toISOString(),
         total: editingAuthor.total,
         firstAuthored: editingAuthor.firstAuthored,
         types: editingAuthor.types

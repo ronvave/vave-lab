@@ -1322,6 +1322,44 @@
     });
   }
 
+  // Confederacy → gradient stops for the banner + initials background.
+  // Matches Panel A/B/C confederacy colours.
+  const CONF_GRADIENT = {
+    Burebasaga: { from: '#FF5A6E', to: '#c93e50' },
+    Kubuna:     { from: '#4ECDE6', to: '#0891b2' },
+    Tovata:     { from: '#FFD84A', to: '#f7b500' }
+  };
+  const NEUTRAL_GRADIENT = { from: '#0e7490', to: '#062f35' };
+
+  // Type styling matches the Panel B/C stacked-histogram palette.
+  const TYPE_STYLES = {
+    journalArticle: { color: '#0e7490', bg: '#e6f3f5', border: '#a8d1d8', s: 'Journal article', p: 'Journal articles' },
+    thesis:         { color: '#6b3e26', bg: '#efe6df', border: '#c9b39d', s: 'Thesis',           p: 'Theses' },
+    bookSection:    { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter',     p: 'Book chapters' },
+    book:           { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book',             p: 'Books' },
+    report:         { color: '#1e40af', bg: '#e6ecf7', border: '#a8b8dc', s: 'Report',           p: 'Reports' },
+    conferencePaper:{ color: '#92400e', bg: '#f7ecdf', border: '#d9b58a', s: 'Conference paper', p: 'Conference papers' },
+    preprint:       { color: '#6b7280', bg: '#eef0f2', border: '#c7cbd1', s: 'Preprint',         p: 'Preprints' }
+  };
+  // Order in which chips are rendered (only shown if count > 0)
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesis', 'report', 'conferencePaper', 'preprint'];
+
+  const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
+  const GS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
+
+  function provinceToConfederacy(name) {
+    if (!name || !state.provinces) return null;
+    const f = state.provinces.features.find(x => x.properties.name === name);
+    return f ? f.properties.confederacy : null;
+  }
+
+  function formatLastUpdate(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d)) return '';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
   function renderScholarCard(r) {
     const active = state.filter.scholar === r.name;
     const salutation = r.salutation || '';
@@ -1330,69 +1368,86 @@
     const displayName = `${salutation ? salutation + ' ' : ''}${first} ${last}`.trim();
     const village = r.village || '';
     const paternal = r.paternalProvince || '';
-    const villageLine = (village || paternal)
-      ? `${village}${village && paternal ? ', ' : ''}${paternal ? paternal + ' Province' : ''}`
-      : '';
+    const confederacy = provinceToConfederacy(paternal);
+    const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
+    const bannerLabel = confederacy ? `${confederacy} Confederacy` : 'iTaukei Scholar';
     const institution = r.institution || '';
+    const title = r.title || '';
+    const lastUpdate = formatLastUpdate(r.lastUpdate);
     const t = r.types || {};
+    const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
+
+    // Meta line: village · paternal province
+    const metaBits = [];
+    if (village) metaBits.push(escapeHtml(village) + ' village');
+    else metaBits.push('<span class="db-scholar-card__meta--empty">Village not yet added</span>');
+    if (paternal) metaBits.push(escapeHtml(paternal) + ' Province');
+    const metaHtml = metaBits.join('<span class="sep">·</span>');
+
+    // Institution
+    let institutionHtml;
+    if (institution) {
+      institutionHtml = r.institutionUrl
+        ? `<a href="${escapeAttr(r.institutionUrl)}" target="_blank" rel="noopener">${escapeHtml(institution)}</a>`
+        : escapeHtml(institution);
+    } else {
+      institutionHtml = '<span class="db-scholar-card__institution--empty">Institution not yet added</span>';
+    }
+
+    // Type chips (only non-zero, in CHIP_ORDER)
+    const chipsHtml = CHIP_ORDER.filter(k => (t[k] || 0) > 0).map(k => {
+      const s = TYPE_STYLES[k];
+      const label = t[k] === 1 ? s.s : s.p;
+      return `<span class="db-scholar-card__type-chip" style="background:${s.bg};border-color:${s.border};color:${s.color};">`
+        + `<span class="n" style="color:${s.color};">${t[k]}</span> ${label}</span>`;
+    }).join('');
 
     const card = document.createElement('article');
     card.className = 'db-scholar-card' + (active ? ' is-active' : '');
     card.title = `Click to filter items to ${r.name}’s papers`;
+    card.style.setProperty('--conf-from', gradient.from);
+    card.style.setProperty('--conf-to', gradient.to);
     card.addEventListener('click', ev => {
-      // Ignore clicks on the Google Scholar link
-      if (ev.target.closest('.db-scholar-card__scholar')) return;
+      // Ignore clicks on external-profile icons
+      if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid')) return;
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();
       $('.db-items').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // Photo
-    const photoBox = document.createElement('div');
-    photoBox.className = 'db-scholar-card__photo';
-    if (r.photo) photoBox.style.backgroundImage = `url('${escapeAttr(r.photo)}')`;
-    else photoBox.innerHTML = PHOTO_PLACEHOLDER_SVG;
-    card.appendChild(photoBox);
+    // Photo (as background image) or initials fallback
+    const photoHtml = r.photo
+      ? `<div class="db-scholar-card__photo" style="background-image:url('${escapeAttr(r.photo)}')"></div>`
+      : `<div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${escapeHtml(initials)}</div></div>`;
 
-    // Body
-    const body = document.createElement('div');
-    body.className = 'db-scholar-card__body';
-    body.innerHTML = `
-      <div class="db-scholar-card__row">
-        <span class="db-scholar-card__key">Name:</span>
-        <span class="db-scholar-card__val">${escapeHtml(displayName || (first + ' ' + last).trim())}</span>
+    card.innerHTML = `
+      <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label">${escapeHtml(bannerLabel)}</span></div>
+      <a class="db-scholar-card__orcid${r.orcidUrl ? '' : ' is-missing'}"
+         href="${escapeAttr(r.orcidUrl || '#')}"
+         ${r.orcidUrl ? 'target="_blank" rel="noopener"' : ''}
+         title="${r.orcidUrl ? 'Open ORCID iD' : 'ORCID iD not yet linked'}"
+         aria-label="ORCID iD${r.orcidUrl ? '' : ' not linked'}">${ORCID_SVG}</a>
+      <a class="db-scholar-card__gs${r.googleScholarUrl ? '' : ' is-missing'}"
+         href="${escapeAttr(r.googleScholarUrl || '#')}"
+         ${r.googleScholarUrl ? 'target="_blank" rel="noopener"' : ''}
+         title="${r.googleScholarUrl ? 'Open Google Scholar profile' : 'Google Scholar profile not yet linked'}">${GS_SVG}</a>
+      <div class="db-scholar-card__body">
+        ${photoHtml}
+        <div class="db-scholar-card__info">
+          <h3 class="db-scholar-card__name">${escapeHtml(displayName || (first + ' ' + last).trim())}</h3>
+          <div class="db-scholar-card__meta">${metaHtml}</div>
+          <div class="db-scholar-card__institution">${institutionHtml}</div>
+          ${title ? `<div class="db-scholar-card__title">${escapeHtml(title)}</div>` : ''}
+          ${lastUpdate ? `<div class="db-scholar-card__updated">Last update: <em>${escapeHtml(lastUpdate)}</em></div>` : ''}
+        </div>
       </div>
-      <div class="db-scholar-card__row">
-        <span class="db-scholar-card__key">Village:</span>
-        <span class="${villageLine ? 'db-scholar-card__val' : 'db-scholar-card__val--empty'}">${villageLine ? escapeHtml(villageLine) : 'Village &amp; Province name'}</span>
+      <div class="db-scholar-card__stats">
+        <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num">${r.total}</span><span class="db-scholar-card__stat-label">Publication${r.total === 1 ? '' : 's'}</span></div>
+        <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num accent">${r.firstAuthored}</span><span class="db-scholar-card__stat-label">First-authored</span></div>
       </div>
-      <div class="db-scholar-card__institution">${institution
-          ? (r.institutionUrl
-              ? `<a href="${escapeAttr(r.institutionUrl)}" target="_blank" rel="noopener">${escapeHtml(institution)}</a>`
-              : escapeHtml(institution))
-          : '<span class="db-scholar-card__val--empty">Institution name</span>'}</div>
-      <div class="db-scholar-card__totals">
-        Total: <span class="db-scholar-card__totals--num-total">${r.total} Publication${r.total === 1 ? '' : 's'}</span> &nbsp;|&nbsp; <span class="db-scholar-card__totals--num-first">${r.firstAuthored} First authored</span>
-      </div>
-      <div class="db-scholar-card__types">
-        <span>Journal articles: <em>${t.journalArticle || 0}</em></span>
-        <span>Reports: <em>${t.report || 0}</em></span>
-        <span>Books: <em>${t.book || 0}</em></span>
-        <span>Book chapters: <em>${t.bookSection || 0}</em></span>
-      </div>
+      ${chipsHtml ? `<div class="db-scholar-card__types">${chipsHtml}</div>` : ''}
     `;
-    card.appendChild(body);
-
-    // Google Scholar link (top right)
-    const scholarBtn = document.createElement('a');
-    scholarBtn.className = 'db-scholar-card__scholar' + (r.googleScholarUrl ? '' : ' is-missing');
-    scholarBtn.href = r.googleScholarUrl || '#';
-    if (r.googleScholarUrl) { scholarBtn.target = '_blank'; scholarBtn.rel = 'noopener'; }
-    scholarBtn.title = r.googleScholarUrl ? 'Open Google Scholar profile' : 'Google Scholar profile not yet linked';
-    scholarBtn.innerHTML = `<img src="img/icons/google-scholar.png" alt="Google Scholar" />`;
-    card.appendChild(scholarBtn);
-
     return card;
   }
 
