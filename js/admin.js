@@ -513,9 +513,17 @@
     });
   }
 
-  // UTF-8 safe base64 (JSON blobs may contain non-ASCII: village names, etc.)
+  // UTF-8 safe base64. Chunked because String.fromCharCode(...huge) overflows
+  // the call stack — profiles JSON can be many hundreds of KB once even a few
+  // photos are inline base64.
   function utf8ToBase64(str) {
-    return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+    const bytes = new TextEncoder().encode(str);
+    const chunkSize = 0x8000; // 32 KB per chunk
+    let binary = '';
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunkSize));
+    }
+    return btoa(binary);
   }
 
   // Generic GitHub upload. `content` may be a Blob (binary, e.g. photos) or a
