@@ -44,6 +44,7 @@
   const state = {
     snapshot: null,
     profilesByKey: new Map(),  // key = "Last, First"
+    hiddenScholars: new Set(), // names the admin explicitly UNCHECKED (removed from iTaukei list) — filtered out on public dashboard even if still in Zotero collection
     authors: [],               // all unique authors (sorted by total desc)
     filter: { q: '', status: 'all' }
   };
@@ -222,6 +223,9 @@
       merged.set(key, withName(Object.assign({}, merged.get(key) || {}, cleanSheet)));
     });
     state.profilesByKey = merged;
+    // Load the explicit hide-list. Names in here are removed from the public dashboard
+    // even though they still exist as Zotero collection subs.
+    state.hiddenScholars = new Set(Array.isArray(profilesJson.hiddenScholars) ? profilesJson.hiddenScholars : []);
 
     // Build unique-author list from Zotero items
     const authorMap = new Map();
@@ -386,8 +390,10 @@
     $('#stat-new').textContent = newC;
   }
 
-  function toggleItaukei(author, on) {
+  async function toggleItaukei(author, on) {
     if (on) {
+      // Re-adding: clear from hide-list AND add empty profile
+      state.hiddenScholars.delete(author.name);
       if (!state.profilesByKey.has(author.name)) {
         const [last, first] = author.name.split(',').map(s => s.trim());
         state.profilesByKey.set(author.name, {
@@ -399,10 +405,25 @@
         toast(`Marked ${author.name} as iTaukei. Click "Edit" to add their profile.`);
       }
     } else {
+      // Removing: drop profile AND add to explicit hide-list so the public
+      // dashboard hides them even though they still exist as a Zotero collection.
       state.profilesByKey.delete(author.name);
-      toast(`Removed ${author.name} from iTaukei list.`);
+      state.hiddenScholars.add(author.name);
+      toast(`Removed ${author.name} from iTaukei list. Saving\u2026`);
     }
     render();
+    // Persist to GitHub so the change survives refresh AND propagates to the public dashboard.
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try {
+        await pushProfilesToGitHub(on ? `toggle on ${author.name}` : `toggle off ${author.name}`);
+        toast(on ? `${author.name} saved.` : `${author.name} removed and hidden from public dashboard.`, 'success');
+      } catch (err) {
+        console.error('toggleItaukei push failed:', err);
+        toast(`GitHub push failed \u2014 change is only in this browser. ${err.message}`, 'error');
+      }
+    } else {
+      toast('No GitHub token set \u2014 change is only in this browser. Paste a token to persist.', 'error');
+    }
   }
 
   // ==================== edit modal ====================
@@ -582,10 +603,12 @@
       const nb = (b.name || '').toLowerCase();
       return na.localeCompare(nb);
     });
+    const hiddenScholars = Array.from(state.hiddenScholars).sort();
     return JSON.stringify({
       generatedAt: new Date().toISOString(),
       source: 'admin-dashboard',
-      scholars
+      scholars,
+      hiddenScholars
     }, null, 2) + '\n';
   }
 

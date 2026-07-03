@@ -169,6 +169,11 @@
       const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
       if (name) state.scholarProfilesByName.set(name, p);
     });
+    // Explicit hide-list — names the admin dashboard has removed from the iTaukei list.
+    // These scholars will not appear as cards on the public dashboard even if they still
+    // exist as Zotero collection subs. Persisted in data/scholar-profiles.json under
+    // "hiddenScholars".
+    state.hiddenScholars = new Set(Array.isArray(profiles.hiddenScholars) ? profiles.hiddenScholars : []);
     const sheetUrl = localStorage.getItem('vavelab_scholar_sheet_url');
     if (sheetUrl) {
       try {
@@ -1328,7 +1333,9 @@
     // missing we still render the card using derived counts.
     const derived = deriveScholarRows();
     const enrichedByName = state.scholarProfilesByName || new Map();
+    const hidden = state.hiddenScholars || new Set();
     const rows = derived
+      .filter(r => !hidden.has(r.name))
       .map(r => Object.assign({}, r, enrichedByName.get(r.name) || {}))
       .sort((a, b) => b.total - a.total);
 
