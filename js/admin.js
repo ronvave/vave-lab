@@ -576,15 +576,22 @@
     };
     // Get the CURRENT sha (cache-busted). GitHub's contents API can return a stale sha
     // if a CDN caches the GET response — which causes a 409 conflict on PUT.
+    // 404 = file is new (no sha needed). Other errors are surfaced so the caller
+    // can distinguish "can't reach GitHub" from "sha is unavailable".
     async function fetchCurrentSha() {
-      try {
-        const head = await fetch(`${apiUrl}?ref=${GH_BRANCH}&_=${Date.now()}`, {
-          headers: Object.assign({}, headers, { 'Cache-Control': 'no-cache' }),
-          cache: 'no-store'
-        });
-        if (head.ok) { const j = await head.json(); return j.sha; }
-      } catch (_) { /* file is new — no SHA needed */ }
-      return undefined;
+      const url = `${apiUrl}?ref=${GH_BRANCH}&_=${Date.now()}`;
+      const head = await fetch(url, {
+        headers: Object.assign({}, headers, { 'Cache-Control': 'no-cache' }),
+        cache: 'no-store'
+      });
+      if (head.status === 404) return undefined; // file is new
+      if (!head.ok) {
+        const errText = await head.text().catch(() => '');
+        console.warn('[admin] fetchCurrentSha non-OK:', head.status, errText.slice(0, 200));
+        return undefined; // will trigger 422 retry path below
+      }
+      const j = await head.json();
+      return j.sha;
     }
     const base64 = (content instanceof Blob) ? await blobToBase64(content) : utf8ToBase64(content);
 
@@ -594,14 +601,19 @@
       return fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
     }
 
-    let sha = await fetchCurrentSha();
+    let sha;
+    try { sha = await fetchCurrentSha(); }
+    catch (e) { console.warn('[admin] initial sha fetch threw', e); sha = undefined; }
     let put = await attemptPut(sha);
 
-    // 409 = sha stale. GitHub responded with the current sha in the error message;
-    // simplest: refetch sha (fresh, cache-busted) and retry once.
-    if (put.status === 409) {
-      const freshSha = await fetchCurrentSha();
-      if (freshSha && freshSha !== sha) {
+    // Retry once on:
+    //   409 = sha we sent is stale (file changed between GET and PUT)
+    //   422 = sha wasn't supplied but the file exists (our GET returned undefined)
+    if (put.status === 409 || put.status === 422) {
+      let freshSha;
+      try { freshSha = await fetchCurrentSha(); }
+      catch (e) { console.warn('[admin] retry sha fetch threw', e); }
+      if (freshSha) {
         put = await attemptPut(freshSha);
       }
     }
