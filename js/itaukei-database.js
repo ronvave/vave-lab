@@ -17,13 +17,27 @@
   };
   const TYPE_LABELS = {
     journalArticle:  'Journal Article',
-    thesis:          'Thesis',
+    thesisPhd:       'PhD Thesis',
+    thesisMasters:   'Masters Thesis',
+    thesisUnknown:   'Thesis',
     bookSection:     'Book Chapter',
     book:            'Book',
     conferencePaper: 'Conference',
     report:          'Report',
     preprint:        'Preprint',
     document:        'Document'
+  };
+  const TYPE_LABELS_PLURAL = {
+    journalArticle:  'Journal Articles',
+    thesisPhd:       'PhD Theses',
+    thesisMasters:   'Masters Theses',
+    thesisUnknown:   'Theses',
+    bookSection:     'Book Chapters',
+    book:            'Books',
+    conferencePaper: 'Conference Papers',
+    report:          'Reports',
+    preprint:        'Preprints',
+    document:        'Documents'
   };
   const PIN_OFFSETS = {
     'Ba':            [ 0.20, -0.15],
@@ -46,11 +60,31 @@
   const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'province', 'paternal', 'university', 'year', 'scholar'];
 
   const TYPE_COLOR = {
-    thesis: '#6b3e26', journalArticle: '#0e7490', bookSection: '#7a1419',
-    book: '#7a1419', report: '#1e40af', conferencePaper: '#92400e', preprint: '#6b7280',
-    document: '#9ca3af'
+    thesisPhd:      '#228B22',   // forest green — PhD
+    thesisMasters:  '#8FBC8F',   // dark sea green — lighter forest, Masters
+    thesisUnknown:  '#4CAF50',   // material green — unclassified thesis
+    journalArticle: '#0e7490',
+    bookSection:    '#7a1419',
+    book:           '#7a1419',
+    report:         '#1e40af',
+    conferencePaper:'#92400e',
+    preprint:       '#6b7280',
+    document:       '#9ca3af'
   };
-  const TYPE_ORDER = ['thesis','journalArticle','bookSection','book','report','conferencePaper','preprint'];
+  // Order determines stacked-chart segment order (bottom → top) and legend order.
+  // PhD, Masters, unknown — grouped as the "thesis family" first.
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','thesisUnknown','journalArticle','bookSection','book','report','conferencePaper','preprint'];
+
+  // Convert a Zotero item to its display-type key (splits `thesis` →
+  // thesisPhd / thesisMasters / thesisUnknown based on `thesisLevel`).
+  function visualType(item) {
+    if (!item) return null;
+    if (item.itemType !== 'thesis') return item.itemType;
+    const lvl = item.thesisLevel;
+    if (lvl === 'phd') return 'thesisPhd';
+    if (lvl === 'masters') return 'thesisMasters';
+    return 'thesisUnknown';
+  }
 
   const state = {
     snapshot: null,
@@ -509,12 +543,13 @@
       const p = f.properties;
       const key = p.zoteroCollectionKey_publicationLocation;
       const scholarSet = new Set();
-      const bucket = { total: 0, journalArticle: 0, thesis: 0, bookSection: 0, book: 0, conferencePaper: 0, report: 0, preprint: 0, document: 0, scholars: 0 };
+      const bucket = { total: 0, journalArticle: 0, thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0, bookSection: 0, book: 0, conferencePaper: 0, report: 0, preprint: 0, document: 0, scholars: 0 };
       if (key) {
         items.forEach(it => {
           if ((it.collections || []).includes(key)) {
             bucket.total += 1;
-            if (bucket[it.itemType] != null) bucket[it.itemType] += 1;
+            const vt = visualType(it);
+            if (bucket[vt] != null) bucket[vt] += 1;
             // Count unique iTaukei leaderboard scholars tied to this province
             const scholarsForItem = state.scholarByItem.get(it.key);
             if (scholarsForItem) scholarsForItem.forEach(s => scholarSet.add(s));
@@ -601,7 +636,9 @@
     const rows = [];
     const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.confederacy]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
     push(b.journalArticle,  b.journalArticle === 1 ? 'Journal Article' : 'Journal Articles');
-    push(b.thesis,          b.thesis === 1 ? 'Thesis' : 'Theses');
+    push(b.thesisPhd,       b.thesisPhd === 1 ? 'PhD Thesis' : 'PhD Theses');
+    push(b.thesisMasters,   b.thesisMasters === 1 ? 'Masters Thesis' : 'Masters Theses');
+    push(b.thesisUnknown,   b.thesisUnknown === 1 ? 'Thesis' : 'Theses');
     push(b.bookSection,     b.bookSection === 1 ? 'Book Chapter' : 'Book Chapters');
     push(b.book,            b.book === 1 ? 'Book' : 'Books');
     push(b.conferencePaper, b.conferencePaper === 1 ? 'Conference Paper' : 'Conference Papers');
@@ -698,14 +735,15 @@
       });
     });
     state.snapshot.items.forEach(it => {
-      if (!state.typeSet.has(it.itemType)) return;
+      const vt = visualType(it);
+      if (!state.typeSet.has(vt)) return;
       const ps = state.provincesByItem.get(it.key);
       if (!ps) return;
       ps.forEach(name => {
         const bucket = byProv.get(name);
         if (bucket) {
           bucket.total += 1;
-          bucket.types[it.itemType] = (bucket.types[it.itemType] || 0) + 1;
+          bucket.types[vt] = (bucket.types[vt] || 0) + 1;
         }
       });
     });
@@ -770,7 +808,7 @@
     const perProvTotal = new Map();
     provs.forEach(p => perProvTotal.set(p.name, 0));
     state.snapshot.items.forEach(it => {
-      if (!state.typeSet.has(it.itemType)) return;
+      if (!state.typeSet.has(visualType(it))) return;
       const ps = state.provincesByItem.get(it.key);
       if (!ps) return;
       ps.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
@@ -818,10 +856,11 @@
     const host = $('[data-db-type-filter]');
     if (!host) return;
 
-    // Count items per type in the current snapshot
+    // Count items per (visual) type in the current snapshot
     const typeCounts = new Map();
     state.snapshot.items.forEach(it => {
-      typeCounts.set(it.itemType, (typeCounts.get(it.itemType) || 0) + 1);
+      const vt = visualType(it);
+      typeCounts.set(vt, (typeCounts.get(vt) || 0) + 1);
     });
 
     // Hide checkboxes for types with zero items and drop them from typeSet.
@@ -861,7 +900,10 @@
     const host = $('[data-db-hist-legend]');
     if (!host) return;
     const counts = new Map();
-    state.snapshot.items.forEach(it => counts.set(it.itemType, (counts.get(it.itemType) || 0) + 1));
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      counts.set(vt, (counts.get(vt) || 0) + 1);
+    });
     host.innerHTML = '';
     TYPE_ORDER.forEach(t => {
       if ((counts.get(t) || 0) === 0) return;
@@ -974,10 +1016,11 @@
     items.forEach(it => {
       if (!it.year) return;
       yearsAll.push(it.year);
-      if (!state.typeSet.has(it.itemType)) return;
+      const vt = visualType(it);
+      if (!state.typeSet.has(vt)) return;
       let bucket = perYear.get(it.year);
       if (!bucket) { bucket = {}; perYear.set(it.year, bucket); }
-      bucket[it.itemType] = (bucket[it.itemType] || 0) + 1;
+      bucket[vt] = (bucket[vt] || 0) + 1;
     });
 
     // Keep decade dropdown populated for the item-list filter
@@ -988,7 +1031,7 @@
     svg.innerHTML = '';
 
     // Which item types are enabled AND actually appear in the data
-    const typesInData = new Set(items.map(i => i.itemType));
+    const typesInData = new Set(items.map(i => visualType(i)));
     const visibleTypes = TYPE_ORDER.filter(t => state.typeSet.has(t) && typesInData.has(t));
 
     if (!visibleTypes.length || !perYear.size) {
@@ -1306,11 +1349,12 @@
     const subs = cols.filter(c => c.parent === root.key);
     return subs.map(c => {
       const last = c.name.split(',')[0].trim().toLowerCase();
-      const types = { journalArticle: 0, thesis: 0, bookSection: 0, book: 0, report: 0 };
+      const types = { journalArticle: 0, thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0, bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0 };
       let firstAuthored = 0;
       state.snapshot.items.forEach(it => {
         if (!(it.collections || []).includes(c.key)) return;
-        if (types[it.itemType] != null) types[it.itemType] += 1;
+        const vt = visualType(it);
+        if (types[vt] != null) types[vt] += 1;
         const creators = it.creators || [];
         if (creators.length) {
           const lastTok = (creators[0].includes(',') ? creators[0].split(',')[0].trim()
@@ -1333,8 +1377,10 @@
 
   // Type styling matches the Panel B/C stacked-histogram palette.
   const TYPE_STYLES = {
-    journalArticle: { color: '#0e7490', bg: '#e6f3f5', border: '#a8d1d8', s: 'Journal article', p: 'Journal articles' },
-    thesis:         { color: '#6b3e26', bg: '#efe6df', border: '#c9b39d', s: 'Thesis',           p: 'Theses' },
+    journalArticle: { color: '#0e7490', bg: '#e6f3f5', border: '#a8d1d8', s: 'Journal article',  p: 'Journal articles' },
+    thesisPhd:      { color: '#228B22', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis',       p: 'PhD theses' },
+    thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: 'Masters thesis',   p: 'Masters theses' },
+    thesisUnknown:  { color: '#4CAF50', bg: '#eaf5ea', border: '#b8dab8', s: 'Thesis',           p: 'Theses' },
     bookSection:    { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter',     p: 'Book chapters' },
     book:           { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book',             p: 'Books' },
     report:         { color: '#1e40af', bg: '#e6ecf7', border: '#a8b8dc', s: 'Report',           p: 'Reports' },
@@ -1342,7 +1388,7 @@
     preprint:       { color: '#6b7280', bg: '#eef0f2', border: '#c7cbd1', s: 'Preprint',         p: 'Preprints' }
   };
   // Order in which chips are rendered (only shown if count > 0)
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesis', 'report', 'conferencePaper', 'preprint'];
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'thesisUnknown', 'report', 'conferencePaper', 'preprint'];
 
   const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
   const GS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
@@ -1505,7 +1551,12 @@
   // ============ ITEMS FILTER + CARDS ============
   function itemMatches(item) {
     const f = state.filter;
-    if (f.itemType && item.itemType !== f.itemType) return false;
+    if (f.itemType) {
+      // Support both the base Zotero itemType (`thesis`, `book`, ...) and our
+      // visual sub-types (`thesisPhd`, `thesisMasters`, `thesisUnknown`).
+      const vt = visualType(item);
+      if (item.itemType !== f.itemType && vt !== f.itemType) return false;
+    }
     if (f.year && item.year !== f.year) return false;
 
     if (f.decade) {
@@ -1571,8 +1622,11 @@
   }
 
   function renderItemCard(it) {
-    const li = el('li', { className: 'db-item', 'data-type': it.itemType });
-    const type = TYPE_LABELS[it.itemType] || TYPE_LABELS.document;
+    // data-type uses the visual sub-type so the coloured left border reflects
+    // PhD/Masters/base for theses.
+    const li = el('li', { className: 'db-item', 'data-type': visualType(it) });
+    // Show the visual sub-type label (e.g. "PhD Thesis") when applicable
+    const type = TYPE_LABELS[visualType(it)] || TYPE_LABELS[it.itemType] || TYPE_LABELS.document;
     const authorList = (it.creators || []).slice(0, 5).join(', ') + (it.creators && it.creators.length > 5 ? ', et al.' : '');
     const zoteroUrl = `https://www.zotero.org/groups/5983386/itaukei_academic_research/items/${it.key}`;
     const doiUrl = it.DOI ? `https://doi.org/${it.DOI}` : null;

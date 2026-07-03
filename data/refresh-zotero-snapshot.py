@@ -8,7 +8,7 @@ Run this whenever you've added or edited items in the iTaukei Academic Research 
 After running, commit the updated JSON:
   git add data/itaukei-zotero-snapshot.json && git commit -m "Refresh Zotero snapshot" && git push
 """
-import json, os, time, urllib.request
+import json, os, re, time, urllib.request
 from datetime import datetime, timezone
 
 GROUP_ID = 5983386
@@ -42,13 +42,26 @@ def year_of(dt):
             return int(tok)
     return None
 
+def classify_thesis_level(thesis_type: str, title: str = "") -> str:
+    """Classify a thesis into 'phd' | 'masters' | 'unknown' using the thesisType
+    field (and title as a fallback)."""
+    haystack = f"{thesis_type} {title}".lower()
+    # PhD family: PhD, doctoral, doctorate, dissertation, D.Phil, Doctor of / Doctor in
+    if re.search(r"\b(phd|doctoral|doctorate|d\.?phil|dissertation|doctor of|doctor in)\b", haystack):
+        return "phd"
+    # Masters family: MA, MSc, MEd, MPhil, MRes, MEng, MBA, Master's, Masters, Master of, Master in
+    if re.search(r"\b(m\.?a|m\.?sc|m\.?ed|m\.?eng|m\.?phil|m\.?res|mba|mia|mmis|mst|mlitt|masters?|master's|master of|master in)\b", haystack):
+        return "masters"
+    return "unknown"
+
 raw = fetch_all("items")
 items = []
 for item in raw:
     d = item.get("data", {})
     itype = d.get("itemType")
     if itype in ("attachment", "note"): continue
-    items.append({
+    thesis_type = d.get("thesisType") or ""
+    entry = {
         "key": item["key"], "itemType": itype,
         "title": d.get("title") or "",
         "creators": creators(d.get("creators")),
@@ -56,12 +69,15 @@ for item in raw:
         "date": d.get("date") or "",
         "publicationTitle": d.get("publicationTitle") or d.get("bookTitle") or d.get("proceedingsTitle") or "",
         "university": d.get("university") or d.get("institution") or "",
-        "thesisType": d.get("thesisType") or "",
+        "thesisType": thesis_type,
         "DOI": d.get("DOI") or "",
         "url": d.get("url") or "",
         "collections": d.get("collections") or [],
         "tags": [t.get("tag") for t in (d.get("tags") or []) if t.get("tag")],
-    })
+    }
+    if itype == "thesis":
+        entry["thesisLevel"] = classify_thesis_level(thesis_type, entry["title"])
+    items.append(entry)
 
 cols_raw = fetch_all("collections")
 collections = [{

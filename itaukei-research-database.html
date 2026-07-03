@@ -638,7 +638,10 @@
       transform: translateY(-1px);
       box-shadow: 0 4px 14px rgba(6,47,53,0.08);
     }
-    .db-item[data-type="thesis"]          { border-left-color: #6b3e26; }
+    .db-item[data-type="thesisPhd"]       { border-left-color: #228B22; }
+    .db-item[data-type="thesisMasters"]   { border-left-color: #8FBC8F; }
+    .db-item[data-type="thesisUnknown"]   { border-left-color: #4CAF50; }
+    .db-item[data-type="thesis"]          { border-left-color: #228B22; }
     .db-item[data-type="journalArticle"]  { border-left-color: #0e7490; }
     .db-item[data-type="bookSection"]     { border-left-color: #7a1419; }
     .db-item[data-type="book"]            { border-left-color: #7a1419; }
@@ -1024,7 +1027,9 @@
         <p class="db-panel__hint">Bars are colour-coded by item type. Dot beside each province shows confederacy. Click a bar to filter the item list below.</p>
         <div class="db-bars" data-db-bars></div>
         <div class="db-type-filter" data-db-type-filter>
-          <label><input type="checkbox" value="thesis" checked><i style="background:#6b3e26;"></i> Thesis</label>
+          <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
+          <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Masters Thesis</label>
+          <label><input type="checkbox" value="thesisUnknown" checked><i style="background:#4CAF50;"></i> Thesis</label>
           <label><input type="checkbox" value="journalArticle" checked><i style="background:#0e7490;"></i> Journal Article</label>
           <label><input type="checkbox" value="bookSection" checked><i style="background:#7a1419;"></i> Book Chapter</label>
           <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
@@ -1083,7 +1088,9 @@
           <select class="db-filter" data-db-filter="itemType" aria-label="Filter by item type">
             <option value="">All types</option>
             <option value="journalArticle">Journal Articles</option>
-            <option value="thesis">Theses</option>
+            <option value="thesisPhd">PhD Theses</option>
+            <option value="thesisMasters">Masters Theses</option>
+            <option value="thesisUnknown">Theses (type unspecified)</option>
             <option value="bookSection">Book Chapters</option>
             <option value="book">Books</option>
             <option value="conferencePaper">Conference Papers</option>
