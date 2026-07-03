@@ -509,9 +509,14 @@
     });
   }
 
-  // Upload a Blob to the GitHub repo at `path` via the Contents API.
-  // Requires a Personal Access Token in localStorage under GH_TOKEN_KEY.
-  async function githubUploadPhoto(path, blob, message) {
+  // UTF-8 safe base64 (JSON blobs may contain non-ASCII: village names, etc.)
+  function utf8ToBase64(str) {
+    return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
+  }
+
+  // Generic GitHub upload. `content` may be a Blob (binary, e.g. photos) or a
+  // string (text, e.g. JSON). Requires a Personal Access Token in localStorage.
+  async function githubUploadFile(path, content, message) {
     const token = localStorage.getItem(GH_TOKEN_KEY);
     if (!token) throw new Error('no-token');
     const apiUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${path}`;
@@ -526,8 +531,8 @@
       const head = await fetch(`${apiUrl}?ref=${GH_BRANCH}`, { headers });
       if (head.ok) { const j = await head.json(); sha = j.sha; }
     } catch (_) { /* file is new — no SHA needed */ }
-    const content = await blobToBase64(blob);
-    const body = { message, content, branch: GH_BRANCH };
+    const base64 = (content instanceof Blob) ? await blobToBase64(content) : utf8ToBase64(content);
+    const body = { message, content: base64, branch: GH_BRANCH };
     if (sha) body.sha = sha;
     const put = await fetch(apiUrl, { method: 'PUT', headers, body: JSON.stringify(body) });
     if (!put.ok) {
@@ -536,6 +541,33 @@
       throw new Error(`GitHub upload failed (${put.status}): ${short}`);
     }
     return path;
+  }
+
+  // Legacy alias kept for photo drop paths
+  const githubUploadPhoto = githubUploadFile;
+
+  // Serialize the entire in-memory scholars map to the JSON shape the public
+  // site reads from data/scholar-profiles.json.
+  function serializeProfilesJson() {
+    const scholars = Array.from(state.profilesByKey.values()).sort((a, b) => {
+      const na = (a.name || '').toLowerCase();
+      const nb = (b.name || '').toLowerCase();
+      return na.localeCompare(nb);
+    });
+    return JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      source: 'admin-dashboard',
+      scholars
+    }, null, 2) + '\n';
+  }
+
+  // Push data/scholar-profiles.json to GitHub. Silent no-op if no token set.
+  async function pushProfilesToGitHub(triggerName) {
+    if (!localStorage.getItem(GH_TOKEN_KEY)) return { skipped: true };
+    const json = serializeProfilesJson();
+    const msg = `admin: update scholar profiles${triggerName ? ' (' + triggerName + ')' : ''}`;
+    await githubUploadFile('data/scholar-profiles.json', json, msg);
+    return { pushed: true, bytes: json.length };
   }
 
   function wirePhotoDropzone() {
@@ -674,6 +706,23 @@
       }
     });
 
+    // Push to GitHub (bulk)
+    $('#push-github').addEventListener('click', async () => {
+      if (!localStorage.getItem(GH_TOKEN_KEY)) {
+        toast('Save a GitHub token in Data source first.');
+        return;
+      }
+      const count = state.profilesByKey.size;
+      toast(`Pushing ${count} profiles to GitHub…`);
+      try {
+        await pushProfilesToGitHub('bulk push');
+        toast(`Pushed ${count} profiles to data/scholar-profiles.json. Public site updates within ~1 min.`);
+      } catch (err) {
+        console.error(err);
+        toast('GitHub push failed: ' + err.message);
+      }
+    });
+
     // Export buttons
     $('#export-csv').addEventListener('click', () => {
       const rows = Array.from(state.profilesByKey.values());
@@ -701,7 +750,7 @@
       closeEdit();
       render();
     });
-    $('#profile-form').addEventListener('submit', ev => {
+    $('#profile-form').addEventListener('submit', async ev => {
       ev.preventDefault();
       if (!editingAuthor) return;
       const p = state.profilesByKey.get(editingAuthor.name) || {};
@@ -725,9 +774,23 @@
         types: editingAuthor.types
       });
       state.profilesByKey.set(editingAuthor.name, p);
-      toast(`Saved profile for ${editingAuthor.name}.`);
       closeEdit();
       render();
+
+      // Auto-push data/scholar-profiles.json to GitHub if a token is set,
+      // eliminating the copy-paste-into-Sheets round-trip.
+      if (localStorage.getItem(GH_TOKEN_KEY)) {
+        toast(`Saved locally. Pushing to GitHub…`);
+        try {
+          await pushProfilesToGitHub(editingAuthor.name);
+          toast(`Saved & pushed to GitHub. Public site updates within ~1 min.`);
+        } catch (err) {
+          console.error(err);
+          toast('Saved locally, but GitHub push failed: ' + err.message);
+        }
+      } else {
+        toast(`Saved profile for ${editingAuthor.name}. Set a GitHub token in Data source to sync automatically.`);
+      }
     });
 
     // Output modal
