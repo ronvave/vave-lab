@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T20:26:29.810Z",
+  "generatedAt": "2026-07-03T20:32:04.760Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1736,32 +1736,37 @@
       "slug": "sera-vada",
       "last": "Vada",
       "first": "Sera",
-      "total": "17",
-      "firstAuthored": "7",
+      "total": 16,
+      "firstAuthored": 6,
       "types": {
-        "journalArticle": 16,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "journalArticle": 16
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "salutation": "Dr.",
+      "village": "Nairai",
+      "paternalProvince": "Lomaiviti",
+      "institution": "Griffith University (Australia)",
+      "institutionUrl": "https://www.griffith.edu.au/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=IrUnCj4AAAAJ",
+      "photo": "img/scholars/sera-vada.jpg",
       "name": "Vada, Sera",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0001-6192-9444",
+      "lastUpdate": "2026-07-03T20:32:04.751Z",
       "types.journalArticle": "16",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://blogs.griffith.edu.au/institute-for-tourism/meet-dr-sera-vada/",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "Griffith University",
+        "country": "Australia"
+      }
     },
     {
       "slug": "esala-vakamacawai",
