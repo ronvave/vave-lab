@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T08:42:57.772Z",
+  "generatedAt": "2026-07-03T09:19:19.946Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -293,7 +293,7 @@
         "journalArticle": 12
       },
       "salutation": "Dr.",
-      "village": "Tubou",
+      "village": "Tubou vlg, Lakeba Is",
       "paternalProvince": "Lau",
       "institution": "University of Tasmania, Australia",
       "institutionUrl": "https://www.utas.edu.au/profiles/staff/tsbe/glenn-finau",
@@ -301,7 +301,7 @@
       "photo": "img/scholars/glenn-finau.jpg",
       "title": "Senior Lecturer",
       "orcidUrl": "https://orcid.org/0000-0002-9080-6862",
-      "lastUpdate": "2026-07-03T08:40:11.397Z",
+      "lastUpdate": "2026-07-03T09:19:19.931Z",
       "name": "Finau, Glenn",
       "confederacy": "Tovata",
       "types.journalArticle": "27",
