@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T17:45:40.822Z",
+  "generatedAt": "2026-07-03T17:51:45.819Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1368,32 +1368,31 @@
       "slug": "amerita-ravuvu",
       "last": "Ravuvu",
       "first": "Amerita",
-      "total": "21",
-      "firstAuthored": "5",
+      "total": 20,
+      "firstAuthored": 6,
       "types": {
-        "journalArticle": 19,
-        "thesis": 1,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
+        "thesis": 2,
+        "journalArticle": 17,
+        "bookSection": 1
       },
       "salutation": "Dr.",
       "village": "Nakorosule",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "paternalProvince": "Naitasiri",
+      "institution": "The Pacific Community (SPC)",
+      "institutionUrl": "https://www.spc.int/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/amerita-ravuvu.jpg",
       "name": "Ravuvu, Amerita",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "NCD Policy and Planning Adviser (Public Health Division)",
+      "orcidUrl": "https://orcid.org/0000-0001-8135-0560",
+      "lastUpdate": "2026-07-03T17:51:45.808Z",
       "types.journalArticle": "19",
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://www.spc.int/people/amerita-ravuvu"
     },
     {
       "slug": "asesela-ravuvu",
