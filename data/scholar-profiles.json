@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T20:04:20.770Z",
+  "generatedAt": "2026-07-03T20:22:11.621Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1829,11 +1829,11 @@
       "slug": "ron-vave",
       "last": "Vave",
       "first": "Ron",
-      "total": 15,
+      "total": 17,
       "firstAuthored": 7,
       "types": {
+        "journalArticle": 12,
         "bookSection": 3,
-        "journalArticle": 10,
         "thesis": 2
       },
       "salutation": "Prof.",
@@ -1847,13 +1847,21 @@
       "confederacy": "",
       "title": "Assistant Professor",
       "orcidUrl": "https://orcid.org/0000-0001-6137-3685",
-      "lastUpdate": "2026-07-03T17:45:40.811Z",
+      "lastUpdate": "2026-07-03T20:22:11.611Z",
       "types.journalArticle": "12",
       "types.thesis": "2",
       "types.bookSection": "3",
       "types.book": "0",
       "types.report": "0",
-      "profileUrl": "https://hawaii.edu/cpis/people/core-faculty/ron-vave/"
+      "profileUrl": "https://hawaii.edu/cpis/people/core-faculty/ron-vave/",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "University of Hawaiʻi at Mānoa",
+        "country": "USA"
+      }
     },
     {
       "slug": "joeli-veitayaki",
