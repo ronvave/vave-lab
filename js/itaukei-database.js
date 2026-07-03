@@ -686,26 +686,13 @@
 
     state.worldLayer = L.layerGroup(markers).addTo(state.map);
 
-    // Pacific-centric framing: the vast majority of iTaukei graduate work is in
-    // Fiji, NZ, Australia, USA (Hawaii). Manually center the view so Fiji sits
-    // near the middle instead of on the map edge, and include Europe (UK,
-    // Bremen). Longitudes crossing the antimeridian are handled by shifting
-    // any negative-longitude points (Americas/Europe) into the 0–360 range,
-    // then computing the bounds in that shifted space.
-    if (points.length > 0) {
-      const shifted = points.map(p => ({ lat: p.lat, lng: (p.lng < 0 ? p.lng + 360 : p.lng) }));
-      const lats = shifted.map(p => p.lat);
-      const lngs = shifted.map(p => p.lng);
-      const minLat = Math.min(...lats) - 8;
-      const maxLat = Math.max(...lats) + 8;
-      const minLng = Math.min(...lngs) - 12;
-      const maxLng = Math.max(...lngs) + 12;
-      // Leaflet accepts longitudes > 180 (it wraps them). Using the shifted
-      // range keeps Fiji + Hawaii + UK visible in one continuous frame.
-      state.map.fitBounds([[minLat, minLng], [maxLat, maxLng]], { padding: [20, 20] });
-    } else {
-      state.map.setView([10, 160], 2);
-    }
+    // Pacific-centric framing. Because iTaukei graduate work spans Fiji, NZ,
+    // Australia, Hawaii, UK, Bremen — more than 180° of longitude — no single
+    // Leaflet bounds can show them all without one edge or the other clipping.
+    // We optimise for the primary Pacific cluster (Fiji + NZ + Australia +
+    // Hawaii) which contains the vast majority of scholars. Europe points sit
+    // shifted to 360+ and remain reachable by scroll/drag.
+    state.map.setView([-5, 190], 3);
   }
 
   function renderChoropleth() {
