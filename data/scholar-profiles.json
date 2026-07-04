@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:19:06.954Z",
+  "generatedAt": "2026-07-04T19:19:09.712Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -624,6 +624,19 @@
       "slug": "apaitia-e-liga",
       "last": "Liga",
       "first": "Apaitia E.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Liwaiono, Fulori",
+      "slug": "fulori-liwaiono",
+      "last": "Liwaiono",
+      "first": "Fulori",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
