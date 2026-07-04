@@ -31,6 +31,10 @@ jobs:
         run: |
           python3 data/refresh-zotero-snapshot.py
 
+      - name: Regenerate graduate-studies from snapshot
+        run: |
+          python3 data/refresh-graduate-studies.py
+
       - name: Compare vs previous snapshot & write last-sync tracker
         id: diff
         run: |
@@ -93,10 +97,13 @@ jobs:
           new_t  = totals(new)
           prev_t = totals(prev) if has_prev else {k: 0 for k in new_t}
 
-          # 4. Compare with a 2% threshold
+          # 4. Compare with a 2% threshold. Manual (workflow_dispatch) runs
+          # bypass the threshold — Ron clicks the button precisely because he
+          # wants latest data reflected, even for small edits.
           THRESHOLD_PCT = 2.0
+          FORCE_COMMIT = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
           rows = []
-          data_changed = not has_prev
+          data_changed = (not has_prev) or FORCE_COMMIT
           moved = []
           for key in sorted(set(prev_t) | set(new_t)):
               a = prev_t.get(key, 0)
@@ -154,7 +161,7 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if [ "${{ steps.diff.outputs.data_changed }}" = "true" ]; then
-            git add data/itaukei-zotero-snapshot.json data/last-sync.json
+            git add data/itaukei-zotero-snapshot.json data/last-sync.json data/itaukei-graduate-studies.json
             git commit -m "Auto-refresh Zotero snapshot ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
 
           One or more tracked totals moved by >2% since the last snapshot.

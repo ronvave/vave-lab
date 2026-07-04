@@ -823,6 +823,96 @@
     });
     $('#reload-btn').addEventListener('click', () => { loadData().then(render); });
 
+    // ============== Force sync from Zotero ==============
+    // Triggers the GitHub Action `refresh-zotero-snapshot.yml` via API, then
+    // polls until the workflow run completes, then re-loads admin data so
+    // Ron sees the freshly synced snapshot without leaving the page.
+    const WORKFLOW_FILE = 'refresh-zotero-snapshot.yml';
+    const syncBtn = $('#sync-zotero-btn');
+    if (syncBtn) syncBtn.addEventListener('click', async () => {
+      const token = localStorage.getItem(GH_TOKEN_KEY);
+      if (!token) {
+        toast('Paste a GitHub PAT below first — the Force Sync button needs it to trigger the Action.', 'error');
+        return;
+      }
+      syncBtn.disabled = true;
+      const origLabel = syncBtn.textContent;
+      const setLabel = t => { syncBtn.textContent = t; };
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      };
+      try {
+        setLabel('Triggering sync…');
+        // 1. POST workflow_dispatch
+        const dispatchUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/${WORKFLOW_FILE}/dispatches`;
+        const dispatchRes = await fetch(dispatchUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ ref: 'main' })
+        });
+        if (!dispatchRes.ok) {
+          const errBody = await dispatchRes.text();
+          // 403 usually means the PAT lacks Actions:write permission
+          if (dispatchRes.status === 403 || dispatchRes.status === 404) {
+            toast(
+              `Your GitHub PAT can't trigger Actions (status ${dispatchRes.status}). Regenerate it with “Actions: Read and write” permission, or click “Run workflow” directly on GitHub.`,
+              'error'
+            );
+            window.open(`https://github.com/${GH_OWNER}/${GH_REPO}/actions/workflows/${WORKFLOW_FILE}`, '_blank');
+            throw new Error(`dispatch ${dispatchRes.status}: ${errBody.slice(0,120)}`);
+          }
+          throw new Error(`dispatch failed (${dispatchRes.status}): ${errBody.slice(0,120)}`);
+        }
+        toast('Sync started on GitHub. Waiting for it to finish…', 'success');
+        // 2. Find the workflow run we just kicked off. There is a small delay
+        // before it appears in the runs list, so poll a few times.
+        const runsUrl = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/workflows/${WORKFLOW_FILE}/runs?event=workflow_dispatch&per_page=3`;
+        let runId = null;
+        for (let attempt = 0; attempt < 10 && !runId; attempt++) {
+          await new Promise(r => setTimeout(r, 3000));
+          setLabel(`Waiting for run to appear (${(attempt + 1) * 3}s)…`);
+          const r = await fetch(runsUrl + '&_=' + Date.now(), { headers });
+          if (!r.ok) continue;
+          const j = await r.json();
+          const recent = (j.workflow_runs || []).find(w => (Date.now() - new Date(w.created_at).getTime()) < 90000);
+          if (recent) runId = recent.id;
+        }
+        if (!runId) throw new Error('Timed out waiting for the workflow run to appear.');
+        // 3. Poll run status until it completes
+        for (let i = 0; i < 40; i++) {
+          await new Promise(r => setTimeout(r, 4000));
+          const rr = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/actions/runs/${runId}`, { headers });
+          if (!rr.ok) continue;
+          const rj = await rr.json();
+          setLabel(`${rj.status === 'completed' ? 'Finalizing' : 'Syncing'}… (${Math.round((i + 1) * 4)}s)`);
+          if (rj.status === 'completed') {
+            if (rj.conclusion === 'success') {
+              toast('Sync complete. Reloading admin data…', 'success');
+              await loadData();
+              render();
+              // GH Pages takes ~30-60s more to serve the new JSON to the public
+              // dashboard, so nudge Ron to hard-refresh that separately.
+              toast('Public dashboard will show the new data within ~1 min (Cmd+Shift+R once).', 'success');
+            } else {
+              toast(`Sync workflow finished with status: ${rj.conclusion}. See the Actions tab.`, 'error');
+              window.open(rj.html_url, '_blank');
+            }
+            return;
+          }
+        }
+        toast('Sync is taking longer than usual — check the Actions tab.', 'error');
+        window.open(`https://github.com/${GH_OWNER}/${GH_REPO}/actions/runs/${runId}`, '_blank');
+      } catch (err) {
+        console.error(err);
+        toast(`Sync failed: ${err.message}`, 'error');
+      } finally {
+        syncBtn.disabled = false;
+        setLabel(origLabel);
+      }
+    });
+
     // GitHub token (for direct photo uploads)
     const ghInput = $('#gh-token');
     if (ghInput) ghInput.value = localStorage.getItem(GH_TOKEN_KEY) || '';

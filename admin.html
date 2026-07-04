@@ -295,7 +295,8 @@
     <div class="panel">
       <h2>Data source
         <div class="panel-actions">
-          <button class="btn ghost" id="reload-btn">Reload from source</button>
+          <button class="btn ghost" id="reload-btn" title="Re-fetches the JSON files already in this repo (fast, no Zotero call).">Reload from source</button>
+          <button class="btn" id="sync-zotero-btn" title="Triggers a GitHub Action that pulls the latest Zotero data and pushes it to the repo. Takes ~30–60 seconds.">Force sync from Zotero</button>
         </div>
       </h2>
       <p class="subtitle">Public database reads scholar profiles from a Google Sheet. Paste the sheet’s URL here — stored in your browser only, not committed to the repo.</p>
@@ -515,6 +516,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260703-12" defer></script>
+<script src="js/admin.js?v=20260703-13" defer></script>
 </body>
 </html>
