@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:18.168Z",
+  "generatedAt": "2026-07-04T19:14:20.237Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1753,6 +1753,19 @@
       "slug": "marika-v-tuiwawa",
       "last": "Tuiwawa",
       "first": "Marika V.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuiwawa, Senilolia H.",
+      "slug": "senilolia-h-tuiwawa",
+      "last": "Tuiwawa",
+      "first": "Senilolia H.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
