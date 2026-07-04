@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:45.022Z",
+  "generatedAt": "2026-07-04T19:17:48.383Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -605,6 +605,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Liga, Apaitia E.",
+      "slug": "apaitia-e-liga",
+      "last": "Liga",
+      "first": "Apaitia E.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "epeli-loganimoce",
