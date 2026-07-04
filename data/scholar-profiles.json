@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:37:22.659Z",
+  "generatedAt": "2026-07-04T17:42:45.451Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1428,18 +1428,18 @@
       "salutation": "Prof.",
       "village": "",
       "paternalProvince": "Bua",
-      "institution": "University of Central Lancashire",
+      "institution": "University of Central Lancashire (UK)",
       "institutionUrl": "https://www.lancashire.ac.uk/",
       "googleScholarUrl": "",
       "photo": "img/scholars/jioji-n-tabudravu.jpg",
-      "department": "",
-      "departmentUrl": "",
+      "department": "School of Pharmacy and Biomedical Sciences",
+      "departmentUrl": "https://www.lancashire.ac.uk/schools/pharmacy-and-biomedical-sciences",
       "profileUrl": "",
       "masters": null,
       "phd": null,
-      "title": "",
+      "title": "Senior Lecturer",
       "orcidUrl": "https://orcid.org/0000-0002-6930-6572",
-      "lastUpdate": "2026-07-04T17:12:49.288Z",
+      "lastUpdate": "2026-07-04T17:42:45.435Z",
       "total": 63,
       "firstAuthored": 12,
       "types": {
