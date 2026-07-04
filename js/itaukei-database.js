@@ -828,8 +828,8 @@
       if (!cell) return;
       const t = byConf[name].total, k = byConf[name].itaukei;
       cell.innerHTML =
-        `<span class="db-conf-row__stat"><strong>${t}</strong> Total publications</span>` +
-        `<span class="db-conf-row__stat db-conf-row__stat--lead">[<strong>${k}</strong> with iTaukei as Lead author]</span>`;
+        `<span class="db-conf-row__stat"><strong>${t}</strong> Publications ` +
+        `<span class="db-conf-row__stat--lead">[<strong>${k}</strong> iTaukei as Lead author]</span></span>`;
     });
 
     // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
