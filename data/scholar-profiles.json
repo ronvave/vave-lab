@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T11:15:01.802Z",
+  "generatedAt": "2026-07-04T11:42:22.362Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1510,6 +1510,19 @@
       "slug": "lavenia-tawake",
       "last": "Tawake",
       "first": "Lavenia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tawaketini, Inise",
+      "slug": "inise-tawaketini",
+      "last": "Tawaketini",
+      "first": "Inise",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
