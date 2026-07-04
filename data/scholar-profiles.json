@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:23:46.406Z",
+  "generatedAt": "2026-07-04T19:23:48.167Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -676,6 +676,19 @@
       "slug": "apaitia-e-liga",
       "last": "Liga",
       "first": "Apaitia E.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Ligairi, Josua Naua",
+      "slug": "josua-naua-ligairi",
+      "last": "Ligairi",
+      "first": "Josua Naua",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
