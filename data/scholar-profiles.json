@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:19:09.712Z",
+  "generatedAt": "2026-07-04T19:19:41.597Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -373,6 +373,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Gauna, Metuisela",
+      "slug": "metuisela-gauna",
+      "last": "Gauna",
+      "first": "Metuisela",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Gavidi, Sikeli",
