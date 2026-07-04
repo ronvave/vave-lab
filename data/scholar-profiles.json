@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:12:16.186Z",
+  "generatedAt": "2026-07-04T06:12:31.557Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -402,6 +402,24 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Gavidi, Sikeli",
+      "slug": "sikeli-gavidi",
+      "last": "Gavidi",
+      "first": "Sikeli",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 5,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 5
+      }
     },
     {
       "slug": "joape-ginigini",
