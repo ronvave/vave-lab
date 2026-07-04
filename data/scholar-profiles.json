@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:09.844Z",
+  "generatedAt": "2026-07-04T19:14:14.516Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -849,6 +849,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Naikatini, Alivereti N.",
+      "slug": "alivereti-n-naikatini",
+      "last": "Naikatini",
+      "first": "Alivereti N.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "winifereti-nainoca",
