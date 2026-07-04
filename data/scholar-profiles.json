@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:19:41.597Z",
+  "generatedAt": "2026-07-04T19:19:53.727Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1974,6 +1974,19 @@
       "slug": "senilolia-h-tuiwawa",
       "last": "Tuiwawa",
       "first": "Senilolia H.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tulele, Loraini",
+      "slug": "loraini-tulele",
+      "last": "Tulele",
+      "first": "Loraini",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
