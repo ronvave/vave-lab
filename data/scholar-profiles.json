@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:35:17.647Z",
+  "generatedAt": "2026-07-04T07:42:15.232Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1000,32 +1000,37 @@
       "slug": "semisi-meo",
       "last": "Meo",
       "first": "Semisi",
-      "total": "9",
-      "firstAuthored": "1",
+      "total": 8,
+      "firstAuthored": 1,
       "types": {
-        "journalArticle": 8,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "journalArticle": 7,
+        "thesis": 1
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "salutation": "Mr.",
+      "village": "Naboutini vlg",
+      "paternalProvince": "Cakaudrove",
+      "institution": "Conservation International",
+      "institutionUrl": "https://www.conservation.org/places/fiji",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/semisi-meo.jpg",
       "name": "Meo, Semisi",
       "confederacy": "",
-      "title": "",
+      "title": "Technical Director",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-04T07:42:15.231Z",
       "types.journalArticle": "8",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": null
     },
     {
       "slug": "unaisi-nabobo-baba",
