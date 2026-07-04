@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:39.566Z",
+  "generatedAt": "2026-07-04T19:24:45.340Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1299,6 +1299,19 @@
       "name": "Osborne-Naikatini, Tamara",
       "slug": "tamara-osborne-naikatini",
       "last": "Osborne-Naikatini",
+      "first": "Tamara",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Osborne, Tamara",
+      "slug": "tamara-osborne",
+      "last": "Osborne",
       "first": "Tamara",
       "salutation": "",
       "village": "",
