@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:22:17.238Z",
+  "generatedAt": "2026-07-04T19:22:22.112Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2234,6 +2234,19 @@
       "slug": "paula-vivili",
       "last": "Vivili",
       "first": "Paula",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Volavola, Litiana",
+      "slug": "litiana-volavola",
+      "last": "Volavola",
+      "first": "Litiana",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
