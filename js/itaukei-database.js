@@ -1918,7 +1918,7 @@
       state.scholarFilterNames.forEach(n => { if (set.has(n)) any = true; });
       if (!any) return false;
     }
-    // Panel B2 compare-authorship view: filter by authorship category when set.
+    // Panel B2 authorship view: filter by authorship category when set.
     if (f.b2Authorship) {
       const scholars = state.scholarProfilesByName || new Map();
       const creators = item.creators || [];
@@ -2085,7 +2085,7 @@
     if (state.filter.university) add('University:', state.filter.university, () => clearFilter('university'));
     if (state.filter.scholar)    add('Scholar:',    state.filter.scholar, () => clearFilter('scholar'));
     if (state.filter.b2Authorship) {
-      const auth = { itaukeiFirst: 'iTaukei first author', includesItaukei: 'Includes an iTaukei author', noItaukei: 'No identified iTaukei author' }[state.filter.b2Authorship] || state.filter.b2Authorship;
+      const auth = { itaukeiFirst: 'iTaukei first author', includesItaukei: 'iTaukei co-author, not first author', noItaukei: 'No iTaukei author identified' }[state.filter.b2Authorship] || state.filter.b2Authorship;
       add('Authorship:', auth, () => clearFilter('b2Authorship'));
     }
   }
@@ -2225,11 +2225,11 @@
   //   fiji-focused        → iTaukei first-author, Fiji-focused, group by paternal province
   //   all-locations       → iTaukei first-author, ANY location, group by paternal province
   //   all-authors         → any author, Fiji-focused, group by study province + Fiji-wide row
-  //   compare-authorship  → any author, Fiji-focused, group by study province, 3 authorship categories
+  //   authorship          → any author, Fiji-focused, group by study province, single stacked bar per province by authorship role
   //
   // Selected view + its type-filter checkboxes are persisted in URL hash so a
   // link like #b2=all-locations bookmarks the view.
-  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors', 'compare-authorship'];
+  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors', 'authorship'];
   const B2_META = {
     'fiji-focused': {
       title: 'Fiji-focused publications by iTaukei authors',
@@ -2258,30 +2258,42 @@
         ['Authors',     'All authors']
       ]
     },
-    'compare-authorship': {
-      title: 'Fiji-focused publications by authorship group',
-      hint:  'Compares Fiji-focused publications involving iTaukei authors with publications that do not yet include an identified iTaukei author.',
+    'authorship': {
+      title: 'iTaukei authorship in Fiji-focused research',
+      hint:  'For each study province, publications are classified by whether an iTaukei scholar is the first author, a co-author, or no iTaukei author has yet been identified.',
       meta: [
         ['Grouped by',  'Study province'],
         ['Scope',       'Fiji-focused'],
-        ['Comparison',  'Authorship group']
+        ['Measure',     'Authorship role']
       ]
     }
   };
-  // Colours for the compare-authorship view. Deliberately distinct from the
+  // Colours for the authorship view. Deliberately distinct from the
   // publication-type stack so viewers don't confuse categories.
   const AUTHORSHIP_COLORS = {
-    itaukeiFirst:    '#0e7490',  // matches Panel A / Impact 'Fiji-focused'
-    includesItaukei: '#5fa6ae',  // lighter teal
-    noItaukei:       '#c2410c'   // matches Panel A / Impact 'International'
+    itaukeiFirst:    '#0f766e',  // dark teal — first author
+    includesItaukei: '#5fa6ae',  // light teal — co-author, not first
+    noItaukei:       '#9ca3af'   // neutral grey — not yet identified
   };
+  const AUTHORSHIP_LABELS = {
+    itaukeiFirst:    'iTaukei first author',
+    includesItaukei: 'iTaukei co-author, not first author',
+    noItaukei:       'No iTaukei author identified'
+  };
+  const AUTHORSHIP_KEYS = ['itaukeiFirst', 'includesItaukei', 'noItaukei'];
 
   // Initial hydration from URL hash — e.g. #b2=all-authors
   state.b2View = 'fiji-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
+  state.b2AuthorshipMode = 'counts';
+  state.b2AuthorshipSort = 'total';
   (function readB2FromHash() {
     const m = window.location.hash.match(/(?:^|[#&])b2=([a-z-]+)/);
-    if (m && B2_VIEWS.includes(m[1])) state.b2View = m[1];
+    if (!m) return;
+    // Migrate old slug from a prior release so pre-existing bookmarks still land
+    // on the redesigned single-stacked-bar authorship view.
+    const slug = m[1] === 'compare-authorship' ? 'authorship' : m[1];
+    if (B2_VIEWS.includes(slug)) state.b2View = slug;
   })();
 
   function setB2ViewInHash(view) {
@@ -2533,69 +2545,219 @@
         }
       });
       barsEl.classList.remove('db-bars--grouped');
-    } else if (view === 'compare-authorship') {
+    } else if (view === 'authorship') {
       const rows = buildB2Rows_compareAuthorship();
-      renderCompareAuthorshipInto(barsEl, rows);
-      barsEl.classList.add('db-bars--grouped');
+      renderAuthorshipInto(barsEl, rows);
+      barsEl.classList.remove('db-bars--grouped');
     }
+
+    // Authorship-only DOM chrome: show the province-note, controls, and caveat
+    // only when the authorship view is active.
+    const isAuthorship = view === 'authorship';
+    const showAuth = el => { if (el) el.style.display = isAuthorship ? '' : 'none'; };
+    showAuth($('[data-b2-province-note]'));
+    showAuth($('[data-b2-authorship-controls]'));
+    showAuth($('[data-b2-caveat]'));
   }
 
-  function renderCompareAuthorshipInto(host, rows) {
-    host.innerHTML = '';
-    if (!rows.length) return;
-    const maxCat = Math.max(1, ...rows.flatMap(r => Object.values(r.cats)));
-    // Header key inside the bars area — explains the 3 categories
-    const key = document.createElement('div');
-    key.style.cssText = 'grid-column:1 / -1;display:flex;gap:14px;flex-wrap:wrap;padding:4px 0 8px;font-size:0.78rem;color:#475569;border-bottom:1px dashed #e2e8f0;margin-bottom:6px;';
-    key.innerHTML = [
-      ['itaukeiFirst',    'iTaukei first author'],
-      ['includesItaukei', 'Includes an iTaukei author'],
-      ['noItaukei',       'No identified iTaukei author']
-    ].map(([k, label]) => `<span><span style="display:inline-block;width:11px;height:11px;background:${AUTHORSHIP_COLORS[k]};border-radius:2px;vertical-align:middle;margin-right:6px;"></span>${label}</span>`).join('');
-    host.appendChild(key);
+  // Ensure a single tooltip element exists on document.body for the authorship
+  // view. Positioned with position:fixed and toggled via the .is-visible class.
+  function ensureAuthorshipTip() {
+    if (state.b2Tip && document.body.contains(state.b2Tip)) return state.b2Tip;
+    const tip = document.createElement('div');
+    tip.className = 'db-b2-tip';
+    tip.setAttribute('role', 'tooltip');
+    document.body.appendChild(tip);
+    state.b2Tip = tip;
+    return tip;
+  }
 
-    rows.forEach(r => {
-      // Province label
+  function hideAuthorshipTip() {
+    if (state.b2Tip) state.b2Tip.classList.remove('is-visible');
+  }
+
+  function showAuthorshipTipForRow(r, focusKey, anchorEl) {
+    const tip = ensureAuthorshipTip();
+    const total = r.total || 0;
+    const rows = AUTHORSHIP_KEYS.map(k => {
+      const n = r.cats[k] || 0;
+      const pct = total > 0 ? Math.round((n / total) * 100) : 0;
+      const emph = focusKey === k ? ' style="font-weight:600;"' : '';
+      return `<div class="db-b2-tip__row"${emph}>
+        <span class="db-b2-tip__sw" style="background:${AUTHORSHIP_COLORS[k]};"></span>
+        <span>${escapeHtml(AUTHORSHIP_LABELS[k])}</span>
+        <span class="db-b2-tip__val">${n} (${pct}%)</span>
+      </div>`;
+    }).join('');
+    const note = (r.cats.noItaukei || 0) > 0
+      ? `<div class="db-b2-tip__note">“No iTaukei author identified” means none has yet been identified in the current database.</div>`
+      : '';
+    tip.innerHTML = `
+      <div class="db-b2-tip__title">${escapeHtml(r.name)}</div>
+      ${rows}
+      <div class="db-b2-tip__total">Total: ${total} publication${total === 1 ? '' : 's'}</div>
+      ${note}`;
+
+    // Position above the anchor, clamped to viewport.
+    const rect = anchorEl.getBoundingClientRect();
+    tip.classList.add('is-visible');
+    // Force layout so we can measure the tip.
+    const tipRect = tip.getBoundingClientRect();
+    let left = rect.left + rect.width / 2 - tipRect.width / 2;
+    let top = rect.top - tipRect.height - 10;
+    const pad = 8;
+    if (left < pad) left = pad;
+    if (left + tipRect.width > window.innerWidth - pad) left = window.innerWidth - tipRect.width - pad;
+    if (top < pad) top = rect.bottom + 10; // flip below when no room above
+    tip.style.left = `${Math.round(left)}px`;
+    tip.style.top  = `${Math.round(top)}px`;
+  }
+
+  function renderAuthorshipInto(host, rows) {
+    host.innerHTML = '';
+    hideAuthorshipTip();
+    if (!rows.length) {
+      host.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.9rem;">No items match the current filters.</div>';
+      return;
+    }
+    const mode = state.b2AuthorshipMode || 'counts';
+    const sort = state.b2AuthorshipSort || 'total';
+
+    // Sort rows. Fiji-wide / national always pinned to the end. Zero-total
+    // rows keep their alphabetical fallback so the layout stays readable.
+    const sortable = rows.filter(r => r.name !== 'Fiji-wide / national');
+    const trailing = rows.filter(r => r.name === 'Fiji-wide / national');
+    const shareOf = (r, key) => (r.total > 0 ? (r.cats[key] || 0) / r.total : 0);
+    sortable.sort((a, b) => {
+      if (sort === 'first-share') {
+        return shareOf(b, 'itaukeiFirst') - shareOf(a, 'itaukeiFirst') || (b.total - a.total);
+      }
+      if (sort === 'any-share') {
+        return (shareOf(b, 'itaukeiFirst') + shareOf(b, 'includesItaukei'))
+             - (shareOf(a, 'itaukeiFirst') + shareOf(a, 'includesItaukei'))
+             || (b.total - a.total);
+      }
+      return b.total - a.total;
+    });
+    const ordered = sortable.concat(trailing);
+
+    const maxTotal = Math.max(1, ...ordered.map(r => r.total));
+    const activeProv = state.filter.province || null;
+    const activeAuth = state.filter.b2Authorship || null;
+
+    ordered.forEach(r => {
+      // Column 1 — province label + confederacy dot + total-only click target
       const label = document.createElement('div');
       label.className = 'db-bars__prov';
+      if (activeProv === r.name) label.classList.add('is-active');
       const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
       label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
+      const canFilterProv = r.name !== 'Fiji-wide / national' && r.total > 0;
+      if (canFilterProv) {
+        label.style.cursor = 'pointer';
+        label.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
+          state.filter.b2Authorship = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      }
       host.appendChild(label);
 
-      // Group of 3 mini-bars
-      const group = document.createElement('div');
-      group.className = 'db-bars__group';
-      const catRow = (catKey, label, count) => {
-        const wrap = document.createElement('div');
-        wrap.className = 'db-bars__mini';
-        wrap.innerHTML = `
-          <span class="db-bars__mini-label">${escapeHtml(label)}</span>
-          <span class="db-bars__mini-bar">
-            <span class="db-bars__mini-bar-fill" style="width:${(count / maxCat) * 100}%;background:${AUTHORSHIP_COLORS[catKey]};"></span>
-          </span>
-          <span class="db-bars__mini-total">${count}</span>`;
-        if (count > 0 && r.name !== 'Fiji-wide / national') {
-          wrap.style.cursor = 'pointer';
-          wrap.addEventListener('click', () => {
-            state.filter.province = state.filter.province === r.name ? '' : r.name;
-            state.filter.paternal = '';
-            state.filter.b2Group = 'province';
-            state.filter.b2Authorship = state.filter.b2Authorship === catKey ? '' : catKey;
-            state.shown = state.pageSize;
-            afterFilterChange();
-          });
-        }
-        return wrap;
-      };
-      group.appendChild(catRow('itaukeiFirst',    'iTaukei first author',       r.cats.itaukeiFirst));
-      group.appendChild(catRow('includesItaukei', 'Includes an iTaukei author', r.cats.includesItaukei));
-      group.appendChild(catRow('noItaukei',       'No identified iTaukei author', r.cats.noItaukei));
-      host.appendChild(group);
+      // Column 2 — stacked bar row
+      const rowWrap = document.createElement('div');
+      const bar = document.createElement('div');
+      bar.className = 'db-bars__row db-bars__row--authorship';
+      // In counts mode, bar width scales with total. In percent mode always 100%.
+      const barPct = mode === 'percent' ? 100 : (r.total / maxTotal) * 100;
+      bar.style.width = `${barPct}%`;
 
-      // Right-side total
+      if (r.total === 0) {
+        // Draw an empty outline so the province still has a visual anchor.
+        bar.style.width = '4px';
+        bar.style.background = 'transparent';
+        bar.style.boxShadow = 'inset 0 0 0 1.5px rgba(0,0,0,0.06)';
+      } else {
+        AUTHORSHIP_KEYS.forEach(k => {
+          const n = r.cats[k] || 0;
+          if (n <= 0) return;
+          const share = n / r.total;
+          const segPct = share * 100; // segment width as a share of the bar
+          const seg = document.createElement('span');
+          seg.className = 'db-bars__seg db-bars__seg--auth';
+          seg.style.width = `${segPct}%`;
+          seg.style.background = AUTHORSHIP_COLORS[k];
+          seg.setAttribute('tabindex', '0');
+          seg.setAttribute('role', 'button');
+          const pct = Math.round(share * 100);
+          seg.setAttribute('aria-label', `${r.name} · ${AUTHORSHIP_LABELS[k]}: ${n} (${pct}%)`);
+          if (activeProv === r.name && activeAuth === k) seg.classList.add('is-active');
+          // Show the count inside the segment when there's room. In counts
+          // mode the visible width is `barPct * share`; in percent mode it's
+          // just `segPct`.
+          const visibleWidthPct = mode === 'percent' ? segPct : (barPct * share);
+          if (visibleWidthPct >= 6) {
+            const inner = mode === 'percent' ? `${pct}%` : `${n}`;
+            seg.textContent = inner;
+          }
+          const openTip  = () => showAuthorshipTipForRow(r, k, seg);
+          const closeTip = () => hideAuthorshipTip();
+          seg.addEventListener('mouseenter', openTip);
+          seg.addEventListener('mouseleave', closeTip);
+          seg.addEventListener('focus', openTip);
+          seg.addEventListener('blur', closeTip);
+          const canFilterSeg = r.name !== 'Fiji-wide / national';
+          if (canFilterSeg) {
+            seg.style.cursor = 'pointer';
+            const onActivate = () => {
+              const sameProv = state.filter.province === r.name;
+              const sameAuth = state.filter.b2Authorship === k;
+              if (sameProv && sameAuth) {
+                state.filter.province = '';
+                state.filter.b2Authorship = '';
+                state.filter.b2Group = '';
+              } else {
+                state.filter.province = r.name;
+                state.filter.paternal = '';
+                state.filter.b2Group = 'province';
+                state.filter.b2Authorship = k;
+              }
+              state.shown = state.pageSize;
+              afterFilterChange();
+            };
+            seg.addEventListener('click', onActivate);
+            seg.addEventListener('keydown', ev => {
+              if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                onActivate();
+              }
+            });
+          } else {
+            seg.style.cursor = 'default';
+          }
+          bar.appendChild(seg);
+        });
+      }
+      rowWrap.appendChild(bar);
+      host.appendChild(rowWrap);
+
+      // Column 3 — right-side total (also acts as a province filter target)
       const num = document.createElement('div');
       num.className = 'db-bars__total';
       num.textContent = r.total;
+      if (canFilterProv) {
+        num.style.cursor = 'pointer';
+        num.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
+          state.filter.b2Authorship = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      }
       host.appendChild(num);
     });
   }
@@ -2639,6 +2801,39 @@
       $$('[data-b2-type-filter] input[type=checkbox]').forEach(c => { c.checked = false; });
       state.b2TypeSet = new Set();
       renderPanelB2();
+    });
+
+    // Authorship-view: Counts / Percentage toggle
+    $$('[data-b2-mode]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const mode = btn.dataset.b2Mode;
+        if (!mode || state.b2AuthorshipMode === mode) return;
+        state.b2AuthorshipMode = mode;
+        $$('[data-b2-mode]').forEach(b => {
+          const on = b.dataset.b2Mode === mode;
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-checked', on ? 'true' : 'false');
+        });
+        renderPanelB2();
+      });
+    });
+
+    // Authorship-view: Sort dropdown
+    const sortSel = $('[data-b2-sort]');
+    if (sortSel) {
+      sortSel.addEventListener('change', () => {
+        state.b2AuthorshipSort = sortSel.value || 'total';
+        renderPanelB2();
+      });
+    }
+
+    // Dismiss the authorship tooltip when scrolling or clicking outside a segment.
+    window.addEventListener('scroll', hideAuthorshipTip, { passive: true });
+    document.addEventListener('click', ev => {
+      if (!state.b2Tip) return;
+      const t = ev.target;
+      if (t && (t.classList && t.classList.contains('db-bars__seg--auth'))) return;
+      hideAuthorshipTip();
     });
   }
 
