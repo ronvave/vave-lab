@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T08:03:16.788Z",
+  "generatedAt": "2026-07-04T09:06:39.376Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1615,32 +1615,34 @@
       "slug": "jioji-ravulo",
       "last": "Ravulo",
       "first": "Jioji",
-      "total": "8",
-      "firstAuthored": "1",
+      "total": 9,
+      "firstAuthored": 2,
       "types": {
-        "journalArticle": 7,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
+        "bookSection": 2,
+        "journalArticle": 7
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
+      "salutation": "Prof.",
+      "village": "Nayavuira vlg",
+      "paternalProvince": "Ra",
       "institution": "",
       "institutionUrl": "",
-      "googleScholarUrl": "",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=ZI0E2_AAAAAJ&hl=en",
       "photo": "",
       "name": "Ravulo, Jioji",
       "confederacy": "",
       "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "orcidUrl": "https://orcid.org/0000-0001-5195-7513",
+      "lastUpdate": "2026-07-04T09:06:39.375Z",
       "types.journalArticle": "7",
       "types.thesis": "0",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "https://profiles.sydney.edu.au/jioji.ravulo",
+      "masters": null,
+      "phd": null
     },
     {
       "slug": "amerita-ravuvu",
