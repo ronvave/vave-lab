@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:05:56.860Z",
+  "generatedAt": "2026-07-04T17:12:49.300Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1425,13 +1425,29 @@
       "slug": "jioji-n-tabudravu",
       "last": "Tabudravu",
       "first": "Jioji N.",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "paternalProvince": "Bua",
+      "institution": "University of Central Lancashire",
+      "institutionUrl": "https://www.lancashire.ac.uk/",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "img/scholars/jioji-n-tabudravu.jpg",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": null,
+      "phd": null,
+      "title": "",
+      "orcidUrl": "https://orcid.org/0000-0002-6930-6572",
+      "lastUpdate": "2026-07-04T17:12:49.288Z",
+      "total": 63,
+      "firstAuthored": 12,
+      "types": {
+        "journalArticle": 60,
+        "document": 1,
+        "report": 1,
+        "bookSection": 1
+      }
     },
     {
       "name": "Tagicakiverata, Isimeli Waibuta",
