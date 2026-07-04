@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:12:55.223Z",
+  "generatedAt": "2026-07-04T17:24:24.222Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1859,13 +1859,36 @@
       "slug": "hilda-waqa-sakiti",
       "last": "Waqa-Sakiti",
       "first": "Hilda",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
+      "salutation": "Dr.",
+      "village": "Lomati vlg",
+      "paternalProvince": "Lau",
+      "institution": "University of the South Pacific (Fiji)",
+      "institutionUrl": "https://www.usp.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=NHS_N-wAAAAJ",
+      "photo": "img/scholars/hilda-waqa-sakiti.jpg",
+      "department": "Pacific Centre for Environment and Sustainable Development (PaCE-SD)",
+      "departmentUrl": "https://www.usp.ac.fj/pace-sd/about-us/who-we-are/",
+      "profileUrl": "https://www.usp.ac.fj/pace-sd/about-us/staff/hilda-waqa-sakiti/",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "title": "Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0002-3781-8928",
+      "lastUpdate": "2026-07-04T17:24:24.204Z",
+      "total": 46,
+      "firstAuthored": 18,
+      "types": {
+        "bookSection": 8,
+        "journalArticle": 21,
+        "book": 3,
+        "report": 10,
+        "thesis": 4
+      }
     },
     {
       "slug": "gade-waqa",
