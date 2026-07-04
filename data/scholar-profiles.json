@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:14.516Z",
+  "generatedAt": "2026-07-04T19:14:18.168Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -473,6 +473,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Kuridrani, Nanise",
+      "slug": "nanise-kuridrani",
+      "last": "Kuridrani",
+      "first": "Nanise",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "rosiana-lagi",
