@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T18:59:15.602Z",
+  "generatedAt": "2026-07-04T19:13:00.783Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1946,6 +1946,19 @@
         "journalArticle": 63,
         "report": 1
       }
+    },
+    {
+      "name": "Waqa, Malakai",
+      "slug": "malakai-waqa",
+      "last": "Waqa",
+      "first": "Malakai",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "salote-waqairatu",
