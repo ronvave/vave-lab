@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:37.250Z",
+  "generatedAt": "2026-07-04T19:17:41.778Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -150,6 +150,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Cakacaka, Tokasaya",
+      "slug": "tokasaya-cakacaka",
+      "last": "Cakacaka",
+      "first": "Tokasaya",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "radilaite-cammock",
