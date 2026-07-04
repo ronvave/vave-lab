@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-04T09:58:35.697807+00:00",
-  "source": "cleanup-stale-counts",
+  "generatedAt": "2026-07-04T11:15:01.802Z",
+  "source": "admin-dashboard",
   "scholars": [
     {
       "slug": "apo-aporosa",
@@ -488,23 +488,40 @@
       "slug": "jimaima-lako",
       "last": "Lako",
       "first": "Jimaima",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "paternalProvince": "Lau",
+      "institution": "Fiji National University (Fiji)",
+      "institutionUrl": "https://www.fnu.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=RIgrBb8AAAAJ",
+      "photo": "img/scholars/jimaima-lako.jpg",
       "name": "Lako, Jimaima",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Pro Vice Chancellor (Learning and Teaching)",
+      "orcidUrl": "https://orcid.org/0000-0002-2330-0191",
+      "lastUpdate": "2026-07-04T11:15:01.786Z",
       "types.journalArticle": "11",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Office of Learning and Teaching",
+      "departmentUrl": "",
+      "profileUrl": "https://www.fnu.ac.fj/about-fnu/campus-info-maps/directory-all//?profile=3851",
+      "masters": null,
+      "phd": {
+        "university": "Monash University",
+        "country": "Australia"
+      },
+      "total": 28,
+      "firstAuthored": 18,
+      "types": {
+        "journalArticle": 18,
+        "report": 5,
+        "conferencePaper": 2,
+        "bookSection": 2,
+        "book": 1
+      }
     },
     {
       "slug": "watisoni-lalavanua",
