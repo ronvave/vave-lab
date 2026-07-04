@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:48:50.796Z",
+  "generatedAt": "2026-07-04T06:51:14.793Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -926,6 +926,24 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Matatolu, Ilisapeci",
+      "slug": "ilisapeci-matatolu",
+      "last": "Matatolu",
+      "first": "Ilisapeci",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 1,
+      "firstAuthored": 1,
+      "types": {
+        "thesis": 1
+      }
     },
     {
       "slug": "litea-meo-sewabu",
