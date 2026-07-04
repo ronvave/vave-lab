@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:29:21.143Z",
+  "generatedAt": "2026-07-04T22:42:32.288Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2417,7 +2417,7 @@
       "slug": "gade-waqa",
       "last": "Waqa",
       "first": "Gade",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
       "paternalProvince": "",
       "institution": "Fiji National University",
@@ -2428,7 +2428,7 @@
       "confederacy": "",
       "title": "Associate Professor",
       "orcidUrl": "https://orcid.org/0000-0002-6079-3634",
-      "lastUpdate": "2026-07-04T17:37:22.647Z",
+      "lastUpdate": "2026-07-04T22:42:32.270Z",
       "types.journalArticle": "7",
       "types.thesis": "1",
       "types.bookSection": "0",
