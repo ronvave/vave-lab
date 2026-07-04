@@ -1,39 +1,53 @@
 {
-  "lastChecked": "2026-07-04T11:10:45Z",
-  "lastChanged": "2026-07-04T11:10:45Z",
+  "lastChecked": "2026-07-04T13:19:50Z",
+  "lastChanged": "2026-07-04T13:19:50Z",
   "dataChangedThisRun": true,
-  "totalItems": 1621,
+  "totalItems": 1871,
   "movedMetrics": [
     {
-      "metric": "type:book",
-      "prev": 19,
-      "new": 20,
+      "metric": "conf:Tovata",
+      "prev": 42,
+      "new": 43,
       "delta": 1,
-      "pct": 5.26
+      "pct": 2.38
+    },
+    {
+      "metric": "items",
+      "prev": 1621,
+      "new": 1871,
+      "delta": 250,
+      "pct": 15.42
+    },
+    {
+      "metric": "type:book",
+      "prev": 20,
+      "new": 29,
+      "delta": 9,
+      "pct": 45.0
     },
     {
       "metric": "type:bookSection",
-      "prev": 87,
-      "new": 89,
-      "delta": 2,
-      "pct": 2.3
+      "prev": 89,
+      "new": 100,
+      "delta": 11,
+      "pct": 12.36
     },
     {
       "metric": "type:journalArticle",
-      "prev": 421,
-      "new": 430,
-      "delta": 9,
-      "pct": 2.14
+      "prev": 430,
+      "new": 617,
+      "delta": 187,
+      "pct": 43.49
     },
     {
       "metric": "type:report",
-      "prev": 25,
-      "new": 30,
-      "delta": 5,
-      "pct": 20.0
+      "prev": 30,
+      "new": 63,
+      "delta": 33,
+      "pct": 110.0
     }
   ],
-  "summary": "Changes: type:book 19\u219220, type:bookSection 87\u219289, type:journalArticle 421\u2192430, type:report 25\u219230",
+  "summary": "Changes: conf:Tovata 42\u219243, items 1621\u21921871, type:book 20\u219229, type:bookSection 89\u2192100, type:journalArticle 430\u2192617, type:report 30\u219263",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28704316200"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28707462388"
 }

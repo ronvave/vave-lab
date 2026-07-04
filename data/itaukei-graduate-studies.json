@@ -1,7 +1,103 @@
 {
-  "generatedAt": "2026-07-04T11:10:45.216191+00:00",
-  "sourceSnapshot": "2026-07-04T11:10:45.111550+00:00",
+  "generatedAt": "2026-07-04T13:19:50.187784+00:00",
+  "sourceSnapshot": "2026-07-04T13:19:50.074038+00:00",
   "scholars": {
+    "Naqasima-Sobey, Milika": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Master's Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 1996,
+        "title": "An Investigation of Public Health and Fisheries Issues Concerning Anadara antiquata (Mollusca, Bivalvia: Arcidae) and Batissa violacea (Bivalvia: Corbiculacea)"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Essex",
+        "iso": null,
+        "country": null,
+        "lat": null,
+        "lng": null,
+        "year": 2004,
+        "title": "The Role of Bottom Sediments in Nitrogen Cycling in a Tropical Lagoon"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Master's Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 1996,
+          "title": "An Investigation of Public Health and Fisheries Issues Concerning Anadara antiquata (Mollusca, Bivalvia: Arcidae) and Batissa violacea (Bivalvia: Corbiculacea)"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Essex",
+          "iso": null,
+          "country": null,
+          "lat": null,
+          "lng": null,
+          "year": 2004,
+          "title": "The Role of Bottom Sediments in Nitrogen Cycling in a Tropical Lagoon"
+        }
+      ]
+    },
+    "Waqa-Sakiti, Hilda": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Master's Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2006,
+        "title": "Taxonomy, diversity and distribution of canopy Coleoptera (beetles) along elevational gradients on eastern Viti Levu, Fiji"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2015,
+        "title": "Taxonomy, host-selection, biogeography and species distribution modeling of the Fijian long-horned beetles (Coleoptera: Cerambycidae)"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Master's Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2006,
+          "title": "Taxonomy, diversity and distribution of canopy Coleoptera (beetles) along elevational gradients on eastern Viti Levu, Fiji"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2015,
+          "title": "Taxonomy, host-selection, biogeography and species distribution modeling of the Fijian long-horned beetles (Coleoptera: Cerambycidae)"
+        }
+      ]
+    },
     "Ratuva, Steven": {
       "masters": {
         "level": "masters",
@@ -112,6 +208,33 @@
           "lng": 175.612,
           "year": 2022,
           "title": "“Na mata ni Civa au a vakawaletaka” : an ethnobotanical study on kumala (Ipomoea batatas (L.) Lam) and its contribution to climate-smart agriculture in Ra, Fiji"
+        }
+      ]
+    },
+    "Tawake, Lavenia": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "M.A. thesis",
+        "university": "The University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2007,
+        "title": "Coastal processes causing beach erosion : a case study of Votua village on the Coral Coast, Sigatoka, Fiji Islands"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "M.A. thesis",
+          "university": "The University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2007,
+          "title": "Coastal processes causing beach erosion : a case study of Votua village on the Coral Coast, Sigatoka, Fiji Islands"
         }
       ]
     },
@@ -1008,12 +1131,14 @@
       "phdScholars": [
         "Lagi, Rosiana",
         "Sakai, Sevanaia",
-        "Tamata, Apolonia"
+        "Tamata, Apolonia",
+        "Waqa-Sakiti, Hilda"
       ],
       "mastersScholars": [
         "Cakacaka, Akuila",
         "Ginigini, Joape",
         "Meo, Semisi",
+        "Naqasima-Sobey, Milika",
         "Raisele, Kolaia",
         "Ratuva, Steven",
         "Sakai, Sevanaia",
@@ -1021,9 +1146,10 @@
         "Thomas, Nunia",
         "Vada, Sera",
         "Vave, Ron",
+        "Waqa-Sakiti, Hilda",
         "Waqavakatoga, William"
       ],
-      "total": 14
+      "total": 17
     },
     {
       "iso": "NZ",
@@ -1157,6 +1283,18 @@
       "total": 1
     },
     {
+      "iso": "FJ",
+      "country": "Fiji",
+      "university": "The University of the South Pacific",
+      "lat": -18.148,
+      "lng": 178.446,
+      "phdScholars": [],
+      "mastersScholars": [
+        "Tawake, Lavenia"
+      ],
+      "total": 1
+    },
+    {
       "iso": "DE",
       "country": "Germany",
       "university": "University of Bremen",
@@ -1205,5 +1343,7 @@
       "total": 1
     }
   ],
-  "unknownUniversities": []
+  "unknownUniversities": [
+    "University of Essex"
+  ]
 }
