@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:03:03.286Z",
+  "generatedAt": "2026-07-04T07:05:32.139Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2235,7 +2235,7 @@
       "salutation": "Prof.",
       "village": "Sawana vlg, Vanua balavu Is",
       "paternalProvince": "Lau",
-      "institution": "University of Hawaiʻi at Mānoa",
+      "institution": "University of Hawaiʻi at Mānoa (U.S.A)",
       "institutionUrl": "https://manoa.hawaii.edu/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=kQp4VUoAAAAJ&hl=en&oi=ao",
       "photo": "img/scholars/ron-vave.jpg",
@@ -2243,7 +2243,7 @@
       "confederacy": "",
       "title": "Assistant Professor",
       "orcidUrl": "https://orcid.org/0000-0001-6137-3685",
-      "lastUpdate": "2026-07-04T06:48:50.785Z",
+      "lastUpdate": "2026-07-04T07:05:32.129Z",
       "types.journalArticle": "12",
       "types.thesis": "2",
       "types.bookSection": "3",
