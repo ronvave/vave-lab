@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:00:24.815Z",
+  "generatedAt": "2026-07-04T07:03:03.286Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1085,32 +1085,36 @@
       "slug": "winifereti-nainoca",
       "last": "Nainoca",
       "first": "Winifereti",
-      "total": "3",
-      "firstAuthored": "1",
+      "total": 2,
+      "firstAuthored": 0,
       "types": {
-        "journalArticle": 2,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "journalArticle": 2
       },
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
-      "paternalProvince": "",
+      "paternalProvince": "Rewa",
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/winifereti-nainoca.jpg",
       "name": "Nainoca, Winifereti",
       "confederacy": "",
       "title": "",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-04T07:03:03.284Z",
       "types.journalArticle": "2",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": null,
+      "phd": {
+        "university": "Massey University",
+        "country": "New Zealand"
+      }
     },
     {
       "slug": "sereima-naisilisili",
