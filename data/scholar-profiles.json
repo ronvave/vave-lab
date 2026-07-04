@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:23:48.167Z",
+  "generatedAt": "2026-07-04T19:24:09.280Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2550,6 +2550,19 @@
       "slug": "viliame-p-waqalevu",
       "last": "Waqalevu",
       "first": "Viliame P.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Waqalevu, Viliame Pita",
+      "slug": "viliame-pita-waqalevu",
+      "last": "Waqalevu",
+      "first": "Viliame Pita",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
