@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T11:42:24.924Z",
+  "generatedAt": "2026-07-04T17:05:56.860Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1412,6 +1412,19 @@
       "slug": "vika-soqo",
       "last": "Soqo",
       "first": "Vika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabudravu, Jioji N.",
+      "slug": "jioji-n-tabudravu",
+      "last": "Tabudravu",
+      "first": "Jioji N.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
