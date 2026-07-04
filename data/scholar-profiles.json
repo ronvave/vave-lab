@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:26.007Z",
+  "generatedAt": "2026-07-04T19:24:33.630Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1689,6 +1689,19 @@
       "slug": "j-samuwai",
       "last": "Samuwai",
       "first": "J.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Samuwai, Jale",
+      "slug": "jale-samuwai",
+      "last": "Samuwai",
+      "first": "Jale",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
