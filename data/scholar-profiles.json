@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:30.559Z",
+  "generatedAt": "2026-07-04T06:13:40.819Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2298,6 +2298,24 @@
       "title": "Lead Researcher",
       "orcidUrl": "",
       "lastUpdate": "2026-07-03T19:59:15.329Z"
+    },
+    {
+      "name": "Waqalevu, Viliame P.",
+      "slug": "viliame-p-waqalevu",
+      "last": "Waqalevu",
+      "first": "Viliame P.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 3,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 3
+      }
     },
     {
       "slug": "william-waqavakatoga",
