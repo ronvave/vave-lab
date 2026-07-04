@@ -1462,10 +1462,13 @@
 
   // Province groupings per confederacy — used to rebuild the province dropdown
   // when the confederacy dropdown changes.
+  // The 14 Fijian provinces grouped by chiefly confederacy.
+  // Sourced from fiji-provinces.geojson (each feature has a `confederacy`
+  // property). Ra is part of Kubuna — previously missed.
   const CONFEDERACY_PROVINCES = {
     Burebasaga: ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
-    Kubuna:     ['Ba', 'Naitasiri', 'Tailevu', 'Lomaiviti'],
-    Tovata:     ['Bua', 'Cakaudrove', 'Macuata', 'Lau']
+    Kubuna:     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
+    Tovata:     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
   };
 
   function wireScholarFilters() {
