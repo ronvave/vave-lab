@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T04:02:21.249Z",
+  "generatedAt": "2026-07-04T05:50:14.679Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2160,6 +2160,24 @@
       "profileUrl": "https://www.fnu.ac.fj/research-office-contacts/dr-donald-wilson/",
       "masters": null,
       "phd": null
+    },
+    {
+      "name": "Wilson, Donald J.",
+      "slug": "donald-j-wilson",
+      "last": "Wilson",
+      "first": "Donald J.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 39,
+      "firstAuthored": 2,
+      "types": {
+        "journalArticle": 39
+      }
     }
   ],
   "hiddenScholars": []
