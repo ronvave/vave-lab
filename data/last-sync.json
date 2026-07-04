@@ -1,53 +1,10 @@
 {
-  "lastChecked": "2026-07-04T13:19:50Z",
+  "lastChecked": "2026-07-04T16:01:05Z",
   "lastChanged": "2026-07-04T13:19:50Z",
-  "dataChangedThisRun": true,
+  "dataChangedThisRun": false,
   "totalItems": 1871,
-  "movedMetrics": [
-    {
-      "metric": "conf:Tovata",
-      "prev": 42,
-      "new": 43,
-      "delta": 1,
-      "pct": 2.38
-    },
-    {
-      "metric": "items",
-      "prev": 1621,
-      "new": 1871,
-      "delta": 250,
-      "pct": 15.42
-    },
-    {
-      "metric": "type:book",
-      "prev": 20,
-      "new": 29,
-      "delta": 9,
-      "pct": 45.0
-    },
-    {
-      "metric": "type:bookSection",
-      "prev": 89,
-      "new": 100,
-      "delta": 11,
-      "pct": 12.36
-    },
-    {
-      "metric": "type:journalArticle",
-      "prev": 430,
-      "new": 617,
-      "delta": 187,
-      "pct": 43.49
-    },
-    {
-      "metric": "type:report",
-      "prev": 30,
-      "new": 63,
-      "delta": 33,
-      "pct": 110.0
-    }
-  ],
-  "summary": "Changes: conf:Tovata 42\u219243, items 1621\u21921871, type:book 20\u219229, type:bookSection 89\u2192100, type:journalArticle 430\u2192617, type:report 30\u219263",
+  "movedMetrics": [],
+  "summary": "No tracked total moved by more than 2.0%.",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28707462388"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28711698527"
 }
