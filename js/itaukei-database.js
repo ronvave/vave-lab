@@ -1450,6 +1450,8 @@
   // ============ SCHOLAR CARDS (paginated, image-4 style) ============
   const SCHOLAR_PAGE_SIZE = 20;
   state.scholarPage = 1;
+  state.scholarConfFilter = '';  // '', '__untagged__', 'Burebasaga', 'Kubuna', 'Tovata'
+  state.scholarProvFilter = '';  // '', '__untagged__', or a province name
 
   // Placeholder silhouette shown when no photo is provided
   const PHOTO_PLACEHOLDER_SVG = `
@@ -1458,9 +1460,70 @@
       <path d="M12 120 C 12 85, 88 85, 88 120 Z" fill="#b6bcc2"/>
     </svg>`;
 
+  // Province groupings per confederacy — used to rebuild the province dropdown
+  // when the confederacy dropdown changes.
+  const CONFEDERACY_PROVINCES = {
+    Burebasaga: ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
+    Kubuna:     ['Ba', 'Naitasiri', 'Tailevu', 'Lomaiviti'],
+    Tovata:     ['Bua', 'Cakaudrove', 'Macuata', 'Lau']
+  };
+
+  function wireScholarFilters() {
+    const confSel = $('[data-scholar-conf-filter]');
+    const provSel = $('[data-scholar-prov-filter]');
+    if (!confSel || !provSel) return;
+
+    // Rebuild the province dropdown options based on the currently-selected
+    // confederacy (or show all provinces if 'All confederacies' is chosen).
+    function rebuildProvinceOptions() {
+      const conf = state.scholarConfFilter;
+      // Preserve the selected value if it's still valid
+      const prevProv = state.scholarProvFilter;
+      let provinces;
+      if (!conf || conf === '__untagged__') {
+        provinces = Object.values(CONFEDERACY_PROVINCES).flat().sort();
+      } else {
+        provinces = (CONFEDERACY_PROVINCES[conf] || []).slice().sort();
+      }
+      // Build options: All, Untagged, then each province
+      provSel.innerHTML =
+        '<option value="">All provinces</option>' +
+        '<option value="__untagged__">Untagged (no province)</option>' +
+        provinces.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join('');
+      // Restore selection if still available; otherwise reset to All
+      if (prevProv && (prevProv === '__untagged__' || provinces.includes(prevProv))) {
+        provSel.value = prevProv;
+      } else {
+        provSel.value = '';
+        state.scholarProvFilter = '';
+      }
+    }
+    // Initial build so the province list starts with all 14 provinces
+    rebuildProvinceOptions();
+
+    confSel.addEventListener('change', () => {
+      state.scholarConfFilter = confSel.value;
+      state.scholarPage = 1;
+      rebuildProvinceOptions();
+      renderLeaders();
+    });
+    provSel.addEventListener('change', () => {
+      state.scholarProvFilter = provSel.value;
+      state.scholarPage = 1;
+      renderLeaders();
+    });
+  }
+
   function renderLeaders() {
     const grid = $('[data-db-leaders]');
     if (!grid) return;
+
+    // Province → confederacy map (from fiji-provinces.geojson) so we can
+    // classify each scholar's paternal province into a confederacy.
+    const provConf = new Map();
+    if (state.provinces && state.provinces.features) {
+      state.provinces.features.forEach(f => provConf.set(f.properties.name, f.properties.confederacy));
+    }
 
     // Build the sorted, enriched scholar list. Enrichment comes from
     // data/scholar-profiles.json (loaded once during init). If a profile row is
@@ -1468,10 +1531,31 @@
     const derived = deriveScholarRows();
     const enrichedByName = state.scholarProfilesByName || new Map();
     const hidden = state.hiddenScholars || new Set();
-    const rows = derived
+    let rows = derived
       .filter(r => !hidden.has(r.name))
-      .map(r => Object.assign({}, r, enrichedByName.get(r.name) || {}))
+      .map(r => {
+        const enriched = Object.assign({}, r, enrichedByName.get(r.name) || {});
+        // Compute confederacy from paternalProvince for filtering
+        enriched._prov = enriched.paternalProvince || '';
+        enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
+        return enriched;
+      })
       .sort((a, b) => b.total - a.total);
+
+    // Apply confederacy filter
+    const confF = state.scholarConfFilter;
+    if (confF === '__untagged__') {
+      rows = rows.filter(r => !r._conf);
+    } else if (confF) {
+      rows = rows.filter(r => r._conf === confF);
+    }
+    // Apply province filter
+    const provF = state.scholarProvFilter;
+    if (provF === '__untagged__') {
+      rows = rows.filter(r => !r._prov);
+    } else if (provF) {
+      rows = rows.filter(r => r._prov === provF);
+    }
 
     // Pagination state (10 per page)
     const totalPages = Math.max(1, Math.ceil(rows.length / SCHOLAR_PAGE_SIZE));
@@ -1583,6 +1667,15 @@
     } else {
       institutionHtml = '<span class="db-scholar-card__institution--empty">Institution not yet added</span>';
     }
+    // Department: rendered under institution when the admin filled it.
+    // Linked to r.departmentUrl if present.
+    const departmentText = r.department || '';
+    let departmentHtml = '';
+    if (departmentText) {
+      departmentHtml = r.departmentUrl
+        ? `<a href="${escapeAttr(r.departmentUrl)}" target="_blank" rel="noopener">${escapeHtml(departmentText)}</a>`
+        : escapeHtml(departmentText);
+    }
     // Professional title: linked to r.profileUrl (faculty profile page) if present
     let titleHtml = '';
     if (title) {
@@ -1638,6 +1731,7 @@
           <h3 class="db-scholar-card__name">${escapeHtml(displayName || (first + ' ' + last).trim())}</h3>
           <div class="db-scholar-card__meta">${metaHtml}</div>
           <div class="db-scholar-card__institution">${institutionHtml}</div>
+          ${departmentHtml ? `<div class="db-scholar-card__department">${departmentHtml}</div>` : ''}
           ${title ? `<div class="db-scholar-card__title">${titleHtml}</div>` : ''}
           ${lastUpdate ? `<div class="db-scholar-card__updated">Last update: <em>${escapeHtml(lastUpdate)}</em></div>` : ''}
         </div>
@@ -2001,6 +2095,7 @@
     renderPanelD();
     renderHistogram();
     renderLeaders();
+    wireScholarFilters();
     wire();
     wireTypeFilter();
     wireHistControls();

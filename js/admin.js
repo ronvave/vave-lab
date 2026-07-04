@@ -447,6 +447,8 @@
     $('#pf-paternal-province').value = p.paternalProvince || '';
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
+    $('#pf-department').value = p.department || '';
+    $('#pf-department-url').value = p.departmentUrl || '';
     $('#pf-profile-url').value = p.profileUrl || '';
     $('#pf-masters-uni').value = (p.masters && p.masters.university) || '';
     $('#pf-masters-country').value = (p.masters && p.masters.country) || '';
@@ -998,6 +1000,8 @@
         paternalProvince: $('#pf-paternal-province').value,
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
+        department: $('#pf-department').value.trim(),
+        departmentUrl: $('#pf-department-url').value.trim(),
         profileUrl: $('#pf-profile-url').value.trim(),
         masters: (function(){
           const u = $('#pf-masters-uni').value.trim(), c = $('#pf-masters-country').value.trim();
