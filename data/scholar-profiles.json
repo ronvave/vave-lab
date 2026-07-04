@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:55:34.778Z",
+  "generatedAt": "2026-07-04T06:55:49.673Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1316,6 +1316,24 @@
       "types.bookSection": "2",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Naqasima-Sobey, Milika",
+      "slug": "milika-naqasima-sobey",
+      "last": "Naqasima-Sobey",
+      "first": "Milika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 1,
+      "firstAuthored": 1,
+      "types": {
+        "thesis": 1
+      }
     },
     {
       "name": "Naucunivanua, Sikeli",
