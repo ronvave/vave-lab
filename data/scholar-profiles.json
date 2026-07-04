@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:09.280Z",
+  "generatedAt": "2026-07-04T19:24:12.039Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -670,6 +670,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Leweniqila, Ilisoni Lasaqa Vuetinabouono",
+      "slug": "ilisoni-lasaqa-vuetinabouono-leweniqila",
+      "last": "Leweniqila",
+      "first": "Ilisoni Lasaqa Vuetinabouono",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Liga, Apaitia E.",
