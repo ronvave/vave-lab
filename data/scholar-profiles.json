@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:28.893Z",
+  "generatedAt": "2026-07-04T19:17:37.250Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1844,6 +1844,19 @@
       "slug": "marika-v-tuiwawa",
       "last": "Tuiwawa",
       "first": "Marika V.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuiwawa, Senilolia",
+      "slug": "senilolia-tuiwawa",
+      "last": "Tuiwawa",
+      "first": "Senilolia",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
