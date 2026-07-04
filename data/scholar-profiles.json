@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:19:53.727Z",
+  "generatedAt": "2026-07-04T19:20:08.203Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -587,6 +587,19 @@
         "bookSection": 2,
         "book": 1
       }
+    },
+    {
+      "name": "Lalamacuata, Maria",
+      "slug": "maria-lalamacuata",
+      "last": "Lalamacuata",
+      "first": "Maria",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "watisoni-lalavanua",
