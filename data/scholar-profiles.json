@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-03T20:36:05.078Z",
+  "generatedAt": "2026-07-04T00:10:16.724Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1952,8 +1952,8 @@
         "thesis": 1
       },
       "salutation": "Dr.",
-      "village": "",
-      "paternalProvince": "",
+      "village": "Vitina vlg",
+      "paternalProvince": "Macuata",
       "institution": "Lincoln University (New Zealand)",
       "institutionUrl": "https://researchers.lincoln.ac.nz/",
       "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=3VMou-4AAAAJ",
@@ -1962,7 +1962,7 @@
       "confederacy": "",
       "title": "Senior Lecturer",
       "orcidUrl": "https://orcid.org/0000-0003-0453-9452",
-      "lastUpdate": "2026-07-03T20:26:29.800Z",
+      "lastUpdate": "2026-07-04T00:10:16.713Z",
       "types.journalArticle": "9",
       "types.thesis": "1",
       "types.bookSection": "5",
