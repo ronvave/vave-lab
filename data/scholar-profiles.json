@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T05:58:49.990Z",
+  "generatedAt": "2026-07-04T06:12:16.186Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1313,6 +1313,24 @@
       "phd": {
         "university": "University of Sussex",
         "country": "UK"
+      }
+    },
+    {
+      "name": "Ravoka, Mereia",
+      "slug": "mereia-ravoka",
+      "last": "Ravoka",
+      "first": "Mereia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 6,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 6
       }
     },
     {
