@@ -1,10 +1,18 @@
 {
-  "lastChecked": "2026-07-04T19:08:08Z",
-  "lastChanged": "2026-07-04T13:19:50Z",
-  "dataChangedThisRun": false,
-  "totalItems": 1860,
-  "movedMetrics": [],
-  "summary": "No tracked total moved by more than 2.0%.",
+  "lastChecked": "2026-07-04T21:57:42Z",
+  "lastChanged": "2026-07-04T21:57:42Z",
+  "dataChangedThisRun": true,
+  "totalItems": 1859,
+  "movedMetrics": [
+    {
+      "metric": "conf:Kubuna",
+      "prev": 79,
+      "new": 81,
+      "delta": 2,
+      "pct": 2.53
+    }
+  ],
+  "summary": "Changes: conf:Kubuna 79\u219281",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28716634157"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28720888095"
 }
