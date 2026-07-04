@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:27.266Z",
+  "generatedAt": "2026-07-04T19:17:28.893Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1287,6 +1287,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Ravuiwasa, Kaliova Tavou",
+      "slug": "kaliova-tavou-ravuiwasa",
+      "last": "Ravuiwasa",
+      "first": "Kaliova Tavou",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "jioji-ravulo",
