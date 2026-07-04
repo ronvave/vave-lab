@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:17.105Z",
+  "generatedAt": "2026-07-04T06:13:30.559Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1965,6 +1965,24 @@
       "phd": {
         "university": "Griffith University",
         "country": "Australia"
+      }
+    },
+    {
+      "name": "Vakaloloma, Unise",
+      "slug": "unise-vakaloloma",
+      "last": "Vakaloloma",
+      "first": "Unise",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 3,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 3
       }
     },
     {
