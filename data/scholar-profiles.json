@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:00.783Z",
+  "generatedAt": "2026-07-04T19:13:13.746Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1656,6 +1656,19 @@
       "types.bookSection": "3",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tuiwawa, Marika V.",
+      "slug": "marika-v-tuiwawa",
+      "last": "Tuiwawa",
+      "first": "Marika V.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "sera-vada",
