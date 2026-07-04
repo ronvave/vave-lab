@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:22.659Z",
+  "generatedAt": "2026-07-04T19:24:26.007Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1799,6 +1799,19 @@
         "report": 1,
         "bookSection": 1
       }
+    },
+    {
+      "name": "Tabudravu, Jioji Natadra",
+      "slug": "jioji-natadra-tabudravu",
+      "last": "Tabudravu",
+      "first": "Jioji Natadra",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Tabunakawai-Vakalalabure, Margaret",
