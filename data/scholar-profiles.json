@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:12.039Z",
+  "generatedAt": "2026-07-04T19:24:18.781Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2037,6 +2037,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tikoibua, Tomasi",
+      "slug": "tomasi-tikoibua",
+      "last": "Tikoibua",
+      "first": "Tomasi",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Tuibeqa, Ilisapeci",
