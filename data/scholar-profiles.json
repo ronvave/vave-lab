@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:34.446Z",
+  "generatedAt": "2026-07-04T19:14:02.981Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1787,6 +1787,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "1"
+    },
+    {
+      "name": "Vakarewa, Isoa",
+      "slug": "isoa-vakarewa",
+      "last": "Vakarewa",
+      "first": "Isoa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "joeli-varo",
