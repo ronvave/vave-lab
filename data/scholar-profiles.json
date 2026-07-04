@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:18:56.615Z",
+  "generatedAt": "2026-07-04T19:19:04.360Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1636,6 +1636,19 @@
       "slug": "margaret-tabunakawai-vakalalabure",
       "last": "Tabunakawai-Vakalalabure",
       "first": "Margaret",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabunakawai, K.",
+      "slug": "k-tabunakawai",
+      "last": "Tabunakawai",
+      "first": "K.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
