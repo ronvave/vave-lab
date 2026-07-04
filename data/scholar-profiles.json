@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T05:50:14.679Z",
+  "generatedAt": "2026-07-04T05:58:49.990Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2169,15 +2169,21 @@
       "salutation": "",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "institution": "Fiji Institute of Pacific Health Research at Fiji National University (Fiji)",
+      "institutionUrl": "https://www.fnu.ac.fj/college-of-medicine/research-cmnhs/fiphr/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=z2jcHJAAAAAJ&hl=en",
+      "photo": "img/scholars/donald-j-wilson.jpg",
       "total": 39,
       "firstAuthored": 2,
       "types": {
         "journalArticle": 39
-      }
+      },
+      "profileUrl": "",
+      "masters": null,
+      "phd": null,
+      "title": "Associate Dean Research and Director",
+      "orcidUrl": "https://orcid.org/0000-0003-1047-1669",
+      "lastUpdate": "2026-07-04T05:58:49.980Z"
     }
   ],
   "hiddenScholars": []
