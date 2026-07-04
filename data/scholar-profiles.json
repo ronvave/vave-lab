@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:10:01.015Z",
+  "generatedAt": "2026-07-04T07:15:56.728Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1023,32 +1023,41 @@
       "slug": "unaisi-nabobo-baba",
       "last": "Nabobo-Baba",
       "first": "Unaisi",
-      "total": "10",
-      "firstAuthored": "2",
+      "total": 6,
+      "firstAuthored": 3,
       "types": {
-        "journalArticle": 8,
-        "thesis": 0,
+        "thesis": 2,
         "bookSection": 1,
-        "book": 1,
-        "report": 0
+        "journalArticle": 3
       },
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "paternalProvince": "Tailevu",
+      "institution": "Fiji National University",
+      "institutionUrl": "https://www.fnu.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=mdceINIAAAAJ&hl=en&oi=ao",
+      "photo": "img/scholars/unaisi-nabobo-baba.jpg",
       "name": "Nabobo-Baba, Unaisi",
       "confederacy": "",
-      "title": "",
+      "title": "Vice-Chancellor",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-04T07:15:56.727Z",
       "types.journalArticle": "8",
       "types.thesis": "0",
       "types.bookSection": "1",
       "types.book": "1",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Office of the Vice-Chancellor",
+      "departmentUrl": "",
+      "profileUrl": "https://www.fnu.ac.fj/about-fnu/campus-info-maps/directory-all/?profile=1378",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "University of Auckland",
+        "country": "New Zealand"
+      }
     },
     {
       "slug": "alivereti-naikatini",
