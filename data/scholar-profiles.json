@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:20:29.377Z",
+  "generatedAt": "2026-07-04T19:20:34.633Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -316,6 +316,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Fong, Patrick S.",
+      "slug": "patrick-s-fong",
+      "last": "Fong",
+      "first": "Patrick S.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "patrick-sakiusa-fong",
