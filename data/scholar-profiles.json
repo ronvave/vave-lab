@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:27:23.875Z",
+  "generatedAt": "2026-07-04T06:48:50.796Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2181,7 +2181,7 @@
       "confederacy": "",
       "title": "Assistant Professor",
       "orcidUrl": "https://orcid.org/0000-0001-6137-3685",
-      "lastUpdate": "2026-07-03T20:22:11.611Z",
+      "lastUpdate": "2026-07-04T06:48:50.785Z",
       "types.journalArticle": "12",
       "types.thesis": "2",
       "types.bookSection": "3",
@@ -2195,7 +2195,9 @@
       "phd": {
         "university": "University of Hawaiʻi at Mānoa",
         "country": "USA"
-      }
+      },
+      "department": "Department of Pacific Islands Studies",
+      "departmentUrl": "https://hawaii.edu/cpis/"
     },
     {
       "slug": "joeli-veitayaki",
