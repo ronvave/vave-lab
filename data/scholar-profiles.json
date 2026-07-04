@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:42:45.451Z",
+  "generatedAt": "2026-07-04T17:47:59.251Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1516,23 +1516,41 @@
       "slug": "alifereti-tawake",
       "last": "Tawake",
       "first": "Alifereti",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
+      "salutation": "Mr.",
+      "village": "Daku vlg",
+      "paternalProvince": "Kadavu",
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/alifereti-tawake.jpg",
       "name": "Tawake, Alifereti",
       "confederacy": "",
       "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "orcidUrl": "https://orcid.org/0000-0002-0154-3600",
+      "lastUpdate": "2026-07-04T17:47:59.236Z",
       "types.journalArticle": "5",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": null,
+      "total": 40,
+      "firstAuthored": 5,
+      "types": {
+        "report": 5,
+        "journalArticle": 26,
+        "book": 5,
+        "bookSection": 2,
+        "conferencePaper": 1,
+        "thesis": 1
+      }
     },
     {
       "name": "Tawake, Lavenia",
