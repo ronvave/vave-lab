@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T00:10:47.300Z",
+  "generatedAt": "2026-07-04T00:27:26.922Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2131,32 +2131,31 @@
       "slug": "donald-wilson",
       "last": "Wilson",
       "first": "Donald",
-      "total": "11",
-      "firstAuthored": "3",
+      "total": 11,
+      "firstAuthored": 1,
       "types": {
-        "journalArticle": 11,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "journalArticle": 11
       },
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "institution": "Fiji Institute of Pacific Health Research (Fiji)",
+      "institutionUrl": "https://www.fnu.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=z2jcHJAAAAAJ",
+      "photo": "img/scholars/donald-wilson.jpg",
       "name": "Wilson, Donald",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Associate Dean Research & Director",
+      "orcidUrl": "https://orcid.org/0000-0003-1047-1669",
+      "lastUpdate": "2026-07-04T00:27:26.911Z",
       "types.journalArticle": "11",
       "types.thesis": "0",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://www.fnu.ac.fj/research-office-contacts/dr-donald-wilson/",
+      "masters": null,
+      "phd": null
     }
   ],
   "hiddenScholars": []
