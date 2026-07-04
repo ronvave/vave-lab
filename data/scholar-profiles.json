@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:22:29.051Z",
+  "generatedAt": "2026-07-04T19:23:07.491Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1991,6 +1991,19 @@
       "slug": "ilisapeci-tuibeqa",
       "last": "Tuibeqa",
       "first": "Ilisapeci",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuimabu, Lanieta",
+      "slug": "lanieta-tuimabu",
+      "last": "Tuimabu",
+      "first": "Lanieta",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
