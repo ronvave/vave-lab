@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:39.744Z",
+  "generatedAt": "2026-07-04T19:14:49.152Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1339,6 +1339,19 @@
       "slug": "nacanieli-rika",
       "last": "Rika",
       "first": "Nacanieli",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Rokoduru, Avelina",
+      "slug": "avelina-rokoduru",
+      "last": "Rokoduru",
+      "first": "Avelina",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
