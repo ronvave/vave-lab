@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:20:34.633Z",
+  "generatedAt": "2026-07-04T19:20:55.749Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1457,6 +1457,19 @@
       "profileUrl": "https://profiles.sydney.edu.au/jioji.ravulo",
       "masters": null,
       "phd": null
+    },
+    {
+      "name": "Ravulo, Jioji J.",
+      "slug": "jioji-j-ravulo",
+      "last": "Ravulo",
+      "first": "Jioji J.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "amerita-ravuvu",
