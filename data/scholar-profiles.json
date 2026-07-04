@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:09.819Z",
+  "generatedAt": "2026-07-04T19:17:27.266Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1503,6 +1503,19 @@
       "slug": "rusila-savou",
       "last": "Savou",
       "first": "Rusila",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Sawailau, Mere Jane",
+      "slug": "mere-jane-sawailau",
+      "last": "Sawailau",
+      "first": "Mere Jane",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
