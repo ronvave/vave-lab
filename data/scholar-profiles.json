@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:12:34.519Z",
+  "generatedAt": "2026-07-04T06:12:37.731Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1310,6 +1310,24 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Ratu, Anaseini",
+      "slug": "anaseini-ratu",
+      "last": "Ratu",
+      "first": "Anaseini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 5,
+      "firstAuthored": 1,
+      "types": {
+        "journalArticle": 5
+      }
     },
     {
       "slug": "steven-ratuva",
