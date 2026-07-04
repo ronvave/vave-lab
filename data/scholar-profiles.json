@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:33.630Z",
+  "generatedAt": "2026-07-04T19:24:36.814Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1567,6 +1567,19 @@
       "types.bookSection": "0",
       "types.book": "4",
       "types.report": "0"
+    },
+    {
+      "name": "Ravuvu, Asesela D. (Asesela Drekeivalu)",
+      "slug": "asesela-d-asesela-drekeivalu-ravuvu",
+      "last": "Ravuvu",
+      "first": "Asesela D. (Asesela Drekeivalu)",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Rika, Nacanieli",
