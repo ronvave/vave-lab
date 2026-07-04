@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:18:24.562Z",
+  "generatedAt": "2026-07-04T07:35:17.647Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -339,30 +339,38 @@
       "slug": "glenn-finau",
       "last": "Finau",
       "first": "Glenn",
-      "total": 16,
+      "total": 31,
       "firstAuthored": 12,
       "types": {
-        "thesis": 1,
-        "bookSection": 3,
-        "journalArticle": 12
+        "journalArticle": 26,
+        "bookSection": 4,
+        "thesis": 1
       },
       "salutation": "Dr.",
       "village": "Tubou vlg, Lakeba Is",
       "paternalProvince": "Lau",
       "institution": "University of Tasmania, Australia",
-      "institutionUrl": "https://www.utas.edu.au/profiles/staff/tsbe/glenn-finau",
+      "institutionUrl": "https://www.utas.edu.au/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=Glenn-Finau",
       "photo": "img/scholars/glenn-finau.jpg",
       "title": "Senior Lecturer",
       "orcidUrl": "https://orcid.org/0000-0002-9080-6862",
-      "lastUpdate": "2026-07-03T09:19:19.931Z",
+      "lastUpdate": "2026-07-04T07:35:17.644Z",
       "name": "Finau, Glenn",
       "confederacy": "Tovata",
       "types.journalArticle": "27",
       "types.thesis": "1",
       "types.bookSection": "4",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Tasmanian School of Business and Economics",
+      "departmentUrl": "https://www.utas.edu.au/about/academic-structure/business-and-economics",
+      "profileUrl": "https://www.utas.edu.au/profiles/staff/tsbe/glenn-finau",
+      "masters": null,
+      "phd": {
+        "university": "UNSW Sydney",
+        "country": "Australia"
+      }
     },
     {
       "slug": "mereia-fong-lomavatu",
