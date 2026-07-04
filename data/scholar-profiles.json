@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:12:37.731Z",
+  "generatedAt": "2026-07-04T06:12:44.994Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1571,6 +1571,25 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Rounds, Isaac A.",
+      "slug": "isaac-a-rounds",
+      "last": "Rounds",
+      "first": "Isaac A.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 5,
+      "firstAuthored": 1,
+      "types": {
+        "thesis": 1,
+        "journalArticle": 4
+      }
     },
     {
       "slug": "sevanaia-sakai",
