@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T22:42:32.288Z",
+  "generatedAt": "2026-07-04T22:43:32.010Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1508,15 +1508,30 @@
       "photo": "img/scholars/amerita-ravuvu.jpg",
       "name": "Ravuvu, Amerita",
       "confederacy": "",
-      "title": "NCD Policy and Planning Adviser (Public Health Division)",
+      "title": "NCD Policy and Planning Adviser",
       "orcidUrl": "https://orcid.org/0000-0001-8135-0560",
-      "lastUpdate": "2026-07-03T20:04:20.760Z",
+      "lastUpdate": "2026-07-04T22:43:31.982Z",
       "types.journalArticle": "19",
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0",
-      "profileUrl": "https://www.spc.int/people/amerita-ravuvu"
+      "profileUrl": "https://www.spc.int/people/amerita-ravuvu",
+      "department": "Public Health Division",
+      "departmentUrl": "",
+      "masters": null,
+      "phd": {
+        "university": "University of New South Wales",
+        "country": "Australia"
+      },
+      "total": 31,
+      "firstAuthored": 8,
+      "types": {
+        "journalArticle": 23,
+        "conferencePaper": 4,
+        "bookSection": 2,
+        "thesis": 2
+      }
     },
     {
       "slug": "asesela-ravuvu",
