@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:51.841Z",
+  "generatedAt": "2026-07-04T19:14:53.801Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1587,6 +1587,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tamata, Laitia",
+      "slug": "laitia-tamata",
+      "last": "Tamata",
+      "first": "Laitia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "jope-tarai",
