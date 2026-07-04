@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:36.814Z",
+  "generatedAt": "2026-07-04T19:24:39.566Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1440,6 +1440,19 @@
       "slug": "mereia-ravoka",
       "last": "Ravoka",
       "first": "Mereia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Ravono, Akisi Nailaba",
+      "slug": "akisi-nailaba-ravono",
+      "last": "Ravono",
+      "first": "Akisi Nailaba",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
