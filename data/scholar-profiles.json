@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:47:59.251Z",
+  "generatedAt": "2026-07-04T18:59:15.602Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1519,15 +1519,15 @@
       "salutation": "Mr.",
       "village": "Daku vlg",
       "paternalProvince": "Kadavu",
-      "institution": "",
+      "institution": "Locally Managed Marine Area (LMMA) Network",
       "institutionUrl": "",
       "googleScholarUrl": "",
       "photo": "img/scholars/alifereti-tawake.jpg",
       "name": "Tawake, Alifereti",
       "confederacy": "",
       "title": "",
-      "orcidUrl": "https://orcid.org/0000-0002-0154-3600",
-      "lastUpdate": "2026-07-04T17:47:59.236Z",
+      "orcidUrl": "",
+      "lastUpdate": "2026-07-04T18:59:15.585Z",
       "types.journalArticle": "5",
       "types.thesis": "1",
       "types.bookSection": "0",
