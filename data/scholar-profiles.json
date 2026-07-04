@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:44.418Z",
+  "generatedAt": "2026-07-04T06:13:46.242Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1741,6 +1741,25 @@
       "firstAuthored": 0,
       "types": {
         "journalArticle": 4
+      }
+    },
+    {
+      "name": "Tagicakiverata, Isimeli Waibuta",
+      "slug": "isimeli-waibuta-tagicakiverata",
+      "last": "Tagicakiverata",
+      "first": "Isimeli Waibuta",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 3,
+      "firstAuthored": 3,
+      "types": {
+        "thesis": 2,
+        "journalArticle": 1
       }
     },
     {
