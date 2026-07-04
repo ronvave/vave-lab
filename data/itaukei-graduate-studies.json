@@ -1,7 +1,66 @@
 {
-  "generatedAt": "2026-07-04T09:27:47.020081+00:00",
-  "sourceSnapshot": "2026-07-04T09:27:46.911439+00:00",
+  "generatedAt": "2026-07-04T10:53:41.737809+00:00",
+  "sourceSnapshot": "2026-07-04T10:53:41.630978+00:00",
   "scholars": {
+    "Ratuva, Steven": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Masters Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 1995,
+        "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Sussex",
+        "iso": "GB",
+        "country": "UK",
+        "lat": 50.866,
+        "lng": -0.087,
+        "year": 2000,
+        "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Masters Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 1995,
+          "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Sussex",
+          "iso": "GB",
+          "country": "UK",
+          "lat": 50.866,
+          "lng": -0.087,
+          "year": 1999,
+          "title": "The Ethnic Politics of Affirmative Action: An Analysis of the Relationship Between Ethnicity, Affirmative Action and Development in Fiji, Malaysia and South Africa"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Sussex",
+          "iso": "GB",
+          "country": "UK",
+          "lat": 50.866,
+          "lng": -0.087,
+          "year": 2000,
+          "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
+        }
+      ]
+    },
     "Finau, Glenn": {
       "masters": null,
       "phd": {
@@ -284,54 +343,6 @@
           "lng": 8.851,
           "year": 2018,
           "title": "Livelihood Vulnerability of Coastal Communities in Fiji and Solomon Islands to Changes in Reef Resource Availability and Climate Change"
-        }
-      ]
-    },
-    "Ratuva, Steven": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "Masters Thesis",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 1995,
-        "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
-      },
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Sussex",
-        "iso": "GB",
-        "country": "UK",
-        "lat": 50.866,
-        "lng": -0.087,
-        "year": 2000,
-        "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
-      },
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "Masters Thesis",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 1995,
-          "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
-        },
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Sussex",
-          "iso": "GB",
-          "country": "UK",
-          "lat": 50.866,
-          "lng": -0.087,
-          "year": 2000,
-          "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
         }
       ]
     },
