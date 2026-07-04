@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T00:10:16.724Z",
+  "generatedAt": "2026-07-04T00:10:47.300Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -847,7 +847,7 @@
         "report": 1
       },
       "salutation": "Prof.",
-      "village": "",
+      "village": "Naboutini",
       "paternalProvince": "Cakaudrove",
       "institution": "Western Sydney University (Australia)",
       "institutionUrl": "",
@@ -857,13 +857,18 @@
       "confederacy": "",
       "title": "Associate Professor",
       "orcidUrl": "https://orcid.org/0000-0003-2520-1397",
-      "lastUpdate": "2026-07-03T18:25:51.168Z",
+      "lastUpdate": "2026-07-04T00:10:47.270Z",
       "types.journalArticle": "8",
       "types.thesis": "1",
       "types.bookSection": "2",
       "types.book": "0",
       "types.report": "1",
-      "profileUrl": "https://researchers.westernsydney.edu.au/en/persons/litea-meo-sewabu/"
+      "profileUrl": "https://researchers.westernsydney.edu.au/en/persons/litea-meo-sewabu/",
+      "masters": null,
+      "phd": {
+        "university": "Massey University",
+        "country": "New Zealand"
+      }
     },
     {
       "slug": "semisi-meo",
