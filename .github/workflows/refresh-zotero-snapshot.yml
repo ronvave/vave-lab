@@ -175,4 +175,20 @@ jobs:
           No tracked total moved by >2% — snapshot file unchanged.
           Run: ${{ github.run_id }}"
           fi
-          git push origin HEAD:${{ github.ref_name }}
+          # Concurrency-safe push: if another commit (e.g. Ron editing profiles
+          # in the admin dashboard) lands on main while this workflow ran, our
+          # push would be rejected as non-fast-forward. Rebase onto whatever is
+          # currently on origin/main and try again. Up to 3 retries.
+          push_with_rebase() {
+            for attempt in 1 2 3; do
+              if git push origin HEAD:${{ github.ref_name }}; then
+                return 0
+              fi
+              echo "Push rejected (attempt $attempt/3), rebasing onto origin/${{ github.ref_name }}…"
+              git fetch origin ${{ github.ref_name }}
+              git rebase origin/${{ github.ref_name }}
+            done
+            echo "ERROR: push still rejected after 3 rebases"
+            return 1
+          }
+          push_with_rebase
