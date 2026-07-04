@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:40.819Z",
+  "generatedAt": "2026-07-04T06:13:44.418Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1837,6 +1837,25 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tawake, Lavenia",
+      "slug": "lavenia-tawake",
+      "last": "Tawake",
+      "first": "Lavenia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 3,
+      "firstAuthored": 2,
+      "types": {
+        "thesis": 2,
+        "journalArticle": 1
+      }
     },
     {
       "slug": "nunia-thomas",
