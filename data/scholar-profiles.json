@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:20.237Z",
+  "generatedAt": "2026-07-04T19:14:39.744Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1929,6 +1929,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "1"
+    },
+    {
+      "name": "Vivili, Paula",
+      "slug": "paula-vivili",
+      "last": "Vivili",
+      "first": "Paula",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "sunia-vosikata",
