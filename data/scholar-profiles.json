@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:48.383Z",
+  "generatedAt": "2026-07-04T19:18:56.615Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1568,6 +1568,19 @@
       "slug": "mere-jane-sawailau",
       "last": "Sawailau",
       "first": "Mere Jane",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Silatolu, Ana Moala",
+      "slug": "ana-moala-silatolu",
+      "last": "Silatolu",
+      "first": "Ana Moala",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
