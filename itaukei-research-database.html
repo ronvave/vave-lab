@@ -880,6 +880,81 @@
     .db-popup-meta  { margin: 0; color: var(--color-text-muted); font-size: 0.82rem; }
     .db-popup-count { font-weight: 700; color: var(--color-primary); }
 
+    /* ============ Panel B/B1/B2 metadata + tabs ============ */
+    .db-panel__meta {
+      display: flex; gap: 18px; flex-wrap: wrap;
+      margin: 0 0 14px; padding: 8px 12px;
+      background: rgba(14,116,144,0.05); border-radius: 8px;
+      font-size: 0.82rem; color: #475569;
+    }
+    .db-panel__meta em {
+      font-style: normal; font-weight: 700; color: #0e7490;
+      letter-spacing: 0.02em; margin-right: 4px;
+    }
+
+    /* Panel B2 tab strip — accessible, keyboard-navigable */
+    .db-panel-b2__tabs {
+      display: flex; gap: 4px;
+      overflow-x: auto; overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 4px; margin: 0 0 16px;
+      background: rgba(14,116,144,0.08);
+      border-radius: 999px;
+      align-self: flex-start;
+      max-width: fit-content;
+    }
+    .db-b2-tab {
+      appearance: none; border: 0; background: transparent;
+      padding: 8px 16px; border-radius: 999px; cursor: pointer;
+      font: 600 0.88rem 'Source Sans Pro', sans-serif;
+      color: #334155; white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+    .db-b2-tab:hover { color: #062f35; }
+    .db-b2-tab.is-active { background: var(--color-primary); color: #fff; }
+    .db-b2-tab:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+
+    .db-b2-info {
+      margin: 8px 0 14px; font-size: 0.85rem; color: #475569;
+    }
+    .db-b2-info summary {
+      cursor: pointer; color: #0e7490; font-weight: 600;
+      padding: 4px 0;
+    }
+    .db-b2-info summary:hover { text-decoration: underline; }
+    .db-b2-info p { margin: 6px 0; line-height: 1.5; }
+
+    /* Grouped-bar row for the "Compare authorship" view. Each province has a
+       label + a vertical stack of 3 mini bars, each labelled with its category. */
+    .db-bars--grouped .db-bars__group {
+      display: flex; flex-direction: column; gap: 3px;
+      padding: 2px 0;
+    }
+    .db-bars__mini {
+      display: grid;
+      grid-template-columns: 128px 1fr 30px;
+      align-items: center; gap: 8px;
+      font-size: 0.75rem; color: #475569;
+    }
+    .db-bars__mini-label { text-align: right; color: #64748b; white-space: nowrap; }
+    .db-bars__mini-bar {
+      height: 12px; border-radius: 3px;
+      background: rgba(0,0,0,0.05);
+      position: relative; overflow: hidden;
+    }
+    .db-bars__mini-bar-fill {
+      position: absolute; inset: 0 auto 0 0;
+      border-radius: 3px 0 0 3px;
+      transition: width 0.4s ease;
+    }
+    .db-bars__mini-total {
+      font-variant-numeric: tabular-nums;
+      color: var(--color-text); font-weight: 600;
+    }
+
     /* ============ Present-view CTA button ============ */
     .db-present-cta { margin-top: var(--space-4); }
     .db-present-cta__btn {
@@ -1299,11 +1374,15 @@
         </div>
       </div>
 
-      <!-- Panel B — ranked bar chart (rev 13) -->
-      <div class="db-panel reveal" data-panel="B">
-        <span class="db-panel__label">B</span>
-        <h2 class="db-panel__title">Publications in Provinces across Fiji</h2>
-        <p class="db-panel__hint">Bars are colour-coded by item type. Dot beside each province shows confederacy. Click a bar to filter the item list below.</p>
+      <!-- Panel B1 — ranked bar chart, province-tagged research by iTaukei authors -->
+      <div class="db-panel reveal" data-panel="B1">
+        <span class="db-panel__label">B1</span>
+        <h2 class="db-panel__title">Province-specific research by iTaukei authors</h2>
+        <p class="db-panel__hint">Publications are counted in each Fiji province explicitly identified as a study or fieldwork location. A publication may be counted in more than one province.</p>
+        <div class="db-panel__meta">
+          <span><em>Grouped by:</em> Study province</span>
+          <span><em>Authors:</em> iTaukei authors</span>
+        </div>
         <div class="db-bars" data-db-bars></div>
         <div class="db-type-filter" data-db-type-filter>
           <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
@@ -1318,6 +1397,41 @@
             <button type="button" data-db-type-all>Check all</button>
             <button type="button" data-db-type-none>Clear</button>
           </span>
+        </div>
+      </div>
+
+      <!-- Panel B2 — interactive multi-view chart -->
+      <div class="db-panel reveal" data-panel="B2">
+        <span class="db-panel__label">B2</span>
+        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
+          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0">Fiji-focused</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">All locations</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-authors" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">All authors</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="compare-authorship" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">Compare authorship</button>
+        </div>
+        <div id="db-b2-panel" role="tabpanel">
+          <h2 class="db-panel__title" data-b2-title>Fiji-focused publications by iTaukei authors</h2>
+          <p class="db-panel__hint" data-b2-hint></p>
+          <div class="db-panel__meta" data-b2-meta></div>
+          <details class="db-b2-info">
+            <summary>How is “province” defined in this panel?</summary>
+            <p>In the <strong>Fiji-focused</strong> and <strong>All locations</strong> views, province means the <em>paternal province of the iTaukei first author</em>. In the <strong>All authors</strong> and <strong>Compare authorship</strong> views, province means the <em>location of the research</em>.</p>
+            <p>A publication covering more than one research province may be counted once in each tagged province.</p>
+          </details>
+          <div class="db-bars" data-b2-bars></div>
+          <div class="db-type-filter" data-b2-type-filter>
+            <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
+            <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Masters Thesis</label>
+            <label><input type="checkbox" value="journalArticle" checked><i style="background:#0e7490;"></i> Journal Article</label>
+            <label><input type="checkbox" value="bookSection" checked><i style="background:#7a1419;"></i> Book Chapter</label>
+            <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
+            <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
+            <label><input type="checkbox" value="conferencePaper" checked><i style="background:#92400e;"></i> Conference</label>
+            <span class="db-type-filter__actions">
+              <button type="button" data-b2-type-all>Check all</button>
+              <button type="button" data-b2-type-none>Clear</button>
+            </span>
+          </div>
         </div>
       </div>
 
@@ -1521,6 +1635,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-03" defer></script>
+<script src="js/itaukei-database.js?v=20260704-04" defer></script>
 </body>
 </html>

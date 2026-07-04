@@ -57,7 +57,7 @@
   };
 
   // Filter keys we serialize to the URL
-  const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'province', 'paternal', 'university', 'year', 'scholar'];
+  const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'province', 'paternal', 'university', 'year', 'scholar', 'b2Group', 'b2Authorship'];
 
   const TYPE_COLOR = {
     thesisPhd:      '#228B22',   // forest green — PhD
@@ -393,6 +393,8 @@
     window.history.replaceState(null, '', newUrl);
   }
 
+  // Note: clearFilter blindly resets state.filter[key] which includes the
+  // Panel-B2 keys b2Group and b2Authorship.
   function clearFilter(key) {
     if (key === 'year') state.filter.year = '';
     else state.filter[key] = '';
@@ -1916,6 +1918,16 @@
       state.scholarFilterNames.forEach(n => { if (set.has(n)) any = true; });
       if (!any) return false;
     }
+    // Panel B2 compare-authorship view: filter by authorship category when set.
+    if (f.b2Authorship) {
+      const scholars = state.scholarProfilesByName || new Map();
+      const creators = item.creators || [];
+      const firstIsItaukei = !!itaukeiName(creators[0], scholars);
+      const anyItaukei = firstIsItaukei || creators.slice(1).some(c => itaukeiName(c, scholars));
+      if (f.b2Authorship === 'itaukeiFirst'    && !firstIsItaukei) return false;
+      if (f.b2Authorship === 'includesItaukei' && !(anyItaukei && !firstIsItaukei)) return false;
+      if (f.b2Authorship === 'noItaukei'       && anyItaukei) return false;
+    }
     if (f.q) {
       const q = f.q.toLowerCase();
       const hay = [
@@ -2072,6 +2084,10 @@
     if (state.filter.paternal)   add('Paternal:',   state.filter.paternal, () => clearFilter('paternal'));
     if (state.filter.university) add('University:', state.filter.university, () => clearFilter('university'));
     if (state.filter.scholar)    add('Scholar:',    state.filter.scholar, () => clearFilter('scholar'));
+    if (state.filter.b2Authorship) {
+      const auth = { itaukeiFirst: 'iTaukei first author', includesItaukei: 'Includes an iTaukei author', noItaukei: 'No identified iTaukei author' }[state.filter.b2Authorship] || state.filter.b2Authorship;
+      add('Authorship:', auth, () => clearFilter('b2Authorship'));
+    }
   }
 
   // ============ EXPORT .BIB ============
@@ -2177,6 +2193,8 @@
     populateDisciplineSelect();
     renderHistLegend();
     renderPanelB();
+    renderPanelB2();
+    wirePanelB2();
     renderPanelD();
     renderHistogram();
     renderLeaders();
@@ -2199,6 +2217,430 @@
 
     backgroundRefresh();
   });
+
+  // ============================================================
+  //  PANEL B2 — interactive multi-view chart
+  // ============================================================
+  // Four views:
+  //   fiji-focused        → iTaukei first-author, Fiji-focused, group by paternal province
+  //   all-locations       → iTaukei first-author, ANY location, group by paternal province
+  //   all-authors         → any author, Fiji-focused, group by study province + Fiji-wide row
+  //   compare-authorship  → any author, Fiji-focused, group by study province, 3 authorship categories
+  //
+  // Selected view + its type-filter checkboxes are persisted in URL hash so a
+  // link like #b2=all-locations bookmarks the view.
+  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors', 'compare-authorship'];
+  const B2_META = {
+    'fiji-focused': {
+      title: 'Fiji-focused publications by iTaukei authors',
+      hint:  'Includes province-specific studies and research concerning Fiji nationally. Bars are grouped by the paternal province of the iTaukei first author, not by the location of the research.',
+      meta: [
+        ['Grouped by',  'First-author paternal province'],
+        ['Scope',       'Fiji-focused'],
+        ['Authors',     'iTaukei first authors']
+      ]
+    },
+    'all-locations': {
+      title: 'All publications by iTaukei authors',
+      hint:  'Includes research conducted in Fiji and elsewhere. Bars are grouped by the paternal province of the iTaukei first author.',
+      meta: [
+        ['Grouped by',  'First-author paternal province'],
+        ['Scope',       'Fiji and international'],
+        ['Authors',     'iTaukei first authors']
+      ]
+    },
+    'all-authors': {
+      title: 'Fiji-focused publications by all authors',
+      hint:  'Includes Fiji-focused publications by iTaukei and non-iTaukei authors. Bars show the Fiji province studied. National studies without a specific province appear under Fiji-wide / national.',
+      meta: [
+        ['Grouped by',  'Study province'],
+        ['Scope',       'Fiji-focused'],
+        ['Authors',     'All authors']
+      ]
+    },
+    'compare-authorship': {
+      title: 'Fiji-focused publications by authorship group',
+      hint:  'Compares Fiji-focused publications involving iTaukei authors with publications that do not yet include an identified iTaukei author.',
+      meta: [
+        ['Grouped by',  'Study province'],
+        ['Scope',       'Fiji-focused'],
+        ['Comparison',  'Authorship group']
+      ]
+    }
+  };
+  // Colours for the compare-authorship view. Deliberately distinct from the
+  // publication-type stack so viewers don't confuse categories.
+  const AUTHORSHIP_COLORS = {
+    itaukeiFirst:    '#0e7490',  // matches Panel A / Impact 'Fiji-focused'
+    includesItaukei: '#5fa6ae',  // lighter teal
+    noItaukei:       '#c2410c'   // matches Panel A / Impact 'International'
+  };
+
+  // Initial hydration from URL hash — e.g. #b2=all-authors
+  state.b2View = 'fiji-focused';
+  state.b2TypeSet = new Set(TYPE_ORDER);
+  (function readB2FromHash() {
+    const m = window.location.hash.match(/(?:^|[#&])b2=([a-z-]+)/);
+    if (m && B2_VIEWS.includes(m[1])) state.b2View = m[1];
+  })();
+
+  function setB2ViewInHash(view) {
+    // Preserve any other hash params
+    const h = window.location.hash.replace(/^#/, '');
+    const params = new URLSearchParams(h);
+    params.set('b2', view);
+    const newHash = '#' + params.toString();
+    if (newHash !== window.location.hash) history.replaceState(null, '', newHash);
+  }
+
+  // -------- shared: get iTaukei scholar names + paternal-province lookup --------
+  function iTaukeiScholarMaps() {
+    // Anyone with a saved profile record is considered an iTaukei scholar.
+    // Their paternal province may or may not be filled.
+    const scholars = state.scholarProfilesByName || new Map();
+    const paternalByName = new Map();
+    scholars.forEach((p, name) => paternalByName.set(name, p.paternalProvince || ''));
+    return { scholars, paternalByName };
+  }
+
+  // Determine the canonical scholar-name for a raw Zotero creator string.
+  // Returns null when the creator doesn't map to a known iTaukei scholar.
+  function itaukeiName(creator, scholars) {
+    if (!creator || typeof creator !== 'string') return null;
+    let cn = creator.includes(',') ? creator.trim() : (function() {
+      const parts = creator.trim().split(/\s+/);
+      if (parts.length < 2) return null;
+      return `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}`;
+    })();
+    if (!cn) return null;
+    return scholars.has(cn) ? cn : null;
+  }
+
+  // -------- shared: render horizontal bar rows into a host --------
+  // rows: [{ name, total, types: {vt: n}, conf, isConfirmed }]
+  // opts: { activeName, onClick(row), confDotColor(row), maxTotal }
+  function renderPanelBBarsInto(host, rows, opts) {
+    host.innerHTML = '';
+    if (!rows.length) {
+      host.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.9rem;">No items match the current filters.</div>';
+      return;
+    }
+    const maxTotal = opts.maxTotal || Math.max(1, ...rows.map(r => r.total));
+    rows.forEach(r => {
+      const label = document.createElement('div');
+      label.className = 'db-bars__prov';
+      if (opts.activeName && opts.activeName === r.name) label.classList.add('is-active');
+      const dotColor = opts.confDotColor ? opts.confDotColor(r) : (r.conf ? CONF_COLORS[r.conf] : 'transparent');
+      label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
+      label.addEventListener('click', () => opts.onClick && opts.onClick(r));
+      host.appendChild(label);
+
+      const rowWrap = document.createElement('div');
+      const bar = document.createElement('div');
+      bar.className = 'db-bars__row';
+      bar.style.width = `${(r.total / maxTotal) * 100}%`;
+      bar.style.background = 'transparent';
+      bar.style.boxShadow = 'inset 0 0 0 1.5px rgba(0,0,0,0.06)';
+      bar.title = `${r.name} · ${r.total} items`;
+      TYPE_ORDER.forEach(t => {
+        const n = r.types[t] || 0;
+        if (n > 0) {
+          const seg = document.createElement('span');
+          seg.className = 'db-bars__seg';
+          seg.style.width = `${(n / r.total) * 100}%`;
+          seg.style.background = TYPE_COLOR[t];
+          seg.title = `${n} × ${TYPE_LABELS[t]}`;
+          bar.appendChild(seg);
+        }
+      });
+      bar.addEventListener('click', () => opts.onClick && opts.onClick(r));
+      rowWrap.appendChild(bar);
+      host.appendChild(rowWrap);
+
+      const num = document.createElement('div');
+      num.className = 'db-bars__total';
+      num.textContent = r.total;
+      host.appendChild(num);
+    });
+  }
+
+  // -------- Row builders per view --------
+  // Returns [{ name, total, types, conf, isConfirmed }] sorted desc, plus a
+  // final “Province not yet confirmed” row when appropriate.
+  function buildB2Rows_paternalGrouped(includeAllLocations) {
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const rows = new Map();
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
+    });
+    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+
+      // First creator must map to an iTaukei scholar
+      const first = (it.creators || [])[0];
+      const scholar = itaukeiName(first, scholars);
+      if (!scholar) return;
+
+      // Fiji-focused rule (view 1) = has at least one Fiji-province tag OR the
+      // scholar's paternal province is confirmed (paternal province acts as the
+      // “national Fiji” fallback bucket for iTaukei-authored work). This is a
+      // pragmatic choice given the current data model.
+      const provSet = state.provincesByItem.get(it.key);
+      const hasProvinceTag = provSet && provSet.size > 0;
+      if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(scholar)) {
+        // Fiji-focused view: skip items with no province tag AND no known
+        // paternal province (we cannot confidently classify these as Fiji).
+        return;
+      }
+
+      const paternal = paternalByName.get(scholar) || '';
+      const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
+      bucket.total += 1;
+      bucket.types[vt] = (bucket.types[vt] || 0) + 1;
+    });
+
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (unconfirmed.total > 0) out.push(unconfirmed);
+    return out;
+  }
+
+  function buildB2Rows_studyProvince_allAuthors() {
+    const rows = new Map();
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {} });
+    });
+    const fijiWide = { name: 'Fiji-wide / national', conf: null, total: 0, types: {} };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      const provSet = state.provincesByItem.get(it.key);
+      if (provSet && provSet.size > 0) {
+        provSet.forEach(name => {
+          const bucket = rows.get(name);
+          if (bucket) {
+            bucket.total += 1;
+            bucket.types[vt] = (bucket.types[vt] || 0) + 1;
+          }
+        });
+      }
+      // “Fiji-wide / national” needs a positive signal. Without an explicit
+      // Zotero tag we cannot fill this bucket for non-iTaukei papers. Leaving
+      // it visible (with 0) documents that the row exists once tagging arrives.
+    });
+
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    out.push(fijiWide);
+    return out;
+  }
+
+  function buildB2Rows_compareAuthorship() {
+    // For each Fiji province, count 3 authorship categories.
+    const { scholars } = iTaukeiScholarMaps();
+    const rows = new Map();
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, {
+        name: f.properties.name, conf: f.properties.confederacy,
+        cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
+        total: 0
+      });
+    });
+    const fijiWide = { name: 'Fiji-wide / national', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      const provSet = state.provincesByItem.get(it.key);
+      if (!provSet || provSet.size === 0) return; // Only Fiji-focused rows for this view
+
+      const creators = it.creators || [];
+      const firstIsItaukei = !!itaukeiName(creators[0], scholars);
+      const anyItaukei = firstIsItaukei || creators.slice(1).some(c => itaukeiName(c, scholars));
+
+      provSet.forEach(name => {
+        const b = rows.get(name);
+        if (!b) return;
+        if (firstIsItaukei) b.cats.itaukeiFirst += 1;
+        else if (anyItaukei) b.cats.includesItaukei += 1;
+        else b.cats.noItaukei += 1;
+        b.total = b.cats.itaukeiFirst + b.cats.includesItaukei + b.cats.noItaukei;
+      });
+    });
+
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    out.push(fijiWide);
+    return out;
+  }
+
+  // -------- Render dispatcher --------
+  function renderPanelB2() {
+    const view = state.b2View;
+    const meta = B2_META[view] || B2_META['fiji-focused'];
+    const titleEl = $('[data-b2-title]');
+    const hintEl = $('[data-b2-hint]');
+    const metaEl = $('[data-b2-meta]');
+    const barsEl = $('[data-b2-bars]');
+    if (!titleEl || !hintEl || !metaEl || !barsEl) return;
+
+    titleEl.textContent = meta.title;
+    hintEl.textContent = meta.hint;
+    metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
+
+    // Toggle tab active state + tabindex per aria-tablist pattern
+    $$('.db-b2-tab').forEach(btn => {
+      const on = btn.dataset.b2Tab === view;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.tabIndex = on ? 0 : -1;
+    });
+
+    // Update URL hash
+    setB2ViewInHash(view);
+
+    // Route
+    if (view === 'fiji-focused' || view === 'all-locations') {
+      const rows = buildB2Rows_paternalGrouped(view === 'all-locations');
+      renderPanelBBarsInto(barsEl, rows, {
+        activeName: state.filter.paternal || null,
+        confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
+        onClick: r => {
+          if (!r.isConfirmed) return; // "Province not yet confirmed" bar is informational
+          state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
+          state.filter.province = '';
+          state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
+          state.filter.b2Authorship = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        }
+      });
+      barsEl.classList.remove('db-bars--grouped');
+    } else if (view === 'all-authors') {
+      const rows = buildB2Rows_studyProvince_allAuthors();
+      renderPanelBBarsInto(barsEl, rows, {
+        activeName: state.filter.province || null,
+        confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
+        onClick: r => {
+          if (r.name === 'Fiji-wide / national') return; // no items tagged yet
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
+          state.filter.b2Authorship = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        }
+      });
+      barsEl.classList.remove('db-bars--grouped');
+    } else if (view === 'compare-authorship') {
+      const rows = buildB2Rows_compareAuthorship();
+      renderCompareAuthorshipInto(barsEl, rows);
+      barsEl.classList.add('db-bars--grouped');
+    }
+  }
+
+  function renderCompareAuthorshipInto(host, rows) {
+    host.innerHTML = '';
+    if (!rows.length) return;
+    const maxCat = Math.max(1, ...rows.flatMap(r => Object.values(r.cats)));
+    // Header key inside the bars area — explains the 3 categories
+    const key = document.createElement('div');
+    key.style.cssText = 'grid-column:1 / -1;display:flex;gap:14px;flex-wrap:wrap;padding:4px 0 8px;font-size:0.78rem;color:#475569;border-bottom:1px dashed #e2e8f0;margin-bottom:6px;';
+    key.innerHTML = [
+      ['itaukeiFirst',    'iTaukei first author'],
+      ['includesItaukei', 'Includes an iTaukei author'],
+      ['noItaukei',       'No identified iTaukei author']
+    ].map(([k, label]) => `<span><span style="display:inline-block;width:11px;height:11px;background:${AUTHORSHIP_COLORS[k]};border-radius:2px;vertical-align:middle;margin-right:6px;"></span>${label}</span>`).join('');
+    host.appendChild(key);
+
+    rows.forEach(r => {
+      // Province label
+      const label = document.createElement('div');
+      label.className = 'db-bars__prov';
+      const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
+      label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
+      host.appendChild(label);
+
+      // Group of 3 mini-bars
+      const group = document.createElement('div');
+      group.className = 'db-bars__group';
+      const catRow = (catKey, label, count) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'db-bars__mini';
+        wrap.innerHTML = `
+          <span class="db-bars__mini-label">${escapeHtml(label)}</span>
+          <span class="db-bars__mini-bar">
+            <span class="db-bars__mini-bar-fill" style="width:${(count / maxCat) * 100}%;background:${AUTHORSHIP_COLORS[catKey]};"></span>
+          </span>
+          <span class="db-bars__mini-total">${count}</span>`;
+        if (count > 0 && r.name !== 'Fiji-wide / national') {
+          wrap.style.cursor = 'pointer';
+          wrap.addEventListener('click', () => {
+            state.filter.province = state.filter.province === r.name ? '' : r.name;
+            state.filter.paternal = '';
+            state.filter.b2Group = 'province';
+            state.filter.b2Authorship = state.filter.b2Authorship === catKey ? '' : catKey;
+            state.shown = state.pageSize;
+            afterFilterChange();
+          });
+        }
+        return wrap;
+      };
+      group.appendChild(catRow('itaukeiFirst',    'iTaukei first author',       r.cats.itaukeiFirst));
+      group.appendChild(catRow('includesItaukei', 'Includes an iTaukei author', r.cats.includesItaukei));
+      group.appendChild(catRow('noItaukei',       'No identified iTaukei author', r.cats.noItaukei));
+      host.appendChild(group);
+
+      // Right-side total
+      const num = document.createElement('div');
+      num.className = 'db-bars__total';
+      num.textContent = r.total;
+      host.appendChild(num);
+    });
+  }
+
+  // -------- Wire tabs, keyboard, and type checkboxes --------
+  function wirePanelB2() {
+    const tabs = $$('.db-b2-tab');
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.b2View = btn.dataset.b2Tab;
+        renderPanelB2();
+      });
+      btn.addEventListener('keydown', ev => {
+        if (ev.key !== 'ArrowRight' && ev.key !== 'ArrowLeft') return;
+        ev.preventDefault();
+        const idx = tabs.indexOf(btn);
+        const next = ev.key === 'ArrowRight' ? (idx + 1) % tabs.length : (idx - 1 + tabs.length) % tabs.length;
+        state.b2View = tabs[next].dataset.b2Tab;
+        renderPanelB2();
+        tabs[next].focus();
+      });
+    });
+    // Panel B2 has its own type-filter checkboxes so B1 and B2 can be tuned
+    // independently.
+    $$('[data-b2-type-filter] input[type=checkbox]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        state.b2TypeSet = new Set(
+          $$('[data-b2-type-filter] input[type=checkbox]:checked').map(c => c.value)
+        );
+        renderPanelB2();
+      });
+    });
+    const all = $('[data-b2-type-all]');
+    if (all) all.addEventListener('click', () => {
+      $$('[data-b2-type-filter] input[type=checkbox]').forEach(c => { c.checked = true; });
+      state.b2TypeSet = new Set(TYPE_ORDER);
+      renderPanelB2();
+    });
+    const none = $('[data-b2-type-none]');
+    if (none) none.addEventListener('click', () => {
+      $$('[data-b2-type-filter] input[type=checkbox]').forEach(c => { c.checked = false; });
+      state.b2TypeSet = new Set();
+      renderPanelB2();
+    });
+  }
 
   // ============ IMPACT VIEW (Ron's presentation overlay) ============
   // Publications grouped by paternal confederacy of the iTaukei lead author,
