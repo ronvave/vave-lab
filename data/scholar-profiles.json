@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T00:27:26.922Z",
+  "generatedAt": "2026-07-04T00:36:23.619Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1595,32 +1595,34 @@
       "slug": "jope-tarai",
       "last": "Tarai",
       "first": "Jope",
-      "total": "10",
-      "firstAuthored": "2",
+      "total": 7,
+      "firstAuthored": 2,
       "types": {
-        "journalArticle": 10,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "journalArticle": 7
       },
-      "salutation": "",
+      "salutation": "Mr.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "institution": "Australian National University (Australia)",
+      "institutionUrl": "https://bellschool.anu.edu.au/",
+      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=qe0GUqEAAAAJ",
+      "photo": "img/scholars/jope-tarai.jpg",
       "name": "Tarai, Jope",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "PhD Candidate",
+      "orcidUrl": "https://orcid.org/0000-0001-8193-5702",
+      "lastUpdate": "2026-07-04T00:36:23.607Z",
       "types.journalArticle": "10",
       "types.thesis": "0",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "profileUrl": "https://bellschool.anu.edu.au/people/jope-tarai",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": null
     },
     {
       "slug": "alifereti-tawake",
