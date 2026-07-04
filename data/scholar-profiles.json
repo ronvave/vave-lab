@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:20:16.114Z",
+  "generatedAt": "2026-07-04T19:20:29.377Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -957,6 +957,19 @@
         "university": "University of Auckland",
         "country": "New Zealand"
       }
+    },
+    {
+      "name": "Nabose, Ilisapeci",
+      "slug": "ilisapeci-nabose",
+      "last": "Nabose",
+      "first": "Ilisapeci",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "alivereti-naikatini",
