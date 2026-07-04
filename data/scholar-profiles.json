@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:24:18.781Z",
+  "generatedAt": "2026-07-04T19:24:22.659Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1844,6 +1844,19 @@
       "slug": "isimeli-waibuta-tagicakiverata",
       "last": "Tagicakiverata",
       "first": "Isimeli Waibuta",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tagivakatini, Sereana Railoa",
+      "slug": "sereana-railoa-tagivakatini",
+      "last": "Tagivakatini",
+      "first": "Sereana Railoa",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
