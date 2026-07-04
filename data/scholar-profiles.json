@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:12:31.557Z",
+  "generatedAt": "2026-07-04T06:12:34.519Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1199,6 +1199,24 @@
       "types.bookSection": "2",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Naucunivanua, Sikeli",
+      "slug": "sikeli-naucunivanua",
+      "last": "Naucunivanua",
+      "first": "Sikeli",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 5,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 5
+      }
     },
     {
       "slug": "sefanaia-nawadra",
