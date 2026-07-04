@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T00:36:23.619Z",
+  "generatedAt": "2026-07-04T01:42:04.719Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -508,7 +508,7 @@
         "thesis": 1
       },
       "salutation": "Dr.",
-      "village": "",
+      "village": "Naikorokoro vlg",
       "paternalProvince": "Kadavu",
       "institution": "University of the South Pacific (USP)",
       "institutionUrl": "https://www.usp.ac.fj/",
@@ -518,13 +518,15 @@
       "confederacy": "",
       "title": "Acting Director (Institute of Applied Science)",
       "orcidUrl": "",
-      "lastUpdate": "2026-07-03T17:57:57.815Z",
+      "lastUpdate": "2026-07-04T01:42:04.704Z",
       "types.journalArticle": "9",
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0",
-      "profileUrl": "https://www.usp.ac.fj/the-institute-of-applied-sciences/our-team/management-team/dr-isoa-korovulavula/"
+      "profileUrl": "https://www.usp.ac.fj/the-institute-of-applied-sciences/our-team/management-team/dr-isoa-korovulavula/",
+      "masters": null,
+      "phd": null
     },
     {
       "slug": "ilisapeci-kubuabola",
