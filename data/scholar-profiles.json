@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T17:24:24.222Z",
+  "generatedAt": "2026-07-04T17:37:22.659Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1897,20 +1897,37 @@
       "salutation": "",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "institution": "Fiji National University",
+      "institutionUrl": "https://www.fnu.ac.fj/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/gade-waqa.jpg",
       "name": "Waqa, Gade",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Associate Professor",
+      "orcidUrl": "https://orcid.org/0000-0002-6079-3634",
+      "lastUpdate": "2026-07-04T17:37:22.647Z",
       "types.journalArticle": "7",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Fiji Institute for Pacific Health Research",
+      "departmentUrl": "https://www.fnu.ac.fj/college-of-medicine/research-cmnhs/fiphr/",
+      "profileUrl": "",
+      "masters": {
+        "university": "Fiji National University",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "Deakin University",
+        "country": "Australia"
+      },
+      "total": 64,
+      "firstAuthored": 13,
+      "types": {
+        "journalArticle": 63,
+        "report": 1
+      }
     },
     {
       "slug": "salote-waqairatu",
