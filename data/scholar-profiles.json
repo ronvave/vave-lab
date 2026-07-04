@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:14:49.152Z",
+  "generatedAt": "2026-07-04T19:14:51.841Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1738,6 +1738,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tuiono, Malakai",
+      "slug": "malakai-tuiono",
+      "last": "Tuiono",
+      "first": "Malakai",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "marika-tuiwawa",
