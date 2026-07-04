@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T07:05:32.139Z",
+  "generatedAt": "2026-07-04T07:10:01.015Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1704,32 +1704,40 @@
       "slug": "ponipate-rokolekutu",
       "last": "Rokolekutu",
       "first": "Ponipate",
-      "total": "3",
-      "firstAuthored": "3",
+      "total": 2,
+      "firstAuthored": 2,
       "types": {
         "journalArticle": 1,
-        "thesis": 2,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
+        "thesis": 1
       },
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "salutation": "Prof.",
+      "village": "Vunimono vlg",
+      "paternalProvince": "Tailevu",
+      "institution": "San Francisco State University",
+      "institutionUrl": "https://www.sfsu.edu/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/ponipate-rokolekutu.jpg",
       "name": "Rokolekutu, Ponipate",
       "confederacy": "",
-      "title": "",
+      "title": "Associate Professor",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-04T07:10:01.014Z",
       "types.journalArticle": "1",
       "types.thesis": "2",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Race & Resistance Studies",
+      "departmentUrl": "https://rrs.sfsu.edu/",
+      "profileUrl": "https://rrs.sfsu.edu/ponipate-rokolekutu",
+      "masters": {
+        "university": "University of Hawaiʻi at Mānoa",
+        "country": "USA"
+      },
+      "phd": {
+        "university": "University of Hawaiʻi at Mānoa",
+        "country": "USA"
+      }
     },
     {
       "slug": "isaac-rounds",
