@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:22:22.112Z",
+  "generatedAt": "2026-07-04T19:22:29.051Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1261,6 +1261,19 @@
       "slug": "tamara-osborne-naikatini",
       "last": "Osborne-Naikatini",
       "first": "Tamara",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Power, Rosalie",
+      "slug": "rosalie-power",
+      "last": "Power",
+      "first": "Rosalie",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
