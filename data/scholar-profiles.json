@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:32.191Z",
+  "generatedAt": "2026-07-04T19:13:34.446Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1079,6 +1079,19 @@
       "slug": "virisila-qolisaya-lidise-puamau",
       "last": "Puamau",
       "first": "Virisila Qolisaya Lidise",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Radikedike, Pio",
+      "slug": "pio-radikedike",
+      "last": "Radikedike",
+      "first": "Pio",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
