@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:29.115Z",
+  "generatedAt": "2026-07-04T19:13:32.191Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1467,6 +1467,19 @@
       "slug": "margaret-tabunakawai-vakalalabure",
       "last": "Tabunakawai-Vakalalabure",
       "first": "Margaret",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabunakawai, Kesaia",
+      "slug": "kesaia-tabunakawai",
+      "last": "Tabunakawai",
+      "first": "Kesaia",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
