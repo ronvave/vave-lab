@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:13.746Z",
+  "generatedAt": "2026-07-04T19:13:17.953Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -216,6 +216,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Drugunalevu, Eliki",
+      "slug": "eliki-drugunalevu",
+      "last": "Drugunalevu",
+      "first": "Eliki",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "patrina-dumaru",
