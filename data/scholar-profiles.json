@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:04.975Z",
+  "generatedAt": "2026-07-04T06:13:07.644Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1688,6 +1688,24 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Soqo, Vika",
+      "slug": "vika-soqo",
+      "last": "Soqo",
+      "first": "Vika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 4,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 4
+      }
     },
     {
       "slug": "apolonia-tamata",
