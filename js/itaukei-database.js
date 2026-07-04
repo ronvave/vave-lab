@@ -402,6 +402,16 @@
   function clearAllFilters() {
     FILTER_KEYS.forEach(k => { state.filter[k] = (k === 'year') ? '' : ''; });
     state.shown = state.pageSize;
+    // Also reset the scholar-leaderboard dropdowns so “Clear all” truly clears
+    // everything (they narrow both the cards and the item list).
+    state.scholarConfFilter = '';
+    state.scholarProvFilter = '';
+    state.scholarPage = 1;
+    if (typeof computeScholarFilterNames === 'function') computeScholarFilterNames();
+    const confSel = $('[data-scholar-conf-filter]');
+    const provSel = $('[data-scholar-prov-filter]');
+    if (confSel) confSel.value = '';
+    if (provSel) provSel.value = '';
     const search = $('[data-db-search]');
     if (search) search.value = '';
     $$('.db-filter[data-db-filter]').forEach(s => { s.value = ''; });
@@ -420,7 +430,9 @@
   function updateClearAllButton() {
     const btn = $('[data-db-clear]');
     if (!btn) return;
-    const any = FILTER_KEYS.some(k => state.filter[k] !== '' && state.filter[k] != null);
+    const any = FILTER_KEYS.some(k => state.filter[k] !== '' && state.filter[k] != null)
+              || !!state.scholarConfFilter
+              || !!state.scholarProvFilter;
     btn.classList.toggle('is-hidden', !any);
   }
 
@@ -1471,6 +1483,54 @@
     Tovata:     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
   };
 
+  // Set of scholar names whose card is currently visible under the confederacy/
+  // province dropdowns at the top of the leaderboard. Also used by the item
+  // list at the bottom so "filter to Ra" narrows both the cards AND the
+  // publications shown below.
+  state.scholarFilterNames = null; // null = no dropdown filter active
+
+  function computeScholarFilterNames() {
+    const conf = state.scholarConfFilter;
+    const prov = state.scholarProvFilter;
+    if (!conf && !prov) { state.scholarFilterNames = null; return; }
+
+    const provConf = new Map();
+    if (state.provinces && state.provinces.features) {
+      state.provinces.features.forEach(f => provConf.set(f.properties.name, f.properties.confederacy));
+    }
+
+    const names = new Set();
+    (state.scholarProfilesByName || new Map()).forEach((profile, name) => {
+      const p = profile.paternalProvince || '';
+      const c = p ? (provConf.get(p) || '') : '';
+
+      // Confederacy check
+      if (conf === '__untagged__') {
+        if (c) return;
+      } else if (conf) {
+        if (c !== conf) return;
+      }
+      // Province check
+      if (prov === '__untagged__') {
+        if (p) return;
+      } else if (prov) {
+        if (p !== prov) return;
+      }
+      names.add(name);
+    });
+    // Also allow scholar names that exist in Zotero collections but have no
+    // profile at all — they count as "untagged" for both dropdowns.
+    if ((conf === '__untagged__' || !conf) && (prov === '__untagged__' || !prov)) {
+      const enriched = state.scholarProfilesByName || new Map();
+      state.snapshot.collections.forEach(c => {
+        const root = state.snapshot.collections.find(x => x.name === 'iTaukei authors (>3 papers)');
+        if (!root || c.parent !== root.key) return;
+        if (!enriched.has(c.name)) names.add(c.name);
+      });
+    }
+    state.scholarFilterNames = names;
+  }
+
   function wireScholarFilters() {
     const confSel = $('[data-scholar-conf-filter]');
     const provSel = $('[data-scholar-prov-filter]');
@@ -1508,12 +1568,20 @@
       state.scholarConfFilter = confSel.value;
       state.scholarPage = 1;
       rebuildProvinceOptions();
+      computeScholarFilterNames();
       renderLeaders();
+      renderItems();
+      renderFilterChips();
+      updateClearAllButton();
     });
     provSel.addEventListener('change', () => {
       state.scholarProvFilter = provSel.value;
       state.scholarPage = 1;
+      computeScholarFilterNames();
       renderLeaders();
+      renderItems();
+      renderFilterChips();
+      updateClearAllButton();
     });
   }
 
@@ -1837,6 +1905,16 @@
     if (f.scholar) {
       const set = state.scholarByItem.get(item.key);
       if (!set || !set.has(f.scholar)) return false;
+    }
+    // Confederacy/province dropdown filters on the scholar leaderboard also
+    // narrow the item list below. An item passes if it belongs to at least one
+    // scholar in the visible-cards set.
+    if (state.scholarFilterNames) {
+      const set = state.scholarByItem.get(item.key);
+      if (!set) return false;
+      let any = false;
+      state.scholarFilterNames.forEach(n => { if (set.has(n)) any = true; });
+      if (!any) return false;
     }
     if (f.q) {
       const q = f.q.toLowerCase();
