@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:23:07.491Z",
+  "generatedAt": "2026-07-04T19:23:42.688Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1644,6 +1644,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Samuwai, J.",
+      "slug": "j-samuwai",
+      "last": "Samuwai",
+      "first": "J.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "rusila-savou-wara",
