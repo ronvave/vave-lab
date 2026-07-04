@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T01:42:04.719Z",
+  "generatedAt": "2026-07-04T04:02:21.249Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1760,7 +1760,7 @@
         "journalArticle": 16
       },
       "salutation": "Dr.",
-      "village": "Nairai",
+      "village": "Nairai vlg",
       "paternalProvince": "Lomaiviti",
       "institution": "Griffith University (Australia)",
       "institutionUrl": "https://www.griffith.edu.au/",
@@ -1770,7 +1770,7 @@
       "confederacy": "",
       "title": "Lecturer",
       "orcidUrl": "https://orcid.org/0000-0001-6192-9444",
-      "lastUpdate": "2026-07-03T20:32:04.751Z",
+      "lastUpdate": "2026-07-04T04:02:21.238Z",
       "types.journalArticle": "16",
       "types.thesis": "1",
       "types.bookSection": "0",
