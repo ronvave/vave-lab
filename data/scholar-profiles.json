@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:19:04.360Z",
+  "generatedAt": "2026-07-04T19:19:06.954Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -338,6 +338,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Fong, Sakiusa",
+      "slug": "sakiusa-fong",
+      "last": "Fong",
+      "first": "Sakiusa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "teddy-fong",
