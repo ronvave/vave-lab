@@ -1537,13 +1537,17 @@
     let rows = derived
       .filter(r => !hidden.has(r.name))
       .map(r => {
-        const enriched = Object.assign({}, r, enrichedByName.get(r.name) || {});
-        // Compute confederacy from paternalProvince for filtering
-        enriched._prov = enriched.paternalProvince || '';
+        // Merge order matters: enrichment (village, institution, photo, etc.)
+        // sits UNDERNEATH the Zotero-derived counts (total, firstAuthored,
+        // types, key, name). Otherwise old totals baked into scholar-profiles
+        // .json at toggle-time would override the live Zotero numbers.
+        const enrichment = enrichedByName.get(r.name) || {};
+        const enriched = Object.assign({}, enrichment, r);
+        enriched._prov = enrichment.paternalProvince || '';
         enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
         return enriched;
       })
-      .sort((a, b) => b.total - a.total);
+      .sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0));
 
     // Apply confederacy filter
     const confF = state.scholarConfFilter;

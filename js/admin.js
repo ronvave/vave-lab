@@ -405,11 +405,13 @@
       state.hiddenScholars.delete(author.name);
       if (!state.profilesByKey.has(author.name)) {
         const [last, first] = author.name.split(',').map(s => s.trim());
+        // Do NOT bake author.total / firstAuthored / types into the saved
+        // profile — those are Zotero-derived counts that change every sync.
+        // Public dashboard always reads them fresh from the snapshot instead.
         state.profilesByKey.set(author.name, {
           name: author.name, slug: slugify(`${first}-${last}`),
           last, first, salutation: '', village: '', paternalProvince: '',
-          institution: '', institutionUrl: '', googleScholarUrl: '', photo: '',
-          total: author.total, firstAuthored: author.firstAuthored, types: author.types
+          institution: '', institutionUrl: '', googleScholarUrl: '', photo: ''
         });
         toast(`Marked ${author.name} as iTaukei. Click "Edit" to add their profile.`);
       }

@@ -1,20 +1,11 @@
 {
-  "generatedAt": "2026-07-04T09:26:25.629Z",
-  "source": "admin-dashboard",
+  "generatedAt": "2026-07-04T09:58:35.697807+00:00",
+  "source": "cleanup-stale-counts",
   "scholars": [
     {
       "slug": "apo-aporosa",
       "last": "Aporosa",
       "first": "Apo",
-      "total": "10",
-      "firstAuthored": "9",
-      "types": {
-        "journalArticle": 9,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -44,12 +35,7 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 3,
-      "types": {
-        "journalArticle": 3
-      }
+      "photo": ""
     },
     {
       "name": "Baleinamau, Ponipate",
@@ -62,26 +48,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 4,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "slug": "sakiusa-baleivanualala",
       "last": "Baleivanualala",
       "first": "Sakiusa",
-      "total": "4",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -111,26 +83,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 4,
-      "firstAuthored": 4,
-      "types": {
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "slug": "alifereti-bogiva",
       "last": "Bogiva",
       "first": "Alifereti",
-      "total": "3",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -153,15 +111,6 @@
       "slug": "akanisi-caginitoba",
       "last": "Caginitoba",
       "first": "Akanisi",
-      "total": "3",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -184,15 +133,6 @@
       "slug": "akuila-cakacaka",
       "last": "Cakacaka",
       "first": "Akuila",
-      "total": "4",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 2,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -215,15 +155,6 @@
       "slug": "radilaite-cammock",
       "last": "Cammock",
       "first": "Radilaite",
-      "total": "7",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 6,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -246,15 +177,6 @@
       "slug": "ana-ciriyawa",
       "last": "Ciriyawa",
       "first": "Ana",
-      "total": "3",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -277,15 +199,6 @@
       "slug": "jeremaia-coriakula",
       "last": "Coriakula",
       "first": "Jeremaia",
-      "total": "5",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 5,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -308,15 +221,6 @@
       "slug": "patrina-dumaru",
       "last": "Dumaru",
       "first": "Patrina",
-      "total": "3",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -339,13 +243,6 @@
       "slug": "glenn-finau",
       "last": "Finau",
       "first": "Glenn",
-      "total": 31,
-      "firstAuthored": 12,
-      "types": {
-        "journalArticle": 26,
-        "bookSection": 4,
-        "thesis": 1
-      },
       "salutation": "Dr.",
       "village": "Tubou vlg, Lakeba Is",
       "paternalProvince": "Lau",
@@ -376,15 +273,6 @@
       "slug": "mereia-fong-lomavatu",
       "last": "Fong-Lomavatu",
       "first": "Mereia",
-      "total": "5",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -407,15 +295,6 @@
       "slug": "patrick-sakiusa-fong",
       "last": "Fong",
       "first": "Patrick Sakiusa",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -438,15 +317,6 @@
       "slug": "teddy-fong",
       "last": "Fong",
       "first": "Teddy",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -476,26 +346,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 5,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 5
-      }
+      "photo": ""
     },
     {
       "slug": "joape-ginigini",
       "last": "Ginigini",
       "first": "Joape",
-      "total": "8",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 7,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -518,15 +374,6 @@
       "slug": "manasa-katonivualiku",
       "last": "Katonivualiku",
       "first": "Manasa",
-      "total": "3",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -549,15 +396,6 @@
       "slug": "salanieta-kitolelei",
       "last": "Kitolelei",
       "first": "Salanieta",
-      "total": "5",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -580,13 +418,6 @@
       "slug": "isoa-korovulavula",
       "last": "Korovulavula",
       "first": "Isoa",
-      "total": 11,
-      "firstAuthored": 3,
-      "types": {
-        "journalArticle": 9,
-        "bookSection": 1,
-        "thesis": 1
-      },
       "salutation": "Dr.",
       "village": "Naikorokoro vlg",
       "paternalProvince": "Kadavu",
@@ -612,15 +443,6 @@
       "slug": "ilisapeci-kubuabola",
       "last": "Kubuabola",
       "first": "Ilisapeci",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -643,13 +465,6 @@
       "slug": "rosiana-lagi",
       "last": "Lagi",
       "first": "Rosiana",
-      "total": 9,
-      "firstAuthored": 2,
-      "types": {
-        "bookSection": 1,
-        "journalArticle": 7,
-        "thesis": 1
-      },
       "salutation": "Dr.",
       "village": "",
       "paternalProvince": "Lomaiviti",
@@ -673,15 +488,6 @@
       "slug": "jimaima-lako",
       "last": "Lako",
       "first": "Jimaima",
-      "total": "12",
-      "firstAuthored": "6",
-      "types": {
-        "journalArticle": 11,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -704,15 +510,6 @@
       "slug": "watisoni-lalavanua",
       "last": "Lalavanua",
       "first": "Watisoni",
-      "total": "1",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 1,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -735,15 +532,6 @@
       "slug": "ilisoni-leweniqila",
       "last": "Leweniqila",
       "first": "Ilisoni",
-      "total": "4",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -766,15 +554,6 @@
       "slug": "epeli-loganimoce",
       "last": "Loganimoce",
       "first": "Epeli",
-      "total": "5",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -797,15 +576,6 @@
       "slug": "kinikoto-mailautoka",
       "last": "Mailautoka",
       "first": "Kinikoto",
-      "total": "5",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 5,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -828,15 +598,6 @@
       "slug": "jekope-ramala-maiono",
       "last": "Maiono",
       "first": "Jekope Ramala",
-      "total": "2",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 1,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -859,15 +620,6 @@
       "slug": "kalisiana-marama",
       "last": "Marama",
       "first": "Kalisiana",
-      "total": "4",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -897,26 +649,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 4,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "slug": "sepeti-matararaba",
       "last": "Matararaba",
       "first": "Sepeti",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -947,11 +685,6 @@
       "institutionUrl": "https://www.usp.ac.fj/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=ThBs0AEAAAAJ&hl=en",
       "photo": "img/scholars/ilisapeci-matatolu.jpg",
-      "total": 1,
-      "firstAuthored": 1,
-      "types": {
-        "thesis": 1
-      },
       "department": "Discipline of Tourism and Hospitality",
       "departmentUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/",
       "profileUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/the-team/ilisapeci-matatolu/",
@@ -965,13 +698,6 @@
       "slug": "litea-meo-sewabu",
       "last": "Meo-Sewabu",
       "first": "Litea",
-      "total": 9,
-      "firstAuthored": 3,
-      "types": {
-        "bookSection": 2,
-        "journalArticle": 6,
-        "report": 1
-      },
       "salutation": "Prof.",
       "village": "Naboutini",
       "paternalProvince": "Cakaudrove",
@@ -1000,12 +726,6 @@
       "slug": "semisi-meo",
       "last": "Meo",
       "first": "Semisi",
-      "total": 8,
-      "firstAuthored": 1,
-      "types": {
-        "journalArticle": 7,
-        "thesis": 1
-      },
       "salutation": "Mr.",
       "village": "Naboutini vlg",
       "paternalProvince": "Cakaudrove",
@@ -1036,13 +756,6 @@
       "slug": "unaisi-nabobo-baba",
       "last": "Nabobo-Baba",
       "first": "Unaisi",
-      "total": 6,
-      "firstAuthored": 3,
-      "types": {
-        "thesis": 2,
-        "bookSection": 1,
-        "journalArticle": 3
-      },
       "salutation": "Prof.",
       "village": "",
       "paternalProvince": "Tailevu",
@@ -1076,15 +789,6 @@
       "slug": "alivereti-naikatini",
       "last": "Naikatini",
       "first": "Alivereti",
-      "total": "5",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1107,11 +811,6 @@
       "slug": "winifereti-nainoca",
       "last": "Nainoca",
       "first": "Winifereti",
-      "total": 2,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 2
-      },
       "salutation": "Dr.",
       "village": "",
       "paternalProvince": "Rewa",
@@ -1142,15 +841,6 @@
       "slug": "sereima-naisilisili",
       "last": "Naisilisili",
       "first": "Sereima",
-      "total": "3",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 1
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1180,27 +870,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 2,
-      "types": {
-        "thesis": 2,
-        "journalArticle": 1
-      }
+      "photo": ""
     },
     {
       "slug": "waisea-naisilisili",
       "last": "Naisilisili",
       "first": "Waisea",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1223,15 +898,6 @@
       "slug": "kelera-naivalu",
       "last": "Naivalu",
       "first": "Kelera",
-      "total": "6",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 6,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1254,15 +920,6 @@
       "slug": "timoci-naivalulevu",
       "last": "Naivalulevu",
       "first": "Timoci",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1285,15 +942,6 @@
       "slug": "vilisi-naivalulevu",
       "last": "Naivalulevu",
       "first": "Vilisi",
-      "total": "5",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 5,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1316,15 +964,6 @@
       "slug": "elia-nakoro",
       "last": "Nakoro",
       "first": "Elia",
-      "total": "8",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 6,
-        "thesis": 0,
-        "bookSection": 2,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1355,11 +994,6 @@
       "institutionUrl": "https://www.giz.de/en/regions/asia/oceania",
       "googleScholarUrl": "",
       "photo": "img/scholars/milika-naqasima-sobey.jpg",
-      "total": 1,
-      "firstAuthored": 1,
-      "types": {
-        "thesis": 1
-      },
       "department": "",
       "departmentUrl": "",
       "profileUrl": "",
@@ -1386,26 +1020,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 5,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 5
-      }
+      "photo": ""
     },
     {
       "slug": "sefanaia-nawadra",
       "last": "Nawadra",
       "first": "Sefanaia",
-      "total": "8",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 0,
-        "thesis": 0,
-        "bookSection": 8,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1435,26 +1055,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 3,
-      "types": {
-        "thesis": 3
-      }
+      "photo": ""
     },
     {
       "slug": "ratu-pio-radikedike",
       "last": "Radikedike",
       "first": "Ratu Pio",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1477,15 +1083,6 @@
       "slug": "kolaia-raisele",
       "last": "Raisele",
       "first": "Kolaia",
-      "total": "4",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1515,26 +1112,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 5,
-      "firstAuthored": 1,
-      "types": {
-        "journalArticle": 5
-      }
+      "photo": ""
     },
     {
       "slug": "steven-ratuva",
       "last": "Ratuva",
       "first": "Steven",
-      "total": 21,
-      "firstAuthored": 17,
-      "types": {
-        "thesis": 3,
-        "report": 1,
-        "bookSection": 6,
-        "book": 1,
-        "journalArticle": 10
-      },
       "salutation": "Prof.",
       "village": "Yale vlg, Kadavu Is",
       "paternalProvince": "Kadavu",
@@ -1573,26 +1156,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 6,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 6
-      }
+      "photo": ""
     },
     {
       "slug": "kaliova-ravuiwasa",
       "last": "Ravuiwasa",
       "first": "Kaliova",
-      "total": "3",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1615,12 +1184,6 @@
       "slug": "jioji-ravulo",
       "last": "Ravulo",
       "first": "Jioji",
-      "total": 9,
-      "firstAuthored": 2,
-      "types": {
-        "bookSection": 2,
-        "journalArticle": 7
-      },
       "salutation": "Prof.",
       "village": "Nayavuira vlg",
       "paternalProvince": "Ra",
@@ -1648,13 +1211,6 @@
       "slug": "amerita-ravuvu",
       "last": "Ravuvu",
       "first": "Amerita",
-      "total": 20,
-      "firstAuthored": 6,
-      "types": {
-        "thesis": 2,
-        "journalArticle": 17,
-        "bookSection": 1
-      },
       "salutation": "Dr.",
       "village": "Nakorosule",
       "paternalProvince": "Naitasiri",
@@ -1678,15 +1234,6 @@
       "slug": "asesela-ravuvu",
       "last": "Ravuvu",
       "first": "Asesela",
-      "total": "4",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 0,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 4,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1716,24 +1263,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 3,
-      "types": {
-        "thesis": 1,
-        "journalArticle": 2
-      }
+      "photo": ""
     },
     {
       "slug": "ponipate-rokolekutu",
       "last": "Rokolekutu",
       "first": "Ponipate",
-      "total": 2,
-      "firstAuthored": 2,
-      "types": {
-        "journalArticle": 1,
-        "thesis": 1
-      },
       "salutation": "Prof.",
       "village": "Vunimono vlg",
       "paternalProvince": "Tailevu",
@@ -1767,15 +1302,6 @@
       "slug": "isaac-rounds",
       "last": "Rounds",
       "first": "Isaac",
-      "total": "5",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 5,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1805,27 +1331,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 5,
-      "firstAuthored": 1,
-      "types": {
-        "thesis": 1,
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "slug": "sevanaia-sakai",
       "last": "Sakai",
       "first": "Sevanaia",
-      "total": "5",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 2,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1848,15 +1359,6 @@
       "slug": "rusila-savou-wara",
       "last": "Savou-Wara",
       "first": "Rusila",
-      "total": "4",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1886,12 +1388,7 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 4,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "name": "Soqo, Vika",
@@ -1904,12 +1401,7 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 4,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 4
-      }
+      "photo": ""
     },
     {
       "name": "Tagicakiverata, Isimeli Waibuta",
@@ -1922,27 +1414,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 3,
-      "types": {
-        "thesis": 2,
-        "journalArticle": 1
-      }
+      "photo": ""
     },
     {
       "slug": "apolonia-tamata",
       "last": "Tamata",
       "first": "Apolonia",
-      "total": "3",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 1,
-        "thesis": 2,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -1965,11 +1442,6 @@
       "slug": "jope-tarai",
       "last": "Tarai",
       "first": "Jope",
-      "total": 7,
-      "firstAuthored": 2,
-      "types": {
-        "journalArticle": 7
-      },
       "salutation": "Mr.",
       "village": "",
       "paternalProvince": "",
@@ -1998,15 +1470,6 @@
       "slug": "alifereti-tawake",
       "last": "Tawake",
       "first": "Alifereti",
-      "total": "6",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 5,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2036,27 +1499,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 2,
-      "types": {
-        "thesis": 2,
-        "journalArticle": 1
-      }
+      "photo": ""
     },
     {
       "slug": "nunia-thomas",
       "last": "Thomas",
       "first": "Nunia",
-      "total": "5",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 1,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2079,15 +1527,6 @@
       "slug": "siteri-tikoca",
       "last": "Tikoca",
       "first": "Siteri",
-      "total": "4",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2110,15 +1549,6 @@
       "slug": "marika-tuiwawa",
       "last": "Tuiwawa",
       "first": "Marika",
-      "total": "7",
-      "firstAuthored": "0",
-      "types": {
-        "journalArticle": 4,
-        "thesis": 0,
-        "bookSection": 3,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2141,11 +1571,6 @@
       "slug": "sera-vada",
       "last": "Vada",
       "first": "Sera",
-      "total": 16,
-      "firstAuthored": 6,
-      "types": {
-        "journalArticle": 16
-      },
       "salutation": "Dr.",
       "village": "Nairai vlg",
       "paternalProvince": "Lomaiviti",
@@ -2184,26 +1609,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 3
-      }
+      "photo": ""
     },
     {
       "slug": "esala-vakamacawai",
       "last": "Vakamacawai",
       "first": "Esala",
-      "total": "4",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 0,
-        "bookSection": 1,
-        "book": 0,
-        "report": 1
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2226,15 +1637,6 @@
       "slug": "joeli-varo",
       "last": "Varo",
       "first": "Joeli",
-      "total": "5",
-      "firstAuthored": "4",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 2,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2257,13 +1659,6 @@
       "slug": "ron-vave",
       "last": "Vave",
       "first": "Ron",
-      "total": 17,
-      "firstAuthored": 7,
-      "types": {
-        "journalArticle": 12,
-        "bookSection": 3,
-        "thesis": 2
-      },
       "salutation": "Prof.",
       "village": "Sawana vlg, Vanua balavu Is",
       "paternalProvince": "Lau",
@@ -2297,14 +1692,6 @@
       "slug": "joeli-veitayaki",
       "last": "Veitayaki",
       "first": "Joeli",
-      "total": "9",
-      "firstAuthored": "5",
-      "types": {
-        "thesis": 3,
-        "report": 1,
-        "bookSection": 2,
-        "journalArticle": 7
-      },
       "salutation": "Dr.",
       "village": "Malawai vlg, Gau Is",
       "paternalProvince": "Lomaiviti",
@@ -2327,15 +1714,6 @@
       "slug": "sunia-vosikata",
       "last": "Vosikata",
       "first": "Sunia",
-      "total": "3",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 1,
-        "thesis": 1,
-        "bookSection": 1,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2358,15 +1736,6 @@
       "slug": "suliasi-vunibola",
       "last": "Vunibola",
       "first": "Suliasi",
-      "total": 19,
-      "firstAuthored": 7,
-      "types": {
-        "report": 2,
-        "bookSection": 6,
-        "journalArticle": 9,
-        "book": 1,
-        "thesis": 1
-      },
       "salutation": "Dr.",
       "village": "Vitina vlg",
       "paternalProvince": "Macuata",
@@ -2395,15 +1764,6 @@
       "slug": "tarisi-vunidilo",
       "last": "Vunidilo",
       "first": "Tarisi",
-      "total": "3",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 1,
-        "thesis": 2,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2426,15 +1786,6 @@
       "slug": "gade-waqa",
       "last": "Waqa",
       "first": "Gade",
-      "total": "8",
-      "firstAuthored": "2",
-      "types": {
-        "journalArticle": 7,
-        "thesis": 1,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2457,15 +1808,6 @@
       "slug": "salote-waqairatu",
       "last": "Waqairatu",
       "first": "Salote",
-      "total": "3",
-      "firstAuthored": "1",
-      "types": {
-        "journalArticle": 3,
-        "thesis": 0,
-        "bookSection": 0,
-        "book": 0,
-        "report": 0
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2496,12 +1838,6 @@
       "institutionUrl": "https://www.seaworldabudhabi.com/en/research-and-rescue",
       "googleScholarUrl": "https://scholar.google.com/citations?user=dXh2ZewAAAAJ&hl=en",
       "photo": "img/scholars/viliame-waqalevu.jpg",
-      "total": 29,
-      "firstAuthored": 4,
-      "types": {
-        "journalArticle": 28,
-        "bookSection": 1
-      },
       "profileUrl": "",
       "title": "Lead Researcher",
       "orcidUrl": "",
@@ -2518,26 +1854,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "total": 3,
-      "firstAuthored": 0,
-      "types": {
-        "journalArticle": 3
-      }
+      "photo": ""
     },
     {
       "slug": "william-waqavakatoga",
       "last": "Waqavakatoga",
       "first": "William",
-      "total": "5",
-      "firstAuthored": "3",
-      "types": {
-        "journalArticle": 2,
-        "thesis": 1,
-        "bookSection": 1,
-        "book": 0,
-        "report": 1
-      },
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -2560,11 +1882,6 @@
       "slug": "donald-wilson",
       "last": "Wilson",
       "first": "Donald",
-      "total": 11,
-      "firstAuthored": 1,
-      "types": {
-        "journalArticle": 11
-      },
       "salutation": "Prof.",
       "village": "",
       "paternalProvince": "",
@@ -2598,11 +1915,6 @@
       "institutionUrl": "https://www.fnu.ac.fj/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=z2jcHJAAAAAJ&hl=en",
       "photo": "img/scholars/donald-j-wilson.jpg",
-      "total": 39,
-      "firstAuthored": 2,
-      "types": {
-        "journalArticle": 39
-      },
       "profileUrl": "https://www.fnu.ac.fj/research-office-contacts/dr-donald-wilson/",
       "masters": null,
       "phd": null,
