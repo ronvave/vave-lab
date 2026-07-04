@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:55:49.673Z",
+  "generatedAt": "2026-07-04T07:00:24.815Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1322,18 +1322,32 @@
       "slug": "milika-naqasima-sobey",
       "last": "Naqasima-Sobey",
       "first": "Milika",
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "paternalProvince": "Nadroga/Navosa",
+      "institution": "GIZ Pacific",
+      "institutionUrl": "https://www.giz.de/en/regions/asia/oceania",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/milika-naqasima-sobey.jpg",
       "total": 1,
       "firstAuthored": 1,
       "types": {
         "thesis": 1
-      }
+      },
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": {
+        "university": "University of Essex",
+        "country": "United Kingdom"
+      },
+      "title": "Senior Technical Adviser",
+      "orcidUrl": "",
+      "lastUpdate": "2026-07-04T07:00:24.814Z"
     },
     {
       "name": "Naucunivanua, Sikeli",
