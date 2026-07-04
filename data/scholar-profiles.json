@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:15:52.337Z",
+  "generatedAt": "2026-07-04T19:17:07.463Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2147,6 +2147,19 @@
       "slug": "malakai-waqa",
       "last": "Waqa",
       "first": "Malakai",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Waqainabete, Ifereimi",
+      "slug": "ifereimi-waqainabete",
+      "last": "Waqainabete",
+      "first": "Ifereimi",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
