@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:13:17.953Z",
+  "generatedAt": "2026-07-04T19:13:29.115Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1461,6 +1461,19 @@
         "report": 1,
         "bookSection": 1
       }
+    },
+    {
+      "name": "Tabunakawai-Vakalalabure, Margaret",
+      "slug": "margaret-tabunakawai-vakalalabure",
+      "last": "Tabunakawai-Vakalalabure",
+      "first": "Margaret",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Tagicakiverata, Isimeli Waibuta",
