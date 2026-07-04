@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T11:42:22.362Z",
+  "generatedAt": "2026-07-04T11:42:24.924Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1510,6 +1510,19 @@
       "slug": "lavenia-tawake",
       "last": "Tawake",
       "first": "Lavenia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tawake, Peni",
+      "slug": "peni-tawake",
+      "last": "Tawake",
+      "first": "Peni",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
