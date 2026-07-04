@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T19:17:07.463Z",
+  "generatedAt": "2026-07-04T19:17:09.819Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -620,6 +620,19 @@
       "slug": "epeli-m-loganimoce",
       "last": "Loganimoce",
       "first": "Epeli M.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Lomavatu, Mereia Fong",
+      "slug": "mereia-fong-lomavatu",
+      "last": "Lomavatu",
+      "first": "Mereia Fong",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
