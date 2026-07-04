@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T06:13:46.242Z",
+  "generatedAt": "2026-07-04T06:13:47.726Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1563,6 +1563,25 @@
       "types.bookSection": "0",
       "types.book": "4",
       "types.report": "0"
+    },
+    {
+      "name": "Rika, Nacanieli",
+      "slug": "nacanieli-rika",
+      "last": "Rika",
+      "first": "Nacanieli",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "total": 3,
+      "firstAuthored": 3,
+      "types": {
+        "thesis": 1,
+        "journalArticle": 2
+      }
     },
     {
       "slug": "ponipate-rokolekutu",
