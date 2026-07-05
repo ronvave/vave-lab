@@ -1571,42 +1571,49 @@
       color: #062f35; border-bottom-color: currentColor;
     }
 
-    /* --- Inline dropdown used in Panel B1 title. Inherits the title's
-       uppercase / letter-spacing / weight so it reads as part of the title
-       rather than a separate form field. A small chevron marks it as
-       selectable, and a subtle dashed underline hints at interactivity. */
+    /* --- Inline dropdown used in the panel titles. Rendered as a solid brown
+       pill with light-cream text so it reads as a distinct, clearly-clickable
+       control while still sitting on the same line as the static title text. */
     .db-title-select {
       position: relative;
       display: inline-flex; align-items: center;
       vertical-align: baseline;
+      margin: 0 2px;
     }
     .db-title-select__select {
       appearance: none; -webkit-appearance: none; -moz-appearance: none;
-      background: transparent; border: 0; outline: 0;
-      padding: 0 16px 1px 0;
+      background: #854F0B;
+      color: #FAEEDA;
+      border: 0; outline: 0;
+      padding: 4px 28px 4px 14px;
       margin: 0;
       font: inherit;
-      color: var(--color-primary);
       text-transform: inherit;
       letter-spacing: inherit;
       cursor: pointer;
-      border-bottom: 1px dashed rgba(14,116,144,0.55);
-      border-radius: 0;
-      line-height: inherit;
+      border-radius: 999px;
+      line-height: 1.35;
     }
+    .db-title-select__select option {
+      /* Native dropdown menu items — keep readable in the OS chrome. */
+      background: #FAEEDA;
+      color: #3d1c00;
+      text-transform: none;
+      letter-spacing: normal;
+      font: 400 0.95rem 'Source Sans Pro', system-ui, sans-serif;
+    }
+    .db-title-select__select:hover     { background: #6a3f08; }
     .db-title-select__select:focus-visible {
-      outline: 2px solid var(--color-primary);
-      outline-offset: 3px;
-      border-radius: 2px;
-    }
-    .db-title-select__select:hover {
-      color: #062f35; border-bottom-color: rgba(14,116,144,0.9);
+      outline: 2px solid #854F0B;
+      outline-offset: 2px;
     }
     .db-title-select__chevron {
-      position: absolute; right: 0; top: 50%;
+      position: absolute; right: 10px; top: 50%;
       transform: translateY(-52%);
-      font-size: 0.9em; color: var(--color-primary);
+      font-size: 0.8em;
+      color: #FAEEDA;
       pointer-events: none;
+      line-height: 1;
     }
 
     /* --- (1) enlarge small helper/caption text --- */
@@ -2364,6 +2371,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-12" defer></script>
+<script src="js/itaukei-database.js?v=20260704-13" defer></script>
 </body>
 </html>
