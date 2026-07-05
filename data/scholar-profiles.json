@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T13:39:03.438Z",
+  "generatedAt": "2026-07-05T18:37:27.678Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1006,23 +1006,39 @@
       "slug": "alivereti-naikatini",
       "last": "Naikatini",
       "first": "Alivereti",
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
+      "institution": "Ministry of Forestry (Fiji)",
+      "institutionUrl": "https://www.forestry.gov.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=3EsALNUAAAAJ&hl=en",
+      "photo": "img/scholars/alivereti-naikatini.jpg",
       "name": "Naikatini, Alivereti",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Director",
+      "orcidUrl": "https://orcid.org/0000-0001-5881-5219",
+      "lastUpdate": "2026-07-05T18:37:27.666Z",
       "types.journalArticle": "4",
       "types.thesis": "0",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Research & Development",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": null,
+      "phd": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "total": 10,
+      "firstAuthored": 2,
+      "types": {
+        "journalArticle": 4,
+        "report": 4,
+        "book": 1,
+        "bookSection": 1
+      }
     },
     {
       "slug": "winifereti-nainoca",
