@@ -2144,6 +2144,38 @@
       "publicationCount": 3,
       "signature": "sha1:01b8045b120e8401",
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
+    },
+    "Vuki, Maika": {
+      "keywords": [
+        "Electrochemical Sensor Development",
+        "Arsenic Water Contamination",
+        "Silver Nanoparticle Biosensors",
+        "Polyaniline Redox Chemistry",
+        "Trace Metal Analysis",
+        "Pacific Marine Environment Assessment",
+        "Forensic Chemistry Education",
+        "Ion Mobility Spectrometry"
+      ],
+      "summary": "Vuki is an analytical chemist whose career traces an unusual arc from reef science in Fiji to biosensor design in Guam. After training in chemistry and math at USP, then earning a master's in Auckland and a PhD in electrochemistry from <a href=\"https://www.uog.edu/directory/vuki-maika\" target=\"_blank\" rel=\"noopener\">the University of Southampton</a>, he taught at USP for over a decade before moving to the University of Guam in 2002. His research develops <a href=\"https://www.researchgate.net/profile/Maika-Vuki\" target=\"_blank\" rel=\"noopener\">silver nanoparticle and fluorescence-based biosensors</a> for detecting trace contaminants, and he has directly measured <a href=\"https://www.researchgate.net/profile/Maika-Vuki\" target=\"_blank\" rel=\"noopener\">arsenic speciation in Guam's spring waters</a> near Tumon Bay. Earlier in his career he co-authored regional overviews of the marine environments of Fiji and Vanuatu. At UOG he now chairs the Division of Natural Sciences, helped found the Chemical Society of Guam, and recently launched the university's first forensic chemistry track.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "Maika V. Vuki | University of Guam Directory",
+          "url": "https://www.uog.edu/directory/vuki-maika"
+        },
+        {
+          "title": "Maika Vuki | Research Profile - ResearchGate",
+          "url": "https://www.researchgate.net/profile/Maika-Vuki"
+        },
+        {
+          "title": "UOG launches new degree track in forensic chemistry - University of Guam",
+          "url": "https://www.uog.edu/news-announcements/2024-2025/2024-UOG-launches-new-degree-track-in-forensic-chemistry"
+        },
+        {
+          "title": "About Us | Chemical Society of Guam",
+          "url": "https://chemicalguam.com/about-us/"
+        }
+      ]
     }
   }
 }
