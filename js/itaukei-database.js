@@ -2875,6 +2875,44 @@
     return out;
   }
 
+  // Build the inline Panel B2 title dropdown pill. Style comes from the shared
+  // .db-title-select CSS (brown pill + cream text). Changing the selection
+  // moves the user to the corresponding B2 view:
+  //   iTaukei authors → fiji-focused (Fiji-focused + iTaukei first author)
+  //   All authors     → all-authors  (Fiji-focused + any author)
+  // We deliberately don't try to preserve 'all-locations' when switching to
+  // 'all authors': there is no All locations + all authors view today, and
+  // predictable behaviour trumps state-preservation guesswork here.
+  function buildB2AuthorsPill(currentType) {
+    const wrap = document.createElement('span');
+    wrap.className = 'db-title-select';
+    const sel  = document.createElement('select');
+    sel.className = 'db-title-select__select';
+    sel.setAttribute('data-b2-authors', '');
+    sel.setAttribute('aria-label', 'Filter authors');
+    const opts = [
+      { value: 'itaukei', label: 'iTaukei authors' },
+      { value: 'all',     label: 'All authors' }
+    ];
+    opts.forEach(o => {
+      const opt = document.createElement('option');
+      opt.value = o.value; opt.textContent = o.label;
+      sel.appendChild(opt);
+    });
+    sel.value = currentType;
+    sel.addEventListener('change', () => {
+      state.b2View = sel.value === 'all' ? 'all-authors' : 'fiji-focused';
+      renderPanelB2();
+    });
+    wrap.appendChild(sel);
+    const chev = document.createElement('span');
+    chev.className = 'db-title-select__chevron';
+    chev.setAttribute('aria-hidden', 'true');
+    chev.textContent = '\u25be';
+    wrap.appendChild(chev);
+    return wrap;
+  }
+
   // -------- Render dispatcher --------
   function renderPanelB2() {
     const view = state.b2View;
@@ -2885,7 +2923,23 @@
     const barsEl = $('[data-b2-bars]');
     if (!titleEl || !hintEl || !metaEl || !barsEl) return;
 
-    titleEl.textContent = meta.title;
+    // Build the title. For views that have an author-type semantic
+    // (fiji-focused, all-locations, all-authors) inject an inline dropdown
+    // pill in place of the 'iTaukei authors' / 'all authors' phrase, so the
+    // control matches Panel B1's title pill exactly. The authorship view
+    // shows plain text (no author-type dimension to toggle).
+    titleEl.innerHTML = '';
+    if (view === 'authorship') {
+      titleEl.textContent = meta.title;
+    } else {
+      // Every non-authorship B2 title in B2_META ends with either
+      // 'iTaukei authors' or 'all authors' — split on ' by ' and rebuild.
+      const parts = meta.title.split(/ by /i);
+      const prefix = (parts[0] || '') + ' by ';
+      const currentAuthors = view === 'all-authors' ? 'all' : 'itaukei';
+      titleEl.appendChild(document.createTextNode(prefix));
+      titleEl.appendChild(buildB2AuthorsPill(currentAuthors));
+    }
     hintEl.textContent = meta.hint;
     metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
 

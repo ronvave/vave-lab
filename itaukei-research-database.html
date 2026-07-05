@@ -1147,13 +1147,14 @@
       letter-spacing: 0.02em; margin-right: 4px;
     }
 
-    /* Panel B2 tab strip — accessible, keyboard-navigable */
+    /* Panel B2 tab strip — accessible, keyboard-navigable.
+       Active pill styling matches Panel B1's inline dropdown (brown + cream). */
     .db-panel-b2__tabs {
       display: flex; gap: 4px;
       overflow-x: auto; overflow-y: hidden;
       -webkit-overflow-scrolling: touch;
       padding: 4px; margin: 0 0 16px;
-      background: rgba(14,116,144,0.08);
+      background: rgba(133,79,11,0.10);
       border-radius: 999px;
       align-self: flex-start;
       max-width: fit-content;
@@ -1162,13 +1163,16 @@
       appearance: none; border: 0; background: transparent;
       padding: 8px 16px; border-radius: 999px; cursor: pointer;
       font: 600 0.88rem 'Source Sans Pro', sans-serif;
-      color: #334155; white-space: nowrap;
+      color: #3d1c00; white-space: nowrap;
       transition: background 0.15s, color 0.15s;
     }
-    .db-b2-tab:hover { color: #062f35; }
-    .db-b2-tab.is-active { background: var(--color-primary); color: #fff; }
+    .db-b2-tab:hover:not(.is-active) { color: #6a3f08; }
+    .db-b2-tab.is-active {
+      background: #854F0B;
+      color: #FAEEDA;
+    }
     .db-b2-tab:focus-visible {
-      outline: 2px solid var(--color-primary);
+      outline: 2px solid #854F0B;
       outline-offset: 2px;
     }
 
@@ -2371,6 +2375,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-13" defer></script>
+<script src="js/itaukei-database.js?v=20260704-14" defer></script>
 </body>
 </html>
