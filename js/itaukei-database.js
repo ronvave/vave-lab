@@ -2724,7 +2724,7 @@
         root: workRoot, input, panel: workPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
         tree, parentLabelSingular: 'Universities',
-        buildLabel: () => 'Countries / Universities of work',
+        buildLabel: () => 'Countries / Institutions of work',
         isActive: () => {
           const c = state.scholarWorkCountry, u = state.scholarWorkUni;
           if (c && u) return { active: true, value: `${c} › ${u}` };
