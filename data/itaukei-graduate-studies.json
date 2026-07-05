@@ -1,7 +1,34 @@
 {
-  "generatedAt": "2026-07-05T08:04:08.780555+00:00",
-  "sourceSnapshot": "2026-07-05T08:04:08.664030+00:00",
+  "generatedAt": "2026-07-05T10:54:30.357084+00:00",
+  "sourceSnapshot": "2026-07-05T10:54:30.217337+00:00",
   "scholars": {
+    "Vuki, Maika": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Southampton",
+        "iso": null,
+        "country": null,
+        "lat": null,
+        "lng": null,
+        "year": 1993,
+        "title": "A study of the electrochemical oxidation and reduction of polyaniline"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Southampton",
+          "iso": null,
+          "country": null,
+          "lat": null,
+          "lng": null,
+          "year": 1993,
+          "title": "A study of the electrochemical oxidation and reduction of polyaniline"
+        }
+      ]
+    },
     "Naqasima-Sobey, Milika": {
       "masters": {
         "level": "masters",
@@ -614,6 +641,33 @@
         }
       ]
     },
+    "Matatolu, Ilisapeci": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Masters Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2020,
+        "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Masters Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2020,
+          "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+        }
+      ]
+    },
     "Thomas, Nunia": {
       "masters": {
         "level": "masters",
@@ -1126,6 +1180,7 @@
       "mastersScholars": [
         "Cakacaka, Akuila",
         "Ginigini, Joape",
+        "Matatolu, Ilisapeci",
         "Meo, Semisi",
         "Naqasima-Sobey, Milika",
         "Raisele, Kolaia",
@@ -1138,7 +1193,7 @@
         "Waqa-Sakiti, Hilda",
         "Waqavakatoga, William"
       ],
-      "total": 17
+      "total": 18
     },
     {
       "iso": "NZ",
@@ -1333,6 +1388,7 @@
     }
   ],
   "unknownUniversities": [
-    "University of Essex"
+    "University of Essex",
+    "University of Southampton"
   ]
 }
