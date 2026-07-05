@@ -1109,9 +1109,13 @@
         types: {}
       });
     });
+    // Panel B1 authors filter — defaults to iTaukei-only. Toggled via the
+    // inline dropdown in the panel title (see wirePanelB1).
+    const authorsMode = state.b1Authors || 'itaukei';
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
       if (!state.typeSet.has(vt)) return;
+      if (authorsMode === 'itaukei' && !isItaukei(it)) return;
       const ps = state.provincesByItem.get(it.key);
       if (!ps) return;
       ps.forEach(name => {
