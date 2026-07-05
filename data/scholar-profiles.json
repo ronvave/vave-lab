@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:29:45.506Z",
+  "generatedAt": "2026-07-05T11:29:46.972Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1652,28 +1652,6 @@
       }
     },
     {
-      "slug": "isaac-rounds",
-      "last": "Rounds",
-      "first": "Isaac",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Rounds, Isaac",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "5",
-      "types.thesis": "0",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "0"
-    },
-    {
       "name": "Rounds, Isaac A.",
       "slug": "isaac-a-rounds",
       "last": "Rounds",
@@ -1684,7 +1662,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "types.journalArticle": "5",
+      "types.thesis": "0",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "0"
     },
     {
       "slug": "sevanaia-sakai",
@@ -2796,6 +2779,7 @@
     "Ravuvu, A.": "Ravuvu, Amerita",
     "Ravuvu, Amerita L. A.": "Ravuvu, Amerita",
     "Ravuvu, Asesela D. (Asesela Drekeivalu)": "Ravuvu, Asesela",
+    "Rounds, Isaac": "Rounds, Isaac A.",
     "Souter, Regina": "Souter, Regina T.",
     "Sridharan, S.": "Sridharan, Srinivas",
     "Takahashi, K.": "Takahashi, Ken",
