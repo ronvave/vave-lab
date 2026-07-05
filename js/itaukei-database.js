@@ -2243,13 +2243,16 @@
     }
     // Country/University of work — use scholarWorkCountry() which falls back
     // to institution-string parsing when institutionCountry is not yet set.
+    // University comparison strips any " (Country)" suffix on both sides so
+    // the filter matches regardless of whether the admin entered the country
+    // suffix in the institution field for card display purposes.
     if (state.scholarWorkCountry) {
       const wantC = state.scholarWorkCountry;
       const wantU = state.scholarWorkUni;
       rows = rows.filter(r => {
         const p = enrichedByName.get(r.name) || {};
         return scholarWorkCountry(p) === wantC
-            && (!wantU || (p.institution || '') === wantU);
+            && (!wantU || stripCountrySuffix(p.institution || '') === wantU);
       });
     }
 
@@ -2361,14 +2364,25 @@
     return guessWorkCountry(p.institution);
   }
 
+  // Strip a trailing " (Country)" suffix from an institution string — that
+  // suffix is included in the admin-entered field only so the scholar card
+  // displays it; in the filter dropdown we want the institution name on its
+  // own so a listing reads "Australian National University" rather than
+  // "Australian National University (Australia)".
+  function stripCountrySuffix(inst) {
+    const s = String(inst || '').trim();
+    if (!s) return '';
+    return s.replace(/\s*[\(,]\s*[A-Za-z][A-Za-z\s]{1,30}?\s*\)?\s*$/, '').trim() || s;
+  }
+
   function buildWorkTree() {
     const tree = new Map();
     (state.scholarProfilesByName || new Map()).forEach(p => {
       const c = scholarWorkCountry(p);
-      const u = (p.institution || '').trim();
+      const uRaw = (p.institution || '').trim();
       if (!c) return;
       if (!tree.has(c)) tree.set(c, new Set());
-      if (u) tree.get(c).add(u);
+      if (uRaw) tree.get(c).add(stripCountrySuffix(uRaw));
     });
     return new Map([...tree.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
