@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:29:53.150Z",
+  "generatedAt": "2026-07-05T11:29:54.721Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1873,19 +1873,6 @@
       "photo": ""
     },
     {
-      "name": "Tabunakawai, K.",
-      "slug": "k-tabunakawai",
-      "last": "Tabunakawai",
-      "first": "K.",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "name": "Tabunakawai, Kesaia",
       "slug": "kesaia-tabunakawai",
       "last": "Tabunakawai",
@@ -2786,6 +2773,7 @@
     "Sotheeswaran, S": "Sotheeswaran, Subramaniam",
     "Souter, Regina": "Souter, Regina T.",
     "Sridharan, S.": "Sridharan, Srinivas",
+    "Tabunakawai, K.": "Tabunakawai, Kesaia",
     "Takahashi, K.": "Takahashi, Ken",
     "TAKAHASHI, Ken": "Takahashi, Ken",
     "Tarai, J.": "Tarai, Jope",
