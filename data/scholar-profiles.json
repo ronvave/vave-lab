@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T08:04:36.656Z",
+  "generatedAt": "2026-07-05T08:46:36.945Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1960,6 +1960,19 @@
       "slug": "inise-tawaketini",
       "last": "Tawaketini",
       "first": "Inise",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tawaketini, Janet",
+      "slug": "janet-tawaketini",
+      "last": "Tawaketini",
+      "first": "Janet",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
