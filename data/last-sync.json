@@ -1,10 +1,10 @@
 {
-  "lastChecked": "2026-07-05T10:54:30Z",
+  "lastChecked": "2026-07-05T11:03:36Z",
   "lastChanged": "2026-07-05T10:54:30Z",
-  "dataChangedThisRun": true,
+  "dataChangedThisRun": false,
   "totalItems": 1864,
   "movedMetrics": [],
   "summary": "No tracked total moved by more than 2.0%.",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28738346610"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28738578571"
 }
