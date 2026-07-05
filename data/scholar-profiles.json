@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:30:42.904Z",
+  "generatedAt": "2026-07-05T11:30:44.781Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2194,19 +2194,6 @@
       "types.report": "0"
     },
     {
-      "name": "Tuiwawa, Senilolia",
-      "slug": "senilolia-tuiwawa",
-      "last": "Tuiwawa",
-      "first": "Senilolia",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "name": "Tuiwawa, Senilolia H.",
       "slug": "senilolia-h-tuiwawa",
       "last": "Tuiwawa",
@@ -2771,6 +2758,7 @@
     "Titifanue, J.": "Titifanue, Jason",
     "Tuiwawa, Marika V.": "Tuiwawa, Marika",
     "Tuiwawa, Marika Vuli": "Tuiwawa, Marika",
+    "Tuiwawa, Senilolia": "Tuiwawa, Senilolia H.",
     "Vada, Sera Kogure": "Vada, Sera",
     "Waqa-Sakiti, Hilda F. V.": "Waqa-Sakiti, Hilda",
     "Waqa-Sakiti, Hilda V. F.": "Waqa-Sakiti, Hilda",
