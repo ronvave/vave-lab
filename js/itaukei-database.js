@@ -2439,17 +2439,22 @@
     const insight = key ? state.scholarInsights[key] : null;
     const btnId   = `db-insight-btn-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const panelId = `db-insight-panel-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
-    const hasInsight = !!insight && (insight.keywords || []).length >= 1;
+    const hasKeywords = !!insight && (insight.keywords || []).length >= 1;
+    const hasSummary  = !!insight && !!(insight.summary && insight.summary.trim());
+    const hasInsight  = hasKeywords || hasSummary;
 
-    const tagsHtml = hasInsight ? (insight.keywords || []).map((k, i) =>
+    const tagsHtml = hasKeywords ? (insight.keywords || []).map((k, i) =>
       `<span class="db-scholar-card__insight-tag" data-tag-color="${i % 8}">${escapeHtml(k)}</span>`
     ).join('') : '';
 
     // Curated summaries may embed <a> / <em> / <strong> — sanitize before
     // injecting. Rule-based fallback summaries stay plain text and are
     // still safely handled by sanitizeSummaryHtml (which escape-encodes
-    // non-whitelisted markup).
-    const summaryHtml = hasInsight
+    // non-whitelisted markup). If a curated entry has a real summary but no
+    // keyword pills (scholar with no findable web presence), still render
+    // the summary honestly rather than falling back to a misleading
+    // "not yet generated" placeholder.
+    const summaryHtml = hasSummary
       ? `<p class="db-scholar-card__insight-summary">${sanitizeSummaryHtml(insight.summary || '')}</p>`
       : `<p class="db-scholar-card__insight-summary db-scholar-card__insight-summary--empty">Insight not yet generated for this scholar. It will appear here after the next data refresh.</p>`;
 

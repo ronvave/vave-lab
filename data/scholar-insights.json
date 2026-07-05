@@ -90,13 +90,23 @@
     },
     "Tabunakawai-Vakalalabure, Margaret": {
       "keywords": [
-        "Management"
+        "Coral Reef Conservation",
+        "Locally Managed Marine Areas",
+        "Overfishing and Predator Fish Decline",
+        "Community-Based Marine Governance",
+        "Marine Spatial Planning"
       ],
-      "summary": "A plain-English summary of Margaret Tabunakawai-Vakalalabure’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Tabunakawai-Vakalalabure manages WWF Pacific's Fiji Coral Reef Rescue Initiative, working to protect the Great Sea Reef and other coral ecosystems through community-led conservation. She has warned publicly that <a href=\"https://fijisun.com.fj/news/nation/several-top-predator-fish-wiped-out-wwf-warns-of-marine-crisis\" target=\"_blank\" rel=\"noopener\">overfishing has already wiped out several top predator fish species</a> in Fijian waters, disrupting entire food webs, and has spent years coordinating Fiji's Locally Managed Marine Area Network before moving into this reef-focused conservation role.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:a208ce319de493a0",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Several top predator fish wiped out, WWF warns of marine crisis - Fiji Sun",
+          "url": "https://fijisun.com.fj/news/nation/several-top-predator-fish-wiped-out-wwf-warns-of-marine-crisis"
+        }
+      ]
     },
     "Rupeni, Etika": {
       "keywords": [],
@@ -160,14 +170,27 @@
     },
     "Vakaoti, Patrick": {
       "keywords": [
-        "Social Protection",
-        "Covid-19 and Social"
+        "Street-Frequenting Youth",
+        "Youth Political Participation",
+        "Child Protection Policy",
+        "Pacific Community Development",
+        "Decolonizing Global Health"
       ],
-      "summary": "A plain-English summary of This scholar’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Vakaoti studies young Fijians who exist on the margins of a society with strict ideas about the 'right' way to live — particularly street-frequenting youth from low-income backgrounds. His book <a href=\"https://link.springer.com/book/10.1007/978-3-319-63079-3\" target=\"_blank\" rel=\"noopener\">Street-Frequenting Young People in Fiji</a> uncovered the lived experiences of these young people and their need to belong despite marginalization. He has since expanded into researching youth political participation, child protection, and, more recently, <a href=\"https://www.otago.ac.nz/news/newsroom/associate-professor-patrick-vakaoti-decolonising-global-health\" target=\"_blank\" rel=\"noopener\">how global health institutions can be decolonized</a> to work more justly with Pacific communities.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:2ed6b3850864e722",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Street-Frequenting Young People in Fiji: Theory and Practice - Springer",
+          "url": "https://link.springer.com/book/10.1007/978-3-319-63079-3"
+        },
+        {
+          "title": "Associate Professor Patrick Vakaoti Decolonising global health - University of Otago",
+          "url": "https://www.otago.ac.nz/news/newsroom/associate-professor-patrick-vakaoti-decolonising-global-health"
+        }
+      ]
     },
     "Movono, Api": {
       "keywords": [],
@@ -215,28 +238,37 @@
     },
     "Baleivanualala, Sakiusa": {
       "keywords": [
-        "Acinetobacter Baumannii",
-        "Carbapenem Resistant",
-        "Clinical Epidemiology",
-        "Epidemiology of Carbapenem",
-        "Molecular and Clinical",
-        "Resistant Acinetobacter",
-        "Carbapenem Resistant Acinetobacter",
-        "Resistant Acinetobacter Baumannii"
+        "Carbapenem-Resistant Acinetobacter Baumannii",
+        "Antimicrobial Resistance Surveillance",
+        "Hospital-Acquired Infections",
+        "Molecular Epidemiology",
+        "Whole Genome Sequencing",
+        "Hospital Environmental Contamination"
       ],
-      "summary": "A plain-English summary of Sakiusa Baleivanualala’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Baleivanualala leads much of Fiji's research into the drug-resistant hospital infections threatening the country's public health system. His <a href=\"https://www.thelancet.com/journals/lanwpc/article/PIIS2666-6065(24)00089-0/fulltext\" target=\"_blank\" rel=\"noopener\">multicentre studies tracing carbapenem-resistant bacteria across Fiji's major hospitals</a> used whole genome sequencing to identify ongoing, previously unrecognised outbreaks in intensive care units. He has also investigated <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC11456574/\" target=\"_blank\" rel=\"noopener\">how contaminated hospital surfaces themselves act as a source of infection</a>, work aimed at improving infection control across Fiji's and the wider Oceania region's healthcare facilities.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:fee6b4c42e67bb88",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Molecular and clinical epidemiology of carbapenem resistant Acinetobacter baumannii, Pseudomonas aeruginosa and Enterobacterales in Fiji - The Lancet Regional Health Western Pacific",
+          "url": "https://www.thelancet.com/journals/lanwpc/article/PIIS2666-6065(24)00089-0/fulltext"
+        },
+        {
+          "title": "Environmental contamination with carbapenem resistant Acinetobacter baumannii in healthcare settings in Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11456574/"
+        }
+      ]
     },
     "Tikoca, Siteri": {
       "keywords": [],
-      "summary": "A plain-English summary of Siteri Tikoca’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:a091c89b378b6ce5",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Naisilisili, Sereima": {
       "keywords": [],
@@ -335,11 +367,12 @@
     },
     "Waqavakatoga, William": {
       "keywords": [],
-      "summary": "A plain-English summary of William Waqavakatoga’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:302115c12f9673ca",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Waqa, Gade": {
       "keywords": [
@@ -403,25 +436,22 @@
       ]
     },
     "Varo, Joeli": {
-      "keywords": [
-        "Levu Island",
-        "Hazard",
-        "Viti Levu",
-        "Viti Levu Island"
-      ],
-      "summary": "A plain-English summary of Joeli Varo’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:dcaee35cb28e0ee4",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Vakamacawai, Esala": {
       "keywords": [],
-      "summary": "A plain-English summary of Esala Vakamacawai’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:37494a4579bb0bed",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Vada, Sera": {
       "keywords": [
@@ -538,11 +568,12 @@
     },
     "Thomas, Nunia": {
       "keywords": [],
-      "summary": "A plain-English summary of Nunia Thomas’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:5e7844242ff23b8c",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Tarai, Jope": {
       "keywords": [
@@ -574,49 +605,51 @@
     },
     "Savou-Wara, Rusila": {
       "keywords": [
-        "Molecular Identification",
-        "Frequently Landed",
-        "Identification of Frequently",
-        "Landed Octopus",
-        "Frequently Landed Octopus"
+        "Climate Change Policy",
+        "Marine Conservation"
       ],
-      "summary": "A plain-English summary of Rusila Savou-Wara’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Public records list a Rusila Savou-Wara associated with climate change and marine conservation work in Fiji, closely overlapping with published work under the name Rusila Savou; without a confirmed link between the two records, only limited independent detail can be given here.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:55cf508582961571",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Sakai, Sevanaia": {
       "keywords": [
-        "Governance Wellbeing",
-        "Political Aspiration",
-        "Itaukei Land",
-        "Nadi Fiji",
-        "Narewa Village",
-        "Aspiration Case Study",
-        "Land Literacy Governance",
-        "Study of Narewa",
-        "Wellbeing and Political",
-        "Literacy Governance"
+        "iTaukei Land Literacy",
+        "Village Governance and Wellbeing",
+        "Political Aspiration and Land",
+        "Customary Land Policy",
+        "Equal Distribution Policy",
+        "Indigenous Tourism Development",
+        "Mangrove Ecosystem Services",
+        "Land Rights Advocacy"
       ],
-      "summary": "A plain-English summary of Sevanaia Sakai’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Sakai studies how well iTaukei villagers actually understand the laws that govern their own customary land — and what happens to community wellbeing and politics when that knowledge is thin. His case study of <a href=\"https://www.usp.ac.fj/journal-of-pacific-studies/wp-content/uploads/sites/162/2024/02/Assessing-the-Cultural-Impact-of-the-Equal-Distribution-Policy-EDIP.pdf\" target=\"_blank\" rel=\"noopener\">Narewa Village, Nadi</a> — the original landowners of what is now Denarau Island's resort strip — traces how land literacy shapes village governance, political loyalties, and everyday wellbeing. He has also questioned whether a national policy meant to protect iTaukei culture through equal profit-sharing has actually delivered on that promise, and <a href=\"https://www.fijivillage.com/news/commission-hears-calls-for-greater-powers-for-permanent-secretaries-and-mandatory-investment-of-resource-income-in-usp-submission-7769c1/\" target=\"_blank\" rel=\"noopener\">has called for landowners to be required to invest resource income</a> for long-term family wealth rather than short-term payouts.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:304f21664fac260d",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Assessing the Cultural Impact of the Equal Distribution Policy (EDIP) on iTaukei - USP Journal of Pacific Studies",
+          "url": "https://www.usp.ac.fj/journal-of-pacific-studies/wp-content/uploads/sites/162/2024/02/Assessing-the-Cultural-Impact-of-the-Equal-Distribution-Policy-EDIP.pdf"
+        },
+        {
+          "title": "Commission hears calls for greater powers for Permanent Secretaries - Fijivillage",
+          "url": "https://www.fijivillage.com/news/commission-hears-calls-for-greater-powers-for-permanent-secretaries-and-mandatory-investment-of-resource-income-in-usp-submission-7769c1/"
+        }
+      ]
     },
     "Rounds, Isaac": {
-      "keywords": [
-        "Sovi Basin",
-        "Viti Levu",
-        "Levu Fiji Islands",
-        "Viti Levu Fiji"
-      ],
-      "summary": "A plain-English summary of Isaac Rounds’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:639adaca82da26b2",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Rokolekutu, Ponipate": {
       "keywords": [
@@ -718,12 +751,23 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Ravuvu, Asesela": {
-      "keywords": [],
-      "summary": "A plain-English summary of Asesela Ravuvu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Fijian Way of Life",
+        "Fijian Ethos and Custom",
+        "Political History of Fiji",
+        "Pacific Studies Founding Scholarship"
+      ],
+      "summary": "Ravuvu (1931–2008) was one of the founding figures of Fijian anthropology, among the first graduates of the University of the South Pacific before earning his PhD in anthropology from Auckland. His book <a href=\"https://en.wikipedia.org/wiki/Asesela_Ravuvu\" target=\"_blank\" rel=\"noopener\">Vaka i Taukei: The Fijian Way of Life</a> became a standard reference on Fijian custom and remains widely cited decades later. He went on to lead Pacific Studies at USP and later served in Fiji's Senate, writing further influential works on Fijian political history including The Fijian Ethos and The Façade of Democracy.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:a2901a0b0fce8c6e",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Asesela Ravuvu - Wikipedia",
+          "url": "https://en.wikipedia.org/wiki/Asesela_Ravuvu"
+        }
+      ]
     },
     "Ravulo, Jioji": {
       "keywords": [
@@ -792,14 +836,23 @@
     },
     "Raisele, Kolaia": {
       "keywords": [
-        "Indigenous",
-        "Climate Crisis"
+        "Indigenous Knowledge Systems",
+        "Climate Change Adaptation",
+        "Intangible Cultural Heritage",
+        "Solesolevaki Social Capital",
+        "Sea Level Rise Response"
       ],
-      "summary": "A plain-English summary of Kolaia Raisele’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Raisele studies how Indigenous Fijian knowledge and communal traditions help villages adapt to environmental change. Her research on <a href=\"https://ir.canterbury.ac.nz/handle/10092/105252\" target=\"_blank\" rel=\"noopener\">sea-level rise and dried water sources</a> in a Fijian village showed how Indigenous knowledge systems inform local, community-driven responses that Western scientific approaches often overlook. Her master's thesis examined <em>solesolevaki</em> (communal work) as a form of intangible cultural heritage worth revitalizing for inclusive social development.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:7f610cf0b6969463",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Indigenous Knowledge Systems role in addressing Sea Level Rise and Dried Water Source - Pacific Dynamics",
+          "url": "https://ir.canterbury.ac.nz/handle/10092/105252"
+        }
+      ]
     },
     "Radikedike, Ratu Pio": {
       "keywords": [
@@ -815,12 +868,22 @@
       "sources": []
     },
     "Naisilisili, Waisea": {
-      "keywords": [],
-      "summary": "A plain-English summary of Waisea Naisilisili’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Fisherwomen Contributions",
+        "Coastal Fisheries Management",
+        "Food Security and Livelihoods"
+      ],
+      "summary": "Naisilisili's research with the Wildlife Conservation Society has helped quantify a part of Fiji's fishing economy long left out of official statistics: the food and income that women fishers bring home. His studies <a href=\"https://www.sciencedirect.com/science/article/pii/S0964569121000569\" target=\"_blank\" rel=\"noopener\">documented how Fijian women fish across habitats from rivers to the open ocean</a>, finding that most fish primarily to feed their own families, work that has informed how coastal fisheries policy accounts for gender in Fiji.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:93c008177da6f9b0",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Why they must be counted: Significant contributions of Fijian women fishers to food security and livelihoods - ScienceDirect",
+          "url": "https://www.sciencedirect.com/science/article/pii/S0964569121000569"
+        }
+      ]
     },
     "Ravuiwasa, Kaliova": {
       "keywords": [
@@ -865,20 +928,30 @@
       "sources": []
     },
     "Naivalulevu, Vilisi": {
-      "keywords": [],
-      "summary": "A plain-English summary of Vilisi Naivalulevu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "Drinking Water Quality"
+      ],
+      "summary": "Naivalulevu is part of the Fiji Institute of Pacific Health Research team on the Watershed Interventions for Systems Health (WISH Fiji) project, which studies rural sanitation and drinking water quality across Fijian communities. Independent public information about her research beyond this collaborative project is limited.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:8cf37159a7a67660",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Naivalulevu, Timoci": {
-      "keywords": [],
-      "summary": "A plain-English summary of Timoci Naivalulevu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "Faecal Contamination Monitoring"
+      ],
+      "summary": "Naivalulevu is part of the Fiji Institute of Pacific Health Research team on the Watershed Interventions for Systems Health (WISH Fiji) project, studying rural sanitation infrastructure and its links to water quality. Public information about his research beyond this collaborative project is limited.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:eb7a639b419495af",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Naivalu, Kelera": {
       "keywords": [
@@ -938,19 +1011,25 @@
     },
     "Marama, Kalisiana": {
       "keywords": [],
-      "summary": "A plain-English summary of Kalisiana Marama’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:7013632cf227cea9",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Mailautoka, Kinikoto": {
-      "keywords": [],
-      "summary": "A plain-English summary of Kinikoto Mailautoka’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "Water Quality Monitoring"
+      ],
+      "summary": "Mailautoka is part of the Fiji Institute of Pacific Health Research team behind the Watershed Interventions for Systems Health (WISH Fiji) project, studying sanitation infrastructure and water quality across rural Fijian catchments. Beyond this collaborative project, limited independent information is publicly available about his research.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:8af0353f6b5373fd",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Nainoca, Winifereti": {
       "keywords": [
@@ -1075,26 +1154,47 @@
       ]
     },
     "Matararaba, Sepeti": {
-      "keywords": [],
-      "summary": "A plain-English summary of Sepeti Matararaba’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Lapita Archaeology",
+        "Early Fiji Settlement Sites",
+        "Hillfort Chronology",
+        "Cultural Heritage Fieldwork"
+      ],
+      "summary": "Matararaba is a Fiji Museum archaeologist who has spent decades excavating the sites that reveal how and when people first settled the Fiji Islands. He co-directed the excavation of <a href=\"https://www.researchgate.net/publication/247768779_Early_Lapita_settlement_site_at_Bourewa_southwest_Viti_Levu_Island_Fiji\" target=\"_blank\" rel=\"noopener\">Bourewa, likely Fiji's earliest human settlement</a>, uncovering 3,000-year-old Lapita pottery and stone tools, and has contributed to numerous other digs across Fiji, including Lapita sites in the northern Lau Islands and hillforts in Bua Province.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:c79ea818118f160c",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Early Lapita settlement site at Bourewa, southwest Viti Levu Island, Fiji - ResearchGate",
+          "url": "https://www.researchgate.net/publication/247768779_Early_Lapita_settlement_site_at_Bourewa_southwest_Viti_Levu_Island_Fiji"
+        }
+      ]
     },
     "Loganimoce, Epeli": {
       "keywords": [
-        "Molecular Identification",
-        "Frequently Landed",
-        "Identification of Frequently",
-        "Landed Octopus",
-        "Frequently Landed Octopus"
+        "Coconut Crab Ecology",
+        "Octopus Fishery Management",
+        "Fisherwomen's Contributions",
+        "Illegal Fishing Monitoring",
+        "Artisanal Reef Fisheries"
       ],
-      "summary": "A plain-English summary of Epeli Loganimoce’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Loganimoce studies species that are easy to overfish and hard to manage because so little is known about their basic biology, from coconut crabs in the Lau Islands to octopus across the southwest Pacific. His <a href=\"https://www.researchgate.net/publication/350104545_Using_local_knowledge_to_guide_coconut_crab_science_in_Fiji\" target=\"_blank\" rel=\"noopener\">work with coconut crab hunters</a> combined local ecological knowledge with scientific surveys to fill gaps in understanding population health. He has also researched artisanal reef fishing patterns and women's contributions to Fiji's fisheries, and now works at Global Fishing Watch applying satellite tracking to detect illegal and unregulated fishing.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:9ea55bd44f23befd",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Using local knowledge to guide coconut crab science in Fiji - ResearchGate",
+          "url": "https://www.researchgate.net/publication/350104545_Using_local_knowledge_to_guide_coconut_crab_science_in_Fiji"
+        },
+        {
+          "title": "Epeli Loganimoce - Global Fishing Watch | LinkedIn",
+          "url": "https://www.linkedin.com/in/epeli-loganimoce-aba083a9/"
+        }
+      ]
     },
     "Kubuabola, Ilisapeci": {
       "keywords": [
@@ -1154,34 +1254,57 @@
     },
     "Fong, Patrick Sakiusa": {
       "keywords": [
-        "Mositi Vanuaso"
+        "Coral Reef Management",
+        "Marine Biodiversity Monitoring",
+        "Pacific Ocean Science Capacity Building"
       ],
-      "summary": "A plain-English summary of Patrick S. Fong’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Fong is a marine scientist with the University of the South Pacific's Institute of Applied Sciences, whose work has contributed to <a href=\"https://www.researchgate.net/publication/286225966_Global_Changes_and_Capacity_Building_in_Coral_Reef_Management_in_the_Pacific_Engaging_Scientists_and_Policy_Makers_in_Fiji_Tonga_Samoa_and_Tuvalu\" target=\"_blank\" rel=\"noopener\">building coral reef management capacity across Fiji, Tonga, Samoa, and Tuvalu</a>, connecting scientists with the policymakers who set marine conservation priorities in the region.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:398c38bbf653e7de",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Global Changes and Capacity Building in Coral Reef Management in the Pacific",
+          "url": "https://www.researchgate.net/publication/286225966_Global_Changes_and_Capacity_Building_in_Coral_Reef_Management_in_the_Pacific_Engaging_Scientists_and_Policy_Makers_in_Fiji_Tonga_Samoa_and_Tuvalu"
+        }
+      ]
     },
     "Fong-Lomavatu, Mereia": {
-      "keywords": [
-        "Postharvest Diseases"
-      ],
-      "summary": "A plain-English summary of Mereia Fong-Lomavatu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:3a08cffca0275da5",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Leweniqila, Ilisoni": {
       "keywords": [
-        "Indigenous",
-        "Knowledge Iak"
+        "Indigenous Agricultural Knowledge",
+        "Kumala Production Systems",
+        "Climate-Smart Agriculture",
+        "Ethnobotany of Root Crops",
+        "Breadfruit Propagation",
+        "Food Security in Rural Fiji",
+        "Indigenous Innovation",
+        "Vanua Research Framework"
       ],
-      "summary": "A plain-English summary of Ilisoni Leweniqila’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Leweniqila studies how the traditional farming knowledge of Fijian sweet-potato (kumala) growers in Ra Province can help agriculture adapt to a changing climate, rather than being replaced by imported techniques. His doctoral research, <a href=\"https://www.researchgate.net/publication/313781274_Decolonising_Framings_in_Pacific_Research_Indigenous_Fijian_Vanua_Research_Framework_as_an_Organic_Response\" target=\"_blank\" rel=\"noopener\">'Sa vosa na Vanua' (the land speaks)</a>, treats Indigenous Agricultural Knowledge as a philosophy of life and values, not just a set of farming tips, and ties it directly to kumala yields. During the pandemic, he also documented <a href=\"https://onlinelibrary.wiley.com/doi/full/10.1002/ocea.5270\" target=\"_blank\" rel=\"noopener\">how Indigenous Fijian communities' food-growing networks kept families fed</a> when supply chains broke down, and he continues to work on breadfruit propagation and climate-resilient innovation in rural Fiji.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:49e7b90495ce91fb",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "'Sa vosa na Vanua' - The Land Speaks: Indigenous Agriculture Knowledge (IAK) - Pacific Dynamics",
+          "url": "https://www.researchgate.net/publication/313781274_Decolonising_Framings_in_Pacific_Research_Indigenous_Fijian_Vanua_Research_Framework_as_an_Organic_Response"
+        },
+        {
+          "title": "Food Security in COVID-19: Insights from Indigenous Fijian Communities - Oceania",
+          "url": "https://onlinelibrary.wiley.com/doi/full/10.1002/ocea.5270"
+        }
+      ]
     },
     "Lagi, Rosiana": {
       "keywords": [
@@ -1215,12 +1338,28 @@
       ]
     },
     "Kitolelei, Salanieta": {
-      "keywords": [],
-      "summary": "A plain-English summary of Salanieta Kitolelei’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Indigenous Fishing Knowledge",
+        "Fisherwomen's Local Knowledge",
+        "Mangrove Blue Carbon Management",
+        "Climate Resilient Fisheries",
+        "Marine and Freshwater Resource Management"
+      ],
+      "summary": "Kitolelei documents the fishing knowledge that Fijian communities have built up over generations — knowing, for instance, when certain plants bloom to predict when specific fish are ready to catch — before it disappears. Her research on <a href=\"https://www.sprep.org/news/bridging-science-and-tradition-to-protect-fijis-mangroves\" target=\"_blank\" rel=\"noopener\">mangrove management in Rewa Province</a> works directly with villages to combine traditional practices with scientific monitoring of these vital coastal carbon sinks. She has also highlighted <a href=\"https://www.researchgate.net/profile/Salanieta-Kitolelei\" target=\"_blank\" rel=\"noopener\">the often-overlooked knowledge of Fijian fisherwomen</a>, arguing it is essential — not supplementary — to sustainable ocean management.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:ee82daf24b8f74d3",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Bridging science and tradition to protect Fiji's mangroves | Pacific Environment",
+          "url": "https://www.sprep.org/news/bridging-science-and-tradition-to-protect-fijis-mangroves"
+        },
+        {
+          "title": "Salanieta Kitolelei | ResearchGate",
+          "url": "https://www.researchgate.net/profile/Salanieta-Kitolelei"
+        }
+      ]
     },
     "Katonivualiku, Manasa": {
       "keywords": [
@@ -1234,14 +1373,21 @@
     },
     "Fong, Teddy": {
       "keywords": [
-        "Climate",
-        "Climate Change"
+        "Peripherality and Climate Resilience",
+        "Climate-Induced Relocation",
+        "Locally Managed Marine Areas"
       ],
-      "summary": "A plain-English summary of Teddy Fong’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Fong, based at USP's Institute of Applied Sciences, has co-authored research with Isoa Korovulavula on <a href=\"https://www.tandfonline.com/doi/abs/10.1080/17565529.2019.1701972\" target=\"_blank\" rel=\"noopener\">how a Fijian community's distance from services and roads ('peripherality') shapes its resilience to climate change</a>, based on fieldwork along Viti Levu's cross-island road, as well as studies on the socioeconomic impacts of locally managed marine areas in Kadavu.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:641d15637a231cc2",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Peripherality as key to understanding opportunities and needs for effective and sustainable climate-change adaptation - Climate and Development",
+          "url": "https://www.tandfonline.com/doi/abs/10.1080/17565529.2019.1701972"
+        }
+      ]
     },
     "Caginitoba, Akanisi": {
       "keywords": [],
@@ -1298,12 +1444,16 @@
       ]
     },
     "Cakacaka, Akuila": {
-      "keywords": [],
-      "summary": "A plain-English summary of Akuila Cakacaka’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Entomological Field Survey",
+        "Natural Resource Assessment"
+      ],
+      "summary": "Cakacaka has contributed to entomological field survey work in Fiji, including a 2011 survey of insects in the upper Wainavadu and Waisoi area of Namosi Province conducted with the Institute of Applied Sciences. Public information about his broader research profile is limited.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:b564904a2891ecaf",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Finau, Glenn": {
       "keywords": [
@@ -1338,12 +1488,17 @@
       ]
     },
     "Coriakula, Jeremaia": {
-      "keywords": [],
-      "summary": "A plain-English summary of Jeremaia Coriakula’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Latrine Infrastructure Assessment",
+        "Faecal Contamination Monitoring",
+        "Rural Sanitation Systems"
+      ],
+      "summary": "Coriakula has contributed to fieldwork assessing latrine design and faecal contamination risk across rural Fiji as part of the Watershed Interventions for Systems Health (WISH Fiji) project. Public information about his broader research profile beyond this collaborative project is limited.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:193bdf6ae77656e7",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Ciriyawa, Ana": {
       "keywords": [
@@ -1401,22 +1556,16 @@
     },
     "Baleinamau, Ponipate": {
       "keywords": [
-        "Faecal Contamination",
-        "Front-end Characteristics",
-        "Associated Surface",
-        "Coli Indicated",
-        "Health Project",
-        "Place-based Management",
-        "Watershed Interventions",
-        "Characteristics and Associated",
-        "Contamination in Rural",
-        "Fiji the Watershed"
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "Latrine Infrastructure Assessment"
       ],
-      "summary": "A plain-English summary of Ponipate Baleinamau’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Baleinamau is part of the Fiji Institute of Pacific Health Research team behind the Watershed Interventions for Systems Health (WISH Fiji) project, contributing to research on rural sanitation infrastructure and watershed management. Independent public information about his research beyond this collaborative project is limited.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:9926777044e4f193",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Cakacaka, Tokasaya": {
       "keywords": [],
@@ -1427,14 +1576,13 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Drugunalevu, Eliki": {
-      "keywords": [
-        "Climate Crisis"
-      ],
-      "summary": "A plain-English summary of Eliki Drugunalevu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:5aa211c9aef684ef",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Fong, Sakiusa": {
       "keywords": [],
@@ -1456,22 +1604,16 @@
     },
     "Gavidi, Sikeli": {
       "keywords": [
-        "Faecal Contamination",
-        "Front-end Characteristics",
-        "Associated Surface",
-        "Coli Indicated",
-        "Health Project",
-        "Place-based Management",
-        "Watershed Interventions",
-        "Characteristics and Associated",
-        "Contamination in Rural",
-        "Fiji the Watershed"
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "On-Site Sanitation Design"
       ],
-      "summary": "A plain-English summary of Sikeli Gavidi’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Gavidi works with the Fiji Institute of Pacific Health Research on the Watershed Interventions for Systems Health (WISH Fiji) project, studying how on-site sanitation systems in rural Fiji affect water quality and community health. Independent information about his research beyond this collaborative project is limited.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:f81eda68cba6a837",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Kuridrani, Nanise": {
       "keywords": [
@@ -1591,22 +1733,26 @@
     },
     "Matanitobua, Silivia": {
       "keywords": [
-        "Acinetobacter Baumannii",
-        "Carbapenem Resistant",
-        "Clinical Epidemiology",
-        "Environmental Contamination",
-        "Healthcare Settings",
-        "Contamination with Carbapenem",
-        "Epidemiology of Carbapenem",
-        "Source of Infection",
-        "Baumannii in Healthcare",
-        "Fiji Potential Source"
+        "Antimicrobial Resistance Surveillance",
+        "Hospital-Acquired Infections",
+        "Typhoid Genomic Surveillance",
+        "Public Health Laboratory Coordination"
       ],
-      "summary": "A plain-English summary of Silivia Matanitobua’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Matanitobua works with Fiji's Centre for Disease Control on tracking dangerous, drug-resistant infections in the country's hospitals. She has been a key contributor to <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC11456574/\" target=\"_blank\" rel=\"noopener\">multi-hospital studies of carbapenem-resistant Acinetobacter baumannii outbreaks</a>, and has helped coordinate sample collection for genomic surveillance of typhoid fever ahead of a national vaccination campaign in Fiji's Northern Division.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:342f03007ba06289",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Environmental contamination with carbapenem resistant Acinetobacter baumannii in healthcare settings in Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11456574/"
+        },
+        {
+          "title": "Genetic heterogeneity in the Salmonella Typhi Vi capsule locus: a population genomic study from Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11385387/"
+        }
+      ]
     },
     "Matatolu, Ilisapeci": {
       "keywords": [],
@@ -1637,22 +1783,16 @@
     },
     "Naucunivanua, Sikeli": {
       "keywords": [
-        "Faecal Contamination",
-        "Front-end Characteristics",
-        "Associated Surface",
-        "Coli Indicated",
-        "Health Project",
-        "Place-based Management",
-        "Watershed Interventions",
-        "Characteristics and Associated",
-        "Contamination in Rural",
-        "Fiji the Watershed"
+        "Rural Sanitation Systems",
+        "Fisherwomen Contributions",
+        "Watershed Systems Health"
       ],
-      "summary": "A plain-English summary of Sikeli Naucunivanua’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Naucunivanua has contributed to both the Watershed Interventions for Systems Health (WISH Fiji) project on rural sanitation, and Wildlife Conservation Society research documenting the contributions of Fijian women fishers to household food security. Public information about his individual research profile beyond these collaborative projects is limited.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:f81eda68cba6a837",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Osborne-Naikatini, Tamara": {
       "keywords": [],
@@ -1688,51 +1828,42 @@
     },
     "Radikedike, Pio": {
       "keywords": [
-        "Mositi Vanuaso"
+        "Climate-Induced Relocation",
+        "Cultural Loss from Climate Change",
+        "Coastal Village Fieldwork"
       ],
-      "summary": "A plain-English summary of Pio Radikedike’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Radikedike's research focuses on the difficult tradeoffs Fijian coastal communities face when climate change forces them to relocate — particularly the tension between preserving cultural heritage and adopting safer, modern infrastructure. His fieldwork, often conducted alongside researchers at USP's Institute of Applied Sciences, has also documented the less visible cultural and psychological losses and damages that climate change causes in Fijian communities, beyond the physical and financial costs typically measured.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:0d42bee9dd5c2450",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Ratu, Anaseini": {
       "keywords": [
-        "Faecal Contamination",
-        "Front-end Characteristics",
-        "Associated Surface",
-        "Coli Indicated",
-        "Health Project",
-        "Place-based Management",
-        "Watershed Interventions",
-        "Characteristics and Associated",
-        "Contamination in Rural",
-        "Fiji the Watershed"
+        "Rural Sanitation Systems",
+        "Watershed Systems Health",
+        "Latrine Infrastructure Monitoring"
       ],
-      "summary": "A plain-English summary of Anaseini Ratu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Ratu is part of the Fiji Institute of Pacific Health Research team behind the Watershed Interventions for Systems Health (WISH Fiji) project, which studies sanitation infrastructure and its links to water quality in rural Fiji. Beyond this collaborative project, limited independent information is publicly available about her research.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:089ada4daeac186e",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Ravoka, Mereia": {
       "keywords": [
-        "Faecal Contamination",
-        "Front-end Characteristics",
-        "Associated Surface",
-        "Coli Indicated",
-        "Health Project",
-        "Place-based Management",
-        "Watershed Interventions",
-        "Characteristics and Associated",
-        "Contamination in Rural",
-        "Fiji the Watershed"
+        "Rural Sanitation Assessment",
+        "Watershed Systems Health",
+        "Latrine Infrastructure Monitoring"
       ],
-      "summary": "A plain-English summary of Mereia Ravoka’s research is not yet available. See the keyword themes and publication mix below for a first look at the 6 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Ravoka is part of the Fiji research team behind the Watershed Interventions for Systems Health (WISH Fiji) project, which studies rural sanitation infrastructure and its links to water quality and public health across Fiji's river catchments. Beyond her role on this multi-author project, limited independent information is publicly available about her research.",
+      "summaryFormat": "html",
       "publicationCount": 6,
       "signature": "sha1:7079759d3ed1d24d",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Rika, Nacanieli": {
       "keywords": [],
@@ -1752,17 +1883,21 @@
     },
     "Savou, Rusila": {
       "keywords": [
-        "Molecular Identification",
-        "Frequently Landed",
-        "Identification of Frequently",
-        "Landed Octopus",
-        "Frequently Landed Octopus"
+        "Climate Change Policy",
+        "Octopus Fishery Management",
+        "Marine Spatial Planning"
       ],
-      "summary": "A plain-English summary of Rusila Savou’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Savou has worked as a Climate Change Officer with WWF Fiji, contributing to regional marine spatial planning discussions on ocean governance and protected areas. She has also co-authored research on <a href=\"https://fame.spc.int/publications/bulletins/womeninfisheries/40\" target=\"_blank\" rel=\"noopener\">Fiji's octopus fishery and its harvesters</a>, examining how this understudied resource is used and managed by coastal communities.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:55cf508582961571",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Women in Fisheries No 40 (September 2024) - Pacific Community",
+          "url": "https://fame.spc.int/publications/bulletins/womeninfisheries/40"
+        }
+      ]
     },
     "Sawailau, Mere Jane": {
       "keywords": [
@@ -1787,22 +1922,26 @@
     },
     "Soqo, Vika": {
       "keywords": [
-        "Acinetobacter Baumannii",
-        "Carbapenem Resistant",
-        "Environmental Contamination",
-        "Healthcare Settings",
-        "Contamination with Carbapenem",
-        "Source of Infection",
-        "Baumannii in Healthcare",
-        "Fiji Potential Source",
-        "Resistant Acinetobacter",
-        "Carbapenem Resistant Acinetobacter"
+        "Antimicrobial Resistance Surveillance",
+        "Hospital-Acquired Infections",
+        "Typhoid Genomic Surveillance",
+        "Clinical Microbiology"
       ],
-      "summary": "A plain-English summary of Vika Soqo’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Soqo is a clinical microbiologist based at Lautoka Hospital who has contributed to Fiji's major studies tracking drug-resistant bacteria in the country's hospitals. She has been a co-author on <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC11166881/\" target=\"_blank\" rel=\"noopener\">multicentre research identifying carbapenem-resistant organisms across Fiji's health system</a>, and on genomic surveillance of typhoid fever ahead of a mass vaccination campaign in Fiji's Northern Division.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:4ccf86e5eeb7c0a0",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Molecular and clinical epidemiology of carbapenem resistant Acinetobacter baumannii, Pseudomonas aeruginosa and Enterobacterales in Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11166881/"
+        },
+        {
+          "title": "Genetic heterogeneity in the Salmonella Typhi Vi capsule locus: a population genomic study from Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11385387/"
+        }
+      ]
     },
     "Tabunakawai, K.": {
       "keywords": [],
@@ -1900,11 +2039,12 @@
     },
     "Tuiwawa, Senilolia": {
       "keywords": [],
-      "summary": "A plain-English summary of Senilolia Tuiwawa’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:21065c02caa14f79",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Tulele, Loraini": {
       "keywords": [
@@ -1923,23 +2063,13 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Vakaloloma, Unise": {
-      "keywords": [
-        "Implementation Adoption",
-        "Disease Interventions",
-        "Essential Noncommunicable",
-        "Adoption and Acceptability",
-        "Children with Disability",
-        "Disability in Fiji",
-        "Noncommunicable Pen Disease",
-        "Package of Essential",
-        "Noncommunicable Pen",
-        "Pen Disease"
-      ],
-      "summary": "A plain-English summary of Unise Vakaloloma’s research is not yet available. See the keyword themes and publication mix below for a first look at the 4 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 4,
       "signature": "sha1:9b0b1341ff9da925",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Vakarewa, Isoa": {
       "keywords": [
@@ -1999,18 +2129,13 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Waqa, Malakai": {
-      "keywords": [
-        "Queer Resilience",
-        "Reviving Indigenous-pacific",
-        "Resilience Reviving",
-        "Queer Resilience Reviving",
-        "Resilience Reviving Indigenous-pacific"
-      ],
-      "summary": "A plain-English summary of Malakai Waqa’s research is not yet available. See the keyword themes and publication mix below for a first look at the 5 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [],
+      "summary": "No substantive, publicly available information could be found to describe this scholar's individual research focus.",
+      "summaryFormat": "html",
       "publicationCount": 5,
       "signature": "sha1:46f7908023192419",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Waqainabete, Ifereimi": {
       "keywords": [],
