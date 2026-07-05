@@ -221,20 +221,30 @@
       gap: 10px; margin-bottom: 4px;
     }
     @media (max-width: 900px) { .db-narrative__insights { grid-template-columns: repeat(2, 1fr); } }
+    /* Insight tiles inside the "iTaukei scholarly research at a glance" card.
+       Each tile carries a colored top accent bar; the title inherits that
+       accent color so the two match. Body text is a comfortable reading size. */
     .db-insight {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
+      border-top: 3px solid var(--accent, var(--color-primary));
       border-radius: var(--radius-md);
-      padding: 10px 12px;
+      padding: 12px 14px 14px;
     }
     .db-insight__title {
-      font-size: 0.72rem; text-transform: uppercase;
-      letter-spacing: 0.06em; font-weight: 700;
-      color: var(--color-primary); margin-bottom: 4px;
+      font-size: 13px; text-transform: uppercase;
+      letter-spacing: 0.07em; font-weight: 700;
+      color: var(--accent, var(--color-primary));
+      margin-bottom: 6px;
     }
     .db-insight__body {
-      font-size: 0.84rem; color: var(--color-text); line-height: 1.4;
+      font-size: 14.5px; color: var(--color-text); line-height: 1.5;
     }
+    /* Per-tile accent colors (reuse the Database overview palette). */
+    .db-insight--teal  { --accent: #085041; }
+    .db-insight--pink  { --accent: #72243E; }
+    .db-insight--amber { --accent: #633806; }
+    .db-insight--blue  { --accent: #0C447C; }
     .db-narrative__note {
       margin: 6px 0 0; font-size: 0.78rem;
       color: var(--color-text-muted); font-style: italic;
@@ -292,7 +302,7 @@
     .db-dashboard > .db-panel { width: 100%; }
 
     /* Panel B — label column wide enough that 'Nadroga/Navosa' fits without clipping */
-    .db-bars { grid-template-columns: 200px 1fr 44px; row-gap: 7px; }
+    .db-bars { grid-template-columns: 200px 1fr 44px !important; row-gap: 7px; }
     .db-bars__row { height: 24px; }
     .db-bars__prov { font-size: 0.92rem; white-space: nowrap; }
     .db-bars__prov > span:first-child { overflow: visible; }
@@ -394,13 +404,26 @@
       cursor: pointer; color: var(--color-primary); font-weight: 600;
     }
     .db-map-toggle button.is-active { background: var(--color-primary); color: #fff; }
-    /* Panel A layout — narrower map on the left, generous legend column on the right */
+    /* Panel A layout — narrower map on the left, generous legend column on the right.
+       Both columns stretch to the taller sibling's height so the map's bottom
+       edge lines up with the sidebar's bottom edge. */
     .db-map-a-wrap {
       display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--space-3);
       align-items: stretch;
     }
     @media (max-width: 640px) { .db-map-a-wrap { grid-template-columns: 1fr; } }
-    #db-map { height: 520px; width: 100%; border-radius: var(--radius-md); background: #d6ecf0; }
+    /* Left column becomes a flex container so #db-map can flex-grow to fill
+       the stretched column. Leaflet then reports its full pixel height. */
+    .db-map-a-wrap > div:first-child {
+      display: flex; flex-direction: column;
+    }
+    #db-map {
+      flex: 1 1 auto;
+      min-height: 480px;
+      width: 100%;
+      border-radius: var(--radius-md);
+      background: #d6ecf0;
+    }
     .db-map-error {
       display: none;
       padding: var(--space-4); text-align: center; color: var(--color-text-muted);
@@ -534,8 +557,10 @@
     }
     .db-sync-inline b { color: var(--color-text); font-weight: 600; }
 
-    /* Panel B — ranked bars */
-    .db-bars { display: grid; grid-template-columns: 100px 1fr 36px; gap: 6px; row-gap: 5px; align-items: center; }
+    /* Panel B — ranked bars. Label column is fixed-width and generous enough to
+       accommodate the longest Fiji-province name ('Nadroga/Navosa') without
+       clipping. Text is right-aligned inside the column (see .db-bars__prov). */
+    .db-bars { display: grid; grid-template-columns: 180px 1fr 44px; gap: 6px; row-gap: 5px; align-items: center; }
     .db-bars__prov {
       font-weight: 600; font-size: 0.85rem; text-align: right; padding-right: 4px;
       color: var(--color-text); cursor: pointer;
@@ -1691,10 +1716,10 @@
           <p class="db-narrative__lede">This database highlights the knowledge, leadership, and academic contributions of iTaukei scholars across Fiji and the world.</p>
           <p class="db-narrative__body" data-narrative-body>—</p>
           <div class="db-narrative__insights">
-            <div class="db-insight"><div class="db-insight__title">iTaukei participation</div><div class="db-insight__body" data-insight="participation">—</div></div>
-            <div class="db-insight"><div class="db-insight__title">Research leadership</div><div class="db-insight__body" data-insight="leadership">—</div></div>
-            <div class="db-insight"><div class="db-insight__title">Graduate scholarship</div><div class="db-insight__body" data-insight="grad">—</div></div>
-            <div class="db-insight"><div class="db-insight__title">Geographic reach</div><div class="db-insight__body" data-insight="geo">—</div></div>
+            <div class="db-insight db-insight--teal"><div class="db-insight__title">iTaukei participation</div><div class="db-insight__body" data-insight="participation">—</div></div>
+            <div class="db-insight db-insight--pink"><div class="db-insight__title">Research leadership</div><div class="db-insight__body" data-insight="leadership">—</div></div>
+            <div class="db-insight db-insight--amber"><div class="db-insight__title">Graduate scholarship</div><div class="db-insight__body" data-insight="grad">—</div></div>
+            <div class="db-insight db-insight--blue"><div class="db-insight__title">Geographic reach</div><div class="db-insight__body" data-insight="geo">—</div></div>
           </div>
           <p class="db-narrative__note">Figures are based on the current database snapshot and update as records are added or revised.</p>
         </div>
@@ -2124,6 +2149,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-08" defer></script>
+<script src="js/itaukei-database.js?v=20260704-09" defer></script>
 </body>
 </html>

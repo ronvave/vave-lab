@@ -1084,6 +1084,15 @@
         if (sync && sync.summary) inline.title = sync.summary;
       }
     }
+
+    // The map container now flex-grows to match the sidebar's height, so its
+    // pixel size may have changed since the last render. Leaflet needs an
+    // explicit invalidateSize() call to notice and re-lay-out tiles.
+    if (state.map && typeof state.map.invalidateSize === 'function') {
+      requestAnimationFrame(() => {
+        try { state.map.invalidateSize({ animate: false }); } catch (_) {}
+      });
+    }
   }
 
   // ============ PANEL B — ranked bar chart ============
