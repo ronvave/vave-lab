@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:09.795Z",
+  "generatedAt": "2026-07-05T10:54:12.681Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1320,6 +1320,19 @@
       "photo": ""
     },
     {
+      "name": "Qereqeretabua, Sakiusa",
+      "slug": "sakiusa-qereqeretabua",
+      "last": "Qereqeretabua",
+      "first": "Sakiusa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
       "name": "Radikedike, Pio",
       "slug": "pio-radikedike",
       "last": "Radikedike",
@@ -1774,6 +1787,19 @@
       "slug": "george-v-tabua",
       "last": "Tabua",
       "first": "George V.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabua, Katafono Mereia",
+      "slug": "katafono-mereia-tabua",
+      "last": "Tabua",
+      "first": "Katafono Mereia",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
