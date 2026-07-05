@@ -111,22 +111,39 @@
     },
     "Waqa-Sakiti, Hilda": {
       "keywords": [
-        "Viti Levu",
-        "Climate",
-        "Coleoptera",
-        "Biodiversity",
-        "Distribution",
-        "Food Loss",
-        "Long-horned Beetles",
-        "Forest",
-        "Insects",
-        "Species"
+        "Long-horned Beetle Taxonomy",
+        "Insect Biogeography",
+        "Species Distribution Modeling",
+        "Forest Canopy Ecology",
+        "Tree Cover Loss Monitoring",
+        "Environmental Impact Assessment",
+        "Mangrove Ecosystem Survey",
+        "Climate Change Adaptation",
+        "Endemic Species Conservation"
       ],
-      "summary": "A plain-English summary of Dr. Hilda Waqa-Sakiti’s research is not yet available. See the keyword themes and publication mix below for a first look at the 45 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Waqa-Sakiti is a Fijian entomologist who has spent years combing Fiji's forests to describe long-horned beetles found nowhere else on Earth, including documenting the giant Xixuthrus heros — one of the world's largest beetles and a <a href=\"https://www.usp.ac.fj/the-institute-of-applied-sciences/south-pacific-regional-herbarium-and-biodiversity-centre/south-pacific-regional-herbarium-and-biodiversity-centre-research/hilda-sakiti-waqa/\" target=\"_blank\" rel=\"noopener\">cultural totem for a Namosi chiefly clan</a>. Her taxonomic surveys and species-distribution models reveal which native forests and host trees matter most for conserving these often-endemic insects. That grounding in fieldwork has widened into broader environmental work, from <a href=\"https://www.usp.ac.fj/pace-sd/about-us/staff/hilda-waqa-sakiti/\" target=\"_blank\" rel=\"noopener\">tracking tree cover loss across Pacific island catchments</a> to leading rapid biodiversity assessments and environmental impact studies ahead of development projects. She has since become <a href=\"https://www.usp.ac.fj/news/dr-hilda-waqa-sakitis-inspiring-journey-in-science-and-leadership/\" target=\"_blank\" rel=\"noopener\">one of the region's leading women in science</a>, mentoring young Pacific researchers while leading conservation projects across the islands.",
+      "summaryFormat": "html",
       "publicationCount": 45,
       "signature": "sha1:f81b1ca505cb9839",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Hilda Sakiti Waqa | Institute of Applied Sciences, USP",
+          "url": "https://www.usp.ac.fj/the-institute-of-applied-sciences/south-pacific-regional-herbarium-and-biodiversity-centre/south-pacific-regional-herbarium-and-biodiversity-centre-research/hilda-sakiti-waqa/"
+        },
+        {
+          "title": "Hilda Waqa-Sakiti | PaCE-SD, University of the South Pacific",
+          "url": "https://www.usp.ac.fj/pace-sd/about-us/staff/hilda-waqa-sakiti/"
+        },
+        {
+          "title": "Dr Hilda Waqa-Sakiti's Inspiring Journey in Science and Leadership - USP",
+          "url": "https://www.usp.ac.fj/news/dr-hilda-waqa-sakitis-inspiring-journey-in-science-and-leadership/"
+        },
+        {
+          "title": "Hilda Waqa-Sakiti - Wikispecies",
+          "url": "https://species.wikimedia.org/wiki/Hilda_Waqa-Sakiti"
+        }
+      ]
     },
     "Vakaoti, Patrick": {
       "keywords": [
@@ -240,22 +257,35 @@
     },
     "Wilson, Donald": {
       "keywords": [
-        "Health",
-        "Acinetobacter Baumannii",
-        "Carbapenem Resistant",
-        "T2dm Patients",
-        "Clinical Epidemiology",
-        "Diabetes",
-        "Cohort Study",
-        "Dental Care",
+        "Carbapenem-Resistant Acinetobacter Baumannii",
+        "Antimicrobial Resistance Surveillance",
+        "Hospital-Acquired Infections",
+        "Non-Communicable Disease Policy",
+        "Type 2 Diabetes Self-Care",
         "Glycaemic Control",
-        "Island Countries"
+        "Diabetes and Dental Care Costs",
+        "Occupational and Environmental Epidemiology",
+        "Pacific Health Systems Research"
       ],
-      "summary": "A plain-English summary of Prof. Donald Wilson’s research is not yet available. See the keyword themes and publication mix below for a first look at the 42 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Wilson is a public health physician whose research spans two very different threats to Pacific health systems: drug-resistant hospital infections and the rising burden of diabetes. He has helped uncover <a href=\"https://www.thelancet.com/journals/lanwpc/article/PIIS2666-6065(24)00089-0/fulltext\" target=\"_blank\" rel=\"noopener\">ongoing outbreaks of carbapenem-resistant Acinetobacter baumannii</a> in Fiji's major hospitals, tracing how the superbug spreads between wards and even across Pacific borders. His diabetes research looks at where care is falling short, from <a href=\"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11142515/\" target=\"_blank\" rel=\"noopener\">how patients themselves understand diabetes self-care</a> to the often-overlooked link between blood sugar control and dental costs, an interest that traces back to <a href=\"https://www.researchgate.net/profile/Donald-Wilson-5\" target=\"_blank\" rel=\"noopener\">his earlier occupational health research in Japan</a> on diabetes and medical spending. Together, the work aims to strengthen how Fiji's health system detects and manages both infectious and chronic disease.",
+      "summaryFormat": "html",
       "publicationCount": 42,
       "signature": "sha1:9e23f970b4c0670c",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Molecular and clinical epidemiology of carbapenem resistant Acinetobacter baumannii ST2 in Oceania - The Lancet Regional Health Western Pacific",
+          "url": "https://www.thelancet.com/journals/lanwpc/article/PIIS2666-6065(24)00089-0/fulltext"
+        },
+        {
+          "title": "Perception of Type 2 Diabetes Mellitus (T2DM) patients on diabetes self-care management in Fiji - PMC",
+          "url": "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11142515/"
+        },
+        {
+          "title": "Donald Wilson | Fiji National University - ResearchGate profile",
+          "url": "https://www.researchgate.net/profile/Donald-Wilson-5"
+        }
+      ]
     },
     "Waqavakatoga, William": {
       "keywords": [],
