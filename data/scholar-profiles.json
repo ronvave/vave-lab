@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T19:08:47.536Z",
+  "generatedAt": "2026-07-05T20:41:23.289Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2651,14 +2651,24 @@
       "salutation": "Dr.",
       "village": "Nabouono vlg",
       "paternalProvince": "Macuata",
-      "institution": "Yas SeaWorld Research & Rescue Center (Abu Dhabi)",
+      "institution": "Yas SeaWorld (Abu Dhabi)",
       "institutionUrl": "https://www.seaworldabudhabi.com/en/research-and-rescue",
       "googleScholarUrl": "https://scholar.google.com/citations?user=dXh2ZewAAAAJ&hl=en",
       "photo": "img/scholars/viliame-waqalevu.jpg",
       "profileUrl": "",
       "title": "Lead Researcher",
       "orcidUrl": "",
-      "lastUpdate": "2026-07-03T19:59:15.329Z"
+      "lastUpdate": "2026-07-05T20:41:23.287Z",
+      "department": "Research & Rescue Center",
+      "departmentUrl": "",
+      "masters": null,
+      "phd": null,
+      "total": 34,
+      "firstAuthored": 4,
+      "types": {
+        "journalArticle": 33,
+        "bookSection": 1
+      }
     },
     {
       "name": "Waqatabu, Penina",
