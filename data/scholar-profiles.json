@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T20:41:23.289Z",
+  "generatedAt": "2026-07-05T21:18:41.227Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -293,7 +293,9 @@
       "phd": {
         "university": "UNSW Sydney",
         "country": "Australia"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Australia"
     },
     {
       "slug": "mereia-fong-lomavatu",
@@ -498,7 +500,9 @@
       "types.report": "0",
       "profileUrl": "https://www.usp.ac.fj/the-institute-of-applied-sciences/our-team/management-team/dr-isoa-korovulavula/",
       "masters": null,
-      "phd": null
+      "phd": null,
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "ilisapeci-kubuabola",
@@ -567,7 +571,9 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0",
-      "profileUrl": "https://www.usp.ac.fj/usp-space/research-innovation-and-postgraduate-affairs-copy-3/"
+      "profileUrl": "https://www.usp.ac.fj/usp-space/research-innovation-and-postgraduate-affairs-copy-3/",
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "jimaima-lako",
@@ -606,7 +612,9 @@
         "conferencePaper": 2,
         "bookSection": 2,
         "book": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "name": "Lalamacuata, Maria",
@@ -818,7 +826,9 @@
         "journalArticle": 2,
         "bookSection": 1,
         "thesis": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "New Zealand"
     },
     {
       "slug": "kalisiana-marama",
@@ -896,7 +906,9 @@
       "phd": null,
       "title": "Assistant Lecturer",
       "orcidUrl": "https://orcid.org/0000-0002-9410-215X",
-      "lastUpdate": "2026-07-04T07:18:24.560Z"
+      "lastUpdate": "2026-07-04T07:18:24.560Z",
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "litea-meo-sewabu",
@@ -924,7 +936,9 @@
       "phd": {
         "university": "Massey University",
         "country": "New Zealand"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Australia"
     },
     {
       "slug": "semisi-meo",
@@ -954,7 +968,8 @@
         "university": "University of the South Pacific",
         "country": "Fiji"
       },
-      "phd": null
+      "phd": null,
+      "sector": "Non-Government / Civil Society"
     },
     {
       "slug": "unaisi-nabobo-baba",
@@ -987,7 +1002,9 @@
       "phd": {
         "university": "University of Auckland",
         "country": "New Zealand"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "name": "Nabose, Ilisapeci",
@@ -1041,7 +1058,9 @@
         "report": 4,
         "book": 1,
         "bookSection": 1
-      }
+      },
+      "sector": "Government",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "winifereti-nainoca",
@@ -1438,7 +1457,9 @@
         "journalArticle": 19,
         "book": 10,
         "thesis": 3
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "New Zealand"
     },
     {
       "name": "Ravoka, Mereia",
@@ -1496,7 +1517,9 @@
       "departmentUrl": "https://www.sydney.edu.au/arts/schools/sydney-school-of-education-and-social-work.html",
       "profileUrl": "https://profiles.sydney.edu.au/jioji.ravulo",
       "masters": null,
-      "phd": null
+      "phd": null,
+      "sector": "Academia",
+      "institutionCountry": "Australia"
     },
     {
       "slug": "amerita-ravuvu",
@@ -1534,7 +1557,9 @@
         "conferencePaper": 4,
         "bookSection": 2,
         "thesis": 2
-      }
+      },
+      "sector": "International Organisation",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "asesela-ravuvu",
@@ -1615,7 +1640,9 @@
       "phd": {
         "university": "University of Hawaiʻi at Mānoa",
         "country": "USA"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "USA"
     },
     {
       "name": "Rounds, Isaac A.",
@@ -1810,7 +1837,9 @@
         "document": 1,
         "report": 1,
         "bookSection": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "United Kingdom"
     },
     {
       "name": "Tabunakawai-Vakalalabure, Margaret",
@@ -1925,7 +1954,9 @@
         "university": "University of the South Pacific",
         "country": "Fiji"
       },
-      "phd": null
+      "phd": null,
+      "sector": "Academia",
+      "institutionCountry": "Australia"
     },
     {
       "slug": "alifereti-tawake",
@@ -2218,7 +2249,9 @@
       "phd": {
         "university": "Griffith University",
         "country": "Australia"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Australia"
     },
     {
       "name": "Vakaloloma, Unise",
@@ -2283,7 +2316,9 @@
         "bookSection": 8,
         "book": 5,
         "thesis": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "New Zealand"
     },
     {
       "name": "Vakarewa, Isoa",
@@ -2351,7 +2386,9 @@
         "country": "USA"
       },
       "department": "Department of Pacific Islands Studies",
-      "departmentUrl": "https://hawaii.edu/cpis/"
+      "departmentUrl": "https://hawaii.edu/cpis/",
+      "sector": "Academia",
+      "institutionCountry": "USA"
     },
     {
       "slug": "joeli-veitayaki",
@@ -2373,7 +2410,8 @@
       "types.thesis": "1",
       "types.bookSection": "1",
       "types.book": "0",
-      "types.report": "1"
+      "types.report": "1",
+      "institutionCountry": "Fiji"
     },
     {
       "name": "Vivili, Paula",
@@ -2455,7 +2493,9 @@
         "thesis": 1,
         "journalArticle": 12,
         "bookSection": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Guam (USA territory)"
     },
     {
       "slug": "suliasi-vunibola",
@@ -2483,7 +2523,9 @@
       "phd": {
         "university": "Massey University",
         "country": "New Zealand"
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "New Zealand"
     },
     {
       "slug": "tarisi-vunidilo",
@@ -2554,7 +2596,9 @@
         "book": 3,
         "report": 10,
         "thesis": 4
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "slug": "gade-waqa",
@@ -2593,7 +2637,9 @@
       "types": {
         "journalArticle": 63,
         "report": 1
-      }
+      },
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     },
     {
       "name": "Waqa, Malakai",
@@ -2668,7 +2714,8 @@
       "types": {
         "journalArticle": 33,
         "bookSection": 1
-      }
+      },
+      "institutionCountry": "United Arab Emirates"
     },
     {
       "name": "Waqatabu, Penina",
@@ -2734,7 +2781,9 @@
       "types.thesis": "0",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "sector": "Academia",
+      "institutionCountry": "Fiji"
     }
   ],
   "hiddenScholars": [],
@@ -2915,6 +2964,7 @@
     "Samad, A. H. Q.": "Samad, A.",
     "Samuwai, J.": "Samuwai, Jale",
     "Scheyvens, R": "Scheyvens, Regina",
+    "Scheyvens, Regina A.": "Scheyvens, Regina",
     "Schultz, Jimaima T.": "Schultz, Jimaima",
     "Scobie, M.": "Scobie, Matthew",
     "Shadrack, Ronick Spenly": "Shadrack, Ronick S.",
