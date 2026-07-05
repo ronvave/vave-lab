@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:30:46.311Z",
+  "generatedAt": "2026-07-05T11:30:47.668Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1057,28 +1057,6 @@
       }
     },
     {
-      "slug": "sereima-naisilisili",
-      "last": "Naisilisili",
-      "first": "Sereima",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Naisilisili, Sereima",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "2",
-      "types.thesis": "0",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "1"
-    },
-    {
       "name": "Naisilisili, Sereima Volivoli",
       "slug": "sereima-volivoli-naisilisili",
       "last": "Naisilisili",
@@ -1089,7 +1067,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "types.journalArticle": "2",
+      "types.thesis": "0",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "1"
     },
     {
       "slug": "waisea-naisilisili",
@@ -2732,6 +2715,7 @@
     "Meo, Semisi others including": "Meo, Semisi",
     "Nabobo-Baba, U.": "Nabobo-Baba, Unaisi",
     "Naikatini, Alivereti N.": "Naikatini, Alivereti",
+    "Naisilisili, Sereima": "Naisilisili, Sereima Volivoli",
     "Nakoro, E": "Nakoro, Elia",
     "Nakoro, Elia R.": "Nakoro, Elia",
     "Nunn, P D": "Nunn, Patrick D.",
