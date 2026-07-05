@@ -3,22 +3,35 @@
   "insights": {
     "Naqasima-Sobey, Milika": {
       "keywords": [
-        "Batissa Violacea",
-        "Great Astrolabe",
-        "Marine Environment",
-        "Eluvuka Treasure",
-        "Baseline Study",
-        "Group Western",
-        "Island Mamanuca",
-        "Reduction",
-        "Management",
-        "Treasure Island"
+        "Coastal Water Quality",
+        "Coral Reef Sedimentation",
+        "Nitrogen Cycling in Lagoons",
+        "Freshwater Mussel Fisheries",
+        "Integrated Water Resource Management",
+        "Indigenous Water Knowledge",
+        "Disaster Risk Reduction Biodiversity",
+        "Marine Environmental Assessment",
+        "Pacific Ridge-to-Reef Governance"
       ],
-      "summary": "A plain-English summary of Dr. Milika Naqasima-Sobey’s research is not yet available. See the keyword themes and publication mix below for a first look at the 23 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Naqasima-Sobey's research traces the link between land, freshwater, and reef health across the Pacific — work rooted in her own village on the Sigatoka River, where women harvest freshwater mussels (kai) that first drew her into fisheries science. Her early studies tracked <a href=\"https://naturefiji.org/profile/milika-naqasima-sobey/\" target=\"_blank\" rel=\"noopener\">coral reef sedimentation and water quality around Fiji's lagoons</a>, while later work examined how communities across the region actually manage water resources. She now advocates for treating Indigenous knowledge as essential to water governance, warning that <a href=\"https://siwi.org/latest/the-critical-role-of-indigenous-peoples-knowledge-for-innovation/\" target=\"_blank\" rel=\"noopener\">oral traditions about water management risk being lost</a> unless they are properly documented.",
+      "summaryFormat": "html",
       "publicationCount": 23,
       "signature": "sha1:f38963fa5b701c3c",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Milika Sobey - NatureFiji-MareqetiViti",
+          "url": "https://naturefiji.org/profile/milika-naqasima-sobey/"
+        },
+        {
+          "title": "The critical role of Indigenous Peoples' knowledge for innovation - SIWI",
+          "url": "https://siwi.org/latest/the-critical-role-of-indigenous-peoples-knowledge-for-innovation/"
+        },
+        {
+          "title": "At World Water Week 2025 - Dr Milika Sobey - Australian Water Partnership",
+          "url": "https://waterpartnership.org.au/news-item/at-world-water-week-2025-dr-milika-sobey/"
+        }
+      ]
     },
     "Tabudravu, Jioji": {
       "keywords": [
@@ -166,22 +179,31 @@
     },
     "Waqalevu, Viliame": {
       "keywords": [
-        "Coral Reef",
-        "Brachionus Plicatilis",
-        "Digestive",
-        "Bream Pagrus",
-        "Japanese Flounder",
-        "Paralichthys Olivaceus",
-        "Red Sea",
-        "Enrichment",
-        "Early",
-        "Larvae"
+        "Marine Fish Larviculture",
+        "Rotifer Nutrition",
+        "Live Feed Enrichment",
+        "Digestive Enzyme Development",
+        "Red Sea Bream Aquaculture",
+        "Japanese Flounder Rearing",
+        "Coral Reef Soundscapes",
+        "Mangrove Ecosystem Assessment",
+        "Aquaculture Feed Innovation"
       ],
-      "summary": "A plain-English summary of Dr. Viliame Waqalevu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 34 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Waqalevu works on one of aquaculture's hardest early bottlenecks: keeping baby fish alive and healthy in their first days of life. His research on feeding rotifers with enriched microalgae and oils has improved survival and growth in hatchery-raised <a href=\"https://www.researchgate.net/profile/Viliame-Waqalevu\" target=\"_blank\" rel=\"noopener\">Japanese flounder and red sea bream larvae</a>, species central to Japan's seafood industry. He has also studied how the digestive systems and hormones of fish larvae develop day by day, and has extended his work into coral reef and mangrove research across the Pacific, Middle East, and French Polynesia. He now leads live-feed and marine-rescue research at Yas SeaWorld in Abu Dhabi.",
+      "summaryFormat": "html",
       "publicationCount": 34,
       "signature": "sha1:0b1fb647b177c159",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Viliame Waqalevu | Yas SeaWorld Research and Rescue - ResearchGate",
+          "url": "https://www.researchgate.net/profile/Viliame-Waqalevu"
+        },
+        {
+          "title": "Viliame Waqalevu - Google Scholar",
+          "url": "https://scholar.google.com/citations?user=dXh2ZewAAAAJ&hl=en"
+        }
+      ]
     },
     "Vosikata, Sunia": {
       "keywords": [],
@@ -226,34 +248,58 @@
     },
     "Lako, Jimaima": {
       "keywords": [
-        "Products",
-        "Diabetes Mellitus",
-        "Dietary Patterns",
-        "Risk Factors",
-        "South Pacific",
-        "Supply Chain",
-        "Tilapia Oreochromis",
-        "Patterns and Risk",
-        "Fish",
-        "Value"
+        "Antioxidants in Pacific Foods",
+        "Glycemic Index of Local Foods",
+        "Non-Communicable Disease Nutrition",
+        "Food Safety Regulation",
+        "Traditional Ecological Fish Knowledge",
+        "Seafood Value Chains",
+        "Ciguatera Fish Poisoning",
+        "Virgin Coconut Oil Quality",
+        "Postharvest Food Handling"
       ],
-      "summary": "A plain-English summary of Prof. Jimaima Lako’s research is not yet available. See the keyword themes and publication mix below for a first look at the 29 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Lako studies the foods Fijians actually eat — from garden vegetables to reef fish — to understand both their nutritional value and the risks they can carry. Her lab work <a href=\"https://usp-fj.academia.edu/JimaimaLako\" target=\"_blank\" rel=\"noopener\">measured antioxidants and glycemic index in dozens of Pacific foods</a>, generating some of the first regional data linking traditional diets to protection against diabetes and heart disease. She has also traced how the shift toward processed, imported food has driven rising obesity in Fiji, and has worked on practical food-safety problems like ciguatera fish poisoning, and on building better supply chains for Pacific products like tilapia, sea grapes, and virgin coconut oil.",
+      "summaryFormat": "html",
       "publicationCount": 29,
       "signature": "sha1:e55e52de446ac4dc",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Jimaima Lako | University of the South Pacific - Academia.edu",
+          "url": "https://usp-fj.academia.edu/JimaimaLako"
+        },
+        {
+          "title": "A call for integrated action to bring about healthy food systems in Fiji - CTA",
+          "url": "https://cta.int/en/blog/all/article/a-call-for-integrated-action-to-bring-about-healthy-food-systems-in-fiji-sid028eb3718-59b3-43c8-ab93-0aa06f4972f4.html"
+        }
+      ]
     },
     "Ginigini, Joape": {
       "keywords": [
-        "Salinispora",
-        "Marine",
-        "Nov Salinispora"
+        "Salinispora Taxonomy",
+        "Marine Antibiotic Discovery",
+        "Coral Reef Bacterial Ecology",
+        "Actinobacteria Genomics",
+        "Marine Natural Products",
+        "eDNA Monitoring Standards",
+        "Invasive Species Decision Support",
+        "Essential Oil Chemodiversity"
       ],
-      "summary": "A plain-English summary of Joape Ginigini’s research is not yet available. See the keyword themes and publication mix below for a first look at the 8 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Ginigini searches Fiji's coral reefs and marine sediments for bacteria that could become the next generation of antibiotics. His work helped describe <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC7660244/\" target=\"_blank\" rel=\"noopener\">six new species of Salinispora</a>, a genus of marine bacteria already known for producing anticancer and antibiotic compounds, and has explored how competition between reef bacteria alters their antibiotic activity. He now also works on more applied marine science, including <a href=\"https://www.researchgate.net/profile/Joape-Ginigini\" target=\"_blank\" rel=\"noopener\">tools to detect and manage invasive marine species in Fiji</a> and international standards for environmental DNA monitoring.",
+      "summaryFormat": "html",
       "publicationCount": 8,
       "signature": "sha1:9865a40162ab82ae",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Six novel species of the obligate marine actinobacterium Salinispora - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC7660244/"
+        },
+        {
+          "title": "Joape Ginigini | University of the South Pacific - ResearchGate",
+          "url": "https://www.researchgate.net/profile/Joape-Ginigini"
+        }
+      ]
     },
     "Wilson, Donald": {
       "keywords": [
@@ -330,22 +376,31 @@
     },
     "Veitayaki, Joeli": {
       "keywords": [
-        "Resource Conservation",
-        "Poverty Alleviation",
-        "Alternative Sources",
-        "Climate Crisis",
-        "Fisheries Development",
-        "Mositi Vanuaso",
-        "Alleviation in Pacific",
-        "Conservation and Alternative",
-        "Communities Through Resource",
-        "Sources of Livelihood"
+        "Community-Based Fisheries Management",
+        "Locally Managed Marine Areas",
+        "Ocean Governance",
+        "Blue Economy Development",
+        "Gau Island Conservation",
+        "Traditional Resource Management",
+        "Marine Spatial Planning",
+        "Poverty Alleviation through Fisheries",
+        "Climate Change Resilience"
       ],
-      "summary": "A plain-English summary of Dr. Joeli Veitayaki’s research is not yet available. See the keyword themes and publication mix below for a first look at the 14 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Veitayaki has spent decades studying and building community-based fisheries management in Fiji, starting with his own home community on Gau Island, where he helped set up the Lomani Gau network linking all 16 villages around shared environmental management. He researches how traditional resource-management systems can work alongside modern conservation science, and has published widely on <a href=\"https://cirdap.org/joeli-veitayaki/\" target=\"_blank\" rel=\"noopener\">Pacific ocean governance and the law of the sea</a>. He is now a strategic advisor for <a href=\"https://www.blueprosperityfiji.org/post/blue-prosperity-fiji-shares-valuable-coral-reef-data-with-communities\" target=\"_blank\" rel=\"noopener\">Blue Prosperity Fiji</a>, a national program surveying reefs across the country and putting that data directly into the hands of the coastal communities who depend on them.",
+      "summaryFormat": "html",
       "publicationCount": 14,
       "signature": "sha1:7956df4902fa28f0",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Professor Joeli Veitayaki - CIRDAP",
+          "url": "https://cirdap.org/joeli-veitayaki/"
+        },
+        {
+          "title": "Blue Prosperity Fiji Shares Valuable Coral Reef Data with Communities",
+          "url": "https://www.blueprosperityfiji.org/post/blue-prosperity-fiji-shares-valuable-coral-reef-data-with-communities"
+        }
+      ]
     },
     "Varo, Joeli": {
       "keywords": [
@@ -370,22 +425,31 @@
     },
     "Vada, Sera": {
       "keywords": [
-        "Tourism",
-        "Well-being",
-        "Tourist",
-        "Positive Psychology",
-        "Behavioural Intentions",
-        "Lens",
-        "Tourism Experiences",
-        "Psychological Well-being",
-        "Tourist Well-being",
-        "Tourist Wellbeing"
+        "Tourist Wellbeing",
+        "Positive Psychology in Tourism",
+        "Place Attachment",
+        "Memorable Tourism Experiences",
+        "Repeat Visitation",
+        "Inclusive WASH in Tourism",
+        "Seniors' Tourism Research",
+        "Disaster Recovery in Tourism",
+        "Pacific Tourism Development"
       ],
-      "summary": "A plain-English summary of Dr. Sera Vada’s research is not yet available. See the keyword themes and publication mix below for a first look at the 17 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Vada studies what actually makes a trip good for the traveler, beyond simple enjoyment — drawing on positive psychology to measure tourists' deeper wellbeing rather than just satisfaction scores. Her <a href=\"https://blogs.griffith.edu.au/institute-for-tourism/meet-dr-sera-vada/\" target=\"_blank\" rel=\"noopener\">PhD examined the hedonic and eudaimonic effects of travel</a>, work that has grown into a research program spanning repeat visitors to Fiji, seniors' travel experiences, and Chinese tourists viewed through a Confucian lens. As a proud Fijian who has worked in her country's tourism industry, she is also <a href=\"https://blogs.griffith.edu.au/library/2023/07/17/welcome-back-repeat-visitation-and-tourist-wellbeing-meet-dr-sera-vada/\" target=\"_blank\" rel=\"noopener\">motivated by how tourism wellbeing research can benefit host communities</a>, not just visitors, including her work on inclusive water and sanitation access in Pacific tourism destinations.",
+      "summaryFormat": "html",
       "publicationCount": 17,
       "signature": "sha1:87943d260bb4f1d8",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Meet Dr Sera Vada - Griffith Institute for Tourism Insights",
+          "url": "https://blogs.griffith.edu.au/institute-for-tourism/meet-dr-sera-vada/"
+        },
+        {
+          "title": "'Exploring Tourism Well-being' Meet Dr Sera Vada - Library Connect",
+          "url": "https://blogs.griffith.edu.au/library/2023/07/17/welcome-back-repeat-visitation-and-tourist-wellbeing-meet-dr-sera-vada/"
+        }
+      ]
     },
     "Vunidilo, Tarisi": {
       "keywords": [],
@@ -429,37 +493,48 @@
     },
     "Vave, Ron": {
       "keywords": [
-        "Indigenous Fijian",
-        "Subsection Subchapter",
-        "Subsistence Fishing",
-        "Cultural Ecosystem",
-        "Mositi Vanuaso",
-        "Funerals in Fiji",
-        "Marine",
-        "Ecosystem Services",
-        "Fijian Funerals",
-        "Cultural Ecosystem Services"
+        "Cultural Ecosystem Services",
+        "Indigenous Fijian Funerals",
+        "Community-Based Fisheries Management",
+        "Culturally Protected Water Bodies",
+        "Marine Biocultural Diversity",
+        "Ocean Governance",
+        "Subsistence Fishing Practices",
+        "Social-Ecological Resilience",
+        "Deep-Sea Mining Governance"
       ],
-      "summary": "A plain-English summary of Prof. Ron Vave’s research is not yet available. See the keyword themes and publication mix below for a first look at the 18 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Vave studies a striking Fijian practice that Western conservation science rarely examines: how the 100-night fishing ban that follows a chief's funeral doubles as an accidental marine protected area. His <a href=\"https://hawaii.edu/cpis/people/core-faculty/ron-vave/\" target=\"_blank\" rel=\"noopener\">doctoral research on Indigenous Fijian funerals</a> asked how this tradition shapes both social bonds and reef health, and whether it still holds as urbanization changes Fijian communities. Drawing on 14 years as a Locally Managed Marine Area practitioner across the Indo-Pacific, he now researches how <a href=\"https://manoa.hawaii.edu/biocultural/vave/\" target=\"_blank\" rel=\"noopener\">cultural practices and ecosystem services are deeply intertwined</a>, comparing Indigenous fishing and resource governance across Fiji, Hawai'i, and Papua New Guinea.",
+      "summaryFormat": "html",
       "publicationCount": 18,
       "signature": "sha1:5e2973c39cd0e86f",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Ron Vave — Vave Lab | University of Hawaiʻi at Mānoa",
+          "url": "https://hawaii.edu/cpis/people/core-faculty/ron-vave/"
+        },
+        {
+          "title": "Ron Vave – Biocultural Initiative of the Pacific",
+          "url": "https://manoa.hawaii.edu/biocultural/vave/"
+        }
+      ]
     },
     "Tuiwawa, Marika": {
       "keywords": [
-        "Survey",
-        "Nakorotubu Range",
-        "Provinces Fiji",
-        "Sovi Basin",
-        "Tailevu Provinces",
-        "Tailevu Provinces Fiji"
+        "Rapid Biodiversity Assessment",
+        "Insect Taxonomy",
+        "Damselfly Species Discovery",
+        "Forest Biodiversity Hotspots",
+        "Mangrove Ecosystem Survey",
+        "Invasive Alien Species",
+        "Tree Cover Loss Monitoring"
       ],
-      "summary": "A plain-English summary of Marika Tuiwawa’s research is not yet available. See the keyword themes and publication mix below for a first look at the 8 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Tuiwawa is a field entomologist and biodiversity researcher who has helped document Fiji's insect life, including describing a new species of forest damselfly on Vanua Levu. His broader fieldwork spans rapid biodiversity assessments of forests and mangroves across Fiji, contributions to the East Melanesian Islands Biodiversity Hotspot profile, and Fiji's national inventory of invasive alien species.",
+      "summaryFormat": "html",
       "publicationCount": 8,
       "signature": "sha1:f4be9952d12b7ebf",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Thomas, Nunia": {
       "keywords": [],
@@ -471,18 +546,31 @@
     },
     "Tarai, Jope": {
       "keywords": [
-        "Social Media",
-        "Cyclone Winston",
-        "Climate Change",
-        "Disaster",
-        "Tropical Cyclone",
-        "Tropical Cyclone Winston"
+        "Social Media and Elections",
+        "Disaster Communication",
+        "Digital Activism",
+        "Climate Change Advocacy Online",
+        "Internet Censorship Politics",
+        "Fiji Political Campaigning",
+        "Christian Interpretations of Disaster",
+        "Aid Decolonization",
+        "Pacific Regionalism"
       ],
-      "summary": "A plain-English summary of Mr. Jope Tarai’s research is not yet available. See the keyword themes and publication mix below for a first look at the 10 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Tarai studies how Fijians actually use social media to organize, campaign, and cope with crisis — from elections to cyclones. His research on <a href=\"https://ojs.aut.ac.nz/pacific-journalism-review/article/view/476\" target=\"_blank\" rel=\"noopener\">Fiji's 2014 and 2018 elections</a> traced how political parties adapted their social media tactics over time, while a separate study of Tropical Cyclone Winston showed how hashtags like #StrongerThanWinston helped Fijians share information and build solidarity during the country's worst storm in decades. He has also examined <a href=\"https://bellschool.anu.edu.au/people/jope-tarai\" target=\"_blank\" rel=\"noopener\">how Christian communities interpreted Cyclone Winston as divine judgment</a>, and writes more broadly on internet censorship, digital feminism, and decolonizing foreign aid in the Pacific.",
+      "summaryFormat": "html",
       "publicationCount": 10,
       "signature": "sha1:8534a977c765f171",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Social media and Fiji's 2018 national election - Pacific Journalism Review",
+          "url": "https://ojs.aut.ac.nz/pacific-journalism-review/article/view/476"
+        },
+        {
+          "title": "Jope Tarai | Coral Bell School of Asia Pacific Affairs, ANU",
+          "url": "https://bellschool.anu.edu.au/people/jope-tarai"
+        }
+      ]
     },
     "Savou-Wara, Rusila": {
       "keywords": [
@@ -591,22 +679,35 @@
     },
     "Tawake, Alifereti": {
       "keywords": [
-        "Management",
-        "Conservation",
-        "Marine",
-        "Community-based",
-        "Fisheries",
-        "Locally-managed Marine Areas",
-        "Alien Species",
-        "Biological Monitoring",
-        "Mositi Vanuaso",
-        "Multiple Objectives"
+        "Locally Managed Marine Areas",
+        "Community-Based Fisheries Management",
+        "Customary Marine Tenure",
+        "Clam Population Recovery",
+        "Biological Monitoring Training",
+        "Coastal Livelihood Diversification",
+        "Women in Fisheries Governance",
+        "National Conservation Policy",
+        "Melanesian Community Conservation"
       ],
-      "summary": "A plain-English summary of Mr. Alifereti Tawake’s research is not yet available. See the keyword themes and publication mix below for a first look at the 34 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Tawake pioneered a community-led approach to reviving Fiji's coastal fisheries that has since spread to twenty countries worldwide. It began in the 1990s in Verata, a small mudflat community whose clam population had collapsed; working with villagers, <a href=\"https://whitleyaward.org/winners/everlasting-marine-resources-fiji/\" target=\"_blank\" rel=\"noopener\">he helped clam numbers rebound 24-fold</a> by reviving traditional no-take periods, work that won him a Whitley Award for conservation. That local success grew into the <a href=\"https://www.equatorinitiative.org/wp-content/uploads/2017/05/case_1348160544.pdf\" target=\"_blank\" rel=\"noopener\">Fiji Locally-Managed Marine Area Network</a>, now covering over a quarter of Fiji's inshore waters and formally adopted by the Fiji government. His more recent research looks at what makes these community-led networks endure, including <a href=\"https://www.iccaconsortium.org/people/alifereti-tawake/\" target=\"_blank\" rel=\"noopener\">the often-overlooked role women play in governing coastal fisheries</a>.",
+      "summaryFormat": "html",
       "publicationCount": 34,
       "signature": "sha1:e9e3fbc623b59518",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Everlasting marine resources for our descendants, Fiji | Whitley Award",
+          "url": "https://whitleyaward.org/winners/everlasting-marine-resources-fiji/"
+        },
+        {
+          "title": "Fiji Locally-Managed Marine Area Network - Equator Initiative Case Study",
+          "url": "https://www.equatorinitiative.org/wp-content/uploads/2017/05/case_1348160544.pdf"
+        },
+        {
+          "title": "Alifereti Tawake - ICCA Consortium",
+          "url": "https://www.iccaconsortium.org/people/alifereti-tawake/"
+        }
+      ]
     },
     "Tamata, Apolonia": {
       "keywords": [],
@@ -702,13 +803,16 @@
     },
     "Radikedike, Ratu Pio": {
       "keywords": [
-        "Mositi Vanuaso"
+        "Climate-Induced Relocation",
+        "Cultural Loss from Climate Change",
+        "Coastal Village Fieldwork"
       ],
-      "summary": "A plain-English summary of Ratu Pio Radikedike’s research is not yet available. See the keyword themes and publication mix below for a first look at the 6 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Radikedike's research focuses on the difficult tradeoffs Fijian coastal communities face when climate change forces them to relocate — particularly the tension between preserving cultural heritage and adopting safer, modern infrastructure. His fieldwork, often conducted alongside researchers at USP's Institute of Applied Sciences, has also documented the less visible cultural and psychological losses and damages that climate change causes in Fijian communities, beyond the physical and financial costs typically measured.",
+      "summaryFormat": "html",
       "publicationCount": 6,
       "signature": "sha1:960c220da06aaae2",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Naisilisili, Waisea": {
       "keywords": [],
@@ -730,33 +834,35 @@
     },
     "Nawadra, Sefanaia": {
       "keywords": [
-        "Nakauvadra Range",
-        "Province Fiji",
-        "Range Ra Province",
-        "Survey",
-        "Preliminary Baseline",
-        "Tailevu Provinces",
-        "Baseline Survey",
-        "Cultural Survey",
-        "Nakorotubu Range",
-        "Provinces Fiji"
+        "Avifauna Baseline Survey",
+        "Herpetofauna Documentation",
+        "Freshwater Fish Surveys",
+        "Botanical Range Survey",
+        "Cultural Heritage Survey",
+        "Terrestrial Gastropod Records"
       ],
-      "summary": "A plain-English summary of Sefanaia Nawadra’s research is not yet available. See the keyword themes and publication mix below for a first look at the 8 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Nawadra has contributed to a series of baseline biodiversity and cultural surveys across Fiji's Nakauvadra and Nakorotubu mountain ranges, documenting birds, reptiles, freshwater fish, plants, and land snails alongside cultural heritage sites in Ra and Tailevu provinces. This fieldwork builds the ecological baseline data used for conservation and land-use planning in these remote highland areas.",
+      "summaryFormat": "html",
       "publicationCount": 8,
       "signature": "sha1:9855a1165ae0fece",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Nakoro, Elia": {
       "keywords": [
-        "Cultural Survey",
-        "Human"
+        "Archaeological Survey",
+        "Lapita Ceramic Analysis",
+        "Cultural Heritage Documentation",
+        "Hillfort Chronology",
+        "Coastal Change Archaeology",
+        "Vanished Island Geography"
       ],
-      "summary": "A plain-English summary of Elia Nakoro’s research is not yet available. See the keyword themes and publication mix below for a first look at the 9 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Nakoro is an archaeologist whose fieldwork has documented Fiji's deep human history, from Lapita pottery that reveals 3,000-year-old trade and settlement patterns to fortified hilltop sites in Bua Province. He has also researched the geography and oral history behind vanished islands like Vuniivilevu and Burotu, and works alongside biologists on rapid cultural and environmental surveys of Fiji's forests and river systems.",
+      "summaryFormat": "html",
       "publicationCount": 9,
       "signature": "sha1:eef30002de2c5fa7",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Naivalulevu, Vilisi": {
       "keywords": [],
@@ -775,12 +881,35 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Naivalu, Kelera": {
-      "keywords": [],
-      "summary": "A plain-English summary of Kelera Naivalu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 6 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Rural Sanitation Systems",
+        "On-Site Sanitation Infrastructure",
+        "Watershed Systems Health",
+        "Drinking Water Quality",
+        "Faecal Contamination Monitoring",
+        "Water Committee Governance",
+        "Disease Outbreak Communication",
+        "Participatory Watershed Management"
+      ],
+      "summary": "Naivalu's research digs into a basic but under-studied question for rural Fiji: whether the pit latrines and septic systems people actually use are safe, and whether the water coming out of village taps is too. Her fieldwork across <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC11379791/\" target=\"_blank\" rel=\"noopener\">29 rural communities found E. coli contamination linked to poorly designed latrines</a>, while a companion study on <a href=\"https://iwaponline.com/wpt/article/17/3/719/87416/Perceptions-of-drinking-water-access-and-quality\" target=\"_blank\" rel=\"noopener\">household perceptions of drinking water</a> found many villagers misjudge how clean their water really is. As part of the <a href=\"https://eartharxiv.org/repository/view/5019/\" target=\"_blank\" rel=\"noopener\">Watershed Interventions for Systems Health project</a>, she works with communities and water committees to fix these problems across the whole watershed rather than one tap or toilet at a time.",
+      "summaryFormat": "html",
       "publicationCount": 6,
       "signature": "sha1:69c9257a2a77b770",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "An assessment of latrine front-end characteristics and associated surface E. coli indicated faecal contamination in rural Fiji - PMC",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11379791/"
+        },
+        {
+          "title": "Perceptions of drinking water access and quality in rural indigenous villages in Fiji",
+          "url": "https://iwaponline.com/wpt/article/17/3/719/87416/Perceptions-of-drinking-water-access-and-quality"
+        },
+        {
+          "title": "Transforming place-based management within watersheds in Fiji: the WISH Fiji project",
+          "url": "https://eartharxiv.org/repository/view/5019/"
+        }
+      ]
     },
     "Maiono, Jekope Ramala": {
       "keywords": [],
@@ -792,19 +921,20 @@
     },
     "Naikatini, Alivereti": {
       "keywords": [
-        "Viti Levu",
-        "Rapid Biodiversity",
-        "Survey",
-        "Sovi Basin",
-        "Forest",
-        "Viti Levu Fiji",
-        "Archaeological Survey"
+        "Rapid Biodiversity Assessment",
+        "Forest Ecology Surveys",
+        "Invasive Alien Species",
+        "Avifauna Baseline Surveys",
+        "Tree Cover Loss Monitoring",
+        "Mangrove Ecosystem Survey",
+        "Vertebrate Biodiversity Monitoring"
       ],
-      "summary": "A plain-English summary of Alivereti Naikatini’s research is not yet available. See the keyword themes and publication mix below for a first look at the 9 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Naikatini is a field biologist who has spent years documenting Fiji's forests, mangroves, and wildlife through rapid biodiversity assessments across sites like the Sovi Basin, the Nakorotubu Range, and the Rewa River mangroves. His surveys combine botanical, avifaunal, and vertebrate data collection to build baseline records used in conservation planning, including Fiji's national inventory of invasive alien species and REDD+ forest-carbon pilot sites.",
+      "summaryFormat": "html",
       "publicationCount": 9,
       "signature": "sha1:c0d3ec2fdac2dbc6",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": []
     },
     "Marama, Kalisiana": {
       "keywords": [],
@@ -851,32 +981,62 @@
     },
     "Nabobo-Baba, Unaisi": {
       "keywords": [
-        "Indigenous Fijian"
+        "Vanua Research Framework",
+        "Indigenous Fijian Epistemology",
+        "Decolonizing Pacific Research",
+        "Higher Education History in Fiji",
+        "Climate Change and Health",
+        "Indigenous Knowledge and Pedagogy",
+        "Cruise Tourism Experience",
+        "Pacific Storytelling Methods"
       ],
-      "summary": "A plain-English summary of Prof. Unaisi Nabobo-Baba’s research is not yet available. See the keyword themes and publication mix below for a first look at the 10 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Nabobo-Baba created the <a href=\"https://unaisinabobobaba.wordpress.com/fijian-vanua-research-framework/\" target=\"_blank\" rel=\"noopener\">Fijian Vanua Research Framework</a>, a now widely used method that asks researchers working with iTaukei communities to follow Fijian cultural protocol — seeking permission from the vanua, using talanoa, and giving back to the community — rather than importing Western research norms wholesale. Her own doctoral study of her home district of <a href=\"https://books.google.com/books/about/Knowing_and_Learning.html?id=ok2a0X9sX2oC\" target=\"_blank\" rel=\"noopener\">Vugalei explored how Indigenous Fijians actually acquire and pass on knowledge</a>, with findings that reshaped how she thinks education, curriculum, and even school design should work in Fiji. She has since applied this same decolonizing lens to topics as varied as the history of Fijian higher education and climate change's health impacts in the Pacific.",
+      "summaryFormat": "html",
       "publicationCount": 10,
       "signature": "sha1:e9b979a218c78927",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "The Fijian Vanua Research Framework - Unaisi Nabobo-Baba",
+          "url": "https://unaisinabobobaba.wordpress.com/fijian-vanua-research-framework/"
+        },
+        {
+          "title": "Knowing and Learning: An Indigenous Fijian Approach - Google Books",
+          "url": "https://books.google.com/books/about/Knowing_and_Learning.html?id=ok2a0X9sX2oC"
+        },
+        {
+          "title": "Decolonising Framings in Pacific Research - Nabobo-Baba, 2008",
+          "url": "https://journals.sagepub.com/doi/10.1177/117718010800400210"
+        }
+      ]
     },
     "Meo, Semisi": {
       "keywords": [
-        "Marketing Exchanges",
-        "Water Sanitation",
-        "Alternative Sources",
-        "Ascidian Polyandrocarpa",
-        "Programming Brief",
-        "Sanitation and Hygiene",
-        "Sources of Livelihood",
-        "Food Security",
-        "Poverty Alleviation",
-        "Resource Conservation"
+        "Fisherwomen Contributions",
+        "Coastal Fisheries Monitoring",
+        "Locally Managed Marine Areas",
+        "Hawksbill Turtle Nesting",
+        "Sea Cucumber Aquaculture",
+        "WASH in Informal Settlements",
+        "Environmental Impact Assessment",
+        "Reef Fish Survey Methods",
+        "Rural Livelihood Diversification"
       ],
-      "summary": "A plain-English summary of Mr. Semisi Meo’s research is not yet available. See the keyword themes and publication mix below for a first look at the 33 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Meo's research has helped make visible a part of Fiji's fishing economy that's often overlooked: the work of women fishers. His studies with the Wildlife Conservation Society and Conservation International <a href=\"https://www.spc.int/updates/blog/2020/03/valuing-the-critical-roles-and-contributions-of-women-fishers-to-food-security\" target=\"_blank\" rel=\"noopener\">documented how much food and income Fijian women bring home from fishing</a>, work that had previously gone uncounted in national fisheries data. He has also compared different methods for monitoring reef fish, tracked hawksbill turtle nesting sites, and worked on water, sanitation, and hygiene programs in Melanesia's informal settlements — applying the same close, community-based fieldwork across very different conservation and development challenges.",
+      "summaryFormat": "html",
       "publicationCount": 33,
       "signature": "sha1:bf2b8ea5072d9387",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Valuing the critical roles and contributions of women fishers to food security and livelihoods in Fiji - The Pacific Community",
+          "url": "https://www.spc.int/updates/blog/2020/03/valuing-the-critical-roles-and-contributions-of-women-fishers-to-food-security"
+        },
+        {
+          "title": "Why they must be counted: Significant contributions of Fijian women fishers to food security and livelihoods",
+          "url": "https://www.sciencedirect.com/science/article/pii/S0964569121000569"
+        }
+      ]
     },
     "Meo-Sewabu, Litea": {
       "keywords": [
@@ -938,32 +1098,59 @@
     },
     "Kubuabola, Ilisapeci": {
       "keywords": [
-        "Non-communicable Diseases",
-        "Childhood Obesity",
-        "Legislation Actions",
-        "Policy and Legislation",
-        "Actions to Address",
-        "Progress",
-        "Diseases Crisis",
-        "Non-communicable Diseases Crisis"
+        "Non-Communicable Disease Policy",
+        "NCD Monitoring and Surveillance",
+        "Childhood Obesity Prevention",
+        "Diabetes Prevention Programs",
+        "Health Legislation Tracking",
+        "Youth-Led Health Advocacy",
+        "Maternal Cardiac Care",
+        "Lymphatic Filariasis Elimination",
+        "Mental Health Service Evaluation"
       ],
-      "summary": "A plain-English summary of Ilisapeci Kubuabola’s research is not yet available. See the keyword themes and publication mix below for a first look at the 14 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Kubuabola tracks whether the Pacific's promises to fight non-communicable diseases — diabetes, obesity, heart disease — are actually being kept. As monitoring and evaluation lead for the region's <a href=\"https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-016-3614-8\" target=\"_blank\" rel=\"noopener\">Monitoring Alliance for NCD Action (MANA)</a>, she has helped build the dashboards that score Pacific countries and territories on their NCD policies, from sugar taxes to school food rules. Her work has also assessed <a href=\"https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272424\" target=\"_blank\" rel=\"noopener\">how much legislative progress Pacific governments have actually made</a> since committing to act, alongside separate research on maternal heart disease, mental health services, and disease elimination programs in Fiji.",
+      "summaryFormat": "html",
       "publicationCount": 14,
       "signature": "sha1:9ccf561c6d057e2e",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Monitoring and accountability for the Pacific response to the non-communicable diseases crisis - BMC Public Health",
+          "url": "https://bmcpublichealth.biomedcentral.com/articles/10.1186/s12889-016-3614-8"
+        },
+        {
+          "title": "Assessing the progress on the implementation of policy and legislation actions to address the NCD crisis in the Pacific - PLOS One",
+          "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0272424"
+        }
+      ]
     },
     "Korovulavula, Isoa": {
       "keywords": [
-        "Climate",
-        "Peripherality As Key",
-        "Climate Change"
+        "Climate-Induced Relocation",
+        "Peripherality and Resilience",
+        "Traditional Knowledge for Adaptation",
+        "Coastal Village Relocation",
+        "Cultural Loss from Climate Change",
+        "Locally Managed Marine Areas",
+        "Water Resource Management",
+        "Biodiversity Valuation",
+        "Community-Based Adaptation"
       ],
-      "summary": "A plain-English summary of Dr. Isoa Korovulavula’s research is not yet available. See the keyword themes and publication mix below for a first look at the 11 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Korovulavula's research asks a hard question that Fiji's relocating coastal villages face: how do you weigh cultural heritage against the practical need for safer, modern infrastructure? His concept of 'peripherality' — how far a community sits from services and roads — has helped explain why some Fijian villages cope with disasters and climate change better than others, based on fieldwork <a href=\"https://www.tandfonline.com/doi/abs/10.1080/17565529.2019.1701972\" target=\"_blank\" rel=\"noopener\">along the 200-km cross-island road on Viti Levu</a>. He has also studied the emotional and cultural toll of planned village relocations, and argues that <a href=\"https://www.academia.edu/77216951/Addressing_Challenges_in_Climate_Change_Adaptation_Learning_from_the_Narikoso_Community_Relocation_in_Fiji1\" target=\"_blank\" rel=\"noopener\">relocation policy too often overlooks tradition and local knowledge</a> in favor of purely technical solutions.",
+      "summaryFormat": "html",
       "publicationCount": 11,
       "signature": "sha1:9aeefffff99415d0",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Peripherality as key to understanding opportunities and needs for effective and sustainable climate-change adaptation - Climate and Development",
+          "url": "https://www.tandfonline.com/doi/abs/10.1080/17565529.2019.1701972"
+        },
+        {
+          "title": "Addressing Challenges in Climate Change Adaptation: Learning from the Narikoso Community Relocation in Fiji",
+          "url": "https://www.academia.edu/77216951/Addressing_Challenges_in_Climate_Change_Adaptation_Learning_from_the_Narikoso_Community_Relocation_in_Fiji1"
+        }
+      ]
     },
     "Fong, Patrick Sakiusa": {
       "keywords": [
@@ -1086,14 +1273,29 @@
     },
     "Cammock, Radilaite": {
       "keywords": [
-        "Family Planning",
-        "Itaukei Women"
+        "Indigenous Research Methodology",
+        "Talanoa Methodology",
+        "Family Planning Communication",
+        "Pacific Youth Sexual Health",
+        "Decolonizing Higher Education",
+        "Food Security and Nutrition",
+        "Diaspora Academic Experience"
       ],
-      "summary": "A plain-English summary of Radilaite Cammock’s research is not yet available. See the keyword themes and publication mix below for a first look at the 7 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Cammock develops and applies Pacific research methods — grounded in talanoa (dialogue-based storytelling) — to study topics that are often hard to discuss directly, like family planning and sexual health. Her study of <a href=\"https://www.researchgate.net/publication/365629343_Cultural_values_influencing_iTaukei_women's_discussion_of_family_planning_in_the_home\" target=\"_blank\" rel=\"noopener\">iTaukei women's family planning conversations</a> in both Fiji and New Zealand found that cultural values shape what can be said, and to whom, within the home. She is also a founding voice in the <a href=\"https://www.tandfonline.com/doi/full/10.1080/00131857.2024.2323565\" target=\"_blank\" rel=\"noopener\">Moanaroa Pacific research collective</a>, which pushes universities to move beyond extractive, Eurocentric research models toward ones grounded in Indigenous Pacific values and knowledge.",
+      "summaryFormat": "html",
       "publicationCount": 7,
       "signature": "sha1:395e8fdc5f17ffc2",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Cultural values influencing iTaukei women's discussion of family planning in the home",
+          "url": "https://www.researchgate.net/publication/365629343_Cultural_values_influencing_iTaukei_women's_discussion_of_family_planning_in_the_home"
+        },
+        {
+          "title": "Indigenising research: Moanaroa a philosophy for practice - Educational Philosophy and Theory",
+          "url": "https://www.tandfonline.com/doi/full/10.1080/00131857.2024.2323565"
+        }
+      ]
     },
     "Cakacaka, Akuila": {
       "keywords": [],
