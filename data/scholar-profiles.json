@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:16.856Z",
+  "generatedAt": "2026-07-05T10:54:19.415Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1826,6 +1826,19 @@
       "slug": "unaisi-tabua",
       "last": "Tabua",
       "first": "Unaisi",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "TABUANIQILI, KELERA",
+      "slug": "kelera-tabuaniqili",
+      "last": "TABUANIQILI",
+      "first": "KELERA",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
