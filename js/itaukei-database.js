@@ -179,10 +179,27 @@
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
     // localStorage under 'vavelab_scholar_sheet_url').
+    //
+    // Name matching is deliberately tolerant of middle-initial variants. The
+    // admin can save a profile as "Tabudravu, Jioji N." while the Zotero
+    // sub-collection is named "Tabudravu, Jioji" (no middle initial) — both
+    // point to the same person. We therefore index each profile under both its
+    // canonical "Last, First" key and a stripped "Last, <first-token-of-First>"
+    // fallback key. The fallback is only added when it doesn't collide with an
+    // already-indexed profile, so distinct people with the same surname +
+    // first-token (e.g. "Smith, John A." vs "Smith, John B.") aren't merged.
     state.scholarProfilesByName = new Map();
+    const firstToken = s => String(s || '').trim().split(/\s+/)[0] || '';
     (profiles.scholars || []).forEach(p => {
       const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
-      if (name) state.scholarProfilesByName.set(name, p);
+      if (!name) return;
+      state.scholarProfilesByName.set(name, p);
+      if (p.last && p.first) {
+        const stripped = `${p.last}, ${firstToken(p.first)}`;
+        if (stripped !== name && !state.scholarProfilesByName.has(stripped)) {
+          state.scholarProfilesByName.set(stripped, p);
+        }
+      }
     });
     // Explicit hide-list — names the admin dashboard has removed from the iTaukei list.
     // These scholars will not appear as cards on the public dashboard even if they still
@@ -195,7 +212,14 @@
         const csvText = await fetch(sheetUrl, { cache: 'no-cache' }).then(r => r.text());
         parseCsvToScholars(csvText).forEach(p => {
           const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
-          if (name) state.scholarProfilesByName.set(name, Object.assign({}, state.scholarProfilesByName.get(name) || {}, p));
+          if (!name) return;
+          state.scholarProfilesByName.set(name, Object.assign({}, state.scholarProfilesByName.get(name) || {}, p));
+          if (p.last && p.first) {
+            const stripped = `${p.last}, ${firstToken(p.first)}`;
+            if (stripped !== name) {
+              state.scholarProfilesByName.set(stripped, Object.assign({}, state.scholarProfilesByName.get(stripped) || {}, p));
+            }
+          }
         });
       } catch (e) {
         console.warn('Google Sheet CSV fetch failed; using local snapshot only.', e);
