@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T13:33:11.820Z",
+  "generatedAt": "2026-07-05T13:39:03.438Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2241,13 +2241,30 @@
       "slug": "patrick-vakaoti",
       "last": "Vakaoti",
       "first": "Patrick",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
+      "institution": "University of Otago",
+      "institutionUrl": "https://www.otago.ac.nz/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=GPiHGkUAAAAJ&hl=en",
+      "photo": "img/scholars/patrick-vakaoti.jpg",
+      "department": "Sociology, Gender Studies and Criminology",
+      "departmentUrl": "https://www.otago.ac.nz/sgc",
+      "profileUrl": "https://www.otago.ac.nz/sgc/our-people/professor-patrick-vakaoti",
+      "masters": null,
+      "phd": null,
+      "title": "Associate Professor",
+      "orcidUrl": "https://orcid.org/0000-0002-7230-5909",
+      "lastUpdate": "2026-07-05T13:39:03.427Z",
+      "total": 26,
+      "firstAuthored": 16,
+      "types": {
+        "report": 2,
+        "journalArticle": 10,
+        "bookSection": 8,
+        "book": 5,
+        "thesis": 1
+      }
     },
     {
       "name": "Vakarewa, Isoa",
