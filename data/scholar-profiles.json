@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T08:46:36.945Z",
+  "generatedAt": "2026-07-05T08:46:38.923Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1930,6 +1930,19 @@
       }
     },
     {
+      "name": "Tawake, Kaminieli",
+      "slug": "kaminieli-tawake",
+      "last": "Tawake",
+      "first": "Kaminieli",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
       "name": "Tawake, Lavenia",
       "slug": "lavenia-tawake",
       "last": "Tawake",
@@ -1947,6 +1960,19 @@
       "slug": "peni-tawake",
       "last": "Tawake",
       "first": "Peni",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tawakelevu, S.",
+      "slug": "s-tawakelevu",
+      "last": "Tawakelevu",
+      "first": "S.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
