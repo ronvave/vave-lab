@@ -87,6 +87,54 @@ STOP = set(
     ni na kei ki e i lako sa mai kei-na ni-na e-na
     """.split()
 )
+
+# Single-word keywords that are too generic to be meaningful research tags on
+# their own. These are only excluded when they appear as ONE-WORD keywords;
+# when they're part of a longer phrase they're still accepted. E.g. we reject
+# "food" but accept "food security".
+GENERIC_SINGLE = set(
+    """
+    study studies research work works project projects paper papers article articles
+    thesis theses field fields level levels degree area areas topic topics theme themes
+    subject subjects factor factors issue issues effect effects impact impacts influence
+    response responses trend trends practice practices approach approaches perspective
+    perspectives context contexts insight insights understanding understandings example
+    examples case cases analysis review overview evaluation assessment exploration
+    experience experiences result results outcome outcomes finding findings
+    system systems process processes activity activities role roles model models
+    method methods application applications aspect aspects need needs concern concerns
+    challenge challenges opportunity opportunities significance implication implications
+    development developments change changes shift shifts phase phases stage stages
+    background introduction discussion conclusion conclusions summary summaries
+    people person community communities population populations group groups
+    setting settings site sites location locations region regions place places
+    body bodies form forms type types kind kinds sort sorts way ways
+    quality quantity size shape number amount time times year years age ages date dates
+    life food water air soil part parts point points side sides end ends
+    fiji fijian pacific islands island oceania oceanic melanesia melanesian polynesia
+    novel new recent modern initial preliminary comprehensive brief detailed
+    remarks chapter chapters section sections preface epilogue foreword afterword
+    concluding introductory intermediate general special specific specialised
+    attending emerging leading previous previously current currently traditional
+    contemporary modern global local regional national international rural urban
+    ghanaian american american european asian african pacific-based indian chinese
+    japanese korean australian british british-based canadian scottish scottish-based
+    english welsh irish german french german-based
+    cyclic linear planar recent old
+    role roles trend trends impact impacts effect effects
+    author authors editor editors
+    open closed public private
+    isolated discovery isolation identification identifying identifies
+    report reports working workshop workshops
+    social cultural political economic biological chemical physical
+    critical high low mid mean median average
+    exploring examining reviewing surveying reporting
+    """.split()
+)
+# NOTE: 'fiji' / 'pacific' / 'islands' are in the generic single-word list
+# because every iTaukei scholar's work is by definition Pacific-related; the
+# bare word doesn't tell the reader anything. When these words appear inside
+# a longer phrase ("Pacific health", "Fijian communities") they're kept.
 # Fijian and academic particles/function words that show up mid-phrase and
 # make it look like a keyword pill contains no real content.
 MID_BAD = {
@@ -130,6 +178,40 @@ def _valid_word(w: str) -> bool:
     if not any(ch.isalpha() for ch in w):
         return False
     return True
+
+
+# Phrases we always want to reject regardless of how frequent they are.
+# These are chapter/section headings and other title fragments that slip through
+# frequency filtering (e.g. book series with repeated "concluding remarks").
+BAD_PHRASE_FRAGMENTS = {
+    "concluding remarks", "introductory remarks", "opening remarks",
+    "book chapter", "chapter conclusion",
+    "islands field", "field notes",
+    "attending clinics", "attending physicians",
+    "levu fiji", "suva fiji",
+    "first-in class", "in press", "in progress",
+    "case study", "case studies",
+}
+
+# Adverbs (mostly -ly) and other grammatical fragments that shouldn't stand
+# alone as "keywords" — they are modifiers, not topics.
+def _is_adverbial(word: str) -> bool:
+    w = word.lower()
+    if w.endswith("ly") and len(w) > 5:
+        return True
+    return False
+
+
+def _stem(word: str) -> str:
+    """Cheap stemmer used only for overlap-detection between candidate keywords.
+    Strips common English plural / -ing / -ed endings so 'sponge' and 'sponges'
+    are treated as the same stem when we de-duplicate the final keyword list.
+    """
+    w = word.lower()
+    for suf in ("'s", "ies", "ing", "ies", "ees", "ses", "sses", "es", "ed", "s"):
+        if len(w) > len(suf) + 2 and w.endswith(suf):
+            return w[: -len(suf)]
+    return w
 
 
 def title_ngrams(title: str, max_n: int = 3) -> list[str]:
@@ -178,62 +260,115 @@ def titlecase_phrase(p: str) -> str:
 
 def score_ngrams(items_titles: list[str]) -> list[tuple[str, float]]:
     """
-    Return a list of (phrase, score) sorted by score desc, where longer
-    phrases are boosted so specific topics rank above their constituent
-    words. Phrases whose words are fully contained in a higher-scoring
-    longer phrase are demoted.
+    Rank candidate keyword phrases by a diversity-friendly score.
+
+    Design goals:
+    * Prefer 2-grams because "marine natural products" is a richer research tag
+      than either "marine" or "products" alone.
+    * Reject one-word candidates that are too generic to be meaningful research
+      tags on their own (see GENERIC_SINGLE) and any one-word candidate that
+      only appears in a single publication (weak signal).
+    * Reject over-specific 3-grams that only echo a longer version of an
+      already-strong 2-gram phrase ("sponge stylotella aurantium" adds no new
+      research area beyond "marine sponge").
     """
     counter: Counter[str] = Counter()
     for t in items_titles:
         for g in title_ngrams(t, max_n=3):
             counter[g] += 1
 
-    # Length boost: 2-grams and 3-grams outrank single words with the same freq.
     scored: dict[str, float] = {}
     for gram, cnt in counter.items():
-        n = len(gram.split())
-        boost = 1.0 if n == 1 else 1.6 if n == 2 else 2.0
+        toks = gram.split()
+        n = len(toks)
+
+        # Frequency floor per length. Removes long tail of one-off phrases.
+        if n == 1 and cnt < 2:
+            continue
+        if n == 2 and cnt < 2:
+            continue
+        if n == 3 and cnt < 2:
+            continue
+
+        if gram in BAD_PHRASE_FRAGMENTS:
+            continue
+
+        # Reject any 2- or 3-word phrase that starts OR ends with a bare
+        # nationality/adverbial modifier ("Ghanaian sponges", "clinically").
+        if any(w in GENERIC_SINGLE for w in (toks[0], toks[-1])) and n >= 2:
+            # Allowed if the phrase is a well-known compound like
+            # 'food security', 'body image', 'health policy' — we recognise
+            # this by NEITHER end being a generic AND the whole phrase
+            # containing at least one non-generic content word.
+            content_words = [w for w in toks if w not in GENERIC_SINGLE]
+            if not content_words:
+                continue
+            # If both ends are generic, drop.
+            if toks[0] in GENERIC_SINGLE and toks[-1] in GENERIC_SINGLE:
+                continue
+
+        # Single-word candidates are only kept when they aren't in the generic
+        # blacklist AND they show up in enough different publications to look
+        # like a real theme rather than an accident.
+        if n == 1:
+            if toks[0] in GENERIC_SINGLE:
+                continue
+            if _is_adverbial(toks[0]):
+                continue
+            if cnt < 3:
+                continue
+
+        # Length boost weighted toward the sweet-spot 2-gram.
+        boost = 1.0 if n == 1 else 1.9 if n == 2 else 1.6
+        # Extra bump if the phrase contains a research-word (heuristic: any
+        # word ending in a common science suffix like -ology, -ics, -tion,
+        # -ism, -ity). This nudges terms like "conservation", "ecology",
+        # "linguistics", "identity" over long organism-name compounds.
+        if any(re.search(r"(ology|ophy|ics|tion|sion|ism|ity|ance|ence|ure)$", w) for w in toks):
+            boost *= 1.15
         scored[gram] = cnt * boost
 
-    # Sort by score desc, then by phrase-length desc, then alpha for stability.
-    ranked = sorted(
-        scored.items(),
-        key=lambda kv: (-kv[1], -len(kv[0].split()), kv[0]),
-    )
+    ranked = sorted(scored.items(), key=lambda kv: (-kv[1], -len(kv[0].split()), kv[0]))
 
-    # De-overlap: once we accept a phrase, drop its sub-phrases that appear
-    # fewer times than the parent (they're likely redundant).
-    accepted: list[tuple[str, float]] = []
-    dropped: set[str] = set()
+    # De-overlap A: drop a phrase when a strictly-longer phrase contains all
+    # of its tokens ("sponge" ⊂ "marine sponge" ⊂ "fijian marine sponge").
+    ordered: list[tuple[str, float]] = []
+    accepted_tokens: list[set[str]] = []
     for gram, sc in ranked:
-        if gram in dropped:
+        toks = set(gram.split())
+        if any(toks < acc for acc in accepted_tokens):  # strict subset
             continue
-        tokens = gram.split()
-        if len(tokens) >= 2:
-            for size in range(len(tokens) - 1, 0, -1):
-                for i in range(len(tokens) - size + 1):
-                    sub = " ".join(tokens[i : i + size])
-                    if sub in scored and scored[sub] <= sc * 1.1:
-                        dropped.add(sub)
-        accepted.append((gram, sc))
-    return accepted
+        ordered.append((gram, sc))
+        accepted_tokens.append(toks)
+    return ordered
 
 
-def pick_keywords(titles: list[str], k: int = 10) -> list[str]:
-    """Return a diverse ordered list of at least `k` display-ready keywords."""
+def pick_keywords(titles: list[str], k: int = 8) -> list[str]:
+    """Return a diverse ordered list of display-ready keywords.
+
+    Diversity is enforced via a shared-stem penalty: once a phrase whose stem
+    set S is picked, later candidates whose stems overlap with S by more than
+    one word are skipped. This is what stops the list from becoming "marine",
+    "marine sponge", "fijian marine sponge", "sponge biology" — four ways of
+    saying one thing.
+    """
     ranked = score_ngrams(titles)
     picked: list[str] = []
-    seen_first_word: Counter[str] = Counter()
-    # Pass 1: prefer diversity by first word so we don't get 8 variations of one theme.
-    for gram, _ in ranked:
-        if len(picked) >= k:
-            break
-        fw = gram.split()[0]
-        if seen_first_word[fw] >= 2 and len(picked) < k - 2:
+    picked_stems: list[set[str]] = []
+    for gram, _sc in ranked:
+        stems = {_stem(t) for t in gram.split()}
+        # If any already-picked keyword shares ≥1 stem (≥2 for 3-word
+        # phrases, where a single shared common word is fine), skip.
+        overlap_threshold = 2 if len(stems) >= 3 else 1
+        if any(len(stems & prev) >= overlap_threshold for prev in picked_stems):
             continue
         picked.append(titlecase_phrase(gram))
-        seen_first_word[fw] += 1
-    # If diversity gate was too tight, top up from remaining.
+        picked_stems.append(stems)
+        if len(picked) >= k:
+            break
+
+    # Top up from remaining ranked phrases if the diversity gate was too tight
+    # and we don't yet have enough entries.
     if len(picked) < k:
         for gram, _ in ranked:
             disp = titlecase_phrase(gram)
@@ -248,61 +383,63 @@ def pick_keywords(titles: list[str], k: int = 10) -> list[str]:
 def build_summary(profile: dict, keywords: list[str], pub_count: int,
                   types: dict) -> str:
     """
-    Two-to-four sentence plain-English summary. Uses top keywords + counts
-    + optional profile fields. Deterministic, no LLM.
+    Plain-English summary focused on what the scholar's research is about —
+    not what publication types they have. Uses top keywords to describe
+    focus and breadth, plus institution / department context when available.
+
+    Kept deterministic and rule-based so this pipeline can run offline. It
+    is intentionally a first-cut; a follow-up LLM step can rewrite these to
+    add motivation and news-article context. See scholar-insights schema:
+    entries may include a `summaryLinks` array once LLM enrichment lands.
     """
     salutation = (profile or {}).get("salutation") or ""
     first = (profile or {}).get("first") or ""
     last  = (profile or {}).get("last") or ""
+    pronoun = "Their"
     display = f"{salutation} {first} {last}".strip() or "This scholar"
 
-    # Determine primary focus using the top-2 keywords.
-    top_two = keywords[:2] if len(keywords) >= 2 else keywords[:1]
-    top_two = [k.lower() for k in top_two]
-    focus = " and ".join(top_two) if top_two else "their field"
+    def _lower(k):
+        return k.lower() if k else ""
 
-    # Determine breadth using keywords 3-6.
-    breadth = keywords[2:6]
-    breadth = [k.lower() for k in breadth]
-    breadth_text = ""
-    if len(breadth) >= 2:
-        breadth_text = (
-            f" Their work also touches on {', '.join(breadth[:-1])}, and {breadth[-1]}."
-        )
-    elif breadth:
-        breadth_text = f" Their work also touches on {breadth[0]}."
+    top = [_lower(k) for k in keywords[:3]]
+    breadth = [_lower(k) for k in keywords[3:7]]
 
-    # Publication mix.
-    parts = []
-    if types.get("journalArticle"):
-        parts.append(f"{types['journalArticle']} journal article"
-                     + ("s" if types['journalArticle'] != 1 else ""))
-    if types.get("bookSection"):
-        parts.append(f"{types['bookSection']} book chapter"
-                     + ("s" if types['bookSection'] != 1 else ""))
-    if types.get("book"):
-        parts.append(f"{types['book']} book" + ("s" if types['book'] != 1 else ""))
-    if types.get("report"):
-        parts.append(f"{types['report']} report" + ("s" if types['report'] != 1 else ""))
-    theses = (types.get("thesisPhd") or 0) + (types.get("thesisMasters") or 0) + (types.get("thesisUnknown") or 0)
-    if theses:
-        parts.append(f"{theses} thesis" if theses == 1 else f"{theses} theses")
-    mix = ", ".join(parts[:-1]) + (", and " + parts[-1] if len(parts) > 1 else parts[-1]) if parts else ""
+    def _join_and(items: list[str]) -> str:
+        items = [i for i in items if i]
+        if not items:
+            return ""
+        if len(items) == 1:
+            return items[0]
+        if len(items) == 2:
+            return f"{items[0]} and {items[1]}"
+        return ", ".join(items[:-1]) + f", and {items[-1]}"
 
-    # Compose.
-    s1 = f"{display} researches {focus}."
-    if pub_count > 0:
-        if mix:
-            s2 = f"Their {pub_count} indexed publication{'s' if pub_count != 1 else ''} include{'s' if pub_count == 1 else ''} {mix}."
-        else:
-            s2 = f"They have {pub_count} indexed publication{'s' if pub_count != 1 else ''} in this database."
+    # Sentence 1 — primary focus.
+    if len(top) >= 2:
+        s1 = f"{display}\u2019s research focuses on {_join_and(top)}."
+    elif top:
+        s1 = f"{display}\u2019s research focuses on {top[0]}."
     else:
-        s2 = "No indexed publications yet."
-    s3 = breadth_text.strip()
+        s1 = f"{display} is an iTaukei researcher indexed in this database."
 
-    sentences = [s1, s2]
-    if s3:
-        sentences.append(s3)
+    # Sentence 2 — breadth.
+    s2 = ""
+    if breadth:
+        s2 = f"{pronoun} indexed work also engages with {_join_and(breadth)}."
+
+    # Sentence 3 — institutional / regional grounding, if we have it.
+    inst = (profile or {}).get("institution") or ""
+    dept = (profile or {}).get("department") or ""
+    prov = (profile or {}).get("paternalProvince") or ""
+    grounding = ""
+    if inst and dept:
+        grounding = f"They are based at {inst}, in {dept}."
+    elif inst:
+        grounding = f"They are based at {inst}."
+    if prov and grounding:
+        grounding = grounding.rstrip(".") + f", with paternal roots in {prov} Province."
+
+    sentences = [s for s in (s1, s2, grounding) if s]
     return " ".join(sentences)
 
 
