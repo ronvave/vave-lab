@@ -33,11 +33,25 @@
         "Comanthus Parvicirrus",
         "Cyclic Heptapeptide"
       ],
-      "summary": "A plain-English summary of Prof. Jioji N. Tabudravu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 63 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Dr Tabudravu is a chemist who searches Fiji’s reefs — and increasingly other Pacific ecosystems — for new molecules that could become tomorrow’s medicines, an area known as <a href=\"https://www.fnu.ac.fj/blog/events/dr-jioji-tabudravu-cetvet-seminar/\" target=\"_blank\" rel=\"noopener\">marine natural product biodiscovery</a>. In practical terms, his team isolates compounds from Fijian sponges (for example <a href=\"https://onlinelibrary.wiley.com/doi/full/10.1002/cbdv.202000335\" target=\"_blank\" rel=\"noopener\">Aplysinella rhax and Stylotella aurantium</a>) and tests whether they can inhibit malaria parasites, sleeping-sickness parasites, or cancer cells; his lab has also built database-driven screening tools that help scientists quickly spot genuinely new chemistry rather than re-isolating molecules already known to science. A <a href=\"https://www.parliament.gov.fj/wp-content/uploads/2023/08/Daily-Hansard-Wednesday-12th-July-2023.pdf\" target=\"_blank\" rel=\"noopener\">son of Wainunu in Bua</a>, he continues to link his UK lab back to Fijian universities and students.",
+      "summaryFormat": "html",
       "publicationCount": 63,
       "signature": "sha1:ae3d2681a6a58712",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "FNU CETVET seminar — Exploring the World of Natural Product Biodiscovery",
+          "url": "https://www.fnu.ac.fj/blog/events/dr-jioji-tabudravu-cetvet-seminar/"
+        },
+        {
+          "title": "Fiji Parliament Hansard (welcomed as son of Wainunu, Bua)",
+          "url": "https://www.parliament.gov.fj/wp-content/uploads/2023/08/Daily-Hansard-Wednesday-12th-July-2023.pdf"
+        },
+        {
+          "title": "Chemistry & Biodiversity — Bromotyrosine alkaloids from Fijian sponge Aplysinella rhax",
+          "url": "https://onlinelibrary.wiley.com/doi/full/10.1002/cbdv.202000335"
+        }
+      ]
     },
     "Waqairatu, Salote": {
       "keywords": [
@@ -264,11 +278,25 @@
         "Prevention",
         "Central Division"
       ],
-      "summary": "A plain-English summary of Prof. Gade Waqa’s research is not yet available. See the keyword themes and publication mix below for a first look at the 63 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Dr Waqa leads the Pacific Research Centre for the Prevention of Obesity and <a href=\"https://www.fnu.ac.fj/blog/news/fnu-hosts-important-health-workshop/\" target=\"_blank\" rel=\"noopener\">Non-Communicable Diseases (C-POND)</a> — a WHO Collaborating Centre. Her work asks a very practical question: given that around 80% of deaths in Fiji come from lifestyle diseases like diabetes, heart disease and hypertension, how do you get good scientific evidence into the hands of the ministers and civil servants who actually write food and health policy? Through projects such as <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC3444395/\" target=\"_blank\" rel=\"noopener\">TROPIC (Translational Research for Obesity Prevention in Communities)</a> she has trained government \"knowledge brokers\", studied salt and sugar intake, and pushed for measures such as sugar taxes and healthier food environments in schools and communities across the <a href=\"https://www.fnu.ac.fj/college-of-medicine/wp-content/uploads/sites/6/2024/05/PIHRS-2023-Proceedings-Report.pdf\" target=\"_blank\" rel=\"noopener\">Pacific region</a>.",
+      "summaryFormat": "html",
       "publicationCount": 63,
       "signature": "sha1:29469325d16eeae7",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "FNU — FNU hosts important health workshop (Dr Gade Waqa on Fiji NCD burden)",
+          "url": "https://www.fnu.ac.fj/blog/news/fnu-hosts-important-health-workshop/"
+        },
+        {
+          "title": "BMC Public Health — TROPIC project (Waqa et al.)",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3444395/"
+        },
+        {
+          "title": "Pacific Islands Health Research Symposium 2023 Proceedings",
+          "url": "https://www.fnu.ac.fj/college-of-medicine/wp-content/uploads/sites/6/2024/05/PIHRS-2023-Proceedings-Report.pdf"
+        }
+      ]
     },
     "Veitayaki, Joeli": {
       "keywords": [
