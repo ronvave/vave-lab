@@ -496,13 +496,33 @@
     const theses     = items.filter(i => i.itemType === 'thesis');
     const totalTheses = theses.length;
 
-    // Unique authors: dedupe by normalised surname + first initial. This keeps
-    // "Sopoaga, Faafetai" and "Sopoaga, F." as one person while still
-    // separating true different authors with the same surname.
+    // Unique authors: dedupe by normalised surname + first initial. Creators in
+    // this snapshot are stored as plain strings (either "First Last" or
+    // "Last, First"). This keeps "Sopoaga, Faafetai" and "Sopoaga, F." as one
+    // person while still separating different authors with the same surname.
     const authorSet = new Set();
-    items.forEach(it => (it.creators || []).forEach(c => {
-      const last  = String(c.lastName || c.name || '').trim().toLowerCase();
-      const first = String(c.firstName || '').trim().toLowerCase();
+    items.forEach(it => (it.creators || []).forEach(raw => {
+      if (!raw || typeof raw !== 'string') return;
+      const s = raw.trim();
+      if (!s) return;
+      let last = '', first = '';
+      if (s.includes(',')) {
+        // "Last, First Middle"
+        const [ln, fn] = s.split(',', 2);
+        last  = (ln || '').trim();
+        first = (fn || '').trim();
+      } else {
+        // "First Middle Last" — last token is the surname (handles "Nunia T. Thomas").
+        const tokens = s.split(/\s+/);
+        if (tokens.length === 1) {
+          last = tokens[0];
+        } else {
+          last  = tokens[tokens.length - 1];
+          first = tokens[0];
+        }
+      }
+      last  = last.toLowerCase().replace(/[.]/g, '').trim();
+      first = first.toLowerCase().replace(/[.]/g, '').trim();
       if (!last && !first) return;
       const firstInit = first ? first[0] : '';
       authorSet.add(`${last}|${firstInit}`);
