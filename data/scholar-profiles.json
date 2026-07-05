@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:08.357Z",
+  "generatedAt": "2026-07-05T10:54:09.795Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1761,6 +1761,19 @@
       "slug": "vika-soqo",
       "last": "Soqo",
       "first": "Vika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabua, George V.",
+      "slug": "george-v-tabua",
+      "last": "Tabua",
+      "first": "George V.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
