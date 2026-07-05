@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:28:16.295Z",
+  "generatedAt": "2026-07-05T11:28:18.717Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2814,7 +2814,9 @@
   ],
   "hiddenScholars": [],
   "nameAliases": {
-    "Ravulo, Jioji J.": "Ravulo, Jioji"
+    "Ravulo, Jioji J.": "Ravulo, Jioji",
+    "Waqa, Gade D": "Waqa, Gade",
+    "Waqa, Gade D.": "Waqa, Gade"
   },
   "dismissedVariantGroups": []
 }
