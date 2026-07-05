@@ -712,7 +712,11 @@
           $$('[data-mapscope-panel]').forEach(p => { p.style.display = (p.dataset.mapscopePanel === state.mapScope) ? '' : 'none'; });
           $$('[data-mapscope-note]').forEach(n => { n.style.display = (n.dataset.mapscopeNote === state.mapScope) ? '' : 'none'; });
           if (state.mapScope === 'world') {
+            // Reset any lingering country drill-down each time the world scope
+            // is entered, so the user always lands on the full country list.
+            state.worldSelectedCountry = null;
             renderWorldMap();
+            renderWorldPanel();
           } else {
             // Restore Fiji view
             if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
@@ -792,6 +796,145 @@
   // Renders circle markers for universities where iTaukei scholars have
   // completed graduate studies. Size + colour indicate scholar counts.
   // Data comes from data/itaukei-graduate-studies.json (see refresh-graduate-studies.py).
+  // -------- Right-hand panel for the World scope: countries → universities.
+  // Aggregates worldPoints by country, sorts descending by total degrees, and
+  // supports a drill-down into any country to reveal its universities. Clicks
+  // are wired here; the map zoom is delegated to zoomToWorldCountry().
+  function renderWorldPanel() {
+    const listView   = document.querySelector('[data-world-list-view]');
+    const detailView = document.querySelector('[data-world-detail-view]');
+    const listHost   = document.querySelector('[data-world-country-list]');
+    if (!listHost || !listView || !detailView) return;
+
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const points = grad.worldPoints || [];
+
+    // Aggregate per country.
+    const byCountry = new Map();
+    points.forEach(p => {
+      if (!byCountry.has(p.country)) {
+        byCountry.set(p.country, { name: p.country, iso: p.iso, masters: 0, phd: 0, unis: [] });
+      }
+      const c = byCountry.get(p.country);
+      c.masters += (p.mastersScholars || []).length;
+      c.phd     += (p.phdScholars || []).length;
+      c.unis.push(p);
+    });
+    const countries = Array.from(byCountry.values())
+      .map(c => Object.assign(c, { total: c.masters + c.phd }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+    if (state.worldSelectedCountry) {
+      // Drill-down view for the selected country.
+      listView.style.display = 'none';
+      detailView.style.display = '';
+      const c = byCountry.get(state.worldSelectedCountry);
+      const titleEl    = document.querySelector('[data-world-detail-title]');
+      const subtitleEl = document.querySelector('[data-world-detail-subtitle]');
+      const uniHost    = document.querySelector('[data-world-uni-list]');
+      if (c) {
+        if (titleEl) titleEl.textContent = c.name;
+        if (subtitleEl) {
+          subtitleEl.innerHTML =
+            `<b>Masters</b> ${c.masters} <span class="pipe"></span> ` +
+            `<b>PhD</b> ${c.phd} <span class="pipe"></span> ` +
+            `<span class="db-world-total">Total ${c.total}</span> ` +
+            `· ${c.unis.length} ${c.unis.length === 1 ? 'university' : 'universities'}`;
+        }
+        if (uniHost) {
+          uniHost.innerHTML = '';
+          c.unis.slice().sort((a, b) => {
+            const at = a.phdScholars.length + a.mastersScholars.length;
+            const bt = b.phdScholars.length + b.mastersScholars.length;
+            return bt - at || a.university.localeCompare(b.university);
+          }).forEach(u => {
+            const row = document.createElement('div');
+            row.className = 'db-world-uni-row';
+            const m = u.mastersScholars.length;
+            const p = u.phdScholars.length;
+            row.innerHTML =
+              `<span class="db-world-uni-row__name">${escapeHtml(u.university)}</span>` +
+              `<span class="db-world-uni-row__counts"><b>Masters</b> ${m} ` +
+              `<span class="pipe"></span> <b>PhD</b> ${p}</span>`;
+            uniHost.appendChild(row);
+          });
+        }
+      } else {
+        if (titleEl) titleEl.textContent = state.worldSelectedCountry;
+        if (subtitleEl) subtitleEl.textContent = 'No data available for this country.';
+        if (uniHost) uniHost.innerHTML = '';
+      }
+      return;
+    }
+
+    // Default state: the country list.
+    listView.style.display = '';
+    detailView.style.display = 'none';
+    listHost.innerHTML = '';
+    countries.forEach(c => {
+      const row = document.createElement('div');
+      row.className = 'db-world-country-row';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'db-world-country-row__name';
+      btn.textContent = c.name;
+      btn.setAttribute('aria-label', 'View universities in ' + c.name);
+      btn.addEventListener('click', () => selectWorldCountry(c.name));
+      row.appendChild(btn);
+      const counts = document.createElement('span');
+      counts.className = 'db-world-country-row__counts';
+      counts.innerHTML =
+        `<b>Masters</b> ${c.masters} ` +
+        `<span class="pipe"></span> <b>PhD</b> ${c.phd} ` +
+        `<span class="pipe"></span> <span class="db-world-total">Total ${c.total}</span>`;
+      row.appendChild(counts);
+      listHost.appendChild(row);
+    });
+
+    const narrEl = document.querySelector('[data-world-narrative]');
+    if (narrEl) {
+      const totM = countries.reduce((a, r) => a + r.masters, 0);
+      const totP = countries.reduce((a, r) => a + r.phd, 0);
+      narrEl.textContent = `iTaukei scholars completed ${totM} Master\u2019s and ${totP} PhD ` +
+        `${(totM + totP) === 1 ? 'degree' : 'degrees'} across ${countries.length} ` +
+        `${countries.length === 1 ? 'country' : 'countries'}.`;
+    }
+  }
+
+  function selectWorldCountry(name) {
+    state.worldSelectedCountry = name;
+    renderWorldPanel();
+    zoomToWorldCountry(name);
+  }
+  function clearWorldCountry() {
+    state.worldSelectedCountry = null;
+    renderWorldPanel();
+    // Reset the map to the default Pacific-centric world framing.
+    if (state.map) state.map.setView([-5, 190], 3);
+  }
+
+  function zoomToWorldCountry(name) {
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const pts = (grad.worldPoints || []).filter(p => p.country === name);
+    if (!pts.length || !state.map) return;
+    // Apply the same +360 longitude shift the map uses so the frame lands on
+    // the Pacific-centric copy of the point (not the antimeridian-crossed one).
+    const latlngs = pts.map(p => [p.lat, p.lng < 0 ? p.lng + 360 : p.lng]);
+    if (latlngs.length === 1) {
+      state.map.setView(latlngs[0], 5, { animate: true });
+    } else {
+      const bounds = L.latLngBounds(latlngs);
+      state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6, animate: true });
+    }
+  }
+
+  function wireWorldPanel() {
+    const back = document.querySelector('[data-world-back]');
+    if (back) {
+      back.addEventListener('click', (e) => { e.preventDefault(); clearWorldCountry(); });
+    }
+  }
+
   function renderWorldMap() {
     if (!state.map) return;
     // Remove any Fiji choropleth to avoid cluttering the wider view
@@ -2443,6 +2586,7 @@
     wire();
     wireTypeFilter();
     wirePanelB1();
+    wireWorldPanel();
     wireHistControls();
     renderItems();
     renderFilterChips();
@@ -2526,6 +2670,7 @@
 
   // Initial hydration from URL hash — e.g. #b2=all-authors
   state.b1Authors = 'itaukei';
+  state.worldSelectedCountry = null;
   state.b2View = 'fiji-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';

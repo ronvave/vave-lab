@@ -1489,6 +1489,88 @@
        without having to touch each original rule.
        ============================================================ */
 
+    /* --- World-scope drill-down panel (Countries → Universities) --- */
+    .db-world-panel h4 {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin: 0 0 6px;
+    }
+    .db-world-country-list, .db-world-uni-list {
+      margin-top: var(--space-2);
+    }
+    .db-world-country-row, .db-world-uni-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      column-gap: 14px;
+      align-items: baseline;
+      padding: 10px 0;
+      border-bottom: 1px dashed rgba(15,23,42,0.10);
+    }
+    .db-world-country-row:last-child, .db-world-uni-row:last-child { border-bottom: none; }
+    .db-world-country-row__name {
+      color: var(--color-primary);
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 700;
+      font-size: 0.98rem;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-color: rgba(14,116,144,0.45);
+      cursor: pointer;
+      background: transparent; border: none; padding: 0;
+      text-align: left;
+    }
+    .db-world-country-row__name:hover,
+    .db-world-country-row__name:focus-visible {
+      color: #062f35; text-decoration-color: currentColor;
+    }
+    .db-world-country-row.is-active .db-world-country-row__name {
+      color: #062f35; text-decoration-color: currentColor;
+    }
+    .db-world-uni-row__name {
+      color: var(--color-text);
+      font-weight: 600; font-size: 0.94rem;
+    }
+    .db-world-country-row__counts,
+    .db-world-uni-row__counts {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-variant-numeric: tabular-nums;
+      color: var(--color-text);
+      font-size: 0.88rem;
+      white-space: nowrap;
+    }
+    .db-world-country-row__counts b,
+    .db-world-uni-row__counts b {
+      color: var(--color-text-muted); font-weight: 500;
+    }
+    .db-world-country-row__counts .db-world-total {
+      color: var(--color-primary); font-weight: 700;
+    }
+    .db-world-country-row__counts .pipe,
+    .db-world-uni-row__counts .pipe {
+      display: inline-block; width: 1px; height: 12px;
+      background: rgba(15,23,42,0.25);
+      margin: 0 8px;
+      vertical-align: middle;
+    }
+    .db-world-back {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 0.9rem;
+      color: var(--color-primary);
+      text-decoration: none;
+      padding: 2px 0 4px;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed rgba(14,116,144,0.35);
+    }
+    .db-world-back:hover,
+    .db-world-back:focus-visible {
+      color: #062f35; border-bottom-color: currentColor;
+    }
+
     /* --- Inline dropdown used in Panel B1 title. Inherits the title's
        uppercase / letter-spacing / weight so it reads as part of the title
        rather than a separate form field. A small chevron marks it as
@@ -1915,7 +1997,7 @@
             <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
             <div class="db-map-error" data-db-map-error>Map couldn't load — the rest of the page is still available.</div>
           </div>
-          <aside class="db-map-legend-panel">
+          <aside class="db-map-legend-panel" data-mapscope-panel="fiji">
             <div>
               <h4 data-db-map-legend-title>All Fiji-focused publications by study province</h4>
               <div class="db-choro-scale">
@@ -1962,6 +2044,26 @@
             </div>
             <div class="db-sync-inline">
               <b>Sync:</b> <span data-db-sync-inline>loading…</span>
+            </div>
+          </aside>
+
+          <!-- World scope: countries → universities drill-down. Shown only when
+               "World — iTaukei graduate studies" is selected on the scope tabs. -->
+          <aside class="db-map-legend-panel db-world-panel" data-mapscope-panel="world" style="display:none;">
+            <div data-world-list-view>
+              <h4>Countries of iTaukei graduate study</h4>
+              <p class="db-conf-explain">Master&rsquo;s and PhD degrees completed by iTaukei scholars, grouped by country. Click a country to zoom the map and see the universities inside it.</p>
+              <div class="db-world-country-list" data-world-country-list></div>
+              <p class="db-conf-narrative" data-world-narrative>—</p>
+            </div>
+            <div data-world-detail-view style="display:none;">
+              <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
+              <h4 data-world-detail-title>—</h4>
+              <p class="db-conf-explain" data-world-detail-subtitle>—</p>
+              <div class="db-world-uni-list" data-world-uni-list></div>
+            </div>
+            <div class="db-sync-inline">
+              <b>Note:</b> Only theses catalogued in each scholar&rsquo;s iTaukei sub-collection are counted.
             </div>
           </aside>
         </div>
@@ -2262,6 +2364,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-11" defer></script>
+<script src="js/itaukei-database.js?v=20260704-12" defer></script>
 </body>
 </html>
