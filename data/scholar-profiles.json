@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T21:25:22.670Z",
+  "generatedAt": "2026-07-05T21:27:07.333Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1281,6 +1281,19 @@
       "types.bookSection": "8",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Nayacalevu, Romulo",
+      "slug": "romulo-nayacalevu",
+      "last": "Nayacalevu",
+      "first": "Romulo",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Osborne-Naikatini, Tamara",
