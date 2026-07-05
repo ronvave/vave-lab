@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:28:20.344Z",
+  "generatedAt": "2026-07-05T11:28:22.450Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2761,31 +2761,6 @@
       "types.report": "1"
     },
     {
-      "slug": "donald-wilson",
-      "last": "Wilson",
-      "first": "Donald",
-      "salutation": "Prof.",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "Fiji Institute of Pacific Health Research (Fiji)",
-      "institutionUrl": "https://www.fnu.ac.fj/",
-      "googleScholarUrl": "https://scholar.google.com/citations?hl=en&user=z2jcHJAAAAAJ",
-      "photo": "img/scholars/donald-wilson.jpg",
-      "name": "Wilson, Donald",
-      "confederacy": "",
-      "title": "Associate Dean Research & Director",
-      "orcidUrl": "https://orcid.org/0000-0003-1047-1669",
-      "lastUpdate": "2026-07-04T00:27:26.911Z",
-      "types.journalArticle": "11",
-      "types.thesis": "0",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "0",
-      "profileUrl": "https://www.fnu.ac.fj/research-office-contacts/dr-donald-wilson/",
-      "masters": null,
-      "phd": null
-    },
-    {
       "name": "Wilson, Donald J.",
       "slug": "donald-j-wilson",
       "last": "Wilson",
@@ -2809,7 +2784,12 @@
       "firstAuthored": 3,
       "types": {
         "journalArticle": 44
-      }
+      },
+      "types.journalArticle": "11",
+      "types.thesis": "0",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "0"
     }
   ],
   "hiddenScholars": [],
@@ -2817,7 +2797,9 @@
     "Ratuva, Steven.": "Ratuva, Steven",
     "Ravulo, Jioji J.": "Ravulo, Jioji",
     "Waqa, Gade D": "Waqa, Gade",
-    "Waqa, Gade D.": "Waqa, Gade"
+    "Waqa, Gade D.": "Waqa, Gade",
+    "Wilson, Donald": "Wilson, Donald J.",
+    "Wilson, Donald J": "Wilson, Donald J."
   },
   "dismissedVariantGroups": []
 }
