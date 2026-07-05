@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T21:53:08.714Z",
+  "generatedAt": "2026-07-05T21:56:29.563Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1220,23 +1220,37 @@
       "slug": "elia-nakoro",
       "last": "Nakoro",
       "first": "Elia",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
+      "salutation": "Mr.",
+      "village": "Vatukuca vlg",
+      "paternalProvince": "Cakaudrove",
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/elia-nakoro.jpg",
       "name": "Nakoro, Elia",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Independent Consultant",
+      "orcidUrl": "https://orcid.org/0009-0000-0334-4157",
+      "lastUpdate": "2026-07-05T21:56:29.561Z",
       "types.journalArticle": "6",
       "types.thesis": "0",
       "types.bookSection": "2",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "sector": "",
+      "institutionCountry": "",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": null,
+      "phd": null,
+      "total": 10,
+      "firstAuthored": 0,
+      "types": {
+        "report": 2,
+        "journalArticle": 6,
+        "bookSection": 2
+      }
     },
     {
       "name": "Naqasima-Sobey, Milika",
