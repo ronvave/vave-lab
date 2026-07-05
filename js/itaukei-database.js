@@ -250,6 +250,13 @@
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
 
+    // Name-variant aliases. Curated by the admin in the merge panel and pushed
+    // via data/scholar-profiles.json. Keys are Zotero-creator variants and
+    // values are the canonical author name. Applied when we scan creators so
+    // publications authored under, say, "Tabunakawai, K." are folded into
+    // "Tabunakawai, Kesaia" for pub counts and scholar-card totals.
+    state.nameAliases = new Map(Object.entries((profiles && profiles.nameAliases) || {}));
+
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
     // localStorage under 'vavelab_scholar_sheet_url').
@@ -2154,6 +2161,26 @@
     });
     const firstToken = s => String(s || '').trim().split(/\s+/)[0] || '';
     const stripDots = s => String(s || '').replace(/\./g, '');
+    const aliases = state.nameAliases || new Map();
+
+    // Turn a raw Zotero creator string into a canonical "Last, First" form,
+    // applying the admin's alias map. Returns null on non-string / empty input.
+    function canonicalizeCreator(raw) {
+      if (typeof raw !== 'string' || !raw.trim()) return null;
+      const s = raw.trim();
+      const asLastFirst = s.includes(',') ? s : (() => {
+        const toks = s.split(/\s+/);
+        return `${toks[toks.length - 1]}, ${toks.slice(0, -1).join(' ')}`;
+      })();
+      return aliases.get(asLastFirst) || aliases.get(s) || asLastFirst;
+    }
+    // Build a reverse index (canonical → [variant strings]) so Source A can
+    // sweep aliased variant items into the sub-collection scholar's totals.
+    const variantsByCanonical = new Map();
+    aliases.forEach((canon, variant) => {
+      if (!variantsByCanonical.has(canon)) variantsByCanonical.set(canon, []);
+      variantsByCanonical.get(canon).push(variant);
+    });
 
     // ---- Source A: Zotero sub-collections ----
     const root = cols.find(c => c.name === 'iTaukei authors (>3 papers)');
@@ -2163,8 +2190,10 @@
         const last = c.name.split(',')[0].trim().toLowerCase();
         const types = emptyTypes();
         let firstAuthored = 0;
+        const countedItemKeys = new Set();
         state.snapshot.items.forEach(it => {
           if (!(it.collections || []).includes(c.key)) return;
+          countedItemKeys.add(it.key);
           const vt = visualType(it);
           if (types[vt] != null) types[vt] += 1;
           const creators = it.creators || [];
@@ -2176,7 +2205,40 @@
             if (lastTok === last) firstAuthored += 1;
           }
         });
-        rows.push({ name: c.name, key: c.key, total: c.numItems, firstAuthored, types });
+        let total = c.numItems;
+        // Supplement with items authored under any admin-registered variant name
+        // that maps to this sub-collection's canonical scholar. Skip items already
+        // counted via sub-collection membership so we never double-count.
+        const variants = variantsByCanonical.get(c.name) || [];
+        if (variants.length) {
+          const variantSet = new Set(variants);
+          state.snapshot.items.forEach(it => {
+            if (countedItemKeys.has(it.key)) return;
+            const creators = it.creators || [];
+            let isMatch = false, isFirstMatch = false;
+            for (let i = 0; i < creators.length; i++) {
+              const raw = creators[i];
+              if (typeof raw !== 'string' || !raw.trim()) continue;
+              const s = raw.trim();
+              const asLastFirst = s.includes(',') ? s : (() => {
+                const toks = s.split(/\s+/);
+                return `${toks[toks.length - 1]}, ${toks.slice(0, -1).join(' ')}`;
+              })();
+              if (variantSet.has(asLastFirst) || variantSet.has(s)) {
+                isMatch = true;
+                if (i === 0) isFirstMatch = true;
+                break;
+              }
+            }
+            if (!isMatch) return;
+            countedItemKeys.add(it.key);
+            total += 1;
+            const vt = visualType(it);
+            if (types[vt] != null) types[vt] += 1;
+            if (isFirstMatch) firstAuthored += 1;
+          });
+        }
+        rows.push({ name: c.name, key: c.key, total, firstAuthored, types });
         seenLastFirst.add(c.name.toLowerCase());
         // Also mark the stripped form so a profile keyed under
         // "Tabudravu, Jioji N." doesn't double-emit when we hit source B.
@@ -2216,7 +2278,9 @@
         for (let i = 0; i < creators.length; i++) {
           const raw = creators[i];
           if (typeof raw !== 'string' || !raw.trim()) continue;
-          const s = raw.trim();
+          // Resolve alias BEFORE parsing so a variant like "Tabunakawai, K."
+          // becomes "Tabunakawai, Kesaia" and matches Kesaia's profile.
+          const s = (canonicalizeCreator(raw) || raw).trim();
           let lLow, fTokLow;
           if (s.includes(',')) {
             const [ln, fn] = s.split(',', 2);

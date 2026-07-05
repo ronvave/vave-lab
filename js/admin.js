@@ -45,9 +45,29 @@
     snapshot: null,
     profilesByKey: new Map(),  // key = "Last, First"
     hiddenScholars: new Set(), // names the admin explicitly UNCHECKED (removed from iTaukei list) — filtered out on public dashboard even if still in Zotero collection
+    // Name-variant aliases. Map from a Zotero creator variant (e.g. "Tabunakawai, K.")
+    // to the canonical author name it should be merged into (e.g. "Tabunakawai, Kesaia").
+    // Persisted to data/scholar-profiles.json under `nameAliases`. The public dashboard
+    // reads the same map so pub counts on scholar cards fold in variant items too.
+    nameAliases: new Map(),
+    // Groups the admin has explicitly "dismissed" in the variant finder so we don't keep
+    // suggesting them. Stored as a Set of pipe-joined sorted-name lists.
+    dismissedVariantGroups: new Set(),
     authors: [],               // all unique authors (sorted by total desc)
     filter: { q: '', status: 'all' }
   };
+
+  // Resolve a raw Zotero creator name to its canonical form via the alias map.
+  // Returns the input unchanged when no alias is registered.
+  function resolveAlias(name) {
+    if (!name) return name;
+    return state.nameAliases.get(name) || name;
+  }
+
+  // Stable identity for a group of variant names — used to remember dismissals.
+  function variantGroupId(names) {
+    return [...names].map(n => n.toLowerCase()).sort().join('|');
+  }
 
   // ==================== helpers ====================
   const $ = s => document.querySelector(s);
@@ -127,6 +147,7 @@
     await loadData();
     wireControls();
     render();
+    renderVariantPanel();
   }
 
   // Accept any of the common Google Sheets URL shapes and return a URL that
@@ -236,23 +257,42 @@
     // even though they still exist as Zotero collection subs.
     state.hiddenScholars = new Set(Array.isArray(profilesJson.hiddenScholars) ? profilesJson.hiddenScholars : []);
 
-    // Build unique-author list from Zotero items
+    // Load persisted name-variant aliases (variant → canonical).
+    state.nameAliases = new Map(Object.entries(profilesJson.nameAliases || {}));
+    // Load list of dismissed variant groups (admin said "these are NOT the same person").
+    state.dismissedVariantGroups = new Set(Array.isArray(profilesJson.dismissedVariantGroups)
+      ? profilesJson.dismissedVariantGroups : []);
+
+    // Build unique-author list from Zotero items. Alias resolution here folds
+    // variant-name items into their canonical author so the admin table shows
+    // one row per real person (with the combined pub count) after merges.
+    rebuildAuthors(snap);
+  }
+
+  function rebuildAuthors(snapshot) {
+    const snap = snapshot || state.snapshot;
+    if (!snap) return;
     const authorMap = new Map();
     snap.items.forEach(it => {
       const creators = it.creators || [];
       creators.forEach((c, idx) => {
-        const canonical = canonicalName(c);
-        if (!canonical) return;
+        const raw = canonicalName(c);
+        if (!raw) return;
+        const canonical = resolveAlias(raw);
         if (!authorMap.has(canonical)) {
-          authorMap.set(canonical, { name: canonical, total: 0, firstAuthored: 0, types: {} });
+          authorMap.set(canonical, { name: canonical, total: 0, firstAuthored: 0, types: {}, variants: new Set() });
         }
         const rec = authorMap.get(canonical);
         rec.total += 1;
         if (idx === 0) rec.firstAuthored += 1;
         rec.types[it.itemType] = (rec.types[it.itemType] || 0) + 1;
+        if (raw !== canonical) rec.variants.add(raw);
       });
     });
-    state.authors = Array.from(authorMap.values()).sort((a, b) => b.total - a.total);
+    // Freeze variants as sorted arrays for downstream code.
+    state.authors = Array.from(authorMap.values())
+      .map(a => Object.assign(a, { variants: Array.from(a.variants).sort() }))
+      .sort((a, b) => b.total - a.total);
   }
 
   // Very small CSV parser (handles quoted fields with embedded commas + newlines)
@@ -347,6 +387,264 @@
       if (author.total < 2) return false;
     }
     return true;
+  }
+
+  // ==================== NAME-VARIANT DETECTION ====================
+  // Heuristic: two authors are likely the same person when they share a surname
+  // and their given names are either identical, initials of each other, or share
+  // a first token. We surface groups of 2+ for admin review — we never merge
+  // automatically. Once merged, one alias entry per variant redirects future
+  // Zotero snapshots into the canonical author.
+
+  function normSurname(name) {
+    if (!name) return '';
+    const s = name.includes(',') ? name.split(',')[0] : name.split(/\s+/).slice(-1)[0];
+    return String(s || '').toLowerCase().replace(/[\.'\-\s]+/g, '');
+  }
+
+  function firstNameTokens(name) {
+    if (!name || !name.includes(',')) return [];
+    return String(name.split(',').slice(1).join(',') || '')
+      .split(/\s+/)
+      .map(t => t.replace(/\./g, '').trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  // Are two first-name token sets compatible (i.e. plausibly the same person)?
+  // Rule: at least one shared first-letter across their leading tokens, AND either
+  //   (a) one side has ONLY initial-length tokens (≤1 char), so it can match anyone with
+  //       that first letter (e.g. "K." vs "Kesaia"), OR
+  //   (b) at least one full token appears identically on both sides (e.g. "Sera" vs
+  //       "Sera Va"), OR
+  //   (c) one side is empty (no given name at all).
+  function firstNamesCompatible(a, b) {
+    if (!a.length || !b.length) return true;
+    const initialsA = a.every(t => t.length <= 1);
+    const initialsB = b.every(t => t.length <= 1);
+    const leadA = a[0][0], leadB = b[0][0];
+    if (!leadA || !leadB) return true;
+    if (leadA !== leadB) return false;
+    if (initialsA || initialsB) return true;
+    // Both sides have full tokens — require a shared full token to accept.
+    return a.some(t => t.length > 1 && b.includes(t));
+  }
+
+  // Return an array of variant-group objects the admin should review.
+  // Each group: { key, canonical, members: [{ name, total, isCanonical }], score }
+  function detectVariantGroups() {
+    // Only consider authors that (a) have at least one publication and
+    // (b) aren't already merged INTO something else (they're at their canonical
+    // form here — rebuildAuthors folded variants already).
+    const groupsBySurname = new Map();
+    state.authors.forEach(a => {
+      const surname = normSurname(a.name);
+      if (!surname) return;
+      if (!groupsBySurname.has(surname)) groupsBySurname.set(surname, []);
+      groupsBySurname.get(surname).push(a);
+    });
+
+    const groups = [];
+    for (const [surname, members] of groupsBySurname.entries()) {
+      if (members.length < 2) continue;
+      // Build compatibility clusters within a surname.
+      const buckets = [];
+      for (const author of members) {
+        const tokensA = firstNameTokens(author.name);
+        let placed = false;
+        for (const bucket of buckets) {
+          if (bucket.every(other => firstNamesCompatible(tokensA, firstNameTokens(other.name)))) {
+            bucket.push(author);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) buckets.push([author]);
+      }
+      buckets.filter(b => b.length >= 2).forEach(bucket => {
+        const names = bucket.map(a => a.name);
+        const gid = variantGroupId(names);
+        if (state.dismissedVariantGroups.has(gid)) return;
+        // Determine "canonical" candidate = the one with a fully-typed given name,
+        // preferring iTaukei-profile members, then highest pub count. Fall back to
+        // the first alphabetically stable name.
+        const scored = bucket.slice().sort((x, y) => {
+          const xTokens = firstNameTokens(x.name);
+          const yTokens = firstNameTokens(y.name);
+          const xFull = xTokens.some(t => t.length > 1) ? 1 : 0;
+          const yFull = yTokens.some(t => t.length > 1) ? 1 : 0;
+          if (xFull !== yFull) return yFull - xFull;
+          const xProf = isItaukei(x) ? 1 : 0;
+          const yProf = isItaukei(y) ? 1 : 0;
+          if (xProf !== yProf) return yProf - xProf;
+          if (x.total !== y.total) return y.total - x.total;
+          return x.name.localeCompare(y.name);
+        });
+        const canonical = scored[0].name;
+        groups.push({
+          id: gid,
+          surname,
+          suggestedCanonical: canonical,
+          members: bucket.map(a => ({
+            name: a.name, total: a.total, firstAuthored: a.firstAuthored,
+            iTaukei: isItaukei(a), enriched: statusFlag(a) === 'filled'
+          })).sort((a, b) => b.total - a.total),
+          score: bucket.reduce((s, a) => s + a.total, 0)
+        });
+      });
+    }
+    // Highest combined publication count first (most impactful merges).
+    return groups.sort((a, b) => b.score - a.score);
+  }
+
+  function renderVariantPanel() {
+    const wrap = $('#variants-body');
+    const countBadge = $('#variants-count');
+    const aliasList = $('#variants-alias-list');
+    if (!wrap) return;
+
+    const groups = detectVariantGroups();
+    if (countBadge) countBadge.textContent = groups.length ? `${groups.length} potential group${groups.length===1?'':'s'} to review` : 'No new variants detected';
+
+    wrap.innerHTML = '';
+    if (!groups.length) {
+      wrap.innerHTML = '<p class="subtitle" style="margin:0;color:var(--muted);font-size:0.9rem;">No unreviewed name variants right now. If you see a duplicate that isn\u2019t showing here, use the search in the authors table below and we can teach the detector.</p>';
+    }
+
+    groups.forEach(g => {
+      const card = document.createElement('div');
+      card.className = 'variant-group';
+      card.dataset.gid = g.id;
+      const radioName = `canon-${g.id.replace(/[^a-z0-9]+/gi, '_')}`;
+      const rows = g.members.map(m => {
+        const isCanon = m.name === g.suggestedCanonical;
+        return `
+        <label class="variant-row">
+          <input type="radio" name="${radioName}" data-canonical value="${escapeHtml(m.name)}" ${isCanon?'checked':''} />
+          <input type="checkbox" data-member value="${escapeHtml(m.name)}" checked />
+          <span class="variant-name">${escapeHtml(m.name)}</span>
+          <span class="variant-meta">${m.total} pub${m.total===1?'':'s'}${m.firstAuthored?` · ${m.firstAuthored} first-authored`:''}${m.iTaukei?' · iTaukei':''}${m.enriched?' · profile filled':''}</span>
+        </label>`;
+      }).join('');
+      card.innerHTML = `
+        <div class="variant-head">
+          <div>
+            <div class="variant-title">Possible variants of “${escapeHtml(g.suggestedCanonical)}”</div>
+            <div class="variant-hint">Choose the canonical name (radio), keep only the entries that are really the same person (checkboxes), then Merge.</div>
+          </div>
+          <div class="variant-actions">
+            <button class="btn" data-merge>Merge into canonical</button>
+            <button class="btn ghost" data-dismiss title="These are different people — don\u2019t suggest again">Not the same</button>
+          </div>
+        </div>
+        <div class="variant-rows">${rows}</div>`;
+      card.querySelector('[data-merge]').addEventListener('click', () => mergeVariantGroup(card, g));
+      card.querySelector('[data-dismiss]').addEventListener('click', () => dismissVariantGroup(g));
+      wrap.appendChild(card);
+    });
+
+    // Render existing merges list
+    if (aliasList) {
+      aliasList.innerHTML = '';
+      if (state.nameAliases.size === 0) {
+        aliasList.innerHTML = '<p class="subtitle" style="margin:0;color:var(--muted);font-size:0.85rem;">No merges yet.</p>';
+      } else {
+        // Group by canonical target
+        const byCanon = new Map();
+        for (const [variant, canonical] of state.nameAliases.entries()) {
+          if (!byCanon.has(canonical)) byCanon.set(canonical, []);
+          byCanon.get(canonical).push(variant);
+        }
+        Array.from(byCanon.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .forEach(([canonical, variants]) => {
+            const row = document.createElement('div');
+            row.className = 'alias-row';
+            row.innerHTML = `
+              <div class="alias-canonical">${escapeHtml(canonical)}</div>
+              <div class="alias-variants">${variants.map(v => `<span class="alias-pill">${escapeHtml(v)}<button type="button" class="alias-remove" data-variant="${escapeHtml(v)}" title="Undo this merge">×</button></span>`).join('')}</div>`;
+            row.querySelectorAll('[data-variant]').forEach(btn => {
+              btn.addEventListener('click', () => unmergeVariant(btn.dataset.variant));
+            });
+            aliasList.appendChild(row);
+          });
+      }
+    }
+  }
+
+  async function mergeVariantGroup(cardEl, group) {
+    const canonical = cardEl.querySelector('[data-canonical]:checked');
+    if (!canonical) { toast('Pick a canonical name first.', 'error'); return; }
+    const canonName = canonical.value;
+    const chosen = Array.from(cardEl.querySelectorAll('[data-member]:checked'))
+      .map(cb => cb.value).filter(n => n !== canonName);
+    if (!chosen.length) { toast('Select at least one variant to merge into the canonical name.', 'error'); return; }
+
+    // Add aliases. Also compose transitively (if the canonical was itself the
+    // target of an alias, we'd never overwrite — but here the canonical is a
+    // real author row, so it's a straight variant→canonical mapping).
+    chosen.forEach(variant => { state.nameAliases.set(variant, canonName); });
+
+    // If the canonical is iTaukei but any variant carried a scholar profile,
+    // copy over any non-empty enriched fields into the canonical profile so
+    // hand-filled data (photo, institution, etc.) isn't lost. Then drop the
+    // variant profile entry.
+    const canonProfile = state.profilesByKey.get(canonName) || null;
+    chosen.forEach(variant => {
+      const vp = state.profilesByKey.get(variant);
+      if (!vp) return;
+      if (canonProfile) {
+        for (const [k, v] of Object.entries(vp)) {
+          if (v && !canonProfile[k]) canonProfile[k] = v;
+        }
+        state.profilesByKey.set(canonName, canonProfile);
+      }
+      state.profilesByKey.delete(variant);
+      // Variant is no longer a first-class author, so make sure it's not in the hide-list either.
+      state.hiddenScholars.delete(variant);
+    });
+
+    rebuildAuthors();
+    render();
+    renderVariantPanel();
+
+    toast(`Merged ${chosen.length} variant${chosen.length===1?'':'s'} into ${canonName}. Saving\u2026`);
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try {
+        await pushProfilesToGitHub(`merge variants into ${canonName}`);
+        toast(`Merge saved. Public dashboard updates in ~1 minute.`, 'success');
+      } catch (err) {
+        console.error('merge push failed:', err);
+        toast(`GitHub push failed \u2014 merge is only in this browser. ${err.message}`, 'error');
+      }
+    } else {
+      toast('No GitHub token set \u2014 merge is only in this browser.', 'error');
+    }
+  }
+
+  async function dismissVariantGroup(group) {
+    state.dismissedVariantGroups.add(group.id);
+    renderVariantPanel();
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try { await pushProfilesToGitHub(`dismiss variant suggestion ${group.suggestedCanonical}`); } catch (_) {}
+    }
+  }
+
+  async function unmergeVariant(variant) {
+    if (!state.nameAliases.has(variant)) return;
+    const canonical = state.nameAliases.get(variant);
+    state.nameAliases.delete(variant);
+    rebuildAuthors();
+    render();
+    renderVariantPanel();
+    toast(`Undid merge of ${variant} into ${canonical}. Saving\u2026`);
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try {
+        await pushProfilesToGitHub(`unmerge ${variant}`);
+        toast('Undo saved.', 'success');
+      } catch (err) {
+        toast(`GitHub push failed. ${err.message}`, 'error');
+      }
+    }
   }
 
   function render() {
@@ -689,11 +987,19 @@
       return na.localeCompare(nb);
     });
     const hiddenScholars = Array.from(state.hiddenScholars).sort();
+    // Sort aliases for stable diffs
+    const nameAliases = {};
+    Array.from(state.nameAliases.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([variant, canonical]) => { nameAliases[variant] = canonical; });
+    const dismissedVariantGroups = Array.from(state.dismissedVariantGroups).sort();
     return JSON.stringify({
       generatedAt: new Date().toISOString(),
       source: 'admin-dashboard',
       scholars,
-      hiddenScholars
+      hiddenScholars,
+      nameAliases,
+      dismissedVariantGroups
     }, null, 2) + '\n';
   }
 

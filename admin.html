@@ -222,6 +222,84 @@
   }
   .photo-dz:hover { border-color: var(--teal); background: #f0fdfa; }
   .photo-dz.is-dragover { border-color: var(--teal); background: #ccfbf1; }
+
+  /* ==== Name-variant merge panel ==== */
+  #variants-panel details > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    background: #f6f4ea;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 600;
+    user-select: none;
+  }
+  #variants-panel details > summary::-webkit-details-marker { display: none; }
+  #variants-panel details[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 0; }
+  .variants-summary-caret {
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--muted);
+  }
+  #variants-panel details[open] .variants-summary-caret { transform: rotate(90deg); }
+  #variants-panel .variants-count-badge {
+    color: var(--teal); background: #e0f2f4; padding: 2px 10px; border-radius: 10px;
+    font-size: 0.78rem; font-weight: 600;
+  }
+  #variants-panel .variants-body {
+    border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 14px; background: #fff;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .variant-group {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #fbfaf3;
+  }
+  .variant-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .variant-title { font-weight: 600; color: var(--teal-dark); font-size: 0.98rem; }
+  .variant-hint { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+  .variant-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .variant-rows { display: flex; flex-direction: column; gap: 4px; }
+  .variant-row {
+    display: grid; grid-template-columns: 20px 20px 1fr auto; gap: 8px; align-items: center;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .variant-row:hover { background: #f4f2e6; }
+  .variant-row input[type="radio"], .variant-row input[type="checkbox"] { margin: 0; }
+  .variant-name { color: var(--text); font-weight: 500; }
+  .variant-meta { color: var(--muted); font-size: 0.8rem; }
+
+  /* Existing merges list */
+  #variants-alias-list {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #variants-alias-list h4 { margin: 0 0 4px; font-size: 0.85rem; color: var(--muted); font-family: inherit; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .alias-row {
+    display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 12px;
+    align-items: center; font-size: 0.88rem;
+  }
+  .alias-canonical { font-weight: 600; color: var(--teal-dark); }
+  .alias-variants { display: flex; gap: 6px; flex-wrap: wrap; }
+  .alias-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #e6f3f5; color: var(--teal-dark);
+    padding: 3px 4px 3px 10px; border-radius: 12px; font-size: 0.82rem;
+  }
+  .alias-remove {
+    background: none; border: none; color: var(--teal); cursor: pointer;
+    font-size: 1rem; line-height: 1; padding: 0 6px;
+  }
+  .alias-remove:hover { color: var(--coral); }
   .photo-dz .dz-title { font-weight: 600; color: var(--teal-dark); font-size: 0.9rem; }
   .photo-dz .dz-sub { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
   .photo-actions {
@@ -322,6 +400,25 @@
         <button class="btn" id="gh-token-save">Save token</button>
       </div>
       <p class="subtitle" style="margin-top:6px;font-size:0.82rem;">Create a <b>fine-grained</b> token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <b>ronvave</b> → Repository access: <b>Only select → ronvave/vave-lab</b> → Repository permissions → <b>Contents: Read and write</b>. That’s it — no other scopes needed. Set an expiration you’re comfortable with (e.g. 90 days). Without a token, dropped photos fall back to inline base64 + “Download for repo”.</p>
+    </div>
+
+    <!-- Name-variant merge panel -->
+    <div class="panel" id="variants-panel">
+      <details>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Find name variants (potential duplicates)</span>
+          <span class="variants-count-badge" id="variants-count">—</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 6px;font-size:0.85rem;">Groups of authors that share a surname AND have compatible first names (e.g. “K.” vs “Kesaia”). Choose the canonical name in each group, keep only the entries that really are the same person, then Merge. Merged variants no longer show as separate rows below, and their publications are folded into the canonical author on the public dashboard too.</p>
+          <div id="variants-body"></div>
+          <div>
+            <h4 style="margin: 0 0 4px; font-size: 0.85rem; color: var(--muted); font-family: inherit; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Existing merges</h4>
+            <div id="variants-alias-list"></div>
+          </div>
+        </div>
+      </details>
     </div>
 
     <!-- Authors panel -->
@@ -525,6 +622,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260704-01" defer></script>
+<script src="js/admin.js?v=20260705-01" defer></script>
 </body>
 </html>
