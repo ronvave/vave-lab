@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:36:50.802Z",
+  "generatedAt": "2026-07-05T11:36:53.408Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1750,19 +1750,6 @@
       "photo": ""
     },
     {
-      "name": "TABUANIQILI, KELERA VERELADA",
-      "slug": "kelera-verelada-tabuaniqili",
-      "last": "TABUANIQILI",
-      "first": "KELERA VERELADA",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "name": "Tabudravu, Jioji N.",
       "slug": "jioji-n-tabudravu",
       "last": "Tabudravu",
@@ -2820,6 +2807,7 @@
     "Stoeckl, N.": "Stoeckl, Natalie",
     "Swinburn, Boyd A.": "Swinburn, Boyd",
     "Sykes, H.": "Sykes, Helen",
+    "TABUANIQILI, KELERA VERELADA": "TABUANIQILI, KELERA",
     "Tabunakawai, K.": "Tabunakawai, Kesaia",
     "Tagivakatini, Sereana": "Tagivakatini, Sereana Railoa",
     "Takahashi, K.": "Takahashi, Ken",
