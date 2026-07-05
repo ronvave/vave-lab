@@ -2420,8 +2420,8 @@
     card.style.setProperty('--conf-from', gradient.from);
     card.style.setProperty('--conf-to', gradient.to);
     card.addEventListener('click', ev => {
-      // Ignore clicks on external-profile icons
-      if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid')) return;
+      // Ignore clicks on external-profile icons or the Submit-info button
+      if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid, .db-scholar-card__submit')) return;
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();
@@ -2435,6 +2435,10 @@
 
     card.innerHTML = `
       <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label">${escapeHtml(bannerLabel)}</span></div>
+      <button type="button" class="db-scholar-card__submit" data-submit-info
+              title="Suggest corrections or add missing info for this scholar (name, institution, links, photo, or a BibTeX/EndNote file of their publications). Submissions go to Vave Lab for review before publishing.">
+        Submit info
+      </button>
       <a class="db-scholar-card__orcid${r.orcidUrl ? '' : ' is-missing'}"
          href="${escapeAttr(r.orcidUrl || '#')}"
          ${r.orcidUrl ? 'target="_blank" rel="noopener"' : ''}
@@ -2463,7 +2467,225 @@
       ${chipsHtml ? `<div class="db-scholar-card__types">${chipsHtml}</div>` : ''}
     `;
     wireScholarInsight(card);
+    wireScholarSubmit(card, r);
     return card;
+  }
+
+  // ===================== Submit-info modal =====================
+  // Endpoint that receives the submission. Formsubmit.co sends every field
+  // (including file uploads) to the target email address. First submission
+  // triggers a one-time activation email that must be confirmed by the
+  // recipient before further submissions go through. To switch delivery
+  // providers later (e.g. Formspree, Web3Forms), only this URL needs to
+  // change — the multipart/form-data POST shape is portable.
+  const SUBMIT_ENDPOINT = 'https://formsubmit.co/ronvave2011@gmail.com';
+
+  // Fill the paternal-province dropdown with the same province list the site
+  // already ships. Called lazily on first modal open so the DOM is ready.
+  let provinceOptionsFilled = false;
+  function fillProvinceOptions() {
+    if (provinceOptionsFilled) return;
+    const sel = document.getElementById('db-sf-paternal');
+    if (!sel) return;
+    const provList = (state.provinces && state.provinces.features)
+      ? state.provinces.features.map(f => (f.properties && (f.properties.name || f.properties.NAME)) || '').filter(Boolean)
+      : [];
+    // Dedupe + sort so the UI stays sane even if the geojson has quirks.
+    const uniq = Array.from(new Set(provList)).sort();
+    uniq.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      sel.appendChild(opt);
+    });
+    provinceOptionsFilled = true;
+  }
+
+  function wireScholarSubmit(card, row) {
+    const btn = card.querySelector('[data-submit-info]');
+    if (!btn) return;
+    btn.addEventListener('click', ev => {
+      ev.stopPropagation();
+      openScholarSubmitModal(row);
+    });
+  }
+
+  function openScholarSubmitModal(row) {
+    const modal = document.getElementById('db-submit-modal');
+    if (!modal) return;
+    fillProvinceOptions();
+
+    // Pull existing enriched profile (village, institution, urls, etc) so we
+    // can pre-populate the form. Fall back to empty strings when unknown.
+    const profile = (state.scholarProfilesByName && state.scholarProfilesByName.get(row.name)) || {};
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : String(v); };
+
+    setVal('db-sf-yourname', '');
+    setVal('db-sf-youremail', '');
+    setVal('db-sf-relationship', '');
+
+    setVal('db-sf-salutation',   profile.salutation || '');
+    setVal('db-sf-village',      profile.village || '');
+    setVal('db-sf-paternal',     profile.paternalProvince || '');
+    setVal('db-sf-title',        profile.title || '');
+    setVal('db-sf-institution',  profile.institution || '');
+    setVal('db-sf-institution-url', profile.institutionUrl || '');
+    setVal('db-sf-department',   profile.department || '');
+    setVal('db-sf-department-url', profile.departmentUrl || '');
+    setVal('db-sf-profile-url',  profile.profileUrl || '');
+    setVal('db-sf-scholar-url',  profile.googleScholarUrl || '');
+    setVal('db-sf-orcid-url',    profile.orcidUrl || '');
+    setVal('db-sf-photo',        profile.photo || '');
+    setVal('db-sf-masters-uni',     (profile.masters && profile.masters.university) || '');
+    setVal('db-sf-masters-country', (profile.masters && profile.masters.country) || '');
+    setVal('db-sf-phd-uni',         (profile.phd && profile.phd.university) || '');
+    setVal('db-sf-phd-country',     (profile.phd && profile.phd.country) || '');
+    setVal('db-sf-notes', '');
+    const bibFile = document.getElementById('db-sf-bib-file'); if (bibFile) bibFile.value = '';
+    const photoFile = document.getElementById('db-sf-photo-file'); if (photoFile) photoFile.value = '';
+
+    // Hidden fields for provenance + email subject line
+    setVal('db-sf-scholar-name', row.name);
+    setVal('db-sf-scholar-slug', (profile.slug || row.name || '').toString());
+    setVal('db-sf-subject', `Vave Lab — submit info for ${row.name}`);
+
+    // Header subtitle
+    const sub = document.getElementById('db-submit-modal-sub');
+    if (sub) sub.textContent = `Correcting / adding info for ${row.name}. Fields below are pre-filled with the info the public dashboard is currently showing.`;
+
+    // Reset status
+    const status = document.getElementById('db-submit-status');
+    if (status) { status.textContent = ''; status.className = 'db-submit-modal__status'; }
+    const submitBtn = document.querySelector('[data-submit-send]');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit for review'; }
+
+    modal.classList.add('is-visible');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeScholarSubmitModal() {
+    const modal = document.getElementById('db-submit-modal');
+    if (!modal) return;
+    modal.classList.remove('is-visible');
+    document.body.style.overflow = '';
+  }
+
+  // Wire modal-level interactions (once on load, not per card).
+  function wireSubmitModalOnce() {
+    const modal = document.getElementById('db-submit-modal');
+    if (!modal || modal.dataset.wired) return;
+    modal.dataset.wired = '1';
+
+    // Cancel button + backdrop click + ESC
+    modal.querySelector('[data-submit-cancel]').addEventListener('click', closeScholarSubmitModal);
+    modal.addEventListener('click', ev => {
+      if (ev.target === modal) closeScholarSubmitModal();
+    });
+    document.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape' && modal.classList.contains('is-visible')) closeScholarSubmitModal();
+    });
+
+    const form   = document.getElementById('db-submit-form');
+    const status = document.getElementById('db-submit-status');
+    const submitBtn = form.querySelector('[data-submit-send]');
+
+    function showStatus(kind, msg) {
+      if (!status) return;
+      status.textContent = msg;
+      status.className = 'db-submit-modal__status is-visible is-' + kind;
+    }
+
+    form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      // Enforce required fields explicitly — native validation may be
+      // suppressed by the `novalidate` attribute on the form.
+      const yourName  = form.querySelector('#db-sf-yourname').value.trim();
+      const yourEmail = form.querySelector('#db-sf-youremail').value.trim();
+      const rel       = form.querySelector('#db-sf-relationship').value.trim();
+      if (!yourName || !yourEmail || !rel) {
+        showStatus('error', 'Please fill in your name, email, and relationship before submitting.');
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(yourEmail)) {
+        showStatus('error', 'That email address doesn\u2019t look right — double-check the format (e.g. name@example.com).');
+        return;
+      }
+
+      // Snapshot every text field as a JSON blob so Ron can paste the entire
+      // structured submission into the admin dashboard in one shot without
+      // re-typing each field.
+      const jsonBlob = {
+        scholar_name:   form.querySelector('#db-sf-scholar-name').value,
+        scholar_slug:   form.querySelector('#db-sf-scholar-slug').value,
+        submitter: {
+          name:  yourName,
+          email: yourEmail,
+          relationship: rel
+        },
+        profile: {
+          salutation:       form.querySelector('#db-sf-salutation').value.trim(),
+          village:          form.querySelector('#db-sf-village').value.trim(),
+          paternalProvince: form.querySelector('#db-sf-paternal').value.trim(),
+          title:            form.querySelector('#db-sf-title').value.trim(),
+          institution:      form.querySelector('#db-sf-institution').value.trim(),
+          institutionUrl:   form.querySelector('#db-sf-institution-url').value.trim(),
+          department:       form.querySelector('#db-sf-department').value.trim(),
+          departmentUrl:    form.querySelector('#db-sf-department-url').value.trim(),
+          profileUrl:       form.querySelector('#db-sf-profile-url').value.trim(),
+          googleScholarUrl: form.querySelector('#db-sf-scholar-url').value.trim(),
+          orcidUrl:         form.querySelector('#db-sf-orcid-url').value.trim(),
+          photo:            form.querySelector('#db-sf-photo').value.trim()
+        },
+        masters: {
+          university: form.querySelector('#db-sf-masters-uni').value.trim(),
+          country:    form.querySelector('#db-sf-masters-country').value.trim()
+        },
+        phd: {
+          university: form.querySelector('#db-sf-phd-uni').value.trim(),
+          country:    form.querySelector('#db-sf-phd-country').value.trim()
+        },
+        notes: form.querySelector('#db-sf-notes').value.trim(),
+        submittedAt: new Date().toISOString()
+      };
+      form.querySelector('#db-sf-submission-json').value = JSON.stringify(jsonBlob, null, 2);
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending\u2026';
+      showStatus('success', 'Sending your submission\u2026');
+
+      try {
+        const fd = new FormData(form);
+        // Formsubmit.co’s AJAX endpoint returns JSON but doesn’t accept file
+        // uploads on that path. When files are attached, fall back to a same-
+        // origin fetch to the regular endpoint (which redirects). We handle
+        // the redirect manually by catching a network-level 'opaqueredirect'.
+        const hasFile = fd.getAll('publications_file').some(v => v && v.name)
+                     || fd.getAll('photo_file').some(v => v && v.name);
+        const url = SUBMIT_ENDPOINT.replace('formsubmit.co/', hasFile ? 'formsubmit.co/' : 'formsubmit.co/ajax/');
+
+        const res = await fetch(url, {
+          method: 'POST',
+          body: fd,
+          headers: hasFile ? {} : { 'Accept': 'application/json' },
+          redirect: 'follow'
+        });
+        // Success = HTTP 200 (json path) or a redirect landed successfully.
+        if (!res.ok && res.status !== 0) throw new Error('HTTP ' + res.status);
+        showStatus('success',
+          `Thank you! Your submission for ${jsonBlob.scholar_name} has been sent to Vave Lab for review. ` +
+          `We\u2019ll update the public profile once we\u2019ve confirmed the changes with you if needed. ` +
+          `You can close this window now.`);
+        submitBtn.textContent = 'Submitted';
+        // Auto-close after a moment so the user isn’t stuck.
+        setTimeout(closeScholarSubmitModal, 4500);
+      } catch (err) {
+        console.error('scholar-info submission failed:', err);
+        showStatus('error',
+          'Sorry — the submission couldn\u2019t be sent right now. ' +
+          'Please try again in a minute, or email ronvave2011@gmail.com directly with your corrections.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit for review';
+      }
+    });
   }
 
   // -------- "Explain their research (AI generated)" — button + expandable panel --------
@@ -2923,6 +3145,8 @@
       if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the database snapshot. Please refresh the page in a moment.</li>';
       return;
     }
+    // Wire the shared "Submit info" modal once (button per card wires open handler).
+    wireSubmitModalOnce();
     renderStats();
     renderDonut();
     populateDisciplineSelect();

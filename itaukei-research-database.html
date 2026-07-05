@@ -740,14 +740,31 @@
       position: relative;
     }
     .db-scholar-card__conf-label {
-      position: absolute; bottom: 12px; left: 20px;
+      position: absolute; top: 24px; left: 20px;
       font-family: 'Cormorant Garamond', serif;
       font-size: 1.15rem; font-weight: 700;
       letter-spacing: 0.08em; text-transform: uppercase;
       color: #111;
+      line-height: 1;
     }
     /* Neutral banner ("ITAUKEI SCHOLAR") uses white text for contrast on the dark teal gradient */
     .db-scholar-card--neutral .db-scholar-card__conf-label { color: #fff; }
+    /* Submit info button in the banner — lets scholars (or those close to them)
+       propose corrections. Clicking opens the submission modal. Positioned in
+       the banner between the confederacy label and the profile icons. */
+    .db-scholar-card__submit {
+      position: absolute; top: 18px; right: 105px;
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 34px; padding: 0 12px;
+      background: #062f35; color: #fff;
+      font: inherit; font-size: 0.82rem; font-weight: 600;
+      border: none; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 2px 6px rgba(6,47,53,0.18);
+      transition: transform .12s, background .12s;
+    }
+    .db-scholar-card__submit:hover { transform: scale(1.04); background: #0e7490; }
+    .db-scholar-card__submit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+    .db-scholar-card__submit svg { width: 14px; height: 14px; }
     /* Body row: avatar + info */
     .db-scholar-card__body {
       padding: 18px 22px 20px;
@@ -1761,6 +1778,83 @@
       font-weight: 700 !important;
       font-style: normal !important;
     }
+    /* ==== Submit-info modal ==== */
+    .db-submit-modal {
+      position: fixed; inset: 0; z-index: 9999;
+      background: rgba(6,47,53,0.55);
+      display: none; align-items: flex-start; justify-content: center;
+      padding: 40px 16px; overflow-y: auto;
+    }
+    .db-submit-modal.is-visible { display: flex; }
+    .db-submit-modal__dialog {
+      background: #fff; color: var(--color-text);
+      border-radius: 14px; box-shadow: 0 20px 60px rgba(6,47,53,0.35);
+      width: 100%; max-width: 720px;
+      padding: 28px 30px 24px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+    }
+    .db-submit-modal__dialog h2 {
+      font-family: 'Cormorant Garamond', serif; font-weight: 500;
+      font-size: 1.6rem; color: #062f35;
+      margin: 0 0 4px; text-transform: none; letter-spacing: 0;
+    }
+    .db-submit-modal__sub { color: var(--color-text-muted); font-size: 0.88rem; margin-bottom: 12px; }
+    .db-submit-modal__notice {
+      background: #fdf6e3; border-left: 4px solid #d97706;
+      padding: 10px 14px; border-radius: 6px;
+      color: #78350f; font-size: 0.86rem; line-height: 1.4;
+      margin-bottom: 18px;
+    }
+    .db-submit-modal__notice strong { color: #78350f; }
+    .db-submit-modal fieldset {
+      border: 1px solid var(--color-border); border-radius: 10px;
+      padding: 14px 16px 12px; margin: 0 0 16px;
+    }
+    .db-submit-modal legend {
+      padding: 0 8px; font-weight: 600; font-size: 0.9rem;
+      color: #062f35; letter-spacing: 0.02em;
+    }
+    .db-submit-modal .grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px;
+    }
+    @media (max-width: 560px) { .db-submit-modal .grid { grid-template-columns: 1fr; } }
+    .db-submit-modal label {
+      display: block; font-size: 0.82rem; font-weight: 600;
+      color: #062f35; margin-bottom: 4px;
+    }
+    .db-submit-modal label .req { color: #b23a48; margin-left: 2px; }
+    .db-submit-modal input, .db-submit-modal select, .db-submit-modal textarea {
+      width: 100%; padding: 8px 10px; font: inherit; font-size: 0.9rem;
+      border: 1px solid var(--color-border); border-radius: 6px; background: #fff;
+      color: var(--color-text);
+    }
+    .db-submit-modal input:focus, .db-submit-modal select:focus, .db-submit-modal textarea:focus {
+      outline: 2px solid var(--color-primary); border-color: var(--color-primary);
+    }
+    .db-submit-modal small { display: block; color: var(--color-text-muted); font-size: 0.74rem; margin-top: 3px; }
+    .db-submit-modal input[type="file"] {
+      padding: 6px; background: #f8fafc; cursor: pointer;
+    }
+    .db-submit-modal__actions {
+      display: flex; justify-content: space-between; gap: 10px; margin-top: 10px; flex-wrap: wrap;
+    }
+    .db-submit-modal__btn {
+      padding: 10px 20px; font: inherit; font-size: 0.9rem; font-weight: 600;
+      border-radius: 8px; cursor: pointer; border: 1px solid transparent;
+      transition: background .12s, color .12s;
+    }
+    .db-submit-modal__btn--primary { background: #062f35; color: #fff; }
+    .db-submit-modal__btn--primary:hover { background: #0e7490; }
+    .db-submit-modal__btn--primary:disabled { background: #94a3b8; cursor: wait; }
+    .db-submit-modal__btn--ghost { background: #fff; color: #b23a48; border-color: #b23a48; }
+    .db-submit-modal__btn--ghost:hover { background: #fdf1f3; }
+    .db-submit-modal__status {
+      margin-top: 12px; padding: 10px 14px; border-radius: 6px;
+      font-size: 0.88rem; line-height: 1.4; display: none;
+    }
+    .db-submit-modal__status.is-visible { display: block; }
+    .db-submit-modal__status.is-success { background: #ecfdf5; color: #065f46; border-left: 4px solid #16a34a; }
+    .db-submit-modal__status.is-error   { background: #fef2f2; color: #991b1b; border-left: 4px solid #b91c1c; }
   </style>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -2470,6 +2564,160 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260705-09" defer></script>
+<!-- ==== Submit-info modal (for scholars to propose corrections) ==== -->
+<div class="db-submit-modal" id="db-submit-modal" role="dialog" aria-modal="true" aria-labelledby="db-submit-modal-title">
+  <div class="db-submit-modal__dialog">
+    <h2 id="db-submit-modal-title">Submit info for this scholar</h2>
+    <p class="db-submit-modal__sub" id="db-submit-modal-sub"></p>
+    <div class="db-submit-modal__notice">
+      <strong>Please read:</strong> corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, or students can also submit on their behalf.
+    </div>
+
+    <form id="db-submit-form" enctype="multipart/form-data" novalidate>
+      <fieldset>
+        <legend>Who is submitting this</legend>
+        <div class="grid">
+          <div>
+            <label for="db-sf-yourname">Your name <span class="req">*</span></label>
+            <input type="text" id="db-sf-yourname" name="submitter_name" required maxlength="120" />
+          </div>
+          <div>
+            <label for="db-sf-youremail">Your email <span class="req">*</span></label>
+            <input type="email" id="db-sf-youremail" name="submitter_email" required maxlength="200" />
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label for="db-sf-relationship">Relationship to this scholar <span class="req">*</span></label>
+            <select id="db-sf-relationship" name="submitter_relationship" required>
+              <option value="">Select one…</option>
+              <option value="self">This is my own profile</option>
+              <option value="family">Family / relative</option>
+              <option value="colleague">Colleague / collaborator</option>
+              <option value="student">Student / mentee</option>
+              <option value="supervisor">Supervisor / advisor</option>
+              <option value="community">Community member</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Scholar profile</legend>
+        <div class="grid">
+          <div>
+            <label for="db-sf-salutation">Salutation</label>
+            <select id="db-sf-salutation" name="salutation">
+              <option value="">(none)</option>
+              <option>Dr.</option><option>Prof.</option>
+              <option>Mr.</option><option>Mrs.</option><option>Ms.</option>
+            </select>
+          </div>
+          <div>
+            <label for="db-sf-village">Village</label>
+            <input type="text" id="db-sf-village" name="village" placeholder="e.g. Tubou" />
+          </div>
+          <div>
+            <label for="db-sf-paternal">Paternal Province</label>
+            <select id="db-sf-paternal" name="paternal_province">
+              <option value="">(select)</option>
+            </select>
+            <small>Confederacy is derived automatically.</small>
+          </div>
+          <div>
+            <label for="db-sf-title">Professional title</label>
+            <input type="text" id="db-sf-title" name="title" placeholder="e.g. Senior Lecturer" />
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label for="db-sf-institution">Institution</label>
+            <input type="text" id="db-sf-institution" name="institution" />
+          </div>
+          <div>
+            <label for="db-sf-institution-url">Institution URL</label>
+            <input type="url" id="db-sf-institution-url" name="institution_url" placeholder="https://…" />
+          </div>
+          <div>
+            <label for="db-sf-department">Department</label>
+            <input type="text" id="db-sf-department" name="department" />
+          </div>
+          <div>
+            <label for="db-sf-department-url">Department URL</label>
+            <input type="url" id="db-sf-department-url" name="department_url" placeholder="https://…" />
+          </div>
+          <div>
+            <label for="db-sf-profile-url">Faculty profile URL</label>
+            <input type="url" id="db-sf-profile-url" name="profile_url" placeholder="https://…" />
+          </div>
+          <div>
+            <label for="db-sf-scholar-url">Google Scholar URL</label>
+            <input type="url" id="db-sf-scholar-url" name="google_scholar_url" placeholder="https://scholar.google.com/citations?user=…" />
+          </div>
+          <div>
+            <label for="db-sf-orcid-url">ORCID iD URL</label>
+            <input type="url" id="db-sf-orcid-url" name="orcid_url" placeholder="https://orcid.org/0000-0000-0000-0000" />
+          </div>
+          <div>
+            <label for="db-sf-photo">Profile photo URL</label>
+            <input type="url" id="db-sf-photo" name="photo_url" placeholder="https://… or leave blank" />
+            <small>Or attach the image file below.</small>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <label for="db-sf-photo-file">Attach a photo (optional)</label>
+            <input type="file" id="db-sf-photo-file" name="photo_file" accept="image/*" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Graduate studies (optional)</legend>
+        <div class="grid">
+          <div>
+            <label for="db-sf-masters-uni">Masters — University</label>
+            <input type="text" id="db-sf-masters-uni" name="masters_university" />
+          </div>
+          <div>
+            <label for="db-sf-masters-country">Masters — Country</label>
+            <input type="text" id="db-sf-masters-country" name="masters_country" />
+          </div>
+          <div>
+            <label for="db-sf-phd-uni">PhD — University</label>
+            <input type="text" id="db-sf-phd-uni" name="phd_university" />
+          </div>
+          <div>
+            <label for="db-sf-phd-country">PhD — Country</label>
+            <input type="text" id="db-sf-phd-country" name="phd_country" />
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Publications to add</legend>
+        <label for="db-sf-bib-file">BibTeX or EndNote file</label>
+        <input type="file" id="db-sf-bib-file" name="publications_file" accept=".bib,.enl,.enw,.ris,.txt,.xml" />
+        <small>Attach a single file containing <strong>all</strong> the publications you want added. BibTeX (.bib) is preferred; EndNote (.enw / .enl / .ris) is also fine.</small>
+        <div style="margin-top: 10px;">
+          <label for="db-sf-notes">Anything else we should know?</label>
+          <textarea id="db-sf-notes" name="notes" rows="3" placeholder="Optional — e.g. context on which fields you edited, or corrections that don't fit above."></textarea>
+        </div>
+      </fieldset>
+
+      <!-- Formsubmit.co configuration — hidden fields -->
+      <input type="hidden" name="_subject" id="db-sf-subject" value="Vave Lab scholar-info submission" />
+      <input type="hidden" name="_captcha" value="false" />
+      <input type="hidden" name="_template" value="table" />
+      <input type="hidden" name="scholar_name" id="db-sf-scholar-name" value="" />
+      <input type="hidden" name="scholar_slug" id="db-sf-scholar-slug" value="" />
+      <input type="hidden" name="submission_json" id="db-sf-submission-json" value="" />
+
+      <div class="db-submit-modal__actions">
+        <button type="button" class="db-submit-modal__btn db-submit-modal__btn--ghost" data-submit-cancel>Cancel</button>
+        <button type="submit" class="db-submit-modal__btn db-submit-modal__btn--primary" data-submit-send>Submit for review</button>
+      </div>
+
+      <div class="db-submit-modal__status" id="db-submit-status"></div>
+    </form>
+  </div>
+</div>
+
+<script src="js/itaukei-database.js?v=20260705-10" defer></script>
 </body>
 </html>

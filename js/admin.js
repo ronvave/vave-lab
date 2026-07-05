@@ -1114,6 +1114,114 @@
     if (urlInput) urlInput.style.display = 'none';
   }
 
+  // ==================== Submission paste helper ====================
+  // Takes JSON pasted from a submission email and opens the matching scholar's
+  // Edit modal with the proposed values pre-filled. Ron reviews and saves.
+  function findAuthorByName(name) {
+    if (!name) return null;
+    const target = name.trim().toLowerCase();
+    // 1) Exact match against known authors
+    let hit = state.authors.find(a => a.name.toLowerCase() === target);
+    if (hit) return hit;
+    // 2) Match through alias table (variant → canonical)
+    const canon = state.nameAliases.get(name);
+    if (canon) {
+      hit = state.authors.find(a => a.name.toLowerCase() === canon.toLowerCase());
+      if (hit) return hit;
+    }
+    // 3) Loose match by "Last, First-token"
+    const [last, first] = name.split(',').map(s => (s || '').trim());
+    if (last && first) {
+      const firstTok = first.split(/\s+/)[0].toLowerCase();
+      hit = state.authors.find(a => {
+        const [l, f] = a.name.split(',').map(s => (s || '').trim());
+        return l && f && l.toLowerCase() === last.toLowerCase()
+            && f.split(/\s+/)[0].toLowerCase() === firstTok;
+      });
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function applyPastedSubmission() {
+    const ta = $('#submission-paste');
+    const status = $('#submission-status');
+    const raw = (ta && ta.value || '').trim();
+    if (!raw) { status.textContent = 'Paste the JSON first.'; return; }
+    let data;
+    try { data = JSON.parse(raw); }
+    catch (err) {
+      status.textContent = 'That doesn\u2019t look like valid JSON — double-check you copied the whole block.';
+      return;
+    }
+    const name = data.scholar_name || (data.profile && data.profile.name) || '';
+    const author = findAuthorByName(name);
+    if (!author) {
+      status.textContent = `Couldn\u2019t find a scholar named “${name || '(unknown)'}” in the current authors list.`;
+      return;
+    }
+    // Ensure the scholar is flagged iTaukei so their profile can be edited.
+    if (!isItaukei(author)) {
+      // Create an empty profile so openEdit can populate it. This mirrors
+      // toggleItaukei's re-add branch but skips the auto-push, since we're
+      // about to open the Edit modal and Ron will Save anyway.
+      const [last, first] = author.name.split(',').map(s => s.trim());
+      state.profilesByKey.set(author.name, {
+        name: author.name, slug: slugify(`${first}-${last}`),
+        last, first, salutation: '', village: '', paternalProvince: '',
+        institution: '', institutionUrl: '', googleScholarUrl: '', photo: ''
+      });
+      state.hiddenScholars.delete(author.name);
+      render();
+    }
+    // Overlay the pasted profile fields ONTO the existing saved profile so we
+    // don't wipe filled fields when the submitter left something blank.
+    const p = Object.assign({}, state.profilesByKey.get(author.name) || {});
+    const src = data.profile || {};
+    const nonEmpty = (v) => v != null && String(v).trim() !== '';
+    if (nonEmpty(src.salutation))       p.salutation = src.salutation;
+    if (nonEmpty(src.village))          p.village = src.village;
+    if (nonEmpty(src.paternalProvince)) p.paternalProvince = src.paternalProvince;
+    if (nonEmpty(src.title))            p.title = src.title;
+    if (nonEmpty(src.institution))      p.institution = src.institution;
+    if (nonEmpty(src.institutionUrl))   p.institutionUrl = src.institutionUrl;
+    if (nonEmpty(src.department))       p.department = src.department;
+    if (nonEmpty(src.departmentUrl))    p.departmentUrl = src.departmentUrl;
+    if (nonEmpty(src.profileUrl))       p.profileUrl = src.profileUrl;
+    if (nonEmpty(src.googleScholarUrl)) p.googleScholarUrl = src.googleScholarUrl;
+    if (nonEmpty(src.orcidUrl))         p.orcidUrl = src.orcidUrl;
+    if (nonEmpty(src.photo))            p.photo = src.photo;
+    const m = data.masters || {}, ph = data.phd || {};
+    if (nonEmpty(m.university) || nonEmpty(m.country)) {
+      p.masters = Object.assign({}, p.masters || {}, {
+        university: m.university || (p.masters && p.masters.university) || '',
+        country:    m.country    || (p.masters && p.masters.country)    || ''
+      });
+    }
+    if (nonEmpty(ph.university) || nonEmpty(ph.country)) {
+      p.phd = Object.assign({}, p.phd || {}, {
+        university: ph.university || (p.phd && p.phd.university) || '',
+        country:    ph.country    || (p.phd && p.phd.country)    || ''
+      });
+    }
+    state.profilesByKey.set(author.name, p);
+
+    // Open the existing Edit modal. It re-reads from state.profilesByKey.
+    openEdit(author);
+
+    // Attach a submitter-provenance hint above the modal form.
+    const meta = data.submitter ? `Submitted by ${data.submitter.name} <${data.submitter.email}> (${data.submitter.relationship}) on ${new Date(data.submittedAt || Date.now()).toLocaleString()}.` : '';
+    const notes = (data.notes || '').trim();
+    const subtitle = $('#profile-modal-subtitle');
+    if (subtitle) {
+      const baseText = subtitle.textContent;
+      subtitle.innerHTML = escapeHtml(baseText)
+        + (meta   ? `<br><em style="color:#0e7490;">${escapeHtml(meta)}</em>` : '')
+        + (notes  ? `<br><em style="color:#0e7490;">Notes: ${escapeHtml(notes)}</em>` : '');
+    }
+    status.textContent = `Loaded submission for ${author.name}. Review the fields and click Save changes.`;
+  }
+
   function wireControls() {
     // Search + status filters
     let searchTimer;
@@ -1132,6 +1240,15 @@
       setTimeout(() => loadData().then(render), 300);
     });
     $('#reload-btn').addEventListener('click', () => { loadData().then(render); });
+
+    // Submission paste helper wiring
+    const applyBtn = $('#submission-apply');
+    const clearBtn = $('#submission-clear');
+    if (applyBtn) applyBtn.addEventListener('click', applyPastedSubmission);
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      $('#submission-paste').value = '';
+      $('#submission-status').textContent = '';
+    });
 
     // ============== Force sync from Zotero ==============
     // Triggers the GitHub Action `refresh-zotero-snapshot.yml` via API, then

@@ -421,6 +421,30 @@
       </details>
     </div>
 
+    <!-- Submitted-info panel -->
+    <div class="panel" id="submissions-panel">
+      <details>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Suggested edits from public dashboard</span>
+          <span class="variants-count-badge">Paste to apply</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 8px;font-size:0.85rem;">
+            When someone clicks “Submit info” on a scholar card in the public dashboard, their submission is emailed to <code>ronvave2011@gmail.com</code>. The email body contains a machine-readable <code>submission_json</code> block. Paste that JSON here and I’ll open the matching scholar’s Edit form pre-filled with the proposed values so you can review, tweak, and save in one flow.
+          </p>
+          <label for="submission-paste" style="font-size:0.82rem;font-weight:600;color:var(--teal-dark);display:block;margin-bottom:4px;">Paste submission JSON</label>
+          <textarea id="submission-paste" rows="6" placeholder='Paste the submission_json block from the email here — starts with { "scholar_name": ...'
+                    style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Menlo','Consolas',monospace;font-size:0.82rem;background:#fbfaf3;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+            <button class="btn" id="submission-apply">Open in Edit form</button>
+            <button class="btn ghost" id="submission-clear">Clear</button>
+            <span id="submission-status" style="color:var(--muted);font-size:0.82rem;"></span>
+          </div>
+        </div>
+      </details>
+    </div>
+
     <!-- Authors panel -->
     <div class="panel">
       <h2>Authors extracted from Zotero
@@ -622,6 +646,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260705-01" defer></script>
+<script src="js/admin.js?v=20260705-02" defer></script>
 </body>
 </html>
