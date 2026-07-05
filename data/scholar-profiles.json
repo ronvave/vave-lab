@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:19.415Z",
+  "generatedAt": "2026-07-05T10:54:22.079Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1337,6 +1337,19 @@
       "slug": "sakiusa-qereqeretabua",
       "last": "Qereqeretabua",
       "first": "Sakiusa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "QEREQERETABUA, TIMOCI",
+      "slug": "timoci-qereqeretabua",
+      "last": "QEREQERETABUA",
+      "first": "TIMOCI",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
