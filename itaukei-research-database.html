@@ -113,27 +113,39 @@
       grid-template-columns: repeat(6, minmax(0, 1fr));
       gap: var(--space-3);
     }
-    @media (max-width: 1000px) { .db-kpis { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 560px)  { .db-kpis { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 1100px) { .db-kpis { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 620px)  { .db-kpis { grid-template-columns: repeat(2, 1fr); } }
+    /* Horizontal KPI card: line-art icon in a soft teal disc on the left,
+       large number + short label stacked on the right. Matches Ron's mockup. */
     .db-kpi {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
-      padding: 14px 10px 12px;
-      text-align: center;
+      padding: 14px 14px;
       box-shadow: var(--shadow-sm);
-      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      display: flex; align-items: center; gap: 12px;
+      text-align: left; min-width: 0;
     }
-    .db-kpi__icon { font-size: 1.35rem; line-height: 1; margin-bottom: 2px; }
+    .db-kpi__icon {
+      flex-shrink: 0;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: rgba(14,116,144,0.10);
+      color: var(--color-primary);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .db-kpi__icon svg { width: 22px; height: 22px; }
+    .db-kpi__body {
+      display: flex; flex-direction: column; gap: 2px; min-width: 0;
+    }
     .db-kpi__num {
       font-family: var(--font-display); font-weight: 600;
-      font-size: 1.85rem; line-height: 1;
-      color: var(--color-primary);
+      font-size: 2.05rem; line-height: 1.05;
+      color: var(--color-text);
       font-variant-numeric: tabular-nums;
     }
     .db-kpi__label {
-      font-size: 0.75rem; color: var(--color-text-muted);
-      line-height: 1.35; padding: 0 2px;
+      font-size: 0.8rem; color: var(--color-text-muted);
+      line-height: 1.3;
     }
 
     /* Legacy ".db-stats" retained defensively — no longer emitted by the page */
@@ -403,28 +415,45 @@
     .db-conf-row__stat--lead { color: #3d5a35; }
     .db-conf-row__stat strong { color: #0f172a; font-weight: 700; font-size: 0.98rem; }
 
-    /* Two-line confederacy row (new layout) */
-    .db-conf-row--two-line {
-      align-items: flex-start; padding: 10px 0;
-      border-bottom: 1px dashed rgba(15,23,42,0.08);
+    /* One-line confederacy row: big colored swatch — name — large total —
+       pipe — descriptive iTaukei count. Uses grid so the columns line up
+       vertically across all three confederacies. */
+    .db-conf-row--one-line {
+      display: grid;
+      grid-template-columns: 22px auto auto 1px 1fr;
+      column-gap: 12px;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px dashed rgba(15,23,42,0.10);
     }
-    .db-conf-row--two-line:last-child { border-bottom: none; }
-    .db-conf-row__body {
-      flex: 1; min-width: 0;
-      display: flex; flex-direction: column; gap: 2px;
+    .db-conf-row--one-line:last-of-type { border-bottom: none; }
+    .db-conf-row--one-line .db-conf-row__sw {
+      width: 22px; height: 22px; border-radius: 5px;
     }
-    .db-conf-row__line1 {
-      display: flex; justify-content: space-between; align-items: baseline;
-      gap: 8px;
+    .db-conf-row--one-line .db-conf-row__name {
+      color: var(--color-text);
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
-    .db-conf-row__total {
+    .db-conf-row--one-line .db-conf-row__total {
       font-family: var(--font-display); font-weight: 600;
-      font-size: 1.2rem; color: var(--color-text);
+      font-size: 1.65rem; line-height: 1;
+      color: var(--color-text);
       font-variant-numeric: tabular-nums;
+      padding-left: 4px;
     }
-    .db-conf-row__line2 {
-      font-size: 0.82rem; color: var(--color-text-muted);
-      font-variant-numeric: tabular-nums;
+    .db-conf-row--one-line .db-conf-row__pipe {
+      width: 1px; height: 22px;
+      background: rgba(15,23,42,0.18);
+    }
+    .db-conf-row--one-line .db-conf-row__sub {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+      line-height: 1.35;
     }
     .db-conf-explain {
       margin: 4px 0 var(--space-2);
@@ -1458,6 +1487,68 @@
   </div>
 </section>
 
+<!-- Icon symbol library used by KPI cards, insight tiles and confederacy narrative.
+     Line-art (Lucide-style), inherits `color` so it stays consistent with the teal palette. -->
+<svg width="0" height="0" style="position:absolute;" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+    </symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </symbol>
+    <symbol id="i-cap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M22 10 12 5 2 10l10 5 10-5z"/>
+      <path d="M6 12v5c3 2 9 2 12 0v-5"/>
+    </symbol>
+    <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 21h18"/>
+      <path d="M12 3 3 8h18z"/>
+      <path d="M6 21V10"/>
+      <path d="M10 21V10"/>
+      <path d="M14 21V10"/>
+      <path d="M18 21V10"/>
+    </symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M2 12h20"/>
+      <path d="M12 2a15.3 15.3 0 0 1 0 20"/>
+      <path d="M12 2a15.3 15.3 0 0 0 0 20"/>
+    </symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+    </symbol>
+    <symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
+      <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
+      <path d="m21 3 1 11h-2"/>
+      <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
+      <path d="M3 4h8"/>
+    </symbol>
+    <symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M15 12h-5"/>
+      <path d="M15 8h-5"/>
+      <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
+      <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
+    </symbol>
+    <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.8 19.2 16 11l3.5-3.5a1.5 1.5 0 1 0-2.12-2.12L14 8.9 5.8 7.2a.5.5 0 0 0-.4.9L11 12l-3 3H5l-1.5 2.5L6 18l2.5 2.5L10 19v-3l4.5 5.5a.5.5 0 0 0 .9-.4l-.6-1.9z"/>
+    </symbol>
+    <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.5 2c1 3 .5 6 0 9-1 4.5-4.5 7.5-8.5 8z"/>
+      <path d="M2 21c0-3 1.85-5.36 5.08-6"/>
+    </symbol>
+  </defs>
+</svg>
+
 <main>
 <section class="section">
   <div class="container">
@@ -1491,12 +1582,30 @@
           <p class="db-section__hint">Statistics describing the entire indexed database.</p>
         </header>
         <div class="db-kpis">
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📚</div><div class="db-kpi__num" data-kpi="db-works">—</div><div class="db-kpi__label">Indexed works</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">✍️</div><div class="db-kpi__num" data-kpi="db-authors">—</div><div class="db-kpi__label">Unique authors</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🎓</div><div class="db-kpi__num" data-kpi="db-theses">—</div><div class="db-kpi__label">Theses</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🏛️</div><div class="db-kpi__num" data-kpi="db-unis">—</div><div class="db-kpi__label">Universities represented</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🌏</div><div class="db-kpi__num" data-kpi="db-countries">—</div><div class="db-kpi__label">Countries represented</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📍</div><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Fiji provinces studied</div></div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-works">—</div><div class="db-kpi__label">Indexed works</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-authors">—</div><div class="db-kpi__label">Unique authors</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-theses">—</div><div class="db-kpi__label">Theses</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-unis">—</div><div class="db-kpi__label">Universities represented</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-countries">—</div><div class="db-kpi__label">Countries represented</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Fiji provinces studied</div></div>
+          </div>
         </div>
       </section>
 
@@ -1507,12 +1616,30 @@
           <p class="db-section__hint">Statistics filtered to works and graduate research involving identified iTaukei scholars.</p>
         </header>
         <div class="db-kpis">
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">👥</div><div class="db-kpi__num" data-kpi="it-works">—</div><div class="db-kpi__label">Works with iTaukei authors</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">⭐</div><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">iTaukei-led works</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🤝</div><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">Works with iTaukei co-authors</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📜</div><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🏫</div><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by iTaukei graduate researchers</div></div>
-          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">✈️</div><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of iTaukei graduate study</div></div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-works">—</div><div class="db-kpi__label">Works with iTaukei authors</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-star"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">iTaukei-led works</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-handshake"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">Works with iTaukei co-authors</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by iTaukei graduate researchers</div></div>
+          </div>
+          <div class="db-kpi">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-plane"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of iTaukei graduate study</div></div>
+          </div>
         </div>
 
         <!-- Narrative summary card -->
@@ -1629,35 +1756,26 @@
               <h4>Publications by study confederacy</h4>
               <p class="db-conf-explain" data-db-conf-explain>All Fiji-focused publications, grouped by the confederacy of the province studied.</p>
               <div data-db-conf-legend>
-                <div class="db-conf-row db-conf-row--two-line">
+                <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#FF5A6E;"></span>
-                  <div class="db-conf-row__body">
-                    <div class="db-conf-row__line1">
-                      <span class="db-conf-row__name">Burebasaga</span>
-                      <span class="db-conf-row__total" data-conf-total="Burebasaga">—</span>
-                    </div>
-                    <div class="db-conf-row__line2" data-conf-sub="Burebasaga">—</div>
-                  </div>
+                  <span class="db-conf-row__name">Burebasaga</span>
+                  <span class="db-conf-row__total" data-conf-total="Burebasaga">—</span>
+                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
+                  <span class="db-conf-row__sub" data-conf-sub="Burebasaga">—</span>
                 </div>
-                <div class="db-conf-row db-conf-row--two-line">
+                <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#4ECDE6;"></span>
-                  <div class="db-conf-row__body">
-                    <div class="db-conf-row__line1">
-                      <span class="db-conf-row__name">Kubuna</span>
-                      <span class="db-conf-row__total" data-conf-total="Kubuna">—</span>
-                    </div>
-                    <div class="db-conf-row__line2" data-conf-sub="Kubuna">—</div>
-                  </div>
+                  <span class="db-conf-row__name">Kubuna</span>
+                  <span class="db-conf-row__total" data-conf-total="Kubuna">—</span>
+                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
+                  <span class="db-conf-row__sub" data-conf-sub="Kubuna">—</span>
                 </div>
-                <div class="db-conf-row db-conf-row--two-line">
+                <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#FFD84A;"></span>
-                  <div class="db-conf-row__body">
-                    <div class="db-conf-row__line1">
-                      <span class="db-conf-row__name">Tovata</span>
-                      <span class="db-conf-row__total" data-conf-total="Tovata">—</span>
-                    </div>
-                    <div class="db-conf-row__line2" data-conf-sub="Tovata">—</div>
-                  </div>
+                  <span class="db-conf-row__name">Tovata</span>
+                  <span class="db-conf-row__total" data-conf-total="Tovata">—</span>
+                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
+                  <span class="db-conf-row__sub" data-conf-sub="Tovata">—</span>
                 </div>
               </div>
               <p class="db-conf-narrative" data-db-conf-narrative>—</p>
@@ -1963,6 +2081,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-07" defer></script>
+<script src="js/itaukei-database.js?v=20260704-08" defer></script>
 </body>
 </html>
