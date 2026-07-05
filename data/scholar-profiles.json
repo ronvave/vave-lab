@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:30:27.068Z",
+  "generatedAt": "2026-07-05T11:30:35.890Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -709,28 +709,6 @@
       "photo": ""
     },
     {
-      "slug": "epeli-loganimoce",
-      "last": "Loganimoce",
-      "first": "Epeli",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Loganimoce, Epeli",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "4",
-      "types.thesis": "0",
-      "types.bookSection": "1",
-      "types.book": "0",
-      "types.report": "0"
-    },
-    {
       "name": "Loganimoce, Epeli M.",
       "slug": "epeli-m-loganimoce",
       "last": "Loganimoce",
@@ -741,7 +719,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "types.journalArticle": "4",
+      "types.thesis": "0",
+      "types.bookSection": "1",
+      "types.book": "0",
+      "types.report": "0"
     },
     {
       "name": "Lomavatu, Mereia Fong",
@@ -2752,6 +2735,7 @@
     "Lako, Jimaima V": "Lako, Jimaima",
     "Lako, Jimaima Veisikiaki": "Lako, Jimaima",
     "Lecchini, D.": "Lecchini, David",
+    "Loganimoce, Epeli": "Loganimoce, Epeli M.",
     "McCabe, Marita": "McCabe, Marita P.",
     "McKenzie, Briar L.": "McKenzie, Briar",
     "McKenzie, Briar Louise": "McKenzie, Briar",
