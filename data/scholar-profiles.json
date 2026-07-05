@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:28:27.163Z",
+  "generatedAt": "2026-07-05T11:28:31.993Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2713,19 +2713,6 @@
       "lastUpdate": "2026-07-03T19:59:15.329Z"
     },
     {
-      "name": "Waqalevu, Viliame P.",
-      "slug": "viliame-p-waqalevu",
-      "last": "Waqalevu",
-      "first": "Viliame P.",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "name": "Waqatabu, Penina",
       "slug": "penina-waqatabu",
       "last": "Waqatabu",
@@ -2800,6 +2787,8 @@
     "Waqa-Sakiti, Hilda V. F.": "Waqa-Sakiti, Hilda",
     "Waqa, Gade D": "Waqa, Gade",
     "Waqa, Gade D.": "Waqa, Gade",
+    "Waqalevu, Viliame P.": "Waqalevu, Viliame",
+    "Waqalevu, Viliame Pita": "Waqalevu, Viliame",
     "Wilson, Donald": "Wilson, Donald J.",
     "Wilson, Donald J": "Wilson, Donald J."
   },
