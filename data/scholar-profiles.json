@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T08:48:58.643Z",
+  "generatedAt": "2026-07-05T10:54:08.357Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1829,6 +1829,19 @@
       "slug": "kesaia-tabunakawai",
       "last": "Tabunakawai",
       "first": "Kesaia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabuya, Jone Duikoro",
+      "slug": "jone-duikoro-tabuya",
+      "last": "Tabuya",
+      "first": "Jone Duikoro",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
