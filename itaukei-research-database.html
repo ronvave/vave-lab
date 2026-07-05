@@ -56,31 +56,133 @@
     .db-fallback-banner.is-visible { display: block; }
     .db-fallback-banner strong { color: #92400e; }
 
-    /* Stat banner */
-    .db-stats {
+    /* Live-status compact pill row */
+    .db-status-row {
+      display: flex; flex-wrap: wrap; gap: 8px 10px;
+      align-items: center; margin-top: var(--space-3);
+    }
+    .db-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; border-radius: 999px;
+      background: rgba(14,116,144,0.08);
+      border: 1px solid rgba(14,116,144,0.22);
+      color: var(--color-text);
+      font-size: 0.82rem;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .db-pill b { color: var(--color-primary); font-weight: 700; }
+    .db-pill--muted {
+      background: transparent;
+      border-color: var(--color-border);
+      color: var(--color-text-muted);
+    }
+    .db-pill--status {
+      background: rgba(22,163,74,0.10);
+      border-color: rgba(22,163,74,0.35);
+      color: var(--color-primary); font-weight: 600;
+    }
+    .db-pill__dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,0.18);
+    }
+    .db-pill--status.is-stale .db-pill__dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.18); }
+    .db-pill--status.is-error .db-pill__dot { background: #b91c1c; box-shadow: 0 0 0 3px rgba(185,28,28,0.18); }
+
+    /* Sectioned KPI panel (Database overview / iTaukei scholarship) */
+    .db-section {
+      margin-top: var(--space-5);
+      padding: var(--space-4) var(--space-5) var(--space-4);
+      background: rgba(14,116,144,0.04);
+      border: 1px solid rgba(14,116,144,0.14);
+      border-radius: var(--radius-xl);
+    }
+    .db-section--itaukei { background: rgba(14,116,144,0.07); border-color: rgba(14,116,144,0.20); }
+    .db-section__head { margin-bottom: var(--space-3); }
+    .db-section__label {
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 1.15rem; color: var(--color-primary);
+      letter-spacing: 0.01em;
+    }
+    .db-section__hint {
+      margin: 2px 0 0; font-size: 0.86rem;
+      color: var(--color-text-muted); line-height: 1.4;
+    }
+    .db-kpis {
       display: grid;
       grid-template-columns: repeat(6, minmax(0, 1fr));
-      gap: var(--space-4);
-      margin-top: var(--space-6);
+      gap: var(--space-3);
     }
-    @media (max-width: 900px) { .db-stats { grid-template-columns: repeat(3, 1fr); } }
-    @media (max-width: 500px) { .db-stats { grid-template-columns: repeat(2, 1fr); } }
-    .db-stat {
+    @media (max-width: 1000px) { .db-kpis { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 560px)  { .db-kpis { grid-template-columns: repeat(2, 1fr); } }
+    .db-kpi {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
       border-radius: var(--radius-lg);
-      padding: var(--space-4) var(--space-3);
+      padding: 14px 10px 12px;
       text-align: center;
       box-shadow: var(--shadow-sm);
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
     }
-    .db-stat__num {
-      font-family: var(--font-display);
-      font-size: 2.1rem; font-weight: 600; line-height: 1;
+    .db-kpi__icon { font-size: 1.35rem; line-height: 1; margin-bottom: 2px; }
+    .db-kpi__num {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 1.85rem; line-height: 1;
       color: var(--color-primary);
+      font-variant-numeric: tabular-nums;
     }
-    .db-stat__label {
-      font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--color-text-muted); margin-top: var(--space-2);
+    .db-kpi__label {
+      font-size: 0.75rem; color: var(--color-text-muted);
+      line-height: 1.35; padding: 0 2px;
+    }
+
+    /* Legacy ".db-stats" retained defensively — no longer emitted by the page */
+    .db-stats { display: none; }
+
+    /* iTaukei narrative summary card */
+    .db-narrative {
+      margin-top: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      background: rgba(64,145,158,0.10);
+      border: 1px solid rgba(14,116,144,0.20);
+      border-radius: var(--radius-lg);
+    }
+    .db-narrative__title {
+      margin: 0 0 4px;
+      font-family: var(--font-display); font-weight: 500;
+      font-size: 1.1rem; color: var(--color-primary);
+    }
+    .db-narrative__lede {
+      margin: 0 0 var(--space-2);
+      color: var(--color-text); font-size: 0.92rem; font-weight: 500;
+      line-height: 1.5;
+    }
+    .db-narrative__body {
+      margin: 0 0 var(--space-3);
+      color: var(--color-text); font-size: 0.9rem; line-height: 1.6;
+    }
+    .db-narrative__insights {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px; margin-bottom: 4px;
+    }
+    @media (max-width: 900px) { .db-narrative__insights { grid-template-columns: repeat(2, 1fr); } }
+    .db-insight {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+    .db-insight__title {
+      font-size: 0.72rem; text-transform: uppercase;
+      letter-spacing: 0.06em; font-weight: 700;
+      color: var(--color-primary); margin-bottom: 4px;
+    }
+    .db-insight__body {
+      font-size: 0.84rem; color: var(--color-text); line-height: 1.4;
+    }
+    .db-narrative__note {
+      margin: 6px 0 0; font-size: 0.78rem;
+      color: var(--color-text-muted); font-style: italic;
     }
 
     /* About / inclusion criteria collapsible */
@@ -300,16 +402,60 @@
     .db-conf-row__stat { color: #334155; }
     .db-conf-row__stat--lead { color: #3d5a35; }
     .db-conf-row__stat strong { color: #0f172a; font-weight: 700; font-size: 0.98rem; }
+
+    /* Two-line confederacy row (new layout) */
+    .db-conf-row--two-line {
+      align-items: flex-start; padding: 10px 0;
+      border-bottom: 1px dashed rgba(15,23,42,0.08);
+    }
+    .db-conf-row--two-line:last-child { border-bottom: none; }
+    .db-conf-row__body {
+      flex: 1; min-width: 0;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .db-conf-row__line1 {
+      display: flex; justify-content: space-between; align-items: baseline;
+      gap: 8px;
+    }
+    .db-conf-row__total {
+      font-family: var(--font-display); font-weight: 600;
+      font-size: 1.2rem; color: var(--color-text);
+      font-variant-numeric: tabular-nums;
+    }
+    .db-conf-row__line2 {
+      font-size: 0.82rem; color: var(--color-text-muted);
+      font-variant-numeric: tabular-nums;
+    }
+    .db-conf-explain {
+      margin: 4px 0 var(--space-2);
+      font-size: 0.82rem; color: var(--color-text-muted); line-height: 1.45;
+    }
+    .db-conf-narrative {
+      margin: 10px 0 0; padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+      font-size: 0.85rem; color: var(--color-text); line-height: 1.5;
+    }
+
     .db-nonfiji {
       padding: 12px 14px;
-      background: rgba(61,90,53,0.08); border-radius: var(--radius-md);
+      background: rgba(14,116,144,0.06);
+      border: 1px solid rgba(14,116,144,0.15);
+      border-radius: var(--radius-md);
       font-size: 0.95rem;
     }
     .db-nonfiji__num {
-      font-family: var(--font-display); font-weight: 700; font-size: 2.3rem;
-      color: #3d5a35; line-height: 1; display: block;
+      font-family: var(--font-display); font-weight: 700; font-size: 2.2rem;
+      color: var(--color-primary); line-height: 1; display: block;
     }
-    .db-nonfiji__label { color: var(--color-text-muted); font-size: 0.92rem; }
+    .db-nonfiji__label {
+      display: block;
+      color: var(--color-text); font-size: 0.92rem; font-weight: 600;
+      margin-top: 4px;
+    }
+    .db-nonfiji__sub {
+      display: block; font-size: 0.78rem; color: var(--color-text-muted);
+      margin-top: 4px; line-height: 1.45;
+    }
     .db-sync-inline {
       font-size: 0.88rem; color: var(--color-text-muted); padding-top: 10px;
       border-top: 1px dashed var(--color-border);
@@ -1321,11 +1467,16 @@
         A curated, publicly-accessible <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Zotero database</a> of scholarly research on Fiji and Fijians &mdash; with a deliberate focus on <em>iTaukei</em> (Indigenous Fijian) authors. Explore by province where the research was conducted, by 1st-author's paternal province (grouped by chiefly confederacy), or by country and university where iTaukei theses were completed.
       </p>
 
-      <div class="db-sync-row">
-        <span class="db-sync-badge" data-db-sync>
-          <span class="db-sync-badge__dot"></span>
+      <!-- Compact live-status pill row -->
+      <div class="db-status-row" data-db-status>
+        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Automatic check against the live Zotero library">
+          <span class="db-pill__dot db-sync-badge__dot"></span>
           <span data-db-sync-text>Loading…</span>
         </span>
+        <span class="db-pill"><b>Live:</b>&nbsp;<span data-db-live-total>—</span>&nbsp;items</span>
+        <span class="db-pill"><b>Snapshot:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;items indexed</span>
+        <span class="db-pill"><span data-db-itaukei-count>—</span>&nbsp;works with iTaukei authors</span>
+        <span class="db-pill db-pill--muted" data-db-updated-pill>Updated —</span>
         <span class="db-sync-note" data-db-sync-note></span>
       </div>
 
@@ -1333,14 +1484,51 @@
         <strong>Live Zotero check unavailable.</strong> Showing the most recent local snapshot &mdash; map, charts, and search remain fully functional. <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener">Open the live Zotero library</a> for the latest additions.
       </div>
 
-      <div class="db-stats" data-db-stats>
-        <div class="db-stat"><div class="db-stat__num" data-stat="items">—</div><div class="db-stat__label">Items</div></div>
-        <div class="db-stat"><div class="db-stat__num" data-stat="itaukei">—</div><div class="db-stat__label">By iTaukei authors</div></div>
-        <div class="db-stat"><div class="db-stat__num" data-stat="theses">—</div><div class="db-stat__label">Theses</div></div>
-        <div class="db-stat"><div class="db-stat__num" data-stat="universities">—</div><div class="db-stat__label">Universities</div></div>
-        <div class="db-stat"><div class="db-stat__num" data-stat="countries">—</div><div class="db-stat__label">Countries</div></div>
-        <div class="db-stat"><div class="db-stat__num" data-stat="provinces">14</div><div class="db-stat__label">Provinces</div></div>
-      </div>
+      <!-- Database overview: statistics describing the entire indexed database -->
+      <section class="db-section db-section--overview" aria-labelledby="db-section-overview">
+        <header class="db-section__head">
+          <div class="db-section__label" id="db-section-overview">Database overview</div>
+          <p class="db-section__hint">Statistics describing the entire indexed database.</p>
+        </header>
+        <div class="db-kpis">
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📚</div><div class="db-kpi__num" data-kpi="db-works">—</div><div class="db-kpi__label">Indexed works</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">✍️</div><div class="db-kpi__num" data-kpi="db-authors">—</div><div class="db-kpi__label">Unique authors</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🎓</div><div class="db-kpi__num" data-kpi="db-theses">—</div><div class="db-kpi__label">Theses</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🏛️</div><div class="db-kpi__num" data-kpi="db-unis">—</div><div class="db-kpi__label">Universities represented</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🌏</div><div class="db-kpi__num" data-kpi="db-countries">—</div><div class="db-kpi__label">Countries represented</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📍</div><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Fiji provinces studied</div></div>
+        </div>
+      </section>
+
+      <!-- iTaukei scholarship: statistics filtered to publications involving iTaukei scholars -->
+      <section class="db-section db-section--itaukei" aria-labelledby="db-section-itaukei">
+        <header class="db-section__head">
+          <div class="db-section__label" id="db-section-itaukei">iTaukei scholarship</div>
+          <p class="db-section__hint">Statistics filtered to works and graduate research involving identified iTaukei scholars.</p>
+        </header>
+        <div class="db-kpis">
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">👥</div><div class="db-kpi__num" data-kpi="it-works">—</div><div class="db-kpi__label">Works with iTaukei authors</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">⭐</div><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">iTaukei-led works</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🤝</div><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">Works with iTaukei co-authors</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">📜</div><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">🏫</div><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by iTaukei graduate researchers</div></div>
+          <div class="db-kpi"><div class="db-kpi__icon" aria-hidden="true">✈️</div><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of iTaukei graduate study</div></div>
+        </div>
+
+        <!-- Narrative summary card -->
+        <div class="db-narrative">
+          <h3 class="db-narrative__title">iTaukei scholarly research at a glance</h3>
+          <p class="db-narrative__lede">This database highlights the knowledge, leadership, and academic contributions of iTaukei scholars across Fiji and the world.</p>
+          <p class="db-narrative__body" data-narrative-body>—</p>
+          <div class="db-narrative__insights">
+            <div class="db-insight"><div class="db-insight__title">iTaukei participation</div><div class="db-insight__body" data-insight="participation">—</div></div>
+            <div class="db-insight"><div class="db-insight__title">Research leadership</div><div class="db-insight__body" data-insight="leadership">—</div></div>
+            <div class="db-insight"><div class="db-insight__title">Graduate scholarship</div><div class="db-insight__body" data-insight="grad">—</div></div>
+            <div class="db-insight"><div class="db-insight__title">Geographic reach</div><div class="db-insight__body" data-insight="geo">—</div></div>
+          </div>
+          <p class="db-narrative__note">Figures are based on the current database snapshot and update as records are added or revised.</p>
+        </div>
+      </section>
 
       <!-- Impact View trigger — opens a presentation-ready overlay -->
       <div class="db-present-cta">
@@ -1426,7 +1614,7 @@
           </div>
           <aside class="db-map-legend-panel">
             <div>
-              <h4>Publications by province</h4>
+              <h4 data-db-map-legend-title>All Fiji-focused publications by study province</h4>
               <div class="db-choro-scale">
                 <span style="background:#fff5eb;border:1px solid #f2d9b8;"></span>
                 <span style="background:#fdd0a2;"></span>
@@ -1437,28 +1625,46 @@
               <div class="db-choro-scale-labels"><span>0</span><span>3</span><span>6</span><span>9</span><span>13+</span></div>
             </div>
             <div>
-              <h4>Confederacy total <span style="opacity:0.7;">[iTaukei lead-authored]</span></h4>
+              <h4>Publications by study confederacy</h4>
+              <p class="db-conf-explain" data-db-conf-explain>All Fiji-focused publications, grouped by the confederacy of the province studied.</p>
               <div data-db-conf-legend>
-                <div class="db-conf-row">
+                <div class="db-conf-row db-conf-row--two-line">
                   <span class="db-conf-row__sw" style="background:#FF5A6E;"></span>
-                  <span class="db-conf-row__name">Burebasaga</span>
-                  <span class="db-conf-row__nums" data-conf="Burebasaga">—</span>
+                  <div class="db-conf-row__body">
+                    <div class="db-conf-row__line1">
+                      <span class="db-conf-row__name">Burebasaga</span>
+                      <span class="db-conf-row__total" data-conf-total="Burebasaga">—</span>
+                    </div>
+                    <div class="db-conf-row__line2" data-conf-sub="Burebasaga">—</div>
+                  </div>
                 </div>
-                <div class="db-conf-row">
+                <div class="db-conf-row db-conf-row--two-line">
                   <span class="db-conf-row__sw" style="background:#4ECDE6;"></span>
-                  <span class="db-conf-row__name">Kubuna</span>
-                  <span class="db-conf-row__nums" data-conf="Kubuna">—</span>
+                  <div class="db-conf-row__body">
+                    <div class="db-conf-row__line1">
+                      <span class="db-conf-row__name">Kubuna</span>
+                      <span class="db-conf-row__total" data-conf-total="Kubuna">—</span>
+                    </div>
+                    <div class="db-conf-row__line2" data-conf-sub="Kubuna">—</div>
+                  </div>
                 </div>
-                <div class="db-conf-row">
+                <div class="db-conf-row db-conf-row--two-line">
                   <span class="db-conf-row__sw" style="background:#FFD84A;"></span>
-                  <span class="db-conf-row__name">Tovata</span>
-                  <span class="db-conf-row__nums" data-conf="Tovata">—</span>
+                  <div class="db-conf-row__body">
+                    <div class="db-conf-row__line1">
+                      <span class="db-conf-row__name">Tovata</span>
+                      <span class="db-conf-row__total" data-conf-total="Tovata">—</span>
+                    </div>
+                    <div class="db-conf-row__line2" data-conf-sub="Tovata">—</div>
+                  </div>
                 </div>
               </div>
+              <p class="db-conf-narrative" data-db-conf-narrative>—</p>
             </div>
             <div class="db-nonfiji">
               <span class="db-nonfiji__num" data-db-nonfiji>—</span>
-              <span class="db-nonfiji__label">Non-Fiji publications by iTaukei authors</span>
+              <span class="db-nonfiji__label" data-db-nonfiji-label>Publications beyond Fiji-focused research</span>
+              <span class="db-nonfiji__sub">Research by iTaukei authors concerning other places, global topics, laboratory work, and research not limited to Fiji.</span>
             </div>
             <div class="db-sync-inline">
               <b>Sync:</b> <span data-db-sync-inline>loading…</span>
@@ -1484,7 +1690,6 @@
           <label><input type="checkbox" value="bookSection" checked><i style="background:#7a1419;"></i> Book Chapter</label>
           <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
           <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
-          <label><input type="checkbox" value="conferencePaper" checked><i style="background:#92400e;"></i> Conference</label>
           <label><input type="checkbox" value="preprint" checked><i style="background:#6b7280;"></i> Preprint</label>
           <span class="db-type-filter__actions">
             <button type="button" data-db-type-all>Check all</button>
@@ -1549,7 +1754,6 @@
             <label><input type="checkbox" value="bookSection" checked><i style="background:#7a1419;"></i> Book Chapter</label>
             <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
             <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
-            <label><input type="checkbox" value="conferencePaper" checked><i style="background:#92400e;"></i> Conference</label>
             <span class="db-type-filter__actions">
               <button type="button" data-b2-type-all>Check all</button>
               <button type="button" data-b2-type-none>Clear</button>
@@ -1758,6 +1962,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-05" defer></script>
+<script src="js/itaukei-database.js?v=20260704-06" defer></script>
 </body>
 </html>

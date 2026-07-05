@@ -75,7 +75,12 @@
   // PhD + Masters only — unclassified theses ('thesisUnknown') are intentionally
   // excluded from Panels B/C counts and legend per Ron's request. They still
   // appear individually in the item list at the bottom.
-  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','conferencePaper','preprint'];
+  // NOTE: `conferencePaper` is intentionally omitted from TYPE_ORDER.
+  // The visualization panels (B1, B2, C, D) iterate over TYPE_ORDER, so this
+  // drops conference papers from bars, histogram, and type-filter checkboxes.
+  // The underlying items remain in the item list and BibTeX export (which do
+  // not depend on TYPE_ORDER).
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','preprint'];
 
   // Convert a Zotero item to its display-type key (splits `thesis` →
   // thesisPhd / thesisMasters / thesisUnknown based on `thesisLevel`).
@@ -474,22 +479,97 @@
   }
 
   // ============ STATS ============
+  //
+  // The top section is now split into two clearly-distinct blocks:
+  //   1) Database overview   — statistics describing the ENTIRE indexed dataset.
+  //   2) iTaukei scholarship — statistics filtered to iTaukei-authored items and
+  //                            iTaukei graduate research.
+  // Numbers must never be duplicated across the two blocks unless they are
+  // genuinely different measurements. Each label must state its unit clearly.
   function renderStats() {
-    const snap = state.snapshot;
+    const snap  = state.snapshot;
     const items = snap.items;
-    const stats = $('[data-db-stats]');
-    const total = items.length;
-    const theses = items.filter(i => i.itemType === 'thesis').length;
-    const itaukeiCount = items.filter(isItaukei).length;
-    stats.querySelector('[data-stat="items"]').textContent = total;
-    stats.querySelector('[data-stat="itaukei"]').textContent = itaukeiCount;
-    stats.querySelector('[data-stat="theses"]').textContent = theses;
-    stats.querySelector('[data-stat="universities"]').textContent = state.universities.totalUniversities;
-    stats.querySelector('[data-stat="countries"]').textContent = state.universities.totalCountries;
+    const sync  = state.lastSync;
 
-    // Sync badge — prefer the workflow heartbeat (advances every run) over the
-    // snapshot's generatedAt (only advances when data materially changes).
-    const sync = state.lastSync;
+    // ---- Database-wide totals ----
+    const totalWorks = items.length;
+    const theses     = items.filter(i => i.itemType === 'thesis');
+    const totalTheses = theses.length;
+
+    // Unique authors: dedupe by normalised surname + first initial. This keeps
+    // "Sopoaga, Faafetai" and "Sopoaga, F." as one person while still
+    // separating true different authors with the same surname.
+    const authorSet = new Set();
+    items.forEach(it => (it.creators || []).forEach(c => {
+      const last  = String(c.lastName || c.name || '').trim().toLowerCase();
+      const first = String(c.firstName || '').trim().toLowerCase();
+      if (!last && !first) return;
+      const firstInit = first ? first[0] : '';
+      authorSet.add(`${last}|${firstInit}`);
+    }));
+    const uniqueAuthors = authorSet.size;
+
+    // Fiji provinces studied — any province tagged on ≥1 publication.
+    const provsStudied = new Set();
+    state.provincesByItem.forEach(s => s.forEach(p => provsStudied.add(p)));
+
+    // ---- iTaukei-scholarship counts ----
+    let itLed = 0, itCoauth = 0;
+    items.forEach(it => {
+      const r = itaukeiAuthorship(it);
+      if (r === 'lead')   itLed++;
+      else if (r === 'coauth') itCoauth++;
+    });
+    const itWorks = itLed + itCoauth;
+
+    let itPhd = 0, itMasters = 0, itThesesOther = 0;
+    theses.forEach(t => {
+      if (!isItaukei(t)) return;
+      const lvl = t.thesisLevel;
+      if (lvl === 'phd') itPhd++;
+      else if (lvl === 'masters') itMasters++;
+      else itThesesOther++;
+    });
+    const itTheses = itPhd + itMasters + itThesesOther;
+
+    // iTaukei graduate-study universities and countries — from the graduate
+    // studies data (theses that appear in a scholar's iTaukei sub-collection).
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const gradUnis = new Set(), gradCountries = new Set();
+    (grad.worldPoints || []).forEach(wp => {
+      if (wp.university) gradUnis.add(wp.university);
+      if (wp.country)    gradCountries.add(wp.country);
+    });
+
+    // ---- Populate DOM ----
+    const setText = (sel, val) => {
+      const n = document.querySelector(sel);
+      if (n) n.textContent = val;
+    };
+    const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
+
+    // Database overview
+    setText('[data-kpi="db-works"]',     fmt(totalWorks));
+    setText('[data-kpi="db-authors"]',   fmt(uniqueAuthors));
+    setText('[data-kpi="db-theses"]',    fmt(totalTheses));
+    setText('[data-kpi="db-unis"]',      fmt(state.universities.totalUniversities));
+    setText('[data-kpi="db-countries"]', fmt(state.universities.totalCountries));
+    setText('[data-kpi="db-provinces"]', fmt(provsStudied.size));
+
+    // iTaukei scholarship
+    setText('[data-kpi="it-works"]',     fmt(itWorks));
+    setText('[data-kpi="it-led"]',       fmt(itLed));
+    setText('[data-kpi="it-coauth"]',    fmt(itCoauth));
+    setText('[data-kpi="it-theses"]',    fmt(itTheses));
+    setText('[data-kpi="it-unis"]',      fmt(gradUnis.size));
+    setText('[data-kpi="it-countries"]', fmt(gradCountries.size));
+
+    // Status pills
+    const liveTotal = (sync && typeof sync.totalItems === 'number') ? sync.totalItems : totalWorks;
+    setText('[data-db-live-total]', fmt(liveTotal));
+    setText('[data-db-snap-total]', fmt(totalWorks));
+    setText('[data-db-itaukei-count]', fmt(itWorks));
+
     const checkedIso = (sync && sync.lastChecked) || snap.generatedAt;
     const changedIso = (sync && sync.lastChanged) || snap.generatedAt;
     const ago = relativeTime(checkedIso);
@@ -507,10 +587,58 @@
       badge.setAttribute('title', tip);
     }
 
-    // Footer line: always show the data-change timestamp so it's clear when the numbers actually moved
+    // "Updated — <date>" pill: reflects the last time the underlying data
+    // actually moved (changedIso), not just the heartbeat.
+    const updatedPill = $('[data-db-updated-pill]');
+    if (updatedPill) {
+      const d = new Date(changedIso);
+      updatedPill.textContent = 'Updated ' + d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    // Footer line (unchanged)
     const dataChangedAt = new Date(changedIso).toLocaleString();
-    $('[data-db-updated]').textContent =
-      `Sync checked ${new Date(checkedIso).toLocaleString()} · last data change ${dataChangedAt} · ${snap.items.length} items indexed`;
+    const footer = $('[data-db-updated]');
+    if (footer) footer.textContent =
+      `Sync checked ${new Date(checkedIso).toLocaleString()} · last data change ${dataChangedAt} · ${totalWorks} items indexed`;
+
+    // ---- Narrative card ----
+    renderTopNarrative({
+      totalWorks, itWorks, itLed, itCoauth,
+      itPhd, itMasters, itThesesOther, itTheses,
+      gradUnis: gradUnis.size, gradCountries: gradCountries.size,
+      provincesStudied: provsStudied.size
+    });
+  }
+
+  // Dynamic paragraph + four insight blocks for the iTaukei narrative card.
+  function renderTopNarrative(x) {
+    const pct = (n, d) => d > 0 ? Math.round((n / d) * 100) : 0;
+    const bodyEl = document.querySelector('[data-narrative-body]');
+    if (bodyEl) {
+      // Contract the paragraph gracefully when counts are zero.
+      const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
+      const parts = [];
+      parts.push(`Of the ${fmt(x.totalWorks)} works currently indexed, ${fmt(x.itWorks)} include at least one identified iTaukei author.`);
+      if (x.itWorks > 0) {
+        parts.push(`Of these, ${fmt(x.itLed)} are led by an iTaukei first author, while ${fmt(x.itCoauth)} include an iTaukei scholar as a co-author.`);
+      }
+      if (x.itMasters + x.itPhd > 0) {
+        parts.push(`The database documents ${fmt(x.itMasters)} Master\u2019s theses and ${fmt(x.itPhd)} PhD theses by iTaukei scholars, completed across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
+      }
+      parts.push('This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
+      bodyEl.textContent = parts.join(' ');
+    }
+    const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };
+    setText('[data-insight="participation"]',
+      `${pct(x.itWorks, x.totalWorks)}% of indexed works include at least one identified iTaukei author.`);
+    setText('[data-insight="leadership"]',
+      x.itWorks > 0
+        ? `${pct(x.itLed, x.itWorks)}% of works involving iTaukei scholars are led by an iTaukei first author.`
+        : 'No iTaukei-authored works have been indexed yet.');
+    setText('[data-insight="grad"]',
+      `iTaukei scholars completed ${x.itMasters} Master\u2019s and ${x.itPhd} PhD theses across ${x.gradUnis} universities.`);
+    setText('[data-insight="geo"]',
+      `iTaukei scholarship extends across ${x.gradCountries} countries and connects with all 14 provinces of Fiji.`);
   }
 
   // ============ MAP ============
@@ -819,32 +947,94 @@
 
     const items = state.snapshot.items;
     const provOfItem = state.provincesByItem;
-    // Confederacy tallies — total = sum of province-row totals (matches Panel D).
-    // iTaukei column = strictly iTaukei lead-authored items only (first creator is iTaukei),
-    // as specified in the revision notes.
-    const byConf = { Burebasaga: {total:0, itaukei:0}, Kubuna: {total:0, itaukei:0}, Tovata: {total:0, itaukei:0} };
+
+    // Confederacy tallies. For each confederacy we track three counts:
+    //   total    — all Fiji-focused publications (province-tagged), regardless of authorship
+    //   itaukei  — strictly iTaukei-lead-authored items (first creator is iTaukei)
+    //   coauth   — iTaukei co-authored items (any iTaukei author present, not first)
+    // These feed both the two-line legend rows and the dynamic sidebar narrative.
+    const byConf = {
+      Burebasaga: { total:0, itaukei:0, coauth:0 },
+      Kubuna:     { total:0, itaukei:0, coauth:0 },
+      Tovata:     { total:0, itaukei:0, coauth:0 }
+    };
     const confByProv = new Map();
     state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
     items.forEach(it => {
       const provs = provOfItem.get(it.key);
       if (!provs || !provs.size) return;
-      const isLead = itaukeiAuthorship(it) === 'lead';
+      const role = itaukeiAuthorship(it);
       provs.forEach(p => {
         const c = confByProv.get(p);
-        if (c && byConf[c]) {
-          byConf[c].total += 1;
-          if (isLead) byConf[c].itaukei += 1;
-        }
+        if (!c || !byConf[c]) return;
+        byConf[c].total  += 1;
+        if (role === 'lead')   byConf[c].itaukei += 1;
+        if (role === 'coauth') byConf[c].coauth  += 1;
       });
     });
+
+    // Dynamic map legend title — reflects the currently-selected Panel A sub-tab.
+    const legendTitles = {
+      all:    'All Fiji-focused publications by study province',
+      lead:   'iTaukei-led publications by study province',
+      coauth: 'Publications co-authored with iTaukei scholars by study province'
+    };
+    const legendTitleEl = $('[data-db-map-legend-title]');
+    if (legendTitleEl) legendTitleEl.textContent = legendTitles[state.mapView] || legendTitles.all;
+
+    // Dynamic explanation sentence for the confederacy summary.
+    const explainSentences = {
+      all:    'All Fiji-focused publications, grouped by the confederacy of the province studied.',
+      lead:   'Publications led by an iTaukei first author, grouped by the confederacy of the province studied.',
+      coauth: 'Publications co-authored with iTaukei scholars, grouped by the confederacy of the province studied.'
+    };
+    const explainEl = $('[data-db-conf-explain]');
+    if (explainEl) explainEl.textContent = explainSentences[state.mapView] || explainSentences.all;
+
+    // Populate the two-line confederacy rows. The primary number always reflects
+    // ALL Fiji-focused publications for that confederacy (so the reader gets a
+    // stable point of reference). The secondary line adapts to the active
+    // sub-tab so it complements what the map is currently showing.
     Object.keys(byConf).forEach(name => {
-      const cell = document.querySelector(`[data-conf="${name}"]`);
-      if (!cell) return;
-      const t = byConf[name].total, k = byConf[name].itaukei;
-      cell.innerHTML =
-        `<span class="db-conf-row__stat"><strong>${t}</strong> Publications ` +
-        `<span class="db-conf-row__stat--lead">[<strong>${k}</strong> iTaukei as Lead author]</span></span>`;
+      const t = byConf[name].total;
+      const k = byConf[name].itaukei;
+      const co = byConf[name].coauth;
+      const totalEl = document.querySelector(`[data-conf-total="${name}"]`);
+      const subEl   = document.querySelector(`[data-conf-sub="${name}"]`);
+      if (totalEl) totalEl.textContent = t.toLocaleString();
+      if (subEl) {
+        let secondary;
+        if (state.mapView === 'lead') {
+          secondary = `${k} iTaukei-led · ${co} co-authored`;
+        } else if (state.mapView === 'coauth') {
+          secondary = `${co} co-authored with iTaukei · ${k} iTaukei-led`;
+        } else {
+          secondary = `${k} iTaukei-led publication${k === 1 ? '' : 's'}`;
+        }
+        subEl.textContent = secondary;
+      }
     });
+
+    // Dynamic narrative sentence beneath the confederacy rows. Ranks the three
+    // confederacies by total and reports the total iTaukei-led count.
+    const narrativeEl = $('[data-db-conf-narrative]');
+    if (narrativeEl) {
+      const ranked = Object.keys(byConf)
+        .map(n => ({ name: n, total: byConf[n].total, led: byConf[n].itaukei, coauth: byConf[n].coauth }))
+        .sort((a, b) => b.total - a.total);
+      const totalLed    = ranked.reduce((a, r) => a + r.led, 0);
+      const totalCoauth = ranked.reduce((a, r) => a + r.coauth, 0);
+      const [a, b, c] = ranked;
+      let s = `Fiji-focused publications are most concentrated in ${a.name} (${a.total.toLocaleString()}), followed by ${b.name} (${b.total.toLocaleString()}) and ${c.name} (${c.total.toLocaleString()}). `;
+      if (state.mapView === 'coauth') {
+        s += `Of these, ${totalCoauth.toLocaleString()} include an iTaukei scholar as a co-author.`;
+      } else if (state.mapView === 'lead') {
+        s += `Of these, ${totalLed.toLocaleString()} are led by an iTaukei first author.`;
+      } else {
+        s += `Of these, ${totalLed.toLocaleString()} are led by an iTaukei first author.`;
+      }
+      narrativeEl.textContent = s;
+    }
 
     // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
     let nonFiji = 0;
