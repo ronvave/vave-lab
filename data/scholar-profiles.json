@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:24.138Z",
+  "generatedAt": "2026-07-05T10:54:26.187Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2717,6 +2717,19 @@
       "slug": "viliame-p-waqalevu",
       "last": "Waqalevu",
       "first": "Viliame P.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Waqatabu, Penina",
+      "slug": "penina-waqatabu",
+      "last": "Waqatabu",
+      "first": "Penina",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
