@@ -2428,17 +2428,25 @@
       $('.db-items').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
 
-    // Photo (as background image) or initials fallback
-    const photoHtml = r.photo
+    // Photo (as background image) or initials fallback. Wrapped in a
+    // photo-column container so the 'Submit info' button can stack directly
+    // beneath the photo without ever running under the confederacy banner
+    // title (which sits in the same row and would otherwise be overlapped
+    // on shorter names or wider titles like BUREBASAGA CONFEDERACY).
+    const photoInnerHtml = r.photo
       ? `<div class="db-scholar-card__photo" style="background-image:url('${escapeAttr(r.photo)}')"></div>`
       : `<div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${escapeHtml(initials)}</div></div>`;
+    const photoHtml = `
+      <div class="db-scholar-card__photo-col">
+        ${photoInnerHtml}
+        <button type="button" class="db-scholar-card__submit" data-submit-info
+                title="Suggest corrections or add missing info for this scholar (name, institution, links, photo, or a BibTeX/EndNote file of their publications). Submissions go to Vave Lab for review before publishing.">
+          Submit info
+        </button>
+      </div>`;
 
     card.innerHTML = `
       <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label">${escapeHtml(bannerLabel)}</span></div>
-      <button type="button" class="db-scholar-card__submit" data-submit-info
-              title="Suggest corrections or add missing info for this scholar (name, institution, links, photo, or a BibTeX/EndNote file of their publications). Submissions go to Vave Lab for review before publishing.">
-        Submit info
-      </button>
       <a class="db-scholar-card__orcid${r.orcidUrl ? '' : ' is-missing'}"
          href="${escapeAttr(r.orcidUrl || '#')}"
          ${r.orcidUrl ? 'target="_blank" rel="noopener"' : ''}

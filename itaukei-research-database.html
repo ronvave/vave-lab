@@ -749,13 +749,19 @@
     }
     /* Neutral banner ("ITAUKEI SCHOLAR") uses white text for contrast on the dark teal gradient */
     .db-scholar-card--neutral .db-scholar-card__conf-label { color: #fff; }
-    /* Submit info button in the banner — lets scholars (or those close to them)
-       propose corrections. Clicking opens the submission modal. Positioned in
-       the banner between the confederacy label and the profile icons. */
+    /* Photo + Submit-info button stack: keeps them visually locked together
+       under the confederacy banner, at the same 110px width so they always
+       align regardless of the info column height. */
+    .db-scholar-card__photo-col {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 10px; width: 110px;
+    }
+    /* Submit info button — lets scholars (or those close to them) propose
+       corrections. Sits directly under the profile photo so it never runs
+       into wider confederacy titles like “BUREBASAGA CONFEDERACY”. */
     .db-scholar-card__submit {
-      position: absolute; top: 18px; right: 105px;
-      display: inline-flex; align-items: center; gap: 6px;
-      height: 34px; padding: 0 12px;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 110px; height: 32px; padding: 0 12px;
       background: #062f35; color: #fff;
       font: inherit; font-size: 0.82rem; font-weight: 600;
       border: none; border-radius: 8px; cursor: pointer;
@@ -763,8 +769,7 @@
       transition: transform .12s, background .12s;
     }
     .db-scholar-card__submit:hover { transform: scale(1.04); background: #0e7490; }
-    .db-scholar-card__submit:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
-    .db-scholar-card__submit svg { width: 14px; height: 14px; }
+    .db-scholar-card__submit:focus-visible { outline: 2px solid #062f35; outline-offset: 2px; }
     /* Body row: avatar + info */
     .db-scholar-card__body {
       padding: 18px 22px 20px;
@@ -2718,6 +2723,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-10" defer></script>
+<script src="js/itaukei-database.js?v=20260705-11" defer></script>
 </body>
 </html>
