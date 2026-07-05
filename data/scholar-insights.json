@@ -816,22 +816,39 @@
     },
     "Meo-Sewabu, Litea": {
       "keywords": [
-        "Indigenous",
-        "Customary Land",
-        "Participatory Design",
-        "Sanitation Infrastructure",
-        "Business Serves",
+        "Indigenous Fijian Wellbeing",
+        "Marama iTaukei Health Beliefs",
+        "Indigenous Research Methodology",
+        "WASH and Gender Inclusion",
         "Informal Settlements",
-        "Locally-driven Development",
-        "Marama Itaukei",
-        "Research Guidelines",
-        "Socially Inclusive"
+        "Child Protection and Wellbeing",
+        "Kava Policy Evaluation",
+        "Talanoa Mental Health",
+        "Pacific Labour Mobility"
       ],
-      "summary": "A plain-English summary of Prof. Litea Meo-Sewabu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 28 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Meo-Sewabu studies how Indigenous Fijian communities understand health, wellbeing, and vulnerability — and how research itself should be conducted ethically within those communities. Her doctoral work developed the <a href=\"https://www.massey.ac.nz/massey/expertise/phd-student-profiles/doctoral-my-story.cfm?studid=Fugta1/ewNE%3D\" target=\"_blank\" rel=\"noopener\">Tanoa Health Belief Framework</a>, a lens for understanding wellbeing among Marama iTaukei (Indigenous Fijian women) built on an Indigenous research method she calls 'Tali Magimagi'. She has since applied that same community-first approach to practical problems, from co-designing <a href=\"https://www.odc.gov.au/sites/default/files/2023-12/monitoring-evaluation-kava-pilot-program.pdf\" target=\"_blank\" rel=\"noopener\">Australia's kava importation policy</a> with Pacific communities to studies on violence against children and gender-inclusive sanitation in informal settlements. Her recent work on <a href=\"https://www.westernsydney.edu.au/wellbeing-mental-health/promotions-events-campaigns-and-partnerships/.cultural-wellbeing/mentalhealthtalanoamhtresearchandresourcesravulowintersteinsaid-3.pdf\" target=\"_blank\" rel=\"noopener\">Talanoa-based mental health research</a> continues that effort to build culturally safe support for Pacific communities in Australia.",
+      "summaryFormat": "html",
       "publicationCount": 28,
       "signature": "sha1:0b170aafe8db8b91",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "My Doctoral Story - Litea Meo-Sewabu (2015) - Massey University",
+          "url": "https://www.massey.ac.nz/massey/expertise/phd-student-profiles/doctoral-my-story.cfm?studid=Fugta1/ewNE%3D"
+        },
+        {
+          "title": "Monitoring and Evaluation of the Kava Pilot Program - Final Report",
+          "url": "https://www.odc.gov.au/sites/default/files/2023-12/monitoring-evaluation-kava-pilot-program.pdf"
+        },
+        {
+          "title": "Mental Health Talanoa (MHT) Research and Resources - Western Sydney University",
+          "url": "https://www.westernsydney.edu.au/wellbeing-mental-health/promotions-events-campaigns-and-partnerships/.cultural-wellbeing/mentalhealthtalanoamhtresearchandresourcesravulowintersteinsaid-3.pdf"
+        },
+        {
+          "title": "Litea Meo-Sewabu - Western Sydney University Research Profile",
+          "url": "https://researchers.westernsydney.edu.au/en/persons/litea-meo-sewabu/"
+        }
+      ]
     },
     "Matararaba, Sepeti": {
       "keywords": [],
@@ -1007,22 +1024,35 @@
     },
     "Finau, Glenn": {
       "keywords": [
-        "Accounting",
-        "Indigenous",
-        "Land",
-        "Cyclone Winston",
-        "Social Media",
-        "Southern Ocean",
-        "Digital",
-        "Climate Change",
-        "Ecosystem Services",
-        "Antarctic and Southern"
+        "Indigenous Accounting",
+        "Customary Land Tenure",
+        "Climate Change Advocacy",
+        "Social Media Activism",
+        "Digital Diaspora and Identity",
+        "Environmental Accountability",
+        "Pacific Ocean Accounting",
+        "Antarctic and Southern Ocean Governance",
+        "Religion and Disaster Response"
       ],
-      "summary": "A plain-English summary of Dr. Glenn Finau’s research is not yet available. See the keyword themes and publication mix below for a first look at the 31 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Finau is an accounting scholar who studies how systems built to measure money and value often clash with Indigenous ways of relating to land and resources. His research on <a href=\"https://journals.sagepub.com/doi/full/10.1177/0308518X211060842\" target=\"_blank\" rel=\"noopener\">customary land and 'land banking' in Fiji</a> shows how accounting techniques can quietly dispossess communities of communally owned land. He has also examined how <a href=\"https://utas.academia.edu/GlennFinau\" target=\"_blank\" rel=\"noopener\">Fijians drew on religious belief to make sense of Cyclone Winston</a>, and how social media has helped diaspora communities like Rotumans sustain cultural identity online. As a <a href=\"https://marinesocioecology.org/team/dr-glenn-finau/\" target=\"_blank\" rel=\"noopener\">Pacific Ocean Accounts Fellow</a>, he now works on building accounting frameworks that help Pacific nations value and manage their ocean resources.",
+      "summaryFormat": "html",
       "publicationCount": 31,
       "signature": "sha1:1ea6bb58663ca84d",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Land, land banks and land back: Accounting, social reproduction and Indigenous resurgence",
+          "url": "https://journals.sagepub.com/doi/full/10.1177/0308518X211060842"
+        },
+        {
+          "title": "Glenn Finau | University of Tasmania - Academia.edu",
+          "url": "https://utas.academia.edu/GlennFinau"
+        },
+        {
+          "title": "Dr Glenn Finau | Centre for Marine Socioecology",
+          "url": "https://marinesocioecology.org/team/dr-glenn-finau/"
+        }
+      ]
     },
     "Coriakula, Jeremaia": {
       "keywords": [],
