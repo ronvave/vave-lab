@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:22.079Z",
+  "generatedAt": "2026-07-05T10:54:24.138Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1852,6 +1852,19 @@
       "slug": "kelera-tabuaniqili",
       "last": "TABUANIQILI",
       "first": "KELERA",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "TABUANIQILI, KELERA VERELADA",
+      "slug": "kelera-verelada-tabuaniqili",
+      "last": "TABUANIQILI",
+      "first": "KELERA VERELADA",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
