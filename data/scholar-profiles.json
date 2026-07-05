@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:41:48.223Z",
+  "generatedAt": "2026-07-05T11:45:45.589Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2364,13 +2364,34 @@
       "slug": "maika-vuki",
       "last": "Vuki",
       "first": "Maika",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "paternalProvince": "Cakaudrove",
+      "institution": "University of Guam (Guam)",
+      "institutionUrl": "https://www.uog.edu/",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "img/scholars/maika-vuki.jpg",
+      "department": "College of Natural & Applied Sciences",
+      "departmentUrl": "https://catalog.uog.edu/current/programs/college-of-natural-and-applied-sciences/chemistry#Tracks",
+      "profileUrl": "https://www.uog.edu/directory/vuki-maika",
+      "masters": {
+        "university": "University of Auckland",
+        "country": "New Zealand"
+      },
+      "phd": {
+        "university": "University of Southampton",
+        "country": "England"
+      },
+      "title": "Interm Associate Dean & Professor",
+      "orcidUrl": "https://orcid.org/0009-0009-5541-5346",
+      "lastUpdate": "2026-07-05T11:45:45.578Z",
+      "total": 14,
+      "firstAuthored": 5,
+      "types": {
+        "thesis": 1,
+        "journalArticle": 12,
+        "bookSection": 1
+      }
     },
     {
       "slug": "suliasi-vunibola",
