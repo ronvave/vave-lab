@@ -383,64 +383,35 @@ def pick_keywords(titles: list[str], k: int = 8) -> list[str]:
 def build_summary(profile: dict, keywords: list[str], pub_count: int,
                   types: dict) -> str:
     """
-    Plain-English summary focused on what the scholar's research is about —
-    not what publication types they have. Uses top keywords to describe
-    focus and breadth, plus institution / department context when available.
+    Fallback plain-English summary used when a scholar does NOT yet have a
+    hand-written / LLM-enriched summary in the JSON. It is intentionally very
+    short and neutral because keyword pills already show the topical themes
+    right next to it — restating them here just wastes the reader's time.
 
-    Kept deterministic and rule-based so this pipeline can run offline. It
-    is intentionally a first-cut; a follow-up LLM step can rewrite these to
-    add motivation and news-article context. See scholar-insights schema:
-    entries may include a `summaryLinks` array once LLM enrichment lands.
+    We deliberately do NOT restate the scholar's institution, department, or
+    paternal province: those are visible on their profile card already.
+
+    A richer HTML summary with embedded links to news articles / faculty
+    pages can be added by hand-editing the entry and setting
+    `summaryFormat: "html"`; the loader will preserve those overrides.
     """
     salutation = (profile or {}).get("salutation") or ""
     first = (profile or {}).get("first") or ""
     last  = (profile or {}).get("last") or ""
-    pronoun = "Their"
     display = f"{salutation} {first} {last}".strip() or "This scholar"
 
-    def _lower(k):
-        return k.lower() if k else ""
-
-    top = [_lower(k) for k in keywords[:3]]
-    breadth = [_lower(k) for k in keywords[3:7]]
-
-    def _join_and(items: list[str]) -> str:
-        items = [i for i in items if i]
-        if not items:
-            return ""
-        if len(items) == 1:
-            return items[0]
-        if len(items) == 2:
-            return f"{items[0]} and {items[1]}"
-        return ", ".join(items[:-1]) + f", and {items[-1]}"
-
-    # Sentence 1 — primary focus.
-    if len(top) >= 2:
-        s1 = f"{display}\u2019s research focuses on {_join_and(top)}."
-    elif top:
-        s1 = f"{display}\u2019s research focuses on {top[0]}."
-    else:
-        s1 = f"{display} is an iTaukei researcher indexed in this database."
-
-    # Sentence 2 — breadth.
-    s2 = ""
-    if breadth:
-        s2 = f"{pronoun} indexed work also engages with {_join_and(breadth)}."
-
-    # Sentence 3 — institutional / regional grounding, if we have it.
-    inst = (profile or {}).get("institution") or ""
-    dept = (profile or {}).get("department") or ""
-    prov = (profile or {}).get("paternalProvince") or ""
-    grounding = ""
-    if inst and dept:
-        grounding = f"They are based at {inst}, in {dept}."
-    elif inst:
-        grounding = f"They are based at {inst}."
-    if prov and grounding:
-        grounding = grounding.rstrip(".") + f", with paternal roots in {prov} Province."
-
-    sentences = [s for s in (s1, s2, grounding) if s]
-    return " ".join(sentences)
+    # A short honest placeholder. It signals to the reader that a fuller,
+    # research-aware summary is not yet available for this scholar rather
+    # than pretending the extracted keywords already constitute one.
+    if pub_count > 1:
+        return (
+            f"A plain-English summary of {display}\u2019s research is not yet "
+            f"available. See the keyword themes and publication mix below for "
+            f"a first look at the {pub_count} indexed items."
+        )
+    return (
+        f"A plain-English summary of {display}\u2019s research is not yet available."
+    )
 
 
 # ---------------- name-matching (mirrors JS deriveScholarRows Source B) --------------
@@ -593,8 +564,10 @@ def main() -> int:
         items = collect_scholar_items(name, prof, snapshot)
         sig = item_signature(items)
         prev = existing.get(name)
-        if prev and prev.get("signature") == sig:
-            # Nothing to regenerate.
+        if prev and prev.get("signature") == sig and prev.get("summaryFormat"):
+            # Signature matches AND the entry already has a summaryFormat tag
+            # (i.e. was written by the current generator or has a curated HTML
+            # summary). Preserve as-is.
             out[name] = prev
             continue
 
@@ -603,15 +576,35 @@ def main() -> int:
         types = Counter()
         for it in items:
             types[types_of_item(it)] += 1
-        summary = build_summary(prof, keywords, len(items), types)
 
-        out[name] = {
+        # Preserve any hand-written / LLM-enriched summary on the existing
+        # entry. We only regenerate the summary when the previous one is a
+        # plaintext fallback (no `summaryFormat` field, or `summaryFormat` ==
+        # "plaintext"). This lets us safely rerun the generator after Zotero
+        # refreshes without clobbering the curated HTML summaries.
+        prev_summary = (prev or {}).get("summary") if isinstance(prev, dict) else None
+        prev_format  = (prev or {}).get("summaryFormat") if isinstance(prev, dict) else None
+        if prev_summary and prev_format == "html":
+            summary = prev_summary
+            summary_format = "html"
+        else:
+            summary = build_summary(prof, keywords, len(items), types)
+            summary_format = "plaintext"
+
+        entry = {
             "keywords": keywords,
             "summary": summary,
+            "summaryFormat": summary_format,
             "publicationCount": len(items),
             "signature": sig,
             "regeneratedAt": now,
         }
+        # Carry over any prior hand-added extras (e.g. sources array).
+        if isinstance(prev, dict):
+            for extra_key in ("sources", "summarySource"):
+                if extra_key in prev:
+                    entry[extra_key] = prev[extra_key]
+        out[name] = entry
 
     OUTPUT_PATH.write_text(
         json.dumps(

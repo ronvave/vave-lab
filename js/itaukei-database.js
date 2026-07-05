@@ -154,6 +154,75 @@
   }
   function escapeAttr(s) { return escapeHtml(s); }
 
+  // Sanitiser for the plain-English scholar summary. Curated summaries in
+  // data/scholar-insights.json may embed links to news articles or faculty
+  // pages that give the reader real context on why a scholar cares about
+  // their work. We whitelist only:
+  //   <a href="..." target="_blank" rel="noopener">text</a>
+  //   <em>...</em>, <strong>...</strong>
+  // Everything else — including any inline script or event handler — is
+  // encoded as plain text. Href values are restricted to http(s) URLs so
+  // that javascript:/data: URIs cannot slip through.
+  function sanitizeSummaryHtml(input) {
+    if (input == null) return '';
+    const src = String(input);
+    // Fast path: if the string contains no '<' at all, just escape.
+    if (src.indexOf('<') === -1) return escapeHtml(src);
+
+    let out = '';
+    let i = 0;
+    const N = src.length;
+    while (i < N) {
+      const ch = src[i];
+      if (ch !== '<') {
+        // Escape naked entity-sensitive chars but preserve typography.
+        if (ch === '&') out += '&amp;';
+        else if (ch === '>') out += '&gt;';
+        else if (ch === '"') out += '&quot;';
+        else if (ch === "'") out += '&#39;';
+        else out += ch;
+        i++;
+        continue;
+      }
+      // Try to match an allowed opening or closing tag starting at i.
+      // Anchor: <a ...>  or  </a>
+      const closeA = src.substr(i, 4).toLowerCase() === '</a>';
+      if (closeA) { out += '</a>'; i += 4; continue; }
+      const openA = src.substr(i, 2).toLowerCase() === '<a' &&
+                    (src[i + 2] === ' ' || src[i + 2] === '\t');
+      if (openA) {
+        const end = src.indexOf('>', i);
+        if (end === -1) { out += '&lt;'; i++; continue; }
+        const attrStr = src.substring(i + 2, end);
+        const href = /href\s*=\s*"([^"]*)"/i.exec(attrStr)
+                  || /href\s*=\s*'([^']*)'/i.exec(attrStr);
+        let hrefVal = href ? href[1].trim() : '';
+        // Only allow safe URL schemes.
+        if (!/^https?:\/\//i.test(hrefVal) && !/^mailto:/i.test(hrefVal)) {
+          // Skip the whole opening tag (render nothing, just drop it).
+          i = end + 1;
+          continue;
+        }
+        out += '<a href="' + escapeAttr(hrefVal) + '" target="_blank" rel="noopener">';
+        i = end + 1;
+        continue;
+      }
+      // <em>, </em>, <strong>, </strong>
+      const lower3 = src.substr(i, 4).toLowerCase();
+      const lower4 = src.substr(i, 5).toLowerCase();
+      const lower6 = src.substr(i, 8).toLowerCase();
+      const lower7 = src.substr(i, 9).toLowerCase();
+      if (lower3 === '<em>')      { out += '<em>';       i += 4; continue; }
+      if (lower4 === '</em>')     { out += '</em>';      i += 5; continue; }
+      if (lower6 === '<strong>')  { out += '<strong>';   i += 8; continue; }
+      if (lower7 === '</strong>') { out += '</strong>';  i += 9; continue; }
+      // Anything else — encode the '<' as text and move on.
+      out += '&lt;';
+      i++;
+    }
+    return out;
+  }
+
   // ============ DATA LOAD ============
   async function loadAll() {
     const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc] = await Promise.all([
@@ -2376,8 +2445,12 @@
       `<span class="db-scholar-card__insight-tag" data-tag-color="${i % 8}">${escapeHtml(k)}</span>`
     ).join('') : '';
 
+    // Curated summaries may embed <a> / <em> / <strong> — sanitize before
+    // injecting. Rule-based fallback summaries stay plain text and are
+    // still safely handled by sanitizeSummaryHtml (which escape-encodes
+    // non-whitelisted markup).
     const summaryHtml = hasInsight
-      ? `<p class="db-scholar-card__insight-summary">${escapeHtml(insight.summary || '')}</p>`
+      ? `<p class="db-scholar-card__insight-summary">${sanitizeSummaryHtml(insight.summary || '')}</p>`
       : `<p class="db-scholar-card__insight-summary db-scholar-card__insight-summary--empty">Insight not yet generated for this scholar. It will appear here after the next data refresh.</p>`;
 
     return `
