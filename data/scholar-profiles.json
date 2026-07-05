@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:26.187Z",
+  "generatedAt": "2026-07-05T10:54:30.289Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2197,6 +2197,19 @@
       "slug": "ilisapeci-tuibeqa",
       "last": "Tuibeqa",
       "first": "Ilisapeci",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuikenatabua, Iliesa",
+      "slug": "iliesa-tuikenatabua",
+      "last": "Tuikenatabua",
+      "first": "Iliesa",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
