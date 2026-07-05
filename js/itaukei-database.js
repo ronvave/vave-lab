@@ -1227,6 +1227,24 @@
   }
 
   // ============ Type-filter checkbox wiring ============
+  // Panel B1 title dropdown: switches the ranked-bar chart between iTaukei
+  // authors (default) and all authors. Keeps the meta pill in sync.
+  function wirePanelB1() {
+    const sel = document.querySelector('[data-b1-authors]');
+    if (!sel) return;
+    sel.value = state.b1Authors || 'itaukei';
+    updateB1AuthorsLabel();
+    sel.addEventListener('change', () => {
+      state.b1Authors = sel.value === 'all' ? 'all' : 'itaukei';
+      updateB1AuthorsLabel();
+      renderPanelB();
+    });
+  }
+  function updateB1AuthorsLabel() {
+    const lbl = document.querySelector('[data-b1-authors-label]');
+    if (lbl) lbl.textContent = state.b1Authors === 'all' ? 'All authors' : 'iTaukei authors';
+  }
+
   function wireTypeFilter() {
     const host = $('[data-db-type-filter]');
     if (!host) return;
@@ -2420,6 +2438,7 @@
     wireScholarFilters();
     wire();
     wireTypeFilter();
+    wirePanelB1();
     wireHistControls();
     renderItems();
     renderFilterChips();
@@ -2502,6 +2521,7 @@
   const AUTHORSHIP_KEYS = ['itaukeiFirst', 'includesItaukei', 'noItaukei'];
 
   // Initial hydration from URL hash — e.g. #b2=all-authors
+  state.b1Authors = 'itaukei';
   state.b2View = 'fiji-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';

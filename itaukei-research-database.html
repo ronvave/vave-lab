@@ -1489,6 +1489,44 @@
        without having to touch each original rule.
        ============================================================ */
 
+    /* --- Inline dropdown used in Panel B1 title. Inherits the title's
+       uppercase / letter-spacing / weight so it reads as part of the title
+       rather than a separate form field. A small chevron marks it as
+       selectable, and a subtle dashed underline hints at interactivity. */
+    .db-title-select {
+      position: relative;
+      display: inline-flex; align-items: center;
+      vertical-align: baseline;
+    }
+    .db-title-select__select {
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background: transparent; border: 0; outline: 0;
+      padding: 0 16px 1px 0;
+      margin: 0;
+      font: inherit;
+      color: var(--color-primary);
+      text-transform: inherit;
+      letter-spacing: inherit;
+      cursor: pointer;
+      border-bottom: 1px dashed rgba(14,116,144,0.55);
+      border-radius: 0;
+      line-height: inherit;
+    }
+    .db-title-select__select:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 3px;
+      border-radius: 2px;
+    }
+    .db-title-select__select:hover {
+      color: #062f35; border-bottom-color: rgba(14,116,144,0.9);
+    }
+    .db-title-select__chevron {
+      position: absolute; right: 0; top: 50%;
+      transform: translateY(-52%);
+      font-size: 0.9em; color: var(--color-primary);
+      pointer-events: none;
+    }
+
     /* --- (1) enlarge small helper/caption text --- */
     .db-panel__hint            { font-size: 0.9rem;  line-height: 1.5; }
     .db-narrative__note        { font-size: 0.88rem; }
@@ -1932,11 +1970,17 @@
       <!-- Panel B1 — ranked bar chart, province-tagged research by iTaukei authors -->
       <div class="db-panel reveal" data-panel="B1">
         <span class="db-panel__label">B1</span>
-        <h2 class="db-panel__title">Province-specific research by iTaukei authors</h2>
+        <h2 class="db-panel__title">Province-specific research by <span class="db-title-select">
+          <select class="db-title-select__select" data-b1-authors aria-label="Filter authors">
+            <option value="itaukei">iTaukei authors</option>
+            <option value="all">All authors</option>
+          </select>
+          <span class="db-title-select__chevron" aria-hidden="true">▾</span>
+        </span></h2>
         <p class="db-panel__hint">Publications are counted in each Fiji province explicitly identified as a study or fieldwork location. A publication may be counted in more than one province.</p>
         <div class="db-panel__meta">
           <span><em>Grouped by:</em> Study province</span>
-          <span><em>Authors:</em> iTaukei authors</span>
+          <span><em>Authors:</em> <span data-b1-authors-label>iTaukei authors</span></span>
         </div>
         <div class="db-bars" data-db-bars></div>
         <div class="db-type-filter" data-db-type-filter>
@@ -2218,6 +2262,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-10" defer></script>
+<script src="js/itaukei-database.js?v=20260704-11" defer></script>
 </body>
 </html>
