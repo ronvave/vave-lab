@@ -1,46 +1,32 @@
 {
-  "lastChecked": "2026-07-05T13:26:28Z",
-  "lastChanged": "2026-07-05T13:26:28Z",
+  "lastChecked": "2026-07-05T16:06:55Z",
+  "lastChanged": "2026-07-05T16:06:55Z",
   "dataChangedThisRun": true,
-  "totalItems": 1905,
+  "totalItems": 1934,
   "movedMetrics": [
     {
-      "metric": "items",
-      "prev": 1864,
-      "new": 1905,
-      "delta": 41,
-      "pct": 2.2
-    },
-    {
       "metric": "type:book",
-      "prev": 29,
-      "new": 43,
-      "delta": 14,
-      "pct": 48.28
+      "prev": 43,
+      "new": 45,
+      "delta": 2,
+      "pct": 4.65
     },
     {
       "metric": "type:bookSection",
-      "prev": 99,
-      "new": 108,
-      "delta": 9,
-      "pct": 9.09
+      "prev": 108,
+      "new": 114,
+      "delta": 6,
+      "pct": 5.56
     },
     {
       "metric": "type:journalArticle",
-      "prev": 621,
-      "new": 637,
-      "delta": 16,
-      "pct": 2.58
-    },
-    {
-      "metric": "type:report",
-      "prev": 63,
-      "new": 65,
-      "delta": 2,
-      "pct": 3.17
+      "prev": 637,
+      "new": 658,
+      "delta": 21,
+      "pct": 3.3
     }
   ],
-  "summary": "Changes: items 1864\u21921905, type:book 29\u219243, type:bookSection 99\u2192108, type:journalArticle 621\u2192637, type:report 63\u219265",
+  "summary": "Changes: type:book 43\u219245, type:bookSection 108\u2192114, type:journalArticle 637\u2192658",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28742285549"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28746730499"
 }
