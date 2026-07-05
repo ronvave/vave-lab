@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:14.749Z",
+  "generatedAt": "2026-07-05T10:54:16.856Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1813,6 +1813,19 @@
       "slug": "katafono-mereia-tabua",
       "last": "Tabua",
       "first": "Katafono Mereia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tabua, Unaisi",
+      "slug": "unaisi-tabua",
+      "last": "Tabua",
+      "first": "Unaisi",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
