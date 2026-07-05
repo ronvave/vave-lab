@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T08:46:40.856Z",
+  "generatedAt": "2026-07-05T08:48:58.643Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1404,7 +1404,7 @@
       "confederacy": "",
       "title": "Professor",
       "orcidUrl": "https://orcid.org/0000-0002-2393-4581",
-      "lastUpdate": "2026-07-03T20:36:05.068Z",
+      "lastUpdate": "2026-07-05T08:48:58.632Z",
       "types.journalArticle": "10",
       "types.thesis": "2",
       "types.bookSection": "4",
@@ -1418,6 +1418,17 @@
       "phd": {
         "university": "University of Sussex",
         "country": "UK"
+      },
+      "department": "Macmillan Brown Centre for Pacific Studies",
+      "departmentUrl": "https://www.canterbury.ac.nz/research/about-uc-research/research-groups-and-centres/macmillan-brown-centre-for-pacific-studies",
+      "total": 65,
+      "firstAuthored": 56,
+      "types": {
+        "report": 2,
+        "bookSection": 31,
+        "journalArticle": 19,
+        "book": 10,
+        "thesis": 3
       }
     },
     {
