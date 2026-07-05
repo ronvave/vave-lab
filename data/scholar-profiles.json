@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:30.289Z",
+  "generatedAt": "2026-07-05T11:28:16.295Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1546,19 +1546,6 @@
       "phd": null
     },
     {
-      "name": "Ravulo, Jioji J.",
-      "slug": "jioji-j-ravulo",
-      "last": "Ravulo",
-      "first": "Jioji J.",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "slug": "amerita-ravuvu",
       "last": "Ravuvu",
       "first": "Amerita",
@@ -2825,5 +2812,9 @@
       }
     }
   ],
-  "hiddenScholars": []
+  "hiddenScholars": [],
+  "nameAliases": {
+    "Ravulo, Jioji J.": "Ravulo, Jioji"
+  },
+  "dismissedVariantGroups": []
 }
