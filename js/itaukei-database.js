@@ -2317,10 +2317,17 @@
   // rules used in the admin so the public work filter is populated even
   // before Ron pushes the auto-seeded profile updates.
   const WORK_COUNTRY_RULES = [
+    // ---- Fiji (universities, museums, regional NGOs headquartered in Suva) ----
     [/\bfiji national university\b|\bfnu\b/i, 'Fiji'],
     [/\buniversity of the south pacific\b|\busp\b/i, 'Fiji'],
     [/\bnature\s*fiji\b|\bfiji museum\b|\bblue prosperity fiji\b|\bwish fiji\b/i, 'Fiji'],
-    [/\bministry.*fiji|\bfiji.*ministry|\bsuva\b|\blautoka\b/i, 'Fiji'],
+    [/\bministry.*fiji|\bfiji.*ministry|\bsuva\b|\blautoka\b|\bnadi\b|\bnadroga\b/i, 'Fiji'],
+    // Pacific-regional bodies + NGOs that are based in Suva even though the parent org is global.
+    [/\blocally managed marine area\b|\blmma\b|\bgiz pacific\b|\bpacific community\b|\bspc\b|\bsprep\b|\bffa\b|\bwwf pacific\b|\bwildlife conservation society.*fiji\b|\bconservation international.*(fiji|pacific)\b|\biucn oceania\b|\bcaritas.*fiji\b/i, 'Fiji'],
+    // Conservation International / WWF / WCS without a region suffix — assume the Pacific office.
+    [/\bconservation international\b|\bwildlife conservation society\b|\bwwf\b/i, 'Fiji'],
+    // Fijian government + hospitals + health service.
+    [/\bhealth service.*fiji\b|\blautoka hospital\b|\bcwm hospital\b|\bcolonial war memorial\b|\bfiji cdc\b/i, 'Fiji'],
     [/\buniversity of central lancashire\b|\bcentral lancashire\b|\buclan\b/i, 'United Kingdom'],
     [/\buniversity of southampton\b|\bimperial college\b|\boxford\b|\bcambridge\b|\b\(uk\)\b|\bunited kingdom\b/i, 'United Kingdom'],
     [/\buniversity of guam\b|\buog\b/i, 'Guam (USA territory)'],
