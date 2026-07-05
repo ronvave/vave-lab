@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T12:47:28.467Z",
+  "generatedAt": "2026-07-05T13:23:57.681Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -787,23 +787,38 @@
       "slug": "jekope-ramala-maiono",
       "last": "Maiono",
       "first": "Jekope Ramala",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "salutation": "Dr.",
+      "village": "Vatulele vlg, Cikobia Is",
+      "paternalProvince": "Macuata",
+      "institution": "University of Otago",
+      "institutionUrl": "https://www.otago.ac.nz/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/jekope-ramala-maiono.jpg",
       "name": "Maiono, Jekope Ramala",
       "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
+      "title": "Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0002-9049-2285",
+      "lastUpdate": "2026-07-05T13:23:57.679Z",
       "types.journalArticle": "1",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "department": "Department of Management",
+      "departmentUrl": "https://www.otago.ac.nz/management",
+      "profileUrl": "https://www.otago.ac.nz/management/staff/people/maiono-jekope-ramala",
+      "masters": null,
+      "phd": {
+        "university": "University of Otago",
+        "country": "New Zealand"
+      },
+      "total": 4,
+      "firstAuthored": 3,
+      "types": {
+        "journalArticle": 2,
+        "bookSection": 1,
+        "thesis": 1
+      }
     },
     {
       "slug": "kalisiana-marama",
