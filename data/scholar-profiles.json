@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T21:18:48.583Z",
+  "generatedAt": "2026-07-05T21:25:22.670Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2016,13 +2016,32 @@
       "slug": "lavenia-tawake",
       "last": "Tawake",
       "first": "Lavenia",
-      "salutation": "",
+      "salutation": "Mrs.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "paternalProvince": "Nadroga/Navosa",
+      "institution": "University of the South Pacific (Fiji)",
+      "institutionUrl": "https://www.usp.ac.fj/",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "img/scholars/lavenia-tawake.jpg",
+      "sector": "Academia",
+      "institutionCountry": "Fiji",
+      "department": "Institute of Marine Resources (IMR)",
+      "departmentUrl": "https://www.usp.ac.fj/institute-of-marine-resources/",
+      "profileUrl": "https://www.usp.ac.fj/institute-of-marine-resources/staff/",
+      "masters": {
+        "university": "University of the South Pacific",
+        "country": "Fiji"
+      },
+      "phd": null,
+      "title": "Project Team Leader",
+      "orcidUrl": "https://orcid.org/0000-0001-9093-8884",
+      "lastUpdate": "2026-07-05T21:25:22.669Z",
+      "total": 2,
+      "firstAuthored": 1,
+      "types": {
+        "thesis": 1,
+        "journalArticle": 1
+      }
     },
     {
       "name": "Tawake, Peni",
@@ -2816,7 +2835,6 @@
     "Cakacaka, A.": "Cakacaka, Akuila",
     "Cakacaka, Akuila Labati": "Cakacaka, Akuila",
     "Chand, S.": "Chand, Subhash",
-    "Cheer, Joseph": "Cheer, Joseph M.",
     "Choi, H J": "Choi, Hyun-Ju",
     "Ciriyawa, A": "Ciriyawa, Ana",
     "Clarke, David": "Clarke, David J.",
@@ -2848,7 +2866,6 @@
     "Fulton, Elizabeth A": "Fulton, Elizabeth A.",
     "Gatiso, Tsegaye T.": "Gatiso, Tsegaye",
     "Gauna, M.": "Gauna, Metuisela",
-    "Gibson, Dawn Jocelyn Alexis": "Gibson, Dawn",
     "Ginigini, Joape G. M.": "Ginigini, Joape",
     "Ginigini, Joape G.M.": "Ginigini, Joape",
     "Glaus, Kerstin B.J.": "Glaus, Kerstin",
@@ -2908,7 +2925,6 @@
     "Meo-Sewabu, Litea Diloki": "Meo-Sewabu, Litea",
     "Meo, Jovili Iliesa": "Meo, Jovili I.",
     "Meo, Semisi others including": "Meo, Semisi",
-    "Mika, Jason Paul": "Mika, Jason",
     "Moronkola, D. O.": "Moronkola, Dorcas O.",
     "Morris, C.": "Morris, Cherie",
     "Morris, Cherie W.": "Morris, Cherie",
@@ -2948,7 +2964,6 @@
     "Rateb, Mostafa": "Rateb, Mostafa E.",
     "Ratuva, S.": "Ratuva, Steven",
     "Ratuva, Steven.": "Ratuva, Steven",
-    "Ravono, Akisi": "Ravono, Akisi Nailaba",
     "Ravuiwasa, Kaliova": "Ravuiwasa, Kaliova Tavou",
     "Ravula, N.": "Ravula, Nacanieli",
     "Ravulo, Jioji J.": "Ravulo, Jioji",
@@ -2968,7 +2983,6 @@
     "Samad, A. H. Q.": "Samad, A.",
     "Samuwai, J.": "Samuwai, Jale",
     "Scheyvens, R": "Scheyvens, Regina",
-    "Scheyvens, Regina A.": "Scheyvens, Regina",
     "Schultz, Jimaima T.": "Schultz, Jimaima",
     "Scobie, M.": "Scobie, Matthew",
     "Shadrack, Ronick Spenly": "Shadrack, Ronick S.",
