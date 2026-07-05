@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:31:24.710Z",
+  "generatedAt": "2026-07-05T11:31:27.000Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1420,28 +1420,6 @@
       "photo": ""
     },
     {
-      "slug": "kaliova-ravuiwasa",
-      "last": "Ravuiwasa",
-      "first": "Kaliova",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Ravuiwasa, Kaliova",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "3",
-      "types.thesis": "0",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "0"
-    },
-    {
       "name": "Ravuiwasa, Kaliova Tavou",
       "slug": "kaliova-tavou-ravuiwasa",
       "last": "Ravuiwasa",
@@ -1452,7 +1430,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "types.journalArticle": "3",
+      "types.thesis": "0",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "0"
     },
     {
       "slug": "jioji-ravulo",
@@ -2718,6 +2701,7 @@
     "Piovano, S": "Piovano, Susanna",
     "Rateb, Mostafa": "Rateb, Mostafa E.",
     "Ratuva, Steven.": "Ratuva, Steven",
+    "Ravuiwasa, Kaliova": "Ravuiwasa, Kaliova Tavou",
     "Ravulo, Jioji J.": "Ravulo, Jioji",
     "Ravuvu, A.": "Ravuvu, Amerita",
     "Ravuvu, Amerita L. A.": "Ravuvu, Amerita",
