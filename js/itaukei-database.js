@@ -2241,13 +2241,14 @@
         return items.some(g => g.country === wantC && (!wantU || g.university === wantU));
       });
     }
-    // Country/University of work
+    // Country/University of work — use scholarWorkCountry() which falls back
+    // to institution-string parsing when institutionCountry is not yet set.
     if (state.scholarWorkCountry) {
       const wantC = state.scholarWorkCountry;
       const wantU = state.scholarWorkUni;
       rows = rows.filter(r => {
         const p = enrichedByName.get(r.name) || {};
-        return (p.institutionCountry || '') === wantC
+        return scholarWorkCountry(p) === wantC
             && (!wantU || (p.institution || '') === wantU);
       });
     }
@@ -2311,10 +2312,52 @@
       .map(([c, us]) => [c, [...us].sort((a, b) => a.localeCompare(b))]));
   }
 
+  // Fallback country guesser for scholars whose profile doesn't yet have
+  // institutionCountry filled in (which is a new field). Mirrors the same
+  // rules used in the admin so the public work filter is populated even
+  // before Ron pushes the auto-seeded profile updates.
+  const WORK_COUNTRY_RULES = [
+    [/\bfiji national university\b|\bfnu\b/i, 'Fiji'],
+    [/\buniversity of the south pacific\b|\busp\b/i, 'Fiji'],
+    [/\bnature\s*fiji\b|\bfiji museum\b|\bblue prosperity fiji\b|\bwish fiji\b/i, 'Fiji'],
+    [/\bministry.*fiji|\bfiji.*ministry|\bsuva\b|\blautoka\b/i, 'Fiji'],
+    [/\buniversity of central lancashire\b|\bcentral lancashire\b|\buclan\b/i, 'United Kingdom'],
+    [/\buniversity of southampton\b|\bimperial college\b|\boxford\b|\bcambridge\b|\b\(uk\)\b|\bunited kingdom\b/i, 'United Kingdom'],
+    [/\buniversity of guam\b|\buog\b/i, 'Guam (USA territory)'],
+    [/\byas seaworld\b|\babu dhabi\b|\buae\b|\bunited arab emirates\b/i, 'United Arab Emirates'],
+    [/\bmassey university\b|\bauckland\b|\botago\b|\bcanterbury\b|\bwaikato\b|\bvictoria university of wellington\b|\b\(new zealand\)\b|\bnew zealand\b/i, 'New Zealand'],
+    [/\bsydney\b|\btasmania\b|\bunsw\b|\bmelbourne\b|\bqueensland\b|\bjames cook\b|\bcharles darwin\b|\bgriffith\b|\bsunshine coast\b|\banu\b|\bmurdoch\b|\bwestern sydney\b|\bnewcastle\b|\bcanberra\b|\bmacquarie\b|\b\(australia\)\b|\baustralia\b/i, 'Australia'],
+    [/\bmanoa\b|\bhawai[\u02bbi\']i\b|\bsan francisco state\b|\bsfsu\b|\bhawaii\b|\b\(usa\)\b|\bunited states\b/i, 'USA'],
+    [/\bryukyu\b|\btokyo\b|\bkyoto\b|\b\(japan\)\b|\bjapan\b/i, 'Japan'],
+    [/\bpapua new guinea\b|\bpng\b/i, 'Papua New Guinea'],
+    [/\bsolomon islands\b/i, 'Solomon Islands'],
+    [/\bvanuatu\b/i, 'Vanuatu'],
+    [/\bsamoa\b/i, 'Samoa'],
+    [/\btonga\b/i, 'Tonga'],
+  ];
+  function guessWorkCountry(inst) {
+    const s = String(inst || '');
+    if (!s.trim()) return '';
+    for (const [pattern, country] of WORK_COUNTRY_RULES) {
+      if (pattern.test(s)) return country;
+    }
+    const m = s.match(/[\(,]\s*([A-Za-z][A-Za-z\s]{2,25}?)\s*\)?\s*$/);
+    return m ? m[1].trim() : '';
+  }
+
+  // Resolve the country of work for a scholar: explicit field first,
+  // falling back to the guesser so the Work filter functions before the
+  // admin has pushed auto-seeded values.
+  function scholarWorkCountry(p) {
+    if (!p) return '';
+    if (p.institutionCountry && String(p.institutionCountry).trim()) return String(p.institutionCountry).trim();
+    return guessWorkCountry(p.institution);
+  }
+
   function buildWorkTree() {
     const tree = new Map();
     (state.scholarProfilesByName || new Map()).forEach(p => {
-      const c = (p.institutionCountry || '').trim();
+      const c = scholarWorkCountry(p);
       const u = (p.institution || '').trim();
       if (!c) return;
       if (!tree.has(c)) tree.set(c, new Set());
