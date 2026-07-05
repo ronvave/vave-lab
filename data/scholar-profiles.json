@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:29:23.874Z",
+  "generatedAt": "2026-07-05T11:29:25.177Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1042,19 +1042,6 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
-    },
-    {
-      "name": "Naikatini, Alivereti N.",
-      "slug": "alivereti-n-naikatini",
-      "last": "Naikatini",
-      "first": "Alivereti N.",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
     },
     {
       "slug": "winifereti-nainoca",
@@ -2786,6 +2773,7 @@
     "McKenzie, Briar L.": "McKenzie, Briar",
     "McKenzie, Briar Louise": "McKenzie, Briar",
     "Meo-Sewabu, Litea Diloki": "Meo-Sewabu, Litea",
+    "Naikatini, Alivereti N.": "Naikatini, Alivereti",
     "Nakoro, E": "Nakoro, Elia",
     "Nakoro, Elia R.": "Nakoro, Elia",
     "Nunn, P D": "Nunn, Patrick D.",
