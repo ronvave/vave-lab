@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T21:34:26.514Z",
+  "generatedAt": "2026-07-05T21:53:08.714Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -168,23 +168,41 @@
       "slug": "radilaite-cammock",
       "last": "Cammock",
       "first": "Radilaite",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
+      "salutation": "Prof.",
+      "village": "Vutia vlg",
+      "paternalProvince": "Rewa",
+      "institution": "Auckland University of Technology (New Zealand)",
+      "institutionUrl": "https://academics.aut.ac.nz/",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/radilaite-cammock.jpg",
       "name": "Cammock, Radilaite",
       "confederacy": "",
-      "title": "",
+      "title": "Associate Professor",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-05T21:53:08.710Z",
       "types.journalArticle": "6",
       "types.thesis": "1",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "sector": "Academia",
+      "institutionCountry": "New Zealand",
+      "department": "School of Public Health and Interdisciplinary Studies",
+      "departmentUrl": "https://www.aut.ac.nz/research/academic-departments/public-health",
+      "profileUrl": "https://academics.aut.ac.nz/radilaite.cammock",
+      "masters": {
+        "university": "University of Otago",
+        "country": "New Zealand"
+      },
+      "phd": {
+        "university": "University of Otago",
+        "country": "New Zealand"
+      },
+      "total": 8,
+      "firstAuthored": 4,
+      "types": {
+        "journalArticle": 8
+      }
     },
     {
       "slug": "ana-ciriyawa",
@@ -2544,19 +2562,6 @@
       },
       "sector": "Academia",
       "institutionCountry": "Guam (USA territory)"
-    },
-    {
-      "name": "Vunibola, Suli",
-      "slug": "suli-vunibola",
-      "last": "Vunibola",
-      "first": "Suli",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
     },
     {
       "slug": "suliasi-vunibola",
