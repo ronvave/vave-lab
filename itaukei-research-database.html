@@ -148,6 +148,49 @@
       line-height: 1.3;
     }
 
+    /* Solid-colored KPI card variant (used by the Database overview row only).
+       Each card carries a saturated background + a per-card icon tint via the
+       .db-kpi--<color> modifier. Numbers switch to Arial/Helvetica bold white
+       so they read strongly against the dark ground. */
+    .db-kpi--solid {
+      background: var(--kpi-bg, #085041);
+      border: none;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.10);
+      color: #ffffff;
+    }
+    .db-kpi--solid .db-kpi__icon {
+      background: rgba(255,255,255,0.10);
+      color: var(--kpi-icon, #4a9384);
+      width: 42px; height: 42px;
+    }
+    .db-kpi--solid .db-kpi__icon svg { width: 24px; height: 24px; }
+    .db-kpi--solid .db-kpi__num {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 26px;
+      line-height: 1.1;
+      color: #ffffff;
+    }
+    .db-kpi--solid .db-kpi__label {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-size: 11px;
+      line-height: 1.35;
+      color: rgba(255,255,255,0.78);
+      letter-spacing: 0.01em;
+    }
+    /* Per-card palette. Icon tint is a lighter version of the same bg color. */
+    .db-kpi--teal   { --kpi-bg: #085041; --kpi-icon: #4a9384; }
+    .db-kpi--rust   { --kpi-bg: #712B13; --kpi-icon: #b3705c; }
+    .db-kpi--amber  { --kpi-bg: #633806; --kpi-icon: #a17942; }
+    .db-kpi--blue   { --kpi-bg: #0C447C; --kpi-icon: #567ba9; }
+    .db-kpi--purple { --kpi-bg: #3C3489; --kpi-icon: #7d75be; }
+    .db-kpi--pink   { --kpi-bg: #72243E; --kpi-icon: #b26978; }
+    /* Solid cards apply the palette directly — no light-teal wash from the
+       parent .db-section--overview shell. */
+    .db-section--overview { background: transparent; border-color: transparent; padding-left: 0; padding-right: 0; }
+
     /* Legacy ".db-stats" retained defensively — no longer emitted by the page */
     .db-stats { display: none; }
 
@@ -1582,27 +1625,27 @@
           <p class="db-section__hint">Statistics describing the entire indexed database.</p>
         </header>
         <div class="db-kpis">
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--teal">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-works">—</div><div class="db-kpi__label">Indexed works</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--rust">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-authors">—</div><div class="db-kpi__label">Unique authors</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--amber">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-theses">—</div><div class="db-kpi__label">Theses</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--blue">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-unis">—</div><div class="db-kpi__label">Universities represented</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--purple">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-countries">—</div><div class="db-kpi__label">Countries represented</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--pink">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Fiji provinces studied</div></div>
           </div>
