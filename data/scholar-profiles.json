@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T10:54:12.681Z",
+  "generatedAt": "2026-07-05T10:54:14.749Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -434,6 +434,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Kamenio, Luisa Kacilala Qilatabu",
+      "slug": "luisa-kacilala-qilatabu-kamenio",
+      "last": "Kamenio",
+      "first": "Luisa Kacilala Qilatabu",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "manasa-katonivualiku",
