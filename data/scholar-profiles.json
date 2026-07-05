@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:28:48.922Z",
+  "generatedAt": "2026-07-05T11:28:50.950Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2254,19 +2254,6 @@
       "types.report": "0"
     },
     {
-      "name": "Tuiwawa, Marika V.",
-      "slug": "marika-v-tuiwawa",
-      "last": "Tuiwawa",
-      "first": "Marika V.",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "name": "Tuiwawa, Senilolia",
       "slug": "senilolia-tuiwawa",
       "last": "Tuiwawa",
@@ -2788,6 +2775,8 @@
     "Ravulo, Jioji J.": "Ravulo, Jioji",
     "Ravuvu, A.": "Ravuvu, Amerita",
     "Ravuvu, Amerita L. A.": "Ravuvu, Amerita",
+    "Tuiwawa, Marika V.": "Tuiwawa, Marika",
+    "Tuiwawa, Marika Vuli": "Tuiwawa, Marika",
     "Waqa-Sakiti, Hilda F. V.": "Waqa-Sakiti, Hilda",
     "Waqa-Sakiti, Hilda V. F.": "Waqa-Sakiti, Hilda",
     "Waqa, Gade D": "Waqa, Gade",
