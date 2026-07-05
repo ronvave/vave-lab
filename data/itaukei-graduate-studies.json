@@ -1,7 +1,61 @@
 {
-  "generatedAt": "2026-07-05T16:06:55.729826+00:00",
-  "sourceSnapshot": "2026-07-05T16:06:55.604447+00:00",
+  "generatedAt": "2026-07-05T22:00:14.669074+00:00",
+  "sourceSnapshot": "2026-07-05T22:00:14.552447+00:00",
   "scholars": {
+    "Vosikata, Sunia": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of New South Wales",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -33.917,
+        "lng": 151.231,
+        "year": 2015,
+        "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of New South Wales",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -33.917,
+          "lng": 151.231,
+          "year": 2015,
+          "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
+        }
+      ]
+    },
+    "Finau, Glenn": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "UNSW Sydney",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -33.917,
+        "lng": 151.231,
+        "year": 2020,
+        "title": "Accounting, Customary Land and Indigenous Peoples : Case Studies from the Pacific"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "UNSW Sydney",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -33.917,
+          "lng": 151.231,
+          "year": 2020,
+          "title": "Accounting, Customary Land and Indigenous Peoples : Case Studies from the Pacific"
+        }
+      ]
+    },
     "Vuki, Maika": {
       "masters": null,
       "phd": {
@@ -122,33 +176,6 @@
           "lng": 178.446,
           "year": 2015,
           "title": "Taxonomy, host-selection, biogeography and species distribution modeling of the Fijian long-horned beetles (Coleoptera: Cerambycidae)"
-        }
-      ]
-    },
-    "Finau, Glenn": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "UNSW Sydney",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -33.917,
-        "lng": 151.231,
-        "year": 2020,
-        "title": "Accounting, Customary Land and Indigenous Peoples : Case Studies from the Pacific"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "UNSW Sydney",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -33.917,
-          "lng": 151.231,
-          "year": 2020,
-          "title": "Accounting, Customary Land and Indigenous Peoples : Case Studies from the Pacific"
         }
       ]
     },
@@ -278,33 +305,6 @@
           "lng": -157.816,
           "year": 2017,
           "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the Itaukei Land Trust Board (TLTB): Understanding the Economic Marginalization of Itaukei"
-        }
-      ]
-    },
-    "Vosikata, Sunia": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of New South Wales",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -33.917,
-        "lng": 151.231,
-        "year": 2015,
-        "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of New South Wales",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -33.917,
-          "lng": 151.231,
-          "year": 2015,
-          "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
         }
       ]
     },
