@@ -1955,6 +1955,15 @@
   state.scholarPage = 1;
   state.scholarConfFilter = '';  // '', '__untagged__', 'Burebasaga', 'Kubuna', 'Tovata'
   state.scholarProvFilter = '';  // '', '__untagged__', or a province name
+  state.scholarNameSearch = '';  // free-text name search (case-insensitive substring)
+  state.scholarSectorFilter = ''; // '' or one of SECTORS
+  state.scholarDisciplineFilter = new Set();  // AND across checked disciplines
+  state.scholarStudyCountry = '';  // country selected in the Study combo
+  state.scholarStudyUni = '';      // optional narrower selection within that country
+  state.scholarWorkCountry = '';   // country selected in the Work combo
+  state.scholarWorkUni = '';       // optional narrower selection within that country
+  // Cache: scholar name → Set<discipline>. Populated lazily on first renderLeaders.
+  state.scholarDisciplines = null;
 
   // Placeholder silhouette shown when no photo is provided
   const PHOTO_PLACEHOLDER_SVG = `
@@ -1973,6 +1982,66 @@
     Kubuna:     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
     Tovata:     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
   };
+
+  // =========================================================================
+  // FILTER TAXONOMY — sectors + disciplines
+  // Both lists are kept in strict alphabetical order so users always find
+  // items in a predictable spot in the dropdowns. Additions must slot in
+  // alphabetically here AND in the admin form to stay in sync.
+  // =========================================================================
+  const SECTORS = [
+    'Academia',
+    'Government',
+    'International Organisation',
+    'Non-Government / Civil Society',
+    'Private Sector'
+  ];
+
+  const DISCIPLINES = [
+    'Anthropology & Social Studies',
+    'Archaeology & Heritage',
+    'Business, Economics & Accounting',
+    'Education & Pedagogy',
+    'Health & Medicine',
+    'Indigenous Knowledge & Culture',
+    'Land, Water & Sanitation',
+    'Marine & Environmental Science',
+    'Physical & Applied Sciences',
+    'Politics & Governance'
+  ];
+
+  // Rule-based classifier: each pattern that matches against a scholar's
+  // combined text (keywords + institution + department + title) adds that
+  // discipline. A scholar can belong to multiple. Rules are intentionally
+  // broad so scholars with sparse keywords still get at least one bucket.
+  const DISCIPLINE_RULES = [
+    ['Anthropology & Social Studies',      /(anthropol|ethnograph|sociolog|social studies|social work|kinship|solidarity|solesolevaki|talanoa|talanoa methodology|indigenous research method|street[- ]frequenting|informal settlement|wellbeing|youth research|community-based research|gender|feminis|disability)/i],
+    ['Archaeology & Heritage',             /(archaeolog|lapita|hillfort|prehistor|cultural heritage|heritage documentation|ceramic|bourewa|vanished island)/i],
+    ['Business, Economics & Accounting',   /(account|economic|business|enterprise|labour|labor|market|value chain|trade|sugar tax|sugar-sweetened beverage tax|food trade|tourism\b|tourist|hospitality|land bank|land back|sovereign wealth|poverty alleviation)/i],
+    ['Education & Pedagogy',               /(educat|pedagog|curriculum|literacy|school\b|university\b|higher education|early childhood|teacher|student|youth (empowerment|advoca|political|mental))/i],
+    ['Health & Medicine',                  /(health|medicine|medical|hospital|antimicrobial|antibiotic|carbapenem|acinetobacter|typhoid|malaria|diabetes|diabetic|obesity|obes\b|kava\b|ptsd|mental|non[- ]communicable|ncd\b|clinical|epidemiolog|nutrition|glycaemic|glycemic|maternal|filaria|dental|ciguatera|substance|pharmaceutical|drug discovery|drug development|antiparasitic|antimalar|antioxidant|body image)/i],
+    ['Indigenous Knowledge & Culture',     /(vanua|itaukei|i[- ]?taukei|indigenous knowledge|indigenous fijian|traditional (knowledge|practice|ecological|resource|medicine)|customary|storytelling|oral tradition|indigenous educ|indigenous methodolog|decolonis|decoloniz|cultural (identity|value|belief|loss|practice)|marama|fijian ethos|fijian way|bula vakavanua|funeral|funerary|kava (drink|circle|ceremonial))/i],
+    ['Land, Water & Sanitation',           /(sanitation|water quality|drinking water|watershed|wash\b|faecal|latrine|septic|hygiene|water resource|water governance|blue carbon\b|mangrove|freshwater|river|catchment|coastal water|land tenure|land right|customary land|land trust|land bank|land back)/i],
+    ['Marine & Environmental Science',     /(marine|coral|reef|ocean|fishery|fisher|fisherwoman|fisherwomen|lmma|locally managed marine|mangrove|coastal|blue economy|blue carbon|sea cucumber|octopus|clam\b|hawksbill|turtle|natural product|biodiscover|biodivers|ecolog|environment|ecosystem|climate|conservation|invasive|forest|habitat|species|entomol|beetle|damselfly|herpetofauna|avifauna|freshwater fish|aquaculture|larvicultur|rotifer|sponge)/i],
+    ['Physical & Applied Sciences',        /(chemistry|chemical|electrochem|biosensor|nanoparticle|arsenic|polyaniline|redox|forensic|spectrometr|ion mobility|whole genome sequencing|genomic surveillance|molecular epidemiolog)/i],
+    ['Politics & Governance',              /(political|politics|governance|policy|coup|colonial|postcolonial|settler|sovereignty|affirmative action|ethnicity|ethnic conflict|regionalism|internet censorship|social media (and|activism|election)|advocacy|foreign aid|aid decolonis|diplomacy|human rights|constitutional|climate mobility|marine spatial planning|ocean governance|community-based (fisheries|marine) management|water governance)/i]
+  ];
+
+  function classifyScholarDisciplines(row, insight, profile) {
+    const bits = [];
+    if (insight && Array.isArray(insight.keywords)) bits.push(...insight.keywords);
+    if (insight && insight.summary) bits.push(insight.summary.replace(/<[^>]*>/g, ' '));
+    if (profile) {
+      ['institution', 'department', 'title'].forEach(k => { if (profile[k]) bits.push(profile[k]); });
+    }
+    const text = bits.join(' \u2022 ');
+    const out = new Set();
+    if (!text.trim()) return out;
+    for (const [name, pattern] of DISCIPLINE_RULES) {
+      if (pattern.test(text)) out.add(name);
+    }
+    return out;
+  }
 
   // Set of scholar names whose card is currently visible under the confederacy/
   // province dropdowns at the top of the leaderboard. Also used by the item
@@ -2108,20 +2177,85 @@
       })
       .sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0));
 
-    // Apply confederacy filter
+    // Populate the disciplines cache once. Uses keyword pills + institution
+    // + department + title for each scholar. Rebuilt on every render so a
+    // scholar-insights hot-reload (e.g. after Ron accepts a submission) picks
+    // up the new classification without a page refresh.
+    const disciplineByName = new Map();
+    rows.forEach(r => {
+      const ins = (state.scholarInsights || {})[r.name] || null;
+      const prof = enrichedByName.get(r.name) || null;
+      disciplineByName.set(r.name, classifyScholarDisciplines(r, ins, prof));
+    });
+    state.scholarDisciplines = disciplineByName;
+
+    // ------- Filter cascade (AND across every filter) -------
+    // Confederacy
     const confF = state.scholarConfFilter;
     if (confF === '__untagged__') {
       rows = rows.filter(r => !r._conf);
     } else if (confF) {
       rows = rows.filter(r => r._conf === confF);
     }
-    // Apply province filter
+    // Province
     const provF = state.scholarProvFilter;
     if (provF === '__untagged__') {
       rows = rows.filter(r => !r._prov);
     } else if (provF) {
       rows = rows.filter(r => r._prov === provF);
     }
+    // Name search (case-insensitive substring; matches "Last, First" AND "First Last")
+    const nameQ = (state.scholarNameSearch || '').trim().toLowerCase();
+    if (nameQ) {
+      rows = rows.filter(r => {
+        const nm = (r.name || '').toLowerCase();
+        const [last, first] = (r.name || '').split(',').map(s => (s || '').trim());
+        const alt = first && last ? `${first} ${last}`.toLowerCase() : '';
+        return nm.includes(nameQ) || alt.includes(nameQ);
+      });
+    }
+    // Sector — matched on the profile's sector field (auto-seeded in admin)
+    const secF = state.scholarSectorFilter;
+    if (secF) {
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        return (p.sector || '') === secF;
+      });
+    }
+    // Disciplines — AND across every checked discipline (must sit in ALL)
+    if (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size) {
+      const wanted = state.scholarDisciplineFilter;
+      rows = rows.filter(r => {
+        const has = disciplineByName.get(r.name) || new Set();
+        for (const w of wanted) if (!has.has(w)) return false;
+        return true;
+      });
+    }
+    // Country/University of study
+    if (state.scholarStudyCountry) {
+      const wantC = state.scholarStudyCountry;
+      const wantU = state.scholarStudyUni;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        const items = [p.masters, p.phd].filter(Boolean);
+        return items.some(g => g.country === wantC && (!wantU || g.university === wantU));
+      });
+    }
+    // Country/University of work
+    if (state.scholarWorkCountry) {
+      const wantC = state.scholarWorkCountry;
+      const wantU = state.scholarWorkUni;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        return (p.institutionCountry || '') === wantC
+            && (!wantU || (p.institution || '') === wantU);
+      });
+    }
+
+    // Recompute the confederacy breakdown counts for the summary bar based on
+    // the CURRENTLY-visible scholar set. Called after filtering so counts
+    // always reflect what the user is actually looking at.
+    renderScholarSummary(rows);
 
     // Pagination state (10 per page)
     const totalPages = Math.max(1, Math.ceil(rows.length / SCHOLAR_PAGE_SIZE));
@@ -2132,6 +2266,441 @@
     grid.innerHTML = '';
     pageRows.forEach(r => grid.appendChild(renderScholarCard(r)));
     renderScholarPager(rows.length, totalPages);
+  }
+
+  // ============================================================
+  //  Summary bar — counts per confederacy on the CURRENT filter result
+  // ============================================================
+  function renderScholarSummary(rows) {
+    const bar = document.querySelector('[data-scholar-summary]');
+    if (!bar) return;
+    const counts = { Kubuna: 0, Tovata: 0, Burebasaga: 0, Unclassified: 0 };
+    (rows || []).forEach(r => {
+      const c = r._conf;
+      if (c && counts[c] != null) counts[c] += 1;
+      else counts.Unclassified += 1;
+    });
+    const total = (rows || []).length;
+    bar.querySelector('[data-count-total]').textContent = String(total);
+    bar.querySelector('[data-count-kubuna]').textContent = String(counts.Kubuna);
+    bar.querySelector('[data-count-tovata]').textContent = String(counts.Tovata);
+    bar.querySelector('[data-count-burebasaga]').textContent = String(counts.Burebasaga);
+    bar.querySelector('[data-count-unclass]').textContent = String(counts.Unclassified);
+  }
+
+  // ============================================================
+  //  Data-tree builders (populate combo panels)
+  //  Countries and universities are extracted from the enrichment profiles
+  //  and returned as alphabetized country → [unis] maps for the combos.
+  // ============================================================
+  function buildStudyTree() {
+    const tree = new Map();
+    (state.scholarProfilesByName || new Map()).forEach(p => {
+      [p.masters, p.phd].forEach(g => {
+        if (!g) return;
+        const c = (g.country || '').trim();
+        const u = (g.university || '').trim();
+        if (!c) return;
+        if (!tree.has(c)) tree.set(c, new Set());
+        if (u) tree.get(c).add(u);
+      });
+    });
+    // Convert to sorted map of sorted arrays.
+    return new Map([...tree.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([c, us]) => [c, [...us].sort((a, b) => a.localeCompare(b))]));
+  }
+
+  function buildWorkTree() {
+    const tree = new Map();
+    (state.scholarProfilesByName || new Map()).forEach(p => {
+      const c = (p.institutionCountry || '').trim();
+      const u = (p.institution || '').trim();
+      if (!c) return;
+      if (!tree.has(c)) tree.set(c, new Set());
+      if (u) tree.get(c).add(u);
+    });
+    return new Map([...tree.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([c, us]) => [c, [...us].sort((a, b) => a.localeCompare(b))]));
+  }
+
+  function buildConfProvTree() {
+    // Same shape as country → unis: confederacy → alphabetized provinces.
+    const tree = new Map();
+    ['Burebasaga', 'Kubuna', 'Tovata'].sort().forEach(c => {
+      tree.set(c, (CONFEDERACY_PROVINCES[c] || []).slice().sort((a, b) => a.localeCompare(b)));
+    });
+    return tree;
+  }
+
+  // Place `panel` just below `anchor` inside their shared positioned ancestor.
+  // Both are absolutely positioned and live under .db-leaderboard__head.
+  function positionPanelBelow(anchor, panel) {
+    // offsetTop/Left are relative to the nearest positioned ancestor. Since
+    // panels live inside .db-leaderboard__head (which is position: relative),
+    // this lines them up correctly beneath the opener button.
+    panel.style.top  = (anchor.offsetTop + anchor.offsetHeight + 4) + 'px';
+    panel.style.left = anchor.offsetLeft + 'px';
+  }
+
+  // ============================================================
+  //  Two-column combo control (Confederacy/Province, Study, Work)
+  //  Left column = parents; right column = children of the hovered parent.
+  //  Typing in the input filters both columns. Click parent → select parent;
+  //  Click child → select parent + child.
+  // ============================================================
+  function initTwoColumnCombo({
+    root, input, panel, colParent, colChild, colChildHeader,
+    tree, parentLabelSingular, buildLabel, onSelect, isActive
+  }) {
+    let hoveredParent = null;
+    let filtered = null; // { parents: [], childrenByParent: Map }
+
+    function open() {
+      // Position the panel just below its opener button. Both live inside the
+      // same relatively-positioned ancestor (.db-leaderboard__head).
+      positionPanelBelow(root, panel);
+      panel.classList.add('is-visible');
+      root.classList.add('is-open');
+      // Default to first parent if no hover yet
+      if (!hoveredParent) {
+        const parents = filtered ? filtered.parents : [...tree.keys()];
+        if (parents.length) setHoveredParent(parents[0]);
+      }
+      document.addEventListener('mousedown', closeOnOutside, true);
+      document.addEventListener('keydown', onEsc);
+    }
+    function close() {
+      panel.classList.remove('is-visible');
+      root.classList.remove('is-open');
+      document.removeEventListener('mousedown', closeOnOutside, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+    function closeOnOutside(ev) {
+      if (!root.contains(ev.target) && !panel.contains(ev.target)) close();
+    }
+    function onEsc(ev) { if (ev.key === 'Escape') close(); }
+
+    function setHoveredParent(name) {
+      hoveredParent = name;
+      renderChildren();
+      // Highlight parent visually
+      colParent.querySelectorAll('.dsf-combo-item').forEach(el => {
+        el.classList.toggle('is-highlighted', el.dataset.value === name);
+      });
+    }
+
+    function renderParents() {
+      const parents = filtered ? filtered.parents : [...tree.keys()];
+      colParent.innerHTML = '';
+      parents.forEach(name => {
+        const el = document.createElement('div');
+        el.className = 'dsf-combo-item';
+        el.dataset.value = name;
+        const kids = (filtered ? (filtered.childrenByParent.get(name) || tree.get(name)) : tree.get(name)) || [];
+        el.innerHTML = `<span class="dsf-combo-item__label">${escapeHtml(name)}</span>
+                        <span class="dsf-combo-item__count">${kids.length ? `(${kids.length})` : ''}</span>
+                        <span class="dsf-combo-caret">\u25B8</span>`;
+        el.addEventListener('mouseenter', () => setHoveredParent(name));
+        el.addEventListener('click', () => {
+          onSelect({ parent: name, child: '' });
+          close();
+        });
+        colParent.appendChild(el);
+      });
+    }
+    function renderChildren() {
+      colChild.innerHTML = '';
+      const kids = (filtered && filtered.childrenByParent.get(hoveredParent))
+                || (hoveredParent ? (tree.get(hoveredParent) || []) : []);
+      if (colChildHeader) {
+        colChildHeader.textContent = hoveredParent ? `${parentLabelSingular ? parentLabelSingular : 'Items'} in ${hoveredParent}` : '';
+      }
+      kids.forEach(kid => {
+        const el = document.createElement('div');
+        el.className = 'dsf-combo-item';
+        el.innerHTML = `<span class="dsf-combo-item__label">${escapeHtml(kid)}</span>`;
+        el.addEventListener('click', () => {
+          onSelect({ parent: hoveredParent, child: kid });
+          close();
+        });
+        colChild.appendChild(el);
+      });
+    }
+
+    function applyTextFilter(q) {
+      const query = q.trim().toLowerCase();
+      if (!query) { filtered = null; hoveredParent = null; renderParents(); renderChildren(); return; }
+      // Match on parents AND children
+      const parentHits = new Set();
+      const childrenByParent = new Map();
+      tree.forEach((kids, parent) => {
+        const parentMatch = parent.toLowerCase().includes(query);
+        const kidHits = kids.filter(k => k.toLowerCase().includes(query));
+        if (parentMatch) { parentHits.add(parent); childrenByParent.set(parent, kids); }
+        else if (kidHits.length) { parentHits.add(parent); childrenByParent.set(parent, kidHits); }
+      });
+      const parents = [...parentHits].sort((a, b) => a.localeCompare(b));
+      filtered = { parents, childrenByParent };
+      hoveredParent = parents[0] || null;
+      renderParents(); renderChildren();
+    }
+
+    // Wire
+    root.addEventListener('click', ev => {
+      if (ev.target.closest('[data-clear-combo]')) return;
+      if (panel.classList.contains('is-visible')) return; // let outside handler close
+      open();
+      renderParents(); renderChildren();
+      if (input) input.focus();
+    });
+    if (input) {
+      input.addEventListener('input', () => { open(); renderParents(); applyTextFilter(input.value); });
+      input.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') {
+          ev.preventDefault();
+          const parents = filtered ? filtered.parents : [...tree.keys()];
+          const first = parents[0];
+          if (first) { onSelect({ parent: first, child: '' }); close(); }
+        }
+      });
+    }
+    // Update the pill label whenever state changes.
+    function refreshLabel() {
+      const active = isActive();
+      root.classList.toggle('is-active', active.active);
+      if (input) input.value = active.value || '';
+      const labelSlot = root.querySelector('[data-label-slot]');
+      if (labelSlot) labelSlot.textContent = active.value || buildLabel();
+      const badge = root.querySelector('[data-clear-combo]');
+      if (badge) badge.style.display = active.active ? '' : 'none';
+    }
+    refreshLabel();
+    return { refreshLabel, close };
+  }
+
+  // ============================================================
+  //  Wire the new filter row (called once at boot)
+  // ============================================================
+  function wireScholarFilterRow() {
+    // ---- Name search ----
+    const searchInput = document.querySelector('[data-scholar-name-search]');
+    if (searchInput) {
+      searchInput.value = state.scholarNameSearch || '';
+      let t;
+      searchInput.addEventListener('input', () => {
+        clearTimeout(t);
+        t = setTimeout(() => {
+          state.scholarNameSearch = searchInput.value;
+          state.scholarPage = 1;
+          renderLeaders();
+        }, 120);
+      });
+    }
+
+    // ---- Confederacy / Province combo ----
+    const confRoot   = document.querySelector('[data-scholar-conf-combo]');
+    const confPanel  = document.querySelector('[data-scholar-conf-panel]');
+    if (confRoot && confPanel) {
+      const colP = confPanel.querySelector('[data-parent-col]');
+      const colC = confPanel.querySelector('[data-child-col]');
+      const colCH = confPanel.querySelector('[data-child-header]');
+      const tree = buildConfProvTree();
+      const combo = initTwoColumnCombo({
+        root: confRoot, input: null, panel: confPanel,
+        colParent: colP, colChild: colC, colChildHeader: colCH,
+        tree, parentLabelSingular: 'Provinces',
+        buildLabel: () => 'All confederacies',
+        isActive: () => {
+          const c = state.scholarConfFilter, p = state.scholarProvFilter;
+          if (c && p) return { active: true, value: `${c} › ${p}` };
+          if (c) return { active: true, value: c };
+          if (p) return { active: true, value: p };
+          return { active: false, value: '' };
+        },
+        onSelect: ({ parent, child }) => {
+          state.scholarConfFilter = parent || '';
+          state.scholarProvFilter = child || '';
+          state.scholarPage = 1;
+          renderLeaders();
+          combo.refreshLabel();
+        }
+      });
+      confRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
+        ev.stopPropagation();
+        state.scholarConfFilter = ''; state.scholarProvFilter = '';
+        state.scholarPage = 1;
+        renderLeaders();
+        combo.refreshLabel();
+      });
+    }
+
+    // ---- Sector dropdown (native <select>) ----
+    const secSel = document.querySelector('[data-scholar-sector]');
+    if (secSel) {
+      secSel.innerHTML = '<option value="">All sectors</option>' +
+        SECTORS.map(s => `<option value="${escapeAttr(s)}">${escapeHtml(s)}</option>`).join('');
+      secSel.value = state.scholarSectorFilter || '';
+      secSel.addEventListener('change', () => {
+        state.scholarSectorFilter = secSel.value;
+        state.scholarPage = 1;
+        renderLeaders();
+      });
+    }
+
+    // ---- Discipline (checkbox multi-select) ----
+    const discRoot  = document.querySelector('[data-scholar-disc-combo]');
+    const discPanel = document.querySelector('[data-scholar-disc-panel]');
+    if (discRoot && discPanel) {
+      // Populate options once (already alphabetical).
+      const list = discPanel.querySelector('[data-disc-list]');
+      list.innerHTML = DISCIPLINES.map(d => `
+        <label class="dsf-check-item">
+          <input type="checkbox" value="${escapeAttr(d)}" />
+          <span class="dsf-check-item__label">${escapeHtml(d)}</span>
+        </label>`).join('');
+
+      function refreshDiscLabel() {
+        const n = state.scholarDisciplineFilter.size;
+        discRoot.classList.toggle('is-active', n > 0);
+        const labelSlot = discRoot.querySelector('[data-label-slot]');
+        if (labelSlot) labelSlot.textContent = n === 0 ? 'Discipline' : `Discipline`;
+        const badge = discRoot.querySelector('[data-disc-badge]');
+        badge.textContent = n ? String(n) : '';
+        badge.style.display = n ? 'inline-flex' : 'none';
+      }
+
+      function openDisc() {
+        positionPanelBelow(discRoot, discPanel);
+        discPanel.classList.add('is-visible'); discRoot.classList.add('is-open');
+        document.addEventListener('mousedown', outsideCloseDisc, true);
+        document.addEventListener('keydown', escCloseDisc);
+      }
+      function closeDisc() {
+        discPanel.classList.remove('is-visible'); discRoot.classList.remove('is-open');
+        document.removeEventListener('mousedown', outsideCloseDisc, true);
+        document.removeEventListener('keydown', escCloseDisc);
+      }
+      function outsideCloseDisc(ev) { if (!discRoot.contains(ev.target) && !discPanel.contains(ev.target)) closeDisc(); }
+      function escCloseDisc(ev) { if (ev.key === 'Escape') closeDisc(); }
+
+      discRoot.addEventListener('click', ev => {
+        if (discPanel.classList.contains('is-visible')) return;
+        openDisc();
+      });
+      list.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = state.scholarDisciplineFilter.has(cb.value);
+        cb.addEventListener('change', () => {
+          if (cb.checked) state.scholarDisciplineFilter.add(cb.value);
+          else state.scholarDisciplineFilter.delete(cb.value);
+          state.scholarPage = 1;
+          refreshDiscLabel();
+          renderLeaders();
+        });
+      });
+      discPanel.querySelector('[data-disc-clear]').addEventListener('click', () => {
+        state.scholarDisciplineFilter.clear();
+        list.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        state.scholarPage = 1;
+        refreshDiscLabel();
+        renderLeaders();
+      });
+      refreshDiscLabel();
+    }
+
+    // ---- Country / University of study combo ----
+    const studyRoot  = document.querySelector('[data-scholar-study-combo]');
+    const studyPanel = document.querySelector('[data-scholar-study-panel]');
+    if (studyRoot && studyPanel) {
+      const input = studyRoot.querySelector('[data-scholar-study-input]');
+      const colP = studyPanel.querySelector('[data-parent-col]');
+      const colC = studyPanel.querySelector('[data-child-col]');
+      const colCH = studyPanel.querySelector('[data-child-header]');
+      const tree = buildStudyTree();
+      const combo = initTwoColumnCombo({
+        root: studyRoot, input, panel: studyPanel,
+        colParent: colP, colChild: colC, colChildHeader: colCH,
+        tree, parentLabelSingular: 'Universities',
+        buildLabel: () => 'Countries / Universities of study',
+        isActive: () => {
+          const c = state.scholarStudyCountry, u = state.scholarStudyUni;
+          if (c && u) return { active: true, value: `${c} › ${u}` };
+          if (c) return { active: true, value: c };
+          return { active: false, value: '' };
+        },
+        onSelect: ({ parent, child }) => {
+          state.scholarStudyCountry = parent || '';
+          state.scholarStudyUni = child || '';
+          state.scholarPage = 1;
+          renderLeaders();
+          combo.refreshLabel();
+        }
+      });
+      studyRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
+        ev.stopPropagation();
+        state.scholarStudyCountry = ''; state.scholarStudyUni = '';
+        if (input) input.value = '';
+        state.scholarPage = 1;
+        renderLeaders();
+        combo.refreshLabel();
+      });
+    }
+
+    // ---- Country / University of work combo ----
+    const workRoot  = document.querySelector('[data-scholar-work-combo]');
+    const workPanel = document.querySelector('[data-scholar-work-panel]');
+    if (workRoot && workPanel) {
+      const input = workRoot.querySelector('[data-scholar-work-input]');
+      const colP = workPanel.querySelector('[data-parent-col]');
+      const colC = workPanel.querySelector('[data-child-col]');
+      const colCH = workPanel.querySelector('[data-child-header]');
+      const tree = buildWorkTree();
+      const combo = initTwoColumnCombo({
+        root: workRoot, input, panel: workPanel,
+        colParent: colP, colChild: colC, colChildHeader: colCH,
+        tree, parentLabelSingular: 'Universities',
+        buildLabel: () => 'Countries / Universities of work',
+        isActive: () => {
+          const c = state.scholarWorkCountry, u = state.scholarWorkUni;
+          if (c && u) return { active: true, value: `${c} › ${u}` };
+          if (c) return { active: true, value: c };
+          return { active: false, value: '' };
+        },
+        onSelect: ({ parent, child }) => {
+          state.scholarWorkCountry = parent || '';
+          state.scholarWorkUni = child || '';
+          state.scholarPage = 1;
+          renderLeaders();
+          combo.refreshLabel();
+        }
+      });
+      workRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
+        ev.stopPropagation();
+        state.scholarWorkCountry = ''; state.scholarWorkUni = '';
+        if (input) input.value = '';
+        state.scholarPage = 1;
+        renderLeaders();
+        combo.refreshLabel();
+      });
+    }
+
+    // ---- Clear-all button ----
+    const clearAll = document.querySelector('[data-scholar-clear-all]');
+    if (clearAll) {
+      clearAll.addEventListener('click', () => {
+        state.scholarNameSearch = '';
+        state.scholarConfFilter = ''; state.scholarProvFilter = '';
+        state.scholarSectorFilter = '';
+        state.scholarDisciplineFilter.clear();
+        state.scholarStudyCountry = ''; state.scholarStudyUni = '';
+        state.scholarWorkCountry = ''; state.scholarWorkUni = '';
+        state.scholarPage = 1;
+        // Force each combo's label to refresh by re-running the wireup.
+        wireScholarFilterRow();
+        renderLeaders();
+      });
+    }
   }
 
   // Derive scholar rows from the Zotero snapshot + the enrichment JSON.
@@ -3165,7 +3734,7 @@
     renderPanelD();
     renderHistogram();
     renderLeaders();
-    wireScholarFilters();
+    wireScholarFilterRow();
     wire();
     wireTypeFilter();
     wirePanelB1();

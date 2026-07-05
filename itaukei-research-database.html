@@ -1783,6 +1783,155 @@
       font-weight: 700 !important;
       font-style: normal !important;
     }
+    /* =====================================================================
+       ==== Scholar-filter row (search + confederacy/prov combo + sector +
+       ==== discipline multi + study combo + work combo + summary bar) ====
+       ===================================================================== */
+    .db-leaderboard__head { display: block; position: relative; }
+    .dsf-row {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin: 8px 0 10px;
+    }
+    .dsf-input {
+      position: relative;
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 8px 12px; height: 38px;
+      border: 1px solid var(--color-border, #d8d0b0); border-radius: 999px;
+      background: #fff; font: inherit; font-size: 0.86rem;
+      color: var(--color-text, #1f2937); cursor: pointer; user-select: none;
+      transition: border-color .12s, box-shadow .12s;
+    }
+    .dsf-input:hover { border-color: #0e7490; }
+    .dsf-input.is-open { border-color: #0e7490; box-shadow: 0 0 0 3px rgba(14,116,144,0.15); }
+    .dsf-input.is-active { background: #e0f2f4; border-color: #0e7490; }
+    .dsf-input.is-active .dsf-input__label { color: #062f35; font-weight: 600; }
+    .dsf-input svg { width: 13px; height: 13px; color: #6b7280; flex-shrink: 0; }
+    .dsf-input input {
+      border: none; outline: none; background: transparent;
+      font: inherit; font-size: 0.9rem; color: var(--color-text, #1f2937);
+      width: 100%; min-width: 140px;
+    }
+    .dsf-input__label {
+      color: #6b7280;
+      max-width: 340px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .dsf-input__caret { color: #6b7280; font-size: 0.7rem; }
+    .dsf-input__clear {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px;
+      border-radius: 50%; background: #062f35; color: #fff; font-size: 0.75rem;
+      line-height: 1; cursor: pointer;
+    }
+    .dsf-input__clear:hover { background: #b23a48; }
+    .dsf-input__badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 18px; height: 18px; padding: 0 6px;
+      background: #0e7490; color: #fff; font-size: 0.72rem; font-weight: 700;
+      border-radius: 9px;
+    }
+    .dsf-input--search { min-width: 200px; flex: 1 1 220px; }
+    .dsf-input--select {
+      padding: 8px 10px 8px 12px;
+      /* native select carets look off inside a pill — hide the extra one from us */
+      appearance: menulist;
+    }
+    .dsf-input--wide { min-width: 240px; }
+    .dsf-clear-all {
+      padding: 8px 14px; height: 38px; font: inherit; font-size: 0.82rem; font-weight: 600;
+      border: 1px solid var(--color-border, #d8d0b0); border-radius: 999px;
+      background: #fff; color: #0e7490; cursor: pointer;
+    }
+    .dsf-clear-all:hover { background: #ecfeff; border-color: #0e7490; }
+
+    /* ---- Two-column combo panel ---- */
+    .dsf-combo-panel {
+      position: absolute; z-index: 40;
+      display: none; flex-direction: row;
+      background: #fff; border: 1px solid var(--color-border, #d8d0b0);
+      border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+      overflow: hidden; margin-top: 4px;
+      min-width: 480px; max-width: 640px;
+      max-height: 360px;
+    }
+    .dsf-combo-panel.is-visible { display: flex; }
+    .dsf-combo-col {
+      display: flex; flex-direction: column; padding: 8px 0;
+      min-width: 220px; max-height: 360px; overflow-y: auto;
+    }
+    .dsf-combo-col--first { border-right: 1px solid var(--color-border, #d8d0b0); background: #fdfbf0; }
+    .dsf-combo-col__head {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: #6b7280; font-weight: 600; padding: 4px 14px 8px;
+    }
+    .dsf-combo-item {
+      padding: 6px 14px; font-size: 0.87rem;
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; color: var(--color-text, #1f2937);
+    }
+    .dsf-combo-item:hover, .dsf-combo-item.is-highlighted { background: #cffafe; color: #062f35; }
+    .dsf-combo-item__label { flex: 1; }
+    .dsf-combo-item__count { color: #6b7280; font-size: 0.78rem; }
+    .dsf-combo-caret { color: #6b7280; font-size: 0.75rem; }
+
+    /* ---- Checkbox multi-select panel (Discipline) ---- */
+    .dsf-check-panel {
+      position: absolute; z-index: 40;
+      display: none; flex-direction: column;
+      background: #fff; border: 1px solid var(--color-border, #d8d0b0);
+      border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.14);
+      margin-top: 4px; padding: 6px 0;
+      min-width: 340px;
+    }
+    .dsf-check-panel.is-visible { display: flex; }
+    .dsf-check-panel__head {
+      padding: 6px 14px 8px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 0.72rem; letter-spacing: 0.05em; color: #6b7280;
+      font-weight: 600; text-transform: uppercase;
+      border-bottom: 1px solid var(--color-border, #d8d0b0); margin-bottom: 4px;
+    }
+    .dsf-check-panel__clear {
+      background: none; border: none; color: #0e7490; cursor: pointer;
+      font: inherit; font-size: 0.7rem; font-weight: 600;
+    }
+    .dsf-check-panel__foot {
+      padding: 8px 14px; border-top: 1px dashed var(--color-border, #d8d0b0);
+      font-size: 0.75rem; color: #6b7280; margin-top: 4px;
+    }
+    .dsf-check-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 14px; font-size: 0.9rem; cursor: pointer; user-select: none;
+      color: var(--color-text, #1f2937);
+    }
+    .dsf-check-item:hover { background: #eaf7f9; }
+    .dsf-check-item input[type="checkbox"] { margin: 0; width: 15px; height: 15px; accent-color: #0e7490; }
+    .dsf-check-item__label { flex: 1; }
+
+    /* ---- Summary bar ---- */
+    .dsf-summary {
+      display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+      padding: 10px 14px; margin: 10px 0 12px;
+      background: linear-gradient(to right, #fbfaf3, #fff);
+      border: 1px solid var(--color-border, #d8d0b0); border-radius: 10px;
+      font-size: 0.88rem;
+    }
+    .dsf-summary strong { font-weight: 700; color: #062f35; font-size: 0.94rem; }
+    .dsf-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 11px; border-radius: 12px; font-size: 0.84rem;
+    }
+    .dsf-chip__dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
+    .dsf-chip--total       { background: #f1f5f9; color: #0f172a; }
+    .dsf-chip--kubuna      { background: #cffafe; color: #155e75; }
+    .dsf-chip--tovata      { background: #fef3c7; color: #92400e; }
+    .dsf-chip--burebasaga  { background: #fecaca; color: #991b1b; }
+    .dsf-chip--unclass     { background: #d1e8ea; color: #062f35; }
+    .dsf-chip--kubuna     .dsf-chip__dot { background: #0891b2; }
+    .dsf-chip--tovata     .dsf-chip__dot { background: #eab308; }
+    .dsf-chip--burebasaga .dsf-chip__dot { background: #dc2626; }
+    .dsf-chip--unclass    .dsf-chip__dot { background: #062f35; }
+
     /* ==== Submit-info modal ==== */
     .db-submit-modal {
       position: fixed; inset: 0; z-index: 9999;
@@ -2402,18 +2551,97 @@
     <div class="db-leaderboard reveal">
       <div class="db-leaderboard__head">
         <h3 class="db-leaderboard__title">iTaukei published scholars</h3>
-        <div class="db-leaderboard__filters">
-          <select class="db-leaderboard__select" data-scholar-conf-filter aria-label="Filter scholars by confederacy">
-            <option value="">All confederacies</option>
-            <option value="__untagged__">Untagged (no confederacy)</option>
-            <option value="Burebasaga">Burebasaga</option>
-            <option value="Kubuna">Kubuna</option>
-            <option value="Tovata">Tovata</option>
+        <div class="dsf-row">
+          <label class="dsf-input dsf-input--search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="search" placeholder="Search by name…" data-scholar-name-search aria-label="Search scholars by name" />
+          </label>
+
+          <button type="button" class="dsf-input dsf-input--combo" data-scholar-conf-combo aria-haspopup="listbox">
+            <span class="dsf-input__label" data-label-slot>All confederacies</span>
+            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
+            <span class="dsf-input__caret">▾</span>
+          </button>
+
+          <select class="dsf-input dsf-input--select" data-scholar-sector aria-label="Filter by sector">
+            <option value="">All sectors</option>
           </select>
-          <select class="db-leaderboard__select" data-scholar-prov-filter aria-label="Filter scholars by province">
-            <option value="">All provinces</option>
-            <option value="__untagged__">Untagged (no province)</option>
-          </select>
+
+          <button type="button" class="dsf-input dsf-input--combo" data-scholar-disc-combo aria-haspopup="listbox">
+            <span class="dsf-input__label" data-label-slot>Discipline</span>
+            <span class="dsf-input__badge" data-disc-badge style="display:none;"></span>
+            <span class="dsf-input__caret">▾</span>
+          </button>
+
+          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-study-combo aria-haspopup="listbox">
+            <span class="dsf-input__label" data-label-slot>Countries / Universities of study</span>
+            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
+            <span class="dsf-input__caret">▾</span>
+          </button>
+
+          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-work-combo aria-haspopup="listbox">
+            <span class="dsf-input__label" data-label-slot>Countries / Universities of work</span>
+            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
+            <span class="dsf-input__caret">▾</span>
+          </button>
+
+          <button type="button" class="dsf-clear-all" data-scholar-clear-all>Clear all</button>
+        </div>
+
+        <!-- Confederacy / Province combo panel -->
+        <div class="dsf-combo-panel" data-scholar-conf-panel role="listbox">
+          <div class="dsf-combo-col dsf-combo-col--first">
+            <div class="dsf-combo-col__head">Confederacy</div>
+            <div data-parent-col></div>
+          </div>
+          <div class="dsf-combo-col">
+            <div class="dsf-combo-col__head" data-child-header>Provinces</div>
+            <div data-child-col></div>
+          </div>
+        </div>
+
+        <!-- Discipline checkbox panel -->
+        <div class="dsf-check-panel" data-scholar-disc-panel role="listbox">
+          <div class="dsf-check-panel__head">
+            <span>Discipline (10)</span>
+            <button type="button" class="dsf-check-panel__clear" data-disc-clear>Clear</button>
+          </div>
+          <div data-disc-list></div>
+          <div class="dsf-check-panel__foot">Ticking multiple disciplines narrows results (AND) — a scholar must sit in every ticked discipline.</div>
+        </div>
+
+        <!-- Study combo panel -->
+        <div class="dsf-combo-panel" data-scholar-study-panel role="listbox">
+          <div class="dsf-combo-col dsf-combo-col--first">
+            <div class="dsf-combo-col__head">Country of study</div>
+            <div data-parent-col></div>
+          </div>
+          <div class="dsf-combo-col">
+            <div class="dsf-combo-col__head" data-child-header>Universities</div>
+            <div data-child-col></div>
+          </div>
+        </div>
+
+        <!-- Work combo panel -->
+        <div class="dsf-combo-panel" data-scholar-work-panel role="listbox">
+          <div class="dsf-combo-col dsf-combo-col--first">
+            <div class="dsf-combo-col__head">Country of work</div>
+            <div data-parent-col></div>
+          </div>
+          <div class="dsf-combo-col">
+            <div class="dsf-combo-col__head" data-child-header>Universities</div>
+            <div data-child-col></div>
+          </div>
+        </div>
+
+        <!-- Summary bar (Total + Kubuna + Tovata + Burebasaga + Unclassified) -->
+        <div class="dsf-summary" data-scholar-summary>
+          <strong>Results</strong>
+          <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
+          <span class="dsf-chip dsf-chip--kubuna"><span class="dsf-chip__dot"></span> Kubuna: <span data-count-kubuna>0</span></span>
+          <span class="dsf-chip dsf-chip--tovata"><span class="dsf-chip__dot"></span> Tovata: <span data-count-tovata>0</span></span>
+          <span class="dsf-chip dsf-chip--burebasaga"><span class="dsf-chip__dot"></span> Burebasaga: <span data-count-burebasaga>0</span></span>
+          <span class="dsf-chip dsf-chip--unclass"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
         </div>
       </div>
       <p class="db-leaderboard__hint">Click a card to see that scholar’s papers below.</p>
@@ -2723,6 +2951,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-11" defer></script>
+<script src="js/itaukei-database.js?v=20260705-12" defer></script>
 </body>
 </html>
