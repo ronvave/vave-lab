@@ -1478,6 +1478,63 @@
       font-size: 0.82rem; color: #64748b; text-align: center;
       margin: 8px auto 0; max-width: 820px; line-height: 1.5;
     }
+    /* ============================================================
+       Text sweep (2026-07-04):
+       (1) Slightly larger descriptive/caption text throughout the
+           dashboard so small helper copy is easier to read.
+       (2) Replace every remaining serif element with Arial bold
+           (font-family + weight only; size, color, and position
+           are untouched).
+       Placed at the tail of the stylesheet so it wins on cascade
+       without having to touch each original rule.
+       ============================================================ */
+
+    /* --- (1) enlarge small helper/caption text --- */
+    .db-panel__hint            { font-size: 0.9rem;  line-height: 1.5; }
+    .db-narrative__note        { font-size: 0.88rem; }
+    .db-conf-explain           { font-size: 0.92rem; line-height: 1.5; }
+    .db-conf-narrative         { font-size: 0.95rem; line-height: 1.55; }
+    .db-nonfiji__sub           { font-size: 0.88rem; }
+    .db-conf-panel__foot       { font-size: 0.82rem; }
+    .db-hist-legend            { font-size: 0.88rem; }
+    .db-type-filter            { font-size: 0.88rem; }
+    .db-scholar-card__meta     { font-size: 0.94rem; }
+    .db-scholar-card__stat-label { font-size: 0.88rem; }
+    .db-item__meta             { font-size: 0.94rem; }
+    .db-conf-mini              { font-size: 0.88rem; }
+    .db-conf-mini__n           { font-size: 0.92rem; }
+    .db-map-scope-note         { font-size: 0.95rem !important; }
+    .db-b2-province-note       { font-size: 0.92rem; }
+    .db-b2-caveat              { font-size: 0.9rem;  }
+    .db-b2-legend              { font-size: 0.92rem; }
+    .db-b2-sort                { font-size: 0.9rem;  }
+    .db-b2-mode button         { font-size: 0.9rem;  }
+
+    /* Exception (per spec): the small "Last update: <date>" text on iTaukei
+       scholar cards stays exactly as it was. Explicit re-declaration so it
+       cannot be caught by any broader selector added above or later. */
+    .db-scholar-card__updated  { font-size: 0.78rem; }
+
+    /* --- (2) swap remaining serif elements to Arial bold ---
+       Only font-family / weight / style change. Size, color, alignment,
+       tabular-numerals and every other property are left untouched. */
+    .db-item__title,
+    .db-bars__total,
+    .db-conf-row__total,
+    .db-kpi__num,
+    .db-nonfiji__num,
+    .db-conf-panel__name,
+    .db-conf-panel__total,
+    .db-scholar-card__conf-label,
+    .db-scholar-card__initials,
+    .db-scholar-card h3.db-scholar-card__name,
+    .db-scholar-card__stat-num,
+    .db-popup-title,
+    .db-about__body h4 {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif !important;
+      font-weight: 700 !important;
+      font-style: normal !important;
+    }
   </style>
 <!-- Google Analytics -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -2161,6 +2218,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-09" defer></script>
+<script src="js/itaukei-database.js?v=20260704-10" defer></script>
 </body>
 </html>
