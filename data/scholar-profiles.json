@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T08:46:38.923Z",
+  "generatedAt": "2026-07-05T08:46:40.856Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -735,6 +735,19 @@
       "slug": "mereia-fong-lomavatu",
       "last": "Lomavatu",
       "first": "Mereia Fong",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Lotawa, Semi",
+      "slug": "semi-lotawa",
+      "last": "Lotawa",
+      "first": "Semi",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
