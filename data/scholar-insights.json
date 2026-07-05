@@ -397,22 +397,35 @@
     },
     "Vunibola, Suliasi": {
       "keywords": [
-        "Indigenous",
-        "Customary Land",
-        "Climate Crisis",
-        "South Pacific",
-        "Innovation",
-        "Itaukei Indigenous Fijian",
-        "Enterprise",
-        "Ocean",
-        "Indigenous Fijian",
-        "Itaukei Indigenous"
+        "Indigenous Enterprise on Customary Land",
+        "Vanua Research Framework",
+        "Community-Driven Development",
+        "Climate Resilience and Adaptation",
+        "Foreign Aid and Maladaptation",
+        "Community Innovation Systems",
+        "Ocean and Local Communities",
+        "Customary Land Tourism",
+        "Food Sovereignty"
       ],
-      "summary": "A plain-English summary of Dr. Suliasi Vunibola’s research is not yet available. See the keyword themes and publication mix below for a first look at the 19 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Vunibola studies how Indigenous Fijian communities build successful businesses and development projects on customary land — challenging the common assumption that communal land ownership is an obstacle to economic progress. Using the <a href=\"https://journals.sagepub.com/doi/10.1177/11771801231193594\" target=\"_blank\" rel=\"noopener\">Vanua Research Framework and talanoa methods</a>, his case studies of itaukei enterprises show how practices like solesolevaki (unpaid communal work) can be assets for locally driven, culturally grounded development rather than barriers to it. He has also written on how <a href=\"https://www.morethanhumanworlds.com/mthm-suliasivuniboladavelevu\" target=\"_blank\" rel=\"noopener\">poorly designed foreign aid can create maladaptation</a> rather than resilience in Pacific communities. His current work extends this thinking to <a href=\"https://www.unisc.edu.au/staff/dr-suliasi-vunibola\" target=\"_blank\" rel=\"noopener\">Pacific-wide climate resilience research</a> spanning Fiji, Vietnam, and the Philippines.",
+      "summaryFormat": "html",
       "publicationCount": 19,
       "signature": "sha1:1187de6a7cae07d9",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Strategies for success of Indigenous businesses on customary land - Vunibola & Scheyvens",
+          "url": "https://journals.sagepub.com/doi/10.1177/11771801231193594"
+        },
+        {
+          "title": "Suliasi Vunibola-Davelevu interview | Sophie Chao",
+          "url": "https://www.morethanhumanworlds.com/mthm-suliasivuniboladavelevu"
+        },
+        {
+          "title": "Dr Suliasi Vunibola | University of the Sunshine Coast",
+          "url": "https://www.unisc.edu.au/staff/dr-suliasi-vunibola"
+        }
+      ]
     },
     "Vave, Ron": {
       "keywords": [
@@ -518,31 +531,63 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Rokolekutu, Ponipate": {
-      "keywords": [],
-      "summary": "A plain-English summary of Prof. Ponipate Rokolekutu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 3 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "iTaukei Land Dispossession",
+        "Colonial Land Legislation",
+        "iTaukei Land Trust Board",
+        "Postcolonial Theory",
+        "Indigenous Sovereignty",
+        "Vanua and Talanoa Pedagogy",
+        "Critical Pacific Islands Studies",
+        "Settler Colonial Studies"
+      ],
+      "summary": "Rokolekutu examines why most iTaukei landowners remain economically marginalized in Fiji despite owning nearly 90% of the country's land. His research traces this paradox to <a href=\"https://scholarspace.manoa.hawaii.edu/items/df7a5ea4-0dc1-4cef-a56a-ff7a986826fa\" target=\"_blank\" rel=\"noopener\">colonial-era institutions like the iTaukei Land Trust Board</a>, arguing that the very structures built to protect Indigenous land rights also entrenched Indigenous economic dependency. He has also challenged the standard narrative that <a href=\"https://u-ryukyu.repo.nii.ac.jp/record/2020424/files/[OJIS.5.Paper]%20Rokolekutu.pdf\" target=\"_blank\" rel=\"noopener\">Britain's annexation of Fiji was an act of benevolence</a>, showing it was instead driven by imperial economic interests. His teaching and writing connect this land history to present-day struggles for Indigenous sovereignty across Oceania.",
+      "summaryFormat": "html",
       "publicationCount": 3,
       "signature": "sha1:d0b6cefe5952299a",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the iTaukei Land Trust Board",
+          "url": "https://scholarspace.manoa.hawaii.edu/items/df7a5ea4-0dc1-4cef-a56a-ff7a986826fa"
+        },
+        {
+          "title": "Interrogating British Colonial Benevolence and the Annexation of the Fijian Islands",
+          "url": "https://u-ryukyu.repo.nii.ac.jp/record/2020424/files/[OJIS.5.Paper]%20Rokolekutu.pdf"
+        },
+        {
+          "title": "Ponipate Rokolekutu | Race & Resistance Studies, SFSU",
+          "url": "https://rrs.sfsu.edu/ponipate-rokolekutu"
+        }
+      ]
     },
     "Ravuvu, Amerita": {
       "keywords": [
-        "Diseases Crisis",
-        "Trade",
-        "Nutrition",
-        "Food Security",
-        "Legislation Actions",
-        "Policy",
-        "Island Countries",
-        "Political Economy",
-        "Policy and Legislation",
-        "Security and Nutrition"
+        "Sugar-Sweetened Beverage Taxation",
+        "Political Economy of Health Policy",
+        "Non-Communicable Disease Prevention",
+        "Childhood Obesity Prevention",
+        "Food Systems Governance",
+        "Food Trade Policy",
+        "Youth Empowerment in Health",
+        "Climate Change and Food Security",
+        "Pacific Health Diplomacy"
       ],
-      "summary": "A plain-English summary of Dr. Amerita Ravuvu’s research is not yet available. See the keyword themes and publication mix below for a first look at the 20 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Ravuvu works on the politics behind the Pacific's fight against non-communicable diseases — the diabetes, obesity, and heart disease that now cause most deaths in the region. Her research into <a href=\"https://academic.oup.com/heapro/article/39/6/daae142/7906020\" target=\"_blank\" rel=\"noopener\">sugar-sweetened beverage taxes in Fiji and Vanuatu</a> traces how industry lobbying and trade pressures can water down policies designed to curb sugar consumption, even when the health case is clear. She has also examined <a href=\"https://pmc.ncbi.nlm.nih.gov/articles/PMC12323095/\" target=\"_blank\" rel=\"noopener\">the political economy behind Fiji's sugar tax as a rare health-and-economic 'win-win'</a>, and written on scaling up food pricing policy and empowering youth across the region to push for stronger NCD prevention.",
+      "summaryFormat": "html",
       "publicationCount": 20,
       "signature": "sha1:3009e22b9fa8cf8f",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Watered down: a cross-case political economy analysis of sugar-sweetened beverage taxes in Vanuatu and Fiji",
+          "url": "https://academic.oup.com/heapro/article/39/6/daae142/7906020"
+        },
+        {
+          "title": "Sugar, power and policy: the political economy of a health and economic 'win-win' in Fiji's sugar-sweetened beverage tax",
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12323095/"
+        }
+      ]
     },
     "Tawake, Alifereti": {
       "keywords": [
@@ -778,12 +823,31 @@
       "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Nainoca, Winifereti": {
-      "keywords": [],
-      "summary": "A plain-English summary of Dr. Winifereti Nainoca’s research is not yet available. See the keyword themes and publication mix below for a first look at the 3 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Community-Based Marine Conservation",
+        "Bula Vakavanua and Conservation",
+        "Traditional Ecological Knowledge",
+        "Social Capital in Fijian Communities",
+        "Vanua Research Framework",
+        "Localizing the SDGs",
+        "Multidimensional Wellbeing",
+        "Coastal Biodiversity Survey"
+      ],
+      "summary": "Nainoca's doctoral research asked why some Fijian villages succeed at protecting their reefs and lagoons while others struggle, and found the answer in bula vakavanua — the traditional Fijian way of life. Her <a href=\"https://mro.massey.ac.nz/handle/10179/2670\" target=\"_blank\" rel=\"noopener\">study of three coastal communities</a> showed that kinship ties, traditional ecological knowledge, and talanoa (dialogue as storytelling) sustain community-based marine conservation more than external rules or funding ever could. She has since broadened this community-first lens to examine <a href=\"https://journalhosting.ucalgary.ca/index.php/jisd/article/view/79230\" target=\"_blank\" rel=\"noopener\">how global development goals can be adapted to fit local, place-based understandings</a> of wellbeing in the Pacific.",
+      "summaryFormat": "html",
       "publicationCount": 3,
       "signature": "sha1:73967ce05b328dec",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "The influence of the Fijian way of life (bula vakavanua) on community-based marine conservation - Massey University",
+          "url": "https://mro.massey.ac.nz/handle/10179/2670"
+        },
+        {
+          "title": "Creating a space for place and multidimensional well-being: lessons learned from localizing the SDGs",
+          "url": "https://journalhosting.ucalgary.ca/index.php/jisd/article/view/79230"
+        }
+      ]
     },
     "Nabobo-Baba, Unaisi": {
       "keywords": [
@@ -934,17 +998,34 @@
     },
     "Lagi, Rosiana": {
       "keywords": [
-        "Education",
-        "Climate",
-        "Indigenous Knowledge",
-        "Climate Change",
-        "Climate Justice"
+        "Indigenous Knowledge of Climate Change",
+        "Climate Change Education",
+        "Climate Justice and Gender Equality",
+        "Participatory Action Research",
+        "Sea Level Rise Adaptation",
+        "Quality Education Policy",
+        "Indigenous Wellbeing and Land",
+        "Literacy and Human Development"
       ],
-      "summary": "A plain-English summary of Dr. Rosiana Lagi’s research is not yet available. See the keyword themes and publication mix below for a first look at the 10 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Lagi studies how Indigenous Fijian knowledge — passed down through generations of reading the land and sea — can be woven into how Fiji teaches and responds to climate change. Her doctoral research in <a href=\"https://www.climate-uni.com/fiji-team\" target=\"_blank\" rel=\"noopener\">Ovalau, Fiji</a> found that Indigenous communities already hold detailed traditional knowledge for forecasting environmental change, work she has since carried into national education policy. Using the Fijian practice of 'curui' (weaving) as a guide, she has examined <a href=\"https://www.tandfonline.com/doi/full/10.1080/03050068.2023.2188370\" target=\"_blank\" rel=\"noopener\">how climate justice and gender equality connect in Fiji's education policies</a>, and studied <a href=\"https://journalhosting.ucalgary.ca/index.php/jisd/article/view/79230\" target=\"_blank\" rel=\"noopener\">how the loss of ancestral land affects Indigenous communities' psychological wellbeing</a>.",
+      "summaryFormat": "html",
       "publicationCount": 10,
       "signature": "sha1:414b8b1bfa129407",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Fiji Team | Climate-Uni.com",
+          "url": "https://www.climate-uni.com/fiji-team"
+        },
+        {
+          "title": "'Curui': weaving climate justice and gender equality into Fijian educational policies and practices",
+          "url": "https://www.tandfonline.com/doi/full/10.1080/03050068.2023.2188370"
+        },
+        {
+          "title": "Climate Crisis and Indigenous Well-being: Ancestral Land, Psychological & Ontological Impact, and Resilience in Fijian Communities",
+          "url": "https://journalhosting.ucalgary.ca/index.php/jisd/article/view/79230"
+        }
+      ]
     },
     "Kitolelei, Salanieta": {
       "keywords": [],
@@ -1074,14 +1155,35 @@
     },
     "Aporosa, Apo": {
       "keywords": [
-        "Kava",
-        "Traditional Kava"
+        "Traditional Kava Use",
+        "Kava and Cognitive Function",
+        "Driver Fitness and Kava",
+        "Kava-Based PTSD Therapy",
+        "Diasporic Kava Identity",
+        "Pacific Post-Development Theory",
+        "Vanua Research Framework",
+        "Decolonizing Research Methods",
+        "Kava Policy and Regulation"
       ],
-      "summary": "A plain-English summary of Apo Aporosa’s research is not yet available. See the keyword themes and publication mix below for a first look at the 10 indexed items.",
-      "summaryFormat": "plaintext",
+      "summary": "Aporosa studies kava — the culturally significant Pacific drink — not as a novelty substance but as it's actually used in traditional settings, where it plays a central role in Pacific social life and identity. His research challenges studies that test kava in tablet form, showing that <a href=\"https://onlinelibrary.wiley.com/doi/abs/10.1002/hup.2725\" target=\"_blank\" rel=\"noopener\">traditionally consumed kava affects cognition very differently</a> than lab-based extracts, with real implications for road-safety rules that don't distinguish between the two. He is now leading a <a href=\"https://www.waikato.ac.nz/int/news-events/news/kava-based-therapy-for-psychological-trauma-reaches-clinical-trial-milestone/\" target=\"_blank\" rel=\"noopener\">clinical trial testing traditional kava circles as therapy for PTSD</a>, drawing on the same cultural spaces he has studied for two decades. His broader work on <a href=\"https://researchoutreach.org/articles/traditional-kava-drinking-cognition-driver-fitness/\" target=\"_blank\" rel=\"noopener\">diasporic kava use and identity</a> argues that Pacific health research needs its own culturally grounded methods, not borrowed Western frameworks.",
+      "summaryFormat": "html",
       "publicationCount": 10,
       "signature": "sha1:c17917c55ca50324",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "regeneratedAt": "2026-07-05T09:47:59+00:00",
+      "sources": [
+        {
+          "title": "Kava drinking in traditional settings: Towards understanding effects on cognitive function - Wiley",
+          "url": "https://onlinelibrary.wiley.com/doi/abs/10.1002/hup.2725"
+        },
+        {
+          "title": "Kava based therapy for psychological trauma reaches clinical trial milestone - University of Waikato",
+          "url": "https://www.waikato.ac.nz/int/news-events/news/kava-based-therapy-for-psychological-trauma-reaches-clinical-trial-milestone/"
+        },
+        {
+          "title": "Traditional kava-drinking, cognition, and driver fitness - Research Outreach",
+          "url": "https://researchoutreach.org/articles/traditional-kava-drinking-cognition-driver-fitness/"
+        }
+      ]
     },
     "Aporosa, S. Apo": {
       "keywords": [
