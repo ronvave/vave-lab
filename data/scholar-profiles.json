@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:37:17.757Z",
+  "generatedAt": "2026-07-05T11:41:48.223Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2358,6 +2358,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Vuki, Maika",
+      "slug": "maika-vuki",
+      "last": "Vuki",
+      "first": "Maika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "suliasi-vunibola",
