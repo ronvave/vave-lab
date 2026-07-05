@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-04T22:43:32.010Z",
+  "generatedAt": "2026-07-05T00:43:36.793Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2599,7 +2599,7 @@
       "first": "Donald J.",
       "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
+      "paternalProvince": "Tailevu",
       "institution": "Fiji National University (Fiji)",
       "institutionUrl": "https://www.fnu.ac.fj/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=z2jcHJAAAAAJ&hl=en",
@@ -2609,9 +2609,14 @@
       "phd": null,
       "title": "Associate Dean Research and Director",
       "orcidUrl": "https://orcid.org/0000-0003-1047-1669",
-      "lastUpdate": "2026-07-04T08:03:16.786Z",
+      "lastUpdate": "2026-07-05T00:43:36.778Z",
       "department": "Fiji Institute of Pacific Health Research",
-      "departmentUrl": "https://www.fnu.ac.fj/college-of-medicine/research-cmnhs/fiphr/"
+      "departmentUrl": "https://www.fnu.ac.fj/college-of-medicine/research-cmnhs/fiphr/",
+      "total": 44,
+      "firstAuthored": 3,
+      "types": {
+        "journalArticle": 44
+      }
     }
   ],
   "hiddenScholars": []
