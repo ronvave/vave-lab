@@ -89,24 +89,32 @@
     .db-pill--status.is-stale .db-pill__dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.18); }
     .db-pill--status.is-error .db-pill__dot { background: #b91c1c; box-shadow: 0 0 0 3px rgba(185,28,28,0.18); }
 
-    /* Sectioned KPI panel (Database overview / iTaukei scholarship) */
+    /* Sectioned KPI panel (Database overview / iTaukei scholarship).
+       Both sections use the same pale-filled bordered container so they read
+       as sibling blocks. Titles are Arial bold so they stand apart from the
+       page's regular serif display type. */
     .db-section {
       margin-top: var(--space-5);
       padding: var(--space-4) var(--space-5) var(--space-4);
-      background: rgba(14,116,144,0.04);
-      border: 1px solid rgba(14,116,144,0.14);
+      background: rgba(14,116,144,0.07);
+      border: 1px solid rgba(14,116,144,0.20);
       border-radius: var(--radius-xl);
     }
     .db-section--itaukei { background: rgba(14,116,144,0.07); border-color: rgba(14,116,144,0.20); }
     .db-section__head { margin-bottom: var(--space-3); }
     .db-section__label {
-      font-family: var(--font-display); font-weight: 500;
-      font-size: 1.15rem; color: var(--color-primary);
-      letter-spacing: 0.01em;
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 1.35rem;
+      line-height: 1.2;
+      color: var(--color-primary);
+      letter-spacing: 0.005em;
     }
     .db-section__hint {
-      margin: 2px 0 0; font-size: 0.86rem;
-      color: var(--color-text-muted); line-height: 1.4;
+      margin: 4px 0 0;
+      font-size: 0.95rem;
+      color: var(--color-text-muted);
+      line-height: 1.5;
     }
     .db-kpis {
       display: grid;
@@ -187,9 +195,8 @@
     .db-kpi--blue   { --kpi-bg: #0C447C; --kpi-icon: #567ba9; }
     .db-kpi--purple { --kpi-bg: #3C3489; --kpi-icon: #7d75be; }
     .db-kpi--pink   { --kpi-bg: #72243E; --kpi-icon: #b26978; }
-    /* Solid cards apply the palette directly — no light-teal wash from the
-       parent .db-section--overview shell. */
-    .db-section--overview { background: transparent; border-color: transparent; padding-left: 0; padding-right: 0; }
+    /* Database overview keeps the shared pale-teal shell so both sections
+       read as sibling containers. Solid cards render on top of it. */
 
     /* Legacy ".db-stats" retained defensively — no longer emitted by the page */
     .db-stats { display: none; }
@@ -203,14 +210,19 @@
       border-radius: var(--radius-lg);
     }
     .db-narrative__title {
-      margin: 0 0 4px;
-      font-family: var(--font-display); font-weight: 500;
-      font-size: 1.1rem; color: var(--color-primary);
+      margin: 0 0 6px;
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 1.3rem;
+      line-height: 1.2;
+      color: var(--color-primary);
     }
     .db-narrative__lede {
       margin: 0 0 var(--space-2);
-      color: var(--color-text); font-size: 0.92rem; font-weight: 500;
-      line-height: 1.5;
+      color: var(--color-text);
+      font-size: 0.98rem;
+      font-weight: 500;
+      line-height: 1.55;
     }
     .db-narrative__body {
       margin: 0 0 var(--space-3);
@@ -1684,27 +1696,27 @@
           <p class="db-section__hint">Statistics filtered to works and graduate research involving identified iTaukei scholars.</p>
         </header>
         <div class="db-kpis">
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--teal">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-works">—</div><div class="db-kpi__label">Works with iTaukei authors</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--rust">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-star"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">iTaukei-led works</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--amber">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-handshake"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">Works with iTaukei co-authors</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--blue">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--purple">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by iTaukei graduate researchers</div></div>
           </div>
-          <div class="db-kpi">
+          <div class="db-kpi db-kpi--solid db-kpi--pink">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-plane"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of iTaukei graduate study</div></div>
           </div>
