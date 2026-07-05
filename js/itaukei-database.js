@@ -156,7 +156,7 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles, sync, grad] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
@@ -168,13 +168,18 @@
       fetchJson('data/last-sync.json').catch(() => null),
       // Optional — iTaukei graduate-studies extracted from Zotero theses.
       // Absence is fine; the world-map tab just falls back to an empty state.
-      fetchJson('data/itaukei-graduate-studies.json').catch(() => ({ scholars: {}, worldPoints: [] }))
+      fetchJson('data/itaukei-graduate-studies.json').catch(() => ({ scholars: {}, worldPoints: [] })),
+      // Optional — pre-generated "Explain their research" insight cache.
+      // Written by scripts/build_scholar_insights.py; regenerated whenever
+      // the Zotero snapshot changes so keywords and summary stay in sync.
+      fetchJson('data/scholar-insights.json').catch(() => ({ insights: {} }))
     ]);
     state.snapshot = snap;
     state.provinces = geo;
     state.universities = unis;
     state.lastSync = sync;
     state.graduateStudies = grad;
+    state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
 
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
@@ -2053,30 +2058,126 @@
     renderScholarPager(rows.length, totalPages);
   }
 
-  // Derive scholar rows from the Zotero snapshot (independent of the enrichment JSON).
-  // Returns [{ name ("Last, First"), key, total, firstAuthored, types }]
+  // Derive scholar rows from the Zotero snapshot + the enrichment JSON.
+  //
+  // Two sources are combined so that a scholar shows up in the dashboard even
+  // if the admin has filled a profile but hasn't yet created a matching Zotero
+  // sub-collection (or if the scholar only has 1 publication and doesn't meet
+  // the informal >3-papers convention).
+  //
+  //   Source A: Zotero sub-collections under 'iTaukei authors (>3 papers)'.
+  //             These are the primary iTaukei-scholar collections curated in
+  //             Zotero Desktop.
+  //   Source B: Admin profiles whose scholar has no matching sub-collection.
+  //             We fall back to matching publications by author name in the
+  //             snapshot (surname + first-name-first-token). Any scholar with
+  //             ≥1 matching publication becomes a card.
+  //
+  // Returns [{ name ("Last, First"), key, total, firstAuthored, types }].
   function deriveScholarRows() {
     const cols = state.snapshot.collections;
+    const rows = [];
+    const seenLastFirst = new Set(); // canonical + stripped "Last, First-token"
+
+    const emptyTypes = () => ({
+      journalArticle: 0, thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0,
+      bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0
+    });
+    const firstToken = s => String(s || '').trim().split(/\s+/)[0] || '';
+    const stripDots = s => String(s || '').replace(/\./g, '');
+
+    // ---- Source A: Zotero sub-collections ----
     const root = cols.find(c => c.name === 'iTaukei authors (>3 papers)');
-    if (!root) return [];
-    const subs = cols.filter(c => c.parent === root.key);
-    return subs.map(c => {
-      const last = c.name.split(',')[0].trim().toLowerCase();
-      const types = { journalArticle: 0, thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0, bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0 };
-      let firstAuthored = 0;
-      state.snapshot.items.forEach(it => {
-        if (!(it.collections || []).includes(c.key)) return;
-        const vt = visualType(it);
-        if (types[vt] != null) types[vt] += 1;
-        const creators = it.creators || [];
-        if (creators.length) {
-          const lastTok = (creators[0].includes(',') ? creators[0].split(',')[0].trim()
-                                                    : creators[0].trim().split(/\s+/).pop()).toLowerCase();
-          if (lastTok === last) firstAuthored += 1;
+    if (root) {
+      const subs = cols.filter(c => c.parent === root.key);
+      subs.forEach(c => {
+        const last = c.name.split(',')[0].trim().toLowerCase();
+        const types = emptyTypes();
+        let firstAuthored = 0;
+        state.snapshot.items.forEach(it => {
+          if (!(it.collections || []).includes(c.key)) return;
+          const vt = visualType(it);
+          if (types[vt] != null) types[vt] += 1;
+          const creators = it.creators || [];
+          if (creators.length) {
+            const first = creators[0];
+            const lastTok = (typeof first === 'string' && first.includes(','))
+              ? first.split(',')[0].trim().toLowerCase()
+              : String(first || '').trim().split(/\s+/).pop().toLowerCase();
+            if (lastTok === last) firstAuthored += 1;
+          }
+        });
+        rows.push({ name: c.name, key: c.key, total: c.numItems, firstAuthored, types });
+        seenLastFirst.add(c.name.toLowerCase());
+        // Also mark the stripped form so a profile keyed under
+        // "Tabudravu, Jioji N." doesn't double-emit when we hit source B.
+        const [lastPart, firstPart] = c.name.split(',').map(s => (s || '').trim());
+        if (lastPart && firstPart) {
+          seenLastFirst.add((lastPart + ', ' + firstToken(firstPart)).toLowerCase());
         }
       });
-      return { name: c.name, key: c.key, total: c.numItems, firstAuthored, types };
+    }
+
+    // ---- Source B: profiles without a matching sub-collection ----
+    // Dedupe profiles — the map has multiple keys per profile (see
+    // scholarProfilesByName build). We identify each profile by slug or by
+    // canonical (last, first) so a profile isn't processed twice.
+    const profSeen = new Set();
+    const enriched = state.scholarProfilesByName || new Map();
+    enriched.forEach(p => {
+      if (!p || !p.last || !p.first) return;
+      const id = p.slug || `${p.last}|${p.first}`;
+      if (profSeen.has(id)) return;
+      profSeen.add(id);
+
+      const canonicalName = `${p.last}, ${p.first}`;
+      const strippedName  = `${p.last}, ${firstToken(p.first)}`;
+      if (seenLastFirst.has(canonicalName.toLowerCase()) ||
+          seenLastFirst.has(strippedName.toLowerCase())) return;
+
+      // Author-name-match every item against this profile.
+      const lastLow  = p.last.toLowerCase();
+      const firstTok = stripDots(firstToken(p.first)).toLowerCase();
+      if (!lastLow || !firstTok) return;
+      const types = emptyTypes();
+      let total = 0, firstAuthored = 0;
+      state.snapshot.items.forEach(it => {
+        const creators = it.creators || [];
+        let isMatch = false, isFirst = false;
+        for (let i = 0; i < creators.length; i++) {
+          const raw = creators[i];
+          if (typeof raw !== 'string' || !raw.trim()) continue;
+          const s = raw.trim();
+          let lLow, fTokLow;
+          if (s.includes(',')) {
+            const [ln, fn] = s.split(',', 2);
+            lLow = (ln || '').trim().toLowerCase();
+            fTokLow = stripDots(firstToken(fn)).toLowerCase();
+          } else {
+            const toks = s.split(/\s+/);
+            lLow = toks[toks.length - 1].toLowerCase();
+            fTokLow = stripDots(toks[0]).toLowerCase();
+          }
+          if (lLow === lastLow && fTokLow === firstTok) {
+            isMatch = true;
+            if (i === 0) isFirst = true;
+            break;
+          }
+        }
+        if (!isMatch) return;
+        total += 1;
+        const vt = visualType(it);
+        if (types[vt] != null) types[vt] += 1;
+        if (isFirst) firstAuthored += 1;
+      });
+      if (total >= 1) {
+        rows.push({ name: canonicalName, key: null, total, firstAuthored, types });
+        seenLastFirst.add(canonicalName.toLowerCase());
+        seenLastFirst.add(strippedName.toLowerCase());
+      }
     });
+
+    return rows;
   }
 
   // Confederacy → gradient stops for the banner + initials background.
@@ -2221,13 +2322,97 @@
           ${lastUpdate ? `<div class="db-scholar-card__updated">Last update: <em>${escapeHtml(lastUpdate)}</em></div>` : ''}
         </div>
       </div>
+      ${renderScholarInsightBlock(r)}
       <div class="db-scholar-card__stats">
         <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num">${r.total}</span><span class="db-scholar-card__stat-label">Publication${r.total === 1 ? '' : 's'}</span></div>
         <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num accent">${r.firstAuthored}</span><span class="db-scholar-card__stat-label">First-authored</span></div>
       </div>
       ${chipsHtml ? `<div class="db-scholar-card__types">${chipsHtml}</div>` : ''}
     `;
+    wireScholarInsight(card);
     return card;
+  }
+
+  // -------- "Explain their research (AI generated)" — button + expandable panel --------
+  // A dedicated section on each scholar card. The button sits between the
+  // Last-update line and the publication stats; clicking it expands to reveal
+  // pre-generated research keywords (as coloured pill tags) and a plain-English
+  // summary. Keywords + summary come from data/scholar-insights.json which is
+  // rebuilt by scripts/build_scholar_insights.py whenever the Zotero snapshot
+  // changes (guarded by a per-scholar item-set signature so unchanged scholars
+  // are not regenerated).
+  function insightLookupKey(rowName) {
+    // Try the row name ("Last, First" from the Zotero sub-collection) first,
+    // then a stripped "Last, first-token" variant so "Tabudravu, Jioji" also
+    // matches an insight generated for "Tabudravu, Jioji N.".
+    const map = state.scholarInsights || {};
+    if (map[rowName]) return rowName;
+    const [lastPart, firstPart] = (rowName || '').split(',').map(s => (s || '').trim());
+    if (lastPart && firstPart) {
+      const stripped = `${lastPart}, ${firstPart.split(/\s+/)[0]}`;
+      if (map[stripped]) return stripped;
+      // As a last resort, try any key that shares the same last name + first-token.
+      const lastLow = lastPart.toLowerCase();
+      const firstTokLow = firstPart.split(/\s+/)[0].toLowerCase();
+      const hit = Object.keys(map).find(k => {
+        const [l, f] = k.split(',').map(s => (s || '').trim());
+        return l && f
+          && l.toLowerCase() === lastLow
+          && f.split(/\s+/)[0].toLowerCase() === firstTokLow;
+      });
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  function renderScholarInsightBlock(r) {
+    const key = insightLookupKey(r.name);
+    const insight = key ? state.scholarInsights[key] : null;
+    const btnId   = `db-insight-btn-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    const panelId = `db-insight-panel-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
+    const hasInsight = !!insight && (insight.keywords || []).length >= 1;
+
+    const tagsHtml = hasInsight ? (insight.keywords || []).map((k, i) =>
+      `<span class="db-scholar-card__insight-tag" data-tag-color="${i % 8}">${escapeHtml(k)}</span>`
+    ).join('') : '';
+
+    const summaryHtml = hasInsight
+      ? `<p class="db-scholar-card__insight-summary">${escapeHtml(insight.summary || '')}</p>`
+      : `<p class="db-scholar-card__insight-summary db-scholar-card__insight-summary--empty">Insight not yet generated for this scholar. It will appear here after the next data refresh.</p>`;
+
+    return `
+      <button type="button" id="${btnId}" class="db-scholar-card__insight-btn"
+              data-insight-btn aria-expanded="false" aria-controls="${panelId}">
+        <span class="db-scholar-card__insight-btn-label">Explain their research</span>
+        <span class="db-scholar-card__insight-btn-tag">(AI generated)</span>
+        <span class="db-scholar-card__insight-btn-chev" aria-hidden="true">\u25be</span>
+      </button>
+      <div class="db-scholar-card__insight" id="${panelId}" data-insight-panel hidden>
+        <div class="db-scholar-card__insight-section">
+          <div class="db-scholar-card__insight-heading">Research keywords</div>
+          <div class="db-scholar-card__insight-tags">${tagsHtml || '<span class="db-scholar-card__insight-caption">(none yet)</span>'}</div>
+          <div class="db-scholar-card__insight-caption">Generated once from this scholar's indexed publications.</div>
+        </div>
+        <div class="db-scholar-card__insight-section">
+          <div class="db-scholar-card__insight-heading">Plain-English summary</div>
+          ${summaryHtml}
+          <div class="db-scholar-card__insight-caption"><em>AI-generated summary based on this scholar's indexed publications \u2014 may not capture every nuance of their work.</em></div>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireScholarInsight(card) {
+    const btn = card.querySelector('[data-insight-btn]');
+    const panel = card.querySelector('[data-insight-panel]');
+    if (!btn || !panel) return;
+    btn.addEventListener('click', ev => {
+      // Don't trip the outer card click-to-select handler.
+      ev.stopPropagation();
+      const open = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', open ? 'false' : 'true');
+      panel.hidden = open;
+    });
   }
 
   function renderScholarPager(totalItems, totalPages) {

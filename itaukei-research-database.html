@@ -1620,6 +1620,101 @@
       line-height: 1;
     }
 
+    /* --- "Explain their research (AI generated)" button + expandable panel
+       inside each scholar card. Placed between the Last-update line and the
+       publication stats. Matches the card's rounded / hairline aesthetic. --- */
+    .db-scholar-card__insight-btn {
+      appearance: none;
+      width: 100%;
+      margin: 14px 0 0;
+      padding: 10px 14px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      cursor: pointer;
+      font: 500 0.9rem 'Source Sans Pro', 'Segoe UI', sans-serif;
+      color: var(--color-text);
+      display: flex; align-items: center; justify-content: center;
+      gap: 6px;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .db-scholar-card__insight-btn:hover {
+      background: rgba(14,116,144,0.05);
+      border-color: rgba(14,116,144,0.25);
+    }
+    .db-scholar-card__insight-btn:focus-visible {
+      outline: 2px solid var(--color-primary);
+      outline-offset: 2px;
+    }
+    .db-scholar-card__insight-btn[aria-expanded="true"] {
+      background: rgba(14,116,144,0.08);
+      border-color: rgba(14,116,144,0.25);
+    }
+    .db-scholar-card__insight-btn-tag {
+      color: var(--color-text-muted); font-weight: 400;
+    }
+    .db-scholar-card__insight-btn-chev {
+      color: var(--color-text-muted);
+      transition: transform 0.2s ease;
+      margin-left: 4px;
+    }
+    .db-scholar-card__insight-btn[aria-expanded="true"] .db-scholar-card__insight-btn-chev {
+      transform: rotate(180deg);
+    }
+
+    .db-scholar-card__insight {
+      margin: 10px 0 0;
+      padding: 12px 14px 14px;
+      background: rgba(14,116,144,0.04);
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+    }
+    .db-scholar-card__insight-heading {
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700;
+      font-size: 0.78rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 6px;
+    }
+    .db-scholar-card__insight-tags {
+      display: flex; flex-wrap: wrap; gap: 6px 6px;
+      margin-bottom: 6px;
+    }
+    .db-scholar-card__insight-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font: 500 0.82rem 'Source Sans Pro', 'Segoe UI', sans-serif;
+      border: 1px solid transparent;
+      white-space: nowrap;
+    }
+    /* Cycling palette — light backgrounds with darker matching text so every
+       tag reads as "tag-like" while still being visually varied. */
+    .db-scholar-card__insight-tag[data-tag-color="0"] { background:#d1fae5; color:#065f46; border-color:#a7f3d0; }
+    .db-scholar-card__insight-tag[data-tag-color="1"] { background:#fed7aa; color:#7c2d12; border-color:#fdba74; }
+    .db-scholar-card__insight-tag[data-tag-color="2"] { background:#ede9fe; color:#4c1d95; border-color:#c4b5fd; }
+    .db-scholar-card__insight-tag[data-tag-color="3"] { background:#dbeafe; color:#1e3a8a; border-color:#93c5fd; }
+    .db-scholar-card__insight-tag[data-tag-color="4"] { background:#fecdd3; color:#7f1d1d; border-color:#fda4af; }
+    .db-scholar-card__insight-tag[data-tag-color="5"] { background:#fef3c7; color:#78350f; border-color:#fde68a; }
+    .db-scholar-card__insight-tag[data-tag-color="6"] { background:#cffafe; color:#164e63; border-color:#7dd3fc; }
+    .db-scholar-card__insight-tag[data-tag-color="7"] { background:#e0e7ff; color:#312e81; border-color:#a5b4fc; }
+    .db-scholar-card__insight-caption {
+      font-size: 0.78rem;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+    }
+    .db-scholar-card__insight-summary {
+      margin: 0; font: 400 0.9rem 'Source Sans Pro', 'Segoe UI', sans-serif;
+      line-height: 1.55; color: var(--color-text);
+    }
+    .db-scholar-card__insight-summary--empty { font-style: italic; color: var(--color-text-muted); }
+    .db-scholar-card__insight-section + .db-scholar-card__insight-section {
+      margin-top: 12px; padding-top: 10px;
+      border-top: 1px dashed var(--color-border);
+    }
+
     /* --- (1) enlarge small helper/caption text --- */
     .db-panel__hint            { font-size: 0.9rem;  line-height: 1.5; }
     .db-narrative__note        { font-size: 0.88rem; }
@@ -2375,6 +2470,6 @@
 </footer>
 
 <script src="js/main.js"></script>
-<script src="js/itaukei-database.js?v=20260704-15" defer></script>
+<script src="js/itaukei-database.js?v=20260704-16" defer></script>
 </body>
 </html>
