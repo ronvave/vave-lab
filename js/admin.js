@@ -64,6 +64,92 @@
     return state.nameAliases.get(name) || name;
   }
 
+  // ==================== Rule-based Sector / Country-of-work seeding ====================
+  // Both fields are new on the scholar profile. To avoid Ron having to type in
+  // 138 values by hand, we auto-seed them from the existing institution text
+  // when a profile has no value yet. These guesses are just defaults — the
+  // Admin edit form still shows them and lets Ron correct any misses. Correct
+  // values are then persisted like any other profile field.
+
+  function guessSector(profile) {
+    const inst = String((profile && profile.institution) || '').toLowerCase();
+    if (!inst) return '';
+    // Academia — anything that looks like a research/teaching institution.
+    if (/\b(university|college|school|institute|polytech|academy|centre for|center for|faculty|research centre|research center)\b/.test(inst))
+      return 'Academia';
+    // Government agencies.
+    if (/\b(ministry|department of|government|centre for disease control|cdc|health authority|hospital)\b/.test(inst))
+      return 'Government';
+    // International organisations and multilateral bodies.
+    if (/\b(spc\b|pacific community|sprep|undp|unesco|unicef|fao|who\b|world health|world bank|world food|iucn|un\s|united nations|ffa\b|forum fisheries|pacific islands forum)\b/.test(inst))
+      return 'International Organisation';
+    // NGOs / civil society.
+    if (/\b(wwf|wildlife conservation|conservation international|nature\s*fiji|birdlife|greenpeace|caritas|save the children|red cross|foundation|society for|non-profit|non-govern|civil society|ngo)\b/.test(inst))
+      return 'Non-Government / Civil Society';
+    // Explicit private sector markers.
+    if (/\b(ltd\b|limited|corp\b|inc\b|llc\b|consult|consulting|group\b|pvt\b|pty\b)\b/.test(inst))
+      return 'Private Sector';
+    return '';
+  }
+
+  // Country parsing: look for common country markers inside the institution
+  // string. The first hit wins, in most-specific-to-least-specific order.
+  // Where the site clearly implies a country ("USP", "Fiji National University",
+  // "University of Guam", etc.) we map directly.
+  const COUNTRY_RULES = [
+    [/\bfiji national university\b|\bfnu\b/i, 'Fiji'],
+    [/\buniversity of the south pacific\b|\busp\b/i, 'Fiji'],
+    [/\bnature\s*fiji\b|\bfiji museum\b|\bblue prosperity fiji\b|\bwish fiji\b/i, 'Fiji'],
+    [/\bministry.*fiji|\bfiji.*ministry|\bsuva\b|\blautoka\b/i, 'Fiji'],
+    [/\buniversity of central lancashire\b|\bcentral lancashire\b|\buclan\b/i, 'United Kingdom'],
+    [/\buniversity of southampton\b|\bimperial college\b|\boxford\b|\bcambridge\b|\b\(uk\)\b|\bunited kingdom\b/i, 'United Kingdom'],
+    [/\buniversity of guam\b|\buog\b/i, 'Guam (USA territory)'],
+    [/\byas seaworld\b|\babu dhabi\b|\buae\b|\bunited arab emirates\b/i, 'United Arab Emirates'],
+    [/\bmassey university\b|\bauckland\b|\botago\b|\bcanterbury\b|\bwaikato\b|\bvictoria university of wellington\b|\b\(new zealand\)\b|\bnew zealand\b/i, 'New Zealand'],
+    [/\bsydney\b|\btasmania\b|\bunsw\b|\bmelbourne\b|\bqueensland\b|\bjames cook\b|\bcharles darwin\b|\bgriffith\b|\bsunshine coast\b|\banu\b|\bmurdoch\b|\bwestern sydney\b|\bnewcastle\b|\bcanberra\b|\bmacquarie\b|\b\(australia\)\b|\baustralia\b/i, 'Australia'],
+    [/\bmanoa\b|\bhawai[\u02bbi\']i\b|\bsan francisco state\b|\bsfsu\b|\bstanford\b|\bharvard\b|\byale\b|\bmit\b|\bcornell\b|\bnorthwestern\b|\bberkeley\b|\bucla\b|\bwashington\b|\bwyoming\b|\bhawaii\b|\b\(usa\)\b|\bunited states\b/i, 'USA'],
+    [/\bryukyu\b|\btokyo\b|\bkyoto\b|\bosaka\b|\bhokkaido\b|\b\(japan\)\b|\bjapan\b/i, 'Japan'],
+    [/\bpapua new guinea\b|\bpng\b/i, 'Papua New Guinea'],
+    [/\bsolomon islands\b/i, 'Solomon Islands'],
+    [/\bvanuatu\b/i, 'Vanuatu'],
+    [/\bsamoa\b/i, 'Samoa'],
+    [/\btonga\b/i, 'Tonga'],
+    [/\btoronto\b|\bmontreal\b|\bvancouver\b|\bmcgill\b|\bottawa\b|\b\(canada\)\b|\bcanada\b/i, 'Canada'],
+    [/\bberlin\b|\bmunich\b|\bheidelberg\b|\bgermany\b/i, 'Germany'],
+  ];
+  function guessInstitutionCountry(profile) {
+    const inst = String((profile && profile.institution) || '');
+    if (!inst) return '';
+    for (const [pattern, country] of COUNTRY_RULES) {
+      if (pattern.test(inst)) return country;
+    }
+    // Last-resort fallback: check for a " (Country)" suffix.
+    const m = inst.match(/[\(,]\s*([A-Za-z][A-Za-z\s]{2,25}?)\s*\)?\s*$/);
+    if (m) return m[1].trim();
+    return '';
+  }
+
+  // Apply the seeds in-memory to every profile that lacks these fields. This
+  // runs once per session at loadData time. Values are only overwritten with
+  // the guess when the profile has no existing value — explicit admin edits
+  // are never trampled.
+  function seedSectorAndCountry(profilesByKey) {
+    let seededSector = 0, seededCountry = 0;
+    profilesByKey.forEach(p => {
+      if (!p.sector) {
+        const g = guessSector(p);
+        if (g) { p.sector = g; seededSector += 1; }
+      }
+      if (!p.institutionCountry) {
+        const g = guessInstitutionCountry(p);
+        if (g) { p.institutionCountry = g; seededCountry += 1; }
+      }
+    });
+    if (seededSector || seededCountry) {
+      console.log(`[admin] auto-seeded sector for ${seededSector} profiles, country of work for ${seededCountry} profiles — saved on next push.`);
+    }
+  }
+
   // Stable identity for a group of variant names — used to remember dismissals.
   function variantGroupId(names) {
     return [...names].map(n => n.toLowerCase()).sort().join('|');
@@ -253,6 +339,10 @@
       merged.set(key, withName(Object.assign({}, merged.get(key) || {}, cleanSheet)));
     });
     state.profilesByKey = merged;
+    // Rule-based auto-seed: fill Sector and Country of work for any profile
+    // that has no value yet, using the institution text. Explicit edits are
+    // preserved. Seeded values persist on the next “Push all to GitHub”.
+    seedSectorAndCountry(state.profilesByKey);
     // Load the explicit hide-list. Names in here are removed from the public dashboard
     // even though they still exist as Zotero collection subs.
     state.hiddenScholars = new Set(Array.isArray(profilesJson.hiddenScholars) ? profilesJson.hiddenScholars : []);
@@ -747,6 +837,11 @@
     $('#pf-paternal-province').value = p.paternalProvince || '';
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
+    // Sector + Country of work. If the profile has no value yet, fall back to
+    // the auto-seeded rule-based guess (guessSector / guessInstitutionCountry
+    // in loadData) so the form always shows a sensible starting value.
+    $('#pf-sector').value = p.sector || guessSector(p) || '';
+    $('#pf-institution-country').value = p.institutionCountry || guessInstitutionCountry(p) || '';
     $('#pf-department').value = p.department || '';
     $('#pf-department-url').value = p.departmentUrl || '';
     $('#pf-profile-url').value = p.profileUrl || '';
@@ -1425,6 +1520,8 @@
         paternalProvince: $('#pf-paternal-province').value,
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
+        sector: $('#pf-sector').value,
+        institutionCountry: $('#pf-institution-country').value.trim(),
         department: $('#pf-department').value.trim(),
         departmentUrl: $('#pf-department-url').value.trim(),
         profileUrl: $('#pf-profile-url').value.trim(),

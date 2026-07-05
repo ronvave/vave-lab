@@ -547,6 +547,40 @@
           <small>Homepage of the institution. Linked from the institution name on the public card.</small>
         </div>
         <div>
+          <label for="pf-sector">Sector</label>
+          <select id="pf-sector">
+            <option value="">(select)</option>
+            <option value="Academia">Academia</option>
+            <option value="Government">Government</option>
+            <option value="Non-Government / Civil Society">Non-Government / Civil Society</option>
+            <option value="Private Sector">Private Sector</option>
+            <option value="International Organisation">International Organisation</option>
+          </select>
+          <small>Used for the Sector filter on the public dashboard. Auto-seeded from the institution name; adjust if wrong.</small>
+        </div>
+        <div>
+          <label for="pf-institution-country">Country of work</label>
+          <input type="text" id="pf-institution-country" list="pf-country-options" placeholder="e.g. Fiji, Australia, United Kingdom" />
+          <small>Country where the institution is based. Auto-seeded from the institution name; adjust if wrong.</small>
+          <datalist id="pf-country-options">
+            <option value="Fiji"></option>
+            <option value="Australia"></option>
+            <option value="New Zealand"></option>
+            <option value="United Kingdom"></option>
+            <option value="USA"></option>
+            <option value="Guam (USA territory)"></option>
+            <option value="United Arab Emirates"></option>
+            <option value="Papua New Guinea"></option>
+            <option value="Samoa"></option>
+            <option value="Solomon Islands"></option>
+            <option value="Tonga"></option>
+            <option value="Vanuatu"></option>
+            <option value="Japan"></option>
+            <option value="Canada"></option>
+            <option value="Germany"></option>
+          </datalist>
+        </div>
+        <div>
           <label for="pf-department">Department</label>
           <input type="text" id="pf-department" placeholder="e.g. School of Marine Studies" />
         </div>
@@ -646,6 +680,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260705-02" defer></script>
+<script src="js/admin.js?v=20260705-03" defer></script>
 </body>
 </html>
