@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:45:45.589Z",
+  "generatedAt": "2026-07-05T12:47:28.467Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2220,6 +2220,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "1"
+    },
+    {
+      "name": "Vakaoti, Patrick",
+      "slug": "patrick-vakaoti",
+      "last": "Vakaoti",
+      "first": "Patrick",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Vakarewa, Isoa",
