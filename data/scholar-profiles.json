@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T11:30:48.663Z",
+  "generatedAt": "2026-07-05T11:30:50.365Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -328,24 +328,7 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
-      "slug": "patrick-sakiusa-fong",
-      "last": "Fong",
-      "first": "Patrick Sakiusa",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
       "photo": "",
-      "name": "Fong, Patrick Sakiusa",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
       "types.journalArticle": "4",
       "types.thesis": "0",
       "types.bookSection": "0",
@@ -2688,6 +2671,8 @@
     "Cakacaka, Akuila Labati": "Cakacaka, Akuila",
     "Feussner, Klaus D.": "Feussner, Klaus",
     "Feussner, Klaus Dieter": "Feussner, Klaus",
+    "Fong, Patrick": "Fong, Patrick S.",
+    "Fong, Patrick Sakiusa": "Fong, Patrick S.",
     "Ginigini, Joape G. M.": "Ginigini, Joape",
     "Ginigini, Joape G.M.": "Ginigini, Joape",
     "Higashi, T.": "Higashi, Toshiaki",
