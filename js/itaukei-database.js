@@ -3193,6 +3193,51 @@
   // surfaced on the public dashboard (per Ron's directive).
   const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper', 'preprint'];
 
+  // Country name → ISO 3166-1 alpha-2 code, used for flag icons in the card header.
+  // Only countries that actually appear in the current dataset (or are
+  // reasonably likely to appear given the iTaukei diaspora — Pacific + common
+  // graduate-study destinations) are enumerated. Names are matched exactly to
+  // what `scholarWorkCountry(p)` returns (which mirrors the admin's Country of
+  // Work datalist), plus a handful of common alternate spellings.
+  const COUNTRY_ISO = {
+    'Fiji': 'fj', 'Australia': 'au', 'New Zealand': 'nz', 'Aotearoa': 'nz',
+    'United Kingdom': 'gb', 'UK': 'gb', 'Great Britain': 'gb', 'England': 'gb', 'Scotland': 'gb', 'Wales': 'gb',
+    'USA': 'us', 'United States': 'us', 'United States of America': 'us', 'America': 'us',
+    'Guam (USA territory)': 'gu', 'Guam': 'gu',
+    'United Arab Emirates': 'ae', 'UAE': 'ae',
+    'Papua New Guinea': 'pg', 'PNG': 'pg',
+    'Samoa': 'ws', 'Western Samoa': 'ws',
+    'American Samoa': 'as',
+    'Solomon Islands': 'sb', 'Tonga': 'to', 'Vanuatu': 'vu', 'Kiribati': 'ki',
+    'Cook Islands': 'ck', 'French Polynesia': 'pf', 'New Caledonia': 'nc',
+    'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Tuvalu': 'tv',
+    'Federated States of Micronesia': 'fm', 'Micronesia': 'fm', 'Marshall Islands': 'mh',
+    'Japan': 'jp', 'Canada': 'ca', 'Germany': 'de',
+    'India': 'in', 'China': 'cn', 'Malaysia': 'my', 'Singapore': 'sg',
+    'Norway': 'no', 'Sweden': 'se', 'Denmark': 'dk', 'Finland': 'fi',
+    'Netherlands': 'nl', 'France': 'fr', 'Spain': 'es', 'Italy': 'it',
+    'Ireland': 'ie', 'Belgium': 'be', 'Switzerland': 'ch', 'Austria': 'at',
+    'Philippines': 'ph', 'Indonesia': 'id', 'Thailand': 'th', 'Vietnam': 'vn',
+    'South Korea': 'kr', 'Republic of Korea': 'kr', 'Korea': 'kr',
+    'Taiwan': 'tw', 'Hong Kong': 'hk',
+    'Brazil': 'br', 'Mexico': 'mx', 'Argentina': 'ar', 'Chile': 'cl',
+    'South Africa': 'za', 'Kenya': 'ke', 'Nigeria': 'ng'
+  };
+
+  // Resolve a scholar profile to a flag HTML snippet, or empty string if the
+  // work country isn't known or isn't in the ISO map. Uses flagcdn.com — a
+  // stable, dependency-free public SVG flag CDN — so each card fetches only
+  // the one flag it needs (browser-cached after first load).
+  function scholarFlagHtml(profile) {
+    if (!profile) return '';
+    const country = scholarWorkCountry(profile);
+    if (!country) return '';
+    const iso = COUNTRY_ISO[country];
+    if (!iso) return '';
+    const alt = escapeAttr(country);
+    return `<img class="db-scholar-card__flag" src="https://flagcdn.com/${iso}.svg" alt="${alt} flag" title="${alt}" loading="lazy" width="26" height="19" />`;
+  }
+
   const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
   const GS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
 
@@ -3301,8 +3346,13 @@
         </button>
       </div>`;
 
+    // Work-country flag (positioned just left of the ORCID icon in the banner).
+    // Empty string when the scholar's work country is unknown or not in the ISO map.
+    const flagHtml = scholarFlagHtml(r);
+
     card.innerHTML = `
       <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label">${escapeHtml(bannerLabel)}</span></div>
+      ${flagHtml}
       <a class="db-scholar-card__orcid${r.orcidUrl ? '' : ' is-missing'}"
          href="${escapeAttr(r.orcidUrl || '#')}"
          ${r.orcidUrl ? 'target="_blank" rel="noopener"' : ''}
