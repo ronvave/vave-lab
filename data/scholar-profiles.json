@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:59:29.605Z",
+  "generatedAt": "2026-07-06T09:59:35.477Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -80,6 +80,19 @@
       "slug": "sakiusa-c-baleivanualala",
       "last": "Baleivanualala",
       "first": "Sakiusa C.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Balenaivalu, Siliva",
+      "slug": "siliva-balenaivalu",
+      "last": "Balenaivalu",
+      "first": "Siliva",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
