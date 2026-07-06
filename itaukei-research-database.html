@@ -1949,7 +1949,8 @@
       padding: 5px 14px; border-radius: 14px; font-size: 0.98rem;
     }
     .dsf-chip__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
-    .dsf-chip--total       { background: #f1f5f9; color: #0f172a; }
+    /* Total pill — black fill, white text so it stands out from the coloured breakdown chips. */
+    .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
     .dsf-chip--kubuna      { background: #cffafe; color: #155e75; }
     .dsf-chip--tovata      { background: #fef3c7; color: #92400e; }
     .dsf-chip--burebasaga  { background: #fecaca; color: #991b1b; }
@@ -2688,7 +2689,6 @@
           <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total pubs: <span data-count-pubs-total>0</span></span>
           <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
           <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
-          <span class="dsf-chip dsf-chip--thesisUnk" data-pub-chip="thesisUnknown"  style="display:none;" title="Theses with type unspecified in Zotero"><span class="dsf-chip__dot"></span> Thesis (unspecified): <span data-count-pub-thesisunk>0</span></span>
           <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
           <span class="dsf-chip dsf-chip--chapter"  data-pub-chip="bookSection"     style="display:none;"><span class="dsf-chip__dot"></span> Book Chapter: <span data-count-pub-chapter>0</span></span>
           <span class="dsf-chip dsf-chip--book"     data-pub-chip="book"            style="display:none;"><span class="dsf-chip__dot"></span> Book: <span data-count-pub-book>0</span></span>
@@ -2713,7 +2713,6 @@
             <option value="journalArticle">Journal Articles</option>
             <option value="thesisPhd">PhD Theses</option>
             <option value="thesisMasters">Masters Theses</option>
-            <option value="thesisUnknown">Theses (type unspecified)</option>
             <option value="bookSection">Book Chapters</option>
             <option value="book">Books</option>
             <option value="conferencePaper">Conference Papers</option>
@@ -3004,6 +3003,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-17" defer></script>
+<script src="js/itaukei-database.js?v=20260705-18" defer></script>
 </body>
 </html>

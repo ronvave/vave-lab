@@ -1186,7 +1186,6 @@
     push(b.journalArticle,  b.journalArticle === 1 ? 'Journal Article' : 'Journal Articles');
     push(b.thesisPhd,       b.thesisPhd === 1 ? 'PhD Thesis' : 'PhD Theses');
     push(b.thesisMasters,   b.thesisMasters === 1 ? 'Masters Thesis' : 'Masters Theses');
-    push(b.thesisUnknown,   b.thesisUnknown === 1 ? 'Thesis' : 'Theses');
     push(b.bookSection,     b.bookSection === 1 ? 'Book Chapter' : 'Book Chapters');
     push(b.book,            b.book === 1 ? 'Book' : 'Books');
     push(b.conferencePaper, b.conferencePaper === 1 ? 'Conference Paper' : 'Conference Papers');
@@ -2387,8 +2386,10 @@
     // publication types that have at least one entry in the current filter.
     const barII = document.querySelector('[data-scholar-summary-ii]');
     if (!barII) return;
+    // 'thesisUnknown' is intentionally excluded per Ron's directive —
+    // "Thesis (unspecified)" is never surfaced on the public dashboard.
     const pub = {
-      thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0, journalArticle: 0,
+      thesisPhd: 0, thesisMasters: 0, journalArticle: 0,
       bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0
     };
     let pubTotal = 0;
@@ -2404,7 +2405,6 @@
     const chipMap = {
       thesisPhd: '[data-count-pub-phd]',
       thesisMasters: '[data-count-pub-masters]',
-      thesisUnknown: '[data-count-pub-thesisunk]',
       journalArticle: '[data-count-pub-journal]',
       bookSection: '[data-count-pub-chapter]',
       book: '[data-count-pub-book]',
@@ -3106,7 +3106,9 @@
     preprint:       { color: '#6b7280', bg: '#eef0f2', border: '#c7cbd1', s: 'Preprint',         p: 'Preprints' }
   };
   // Order in which chips are rendered (only shown if count > 0)
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'thesisUnknown', 'report', 'conferencePaper', 'preprint'];
+  // 'thesisUnknown' is intentionally omitted — "Thesis (unspecified)" is never
+  // surfaced on the public dashboard (per Ron's directive).
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper', 'preprint'];
 
   const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
   const GS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
