@@ -1935,19 +1935,27 @@
     .dsf-check-item input[type="checkbox"] { margin: 0; width: 15px; height: 15px; accent-color: #0e7490; }
     .dsf-check-item__label { flex: 1; }
 
-    /* ---- Summary bar ---- */
+    /* ---- Summary bar ----
+       Two-column grid: fixed-width label | flex-wrapped chip container.
+       Any chips wrapping to a second row align to the left edge of the
+       first chip on row 1 (right after the label column), NOT to the
+       label itself. */
     .dsf-summary {
-      display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center;
+      display: grid;
+      grid-template-columns: 108px 1fr;
+      gap: 4px 12px;
+      align-items: center;
       padding: 12px 18px; margin: 10px 0 12px;
       background: linear-gradient(to right, #fbfaf3, #fff);
       border: 1px solid var(--color-border, #d8d0b0); border-radius: 10px;
       font-size: 1.02rem;
     }
-    /* Give both summary rows' labels the same width so the first chip lines
-       up vertically between the Confederacy row and the Publications row. */
-    .dsf-summary strong {
+    .dsf-summary > strong {
       font-weight: 700; color: #062f35; font-size: 1.12rem;
-      min-width: 108px; display: inline-block;
+    }
+    .dsf-summary__chips {
+      display: flex; flex-wrap: wrap; gap: 8px 12px;
+      align-items: center;
     }
     .dsf-chip {
       display: inline-flex; align-items: center; gap: 7px;
@@ -2681,25 +2689,29 @@
         <!-- Summary bar (Total + Kubuna + Tovata + Burebasaga + Unclassified) -->
         <div class="dsf-summary" data-scholar-summary>
           <strong>Confederacy</strong>
-          <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
-          <span class="dsf-chip dsf-chip--kubuna"><span class="dsf-chip__dot"></span> Kubuna: <span data-count-kubuna>0</span></span>
-          <span class="dsf-chip dsf-chip--tovata"><span class="dsf-chip__dot"></span> Tovata: <span data-count-tovata>0</span></span>
-          <span class="dsf-chip dsf-chip--burebasaga"><span class="dsf-chip__dot"></span> Burebasaga: <span data-count-burebasaga>0</span></span>
-          <span class="dsf-chip dsf-chip--unclass"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-summary-chips>
+            <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
+            <span class="dsf-chip dsf-chip--kubuna"     data-conf-chip="Kubuna"><span class="dsf-chip__dot"></span> Kubuna: <span data-count-kubuna>0</span></span>
+            <span class="dsf-chip dsf-chip--tovata"     data-conf-chip="Tovata"><span class="dsf-chip__dot"></span> Tovata: <span data-count-tovata>0</span></span>
+            <span class="dsf-chip dsf-chip--burebasaga" data-conf-chip="Burebasaga"><span class="dsf-chip__dot"></span> Burebasaga: <span data-count-burebasaga>0</span></span>
+            <span class="dsf-chip dsf-chip--unclass"    data-conf-chip="Unclassified"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
+          </div>
         </div>
 
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
         <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
           <strong>Publications</strong>
-          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
-          <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
-          <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
-          <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
-          <span class="dsf-chip dsf-chip--chapter"  data-pub-chip="bookSection"     style="display:none;"><span class="dsf-chip__dot"></span> Book Chapter: <span data-count-pub-chapter>0</span></span>
-          <span class="dsf-chip dsf-chip--book"     data-pub-chip="book"            style="display:none;"><span class="dsf-chip__dot"></span> Book: <span data-count-pub-book>0</span></span>
-          <span class="dsf-chip dsf-chip--report"   data-pub-chip="report"          style="display:none;"><span class="dsf-chip__dot"></span> Report: <span data-count-pub-report>0</span></span>
-          <span class="dsf-chip dsf-chip--conf"     data-pub-chip="conferencePaper" style="display:none;"><span class="dsf-chip__dot"></span> Conference Paper: <span data-count-pub-conf>0</span></span>
-          <span class="dsf-chip dsf-chip--preprint" data-pub-chip="preprint"        style="display:none;"><span class="dsf-chip__dot"></span> Preprint: <span data-count-pub-preprint>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-summary-ii-chips>
+            <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
+            <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
+            <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
+            <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
+            <span class="dsf-chip dsf-chip--chapter"  data-pub-chip="bookSection"     style="display:none;"><span class="dsf-chip__dot"></span> Book Chapter: <span data-count-pub-chapter>0</span></span>
+            <span class="dsf-chip dsf-chip--book"     data-pub-chip="book"            style="display:none;"><span class="dsf-chip__dot"></span> Book: <span data-count-pub-book>0</span></span>
+            <span class="dsf-chip dsf-chip--report"   data-pub-chip="report"          style="display:none;"><span class="dsf-chip__dot"></span> Report: <span data-count-pub-report>0</span></span>
+            <span class="dsf-chip dsf-chip--conf"     data-pub-chip="conferencePaper" style="display:none;"><span class="dsf-chip__dot"></span> Conference Paper: <span data-count-pub-conf>0</span></span>
+            <span class="dsf-chip dsf-chip--preprint" data-pub-chip="preprint"        style="display:none;"><span class="dsf-chip__dot"></span> Preprint: <span data-count-pub-preprint>0</span></span>
+          </div>
         </div>
       </div>
       <p class="db-leaderboard__hint">Click a card to see that scholar’s papers below.</p>
@@ -3008,6 +3020,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-19" defer></script>
+<script src="js/itaukei-database.js?v=20260705-20" defer></script>
 </body>
 </html>

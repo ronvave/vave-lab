@@ -2251,6 +2251,11 @@
     const derived = deriveScholarRows();
     const enrichedByName = state.scholarProfilesByName || new Map();
     const hidden = state.hiddenScholars || new Set();
+    // Count the visible (non-hidden) scholars BEFORE any filters are applied.
+    // The Confederacy Total pill uses this to show "N of M" once a filter narrows
+    // the result set. Hidden scholars are excluded from both numerator and
+    // denominator so the ratio stays meaningful.
+    const unfilteredTotal = derived.filter(r => !hidden.has(r.name)).length;
     let rows = derived
       .filter(r => !hidden.has(r.name))
       .map(r => {
@@ -2348,7 +2353,7 @@
     // Recompute the confederacy breakdown counts for the summary bar based on
     // the CURRENTLY-visible scholar set. Called after filtering so counts
     // always reflect what the user is actually looking at.
-    renderScholarSummary(rows);
+    renderScholarSummary(rows, unfilteredTotal);
 
     // Pagination state (10 per page)
     const totalPages = Math.max(1, Math.ceil(rows.length / SCHOLAR_PAGE_SIZE));
@@ -2364,7 +2369,19 @@
   // ============================================================
   //  Summary bar — counts per confederacy on the CURRENT filter result
   // ============================================================
-  function renderScholarSummary(rows) {
+  // Any scholar filter active? Used to decide whether the Confederacy Total
+  // pill shows "Total: N" (unfiltered) or "Total: N of M" (filtered).
+  function anyScholarFilterActive() {
+    return !!(state.scholarNameSearch && state.scholarNameSearch.trim())
+        || !!state.scholarConfFilter
+        || !!state.scholarProvFilter
+        || !!state.scholarSectorFilter
+        || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
+        || !!state.scholarStudyCountry || !!state.scholarStudyUni
+        || !!state.scholarWorkCountry  || !!state.scholarWorkUni;
+  }
+
+  function renderScholarSummary(rows, unfilteredTotal) {
     const bar = document.querySelector('[data-scholar-summary]');
     if (!bar) return;
     const counts = { Kubuna: 0, Tovata: 0, Burebasaga: 0, Unclassified: 0 };
@@ -2374,11 +2391,42 @@
       else counts.Unclassified += 1;
     });
     const total = (rows || []).length;
-    bar.querySelector('[data-count-total]').textContent = String(total);
+    // Confederacy Total pill:
+    //   unfiltered  → "Total: N"
+    //   filter live → "Total: matched of full" (e.g. "32 of 143")
+    // Publications Total NEVER uses this pattern (see below).
+    const totalEl = bar.querySelector('[data-count-total]');
+    if (totalEl) {
+      if (typeof unfilteredTotal === 'number' && anyScholarFilterActive() && unfilteredTotal !== total) {
+        totalEl.textContent = `${total} of ${unfilteredTotal}`;
+      } else {
+        totalEl.textContent = String(total);
+      }
+    }
     bar.querySelector('[data-count-kubuna]').textContent = String(counts.Kubuna);
     bar.querySelector('[data-count-tovata]').textContent = String(counts.Tovata);
     bar.querySelector('[data-count-burebasaga]').textContent = String(counts.Burebasaga);
     bar.querySelector('[data-count-unclass]').textContent = String(counts.Unclassified);
+
+    // Reorder Kubuna/Tovata/Burebasaga chips by count descending, tie-broken
+    // alphabetically by confederacy name. Unclassified is anchored to the end
+    // of the row regardless of its count (it isn't a confederacy, so it never
+    // enters the ranked sequence). Order recomputes on every render.
+    const chipsHost = bar.querySelector('[data-scholar-summary-chips]');
+    if (chipsHost) {
+      const CONFED = ['Kubuna', 'Tovata', 'Burebasaga'];
+      const ranked = CONFED.slice().sort((a, b) => {
+        const diff = counts[b] - counts[a];
+        return diff !== 0 ? diff : a.localeCompare(b);
+      });
+      // Total pill stays as the first chip.
+      ranked.forEach(name => {
+        const chip = chipsHost.querySelector(`[data-conf-chip="${name}"]`);
+        if (chip) chipsHost.appendChild(chip); // moves to end — keeps ranked order
+      });
+      const unclass = chipsHost.querySelector('[data-conf-chip="Unclassified"]');
+      if (unclass) chipsHost.appendChild(unclass); // always last
+    }
 
     // ---- Results II — sum publication types across the shown scholars ----
     // Each scholar row already carries a `types` object built by
@@ -2414,12 +2462,13 @@
     };
     // Update counts + hide zero-count chips, then reorder the remaining
     // chips by count descending so the row reads as a natural ranking
-    // (largest category first). Chips stay in the same DOM parent so
-    // the flex-wrap layout keeps them tightly packed.
-    const parent = barII;
+    // (largest category first). All chips live in the inner .dsf-summary__chips
+    // container so wrapped rows align to the first-chip column (right after
+    // the fixed-width label).
+    const chipsHostII = barII.querySelector('[data-scholar-summary-ii-chips]') || barII;
     Object.keys(chipMap).forEach(k => {
-      const chip = barII.querySelector(`[data-pub-chip="${k}"]`);
-      const num = barII.querySelector(chipMap[k]);
+      const chip = chipsHostII.querySelector(`[data-pub-chip="${k}"]`);
+      const num = chipsHostII.querySelector(chipMap[k]);
       if (num) num.textContent = String(pub[k]);
       if (chip) chip.style.display = pub[k] > 0 ? 'inline-flex' : 'none';
     });
@@ -2427,8 +2476,8 @@
       .filter(k => pub[k] > 0)
       .sort((a, b) => pub[b] - pub[a]);
     visibleChips.forEach(k => {
-      const chip = parent.querySelector(`[data-pub-chip="${k}"]`);
-      if (chip) parent.appendChild(chip); // move to end — rebuilds sorted order
+      const chip = chipsHostII.querySelector(`[data-pub-chip="${k}"]`);
+      if (chip) chipsHostII.appendChild(chip); // move to end — rebuilds sorted order
     });
   }
 
