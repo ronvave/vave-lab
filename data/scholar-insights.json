@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:29:44+00:00",
+  "generatedAt": "2026-07-06T19:06:59+00:00",
   "insights": {
     "Naqasima-Sobey, Milika": {
       "keywords": [
@@ -1755,12 +1755,36 @@
       ]
     },
     "Matatolu, Ilisapeci": {
-      "keywords": [],
-      "summary": "A plain-English summary of Dr. Ilisapeci Matatolu’s research is not yet available.",
-      "summaryFormat": "plaintext",
-      "publicationCount": 1,
-      "signature": "sha1:b5f9f18d59877116",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "keywords": [
+        "Indigenous Quality of Life and Tourism",
+        "Indigenous Women in Tourism",
+        "Vanua Research Framework",
+        "Destination Marketing and Branding",
+        "Tourism Entrepreneurship",
+        "Visitor Satisfaction Analysis",
+        "Gender Equality in Tourism",
+        "Tourism Policy Leadership"
+      ],
+      "summary": "Matatolu brings a rare dual perspective to Fijian tourism research: over a decade running Tourism Fiji's marketing operations across Australia and North America, paired with academic study of how tourism actually affects the Indigenous communities it depends on. Her research on <a href=\"https://www.tandfonline.com/doi/full/10.1080/1743873X.2019.1597101\" target=\"_blank\" rel=\"noopener\">tourism's impact on Indigenous Fijians' quality of life</a> critically examines whether the industry's growth genuinely benefits host communities or simply uses their culture as a backdrop. Her doctoral work applies a <a href=\"https://www.researchgate.net/publication/313781274_Decolonising_Framings_in_Pacific_Research_Indigenous_Fijian_Vanua_Research_Framework_as_an_Organic_Response\" target=\"_blank\" rel=\"noopener\">decolonising, Vanua-based research protocol</a> to studying Indigenous women, tourism, and gender equality in Fiji. In 2025 she was appointed <a href=\"https://www.fijitimes.com.fj/tourism-fiji-welcomes-ilisapeci-matatolu-as-new-chairperson/\" target=\"_blank\" rel=\"noopener\">Chairperson of the Tourism Fiji Board</a>, putting her research on Indigenous wellbeing directly to work shaping national tourism strategy.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "A critical examination of indigenous people, tourism and quality of life - Journal of Heritage Tourism",
+          "url": "https://www.tandfonline.com/doi/full/10.1080/1743873X.2019.1597101"
+        },
+        {
+          "title": "Decolonising Framings in Pacific Research: Indigenous Fijian Vanua Research Framework as an Organic Response",
+          "url": "https://www.researchgate.net/publication/313781274_Decolonising_Framings_in_Pacific_Research_Indigenous_Fijian_Vanua_Research_Framework_as_an_Organic_Response"
+        },
+        {
+          "title": "Tourism Fiji welcomes Ilisapeci Matatolu as new chairperson - The Fiji Times",
+          "url": "https://www.fijitimes.com.fj/tourism-fiji-welcomes-ilisapeci-matatolu-as-new-chairperson/"
+        },
+        {
+          "title": "Tourism and Residents' Quality of Life: A Critical Examination - Journal of Pacific Studies",
+          "url": "https://www.usp.ac.fj/journal-of-pacific-studies/wp-content/uploads/sites/162/2023/05/Tourism-and-Residents-Quality-of-Life-A-Critical-Examination.pdf"
+        }
+      ]
     },
     "Nabose, Ilisapeci": {
       "keywords": [
