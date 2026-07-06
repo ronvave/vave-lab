@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:59:35.477Z",
+  "generatedAt": "2026-07-06T09:59:42.146Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1547,6 +1547,19 @@
       "slug": "anaseini-ratu",
       "last": "Ratu",
       "first": "Anaseini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Ratubulewa, Naivalucava Vilikesa",
+      "slug": "naivalucava-vilikesa-ratubulewa",
+      "last": "Ratubulewa",
+      "first": "Naivalucava Vilikesa",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
