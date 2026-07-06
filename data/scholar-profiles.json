@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:45:24.655Z",
+  "generatedAt": "2026-07-06T08:45:53.639Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2365,6 +2365,19 @@
       "slug": "loraini-tulele",
       "last": "Tulele",
       "first": "Loraini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Turagabeci, Amelia R.",
+      "slug": "amelia-r-turagabeci",
+      "last": "Turagabeci",
+      "first": "Amelia R.",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
