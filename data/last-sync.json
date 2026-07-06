@@ -1,32 +1,18 @@
 {
-  "lastChecked": "2026-07-06T05:04:41Z",
-  "lastChanged": "2026-07-06T05:04:41Z",
+  "lastChecked": "2026-07-06T07:13:19Z",
+  "lastChanged": "2026-07-06T07:13:19Z",
   "dataChangedThisRun": true,
-  "totalItems": 1976,
+  "totalItems": 1994,
   "movedMetrics": [
     {
-      "metric": "type:book",
-      "prev": 45,
-      "new": 46,
-      "delta": 1,
-      "pct": 2.22
-    },
-    {
-      "metric": "type:bookSection",
-      "prev": 114,
-      "new": 122,
-      "delta": 8,
-      "pct": 7.02
-    },
-    {
       "metric": "type:journalArticle",
-      "prev": 673,
-      "new": 689,
-      "delta": 16,
-      "pct": 2.38
+      "prev": 689,
+      "new": 707,
+      "delta": 18,
+      "pct": 2.61
     }
   ],
-  "summary": "Changes: type:book 45\u219246, type:bookSection 114\u2192122, type:journalArticle 673\u2192689",
+  "summary": "Changes: type:journalArticle 689\u2192707",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28769015650"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28774322483"
 }
