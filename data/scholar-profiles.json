@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T05:10:45.983Z",
+  "generatedAt": "2026-07-06T05:11:06.864Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2040,6 +2040,19 @@
       "phd": null,
       "sector": "Academia",
       "institutionCountry": "Australia"
+    },
+    {
+      "name": "Tausere-Tiko, Lavinia",
+      "slug": "lavinia-tausere-tiko",
+      "last": "Tausere-Tiko",
+      "first": "Lavinia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "alifereti-tawake",
