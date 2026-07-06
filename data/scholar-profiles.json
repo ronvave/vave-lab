@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:45:53.639Z",
+  "generatedAt": "2026-07-06T08:45:57.388Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2378,6 +2378,19 @@
       "slug": "amelia-r-turagabeci",
       "last": "Turagabeci",
       "first": "Amelia R.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Turagakacivi, Mariana",
+      "slug": "mariana-turagakacivi",
+      "last": "Turagakacivi",
+      "first": "Mariana",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
