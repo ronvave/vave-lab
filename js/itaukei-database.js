@@ -341,7 +341,15 @@
       if (p.zoteroCollectionKey_paternalProvince)    state.provinceColKeyByName.paternal.set(p.name, p.zoteroCollectionKey_paternalProvince);
     });
 
-    // iTaukei collection keys (used to compute the "iTaukei author" badge)
+    // iTaukei collection keys (used to compute the "iTaukei author" badge).
+    // We treat an item as iTaukei-authored if it sits in ANY of these trees:
+    //   1. 'iTaukei authors (>N papers)' → direct child author sub-collections
+    //   2. 'By or with iTaukei authors'
+    //   3. 'iTaukei Thesis by Country/Universities' → country → university tree
+    //      (this catches ~1000 iTaukei-graduate theses that don't have their own
+    //      author sub-collection under the >N-papers root)
+    // The trees are collected via a recursive descendant walk so nested
+    // country/university sub-collections all resolve to iTaukei.
     const itaukeiParents = snap.collections.filter(c =>
       c.name === 'By or with iTaukei authors' || c.name.startsWith('iTaukei authors')
     );
@@ -352,6 +360,23 @@
     }
     const byWith = snap.collections.find(c => c.name === 'By or with iTaukei authors');
     if (byWith) itaukeiParentKeys.add(byWith.key);
+
+    // Recursively add every descendant under the iTaukei Thesis tree.
+    const thesisRoot = snap.collections.find(c => c.name === 'iTaukei Thesis by Country/Universities');
+    if (thesisRoot) {
+      itaukeiParentKeys.add(thesisRoot.key);
+      // Iterate breadth-first through the collection list until no new keys are added.
+      let changed = true;
+      while (changed) {
+        changed = false;
+        snap.collections.forEach(c => {
+          if (c.parent && itaukeiParentKeys.has(c.parent) && !itaukeiParentKeys.has(c.key)) {
+            itaukeiParentKeys.add(c.key);
+            changed = true;
+          }
+        });
+      }
+    }
     state.itaukeiKeys = itaukeiParentKeys;
 
     state.colByKey = new Map(snap.collections.map(c => [c.key, c]));
