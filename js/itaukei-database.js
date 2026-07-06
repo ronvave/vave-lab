@@ -4172,7 +4172,10 @@
   // all group by first-author paternal province; only the scope + author-set
   // differ per tab. Title + description are now static in the HTML — only the
   // meta row (Grouped by / Scope / Authors) is refreshed per tab.
-  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors'];
+  // Every remaining B2 tab groups by iTaukei first-author paternal province.
+  // 'all-authors' was removed — that view aggregated by study province and
+  // clashed with B1's scope now that B1 owns the study-province chart.
+  const B2_VIEWS = ['fiji-focused', 'all-locations'];
   const B2_META = {
     'fiji-focused': {
       meta: [
@@ -4186,13 +4189,6 @@
         ['Grouped by',  'First-author paternal province'],
         ['Scope',       'Fiji + International'],
         ['Authors',     'iTaukei first authors']
-      ]
-    },
-    'all-authors': {
-      meta: [
-        ['Grouped by',  'Study province'],
-        ['Scope',       'Fiji-focused'],
-        ['Authors',     'All authors']
       ]
     }
   };
