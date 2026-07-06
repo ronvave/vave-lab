@@ -82,6 +82,20 @@
   // not depend on TYPE_ORDER).
   const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','preprint'];
 
+  // Effective paternal-province for a scholar profile: prefer the explicit
+  // paternal province, but fall back to the maternal province when paternal
+  // is blank. Used for confederacy chips, Panel B2 grouping, and every place
+  // the dashboard describes a scholar's 'home' province. This handles the
+  // case where a scholar considers themselves iTaukei via their mother
+  // (e.g. Aporosa Apo — Naduri village, Macuata Province via mother).
+  // The admin form records `nonItaukeiDad` and `maternalProvince` explicitly;
+  // the public dashboard doesn't need those flags separately, just the
+  // effective province.
+  function effectivePaternalProvince(profile) {
+    if (!profile) return '';
+    return (profile.paternalProvince || profile.maternalProvince || '').trim();
+  }
+
   // Find the top-level Zotero collection that groups every iTaukei-authored
   // sub-collection. Historically named 'iTaukei authors (>3 papers)' but Ron
   // has renamed it (e.g. '(>2 papers)'), so we match any top-level collection
@@ -2214,7 +2228,7 @@
 
     const names = new Set();
     (state.scholarProfilesByName || new Map()).forEach((profile, name) => {
-      const p = profile.paternalProvince || '';
+      const p = effectivePaternalProvince(profile);
       const c = p ? (provConf.get(p) || '') : '';
 
       // Confederacy check
@@ -2329,7 +2343,7 @@
         // .json at toggle-time would override the live Zotero numbers.
         const enrichment = enrichedByName.get(r.name) || {};
         const enriched = Object.assign({}, enrichment, r);
-        enriched._prov = enrichment.paternalProvince || '';
+        enriched._prov = effectivePaternalProvince(enrichment);
         enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
         return enriched;
       })
@@ -3325,7 +3339,7 @@
     const last  = r.last  || (r.name.includes(',') ? r.name.split(',')[0].trim() : r.name);
     const displayName = `${salutation ? salutation + ' ' : ''}${first} ${last}`.trim();
     const village = r.village || '';
-    const paternal = r.paternalProvince || '';
+    const paternal = effectivePaternalProvince(r);
     const confederacy = provinceToConfederacy(paternal);
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
     const bannerLabel = confederacy ? `${confederacy} Confederacy` : 'iTaukei Scholar';
@@ -4240,7 +4254,7 @@
     // Their paternal province may or may not be filled.
     const scholars = state.scholarProfilesByName || new Map();
     const paternalByName = new Map();
-    scholars.forEach((p, name) => paternalByName.set(name, p.paternalProvince || ''));
+    scholars.forEach((p, name) => paternalByName.set(name, effectivePaternalProvince(p)));
     return { scholars, paternalByName };
   }
 
@@ -4819,7 +4833,7 @@
     // profile. Empty confederacy = we can't attribute their work to a group.
     const scholarConf = new Map();
     (state.scholarProfilesByName || new Map()).forEach((prof, name) => {
-      const c = confByProv.get(prof.paternalProvince || '');
+      const c = confByProv.get(effectivePaternalProvince(prof));
       if (c) scholarConf.set(name, c);
     });
 

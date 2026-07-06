@@ -951,6 +951,18 @@
 
   // ==================== edit modal ====================
   let editingAuthor = null;
+  // When the 'Non-iTaukei dad' checkbox is ticked, the Paternal Province
+  // select is disabled and visually greyed out — Ron only fills the Maternal
+  // Province instead. Unticking restores the paternal control.
+  function applyNonItaukeiDadState(nonItaukeiDad) {
+    const sel = document.getElementById('pf-paternal-province');
+    if (!sel) return;
+    sel.disabled = !!nonItaukeiDad;
+    sel.style.opacity = nonItaukeiDad ? '0.4' : '';
+    sel.style.cursor = nonItaukeiDad ? 'not-allowed' : '';
+    if (nonItaukeiDad) sel.value = '';
+  }
+
   function openEdit(author) {
     editingAuthor = author;
     const p = state.profilesByKey.get(author.name) || {};
@@ -959,6 +971,16 @@
     $('#pf-salutation').value = p.salutation || '';
     $('#pf-village').value = p.village || '';
     $('#pf-paternal-province').value = p.paternalProvince || '';
+    // Maternal province + non-iTaukei-dad flag. For scholars whose father is
+    // non-iTaukei but mother is iTaukei (e.g. Aporosa Apo → Naduri village,
+    // Macuata Province via mother), Ron records the maternal province and
+    // ticks the checkbox. The public dashboard falls back to maternal when
+    // paternal is blank so the scholar still appears in their mother's
+    // confederacy on the paternal-province chart.
+    $('#pf-maternal-province').value = p.maternalProvince || '';
+    const nonIT = !!p.nonItaukeiDad;
+    $('#pf-non-itaukei-dad').checked = nonIT;
+    applyNonItaukeiDadState(nonIT);
     $('#pf-institution').value = p.institution || '';
     $('#pf-institution-url').value = p.institutionUrl || '';
     // Sector + Country of work. If the profile has no value yet, fall back to
@@ -1622,6 +1644,10 @@
 
     // Profile modal
     wirePhotoDropzone();
+    // Non-iTaukei-dad toggle greys out Paternal Province live — the value
+    // is only persisted when Ron actually hits Save.
+    const nonITDadCb = document.getElementById('pf-non-itaukei-dad');
+    if (nonITDadCb) nonITDadCb.addEventListener('change', ev => applyNonItaukeiDadState(ev.target.checked));
     $('#pf-cancel').addEventListener('click', closeEdit);
     $('#pf-clear').addEventListener('click', () => {
       if (!editingAuthor) return;
@@ -1654,6 +1680,8 @@
         salutation: $('#pf-salutation').value,
         village: $('#pf-village').value.trim(),
         paternalProvince: $('#pf-paternal-province').value,
+        maternalProvince: $('#pf-maternal-province').value,
+        nonItaukeiDad: !!$('#pf-non-itaukei-dad').checked,
         institution: $('#pf-institution').value.trim(),
         institutionUrl: $('#pf-institution-url').value.trim(),
         sector: $('#pf-sector').value,

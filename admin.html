@@ -597,7 +597,27 @@
               <option>Bua</option><option>Cakaudrove</option><option>Lau</option><option>Macuata</option>
             </optgroup>
           </select>
-          <small>Confederacy is derived automatically.</small>
+          <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" id="pf-non-itaukei-dad" style="margin:0;" />
+            <span>Non-iTaukei dad <em style="color:var(--muted); font-style:italic;">(scholar will be counted towards mom&rsquo;s province if mom is iTaukei)</em></span>
+          </label>
+          <small>Confederacy is derived automatically from whichever province applies.</small>
+        </div>
+        <div>
+          <label for="pf-maternal-province">Maternal Province</label>
+          <select id="pf-maternal-province">
+            <option value="">(select)</option>
+            <optgroup label="Burebasaga">
+              <option>Kadavu</option><option>Nadroga/Navosa</option><option>Namosi</option><option>Rewa</option><option>Serua</option>
+            </optgroup>
+            <optgroup label="Kubuna">
+              <option>Ba</option><option>Lomaiviti</option><option>Naitasiri</option><option>Ra</option><option>Tailevu</option>
+            </optgroup>
+            <optgroup label="Tovata">
+              <option>Bua</option><option>Cakaudrove</option><option>Lau</option><option>Macuata</option>
+            </optgroup>
+          </select>
+          <small>Optional. Used only when the scholar has a non-iTaukei dad but an iTaukei mother, so their paternal-province chart contribution flows through the mother instead.</small>
         </div>
         <div class="full">
           <label for="pf-institution">Institution name</label>
@@ -742,6 +762,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260705-05" defer></script>
+<script src="js/admin.js?v=20260706-01" defer></script>
 </body>
 </html>
