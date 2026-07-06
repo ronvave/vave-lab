@@ -164,6 +164,45 @@
   table.authors .status-col { width: 90px; }
   table.authors .count-col { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
   table.authors .action-col { width: 90px; text-align: right; }
+  table.authors .select-col { width: 44px; text-align: center; }
+  table.authors tr.is-mm-selected { background: rgba(217,119,6,0.14) !important; }
+
+  /* ==== Manual merge floating action bar ==== */
+  .mm-bar {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 24px; z-index: 90;
+    background: var(--teal-dark, #062f35); color: #fff;
+    padding: 12px 18px; border-radius: 999px;
+    box-shadow: 0 12px 34px rgba(0,0,0,0.3);
+    display: none; align-items: center; gap: 14px;
+    font-size: 0.9rem;
+  }
+  .mm-bar.is-visible { display: inline-flex; }
+  .mm-bar__count { font-weight: 700; }
+  .mm-bar__names { color: rgba(255,255,255,0.75); font-size: 0.8rem; max-width: 380px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mm-bar .btn { padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; }
+  .mm-bar .btn.primary { background: #fff; color: var(--teal-dark, #062f35); border: none; }
+  .mm-bar .btn.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+  .mm-bar .btn.ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ==== Manual merge modal — radio list ==== */
+  .mm-radio-list {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 12px 0 18px;
+    padding: 12px; background: #f9fafb; border-radius: 8px;
+    max-height: 340px; overflow-y: auto;
+  }
+  .mm-radio-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    background: #fff; border: 1px solid var(--border);
+  }
+  .mm-radio-row:hover { border-color: var(--teal); background: rgba(14,116,144,0.03); }
+  .mm-radio-row input { margin: 0; }
+  .mm-radio-name { flex: 1; font-weight: 600; color: var(--teal-dark); }
+  .mm-radio-stats { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mm-hint { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
   .flag {
     display: inline-block; padding: 2px 8px; border-radius: 999px;
     font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
@@ -472,6 +511,7 @@
         <table class="authors">
           <thead>
             <tr>
+              <th class="select-col" title="Tick two or more rows to manually merge them">Merge</th>
               <th class="name-col">Author</th>
               <th class="count-col">Total</th>
               <th class="count-col">First</th>
@@ -497,6 +537,28 @@
       </ol>
     </div>
   </main>
+</div>
+
+<!-- ==== Manual merge floating action bar ==== -->
+<div class="mm-bar" id="mm-bar" role="region" aria-label="Manual merge selection">
+  <span class="mm-bar__count" id="mm-bar-count">0 selected</span>
+  <span class="mm-bar__names" id="mm-bar-names"></span>
+  <button type="button" class="btn primary" id="mm-bar-merge">Merge…</button>
+  <button type="button" class="btn ghost" id="mm-bar-clear">Clear</button>
+</div>
+
+<!-- ==== Manual merge modal ==== -->
+<div class="modal-backdrop" id="mm-modal">
+  <div class="modal" style="max-width: 560px;">
+    <h2>Merge selected authors</h2>
+    <p class="subtitle" id="mm-modal-subtitle">Pick the canonical name below. All other names will be recorded as aliases and their publications will fold into the canonical author.</p>
+    <p class="mm-hint">Tip: pick the fullest, most correctly spelt name as the canonical.</p>
+    <div class="mm-radio-list" id="mm-radio-list" role="radiogroup" aria-label="Canonical name"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+      <button type="button" class="btn ghost" id="mm-modal-cancel">Cancel</button>
+      <button type="button" class="btn primary" id="mm-modal-confirm">Merge into selected canonical</button>
+    </div>
+  </div>
 </div>
 
 <!-- ==== Profile edit modal ==== -->
@@ -680,6 +742,6 @@
 <!-- ==== Toast ==== -->
 <div class="toast" id="toast"></div>
 
-<script src="js/admin.js?v=20260705-03" defer></script>
+<script src="js/admin.js?v=20260705-04" defer></script>
 </body>
 </html>

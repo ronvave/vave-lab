@@ -54,7 +54,12 @@
     // suggesting them. Stored as a Set of pipe-joined sorted-name lists.
     dismissedVariantGroups: new Set(),
     authors: [],               // all unique authors (sorted by total desc)
-    filter: { q: '', status: 'all' }
+    filter: { q: '', status: 'all' },
+    // Manual merge selection — names the admin has ticked from the author
+    // table so they can merge duplicates the automatic finder missed
+    // (e.g. "Movono, Api" + "Movono, Apisalome"). Survives search/filter
+    // re-renders because it lives on state, not the DOM.
+    manualMergeSelection: new Set()
   };
 
   // Resolve a raw Zotero creator name to its canonical form via the alias map.
@@ -719,6 +724,116 @@
     }
   }
 
+  // =============== Manual merge (admin picks arbitrary rows) ==================
+  // Lets the admin merge duplicate authors the automatic name-variant finder
+  // missed — e.g. "Movono, Api" + "Movono, Apisalome". Selection is stored on
+  // state so it survives search/filter re-renders.
+
+  function toggleManualMergeSelect(name, on, rowEl) {
+    if (on) state.manualMergeSelection.add(name);
+    else state.manualMergeSelection.delete(name);
+    if (rowEl) rowEl.classList.toggle('is-mm-selected', on);
+    refreshManualMergeBar();
+  }
+
+  function clearManualMergeSelection() {
+    state.manualMergeSelection.clear();
+    document.querySelectorAll('#authors-body tr.is-mm-selected').forEach(tr => tr.classList.remove('is-mm-selected'));
+    document.querySelectorAll('#authors-body [data-mm-select]:checked').forEach(cb => { cb.checked = false; });
+    refreshManualMergeBar();
+  }
+
+  function refreshManualMergeBar() {
+    const bar = document.getElementById('mm-bar');
+    if (!bar) return;
+    const count = state.manualMergeSelection.size;
+    if (count < 2) { bar.classList.remove('is-visible'); return; }
+    bar.classList.add('is-visible');
+    document.getElementById('mm-bar-count').textContent = `${count} selected`;
+    const names = Array.from(state.manualMergeSelection);
+    document.getElementById('mm-bar-names').textContent = names.join(', ');
+  }
+
+  function openManualMergeModal() {
+    const names = Array.from(state.manualMergeSelection);
+    if (names.length < 2) { toast('Tick at least two authors to merge.', 'error'); return; }
+    const authorByName = new Map(state.authors.map(a => [a.name, a]));
+    // Suggest the row with the highest total as the default canonical.
+    let suggested = names[0];
+    let bestTotal = -1;
+    names.forEach(n => {
+      const a = authorByName.get(n);
+      const t = a ? a.total : 0;
+      if (t > bestTotal) { bestTotal = t; suggested = n; }
+    });
+    const list = document.getElementById('mm-radio-list');
+    list.innerHTML = '';
+    names.forEach(n => {
+      const a = authorByName.get(n) || { total: 0, firstAuthored: 0 };
+      const isDefault = n === suggested;
+      const row = document.createElement('label');
+      row.className = 'mm-radio-row';
+      row.innerHTML = `
+        <input type="radio" name="mm-canonical" value="${escapeHtml(n)}" ${isDefault ? 'checked' : ''} />
+        <span class="mm-radio-name">${escapeHtml(n)}</span>
+        <span class="mm-radio-stats">${a.total} pubs · ${a.firstAuthored} first-authored</span>
+      `;
+      list.appendChild(row);
+    });
+    document.getElementById('mm-modal-subtitle').textContent =
+      `You've selected ${names.length} authors. Pick the canonical name below — the others will be recorded as aliases and their publications will fold into the canonical author.`;
+    document.getElementById('mm-modal').classList.add('is-visible');
+  }
+
+  function closeManualMergeModal() {
+    const el = document.getElementById('mm-modal');
+    if (el) el.classList.remove('is-visible');
+  }
+
+  async function confirmManualMerge() {
+    const chosen = document.querySelector('#mm-radio-list input[name="mm-canonical"]:checked');
+    if (!chosen) { toast('Pick a canonical name first.', 'error'); return; }
+    const canonName = chosen.value;
+    const variants = Array.from(state.manualMergeSelection).filter(n => n !== canonName);
+    if (!variants.length) { toast('At least one variant must be different from the canonical.', 'error'); return; }
+
+    // Same logic as mergeVariantGroup — record aliases, roll enriched fields
+    // into the canonical profile, drop variant profile entries.
+    variants.forEach(v => { state.nameAliases.set(v, canonName); });
+    const canonProfile = state.profilesByKey.get(canonName) || null;
+    variants.forEach(v => {
+      const vp = state.profilesByKey.get(v);
+      if (!vp) return;
+      if (canonProfile) {
+        for (const [k, val] of Object.entries(vp)) {
+          if (val && !canonProfile[k]) canonProfile[k] = val;
+        }
+        state.profilesByKey.set(canonName, canonProfile);
+      }
+      state.profilesByKey.delete(v);
+      state.hiddenScholars.delete(v);
+    });
+
+    closeManualMergeModal();
+    clearManualMergeSelection();
+    rebuildAuthors();
+    render();
+    renderVariantPanel();
+
+    toast(`Merged ${variants.length} variant${variants.length===1?'':'s'} into ${canonName}. Saving\u2026`);
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try {
+        await pushProfilesToGitHub(`manual merge into ${canonName}`);
+        toast('Merge saved. Public dashboard updates in ~1 minute.', 'success');
+      } catch (err) {
+        console.error('manual merge push failed:', err);
+        toast(`GitHub push failed \u2014 merge is only in this browser. ${err.message}`, 'error');
+      }
+    } else {
+      toast('No GitHub token set \u2014 merge is only in this browser.', 'error');
+    }
+  }
+
   async function unmergeVariant(variant) {
     if (!state.nameAliases.has(variant)) return;
     const canonical = state.nameAliases.get(variant);
@@ -749,7 +864,12 @@
       const tr = document.createElement('tr');
       if (iT) tr.classList.add('is-itaukei');
       if (state.filter.status === 'new' || (!iT && a.total >= 3)) tr.classList.add('is-new');
+      const isMMSel = state.manualMergeSelection.has(a.name);
+      if (isMMSel) tr.classList.add('is-mm-selected');
       tr.innerHTML = `
+        <td class="select-col">
+          <input type="checkbox" data-mm-select title="Select for manual merge" ${isMMSel ? 'checked' : ''} />
+        </td>
         <td class="name-col">${displayName}</td>
         <td class="count-col">${a.total}</td>
         <td class="count-col">${a.firstAuthored}</td>
@@ -770,10 +890,14 @@
       tr.querySelector('[data-toggle-itaukei]').addEventListener('change', ev => {
         toggleItaukei(a, ev.target.checked);
       });
+      tr.querySelector('[data-mm-select]').addEventListener('change', ev => {
+        toggleManualMergeSelect(a.name, ev.target.checked, tr);
+      });
       const editBtn = tr.querySelector('[data-edit]');
       editBtn.addEventListener('click', () => { if (!editBtn.disabled) openEdit(a); });
       body.appendChild(tr);
     });
+    refreshManualMergeBar();
     // Filter count text
     $('#filter-count').textContent = `${authors.length} of ${state.authors.length} authors shown`;
     // Stats
@@ -1325,6 +1449,18 @@
       searchTimer = setTimeout(() => { state.filter.q = ev.target.value.trim(); render(); }, 150);
     });
     $('#filter-status').addEventListener('change', ev => { state.filter.status = ev.target.value; render(); });
+
+    // Manual-merge bar + modal wiring
+    const mmBarMerge = document.getElementById('mm-bar-merge');
+    const mmBarClear = document.getElementById('mm-bar-clear');
+    const mmModalCancel = document.getElementById('mm-modal-cancel');
+    const mmModalConfirm = document.getElementById('mm-modal-confirm');
+    const mmModal = document.getElementById('mm-modal');
+    if (mmBarMerge) mmBarMerge.addEventListener('click', openManualMergeModal);
+    if (mmBarClear) mmBarClear.addEventListener('click', clearManualMergeSelection);
+    if (mmModalCancel) mmModalCancel.addEventListener('click', closeManualMergeModal);
+    if (mmModalConfirm) mmModalConfirm.addEventListener('click', confirmManualMerge);
+    if (mmModal) mmModal.addEventListener('click', ev => { if (ev.target === mmModal) closeManualMergeModal(); });
 
     // Sheet URL config
     $('#sheet-save').addEventListener('click', () => {
