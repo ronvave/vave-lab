@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T05:11:06.864Z",
+  "generatedAt": "2026-07-06T05:15:45.255Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2046,13 +2046,35 @@
       "slug": "lavinia-tausere-tiko",
       "last": "Tausere-Tiko",
       "first": "Lavinia",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
+      "paternalProvince": "Lau",
+      "institution": "Fiji National University",
+      "institutionUrl": "https://www.fnu.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=z9b_cNkAAAAJ&hl=en",
+      "photo": "img/scholars/lavinia-tausere-tiko.jpg",
+      "sector": "Academia",
+      "institutionCountry": "Fiji",
+      "department": "College of Humanities, Education and Law (CHEL)",
+      "departmentUrl": "https://www.fnu.ac.fj/humanities-education/",
+      "profileUrl": "https://www.fnu.ac.fj/about-fnu/campus-info-maps/directory-all/?profile=3596",
+      "masters": null,
+      "phd": {
+        "university": "University of New England",
+        "country": "Australia"
+      },
+      "title": "Acting Dean",
+      "orcidUrl": "https://orcid.org/0000-0003-2508-9534",
+      "lastUpdate": "2026-07-06T05:15:45.254Z",
+      "total": 19,
+      "firstAuthored": 13,
+      "types": {
+        "book": 1,
+        "report": 1,
+        "journalArticle": 8,
+        "bookSection": 8,
+        "thesis": 1
+      }
     },
     {
       "slug": "alifereti-tawake",
