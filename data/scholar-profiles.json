@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:55:59.266Z",
+  "generatedAt": "2026-07-06T09:56:54.591Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1225,6 +1225,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Naivalu, Taina K.",
+      "slug": "taina-k-naivalu",
+      "last": "Naivalu",
+      "first": "Taina K.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "timoci-naivalulevu",
