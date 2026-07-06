@@ -1936,13 +1936,15 @@
     .dsf-check-item__label { flex: 1; }
 
     /* ---- Summary bar ----
-       Two-column grid: fixed-width label | flex-wrapped chip container.
-       Any chips wrapping to a second row align to the left edge of the
-       first chip on row 1 (right after the label column), NOT to the
-       label itself. */
+       Three-column grid: fixed-width label | fixed-width Total pill | flex-wrapped chips.
+       The Total pill sits in its own fixed-width column so the first ranked
+       chip after Total starts at the SAME X coordinate on both rows,
+       regardless of the Total pill's actual text width
+       (e.g. "Total: 5 of 143" vs "Total: 161"). Chips wrapping to a
+       second row also align to that same column start. */
     .dsf-summary {
       display: grid;
-      grid-template-columns: 108px 1fr;
+      grid-template-columns: 108px 180px 1fr;
       gap: 4px 12px;
       align-items: center;
       padding: 12px 18px; margin: 10px 0 12px;
@@ -1953,6 +1955,9 @@
     .dsf-summary > strong {
       font-weight: 700; color: #062f35; font-size: 1.12rem;
     }
+    /* Total pill sits in the middle grid column left-aligned so it stays a
+       pill (not stretched) while reserving its column width for alignment. */
+    .dsf-summary > .dsf-chip--total { justify-self: start; }
     .dsf-summary__chips {
       display: flex; flex-wrap: wrap; gap: 8px 12px;
       align-items: center;
@@ -2689,8 +2694,8 @@
         <!-- Summary bar (Total + Kubuna + Tovata + Burebasaga + Unclassified) -->
         <div class="dsf-summary" data-scholar-summary>
           <strong>Confederacy</strong>
+          <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
           <div class="dsf-summary__chips" data-scholar-summary-chips>
-            <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
             <span class="dsf-chip dsf-chip--kubuna"     data-conf-chip="Kubuna"><span class="dsf-chip__dot"></span> Kubuna: <span data-count-kubuna>0</span></span>
             <span class="dsf-chip dsf-chip--tovata"     data-conf-chip="Tovata"><span class="dsf-chip__dot"></span> Tovata: <span data-count-tovata>0</span></span>
             <span class="dsf-chip dsf-chip--burebasaga" data-conf-chip="Burebasaga"><span class="dsf-chip__dot"></span> Burebasaga: <span data-count-burebasaga>0</span></span>
@@ -2701,8 +2706,8 @@
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
         <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
           <strong>Publications</strong>
+          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
           <div class="dsf-summary__chips" data-scholar-summary-ii-chips>
-            <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
             <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
             <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
             <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
@@ -3020,6 +3025,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-20" defer></script>
+<script src="js/itaukei-database.js?v=20260705-21" defer></script>
 </body>
 </html>
