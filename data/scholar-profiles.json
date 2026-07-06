@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:56:54.591Z",
+  "generatedAt": "2026-07-06T09:59:29.605Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1225,6 +1225,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Naivalu, Misieli Naulivou",
+      "slug": "misieli-naulivou-naivalu",
+      "last": "Naivalu",
+      "first": "Misieli Naulivou",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Naivalu, Taina K.",
