@@ -1356,6 +1356,46 @@
   function renderPanelB() {
     const host = $('[data-db-bars]');
     if (!host) return;
+
+    // Keep the tab pills in sync with state (initial load, back/forward).
+    const b1Root = document.querySelector('[data-panel="B1"]');
+    if (b1Root) {
+      b1Root.querySelectorAll('[data-b1-tab]').forEach(btn => {
+        const on = btn.dataset.b1Tab === (state.b1View || 'type');
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
+      });
+    }
+
+    // ============ Authorship view ============
+    // Reuses B2's authorship rendering (single stacked bar per province,
+    // segmented by iTaukei first / co-author / no iTaukei identified).
+    // Chrome swap: hide the type-filter checkboxes + disable the Authors
+    // dropdown, show the authorship legend + "Grouped by" label change.
+    const typeFilter    = document.querySelector('[data-db-type-filter]');
+    const authorsSelect = document.querySelector('[data-b1-authors]');
+    const authorshipLegend = document.querySelector('[data-b1-authorship-legend]');
+    const groupedLabel  = document.querySelector('[data-b1-grouped-label]');
+
+    if ((state.b1View || 'type') === 'authorship') {
+      if (typeFilter) typeFilter.style.display = 'none';
+      if (authorshipLegend) authorshipLegend.style.display = '';
+      if (authorsSelect) authorsSelect.disabled = true;
+      if (groupedLabel) groupedLabel.textContent = 'Study province · iTaukei authorship role';
+      host.innerHTML = '';
+      const rows = buildB2Rows_compareAuthorship();
+      renderAuthorshipInto(host, rows);
+      host.classList.remove('db-bars--grouped');
+      return;
+    }
+
+    // ============ Default publication-type view ============
+    if (typeFilter) typeFilter.style.display = '';
+    if (authorshipLegend) authorshipLegend.style.display = 'none';
+    if (authorsSelect) authorsSelect.disabled = false;
+    if (groupedLabel) groupedLabel.textContent = 'Study province';
+
     host.innerHTML = '';
     const provs = state.provinces.features.map(f => f.properties);
     const byProv = new Map();
@@ -1367,7 +1407,7 @@
       });
     });
     // Panel B1 authors filter — defaults to iTaukei-only. Toggled via the
-    // inline dropdown in the panel title (see wirePanelB1).
+    // Authors dropdown in the meta row (see wirePanelB1).
     const authorsMode = state.b1Authors || 'itaukei';
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -1582,18 +1622,32 @@
   // authors (default) and all authors. Keeps the meta pill in sync.
   function wirePanelB1() {
     const sel = document.querySelector('[data-b1-authors]');
-    if (!sel) return;
-    sel.value = state.b1Authors || 'itaukei';
-    updateB1AuthorsLabel();
-    sel.addEventListener('change', () => {
-      state.b1Authors = sel.value === 'all' ? 'all' : 'itaukei';
-      updateB1AuthorsLabel();
-      renderPanelB();
-    });
-  }
-  function updateB1AuthorsLabel() {
-    const lbl = document.querySelector('[data-b1-authors-label]');
-    if (lbl) lbl.textContent = state.b1Authors === 'all' ? 'All authors' : 'iTaukei authors';
+    if (sel) {
+      sel.value = state.b1Authors || 'itaukei';
+      sel.addEventListener('change', () => {
+        state.b1Authors = sel.value === 'all' ? 'all' : 'itaukei';
+        renderPanelB();
+      });
+    }
+    // Panel B1 has two mutually exclusive views:
+    //   "type"       — the default publication-type stacked bar
+    //   "authorship" — reuses the visualization that used to live in B2's
+    //                  Authorship tab (iTaukei first / co-author / no iTaukei
+    //                  identified per province).
+    // The dropdown 'Authors: iTaukei / All' is meaningful only in the type
+    // view; the authorship view always considers all authors by definition,
+    // so we disable the dropdown while it's active.
+    const b1Root = document.querySelector('[data-panel="B1"]');
+    if (b1Root) {
+      b1Root.querySelectorAll('[data-b1-tab]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const v = btn.dataset.b1Tab === 'authorship' ? 'authorship' : 'type';
+          if (state.b1View === v) return;
+          state.b1View = v;
+          renderPanelB();
+        });
+      });
+    }
   }
 
   function wireTypeFilter() {
@@ -4114,11 +4168,13 @@
   //
   // Selected view + its type-filter checkboxes are persisted in URL hash so a
   // link like #b2=all-locations bookmarks the view.
-  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors', 'authorship'];
+  // B2 no longer has an Authorship tab (it moved to Panel B1). Remaining views
+  // all group by first-author paternal province; only the scope + author-set
+  // differ per tab. Title + description are now static in the HTML — only the
+  // meta row (Grouped by / Scope / Authors) is refreshed per tab.
+  const B2_VIEWS = ['fiji-focused', 'all-locations', 'all-authors'];
   const B2_META = {
     'fiji-focused': {
-      title: 'Fiji-focused publications by iTaukei authors',
-      hint:  'Includes province-specific studies and research concerning Fiji nationally. Bars are grouped by the paternal province of the iTaukei first author, not by the location of the research.',
       meta: [
         ['Grouped by',  'First-author paternal province'],
         ['Scope',       'Fiji-focused'],
@@ -4126,30 +4182,17 @@
       ]
     },
     'all-locations': {
-      title: 'All publications by iTaukei authors',
-      hint:  'Includes research conducted in Fiji and elsewhere. Bars are grouped by the paternal province of the iTaukei first author.',
       meta: [
         ['Grouped by',  'First-author paternal province'],
-        ['Scope',       'Fiji and international'],
+        ['Scope',       'Fiji + International'],
         ['Authors',     'iTaukei first authors']
       ]
     },
     'all-authors': {
-      title: 'Fiji-focused publications by all authors',
-      hint:  'Includes Fiji-focused publications by iTaukei and non-iTaukei authors. Bars show the Fiji province studied. National studies without a specific province appear under Fiji-wide / national.',
       meta: [
         ['Grouped by',  'Study province'],
         ['Scope',       'Fiji-focused'],
         ['Authors',     'All authors']
-      ]
-    },
-    'authorship': {
-      title: 'iTaukei authorship in Fiji-focused research',
-      hint:  'For each study province, publications are classified by whether an iTaukei scholar is the first author, a co-author, or no iTaukei author has yet been identified.',
-      meta: [
-        ['Grouped by',  'Study province'],
-        ['Scope',       'Fiji-focused'],
-        ['Measure',     'Authorship role']
       ]
     }
   };
@@ -4169,6 +4212,9 @@
 
   // Initial hydration from URL hash — e.g. #b2=all-authors
   state.b1Authors = 'itaukei';
+  // Panel B1 view mode: 'type' (default) shows publication-type stacked bars;
+  // 'authorship' shows the iTaukei-authorship stacked bar previously on B2.
+  state.b1View = 'type';
   state.worldSelectedCountry = null;
   state.b2View = 'fiji-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
@@ -4416,39 +4462,26 @@
   function renderPanelB2() {
     const view = state.b2View;
     const meta = B2_META[view] || B2_META['fiji-focused'];
-    const titleEl = $('[data-b2-title]');
-    const hintEl = $('[data-b2-hint]');
     const metaEl = $('[data-b2-meta]');
     const barsEl = $('[data-b2-bars]');
-    if (!titleEl || !hintEl || !metaEl || !barsEl) return;
+    if (!metaEl || !barsEl) return;
 
-    // Build the title. For views that have an author-type semantic
-    // (fiji-focused, all-locations, all-authors) inject an inline dropdown
-    // pill in place of the 'iTaukei authors' / 'all authors' phrase, so the
-    // control matches Panel B1's title pill exactly. The authorship view
-    // shows plain text (no author-type dimension to toggle).
-    titleEl.innerHTML = '';
-    if (view === 'authorship') {
-      titleEl.textContent = meta.title;
-    } else {
-      // Every non-authorship B2 title in B2_META ends with either
-      // 'iTaukei authors' or 'all authors' — split on ' by ' and rebuild.
-      const parts = meta.title.split(/ by /i);
-      const prefix = (parts[0] || '') + ' by ';
-      const currentAuthors = view === 'all-authors' ? 'all' : 'itaukei';
-      titleEl.appendChild(document.createTextNode(prefix));
-      titleEl.appendChild(buildB2AuthorsPill(currentAuthors));
-    }
-    hintEl.textContent = meta.hint;
+    // Title + description are now static in the HTML (rewritten to describe the
+    // panel as a whole rather than the current tab). Only the meta row updates
+    // per tab so the reader can see what scope / authorship the current tab uses.
     metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
 
-    // Toggle tab active state + tabindex per aria-tablist pattern
-    $$('.db-b2-tab').forEach(btn => {
-      const on = btn.dataset.b2Tab === view;
-      btn.classList.toggle('is-active', on);
-      btn.setAttribute('aria-selected', on ? 'true' : 'false');
-      btn.tabIndex = on ? 0 : -1;
-    });
+    // Toggle tab active state + tabindex per aria-tablist pattern. Only look
+    // inside the B2 panel so the B1 tabs on the panel above aren't affected.
+    const b2Root = document.querySelector('[data-panel="B2"]');
+    if (b2Root) {
+      b2Root.querySelectorAll('.db-b2-tab').forEach(btn => {
+        const on = btn.dataset.b2Tab === view;
+        btn.classList.toggle('is-active', on);
+        btn.setAttribute('aria-selected', on ? 'true' : 'false');
+        btn.tabIndex = on ? 0 : -1;
+      });
+    }
 
     // Update URL hash
     setB2ViewInHash(view);
@@ -4486,19 +4519,14 @@
         }
       });
       barsEl.classList.remove('db-bars--grouped');
-    } else if (view === 'authorship') {
-      const rows = buildB2Rows_compareAuthorship();
-      renderAuthorshipInto(barsEl, rows);
-      barsEl.classList.remove('db-bars--grouped');
     }
 
-    // Authorship-only DOM chrome: show the province-note, controls, and caveat
-    // only when the authorship view is active.
-    const isAuthorship = view === 'authorship';
-    const showAuth = el => { if (el) el.style.display = isAuthorship ? '' : 'none'; };
-    showAuth($('[data-b2-province-note]'));
-    showAuth($('[data-b2-authorship-controls]'));
-    showAuth($('[data-b2-caveat]'));
+    // Authorship chrome (province note, legend, caveat) is no longer used in
+    // B2 — the Authorship tab moved to Panel B1. Ensure it's hidden here.
+    const hide = el => { if (el) el.style.display = 'none'; };
+    hide($('[data-b2-province-note]'));
+    hide($('[data-b2-authorship-controls]'));
+    hide($('[data-b2-caveat]'));
   }
 
   // Ensure a single tooltip element exists on document.body for the authorship
@@ -4705,7 +4733,9 @@
 
   // -------- Wire tabs, keyboard, and type checkboxes --------
   function wirePanelB2() {
-    const tabs = $$('.db-b2-tab');
+    // Scope to elements carrying data-b2-tab so we don't accidentally hijack
+    // the B1 tabs (which reuse the same .db-b2-tab class for styling).
+    const tabs = $$('.db-b2-tab[data-b2-tab]');
     tabs.forEach(btn => {
       btn.addEventListener('click', () => {
         state.b2View = btn.dataset.b2Tab;

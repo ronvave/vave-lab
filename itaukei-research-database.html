@@ -382,15 +382,18 @@
       display: flex; align-items: center; justify-content: center;
       letter-spacing: 0;
     }
+    /* Panel titles + description text — solid black rather than muted grey
+       so chart headers and their explanatory copy read as first-class
+       content, not secondary text. */
     .db-panel__title {
       margin: 0 0 var(--space-2);
       font-family: var(--font-body); font-weight: 700; font-size: 0.95rem;
-      text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text);
       padding-right: 34px;
     }
     .db-panel__hint {
-      font-size: 0.78rem; color: var(--color-text-muted); margin: 0 0 var(--space-3);
-      text-transform: none; letter-spacing: 0; font-weight: 400;
+      font-size: 0.9rem; color: var(--color-text); margin: 0 0 var(--space-3);
+      text-transform: none; letter-spacing: 0; font-weight: 400; line-height: 1.5;
     }
 
     /* Panel A — map */
@@ -1205,15 +1208,37 @@
     .db-popup-count { font-weight: 700; color: var(--color-primary); }
 
     /* ============ Panel B/B1/B2 metadata + tabs ============ */
+    /* Meta strip — the row above each chart showing 'Grouped by / Scope / Authors'.
+       Bumped to 0.98rem so it reads clearly as a first-class caption, matching
+       Ron's request to make the row between the description and the chart more
+       visually prominent. */
     .db-panel__meta {
-      display: flex; gap: 18px; flex-wrap: wrap;
-      margin: 0 0 14px; padding: 8px 12px;
+      display: flex; gap: 20px; flex-wrap: wrap;
+      margin: 0 0 14px; padding: 10px 14px;
       background: rgba(14,116,144,0.05); border-radius: 8px;
-      font-size: 0.82rem; color: #475569;
+      font-size: 0.98rem; color: var(--color-text);
     }
     .db-panel__meta em {
       font-style: normal; font-weight: 700; color: #0e7490;
       letter-spacing: 0.02em; margin-right: 4px;
+    }
+    /* Inline dropdown pill inside the meta row — reuses the brown-on-cream
+       styling of the B2 tab "is-active" state so the affordance is obvious
+       and matches the tab bar visually. */
+    .db-panel__meta select.db-meta-select {
+      appearance: none; -webkit-appearance: none; -moz-appearance: none;
+      background: #854F0B; color: #FAEEDA;
+      border: none; border-radius: 999px;
+      font: 700 0.92rem 'Source Sans Pro', sans-serif;
+      padding: 3px 26px 3px 12px; cursor: pointer;
+      background-image: linear-gradient(45deg, transparent 50%, #FAEEDA 50%),
+                        linear-gradient(135deg, #FAEEDA 50%, transparent 50%);
+      background-position: calc(100% - 12px) 55%, calc(100% - 7px) 55%;
+      background-size: 5px 5px, 5px 5px;
+      background-repeat: no-repeat;
+    }
+    .db-panel__meta select.db-meta-select:disabled {
+      opacity: 0.55; cursor: not-allowed;
     }
 
     /* Panel B2 tab strip — accessible, keyboard-navigable.
@@ -2500,20 +2525,32 @@
         </div>
       </div>
 
-      <!-- Panel B1 — ranked bar chart, province-tagged research by iTaukei authors -->
+      <!-- Panel B1 — ranked bar chart, province-tagged research (study location) -->
       <div class="db-panel reveal" data-panel="B1">
         <span class="db-panel__label">B1</span>
-        <h2 class="db-panel__title">Province-specific research by <span class="db-title-select">
-          <select class="db-title-select__select" data-b1-authors aria-label="Filter authors">
+        <!-- Panel B1 tab row: publication-type stack (default) vs. authorship stack.
+             Reuses the .db-panel-b2__tabs styling for visual consistency. -->
+        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B1 view" data-b1-tabs>
+          <button type="button" role="tab" class="db-b2-tab is-active" data-b1-tab="type" aria-selected="true" tabindex="0">By publication type</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b1-tab="authorship" aria-selected="false" tabindex="-1">Authorship</button>
+        </div>
+        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Fiji's Provinces</h2>
+        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Fiji's 14 provinces based on where the study or fieldwork took place, plus a “Non-provincial/Fiji” category for research on Fiji-wide topics (e.g. national legislation, national mental health policy) not tied to one province. Default view shows iTaukei authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
+        <div class="db-panel__meta">
+          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study province</span></span>
+          <span><em>Authors:</em> <select class="db-meta-select" data-b1-authors aria-label="Filter authors">
             <option value="itaukei">iTaukei authors</option>
             <option value="all">All authors</option>
-          </select>
-          <span class="db-title-select__chevron" aria-hidden="true">▾</span>
-        </span></h2>
-        <p class="db-panel__hint">Publications are counted in each Fiji province explicitly identified as a study or fieldwork location. A publication may be counted in more than one province.</p>
-        <div class="db-panel__meta">
-          <span><em>Grouped by:</em> Study province</span>
-          <span><em>Authors:</em> <span data-b1-authors-label>iTaukei authors</span></span>
+          </select></span>
+        </div>
+        <!-- Authorship-view only: legend for the three coloured segments, shown
+             beneath the description (identical to what B2 previously used). -->
+        <div class="db-b2-authorship-controls" data-b1-authorship-legend style="display:none;">
+          <div class="db-b2-legend">
+            <span><span class="db-b2-legend__sw" style="background:#0f766e;"></span>iTaukei first author</span>
+            <span><span class="db-b2-legend__sw" style="background:#5fa6ae;"></span>iTaukei co-author, not first author</span>
+            <span><span class="db-b2-legend__sw" style="background:#9ca3af;"></span>No iTaukei author identified</span>
+          </div>
         </div>
         <div class="db-bars" data-db-bars></div>
         <div class="db-type-filter" data-db-type-filter>
@@ -2531,18 +2568,17 @@
         </div>
       </div>
 
-      <!-- Panel B2 — interactive multi-view chart -->
+      <!-- Panel B2 — interactive multi-view chart, grouped by author's paternal province -->
       <div class="db-panel reveal" data-panel="B2">
         <span class="db-panel__label">B2</span>
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
           <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0">Fiji-focused</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">All locations</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">Fiji + International</button>
           <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-authors" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">All authors</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="authorship" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">Authorship</button>
         </div>
         <div id="db-b2-panel" role="tabpanel">
-          <h2 class="db-panel__title" data-b2-title>Fiji-focused publications by iTaukei authors</h2>
-          <p class="db-panel__hint" data-b2-hint></p>
+          <h2 class="db-panel__title" data-b2-title>Research Output by Author's Home Province</h2>
+          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the iTaukei first author’s own paternal province. Default scope shows Fiji-focused publications; switch to “Fiji + International” to include research on non-Fiji topics and locations too.</p>
           <div class="db-panel__meta" data-b2-meta></div>
           <!-- Authorship-view only: sentence that clarifies the province semantics -->
           <p class="db-b2-province-note" data-b2-province-note style="display:none;">
@@ -3045,6 +3081,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-28" defer></script>
+<script src="js/itaukei-database.js?v=20260705-29" defer></script>
 </body>
 </html>
