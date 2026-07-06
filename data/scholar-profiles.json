@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T00:44:48.484Z",
+  "generatedAt": "2026-07-06T00:46:04.950Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -316,6 +316,28 @@
       "institutionCountry": "Australia"
     },
     {
+      "slug": "mereia-fong-lomavatu",
+      "last": "Fong-Lomavatu",
+      "first": "Mereia",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": "",
+      "name": "Fong-Lomavatu, Mereia",
+      "confederacy": "",
+      "title": "",
+      "orcidUrl": "",
+      "lastUpdate": "",
+      "types.journalArticle": "4",
+      "types.thesis": "1",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "0"
+    },
+    {
       "name": "Fong, Patrick S.",
       "slug": "patrick-s-fong",
       "last": "Fong",
@@ -332,6 +354,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Fong, Sakiusa",
+      "slug": "sakiusa-fong",
+      "last": "Fong",
+      "first": "Sakiusa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "teddy-fong",
@@ -711,12 +746,7 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
-      "types.journalArticle": "4",
-      "types.thesis": "1",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "0"
+      "photo": ""
     },
     {
       "name": "Lotawa, Semi",
@@ -958,6 +988,19 @@
       },
       "phd": null,
       "sector": "Non-Government / Civil Society"
+    },
+    {
+      "name": "Movono, Apisalome",
+      "slug": "apisalome-movono",
+      "last": "Movono",
+      "first": "Apisalome",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "unaisi-nabobo-baba",
@@ -2890,12 +2933,9 @@
     "Ferse, Sebastian C.A.": "Ferse, Sebastian C. A.",
     "Feussner, Klaus D.": "Feussner, Klaus",
     "Feussner, Klaus Dieter": "Feussner, Klaus",
-    "Fong-Lomavatu, Mereia": "Lomavatu, Mereia Fong",
-    "Fong‐Lomavatu, Mereia": "Fong-Lomavatu, Mereia",
     "Fong, Patrick": "Fong, Patrick S.",
     "Fong, Patrick Sakiusa": "Fong, Patrick S.",
     "Fong, S.": "Fong, Sakiusa",
-    "Fong, Sakiusa": "Fong, Patrick S.",
     "Friedlander, Alan M.": "Friedlander, Alan M",
     "Fulton, Elizabeth A": "Fulton, Elizabeth A.",
     "Gatiso, Tsegaye T.": "Gatiso, Tsegaye",
