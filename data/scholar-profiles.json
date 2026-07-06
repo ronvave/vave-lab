@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T00:44:29.878Z",
+  "generatedAt": "2026-07-06T00:44:48.484Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -314,28 +314,6 @@
       },
       "sector": "Academia",
       "institutionCountry": "Australia"
-    },
-    {
-      "slug": "mereia-fong-lomavatu",
-      "last": "Fong-Lomavatu",
-      "first": "Mereia",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": "",
-      "name": "Fong-Lomavatu, Mereia",
-      "confederacy": "",
-      "title": "",
-      "orcidUrl": "",
-      "lastUpdate": "",
-      "types.journalArticle": "4",
-      "types.thesis": "1",
-      "types.bookSection": "0",
-      "types.book": "0",
-      "types.report": "0"
     },
     {
       "name": "Fong, Patrick S.",
@@ -733,7 +711,12 @@
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "types.journalArticle": "4",
+      "types.thesis": "1",
+      "types.bookSection": "0",
+      "types.book": "0",
+      "types.report": "0"
     },
     {
       "name": "Lotawa, Semi",
@@ -2907,6 +2890,7 @@
     "Ferse, Sebastian C.A.": "Ferse, Sebastian C. A.",
     "Feussner, Klaus D.": "Feussner, Klaus",
     "Feussner, Klaus Dieter": "Feussner, Klaus",
+    "Fong-Lomavatu, Mereia": "Lomavatu, Mereia Fong",
     "Fong‐Lomavatu, Mereia": "Fong-Lomavatu, Mereia",
     "Fong, Patrick": "Fong, Patrick S.",
     "Fong, Patrick Sakiusa": "Fong, Patrick S.",
