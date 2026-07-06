@@ -2412,11 +2412,23 @@
       conferencePaper: '[data-count-pub-conf]',
       preprint: '[data-count-pub-preprint]'
     };
+    // Update counts + hide zero-count chips, then reorder the remaining
+    // chips by count descending so the row reads as a natural ranking
+    // (largest category first). Chips stay in the same DOM parent so
+    // the flex-wrap layout keeps them tightly packed.
+    const parent = barII;
     Object.keys(chipMap).forEach(k => {
       const chip = barII.querySelector(`[data-pub-chip="${k}"]`);
       const num = barII.querySelector(chipMap[k]);
       if (num) num.textContent = String(pub[k]);
       if (chip) chip.style.display = pub[k] > 0 ? 'inline-flex' : 'none';
+    });
+    const visibleChips = Object.keys(chipMap)
+      .filter(k => pub[k] > 0)
+      .sort((a, b) => pub[b] - pub[a]);
+    visibleChips.forEach(k => {
+      const chip = parent.querySelector(`[data-pub-chip="${k}"]`);
+      if (chip) parent.appendChild(chip); // move to end — rebuilds sorted order
     });
   }
 

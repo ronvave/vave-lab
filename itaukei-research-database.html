@@ -1943,7 +1943,12 @@
       border: 1px solid var(--color-border, #d8d0b0); border-radius: 10px;
       font-size: 1.02rem;
     }
-    .dsf-summary strong { font-weight: 700; color: #062f35; font-size: 1.12rem; }
+    /* Give both summary rows' labels the same width so the first chip lines
+       up vertically between the Confederacy row and the Publications row. */
+    .dsf-summary strong {
+      font-weight: 700; color: #062f35; font-size: 1.12rem;
+      min-width: 108px; display: inline-block;
+    }
     .dsf-chip {
       display: inline-flex; align-items: center; gap: 7px;
       padding: 5px 14px; border-radius: 14px; font-size: 0.98rem;
@@ -2675,7 +2680,7 @@
 
         <!-- Summary bar (Total + Kubuna + Tovata + Burebasaga + Unclassified) -->
         <div class="dsf-summary" data-scholar-summary>
-          <strong>Results</strong>
+          <strong>Confederacy</strong>
           <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
           <span class="dsf-chip dsf-chip--kubuna"><span class="dsf-chip__dot"></span> Kubuna: <span data-count-kubuna>0</span></span>
           <span class="dsf-chip dsf-chip--tovata"><span class="dsf-chip__dot"></span> Tovata: <span data-count-tovata>0</span></span>
@@ -2685,8 +2690,8 @@
 
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
         <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
-          <strong>Results II</strong>
-          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total pubs: <span data-count-pubs-total>0</span></span>
+          <strong>Publications</strong>
+          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
           <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
           <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
           <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
@@ -3003,6 +3008,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-18" defer></script>
+<script src="js/itaukei-database.js?v=20260705-19" defer></script>
 </body>
 </html>
