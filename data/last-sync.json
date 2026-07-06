@@ -1,18 +1,10 @@
 {
-  "lastChecked": "2026-07-06T07:13:19Z",
+  "lastChecked": "2026-07-06T12:45:33Z",
   "lastChanged": "2026-07-06T07:13:19Z",
-  "dataChangedThisRun": true,
-  "totalItems": 1994,
-  "movedMetrics": [
-    {
-      "metric": "type:journalArticle",
-      "prev": 689,
-      "new": 707,
-      "delta": 18,
-      "pct": 2.61
-    }
-  ],
-  "summary": "Changes: type:journalArticle 689\u2192707",
+  "dataChangedThisRun": false,
+  "totalItems": 1999,
+  "movedMetrics": [],
+  "summary": "No tracked total moved by more than 2.0%.",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28774322483"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28792387589"
 }
