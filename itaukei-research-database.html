@@ -886,21 +886,22 @@
     }
     .db-scholar-card__type-chip .n { font-weight: 700; font-variant-numeric: tabular-nums; }
     /* Work-country flag — sits just left of the ORCID icon in the card banner.
-       Height matches the ORCID/Google-Scholar icons (34px) so the three icons
-       align on the same visual line. Width is a 3:2 proportion for most
-       national flags; object-fit: cover crops the small handful of odd
-       aspect ratios gracefully. */
+       Sized to match the FULL bounding box of the ORCID circle / Google-Scholar
+       tile (not the small logo inside them), so the three icons read as the
+       same visual weight. Width is roughly a 3:2 ratio which fits most flags;
+       object-fit: cover crops any odd aspects gracefully. */
     .db-scholar-card__flag {
-      position: absolute; top: 18px; right: 106px;
-      width: 48px; height: 34px;
-      border-radius: 4px;
+      display: block;
+      position: absolute; top: 15px; right: 108px;
+      width: 58px; height: 40px;
+      border-radius: 5px;
       box-shadow: 0 2px 6px rgba(6,47,53,0.18);
       background: rgba(255,255,255,0.4);
       object-fit: cover;
       cursor: help;
       transition: transform .12s;
     }
-    .db-scholar-card__flag:hover { transform: scale(1.08); }
+    .db-scholar-card__flag:hover { transform: scale(1.06); }
 
     /* External profile icons — ORCID (green) + Google Scholar (blue tile) */
     .db-scholar-card__orcid {
@@ -3042,6 +3043,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-25" defer></script>
+<script src="js/itaukei-database.js?v=20260705-26" defer></script>
 </body>
 </html>
