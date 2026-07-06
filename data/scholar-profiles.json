@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:33:03.360Z",
+  "generatedAt": "2026-07-06T09:33:09.814Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -23,6 +23,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Aporosa, S. Apo",
+      "slug": "s-apo-aporosa",
+      "last": "Aporosa",
+      "first": "S. Apo",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Baleinamau, Ponipate",
