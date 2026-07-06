@@ -3015,33 +3015,52 @@
     });
 
     // ---- Source A: Zotero sub-collections ----
+    // If the admin has merged a sub-collection name into another canonical name
+    // via the alias map (e.g. "Movono, Api" → "Movono, Apisalome"), we relabel
+    // this sub-collection with its canonical name here BEFORE creating a row.
+    // When a second sub-collection is already emitted under the same canonical,
+    // we merge their counts into that existing row instead of pushing a
+    // duplicate card. Items are deduped by Zotero item key so a paper that
+    // sits in both sub-collections is only counted once.
+    const rowsByCanonical = new Map(); // canonicalName → rows entry
+    const countedByCanonical = new Map(); // canonicalName → Set<itemKey>
     const root = cols.find(c => c.name === 'iTaukei authors (>3 papers)');
     if (root) {
       const subs = cols.filter(c => c.parent === root.key);
       subs.forEach(c => {
-        const last = c.name.split(',')[0].trim().toLowerCase();
-        const types = emptyTypes();
-        let firstAuthored = 0;
-        const countedItemKeys = new Set();
+        // Resolve the sub-collection name through the alias map. If no alias is
+        // registered, canonicalName === c.name.
+        const canonicalName = aliases.get(c.name) || c.name;
+        const lastForFirstAuthor = canonicalName.split(',')[0].trim().toLowerCase();
+        // Reuse or create the accumulator row for this canonical scholar.
+        let entry = rowsByCanonical.get(canonicalName);
+        if (!entry) {
+          entry = { name: canonicalName, key: c.key, total: 0, firstAuthored: 0, types: emptyTypes() };
+          rowsByCanonical.set(canonicalName, entry);
+          countedByCanonical.set(canonicalName, new Set());
+        }
+        const countedItemKeys = countedByCanonical.get(canonicalName);
         state.snapshot.items.forEach(it => {
           if (!(it.collections || []).includes(c.key)) return;
+          if (countedItemKeys.has(it.key)) return; // already counted via another aliased sub-collection
           countedItemKeys.add(it.key);
+          entry.total += 1;
           const vt = visualType(it);
-          if (types[vt] != null) types[vt] += 1;
+          if (entry.types[vt] != null) entry.types[vt] += 1;
           const creators = it.creators || [];
           if (creators.length) {
             const first = creators[0];
             const lastTok = (typeof first === 'string' && first.includes(','))
               ? first.split(',')[0].trim().toLowerCase()
               : String(first || '').trim().split(/\s+/).pop().toLowerCase();
-            if (lastTok === last) firstAuthored += 1;
+            if (lastTok === lastForFirstAuthor) entry.firstAuthored += 1;
           }
         });
-        let total = c.numItems;
-        // Supplement with items authored under any admin-registered variant name
-        // that maps to this sub-collection's canonical scholar. Skip items already
-        // counted via sub-collection membership so we never double-count.
-        const variants = variantsByCanonical.get(c.name) || [];
+
+        // Supplement with items authored under any admin-registered variant
+        // name that maps to this canonical scholar (but sit outside every
+        // sub-collection). Uses the same dedupe set so nothing double-counts.
+        const variants = variantsByCanonical.get(canonicalName) || [];
         if (variants.length) {
           const variantSet = new Set(variants);
           state.snapshot.items.forEach(it => {
@@ -3064,17 +3083,20 @@
             }
             if (!isMatch) return;
             countedItemKeys.add(it.key);
-            total += 1;
+            entry.total += 1;
             const vt = visualType(it);
-            if (types[vt] != null) types[vt] += 1;
-            if (isFirstMatch) firstAuthored += 1;
+            if (entry.types[vt] != null) entry.types[vt] += 1;
+            if (isFirstMatch) entry.firstAuthored += 1;
           });
         }
-        rows.push({ name: c.name, key: c.key, total, firstAuthored, types });
-        seenLastFirst.add(c.name.toLowerCase());
-        // Also mark the stripped form so a profile keyed under
-        // "Tabudravu, Jioji N." doesn't double-emit when we hit source B.
-        const [lastPart, firstPart] = c.name.split(',').map(s => (s || '').trim());
+      });
+      // Emit one row per canonical scholar. Register both the canonical name
+      // and its stripped-first-token variant in seenLastFirst so Source B
+      // doesn't produce a duplicate card for the same profile.
+      rowsByCanonical.forEach(entry => {
+        rows.push(entry);
+        seenLastFirst.add(entry.name.toLowerCase());
+        const [lastPart, firstPart] = entry.name.split(',').map(s => (s || '').trim());
         if (lastPart && firstPart) {
           seenLastFirst.add((lastPart + ', ' + firstToken(firstPart)).toLowerCase());
         }
