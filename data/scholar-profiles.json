@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:45:57.388Z",
+  "generatedAt": "2026-07-06T08:46:00.029Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2365,6 +2365,19 @@
       "slug": "loraini-tulele",
       "last": "Tulele",
       "first": "Loraini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Turaga, Kositino",
+      "slug": "kositino-turaga",
+      "last": "Turaga",
+      "first": "Kositino",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
