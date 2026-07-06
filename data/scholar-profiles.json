@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:59:42.146Z",
+  "generatedAt": "2026-07-06T10:16:17.651Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -8,7 +8,7 @@
       "first": "Apo",
       "salutation": "Dr.",
       "village": "Naduri vlg",
-      "paternalProvince": "Macuata",
+      "paternalProvince": "",
       "institution": "University of Waikato",
       "institutionUrl": "https://www.waikato.ac.nz/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=imbcnHIAAAAJ&hl=en&oi=ao",
@@ -17,7 +17,7 @@
       "confederacy": "",
       "title": "Senior Lecturer",
       "orcidUrl": "https://orcid.org/0000-0002-4490-9545",
-      "lastUpdate": "2026-07-06T09:55:59.263Z",
+      "lastUpdate": "2026-07-06T10:16:17.649Z",
       "types.journalArticle": "9",
       "types.thesis": "1",
       "types.bookSection": "0",
@@ -38,7 +38,9 @@
       "types": {
         "thesis": 3,
         "journalArticle": 9
-      }
+      },
+      "maternalProvince": "Macuata",
+      "nonItaukeiDad": true
     },
     {
       "name": "Baleinamau, Ponipate",
