@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T00:43:31.368Z",
+  "generatedAt": "2026-07-06T00:44:12.525Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -354,19 +354,6 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
-    },
-    {
-      "name": "Fong, Sakiusa",
-      "slug": "sakiusa-fong",
-      "last": "Fong",
-      "first": "Sakiusa",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
     },
     {
       "slug": "teddy-fong",
@@ -2923,6 +2910,7 @@
     "Fong, Patrick": "Fong, Patrick S.",
     "Fong, Patrick Sakiusa": "Fong, Patrick S.",
     "Fong, S.": "Fong, Sakiusa",
+    "Fong, Sakiusa": "Fong, Patrick S.",
     "Friedlander, Alan M.": "Friedlander, Alan M",
     "Fulton, Elizabeth A": "Fulton, Elizabeth A.",
     "Gatiso, Tsegaye T.": "Gatiso, Tsegaye",
