@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T09:33:44.288Z",
+  "generatedAt": "2026-07-06T09:33:49.446Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -29,6 +29,19 @@
       "slug": "s-apo-aporosa",
       "last": "Aporosa",
       "first": "S 'Apo'",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Aporosa, S. Apo",
+      "slug": "s-apo-aporosa",
+      "last": "Aporosa",
+      "first": "S. Apo",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
