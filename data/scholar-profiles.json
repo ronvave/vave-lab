@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T00:50:57.261Z",
+  "generatedAt": "2026-07-06T00:57:49.886Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1001,22 +1001,16 @@
       "institutionUrl": "",
       "googleScholarUrl": "https://scholar.google.com/citations?user=sVlSfJwAAAAJ&hl=en&oi=ao",
       "photo": "img/scholars/apisalome-movono.jpg",
-      "sector": "",
+      "sector": "Government",
       "institutionCountry": "Fiji",
       "department": "",
       "departmentUrl": "",
       "profileUrl": "",
-      "masters": {
-        "university": "University of the South Pacific",
-        "country": "Fiji"
-      },
-      "phd": {
-        "university": "Griffith University",
-        "country": "Australia"
-      },
+      "masters": null,
+      "phd": null,
       "title": "Chief Executive Officer",
       "orcidUrl": "https://orcid.org/0000-0003-1250-9632",
-      "lastUpdate": "2026-07-06T00:50:57.260Z",
+      "lastUpdate": "2026-07-06T00:57:49.885Z",
       "total": 35,
       "firstAuthored": 17,
       "types": {
