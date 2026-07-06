@@ -3235,7 +3235,7 @@
     const iso = COUNTRY_ISO[country];
     if (!iso) return '';
     const alt = escapeAttr(country);
-    return `<img class="db-scholar-card__flag" src="https://flagcdn.com/${iso}.svg" alt="${alt} flag" title="${alt}" loading="lazy" width="58" height="40" />`;
+    return `<img class="db-scholar-card__flag" src="https://flagcdn.com/${iso}.svg" alt="${alt} flag" title="${alt}" loading="lazy" width="48" height="34" />`;
   }
 
   const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';

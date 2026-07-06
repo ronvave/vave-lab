@@ -892,13 +892,15 @@
        object-fit: cover crops any odd aspects gracefully. */
     .db-scholar-card__flag {
       display: block;
-      position: absolute; top: 15px; right: 108px;
-      width: 58px; height: 40px;
-      border-radius: 5px;
+      position: absolute; top: 18px; right: 106px;
+      width: 48px; height: 34px;
+      border-radius: 4px;
       box-shadow: 0 2px 6px rgba(6,47,53,0.18);
       background: rgba(255,255,255,0.4);
       object-fit: cover;
-      cursor: help;
+      /* Default arrow cursor so the tooltip country name isn't blocked by
+         the extra question-mark glyph the browser adds for `cursor: help`. */
+      cursor: default;
       transition: transform .12s;
     }
     .db-scholar-card__flag:hover { transform: scale(1.06); }
@@ -3043,6 +3045,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-26" defer></script>
+<script src="js/itaukei-database.js?v=20260705-27" defer></script>
 </body>
 </html>
