@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T21:56:29.563Z",
+  "generatedAt": "2026-07-06T00:21:00.393Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2375,7 +2375,7 @@
       "first": "Patrick",
       "salutation": "Prof.",
       "village": "",
-      "paternalProvince": "",
+      "paternalProvince": "Lomaiviti",
       "institution": "University of Otago",
       "institutionUrl": "https://www.otago.ac.nz/",
       "googleScholarUrl": "https://scholar.google.com/citations?user=GPiHGkUAAAAJ&hl=en",
@@ -2387,7 +2387,7 @@
       "phd": null,
       "title": "Associate Professor",
       "orcidUrl": "https://orcid.org/0000-0002-7230-5909",
-      "lastUpdate": "2026-07-05T13:39:03.427Z",
+      "lastUpdate": "2026-07-06T00:21:00.392Z",
       "total": 26,
       "firstAuthored": 16,
       "types": {
