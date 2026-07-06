@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:46:04.957Z",
+  "generatedAt": "2026-07-06T08:54:21.873Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2404,13 +2404,31 @@
       "slug": "amelia-r-turagabeci",
       "last": "Turagabeci",
       "first": "Amelia R.",
-      "salutation": "",
+      "salutation": "Prof.",
       "village": "",
       "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
+      "institution": "Fiji National University",
+      "institutionUrl": "https://www.fnu.ac.fj/",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=q17MHMMAAAAJ&hl=en",
+      "photo": "img/scholars/amelia-r-turagabeci.jpg",
+      "sector": "Academia",
+      "institutionCountry": "Fiji",
+      "department": "College of Medicine, Nursing & Health Sciences",
+      "departmentUrl": "http://www.fnu.ac.fj/college-of-medicine/",
+      "profileUrl": "https://medicaldeans.org.au/member/fnu/",
+      "masters": null,
+      "phd": {
+        "university": "Tokyo Medical and Dental University Hospital",
+        "country": "Japan"
+      },
+      "title": "Dean & Associate Professor",
+      "orcidUrl": "https://orcid.org/0000-0002-4923-7397",
+      "lastUpdate": "2026-07-06T08:54:21.872Z",
+      "total": 19,
+      "firstAuthored": 2,
+      "types": {
+        "journalArticle": 19
+      }
     },
     {
       "name": "Turagakacivi, Mariana",
