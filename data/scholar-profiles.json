@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:38:36.819Z",
+  "generatedAt": "2026-07-06T08:38:57.051Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -23,6 +23,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Aporosa, S. Apo",
+      "slug": "s-apo-aporosa",
+      "last": "Aporosa",
+      "first": "S. Apo",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Baleinamau, Ponipate",
@@ -2945,10 +2958,8 @@
     "Alefaio, S.": "Alefaio, Semese",
     "Andersen, Jeanette Hammer": "Andersen, Jeanette H.",
     "Aporosa, Apo S.": "Aporosa, Apo",
-    "Aporosa, S 'Apo'": "Aporosa, Apo",
     "Aporosa, S Apo": "Aporosa, S. Apo",
     "Aporosa, S. 'Apo'": "Aporosa, S 'Apo'",
-    "Aporosa, S. Apo": "Aporosa, Apo",
     "Aporosa, S. G.": "Aporosa, S. Apo",
     "Atkins, Martin J.": "Atkins, Martin",
     "Baba, Tupeni L.": "Baba, Tupeni",
@@ -3024,6 +3035,7 @@
     "Jenkins, Aaron P": "Jenkins, Aaron",
     "Jenkins, Aaron P.": "Jenkins, Aaron",
     "Jensen, Paul": "Jensen, Paul R.",
+    "Johnston, David W.": "Johnston, David",
     "Jupiter, Stacy": "Jupiter, Stacy D.",
     "Jupiter, Stacy D": "Jupiter, Stacy D.",
     "Kant, R.": "Kant, Romitesh",
@@ -3174,7 +3186,6 @@
     "Tuiwawa, Marika Vuli": "Tuiwawa, Marika",
     "Tuiwawa, Senilolia": "Tuiwawa, Senilolia H.",
     "Tukana, Isimeli N.": "Tukana, Isimeli",
-    "Turagabeci, Amelia R.": "Turagabeci, Amelia",
     "Turner, Diane Michalski": "Turner, Diane M",
     "Tuvuki, Timaima T": "Tuvuki, Timaima",
     "Ussher, James E": "Ussher, James E.",
