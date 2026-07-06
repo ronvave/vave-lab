@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T03:46:30.097Z",
+  "generatedAt": "2026-07-06T04:55:42.486Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2199,6 +2199,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Tiko, Lavinia Sauleca Tausere",
+      "slug": "lavinia-sauleca-tausere-tiko",
+      "last": "Tiko",
+      "first": "Lavinia Sauleca Tausere",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "siteri-tikoca",
