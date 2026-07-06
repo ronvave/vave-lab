@@ -3275,7 +3275,7 @@
         ${photoInnerHtml}
         <button type="button" class="db-scholar-card__submit" data-submit-info
                 title="Suggest corrections or add missing info for this scholar (name, institution, links, photo, or a BibTeX/EndNote file of their publications). Submissions go to Vave Lab for review before publishing.">
-          Submit info
+          Update info
         </button>
       </div>`;
 
