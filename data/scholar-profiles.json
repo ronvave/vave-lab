@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T03:30:43.123Z",
+  "generatedAt": "2026-07-06T03:33:33.831Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2583,7 +2583,7 @@
       "institution": "University of Guam (Guam)",
       "institutionUrl": "https://www.uog.edu/",
       "googleScholarUrl": "",
-      "photo": "img/scholars/maika-vuki.jpg",
+      "photo": "",
       "department": "College of Natural & Applied Sciences",
       "departmentUrl": "https://catalog.uog.edu/current/programs/college-of-natural-and-applied-sciences/chemistry#Tracks",
       "profileUrl": "https://www.uog.edu/directory/vuki-maika",
@@ -2597,7 +2597,7 @@
       },
       "title": "Interim Associate Dean & Professor",
       "orcidUrl": "https://orcid.org/0009-0009-5541-5346",
-      "lastUpdate": "2026-07-06T03:30:43.120Z",
+      "lastUpdate": "2026-07-06T03:33:33.830Z",
       "total": 14,
       "firstAuthored": 5,
       "types": {
