@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-05T09:47:59+00:00",
+  "generatedAt": "2026-07-06T09:29:44+00:00",
   "insights": {
     "Naqasima-Sobey, Milika": {
       "keywords": [
@@ -191,14 +191,6 @@
           "url": "https://www.otago.ac.nz/news/newsroom/associate-professor-patrick-vakaoti-decolonising-global-health"
         }
       ]
-    },
-    "Movono, Api": {
-      "keywords": [],
-      "summary": "A plain-English summary of This scholar’s research is not yet available.",
-      "summaryFormat": "plaintext",
-      "publicationCount": 1,
-      "signature": "sha1:d7b1d8f8b266fae6",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
     },
     "Waqalevu, Viliame": {
       "keywords": [
@@ -897,19 +889,30 @@
     },
     "Nawadra, Sefanaia": {
       "keywords": [
-        "Avifauna Baseline Survey",
-        "Herpetofauna Documentation",
-        "Freshwater Fish Surveys",
-        "Botanical Range Survey",
-        "Cultural Heritage Survey",
-        "Terrestrial Gastropod Records"
+        "Rapid Biodiversity Assessment",
+        "Marine Pollution Governance",
+        "Regional Environmental Policy",
+        "Environmental Monitoring and Governance",
+        "Nakauvadra and Nakorotubu Biodiversity",
+        "Pacific Climate and Biodiversity Crisis Response",
+        "Environmental Impact Assessment"
       ],
-      "summary": "Nawadra has contributed to a series of baseline biodiversity and cultural surveys across Fiji's Nakauvadra and Nakorotubu mountain ranges, documenting birds, reptiles, freshwater fish, plants, and land snails alongside cultural heritage sites in Ra and Tailevu provinces. This fieldwork builds the ecological baseline data used for conservation and land-use planning in these remote highland areas.",
+      "summary": "Nawadra has spent close to three decades moving between hands-on Pacific conservation science and the regional institutions that turn that science into policy. Early in his career he co-edited two major <a href=\"https://bioone.org/ebooks/RAP-Bulletin-of-Biological-Assessment/A-Rapid-Biodiversity-Assessment-of-the-Nakauvadra-Range-Ra-Province/eISBN-/10.1896/978-1-934151-38-9\" target=\"_blank\" rel=\"noopener\">rapid biodiversity assessments of Fiji's Nakauvadra and Nakorotubu mountain ranges</a>, cataloguing the region's plants, birds, bats, reptiles, and insects to guide conservation planning. He went on to serve as Conservation International's Fiji Country Director, SPREP's Marine Pollution Adviser and later Director of its Environmental Monitoring and Governance programme, and Head of the <a href=\"https://www.sprep.org/news/spreps-new-director-general-sefanaia-nawadra-takes-office\" target=\"_blank\" rel=\"noopener\">UNEP Pacific Office</a>, where he helped drive recognition of the 'triple planetary crisis' of climate change, biodiversity loss, and pollution. In 2022 he became <a href=\"https://pina.com.fj/2021/09/09/sefanaia-nawadra-appointed-new-sprep-director-general/\" target=\"_blank\" rel=\"noopener\">Director General of the Secretariat of the Pacific Regional Environment Programme (SPREP)</a>, the region's lead environmental body, where he now sets environmental policy priorities for 26 Pacific island nations and territories.",
       "summaryFormat": "html",
-      "publicationCount": 8,
-      "signature": "sha1:9855a1165ae0fece",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00",
-      "sources": []
+      "sources": [
+        {
+          "title": "A Rapid Biodiversity Assessment of the Nakauvadra Range, Ra Province, Fiji - BioOne",
+          "url": "https://bioone.org/ebooks/RAP-Bulletin-of-Biological-Assessment/A-Rapid-Biodiversity-Assessment-of-the-Nakauvadra-Range-Ra-Province/eISBN-/10.1896/978-1-934151-38-9"
+        },
+        {
+          "title": "SPREP's new Director General Sefanaia Nawadra takes office - Pacific Environment (SPREP)",
+          "url": "https://www.sprep.org/news/spreps-new-director-general-sefanaia-nawadra-takes-office"
+        },
+        {
+          "title": "Sefanaia Nawadra appointed new SPREP Director General - PINA",
+          "url": "https://pina.com.fj/2021/09/09/sefanaia-nawadra-appointed-new-sprep-director-general/"
+        }
+      ]
     },
     "Nakoro, Elia": {
       "keywords": [
@@ -1522,11 +1525,8 @@
         "Decolonizing Research Methods",
         "Kava Policy and Regulation"
       ],
-      "summary": "Aporosa studies kava — the culturally significant Pacific drink — not as a novelty substance but as it's actually used in traditional settings, where it plays a central role in Pacific social life and identity. His research challenges studies that test kava in tablet form, showing that <a href=\"https://onlinelibrary.wiley.com/doi/abs/10.1002/hup.2725\" target=\"_blank\" rel=\"noopener\">traditionally consumed kava affects cognition very differently</a> than lab-based extracts, with real implications for road-safety rules that don't distinguish between the two. He is now leading a <a href=\"https://www.waikato.ac.nz/int/news-events/news/kava-based-therapy-for-psychological-trauma-reaches-clinical-trial-milestone/\" target=\"_blank\" rel=\"noopener\">clinical trial testing traditional kava circles as therapy for PTSD</a>, drawing on the same cultural spaces he has studied for two decades. His broader work on <a href=\"https://researchoutreach.org/articles/traditional-kava-drinking-cognition-driver-fitness/\" target=\"_blank\" rel=\"noopener\">diasporic kava use and identity</a> argues that Pacific health research needs its own culturally grounded methods, not borrowed Western frameworks.",
+      "summary": "Aporosa studies kava — the culturally significant Pacific drink — not as a party substance but as it's actually used in traditional settings, where it plays a central role in Pacific identity and social life. His research challenges studies that test kava in tablet form, showing that <a href=\"https://onlinelibrary.wiley.com/doi/abs/10.1002/hup.2725\" target=\"_blank\" rel=\"noopener\">traditionally consumed kava affects cognition very differently</a> than lab-based extracts, with real implications for road-safety rules that don't distinguish between the two. He is now leading a <a href=\"https://www.waikato.ac.nz/int/news-events/news/kava-based-therapy-for-psychological-trauma-reaches-clinical-trial-milestone/\" target=\"_blank\" rel=\"noopener\">clinical trial testing traditional kava circles as therapy for PTSD</a>, drawing on the same cultural spaces he has studied for two decades. His broader work on <a href=\"https://researchoutreach.org/articles/traditional-kava-drinking-cognition-driver-fitness/\" target=\"_blank\" rel=\"noopener\">diasporic kava use and identity</a> argues that Pacific health research needs its own culturally grounded methods, not borrowed Western frameworks.",
       "summaryFormat": "html",
-      "publicationCount": 10,
-      "signature": "sha1:c17917c55ca50324",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00",
       "sources": [
         {
           "title": "Kava drinking in traditional settings: Towards understanding effects on cognitive function - Wiley",
@@ -2174,6 +2174,126 @@
         {
           "title": "About Us | Chemical Society of Guam",
           "url": "https://chemicalguam.com/about-us/"
+        }
+      ]
+    },
+    "Turagabeci, Amelia": {
+      "keywords": [
+        "Environmental Health in Informal Settlements",
+        "Water-Sensitive Urban Interventions",
+        "Children's Environmental Health",
+        "Disaster Preparedness and Disability",
+        "Planetary Health Research",
+        "WASH Program Evaluation",
+        "Air Quality Monitoring",
+        "Pacific Health Systems Research"
+      ],
+      "summary": "Turagabeci studies how the physical environment people live in — the water they use, the air they breathe, the settlements they call home — shapes their health, with a particular focus on children and other vulnerable groups. She leads Fiji's arm of the <a href=\"https://www.rise-program.org/archived/blog/indonesia-and-fiji-teams-connect-at-pham\" target=\"_blank\" rel=\"noopener\">Revitalising Informal Settlements and their Environments (RISE) project</a>, a large trial testing whether water-sensitive infrastructure upgrades in informal settlements in Fiji and Indonesia can measurably improve child health and local ecology. Her research has also <a href=\"https://www.researchgate.net/publication/344956560_Exploring_persons_with_disabilities_preparedness_perceptions_and_experiences_of_disasters_in_Tuvalu\" target=\"_blank\" rel=\"noopener\">examined how people with disabilities experience and prepare for disasters</a> in low-lying Pacific nations like Tuvalu, and she has helped build regional <a href=\"https://child-health-research.centre.uq.edu.au/profile/2239/amelia-turagabeci\" target=\"_blank\" rel=\"noopener\">indicators for tracking children's environmental health</a> across Pacific Island countries. She now serves as Acting Dean of Fiji National University's College of Medicine, Nursing and Health Sciences.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "Dr Amelia Turagabeci - Child Health Research Centre, University of Queensland",
+          "url": "https://child-health-research.centre.uq.edu.au/profile/2239/amelia-turagabeci"
+        },
+        {
+          "title": "Indonesia and Fiji teams connect at PHAM - RISE Program / Monash",
+          "url": "https://www.rise-program.org/archived/blog/indonesia-and-fiji-teams-connect-at-pham"
+        },
+        {
+          "title": "Exploring persons with disabilities preparedness, perceptions and experiences of disasters in Tuvalu - PLOS One",
+          "url": "https://journals.plos.org/plosone/article/authors?id=10.1371/journal.pone.0241180"
+        },
+        {
+          "title": "Amelia Turagabeci - Research Profile, ResearchGate",
+          "url": "https://www.researchgate.net/profile/Amelia-Turagabeci"
+        }
+      ]
+    },
+    "Movono, Apisalome": {
+      "keywords": [
+        "Tourism Community Resilience",
+        "Indigenous Fijian Livelihoods",
+        "Sustainable Development Goals Localization",
+        "Post-Pandemic Tourism Recovery",
+        "Coastal Community Sustainability",
+        "Ocean Finance and Blue Economy",
+        "Systems Thinking in Development",
+        "Cultural Ecology of Tourism"
+      ],
+      "summary": "Movono studies what happens to Fijian villages when their local economy becomes tied to tourists — for better and worse — and how communities can bounce back when that income disappears overnight, as it did during COVID-19. His Marsden-funded research followed families in tourism-dependent villages like <a href=\"https://www.royalsociety.org.nz/what-we-do/funds-and-opportunities/marsden/awarded-grants/marsden-fund-highlights/2021-marsden-fund-highlights/post-pandemic-pasifika-rebuilding-resilient-and-sustainable-south-pacific-tourism/\" target=\"_blank\" rel=\"noopener\">Vatuolalai as they fell back on traditional food production and social safety nets</a> during the pandemic. His earlier academic work examined <a href=\"https://www.tandfonline.com/doi/abs/10.1080/09669582.2017.1359280\" target=\"_blank\" rel=\"noopener\">how Fijian culture and environment are woven into tourism development itself</a>, not just affected by it, and how local partnerships can help tourism actually deliver on the UN Sustainable Development Goals rather than merely gesturing at them. Outside academia, he co-founded the <a href=\"https://www.worldbank.org/en/news/feature/2020/06/04/meet-the-innovator-from-fiji-protecting-our-oceans\" target=\"_blank\" rel=\"noopener\">Laucala Beach Sustainability Society</a> and was among the first Pacific Ocean Finance Fellows, applying his research on coastal resilience directly to conservation practice back home.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "Post-pandemic Pasifika: Rebuilding resilient and sustainable South Pacific tourism - Royal Society Te Apārangi",
+          "url": "https://www.royalsociety.org.nz/what-we-do/funds-and-opportunities/marsden/awarded-grants/marsden-fund-highlights/2021-marsden-fund-highlights/post-pandemic-pasifika-rebuilding-resilient-and-sustainable-south-pacific-tourism/"
+        },
+        {
+          "title": "Fijian culture and the environment: a focus on the ecological and social interconnectedness of tourism development - Journal of Sustainable Tourism",
+          "url": "https://www.tandfonline.com/doi/abs/10.1080/09669582.2017.1359280"
+        },
+        {
+          "title": "Meet the Innovator from Fiji Protecting our Oceans: Apisalome Movono - World Bank",
+          "url": "https://www.worldbank.org/en/news/feature/2020/06/04/meet-the-innovator-from-fiji-protecting-our-oceans"
+        },
+        {
+          "title": "Tourism partnerships: localizing the SDG agenda in Fiji - Journal of Sustainable Tourism",
+          "url": "https://www.tandfonline.com/doi/abs/10.1080/09669582.2020.1811291"
+        }
+      ]
+    },
+    "Tausere-Tiko, Lavinia": {
+      "keywords": [
+        "Indigenous Fijian Child Development",
+        "Early Childhood Professionalisation",
+        "Decolonizing Early Childhood Education",
+        "Solesolevaki in Pedagogy",
+        "Pacific Teacher Education",
+        "Neoliberalism in Education Policy",
+        "Climate Change Perception Studies",
+        "Preschool to Primary Transition"
+      ],
+      "summary": "Tausere Tiko studies how Fijian children actually learn and grow within their own cultural context — and argues that early childhood education systems built on Western models often miss or misread this entirely. Her doctoral research and subsequent book, <a href=\"https://www.researchgate.net/profile/Lavinia-Tiko\" target=\"_blank\" rel=\"noopener\">Indigenous Fijian Notions of Child Development</a>, centers Indigenous Fijian voices and knowledge on how children learn, know, and grow, with direct implications for national early-years policy. With her longtime collaborator Margaret Sims, she has compared early childhood professionalisation across very different political contexts — the UK, Bhutan, and Fiji — <a href=\"https://www.tandfonline.com/doi/full/10.1080/2331186X.2016.1152673\" target=\"_blank\" rel=\"noopener\">arguing that Pacific concepts like solesolevaki (working together)</a> offer their own path through the pressures of neoliberal education reform, rather than simply adapting imported models.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "Lavinia Tiko | Research Profile - ResearchGate",
+          "url": "https://www.researchgate.net/profile/Lavinia-Tiko"
+        },
+        {
+          "title": "We're going on a bear hunt: Reconciling neoliberalism and postcolonialism in Pacific early childhood - Cogent Education",
+          "url": "https://www.tandfonline.com/doi/full/10.1080/2331186X.2016.1152673"
+        },
+        {
+          "title": "What Discourses Relating to the Purpose of Early Childhood Are Shaping the Work of Early Childhood Practitioners in Three Different Contexts: UK, Bhutan and Fiji? - Journal of Education and Learning",
+          "url": "https://www.ccsenet.org/journal/index.php/jel/article/view/71250"
+        }
+      ]
+    },
+    "Naivalu, Taina": {
+      "keywords": [
+        "Arboviral Disease Surveillance",
+        "Zika and Chikungunya Transmission",
+        "HIV Molecular Epidemiology",
+        "Guillain-Barré Syndrome Investigation",
+        "Antimicrobial Resistance Surveillance",
+        "Medical Laboratory Science",
+        "Outbreak Investigation",
+        "Pacific Health Systems Research"
+      ],
+      "summary": "Naivalu has spent years at the center of Fiji's response to some of its most serious disease outbreaks, working as a medical laboratory scientist tracking how viruses move through the population. She was a co-investigator on the <a href=\"https://www.researchgate.net/publication/307999677_Investigation_of_a_Guillain-Barre_syndrome_cluster_in_the_Republic_of_Fiji\" target=\"_blank\" rel=\"noopener\">investigation into a cluster of Guillain-Barré syndrome cases</a> that followed Fiji's Zika outbreak, and later helped confirm that <a href=\"https://www.researchgate.net/publication/334839054_Sustained_Low-Level_Transmission_of_Zika_and_Chikungunya_Viruses_after_Emergence_in_the_Fiji_Islands\" target=\"_blank\" rel=\"noopener\">Zika and chikungunya continued to quietly circulate in Fiji</a> for years after their initial outbreaks, unlike the explosive epidemics seen elsewhere in the Pacific. More recently, as part of the Fiji Institute of Pacific Health Research, she has contributed to <a href=\"https://www.nature.com/articles/s44298-024-00019-3\" target=\"_blank\" rel=\"noopener\">tracing the molecular epidemiology of HIV in Fiji</a> and to national surveillance of drug-resistant bacterial infections.",
+      "summaryFormat": "html",
+      "sources": [
+        {
+          "title": "Investigation of a Guillain-Barré syndrome cluster in the Republic of Fiji - Journal of the Neurological Sciences",
+          "url": "https://www.researchgate.net/publication/307999677_Investigation_of_a_Guillain-Barre_syndrome_cluster_in_the_Republic_of_Fiji"
+        },
+        {
+          "title": "Sustained Low-Level Transmission of Zika and Chikungunya Viruses after Emergence in the Fiji Islands - Emerging Infectious Diseases",
+          "url": "https://www.researchgate.net/publication/334839054_Sustained_Low-Level_Transmission_of_Zika_and_Chikungunya_Viruses_after_Emergence_in_the_Fiji_Islands"
+        },
+        {
+          "title": "Molecular epidemiology of the HIV-1 epidemic in Fiji - npj Viruses",
+          "url": "https://www.nature.com/articles/s44298-024-00019-3"
         }
       ]
     }
