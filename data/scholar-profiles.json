@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T03:16:03.000Z",
+  "generatedAt": "2026-07-06T03:30:43.123Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2595,15 +2595,15 @@
         "university": "University of Southampton",
         "country": "England"
       },
-      "title": "Interm Associate Dean & Professor",
+      "title": "Interim Associate Dean & Professor",
       "orcidUrl": "https://orcid.org/0009-0009-5541-5346",
-      "lastUpdate": "2026-07-05T11:45:45.578Z",
+      "lastUpdate": "2026-07-06T03:30:43.120Z",
       "total": 14,
       "firstAuthored": 5,
       "types": {
+        "bookSection": 1,
         "thesis": 1,
-        "journalArticle": 12,
-        "bookSection": 1
+        "journalArticle": 12
       },
       "sector": "Academia",
       "institutionCountry": "Guam (USA territory)"
