@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T05:06:32.795Z",
+  "generatedAt": "2026-07-06T05:06:39.340Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2201,19 +2201,6 @@
       "types.report": "0"
     },
     {
-      "name": "Tiko, Lavinia Sauleca Tausere",
-      "slug": "lavinia-sauleca-tausere-tiko",
-      "last": "Tiko",
-      "first": "Lavinia Sauleca Tausere",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
       "slug": "siteri-tikoca",
       "last": "Tikoca",
       "first": "Siteri",
@@ -3148,6 +3135,7 @@
     "Thomas, Alyssa": "Thomas, Alyssa S.",
     "Thomas, Nunia T.": "Thomas, Nunia",
     "Thomas, Nunia Teresa": "Thomas, Nunia",
+    "Tiko, Lavinia Sauleca Tausere": "Tiko, Lavinia",
     "Tikoca, Siteri A. W.": "Tikoca, Siteri",
     "Titifanue, J.": "Titifanue, Jason",
     "Tokalauvere, Lanieta Veileqe": "Tokalauvere, Lanieta V.",
