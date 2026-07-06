@@ -1423,6 +1423,96 @@
       num.textContent = r.total;
       host.appendChild(num);
     });
+
+    // ============ Non-provincial/Fiji bottom bar ============
+    // Aggregates publications that ARE about Fiji broadly (title mentions Fiji /
+    // Fijian / iTaukei) but have no specific province tag — e.g. "Fiji national
+    // legislation", "Fiji mental health policy", national-scale studies.
+    //
+    // Rendering differs from the province bars in three key ways:
+    //   1. Anchored at the bottom regardless of ranking.
+    //   2. The bar is always drawn at 100% width of the longest visible province
+    //      bar (not scaled to its own raw count).
+    //   3. Segments are % share of the category's own total — unchecking a type
+    //      re-normalises the remaining segments back to 100%.
+    // No confederacy dot on the label; an "i" tooltip explains the category.
+    const nonProv = { total: 0, types: {} };
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.typeSet.has(vt)) return;
+      if (authorsMode === 'itaukei' && !isItaukei(it)) return;
+      const ps = state.provincesByItem.get(it.key);
+      if (ps && ps.size > 0) return; // has province tag — already counted above
+      // Require an explicit Fiji signal so we don't sweep in unrelated diaspora
+      // or Pacific-broad papers by iTaukei authors.
+      const hay = String(it.title || '');
+      if (!/\bfiji\b|\bfijian\b|\bitaukei\b|\bi-taukei\b/i.test(hay)) return;
+      nonProv.total += 1;
+      nonProv.types[vt] = (nonProv.types[vt] || 0) + 1;
+    });
+
+    if (nonProv.total > 0) {
+      // Column 1 — label + info icon (no confederacy dot).
+      const npLabel = document.createElement('div');
+      npLabel.className = 'db-bars__prov db-bars__prov--nonprov';
+      const tipText = 'Publications about Fiji broadly or national-level topics '
+                    + '\u2014 such as legislation, policy, or nationwide studies '
+                    + '\u2014 that are not tied to a specific province.';
+      npLabel.innerHTML = `<span>Non-provincial/Fiji</span>`
+        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-provincial/Fiji" title="${escapeAttr(tipText)}">i</span>`;
+      host.appendChild(npLabel);
+
+      // Column 2 — bar at 100% width, percentage-normalised segments.
+      const rowWrap = document.createElement('div');
+      const row = document.createElement('div');
+      row.className = 'db-bars__row db-bars__row--nonprov';
+      row.style.width = '100%';
+      row.style.background = 'transparent';
+      row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
+      row.title = `Non-provincial/Fiji \u00b7 ${nonProv.total} items`;
+      const segsPendingSizing = [];
+      TYPE_ORDER.forEach(t => {
+        const n = nonProv.types[t] || 0;
+        if (n <= 0) return;
+        const share = n / nonProv.total;      // 0..1
+        const pct = Math.round(share * 1000) / 10; // one decimal
+        const seg = document.createElement('span');
+        seg.className = 'db-bars__seg db-bars__seg--nonprov';
+        seg.style.width = `${share * 100}%`;
+        seg.style.background = TYPE_COLOR[t];
+        seg.dataset.pct = String(pct);
+        seg.dataset.count = String(n);
+        seg.title = `${TYPE_LABELS[t]}: ${n} (${pct}%)`;
+        row.appendChild(seg);
+        segsPendingSizing.push(seg);
+      });
+      rowWrap.appendChild(row);
+      host.appendChild(rowWrap);
+
+      // Column 3 — total count on the right, same style as province rows.
+      const num = document.createElement('div');
+      num.className = 'db-bars__total';
+      num.textContent = nonProv.total;
+      host.appendChild(num);
+
+      // Segment percentage labels: show inside the segment only when the
+      // rendered pixel width is greater than 40px. For narrower segments,
+      // rely on the native title tooltip (already set above).
+      // We measure after layout via requestAnimationFrame so getBoundingClientRect
+      // reflects the actual grid-resolved dimensions.
+      requestAnimationFrame(() => {
+        segsPendingSizing.forEach(seg => {
+          const w = seg.getBoundingClientRect().width;
+          if (w > 40) {
+            const pct = parseFloat(seg.dataset.pct);
+            // Show as integer if it happens to be one; otherwise round to nearest int for space.
+            seg.textContent = `${Math.round(pct)}%`;
+          } else {
+            seg.textContent = '';
+          }
+        });
+      });
+    }
   }
 
   // ============ PANEL D — confederacy small multiples ============
@@ -2290,6 +2380,44 @@
     bar.querySelector('[data-count-tovata]').textContent = String(counts.Tovata);
     bar.querySelector('[data-count-burebasaga]').textContent = String(counts.Burebasaga);
     bar.querySelector('[data-count-unclass]').textContent = String(counts.Unclassified);
+
+    // ---- Results II — sum publication types across the shown scholars ----
+    // Each scholar row already carries a `types` object built by
+    // deriveScholarRows(). We aggregate them and only show chips for
+    // publication types that have at least one entry in the current filter.
+    const barII = document.querySelector('[data-scholar-summary-ii]');
+    if (!barII) return;
+    const pub = {
+      thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0, journalArticle: 0,
+      bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0
+    };
+    let pubTotal = 0;
+    (rows || []).forEach(r => {
+      const t = r.types || {};
+      Object.keys(pub).forEach(k => {
+        const n = Number(t[k] || 0);
+        pub[k] += n;
+        pubTotal += n;
+      });
+    });
+    barII.querySelector('[data-count-pubs-total]').textContent = String(pubTotal);
+    const chipMap = {
+      thesisPhd: '[data-count-pub-phd]',
+      thesisMasters: '[data-count-pub-masters]',
+      thesisUnknown: '[data-count-pub-thesisunk]',
+      journalArticle: '[data-count-pub-journal]',
+      bookSection: '[data-count-pub-chapter]',
+      book: '[data-count-pub-book]',
+      report: '[data-count-pub-report]',
+      conferencePaper: '[data-count-pub-conf]',
+      preprint: '[data-count-pub-preprint]'
+    };
+    Object.keys(chipMap).forEach(k => {
+      const chip = barII.querySelector(`[data-pub-chip="${k}"]`);
+      const num = barII.querySelector(chipMap[k]);
+      if (num) num.textContent = String(pub[k]);
+      if (chip) chip.style.display = pub[k] > 0 ? 'inline-flex' : 'none';
+    });
   }
 
   // ============================================================
@@ -2395,6 +2523,10 @@
     ['Burebasaga', 'Kubuna', 'Tovata'].sort().forEach(c => {
       tree.set(c, (CONFEDERACY_PROVINCES[c] || []).slice().sort((a, b) => a.localeCompare(b)));
     });
+    // 'Unclassified' is anchored at the bottom — clicking it filters for
+    // iTaukei scholars whose paternal province info isn't yet known.
+    // It has no child provinces (no sub-tree).
+    tree.set('Unclassified', []);
     return tree;
   }
 
@@ -2479,7 +2611,9 @@
       const kids = (filtered && filtered.childrenByParent.get(hoveredParent))
                 || (hoveredParent ? (tree.get(hoveredParent) || []) : []);
       if (colChildHeader) {
-        colChildHeader.textContent = hoveredParent ? `${parentLabelSingular ? parentLabelSingular : 'Items'} in ${hoveredParent}` : '';
+        if (!hoveredParent) colChildHeader.textContent = '';
+        else if (!kids.length) colChildHeader.textContent = '';
+        else colChildHeader.textContent = `${parentLabelSingular ? parentLabelSingular : 'Items'} in ${hoveredParent}`;
       }
       kids.forEach(kid => {
         const el = document.createElement('div');
@@ -2578,13 +2712,17 @@
         buildLabel: () => 'All confederacies',
         isActive: () => {
           const c = state.scholarConfFilter, p = state.scholarProvFilter;
-          if (c && p) return { active: true, value: `${c} › ${p}` };
-          if (c) return { active: true, value: c };
+          // Map the internal '__untagged__' sentinel back to the friendly label.
+          const cDisplay = c === '__untagged__' ? 'Unclassified' : c;
+          if (cDisplay && p) return { active: true, value: `${cDisplay} › ${p}` };
+          if (cDisplay) return { active: true, value: cDisplay };
           if (p) return { active: true, value: p };
           return { active: false, value: '' };
         },
         onSelect: ({ parent, child }) => {
-          state.scholarConfFilter = parent || '';
+          // 'Unclassified' is the friendly label — the filter engine uses the
+          // internal '__untagged__' sentinel to mean "no paternal province".
+          state.scholarConfFilter = parent === 'Unclassified' ? '__untagged__' : (parent || '');
           state.scholarProvFilter = child || '';
           state.scholarPage = 1;
           renderLeaders();

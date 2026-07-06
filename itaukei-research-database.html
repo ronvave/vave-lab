@@ -16,7 +16,10 @@
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <style>
     /* ============ Page-specific styles ============ */
-    .db-hero { padding: var(--space-8) 0 var(--space-6); }
+    .db-hero { padding: var(--space-3) 0 var(--space-6); }
+    /* Tighten the first section's top padding — the site-wide default leaves
+       a large gap between the site banner and the intro paragraph on this page. */
+    main > .section:first-of-type { padding-block-start: var(--space-4); }
     .db-lede { max-width: 780px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.6; }
 
     /* Sync freshness badge */
@@ -581,13 +584,37 @@
     .db-bars__prov:hover { color: var(--color-primary); }
     .db-bars__prov.is-active { color: var(--color-primary); }
     .db-bars__prov-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    /* Small 'i' info icon used only on the Non-provincial/Fiji bar label */
+    .db-bars__info {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: #0e7490; color: #fff;
+      font-family: 'Georgia', serif; font-style: italic; font-weight: 700;
+      font-size: 10px; line-height: 1; cursor: help;
+      margin-left: 3px; flex-shrink: 0;
+    }
+    .db-bars__info:hover, .db-bars__info:focus-visible { background: #0891b2; outline: none; }
+    /* Non-provincial/Fiji label — same layout as province labels but no click behaviour. */
+    .db-bars__prov--nonprov { cursor: default; }
+    .db-bars__prov--nonprov:hover { color: var(--color-text); }
     .db-bars__row {
       display: flex; height: 18px; border-radius: 3px; overflow: hidden;
       background: rgba(0,0,0,0.04); cursor: pointer;
       transition: transform .1s;
     }
     .db-bars__row:hover { transform: translateX(2px); }
+    /* Non-provincial/Fiji bar behaviour — doesn't act as a filter target */
+    .db-bars__row--nonprov { cursor: default; }
+    .db-bars__row--nonprov:hover { transform: none; }
     .db-bars__seg { display: block; height: 100%; }
+    /* Percentage label rendered inside wider Non-provincial/Fiji segments */
+    .db-bars__seg--nonprov {
+      display: inline-flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 0.72rem; font-weight: 700;
+      font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
+      text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+      overflow: hidden; white-space: nowrap;
+    }
     .db-bars__total {
       font-family: var(--font-display); font-weight: 600; font-size: 1rem;
       color: var(--color-text); text-align: left; padding-left: 2px;
@@ -1932,6 +1959,27 @@
     .dsf-chip--burebasaga .dsf-chip__dot { background: #dc2626; }
     .dsf-chip--unclass    .dsf-chip__dot { background: #062f35; }
 
+    /* ---- Results II — publication-type breakdown of currently-filtered scholars ---- */
+    .dsf-summary--ii { margin-top: -6px; }
+    .dsf-chip--phd         { background: #dcf0dc; color: #14532d; }
+    .dsf-chip--phd         .dsf-chip__dot { background: #228B22; }
+    .dsf-chip--masters     { background: #eaf3ea; color: #14532d; }
+    .dsf-chip--masters     .dsf-chip__dot { background: #8FBC8F; }
+    .dsf-chip--journal     { background: #cffafe; color: #0e7490; }
+    .dsf-chip--journal     .dsf-chip__dot { background: #0e7490; }
+    .dsf-chip--chapter     { background: #fde6e6; color: #7a1419; }
+    .dsf-chip--chapter     .dsf-chip__dot { background: #7a1419; }
+    .dsf-chip--book        { background: #fce7e7; color: #7a1419; }
+    .dsf-chip--book        .dsf-chip__dot { background: #a52a2a; }
+    .dsf-chip--report      { background: #dbeafe; color: #1e3a8a; }
+    .dsf-chip--report      .dsf-chip__dot { background: #1e40af; }
+    .dsf-chip--conf        { background: #ede9fe; color: #4c1d95; }
+    .dsf-chip--conf        .dsf-chip__dot { background: #7c3aed; }
+    .dsf-chip--preprint    { background: #f1f5f9; color: #334155; }
+    .dsf-chip--preprint    .dsf-chip__dot { background: #6b7280; }
+    .dsf-chip--thesisUnk   { background: #ecfccb; color: #365314; }
+    .dsf-chip--thesisUnk   .dsf-chip__dot { background: #65a30d; }
+
     /* ==== Submit-info modal ==== */
     .db-submit-modal {
       position: fixed; inset: 0; z-index: 9999;
@@ -2268,16 +2316,6 @@
         </div>
       </section>
 
-      <!-- Impact View trigger — opens a presentation-ready overlay -->
-      <div class="db-present-cta">
-        <button type="button" class="db-present-cta__btn" data-impact-open aria-haspopup="dialog">
-          <span class="db-present-cta__icon">▶</span>
-          <span>
-            <strong>iTaukei Research Impact view</strong>
-            <em>Presentation-ready overlay for departmental meetings</em>
-          </span>
-        </button>
-      </div>
     </div>
 
     <!-- About / inclusion criteria -->
@@ -2643,6 +2681,21 @@
           <span class="dsf-chip dsf-chip--burebasaga"><span class="dsf-chip__dot"></span> Burebasaga: <span data-count-burebasaga>0</span></span>
           <span class="dsf-chip dsf-chip--unclass"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
         </div>
+
+        <!-- Results II — publication-type breakdown of the filtered scholars' works -->
+        <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
+          <strong>Results II</strong>
+          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total pubs: <span data-count-pubs-total>0</span></span>
+          <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
+          <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
+          <span class="dsf-chip dsf-chip--thesisUnk" data-pub-chip="thesisUnknown"  style="display:none;" title="Theses with type unspecified in Zotero"><span class="dsf-chip__dot"></span> Thesis (unspecified): <span data-count-pub-thesisunk>0</span></span>
+          <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
+          <span class="dsf-chip dsf-chip--chapter"  data-pub-chip="bookSection"     style="display:none;"><span class="dsf-chip__dot"></span> Book Chapter: <span data-count-pub-chapter>0</span></span>
+          <span class="dsf-chip dsf-chip--book"     data-pub-chip="book"            style="display:none;"><span class="dsf-chip__dot"></span> Book: <span data-count-pub-book>0</span></span>
+          <span class="dsf-chip dsf-chip--report"   data-pub-chip="report"          style="display:none;"><span class="dsf-chip__dot"></span> Report: <span data-count-pub-report>0</span></span>
+          <span class="dsf-chip dsf-chip--conf"     data-pub-chip="conferencePaper" style="display:none;"><span class="dsf-chip__dot"></span> Conference Paper: <span data-count-pub-conf>0</span></span>
+          <span class="dsf-chip dsf-chip--preprint" data-pub-chip="preprint"        style="display:none;"><span class="dsf-chip__dot"></span> Preprint: <span data-count-pub-preprint>0</span></span>
+        </div>
       </div>
       <p class="db-leaderboard__hint">Click a card to see that scholar’s papers below.</p>
       <div class="db-scholars-grid" data-db-leaders>Loading…</div>
@@ -2951,6 +3004,6 @@
   </div>
 </div>
 
-<script src="js/itaukei-database.js?v=20260705-16" defer></script>
+<script src="js/itaukei-database.js?v=20260705-17" defer></script>
 </body>
 </html>
