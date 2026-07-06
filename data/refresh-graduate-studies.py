@@ -119,9 +119,16 @@ def main() -> None:
     items = snap.get("items", [])
     cols = snap.get("collections", [])
 
-    root = next((c for c in cols if c["name"] == "iTaukei authors (>3 papers)"), None)
+    # Ron has renamed the root collection more than once (e.g. '(>3 papers)'
+    # → '(>2 papers)'). Match any top-level collection whose name begins with
+    # 'iTaukei authors' so we don't break every time the threshold shifts.
+    root = next(
+        (c for c in cols
+         if not c.get("parent") and c.get("name", "").lower().startswith("itaukei authors")),
+        None,
+    )
     if not root:
-        print("ERROR: root collection missing", file=sys.stderr)
+        print("ERROR: root collection missing (no top-level 'iTaukei authors ...' collection found)", file=sys.stderr)
         sys.exit(1)
 
     itaukei_subs = [c for c in cols if c.get("parent") == root["key"]]

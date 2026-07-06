@@ -82,6 +82,16 @@
   // not depend on TYPE_ORDER).
   const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','preprint'];
 
+  // Find the top-level Zotero collection that groups every iTaukei-authored
+  // sub-collection. Historically named 'iTaukei authors (>3 papers)' but Ron
+  // has renamed it (e.g. '(>2 papers)'), so we match any top-level collection
+  // whose name begins with 'iTaukei authors' — that's still the unambiguous
+  // root in this Zotero group. Returns null if no such collection exists.
+  function findItaukeiRootCollection(cols) {
+    if (!Array.isArray(cols)) return null;
+    return cols.find(c => !c.parent && /^iTaukei authors\b/i.test(String(c.name || ''))) || null;
+  }
+
   // Convert a Zotero item to its display-type key (splits `thesis` →
   // thesisPhd / thesisMasters / thesisUnknown based on `thesisLevel`).
   function visualType(item) {
@@ -322,7 +332,7 @@
       c.name === 'By or with iTaukei authors' || c.name.startsWith('iTaukei authors')
     );
     const itaukeiParentKeys = new Set(itaukeiParents.map(c => c.key));
-    const authorRoot = snap.collections.find(c => c.name === 'iTaukei authors (>3 papers)');
+    const authorRoot = findItaukeiRootCollection(snap.collections);
     if (authorRoot) {
       snap.collections.forEach(c => { if (c.parent === authorRoot.key) itaukeiParentKeys.add(c.key); });
     }
@@ -2172,7 +2182,7 @@
     if ((conf === '__untagged__' || !conf) && (prov === '__untagged__' || !prov)) {
       const enriched = state.scholarProfilesByName || new Map();
       state.snapshot.collections.forEach(c => {
-        const root = state.snapshot.collections.find(x => x.name === 'iTaukei authors (>3 papers)');
+        const root = findItaukeiRootCollection(state.snapshot.collections);
         if (!root || c.parent !== root.key) return;
         if (!enriched.has(c.name)) names.add(c.name);
       });
@@ -3024,7 +3034,7 @@
     // sits in both sub-collections is only counted once.
     const rowsByCanonical = new Map(); // canonicalName → rows entry
     const countedByCanonical = new Map(); // canonicalName → Set<itemKey>
-    const root = cols.find(c => c.name === 'iTaukei authors (>3 papers)');
+    const root = findItaukeiRootCollection(cols);
     if (root) {
       const subs = cols.filter(c => c.parent === root.key);
       subs.forEach(c => {

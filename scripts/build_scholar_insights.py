@@ -453,8 +453,13 @@ def collect_scholar_items(scholar_key: str, profile: dict, snapshot: dict) -> li
     cols = snapshot.get("collections", []) or []
     items = snapshot.get("items", []) or []
 
-    # 1) Try sub-collection.
-    root = next((c for c in cols if c.get("name") == "iTaukei authors (>3 papers)"), None)
+    # 1) Try sub-collection. Match any top-level 'iTaukei authors ...' root so
+    # renames like '(>3 papers)' → '(>2 papers)' don't break this lookup.
+    root = next(
+        (c for c in cols
+         if not c.get("parent") and (c.get("name") or "").lower().startswith("itaukei authors")),
+        None,
+    )
     if root:
         subs = [c for c in cols if c.get("parent") == root.get("key")]
         # Match by canonical name OR by stripped variant.
@@ -515,9 +520,14 @@ def main() -> int:
     seen_keys: set[str] = set()
     scholars: list[tuple[str, dict]] = []
 
-    # Source A: sub-collections
+    # Source A: sub-collections. Match any top-level 'iTaukei authors ...' root
+    # so this survives future renames of the '(>N papers)' threshold.
     cols = snapshot.get("collections", []) or []
-    root = next((c for c in cols if c.get("name") == "iTaukei authors (>3 papers)"), None)
+    root = next(
+        (c for c in cols
+         if not c.get("parent") and (c.get("name") or "").lower().startswith("itaukei authors")),
+        None,
+    )
     if root:
         for c in cols:
             if c.get("parent") != root.get("key"):
