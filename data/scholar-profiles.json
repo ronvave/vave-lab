@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T08:46:00.029Z",
+  "generatedAt": "2026-07-06T08:46:04.957Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -203,6 +203,19 @@
       "types": {
         "journalArticle": 8
       }
+    },
+    {
+      "name": "Cawanibuka, Lasarusa Turaga",
+      "slug": "lasarusa-turaga-cawanibuka",
+      "last": "Cawanibuka",
+      "first": "Lasarusa Turaga",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "ana-ciriyawa",
