@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:24:24.921Z",
+  "generatedAt": "2026-07-07T18:24:37.753Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2568,6 +2568,19 @@
       },
       "sector": "Academia",
       "institutionCountry": "Australia"
+    },
+    {
+      "name": "Vaka, Sione",
+      "slug": "sione-vaka",
+      "last": "Vaka",
+      "first": "Sione",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Vakaloloma, Unise",
