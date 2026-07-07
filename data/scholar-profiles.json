@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:53:02.012Z",
+  "generatedAt": "2026-07-07T18:53:07.448Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2851,6 +2851,19 @@
       },
       "sector": "Academia",
       "institutionCountry": "Guam (USA territory)"
+    },
+    {
+      "name": "Vuki, Veikila C.",
+      "slug": "veikila-c-vuki",
+      "last": "Vuki",
+      "first": "Veikila C.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "slug": "suliasi-vunibola",
