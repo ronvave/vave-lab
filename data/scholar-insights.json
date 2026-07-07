@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T19:06:59+00:00",
+  "generatedAt": "2026-07-07T23:31:17.000Z",
   "insights": {
     "Naqasima-Sobey, Milika": {
       "keywords": [
@@ -735,12 +735,38 @@
       ]
     },
     "Tamata, Apolonia": {
-      "keywords": [],
-      "summary": "A plain-English summary of Apolonia Tamata’s research is not yet available. See the keyword themes and publication mix below for a first look at the 3 indexed items.",
-      "summaryFormat": "plaintext",
+      "keywords": [
+        "Fijian Language Documentation",
+        "Fijian Oral Storytelling",
+        "Indigenous Colour Concepts",
+        "Fijian Playwriting and Revitalization",
+        "Chiefly Language and Heritage",
+        "Indigenous Knowledge of Water Hazards",
+        "Cultural Heritage Fieldwork"
+      ],
+      "summary": "Tamata is a linguist and playwright who has spent her career documenting how the Fijian language itself encodes culture, hierarchy, and meaning — work she now applies creatively as well as academically. Her early research traced <a href=\"https://www.academia.edu/70777323/The_Story_of_the_Fijian_Story_teller\" target=\"_blank\" rel=\"noopener\">the fading art of Fijian oral storytelling</a> and phonological change in casual spoken Fijian, while more recent work as a Fulbright Scholar at the University of Hawai'i examined <a href=\"https://www.hawaii.edu/calendar/manoa/2023/03/09/41054.html?et_id=53750\" target=\"_blank\" rel=\"noopener\">how the Fijian colour term 'damu' is tied to chiefly identity and social hierarchy</a>. She writes and produces plays in the Fijian language as a tool for language revitalization, and now serves as Senior Culture and Heritage Specialist at the iTaukei Trust Fund Board, where she funds and guides Fijian language and heritage research. She has also recently turned to <a href=\"https://www.climateactionartistresidencies.org/residencies/apolonia-tamata\" target=\"_blank\" rel=\"noopener\">exploring the relationship between Indigenous knowledge and water-related climate hazards</a> through an artist-researcher residency.",
+      "summaryFormat": "html",
       "publicationCount": 3,
-      "signature": "sha1:26890ed08762a594",
-      "regeneratedAt": "2026-07-05T09:47:59+00:00"
+      "sources": [
+        {
+          "title": "The Story of the Fijian Story-teller - Academia.edu",
+          "url": "https://www.academia.edu/70777323/The_Story_of_the_Fijian_Story_teller"
+        },
+        {
+          "title": "Brown Bag Biography with Apolonia Tamata: Damu, color concepts, and chief in Fijian - University of Hawaiʻi at Mānoa",
+          "url": "https://www.hawaii.edu/calendar/manoa/2023/03/09/41054.html?et_id=53750"
+        },
+        {
+          "title": "Apolonia Tamata, Ph.D. - Climate Action Artist Residencies",
+          "url": "https://www.climateactionartistresidencies.org/residencies/apolonia-tamata"
+        },
+        {
+          "title": "Dr. Apolonia Tamata (Fijian Studies Coordinator) - USP Discipline of Linguistics and Languages",
+          "url": "https://www.usp.ac.fj/linguistics-languages/linguistics-staff-profiles/dr-apolonia-tamata/"
+        }
+      ],
+      "signature": "sha1:f9436929813f0e27",
+      "regeneratedAt": "2026-07-07T23:31:17+00:00"
     },
     "Ravuvu, Asesela": {
       "keywords": [
