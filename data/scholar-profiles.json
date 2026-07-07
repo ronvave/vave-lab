@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:58:16.840Z",
+  "generatedAt": "2026-07-07T23:30:18.952Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2151,23 +2151,38 @@
       "slug": "apolonia-tamata",
       "last": "Tamata",
       "first": "Apolonia",
-      "salutation": "",
+      "salutation": "Dr.",
       "village": "",
-      "paternalProvince": "",
-      "institution": "",
+      "paternalProvince": "Bua",
+      "institution": "University of the South Pacific",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": "",
+      "photo": "img/scholars/apolonia-tamata.jpg",
       "name": "Tamata, Apolonia",
       "confederacy": "",
-      "title": "",
+      "title": "Senior Lecturer",
       "orcidUrl": "",
-      "lastUpdate": "",
+      "lastUpdate": "2026-07-07T23:30:18.949Z",
       "types.journalArticle": "1",
       "types.thesis": "2",
       "types.bookSection": "0",
       "types.book": "0",
-      "types.report": "0"
+      "types.report": "0",
+      "maternalProvince": "",
+      "nonItaukeiDad": false,
+      "sector": "Academia",
+      "institutionCountry": "Fiji",
+      "department": "School of Pacific Arts, Communication & Education",
+      "departmentUrl": "https://www.usp.ac.fj/usp-space/",
+      "profileUrl": "https://www.usp.ac.fj/linguistics-languages/linguistics-staff-profiles/dr-apolonia-tamata/",
+      "masters": null,
+      "phd": null,
+      "total": 3,
+      "firstAuthored": 3,
+      "types": {
+        "thesis": 2,
+        "journalArticle": 1
+      }
     },
     {
       "name": "Tamata, Laitia",
