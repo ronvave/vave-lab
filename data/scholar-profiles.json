@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:57:12.596Z",
+  "generatedAt": "2026-07-07T18:57:33.443Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -47,6 +47,19 @@
       "slug": "tupeni-baba",
       "last": "Baba",
       "first": "Tupeni",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Baba, Unaisi Nabobo",
+      "slug": "unaisi-nabobo-baba",
+      "last": "Baba",
+      "first": "Unaisi Nabobo",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
