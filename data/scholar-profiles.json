@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:57:33.443Z",
+  "generatedAt": "2026-07-07T18:58:16.840Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -507,6 +507,19 @@
       "slug": "josivini-kaloumaira",
       "last": "Kaloumaira",
       "first": "Josivini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Kama, Ateca",
+      "slug": "ateca-kama",
+      "last": "Kama",
+      "first": "Ateca",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
