@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:53:07.448Z",
+  "generatedAt": "2026-07-07T18:53:39.671Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -3163,6 +3163,19 @@
       "types.report": "0",
       "sector": "Academia",
       "institutionCountry": "Fiji"
+    },
+    {
+      "name": "Young, Luisa",
+      "slug": "luisa-young",
+      "last": "Young",
+      "first": "Luisa",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     }
   ],
   "hiddenScholars": [],
