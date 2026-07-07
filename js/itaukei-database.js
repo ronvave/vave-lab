@@ -1204,14 +1204,19 @@
   function refreshFilteredBadges() {
     const c = state.worldSelectedCountry;
     const u = state.worldSelectedUniversity;
-    const active = !!(c || u);
+    const worldActive = !!(c || u);
+    // Scholar-panel filter (name, keyword, sector, discipline, confederacy,
+    // province, country/uni of study or work) also narrows Panel G below.
+    let scholarActive = false;
+    try { scholarActive = anyScholarFilterActive && anyScholarFilterActive(); } catch (e) {}
+    const active = worldActive || !!scholarActive;
     document.querySelectorAll('[data-filtered-indicator]').forEach(el => {
       el.style.display = active ? '' : 'none';
     });
     const chip = document.querySelector('[data-world-selection-chip]');
     const chipLabel = document.querySelector('[data-world-selection-chip-label]');
     if (chip && chipLabel) {
-      if (active) {
+      if (worldActive) {
         chipLabel.textContent = u ? `${u} · ${c}` : c;
         chip.style.display = '';
       } else {
@@ -1229,8 +1234,10 @@
     // existing plumbing narrows the scholar cards to those who studied here.
     state.scholarStudyCountry = state.worldSelectedCountry || '';
     state.scholarStudyUni = state.worldSelectedUniversity || '';
+    // renderLeaders() now feeds Panel G itself (see the scholarFilterNames
+    // block at the end of that function), so we don't need a separate
+    // renderItems() call here — that would double-render.
     try { renderLeaders && renderLeaders(); } catch (e) {}
-    try { renderItems && renderItems(); } catch (e) {}
   }
 
   // -------- Scholar-name renderer with alternating blue / near-black --------
@@ -1475,8 +1482,15 @@
     // world map, which re-renders both filtered panels back to the full set.
     document.querySelectorAll('[data-filtered-clear]').forEach(btn => {
       btn.addEventListener('click', () => {
+        // Priority: clear the most-specific active filter first.
         if (state.worldSelectedUniversity) clearWorldUniversity();
         else if (state.worldSelectedCountry) clearWorldCountry();
+        else {
+          // Fall back to clearing every Panel F scholar filter — which
+          // then unblocks Panel G via renderLeaders().
+          const clearAll = document.querySelector('[data-scholar-clear-all]');
+          if (clearAll) clearAll.click();
+        }
       });
     });
   }
@@ -2957,6 +2971,24 @@
     // the CURRENTLY-visible scholar set. Called after filtering so counts
     // always reflect what the user is actually looking at.
     renderScholarSummary(rows, unfilteredTotal);
+
+    // ------- Feed Panel G (All items) with the filtered scholar set -------
+    // Any active Panel F filter (name search, keyword search, sector,
+    // discipline, confederacy, province, country/uni of study or work)
+    // narrows Panel G to publications authored by the currently-visible
+    // scholars — so "funeral" in the keyword box also shrinks the item
+    // list below to work on funerals. Panel G's own filters (title
+    // search, item-type, discipline, decade) still layer on top.
+    if (anyScholarFilterActive()) {
+      const namesSet = new Set();
+      rows.forEach(r => namesSet.add(r.name));
+      state.scholarFilterNames = namesSet;
+    } else {
+      state.scholarFilterNames = null;
+    }
+    // Panel G "Filtered" chip visibility is driven by refreshFilteredBadges().
+    try { refreshFilteredBadges(); } catch (e) {}
+    try { renderItems && renderItems(); } catch (e) {}
 
     // Pagination state (10 per page)
     const totalPages = Math.max(1, Math.ceil(rows.length / SCHOLAR_PAGE_SIZE));
