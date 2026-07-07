@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:53:59.038Z",
+  "generatedAt": "2026-07-07T18:56:47.998Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2407,6 +2407,19 @@
       "slug": "lanieta-tuimabu",
       "last": "Tuimabu",
       "first": "Lanieta",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuimavana, Ruveni",
+      "slug": "ruveni-tuimavana",
+      "last": "Tuimavana",
+      "first": "Ruveni",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
