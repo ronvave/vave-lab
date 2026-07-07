@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T23:30:18.952Z",
+  "generatedAt": "2026-07-07T23:32:33.228Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2155,14 +2155,14 @@
       "village": "",
       "paternalProvince": "Bua",
       "institution": "University of the South Pacific",
-      "institutionUrl": "",
+      "institutionUrl": "https://www.usp.ac.fj/",
       "googleScholarUrl": "",
       "photo": "img/scholars/apolonia-tamata.jpg",
       "name": "Tamata, Apolonia",
       "confederacy": "",
       "title": "Senior Lecturer",
       "orcidUrl": "",
-      "lastUpdate": "2026-07-07T23:30:18.949Z",
+      "lastUpdate": "2026-07-07T23:32:33.221Z",
       "types.journalArticle": "1",
       "types.thesis": "2",
       "types.bookSection": "0",
