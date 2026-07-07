@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:52:25.495Z",
+  "generatedAt": "2026-07-07T18:53:02.012Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2541,6 +2541,19 @@
       "slug": "mariana-turagakacivi",
       "last": "Turagakacivi",
       "first": "Mariana",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tuvuki, Timaima",
+      "slug": "timaima-tuvuki",
+      "last": "Tuvuki",
+      "first": "Timaima",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
