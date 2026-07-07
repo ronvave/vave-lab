@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:27:59.381Z",
+  "generatedAt": "2026-07-07T18:52:25.495Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2458,6 +2458,19 @@
       "slug": "senilolia-h-tuiwawa",
       "last": "Tuiwawa",
       "first": "Senilolia H.",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tukana, Isimeli",
+      "slug": "isimeli-tukana",
+      "last": "Tukana",
+      "first": "Isimeli",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
