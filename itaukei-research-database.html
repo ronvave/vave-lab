@@ -1710,13 +1710,38 @@
     }
     .db-world-country-row:last-child, .db-world-uni-row:last-child { border-bottom: none; }
     /* Highlight a country/university row when it matches the active filter
-       so the user can see at a glance which entry is driving downstream panels. */
+       so the user can see at a glance which entry is driving downstream panels.
+       Uses the same orange as the 'Filtered' indicator on Panels F and G. */
     .db-world-country-row.is-filter-active .db-world-country-row__name,
     .db-world-uni-row.is-filter-active .db-world-uni-row__name {
-      color: #062f35;
-      background: rgba(14,116,144,0.10);
+      color: #7c2d0a;
+      background: rgba(234,88,12,0.14);
       border-radius: 4px;
       padding: 2px 6px;
+      font-weight: 700;
+    }
+    /* Small pulsing orange dot on the row itself. Signals selection status
+       even for scrolled users who can't see the map highlight. */
+    .db-world-country-row.is-filter-active .db-world-country-row__name::before,
+    .db-world-uni-row.is-filter-active .db-world-uni-row__name::before {
+      content: '';
+      display: inline-block;
+      width: 8px; height: 8px;
+      margin-right: 6px;
+      border-radius: 50%;
+      background: #ea580c;
+      vertical-align: middle;
+      box-shadow: 0 0 0 0 rgba(234,88,12,0.6);
+      animation: db-filter-dot-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes db-filter-dot-pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(234,88,12,0.6); }
+      70%  { box-shadow: 0 0 0 6px rgba(234,88,12,0); }
+      100% { box-shadow: 0 0 0 0 rgba(234,88,12,0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .db-world-country-row.is-filter-active .db-world-country-row__name::before,
+      .db-world-uni-row.is-filter-active .db-world-uni-row__name::before { animation: none; }
     }
 
     /* Search box above the country list — same input styling as the
@@ -1784,6 +1809,33 @@
       font-family: inherit;
     }
     .db-filtered-indicator__clear:hover {
+      background: #ea580c; color: #fff;
+    }
+
+    /* Inline selection chip in the B2 title bar. Shows the current country
+       (and university, if narrowed) so the user always knows what selection
+       is driving Panels F + G. Includes an inline × to clear the selection. */
+    .db-world-selection-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-left: 12px;
+      vertical-align: middle;
+      background: rgba(234,88,12,0.14);
+      border: 1px solid rgba(234,88,12,0.55);
+      color: #7c2d0a;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-weight: 700; font-size: 0.85rem;
+      letter-spacing: 0.02em; text-transform: none;
+      padding: 3px 6px 3px 10px;
+      border-radius: 999px;
+    }
+    .db-world-selection-chip__label { line-height: 1.1; }
+    .db-world-selection-chip__clear {
+      background: transparent; border: none; cursor: pointer;
+      color: #7c2d0a; font-family: inherit;
+      font-size: 1rem; font-weight: 700; line-height: 1;
+      padding: 2px 6px; border-radius: 999px;
+    }
+    .db-world-selection-chip__clear:hover {
       background: #ea580c; color: #fff;
     }
 
@@ -2707,7 +2759,7 @@
       <!-- Panel A2 — Whole-world map of iTaukei graduate studies (wide layout) -->
       <div class="db-panel reveal db-panel--wide" data-panel="B2">
         <span class="db-panel__label">B2</span>
-        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE</h2>
+        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
         <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
         <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
           <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>

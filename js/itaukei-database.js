@@ -1199,11 +1199,25 @@
 
   // Show/hide the per-panel 'Filtered' + 'Clear filter' indicator on Panels F
   // and G, the only panels that actually respond to the world-map filter.
+  // Also updates the selection chip in the B2 title bar so users always see
+  // which country/university is driving the downstream filter.
   function refreshFilteredBadges() {
-    const active = !!(state.worldSelectedCountry || state.worldSelectedUniversity);
+    const c = state.worldSelectedCountry;
+    const u = state.worldSelectedUniversity;
+    const active = !!(c || u);
     document.querySelectorAll('[data-filtered-indicator]').forEach(el => {
       el.style.display = active ? '' : 'none';
     });
+    const chip = document.querySelector('[data-world-selection-chip]');
+    const chipLabel = document.querySelector('[data-world-selection-chip-label]');
+    if (chip && chipLabel) {
+      if (active) {
+        chipLabel.textContent = u ? `${u} · ${c}` : c;
+        chip.style.display = '';
+      } else {
+        chip.style.display = 'none';
+      }
+    }
   }
 
   // Re-render only the two panels affected by the world filter: the scholar
@@ -1333,8 +1347,18 @@
     state.worldSelectedCountry = null;
     state.worldSelectedUniversity = null;
     renderWorldPanel();
-    // Reset the world map to the default whole-world framing.
-    if (state.worldMap) state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+    // Reset the world map to the marker-bounds framing (auto-fit to all dots).
+    if (state.worldMap) {
+      const pts = ((state.graduateStudies && state.graduateStudies.worldPoints) || []);
+      const latlngs = pts.map(p => [p.lat, p.lng]);
+      if (latlngs.length > 1) {
+        state.worldMap.fitBounds(L.latLngBounds(latlngs), { padding: [40, 60], maxZoom: 3, animate: true });
+      } else if (latlngs.length === 1) {
+        state.worldMap.setView(latlngs[0], 3, { animate: true });
+      } else {
+        state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+      }
+    }
     rerenderAfterWorldFilterChange();
   }
   function selectWorldUniversity(uniName) {
@@ -1418,13 +1442,17 @@
     if (!el || typeof L === 'undefined') return;
     const wmap = L.map(el, {
       zoomSnap: 0.25,
-      worldCopyJump: true,
+      worldCopyJump: false,
       minZoom: 1,
-      maxZoom: 10
+      maxZoom: 10,
+      maxBounds: [[-85, -180], [85, 180]],
+      maxBoundsViscosity: 1.0
     });
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
-      maxZoom: 18
+      maxZoom: 18,
+      noWrap: true,
+      bounds: [[-85, -180], [85, 180]]
     }).addTo(wmap);
     wmap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
     state.worldMap = wmap;
@@ -1450,12 +1478,11 @@
     }
 
     // Where iTaukei graduates study.
-    // Equator-centred whole-world framing. Because Fiji sits right on the
-    // antimeridian (+178°), we plot Fiji/NZ/Australia markers on BOTH sides
-    // of the wrap by rendering a shadow copy at (lng - 360) whenever the
-    // point's longitude is > 0. That way the map can be dragged either
-    // east or west and Fiji stays visible.
+    // Single-copy world (no tile wrap). Markers are plotted once at their
+    // real coordinates; the map is auto-framed below to the marker bounds
+    // so every dot is visible with breathing room on all sides.
     const markers = [];
+    const latlngs = [];
     points.forEach(p => {
       const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
       const radius = Math.min(28, 6 + total * 3);
@@ -1476,27 +1503,23 @@
         wirePopupScholarHovers(el, p);
       });
       markers.push(m);
-
-      if (p.lng > 0) {
-        const shadow = L.circleMarker([p.lat, p.lng - 360], {
-          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
-        });
-        shadow.bindPopup(popupHtml, popupOpts);
-        shadow.on('mouseover', () => shadow.openPopup());
-        shadow.on('popupopen', (evt) => {
-          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
-          wirePopupScholarHovers(el, p);
-        });
-        markers.push(shadow);
-      }
+      latlngs.push([p.lat, p.lng]);
     });
 
     state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
 
-    // Reset to default framing whenever we (re)draw the base world markers,
-    // but only when there's no active drill-down.
+    // Auto-frame to marker bounds (with side buffer) whenever we (re)draw
+    // the base world markers, but only when there's no active drill-down.
     if (!state.worldSelectedCountry) {
-      state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+      if (latlngs.length > 1) {
+        const b = L.latLngBounds(latlngs);
+        // Generous padding so all dots have breathing room from the edges.
+        state.worldMap.fitBounds(b, { padding: [40, 60], maxZoom: 3, animate: false });
+      } else if (latlngs.length === 1) {
+        state.worldMap.setView(latlngs[0], 3, { animate: false });
+      } else {
+        state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+      }
     }
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
   }
