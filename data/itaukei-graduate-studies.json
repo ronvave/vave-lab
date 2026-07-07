@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-06T19:53:33.729028+00:00",
-  "sourceSnapshot": "2026-07-06T19:53:33.613476+00:00",
+  "generatedAt": "2026-07-07T02:51:12.788708+00:00",
+  "sourceSnapshot": "2026-07-07T02:51:12.675128+00:00",
   "scholars": {
     "Tawake, Lavenia": {
       "masters": {
@@ -29,60 +29,6 @@
         }
       ]
     },
-    "Cammock, Radilaite": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Otago",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -45.865,
-        "lng": 170.514,
-        "year": 2016,
-        "title": "Knowledge, attitudes and practice of family planning among iTaukei women in Fiji and New Zealand"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Otago",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -45.865,
-          "lng": 170.514,
-          "year": 2016,
-          "title": "Knowledge, attitudes and practice of family planning among iTaukei women in Fiji and New Zealand"
-        }
-      ]
-    },
-    "Maiono, Jekope Ramala": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Otago",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -45.865,
-        "lng": 170.514,
-        "year": 2023,
-        "title": "Fifty years of independence: Indigenous perception on sustainable land development in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Otago",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -45.865,
-          "lng": 170.514,
-          "year": 2023,
-          "title": "Fifty years of independence: Indigenous perception on sustainable land development in Fiji"
-        }
-      ]
-    },
     "Tawake, Alifereti": {
       "masters": {
         "level": "masters",
@@ -107,156 +53,6 @@
           "lng": 178.446,
           "year": 2004,
           "title": "Human impacts on coastal fisheries in rural communities and their conservation approach : case study on kaikoso (Anadara spp.) fishery in Verata District, Fiji"
-        }
-      ]
-    },
-    "Vunidilo, Tarisi": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "MA in Anthropology",
-        "university": "University of Waikato",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -37.788,
-        "lng": 175.32,
-        "year": 2010,
-        "title": "The Indigeneity of archaeological research in Fiji: Issues and Opportunities"
-      },
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Dissertation",
-        "university": "University of Auckland",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -36.852,
-        "lng": 174.769,
-        "year": 2015,
-        "title": "I Yau vakaviti: Fijian treasures in international museums - A study of repatriation, ownerships and cultural rights"
-      },
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "MA in Anthropology",
-          "university": "University of Waikato",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -37.788,
-          "lng": 175.32,
-          "year": 2010,
-          "title": "The Indigeneity of archaeological research in Fiji: Issues and Opportunities"
-        },
-        {
-          "level": "phd",
-          "thesisType": "PhD Dissertation",
-          "university": "University of Auckland",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -36.852,
-          "lng": 174.769,
-          "year": 2015,
-          "title": "I Yau vakaviti: Fijian treasures in international museums - A study of repatriation, ownerships and cultural rights"
-        }
-      ]
-    },
-    "Korovulavula, Isoa": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Queensland",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -27.497,
-        "lng": 153.014,
-        "year": 2013,
-        "title": "Significance of community based values in Integrated Water Resource Management (IWRM) in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Queensland",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -27.497,
-          "lng": 153.014,
-          "year": 2013,
-          "title": "Significance of community based values in Integrated Water Resource Management (IWRM) in Fiji"
-        }
-      ]
-    },
-    "Veitayaki, Joeli": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "Australian National University",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -35.278,
-        "lng": 149.119,
-        "year": 2000,
-        "title": "Realities in Rural Development: fisheries development in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "Australian National University",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -35.278,
-          "lng": 149.119,
-          "year": 2000,
-          "title": "Realities in Rural Development: fisheries development in Fiji"
-        }
-      ]
-    },
-    "Rokolekutu, Ponipate": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "MA Thesis",
-        "university": "University of Hawaiʻi at Mānoa",
-        "iso": "US",
-        "country": "USA",
-        "lat": 21.297,
-        "lng": -157.816,
-        "year": 2007,
-        "title": "The politicization of land and the paradox of indigenous ownership: the case of Fiji"
-      },
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Dissertation",
-        "university": "University of Hawaiʻi at Mānoa",
-        "iso": "US",
-        "country": "USA",
-        "lat": 21.297,
-        "lng": -157.816,
-        "year": 2017,
-        "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the Itaukei Land Trust Board (TLTB): Understanding the Economic Marginalization of Itaukei"
-      },
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "MA Thesis",
-          "university": "University of Hawaiʻi at Mānoa",
-          "iso": "US",
-          "country": "USA",
-          "lat": 21.297,
-          "lng": -157.816,
-          "year": 2007,
-          "title": "The politicization of land and the paradox of indigenous ownership: the case of Fiji"
-        },
-        {
-          "level": "phd",
-          "thesisType": "PhD Dissertation",
-          "university": "University of Hawaiʻi at Mānoa",
-          "iso": "US",
-          "country": "USA",
-          "lat": 21.297,
-          "lng": -157.816,
-          "year": 2017,
-          "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the Itaukei Land Trust Board (TLTB): Understanding the Economic Marginalization of Itaukei"
         }
       ]
     },
@@ -437,60 +233,6 @@
         }
       ]
     },
-    "Fong-Lomavatu, Mereia": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Sunshine Coast",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -26.719,
-        "lng": 153.058,
-        "year": 2018,
-        "title": "Postharvest diseases of mango in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Sunshine Coast",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -26.719,
-          "lng": 153.058,
-          "year": 2018,
-          "title": "Postharvest diseases of mango in Fiji"
-        }
-      ]
-    },
-    "Vunibola, Suliasi": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD in Development Studies",
-        "university": "Massey University",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -40.383,
-        "lng": 175.612,
-        "year": 2020,
-        "title": "‘E da dravudravua e na dela ni noda vutuni-i-yau’ Customary land and economic development: case studies from Fiji."
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD in Development Studies",
-          "university": "Massey University",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -40.383,
-          "lng": 175.612,
-          "year": 2020,
-          "title": "‘E da dravudravua e na dela ni noda vutuni-i-yau’ Customary land and economic development: case studies from Fiji."
-        }
-      ]
-    },
     "Vada, Sera": {
       "masters": {
         "level": "masters",
@@ -515,6 +257,264 @@
           "lng": 178.446,
           "year": 2015,
           "title": "Diversification of Fiji's tourist market: A study of Chinese tourists to Fiji"
+        }
+      ]
+    },
+    "Thomas, Nunia": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Msc in Biology",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2007,
+        "title": "Distribution and abundance of the Fijian ground frog (Platymantis vitianus) and the cne toad (Chaunus [Bufo] marinus) on Viwa Island, Tailevu, Fiji"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Msc in Biology",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2007,
+          "title": "Distribution and abundance of the Fijian ground frog (Platymantis vitianus) and the cne toad (Chaunus [Bufo] marinus) on Viwa Island, Tailevu, Fiji"
+        }
+      ]
+    },
+    "Matatolu, Ilisapeci": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Masters Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2020,
+        "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Masters Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2020,
+          "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+        }
+      ]
+    },
+    "Sakai, Sevanaia": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "MA in Geography",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2010,
+        "title": "The socio-economic, cultural and environmental sustainability of tourism in Yasawa and Indigenous tourism initiatives in Essipit, Canada"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD in Development Studies",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2024,
+        "title": "iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "MA in Geography",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2010,
+          "title": "The socio-economic, cultural and environmental sustainability of tourism in Yasawa and Indigenous tourism initiatives in Essipit, Canada"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD in Development Studies",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2024,
+          "title": "iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji"
+        }
+      ]
+    },
+    "Ginigini, Joape": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "MSc in Biology",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 2012,
+        "title": "Analysis of the antibiotic activities of salinispora strains from marine sediment as a guide to new phylogenetic and chemical diversity"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "MSc in Biology",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 2012,
+          "title": "Analysis of the antibiotic activities of salinispora strains from marine sediment as a guide to new phylogenetic and chemical diversity"
+        }
+      ]
+    },
+    "Ratuva, Steven": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Masters Thesis",
+        "university": "University of the South Pacific",
+        "iso": "FJ",
+        "country": "Fiji",
+        "lat": -18.148,
+        "lng": 178.446,
+        "year": 1995,
+        "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Sussex",
+        "iso": "GB",
+        "country": "UK",
+        "lat": 50.866,
+        "lng": -0.087,
+        "year": 2000,
+        "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Masters Thesis",
+          "university": "University of the South Pacific",
+          "iso": "FJ",
+          "country": "Fiji",
+          "lat": -18.148,
+          "lng": 178.446,
+          "year": 1995,
+          "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Sussex",
+          "iso": "GB",
+          "country": "UK",
+          "lat": 50.866,
+          "lng": -0.087,
+          "year": 2000,
+          "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
+        }
+      ]
+    },
+    "Korovulavula, Isoa": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Queensland",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -27.497,
+        "lng": 153.014,
+        "year": 2013,
+        "title": "Significance of community based values in Integrated Water Resource Management (IWRM) in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Queensland",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -27.497,
+          "lng": 153.014,
+          "year": 2013,
+          "title": "Significance of community based values in Integrated Water Resource Management (IWRM) in Fiji"
+        }
+      ]
+    },
+    "Veitayaki, Joeli": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "Australian National University",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -35.278,
+        "lng": 149.119,
+        "year": 2000,
+        "title": "Realities in Rural Development: fisheries development in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "Australian National University",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -35.278,
+          "lng": 149.119,
+          "year": 2000,
+          "title": "Realities in Rural Development: fisheries development in Fiji"
+        }
+      ]
+    },
+    "Fong-Lomavatu, Mereia": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Sunshine Coast",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -26.719,
+        "lng": 153.058,
+        "year": 2018,
+        "title": "Postharvest diseases of mango in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Sunshine Coast",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -26.719,
+          "lng": 153.058,
+          "year": 2018,
+          "title": "Postharvest diseases of mango in Fiji"
         }
       ]
     },
@@ -545,30 +545,261 @@
         }
       ]
     },
-    "Matatolu, Ilisapeci": {
+    "Ravuvu, Amerita": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of New South Wales",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -33.917,
+        "lng": 151.231,
+        "year": 2018,
+        "title": "Governing rural development: Discourses and practices of State and Donor sponsored programs for rural development in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of New South Wales",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -33.917,
+          "lng": 151.231,
+          "year": 2018,
+          "title": "Governing rural development: Discourses and practices of State and Donor sponsored programs for rural development in Fiji"
+        }
+      ]
+    },
+    "Lako, Jimaima": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "Monash University",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -37.914,
+        "lng": 145.135,
+        "year": 2021,
+        "title": "Phytochemicals in Pacific foods and related health status"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "Monash University",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -37.914,
+          "lng": 145.135,
+          "year": 2021,
+          "title": "Phytochemicals in Pacific foods and related health status"
+        }
+      ]
+    },
+    "Vosikata, Sunia": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of New South Wales",
+        "iso": "AU",
+        "country": "Australia",
+        "lat": -33.917,
+        "lng": 151.231,
+        "year": 2015,
+        "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of New South Wales",
+          "iso": "AU",
+          "country": "Australia",
+          "lat": -33.917,
+          "lng": 151.231,
+          "year": 2015,
+          "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
+        }
+      ]
+    },
+    "Cammock, Radilaite": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Otago",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -45.865,
+        "lng": 170.514,
+        "year": 2016,
+        "title": "Knowledge, attitudes and practice of family planning among iTaukei women in Fiji and New Zealand"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Otago",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -45.865,
+          "lng": 170.514,
+          "year": 2016,
+          "title": "Knowledge, attitudes and practice of family planning among iTaukei women in Fiji and New Zealand"
+        }
+      ]
+    },
+    "Maiono, Jekope Ramala": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Otago",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -45.865,
+        "lng": 170.514,
+        "year": 2023,
+        "title": "Fifty years of independence: Indigenous perception on sustainable land development in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Otago",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -45.865,
+          "lng": 170.514,
+          "year": 2023,
+          "title": "Fifty years of independence: Indigenous perception on sustainable land development in Fiji"
+        }
+      ]
+    },
+    "Vunidilo, Tarisi": {
       "masters": {
         "level": "masters",
-        "thesisType": "Masters Thesis",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 2020,
-        "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+        "thesisType": "MA in Anthropology",
+        "university": "University of Waikato",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -37.788,
+        "lng": 175.32,
+        "year": 2010,
+        "title": "The Indigeneity of archaeological research in Fiji: Issues and Opportunities"
       },
-      "phd": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Dissertation",
+        "university": "University of Auckland",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -36.852,
+        "lng": 174.769,
+        "year": 2015,
+        "title": "I Yau vakaviti: Fijian treasures in international museums - A study of repatriation, ownerships and cultural rights"
+      },
       "all": [
         {
           "level": "masters",
-          "thesisType": "Masters Thesis",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
+          "thesisType": "MA in Anthropology",
+          "university": "University of Waikato",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -37.788,
+          "lng": 175.32,
+          "year": 2010,
+          "title": "The Indigeneity of archaeological research in Fiji: Issues and Opportunities"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Dissertation",
+          "university": "University of Auckland",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -36.852,
+          "lng": 174.769,
+          "year": 2015,
+          "title": "I Yau vakaviti: Fijian treasures in international museums - A study of repatriation, ownerships and cultural rights"
+        }
+      ]
+    },
+    "Rokolekutu, Ponipate": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "MA Thesis",
+        "university": "University of Hawaiʻi at Mānoa",
+        "iso": "US",
+        "country": "USA",
+        "lat": 21.297,
+        "lng": -157.816,
+        "year": 2007,
+        "title": "The politicization of land and the paradox of indigenous ownership: the case of Fiji"
+      },
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Dissertation",
+        "university": "University of Hawaiʻi at Mānoa",
+        "iso": "US",
+        "country": "USA",
+        "lat": 21.297,
+        "lng": -157.816,
+        "year": 2017,
+        "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the Itaukei Land Trust Board (TLTB): Understanding the Economic Marginalization of Itaukei"
+      },
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "MA Thesis",
+          "university": "University of Hawaiʻi at Mānoa",
+          "iso": "US",
+          "country": "USA",
+          "lat": 21.297,
+          "lng": -157.816,
+          "year": 2007,
+          "title": "The politicization of land and the paradox of indigenous ownership: the case of Fiji"
+        },
+        {
+          "level": "phd",
+          "thesisType": "PhD Dissertation",
+          "university": "University of Hawaiʻi at Mānoa",
+          "iso": "US",
+          "country": "USA",
+          "lat": 21.297,
+          "lng": -157.816,
+          "year": 2017,
+          "title": "Interrogating the Vanua and the Institutional Trusteeship Role of the Itaukei Land Trust Board (TLTB): Understanding the Economic Marginalization of Itaukei"
+        }
+      ]
+    },
+    "Vunibola, Suliasi": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD in Development Studies",
+        "university": "Massey University",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -40.383,
+        "lng": 175.612,
+        "year": 2020,
+        "title": "‘E da dravudravua e na dela ni noda vutuni-i-yau’ Customary land and economic development: case studies from Fiji."
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD in Development Studies",
+          "university": "Massey University",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -40.383,
+          "lng": 175.612,
           "year": 2020,
-          "title": "Na vakatorocaketaki ni bula ni Taukei kei na saravanua: Tourism and quality of life in the Fiji Islands: a case study of a rural Fijian village"
+          "title": "‘E da dravudravua e na dela ni noda vutuni-i-yau’ Customary land and economic development: case studies from Fiji."
         }
       ]
     },
@@ -653,108 +884,6 @@
         }
       ]
     },
-    "Ravuvu, Amerita": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of New South Wales",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -33.917,
-        "lng": 151.231,
-        "year": 2018,
-        "title": "Governing rural development: Discourses and practices of State and Donor sponsored programs for rural development in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of New South Wales",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -33.917,
-          "lng": 151.231,
-          "year": 2018,
-          "title": "Governing rural development: Discourses and practices of State and Donor sponsored programs for rural development in Fiji"
-        }
-      ]
-    },
-    "Sakai, Sevanaia": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "MA in Geography",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 2010,
-        "title": "The socio-economic, cultural and environmental sustainability of tourism in Yasawa and Indigenous tourism initiatives in Essipit, Canada"
-      },
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD in Development Studies",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 2024,
-        "title": "iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji"
-      },
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "MA in Geography",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 2010,
-          "title": "The socio-economic, cultural and environmental sustainability of tourism in Yasawa and Indigenous tourism initiatives in Essipit, Canada"
-        },
-        {
-          "level": "phd",
-          "thesisType": "PhD in Development Studies",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 2024,
-          "title": "iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji iTaukei land literacy, governance, wellbeing, and political aspiration : case study of Narewa Village, Nadi, Fiji"
-        }
-      ]
-    },
-    "Ginigini, Joape": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "MSc in Biology",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 2012,
-        "title": "Analysis of the antibiotic activities of salinispora strains from marine sediment as a guide to new phylogenetic and chemical diversity"
-      },
-      "phd": null,
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "MSc in Biology",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 2012,
-          "title": "Analysis of the antibiotic activities of salinispora strains from marine sediment as a guide to new phylogenetic and chemical diversity"
-        }
-      ]
-    },
     "Finau, Glenn": {
       "masters": null,
       "phd": {
@@ -779,135 +908,6 @@
           "lng": 151.231,
           "year": 2020,
           "title": "Accounting, Customary Land and Indigenous Peoples : Case Studies from the Pacific"
-        }
-      ]
-    },
-    "Ratuva, Steven": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "Masters Thesis",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 1995,
-        "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
-      },
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Sussex",
-        "iso": "GB",
-        "country": "UK",
-        "lat": 50.866,
-        "lng": -0.087,
-        "year": 2000,
-        "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
-      },
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "Masters Thesis",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 1995,
-          "title": "Aid and development : Japanese Official Development Assistance (ODA) to Fiji : the case study of Japanese ODA to fisheries"
-        },
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Sussex",
-          "iso": "GB",
-          "country": "UK",
-          "lat": 50.866,
-          "lng": -0.087,
-          "year": 2000,
-          "title": "Ethnic politics, communalism and affirmative action in Fiji: a critical and comparative study (BL)"
-        }
-      ]
-    },
-    "Lako, Jimaima": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "Monash University",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -37.914,
-        "lng": 145.135,
-        "year": 2021,
-        "title": "Phytochemicals in Pacific foods and related health status"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "Monash University",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -37.914,
-          "lng": 145.135,
-          "year": 2021,
-          "title": "Phytochemicals in Pacific foods and related health status"
-        }
-      ]
-    },
-    "Baleivanualala, Sakiusa": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of Otago",
-        "iso": "NZ",
-        "country": "New Zealand",
-        "lat": -45.865,
-        "lng": 170.514,
-        "year": 2024,
-        "title": "Carbapenemase producing Gram-negative pathogens in Fiji"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of Otago",
-          "iso": "NZ",
-          "country": "New Zealand",
-          "lat": -45.865,
-          "lng": 170.514,
-          "year": 2024,
-          "title": "Carbapenemase producing Gram-negative pathogens in Fiji"
-        }
-      ]
-    },
-    "Vosikata, Sunia": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "PhD Thesis",
-        "university": "University of New South Wales",
-        "iso": "AU",
-        "country": "Australia",
-        "lat": -33.917,
-        "lng": 151.231,
-        "year": 2015,
-        "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "PhD Thesis",
-          "university": "University of New South Wales",
-          "iso": "AU",
-          "country": "Australia",
-          "lat": -33.917,
-          "lng": 151.231,
-          "year": 2015,
-          "title": "The Influence of Social Capital through Networking Ties on Human Resources Selection Policies and Decision Making"
         }
       ]
     },
@@ -956,6 +956,33 @@
           "lng": 8.851,
           "year": 2018,
           "title": "Livelihood Vulnerability of Coastal Communities in Fiji and Solomon Islands to Changes in Reef Resource Availability and Climate Change"
+        }
+      ]
+    },
+    "Baleivanualala, Sakiusa": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "PhD Thesis",
+        "university": "University of Otago",
+        "iso": "NZ",
+        "country": "New Zealand",
+        "lat": -45.865,
+        "lng": 170.514,
+        "year": 2024,
+        "title": "Carbapenemase producing Gram-negative pathogens in Fiji"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "PhD Thesis",
+          "university": "University of Otago",
+          "iso": "NZ",
+          "country": "New Zealand",
+          "lat": -45.865,
+          "lng": 170.514,
+          "year": 2024,
+          "title": "Carbapenemase producing Gram-negative pathogens in Fiji"
         }
       ]
     },
@@ -1106,33 +1133,6 @@
           "lng": 178.446,
           "year": 2021,
           "title": "West Papua in the changing landscape of the new Pacific diplomacy"
-        }
-      ]
-    },
-    "Thomas, Nunia": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "Msc in Biology",
-        "university": "University of the South Pacific",
-        "iso": "FJ",
-        "country": "Fiji",
-        "lat": -18.148,
-        "lng": 178.446,
-        "year": 2007,
-        "title": "Distribution and abundance of the Fijian ground frog (Platymantis vitianus) and the cne toad (Chaunus [Bufo] marinus) on Viwa Island, Tailevu, Fiji"
-      },
-      "phd": null,
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "Msc in Biology",
-          "university": "University of the South Pacific",
-          "iso": "FJ",
-          "country": "Fiji",
-          "lat": -18.148,
-          "lng": 178.446,
-          "year": 2007,
-          "title": "Distribution and abundance of the Fijian ground frog (Platymantis vitianus) and the cne toad (Chaunus [Bufo] marinus) on Viwa Island, Tailevu, Fiji"
         }
       ]
     }
