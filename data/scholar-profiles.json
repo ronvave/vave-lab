@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:20:26.458Z",
+  "generatedAt": "2026-07-07T18:23:17.041Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2285,6 +2285,19 @@
       "slug": "janet-tawaketini",
       "last": "Tawaketini",
       "first": "Janet",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Tela, Autiko",
+      "slug": "autiko-tela",
+      "last": "Tela",
+      "first": "Autiko",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
