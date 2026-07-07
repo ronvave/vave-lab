@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-06T10:16:17.651Z",
+  "generatedAt": "2026-07-07T06:33:05.806Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -942,29 +942,6 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
-    },
-    {
-      "name": "Matatolu, Ilisapeci",
-      "slug": "ilisapeci-matatolu",
-      "last": "Matatolu",
-      "first": "Ilisapeci",
-      "salutation": "Dr.",
-      "village": "",
-      "paternalProvince": "Nadroga/Navosa",
-      "institution": "University of the South Pacific (Fiji)",
-      "institutionUrl": "https://www.usp.ac.fj/",
-      "googleScholarUrl": "https://scholar.google.com/citations?user=ThBs0AEAAAAJ&hl=en",
-      "photo": "img/scholars/ilisapeci-matatolu.jpg",
-      "department": "Discipline of Tourism and Hospitality",
-      "departmentUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/",
-      "profileUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/the-team/ilisapeci-matatolu/",
-      "masters": null,
-      "phd": null,
-      "title": "Assistant Lecturer",
-      "orcidUrl": "https://orcid.org/0000-0002-9410-215X",
-      "lastUpdate": "2026-07-04T07:18:24.560Z",
-      "sector": "Academia",
-      "institutionCountry": "Fiji"
     },
     {
       "slug": "litea-meo-sewabu",
@@ -3207,6 +3184,7 @@
     "Mani, F. S.": "Mani, Francis",
     "Maqbali, Khalid S. Al": "Maqbali, Khalid Al",
     "Matararaba, S": "Matararaba, Sepeti",
+    "Matatolu, Ilisapeci": "Matatolu, Ilisapeci S.",
     "McCabe, Marita": "McCabe, Marita P.",
     "McKenzie, Briar L.": "McKenzie, Briar",
     "McKenzie, Briar Louise": "McKenzie, Briar",
