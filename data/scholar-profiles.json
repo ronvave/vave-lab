@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:53:39.671Z",
+  "generatedAt": "2026-07-07T18:53:59.038Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1900,6 +1900,19 @@
       "slug": "mere-jane-sawailau",
       "last": "Sawailau",
       "first": "Mere Jane",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Schultz, Jimaima",
+      "slug": "jimaima-schultz",
+      "last": "Schultz",
+      "first": "Jimaima",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
