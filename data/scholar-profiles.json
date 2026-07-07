@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:23:17.041Z",
+  "generatedAt": "2026-07-07T18:24:24.921Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -41,6 +41,19 @@
       },
       "maternalProvince": "Macuata",
       "nonItaukeiDad": true
+    },
+    {
+      "name": "Baba, Tupeni",
+      "slug": "tupeni-baba",
+      "last": "Baba",
+      "first": "Tupeni",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Baleinamau, Ponipate",
