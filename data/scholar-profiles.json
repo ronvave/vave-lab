@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:57:00.754Z",
+  "generatedAt": "2026-07-07T18:57:06.787Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -488,6 +488,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Kaloumaira, Josivini",
+      "slug": "josivini-kaloumaira",
+      "last": "Kaloumaira",
+      "first": "Josivini",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Kamenio, Luisa Kacilala Qilatabu",
