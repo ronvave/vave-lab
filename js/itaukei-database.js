@@ -963,19 +963,23 @@
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
 
-    // Aggregate per country.
+    // Aggregate per country. `unknown` covers theses whose degree level
+    // couldn't be classified from thesisType (e.g. 'M.L.I.S. thesis'). We
+    // count them in the country total so no thesis is silently dropped, but
+    // keep the Masters / PhD pills as-is.
     const byCountry = new Map();
     points.forEach(p => {
       if (!byCountry.has(p.country)) {
-        byCountry.set(p.country, { name: p.country, iso: p.iso, masters: 0, phd: 0, unis: [] });
+        byCountry.set(p.country, { name: p.country, iso: p.iso, masters: 0, phd: 0, unknown: 0, unis: [] });
       }
       const c = byCountry.get(p.country);
       c.masters += (p.mastersScholars || []).length;
       c.phd     += (p.phdScholars || []).length;
+      c.unknown += (p.unknownScholars || []).length;
       c.unis.push(p);
     });
     const countries = Array.from(byCountry.values())
-      .map(c => Object.assign(c, { total: c.masters + c.phd }))
+      .map(c => Object.assign(c, { total: c.masters + c.phd + c.unknown }))
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 
     if (state.worldSelectedCountry) {
@@ -998,18 +1002,21 @@
         if (uniHost) {
           uniHost.innerHTML = '';
           c.unis.slice().sort((a, b) => {
-            const at = a.phdScholars.length + a.mastersScholars.length;
-            const bt = b.phdScholars.length + b.mastersScholars.length;
+            const at = a.phdScholars.length + a.mastersScholars.length + (a.unknownScholars || []).length;
+            const bt = b.phdScholars.length + b.mastersScholars.length + (b.unknownScholars || []).length;
             return bt - at || a.university.localeCompare(b.university);
           }).forEach(u => {
             const row = document.createElement('div');
             row.className = 'db-world-uni-row';
             const m = u.mastersScholars.length;
             const p = u.phdScholars.length;
+            const k = (u.unknownScholars || []).length;
             row.innerHTML =
               `<span class="db-world-uni-row__name">${escapeHtml(u.university)}</span>` +
               `<span class="db-world-uni-row__counts"><b>Masters</b> ${m} ` +
-              `<span class="pipe"></span> <b>PhD</b> ${p}</span>`;
+              `<span class="pipe"></span> <b>PhD</b> ${p}` +
+              (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '') +
+              `</span>`;
             uniHost.appendChild(row);
           });
         }
@@ -1049,8 +1056,11 @@
     if (narrEl) {
       const totM = countries.reduce((a, r) => a + r.masters, 0);
       const totP = countries.reduce((a, r) => a + r.phd, 0);
+      const totU = countries.reduce((a, r) => a + (r.unknown || 0), 0);
+      const totalDeg = totM + totP + totU;
+      const otherClause = totU > 0 ? `, and ${totU} other higher-degree ${totU === 1 ? 'thesis' : 'theses'}` : '';
       narrEl.textContent = `iTaukei scholars completed ${totM} Master\u2019s and ${totP} PhD ` +
-        `${(totM + totP) === 1 ? 'degree' : 'degrees'} across ${countries.length} ` +
+        `${(totM + totP) === 1 ? 'degree' : 'degrees'}${otherClause} across ${countries.length} ` +
         `${countries.length === 1 ? 'country' : 'countries'}.`;
     }
   }

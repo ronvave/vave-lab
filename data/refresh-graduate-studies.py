@@ -1,18 +1,34 @@
 #!/usr/bin/env python3
 """Extract iTaukei graduate-studies info from the Zotero snapshot.
 
-For every iTaukei scholar (sub-collection of 'iTaukei authors (>3 papers)'),
-we scan the thesis items in that scholar's collection and pull out:
-  * Masters degree info  (thesisType starts with MA / MSc / Masters / MPhil)
-  * PhD degree info      (thesisType starts with PhD / Doctoral)
-  * The university
-  * The country (looked up from UNIVERSITY_COUNTRY below)
+Panel A ("World-iTaukei graduate studies") is powered by this file's output,
+data/itaukei-graduate-studies.json.
 
-Only theses that appear in a scholar's iTaukei sub-collection count as
-"iTaukei graduate work" — so if Ron only wants theses by research + published
-papers, curating the collection in Zotero is where that filter is enforced.
+Source of truth
+---------------
+The Zotero collection tree
+    iTaukei Thesis by Country/Universities (key: 9XHGQJE6)
+       ├── Australia
+       │     ├── University of Sydney
+       │     ├── Australian National University (ANU)
+       │     └── ...
+       ├── Canada
+       │     └── ...
+       └── ...
 
-Output: data/itaukei-graduate-studies.json (public dashboard reads this).
+Every thesis in any leaf sub-collection of that tree is treated as an
+iTaukei-graduate work. The scholar name comes from the item's first
+creator (Zotero surface form: "Last, First" or "First Last"), the
+university comes from the leaf collection name, and the country comes
+from the country-level parent (or grand-parent, for UK → England/Scotland
+buckets).
+
+Previously the script only counted theses whose author had a personal
+sub-collection under "iTaukei authors (>2 papers)" — this missed every
+one-degree scholar and dropped ~230 theses. It also relied on a hardcoded
+university → country dict; the tree gives us both directly.
+
+Output: data/itaukei-graduate-studies.json  (public dashboard reads this).
 """
 
 import json
@@ -25,165 +41,341 @@ REPO = Path(__file__).resolve().parent.parent
 SNAP = REPO / "data" / "itaukei-zotero-snapshot.json"
 OUT = REPO / "data" / "itaukei-graduate-studies.json"
 
-# University -> ISO country + display label + rough lat/lng for the world map.
-# Only the Pacific-region / Commonwealth universities iTaukei scholars actually
-# attend. Add rows here whenever a new university appears in Ron's Zotero.
-UNIVERSITY_COUNTRY = {
-    # Fiji
-    "University of the South Pacific":       ("FJ", "Fiji",         -18.148, 178.446),
-    "Fiji National University":              ("FJ", "Fiji",         -18.152, 178.437),
-    # New Zealand
-    "Massey University":                     ("NZ", "New Zealand",  -40.383, 175.612),
-    "University of Otago":                   ("NZ", "New Zealand",  -45.865, 170.514),
-    "University of Auckland":                ("NZ", "New Zealand",  -36.852, 174.769),
-    "University of Waikato":                 ("NZ", "New Zealand",  -37.788, 175.320),
-    "Victoria University of Wellington":     ("NZ", "New Zealand",  -41.290, 174.767),
-    "University of Canterbury":              ("NZ", "New Zealand",  -43.523, 172.583),
-    "AUT University":                        ("NZ", "New Zealand",  -36.853, 174.766),
-    # Australia
-    "Australian National University":        ("AU", "Australia",    -35.278, 149.119),
-    "University of New South Wales":         ("AU", "Australia",    -33.917, 151.231),
-    "UNSW Sydney":                           ("AU", "Australia",    -33.917, 151.231),
-    "University of Sydney":                  ("AU", "Australia",    -33.888, 151.187),
-    "University of Queensland":              ("AU", "Australia",    -27.497, 153.014),
-    "The University of Queensland":          ("AU", "Australia",    -27.497, 153.014),
-    "Monash University":                     ("AU", "Australia",    -37.914, 145.135),
-    "University of Melbourne":               ("AU", "Australia",    -37.797, 144.961),
-    "University of Wollongong":              ("AU", "Australia",    -34.406, 150.877),
-    "Deakin University":                     ("AU", "Australia",    -38.199, 144.302),
-    "La Trobe University":                   ("AU", "Australia",    -37.720, 145.048),
-    "Charles Sturt University":              ("AU", "Australia",    -35.084, 147.325),
-    "James Cook University":                 ("AU", "Australia",    -19.328, 146.759),
-    "University of Tasmania":                ("AU", "Australia",    -42.902, 147.328),
-    "Curtin University":                     ("AU", "Australia",    -32.005, 115.894),
-    "University of Adelaide":                ("AU", "Australia",    -34.921, 138.604),
-    "Griffith University":                   ("AU", "Australia",    -27.560, 153.052),
-    "Western Sydney University":             ("AU", "Australia",    -33.774, 150.907),
-    "University of Sunshine Coast":          ("AU", "Australia",    -26.719, 153.058),
-    "University of the Sunshine Coast":      ("AU", "Australia",    -26.719, 153.058),
-    # USA
-    "University of Hawaiʻi at Mānoa":       ("US", "USA",           21.297, -157.816),
-    "University of Hawaii at Manoa":         ("US", "USA",           21.297, -157.816),
-    "University of Oregon":                  ("US", "USA",           44.045, -123.075),
-    "University of California":              ("US", "USA",           37.871, -122.259),
-    # UK
-    "University of Sussex":                  ("GB", "UK",            50.866, -0.087),
-    "University of Cambridge":               ("GB", "UK",            52.204, 0.117),
-    "University of Oxford":                  ("GB", "UK",            51.755, -1.254),
-    "University College London":             ("GB", "UK",            51.524, -0.134),
-    "University of Edinburgh":               ("GB", "UK",            55.944, -3.188),
-    # Germany
-    "University of Bremen":                  ("DE", "Germany",       53.108, 8.851),
-    # Japan
-    "Kagoshima University":                  ("JP", "Japan",         31.581, 130.545),
-    "University of Tokyo":                   ("JP", "Japan",         35.712, 139.762),
-    # Canada
-    "University of British Columbia":        ("CA", "Canada",        49.267, -123.253),
+# Root of the country/university tree in Zotero. This is the canonical
+# source of truth for which theses are iTaukei-graduate work.
+THESIS_ROOT_NAME = "iTaukei Thesis by Country/Universities"
+
+# ISO2 codes for each country-level collection under THESIS_ROOT_NAME.
+COUNTRY_ISO = {
+    "Australia":       "AU",
+    "Canada":          "CA",
+    "Fiji":            "FJ",
+    "Germany":         "DE",
+    "Indonesia":       "ID",
+    "Malta":           "MT",
+    "New Zealand":     "NZ",
+    "Philippines":     "PH",
+    "Portugal":        "PT",
+    "South Korea":     "KR",
+    "Sweden":          "SE",
+    "United Kingdom":  "GB",
+    "USA":             "US",
+    # UK sub-buckets — resolve back to GB.
+    "England":         "GB",
+    "Scotland":        "GB",
+    "Wales":           "GB",
+    "Northern Ireland":"GB",
 }
 
+# Display label used in country pills. Same as the collection name unless we
+# want a slightly different presentation.
+COUNTRY_DISPLAY = {
+    "United Kingdom": "UK",
+}
+
+# Rough campus coordinates for every university that appears (or is likely
+# to appear) as a leaf collection under the thesis tree. Only used to place
+# a circle on the Leaflet world map. Add new rows here when Ron adds a new
+# university leaf to Zotero — the JSON build will still work without a
+# coord entry, but the university won't show on the map (only in the panel).
+UNIVERSITY_COORDS = {
+    # Fiji
+    "University of the South Pacific":       (-18.148, 178.446),
+    "Fiji National University":              (-18.152, 178.437),
+    "University of Fiji":                    (-17.667, 177.450),
+    # New Zealand
+    "Massey University":                     (-40.383, 175.612),
+    "University of Otago":                   (-45.865, 170.514),
+    "University of Auckland":                (-36.852, 174.769),
+    "University of Waikato":                 (-37.788, 175.320),
+    "Victoria University of Wellington":     (-41.290, 174.767),
+    "University of Canterbury":              (-43.523, 172.583),
+    "Te Whare Wānanga o Awanuiārangi":       (-37.984, 176.982),
+    "AUT University":                        (-36.853, 174.766),
+    # Australia
+    "Australian National University (ANU)":  (-35.278, 149.119),
+    "Australian National University":        (-35.278, 149.119),
+    "University of New South Wales":         (-33.917, 151.231),
+    "UNSW Sydney":                           (-33.917, 151.231),
+    "University of Sydney":                  (-33.888, 151.187),
+    "University of Queensland":              (-27.497, 153.014),
+    "The University of Queensland":          (-27.497, 153.014),
+    "Monash University":                     (-37.914, 145.135),
+    "University of Melbourne":               (-37.797, 144.961),
+    "University of Wollongong":              (-34.406, 150.877),
+    "Deakin University":                     (-38.199, 144.302),
+    "La Trobe University":                   (-37.720, 145.048),
+    "Charles Sturt University":              (-35.084, 147.325),
+    "James Cook University":                 (-19.328, 146.759),
+    "University of Tasmania":                (-42.902, 147.328),
+    "Curtin University":                     (-32.005, 115.894),
+    "University of Adelaide":                (-34.921, 138.604),
+    "Griffith University":                   (-27.560, 153.052),
+    "Western Sydney University":             (-33.774, 150.907),
+    "University of Western Sydney":          (-33.774, 150.907),
+    "University of Sunshine Coast":          (-26.719, 153.058),
+    "University of the Sunshine Coast":      (-26.719, 153.058),
+    "Royal Melbourne Institute of Technology": (-37.808, 144.964),
+    "Melbourne College of Divinity":         (-37.798, 144.973),
+    "Macquarie University":                  (-33.775, 151.115),
+    "Victoria University":                   (-37.799, 144.881),
+    "University of Canberra":                (-35.239, 149.084),
+    "Murdoch University":                    (-32.070, 115.837),
+    "University of Newcastle":               (-32.892, 151.706),   # Australia (NSW)
+    "University of New England":             (-30.489, 151.652),
+    "Queensland University of Technology":   (-27.478, 153.028),
+    # USA
+    "University of Hawaiʻi at Mānoa":        (21.297, -157.816),
+    "University of Hawaii at Manoa":         (21.297, -157.816),
+    "University of Hawaii":                  (21.297, -157.816),
+    "University of Oregon":                  (44.045, -123.075),
+    "University of California":              (37.871, -122.259),
+    "Andrews University":                    (41.988, -86.335),
+    "Vanderbilt University":                 (36.148, -86.803),
+    "Brown University":                      (41.826, -71.402),
+    "Brigham Young University":              (40.253, -111.658),
+    # Canada
+    "University of British Columbia":        (49.267, -123.253),
+    "Royal Roads University":                (48.435, -123.474),
+    # UK
+    "University of Sussex":                  (50.866, -0.087),
+    "University of Cambridge":               (52.204, 0.117),
+    "University of Oxford":                  (51.755, -1.254),
+    "University College London":             (51.524, -0.134),
+    "University of Edinburgh":               (55.944, -3.188),
+    "University of Central England":         (52.507, -1.898),
+    "University of Bradford":                (53.792, -1.756),
+    "University of Reading":                 (51.442, -0.945),
+    "University of East Anglia":             (52.622, 1.242),
+    "University of Wolverhampton":           (52.588, -2.128),
+    "Cranfield Institute of Technology":     (52.072, -0.629),
+    "University of Newcastle upon Tyne":     (54.980, -1.615),
+    "Bournemouth University":                (50.742, -1.898),
+    "Lancaster University":                  (54.010, -2.786),
+    "University of Essex":                   (51.878, 0.947),
+    "University of Southampton":             (50.937, -1.396),
+    "University of Birmingham":              (52.451, -1.930),
+    "Loughborough University":               (52.766, -1.226),
+    "University of Nottingham":              (52.938, -1.196),
+    "University of London":                  (51.522, -0.129),
+    "University of Aberdeen":                (57.164, -2.099),
+    # Germany
+    "University of Bremen":                  (53.108, 8.851),
+    # Malta
+    "University of Malta":                   (35.902, 14.484),
+    # Philippines
+    "University of the Philippines":         (14.653, 121.070),
+    # Portugal
+    "University of Porto":                   (41.147, -8.616),
+    # South Korea
+    "Yonsei University":                     (37.565, 126.938),
+    "Korean Development Institute (KDI)":    (37.362, 127.107),
+    # Sweden
+    "Lund University":                       (55.712, 13.194),
+    # Indonesia
+    "Bogor Agricultural University":         (-6.560, 106.725),
+    # Japan
+    "Kagoshima University":                  (31.581, 130.545),
+    "University of Tokyo":                   (35.712, 139.762),
+}
+
+
 # thesisType strings from Zotero can be anything the author typed. Classify.
-PHD_RX      = re.compile(r"\b(phd|ph\.d|d\.phil|doctoral|dissertation|doctorate)\b", re.I)
-MASTERS_RX  = re.compile(r"\b(m\.?a\.?|m\.?s\.?c\.?|m\.?phil|masters?|m\.?tech)\b", re.I)
+PHD_RX     = re.compile(r"\b(phd|ph\.d|d\.phil|doctoral|dissertation|doctorate|doctor of|doctor in)\b", re.I)
+MASTERS_RX = re.compile(
+    r"\b(m\.?a\.?|m\.?s\.?c\.?|m\.?ed|m\.?eng|m\.?phil|m\.?res|mba|mia|mmis|mst|mlitt|mlis|m\.?l\.?i\.?s|masters?|master's|master of|master in|m\.?tech)\b",
+    re.I,
+)
 
 
-def classify(thesis_type: str) -> str:
-    """Return 'phd', 'masters', or 'unknown'."""
-    if not thesis_type:
+def classify(thesis_type: str, title: str = "") -> str:
+    haystack = f"{thesis_type} {title}"
+    if not haystack.strip():
         return "unknown"
-    t = thesis_type.strip()
-    if PHD_RX.search(t):
+    if PHD_RX.search(haystack):
         return "phd"
-    if MASTERS_RX.search(t):
+    if MASTERS_RX.search(haystack):
         return "masters"
     return "unknown"
 
 
-def lookup_country(uni: str):
-    """Return (iso, country, lat, lng) or None if we don't know this uni."""
-    if not uni:
-        return None
-    key = uni.strip()
-    hit = UNIVERSITY_COUNTRY.get(key)
-    if hit:
-        return hit
-    # Try a fuzzy startswith on the map keys — Zotero often has trailing
-    # location like "University of Hawaiʻi at Mānoa, Honolulu"
-    for k, v in UNIVERSITY_COUNTRY.items():
-        if key.lower().startswith(k.lower()) or k.lower() in key.lower():
-            return v
-    return None
+def resolve_name(creator: str) -> str:
+    """Normalize a creator string to a stable display name.
+
+    Zotero surfaces creators as either "Last, First" or "First Last". We keep
+    whichever form the author entered but strip whitespace and collapse
+    multiple spaces so the scholar aggregation dedupes reliably.
+    """
+    if not creator:
+        return ""
+    return re.sub(r"\s+", " ", creator).strip()
+
+
+def build_country_and_university_maps(collections):
+    """Return two dicts from a Zotero collections list.
+
+    country_of[key]     -> "Fiji" | "Australia" | ...   (name of the country-level ancestor)
+    university_of[key]  -> "University of the South Pacific" | ...
+                           (name of the leaf university collection; None for
+                            country-only membership like the direct '_Australia' items)
+    """
+    by_key = {c["key"]: c for c in collections}
+    # The 'iTaukei Thesis by Country/Universities' collection lives under the
+    # top-level 'Thesis' collection in Ron's Zotero group, so match by name
+    # alone rather than requiring parent == None.
+    root = next((c for c in collections if c.get("name") == THESIS_ROOT_NAME), None)
+    if not root:
+        raise SystemExit(f"ERROR: cannot find root collection '{THESIS_ROOT_NAME}' in snapshot")
+
+    # Countries = direct children of the root.
+    countries = {c["key"]: c["name"] for c in collections if c.get("parent") == root["key"]}
+
+    # Walk the whole tree; for each descendant record the country (root child)
+    # and the leaf university (deepest node whose parent is inside the tree
+    # but which itself has no children). For UK sub-buckets (England /
+    # Scotland) the "country" stays "United Kingdom".
+    tree_keys = set(countries)
+    tree_keys.add(root["key"])
+    changed = True
+    while changed:
+        changed = False
+        for c in collections:
+            if c.get("parent") in tree_keys and c["key"] not in tree_keys:
+                tree_keys.add(c["key"])
+                changed = True
+
+    country_of = {}
+    university_of = {}
+    has_children = {c.get("parent") for c in collections if c.get("parent")}
+
+    for k in tree_keys:
+        if k == root["key"]:
+            continue
+        # Walk up to find country-level ancestor (direct child of root).
+        cur = by_key[k]
+        chain = [cur]
+        while cur.get("parent") and cur["parent"] != root["key"]:
+            cur = by_key.get(cur["parent"])
+            if not cur:
+                break
+            chain.append(cur)
+        if not cur or cur.get("parent") != root["key"]:
+            continue
+        country_of[k] = cur["name"]
+
+        # A leaf that has no children is a university (or a country-only bucket).
+        # We flag as university iff (a) it has no children AND (b) it is not the country node itself.
+        node = by_key[k]
+        if node["key"] not in has_children and node["key"] != cur["key"]:
+            university_of[k] = node["name"]
+
+    return country_of, university_of, root["key"], tree_keys
 
 
 def main() -> None:
     snap = json.loads(SNAP.read_text())
     items = snap.get("items", [])
-    cols = snap.get("collections", [])
+    cols  = snap.get("collections", [])
 
-    # Ron has renamed the root collection more than once (e.g. '(>3 papers)'
-    # → '(>2 papers)'). Match any top-level collection whose name begins with
-    # 'iTaukei authors' so we don't break every time the threshold shifts.
-    root = next(
-        (c for c in cols
-         if not c.get("parent") and c.get("name", "").lower().startswith("itaukei authors")),
-        None,
-    )
-    if not root:
-        print("ERROR: root collection missing (no top-level 'iTaukei authors ...' collection found)", file=sys.stderr)
-        sys.exit(1)
+    country_of, university_of, root_key, tree_keys = build_country_and_university_maps(cols)
 
-    itaukei_subs = [c for c in cols if c.get("parent") == root["key"]]
-    key_to_name = {c["key"]: c["name"] for c in itaukei_subs}
-    itaukei_col_keys = set(key_to_name)
-
-    # For each scholar, list every thesis in their sub-collection
-    scholars = {}
+    unknown_countries    = set()
     unknown_universities = set()
+
+    # ------------------------------------------------------------------
+    #  Build a scholar-level roll-up and a (country, university) roll-up.
+    # ------------------------------------------------------------------
+    scholars = {}   # name -> {"masters": [rec, ...], "phd": [...], "unknown": [...]}
+    # (country, university) -> {"phd": set(names), "masters": set(names), "unknown": set(names), "records": [rec, ...]}
+    by_uni = {}
 
     for item in items:
         if item.get("itemType") != "thesis":
             continue
         item_cols = set(item.get("collections") or [])
-        scholar_hits = item_cols & itaukei_col_keys
-        if not scholar_hits:
+        # We only want items inside the country/university tree.
+        member = item_cols & tree_keys
+        if not member:
             continue
 
-        uni = (item.get("university") or "").strip()
-        thesis_type = (item.get("thesisType") or "").strip()
-        year = item.get("year") or item.get("date") or ""
-        # Extract just the year portion if the date is a full string
-        m = re.search(r"\b(19|20)\d{2}\b", str(year))
-        year_val = int(m.group(0)) if m else None
+        # Pick the most specific membership for country + university.
+        # (An item can be tagged into both a university leaf and its country parent.)
+        # Prefer a university-level tag; fall back to a country-only tag.
+        picked_uni = None
+        picked_country = None
+        for k in member:
+            if k in university_of:
+                picked_uni = university_of[k]
+                picked_country = country_of.get(k)
+                break
+        if picked_uni is None:
+            # No university leaf — use the country-only tag.
+            for k in member:
+                if k in country_of and country_of[k] not in (None,):
+                    picked_country = country_of[k]
+                    break
 
-        level = classify(thesis_type)
-        country_row = lookup_country(uni) if uni else None
-        if uni and not country_row:
-            unknown_universities.add(uni)
+        # Fall back: use the university free-text field in the Zotero item.
+        if picked_uni is None and item.get("university"):
+            picked_uni = item["university"].strip()
+
+        if picked_country is None:
+            # Very rare — item tagged into the root itself. Skip.
+            continue
+
+        iso = COUNTRY_ISO.get(picked_country)
+        if not iso:
+            unknown_countries.add(picked_country)
+
+        coords = UNIVERSITY_COORDS.get(picked_uni) if picked_uni else None
+        if picked_uni and not coords:
+            unknown_universities.add(picked_uni)
+
+        level = classify(item.get("thesisType") or "", item.get("title") or "")
+
+        # Prefer first creator as the "scholar" the thesis belongs to.
+        creators = item.get("creators") or []
+        scholar_name = resolve_name(creators[0]) if creators else "(unknown author)"
+
+        # Extract year
+        year_val = item.get("year")
+        if not year_val:
+            m = re.search(r"\b(19|20)\d{2}\b", str(item.get("date") or ""))
+            year_val = int(m.group(0)) if m else None
 
         record = {
             "level": level,
-            "thesisType": thesis_type,
-            "university": uni,
-            "iso": country_row[0] if country_row else None,
-            "country": country_row[1] if country_row else None,
-            "lat": country_row[2] if country_row else None,
-            "lng": country_row[3] if country_row else None,
+            "thesisType": item.get("thesisType") or "",
+            "university": picked_uni,
+            "iso": iso,
+            "country": COUNTRY_DISPLAY.get(picked_country, picked_country),
+            "countryCollection": picked_country,
+            "lat": coords[0] if coords else None,
+            "lng": coords[1] if coords else None,
             "year": year_val,
             "title": item.get("title") or "",
+            "zoteroKey": item.get("key"),
         }
 
-        for col_key in scholar_hits:
-            name = key_to_name[col_key]
-            bucket = scholars.setdefault(name, {"masters": [], "phd": [], "unknown": []})
-            bucket[level].append(record)
+        bucket = scholars.setdefault(scholar_name, {"masters": [], "phd": [], "unknown": []})
+        bucket[level].append(record)
 
-    # For each scholar: pick a primary masters and a primary phd (latest year)
+        if picked_uni:
+            k = (iso, record["country"], picked_uni, record["lat"], record["lng"])
+            uni_bucket = by_uni.setdefault(k, {"phd": set(), "masters": set(), "unknown": set(), "records": []})
+            uni_bucket[level].add(scholar_name)
+            uni_bucket["records"].append(record)
+
+    # ------------------------------------------------------------------
+    #  Scholar profile: pick a headline masters + phd (latest year that
+    #  we can attach a country to; else latest year).
+    # ------------------------------------------------------------------
     profiles = {}
     for name, entries in scholars.items():
         def pick(level: str):
             arr = entries.get(level) or []
             if not arr:
                 return None
-            # Prefer entries with known country, then latest year
             arr_sorted = sorted(
                 arr,
                 key=lambda r: (r["country"] is not None, r["year"] or 0),
@@ -193,20 +385,15 @@ def main() -> None:
 
         profiles[name] = {
             "masters": pick("masters"),
-            "phd": pick("phd"),
-            "all": entries.get("masters", []) + entries.get("phd", []) + entries.get("unknown", []),
+            "phd":     pick("phd"),
+            "all":     entries.get("masters", []) + entries.get("phd", []) + entries.get("unknown", []),
         }
 
-    # World-map aggregation: (iso, university) -> list of scholar names
-    by_uni = {}
-    for name, prof in profiles.items():
-        for role in ("masters", "phd"):
-            rec = prof.get(role)
-            if not rec or not rec.get("iso"):
-                continue
-            k = (rec["iso"], rec["country"], rec["university"], rec["lat"], rec["lng"])
-            by_uni.setdefault(k, {"phd": [], "masters": []})[role].append(name)
-
+    # ------------------------------------------------------------------
+    #  World-map points: one per (country, university) combo. We keep the
+    #  full deduped scholar lists so the panel can show "16 Masters, 4 PhD"
+    #  and drill into each name.
+    # ------------------------------------------------------------------
     world_points = []
     for (iso, country, uni, lat, lng), buckets in by_uni.items():
         world_points.append({
@@ -215,26 +402,61 @@ def main() -> None:
             "university": uni,
             "lat": lat,
             "lng": lng,
-            "phdScholars": sorted(buckets["phd"]),
+            "phdScholars":     sorted(buckets["phd"]),
             "mastersScholars": sorted(buckets["masters"]),
-            "total": len(buckets["phd"]) + len(buckets["masters"]),
+            "unknownScholars": sorted(buckets["unknown"]),
+            "phdCount":     len(buckets["phd"]),
+            "mastersCount": len(buckets["masters"]),
+            "unknownCount": len(buckets["unknown"]),
+            # 'total' now counts theses (records), not distinct scholars, so
+            # a scholar with both an MA and PhD at the same uni is counted
+            # twice. The panel uses this for the "Total" pill; use the
+            # phd/mastersScholars lists when you want distinct-scholar counts.
+            "total": len(buckets["records"]),
+            "thesesCount": len(buckets["records"]),
+            "scholarsCount": len(buckets["phd"] | buckets["masters"] | buckets["unknown"]),
         })
     world_points.sort(key=lambda r: (-r["total"], r["country"], r["university"]))
 
+    # ------------------------------------------------------------------
+    #  Emit
+    # ------------------------------------------------------------------
     output = {
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "sourceSnapshot": snap.get("generatedAt"),
+        "source": {
+            "rootCollection": THESIS_ROOT_NAME,
+            "rootCollectionKey": root_key,
+            "url": f"https://www.zotero.org/groups/{snap.get('source', {}).get('groupId', '')}/collections/{root_key}/collection",
+        },
         "scholars": profiles,
         "worldPoints": world_points,
+        "totals": {
+            "theses":   sum(p["total"] for p in world_points)
+                        + sum(len(v["unknown"]) + len(v["masters"]) + len(v["phd"])
+                              for k, v in by_uni.items() if False),  # kept for schema stability
+            "thesesTracked": sum(p["thesesCount"] for p in world_points),
+            "scholars": len(profiles),
+            "universities": len({(p["country"], p["university"]) for p in world_points}),
+            "countries":    len({p["country"] for p in world_points}),
+        },
+        "unknownCountries":    sorted(unknown_countries),
         "unknownUniversities": sorted(unknown_universities),
     }
 
     OUT.write_text(json.dumps(output, indent=2, ensure_ascii=False) + "\n")
 
-    print(f"scholars with graduate work: {len(profiles)}")
+    print(f"scholars: {len(profiles)}")
     print(f"world-map points: {len(world_points)}")
+    print(f"theses tracked: {output['totals']['thesesTracked']}")
+    print(f"universities: {output['totals']['universities']}")
+    print(f"countries: {output['totals']['countries']}")
+    if unknown_countries:
+        print("Country-level collections without ISO mapping (add to COUNTRY_ISO):")
+        for c in sorted(unknown_countries):
+            print(f"  - {c!r}")
     if unknown_universities:
-        print("Universities with no country mapping (add to UNIVERSITY_COUNTRY):")
+        print("Universities without coord mapping (add to UNIVERSITY_COORDS to plot on the map):")
         for u in sorted(unknown_universities):
             print(f"  - {u!r}")
 
