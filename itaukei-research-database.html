@@ -242,24 +242,31 @@
     .db-insight {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
-      border-top: 3px solid var(--accent, var(--color-primary));
       border-radius: var(--radius-md);
-      padding: 12px 14px 14px;
+      padding: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
     }
+    /* Solid colored header bar with white bold uppercase title. */
     .db-insight__title {
+      background: var(--accent, var(--color-primary));
+      color: #ffffff;
       font-size: 13px; text-transform: uppercase;
       letter-spacing: 0.07em; font-weight: 700;
-      color: var(--accent, var(--color-primary));
-      margin-bottom: 6px;
+      text-align: center;
+      padding: 10px 12px;
+      line-height: 1.2;
     }
     .db-insight__body {
       font-size: 14.5px; color: var(--color-text); line-height: 1.5;
+      padding: 12px 14px 14px;
     }
-    /* Per-tile accent colors (reuse the Database overview palette). */
-    .db-insight--teal  { --accent: #085041; }
-    .db-insight--pink  { --accent: #72243E; }
-    .db-insight--amber { --accent: #633806; }
-    .db-insight--blue  { --accent: #0C447C; }
+    /* Per-tile accent colors (deep saturated tones for solid header bars). */
+    .db-insight--teal  { --accent: #186B8C; }
+    .db-insight--pink  { --accent: #8B3A0F; }
+    .db-insight--amber { --accent: #7B2C7A; }
+    .db-insight--blue  { --accent: #0F3921; }
     .db-narrative__note {
       margin: 6px 0 0; font-size: 0.78rem;
       color: var(--color-text-muted); font-style: italic;
