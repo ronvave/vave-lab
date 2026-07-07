@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:57:06.787Z",
+  "generatedAt": "2026-07-07T18:57:12.596Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1965,6 +1965,19 @@
       "slug": "vika-soqo",
       "last": "Soqo",
       "first": "Vika",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Suka, Metuisela",
+      "slug": "metuisela-suka",
+      "last": "Suka",
+      "first": "Metuisela",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
