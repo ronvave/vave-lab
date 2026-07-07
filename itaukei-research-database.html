@@ -486,6 +486,26 @@
        world-map hover popups. Even-indexed names are blue, odd are default
        (near-black), so comma-separated "Last, First" pairs are easy to scan. */
     .db-scholar-list { line-height: 1.55; }
+    /* Bounded scroll container for scholar sections inside world-map popups.
+       Caps the popup height so countries with lots of scholars (Fiji: 186)
+       don't produce a popup taller than the map itself. The thesis-detail
+       slot sits above this container and stays visible while scrolling. */
+    .db-popup-scroll {
+      max-height: 150px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 6px;
+      margin-right: -6px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(0,0,0,0.35) transparent;
+      overscroll-behavior: contain;
+    }
+    .db-popup-scroll::-webkit-scrollbar { width: 8px; }
+    .db-popup-scroll::-webkit-scrollbar-track { background: transparent; }
+    .db-popup-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.28); border-radius: 4px;
+    }
+    .db-popup-scroll::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.5); }
     .db-scholar-list .db-scholar-name.is-blue { color: #1c6ea4; font-weight: 600; }
     .db-scholar-list .db-scholar-name.is-dark { color: #222; font-weight: 500; }
     .db-scholar-list .db-scholar-sep { color: #333; margin: 0 4px; }

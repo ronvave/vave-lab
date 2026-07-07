@@ -1275,12 +1275,16 @@
     }
     // Detail slot appears between the header row and the scholar sections.
     // Populated dynamically by the mouseover handler when a name is hovered.
+    // Scholar sections live inside a bounded, scrollable container so the
+    // popup stays compact even for countries with hundreds of scholars
+    // (Fiji, USP). The detail slot sits ABOVE the scroll container so it
+    // remains visible regardless of scroll position.
     return (
       `<div class="db-popup-title">${escapeHtml(p.university)}</div>` +
       `<p class="db-popup-meta">${escapeHtml(p.country)}</p>` +
       `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
       `<div class="db-popup-scholar-detail" data-popup-detail></div>` +
-      sections.join('')
+      `<div class="db-popup-scroll">` + sections.join('') + `</div>`
     );
   }
 
@@ -1352,6 +1356,29 @@
     popupEl.addEventListener('mouseleave', scheduleClose);
     marker.on('mouseout', scheduleClose);
     marker.on('mouseover', cancel);
+  }
+
+  // If a popup extends past any edge of the map viewport (typically the top,
+  // for tall Fiji popups; or the right, when the marker sits near the
+  // antimeridian), pan the map by exactly the overflow amount so every edge
+  // of the popup sits inside the map with a small margin. Leaflet's built-in
+  // autoPan handles small overflows but is unreliable for tall popups on the
+  // world view — this helper fills that gap.
+  function nudgePopupIntoView(popupEl, wmap) {
+    if (!popupEl || !wmap) return;
+    const mapEl = wmap.getContainer();
+    if (!mapEl) return;
+    const m = mapEl.getBoundingClientRect();
+    const p = popupEl.getBoundingClientRect();
+    const margin = 12;
+    let dx = 0, dy = 0;
+    if (p.top < m.top + margin) dy = p.top - (m.top + margin);
+    else if (p.bottom > m.bottom - margin) dy = p.bottom - (m.bottom - margin);
+    if (p.left < m.left + margin) dx = p.left - (m.left + margin);
+    else if (p.right > m.right - margin) dx = p.right - (m.right - margin);
+    if (dx !== 0 || dy !== 0) {
+      try { wmap.panBy([dx, dy], { animate: true, duration: 0.25 }); } catch (e) {}
+    }
   }
 
   function selectWorldCountry(name) {
@@ -1459,13 +1486,18 @@
   function initWorldMap() {
     const el = document.getElementById('db-map-world');
     if (!el || typeof L === 'undefined') return;
+    // maxBounds is padded ~30° east/west of the true world edges so Leaflet's
+    // autoPan (used to keep large popups in view for Fiji, NZ, USA-west, etc.)
+    // has room to nudge the viewport without slamming against a hard wall.
+    // The tile layer itself still uses noWrap:true + strict bounds, so the
+    // map never appears duplicated.
     const wmap = L.map(el, {
       zoomSnap: 0.25,
       worldCopyJump: false,
       minZoom: 1,
       maxZoom: 10,
-      maxBounds: [[-85, -180], [85, 180]],
-      maxBoundsViscosity: 1.0
+      maxBounds: [[-85, -210], [85, 210]],
+      maxBoundsViscosity: 0.85
     });
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
@@ -1513,7 +1545,19 @@
       // keeps the popup pinned so the user can move the mouse from the marker
       // onto a scholar name to reveal the thesis title — without the popup
       // vanishing en route or being closed by another marker's mouseover.
-      const popupOpts = { maxWidth: 420, className: 'db-world-popup', autoClose: false, closeOnClick: false };
+      // autoPan:true lets Leaflet nudge the map so the popup fits inside the
+      // viewport — critical for Fiji/NZ markers that sit near the right edge
+      // of the equator-centred world view.
+      const popupOpts = {
+        maxWidth: 460,
+        minWidth: 320,
+        className: 'db-world-popup',
+        autoClose: false,
+        closeOnClick: false,
+        autoPan: true,
+        autoPanPadding: [40, 40],
+        keepInView: true
+      };
 
       const m = L.circleMarker([p.lat, p.lng], {
         radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
@@ -1524,6 +1568,10 @@
         const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
         wirePopupScholarHovers(el, p);
         wirePopupAutoClose(el, evt.popup, m);
+        // Give autoPan a beat, then verify the popup is fully inside the map
+        // viewport. If it isn't (common for Fiji's huge popups near the map
+        // edges), pan the map manually so the popup sits comfortably.
+        setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
       });
       markers.push(m);
       latlngs.push([p.lat, p.lng]);
