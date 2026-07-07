@@ -642,6 +642,8 @@
   // genuinely different measurements. Each label must state its unit clearly.
   function renderStats() {
     const snap  = state.snapshot;
+    // A1 + A2 sit ABOVE the world map (Panel B2), so they always reflect the
+    // full database, not the world filter that only affects panels below.
     const items = snap.items;
     const sync  = state.lastSync;
 
@@ -1046,17 +1048,19 @@
           }).forEach(u => {
             const row = document.createElement('div');
             row.className = 'db-world-uni-row';
+            if (state.worldSelectedUniversity === u.university) row.classList.add('is-filter-active');
             const m = u.mastersScholars.length;
             const p = u.phdScholars.length;
             const k = (u.unknownScholars || []).length;
             // University name is a real button so it's keyboard-focusable
             // and screenreader-visible as an interactive element. Clicking
-            // drills down to the scholar-level view.
+            // drills down to the scholar-level view AND filters the panels
+            // below to just that university.
             const nameBtn = document.createElement('button');
             nameBtn.type = 'button';
             nameBtn.className = 'db-world-uni-row__name is-clickable';
             nameBtn.textContent = u.university;
-            nameBtn.setAttribute('aria-label', 'View scholars at ' + u.university);
+            nameBtn.setAttribute('aria-label', 'Filter panels below by ' + u.university);
             nameBtn.addEventListener('click', () => selectWorldUniversity(u.university));
             const counts = document.createElement('span');
             counts.className = 'db-world-uni-row__counts';
@@ -1082,14 +1086,38 @@
     detailView.style.display = 'none';
     if (uniDetailView) uniDetailView.style.display = 'none';
     listHost.innerHTML = '';
-    countries.forEach(c => {
+
+    // Search filter — keep a country if its own name matches, OR any of its
+    // universities matches, OR any of its scholar names matches. Substring,
+    // case-insensitive.
+    const q = (state.worldSearchTerm || '').trim().toLowerCase();
+    let displayCountries = countries;
+    if (q) {
+      displayCountries = countries.filter(c => {
+        if (c.name.toLowerCase().includes(q)) return true;
+        for (const u of c.unis) {
+          if ((u.university || '').toLowerCase().includes(q)) return true;
+          const scholarLists = [u.mastersScholars, u.phdScholars, u.unknownScholars];
+          for (const list of scholarLists) {
+            if (!list) continue;
+            for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
+          }
+        }
+        return false;
+      });
+    }
+    const emptyEl = document.querySelector('[data-world-empty]');
+    if (emptyEl) emptyEl.style.display = (displayCountries.length === 0) ? '' : 'none';
+
+    displayCountries.forEach(c => {
       const row = document.createElement('div');
       row.className = 'db-world-country-row';
+      if (state.worldSelectedCountry === c.name) row.classList.add('is-filter-active');
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'db-world-country-row__name';
       btn.textContent = c.name;
-      btn.setAttribute('aria-label', 'View universities in ' + c.name);
+      btn.setAttribute('aria-label', 'Filter panels below by ' + c.name);
       btn.addEventListener('click', () => selectWorldCountry(c.name));
       row.appendChild(btn);
       const counts = document.createElement('span');
@@ -1115,12 +1143,81 @@
     }
   }
 
-  // -------- Panel A2 world-map default framing --------
+  // -------- Panel B2 world-map default framing --------
   // Whole-world equator-centred framing (matches Ron's reference view).
   // Zoom 1 gives one world width of 512px; centre latitude 15° puts Europe/UK
   // near the top and NZ/Australia near the bottom without wasting polar space.
   const WORLD_MAP_DEFAULT_CENTER = [15, 30];
   const WORLD_MAP_DEFAULT_ZOOM = 1;
+
+  // -------- World-filter helpers --------
+  // When a country or university is clicked in Panel B2, we filter every
+  // downstream data panel (B1, C1, C2, D, E, F, G) to only items authored by
+  // iTaukei scholars whose graduate work took place in that country/uni.
+  //
+  // `worldFilteredScholarSet()` returns the Set of scholar names to keep, or
+  // `null` when no filter is active. `worldFilterItems(items)` narrows an
+  // item array using state.scholarByItem lookups. Item retained when any of
+  // the item's tagged iTaukei scholars is in the active-scholar set.
+  function worldFilteredScholarSet() {
+    const country = state.worldSelectedCountry;
+    const uni = state.worldSelectedUniversity;
+    if (!country && !uni) return null;
+    // Build the set from scholar profile entries so the names line up with
+    // the Zotero-collection scholar names used in `state.scholarByItem`.
+    // A scholar is included when either their masters or phd graduate-study
+    // entry matches the selected country (and, if set, university).
+    const profiles = state.scholarProfilesByName || new Map();
+    const set = new Set();
+    profiles.forEach((p, name) => {
+      const grad = [p && p.masters, p && p.phd].filter(Boolean);
+      const matched = grad.some(g => {
+        if (country && g.country !== country) return false;
+        if (uni && g.university !== uni) return false;
+        return true;
+      });
+      if (matched) set.add(name);
+    });
+    return set;
+  }
+  function worldFilterItems(items) {
+    const set = worldFilteredScholarSet();
+    if (!set) return items;
+    return items.filter(it => {
+      const scholars = state.scholarByItem && state.scholarByItem.get(it.key);
+      if (!scholars) return false;
+      for (const s of scholars) if (set.has(s)) return true;
+      return false;
+    });
+  }
+  // Convenience wrapper: yields the currently-visible snapshot items.
+  // Every render function that reads state.snapshot.items should call this
+  // instead so the world filter is honoured throughout the dashboard.
+  function currentItems() {
+    return worldFilterItems(state.snapshot.items);
+  }
+
+  // Show/hide the per-panel 'Filtered' + 'Clear filter' indicator on Panels F
+  // and G, the only panels that actually respond to the world-map filter.
+  function refreshFilteredBadges() {
+    const active = !!(state.worldSelectedCountry || state.worldSelectedUniversity);
+    document.querySelectorAll('[data-filtered-indicator]').forEach(el => {
+      el.style.display = active ? '' : 'none';
+    });
+  }
+
+  // Re-render only the two panels affected by the world filter: the scholar
+  // leaderboard (Panel F) and the publications list (Panel G). The user
+  // explicitly asked to keep every other panel unfiltered.
+  function rerenderAfterWorldFilterChange() {
+    refreshFilteredBadges();
+    // Mirror the world filter into the F-panel scholar filter so its
+    // existing plumbing narrows the scholar cards to those who studied here.
+    state.scholarStudyCountry = state.worldSelectedCountry || '';
+    state.scholarStudyUni = state.worldSelectedUniversity || '';
+    try { renderLeaders && renderLeaders(); } catch (e) {}
+    try { renderItems && renderItems(); } catch (e) {}
+  }
 
   // -------- Scholar-name renderer with alternating blue / near-black --------
   // Names in the format "Last, First" already contain a comma — concatenating
@@ -1131,7 +1228,9 @@
     if (!names || !names.length) return '';
     const parts = names.map((n, i) => {
       const cls = (i % 2 === 0) ? 'is-blue' : 'is-dark';
-      return `<span class="db-scholar-name ${cls}">${escapeHtml(n)}</span>`;
+      // data-scholar-name lets popup mouseover handlers look up the person's
+      // thesis title + year and reveal the expanded detail slot.
+      return `<span class="db-scholar-name ${cls}" data-scholar-name="${escapeHtml(n)}">${escapeHtml(n)}</span>`;
     });
     return `<span class="db-scholar-list">${parts.join('<span class="db-scholar-sep">;</span>')}</span>`;
   }
@@ -1160,12 +1259,66 @@
         renderScholarNameList(p.unknownScholars)
       );
     }
+    // Detail slot appears between the header row and the scholar sections.
+    // Populated dynamically by the mouseover handler when a name is hovered.
     return (
       `<div class="db-popup-title">${escapeHtml(p.university)}</div>` +
       `<p class="db-popup-meta">${escapeHtml(p.country)}</p>` +
       `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
+      `<div class="db-popup-scholar-detail" data-popup-detail></div>` +
       sections.join('')
     );
+  }
+
+  // Look up a scholar's thesis metadata by name. Returns { title, year, level }
+  // for the record that matches the world-map point's university/country when
+  // possible, so hovering "Ron Vave" in the University of Hawaii popup shows
+  // his UH PhD, not (say) his USP Masters. Falls back to the first record if
+  // no exact match is found.
+  function lookupScholarThesisForPoint(name, point) {
+    const grad = state.graduateStudies;
+    if (!grad || !grad.scholars) return null;
+    const rec = grad.scholars[name];
+    if (!rec) return null;
+    // Prefer records whose university matches this point.
+    if (rec.all && point) {
+      const match = rec.all.find(t => t.university === point.university && t.country === point.country);
+      if (match) return match;
+    }
+    return rec.phd || rec.masters || (rec.all && rec.all[0]) || null;
+  }
+
+  // Wire mouseover / mouseout on scholar-name spans inside an open Leaflet
+  // popup so hovering a name reveals the thesis title + year in the detail
+  // slot at the top of the popup. Point context is passed so we can pick the
+  // right thesis record for scholars with multiple degrees.
+  function wirePopupScholarHovers(popupEl, point) {
+    if (!popupEl) return;
+    const detail = popupEl.querySelector('[data-popup-detail]');
+    if (!detail) return;
+    const names = popupEl.querySelectorAll('.db-scholar-name[data-scholar-name]');
+    names.forEach(nameEl => {
+      nameEl.addEventListener('mouseenter', () => {
+        const nm = nameEl.getAttribute('data-scholar-name');
+        const rec = lookupScholarThesisForPoint(nm, point);
+        if (!rec) {
+          detail.classList.remove('is-active');
+          detail.innerHTML = '';
+          return;
+        }
+        const title = rec.title || '(untitled)';
+        const year = rec.year || '';
+        const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
+        detail.innerHTML =
+          `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} · ${level}${year ? ' · <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
+          `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>`;
+        detail.classList.add('is-active');
+      });
+      nameEl.addEventListener('mouseleave', () => {
+        detail.classList.remove('is-active');
+        detail.innerHTML = '';
+      });
+    });
   }
 
   function selectWorldCountry(name) {
@@ -1173,6 +1326,8 @@
     state.worldSelectedUniversity = null;
     renderWorldPanel();
     zoomToWorldCountry(name);
+    // Propagate the country filter to every downstream panel.
+    rerenderAfterWorldFilterChange();
   }
   function clearWorldCountry() {
     state.worldSelectedCountry = null;
@@ -1180,17 +1335,20 @@
     renderWorldPanel();
     // Reset the world map to the default whole-world framing.
     if (state.worldMap) state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+    rerenderAfterWorldFilterChange();
   }
   function selectWorldUniversity(uniName) {
     state.worldSelectedUniversity = uniName;
     renderWorldPanel();
     zoomToWorldUniversity(uniName);
+    rerenderAfterWorldFilterChange();
   }
   function clearWorldUniversity() {
     state.worldSelectedUniversity = null;
     renderWorldPanel();
     // Re-zoom back to the country the university belongs to.
     if (state.worldSelectedCountry) zoomToWorldCountry(state.worldSelectedCountry);
+    rerenderAfterWorldFilterChange();
   }
 
   function zoomToWorldCountry(name) {
@@ -1223,6 +1381,34 @@
     if (uniBack) {
       uniBack.addEventListener('click', (e) => { e.preventDefault(); clearWorldUniversity(); });
     }
+    // Search box above the country list — filters by country name, university
+    // name, or scholar name substring. Any match at any level is kept.
+    const searchInput = document.querySelector('[data-world-search]');
+    const searchClear = document.querySelector('[data-world-search-clear]');
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        state.worldSearchTerm = (searchInput.value || '').trim().toLowerCase();
+        if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
+        renderWorldPanel();
+      });
+    }
+    if (searchClear) {
+      searchClear.addEventListener('click', () => {
+        if (searchInput) searchInput.value = '';
+        state.worldSearchTerm = '';
+        searchClear.style.display = 'none';
+        renderWorldPanel();
+      });
+    }
+    // "Clear filter" buttons shown per filtered panel (F and G). Each clears
+    // whichever level (country or university) is currently selected on the
+    // world map, which re-renders both filtered panels back to the full set.
+    document.querySelectorAll('[data-filtered-clear]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (state.worldSelectedUniversity) clearWorldUniversity();
+        else if (state.worldSelectedCountry) clearWorldCountry();
+      });
+    });
   }
 
   // Initialise the Panel A2 world map — a *separate* Leaflet instance from
@@ -1276,19 +1462,31 @@
       const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
       const popupHtml = buildWorldPopupHtml(p);
 
+      // Wider maxWidth to fit both the scholar list and the expandable
+      // thesis-detail slot without wrapping ugly.
+      const popupOpts = { maxWidth: 420, className: 'db-world-popup' };
+
       const m = L.circleMarker([p.lat, p.lng], {
         radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
       });
-      m.bindPopup(popupHtml, { maxWidth: 360 });
+      m.bindPopup(popupHtml, popupOpts);
       m.on('mouseover', () => m.openPopup());
+      m.on('popupopen', (evt) => {
+        const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+        wirePopupScholarHovers(el, p);
+      });
       markers.push(m);
 
       if (p.lng > 0) {
         const shadow = L.circleMarker([p.lat, p.lng - 360], {
           radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
         });
-        shadow.bindPopup(popupHtml, { maxWidth: 360 });
+        shadow.bindPopup(popupHtml, popupOpts);
         shadow.on('mouseover', () => shadow.openPopup());
+        shadow.on('popupopen', (evt) => {
+          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+          wirePopupScholarHovers(el, p);
+        });
         markers.push(shadow);
       }
     });
@@ -4064,7 +4262,7 @@
   }
 
   function renderItems() {
-    const items = state.snapshot.items.filter(itemMatches);
+    const items = currentItems().filter(itemMatches);
     items.sort((a,b) => (b.year||0) - (a.year||0) || a.title.localeCompare(b.title));
     const list = $('[data-db-items]');
     list.innerHTML = '';
@@ -4215,7 +4413,7 @@
 
   // ============ EXPORT .BIB ============
   function exportBib() {
-    const items = state.snapshot.items.filter(itemMatches);
+    const items = currentItems().filter(itemMatches);
     let out = '';
     items.forEach(it => {
       const bibType = ({journalArticle:'article', thesis:'phdthesis', bookSection:'incollection', book:'book', conferencePaper:'inproceedings', report:'techreport', preprint:'misc', document:'misc'})[it.itemType] || 'misc';
@@ -4403,6 +4601,8 @@
   // 'authorship' shows the iTaukei-authorship stacked bar previously on B2.
   state.b1View = 'type';
   state.worldSelectedCountry = null;
+  state.worldSelectedUniversity = null;
+  state.worldSearchTerm = '';
   state.b2View = 'fiji-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';

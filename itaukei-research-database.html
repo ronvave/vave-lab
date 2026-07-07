@@ -104,7 +104,7 @@
       border-radius: var(--radius-xl);
     }
     .db-section--itaukei { background: rgba(14,116,144,0.07); border-color: rgba(14,116,144,0.20); }
-    .db-section__head { margin-bottom: var(--space-3); }
+    .db-section__head { margin-bottom: var(--space-3); padding-right: 48px; /* clear the A1/A2 badge in the top-right corner */ }
     .db-section__label {
       font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
       font-weight: 700;
@@ -278,6 +278,7 @@
       list-style: none; cursor: pointer;
       display: flex; align-items: center; gap: var(--space-2);
       padding: var(--space-3) 0;
+      padding-right: 48px; /* room for the A3 badge in the top-right */
       font-family: var(--font-body); font-weight: 700;
       font-size: 0.95rem; letter-spacing: 0.04em; text-transform: uppercase;
       color: var(--color-text-muted);
@@ -374,14 +375,27 @@
       display: flex; flex-direction: column;
       position: relative;
     }
+    /* Panel badge (A1, A2, B1, C1, D, E, F, G…). Arial-bold, dark-teal disc
+       in the top-right corner. Auto-widens to fit two-character labels while
+       staying a nice pill for one-character labels. */
     .db-panel__label {
       position: absolute; top: 12px; right: 12px;
       background: var(--color-primary); color: #fff;
-      width: 22px; height: 22px; border-radius: 50%;
-      font-family: var(--font-display); font-weight: 600; font-size: 0.85rem;
-      display: flex; align-items: center; justify-content: center;
-      letter-spacing: 0;
+      min-width: 26px; height: 26px;
+      padding: 0 8px;
+      border-radius: 999px;
+      font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+      font-weight: 700; font-size: 0.95rem;
+      display: inline-flex; align-items: center; justify-content: center;
+      letter-spacing: 0.02em;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
     }
+    /* Section-level badge for A1/A2/A3 wrappers, F leaderboard, G items,
+       and the About accordion. Positioned identically so every panel from
+       top to bottom carries a consistent marker. Container needs
+       position:relative; we set that inline via the .has-panel-badge class. */
+    .has-panel-badge { position: relative; }
+    .has-panel-badge > .db-panel__label { z-index: 2; }
     /* Panel titles + description text — solid black rather than muted grey
        so chart headers and their explanatory copy read as first-class
        content, not secondary text. */
@@ -774,6 +788,7 @@
       display: flex; align-items: center; justify-content: space-between;
       gap: var(--space-3); flex-wrap: wrap;
       margin-bottom: var(--space-2);
+      padding-right: 48px; /* clear the F badge in the top-right corner */
     }
     .db-leaderboard__title { margin: 0 !important; }
     .db-leaderboard__filters { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -1018,6 +1033,7 @@
     .db-items-header {
       display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center;
       margin-bottom: var(--space-3);
+      padding-right: 48px; /* clear the G badge in the top-right corner */
     }
     .db-items h3 {
       margin: 0;
@@ -1655,15 +1671,152 @@
     .db-world-country-list, .db-world-uni-list {
       margin-top: var(--space-2);
     }
+    /* Two-column table-like grid for the countries/universities list.
+       Reduces the huge horizontal gap between the name (left) and the
+       Masters/PhD counts (right) that appeared in the previous single-column
+       layout. A subtle vertical divider between columns reinforces the
+       split without shouting. */
+    .db-world-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: var(--space-4);
+      row-gap: 0;
+    }
+    .db-world-grid > .db-world-country-row:nth-child(odd),
+    .db-world-grid > .db-world-uni-row:nth-child(odd) {
+      border-right: 1px solid rgba(15,23,42,0.10);
+      padding-right: var(--space-3);
+    }
+    .db-world-grid > .db-world-country-row:nth-child(even),
+    .db-world-grid > .db-world-uni-row:nth-child(even) {
+      padding-left: var(--space-3);
+    }
+    @media (max-width: 720px) {
+      .db-world-grid { grid-template-columns: 1fr; }
+      .db-world-grid > .db-world-country-row:nth-child(odd),
+      .db-world-grid > .db-world-uni-row:nth-child(odd) {
+        border-right: none; padding-right: 0;
+      }
+      .db-world-grid > .db-world-country-row:nth-child(even),
+      .db-world-grid > .db-world-uni-row:nth-child(even) { padding-left: 0; }
+    }
     .db-world-country-row, .db-world-uni-row {
       display: grid;
       grid-template-columns: 1fr auto;
-      column-gap: 14px;
+      column-gap: 10px;
       align-items: baseline;
-      padding: 10px 0;
+      padding: 8px 0;
       border-bottom: 1px dashed rgba(15,23,42,0.10);
     }
     .db-world-country-row:last-child, .db-world-uni-row:last-child { border-bottom: none; }
+    /* Highlight a country/university row when it matches the active filter
+       so the user can see at a glance which entry is driving downstream panels. */
+    .db-world-country-row.is-filter-active .db-world-country-row__name,
+    .db-world-uni-row.is-filter-active .db-world-uni-row__name {
+      color: #062f35;
+      background: rgba(14,116,144,0.10);
+      border-radius: 4px;
+      padding: 2px 6px;
+    }
+
+    /* Search box above the country list — same input styling as the
+       leaderboard search for visual consistency. */
+    .db-world-search {
+      position: relative;
+      display: flex; align-items: center; gap: 8px;
+      background: #fff;
+      border: 1px solid var(--color-border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      margin: var(--space-2) 0;
+    }
+    .db-world-search svg { width: 16px; height: 16px; color: var(--color-text-muted); flex-shrink: 0; }
+    .db-world-search input {
+      flex: 1; min-width: 0;
+      border: none; outline: none; background: transparent;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 0.95rem; color: var(--color-text);
+    }
+    .db-world-search input::placeholder { color: var(--color-text-muted); }
+    /* Hide the browser's native clear-x on type=search inputs. We render our own. */
+    .db-world-search input::-webkit-search-cancel-button,
+    .db-world-search input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; }
+    .db-world-search__clear {
+      background: transparent; border: none; cursor: pointer;
+      font-size: 1.1rem; color: var(--color-text-muted);
+      padding: 0 4px;
+    }
+    .db-world-search__clear:hover { color: var(--color-primary); }
+    .db-world-empty {
+      margin: var(--space-2) 0 0;
+      color: var(--color-text-muted); font-size: 0.9rem; font-style: italic;
+    }
+
+    /* Per-panel 'Filtered' indicator. Shown inline in a panel's title bar when
+       the panel's data has been narrowed by a world-map country/university
+       selection. The word 'Filtered' blinks in blue to draw the eye; 'Clear
+       filter' next to it is a plain, non-blinking black button. */
+    .db-filtered-indicator {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-left: 10px;
+      vertical-align: middle;
+      font-family: 'Source Sans Pro', sans-serif;
+      font-size: 0.85rem;
+    }
+    .db-filtered-indicator__blink {
+      color: #0e7490; font-weight: 700;
+      letter-spacing: 0.02em;
+      animation: db-filtered-blink 1.1s ease-in-out infinite;
+    }
+    @keyframes db-filtered-blink {
+      0%, 100% { opacity: 1; }
+      50%      { opacity: 0.25; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .db-filtered-indicator__blink { animation: none; }
+    }
+    .db-filtered-indicator__clear {
+      background: transparent; border: 1px solid #1f2937;
+      color: #1f2937; font-weight: 600;
+      font-size: 0.82rem;
+      padding: 3px 10px; border-radius: 999px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .db-filtered-indicator__clear:hover {
+      background: #1f2937; color: #fff;
+    }
+
+    /* Popup hover-expand: extra detail slot inside a world-map popup that
+       fills with the current scholar's thesis title + year when the user
+       hovers over a name in the scholar list. Slot is hidden by default so
+       the popup keeps its baseline compact size, then reveals with a soft
+       fade + slide when a name is hovered. */
+    .db-popup-scholar-detail {
+      display: none;
+      margin: 8px 0 6px;
+      padding: 8px 10px;
+      background: rgba(14,116,144,0.08);
+      border-left: 3px solid var(--color-primary);
+      border-radius: 4px;
+      font-size: 0.85rem;
+      line-height: 1.4;
+      color: var(--color-text);
+    }
+    .db-popup-scholar-detail.is-active { display: block; }
+    .db-popup-scholar-detail__name {
+      font-weight: 700; font-size: 0.9rem; color: var(--color-primary);
+      margin-bottom: 2px;
+    }
+    .db-popup-scholar-detail__thesis { font-style: italic; }
+    .db-popup-scholar-detail__year { color: var(--color-text-muted); }
+    .db-scholar-list .db-scholar-name {
+      cursor: help; padding: 1px 2px; border-radius: 2px;
+      transition: background 0.12s;
+    }
+    .db-scholar-list .db-scholar-name:hover {
+      background: rgba(255,255,180,0.5);
+    }
     .db-world-country-row__name {
       color: var(--color-primary);
       font-family: 'Source Sans Pro', sans-serif;
@@ -2354,7 +2507,8 @@
       </div>
 
       <!-- Database overview: statistics describing the entire indexed database -->
-      <section class="db-section db-section--overview" aria-labelledby="db-section-overview">
+      <section class="db-section db-section--overview has-panel-badge" aria-labelledby="db-section-overview">
+        <span class="db-panel__label">A1</span>
         <header class="db-section__head">
           <div class="db-section__label" id="db-section-overview">Database overview</div>
           <p class="db-section__hint">Statistics describing the entire indexed database.</p>
@@ -2388,7 +2542,8 @@
       </section>
 
       <!-- iTaukei scholarship: statistics filtered to publications involving iTaukei scholars -->
-      <section class="db-section db-section--itaukei" aria-labelledby="db-section-itaukei">
+      <section class="db-section db-section--itaukei has-panel-badge" aria-labelledby="db-section-itaukei">
+        <span class="db-panel__label">A2</span>
         <header class="db-section__head">
           <div class="db-section__label" id="db-section-itaukei">iTaukei scholarship</div>
           <p class="db-section__hint">Statistics filtered to works and graduate research involving identified iTaukei scholars.</p>
@@ -2438,8 +2593,8 @@
     </div>
 
     <!-- About / inclusion criteria -->
-    <details class="db-about reveal">
-      <summary>About this database &middot; Inclusion criteria &amp; methodology</summary>
+    <details class="db-about reveal has-panel-badge">
+      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">A3</span></summary>
       <div class="db-about__body">
         <div class="db-about-grid">
           <div>
@@ -2482,9 +2637,9 @@
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
 
-      <!-- Panel A1 — Fiji-focused choropleth map (province view) -->
-      <div class="db-panel reveal" data-panel="A1">
-        <span class="db-panel__label">A1</span>
+      <!-- Panel B1 — Fiji-focused choropleth map (province view) -->
+      <div class="db-panel reveal" data-panel="B1">
+        <span class="db-panel__label">B1</span>
         <h2 class="db-panel__title">Where the research is — Fiji, by province</h2>
         <p class="db-panel__hint">Fiji-focused publications counted by the province studied. Use the sub-tabs to switch between all publications, iTaukei lead-author, and iTaukei co-authored views.</p>
         <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
@@ -2550,9 +2705,9 @@
       </div>
 
       <!-- Panel A2 — Whole-world map of iTaukei graduate studies (wide layout) -->
-      <div class="db-panel reveal db-panel--wide" data-panel="A2">
-        <span class="db-panel__label">A2</span>
-        <h2 class="db-panel__title">World — iTaukei graduate studies</h2>
+      <div class="db-panel reveal db-panel--wide" data-panel="B2">
+        <span class="db-panel__label">B2</span>
+        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE</h2>
         <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
         <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
           <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>
@@ -2567,15 +2722,21 @@
           <aside class="db-world-panel-wide">
             <div data-world-list-view>
               <h4>Countries of iTaukei graduate study</h4>
-              <p class="db-conf-explain">Click a country to zoom the map and see the universities inside it. Then click a university to zoom further and reveal the individual scholars.</p>
-              <div class="db-world-country-list" data-world-country-list></div>
+              <p class="db-conf-explain">Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
+              <label class="db-world-search" data-world-search-wrap>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" placeholder="Search country, university, or scholar…" data-world-search aria-label="Search countries, universities, and scholars" />
+                <button type="button" class="db-world-search__clear" data-world-search-clear aria-label="Clear search" style="display:none;">×</button>
+              </label>
+              <div class="db-world-country-list db-world-grid" data-world-country-list></div>
+              <p class="db-world-empty" data-world-empty style="display:none;">No countries, universities, or scholars match that search.</p>
               <p class="db-conf-narrative" data-world-narrative>—</p>
             </div>
             <div data-world-detail-view style="display:none;">
               <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
               <h4 data-world-detail-title>—</h4>
               <p class="db-conf-explain" data-world-detail-subtitle>—</p>
-              <div class="db-world-uni-list" data-world-uni-list></div>
+              <div class="db-world-uni-list db-world-grid" data-world-uni-list></div>
             </div>
             <div data-world-uni-detail-view style="display:none;">
               <a href="#" class="db-world-back" data-world-uni-back><span aria-hidden="true">←</span>&nbsp;Back to universities</a>
@@ -2590,9 +2751,9 @@
         </div>
       </div>
 
-      <!-- Panel B1 — ranked bar chart, province-tagged research (study location) -->
-      <div class="db-panel reveal" data-panel="B1">
-        <span class="db-panel__label">B1</span>
+      <!-- Panel C1 — ranked bar chart, province-tagged research (study location) -->
+      <div class="db-panel reveal" data-panel="C1">
+        <span class="db-panel__label">C1</span>
         <!-- Panel B1 tab row: publication-type stack (default) vs. authorship stack.
              Reuses the .db-panel-b2__tabs styling for visual consistency. -->
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B1 view" data-b1-tabs>
@@ -2633,9 +2794,9 @@
         </div>
       </div>
 
-      <!-- Panel B2 — interactive multi-view chart, grouped by author's paternal province -->
-      <div class="db-panel reveal" data-panel="B2">
-        <span class="db-panel__label">B2</span>
+      <!-- Panel C2 — interactive multi-view chart, grouped by author's paternal province -->
+      <div class="db-panel reveal" data-panel="C2">
+        <span class="db-panel__label">C2</span>
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
           <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0">Fiji-focused</button>
           <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">Fiji + International</button>
@@ -2695,9 +2856,9 @@
         </div>
       </div>
 
-      <!-- Panel C — stacked-by-type histogram over time -->
-      <div class="db-panel reveal" data-panel="C">
-        <span class="db-panel__label">C</span>
+      <!-- Panel D — stacked-by-type histogram over time -->
+      <div class="db-panel reveal" data-panel="D">
+        <span class="db-panel__label">D</span>
         <h2 class="db-panel__title">Publications over time, by source type</h2>
         <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Reflects the item types enabled in panel B.</p>
         <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
@@ -2714,9 +2875,9 @@
         </div>
       </div>
 
-      <!-- Panel D — confederacy multiples -->
-      <div class="db-panel reveal" data-panel="D">
-        <span class="db-panel__label">D</span>
+      <!-- Panel E — confederacy multiples -->
+      <div class="db-panel reveal" data-panel="E">
+        <span class="db-panel__label">E</span>
         <h2 class="db-panel__title">By confederacy</h2>
         <p class="db-panel__hint">Ranked within each confederacy. Reflects your item-type selection in panel B.</p>
         <div class="db-conf-grid" data-db-conf-grid></div>
@@ -2725,9 +2886,10 @@
     </div>
 
     <!-- iTaukei scholars — paginated profile cards -->
-    <div class="db-leaderboard reveal">
+    <div class="db-leaderboard reveal has-panel-badge">
+      <span class="db-panel__label">F</span>
       <div class="db-leaderboard__head">
-        <h3 class="db-leaderboard__title">iTaukei published scholars</h3>
+        <h3 class="db-leaderboard__title">iTaukei published scholars <span class="db-filtered-indicator" data-filtered-indicator="F" style="display:none;"><span class="db-filtered-indicator__blink">Filtered</span> <button type="button" class="db-filtered-indicator__clear" data-filtered-clear>Clear filter</button></span></h3>
         <div class="dsf-row">
           <label class="dsf-input dsf-input--search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -2845,9 +3007,10 @@
     </div>
 
     <!-- Items list -->
-    <div class="db-items reveal">
+    <div class="db-items reveal has-panel-badge">
+      <span class="db-panel__label">G</span>
       <div class="db-items-header">
-        <h3>All items (<span data-db-item-count>0</span>)</h3>
+        <h3>All items (<span data-db-item-count>0</span>) <span class="db-filtered-indicator" data-filtered-indicator="G" style="display:none;"><span class="db-filtered-indicator__blink">Filtered</span> <button type="button" class="db-filtered-indicator__clear" data-filtered-clear>Clear filter</button></span></h3>
         <div class="db-items-tools">
           <input type="search" class="db-search" placeholder="Search title, author, journal, keyword…" data-db-search aria-label="Search items" />
           <select class="db-filter" data-db-filter="itemType" aria-label="Filter by item type">
