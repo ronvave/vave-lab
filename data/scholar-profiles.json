@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T06:33:05.806Z",
+  "generatedAt": "2026-07-07T18:20:26.458Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -942,6 +942,39 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Matatolu, Ilisapeci S.",
+      "slug": "ilisapeci-s-matatolu",
+      "last": "Matatolu",
+      "first": "Ilisapeci S.",
+      "salutation": "Dr.",
+      "village": "",
+      "paternalProvince": "Nadroga/Navosa",
+      "institution": "University of the South Pacific",
+      "institutionUrl": "",
+      "googleScholarUrl": "https://scholar.google.com/citations?user=ThBs0AEAAAAJ&hl=en",
+      "photo": "img/scholars/ilisapeci-s-matatolu.jpg",
+      "maternalProvince": "",
+      "nonItaukeiDad": false,
+      "sector": "Academia",
+      "institutionCountry": "Fiji",
+      "department": "Discipline of Tourism and Hospitality Management",
+      "departmentUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/",
+      "profileUrl": "https://www.usp.ac.fj/discipline-of-tourism-and-hospitality-management/the-team/ilisapeci-matatolu/",
+      "masters": null,
+      "phd": null,
+      "title": "Assistant Lecturer",
+      "orcidUrl": "https://orcid.org/0000-0002-9410-215X",
+      "lastUpdate": "2026-07-07T18:20:26.442Z",
+      "total": 11,
+      "firstAuthored": 9,
+      "types": {
+        "thesis": 1,
+        "bookSection": 1,
+        "journalArticle": 4,
+        "report": 5
+      }
     },
     {
       "slug": "litea-meo-sewabu",
