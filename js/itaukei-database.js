@@ -1335,6 +1335,25 @@
     });
   }
 
+  // With autoClose:false the popup no longer disappears on its own — we
+  // manage closing here. The popup stays open as long as the mouse is over
+  // EITHER the marker OR the popup. When the mouse leaves both, we close
+  // after a short grace period so the user can move between them without
+  // losing the popup.
+  function wirePopupAutoClose(popupEl, popup, marker) {
+    if (!popupEl || !popup || !marker) return;
+    let closeTimer = null;
+    const cancel = () => { if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; } };
+    const scheduleClose = () => {
+      cancel();
+      closeTimer = setTimeout(() => { try { marker.closePopup(); } catch (e) {} }, 220);
+    };
+    popupEl.addEventListener('mouseenter', cancel);
+    popupEl.addEventListener('mouseleave', scheduleClose);
+    marker.on('mouseout', scheduleClose);
+    marker.on('mouseover', cancel);
+  }
+
   function selectWorldCountry(name) {
     state.worldSelectedCountry = name;
     state.worldSelectedUniversity = null;
@@ -1490,8 +1509,11 @@
       const popupHtml = buildWorldPopupHtml(p);
 
       // Wider maxWidth to fit both the scholar list and the expandable
-      // thesis-detail slot without wrapping ugly.
-      const popupOpts = { maxWidth: 420, className: 'db-world-popup' };
+      // thesis-detail slot without wrapping ugly. autoClose:false + closeOnClick:false
+      // keeps the popup pinned so the user can move the mouse from the marker
+      // onto a scholar name to reveal the thesis title — without the popup
+      // vanishing en route or being closed by another marker's mouseover.
+      const popupOpts = { maxWidth: 420, className: 'db-world-popup', autoClose: false, closeOnClick: false };
 
       const m = L.circleMarker([p.lat, p.lng], {
         radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
@@ -1501,6 +1523,7 @@
       m.on('popupopen', (evt) => {
         const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
         wirePopupScholarHovers(el, p);
+        wirePopupAutoClose(el, evt.popup, m);
       });
       markers.push(m);
       latlngs.push([p.lat, p.lng]);
