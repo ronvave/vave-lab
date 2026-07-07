@@ -2589,6 +2589,7 @@
   state.scholarConfFilter = '';  // '', '__untagged__', 'Burebasaga', 'Kubuna', 'Tovata'
   state.scholarProvFilter = '';  // '', '__untagged__', or a province name
   state.scholarNameSearch = '';  // free-text name search (case-insensitive substring)
+  state.scholarKeywordSearch = ''; // research-keyword search across insights + publications
   state.scholarSectorFilter = ''; // '' or one of SECTORS
   state.scholarDisciplineFilter = new Set();  // AND across checked disciplines
   state.scholarStudyCountry = '';  // country selected in the Study combo
@@ -2659,6 +2660,50 @@
     ['Physical & Applied Sciences',        /(chemistry|chemical|electrochem|biosensor|nanoparticle|arsenic|polyaniline|redox|forensic|spectrometr|ion mobility|whole genome sequencing|genomic surveillance|molecular epidemiolog)/i],
     ['Politics & Governance',              /(political|politics|governance|policy|coup|colonial|postcolonial|settler|sovereignty|affirmative action|ethnicity|ethnic conflict|regionalism|internet censorship|social media (and|activism|election)|advocacy|foreign aid|aid decolonis|diplomacy|human rights|constitutional|climate mobility|marine spatial planning|ocean governance|community-based (fisheries|marine) management|water governance)/i]
   ];
+
+  // Build a case-insensitive searchable text blob per scholar for the
+  // "Search by research keyword" input. Combines:
+  //   • AI-generated insight keywords + summary (plain text)
+  //   • Profile fields: institution, department, title
+  //   • Every publication authored by that scholar: title,
+  //     publicationTitle (journal/publisher), and Zotero tags
+  // Keyed by the scholar name as it appears on the row (Zotero-collection
+  // "Last, First" form). Rebuilt on demand so it always reflects the
+  // latest scholar-insights + Zotero snapshot.
+  function buildScholarKeywordText(rows, enrichedByName) {
+    const out = new Map();
+    const items = (state.snapshot && state.snapshot.items) || [];
+    // Reverse index: scholar name -> concatenated publication text.
+    const pubTextByName = new Map();
+    items.forEach(it => {
+      const scholars = state.scholarByItem && state.scholarByItem.get(it.key);
+      if (!scholars || !scholars.size) return;
+      const bits = [];
+      if (it.title) bits.push(it.title);
+      if (it.publicationTitle) bits.push(it.publicationTitle);
+      if (it.university) bits.push(it.university);
+      if (Array.isArray(it.tags) && it.tags.length) bits.push(it.tags.join(' '));
+      if (!bits.length) return;
+      const text = ' ' + bits.join(' \u2022 ').toLowerCase();
+      scholars.forEach(name => {
+        pubTextByName.set(name, (pubTextByName.get(name) || '') + text);
+      });
+    });
+    rows.forEach(r => {
+      const bits = [];
+      const ins = (state.scholarInsights || {})[r.name] || null;
+      if (ins) {
+        if (Array.isArray(ins.keywords)) bits.push(ins.keywords.join(' '));
+        if (ins.summary) bits.push(ins.summary.replace(/<[^>]*>/g, ' '));
+      }
+      const prof = enrichedByName.get(r.name) || {};
+      ['institution', 'department', 'title'].forEach(k => { if (prof[k]) bits.push(prof[k]); });
+      const pubText = pubTextByName.get(r.name) || '';
+      const combined = (bits.join(' \u2022 ') + ' ' + pubText).toLowerCase();
+      out.set(r.name, combined);
+    });
+    return out;
+  }
 
   function classifyScholarDisciplines(row, insight, profile) {
     const bits = [];
@@ -2852,6 +2897,20 @@
         return nm.includes(nameQ) || alt.includes(nameQ);
       });
     }
+    // Research-keyword search — scans across the AI-generated insight
+    // (keywords + plain-English summary), profile fields (institution,
+    // department, title), and every publication a scholar authored
+    // (title + journal/publisher + tags). Case-insensitive substring so
+    // "funeral" surfaces work on funerary practices, "systematic literature
+    // review" surfaces SLR authors, etc.
+    const kwQ = (state.scholarKeywordSearch || '').trim().toLowerCase();
+    if (kwQ) {
+      const kwTextByName = buildScholarKeywordText(rows, enrichedByName);
+      rows = rows.filter(r => {
+        const blob = kwTextByName.get(r.name) || '';
+        return blob.includes(kwQ);
+      });
+    }
     // Sector — matched on the profile's sector field (auto-seeded in admin)
     const secF = state.scholarSectorFilter;
     if (secF) {
@@ -2917,6 +2976,7 @@
   // pill shows "Total: N" (unfiltered) or "Total: N of M" (filtered).
   function anyScholarFilterActive() {
     return !!(state.scholarNameSearch && state.scholarNameSearch.trim())
+        || !!(state.scholarKeywordSearch && state.scholarKeywordSearch.trim())
         || !!state.scholarConfFilter
         || !!state.scholarProvFilter
         || !!state.scholarSectorFilter
@@ -3302,6 +3362,21 @@
       });
     }
 
+    // ---- Research-keyword search ----
+    const kwInput = document.querySelector('[data-scholar-keyword-search]');
+    if (kwInput) {
+      kwInput.value = state.scholarKeywordSearch || '';
+      let tk;
+      kwInput.addEventListener('input', () => {
+        clearTimeout(tk);
+        tk = setTimeout(() => {
+          state.scholarKeywordSearch = kwInput.value;
+          state.scholarPage = 1;
+          renderLeaders();
+        }, 160);
+      });
+    }
+
     // ---- Confederacy / Province combo ----
     const confRoot   = document.querySelector('[data-scholar-conf-combo]');
     const confPanel  = document.querySelector('[data-scholar-conf-panel]');
@@ -3497,6 +3572,7 @@
     if (clearAll) {
       clearAll.addEventListener('click', () => {
         state.scholarNameSearch = '';
+        state.scholarKeywordSearch = '';
         state.scholarConfFilter = ''; state.scholarProvFilter = '';
         state.scholarSectorFilter = '';
         state.scholarDisciplineFilter.clear();
