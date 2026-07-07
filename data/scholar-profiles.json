@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T18:56:47.998Z",
+  "generatedAt": "2026-07-07T18:57:00.754Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -760,6 +760,19 @@
       "slug": "fulori-liwaiono",
       "last": "Liwaiono",
       "first": "Fulori",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Loga, Patricia",
+      "slug": "patricia-loga",
+      "last": "Loga",
+      "first": "Patricia",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
