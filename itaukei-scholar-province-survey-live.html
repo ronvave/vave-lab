@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iTaukei Scholar Province Survey</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f6f2;--surface:#fbfbf9;--surface-2:#f1eee8;--text:#28251d;--muted:#6f6d67;--primary:#0b6b72;--primary-dark:#083f43;--gold:#bb7b0f;--gold-soft:#f4e6c7;--green:#214d3c;--green-soft:#dce8df;--border:#d8d2c9;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:22px;--space:16px}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55}
+a{color:var(--primary)} main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+.skip{position:absolute;left:-9999px} .skip:focus{left:12px;top:12px;background:#fff;padding:10px 12px;border-radius:10px;border:1px solid var(--border);z-index:99}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:24px;margin-bottom:20px}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;align-items:start} .hero-box{background:linear-gradient(180deg,#fff,#f5f2ec);border:1px solid var(--border);border-radius:20px;padding:18px}
+h1,h2,h3{margin:0 0 12px;line-height:1.12} h1{font-size:clamp(2rem,4vw,3.25rem)} h2{font-size:clamp(1.35rem,2.5vw,2rem)} h3{font-size:1.05rem} p{margin:0 0 12px;max-width:72ch} .muted{color:var(--muted)}
+.tagrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px} .tag{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid var(--border);font-weight:700;color:var(--primary-dark)}
+.topnav{display:flex;gap:10px;flex-wrap:wrap;margin:0 0 18px} .topnav a{text-decoration:none;padding:10px 14px;border-radius:999px;background:#fff;border:1px solid var(--border);font-weight:700}
+.section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+.toolbar{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:end;margin:16px 0} .search{width:100%;padding:14px 16px;border:1px solid var(--border);border-radius:14px;background:#fff;font-size:1rem}
+.tabs{display:flex;flex-wrap:wrap;gap:8px} .tab{border:1px solid var(--border);background:#fff;padding:10px 14px;border-radius:999px;font-weight:700;color:var(--primary-dark);cursor:pointer} .tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.list{max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:18px;background:#fff;padding:8px} .item{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;padding:10px 12px;border-radius:12px} .item:hover{background:#f6faf9}
+.pill{font-size:.78rem;padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--muted)} .actions{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-top:16px;flex-wrap:wrap}
+.btn{border:none;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer} .btn-primary{background:var(--primary-dark);color:#fff} .btn-primary:disabled{opacity:.45;cursor:not-allowed} .btn-secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px} .field{display:flex;flex-direction:column;gap:6px} input[type=text], input[type=url], select{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff}
+.tablewrap{overflow:auto;border:1px solid var(--border);border-radius:18px;background:#fff} table{width:100%;border-collapse:collapse;min-width:900px} th,td{padding:12px 10px;border-bottom:1px solid #ece7df;vertical-align:top} thead th{position:sticky;top:0;background:#fff;z-index:1} .paternal{background:#7c332d;color:#fff} .maternal{background:#2d5743;color:#fff} .group-pat{background:#f7ece8} .group-mat{background:#edf5ef}
+.note{padding:14px 16px;border-radius:16px;background:#fff;border:1px solid var(--border)} .status{margin-top:12px;font-weight:700}
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center} .count-badge{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid var(--border);font-weight:700}
+.progress-table td:last-child,.progress-table th:last-child{text-align:right} details{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px} details+details{margin-top:10px} summary{cursor:pointer;font-weight:800}
+.small{font-size:.92rem} .hidden{display:none !important}
+@media (max-width:860px){.hero{grid-template-columns:1fr} .toolbar{grid-template-columns:1fr} .form-grid{grid-template-columns:1fr} .item{grid-template-columns:auto 1fr} }
+</style>
+</head>
+<body>
+<a class="skip" href="#mainContent">Skip to content</a>
+<main id="mainContent">
+  <nav class="topnav" aria-label="Page sections">
+    <a href="#screen1">Scholar selection</a>
+    <a href="#screen3">Public progress</a>
+    <a href="#adminView">Admin view</a>
+  </nav>
+
+  <section class="card hero">
+    <div>
+      <h1>iTaukei scholar province survey</h1>
+      <p>This page collects paternal and maternal village and province information for iTaukei Masters and PhD scholars so the research site can credit scholarly productivity by home province.</p>
+      <p class="muted">The public page allows open contribution and only shows progress counts by scholar. Full submitted details should stay restricted to the admin view.</p>
+      <div class="tagrow">
+        <div class="tag">Open public submission</div>
+        <div class="tag">Batch entry</div>
+        <div class="tag">Count-only public progress</div>
+      </div>
+    </div>
+    <div class="hero-box">
+      <h3>Example chart placeholder</h3>
+      <p class="muted small">Insert the dashboard image that shows publications by iTaukei scholars’ home province.</p>
+      <div style="height:200px;border:2px dashed var(--border);border-radius:18px;background:linear-gradient(180deg,#fff,#f5f3ee);"></div>
+    </div>
+  </section>
+
+  <section id="screen1" class="card">
+    <div class="section-head"><div><h2>Screen 1 — scholar selection</h2><p class="muted">Search or browse by last-name initial, then tick one or more scholars before continuing.</p></div></div>
+    <div class="toolbar">
+      <div class="field">
+        <label for="scholarSearch"><strong>Search scholars</strong></label>
+        <input id="scholarSearch" class="search" type="text" placeholder="Filter by first or last name…">
+      </div>
+      <div>
+        <div class="muted small">Browse by last-name initial</div>
+        <div id="alphaTabs" class="tabs"></div>
+      </div>
+    </div>
+    <div id="scholarList" class="list" aria-live="polite"></div>
+    <div class="actions">
+      <div class="muted"><span id="matchCount">0</span> scholars shown · <span id="selCount">0</span> selected</div>
+      <button id="continueBtn" class="btn btn-primary" disabled>Continue with 0 selected</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Add someone not on the list</h2>
+    <p class="muted">Use this separate form if a scholar is missing from the existing list. These records should be written to a separate tab such as <strong>NewScholars</strong>.</p>
+    <form id="newScholarForm" class="form-grid">
+      <div class="field"><label for="newLast">Last name</label><input id="newLast" name="lastName" type="text" required></div>
+      <div class="field"><label for="newFirst">First name</label><input id="newFirst" name="firstName" type="text" required></div>
+      <div class="field"><label for="newDegree">Degree</label><select id="newDegree" name="degree" required><option value="">Select degree…</option><option>Masters</option><option>PhD</option></select></div>
+      <div class="field"><label for="newYear">Graduation year</label><input id="newYear" name="gradYear" type="text" placeholder="e.g. 2018"></div>
+      <div class="field"><label for="newUni">University (optional)</label><input id="newUni" name="university" type="text"></div>
+      <div class="field"><label for="newLink">Link to thesis (optional)</label><input id="newLink" name="thesisLink" type="url" placeholder="https://..."></div>
+    </form>
+    <div class="actions"><div class="muted small">Separate submission stream from the main province responses.</div><button id="submitNewScholar" class="btn btn-secondary" type="button">Submit new scholar</button></div>
+    <div id="newScholarStatus" class="status muted"></div>
+  </section>
+
+  <section id="screen2" class="card hidden">
+    <div class="section-head"><div><h2>Screen 2 — batch entry form</h2><p class="muted">All fields are optional. Submit one row per selected scholar in a single batch.</p></div><button id="backBtn" class="btn btn-secondary" type="button">Back to selection</button></div>
+    <div class="field" style="max-width:420px;margin-bottom:14px"><label for="informantName"><strong>Your name (optional)</strong></label><input id="informantName" type="text" placeholder="e.g. Ron Vave"></div>
+    <div class="tablewrap">
+      <table id="batchTable">
+        <thead>
+          <tr>
+            <th rowspan="2">Scholar</th>
+            <th colspan="2" class="paternal">Vanua e cavu tu mai kina</th>
+            <th colspan="2" class="maternal">Vanua e vasu kina</th>
+          </tr>
+          <tr>
+            <th class="paternal">Paternal village</th>
+            <th class="paternal">Paternal province</th>
+            <th class="maternal">Maternal village</th>
+            <th class="maternal">Maternal province</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="actions"><div class="muted small">Google Sheets endpoint placeholder is included in the script for you to replace.</div><button id="submitBatch" class="btn btn-primary" type="button">Submit this batch</button></div>
+    <div id="batchStatus" class="status muted"></div>
+  </section>
+
+  <section id="screen3" class="card">
+    <div class="section-head"><div><h2>Screen 3 — public progress view</h2><p class="muted">This public view shows counts only, not the submitted village or province answers.</p></div><div class="count-badge" id="publicSummary">Loading sample counts…</div></div>
+    <div class="hero-box" style="margin-bottom:16px"><h3>What this data supports</h3><p class="muted small">This feeds a chart that groups publications by scholars’ home province while keeping detailed submissions private.</p><div style="height:120px;border:2px dashed var(--border);border-radius:16px;background:linear-gradient(180deg,#fff,#f5f3ee);"></div></div>
+    <div class="filters"><label for="progressFilter"><strong>Filter</strong></label><select id="progressFilter"><option value="all">All</option><option value="needs">Needs info (0 forms)</option><option value="low">Low confidence (1 form)</option><option value="confirmed">Confirmed (2+ forms)</option></select></div>
+    <div class="tablewrap" style="margin-top:14px">
+      <table id="progressTable" class="progress-table">
+        <thead><tr><th>Scholar</th><th>Number of submissions</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="adminView" class="card">
+    <div class="section-head"><div><h2>Admin view — restricted</h2><p class="muted">This mockup uses a simple access gate and is intended for a private URL or protected page.</p></div><button id="toggleAdmin" class="btn btn-secondary" type="button">Unlock admin view</button></div>
+    <div id="adminGate" class="note"><p class="small">Recommended production approach: keep this view on an unlinked private URL and require a shared password or Apps Script key before returning full submissions.</p><div class="form-grid" style="margin-top:12px;max-width:700px"><div class="field"><label for="adminPassword">Demo password</label><input id="adminPassword" type="text" placeholder="Enter demo password: ron-admin"></div><div class="field" style="align-self:end"><button id="adminLogin" class="btn btn-primary" type="button">Open details</button></div></div></div>
+    <div id="adminPanel" class="hidden">
+      <div class="note" style="margin-bottom:12px">Full submission rows appear below in the restricted view, including informant name and paternal/maternal village/province fields.</div>
+      <div id="adminList"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Google Sheets integration notes</h2>
+    <div class="note small">
+      <p><strong>ProvinceResponses</strong> columns: Informant name, Last name, First name, Paternal village, Paternal Province, Maternal village, Maternal Province, Timestamp.</p>
+      <p><strong>NewScholars</strong> columns: Last name, First name, Degree, Graduation year, University, Link to thesis, Timestamp.</p>
+      <p>Replace <code>GOOGLE_SCRIPT_URL</code> in the script with your published Apps Script web app URL. This live version fetches public counts from <code>?mode=progress</code> and restricted admin details from <code>?mode=admin&amp;key=...</code>.</p>
+    </div>
+  </section>
+</main>
+<script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpnr7wi_ir55QboVj5FEIHUjtUX9gzdlLDpCTNIjQiLINWD1VrmOlB49YFo3DDERBJ/exec';
+const PROVINCES = ["Ba", "Bua", "Cakaudrove", "Kadavu", "Lau", "Lomaiviti", "Macuata", "Nadroga-Navosa", "Naitasiri", "Namosi", "Ra", "Rewa", "Serua", "Tailevu"];
+const SCHOLARS = [{"id": 1, "lastName": "Alifereti", "firstName": "Vasemaca Ledua", "initial": "A"}, {"id": 2, "lastName": "Aporosa", "firstName": "Apo", "initial": "A"}, {"id": 3, "lastName": "Ba", "firstName": "Tevita", "initial": "B"}, {"id": 4, "lastName": "Baba", "firstName": "Tupeni L.", "initial": "B"}, {"id": 5, "lastName": "Bainivalu", "firstName": "Awei Tiko", "initial": "B"}, {"id": 6, "lastName": "Bakalevu", "firstName": "Salanieta Leiloma", "initial": "B"}, {"id": 7, "lastName": "Balawanilotu-Roach", "firstName": "Gina S.", "initial": "B"}, {"id": 8, "lastName": "Baledrokadroka", "firstName": "Jone", "initial": "B"}, {"id": 9, "lastName": "Baleimakutu", "firstName": "Malakai Koroilagilagi", "initial": "B"}, {"id": 10, "lastName": "Baleinamau", "firstName": "Manasa", "initial": "B"}, {"id": 11, "lastName": "Baleivanualala", "firstName": "Sakiusa C", "initial": "B"}, {"id": 12, "lastName": "Baleivolivoli", "firstName": "Livai", "initial": "B"}, {"id": 13, "lastName": "Balenaivalu", "firstName": "Siliva", "initial": "B"}, {"id": 14, "lastName": "Bauleka", "firstName": "Pauliasi", "initial": "B"}, {"id": 15, "lastName": "Bola", "firstName": "Amelia Robina Taleikicakau", "initial": "B"}, {"id": 16, "lastName": "Bolatagici", "firstName": "Torika", "initial": "B"}, {"id": 17, "lastName": "Buatava", "firstName": "Vitori", "initial": "B"}, {"id": 18, "lastName": "Butukoro", "firstName": "Aisea Ledua", "initial": "B"}, {"id": 19, "lastName": "Cagivanua", "firstName": "Ulamila Monica", "initial": "C"}, {"id": 20, "lastName": "Cakacaka", "firstName": "Akuila", "initial": "C"}, {"id": 21, "lastName": "Carling", "firstName": "Mereia", "initial": "C"}, {"id": 22, "lastName": "Cati", "firstName": "VASITIA TALATOKA SISIVADRA", "initial": "C"}, {"id": 23, "lastName": "Cavuilati", "firstName": "Elizabeth Rowina", "initial": "C"}, {"id": 24, "lastName": "Cawanibuka", "firstName": "Lasarusa Turaga", "initial": "C"}, {"id": 25, "lastName": "Cokanasiga", "firstName": "Isimeli Jale", "initial": "C"}, {"id": 26, "lastName": "Copeland", "firstName": "Lekima", "initial": "C"}, {"id": 27, "lastName": "Corerega-Hawea", "firstName": "Salanieta Musudole", "initial": "C"}, {"id": 28, "lastName": "Curuki", "firstName": "Jale Samuwai", "initial": "C"}, {"id": 29, "lastName": "Dakuidreketi", "firstName": "Mesake Rawaikela", "initial": "D"}, {"id": 30, "lastName": "Dakunivosa", "firstName": "Moses", "initial": "D"}, {"id": 31, "lastName": "Daurewa", "firstName": "Alisi Waqanika", "initial": "D"}, {"id": 32, "lastName": "Degei", "firstName": "Sekove Bigitibau", "initial": "D"}, {"id": 33, "lastName": "Delaibatiki", "firstName": "Radilaite", "initial": "D"}, {"id": 34, "lastName": "Dewa", "firstName": "Fereti S.", "initial": "D"}, {"id": 35, "lastName": "Driu", "firstName": "Sereana", "initial": "D"}, {"id": 36, "lastName": "Duaibe", "firstName": "Katalaine", "initial": "D"}, {"id": 37, "lastName": "Duaibe", "firstName": "Semi Tikilivi", "initial": "D"}, {"id": 38, "lastName": "Durutalo", "firstName": "Alumita Lawaniyavi", "initial": "D"}, {"id": 39, "lastName": "Durutalo", "firstName": "Simione", "initial": "D"}, {"id": 41, "lastName": "Fifita", "firstName": "Selesia", "initial": "F"}, {"id": 42, "lastName": "Finau", "firstName": "Glenn", "initial": "F"}, {"id": 43, "lastName": "Finekaso", "firstName": "Gaylene Osborne", "initial": "F"}, {"id": 44, "lastName": "Fong", "firstName": "Patrick Sakiusa", "initial": "F"}, {"id": 45, "lastName": "Fong-Lomavatu", "firstName": "Mereia", "initial": "F"}, {"id": 40, "lastName": "FUATAU", "firstName": "ORIPA BUNE", "initial": "F"}, {"id": 47, "lastName": "Gavidi", "firstName": "Ratu Osea", "initial": "G"}, {"id": 48, "lastName": "Ginigini", "firstName": "Joape", "initial": "G"}, {"id": 49, "lastName": "Gonelevu", "firstName": "Arieta Meru Lutunauca", "initial": "G"}, {"id": 46, "lastName": "GONEYALI", "firstName": "APAITIA", "initial": "G"}, {"id": 50, "lastName": "Gucake", "firstName": "Roko Netani", "initial": "G"}, {"id": 51, "lastName": "Kamenio", "firstName": "Luisa Kacilala Qilatabu", "initial": "K"}, {"id": 52, "lastName": "Kanainabogi", "firstName": "Lusiana S. M.", "initial": "K"}, {"id": 53, "lastName": "Kasami", "firstName": "Akisi Nailaba", "initial": "K"}, {"id": 54, "lastName": "Kasanawaqa", "firstName": "Viliame", "initial": "K"}, {"id": 55, "lastName": "Kaumaitotoya", "firstName": "Tiriseyane Banuve", "initial": "K"}, {"id": 56, "lastName": "Kedrayate", "firstName": "Akanisi", "initial": "K"}, {"id": 57, "lastName": "Kitolelei", "firstName": "Ann Akata", "initial": "K"}, {"id": 58, "lastName": "Koroi", "firstName": "Bale Theresa Koula", "initial": "K"}, {"id": 59, "lastName": "Koroi", "firstName": "Iliesa", "initial": "K"}, {"id": 60, "lastName": "Koroi", "firstName": "Sefanaia", "initial": "K"}, {"id": 61, "lastName": "Koroi", "firstName": "Temalesi", "initial": "K"}, {"id": 62, "lastName": "Korovavala", "firstName": "Lesikimacuata", "initial": "K"}, {"id": 63, "lastName": "Korovulavula", "firstName": "Isoa", "initial": "K"}, {"id": 64, "lastName": "Koto", "firstName": "Camari Waqanivalu", "initial": "K"}, {"id": 65, "lastName": "Koto", "firstName": "Nemaia Waqanivalu", "initial": "K"}, {"id": 66, "lastName": "Kuilamu", "firstName": "Marika", "initial": "K"}, {"id": 67, "lastName": "Kunabuli", "firstName": "Paula Saraniogo", "initial": "K"}, {"id": 68, "lastName": "Kuridrani", "firstName": "Litiana N Tuilaselase", "initial": "K"}, {"id": 69, "lastName": "Kuruyawa", "firstName": "Salote", "initial": "K"}, {"id": 70, "lastName": "Lagi", "firstName": "Rosiana", "initial": "L"}, {"id": 71, "lastName": "Lako", "firstName": "Jimaima Veisikiaki", "initial": "L"}, {"id": 72, "lastName": "Lako", "firstName": "Jone Fuala", "initial": "L"}, {"id": 73, "lastName": "Lawanivalu", "firstName": "Melaia", "initial": "L"}, {"id": 74, "lastName": "Leba", "firstName": "Merewati", "initial": "L"}, {"id": 75, "lastName": "Lesi", "firstName": "Viola Talemailakeba", "initial": "L"}, {"id": 76, "lastName": "Lesuma", "firstName": "Misaele D.", "initial": "L"}, {"id": 77, "lastName": "Lewatoro", "firstName": "Verenaisi Rokowaqe", "initial": "L"}, {"id": 78, "lastName": "Leweniqila", "firstName": "Ilisoni Lasaqa Vuetinabouono", "initial": "L"}, {"id": 79, "lastName": "Ligairi", "firstName": "Josua Naua", "initial": "L"}, {"id": 80, "lastName": "Likuseniuwa", "firstName": "Kalara Elisabeta", "initial": "L"}, {"id": 81, "lastName": "Loga", "firstName": "Patricia S.", "initial": "L"}, {"id": 82, "lastName": "Loganimoce", "firstName": "Isimeli C", "initial": "L"}, {"id": 83, "lastName": "Logavatu", "firstName": "Aloesi Lewatu", "initial": "L"}, {"id": 84, "lastName": "Loki", "firstName": "Ratu Lutumailagi Israel Vuniyaca", "initial": "L"}, {"id": 85, "lastName": "Lumelume", "firstName": "Sereima", "initial": "L"}, {"id": 86, "lastName": "Luvu", "firstName": "Joeli T.", "initial": "L"}, {"id": 88, "lastName": "Macanawai", "firstName": "Setareki S.", "initial": "M"}, {"id": 89, "lastName": "Maiono", "firstName": "Jekope Ramala", "initial": "M"}, {"id": 90, "lastName": "Maitava", "firstName": "Kevin Peter Marc", "initial": "M"}, {"id": 91, "lastName": "Manoa", "firstName": "Pio Emosi", "initial": "M"}, {"id": 92, "lastName": "Manulevu", "firstName": "Unaisi Nawalowalo", "initial": "M"}, {"id": 93, "lastName": "Matadradra-Dolavale", "firstName": "Anawaite Vuevata", "initial": "M"}, {"id": 94, "lastName": "Mataitoga", "firstName": "Setoki Mocebalavu", "initial": "M"}, {"id": 87, "lastName": "MATANAlCAKE JUNIOR", "firstName": "SEMESA", "initial": "M"}, {"id": 95, "lastName": "Matatolu", "firstName": "Ilisapeci", "initial": "M"}, {"id": 96, "lastName": "Mateivit-Tulavu", "firstName": "Eseta K", "initial": "M"}, {"id": 97, "lastName": "Matiaka", "firstName": "Reapi", "initial": "M"}, {"id": 98, "lastName": "Matoto", "firstName": "Veisinia", "initial": "M"}, {"id": 99, "lastName": "Meo", "firstName": "Jovili I.", "initial": "M"}, {"id": 100, "lastName": "Meo", "firstName": "Semisi", "initial": "M"}, {"id": 101, "lastName": "Meo-Sewabu", "firstName": "Litea Diloki", "initial": "M"}, {"id": 102, "lastName": "Movono", "firstName": "Apisalome", "initial": "M"}, {"id": 103, "lastName": "Movono", "firstName": "Make Liku", "initial": "M"}, {"id": 104, "lastName": "Mua", "firstName": "Makereta Rosarine", "initial": "M"}, {"id": 105, "lastName": "Mua", "firstName": "Mike", "initial": "M"}, {"id": 106, "lastName": "Musudroka", "firstName": "Maria Talei", "initial": "M"}, {"id": 109, "lastName": "Nabobo-Baba", "firstName": "Unaisi", "initial": "N"}, {"id": 110, "lastName": "Naca", "firstName": "Ilaisa", "initial": "N"}, {"id": 111, "lastName": "Naduva", "firstName": "Adriu", "initial": "N"}, {"id": 112, "lastName": "Naikatini", "firstName": "Alifereti Neisava", "initial": "N"}, {"id": 113, "lastName": "Nailatikau", "firstName": "Merewalesi V.", "initial": "N"}, {"id": 114, "lastName": "Nailevu", "firstName": "Losalini", "initial": "N"}, {"id": 115, "lastName": "Nainoca", "firstName": "Fulori Vakalutusau", "initial": "N"}, {"id": 116, "lastName": "Nainoca", "firstName": "Winifereti Ubianalaca", "initial": "N"}, {"id": 117, "lastName": "Naioko", "firstName": "Alifereti", "initial": "N"}, {"id": 118, "lastName": "Naisele", "firstName": "E. T.", "initial": "N"}, {"id": 119, "lastName": "Naisilisili", "firstName": "Sereima Volivoli", "initial": "N"}, {"id": 120, "lastName": "Naivalu", "firstName": "Misieli Naulivou", "initial": "N"}, {"id": 121, "lastName": "Nakalevu", "firstName": "Taito", "initial": "N"}, {"id": 107, "lastName": "NAMEDRE", "firstName": "ASELA MATAI", "initial": "N"}, {"id": 122, "lastName": "Namosimalua", "firstName": "Veniana Qica", "initial": "N"}, {"id": 123, "lastName": "Namudu", "firstName": "Merekeleni Talei", "initial": "N"}, {"id": 124, "lastName": "Naqasima", "firstName": "Akuila Ravuci", "initial": "N"}, {"id": 125, "lastName": "Naqasima-Sobey", "firstName": "Milika", "initial": "N"}, {"id": 126, "lastName": "Narawa", "firstName": "Unaisi", "initial": "N"}, {"id": 127, "lastName": "Narawa-Daurewa", "firstName": "Unaisi Q.", "initial": "N"}, {"id": 128, "lastName": "Nasalo", "firstName": "Salote S.", "initial": "N"}, {"id": 129, "lastName": "Nasedra", "firstName": "Luke", "initial": "N"}, {"id": 130, "lastName": "Nasila", "firstName": "Viliame", "initial": "N"}, {"id": 131, "lastName": "Navakamocea", "firstName": "Jone V.", "initial": "N"}, {"id": 132, "lastName": "Navila", "firstName": "Vilimaina Molidrau", "initial": "N"}, {"id": 133, "lastName": "Navoti", "firstName": "Sainivalati S.", "initial": "N"}, {"id": 108, "lastName": "NAVUNISARAVI", "firstName": "ALIPATE", "initial": "N"}, {"id": 134, "lastName": "Nawele", "firstName": "Kelera", "initial": "N"}, {"id": 135, "lastName": "Nayacalevu", "firstName": "Romulo", "initial": "N"}, {"id": 136, "lastName": "Oli", "firstName": "Kelera Salusalunitoba", "initial": "O"}, {"id": 137, "lastName": "Osborne-Naikatini", "firstName": "Tamara", "initial": "O"}, {"id": 138, "lastName": "Panapasa", "firstName": "Sela", "initial": "P"}, {"id": 139, "lastName": "Puamau", "firstName": "Virisila Qolisaya Lidise", "initial": "P"}, {"id": 141, "lastName": "Qalo", "firstName": "Ropate Rakuita", "initial": "Q"}, {"id": 142, "lastName": "Qalubau", "firstName": "Setoki", "initial": "Q"}, {"id": 143, "lastName": "Qasenivalu", "firstName": "Mosese Tavaga", "initial": "Q"}, {"id": 144, "lastName": "Qereqeretabua", "firstName": "Sakiusa", "initial": "Q"}, {"id": 140, "lastName": "QEREQERETABUA", "firstName": "TIMOCI", "initial": "Q"}, {"id": 145, "lastName": "Qiolevu", "firstName": "Jokapeci Wea Qalo", "initial": "Q"}, {"id": 146, "lastName": "Qovu", "firstName": "Emasi", "initial": "Q"}, {"id": 150, "lastName": "Rabo", "firstName": "Karalaini", "initial": "R"}, {"id": 147, "lastName": "RAGECI", "firstName": "ADRIEL NICOLAS", "initial": "R"}, {"id": 151, "lastName": "Raisele", "firstName": "Kolaia", "initial": "R"}, {"id": 152, "lastName": "Raiyawa", "firstName": "Tomasi Vasulailai", "initial": "R"}, {"id": 153, "lastName": "Rarokolutu", "firstName": "Ratu Tevita", "initial": "R"}, {"id": 154, "lastName": "Ratawa", "firstName": "Wendy Margaret", "initial": "R"}, {"id": 155, "lastName": "Ratubulewa", "firstName": "Naivalucava Vilikesa", "initial": "R"}, {"id": 156, "lastName": "Ratumaitavuki", "firstName": "Maciu", "initial": "R"}, {"id": 157, "lastName": "Ratuniata", "firstName": "Rusiate Lavatani", "initial": "R"}, {"id": 158, "lastName": "Ratuva", "firstName": "Steven", "initial": "R"}, {"id": 159, "lastName": "Ratuvakacereivalu", "firstName": "Joji", "initial": "R"}, {"id": 160, "lastName": "Ravatu", "firstName": "Semiti Gaunavinaka", "initial": "R"}, {"id": 161, "lastName": "Ravono", "firstName": "Akisi Nailaba", "initial": "R"}, {"id": 148, "lastName": "RAVULO - LEWENIQILA", "firstName": "LOSALINI TUIRABE", "initial": "R"}, {"id": 162, "lastName": "Ravulo-Leweniqila", "firstName": "Losalini Tuirabe", "initial": "R"}, {"id": 163, "lastName": "Ravuvu", "firstName": "Amerita", "initial": "R"}, {"id": 164, "lastName": "Ravuvu", "firstName": "Asesela", "initial": "R"}, {"id": 165, "lastName": "Ravuvu", "firstName": "Asesela Drekeivalu", "initial": "R"}, {"id": 166, "lastName": "Rigamoto", "firstName": "Rejieli Ragafuata", "initial": "R"}, {"id": 167, "lastName": "Rika", "firstName": "Nacanieli", "initial": "R"}, {"id": 168, "lastName": "Rika", "firstName": "Pulotu Lewaca Vanua", "initial": "R"}, {"id": 169, "lastName": "Rika-Hicks", "firstName": "Sainiana Senikau", "initial": "R"}, {"id": 149, "lastName": "ROKOCAKAU", "firstName": "AMINIASI", "initial": "R"}, {"id": 170, "lastName": "Rokocakau", "firstName": "Samuela Talekicakau Reva", "initial": "R"}, {"id": 171, "lastName": "Rokoduru", "firstName": "Avelina", "initial": "R"}, {"id": 172, "lastName": "Rokolekutu", "firstName": "Ponipate R.", "initial": "R"}, {"id": 173, "lastName": "Rokomatu", "firstName": "Isikeli", "initial": "R"}, {"id": 174, "lastName": "Rotuivaqali", "firstName": "Masilina Tuiloa", "initial": "R"}, {"id": 175, "lastName": "Rounds", "firstName": "Isaac A.", "initial": "R"}, {"id": 176, "lastName": "Rova", "firstName": "Eremasi C.", "initial": "R"}, {"id": 178, "lastName": "Sakai", "firstName": "Sevanaia", "initial": "S"}, {"id": 179, "lastName": "Sakumeni", "firstName": "Kelera", "initial": "S"}, {"id": 180, "lastName": "Sale-Mario", "firstName": "Emma", "initial": "S"}, {"id": 181, "lastName": "Samisoni", "firstName": "Mere Tuisalato", "initial": "S"}, {"id": 182, "lastName": "Samuwai", "firstName": "Jale", "initial": "S"}, {"id": 183, "lastName": "Savou", "firstName": "Joeli", "initial": "S"}, {"id": 184, "lastName": "Sedra", "firstName": "Jolami Lasawa", "initial": "S"}, {"id": 185, "lastName": "Senibulu", "firstName": "Luisa Matanisiga", "initial": "S"}, {"id": 186, "lastName": "Senlliri", "firstName": "Iokiml", "initial": "S"}, {"id": 177, "lastName": "SERU", "firstName": "MAIKA VULI", "initial": "S"}, {"id": 187, "lastName": "Siga", "firstName": "Amelia", "initial": "S"}, {"id": 188, "lastName": "Simpson", "firstName": "Ron", "initial": "S"}, {"id": 189, "lastName": "Simpson", "firstName": "Samanunu", "initial": "S"}, {"id": 190, "lastName": "Sivo", "firstName": "Loraini Ceva", "initial": "S"}, {"id": 192, "lastName": "Tabakei", "firstName": "Losalini", "initial": "T"}, {"id": 193, "lastName": "Tabilai", "firstName": "Wame Jackson Peni", "initial": "T"}, {"id": 194, "lastName": "Tabua", "firstName": "George V.", "initial": "T"}, {"id": 195, "lastName": "Tabua", "firstName": "Katafono Mereia", "initial": "T"}, {"id": 191, "lastName": "TABUANIQILI", "firstName": "KELERA VERELADA", "initial": "T"}, {"id": 196, "lastName": "Tabudravu", "firstName": "Jioji N.", "initial": "T"}, {"id": 197, "lastName": "Tabuya", "firstName": "Jone Duikoro", "initial": "T"}, {"id": 198, "lastName": "Taga", "firstName": "Raijeli", "initial": "T"}, {"id": 199, "lastName": "Tagi", "firstName": "Epeli Josateki", "initial": "T"}, {"id": 200, "lastName": "Tagicakibau", "firstName": "Ema M. Golea", "initial": "T"}, {"id": 201, "lastName": "Tagicakibau", "firstName": "Sera Salavou Nailagovesi", "initial": "T"}, {"id": 202, "lastName": "Tagicakiverata", "firstName": "Isimeli Waibuta", "initial": "T"}, {"id": 203, "lastName": "Tagivakatini", "firstName": "Sereana Railoa", "initial": "T"}, {"id": 204, "lastName": "Tagivakatini", "firstName": "Serupepli Junior", "initial": "T"}, {"id": 205, "lastName": "Tamani", "firstName": "Eroni", "initial": "T"}, {"id": 206, "lastName": "Tamata", "firstName": "Apolonia N.", "initial": "T"}, {"id": 207, "lastName": "Tamata", "firstName": "Ulukalesi B.", "initial": "T"}, {"id": 208, "lastName": "Tausere", "firstName": "Nemani", "initial": "T"}, {"id": 209, "lastName": "Tavo", "firstName": "Maraia Sera Ratubalavu", "initial": "T"}, {"id": 210, "lastName": "Tavola", "firstName": "Helen Goodwill", "initial": "T"}, {"id": 211, "lastName": "Tavola", "firstName": "Kaliopate", "initial": "T"}, {"id": 212, "lastName": "Tawake", "firstName": "Alifereti", "initial": "T"}, {"id": 213, "lastName": "Tawake", "firstName": "Lavenia", "initial": "T"}, {"id": 214, "lastName": "Tawaketini", "firstName": "Janet", "initial": "T"}, {"id": 215, "lastName": "Thomas", "firstName": "Nunia Teresa", "initial": "T"}, {"id": 216, "lastName": "Tiko", "firstName": "Lavinia Sauleca Tausere", "initial": "T"}, {"id": 217, "lastName": "Tikoca", "firstName": "Siteri A. W.", "initial": "T"}, {"id": 218, "lastName": "Tikoibua", "firstName": "Tomasi", "initial": "T"}, {"id": 219, "lastName": "Titoko", "firstName": "Judith", "initial": "T"}, {"id": 220, "lastName": "Titoko", "firstName": "Richard William", "initial": "T"}, {"id": 221, "lastName": "Tokalauvere", "firstName": "Lanieta Veileqe", "initial": "T"}, {"id": 222, "lastName": "Tokalauvere", "firstName": "Maikeli", "initial": "T"}, {"id": 223, "lastName": "Tokalauvere-Veileqe", "firstName": "Lanieta", "initial": "T"}, {"id": 224, "lastName": "Tokasaya", "firstName": "Pauliasi", "initial": "T"}, {"id": 225, "lastName": "Tokavou", "firstName": "Noa", "initial": "T"}, {"id": 226, "lastName": "Tora", "firstName": "Grace Taito", "initial": "T"}, {"id": 227, "lastName": "Tora", "firstName": "Mere Sau", "initial": "T"}, {"id": 228, "lastName": "Tubuna", "firstName": "Sakiusa", "initial": "T"}, {"id": 229, "lastName": "Tuibeqa", "firstName": "Asaeli Tamanitoakula", "initial": "T"}, {"id": 230, "lastName": "Tuikenatabua", "firstName": "Iliesa", "initial": "T"}, {"id": 231, "lastName": "Tuilau", "firstName": "Manasa", "initial": "T"}, {"id": 232, "lastName": "Tuimavana", "firstName": "Ruveni W. R.", "initial": "T"}, {"id": 233, "lastName": "Tuinamuana", "firstName": "Katarina", "initial": "T"}, {"id": 234, "lastName": "Tuitoga", "firstName": "Anare", "initial": "T"}, {"id": 235, "lastName": "Tuiwawa", "firstName": "Marika Vuli", "initial": "T"}, {"id": 236, "lastName": "Tukana", "firstName": "Andrew", "initial": "T"}, {"id": 237, "lastName": "Tuqota", "firstName": "Meli T.", "initial": "T"}, {"id": 238, "lastName": "Tuvuki", "firstName": "Sandra Dawn", "initial": "T"}, {"id": 239, "lastName": "Tuvuki", "firstName": "Suliasi Wavu", "initial": "T"}, {"id": 240, "lastName": "Tuvuki", "firstName": "Timaima T", "initial": "T"}, {"id": 241, "lastName": "Tuwere", "firstName": "Ilaitia Sevati", "initial": "T"}, {"id": 243, "lastName": "Vada", "firstName": "Sera Kogure", "initial": "V"}, {"id": 244, "lastName": "Vakamocea", "firstName": "Mafa", "initial": "V"}, {"id": 245, "lastName": "Vakaoti", "firstName": "Patrick", "initial": "V"}, {"id": 246, "lastName": "Vakauta", "firstName": "Ana", "initial": "V"}, {"id": 247, "lastName": "Varani-Norton", "firstName": "Eta", "initial": "V"}, {"id": 248, "lastName": "Vatanimoto-Mausio", "firstName": "Asinate", "initial": "V"}, {"id": 249, "lastName": "Vatukela", "firstName": "Jese Rokalevulevu", "initial": "V"}, {"id": 250, "lastName": "Veisa", "firstName": "Filipe T.", "initial": "V"}, {"id": 251, "lastName": "Veitata", "firstName": "Sainimere", "initial": "V"}, {"id": 252, "lastName": "Veitayaki", "firstName": "Joeli", "initial": "V"}, {"id": 253, "lastName": "Voceduadua", "firstName": "Simione", "initial": "V"}, {"id": 242, "lastName": "VOLAVOLA", "firstName": "OSEA", "initial": "V"}, {"id": 254, "lastName": "Vosikata", "firstName": "Sunia", "initial": "V"}, {"id": 255, "lastName": "Vudiniabola", "firstName": "Alisi Talatoka", "initial": "V"}, {"id": 256, "lastName": "Vuki", "firstName": "Veikila C.", "initial": "V"}, {"id": 257, "lastName": "Vuli", "firstName": "Koini M.", "initial": "V"}, {"id": 258, "lastName": "Vuli", "firstName": "Livai Mudu", "initial": "V"}, {"id": 259, "lastName": "Vunibola", "firstName": "Suliasi", "initial": "V"}, {"id": 260, "lastName": "Vunicagi", "firstName": "Kesaia L", "initial": "V"}, {"id": 261, "lastName": "Vunidilo", "firstName": "Tarisi Sorovi", "initial": "V"}, {"id": 262, "lastName": "Vuniivi", "firstName": "Viliame", "initial": "V"}, {"id": 263, "lastName": "Vunisea", "firstName": "Aliti", "initial": "V"}, {"id": 264, "lastName": "Waibuca", "firstName": "Imeri", "initial": "W"}, {"id": 265, "lastName": "Wainiqolo", "firstName": "Iris", "initial": "W"}, {"id": 266, "lastName": "Waqa", "firstName": "Gade D", "initial": "W"}, {"id": 267, "lastName": "Waqa", "firstName": "Melikiseteki Vakasenuku", "initial": "W"}, {"id": 268, "lastName": "Waqa-Sakiti", "firstName": "Hilda", "initial": "W"}, {"id": 269, "lastName": "Waqainabete", "firstName": "Milika", "initial": "W"}, {"id": 270, "lastName": "Waqairatu", "firstName": "Salote", "initial": "W"}, {"id": 271, "lastName": "Waqanicakau", "firstName": "Akanisi Tokalau", "initial": "W"}, {"id": 272, "lastName": "Waqanisau", "firstName": "Jeremaia M.", "initial": "W"}, {"id": 273, "lastName": "Whippy", "firstName": "Albert Jerry", "initial": "W"}, {"id": 274, "lastName": "Williams", "firstName": "Esther W. B.", "initial": "W"}, {"id": 275, "lastName": "Yabaki", "firstName": "Tamarisi", "initial": "Y"}, {"id": 276, "lastName": "Yabaki-Goundar", "firstName": "Mere", "initial": "Y"}];
+let liveProgressRows = [];
+let liveAdminRows = [];
+
+let activeInitial='All';
+let selectedIds=new Set();
+const initials=['All', ...Array.from(new Set(SCHOLARS.map(s => s.initial)))];
+const tabsEl=document.getElementById('alphaTabs'); const listEl=document.getElementById('scholarList'); const searchEl=document.getElementById('scholarSearch'); const matchCountEl=document.getElementById('matchCount'); const selCountEl=document.getElementById('selCount'); const continueBtn=document.getElementById('continueBtn');
+const screen1=document.getElementById('screen1'); const screen2=document.getElementById('screen2'); const batchTbody=document.querySelector('#batchTable tbody');
+function renderTabs(){tabsEl.innerHTML='';initials.forEach(ch=>{const b=document.createElement('button');b.type='button';b.className='tab'+(ch===activeInitial?' active':'');b.textContent=ch;b.addEventListener('click',()=>{activeInitial=ch;renderTabs();renderScholarList();});tabsEl.appendChild(b);});}
+function filteredScholars(){const q=searchEl.value.trim().toLowerCase(); return SCHOLARS.filter(s => (activeInitial==='All' || s.initial===activeInitial) && (!q || s.lastName.toLowerCase().includes(q) || s.firstName.toLowerCase().includes(q)));}
+function updateSelectionUI(){selCountEl.textContent=selectedIds.size; continueBtn.disabled=selectedIds.size===0; continueBtn.textContent=`Continue with ${selectedIds.size} selected`;}
+function renderScholarList(){const rows=filteredScholars(); matchCountEl.textContent=rows.length; listEl.innerHTML=''; rows.forEach(s=>{const row=document.createElement('label'); row.className='item'; const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=selectedIds.has(s.id); cb.addEventListener('change',()=>{cb.checked ? selectedIds.add(s.id) : selectedIds.delete(s.id); updateSelectionUI();}); const name=document.createElement('div'); name.innerHTML=`<strong>${s.lastName}, ${s.firstName}</strong><div class="muted small">Scholar ID ${s.id}</div>`; const pill=document.createElement('div'); pill.className='pill'; pill.textContent=s.initial; row.append(cb,name,pill); listEl.appendChild(row); }); updateSelectionUI();}
+function provinceOptions(){return ['<option value="">Select province…</option>', ...PROVINCES.map(p=>`<option value="${p}">${p}</option>`)].join('');}
+function buildBatchTable(){batchTbody.innerHTML=''; SCHOLARS.filter(s=>selectedIds.has(s.id)).forEach(s=>{const tr=document.createElement('tr'); tr.dataset.id=s.id; tr.innerHTML=`<td><strong>${s.lastName}, ${s.firstName}</strong><div class="muted small">Read-only scholar name</div></td><td class="group-pat"><input type="text" class="pv" aria-label="Paternal village for ${s.lastName}, ${s.firstName}"></td><td class="group-pat"><select class="pp" aria-label="Paternal province for ${s.lastName}, ${s.firstName}">${provinceOptions()}</select></td><td class="group-mat"><input type="text" class="mv" aria-label="Maternal village for ${s.lastName}, ${s.firstName}"></td><td class="group-mat"><select class="mp" aria-label="Maternal province for ${s.lastName}, ${s.firstName}">${provinceOptions()}</select></td>`; batchTbody.appendChild(tr); });}
+searchEl.addEventListener('input', renderScholarList); continueBtn.addEventListener('click',()=>{buildBatchTable(); screen2.classList.remove('hidden'); screen2.scrollIntoView({behavior:'smooth'});}); document.getElementById('backBtn').addEventListener('click',()=>window.scrollTo({top:document.getElementById('screen1').offsetTop-12, behavior:'smooth'}));
+async function submitBatch(){const informantName=document.getElementById('informantName').value.trim(); const entries=[...batchTbody.querySelectorAll('tr')].map(tr=>{const scholar=SCHOLARS.find(s=>s.id===Number(tr.dataset.id)); return {informantName,lastName:scholar.lastName,firstName:scholar.firstName,paternalVillage:tr.querySelector('.pv').value.trim(),paternalProvince:tr.querySelector('.pp').value,maternalVillage:tr.querySelector('.mv').value.trim(),maternalProvince:tr.querySelector('.mp').value};}); const status=document.getElementById('batchStatus'); status.textContent='Ready to send batch to Google Sheets.'; if(GOOGLE_SCRIPT_URL.startsWith('PASTE_')){status.textContent='Replace GOOGLE_SCRIPT_URL with your Apps Script web app URL before publishing.'; return;} try{const r=await fetch(GOOGLE_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'batch',entries})}); status.textContent = r.ok ? 'Batch submitted successfully.' : 'Submission returned an error.';}catch(e){status.textContent='Submission failed. Check Apps Script deployment and CORS settings.';} }
+document.getElementById('submitBatch').addEventListener('click', submitBatch);
+async function submitNewScholar(){const form=document.getElementById('newScholarForm'); const fd=new FormData(form); const payload=Object.fromEntries(fd.entries()); const status=document.getElementById('newScholarStatus'); status.textContent='Ready to send new scholar record.'; if(GOOGLE_SCRIPT_URL.startsWith('PASTE_')){status.textContent='Replace GOOGLE_SCRIPT_URL with your Apps Script web app URL before publishing.'; return;} try{const r=await fetch(GOOGLE_SCRIPT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:'newScholar',...payload})}); status.textContent = r.ok ? 'New scholar submitted.' : 'Submission returned an error.';}catch(e){status.textContent='Submission failed. Check Apps Script deployment and CORS settings.';} }
+document.getElementById('submitNewScholar').addEventListener('click', submitNewScholar);
+function normalizeProgressPayload(data){
+  if(!data) return [];
+  if(Array.isArray(data.rows)) return data.rows;
+  if(data.result && Array.isArray(data.result.rows)) return data.result.rows;
+  return [];
+}
+async function loadProgress(){
+  const summary=document.getElementById('publicSummary');
+  summary.textContent='Loading live counts…';
+  if(GOOGLE_SCRIPT_URL.startsWith('PASTE_')){
+    summary.textContent='Add your Apps Script URL to load live counts';
+    liveProgressRows=[];
+    renderProgress();
+    return;
+  }
+  try{
+    const r=await fetch(`${GOOGLE_SCRIPT_URL}?mode=progress`, {cache:'no-store'});
+    const data=await r.json();
+    liveProgressRows=normalizeProgressPayload(data);
+    renderProgress();
+  }catch(e){
+    summary.textContent='Could not load live progress';
+    liveProgressRows=[];
+    renderProgress();
+  }
+}
+function renderProgress(){
+  const filter=document.getElementById('progressFilter').value;
+  const tbody=document.querySelector('#progressTable tbody');
+  tbody.innerHTML='';
+  let rows=liveProgressRows.slice();
+  if(filter==='needs') rows=rows.filter(r=>r.status==='needs' || Number(r.count)===0);
+  if(filter==='low') rows=rows.filter(r=>r.status==='low' || Number(r.count)===1);
+  if(filter==='confirmed') rows=rows.filter(r=>r.status==='confirmed' || Number(r.count)>=2);
+  rows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${r.lastName}, ${r.firstName}</td><td>${Number(r.count)||0}</td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('publicSummary').textContent=`${rows.length} scholars shown`;
+}
+document.getElementById('progressFilter').addEventListener('change', renderProgress);
+function normalizeAdminPayload(data){
+  if(!data) return [];
+  if(Array.isArray(data.rows)) return data.rows;
+  if(data.result && Array.isArray(data.result.rows)) return data.result.rows;
+  return [];
+}
+function renderAdmin(){
+  const adminList=document.getElementById('adminList');
+  adminList.innerHTML='';
+  if(!liveAdminRows.length){
+    adminList.innerHTML='<div class="note small">No admin rows returned yet.</div>';
+    return;
+  }
+  liveAdminRows.forEach(row=>{
+    const name=`${row.lastName}, ${row.firstName}`;
+    const submissions=Array.isArray(row.submissions) ? row.submissions : [];
+    const d=document.createElement('details');
+    d.innerHTML=`<summary>${name} — ${submissions.length} submission(s)</summary>`;
+    const inner=document.createElement('div');
+    inner.className='small';
+    inner.style.marginTop='10px';
+    inner.innerHTML = submissions.length ? submissions.map(r=>`<div style="padding:10px 0;border-top:1px solid #ece7df"><strong>Informant:</strong> ${r.informantName || ''}<br><strong>Paternal village:</strong> ${r.paternalVillage || ''}<br><strong>Paternal Province:</strong> ${r.paternalProvince || ''}<br><strong>Maternal village:</strong> ${r.maternalVillage || ''}<br><strong>Maternal Province:</strong> ${r.maternalProvince || ''}<br><strong>Timestamp:</strong> ${r.timestamp || ''}</div>`).join('') : '<div style="padding:10px 0;border-top:1px solid #ece7df">No submissions yet.</div>';
+    d.appendChild(inner);
+    adminList.appendChild(d);
+  });
+}
+async function unlockAdmin(){
+  const key=document.getElementById('adminPassword').value.trim();
+  if(!key){ alert('Enter your admin key from Apps Script.'); return; }
+  if(GOOGLE_SCRIPT_URL.startsWith('PASTE_')){ alert('Replace GOOGLE_SCRIPT_URL first.'); return; }
+  try{
+    const r=await fetch(`${GOOGLE_SCRIPT_URL}?mode=admin&key=${encodeURIComponent(key)}`, {cache:'no-store'});
+    const data=await r.json();
+    if(data.status==='error'){ alert(data.message || 'Admin request failed'); return; }
+    liveAdminRows=normalizeAdminPayload(data);
+    document.getElementById('adminGate').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    renderAdmin();
+  }catch(e){
+    alert('Could not load admin data. Check the admin key and Apps Script deployment.');
+  }
+}
+document.getElementById('adminLogin').addEventListener('click', unlockAdmin); document.getElementById('toggleAdmin').addEventListener('click', ()=>document.getElementById('adminPassword').focus());
+renderTabs(); renderScholarList(); loadProgress();
+</script>
+</body>
+</html>
