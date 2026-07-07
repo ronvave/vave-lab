@@ -846,7 +846,9 @@
           renderPanelA();
         });
       });
-      // World-view sub-tabs (Where iTaukei graduates study / have published)
+      // Panel A2 world-view sub-tabs (Where iTaukei graduates study /
+      // have published). Panel A1 no longer hosts a top-level scope toggle
+      // — A2 is a separate standalone panel with its own Leaflet instance.
       $$('[data-mapscope-panel="world"] button').forEach(btn => {
         btn.addEventListener('click', () => {
           if (btn.disabled) return;
@@ -856,34 +858,11 @@
           renderWorldMap();
         });
       });
-      // TOP-level scope toggle: Fiji ↔ World
-      $$('.db-map-scope button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          $$('.db-map-scope button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
-          btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
-          state.mapScope = btn.dataset.mapscope;
-          // Show/hide the corresponding sub-tab row and note
-          $$('[data-mapscope-panel]').forEach(p => { p.style.display = (p.dataset.mapscopePanel === state.mapScope) ? '' : 'none'; });
-          $$('[data-mapscope-note]').forEach(n => { n.style.display = (n.dataset.mapscopeNote === state.mapScope) ? '' : 'none'; });
-          if (state.mapScope === 'world') {
-            // Reset any lingering country drill-down each time the world scope
-            // is entered, so the user always lands on the full country list.
-            state.worldSelectedCountry = null;
-            renderWorldMap();
-            renderWorldPanel();
-          } else {
-            // Restore Fiji view
-            if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
-            const mapEl = document.getElementById('db-map');
-            if (mapEl) mapEl.classList.remove('is-world-scope');
-            state.map.setMinZoom(6);
-            state.map.setMaxZoom(12);
-            state.map.fitBounds(state.mapDefaultBounds || [[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
-            state.map.invalidateSize();
-            renderPanelA();
-          }
-        });
-      });
+
+      // Initialise the standalone Panel A2 world map after Fiji is ready.
+      // Wrapped in try/catch because the world map is a progressive
+      // enhancement — Panel A1 must still work if this fails.
+      try { initWorldMap(); } catch (e) { console.error('World map init failed', e); }
 
       // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
       // three confederacies (Viti Levu + Vanua Levu + Lau) without wasting
@@ -985,10 +964,66 @@
       .map(c => Object.assign(c, { total: c.masters + c.phd + c.unknown }))
       .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
 
+    // Grab the university-detail view (third drill level). It exists only
+    // in Panel A2's markup; older layouts didn't have it, so treat as optional.
+    const uniDetailView = document.querySelector('[data-world-uni-detail-view]');
+
+    // Level 3: a specific university selected within a country.
+    if (state.worldSelectedCountry && state.worldSelectedUniversity && uniDetailView) {
+      listView.style.display = 'none';
+      detailView.style.display = 'none';
+      uniDetailView.style.display = '';
+      const uni = points.find(p => p.university === state.worldSelectedUniversity
+        && p.country === state.worldSelectedCountry);
+      const titleEl = document.querySelector('[data-world-uni-detail-title]');
+      const subtitleEl = document.querySelector('[data-world-uni-detail-subtitle]');
+      const scholarsHost = document.querySelector('[data-world-uni-scholars]');
+      if (uni) {
+        const m = uni.mastersScholars.length;
+        const ph = uni.phdScholars.length;
+        const k = (uni.unknownScholars || []).length;
+        const total = m + ph + k;
+        if (titleEl) titleEl.textContent = uni.university;
+        if (subtitleEl) {
+          subtitleEl.innerHTML =
+            `${escapeHtml(uni.country)} · ` +
+            `<b>Masters</b> ${m} <span class="pipe"></span> ` +
+            `<b>PhD</b> ${ph}` +
+            (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '') +
+            ` <span class="pipe"></span> ` +
+            `<span class="db-world-total">Total ${total}</span>`;
+        }
+        if (scholarsHost) {
+          scholarsHost.innerHTML = '';
+          const groups = [
+            { key: 'phd', label: 'PhD', cls: 'is-phd', names: uni.phdScholars },
+            { key: 'masters', label: 'Masters', cls: 'is-masters', names: uni.mastersScholars },
+            { key: 'other', label: 'Other', cls: 'is-other', names: uni.unknownScholars || [] }
+          ];
+          groups.forEach(g => {
+            if (!g.names.length) return;
+            const wrap = document.createElement('div');
+            wrap.className = `db-scholar-group ${g.cls}`;
+            wrap.innerHTML =
+              `<h5>${g.label} (${g.names.length})</h5>` +
+              renderScholarNameList(g.names);
+            scholarsHost.appendChild(wrap);
+          });
+        }
+      } else {
+        if (titleEl) titleEl.textContent = state.worldSelectedUniversity;
+        if (subtitleEl) subtitleEl.textContent = 'No data available for this university.';
+        if (scholarsHost) scholarsHost.innerHTML = '';
+      }
+      return;
+    }
+
+    // Level 2: a country selected — show its universities.
     if (state.worldSelectedCountry) {
       // Drill-down view for the selected country.
       listView.style.display = 'none';
       detailView.style.display = '';
+      if (uniDetailView) uniDetailView.style.display = 'none';
       const c = byCountry.get(state.worldSelectedCountry);
       const titleEl    = document.querySelector('[data-world-detail-title]');
       const subtitleEl = document.querySelector('[data-world-detail-subtitle]');
@@ -1014,12 +1049,23 @@
             const m = u.mastersScholars.length;
             const p = u.phdScholars.length;
             const k = (u.unknownScholars || []).length;
-            row.innerHTML =
-              `<span class="db-world-uni-row__name">${escapeHtml(u.university)}</span>` +
-              `<span class="db-world-uni-row__counts"><b>Masters</b> ${m} ` +
+            // University name is a real button so it's keyboard-focusable
+            // and screenreader-visible as an interactive element. Clicking
+            // drills down to the scholar-level view.
+            const nameBtn = document.createElement('button');
+            nameBtn.type = 'button';
+            nameBtn.className = 'db-world-uni-row__name is-clickable';
+            nameBtn.textContent = u.university;
+            nameBtn.setAttribute('aria-label', 'View scholars at ' + u.university);
+            nameBtn.addEventListener('click', () => selectWorldUniversity(u.university));
+            const counts = document.createElement('span');
+            counts.className = 'db-world-uni-row__counts';
+            counts.innerHTML =
+              `<b>Masters</b> ${m} ` +
               `<span class="pipe"></span> <b>PhD</b> ${p}` +
-              (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '') +
-              `</span>`;
+              (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '');
+            row.appendChild(nameBtn);
+            row.appendChild(counts);
             uniHost.appendChild(row);
           });
         }
@@ -1034,6 +1080,7 @@
     // Default state: the country list.
     listView.style.display = '';
     detailView.style.display = 'none';
+    if (uniDetailView) uniDetailView.style.display = 'none';
     listHost.innerHTML = '';
     countries.forEach(c => {
       const row = document.createElement('div');
@@ -1068,31 +1115,103 @@
     }
   }
 
+  // -------- Panel A2 world-map default framing --------
+  // Whole-world equator-centred framing (matches Ron's reference view).
+  // Zoom 1 gives one world width of 512px; centre latitude 15° puts Europe/UK
+  // near the top and NZ/Australia near the bottom without wasting polar space.
+  const WORLD_MAP_DEFAULT_CENTER = [15, 30];
+  const WORLD_MAP_DEFAULT_ZOOM = 1;
+
+  // -------- Scholar-name renderer with alternating blue / near-black --------
+  // Names in the format "Last, First" already contain a comma — concatenating
+  // with a comma separator makes the boundaries between people hard to see.
+  // Alternating each person's colour (even = blue, odd = dark) and using
+  // semicolons as separators fixes that visual ambiguity per Ron's request.
+  function renderScholarNameList(names) {
+    if (!names || !names.length) return '';
+    const parts = names.map((n, i) => {
+      const cls = (i % 2 === 0) ? 'is-blue' : 'is-dark';
+      return `<span class="db-scholar-name ${cls}">${escapeHtml(n)}</span>`;
+    });
+    return `<span class="db-scholar-list">${parts.join('<span class="db-scholar-sep">;</span>')}</span>`;
+  }
+
+  // Build the shared popup HTML for a worldPoint. Split into PhD / Masters /
+  // Other sections, each with the blue/black alternating scholar list.
+  function buildWorldPopupHtml(p) {
+    const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
+    const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
+    const sections = [];
+    if (p.phdScholars.length) {
+      sections.push(
+        `<div class="db-popup-scholar-header is-phd">PhD (${p.phdScholars.length}):</div>` +
+        renderScholarNameList(p.phdScholars)
+      );
+    }
+    if (p.mastersScholars.length) {
+      sections.push(
+        `<div class="db-popup-scholar-header is-masters">Masters (${p.mastersScholars.length}):</div>` +
+        renderScholarNameList(p.mastersScholars)
+      );
+    }
+    if ((p.unknownScholars || []).length) {
+      sections.push(
+        `<div class="db-popup-scholar-header is-other">Other (${p.unknownScholars.length}):</div>` +
+        renderScholarNameList(p.unknownScholars)
+      );
+    }
+    return (
+      `<div class="db-popup-title">${escapeHtml(p.university)}</div>` +
+      `<p class="db-popup-meta">${escapeHtml(p.country)}</p>` +
+      `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
+      sections.join('')
+    );
+  }
+
   function selectWorldCountry(name) {
     state.worldSelectedCountry = name;
+    state.worldSelectedUniversity = null;
     renderWorldPanel();
     zoomToWorldCountry(name);
   }
   function clearWorldCountry() {
     state.worldSelectedCountry = null;
+    state.worldSelectedUniversity = null;
     renderWorldPanel();
-    // Reset the map to the default whole-world framing.
-    if (state.map) state.map.setView([15, 30], 1);
+    // Reset the world map to the default whole-world framing.
+    if (state.worldMap) state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+  }
+  function selectWorldUniversity(uniName) {
+    state.worldSelectedUniversity = uniName;
+    renderWorldPanel();
+    zoomToWorldUniversity(uniName);
+  }
+  function clearWorldUniversity() {
+    state.worldSelectedUniversity = null;
+    renderWorldPanel();
+    // Re-zoom back to the country the university belongs to.
+    if (state.worldSelectedCountry) zoomToWorldCountry(state.worldSelectedCountry);
   }
 
   function zoomToWorldCountry(name) {
     const grad = state.graduateStudies || { worldPoints: [] };
     const pts = (grad.worldPoints || []).filter(p => p.country === name);
-    if (!pts.length || !state.map) return;
+    if (!pts.length || !state.worldMap) return;
     // Use the points' native longitudes now that the whole-world view is
     // equator-centred rather than Pacific-centric.
     const latlngs = pts.map(p => [p.lat, p.lng]);
     if (latlngs.length === 1) {
-      state.map.setView(latlngs[0], 5, { animate: true });
+      state.worldMap.setView(latlngs[0], 5, { animate: true });
     } else {
       const bounds = L.latLngBounds(latlngs);
-      state.map.fitBounds(bounds, { padding: [40, 40], maxZoom: 6, animate: true });
+      state.worldMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 6, animate: true });
     }
+  }
+  function zoomToWorldUniversity(uniName) {
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const p = (grad.worldPoints || []).find(x => x.university === uniName);
+    if (!p || !state.worldMap) return;
+    state.worldMap.setView([p.lat, p.lng], 8, { animate: true });
   }
 
   function wireWorldPanel() {
@@ -1100,92 +1219,88 @@
     if (back) {
       back.addEventListener('click', (e) => { e.preventDefault(); clearWorldCountry(); });
     }
+    const uniBack = document.querySelector('[data-world-uni-back]');
+    if (uniBack) {
+      uniBack.addEventListener('click', (e) => { e.preventDefault(); clearWorldUniversity(); });
+    }
+  }
+
+  // Initialise the Panel A2 world map — a *separate* Leaflet instance from
+  // the Fiji choropleth. Uses the same Esri World Imagery basemap.
+  function initWorldMap() {
+    const el = document.getElementById('db-map-world');
+    if (!el || typeof L === 'undefined') return;
+    const wmap = L.map(el, {
+      zoomSnap: 0.25,
+      worldCopyJump: true,
+      minZoom: 1,
+      maxZoom: 10
+    });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+      maxZoom: 18
+    }).addTo(wmap);
+    wmap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+    state.worldMap = wmap;
+    // Render markers immediately if data has already arrived; otherwise the
+    // deferred call inside the data-fetch chain will pick them up.
+    if (state.graduateStudies) renderWorldMap();
+    // Fix late-arriving container sizes (e.g. panel below the fold).
+    setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 100);
   }
 
   function renderWorldMap() {
-    if (!state.map) return;
-    // Remove any Fiji choropleth to avoid cluttering the wider view
-    if (state.provinceLayer) { state.map.removeLayer(state.provinceLayer); state.provinceLayer = null; }
-    // Clear previous world layer
-    if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
-
-    state.map.setMinZoom(1);
-    state.map.setMaxZoom(10);
+    if (!state.worldMap) return;
+    if (state.worldLayer) { state.worldMap.removeLayer(state.worldLayer); state.worldLayer = null; }
 
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
 
     if (state.worldView === 'publish') {
       // Placeholder — publication-country tagging is a follow-up feature.
-      state.worldLayer = L.layerGroup([]).addTo(state.map);
-      state.map.setView([15, 20], 2);
+      state.worldLayer = L.layerGroup([]).addTo(state.worldMap);
+      state.worldMap.setView([15, 20], 2);
       return;
     }
 
     // Where iTaukei graduates study.
-    // Equator-centred whole-world framing (like the user's reference view):
-    // continents run naturally from -180° (Americas) to +180° (Fiji/NZ) with
-    // no longitude shifting — every pin is on-screen at once. Because Fiji
-    // sits right on the antimeridian (+178°), we plot Fiji/NZ/Australia
-    // markers on BOTH sides of the wrap by rendering a shadow copy at
-    // (lng - 360) whenever the point's longitude is > 0. That way the map
-    // can be dragged either east or west and Fiji stays visible.
+    // Equator-centred whole-world framing. Because Fiji sits right on the
+    // antimeridian (+178°), we plot Fiji/NZ/Australia markers on BOTH sides
+    // of the wrap by rendering a shadow copy at (lng - 360) whenever the
+    // point's longitude is > 0. That way the map can be dragged either
+    // east or west and Fiji stays visible.
     const markers = [];
     points.forEach(p => {
       const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
       const radius = Math.min(28, 6 + total * 3);
       const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
-      const phdList = p.phdScholars.length
-        ? `<div style="margin-top:6px;"><strong style="color:#228B22;">PhD (${p.phdScholars.length}):</strong> ${p.phdScholars.join(', ')}</div>`
-        : '';
-      const mastersList = p.mastersScholars.length
-        ? `<div style="margin-top:4px;"><strong style="color:#5f9c5f;">Masters (${p.mastersScholars.length}):</strong> ${p.mastersScholars.join(', ')}</div>`
-        : '';
-      const otherList = (p.unknownScholars || []).length
-        ? `<div style="margin-top:4px;"><strong style="color:#888;">Other (${p.unknownScholars.length}):</strong> ${p.unknownScholars.join(', ')}</div>`
-        : '';
-      const popupHtml =
-        `<div class="db-popup-title">${p.university}</div>` +
-        `<p class="db-popup-meta">${p.country}</p>` +
-        `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
-        phdList + mastersList + otherList;
+      const popupHtml = buildWorldPopupHtml(p);
 
-      // Primary marker at the point's true (native) longitude.
       const m = L.circleMarker([p.lat, p.lng], {
         radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
       });
-      m.bindPopup(popupHtml, { maxWidth: 320 });
+      m.bindPopup(popupHtml, { maxWidth: 360 });
       m.on('mouseover', () => m.openPopup());
       markers.push(m);
 
-      // Shadow marker for points near the antimeridian so drag-panning in
-      // either direction still shows Fiji/NZ/Aus/Asia.
       if (p.lng > 0) {
         const shadow = L.circleMarker([p.lat, p.lng - 360], {
           radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
         });
-        shadow.bindPopup(popupHtml, { maxWidth: 320 });
+        shadow.bindPopup(popupHtml, { maxWidth: 360 });
         shadow.on('mouseover', () => shadow.openPopup());
         markers.push(shadow);
       }
     });
 
-    state.worldLayer = L.layerGroup(markers).addTo(state.map);
+    state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
 
-    // Whole-world framing: zoom 1 gives one world width of 512px, so a
-    // ~500px container comfortably shows every continent from the Americas
-    // (west) to Fiji (east). Centre latitude 15° gives Europe/UK visible up
-    // top and NZ/Australia visible bottom without wasted polar space.
-    // (fitBounds would leave whitespace top/bottom because the map container
-    // is close to square while the visible world is aspect-2:1.)
-    // Add a marker class so CSS can shorten the map container in world mode
-    // (the world at zoom 1 is aspect-2:1 while the Fiji framing needs a
-    // taller container; without this the map leaves whitespace top/bottom).
-    const mapEl = document.getElementById('db-map');
-    if (mapEl) mapEl.classList.add('is-world-scope');
-    state.map.setView([15, 30], 1);
-    // Leaflet needs to be told the size changed after the CSS class flips.
-    setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 0);
+    // Reset to default framing whenever we (re)draw the base world markers,
+    // but only when there's no active drill-down.
+    if (!state.worldSelectedCountry) {
+      state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+    }
+    setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
   }
 
   function renderChoropleth() {
@@ -4213,6 +4328,9 @@
     wireTypeFilter();
     wirePanelB1();
     wireWorldPanel();
+    // Panel A2 country list is standalone (no toggle to reveal it),
+    // so it needs to be populated on initial load.
+    renderWorldPanel();
     wireHistControls();
     renderItems();
     renderFilterChips();

@@ -442,12 +442,61 @@
       border-radius: var(--radius-md);
       background: #d6ecf0;
     }
-    /* Whole-world scope: shorter map so the equator-centered view isn't
-       dominated by empty ocean/Antarctica whitespace at the bottom. */
-    #db-map.is-world-scope {
-      min-height: 360px;
-      flex: 0 0 auto;
+
+    /* Panel A2 — wide world map. Map spans the full panel width (like the
+       reference image), and the country/university/scholar list stacks
+       underneath in a light legend panel. */
+    .db-panel--wide { grid-column: 1 / -1; }
+    .db-world-wide {
+      display: flex; flex-direction: column; gap: var(--space-4);
+      margin-top: var(--space-2);
     }
+    #db-map-world {
+      width: 100%;
+      height: 460px;
+      border-radius: var(--radius-md);
+      background: #d6ecf0;
+    }
+    .db-world-panel-wide {
+      background: var(--color-primary-highlight);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      font-size: 1rem; color: var(--color-text);
+      display: flex; flex-direction: column; gap: var(--space-3);
+    }
+    .db-world-panel-wide h4 {
+      margin: 0 0 6px; font-size: 0.85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text);
+    }
+    /* Alternating blue/black styling for scholar-name lists inside the
+       world-map hover popups. Even-indexed names are blue, odd are default
+       (near-black), so comma-separated "Last, First" pairs are easy to scan. */
+    .db-scholar-list { line-height: 1.55; }
+    .db-scholar-list .db-scholar-name.is-blue { color: #1c6ea4; font-weight: 600; }
+    .db-scholar-list .db-scholar-name.is-dark { color: #222; font-weight: 500; }
+    .db-scholar-list .db-scholar-sep { color: #333; margin: 0 4px; }
+    .db-popup-scholar-header { margin-top: 6px; font-weight: 700; }
+    .db-popup-scholar-header.is-phd { color: #228B22; }
+    .db-popup-scholar-header.is-masters { color: #5f9c5f; }
+    .db-popup-scholar-header.is-other { color: #888; }
+    /* Clickable university names in the country drill-down list. */
+    .db-world-uni-row__name.is-clickable {
+      color: var(--color-primary-teal);
+      text-decoration: underline;
+      cursor: pointer;
+      background: none; border: none; padding: 0; font: inherit;
+      text-align: left;
+    }
+    .db-world-uni-row__name.is-clickable:hover { color: var(--color-accent); }
+    /* Scholar entries in the university-detail drill-down. */
+    .db-world-uni-scholars .db-scholar-group { margin-bottom: var(--space-3); }
+    .db-world-uni-scholars .db-scholar-group h5 {
+      margin: 0 0 4px; font-size: 0.85rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .db-world-uni-scholars .db-scholar-group.is-phd h5 { color: #1c6ea4; }
+    .db-world-uni-scholars .db-scholar-group.is-masters h5 { color: #228B22; }
+    .db-world-uni-scholars .db-scholar-group.is-other h5 { color: #888; }
     .db-map-error {
       display: none;
       padding: var(--space-4); text-align: center; color: var(--color-text-muted);
@@ -2433,27 +2482,16 @@
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
 
-      <!-- Panel A — choropleth map -->
-      <div class="db-panel reveal" data-panel="A">
-        <span class="db-panel__label">A</span>
-        <h2 class="db-panel__title">Where the research is</h2>
-        <p class="db-panel__hint">Explore publications across Fiji by province, or view iTaukei graduate studies worldwide.</p>
-        <div class="db-map-scope" role="tablist" aria-label="Map scope">
-          <button type="button" class="is-active" data-mapscope="fiji" aria-selected="true">Fiji — by province</button>
-          <button type="button" data-mapscope="world" aria-selected="false">World — iTaukei graduate studies</button>
-        </div>
+      <!-- Panel A1 — Fiji-focused choropleth map (province view) -->
+      <div class="db-panel reveal" data-panel="A1">
+        <span class="db-panel__label">A1</span>
+        <h2 class="db-panel__title">Where the research is — Fiji, by province</h2>
+        <p class="db-panel__hint">Fiji-focused publications counted by the province studied. Use the sub-tabs to switch between all publications, iTaukei lead-author, and iTaukei co-authored views.</p>
         <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
           <button type="button" class="is-active" data-mapview="all" aria-selected="true">All publications on Fiji</button>
           <button type="button" data-mapview="lead" aria-selected="false">By iTaukei lead-author</button>
           <button type="button" data-mapview="coauth" aria-selected="false">Co-authored with iTaukei</button>
         </div>
-        <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world" style="display:none;">
-          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>
-          <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where iTaukei have published</button>
-        </div>
-        <p class="db-map-scope-note" data-mapscope-note="world" style="display:none;font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
-          <strong>Note:</strong> Only theses that appear in a scholar's iTaukei sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
-        </p>
         <div class="db-map-a-wrap">
           <div>
             <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
@@ -2508,13 +2546,28 @@
               <b>Sync:</b> <span data-db-sync-inline>loading…</span>
             </div>
           </aside>
+        </div>
+      </div>
 
-          <!-- World scope: countries → universities drill-down. Shown only when
-               "World — iTaukei graduate studies" is selected on the scope tabs. -->
-          <aside class="db-map-legend-panel db-world-panel" data-mapscope-panel="world" style="display:none;">
+      <!-- Panel A2 — Whole-world map of iTaukei graduate studies (wide layout) -->
+      <div class="db-panel reveal db-panel--wide" data-panel="A2">
+        <span class="db-panel__label">A2</span>
+        <h2 class="db-panel__title">World — iTaukei graduate studies</h2>
+        <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
+        <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
+          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>
+          <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where iTaukei have published</button>
+        </div>
+        <p class="db-map-scope-note" data-mapscope-note="world" style="font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
+          <strong>Note:</strong> Only theses that appear in a scholar&rsquo;s iTaukei sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
+        </p>
+        <div class="db-world-wide">
+          <div id="db-map-world" role="application" aria-label="World map of iTaukei graduate studies"></div>
+          <div class="db-map-error" data-db-worldmap-error>Map couldn't load — the country list below is still available.</div>
+          <aside class="db-world-panel-wide">
             <div data-world-list-view>
               <h4>Countries of iTaukei graduate study</h4>
-              <p class="db-conf-explain">Master&rsquo;s and PhD degrees completed by iTaukei scholars, grouped by country. Click a country to zoom the map and see the universities inside it.</p>
+              <p class="db-conf-explain">Click a country to zoom the map and see the universities inside it. Then click a university to zoom further and reveal the individual scholars.</p>
               <div class="db-world-country-list" data-world-country-list></div>
               <p class="db-conf-narrative" data-world-narrative>—</p>
             </div>
@@ -2523,6 +2576,12 @@
               <h4 data-world-detail-title>—</h4>
               <p class="db-conf-explain" data-world-detail-subtitle>—</p>
               <div class="db-world-uni-list" data-world-uni-list></div>
+            </div>
+            <div data-world-uni-detail-view style="display:none;">
+              <a href="#" class="db-world-back" data-world-uni-back><span aria-hidden="true">←</span>&nbsp;Back to universities</a>
+              <h4 data-world-uni-detail-title>—</h4>
+              <p class="db-conf-explain" data-world-uni-detail-subtitle>—</p>
+              <div class="db-world-uni-scholars" data-world-uni-scholars></div>
             </div>
             <div class="db-sync-inline">
               <b>Note:</b> Only theses catalogued in each scholar&rsquo;s iTaukei sub-collection are counted.
