@@ -874,9 +874,12 @@
           } else {
             // Restore Fiji view
             if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
+            const mapEl = document.getElementById('db-map');
+            if (mapEl) mapEl.classList.remove('is-world-scope');
             state.map.setMinZoom(6);
             state.map.setMaxZoom(12);
             state.map.fitBounds(state.mapDefaultBounds || [[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
+            state.map.invalidateSize();
             renderPanelA();
           }
         });
@@ -1073,17 +1076,17 @@
   function clearWorldCountry() {
     state.worldSelectedCountry = null;
     renderWorldPanel();
-    // Reset the map to the default Pacific-centric world framing.
-    if (state.map) state.map.setView([-5, 190], 3);
+    // Reset the map to the default whole-world framing.
+    if (state.map) state.map.setView([15, 30], 1);
   }
 
   function zoomToWorldCountry(name) {
     const grad = state.graduateStudies || { worldPoints: [] };
     const pts = (grad.worldPoints || []).filter(p => p.country === name);
     if (!pts.length || !state.map) return;
-    // Apply the same +360 longitude shift the map uses so the frame lands on
-    // the Pacific-centric copy of the point (not the antimeridian-crossed one).
-    const latlngs = pts.map(p => [p.lat, p.lng < 0 ? p.lng + 360 : p.lng]);
+    // Use the points' native longitudes now that the whole-world view is
+    // equator-centred rather than Pacific-centric.
+    const latlngs = pts.map(p => [p.lat, p.lng]);
     if (latlngs.length === 1) {
       state.map.setView(latlngs[0], 5, { animate: true });
     } else {
@@ -1106,7 +1109,7 @@
     // Clear previous world layer
     if (state.worldLayer) { state.map.removeLayer(state.worldLayer); state.worldLayer = null; }
 
-    state.map.setMinZoom(2);
+    state.map.setMinZoom(1);
     state.map.setMaxZoom(10);
 
     const grad = state.graduateStudies || { worldPoints: [] };
@@ -1115,53 +1118,74 @@
     if (state.worldView === 'publish') {
       // Placeholder — publication-country tagging is a follow-up feature.
       state.worldLayer = L.layerGroup([]).addTo(state.map);
-      state.map.fitBounds([[-45, 100], [50, -100]], { padding: [30, 30] });
+      state.map.setView([15, 20], 2);
       return;
     }
 
     // Where iTaukei graduates study.
-    // We plot Americas/Europe longitudes shifted by +360 so all points sit on
-    // the same side of a Pacific-centric map, keeping Fiji + Hawaii + UK
-    // visible without the map jumping across the antimeridian.
-    const markers = points.map(p => {
-      const total = (p.phdScholars.length + p.mastersScholars.length);
+    // Equator-centred whole-world framing (like the user's reference view):
+    // continents run naturally from -180° (Americas) to +180° (Fiji/NZ) with
+    // no longitude shifting — every pin is on-screen at once. Because Fiji
+    // sits right on the antimeridian (+178°), we plot Fiji/NZ/Australia
+    // markers on BOTH sides of the wrap by rendering a shadow copy at
+    // (lng - 360) whenever the point's longitude is > 0. That way the map
+    // can be dragged either east or west and Fiji stays visible.
+    const markers = [];
+    points.forEach(p => {
+      const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
       const radius = Math.min(28, 6 + total * 3);
       const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
-      const displayLng = p.lng < 0 ? p.lng + 360 : p.lng;
-      const m = L.circleMarker([p.lat, displayLng], {
-        radius,
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.85
-      });
       const phdList = p.phdScholars.length
         ? `<div style="margin-top:6px;"><strong style="color:#228B22;">PhD (${p.phdScholars.length}):</strong> ${p.phdScholars.join(', ')}</div>`
         : '';
       const mastersList = p.mastersScholars.length
         ? `<div style="margin-top:4px;"><strong style="color:#5f9c5f;">Masters (${p.mastersScholars.length}):</strong> ${p.mastersScholars.join(', ')}</div>`
         : '';
-      m.bindPopup(
+      const otherList = (p.unknownScholars || []).length
+        ? `<div style="margin-top:4px;"><strong style="color:#888;">Other (${p.unknownScholars.length}):</strong> ${p.unknownScholars.join(', ')}</div>`
+        : '';
+      const popupHtml =
         `<div class="db-popup-title">${p.university}</div>` +
         `<p class="db-popup-meta">${p.country}</p>` +
         `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
-        phdList + mastersList,
-        { maxWidth: 320 }
-      );
+        phdList + mastersList + otherList;
+
+      // Primary marker at the point's true (native) longitude.
+      const m = L.circleMarker([p.lat, p.lng], {
+        radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+      });
+      m.bindPopup(popupHtml, { maxWidth: 320 });
       m.on('mouseover', () => m.openPopup());
-      return m;
+      markers.push(m);
+
+      // Shadow marker for points near the antimeridian so drag-panning in
+      // either direction still shows Fiji/NZ/Aus/Asia.
+      if (p.lng > 0) {
+        const shadow = L.circleMarker([p.lat, p.lng - 360], {
+          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+        });
+        shadow.bindPopup(popupHtml, { maxWidth: 320 });
+        shadow.on('mouseover', () => shadow.openPopup());
+        markers.push(shadow);
+      }
     });
 
     state.worldLayer = L.layerGroup(markers).addTo(state.map);
 
-    // Pacific-centric framing. Because iTaukei graduate work spans Fiji, NZ,
-    // Australia, Hawaii, UK, Bremen — more than 180° of longitude — no single
-    // Leaflet bounds can show them all without one edge or the other clipping.
-    // We optimise for the primary Pacific cluster (Fiji + NZ + Australia +
-    // Hawaii) which contains the vast majority of scholars. Europe points sit
-    // shifted to 360+ and remain reachable by scroll/drag.
-    state.map.setView([-5, 190], 3);
+    // Whole-world framing: zoom 1 gives one world width of 512px, so a
+    // ~500px container comfortably shows every continent from the Americas
+    // (west) to Fiji (east). Centre latitude 15° gives Europe/UK visible up
+    // top and NZ/Australia visible bottom without wasted polar space.
+    // (fitBounds would leave whitespace top/bottom because the map container
+    // is close to square while the visible world is aspect-2:1.)
+    // Add a marker class so CSS can shorten the map container in world mode
+    // (the world at zoom 1 is aspect-2:1 while the Fiji framing needs a
+    // taller container; without this the map leaves whitespace top/bottom).
+    const mapEl = document.getElementById('db-map');
+    if (mapEl) mapEl.classList.add('is-world-scope');
+    state.map.setView([15, 30], 1);
+    // Leaflet needs to be told the size changed after the CSS class flips.
+    setTimeout(() => { if (state.map) state.map.invalidateSize(); }, 0);
   }
 
   function renderChoropleth() {

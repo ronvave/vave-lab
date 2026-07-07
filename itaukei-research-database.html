@@ -442,6 +442,12 @@
       border-radius: var(--radius-md);
       background: #d6ecf0;
     }
+    /* Whole-world scope: shorter map so the equator-centered view isn't
+       dominated by empty ocean/Antarctica whitespace at the bottom. */
+    #db-map.is-world-scope {
+      min-height: 360px;
+      flex: 0 0 auto;
+    }
     .db-map-error {
       display: none;
       padding: var(--space-4); text-align: center; color: var(--color-text-muted);
