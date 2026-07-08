@@ -1265,13 +1265,24 @@
     }, null, 2) + '\n';
   }
 
-  // Push data/scholar-profiles.json to GitHub. Silent no-op if no token set.
+  // Push data/scholar-profiles.json.enc to GitHub. The plaintext .json is
+  // gitignored (only .enc blobs ship), so we encrypt with the currently
+  // active session key + salt from db-gate before uploading. Silent no-op
+  // if no token set.
   async function pushProfilesToGitHub(triggerName) {
     if (!localStorage.getItem(GH_TOKEN_KEY)) return { skipped: true };
     const json = serializeProfilesJson();
     const msg = `admin: update scholar profiles${triggerName ? ' (' + triggerName + ')' : ''}`;
-    await githubUploadFile('data/scholar-profiles.json', json, msg);
-    return { pushed: true, bytes: json.length };
+
+    // Encrypt so the blob lands with the same salt as every other .enc file
+    // already deployed \u2014 preserves the shared-salt invariant.
+    if (!window.dbGate || !window.dbGate.isUnlocked()) {
+      throw new Error('Database is locked \u2014 unlock first (Reload from source and enter passcode).');
+    }
+    const encBytes = await window.dbGate.encryptForUpload(json);
+    const encBlob = new Blob([encBytes], { type: 'application/octet-stream' });
+    await githubUploadFile('data/scholar-profiles.json.enc', encBlob, msg);
+    return { pushed: true, bytes: encBytes.length };
   }
 
   function wirePhotoDropzone() {
@@ -1639,7 +1650,7 @@
       toast(`Pushing ${count} profiles to GitHub…`);
       try {
         await pushProfilesToGitHub('bulk push');
-        toast(`Pushed ${count} profiles to data/scholar-profiles.json. Public site updates within ~1 min.`);
+        toast(`Pushed ${count} profiles to data/scholar-profiles.json.enc. Public site updates within ~1 min.`);
       } catch (err) {
         console.error(err);
         toast('GitHub push failed: ' + err.message);

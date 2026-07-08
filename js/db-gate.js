@@ -41,6 +41,7 @@
 
   // In-memory AES key once the visitor is verified. Never leaves the page.
   var cachedKey = null;
+  var activeSalt = null; // 16 bytes; matches the salt of the currently-deployed .enc set
 
   // ---------- Low-level crypto ----------
 
@@ -92,7 +93,7 @@
 
   // Given a passcode + one encrypted probe file, extract that file's salt,
   // derive the AES key, and probe-decrypt to confirm the passcode is right.
-  // Returns the CryptoKey on success; throws if the passcode is wrong (the
+  // Returns { key, salt } on success; throws if the passcode is wrong (the
   // AES-GCM auth tag fails to verify).
   async function keyFromPasscode(passcode, probeUrl) {
     var res = await fetch(bust(probeUrl), { cache: 'no-store' });
@@ -103,7 +104,27 @@
     var key = await deriveKey(passcode, salt);
     // Probe-decrypt to verify passcode. Throws if wrong.
     await decryptBlob(key, blob.buffer);
-    return key;
+    return { key: key, salt: salt };
+  }
+
+  // Encrypt a UTF-8 string into an IVAV blob using the currently active salt
+  // + key. Admin uses this when pushing an updated plaintext JSON \u2014 the
+  // resulting .enc lands with the SAME salt as every other deployed file, so
+  // the shared-salt invariant is preserved without a full re-encrypt round.
+  async function encryptString(plaintext, cryptoKey, salt) {
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var body = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      cryptoKey,
+      new TextEncoder().encode(plaintext)
+    );
+    var bodyBytes = new Uint8Array(body);
+    var out = new Uint8Array(4 + 16 + 12 + bodyBytes.length);
+    out.set(MAGIC, 0);
+    out.set(salt, 4);
+    out.set(iv, 20);
+    out.set(bodyBytes, 32);
+    return out; // Uint8Array, ready to be uploaded as base64
   }
 
   // ---------- Session-key persistence ----------
@@ -113,6 +134,9 @@
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
+      // Backwards-compatible: older records only stored k+exp; new ones also
+      // stash the active salt so the admin encrypt helper can produce blobs
+      // compatible with the currently-deployed set.
       if (!parsed || !parsed.k || !parsed.exp) return null;
       if (parsed.exp < Date.now()) {
         localStorage.removeItem(STORAGE_KEY);
@@ -124,16 +148,22 @@
     }
   }
 
-  async function storeSession(cryptoKey) {
+  async function storeSession(cryptoKey, salt) {
     var raw = await crypto.subtle.exportKey('raw', cryptoKey);
-    var record = { k: b64encode(raw), exp: Date.now() + REMEMBER_MS };
+    var record = {
+      k: b64encode(raw),
+      s: salt ? b64encode(salt) : null,
+      exp: Date.now() + REMEMBER_MS
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
   }
 
   async function restoreSessionKey(rawB64) {
     var raw = b64decode(rawB64);
+    // Import as extractable + encrypt-capable too so admin can encrypt fresh
+    // JSON blobs without re-entering the passcode.
     return crypto.subtle.importKey(
-      'raw', raw, { name: 'AES-GCM' }, false, ['decrypt']
+      'raw', raw, { name: 'AES-GCM' }, true, ['decrypt', 'encrypt']
     );
   }
 
@@ -247,9 +277,10 @@
       btnLabel.textContent = 'Unlocking\u2026';
       try {
         var probeUrl = ENC_FILES['data/last-sync.json'];
-        var key = await keyFromPasscode(pass, probeUrl);
-        cachedKey = key;
-        await storeSession(key);
+        var result = await keyFromPasscode(pass, probeUrl);
+        cachedKey = result.key;
+        activeSalt = result.salt;
+        await storeSession(cachedKey, activeSalt);
         gate.style.transition = 'opacity 0.25s ease';
         gate.style.opacity = '0';
         setTimeout(function () {
@@ -280,12 +311,19 @@
       try {
         cachedKey = await restoreSessionKey(stored.k);
         // Verify the stored key still decrypts (in case files were re-encrypted
-        // with a new passcode, i.e. the admin rotated it).
+        // with a new passcode, i.e. the admin rotated it). Also read the fresh
+        // salt from the probe so admin encrypts land in the deployed set.
         var probeUrl = ENC_FILES['data/last-sync.json'];
         var res = await fetch(bust(probeUrl), { cache: 'no-store' });
         if (res.ok) {
           var buf = await res.arrayBuffer();
+          var bytes = new Uint8Array(buf);
+          activeSalt = bytes.slice(4, 20);
           await decryptBlob(cachedKey, buf);
+          // Refresh the persisted salt if it drifted (workflow re-encrypt).
+          if (!stored.s || stored.s !== b64encode(activeSalt)) {
+            await storeSession(cachedKey, activeSalt);
+          }
           document.body.classList.remove('db-gate-locked');
           onReady();
           return;
@@ -298,10 +336,22 @@
     renderLockScreen(onReady);
   }
 
+  // High-level helper for admin.js: encrypt a plaintext string against the
+  // currently active session key + salt so the resulting blob decrypts inside
+  // the same deployed set. Returns a Uint8Array ready for base64/upload.
+  async function encryptForUpload(plaintext) {
+    if (!cachedKey || !activeSalt) {
+      throw new Error('Database is locked \u2014 no session key/salt to encrypt with.');
+    }
+    return encryptString(plaintext, cachedKey, activeSalt);
+  }
+
   // Expose the API for itaukei-database.js.
   window.dbGate = {
     boot: boot,
     fetchJson: fetchJsonEncrypted,
-    clearSession: clearSession
+    clearSession: clearSession,
+    encryptForUpload: encryptForUpload,
+    isUnlocked: function () { return !!(cachedKey && activeSalt); }
   };
 })();
