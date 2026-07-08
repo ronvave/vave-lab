@@ -1,18 +1,10 @@
 {
-  "lastChecked": "2026-07-08T02:28:20Z",
+  "lastChecked": "2026-07-08T05:49:57Z",
   "lastChanged": "2026-07-08T02:28:20Z",
-  "dataChangedThisRun": true,
+  "dataChangedThisRun": false,
   "totalItems": 1961,
-  "movedMetrics": [
-    {
-      "metric": "type:book",
-      "prev": 46,
-      "new": 49,
-      "delta": 3,
-      "pct": 6.52
-    }
-  ],
-  "summary": "Changes: type:book 46\u219249",
+  "movedMetrics": [],
+  "summary": "No tracked total moved by more than 2.0%.",
   "threshold": "2.0%",
-  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28913030730"
+  "workflowRunUrl": "https://github.com/ronvave/vave-lab/actions/runs/28920653269"
 }
