@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T11:41:27.124Z",
+  "generatedAt": "2026-07-08T11:41:45.129Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -1528,6 +1528,19 @@
       "slug": "virisila-qolisaya-lidise-puamau",
       "last": "Puamau",
       "first": "Virisila Qolisaya Lidise",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
+    },
+    {
+      "name": "Qalo, Ropate Rakuita",
+      "slug": "ropate-rakuita-qalo",
+      "last": "Qalo",
+      "first": "Ropate Rakuita",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
