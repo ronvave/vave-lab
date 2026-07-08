@@ -1,12 +1,136 @@
 {
-  "generatedAt": "2026-07-07T19:29:20.328422+00:00",
-  "sourceSnapshot": "2026-07-07T02:51:12.675128+00:00",
+  "generatedAt": "2026-07-08T02:28:19.980107+00:00",
+  "sourceSnapshot": "2026-07-08T02:28:19.864178+00:00",
   "source": {
     "rootCollection": "iTaukei Thesis by Country/Universities",
     "rootCollectionKey": "9XHGQJE6",
     "url": "https://www.zotero.org/groups/5983386/collections/9XHGQJE6/collection"
   },
   "scholars": {
+    "Ropate Rakuita Qalo": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "Ph.D. thesis",
+        "university": "Australian National University (ANU)",
+        "iso": "AU",
+        "country": "Australia",
+        "countryCollection": "Australia",
+        "lat": -35.278,
+        "lng": 149.119,
+        "year": 1993,
+        "title": "Indigenous politics in the governance of Fiji : the case of forestry",
+        "zoteroKey": "58Q3CB4N"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "Ph.D. thesis",
+          "university": "Australian National University (ANU)",
+          "iso": "AU",
+          "country": "Australia",
+          "countryCollection": "Australia",
+          "lat": -35.278,
+          "lng": 149.119,
+          "year": 1993,
+          "title": "Indigenous politics in the governance of Fiji : the case of forestry",
+          "zoteroKey": "58Q3CB4N"
+        }
+      ]
+    },
+    "Romulo Nayacalevu": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "Doctor of Philosophy (PhD) thesis",
+        "university": "Australian National University (ANU)",
+        "iso": "AU",
+        "country": "Australia",
+        "countryCollection": "Australia",
+        "lat": -35.278,
+        "lng": 149.119,
+        "year": 2026,
+        "title": "Strengthening regional arrangements for the protection and promotion of human rights in the Pacific",
+        "zoteroKey": "9ZR9PT78"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "Doctor of Philosophy (PhD) thesis",
+          "university": "Australian National University (ANU)",
+          "iso": "AU",
+          "country": "Australia",
+          "countryCollection": "Australia",
+          "lat": -35.278,
+          "lng": 149.119,
+          "year": 2026,
+          "title": "Strengthening regional arrangements for the protection and promotion of human rights in the Pacific",
+          "zoteroKey": "9ZR9PT78"
+        }
+      ]
+    },
+    "Miliakere Kaitani": {
+      "masters": null,
+      "phd": {
+        "level": "phd",
+        "thesisType": "Ph.D. thesis",
+        "university": "Australian National University (ANU)",
+        "iso": "AU",
+        "country": "Australia",
+        "countryCollection": "Australia",
+        "lat": -35.278,
+        "lng": 149.119,
+        "year": 2003,
+        "title": "Bridging the gap : the changing reproductive and sexual expectations of Fijian men",
+        "zoteroKey": "9MICWQHS"
+      },
+      "all": [
+        {
+          "level": "phd",
+          "thesisType": "Ph.D. thesis",
+          "university": "Australian National University (ANU)",
+          "iso": "AU",
+          "country": "Australia",
+          "countryCollection": "Australia",
+          "lat": -35.278,
+          "lng": 149.119,
+          "year": 2003,
+          "title": "Bridging the gap : the changing reproductive and sexual expectations of Fijian men",
+          "zoteroKey": "9MICWQHS"
+        }
+      ]
+    },
+    "Daniel Brian Faktaufon": {
+      "masters": {
+        "level": "masters",
+        "thesisType": "Master of Philosophy (Applied Epidemiology) thesis",
+        "university": "Australian National University (ANU)",
+        "iso": "AU",
+        "country": "Australia",
+        "countryCollection": "Australia",
+        "lat": -35.278,
+        "lng": 149.119,
+        "year": 2024,
+        "title": "Applied Epidemiology in Fiji Centre for Disease Control (Fiji CDC)",
+        "zoteroKey": "2BUWCRMQ"
+      },
+      "phd": null,
+      "all": [
+        {
+          "level": "masters",
+          "thesisType": "Master of Philosophy (Applied Epidemiology) thesis",
+          "university": "Australian National University (ANU)",
+          "iso": "AU",
+          "country": "Australia",
+          "countryCollection": "Australia",
+          "lat": -35.278,
+          "lng": 149.119,
+          "year": 2024,
+          "title": "Applied Epidemiology in Fiji Centre for Disease Control (Fiji CDC)",
+          "zoteroKey": "2BUWCRMQ"
+        }
+      ]
+    },
     "Mere Yabaki-Goundar": {
       "masters": {
         "level": "masters",
@@ -3637,37 +3761,6 @@
         }
       ]
     },
-    "Daniel Brian Faktaufon": {
-      "masters": {
-        "level": "masters",
-        "thesisType": "Master of Philosophy (Applied Epidemiology) thesis",
-        "university": "Australian National University (ANU)",
-        "iso": "AU",
-        "country": "Australia",
-        "countryCollection": "Australia",
-        "lat": -35.278,
-        "lng": 149.119,
-        "year": 2024,
-        "title": "Applied Epidemiology in Fiji Centre for Disease Control (Fiji CDC)",
-        "zoteroKey": "2BUWCRMQ"
-      },
-      "phd": null,
-      "all": [
-        {
-          "level": "masters",
-          "thesisType": "Master of Philosophy (Applied Epidemiology) thesis",
-          "university": "Australian National University (ANU)",
-          "iso": "AU",
-          "country": "Australia",
-          "countryCollection": "Australia",
-          "lat": -35.278,
-          "lng": 149.119,
-          "year": 2024,
-          "title": "Applied Epidemiology in Fiji Centre for Disease Control (Fiji CDC)",
-          "zoteroKey": "2BUWCRMQ"
-        }
-      ]
-    },
     "Mesake Rawaikela Dakuidreketi": {
       "masters": {
         "level": "masters",
@@ -4645,68 +4738,6 @@
         }
       ]
     },
-    "Ropate Rakuita 1947-2016 Qalo": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "Ph.D. thesis",
-        "university": "Australian National University (ANU)",
-        "iso": "AU",
-        "country": "Australia",
-        "countryCollection": "Australia",
-        "lat": -35.278,
-        "lng": 149.119,
-        "year": 1993,
-        "title": "Indigenous politics in the governance of Fiji : the case of forestry",
-        "zoteroKey": "58Q3CB4N"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "Ph.D. thesis",
-          "university": "Australian National University (ANU)",
-          "iso": "AU",
-          "country": "Australia",
-          "countryCollection": "Australia",
-          "lat": -35.278,
-          "lng": 149.119,
-          "year": 1993,
-          "title": "Indigenous politics in the governance of Fiji : the case of forestry",
-          "zoteroKey": "58Q3CB4N"
-        }
-      ]
-    },
-    "Romulo Nayacalevu": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "Doctor of Philosophy (PhD) thesis",
-        "university": "Australian National University (ANU)",
-        "iso": "AU",
-        "country": "Australia",
-        "countryCollection": "Australia",
-        "lat": -35.278,
-        "lng": 149.119,
-        "year": 2026,
-        "title": "Strengthening regional arrangements for the protection and promotion of human rights in the Pacific",
-        "zoteroKey": "9ZR9PT78"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "Doctor of Philosophy (PhD) thesis",
-          "university": "Australian National University (ANU)",
-          "iso": "AU",
-          "country": "Australia",
-          "countryCollection": "Australia",
-          "lat": -35.278,
-          "lng": 149.119,
-          "year": 2026,
-          "title": "Strengthening regional arrangements for the protection and promotion of human rights in the Pacific",
-          "zoteroKey": "9ZR9PT78"
-        }
-      ]
-    },
     "Setareki S. Macanawai": {
       "masters": null,
       "phd": null,
@@ -4867,37 +4898,6 @@
           "year": 2013,
           "title": "Oral squamous cell carcinoma: Comparing the occurrence of this disease in New Zealand and the Fiji Islands (2000-2010)",
           "zoteroKey": "HDNCAKAK"
-        }
-      ]
-    },
-    "Miliakere Kaitani": {
-      "masters": null,
-      "phd": {
-        "level": "phd",
-        "thesisType": "Ph.D. thesis",
-        "university": "Australian National University (ANU)",
-        "iso": "AU",
-        "country": "Australia",
-        "countryCollection": "Australia",
-        "lat": -35.278,
-        "lng": 149.119,
-        "year": 2003,
-        "title": "Bridging the gap : the changing reproductive and sexual expectations of Fijian men",
-        "zoteroKey": "9MICWQHS"
-      },
-      "all": [
-        {
-          "level": "phd",
-          "thesisType": "Ph.D. thesis",
-          "university": "Australian National University (ANU)",
-          "iso": "AU",
-          "country": "Australia",
-          "countryCollection": "Australia",
-          "lat": -35.278,
-          "lng": 149.119,
-          "year": 2003,
-          "title": "Bridging the gap : the changing reproductive and sexual expectations of Fijian men",
-          "zoteroKey": "9MICWQHS"
         }
       ]
     },
@@ -9706,7 +9706,7 @@
         "Jone Baledrokadroka",
         "Miliakere Kaitani",
         "Romulo Nayacalevu",
-        "Ropate Rakuita 1947-2016 Qalo"
+        "Ropate Rakuita Qalo"
       ],
       "mastersScholars": [
         "Daniel Brian Faktaufon",
