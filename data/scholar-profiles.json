@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T12:39:48.820Z",
+  "generatedAt": "2026-07-08T12:40:06.500Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -972,6 +972,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Matairakula, Ulamila",
+      "slug": "ulamila-matairakula",
+      "last": "Matairakula",
+      "first": "Ulamila",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Matanitobua, Silivia",
