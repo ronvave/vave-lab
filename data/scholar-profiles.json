@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T11:40:22.841Z",
+  "generatedAt": "2026-07-08T11:41:27.124Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -400,6 +400,19 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Fong, James",
+      "slug": "james-fong",
+      "last": "Fong",
+      "first": "James",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Fong, Patrick S.",
