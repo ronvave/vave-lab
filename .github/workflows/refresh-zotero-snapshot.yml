@@ -6,6 +6,11 @@ name: Refresh iTaukei Zotero snapshot
 # only if any critical total (total items, journalArticle, thesis, bookSection,
 # report, book, Burebasaga, Kubuna, Tovata, non-Fiji iTaukei) has shifted by
 # MORE than 2%. Small drift is ignored so we don't spam commits.
+#
+# Since 2026-07-08 the shipped data files are AES-GCM encrypted (.enc). The
+# plaintext .json versions are gitignored. This workflow uses VAVELAB_PASSCODE
+# (repo secret) to decrypt the previous snapshot for diffing, run the refresh,
+# then re-encrypt every data file and commit ONLY the .enc blobs.
 
 on:
   schedule:
@@ -18,6 +23,10 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
+    env:
+      # Same passcode the public dashboard uses. Stored under Settings →
+      # Secrets and variables → Actions. Never printed by any step below.
+      VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -26,6 +35,33 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+
+      - name: Install crypto dependency
+        run: |
+          python3 -m pip install --quiet 'cryptography>=42'
+
+      - name: Guard — passcode secret must be set
+        run: |
+          if [ -z "$VAVELAB_PASSCODE" ]; then
+            echo "::error::VAVELAB_PASSCODE repo secret is missing. Set it under Settings → Secrets → Actions."
+            exit 1
+          fi
+
+      - name: Bootstrap plaintext data files from .enc blobs
+        run: |
+          # Refresh scripts and the diff step need certain data files in
+          # plaintext (geojson for confederacy tallies, prior snapshot for the
+          # diff, graduate-studies for the follow-up regenerator). Decrypt
+          # them into place. They stay untracked (gitignored).
+          python3 scripts/decrypt_data.py --all
+
+      - name: Stash previous snapshot for later diff
+        run: |
+          # The refresh step overwrites the plaintext snapshot; the diff step
+          # needs the pre-refresh version to compare against. Copy it to /tmp.
+          if [ -f data/itaukei-zotero-snapshot.json ]; then
+            cp data/itaukei-zotero-snapshot.json /tmp/prev-snapshot.json
+          fi
 
       - name: Regenerate snapshot from Zotero API
         run: |
@@ -40,33 +76,40 @@ jobs:
         run: |
           python3 - <<'PY'
           """
-          Diff the newly regenerated snapshot against the git-tracked version.
-          Always update data/last-sync.json with the current check timestamp so
-          the public site's Sync badge advances every run, even when nothing
-          material changed. The snapshot file itself is only rewritten when a
-          tracked total moves by more than 2% (to keep commit history clean).
+          Diff the newly regenerated snapshot against the previous one. Since
+          the plaintext .json is gitignored, we compare against the decrypted
+          copy the bootstrap step already restored on disk BEFORE the refresh
+          overwrote it. We saved that copy off to /tmp first.
+          Always update data/last-sync.json with the current check timestamp
+          so the public site's Sync badge advances every run, even when
+          nothing material changed. The snapshot file itself is only marked
+          as changed when a tracked total moves by more than 2% (to keep the
+          commit history clean).
           """
-          import json, os, subprocess, sys, datetime
+          import json, os, subprocess, sys, datetime, shutil
 
           NEW_PATH  = "data/itaukei-zotero-snapshot.json"
           SYNC_PATH = "data/last-sync.json"
+          PREV_PATH = "/tmp/prev-snapshot.json"
 
           # 1. Load the freshly written snapshot (working tree)
           with open(NEW_PATH, "r") as f:
               new = json.load(f)
 
-          # 2. Load the previous snapshot from git (HEAD)
-          try:
-              prev_raw = subprocess.check_output(
-                  ["git", "show", f"HEAD:{NEW_PATH}"], text=True
-              )
-              prev = json.loads(prev_raw)
-              has_prev = True
-          except subprocess.CalledProcessError:
-              prev = None
-              has_prev = False
+          # 2. Load the previous snapshot from the copy we stashed BEFORE the
+          #    refresh ran (see step below).
+          prev = None
+          has_prev = False
+          if os.path.exists(PREV_PATH):
+              try:
+                  with open(PREV_PATH, "r") as f:
+                      prev = json.load(f)
+                  has_prev = True
+              except Exception as e:
+                  print(f"WARN: couldn't parse previous snapshot: {e}")
 
-          # 3. Load geo file to compute confederacy tallies
+          # 3. Load geo file to compute confederacy tallies (bootstrap already
+          #    decrypted it into place).
           with open("data/fiji-provinces.geojson") as f:
               geo = json.load(f)
           prov_conf = {}
@@ -76,7 +119,6 @@ jobs:
               if key:
                   prov_conf[key] = p["confederacy"]
 
-          # Helper: compute the totals we care about from any snapshot
           def totals(snap):
               items = snap["items"]
               out = {"items": len(items)}
@@ -97,9 +139,6 @@ jobs:
           new_t  = totals(new)
           prev_t = totals(prev) if has_prev else {k: 0 for k in new_t}
 
-          # 4. Compare with a 2% threshold. Manual (workflow_dispatch) runs
-          # bypass the threshold — Ron clicks the button precisely because he
-          # wants latest data reflected, even for small edits.
           THRESHOLD_PCT = 2.0
           FORCE_COMMIT = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
           rows = []
@@ -121,23 +160,24 @@ jobs:
           print(f"=== Threshold: {THRESHOLD_PCT}% ===")
           print(f"=== data_changed: {data_changed} ===")
 
-          # 5. Determine "last data change" ISO timestamp (carry forward if no change)
+          # 4. Determine "last data change" ISO timestamp. We used to pull
+          #    prev-sync from git HEAD; now the previous last-sync.json is on
+          #    disk (bootstrap decrypted it) so just read it directly.
           now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
           prev_sync = {}
-          try:
-              prev_sync_raw = subprocess.check_output(
-                  ["git", "show", f"HEAD:{SYNC_PATH}"], text=True
-              )
-              prev_sync = json.loads(prev_sync_raw)
-          except subprocess.CalledProcessError:
-              prev_sync = {}
+          if os.path.exists(SYNC_PATH):
+              try:
+                  with open(SYNC_PATH) as f:
+                      prev_sync = json.load(f)
+              except Exception:
+                  prev_sync = {}
 
           last_changed = now_iso if data_changed else prev_sync.get("lastChanged") or new.get("generatedAt") or now_iso
 
-          # 6. Write the always-fresh sync tracker
+          # 5. Write the always-fresh sync tracker
           summary = ("No tracked total moved by more than "
                      f"{THRESHOLD_PCT}%.") if not moved else (
-              "Changes: " + ", ".join(f"{m['metric']} {m['prev']}→{m['new']}" for m in moved)
+              "Changes: " + ", ".join(f"{m['metric']} {m['prev']}\u2192{m['new']}" for m in moved)
           )
           with open(SYNC_PATH, "w") as f:
               json.dump({
@@ -155,21 +195,25 @@ jobs:
               f.write(f"data_changed={'true' if data_changed else 'false'}\n")
           PY
 
-      - name: Commit and push
+      - name: Re-encrypt every data file
         run: |
-          # last-sync.json is always updated; snapshot only when data moved.
+          python3 scripts/encrypt_data.py
+
+      - name: Commit and push encrypted blobs
+        run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Only the .enc versions are tracked. .gitignore keeps plaintext out.
           if [ "${{ steps.diff.outputs.data_changed }}" = "true" ]; then
-            git add data/itaukei-zotero-snapshot.json data/last-sync.json data/itaukei-graduate-studies.json
+            git add data/itaukei-zotero-snapshot.json.enc \
+                    data/last-sync.json.enc \
+                    data/itaukei-graduate-studies.json.enc
             git commit -m "Auto-refresh Zotero snapshot ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
 
           One or more tracked totals moved by >2% since the last snapshot.
           Run: ${{ github.run_id }}"
           else
-            git add data/last-sync.json
-            # No data change; commit only the sync heartbeat. --allow-empty
-            # is unnecessary because last-sync.json's timestamp always changes.
+            git add data/last-sync.json.enc
             git commit -m "chore: refresh last-sync heartbeat ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
 
           No tracked total moved by >2% — snapshot file unchanged.
@@ -184,7 +228,7 @@ jobs:
               if git push origin HEAD:${{ github.ref_name }}; then
                 return 0
               fi
-              echo "Push rejected (attempt $attempt/3), rebasing onto origin/${{ github.ref_name }}…"
+              echo "Push rejected (attempt $attempt/3), rebasing onto origin/${{ github.ref_name }}\u2026"
               git fetch origin ${{ github.ref_name }}
               git rebase origin/${{ github.ref_name }}
             done
