@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T12:40:06.500Z",
+  "generatedAt": "2026-07-08T12:40:26.684Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -978,13 +978,30 @@
       "slug": "ulamila-matairakula",
       "last": "Matairakula",
       "first": "Ulamila",
-      "salutation": "",
+      "salutation": "Ms.",
       "village": "",
       "paternalProvince": "",
       "institution": "",
       "institutionUrl": "",
       "googleScholarUrl": "",
-      "photo": ""
+      "photo": "",
+      "maternalProvince": "",
+      "nonItaukeiDad": false,
+      "sector": "",
+      "institutionCountry": "",
+      "department": "",
+      "departmentUrl": "",
+      "profileUrl": "",
+      "masters": null,
+      "phd": null,
+      "title": "",
+      "orcidUrl": "",
+      "lastUpdate": "2026-07-08T12:40:26.683Z",
+      "total": 1,
+      "firstAuthored": 0,
+      "types": {
+        "journalArticle": 1
+      }
     },
     {
       "name": "Matanitobua, Silivia",
