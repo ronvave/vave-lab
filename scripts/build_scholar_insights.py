@@ -626,5 +626,20 @@ def main() -> int:
     return 0
 
 
+def _reencrypt_if_configured():
+    import os, subprocess
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    enc = os.path.join(root, "scripts", "encrypt_data.py")
+    if os.environ.get("VAVELAB_PASSCODE"):
+        print("Re-encrypting data files\u2026")
+        subprocess.run([sys.executable, enc], check=True)
+    else:
+        print("NOTE: VAVELAB_PASSCODE not set \u2014 skipped re-encryption. Run "
+              "`VAVELAB_PASSCODE=\u2026 python3 scripts/encrypt_data.py` before committing.")
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    rc = main()
+    if rc == 0:
+        _reencrypt_if_configured()
+    sys.exit(rc)

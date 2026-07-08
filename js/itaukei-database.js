@@ -473,6 +473,13 @@
   }
 
   async function fetchJson(url) {
+    // If the passcode gate is present (production build), route every data
+    // fetch through it so encrypted .enc files are decoded transparently
+    // with the visitor's in-memory AES key. Falls through to a plain fetch
+    // when no gate is wired (local dev without encryption).
+    if (window.dbGate && typeof window.dbGate.fetchJson === 'function') {
+      return window.dbGate.fetchJson(url);
+    }
     // Append a unique query string every time so browsers + CDNs can never
     // serve a stale cached response for admin-edited data files.
     const busted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
@@ -4699,7 +4706,12 @@
   }
 
   // ============ INIT ============
-  document.addEventListener('DOMContentLoaded', async () => {
+  // Split the boot in two: `bootApp` is the original init we always ran; the
+  // DOMContentLoaded hook now hands off to `dbGate.boot(...)` which shows the
+  // passcode lock screen first and only then calls bootApp() once the
+  // visitor is verified. If dbGate isn't loaded (e.g. an unrelated page
+  // reuses this script), we fall back to the direct boot.
+  async function bootApp() {
     loadFilterFromUrl();
     try {
       await loadAll();
@@ -4746,6 +4758,14 @@
     wireImpactView();
 
     backgroundRefresh();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    if (window.dbGate && typeof window.dbGate.boot === 'function') {
+      window.dbGate.boot(() => { bootApp(); });
+    } else {
+      bootApp();
+    }
   });
 
   // ============================================================

@@ -104,3 +104,15 @@ with open(out, "w") as f:
     json.dump(snapshot, f, ensure_ascii=False, separators=(",", ":"))
 sz = os.path.getsize(out)/1024
 print(f"Snapshot refreshed: {len(items)} items · {len(collections)} collections · {sz:.1f} KB")
+
+# Re-encrypt every data file so the shipped .enc blobs stay in sync with
+# the plaintext we just wrote. Requires VAVELAB_PASSCODE in the environment.
+import subprocess, sys
+root = os.path.dirname(here)
+enc = os.path.join(root, "scripts", "encrypt_data.py")
+if os.environ.get("VAVELAB_PASSCODE"):
+    print("Re-encrypting data files\u2026")
+    subprocess.run([sys.executable, enc], check=True)
+else:
+    print("NOTE: VAVELAB_PASSCODE not set \u2014 skipped re-encryption. Run "
+          "`VAVELAB_PASSCODE=\u2026 python3 scripts/encrypt_data.py` before committing.")

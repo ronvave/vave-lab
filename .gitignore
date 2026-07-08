@@ -1,0 +1,17 @@
+# Plaintext database exports — never commit. Only the .enc versions ship.
+data/fiji-provinces.geojson
+data/fiji-provinces.json
+data/itaukei-graduate-studies.json
+data/itaukei-zotero-snapshot.json
+data/last-sync.json
+data/scholar-insights.json
+data/scholar-profiles.json
+data/world-universities.json
+
+# Local artefacts
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.venv/
+node_modules/
