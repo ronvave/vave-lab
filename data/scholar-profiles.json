@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-07T23:32:33.228Z",
+  "generatedAt": "2026-07-08T03:21:47.636Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2162,7 +2162,7 @@
       "confederacy": "",
       "title": "Senior Lecturer",
       "orcidUrl": "",
-      "lastUpdate": "2026-07-07T23:32:33.221Z",
+      "lastUpdate": "2026-07-08T03:21:47.633Z",
       "types.journalArticle": "1",
       "types.thesis": "2",
       "types.bookSection": "0",
@@ -2177,11 +2177,12 @@
       "profileUrl": "https://www.usp.ac.fj/linguistics-languages/linguistics-staff-profiles/dr-apolonia-tamata/",
       "masters": null,
       "phd": null,
-      "total": 3,
-      "firstAuthored": 3,
+      "total": 8,
+      "firstAuthored": 6,
       "types": {
-        "thesis": 2,
-        "journalArticle": 1
+        "book": 3,
+        "journalArticle": 3,
+        "thesis": 2
       }
     },
     {
