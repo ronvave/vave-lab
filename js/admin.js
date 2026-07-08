@@ -235,6 +235,13 @@
   async function showDashboard() {
     $('#login').style.display = 'none';
     $('#dashboard').classList.add('is-visible');
+    // Database files are AES-GCM encrypted at rest on GitHub Pages. Route the
+    // fetch through window.dbGate so a valid session key (or a fresh passcode
+    // entry) unlocks them. If db-gate isn't loaded (offline dev), just proceed
+    // \u2014 loadData() below will try plain fetches and fall back gracefully.
+    if (window.dbGate && typeof window.dbGate.boot === 'function') {
+      await new Promise(resolve => window.dbGate.boot(resolve));
+    }
     await loadData();
     wireControls();
     render();
@@ -279,13 +286,27 @@
 
   // ==================== data load ====================
   async function loadData() {
+    // dbGate.fetchJson() decrypts the .enc blob when the file is on the
+    // encrypted list; falls back to a plain fetch for anything else. If the
+    // gate script never loaded (offline dev), just use plain fetch \u2014 that
+    // path still works against local plaintext files.
+    const readJson = (window.dbGate && window.dbGate.fetchJson)
+      ? (url, fallback) => window.dbGate.fetchJson(url).catch(err => {
+          console.warn('[admin] dbGate.fetchJson failed for', url, err);
+          return fallback;
+        })
+      : (url, fallback) => fetch(`${url}?t=${Date.now()}`, { cache: 'no-store' })
+          .then(r => r.json()).catch(() => fallback);
+
     const [snap, profilesJson, graduate] = await Promise.all([
-      // Cache-bust query string forces fresh fetch every time so admin never
-      // shows a stale copy of the JSON right after a save/push.
-      fetch(`data/itaukei-zotero-snapshot.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()),
-      fetch(`data/scholar-profiles.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: [] })),
-      fetch(`data/itaukei-graduate-studies.json?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.json()).catch(() => ({ scholars: {} }))
+      readJson('data/itaukei-zotero-snapshot.json', null),
+      readJson('data/scholar-profiles.json',        { scholars: [] }),
+      readJson('data/itaukei-graduate-studies.json',{ scholars: {} }),
     ]);
+    if (!snap) {
+      toast('Couldn\u2019t load the Zotero snapshot. Check the passcode and reload.', true);
+      return;
+    }
     state.snapshot = snap;
     // Look-up for the edit form's auto-detected graduate-studies hints.
     state.graduateStudiesByName = new Map(Object.entries((graduate && graduate.scholars) || {}));
