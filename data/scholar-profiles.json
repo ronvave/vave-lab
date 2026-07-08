@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T03:21:47.636Z",
+  "generatedAt": "2026-07-08T03:24:50.851Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -2152,7 +2152,7 @@
       "last": "Tamata",
       "first": "Apolonia",
       "salutation": "Dr.",
-      "village": "",
+      "village": "Nasarowaqa vlg",
       "paternalProvince": "Bua",
       "institution": "University of the South Pacific",
       "institutionUrl": "https://www.usp.ac.fj/",
@@ -2162,7 +2162,7 @@
       "confederacy": "",
       "title": "Senior Lecturer",
       "orcidUrl": "",
-      "lastUpdate": "2026-07-08T03:21:47.633Z",
+      "lastUpdate": "2026-07-08T03:24:50.849Z",
       "types.journalArticle": "1",
       "types.thesis": "2",
       "types.bookSection": "0",
