@@ -74,7 +74,7 @@
       baseKey,
       { name: 'AES-GCM', length: 256 },
       true, // extractable so we can persist the raw bytes
-      ['decrypt']
+      ['decrypt', 'encrypt'] // admin push encrypts fresh blobs with this key
     );
   }
 
