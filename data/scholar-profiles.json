@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-08T11:41:45.129Z",
+  "generatedAt": "2026-07-08T12:11:02.689Z",
   "source": "admin-dashboard",
   "scholars": [
     {
@@ -400,19 +400,6 @@
       "types.bookSection": "0",
       "types.book": "0",
       "types.report": "0"
-    },
-    {
-      "name": "Fong, James",
-      "slug": "james-fong",
-      "last": "Fong",
-      "first": "James",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
     },
     {
       "name": "Fong, Patrick S.",
@@ -850,6 +837,19 @@
       "types.bookSection": "1",
       "types.book": "0",
       "types.report": "0"
+    },
+    {
+      "name": "Lomavatu, Mereia Fong",
+      "slug": "mereia-fong-lomavatu",
+      "last": "Lomavatu",
+      "first": "Mereia Fong",
+      "salutation": "",
+      "village": "",
+      "paternalProvince": "",
+      "institution": "",
+      "institutionUrl": "",
+      "googleScholarUrl": "",
+      "photo": ""
     },
     {
       "name": "Lotawa, Semi",
@@ -1528,19 +1528,6 @@
       "slug": "virisila-qolisaya-lidise-puamau",
       "last": "Puamau",
       "first": "Virisila Qolisaya Lidise",
-      "salutation": "",
-      "village": "",
-      "paternalProvince": "",
-      "institution": "",
-      "institutionUrl": "",
-      "googleScholarUrl": "",
-      "photo": ""
-    },
-    {
-      "name": "Qalo, Ropate Rakuita",
-      "slug": "ropate-rakuita-qalo",
-      "last": "Qalo",
-      "first": "Ropate Rakuita",
       "salutation": "",
       "village": "",
       "paternalProvince": "",
@@ -3362,7 +3349,6 @@
     "Ferse, Sebastian C.A.": "Ferse, Sebastian C. A.",
     "Feussner, Klaus D.": "Feussner, Klaus",
     "Feussner, Klaus Dieter": "Feussner, Klaus",
-    "Fong‐Lomavatu, Mereia": "Fong-Lomavatu, Mereia",
     "Fong, Patrick": "Fong, Patrick S.",
     "Fong, Patrick Sakiusa": "Fong, Patrick S.",
     "Fong, S.": "Fong, Sakiusa",
@@ -3421,7 +3407,6 @@
     "Lockhart, Peter J.": "Lockhart, Peter",
     "Loga, Patricia S.": "Loga, Patricia",
     "Loganimoce, Epeli": "Loganimoce, Epeli M.",
-    "Lomavatu, Mereia Fong": "Fong-Lomavatu, Mereia",
     "Lowry, Brenda Jarvis": "Lowry, Brenda",
     "Lung, T": "Lung, Thomas",
     "Ma, Gemma C.": "Ma, Gemma",
@@ -3478,6 +3463,7 @@
     "Piovano, S": "Piovano, Susanna",
     "Prasad, Sunil": "Prasad, Sunil R.",
     "Premier, R": "Premier, Robert",
+    "Qalo, Ropate Rakuita": "Qalo, Ropate",
     "Qalo, Ropate Rakuita 1947-2016": "Qalo, Ropate",
     "Quinn, N. J.": "Quinn, Norman",
     "Ram, Arishma Reshmi": "Ram, Arishma",
