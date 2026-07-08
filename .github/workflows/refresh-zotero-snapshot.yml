@@ -203,20 +203,20 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # Only the .enc versions are tracked. .gitignore keeps plaintext out.
+          # Only the .enc versions are tracked (.gitignore keeps plaintext out).
+          # encrypt_data.py rewrites EVERY .enc blob with a fresh shared salt,
+          # so we always stage all of them \u2014 otherwise the JS decrypt step
+          # sees a mixed-salt set and fails on the second file it fetches.
+          git add data/*.enc
           if [ "${{ steps.diff.outputs.data_changed }}" = "true" ]; then
-            git add data/itaukei-zotero-snapshot.json.enc \
-                    data/last-sync.json.enc \
-                    data/itaukei-graduate-studies.json.enc
             git commit -m "Auto-refresh Zotero snapshot ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
 
           One or more tracked totals moved by >2% since the last snapshot.
           Run: ${{ github.run_id }}"
           else
-            git add data/last-sync.json.enc
             git commit -m "chore: refresh last-sync heartbeat ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
 
-          No tracked total moved by >2% — snapshot file unchanged.
+          No tracked total moved by >2% \u2014 snapshot file unchanged.
           Run: ${{ github.run_id }}"
           fi
           # Concurrency-safe push: if another commit (e.g. Ron editing profiles
