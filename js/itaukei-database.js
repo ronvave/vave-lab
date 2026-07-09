@@ -1560,27 +1560,46 @@
     if (state.graduateStudies) renderWorldMap();
     // Fix late-arriving container sizes (e.g. panel below the fold).
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 100);
-    // Fullscreen toggle for the B2 graduates map. On expand we fit the
-    // marker bounds so the wider viewport shows all points; on collapse
-    // we restore the pre-fullscreen center/zoom.
-    // Fullscreen toggle for the B2 graduates map. Google tiles wrap,
-    // so no tile-layer swap is needed — we just re-center at a zoom
-    // that keeps the marker cluster (Fiji/AU/NZ) in the middle, and
-    // restore the prior view on close.
+    // Fullscreen toggle for the B2 graduates map. On open we crop out
+    // the polar caps (no one studies in Antarctica or Greenland's
+    // interior) and lift the boxed-world constraints so Google's tiles
+    // wrap seamlessly across the antimeridian — the user can drag left
+    // or right and the map keeps going instead of hitting a wall or
+    // slicing Fiji. We also re-render the marker layer with duplicate
+    // copies at ±360° longitude so dots appear in every world copy.
     wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
       onOpen: () => {
         const m = state.worldMap; if (!m) return;
         state.worldMapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
-        // Pick a zoom that gives comfortable global context on the
-        // widened viewport. z=3 shows most continents at 1500px width.
-        const w = Math.max(window.innerWidth || 1200, 800);
-        const zExact = Math.log2(w / 256);
-        const z = Math.min(5, Math.max(2.5, Math.round(zExact * 4) / 4));
-        m.setView([5, 150], z, { animate: false });
+        // Remove the boxed-world constraints so tiles wrap seamlessly
+        // across the antimeridian. Google's tile server returns tiles
+        // for any x (wrapping modulo the world width), so with the
+        // Leaflet tileLayer default (noWrap:false) the map repeats.
+        m.setMaxBounds(null);
+        m.options.worldCopyJump = true;
+        state.worldMapFullscreen = true;
+        // Re-render markers so each point has copies in the adjacent
+        // world panels (-360, 0, +360). Without this, dragging past
+        // the antimeridian would show blank continents.
+        renderWorldMap();
+        // Frame the useful latitude band (~55S to 60N) centered on the
+        // Pacific so Fiji sits mid-screen. Leaflet's fitBounds picks a
+        // zoom that makes this rectangle fill the container; because
+        // we widened the viewport to 16:9, the resulting view fills
+        // the screen with no empty backdrop.
+        m.fitBounds([[-55, 60], [60, 260]], { animate: false, padding: [0, 0] });
       },
       onClose: () => {
-        const m = state.worldMap; const prev = state.worldMapPrevView;
-        if (m && prev) m.setView(prev.center, prev.zoom, { animate: false });
+        const m = state.worldMap; if (!m) return;
+        // Restore the original bounded, non-wrapping configuration used
+        // by the inline (non-fullscreen) view.
+        m.options.worldCopyJump = false;
+        m.setMaxBounds([[-85, -210], [85, 210]]);
+        state.worldMapFullscreen = false;
+        // Re-render markers as single copies at their real coordinates.
+        renderWorldMap();
+        const prev = state.worldMapPrevView;
+        if (prev) m.setView(prev.center, prev.zoom, { animate: false });
       }
     });
   }
@@ -1641,9 +1660,13 @@
     }
 
     // Where iTaukei graduates study.
-    // Single-copy world (no tile wrap). Markers are plotted once at their
-    // real coordinates; the map is auto-framed below to the marker bounds
-    // so every dot is visible with breathing room on all sides.
+    // Inline view: single-copy world (no tile wrap). Markers plotted once at
+    // their real coordinates, then auto-framed to marker bounds below.
+    // Fullscreen view: tiles wrap seamlessly, so we plot each marker three
+    // times — at lng-360, lng, lng+360 — so dragging across the antimeridian
+    // shows dots on every visible world copy.
+    const isFs = !!state.worldMapFullscreen;
+    const lngOffsets = isFs ? [-360, 0, 360] : [0];
     const markers = [];
     const latlngs = [];
     points.forEach(p => {
@@ -1671,29 +1694,32 @@
         keepInView: true
       };
 
-      const m = L.circleMarker([p.lat, p.lng], {
-        radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+      lngOffsets.forEach(dx => {
+        const m = L.circleMarker([p.lat, p.lng + dx], {
+          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+        });
+        m.bindPopup(popupHtml, popupOpts);
+        m.on('mouseover', () => m.openPopup());
+        m.on('popupopen', (evt) => {
+          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+          wirePopupScholarHovers(el, p);
+          wirePopupAutoClose(el, evt.popup, m);
+          // Give autoPan a beat, then verify the popup is fully inside the map
+          // viewport. If it isn't (common for Fiji's huge popups near the map
+          // edges), pan the map manually so the popup sits comfortably.
+          setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
+        });
+        markers.push(m);
+        if (dx === 0) latlngs.push([p.lat, p.lng]);
       });
-      m.bindPopup(popupHtml, popupOpts);
-      m.on('mouseover', () => m.openPopup());
-      m.on('popupopen', (evt) => {
-        const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
-        wirePopupScholarHovers(el, p);
-        wirePopupAutoClose(el, evt.popup, m);
-        // Give autoPan a beat, then verify the popup is fully inside the map
-        // viewport. If it isn't (common for Fiji's huge popups near the map
-        // edges), pan the map manually so the popup sits comfortably.
-        setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
-      });
-      markers.push(m);
-      latlngs.push([p.lat, p.lng]);
     });
 
     state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
 
     // Auto-frame to marker bounds (with side buffer) whenever we (re)draw
-    // the base world markers, but only when there's no active drill-down.
-    if (!state.worldSelectedCountry) {
+    // the base world markers, but only when there's no active drill-down
+    // and not in fullscreen (fullscreen has its own onOpen framing).
+    if (!state.worldSelectedCountry && !isFs) {
       if (latlngs.length > 1) {
         const b = L.latLngBounds(latlngs);
         // Generous padding so all dots have breathing room from the edges.
