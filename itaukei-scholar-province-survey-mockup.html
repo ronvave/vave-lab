@@ -193,6 +193,18 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .status.ok{color:var(--mat)}
 .status.err{color:var(--pat)}
 
+/* ===== SAMPLE PROFILE THUMBNAIL (in intro) ===== */
+.sample-profile{margin:14px 0 8px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.sample-profile__thumb{display:block;max-width:340px;width:100%;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 6px 22px rgba(45,32,10,.10);cursor:zoom-in;transition:transform .18s ease, box-shadow .18s ease;background:#fff}
+.sample-profile__thumb:hover,.sample-profile__thumb:focus{transform:translateY(-2px);box-shadow:0 10px 28px rgba(45,32,10,.16);outline:none}
+.sample-profile__caption{font-size:.9rem;color:var(--ink);font-weight:500}
+.sample-profile__caption a{color:var(--brown-ink);text-decoration:underline;text-underline-offset:3px;cursor:zoom-in}
+
+/* ===== MAP HIGHLIGHT (in stats note) ===== */
+.map-cta{display:inline-flex;align-items:center;gap:6px;background:#fff2b0;color:#5a4200;font-weight:700;text-decoration:none;padding:4px 12px;border-radius:999px;border:1.5px solid #e8c94a;box-shadow:0 2px 6px rgba(212,168,20,.20);cursor:zoom-in;transition:background .15s ease, box-shadow .15s ease, transform .15s ease}
+.map-cta:hover,.map-cta:focus{background:#ffe680;box-shadow:0 4px 10px rgba(212,168,20,.30);transform:translateY(-1px);outline:none}
+.map-cta__icon{font-size:1rem;line-height:1}
+
 /* ===== LIGHTBOX ===== */
 .lb{position:fixed;inset:0;background:rgba(15,23,42,.86);z-index:100;display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
 .lb.open{display:flex}
@@ -231,12 +243,17 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
       <div class="stat"><span class="stat__num">1,380</span><span class="stat__label">by iTaukei authors</span></div>
       <div class="stat"><span class="stat__num">292</span><span class="stat__label">theses (207 Masters · 85 PhD)</span></div>
       <div class="stat"><span class="stat__num">62</span><span class="stat__label">universities · 13 countries</span></div>
-      <p class="stats__note">As of Thursday, 9 July 2026, 10:05 PM FJT · <a href="#" data-lb="itaukei-grad-sch-global-map-4.jpg">⤢ see the global graduate-studies map</a></p>
+      <p class="stats__note">As of Thursday, 9 July 2026, 10:05 PM FJT · <a href="#" class="map-cta" data-lb="itaukei-grad-sch-global-map-4.jpg"><span class="map-cta__icon" aria-hidden="true">⤢</span>Click to see sample dashboard map</a></p>
     </div>
 
     <p class="hero__body">It's a project I've put a great deal of myself into, built one entry at a time — and it's still growing, since this only reflects what I've been able to gather so far.</p>
 
-    <p class="hero__body">Every iTaukei scholar with <strong>two or more publications</strong> — thesis, journal article, book, book chapter, or report — gets their own <a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg">profile in the database (see a sample)</a>. The dashboard is searchable, filters live, and each scholar has an AI-written plain-language summary plus diverse auto-generated keywords, so you can see the breadth of their work at a glance.</p>
+    <p class="hero__body">Every iTaukei scholar with <strong>two or more publications</strong> — thesis, journal article, book, book chapter, or report — gets their own profile in the database. The dashboard is searchable, filters live, and each scholar has an AI-written plain-language summary plus diverse auto-generated keywords, so you can see the breadth of their work at a glance.</p>
+
+    <figure class="sample-profile">
+      <a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg" aria-label="Open sample scholar profile at full size"><img class="sample-profile__thumb" src="iTaukei-scholar-profile-sample-2.jpg" alt="Sample iTaukei scholar profile card from the dashboard" loading="lazy"></a>
+      <figcaption class="sample-profile__caption"><a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg">Click to enlarge — sample scholar profile</a></figcaption>
+    </figure>
 
     <p class="hero__body"><strong>About the information used here.</strong> All of the information in this database is <strong>publicly available</strong> — from university and journal repositories, or elsewhere on the internet. Author names are extracted from the author lists on each paper. And while most iTaukei authors on this list are researchers and scholars, some are <strong>community members and support staff</strong> — people who also hold a lot of knowledge and skill, and who contributed to the success of the research or projects they were part of.</p>
 
