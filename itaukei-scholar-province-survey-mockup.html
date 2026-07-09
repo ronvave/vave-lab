@@ -42,18 +42,23 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .hero__mark::before{content:"◆  "}
 .hero h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(2.2rem,4.2vw,3.6rem);line-height:1.06;letter-spacing:-.015em;margin:0 0 18px;color:var(--ink)}
 .hero h1 em{font-style:italic;color:var(--brown);font-weight:500}
-.hero__lede{font-size:1.18rem;color:var(--ink-soft);max-width:66ch;margin:0 0 22px}
-.hero__body{font-size:1rem;color:var(--ink-soft);max-width:70ch;margin:0 0 14px}
+.hero__lede{font-size:1.18rem;color:var(--ink-soft);margin:0 0 22px}
+.hero__body{font-size:1rem;color:var(--ink-soft);margin:0 0 14px}
 .hero__body a{color:var(--brown);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 .hero__body a:hover{color:var(--brown-ink)}
 
 /* stat strip */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px 0 22px;padding:22px 24px;background:var(--paper-2);border-radius:14px;border:1px solid var(--line-soft)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px auto 14px;padding:22px 24px;background:var(--paper-2);border-radius:14px;border:1px solid var(--line-soft);max-width:820px}
 .stat{display:flex;flex-direction:column;gap:2px}
 .stat__num{font-family:"Fraunces",serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--brown-ink);font-variant-numeric:tabular-nums}
 .stat__label{font-size:.82rem;color:var(--ink);font-weight:500;letter-spacing:.02em;text-transform:uppercase}
-.stats__note{grid-column:1/-1;margin:6px 0 0;font-size:.88rem;color:var(--ink);font-style:italic}
+.stats__note{grid-column:1/-1;margin:6px 0 0;font-size:.88rem;color:var(--ink);font-style:italic;text-align:center}
 .stats__note a{color:var(--brown);text-decoration:underline;text-underline-offset:3px}
+
+/* ===== MAP CTA ROW (below stats bar) ===== */
+.map-cta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin:0 auto 26px;max-width:820px}
+.map-cta-row .map-cta{font-size:.92rem}
+@media(max-width:640px){.map-cta-row{flex-direction:column;align-items:center}}
 
 /* screen anchor */
 .divider{display:flex;align-items:center;gap:18px;margin:56px 0 24px}
@@ -133,10 +138,13 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 /* ===== SCREEN 2 — BATCH ENTRY ===== */
 #screen2.hidden{display:none}
 
-.informant-field{margin-bottom:24px;max-width:460px}
+.informant-field{margin-bottom:24px}
 .informant-field label{display:block;font-weight:600;font-size:.86rem;color:var(--ink);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
-.informant-field input{width:100%;padding:12px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:1rem;color:var(--ink)}
+.informant-field input{width:100%;padding:12px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:1rem;color:var(--ink);box-sizing:border-box}
 .informant-field input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.informant-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px;margin-bottom:24px}
+@media(max-width:640px){.informant-grid{grid-template-columns:1fr}}
+.informant-grid .informant-field{margin-bottom:0}
 
 /* scholar entry cards — one card per scholar, no table */
 .entries{display:flex;flex-direction:column;gap:18px}
@@ -194,10 +202,10 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .status.err{color:var(--pat)}
 
 /* ===== SAMPLE PROFILE THUMBNAIL (in intro) ===== */
-.sample-profile{margin:14px 0 8px;display:flex;flex-direction:column;align-items:flex-start;gap:8px}
-.sample-profile__thumb{display:block;max-width:340px;width:100%;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 6px 22px rgba(45,32,10,.10);cursor:zoom-in;transition:transform .18s ease, box-shadow .18s ease;background:#fff}
+.sample-profile{margin:20px auto 12px;display:flex;flex-direction:column;align-items:center;gap:8px;max-width:420px}
+.sample-profile__thumb{display:block;max-width:380px;width:100%;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 6px 22px rgba(45,32,10,.10);cursor:zoom-in;transition:transform .18s ease, box-shadow .18s ease;background:#fff}
 .sample-profile__thumb:hover,.sample-profile__thumb:focus{transform:translateY(-2px);box-shadow:0 10px 28px rgba(45,32,10,.16);outline:none}
-.sample-profile__caption{font-size:.9rem;color:var(--ink);font-weight:500}
+.sample-profile__caption{font-size:.9rem;color:var(--ink);font-weight:500;text-align:center}
 .sample-profile__caption a{color:var(--brown-ink);text-decoration:underline;text-underline-offset:3px;cursor:zoom-in}
 
 /* ===== MAP HIGHLIGHT (in stats note) ===== */
@@ -232,6 +240,8 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     <span class="hero__mark">Vave Lab · community crowdsourcing</span>
     <p class="hero__lede"><strong>Help us tag every iTaukei Postgraduate scholar to their village and province.</strong></p>
 
+    <p class="hero__body"><strong>Bula vinaka.</strong> My name is Ron Vave, and I have paternal links to Sawana village (Vanua Balavu, Lau Province) and maternal links to Tiliva village (Bua Province). I currently work at the University of Hawaiʻi at Mānoa in Honolulu.</p>
+
     <p class="hero__body">For the past two years, I've been curating a database of iTaukei scholarly work, sharing it along the way in a <a href="https://www.facebook.com/groups/651412128782477" target="_blank" rel="noopener">closed Facebook group for iTaukei scholars and iTaukei at large</a>.</p>
 
     <p class="hero__body">Part of why I do this is that it's <strong>not iTaukei / Pacific Island culture to talk about our own achievements</strong> — successfully completing graduate studies, publishing a thesis, a journal article, a book. Sharing on someone else's behalf takes that pressure off the scholar, and lets the rest of us see the depth of their work.</p>
@@ -243,7 +253,12 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
       <div class="stat"><span class="stat__num">1,380</span><span class="stat__label">by iTaukei authors</span></div>
       <div class="stat"><span class="stat__num">292</span><span class="stat__label">theses (207 Masters · 85 PhD)</span></div>
       <div class="stat"><span class="stat__num">62</span><span class="stat__label">universities · 13 countries</span></div>
-      <p class="stats__note">As of Thursday, 9 July 2026, 10:05 PM FJT · <a href="#" class="map-cta" data-lb="itaukei-grad-sch-global-map-4.jpg"><span class="map-cta__icon" aria-hidden="true">⤢</span>Click to see sample dashboard map</a></p>
+      <p class="stats__note">As of Thursday, 9 July 2026, 10:05 PM FJT</p>
+    </div>
+
+    <div class="map-cta-row">
+      <a href="#" class="map-cta" data-lb="itaukei-grad-sch-global-map-4.jpg"><span class="map-cta__icon" aria-hidden="true">⤢</span>Click to see sample dashboard map</a>
+      <a href="#" class="map-cta" data-lb="itaukei-grad-sch-map-popup-expl-3.jpg"><span class="map-cta__icon" aria-hidden="true">⤢</span>Click to see map with popup info</a>
     </div>
 
     <p class="hero__body">It's a project I've put a great deal of myself into, built one entry at a time — and it's still growing, since this only reflects what I've been able to gather so far.</p>
@@ -252,7 +267,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 
     <figure class="sample-profile">
       <a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg" aria-label="Open sample scholar profile at full size"><img class="sample-profile__thumb" src="iTaukei-scholar-profile-sample-2.jpg" alt="Sample iTaukei scholar profile card from the dashboard" loading="lazy"></a>
-      <figcaption class="sample-profile__caption"><a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg">Click to enlarge — sample scholar profile</a></figcaption>
+      <figcaption class="sample-profile__caption"><a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg">Click to enlarge — dashboard sample scholar profile</a></figcaption>
     </figure>
 
     <p class="hero__body"><strong>About the information used here.</strong> All of the information in this database is <strong>publicly available</strong> — from university and journal repositories, or elsewhere on the internet. Author names are extracted from the author lists on each paper. And while most iTaukei authors on this list are researchers and scholars, some are <strong>community members and support staff</strong> — people who also hold a lot of knowledge and skill, and who contributed to the success of the research or projects they were part of.</p>
@@ -325,9 +340,15 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
   <section id="screen2" class="card hidden">
     <p class="card__sub">For each scholar you picked, share their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span>. All fields are optional — partial info still helps.</p>
 
-    <div class="informant-field">
-      <label for="informantName">Your name (optional)</label>
-      <input id="informantName" type="text" placeholder="e.g. Ron Vave">
+    <div class="informant-grid">
+      <div class="informant-field">
+        <label for="informantName">Your name (optional)</label>
+        <input id="informantName" type="text" placeholder="e.g. Ron Vave" autocomplete="name">
+      </div>
+      <div class="informant-field">
+        <label for="informantEmail">Your email (optional)</label>
+        <input id="informantEmail" type="email" placeholder="e.g. name@example.com" autocomplete="email">
+      </div>
     </div>
 
     <div id="entries" class="entries"></div>
@@ -522,11 +543,13 @@ function renderFileList(){
 // --------- SUBMISSIONS ---------
 async function submitBatch(){
   const informantName = $('informantName').value.trim();
+  const informantEmail = $('informantEmail').value.trim();
   const wrapUpNotes = $('wrapUpNotes').value.trim();
   const entries = [...entriesEl.querySelectorAll('.entry')].map(card => {
     const scholar = SCHOLARS.find(s => s.id === Number(card.dataset.id));
     return {
       informantName,
+      informantEmail,
       lastName: scholar.lastName,
       firstName: scholar.firstName,
       paternalVillage: card.querySelector('.pv').value.trim(),
