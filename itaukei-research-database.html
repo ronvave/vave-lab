@@ -478,6 +478,48 @@
       border-radius: var(--radius-md);
       background: #d6ecf0;
     }
+    /* Fullscreen affordance for the B2 graduates map (only this map).
+       Wrapper is position:relative so the button can sit over the map's
+       top-right corner without clashing with Leaflet's own zoom controls
+       (which live top-left). */
+    .db-map-world-wrap { position: relative; }
+    .db-map-fs-btn {
+      position: absolute; top: 10px; right: 10px; z-index: 1000;
+      width: 34px; height: 34px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 6px;
+      color: #0f172a;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      transition: background 120ms ease, transform 120ms ease;
+    }
+    .db-map-fs-btn:hover { background: #ffffff; }
+    .db-map-fs-btn:active { transform: scale(0.96); }
+    .db-map-fs-btn:focus-visible {
+      outline: 2px solid #0f766e; outline-offset: 2px;
+    }
+    .db-map-fs-btn svg { width: 18px; height: 18px; display: block; }
+    /* When the wrapper is marked fullscreen, pin it to the viewport and
+       let the inner map fill it. Leaflet's invalidateSize() is called on
+       toggle so tiles re-render at the new size. */
+    .db-map-world-wrap.is-fullscreen {
+      position: fixed; inset: 0;
+      z-index: 9999;
+      background: #0b1220;
+      padding: 0;
+      border-radius: 0;
+    }
+    .db-map-world-wrap.is-fullscreen #db-map-world {
+      width: 100%; height: 100%;
+      border-radius: 0;
+    }
+    .db-map-world-wrap.is-fullscreen .db-map-fs-btn {
+      top: 14px; right: 14px;
+    }
+    /* When the map is fullscreen, hide page scroll behind it. */
+    body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
       background: var(--color-primary-highlight);
       border-radius: var(--radius-md);
@@ -2796,7 +2838,17 @@
           <strong>Note:</strong> Only theses that appear in a scholar&rsquo;s iTaukei sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
         </p>
         <div class="db-world-wide">
-          <div id="db-map-world" role="application" aria-label="World map of iTaukei graduate studies"></div>
+          <div class="db-map-world-wrap" data-db-map-world-wrap>
+            <div id="db-map-world" role="application" aria-label="World map of iTaukei graduate studies"></div>
+            <button type="button" class="db-map-fs-btn" data-db-map-fs-btn
+                    aria-label="Expand map to full screen"
+                    title="Expand map to full screen (Esc to exit)"
+                    aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-db-map-fs-icon="expand">
+                <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
+              </svg>
+            </button>
+          </div>
           <div class="db-map-error" data-db-worldmap-error>Map couldn't load — the country list below is still available.</div>
           <aside class="db-world-panel-wide">
             <div data-world-list-view>
@@ -3393,6 +3445,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-02" defer></script>
+<script src="js/itaukei-database.js?v=20260709-04" defer></script>
 </body>
 </html>

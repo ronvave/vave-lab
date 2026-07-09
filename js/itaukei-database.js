@@ -1533,6 +1533,43 @@
     if (state.graduateStudies) renderWorldMap();
     // Fix late-arriving container sizes (e.g. panel below the fold).
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 100);
+    // Fullscreen toggle: expand only the B2 graduates map to fill the
+    // viewport. Icon swap (expand ↔ collapse), Esc-to-exit, aria-pressed
+    // sync, and a Leaflet invalidateSize() so tiles re-render at the new
+    // container size.
+    setupWorldMapFullscreen();
+  }
+
+  const WORLD_MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';
+  const WORLD_MAP_FS_COLLAPSE_SVG = '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>';
+
+  function setupWorldMapFullscreen() {
+    const wrap = document.querySelector('[data-db-map-world-wrap]');
+    const btn  = document.querySelector('[data-db-map-fs-btn]');
+    if (!wrap || !btn || btn.dataset.dbMapFsWired === '1') return;
+    btn.dataset.dbMapFsWired = '1';
+
+    const setState = (on) => {
+      wrap.classList.toggle('is-fullscreen', on);
+      document.body.classList.toggle('db-map-fullscreen-lock', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Expand map to full screen');
+      btn.setAttribute('title', on ? 'Exit full screen (Esc)' : 'Expand map to full screen (Esc to exit)');
+      const icon = btn.querySelector('svg');
+      if (icon) icon.innerHTML = on ? WORLD_MAP_FS_COLLAPSE_SVG : WORLD_MAP_FS_EXPAND_SVG;
+      // Re-flow Leaflet after the container resizes.
+      setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 60);
+      setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 320);
+    };
+
+    btn.addEventListener('click', () => {
+      setState(!wrap.classList.contains('is-fullscreen'));
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && wrap.classList.contains('is-fullscreen')) {
+        setState(false);
+      }
+    });
   }
 
   function renderWorldMap() {
