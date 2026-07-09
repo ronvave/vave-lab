@@ -456,12 +456,25 @@
     .db-map-a-wrap > div:first-child {
       display: flex; flex-direction: column;
     }
+    /* The Fiji map wrapper flex-grows to fill the stretched left column,
+       and #db-map inside it fills the wrapper 100%. Reuses the shared
+       .db-map-world-wrap class (position:relative + fullscreen rules)
+       so both maps share behaviour. */
+    .db-map-a-wrap .db-map-world-wrap {
+      flex: 1 1 auto; min-height: 480px; display: flex;
+    }
+    .db-map-a-wrap .db-map-world-wrap > #db-map {
+      flex: 1 1 auto; min-height: 480px;
+    }
     #db-map {
-      flex: 1 1 auto;
-      min-height: 480px;
       width: 100%;
       border-radius: var(--radius-md);
       background: #d6ecf0;
+    }
+    /* When fullscreen, the Fiji map's own inner height rules must not
+       fight the fullscreen container. */
+    .db-map-world-wrap.is-fullscreen #db-map {
+      min-height: 0; height: 100%;
     }
 
     /* Panel A2 — wide world map. Map spans the full panel width (like the
@@ -2770,7 +2783,17 @@
         </div>
         <div class="db-map-a-wrap">
           <div>
-            <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
+            <div class="db-map-world-wrap" data-db-map-fiji-wrap>
+              <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
+              <button type="button" class="db-map-fs-btn" data-db-map-fiji-fs-btn
+                      aria-label="Expand map to full screen"
+                      title="Expand map to full screen (Esc to exit)"
+                      aria-pressed="false">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
+                </svg>
+              </button>
+            </div>
             <div class="db-map-error" data-db-map-error>Map couldn't load — the rest of the page is still available.</div>
           </div>
           <aside class="db-map-legend-panel" data-mapscope-panel="fiji">
@@ -3445,6 +3468,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-04" defer></script>
+<script src="js/itaukei-database.js?v=20260709-05" defer></script>
 </body>
 </html>

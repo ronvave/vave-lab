@@ -845,6 +845,9 @@
       }).addTo(map);
       state.map = map;
       renderChoropleth();
+      // Fullscreen toggle for the Fiji choropleth map. Same behaviour as
+      // the B2 world map: expand button top-right, Esc to exit.
+      wireMapFullscreen('[data-db-map-fiji-wrap]', '[data-db-map-fiji-fs-btn]', () => state.map);
 
       // Panel A mapview toggle (Fiji sub-tabs)
       $$('[data-mapscope-panel="fiji"] button').forEach(btn => {
@@ -1533,42 +1536,40 @@
     if (state.graduateStudies) renderWorldMap();
     // Fix late-arriving container sizes (e.g. panel below the fold).
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 100);
-    // Fullscreen toggle: expand only the B2 graduates map to fill the
-    // viewport. Icon swap (expand ↔ collapse), Esc-to-exit, aria-pressed
-    // sync, and a Leaflet invalidateSize() so tiles re-render at the new
-    // container size.
-    setupWorldMapFullscreen();
+    // Fullscreen toggle for the B2 graduates map.
+    wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap);
   }
 
-  const WORLD_MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';
-  const WORLD_MAP_FS_COLLAPSE_SVG = '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>';
+  const MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';
+  const MAP_FS_COLLAPSE_SVG = '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>';
 
-  function setupWorldMapFullscreen() {
-    const wrap = document.querySelector('[data-db-map-world-wrap]');
-    const btn  = document.querySelector('[data-db-map-fs-btn]');
+  // Generic wiring for a per-map fullscreen toggle. Handles icon swap,
+  // aria-pressed/label sync, Esc-to-exit, body scroll lock, and two
+  // deferred Leaflet invalidateSize() calls so tiles re-render at the
+  // new container size (once after the class toggle, once after animated
+  // layout settling). Safe to call multiple times; wiring is idempotent.
+  function wireMapFullscreen(wrapSel, btnSel, getMap) {
+    const wrap = document.querySelector(wrapSel);
+    const btn  = document.querySelector(btnSel);
     if (!wrap || !btn || btn.dataset.dbMapFsWired === '1') return;
     btn.dataset.dbMapFsWired = '1';
 
-    const setState = (on) => {
+    const setFs = (on) => {
       wrap.classList.toggle('is-fullscreen', on);
       document.body.classList.toggle('db-map-fullscreen-lock', on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       btn.setAttribute('aria-label', on ? 'Exit full screen' : 'Expand map to full screen');
       btn.setAttribute('title', on ? 'Exit full screen (Esc)' : 'Expand map to full screen (Esc to exit)');
       const icon = btn.querySelector('svg');
-      if (icon) icon.innerHTML = on ? WORLD_MAP_FS_COLLAPSE_SVG : WORLD_MAP_FS_EXPAND_SVG;
-      // Re-flow Leaflet after the container resizes.
-      setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 60);
-      setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 320);
+      if (icon) icon.innerHTML = on ? MAP_FS_COLLAPSE_SVG : MAP_FS_EXPAND_SVG;
+      const m = typeof getMap === 'function' ? getMap() : null;
+      setTimeout(() => { if (m && typeof m.invalidateSize === 'function') m.invalidateSize(); }, 60);
+      setTimeout(() => { if (m && typeof m.invalidateSize === 'function') m.invalidateSize(); }, 320);
     };
 
-    btn.addEventListener('click', () => {
-      setState(!wrap.classList.contains('is-fullscreen'));
-    });
+    btn.addEventListener('click', () => setFs(!wrap.classList.contains('is-fullscreen')));
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && wrap.classList.contains('is-fullscreen')) {
-        setState(false);
-      }
+      if (e.key === 'Escape' && wrap.classList.contains('is-fullscreen')) setFs(false);
     });
   }
 
