@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Encrypt the plaintext JSON data files with a shared passcode.
+"""Encrypt the plaintext JSON data files with the shared passcode.
 
 The database page's client-side JS decrypts them via WebCrypto after a
 successful lock-screen entry. Format used by both sides:
@@ -7,19 +7,30 @@ successful lock-screen entry. Format used by both sides:
   file bytes = magic (4)  ||  salt (16)  ||  iv (12)  ||  ciphertext+tag
 
   magic         = b"IVAV" (marks a Vave-Lab encrypted blob, version 1)
-  salt          = random bytes fed to PBKDF2-SHA256 (200k iterations) to
-                  derive a 256-bit AES key from the passcode. Salt is
-                  SHARED across every file in a given build so the JS
-                  side only pays the PBKDF2 cost once per session.
+  salt          = per-file random bytes fed to PBKDF2-SHA256 (200k iters)
+                  to derive the 256-bit AES key from the passcode. Each
+                  .enc file is fully self-describing: readers derive the
+                  key from (passcode, salt-from-this-file). There is NO
+                  shared-salt invariant across files — writers (this
+                  script, the admin browser, workflows) can encrypt any
+                  single file independently with a fresh salt and every
+                  other file stays decryptable.
   iv            = per-file random 96-bit nonce for AES-GCM
-  ciphertext+tag= AES-GCM(key, iv, plaintext) \u2014 includes the 16-byte tag
+  ciphertext+tag= AES-GCM(key, iv, plaintext) — includes the 16-byte tag
 
-Passcode comes from the VAVELAB_PASSCODE env variable at build time.
-Never commit the passcode.
+Passcode comes from the VAVELAB_PASSCODE env variable. Never commit it.
+
+CLI:
+  python scripts/encrypt_data.py                    # encrypt every known
+                                                    #   target whose
+                                                    #   plaintext exists
+  python scripts/encrypt_data.py scholar-profiles.json  # encrypt only
+                                                        #   the listed
+                                                        #   files
 """
 from __future__ import annotations
 
-import json
+import argparse
 import os
 import sys
 from pathlib import Path
@@ -60,43 +71,73 @@ def derive_key(passcode: str, salt: bytes) -> bytes:
     return kdf.derive(passcode.encode("utf-8"))
 
 
-def encrypt_body(plaintext: bytes, key: bytes) -> bytes:
+def encrypt_one(name: str, passcode: str) -> bool:
+    """Encrypt a single plaintext file with its own fresh random salt.
+
+    Returns True if the file was encrypted, False if the plaintext was
+    missing (caller decides whether that's a warning or an error).
+    """
+    src = DATA_DIR / name
+    if not src.exists():
+        return False
+    salt = os.urandom(16)
+    key = derive_key(passcode, salt)
     iv = os.urandom(12)
     aes = AESGCM(key)
-    ct = aes.encrypt(iv, plaintext, associated_data=None)
-    return iv + ct
+    plaintext = src.read_bytes()
+    body = aes.encrypt(iv, plaintext, associated_data=None)
+    blob = MAGIC + salt + iv + body
+    dst = DATA_DIR / (name + ".enc")
+    dst.write_bytes(blob)
+    print(
+        f"  encrypted {name} \u2192 {name}.enc "
+        f"({len(plaintext):>7,} B \u2192 {len(blob):>7,} B, "
+        f"salt={salt.hex()[:8]}\u2026)"
+    )
+    return True
 
 
 def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "names",
+        nargs="*",
+        help=(
+            "File names under data/ to encrypt (e.g. scholar-profiles.json). "
+            "If omitted, encrypts every known target whose plaintext exists."
+        ),
+    )
+    args = ap.parse_args()
+
     passcode = os.environ.get("VAVELAB_PASSCODE")
     if not passcode:
         print("ERROR: set VAVELAB_PASSCODE in the environment.", file=sys.stderr)
         return 1
 
-    # One salt + one derived key per build. The JS side does PBKDF2 exactly
-    # once per session and reuses the resulting key across every .enc file.
-    salt = os.urandom(16)
-    key = derive_key(passcode, salt)
-    header = MAGIC + salt  # 20 bytes, prepended to every file
+    if args.names:
+        names = args.names
+        # Validate the caller isn't sneaking in an unknown target.
+        unknown = [n for n in names if n not in TARGETS]
+        if unknown:
+            print(
+                f"ERROR: unknown target(s): {', '.join(unknown)}\n"
+                f"Known: {', '.join(TARGETS)}",
+                file=sys.stderr,
+            )
+            return 2
+    else:
+        names = TARGETS
 
     missing: list[str] = []
-    for name in TARGETS:
-        src = DATA_DIR / name
-        if not src.exists():
+    for name in names:
+        if not encrypt_one(name, passcode):
             missing.append(name)
-            continue
-        dst = DATA_DIR / (name + ".enc")
-        plaintext = src.read_bytes()
-        body = encrypt_body(plaintext, key)
-        blob = header + body
-        dst.write_bytes(blob)
-        print(
-            f"  encrypted {name} \u2192 {name}.enc "
-            f"({len(plaintext):>7,} B \u2192 {len(blob):>7,} B)"
-        )
 
     if missing:
-        print("\nWARNING: skipped (not found):", ", ".join(missing), file=sys.stderr)
+        print(
+            "\nWARNING: skipped (plaintext not found): " + ", ".join(missing),
+            file=sys.stderr,
+        )
     return 0
 
 

@@ -627,26 +627,20 @@ def main() -> int:
 
 
 def _reencrypt_if_configured():
-    # See refresh-zotero-snapshot.py for the reasoning behind bootstrapping
-    # every other plaintext from the shipped .enc blobs before re-encrypting:
-    # keeps stale local files from silently downgrading data we haven’t
-    # touched (e.g. scholar-profiles pushed from the admin dashboard).
+    # Re-encrypt ONLY the insights file we just wrote. Each .enc file uses
+    # its own per-file random salt (see scripts/encrypt_data.py) so there
+    # is no shared-salt invariant to preserve \u2014 touching this one file
+    # is enough and cannot corrupt any of the other .enc blobs on disk.
     import os, subprocess
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     enc = os.path.join(root, "scripts", "encrypt_data.py")
-    dec = os.path.join(root, "scripts", "decrypt_data.py")
     if os.environ.get("VAVELAB_PASSCODE"):
-        # Cache the freshly-written scholar-insights.json so we can restore
-        # it after the bootstrap overwrites it.
-        fresh_insights = OUTPUT_PATH.read_bytes()
-        print("Bootstrapping plaintext from shipped .enc blobs\u2026")
-        subprocess.run([sys.executable, dec, "--all"], check=True)
-        OUTPUT_PATH.write_bytes(fresh_insights)
-        print("Re-encrypting data files\u2026")
-        subprocess.run([sys.executable, enc], check=True)
+        print("Re-encrypting scholar-insights.json\u2026")
+        subprocess.run([sys.executable, enc, "scholar-insights.json"], check=True)
     else:
         print("NOTE: VAVELAB_PASSCODE not set \u2014 skipped re-encryption. Run "
-              "`VAVELAB_PASSCODE=\u2026 python3 scripts/encrypt_data.py` before committing.")
+              "`VAVELAB_PASSCODE=\u2026 python3 scripts/encrypt_data.py scholar-insights.json` "
+              "before committing.")
 
 
 if __name__ == "__main__":

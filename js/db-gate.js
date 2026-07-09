@@ -2,32 +2,54 @@
  * Passcode gate for the iTaukei Research Database.
  *
  * The page ships with encrypted data files (.enc). Nothing renders until the
- * visitor enters the correct passcode, which we use to derive an AES-GCM key
- * and decrypt each file client-side. A correct entry stores a "session key"
- * in localStorage (base64 raw AES key + expiry) so approved devices skip the
- * prompt on future visits.
+ * visitor enters the correct passcode; that passcode is then used to derive
+ * per-file AES-GCM keys and decrypt each file client-side. A correct entry
+ * caches the passcode in localStorage for 30 days so approved devices skip
+ * the prompt on future visits.
  *
- * We NEVER store the passcode itself. We store the derived 256-bit key +
- * expiry, and validate it works by attempting one probe decrypt before
- * letting the rest of the app boot. If probe decryption fails we clear the
- * stored key and re-prompt.
+ * ── Design (per-file salt, no shared invariant) ──
+ * Each .enc file is fully self-describing:
  *
- * File format (produced by scripts/encrypt_data.py):
  *   magic (4) || salt (16) || iv (12) || ciphertext+tag
- *   magic = "IVAV"
- *   PBKDF2-HMAC-SHA256, 200,000 iterations, 32-byte key
- *   AES-GCM
+ *   magic  = "IVAV"
+ *   KDF    = PBKDF2-HMAC-SHA256, 200,000 iterations, 32-byte key
+ *   cipher = AES-GCM (16-byte tag included in the tail)
+ *
+ * We derive a fresh AES key from (passcode, salt-from-that-file) for every
+ * decrypt. There is NO shared-salt invariant across files, so writers (this
+ * page, the auto-refresh workflow, the admin browser) can each re-encrypt a
+ * single file with a fresh random salt without breaking the others. Derived
+ * per-file keys are cached in-memory for the session so we only pay the
+ * PBKDF2 cost once per file per page load.
+ *
+ * ── 30-day session ──
+ * We prove the passcode is correct with a static verifier hash before
+ * caching it:
+ *
+ *   VERIFIER_HASH = PBKDF2-HMAC-SHA256(passcode, "vavelab-db-verifier-v1",
+ *                                     200,000 iters, 32 bytes)
+ *
+ * The correct-passcode hash is baked into this file as VERIFIER_HASH_HEX.
+ * On successful match we stash { p: b64(passcode), exp } in localStorage
+ * with a 30-day expiry so the visitor is not prompted again. Explicit
+ * "Lock now" clears the entry.
  */
 (function () {
   'use strict';
 
-  var STORAGE_KEY = 'vavelab.db.sessionKey.v1';
+  var STORAGE_KEY = 'vavelab.db.session.v2';
   var REMEMBER_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
   var PBKDF2_ITERATIONS = 200000;
   var MAGIC = new Uint8Array([0x49, 0x56, 0x41, 0x56]); // "IVAV"
 
-  // Every file the database fetches. This is the one place that maps public
-  // .json URLs onto the encrypted .enc URLs on disk.
+  // Verifier constants — used to prove a passcode is correct BEFORE we try
+  // to decrypt any file, so a wrong entry fails fast with a clear message.
+  var VERIFIER_SALT = new TextEncoder().encode('vavelab-db-verifier-v1');
+  var VERIFIER_HASH_HEX =
+    'e85cedd8f7060909eb31bf83953d4f2b451eb30a1f9044e384453b881189faf8';
+
+  // Every file the database fetches. Maps the plaintext .json URL that
+  // itaukei-database.js / admin.js request onto the on-disk .enc URL.
   var ENC_FILES = {
     'data/itaukei-zotero-snapshot.json': 'data/itaukei-zotero-snapshot.json.enc',
     'data/fiji-provinces.geojson':       'data/fiji-provinces.geojson.enc',
@@ -39,9 +61,14 @@
     'data/scholar-insights.json':        'data/scholar-insights.json.enc'
   };
 
-  // In-memory AES key once the visitor is verified. Never leaves the page.
-  var cachedKey = null;
-  var activeSalt = null; // 16 bytes; matches the salt of the currently-deployed .enc set
+  // In-memory state once the visitor is verified. Never leaves the page.
+  //   cachedPasscode: string — the passcode itself, kept in memory so we can
+  //     derive a fresh per-file AES key on demand.
+  //   keyBySaltHex: Map<hex-salt-string, CryptoKey> — memoises PBKDF2 output
+  //     for each file's salt so we only pay the cost once per file per page
+  //     load, no matter how many times itaukei-database.js re-fetches.
+  var cachedPasscode = null;
+  var keyBySaltHex = Object.create(null);
 
   // ---------- Low-level crypto ----------
 
@@ -49,6 +76,14 @@
     if (a.length !== b.length) return false;
     for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
     return true;
+  }
+
+  function bytesToHex(bytes) {
+    var hex = '';
+    for (var i = 0; i < bytes.length; i++) {
+      hex += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+    }
+    return hex;
   }
 
   function b64encode(buf) {
@@ -64,58 +99,93 @@
     return bytes;
   }
 
-  async function deriveKey(passcode, salt) {
-    var enc = new TextEncoder();
+  function bust(url) {
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+  }
+
+  // PBKDF2(passcode, salt) → 256-bit raw key material. We derive a
+  // WebCrypto AES-GCM key from that material so it can be used directly
+  // with crypto.subtle.decrypt / encrypt.
+  async function deriveAesKey(passcode, salt) {
     var baseKey = await crypto.subtle.importKey(
-      'raw', enc.encode(passcode), { name: 'PBKDF2' }, false, ['deriveKey']
+      'raw',
+      new TextEncoder().encode(passcode),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveKey']
     );
     return crypto.subtle.deriveKey(
       { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
       baseKey,
       { name: 'AES-GCM', length: 256 },
-      true, // extractable so we can persist the raw bytes
-      ['decrypt', 'encrypt'] // admin push encrypts fresh blobs with this key
+      false, // no need to export — we re-derive on demand
+      ['decrypt', 'encrypt']
     );
   }
 
-  // Each .enc file is: magic(4) || salt(16) || iv(12) || ciphertext+tag.
-  // Salt is shared across every file in a build so the client only pays the
-  // PBKDF2 cost once per session; iv is per-file.
-  async function decryptBlob(cryptoKey, blob) {
-    var bytes = new Uint8Array(blob);
+  // Verifier hash of a passcode, used to fail fast on the wrong entry
+  // without touching any encrypted file.
+  async function verifierHashHex(passcode) {
+    var baseKey = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(passcode),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    var bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: VERIFIER_SALT, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      baseKey,
+      256
+    );
+    return bytesToHex(new Uint8Array(bits));
+  }
+
+  // Get (or lazily derive + memoise) the AES-GCM key for one file's salt.
+  async function keyForSalt(saltBytes) {
+    if (!cachedPasscode) {
+      throw new Error('Database is locked \u2014 no passcode in memory.');
+    }
+    var hex = bytesToHex(saltBytes);
+    if (keyBySaltHex[hex]) return keyBySaltHex[hex];
+    var key = await deriveAesKey(cachedPasscode, saltBytes);
+    keyBySaltHex[hex] = key;
+    return key;
+  }
+
+  // Read an IVAV blob (ArrayBuffer or Uint8Array) and return { key, iv, ct }
+  // ready to hand to crypto.subtle.decrypt.
+  function parseBlob(blob) {
+    var bytes = blob instanceof Uint8Array ? blob : new Uint8Array(blob);
     if (bytes.length < 4 + 16 + 12 + 16) throw new Error('Encrypted blob too short.');
     if (!bytesEqual(bytes.slice(0, 4), MAGIC)) throw new Error('Not an IVAV blob.');
-    var iv = bytes.slice(20, 32);
-    var ct = bytes.slice(32);
-    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, cryptoKey, ct);
+    return {
+      salt: bytes.slice(4, 20),
+      iv: bytes.slice(20, 32),
+      ct: bytes.slice(32)
+    };
+  }
+
+  async function decryptBlob(blob) {
+    var parts = parseBlob(blob);
+    var key = await keyForSalt(parts.salt);
+    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: parts.iv }, key, parts.ct);
     return new TextDecoder().decode(plainBuf);
   }
 
-  // Given a passcode + one encrypted probe file, extract that file's salt,
-  // derive the AES key, and probe-decrypt to confirm the passcode is right.
-  // Returns { key, salt } on success; throws if the passcode is wrong (the
-  // AES-GCM auth tag fails to verify).
-  async function keyFromPasscode(passcode, probeUrl) {
-    var res = await fetch(bust(probeUrl), { cache: 'no-store' });
-    if (!res.ok) throw new Error('probe fetch failed: ' + res.status);
-    var blob = new Uint8Array(await res.arrayBuffer());
-    if (!bytesEqual(blob.slice(0, 4), MAGIC)) throw new Error('probe not IVAV');
-    var salt = blob.slice(4, 20);
-    var key = await deriveKey(passcode, salt);
-    // Probe-decrypt to verify passcode. Throws if wrong.
-    await decryptBlob(key, blob.buffer);
-    return { key: key, salt: salt };
-  }
-
-  // Encrypt a UTF-8 string into an IVAV blob using the currently active salt
-  // + key. Admin uses this when pushing an updated plaintext JSON \u2014 the
-  // resulting .enc lands with the SAME salt as every other deployed file, so
-  // the shared-salt invariant is preserved without a full re-encrypt round.
-  async function encryptString(plaintext, cryptoKey, salt) {
+  // Encrypt a UTF-8 string into an IVAV blob using a FRESH random salt +
+  // fresh random IV. Because per-file salts are independent, this can be
+  // used to update any one .enc file without touching the others.
+  async function encryptString(plaintext) {
+    if (!cachedPasscode) {
+      throw new Error('Database is locked \u2014 no passcode in memory.');
+    }
+    var salt = crypto.getRandomValues(new Uint8Array(16));
     var iv = crypto.getRandomValues(new Uint8Array(12));
+    var key = await deriveAesKey(cachedPasscode, salt);
     var body = await crypto.subtle.encrypt(
       { name: 'AES-GCM', iv: iv },
-      cryptoKey,
+      key,
       new TextEncoder().encode(plaintext)
     );
     var bodyBytes = new Uint8Array(body);
@@ -124,20 +194,20 @@
     out.set(salt, 4);
     out.set(iv, 20);
     out.set(bodyBytes, 32);
-    return out; // Uint8Array, ready to be uploaded as base64
+    // Memoise so a subsequent decrypt of the same freshly-uploaded file
+    // (e.g. after admin push, if the page refetches) is instant.
+    keyBySaltHex[bytesToHex(salt)] = key;
+    return out; // Uint8Array, ready to upload as bytes
   }
 
-  // ---------- Session-key persistence ----------
+  // ---------- Session persistence ----------
 
   function loadStoredSession() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
       var parsed = JSON.parse(raw);
-      // Backwards-compatible: older records only stored k+exp; new ones also
-      // stash the active salt so the admin encrypt helper can produce blobs
-      // compatible with the currently-deployed set.
-      if (!parsed || !parsed.k || !parsed.exp) return null;
+      if (!parsed || !parsed.p || !parsed.exp) return null;
       if (parsed.exp < Date.now()) {
         localStorage.removeItem(STORAGE_KEY);
         return null;
@@ -148,54 +218,54 @@
     }
   }
 
-  async function storeSession(cryptoKey, salt) {
-    var raw = await crypto.subtle.exportKey('raw', cryptoKey);
+  function storeSession(passcode) {
+    // We base64-encode the passcode as light obfuscation against casual
+    // devtools inspection. Anyone with hands-on device access inside the
+    // 30-day window can still recover it — that's the accepted trade-off
+    // for skipping the prompt on every visit.
     var record = {
-      k: b64encode(raw),
-      s: salt ? b64encode(salt) : null,
+      p: b64encode(new TextEncoder().encode(passcode)),
       exp: Date.now() + REMEMBER_MS
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
   }
 
-  async function restoreSessionKey(rawB64) {
-    var raw = b64decode(rawB64);
-    // Import as extractable + encrypt-capable too so admin can encrypt fresh
-    // JSON blobs without re-entering the passcode.
-    return crypto.subtle.importKey(
-      'raw', raw, { name: 'AES-GCM' }, true, ['decrypt', 'encrypt']
-    );
-  }
-
   function clearSession() {
     localStorage.removeItem(STORAGE_KEY);
-    cachedKey = null;
+    cachedPasscode = null;
+    keyBySaltHex = Object.create(null);
   }
 
-  // ---------- Public API used by itaukei-database.js ----------
-
-  function bust(url) {
-    return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+  // Verify a passcode against the static verifier hash. Returns true on
+  // match, false otherwise. This is deterministic and touches NO network.
+  async function verifyPasscode(passcode) {
+    var got = await verifierHashHex(passcode);
+    return got === VERIFIER_HASH_HEX;
   }
+
+  // ---------- Public fetch API used by itaukei-database.js + admin.js ----------
 
   async function fetchJsonEncrypted(url) {
     var encUrl = ENC_FILES[url];
     if (!encUrl) {
-      // Not an encrypted file \u2014 fall through to a normal fetch (e.g. Google
+      // Not an encrypted target — fall through to a normal fetch (e.g. Google
       // Sheets CSVs pulled by admin.html).
       var r0 = await fetch(bust(url), { cache: 'no-store' });
       if (!r0.ok) throw new Error('Fetch failed: ' + url + ' (' + r0.status + ')');
       return r0.json();
     }
-    if (!cachedKey) throw new Error('Database is locked \u2014 no session key.');
+    if (!cachedPasscode) throw new Error('Database is locked \u2014 no passcode.');
     var res = await fetch(bust(encUrl), { cache: 'no-store' });
     if (!res.ok) throw new Error('Fetch failed: ' + encUrl + ' (' + res.status + ')');
-    var buf = await res.arrayBuffer();
-    var text = await decryptBlob(cachedKey, buf);
-    if (url.slice(-8) === '.geojson') {
-      // GeoJSON is JSON but we already decode to text; parse the same way.
-    }
+    var text = await decryptBlob(await res.arrayBuffer());
     return JSON.parse(text);
+  }
+
+  // Admin helper: encrypt an updated plaintext JSON body for upload. Uses a
+  // fresh per-file salt so pushing this file DOES NOT need to be coordinated
+  // with any other .enc file already on origin — every file is independent.
+  async function encryptForUpload(plaintext) {
+    return encryptString(plaintext);
   }
 
   // ---------- Lock-screen UI ----------
@@ -241,7 +311,8 @@
       + '.db-gate__hint{margin:8px 0 0;color:#7a8880;font-size:0.83rem;text-align:center;}'
       + '.db-gate__foot{margin:22px 0 0;color:#7a8880;font-size:0.82rem;}'
       + '.db-gate__foot a{color:#0E7490;text-decoration:underline;text-underline-offset:3px;}'
-      + '@media (prefers-color-scheme: dark){}'
+      + '.db-gate-locknow{position:fixed;bottom:16px;right:16px;padding:8px 14px;font-family:"DM Sans",system-ui,sans-serif;font-size:0.82rem;font-weight:600;color:#0F3921;background:#fff;border:1px solid rgba(15,57,33,0.20);border-radius:999px;cursor:pointer;box-shadow:0 6px 16px -8px rgba(15,57,33,0.20);z-index:9999;}'
+      + '.db-gate-locknow:hover{background:#f5efe4;}'
       + 'body.db-gate-locked main > *:not(.db-gate){display:none !important;}'
       + 'body.db-gate-locked [data-db-hide-when-locked]{display:none !important;}';
     var style = document.createElement('style');
@@ -250,10 +321,25 @@
     document.head.appendChild(style);
   }
 
+  function injectLockNowButton() {
+    if (document.getElementById('db-gate-locknow')) return;
+    var btn = document.createElement('button');
+    btn.id = 'db-gate-locknow';
+    btn.className = 'db-gate-locknow';
+    btn.type = 'button';
+    btn.textContent = 'Lock now';
+    btn.title = 'Clear the 30-day session on this device and require the passcode again.';
+    btn.addEventListener('click', function () {
+      clearSession();
+      // Full reload — simplest way to re-boot the gate and unmount panels.
+      location.reload();
+    });
+    document.body.appendChild(btn);
+  }
+
   function renderLockScreen(onUnlock) {
     injectLockScreenStyles();
     document.body.classList.add('db-gate-locked');
-    // Insert as the first child of <main>
     var main = document.querySelector('main');
     if (!main) return;
     var wrap = document.createElement('div');
@@ -276,11 +362,11 @@
       btn.disabled = true;
       btnLabel.textContent = 'Unlocking\u2026';
       try {
-        var probeUrl = ENC_FILES['data/last-sync.json'];
-        var result = await keyFromPasscode(pass, probeUrl);
-        cachedKey = result.key;
-        activeSalt = result.salt;
-        await storeSession(cachedKey, activeSalt);
+        var ok = await verifyPasscode(pass);
+        if (!ok) throw new Error('bad-passcode');
+        cachedPasscode = pass;
+        storeSession(pass);
+        injectLockNowButton();
         gate.style.transition = 'opacity 0.25s ease';
         gate.style.opacity = '0';
         setTimeout(function () {
@@ -289,7 +375,6 @@
           onUnlock();
         }, 240);
       } catch (e) {
-        // Wrong passcode \u2014 fails the AES-GCM auth tag check.
         errEl.textContent = 'That passcode did not unlock the database. Please try again.';
         errEl.hidden = false;
         btnLabel.textContent = 'Unlock database';
@@ -302,95 +387,41 @@
   // ---------- Boot ----------
 
   async function boot(onReady) {
-    // Ensure lock-CSS is available immediately so hidden real content stays hidden.
+    // Ensure lock CSS is available immediately so hidden real content stays hidden.
     injectLockScreenStyles();
     document.body.classList.add('db-gate-locked');
 
     var stored = loadStoredSession();
     if (stored) {
       try {
-        cachedKey = await restoreSessionKey(stored.k);
-        // Verify the stored key still decrypts (in case files were re-encrypted
-        // with a new passcode, i.e. the admin rotated it). Also read the fresh
-        // salt from the probe so admin encrypts land in the deployed set.
-        var probeUrl = ENC_FILES['data/last-sync.json'];
-        var res = await fetch(bust(probeUrl), { cache: 'no-store' });
-        if (res.ok) {
-          var buf = await res.arrayBuffer();
-          var bytes = new Uint8Array(buf);
-          activeSalt = bytes.slice(4, 20);
-          await decryptBlob(cachedKey, buf);
-          // Refresh the persisted salt if it drifted (workflow re-encrypt).
-          if (!stored.s || stored.s !== b64encode(activeSalt)) {
-            await storeSession(cachedKey, activeSalt);
-          }
+        var pass = new TextDecoder().decode(b64decode(stored.p));
+        // Re-verify against the static hash — cheap sanity check that the
+        // stored value is still the current passcode (e.g. hasn't been
+        // rotated in a new build).
+        var ok = await verifyPasscode(pass);
+        if (ok) {
+          cachedPasscode = pass;
           document.body.classList.remove('db-gate-locked');
+          injectLockNowButton();
           onReady();
           return;
         }
+        // Stored passcode no longer matches — passcode was rotated. Fall
+        // through to a fresh lock screen.
+        clearSession();
       } catch (e) {
-        // Stored key no longer works \u2014 fall through to lock screen.
         clearSession();
       }
     }
     renderLockScreen(onReady);
   }
 
-  // High-level helper for admin.js: encrypt a plaintext string against the
-  // currently active session key + salt so the resulting blob decrypts inside
-  // the same deployed set. Returns a Uint8Array ready for base64/upload.
-  //
-  // IMPORTANT: the auto-refresh workflow rotates the shared salt every 3
-  // hours. If Ron unlocks the dashboard, then leaves the tab open while a
-  // workflow run lands, then pushes an edit, the blob we upload would carry
-  // our stale in-memory salt while every other .enc on the server has moved
-  // on to a new salt \u2014 breaking the shared-salt invariant and causing
-  // "Couldn't load the Zotero snapshot" on the public site. Guard against
-  // that by re-fetching the probe file's salt on every upload, deriving a
-  // fresh key against that salt if it drifted, and using both. This adds one
-  // small HTTP fetch per upload but keeps the deployed set consistent.
-  async function encryptForUpload(plaintext) {
-    if (!cachedKey || !activeSalt) {
-      throw new Error('Database is locked \u2014 no session key/salt to encrypt with.');
-    }
-    // Re-read probe to pick up any workflow-rotated salt.
-    try {
-      var probeUrl = ENC_FILES['data/last-sync.json'];
-      var res = await fetch(bust(probeUrl), { cache: 'no-store' });
-      if (res.ok) {
-        var buf = await res.arrayBuffer();
-        var bytes = new Uint8Array(buf);
-        var freshSalt = bytes.slice(4, 20);
-        // If salt drifted since unlock, re-derive the key and update state.
-        if (!eqBytes(freshSalt, activeSalt)) {
-          // We still hold the original passcode-derived key handle; but the
-          // key is bound to the OLD salt via PBKDF2. We must re-run PBKDF2
-          // with the new salt. We do NOT have the passcode in memory (only
-          // the derived key), so instead we detect the drift, tell the
-          // caller to re-authenticate, and bail out. Better a friendly
-          // re-auth prompt than a silently-broken deploy.
-          throw new Error('Session salt has drifted (workflow refreshed the encrypted blobs). Please re-enter the passcode and try again.');
-        }
-      }
-    } catch (e) {
-      if (e && e.message && e.message.indexOf('drifted') !== -1) throw e;
-      // Network/probe read failure \u2014 fall through and use in-memory salt.
-    }
-    return encryptString(plaintext, cachedKey, activeSalt);
-  }
-
-  function eqBytes(a, b) {
-    if (!a || !b || a.length !== b.length) return false;
-    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-    return true;
-  }
-
-  // Expose the API for itaukei-database.js.
+  // Expose the API for itaukei-database.js and admin.js.
   window.dbGate = {
     boot: boot,
     fetchJson: fetchJsonEncrypted,
     clearSession: clearSession,
     encryptForUpload: encryptForUpload,
-    isUnlocked: function () { return !!(cachedKey && activeSalt); }
+    isUnlocked: function () { return !!cachedPasscode; }
   };
 })();
