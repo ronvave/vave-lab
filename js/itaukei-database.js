@@ -5221,9 +5221,11 @@
     // per tab so the reader can see what scope / authorship the current tab uses.
     metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
 
-    // Toggle tab active state + tabindex per aria-tablist pattern. Only look
-    // inside the B2 panel so the B1 tabs on the panel above aren't affected.
-    const b2Root = document.querySelector('[data-panel="B2"]');
+    // Toggle tab active state + tabindex per aria-tablist pattern. The chart
+    // panel that owns these tabs is Panel C2 (Panel B2 is the world map above
+    // it, which has no such tabs). Historically this selector said B2 and the
+    // active pill never updated — fixed by scoping to the C2 panel.
+    const b2Root = document.querySelector('[data-panel="C2"]');
     if (b2Root) {
       b2Root.querySelectorAll('.db-b2-tab').forEach(btn => {
         const on = btn.dataset.b2Tab === view;
