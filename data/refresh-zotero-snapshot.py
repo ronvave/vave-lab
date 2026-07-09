@@ -44,14 +44,76 @@ def year_of(dt):
 
 def classify_thesis_level(thesis_type: str, title: str = "") -> str:
     """Classify a thesis into 'phd' | 'masters' | 'unknown' using the thesisType
-    field (and title as a fallback)."""
-    haystack = f"{thesis_type} {title}".lower()
-    # PhD family: PhD, doctoral, doctorate, dissertation, D.Phil, Doctor of / Doctor in
-    if re.search(r"\b(phd|doctoral|doctorate|d\.?phil|dissertation|doctor of|doctor in)\b", haystack):
+    field (and title as a fallback).
+
+    Ron enters Zotero thesisType values in many shapes: 'PhD', 'Ph.D.',
+    'M.Sc.', 'M. Sc.', 'M.Env.Sc.', 'M.Ag.Sc.', 'M.Com.', 'M. Com.'. We strip
+    interior dots and whitespace before matching so all of those collapse to
+    the same normalized form ('phd', 'msc', 'menvsc', 'magsc', 'mcom' …).
+    Bachelor's degrees (BA, BSc, B.App.Sc.) intentionally stay unclassified
+    so they never appear in Panel C1, which only tracks PhD + Masters theses.
+    """
+    # Two normalized forms of the Zotero thesisType field:
+    #   tt_raw    lower-case but interior punctuation/spacing preserved.
+    #             Used for phrase matches like 'doctor of ...' and 'master of'.
+    #   tt_norm   dots and whitespace stripped so 'M. Sc.', 'M.Sc.', 'MSc' all
+    #             collapse to 'msc'; 'Ph.D.' becomes 'phd'; 'LL.M.' -> 'llm'.
+    tt_raw = (thesis_type or "").lower()
+    tt_norm = re.sub(r"[.\s]+", "", tt_raw)
+    # Title also lower-cased and kept space-preserved for phrase fallbacks.
+    title_norm = (title or "").lower()
+
+    if not tt_norm and not title_norm:
+        return "unknown"
+
+    # ---- PhD family ---------------------------------------------------------
+    # Starts with a known doctoral abbreviation. Because dots/spaces are
+    # already stripped, this matches 'PhD Thesis' -> 'phdthesis',
+    # 'Ph.D. Theol. thesis' -> 'phdtheolthesis', 'Ed.D. thesis' -> 'eddthesis',
+    # 'D.Min. thesis' -> 'dminthesis', 'SJD thesis' -> 'sjdthesis', etc.
+    if re.match(r"^(phd|dphil|doctorate|doctoral|edd|ded|dmin|sjd|jsd|dth|dsc|ddent|dclindent|drph|drjur)", tt_norm):
         return "phd"
-    # Masters family: MA, MSc, MEd, MPhil, MRes, MEng, MBA, Master's, Masters, Master of, Master in
-    if re.search(r"\b(m\.?a|m\.?sc|m\.?ed|m\.?eng|m\.?phil|m\.?res|mba|mia|mmis|mst|mlitt|masters?|master's|master of|master in)\b", haystack):
+    # Starts with the word 'doctor' — covers 'Doctor of Philosophy',
+    # 'Doctor of Education', 'Doctor of Clinical Dentistry',
+    # 'Doctor of Juridical Science', 'Doctor in ...'.
+    if re.match(r"^doctor", tt_norm):
+        return "phd"
+    # Contains a spelled-out doctorate anywhere in the normalized string,
+    # e.g. 'Doctor of Philosophy (PhD) thesis' embedded parenthetically.
+    if re.search(r"doctorof|doctorin|doctorate|doctoral|philosophiae", tt_norm):
+        return "phd"
+    # Title-level phrase fallback for older records where the type field is
+    # generic ('Other thesis') but the title spells out the doctorate.
+    if re.search(r"\b(phd|d\.?phil|dissertation|doctor of|doctor in|doctorate|doctoral)\b", title_norm):
+        return "phd"
+
+    # ---- Bail-outs before Masters catchall ---------------------------------
+    # 'MD' (Doctor of Medicine) is a physician credential in Fiji not a
+    # research doctorate; treat 'MD thesis' / 'M.D. thesis' as unknown so it
+    # never counts as PhD or Masters in Panel C1.
+    if re.match(r"^md(thesis|$)", tt_norm):
+        return "unknown"
+
+    # ---- Masters family -----------------------------------------------------
+    # LL.M. / LLM = Master of Laws (variants: llmthesis, llm)
+    if re.match(r"^llm", tt_norm):
         return "masters"
+    # Any thesisType starting with 'm' followed by another letter is treated
+    # as a masters degree — covers the long tail of Fiji-region abbreviations
+    # (MA, MSc, MEd, MPhil, MRes, MEng, MBA, MIA, MMIS, MSt, MLitt, MFA,
+    # MHSc, MCom, MAgSc, MEnvSc, MSocSc, MAppSc, MPH, MPA, MArch, MDiv, MTh,
+    # MUS, MLaw, MLing, MNurs, MEc, MEcon, MDevStudies, MBd, MBIT, MDistEd,
+    # MPS, MLib, MTech, MLIS, MAADE, MSciMarineSci, MSocWk, MTeach, …).
+    # 'MD' + 'MDthesis' were already excluded above.
+    if re.match(r"^m[a-z]", tt_norm):
+        return "masters"
+    # Spelled-out variants inside thesisType.
+    if re.search(r"masters?|masterof|masterin", tt_norm):
+        return "masters"
+    # Title-level fallback (English-language variants written out in the title).
+    if re.search(r"\bmasters?\b|\bmaster's\b|\bmaster of\b|\bmaster in\b|\bllm\b|\bll\.m\.", title_norm):
+        return "masters"
+
     return "unknown"
 
 raw = fetch_all("items")
