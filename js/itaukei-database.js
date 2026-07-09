@@ -845,9 +845,28 @@
       }).addTo(map);
       state.map = map;
       renderChoropleth();
-      // Fullscreen toggle for the Fiji choropleth map. Same behaviour as
-      // the B2 world map: expand button top-right, Esc to exit.
-      wireMapFullscreen('[data-db-map-fiji-wrap]', '[data-db-map-fiji-fs-btn]', () => state.map);
+      // Fullscreen toggle for the Fiji choropleth map. On expand we
+      // re-fit to the province layer bounds so the map re-centers on
+      // Fiji at the wider aspect ratio; on collapse we restore.
+      wireMapFullscreen('[data-db-map-fiji-wrap]', '[data-db-map-fiji-fs-btn]', () => state.map, {
+        onOpen: () => {
+          const m = state.map; if (!m) return;
+          state.mapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
+          const layer = state.provinceLayer;
+          if (layer && typeof layer.getBounds === 'function') {
+            try {
+              const b = layer.getBounds();
+              if (b && b.isValid()) m.fitBounds(b, { padding: [40, 40], animate: false });
+            } catch (_) { m.setView([-17.8, 178.0], 7); }
+          } else {
+            m.setView([-17.8, 178.0], 7);
+          }
+        },
+        onClose: () => {
+          const m = state.map; const prev = state.mapPrevView;
+          if (m && prev) m.setView(prev.center, prev.zoom, { animate: false });
+        }
+      });
 
       // Panel A mapview toggle (Fiji sub-tabs)
       $$('[data-mapscope-panel="fiji"] button').forEach(btn => {
@@ -1536,23 +1555,43 @@
     if (state.graduateStudies) renderWorldMap();
     // Fix late-arriving container sizes (e.g. panel below the fold).
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 100);
-    // Fullscreen toggle for the B2 graduates map.
-    wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap);
+    // Fullscreen toggle for the B2 graduates map. On expand we fit the
+    // marker bounds so the wider viewport shows all points; on collapse
+    // we restore the pre-fullscreen center/zoom.
+    wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
+      onOpen: () => {
+        const m = state.worldMap; if (!m) return;
+        state.worldMapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
+        const pts = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
+        const latlngs = pts.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
+        if (latlngs.length > 1) {
+          m.fitBounds(L.latLngBounds(latlngs), { padding: [60, 80], maxZoom: 4, animate: false });
+        } else if (latlngs.length === 1) {
+          m.setView(latlngs[0], 3, { animate: false });
+        }
+      },
+      onClose: () => {
+        const m = state.worldMap; const prev = state.worldMapPrevView;
+        if (m && prev) m.setView(prev.center, prev.zoom, { animate: false });
+      }
+    });
   }
 
   const MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';
   const MAP_FS_COLLAPSE_SVG = '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>';
 
   // Generic wiring for a per-map fullscreen toggle. Handles icon swap,
-  // aria-pressed/label sync, Esc-to-exit, body scroll lock, and two
-  // deferred Leaflet invalidateSize() calls so tiles re-render at the
-  // new container size (once after the class toggle, once after animated
-  // layout settling). Safe to call multiple times; wiring is idempotent.
-  function wireMapFullscreen(wrapSel, btnSel, getMap) {
+  // aria-pressed/label sync, Esc-to-exit, body scroll lock, deferred
+  // Leaflet invalidateSize() so tiles re-render at the new container
+  // size, and optional onOpen/onClose hooks so each map can reframe its
+  // view for the new aspect ratio (e.g. fit to markers, restore prior
+  // view). Idempotent — second call is a no-op.
+  function wireMapFullscreen(wrapSel, btnSel, getMap, hooks) {
     const wrap = document.querySelector(wrapSel);
     const btn  = document.querySelector(btnSel);
     if (!wrap || !btn || btn.dataset.dbMapFsWired === '1') return;
     btn.dataset.dbMapFsWired = '1';
+    hooks = hooks || {};
 
     const setFs = (on) => {
       wrap.classList.toggle('is-fullscreen', on);
@@ -1563,8 +1602,14 @@
       const icon = btn.querySelector('svg');
       if (icon) icon.innerHTML = on ? MAP_FS_COLLAPSE_SVG : MAP_FS_EXPAND_SVG;
       const m = typeof getMap === 'function' ? getMap() : null;
-      setTimeout(() => { if (m && typeof m.invalidateSize === 'function') m.invalidateSize(); }, 60);
-      setTimeout(() => { if (m && typeof m.invalidateSize === 'function') m.invalidateSize(); }, 320);
+      // First: invalidateSize so Leaflet knows the new pixel dimensions.
+      // Then run the per-map reframe hook. Then a second invalidateSize
+      // to catch animated layout settling.
+      setTimeout(() => {
+        if (m && typeof m.invalidateSize === 'function') m.invalidateSize({ animate: false });
+        try { (on ? hooks.onOpen : hooks.onClose) && (on ? hooks.onOpen() : hooks.onClose()); } catch (_) {}
+      }, 60);
+      setTimeout(() => { if (m && typeof m.invalidateSize === 'function') m.invalidateSize({ animate: false }); }, 320);
     };
 
     btn.addEventListener('click', () => setFs(!wrap.classList.contains('is-fullscreen')));
