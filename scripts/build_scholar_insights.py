@@ -627,10 +627,21 @@ def main() -> int:
 
 
 def _reencrypt_if_configured():
+    # See refresh-zotero-snapshot.py for the reasoning behind bootstrapping
+    # every other plaintext from the shipped .enc blobs before re-encrypting:
+    # keeps stale local files from silently downgrading data we haven’t
+    # touched (e.g. scholar-profiles pushed from the admin dashboard).
     import os, subprocess
     root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     enc = os.path.join(root, "scripts", "encrypt_data.py")
+    dec = os.path.join(root, "scripts", "decrypt_data.py")
     if os.environ.get("VAVELAB_PASSCODE"):
+        # Cache the freshly-written scholar-insights.json so we can restore
+        # it after the bootstrap overwrites it.
+        fresh_insights = OUTPUT_PATH.read_bytes()
+        print("Bootstrapping plaintext from shipped .enc blobs\u2026")
+        subprocess.run([sys.executable, dec, "--all"], check=True)
+        OUTPUT_PATH.write_bytes(fresh_insights)
         print("Re-encrypting data files\u2026")
         subprocess.run([sys.executable, enc], check=True)
     else:

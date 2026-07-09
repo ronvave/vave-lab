@@ -169,10 +169,28 @@ print(f"Snapshot refreshed: {len(items)} items · {len(collections)} collections
 
 # Re-encrypt every data file so the shipped .enc blobs stay in sync with
 # the plaintext we just wrote. Requires VAVELAB_PASSCODE in the environment.
+#
+# SAFETY: encrypt_data.py packages whatever plaintext is on disk. To avoid
+# stale local files (e.g. an old scholar-profiles.json left over from a
+# previous session) clobbering .enc blobs that have moved on since \u2014
+# for example, admin dashboard edits that pushed a newer scholar-profiles
+# \u2014 we FIRST re-decrypt every .enc blob so the on-disk plaintext
+# mirrors the shipped state, THEN restore the snapshot plaintext we just
+# regenerated on top of that, THEN re-encrypt. That way no other data file
+# can be silently downgraded when this script runs.
 import subprocess, sys
 root = os.path.dirname(here)
 enc = os.path.join(root, "scripts", "encrypt_data.py")
+dec = os.path.join(root, "scripts", "decrypt_data.py")
 if os.environ.get("VAVELAB_PASSCODE"):
+    # 1. Cache the freshly-written snapshot plaintext.
+    fresh_snapshot = open(out, "rb").read()
+    # 2. Bootstrap every other plaintext file from the shipped .enc blobs.
+    print("Bootstrapping plaintext from shipped .enc blobs\u2026")
+    subprocess.run([sys.executable, dec, "--all"], check=True)
+    # 3. Restore the freshly-written snapshot on top of the bootstrap.
+    with open(out, "wb") as f:
+        f.write(fresh_snapshot)
     print("Re-encrypting data files\u2026")
     subprocess.run([sys.executable, enc], check=True)
 else:
