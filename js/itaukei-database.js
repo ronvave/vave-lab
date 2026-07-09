@@ -1562,17 +1562,41 @@
       onOpen: () => {
         const m = state.worldMap; if (!m) return;
         state.worldMapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
-        const pts = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
-        const latlngs = pts.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng)).map(p => [p.lat, p.lng]);
-        if (latlngs.length > 1) {
-          m.fitBounds(L.latLngBounds(latlngs), { padding: [60, 80], maxZoom: 4, animate: false });
-        } else if (latlngs.length === 1) {
-          m.setView(latlngs[0], 3, { animate: false });
-        }
+        // Swap the noWrap tile layer for a wrapping one so tiles repeat
+        // horizontally and fully fill the widened viewport regardless of
+        // where we pan. Also relax the map's maxBounds so panning across
+        // the wrapped world works naturally. We remember the old layer
+        // and bounds so we can restore both on close.
+        try {
+          m.eachLayer(l => { if (l instanceof L.TileLayer) { state.worldMapPrevTile = l; m.removeLayer(l); } });
+          const wrapTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
+            maxZoom: 18,
+            noWrap: false
+          });
+          wrapTile.addTo(m);
+          state.worldMapFsTile = wrapTile;
+          state.worldMapPrevBounds = m.options.maxBounds;
+          m.setMaxBounds(null);
+        } catch (_) {}
+        // Zoom to a size that keeps a single world copy ≥ viewport width,
+        // then center on the Pacific cluster (Fiji/AU/NZ). With wrapping
+        // tiles the centering can be anywhere without exposing backdrop.
+        const w = Math.max(window.innerWidth || 1200, 800);
+        const zExact = Math.log2(w / 256);
+        const z = Math.min(5, Math.max(2, Math.ceil(zExact * 4) / 4));
+        m.setView([5, 150], z, { animate: false });
       },
       onClose: () => {
-        const m = state.worldMap; const prev = state.worldMapPrevView;
-        if (m && prev) m.setView(prev.center, prev.zoom, { animate: false });
+        const m = state.worldMap; if (!m) return;
+        // Restore the original noWrap tile layer and maxBounds.
+        try {
+          if (state.worldMapFsTile) { m.removeLayer(state.worldMapFsTile); state.worldMapFsTile = null; }
+          if (state.worldMapPrevTile) { state.worldMapPrevTile.addTo(m); state.worldMapPrevTile = null; }
+          if (state.worldMapPrevBounds) { m.setMaxBounds(state.worldMapPrevBounds); state.worldMapPrevBounds = null; }
+        } catch (_) {}
+        const prev = state.worldMapPrevView;
+        if (prev) m.setView(prev.center, prev.zoom, { animate: false });
       }
     });
   }
