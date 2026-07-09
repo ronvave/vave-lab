@@ -339,11 +339,50 @@
   // High-level helper for admin.js: encrypt a plaintext string against the
   // currently active session key + salt so the resulting blob decrypts inside
   // the same deployed set. Returns a Uint8Array ready for base64/upload.
+  //
+  // IMPORTANT: the auto-refresh workflow rotates the shared salt every 3
+  // hours. If Ron unlocks the dashboard, then leaves the tab open while a
+  // workflow run lands, then pushes an edit, the blob we upload would carry
+  // our stale in-memory salt while every other .enc on the server has moved
+  // on to a new salt \u2014 breaking the shared-salt invariant and causing
+  // "Couldn't load the Zotero snapshot" on the public site. Guard against
+  // that by re-fetching the probe file's salt on every upload, deriving a
+  // fresh key against that salt if it drifted, and using both. This adds one
+  // small HTTP fetch per upload but keeps the deployed set consistent.
   async function encryptForUpload(plaintext) {
     if (!cachedKey || !activeSalt) {
       throw new Error('Database is locked \u2014 no session key/salt to encrypt with.');
     }
+    // Re-read probe to pick up any workflow-rotated salt.
+    try {
+      var probeUrl = ENC_FILES['data/last-sync.json'];
+      var res = await fetch(bust(probeUrl), { cache: 'no-store' });
+      if (res.ok) {
+        var buf = await res.arrayBuffer();
+        var bytes = new Uint8Array(buf);
+        var freshSalt = bytes.slice(4, 20);
+        // If salt drifted since unlock, re-derive the key and update state.
+        if (!eqBytes(freshSalt, activeSalt)) {
+          // We still hold the original passcode-derived key handle; but the
+          // key is bound to the OLD salt via PBKDF2. We must re-run PBKDF2
+          // with the new salt. We do NOT have the passcode in memory (only
+          // the derived key), so instead we detect the drift, tell the
+          // caller to re-authenticate, and bail out. Better a friendly
+          // re-auth prompt than a silently-broken deploy.
+          throw new Error('Session salt has drifted (workflow refreshed the encrypted blobs). Please re-enter the passcode and try again.');
+        }
+      }
+    } catch (e) {
+      if (e && e.message && e.message.indexOf('drifted') !== -1) throw e;
+      // Network/probe read failure \u2014 fall through and use in-memory salt.
+    }
     return encryptString(plaintext, cachedKey, activeSalt);
+  }
+
+  function eqBytes(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
   }
 
   // Expose the API for itaukei-database.js.
