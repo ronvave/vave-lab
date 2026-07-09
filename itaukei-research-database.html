@@ -1433,30 +1433,61 @@
     .db-b2-info summary:hover { text-decoration: underline; }
     .db-b2-info p { margin: 6px 0; line-height: 1.5; }
 
-    /* ---- Authorship + Layout dropdowns (Panel C2) ---- */
+    /* ---- Authorship + Layout dropdowns (Panel C2) ----
+       Styled as teal pills so they visually read as an interactive control,
+       complementary to (but distinct from) the brown scope pills above.
+       Brown = scope (Fiji-focused vs Fiji + International)
+       Teal  = view  (authorship + layout of the same data)
+    */
+    .db-b2-view-hint {
+      font-size: 0.78rem; color: #64748b;
+      margin: 12px 0 6px; letter-spacing: 0.01em;
+    }
+    .db-b2-view-hint::before {
+      content: '▾'; color: #0e7490; margin-right: 6px; font-size: 0.9em;
+    }
     .db-b2-view-controls {
       display: flex; flex-wrap: wrap; gap: 10px 16px;
-      align-items: center; margin: 10px 0 8px;
+      align-items: center; margin: 4px 0 12px;
     }
     .db-b2-view-select {
       display: inline-flex; align-items: center; gap: 8px;
-      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
-      padding: 4px 10px 4px 12px; font-size: 0.88rem; color: #0f172a;
+      background: #0e7490; border-radius: 999px;
+      padding: 6px 6px 6px 14px;
+      font-size: 0.88rem; color: #ecfeff;
+      box-shadow: 0 1px 2px rgba(14,116,144,0.15);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .db-b2-view-select:hover {
+      background: #0c6478;
+      box-shadow: 0 2px 5px rgba(14,116,144,0.25);
     }
     .db-b2-view-select__label {
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.06em; color: #64748b;
+      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; color: rgba(236,254,255,0.85);
     }
     .db-b2-view-select select {
       appearance: none; -webkit-appearance: none;
-      background: transparent; border: 0; padding: 4px 20px 4px 4px;
-      font: inherit; color: inherit; cursor: pointer;
-      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.5'/></svg>");
+      background: rgba(255,255,255,0.15); border: 0;
+      padding: 4px 26px 4px 10px; border-radius: 999px;
+      font: 600 0.88rem 'Source Sans Pro', sans-serif;
+      color: #fff; cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23FFFFFF' stroke-width='1.5'/></svg>");
       background-repeat: no-repeat;
-      background-position: right 4px center;
+      background-position: right 10px center;
+      transition: background 0.15s;
+    }
+    .db-b2-view-select select:hover {
+      background-color: rgba(255,255,255,0.25);
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23FFFFFF' stroke-width='1.5'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
     }
     .db-b2-view-select select:focus-visible {
-      outline: 2px solid #0e7490; outline-offset: 2px; border-radius: 3px;
+      outline: 2px solid #fff; outline-offset: 2px;
+    }
+    .db-b2-view-select select option {
+      background: #fff; color: #0f172a;
     }
 
     /* ---- Interpretation blurb (auto-generated) ---- */
@@ -3046,18 +3077,21 @@
       <!-- Panel C2 — interactive multi-view chart, grouped by author's paternal province -->
       <div class="db-panel reveal" data-panel="C2">
         <span class="db-panel__label">C2</span>
+        <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
-          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0">Fiji-focused</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1">Fiji + International</button>
+          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Fiji topics or set in Fiji">Fiji-focused</button>
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="All publications by iTaukei authors, including non-Fiji topics">Fiji + International</button>
         </div>
         <div id="db-b2-panel" role="tabpanel">
           <h2 class="db-panel__title" data-b2-title>Research Output by iTaukei Author's Home Province</h2>
           <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the iTaukei first author’s own paternal province. Default scope shows Fiji-focused publications; switch to “Fiji + International” to include research on non-Fiji topics and locations too.</p>
           <div class="db-panel__meta" data-b2-meta></div>
-          <!-- Authorship + Layout dropdowns. The Layout dropdown only appears
-               when the split view is active (see JS). -->
+          <!-- Authorship + Layout dropdowns. Styled as teal pills so users can
+               tell they're interactive. The Layout dropdown only appears when
+               the split view is active (see JS). -->
+          <div class="db-b2-view-hint" aria-hidden="true">Change how the data is grouped — click a pill to open its dropdown</div>
           <div class="db-b2-view-controls">
-            <label class="db-b2-view-select">
+            <label class="db-b2-view-select" title="Choose whose publications to show: only papers where an iTaukei person is 1st author, only papers where they're a co-author but not 1st, or both roles side by side.">
               <span class="db-b2-view-select__label">Authorship</span>
               <select data-b2-authorship>
                 <option value="first">iTaukei as 1st author</option>
@@ -3065,7 +3099,7 @@
                 <option value="split">1st author + co-author, split</option>
               </select>
             </label>
-            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;">
+            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per province. Detailed splits each province into 1st-author and co-author rows with publication-type colours.">
               <span class="db-b2-view-select__label">Layout</span>
               <select data-b2-layout>
                 <option value="compact">Compact (single bar)</option>
@@ -3586,6 +3620,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-12" defer></script>
+<script src="js/itaukei-database.js?v=20260709-13" defer></script>
 </body>
 </html>
