@@ -4970,6 +4970,18 @@
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';
   state.b2AuthorshipSort = 'total';
+  // Authorship dropdown: 'first' (default), 'co', or 'split'.
+  // Layout dropdown (split view only): 'compact' or 'detailed'.
+  state.b2Authorship = 'first';
+  state.b2Layout = 'compact';
+  (function readB2AuthorshipFromHash() {
+    const h = window.location.hash.replace(/^#/, '');
+    const params = new URLSearchParams(h);
+    const a = params.get('b2a');
+    if (a === 'first' || a === 'co' || a === 'split') state.b2Authorship = a;
+    const l = params.get('b2l');
+    if (l === 'compact' || l === 'detailed') state.b2Layout = l;
+  })();
   (function readB2FromHash() {
     const m = window.location.hash.match(/(?:^|[#&])b2=([a-z-]+)/);
     if (!m) return;
@@ -5098,6 +5110,137 @@
     });
 
     const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (unconfirmed.total > 0) out.push(unconfirmed);
+    return out;
+  }
+
+  // Co-author view: for each publication where NO iTaukei author is first but
+  // at least one iTaukei author appears elsewhere in the byline, add +1 to the
+  // paternal province of every iTaukei co-author. Type filter respects
+  // state.b2TypeSet, but PhD/Masters thesis are inherently single-author works
+  // that don't apply here — the caller disables those checkboxes.
+  function buildB2Rows_coauthor(includeAllLocations) {
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const rows = new Map();
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
+    });
+    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      // Theses are single-author — don't count them here even if a stale
+      // check state slips through the UI.
+      if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
+      const creators = it.creators || [];
+      if (!creators.length) return;
+      const firstScholar = itaukeiName(creators[0], scholars);
+      if (firstScholar) return; // 1st-author view territory, not us
+
+      // Collect all iTaukei co-authors on this paper
+      const coScholars = [];
+      for (let i = 1; i < creators.length; i++) {
+        const s = itaukeiName(creators[i], scholars);
+        if (s) coScholars.push(s);
+      }
+      if (!coScholars.length) return;
+
+      // Fiji-focused rule: paper must have a Fiji province tag OR at least one
+      // co-author with a confirmed paternal province (i.e., an iTaukei scholar
+      // contribution counts as Fiji-relevant even if the study site isn't tagged).
+      const provSet = state.provincesByItem.get(it.key);
+      const hasProvinceTag = provSet && provSet.size > 0;
+      const anyPaternal = coScholars.some(s => paternalByName.get(s));
+      if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
+
+      coScholars.forEach(s => {
+        const paternal = paternalByName.get(s) || '';
+        const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
+        bucket.total += 1;
+        bucket.types[vt] = (bucket.types[vt] || 0) + 1;
+      });
+    });
+
+    const out = Array.from(rows.values()).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
+    if (unconfirmed.total > 0) out.push(unconfirmed);
+    return out;
+  }
+
+  // Split view: for each paternal province, count both (a) publications where
+  // an iTaukei person from that province is 1st author and (b) publications
+  // where an iTaukei person from that province is a co-author (and the paper
+  // has no iTaukei 1st author). One row per province with lead + co counts.
+  //
+  // Note: (a) counts each paper exactly once (against its lead's province),
+  // (b) counts each paper once per distinct co-author province (so a paper
+  // with two co-authors from Kadavu still adds only +1 to Kadavu, but adds
+  // +1 to Lau too if one is from Lau).
+  function buildB2Rows_split(includeAllLocations) {
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const rows = new Map();
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, {
+        name: f.properties.name, conf: f.properties.confederacy,
+        lead: 0, co: 0, total: 0,
+        leadTypes: {}, coTypes: {},
+        isConfirmed: true
+      });
+    });
+    const unconfirmed = {
+      name: 'Province not yet confirmed', conf: null,
+      lead: 0, co: 0, total: 0,
+      leadTypes: {}, coTypes: {},
+      isConfirmed: false
+    };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      const creators = it.creators || [];
+      if (!creators.length) return;
+
+      const firstScholar = itaukeiName(creators[0], scholars);
+      const provSet = state.provincesByItem.get(it.key);
+      const hasProvinceTag = provSet && provSet.size > 0;
+
+      if (firstScholar) {
+        // 1st-author case — counts once against the first author's province.
+        if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(firstScholar)) return;
+        const paternal = paternalByName.get(firstScholar) || '';
+        const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
+        bucket.lead += 1;
+        bucket.leadTypes[vt] = (bucket.leadTypes[vt] || 0) + 1;
+        bucket.total = bucket.lead + bucket.co;
+      } else {
+        // Co-author case — theses are single-author; skip.
+        if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
+        const coScholars = [];
+        for (let i = 1; i < creators.length; i++) {
+          const s = itaukeiName(creators[i], scholars);
+          if (s) coScholars.push(s);
+        }
+        if (!coScholars.length) return;
+        const anyPaternal = coScholars.some(s => paternalByName.get(s));
+        if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
+        // Distinct paternal provinces — avoid double-counting a paper for
+        // one province just because two of its co-authors happen to be
+        // from that province.
+        const seen = new Set();
+        coScholars.forEach(s => {
+          const paternal = paternalByName.get(s) || '__unconfirmed__';
+          if (seen.has(paternal)) return;
+          seen.add(paternal);
+          const key = paternal === '__unconfirmed__' ? '' : paternal;
+          const bucket = key && rows.has(key) ? rows.get(key) : unconfirmed;
+          bucket.co += 1;
+          bucket.coTypes[vt] = (bucket.coTypes[vt] || 0) + 1;
+          bucket.total = bucket.lead + bucket.co;
+        });
+      }
+    });
+
+    const out = Array.from(rows.values()).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
     if (unconfirmed.total > 0) out.push(unconfirmed);
     return out;
   }
@@ -5238,23 +5381,75 @@
     // Update URL hash
     setB2ViewInHash(view);
 
-    // Route
+    // Route by pill (view) x authorship dropdown x layout dropdown.
+    // The pill controls scope (Fiji-focused vs Fiji + International);
+    // the authorship dropdown chooses between 1st author / co-author / split;
+    // the layout dropdown (only meaningful for 'split') picks compact vs detailed.
+    const includeAll = (view === 'all-locations');
+    const auth = state.b2Authorship || 'first';
+    const layout = state.b2Layout || 'compact';
+    const blurbEl = $('[data-b2-blurb]');
+    const layoutWrap = $('[data-b2-layout-wrap]');
+    const authSel = $('[data-b2-authorship]');
+    const layoutSel = $('[data-b2-layout]');
+    if (authSel && authSel.value !== auth) authSel.value = auth;
+    if (layoutSel && layoutSel.value !== layout) layoutSel.value = layout;
+    if (layoutWrap) layoutWrap.style.display = (auth === 'split') ? '' : 'none';
+
+    // Toggle panel-level modifier for detailed layout so CSS can expand height / spacing.
+    if (b2Root) b2Root.classList.toggle('is-detailed', auth === 'split' && layout === 'detailed');
+
+    // Update type-filter checkbox enable/disable state based on authorship view.
+    // Thesis types are single-author works; disable them in the co-author view.
+    updateB2TypeFilterEnabledState(auth);
+
+    // Persist authorship + layout to URL hash for shareability.
+    setB2ExtraHash({ b2a: auth, b2l: auth === 'split' ? layout : null });
+
     if (view === 'fiji-focused' || view === 'all-locations') {
-      const rows = buildB2Rows_paternalGrouped(view === 'all-locations');
-      renderPanelBBarsInto(barsEl, rows, {
-        activeName: state.filter.paternal || null,
-        confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-        onClick: r => {
-          if (!r.isConfirmed) return; // "Province not yet confirmed" bar is informational
-          state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
-          state.filter.province = '';
-          state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
-          state.filter.b2Authorship = '';
-          state.shown = state.pageSize;
-          afterFilterChange();
+      if (auth === 'first') {
+        const rows = buildB2Rows_paternalGrouped(includeAll);
+        renderPanelBBarsInto(barsEl, rows, {
+          activeName: state.filter.paternal || null,
+          confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
+          onClick: r => {
+            if (!r.isConfirmed) return;
+            state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
+            state.filter.province = '';
+            state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
+            state.filter.b2Authorship = 'itaukeiFirst';
+            state.shown = state.pageSize;
+            afterFilterChange();
+          }
+        });
+        barsEl.className = 'db-bars';
+        renderPanelB2Blurb(blurbEl, { auth: 'first', includeAll, rows });
+      } else if (auth === 'co') {
+        const rows = buildB2Rows_coauthor(includeAll);
+        renderPanelBBarsInto(barsEl, rows, {
+          activeName: state.filter.paternal || null,
+          confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
+          onClick: r => {
+            if (!r.isConfirmed) return;
+            state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
+            state.filter.province = '';
+            state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
+            state.filter.b2Authorship = 'includesItaukei';
+            state.shown = state.pageSize;
+            afterFilterChange();
+          }
+        });
+        barsEl.className = 'db-bars';
+        renderPanelB2Blurb(blurbEl, { auth: 'co', includeAll, rows });
+      } else if (auth === 'split') {
+        const rows = buildB2Rows_split(includeAll);
+        if (layout === 'detailed') {
+          renderPanelB2SplitDetailed(barsEl, rows);
+        } else {
+          renderPanelB2SplitCompact(barsEl, rows);
         }
-      });
-      barsEl.classList.remove('db-bars--grouped');
+        renderPanelB2Blurb(blurbEl, { auth: 'split', layout, includeAll, rows });
+      }
     } else if (view === 'all-authors') {
       const rows = buildB2Rows_studyProvince_allAuthors();
       renderPanelBBarsInto(barsEl, rows, {
@@ -5279,6 +5474,227 @@
     hide($('[data-b2-province-note]'));
     hide($('[data-b2-authorship-controls]'));
     hide($('[data-b2-caveat]'));
+  }
+
+  // -------- Split view render helpers --------
+  // Compact: one bar per province, two-tone teal (lead + co).
+  function renderPanelB2SplitCompact(host, rows) {
+    host.innerHTML = '';
+    host.className = 'db-bars db-bars--split';
+    if (!rows.length) {
+      host.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.9rem;">No items match the current filters.</div>';
+      return;
+    }
+    const maxTotal = Math.max(1, ...rows.map(r => r.total));
+    rows.forEach(r => {
+      const label = document.createElement('div');
+      label.className = 'db-bars__prov';
+      const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
+      label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
+      host.appendChild(label);
+
+      const rowWrap = document.createElement('div');
+      const bar = document.createElement('div');
+      bar.className = 'db-bars__row';
+      bar.style.width = `${(r.total / maxTotal) * 100}%`;
+      bar.style.background = 'transparent';
+      bar.style.boxShadow = 'inset 0 0 0 1.5px rgba(0,0,0,0.06)';
+      bar.title = `${r.name} · ${r.lead} first-author + ${r.co} co-author = ${r.total} total`;
+      if (r.lead > 0) {
+        const seg = document.createElement('span');
+        seg.className = 'db-bars__seg db-bars__seg-lead';
+        seg.style.width = `${(r.lead / r.total) * 100}%`;
+        seg.title = `${r.lead} × first author`;
+        bar.appendChild(seg);
+      }
+      if (r.co > 0) {
+        const seg = document.createElement('span');
+        seg.className = 'db-bars__seg db-bars__seg-co';
+        seg.style.width = `${(r.co / r.total) * 100}%`;
+        seg.title = `${r.co} × co-author (not first)`;
+        bar.appendChild(seg);
+      }
+      rowWrap.appendChild(bar);
+      host.appendChild(rowWrap);
+
+      const num = document.createElement('div');
+      num.className = 'db-bars__total';
+      num.textContent = r.total;
+      host.appendChild(num);
+    });
+  }
+
+  // Detailed: two twin bars per province with publication-type colors.
+  // Grid: province | role | bar | totals (province + totals span both rows).
+  function renderPanelB2SplitDetailed(host, rows) {
+    host.innerHTML = '';
+    host.className = 'db-bars db-bars--split-detailed';
+    if (!rows.length) {
+      host.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.9rem;">No items match the current filters.</div>';
+      return;
+    }
+    // Scale by the larger of lead/co so bars are comparable across provinces.
+    const maxSide = Math.max(1, ...rows.flatMap(r => [r.lead, r.co]));
+
+    rows.forEach(r => {
+      const prov = document.createElement('div');
+      prov.className = 'db-bars__prov';
+      const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
+      prov.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
+      host.appendChild(prov);
+
+      // Row 1: 1st author
+      const roleLead = document.createElement('div');
+      roleLead.className = 'db-bars__role';
+      roleLead.textContent = '1st';
+      host.appendChild(roleLead);
+
+      const barLead = document.createElement('div');
+      barLead.className = 'db-bars__row' + (r.lead === 0 ? ' db-bars__row--empty' : '');
+      if (r.lead > 0) {
+        barLead.style.width = `${(r.lead / maxSide) * 100}%`;
+        TYPE_ORDER.forEach(t => {
+          const n = (r.leadTypes && r.leadTypes[t]) || 0;
+          if (n > 0) {
+            const seg = document.createElement('span');
+            seg.className = 'db-bars__seg';
+            seg.style.width = `${(n / r.lead) * 100}%`;
+            seg.style.background = TYPE_COLOR[t];
+            seg.title = `${n} × ${TYPE_LABELS[t]} (first author)`;
+            barLead.appendChild(seg);
+          }
+        });
+      }
+      host.appendChild(barLead);
+
+      // Totals column (spans both rows)
+      const totals = document.createElement('div');
+      totals.className = 'db-bars__totals';
+      totals.innerHTML = `<span class="db-bars__totals-lead">${r.lead}</span><span class="db-bars__totals-co">+${r.co} co</span>`;
+      host.appendChild(totals);
+
+      // Row 2: co-author (skip province + totals cells — they span from row 1)
+      const roleCo = document.createElement('div');
+      roleCo.className = 'db-bars__role';
+      roleCo.textContent = 'co';
+      host.appendChild(roleCo);
+
+      const barCo = document.createElement('div');
+      barCo.className = 'db-bars__row' + (r.co === 0 ? ' db-bars__row--empty' : '');
+      if (r.co > 0) {
+        barCo.style.width = `${(r.co / maxSide) * 100}%`;
+        TYPE_ORDER.forEach(t => {
+          const n = (r.coTypes && r.coTypes[t]) || 0;
+          if (n > 0) {
+            const seg = document.createElement('span');
+            seg.className = 'db-bars__seg';
+            seg.style.width = `${(n / r.co) * 100}%`;
+            seg.style.background = TYPE_COLOR[t];
+            seg.title = `${n} × ${TYPE_LABELS[t]} (co-author, not first)`;
+            barCo.appendChild(seg);
+          }
+        });
+      }
+      host.appendChild(barCo);
+    });
+  }
+
+  // -------- Interpretation blurb --------
+  // Auto-generated text that summarises the current filtered view. Placed
+  // above the chart, below the description. Updates on every filter / view /
+  // layout change. Uses <strong> for numbers/province names and <em> for
+  // interpretive framing so the sentence reads as commentary, not caption.
+  function renderPanelB2Blurb(el, ctx) {
+    if (!el) return;
+    const rows = (ctx && ctx.rows) || [];
+    const confirmed = rows.filter(r => r.isConfirmed);
+    if (!confirmed.length) { el.innerHTML = ''; return; }
+
+    const auth = ctx.auth;
+    const scopeWord = ctx.includeAll ? 'across all locations' : 'in Fiji-focused research';
+
+    const fmt = (n) => `<strong>${n}</strong>`;
+    const prov = (name) => `<strong>${escapeHtml(name)}</strong>`;
+
+    let html = '';
+
+    if (auth === 'first') {
+      // Top-3 first-author provinces
+      const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
+      const [p1, p2, p3] = sorted;
+      if (!p1) { el.innerHTML = ''; return; }
+      html = `${prov(p1.name)} leads iTaukei first-author publications ${scopeWord} with ${fmt(p1.total)} paper${p1.total === 1 ? '' : 's'}`;
+      if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
+      if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
+      html += `. <em>Together, these three provinces account for the bulk of iTaukei-led scholarship represented in this database.</em>`;
+    } else if (auth === 'co') {
+      const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
+      const [p1, p2, p3] = sorted;
+      if (!p1) { el.innerHTML = ''; return; }
+      html = `${prov(p1.name)} tops iTaukei co-authored publications ${scopeWord} at ${fmt(p1.total)}`;
+      if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
+      if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
+      html += ` — <em>provinces whose scholars appear more often as collaborators than as lead authors on these works.</em>`;
+    } else if (auth === 'split') {
+      // Find biggest lead-vs-co gaps in both directions.
+      // Positive gap (co > lead): co-author role dominates.
+      // Negative gap (lead > co): lead role dominates.
+      const withGaps = confirmed.map(r => ({ ...r, gap: r.co - r.lead }));
+      const coHeavy = withGaps.filter(r => r.gap > 0).sort((a, b) => b.gap - a.gap);
+      const leadHeavy = withGaps.filter(r => r.gap < 0).sort((a, b) => a.gap - b.gap);
+      const parts = [];
+      if (coHeavy.length >= 2) {
+        const [c1, c2] = coHeavy;
+        parts.push(`${prov(c1.name)} and ${prov(c2.name)} contribute more as co-authors than as lead authors: ${prov(c1.name)} produces ${fmt(c1.lead)} first-author paper${c1.lead === 1 ? '' : 's'} but appears on ${fmt(c1.co)} as a co-author, while ${prov(c2.name)} shows ${fmt(c2.lead)} versus ${fmt(c2.co)}`);
+      } else if (coHeavy.length === 1) {
+        const c1 = coHeavy[0];
+        parts.push(`${prov(c1.name)} contributes more as a co-author than as a lead author (${fmt(c1.lead)} first-author versus ${fmt(c1.co)} co-authored)`);
+      }
+      if (leadHeavy.length >= 1) {
+        const l1 = leadHeavy[0];
+        parts.push(`${prov(l1.name)}, by contrast, leads more than it co-authors (${fmt(l1.lead)} first-author versus ${fmt(l1.co)} co-authored)`);
+      }
+      if (!parts.length) {
+        // Fallback: describe the top province by total.
+        const top = confirmed.slice().sort((a, b) => b.total - a.total)[0];
+        if (top) parts.push(`${prov(top.name)} has the highest combined presence with ${fmt(top.lead)} first-author and ${fmt(top.co)} co-authored papers`);
+      }
+      html = parts.join('. ') + `. <em>These asymmetries hint at differing research pathways — some provinces are more visible as collaborators, others as lead investigators.</em>`;
+    }
+    el.innerHTML = html;
+  }
+
+  // Enable/disable PhD + Masters checkboxes based on authorship view.
+  // Theses are single-author works, so they don't belong in the co-author view.
+  function updateB2TypeFilterEnabledState(auth) {
+    const wrap = $('[data-b2-type-filter]');
+    if (!wrap) return;
+    const disable = (auth === 'co');
+    ['thesisPhd', 'thesisMasters'].forEach(vt => {
+      const cb = wrap.querySelector(`input[type=checkbox][value="${vt}"]`);
+      if (!cb) return;
+      const lbl = cb.closest('label');
+      cb.disabled = disable;
+      if (lbl) {
+        lbl.classList.toggle('is-disabled', disable);
+        if (disable) lbl.title = 'Theses are single-author works — not applicable in the co-author view';
+        else lbl.removeAttribute('title');
+      }
+      if (disable && cb.checked) {
+        cb.checked = false;
+        state.b2TypeSet.delete(vt);
+      }
+    });
+  }
+
+  // Preserve b2 hash param when writing b2a / b2l.
+  function setB2ExtraHash({ b2a, b2l }) {
+    const h = window.location.hash.replace(/^#/, '');
+    const params = new URLSearchParams(h);
+    if (b2a) params.set('b2a', b2a); else params.delete('b2a');
+    if (b2l) params.set('b2l', b2l); else params.delete('b2l');
+    const newHash = '#' + params.toString();
+    if (newHash !== window.location.hash) history.replaceState(null, '', newHash);
   }
 
   // Ensure a single tooltip element exists on document.body for the authorship
@@ -5504,19 +5920,21 @@
       });
     });
     // Panel B2 has its own type-filter checkboxes so B1 and B2 can be tuned
-    // independently.
+    // independently. Disabled checkboxes (theses in co-author view) are skipped.
     $$('[data-b2-type-filter] input[type=checkbox]').forEach(cb => {
       cb.addEventListener('change', () => {
         state.b2TypeSet = new Set(
-          $$('[data-b2-type-filter] input[type=checkbox]:checked').map(c => c.value)
+          $$('[data-b2-type-filter] input[type=checkbox]:checked:not(:disabled)').map(c => c.value)
         );
         renderPanelB2();
       });
     });
     const all = $('[data-b2-type-all]');
     if (all) all.addEventListener('click', () => {
-      $$('[data-b2-type-filter] input[type=checkbox]').forEach(c => { c.checked = true; });
-      state.b2TypeSet = new Set(TYPE_ORDER);
+      $$('[data-b2-type-filter] input[type=checkbox]:not(:disabled)').forEach(c => { c.checked = true; });
+      state.b2TypeSet = new Set(
+        $$('[data-b2-type-filter] input[type=checkbox]:checked:not(:disabled)').map(c => c.value)
+      );
       renderPanelB2();
     });
     const none = $('[data-b2-type-none]');
@@ -5524,6 +5942,24 @@
       $$('[data-b2-type-filter] input[type=checkbox]').forEach(c => { c.checked = false; });
       state.b2TypeSet = new Set();
       renderPanelB2();
+    });
+
+    // Authorship + Layout dropdowns (Panel C2 top-of-panel controls)
+    const authSel = $('[data-b2-authorship]');
+    if (authSel) authSel.addEventListener('change', () => {
+      const v = authSel.value;
+      if (v === 'first' || v === 'co' || v === 'split') {
+        state.b2Authorship = v;
+        renderPanelB2();
+      }
+    });
+    const layoutSel = $('[data-b2-layout]');
+    if (layoutSel) layoutSel.addEventListener('change', () => {
+      const v = layoutSel.value;
+      if (v === 'compact' || v === 'detailed') {
+        state.b2Layout = v;
+        renderPanelB2();
+      }
     });
 
     // Authorship-view: Counts / Percentage toggle

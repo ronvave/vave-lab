@@ -1433,6 +1433,98 @@
     .db-b2-info summary:hover { text-decoration: underline; }
     .db-b2-info p { margin: 6px 0; line-height: 1.5; }
 
+    /* ---- Authorship + Layout dropdowns (Panel C2) ---- */
+    .db-b2-view-controls {
+      display: flex; flex-wrap: wrap; gap: 10px 16px;
+      align-items: center; margin: 10px 0 8px;
+    }
+    .db-b2-view-select {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 4px 10px 4px 12px; font-size: 0.88rem; color: #0f172a;
+    }
+    .db-b2-view-select__label {
+      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #64748b;
+    }
+    .db-b2-view-select select {
+      appearance: none; -webkit-appearance: none;
+      background: transparent; border: 0; padding: 4px 20px 4px 4px;
+      font: inherit; color: inherit; cursor: pointer;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.5'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 4px center;
+    }
+    .db-b2-view-select select:focus-visible {
+      outline: 2px solid #0e7490; outline-offset: 2px; border-radius: 3px;
+    }
+
+    /* ---- Interpretation blurb (auto-generated) ---- */
+    .db-b2-blurb {
+      margin: 8px 0 14px; padding: 12px 14px 12px 16px;
+      background: #f0f9ff; border-left: 3px solid #0284c7;
+      border-radius: 4px; font-size: 0.9rem; color: #0c4a6e;
+      line-height: 1.55;
+    }
+    .db-b2-blurb:empty { display: none; }
+    .db-b2-blurb strong { color: #0369a1; font-weight: 700; }
+    .db-b2-blurb em { font-style: italic; color: #334155; }
+
+    /* ---- Type-filter checkbox: disabled state for co-author view ---- */
+    .db-type-filter label.is-disabled {
+      opacity: 0.4; cursor: not-allowed;
+    }
+    .db-type-filter label.is-disabled input { cursor: not-allowed; }
+
+    /* ---- Split view: compact (two-tone teal, single bar) ---- */
+    .db-bars--split .db-bars__row { position: relative; }
+    .db-bars__seg-lead { background: #0f766e !important; }
+    .db-bars__seg-co   { background: #5fa6ae !important; }
+
+    /* ---- Split view: detailed (twin bars with type colors) ---- */
+    .db-bars--split-detailed {
+      display: grid;
+      grid-template-columns: 140px 34px 1fr 46px;
+      gap: 4px 10px; align-items: center;
+    }
+    .db-bars--split-detailed .db-bars__prov {
+      grid-column: 1; grid-row: span 2;
+      display: flex; align-items: center; justify-content: flex-end;
+      gap: 6px; font-size: 0.9rem; padding: 0; cursor: pointer;
+    }
+    .db-bars--split-detailed .db-bars__prov.is-active {
+      color: #0e7490; font-weight: 700;
+    }
+    .db-bars--split-detailed .db-bars__role {
+      grid-column: 2; font-size: 0.72rem; color: #64748b;
+      text-align: right; font-weight: 600; letter-spacing: 0.02em;
+    }
+    .db-bars--split-detailed .db-bars__row {
+      grid-column: 3; height: 15px; border-radius: 3px;
+      box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.06);
+      display: flex; overflow: hidden;
+    }
+    .db-bars--split-detailed .db-bars__row--empty {
+      background: transparent; box-shadow: none;
+    }
+    .db-bars--split-detailed .db-bars__totals {
+      grid-column: 4; grid-row: span 2;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: flex-start;
+      font-size: 0.85rem;
+    }
+    .db-bars--split-detailed .db-bars__totals-lead {
+      color: #0f172a; font-weight: 700;
+    }
+    .db-bars--split-detailed .db-bars__totals-co {
+      color: #94a3b8; font-weight: 500; font-size: 0.76rem;
+    }
+
+    /* Detailed layout expands panel vertically — no fixed height needed since
+       we're a scrolling layout, but tighten spacing so the twin bars sit
+       comfortably. */
+    .db-panel[data-panel="C2"].is-detailed .db-b2-blurb { margin-bottom: 10px; }
+
     /* ---- Authorship view (compact, one-bar-per-province) ---- */
     .db-b2-province-note {
       font-size: 0.85rem; color: #334155;
@@ -2959,6 +3051,29 @@
           <h2 class="db-panel__title" data-b2-title>Research Output by iTaukei Author's Home Province</h2>
           <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the iTaukei first author’s own paternal province. Default scope shows Fiji-focused publications; switch to “Fiji + International” to include research on non-Fiji topics and locations too.</p>
           <div class="db-panel__meta" data-b2-meta></div>
+          <!-- Authorship + Layout dropdowns. The Layout dropdown only appears
+               when the split view is active (see JS). -->
+          <div class="db-b2-view-controls">
+            <label class="db-b2-view-select">
+              <span class="db-b2-view-select__label">Authorship</span>
+              <select data-b2-authorship>
+                <option value="first">iTaukei as 1st author</option>
+                <option value="co">iTaukei as co-author</option>
+                <option value="split">1st author + co-author, split</option>
+              </select>
+            </label>
+            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;">
+              <span class="db-b2-view-select__label">Layout</span>
+              <select data-b2-layout>
+                <option value="compact">Compact (single bar)</option>
+                <option value="detailed">Detailed (with publication types)</option>
+              </select>
+            </label>
+          </div>
+          <!-- Interpretation blurb — auto-generated from the current filtered
+               view. Placed above the chart, below the description, per user
+               preference. Updates live on every control change. -->
+          <div class="db-b2-blurb" data-b2-blurb></div>
           <!-- Authorship-view only: sentence that clarifies the province semantics -->
           <p class="db-b2-province-note" data-b2-province-note style="display:none;">
             <span aria-hidden="true">ⓘ</span> Province refers to where the research was conducted.
@@ -3468,6 +3583,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-10" defer></script>
+<script src="js/itaukei-database.js?v=20260709-11" defer></script>
 </body>
 </html>
