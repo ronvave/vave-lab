@@ -48,7 +48,9 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .hero__body a:hover{color:var(--brown-ink)}
 
 /* stat strip */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:26px auto 14px;padding:22px 24px;background:var(--paper-2);border-radius:14px;border:1px solid var(--line-soft);max-width:820px}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin:26px auto 14px;padding:22px 24px;background:var(--paper-2);border-radius:14px;border:1px solid var(--line-soft);max-width:1000px}
+@media(max-width:920px){.stats{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.stats{grid-template-columns:repeat(2,1fr)}}
 .stat{display:flex;flex-direction:column;gap:2px}
 .stat__num{font-family:"Fraunces",serif;font-weight:600;font-size:2.1rem;line-height:1;color:var(--brown-ink);font-variant-numeric:tabular-nums}
 .stat__label{font-size:.82rem;color:var(--ink);font-weight:500;letter-spacing:.02em;text-transform:uppercase}
@@ -56,7 +58,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .stats__note a{color:var(--brown);text-decoration:underline;text-underline-offset:3px}
 
 /* ===== MAP CTA ROW (below stats bar) ===== */
-.map-cta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin:0 auto 26px;max-width:820px}
+.map-cta-row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px;margin:0 auto 26px;max-width:1000px}
 .map-cta-row .map-cta{font-size:.92rem}
 @media(max-width:640px){.map-cta-row{flex-direction:column;align-items:center}}
 
@@ -134,6 +136,14 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .notlist-form__grid label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
 .notlist-form__grid input,.notlist-form__grid select{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:.95rem;color:var(--ink)}
 .notlist-form__grid input:focus,.notlist-form__grid select:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.notlist-count{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin:0 0 18px;padding:0 0 18px;border-bottom:1px dashed var(--line)}
+.notlist-count__field{flex:0 0 auto;min-width:160px}
+.notlist-count__field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
+.notlist-count__field input{width:120px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:.95rem;color:var(--ink)}
+.notlist-count__field input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.notlist-count__hint{flex:1 1 200px;font-size:.9rem;color:var(--ink);margin:0}
+.newScholar-block{margin-top:18px;padding:18px 20px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.newScholar-block__head{font-family:'Fraunces',serif;font-weight:600;font-size:1.02rem;color:var(--brown);margin:0 0 12px}
 
 /* ===== SCREEN 2 — BATCH ENTRY ===== */
 #screen2.hidden{display:none}
@@ -250,8 +260,9 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 
     <div class="stats">
       <div class="stat"><span class="stat__num">2,056</span><span class="stat__label">scholarly references</span></div>
+      <div class="stat"><span class="stat__num">1,380</span><span class="stat__label">publications by and with iTaukei scholars</span></div>
       <div class="stat"><span class="stat__num">397</span><span class="stat__label">iTaukei scholars</span></div>
-      <div class="stat"><span class="stat__num">292</span><span class="stat__label">theses (207 Masters · 85 PhD)</span></div>
+      <div class="stat"><span class="stat__num">339</span><span class="stat__label">iTaukei theses</span></div>
       <div class="stat"><span class="stat__num">62</span><span class="stat__label">universities · 13 countries</span></div>
       <p class="stats__note">As of Thursday, 9 July 2026, 10:05 PM FJT</p>
     </div>
@@ -319,16 +330,20 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     <div id="notListForm" class="notlist-form hidden">
       <h3 style="font-family:'Fraunces',serif;font-weight:600;margin:0 0 6px;color:var(--ink)">Add someone not on the list</h3>
       <p style="margin:0 0 16px;font-size:.94rem;color:var(--ink)">These go to a separate <strong>NewScholars</strong> stream and don't need village/province info here — you can add that with them later.</p>
-      <div class="notlist-form__grid">
-        <div><label for="newLast">Last name</label><input id="newLast" type="text"></div>
-        <div><label for="newFirst">First name</label><input id="newFirst" type="text"></div>
-        <div><label for="newDegree">Degree</label><select id="newDegree"><option value="">Select…</option><option>Masters</option><option>PhD</option><option>Other</option></select></div>
-        <div><label for="newYear">Graduation year</label><input id="newYear" type="text" placeholder="e.g. 2018"></div>
-        <div><label for="newUni">University</label><input id="newUni" type="text"></div>
-        <div><label for="newLink">Thesis or profile link</label><input id="newLink" type="url" placeholder="https://…"></div>
+
+      <div class="notlist-count">
+        <div class="notlist-count__field">
+          <label for="newCount">How many to add</label>
+          <input id="newCount" type="number" min="1" max="20" value="1">
+        </div>
+        <button id="setNewCount" class="btn btn-ghost" type="button">Set number</button>
+        <p class="notlist-count__hint">Enter how many scholars you'd like to add, then fill in the blocks below.</p>
       </div>
+
+      <div id="newScholarBlocks"></div>
+
       <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:12px">
-        <button id="submitNewScholar" class="btn btn-ghost" type="button">Submit new scholar</button>
+        <button id="submitNewScholar" class="btn btn-ghost" type="button">Submit new scholars</button>
       </div>
       <div id="newScholarStatus" class="status"></div>
     </div>
@@ -582,24 +597,64 @@ async function submitBatch(){
 $('submitBatch').addEventListener('click', submitBatch);
 
 // "not on list" flow
-$('showNotList').addEventListener('click', () => $('notListForm').classList.toggle('hidden'));
+$('showNotList').addEventListener('click', () => {
+  const el = $('notListForm');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden') && !$('newScholarBlocks').children.length) {
+    renderNewScholarBlocks(parseInt($('newCount').value, 10) || 1);
+  }
+});
+
+function renderNewScholarBlocks(n){
+  n = Math.max(1, Math.min(20, parseInt(n, 10) || 1));
+  const wrap = $('newScholarBlocks');
+  wrap.innerHTML = '';
+  for (let i = 0; i < n; i++){
+    const block = document.createElement('div');
+    block.className = 'newScholar-block';
+    block.innerHTML = `
+      <p class="newScholar-block__head">Scholar ${i+1} of ${n}</p>
+      <div class="notlist-form__grid">
+        <div><label for="newLast_${i}">Last name</label><input id="newLast_${i}" type="text"></div>
+        <div><label for="newFirst_${i}">First name</label><input id="newFirst_${i}" type="text"></div>
+        <div><label for="newDegree_${i}">Degree</label><select id="newDegree_${i}"><option value="">Select…</option><option>Masters</option><option>PhD</option><option>Other</option></select></div>
+        <div><label for="newYear_${i}">Graduation year</label><input id="newYear_${i}" type="text" placeholder="e.g. 2018"></div>
+        <div><label for="newUni_${i}">University</label><input id="newUni_${i}" type="text"></div>
+        <div><label for="newLink_${i}">Thesis or profile link</label><input id="newLink_${i}" type="url" placeholder="https://…"></div>
+      </div>`;
+    wrap.appendChild(block);
+  }
+}
+$('setNewCount').addEventListener('click', () => {
+  renderNewScholarBlocks($('newCount').value);
+  $('newScholarStatus').textContent = '';
+});
+
 async function submitNewScholar(){
-  const payload = {
-    type: 'newScholar',
-    lastName: $('newLast').value.trim(),
-    firstName: $('newFirst').value.trim(),
-    degree: $('newDegree').value,
-    gradYear: $('newYear').value.trim(),
-    university: $('newUni').value.trim(),
-    thesisLink: $('newLink').value.trim()
-  };
   const status = $('newScholarStatus');
-  if (!payload.lastName || !payload.firstName) { status.className='status err'; status.textContent='Please provide at least first and last name.'; return; }
+  const blocks = $('newScholarBlocks').children;
+  const scholars = [];
+  for (let i = 0; i < blocks.length; i++){
+    const last = ($('newLast_'+i)?.value || '').trim();
+    const first = ($('newFirst_'+i)?.value || '').trim();
+    if (!last && !first) continue; // skip blanks
+    if (!last || !first) { status.className='status err'; status.textContent = `Scholar ${i+1}: please provide both first and last name (or leave both blank to skip).`; return; }
+    scholars.push({
+      lastName: last,
+      firstName: first,
+      degree: ($('newDegree_'+i)?.value || ''),
+      gradYear: ($('newYear_'+i)?.value || '').trim(),
+      university: ($('newUni_'+i)?.value || '').trim(),
+      thesisLink: ($('newLink_'+i)?.value || '').trim()
+    });
+  }
+  if (!scholars.length){ status.className='status err'; status.textContent='Please fill in at least one scholar (first and last name).'; return; }
+  const payload = { type: 'newBatch', scholars: scholars, informantName: ($('informantName')?.value || '').trim(), informantEmail: ($('informantEmail')?.value || '').trim() };
   status.textContent = 'Sending…'; status.className='status';
   try {
     const r = await fetch(GOOGLE_SCRIPT_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
     status.className = r.ok ? 'status ok' : 'status err';
-    status.textContent = r.ok ? 'New scholar submitted. Vinaka vakalevu.' : 'Submission returned an error.';
+    status.textContent = r.ok ? `${scholars.length} new scholar${scholars.length>1?'s':''} submitted. Vinaka vakalevu.` : 'Submission returned an error.';
   } catch (e) { status.className='status err'; status.textContent='Submission failed.'; }
 }
 $('submitNewScholar').addEventListener('click', submitNewScholar);
