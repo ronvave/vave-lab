@@ -1482,10 +1482,13 @@
     .db-bars__seg-co   { background: #5fa6ae !important; }
 
     /* ---- Split view: detailed (twin bars with type colors) ---- */
-    .db-bars--split-detailed {
-      display: grid;
-      grid-template-columns: 140px 34px 1fr 46px;
-      gap: 4px 10px; align-items: center;
+    /* !important overrides the panel-B .db-bars 3-column template above.  */
+    .db-bars.db-bars--split-detailed {
+      display: grid !important;
+      grid-template-columns: 160px 34px 1fr 72px !important;
+      gap: 4px 10px !important;
+      align-items: center;
+      row-gap: 6px !important;
     }
     .db-bars--split-detailed .db-bars__prov {
       grid-column: 1; grid-row: span 2;
@@ -3583,6 +3586,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-11" defer></script>
+<script src="js/itaukei-database.js?v=20260709-12" defer></script>
 </body>
 </html>
