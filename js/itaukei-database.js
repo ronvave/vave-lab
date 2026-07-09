@@ -837,11 +837,14 @@
         scrollWheelZoom: true,
         wheelPxPerZoomLevel: 100
       });
-      // Esri World Imagery (attributed "Esri — Esri, Maxar, Earthstar Geographics,
-      // and the GIS User Community"). Sits under the choropleth polygons.
-      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
-        maxZoom: 18
+      // Google Hybrid tiles (satellite imagery + labels). Uses Google's
+      // public mt0-mt3.google.com CDN with lyrs=y (hybrid). Tiles wrap
+      // horizontally so the map always fills the viewport, including
+      // fullscreen. Subdomains are round-robined for parallelism.
+      L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+        attribution: 'Imagery &copy; Google',
+        subdomains: ['0', '1', '2', '3'],
+        maxZoom: 20
       }).addTo(map);
       state.map = map;
       renderChoropleth();
@@ -1542,11 +1545,13 @@
       maxBounds: [[-85, -210], [85, 210]],
       maxBoundsViscosity: 0.85
     });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
-      maxZoom: 18,
-      noWrap: true,
-      bounds: [[-85, -180], [85, 180]]
+    // Google Hybrid tiles (satellite imagery + labels). Tiles wrap so
+    // the world repeats horizontally and no empty backdrop shows on
+    // widescreen or fullscreen views.
+    L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      attribution: 'Imagery &copy; Google',
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20
     }).addTo(wmap);
     wmap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
     state.worldMap = wmap;
@@ -1558,45 +1563,24 @@
     // Fullscreen toggle for the B2 graduates map. On expand we fit the
     // marker bounds so the wider viewport shows all points; on collapse
     // we restore the pre-fullscreen center/zoom.
+    // Fullscreen toggle for the B2 graduates map. Google tiles wrap,
+    // so no tile-layer swap is needed — we just re-center at a zoom
+    // that keeps the marker cluster (Fiji/AU/NZ) in the middle, and
+    // restore the prior view on close.
     wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
       onOpen: () => {
         const m = state.worldMap; if (!m) return;
         state.worldMapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
-        // Swap the noWrap tile layer for a wrapping one so tiles repeat
-        // horizontally and fully fill the widened viewport regardless of
-        // where we pan. Also relax the map's maxBounds so panning across
-        // the wrapped world works naturally. We remember the old layer
-        // and bounds so we can restore both on close.
-        try {
-          m.eachLayer(l => { if (l instanceof L.TileLayer) { state.worldMapPrevTile = l; m.removeLayer(l); } });
-          const wrapTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Imagery &copy; Esri, Maxar, Earthstar Geographics',
-            maxZoom: 18,
-            noWrap: false
-          });
-          wrapTile.addTo(m);
-          state.worldMapFsTile = wrapTile;
-          state.worldMapPrevBounds = m.options.maxBounds;
-          m.setMaxBounds(null);
-        } catch (_) {}
-        // Zoom to a size that keeps a single world copy ≥ viewport width,
-        // then center on the Pacific cluster (Fiji/AU/NZ). With wrapping
-        // tiles the centering can be anywhere without exposing backdrop.
+        // Pick a zoom that gives comfortable global context on the
+        // widened viewport. z=3 shows most continents at 1500px width.
         const w = Math.max(window.innerWidth || 1200, 800);
         const zExact = Math.log2(w / 256);
-        const z = Math.min(5, Math.max(2, Math.ceil(zExact * 4) / 4));
+        const z = Math.min(5, Math.max(2.5, Math.round(zExact * 4) / 4));
         m.setView([5, 150], z, { animate: false });
       },
       onClose: () => {
-        const m = state.worldMap; if (!m) return;
-        // Restore the original noWrap tile layer and maxBounds.
-        try {
-          if (state.worldMapFsTile) { m.removeLayer(state.worldMapFsTile); state.worldMapFsTile = null; }
-          if (state.worldMapPrevTile) { state.worldMapPrevTile.addTo(m); state.worldMapPrevTile = null; }
-          if (state.worldMapPrevBounds) { m.setMaxBounds(state.worldMapPrevBounds); state.worldMapPrevBounds = null; }
-        } catch (_) {}
-        const prev = state.worldMapPrevView;
-        if (prev) m.setView(prev.center, prev.zoom, { animate: false });
+        const m = state.worldMap; const prev = state.worldMapPrevView;
+        if (m && prev) m.setView(prev.center, prev.zoom, { animate: false });
       }
     });
   }
