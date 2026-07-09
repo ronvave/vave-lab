@@ -3673,6 +3673,30 @@
       variantsByCanonical.get(canon).push(variant);
     });
 
+    // Resolve a Zotero sub-collection name (e.g. "Rakuita, Nawi") to its
+    // canonical scholar name. First try a direct alias lookup; if that fails,
+    // fall back to matching an alias key whose (last, first-token) equals the
+    // sub-collection's (last, first-token). This catches the case where the
+    // admin registered "Rakuita, Nawi Tui" → "Rakuita, Tui" but the Zotero
+    // sub-collection is only "Rakuita, Nawi". Without this fallback the sub-
+    // collection would emit a duplicate row under its own name.
+    function resolveSubName(rawName) {
+      const direct = aliases.get(rawName);
+      if (direct) return direct;
+      if (typeof rawName !== 'string' || !rawName.includes(',')) return rawName;
+      const [lastPart, firstPart] = rawName.split(',', 2).map(s => (s || '').trim());
+      const subTok = firstToken(firstPart).toLowerCase();
+      if (!lastPart || !subTok) return rawName;
+      const lastLow = lastPart.toLowerCase();
+      for (const [variant, canon] of aliases.entries()) {
+        if (typeof variant !== 'string' || !variant.includes(',')) continue;
+        const [vLast, vFirst] = variant.split(',', 2).map(s => (s || '').trim());
+        if (vLast.toLowerCase() !== lastLow) continue;
+        if (firstToken(vFirst).toLowerCase() === subTok) return canon;
+      }
+      return rawName;
+    }
+
     // ---- Source A: Zotero sub-collections ----
     // If the admin has merged a sub-collection name into another canonical name
     // via the alias map (e.g. "Movono, Api" → "Movono, Apisalome"), we relabel
@@ -3687,9 +3711,9 @@
     if (root) {
       const subs = cols.filter(c => c.parent === root.key);
       subs.forEach(c => {
-        // Resolve the sub-collection name through the alias map. If no alias is
-        // registered, canonicalName === c.name.
-        const canonicalName = aliases.get(c.name) || c.name;
+        // Resolve the sub-collection name through the alias map (with a
+        // first-token fallback). If no alias resolves, canonicalName === c.name.
+        const canonicalName = resolveSubName(c.name);
         const lastForFirstAuthor = canonicalName.split(',')[0].trim().toLowerCase();
         // Reuse or create the accumulator row for this canonical scholar.
         let entry = rowsByCanonical.get(canonicalName);
