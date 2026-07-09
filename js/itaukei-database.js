@@ -5545,7 +5545,7 @@
 
       // Row 1: 1st author
       const roleLead = document.createElement('div');
-      roleLead.className = 'db-bars__role';
+      roleLead.className = 'db-bars__role db-bars__role--lead';
       roleLead.textContent = '1st';
       host.appendChild(roleLead);
 
@@ -5567,15 +5567,16 @@
       }
       host.appendChild(barLead);
 
-      // Totals column (spans both rows)
+      // Totals column (spans both rows). We drop the “co” word next to the
+      // co-author number — the orange color + row alignment carry the meaning.
       const totals = document.createElement('div');
       totals.className = 'db-bars__totals';
-      totals.innerHTML = `<span class="db-bars__totals-lead">${r.lead}</span><span class="db-bars__totals-co">+${r.co} co</span>`;
+      totals.innerHTML = `<span class="db-bars__totals-lead">${r.lead}</span><span class="db-bars__totals-co">${r.co}</span>`;
       host.appendChild(totals);
 
       // Row 2: co-author (skip province + totals cells — they span from row 1)
       const roleCo = document.createElement('div');
-      roleCo.className = 'db-bars__role';
+      roleCo.className = 'db-bars__role db-bars__role--co';
       roleCo.textContent = 'co';
       host.appendChild(roleCo);
 

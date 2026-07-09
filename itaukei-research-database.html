@@ -1434,17 +1434,17 @@
     .db-b2-info p { margin: 6px 0; line-height: 1.5; }
 
     /* ---- Authorship + Layout dropdowns (Panel C2) ----
-       Styled as teal pills so they visually read as an interactive control,
-       complementary to (but distinct from) the brown scope pills above.
-       Brown = scope (Fiji-focused vs Fiji + International)
-       Teal  = view  (authorship + layout of the same data)
+       Styled as brown pills so they visually match the Fiji-focused /
+       Fiji + International scope pills above them — one coherent brown
+       pill family for all interactive controls in this panel.
     */
     .db-b2-view-hint {
-      font-size: 0.78rem; color: #64748b;
+      font-size: 0.78rem; color: #0f172a;
       margin: 12px 0 6px; letter-spacing: 0.01em;
+      font-weight: 600;
     }
     .db-b2-view-hint::before {
-      content: '▾'; color: #0e7490; margin-right: 6px; font-size: 0.9em;
+      content: '▾'; color: #854F0B; margin-right: 6px; font-size: 0.9em;
     }
     .db-b2-view-controls {
       display: flex; flex-wrap: wrap; gap: 10px 16px;
@@ -1452,19 +1452,19 @@
     }
     .db-b2-view-select {
       display: inline-flex; align-items: center; gap: 8px;
-      background: #0e7490; border-radius: 999px;
+      background: #854F0B; border-radius: 999px;
       padding: 6px 6px 6px 14px;
-      font-size: 0.88rem; color: #ecfeff;
-      box-shadow: 0 1px 2px rgba(14,116,144,0.15);
+      font-size: 0.88rem; color: #FAEEDA;
+      box-shadow: 0 1px 2px rgba(133,79,11,0.15);
       transition: background 0.15s, box-shadow 0.15s;
     }
     .db-b2-view-select:hover {
-      background: #0c6478;
-      box-shadow: 0 2px 5px rgba(14,116,144,0.25);
+      background: #6a3f08;
+      box-shadow: 0 2px 5px rgba(133,79,11,0.25);
     }
     .db-b2-view-select__label {
       font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.08em; color: rgba(236,254,255,0.85);
+      letter-spacing: 0.08em; color: rgba(250,238,218,0.85);
     }
     .db-b2-view-select select {
       appearance: none; -webkit-appearance: none;
@@ -1513,45 +1513,62 @@
     .db-bars__seg-co   { background: #5fa6ae !important; }
 
     /* ---- Split view: detailed (twin bars with type colors) ---- */
-    /* !important overrides the panel-B .db-bars 3-column template above.  */
+    /* !important overrides the panel-B .db-bars 3-column template above.
+       Two-bar rows per province need extra vertical breathing room, so
+       row-gap is generous and bar height is bumped for readability. */
     .db-bars.db-bars--split-detailed {
       display: grid !important;
-      grid-template-columns: 160px 34px 1fr 72px !important;
-      gap: 4px 10px !important;
+      grid-template-columns: 170px 40px 1fr 80px !important;
+      gap: 5px 12px !important;
       align-items: center;
-      row-gap: 6px !important;
+      row-gap: 8px !important;
     }
+    /* Province label: allow wrap so long labels like
+       “Province not yet confirmed” stay inside their 170px column. */
     .db-bars--split-detailed .db-bars__prov {
       grid-column: 1; grid-row: span 2;
       display: flex; align-items: center; justify-content: flex-end;
-      gap: 6px; font-size: 0.9rem; padding: 0; cursor: pointer;
+      gap: 6px; font-size: 0.95rem; padding: 0; cursor: pointer;
+      white-space: normal; word-break: break-word;
+      text-align: right; line-height: 1.2;
+    }
+    .db-bars--split-detailed .db-bars__prov > span:first-child {
+      overflow: visible; white-space: normal;
     }
     .db-bars--split-detailed .db-bars__prov.is-active {
-      color: #0e7490; font-weight: 700;
+      color: #854F0B; font-weight: 700;
     }
+    /* Role labels: purple for 1st author, orange for co-author — the two
+       colors are unused by any bar segment so they cleanly identify
+       which row is which without needing a legend. */
     .db-bars--split-detailed .db-bars__role {
-      grid-column: 2; font-size: 0.72rem; color: #64748b;
-      text-align: right; font-weight: 600; letter-spacing: 0.02em;
+      grid-column: 2; font-size: 0.82rem;
+      text-align: right; font-weight: 700; letter-spacing: 0.02em;
     }
+    .db-bars--split-detailed .db-bars__role--lead { color: #7c3aed; }
+    .db-bars--split-detailed .db-bars__role--co   { color: #ea580c; }
     .db-bars--split-detailed .db-bars__row {
-      grid-column: 3; height: 15px; border-radius: 3px;
+      grid-column: 3; height: 22px; border-radius: 4px;
       box-shadow: inset 0 0 0 1.5px rgba(0,0,0,0.06);
       display: flex; overflow: hidden;
     }
     .db-bars--split-detailed .db-bars__row--empty {
       background: transparent; box-shadow: none;
     }
+    /* Totals column: black for 1st-author total, orange for co-author
+       total — the color pairing echoes the row labels so the reader can
+       parse the numbers without the word “co”. */
     .db-bars--split-detailed .db-bars__totals {
       grid-column: 4; grid-row: span 2;
       display: flex; flex-direction: column;
       justify-content: center; align-items: flex-start;
-      font-size: 0.85rem;
+      gap: 4px; font-size: 1rem;
     }
     .db-bars--split-detailed .db-bars__totals-lead {
-      color: #0f172a; font-weight: 700;
+      color: #0f172a; font-weight: 700; font-size: 1.02rem;
     }
     .db-bars--split-detailed .db-bars__totals-co {
-      color: #94a3b8; font-weight: 500; font-size: 0.76rem;
+      color: #ea580c; font-weight: 700; font-size: 0.95rem;
     }
 
     /* Detailed layout expands panel vertically — no fixed height needed since
@@ -1587,34 +1604,68 @@
     .db-b2-authorship-actions {
       display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
     }
+    /* Counts / Percentage segmented toggle — teal pill styling to match the
+       C2 view-control dropdowns. Track is subtle teal tint, active button is
+       filled teal, inactive buttons stay muted so the active state pops. */
     .db-b2-mode {
-      display: inline-flex; background: #f1f5f9; border-radius: 999px;
-      padding: 3px; gap: 2px;
+      display: inline-flex; background: rgba(14,116,144,0.12);
+      border-radius: 999px; padding: 3px; gap: 2px;
+      box-shadow: 0 1px 2px rgba(14,116,144,0.10);
     }
     .db-b2-mode button {
       appearance: none; border: 0; background: transparent;
       padding: 5px 14px; border-radius: 999px; cursor: pointer;
       font: 600 0.82rem 'Source Sans Pro', sans-serif;
-      color: #475569; transition: background 0.15s, color 0.15s;
+      color: #0c4a6e; transition: background 0.15s, color 0.15s;
+    }
+    .db-b2-mode button:hover:not(.is-active) {
+      background: rgba(14,116,144,0.10); color: #0e7490;
     }
     .db-b2-mode button.is-active {
-      background: var(--color-primary); color: #fff;
+      background: #0e7490; color: #ecfeff;
+      box-shadow: 0 1px 2px rgba(14,116,144,0.20);
     }
     .db-b2-mode button:focus-visible {
-      outline: 2px solid var(--color-primary); outline-offset: 1px;
+      outline: 2px solid #0e7490; outline-offset: 2px;
     }
+    /* Sort by: dropdown — restyled as a teal pill so it visually belongs
+       with the mode toggle above. */
     .db-b2-sort {
-      display: inline-flex; gap: 6px; align-items: center;
-      font-size: 0.82rem; color: #475569;
+      display: inline-flex; gap: 8px; align-items: center;
+      background: #0e7490; border-radius: 999px;
+      padding: 6px 6px 6px 14px;
+      font: 700 0.68rem 'Source Sans Pro', sans-serif;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: rgba(236,254,255,0.85);
+      box-shadow: 0 1px 2px rgba(14,116,144,0.15);
+      transition: background 0.15s, box-shadow 0.15s;
+    }
+    .db-b2-sort:hover {
+      background: #0c6478;
+      box-shadow: 0 2px 5px rgba(14,116,144,0.25);
+    }
+    .db-b2-sort > span {
+      color: rgba(236,254,255,0.85);
     }
     .db-b2-sort select {
       appearance: none; -webkit-appearance: none;
-      background: #fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%2364748b' d='M0 0l5 6 5-6z'/></svg>") no-repeat right 8px center;
-      background-size: 10px;
-      border: 1px solid #cbd5e1; border-radius: 6px;
-      padding: 4px 26px 4px 10px;
-      font: 500 0.82rem 'Source Sans Pro', sans-serif; color: #062f35;
-      cursor: pointer;
+      background: rgba(255,255,255,0.15)
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23FFFFFF' stroke-width='1.5'/></svg>")
+        no-repeat right 10px center;
+      border: 0; padding: 4px 26px 4px 10px; border-radius: 999px;
+      font: 600 0.82rem 'Source Sans Pro', sans-serif;
+      color: #fff; cursor: pointer;
+      text-transform: none; letter-spacing: 0;
+    }
+    .db-b2-sort select:hover {
+      background-color: rgba(255,255,255,0.25);
+    }
+    .db-b2-sort select:focus-visible {
+      outline: 2px solid #fff; outline-offset: 2px;
+    }
+    .db-b2-sort select option {
+      background: #fff; color: #0f172a;
+      text-transform: none; letter-spacing: 0;
     }
     .db-b2-caveat {
       font-size: 0.82rem; color: #64748b;
@@ -3620,6 +3671,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-13" defer></script>
+<script src="js/itaukei-database.js?v=20260709-14" defer></script>
 </body>
 </html>
