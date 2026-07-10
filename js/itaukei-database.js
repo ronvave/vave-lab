@@ -1290,26 +1290,47 @@
 
   // Build the shared popup HTML for a worldPoint. Split into PhD / Masters /
   // Other sections, each with the blue/black alternating scholar list.
+  //
+  // Scholar name ordering inside each section: most-recent graduation year
+  // first, oldest last. Names with no year drop to the bottom; ties are
+  // broken alphabetically so the ordering is stable and readable. The year
+  // comes from lookupScholarThesisForPoint() so it's the same thesis year
+  // shown in the hover-detail slot.
+  function sortScholarsByYearDesc(names, point) {
+    if (!Array.isArray(names) || names.length <= 1) return names || [];
+    return names.slice().sort((a, b) => {
+      const ra = lookupScholarThesisForPoint(a, point);
+      const rb = lookupScholarThesisForPoint(b, point);
+      const ya = ra && Number(ra.year) ? Number(ra.year) : -Infinity;
+      const yb = rb && Number(rb.year) ? Number(rb.year) : -Infinity;
+      if (ya !== yb) return yb - ya; // newest first
+      return String(a).localeCompare(String(b));
+    });
+  }
+
   function buildWorldPopupHtml(p) {
     const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
     const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
+    const phdSorted     = sortScholarsByYearDesc(p.phdScholars, p);
+    const mastersSorted = sortScholarsByYearDesc(p.mastersScholars, p);
+    const otherSorted   = sortScholarsByYearDesc(p.unknownScholars || [], p);
     const sections = [];
-    if (p.phdScholars.length) {
+    if (phdSorted.length) {
       sections.push(
-        `<div class="db-popup-scholar-header is-phd">PhD (${p.phdScholars.length}):</div>` +
-        renderScholarNameList(p.phdScholars)
+        `<div class="db-popup-scholar-header is-phd">PhD (${phdSorted.length}):</div>` +
+        renderScholarNameList(phdSorted)
       );
     }
-    if (p.mastersScholars.length) {
+    if (mastersSorted.length) {
       sections.push(
-        `<div class="db-popup-scholar-header is-masters">Masters (${p.mastersScholars.length}):</div>` +
-        renderScholarNameList(p.mastersScholars)
+        `<div class="db-popup-scholar-header is-masters">Masters (${mastersSorted.length}):</div>` +
+        renderScholarNameList(mastersSorted)
       );
     }
-    if ((p.unknownScholars || []).length) {
+    if (otherSorted.length) {
       sections.push(
-        `<div class="db-popup-scholar-header is-other">Other (${p.unknownScholars.length}):</div>` +
-        renderScholarNameList(p.unknownScholars)
+        `<div class="db-popup-scholar-header is-other">Other (${otherSorted.length}):</div>` +
+        renderScholarNameList(otherSorted)
       );
     }
     // Detail slot appears between the header row and the scholar sections.
@@ -1368,8 +1389,33 @@
         const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
         // Pull the same profile record the rest of the site uses for scholar
         // cards, so the popup's photo / village / province stay in sync with
-        // every other view (main database, admin editor, panel filters).
-        const profile = (state.scholarProfilesByName && state.scholarProfilesByName.get(nm)) || {};
+        // every other view (main database, admin editor, panel filters). The
+        // profile map is keyed by "Last, First" (from scholar-profiles.json)
+        // but the popup receives names in "First Last" form (from the
+        // graduate-studies worldPoints feed), so we normalize before the
+        // lookup. Try direct hit first, then flip "First Last" → "Last, First",
+        // then the same with only the first-token of the given-names collapsed
+        // ("Litiana N Tuilaselase Kuridrani" → "Kuridrani, Litiana") to match
+        // the stripped-key fallback that scholarProfilesByName also indexes.
+        function lookupProfile(name) {
+          const map = state.scholarProfilesByName;
+          if (!map || !name) return null;
+          let hit = map.get(name);
+          if (hit) return hit;
+          const parts = String(name).trim().split(/\s+/);
+          if (parts.length >= 2) {
+            const last  = parts[parts.length - 1];
+            const first = parts.slice(0, -1).join(' ');
+            hit = map.get(`${last}, ${first}`);
+            if (hit) return hit;
+            // Stripped: only the first given name.
+            const firstTok = parts[0];
+            hit = map.get(`${last}, ${firstTok}`);
+            if (hit) return hit;
+          }
+          return null;
+        }
+        const profile = lookupProfile(nm) || {};
         const village  = (profile.village || '').trim();
         const province = effectivePaternalProvince(profile);
         const slug     = (profile.slug || '').trim();
@@ -1409,15 +1455,17 @@
             ? ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></span>`
             : ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village">${label}</span>`;
         }
-        // Photo column: always rendered in the DOM but hidden via CSS unless
-        // the world map is in fullscreen mode (see .db-popup-scholar-detail__photo
-        // display rule). This keeps the inline popup compact and avoids a
-        // second DOM path for fullscreen rendering.
-        const photoStyle = profile.photo
-          ? `style="background-image:url('${escapeAttr(profile.photo)}')"`
+        // Photo column: only rendered when the profile actually has a photo
+        // URL. Skipping the div when there's no photo prevents the empty
+        // grey placeholder from showing next to scholars whose profile hasn't
+        // been photographed yet (or isn't in scholar-profiles.json at all).
+        // The photo is CSS-hidden inline and only shown in fullscreen (see
+        // .db-popup-scholar-detail__photo display rule).
+        const photoHtml = profile.photo
+          ? `<div class="db-popup-scholar-detail__photo" style="background-image:url('${escapeAttr(profile.photo)}')" aria-hidden="true"></div>`
           : '';
         detail.innerHTML =
-          `<div class="db-popup-scholar-detail__photo" ${photoStyle} aria-hidden="true"></div>` +
+          photoHtml +
           `<div class="db-popup-scholar-detail__body">` +
             `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}${locChip}</div>` +
             `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
@@ -1560,6 +1608,44 @@
         state.worldSearchTerm = '';
         searchClear.style.display = 'none';
         renderWorldPanel();
+        // Also clear the fullscreen search mirror.
+        const fsInput2 = document.querySelector('[data-db-map-fs-search]');
+        const fsClear2 = document.querySelector('[data-db-map-fs-search-clear]');
+        if (fsInput2) fsInput2.value = '';
+        if (fsClear2) fsClear2.style.display = 'none';
+      });
+    }
+    // Fullscreen-only search box floating over the top-left of the world map.
+    // Mirrors the inline searchInput's state so typing in either input keeps
+    // both in sync. Uses the same worldSearchTerm state, so hits highlight
+    // and filter countries + universities exactly as they do inline.
+    const fsSearchInput = document.querySelector('[data-db-map-fs-search]');
+    const fsSearchClear = document.querySelector('[data-db-map-fs-search-clear]');
+    if (fsSearchInput) {
+      fsSearchInput.addEventListener('input', () => {
+        state.worldSearchTerm = (fsSearchInput.value || '').trim().toLowerCase();
+        if (fsSearchClear) fsSearchClear.style.display = state.worldSearchTerm ? '' : 'none';
+        if (searchInput) searchInput.value = fsSearchInput.value;
+        if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
+        renderWorldPanel();
+      });
+    }
+    if (fsSearchClear) {
+      fsSearchClear.addEventListener('click', () => {
+        if (fsSearchInput) fsSearchInput.value = '';
+        state.worldSearchTerm = '';
+        fsSearchClear.style.display = 'none';
+        if (searchInput) searchInput.value = '';
+        if (searchClear) searchClear.style.display = 'none';
+        renderWorldPanel();
+      });
+    }
+    // When the inline search changes, mirror the value into the fullscreen
+    // search input too so switching between views feels continuous.
+    if (searchInput) {
+      searchInput.addEventListener('input', () => {
+        if (fsSearchInput) fsSearchInput.value = searchInput.value;
+        if (fsSearchClear) fsSearchClear.style.display = (searchInput.value || '').trim() ? '' : 'none';
       });
     }
     // "Clear filter" buttons shown per filtered panel (F and G). Each clears
@@ -1666,6 +1752,13 @@
   // the map surface draws a dashed rubber-band. On mouseup, the map fits its
   // bounds to the drawn box and draw mode disarms. Idempotent — second call
   // is a no-op via the wrap.dataset.dbMapDrawWired flag.
+  //
+  // Implementation note: we use native DOM mouse events on the map container
+  // (with useCapture=true so we catch them before Leaflet's own handlers).
+  // We tried the Leaflet mouse-event API (map.on('mousedown', ...)) first,
+  // but those fire AFTER Leaflet's internal drag-start logic, meaning any
+  // pan-attempt on the raster tile still grabs focus. Native + capture is
+  // more reliable when the map's dragging is programmatically disabled.
   function wireWorldMapDrawToZoom() {
     const wrap = document.querySelector('[data-db-map-world-wrap]');
     const btn  = document.querySelector('[data-db-map-draw-btn]');
@@ -1691,16 +1784,16 @@
         ? 'Draw a rectangle on the map (Esc to cancel)'
         : 'Draw a rectangle on the map to zoom to that area');
       if (m) {
-        // Toggle map interactions so the mousedown+drag is captured by our
-        // handlers instead of Leaflet's pan/zoom.
         if (armed) {
           m.dragging.disable();
           m.boxZoom.disable();
           m.doubleClickZoom.disable();
+          m.scrollWheelZoom.disable();
         } else {
           m.dragging.enable();
           m.boxZoom.enable();
           m.doubleClickZoom.enable();
+          m.scrollWheelZoom.enable();
         }
       }
       if (!armed) removeBox();
@@ -1713,90 +1806,101 @@
       startPt = null;
     };
 
-    // Convert a mouse event to wrap-local coordinates. All drawing math is
-    // done relative to the wrap so the rubber-band lines up with the map
-    // regardless of page scroll or zoom.
     const localXY = (e) => {
       const r = wrap.getBoundingClientRect();
       return { x: e.clientX - r.left, y: e.clientY - r.top };
     };
 
-    btn.addEventListener('click', () => setArmed(!armed));
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setArmed(!armed);
+    });
 
-    // Escape cancels an in-progress draw (or disarms if just armed).
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && armed) {
-        setArmed(false);
-      }
+      if (e.key === 'Escape' && armed) setArmed(false);
     });
 
-    wrap.addEventListener('mousedown', (e) => {
-      if (!armed) return;
-      // Only left button.
-      if (e.button !== 0) return;
-      // Ignore clicks on the toolbar buttons themselves.
-      if (e.target.closest('.db-map-fs-btn')) return;
-      dragging = true;
-      startPt = localXY(e);
-      // Fresh box.
-      removeBox();
-      boxEl = document.createElement('div');
-      boxEl.className = 'db-map-draw-box';
-      boxEl.style.left = startPt.x + 'px';
-      boxEl.style.top  = startPt.y + 'px';
-      boxEl.style.width  = '0px';
-      boxEl.style.height = '0px';
-      wrap.appendChild(boxEl);
-      e.preventDefault();
-    });
-
-    wrap.addEventListener('mousemove', (e) => {
-      if (!armed || !dragging || !startPt || !boxEl) return;
-      const cur = localXY(e);
-      const x = Math.min(startPt.x, cur.x);
-      const y = Math.min(startPt.y, cur.y);
-      const w = Math.abs(cur.x - startPt.x);
-      const h = Math.abs(cur.y - startPt.y);
-      boxEl.style.left = x + 'px';
-      boxEl.style.top  = y + 'px';
-      boxEl.style.width  = w + 'px';
-      boxEl.style.height = h + 'px';
-    });
-
-    // On mouseup, translate the pixel box into geographic bounds and fit the
-    // map to it. Ignore tiny boxes (< 8px in either dimension) so accidental
-    // clicks don't launch a zoom.
-    const finish = (e) => {
-      if (!armed || !dragging) return;
+    // Attach mouse handlers to the Leaflet map container with useCapture=true
+    // so we intercept events before Leaflet's own drag logic gets them. We
+    // only act while armed — otherwise pointer events flow to Leaflet as
+    // usual so panning/zooming still work.
+    const attachHandlers = () => {
       const m = getMap();
-      const box = boxEl;
-      removeBox();
-      if (!m || !box) { return; }
-      const endPt = e ? localXY(e) : null;
-      if (!endPt || !startPt) { setArmed(false); return; }
-      const w = Math.abs(endPt.x - startPt.x);
-      const h = Math.abs(endPt.y - startPt.y);
-      if (w < 8 || h < 8) { setArmed(false); return; }
-      // Convert wrap-local corners to map container coordinates. #db-map-world
-      // sits at 0,0 inside the wrap in fullscreen, but be robust anyway.
+      if (!m || wrap.dataset.dbMapDrawHandlersAttached === '1') return;
       const mapEl = m.getContainer();
-      const wrapRect = wrap.getBoundingClientRect();
-      const mapRect  = mapEl.getBoundingClientRect();
-      const offX = mapRect.left - wrapRect.left;
-      const offY = mapRect.top  - wrapRect.top;
-      const p1 = L.point(startPt.x - offX, startPt.y - offY);
-      const p2 = L.point(endPt.x   - offX, endPt.y   - offY);
-      try {
-        const ll1 = m.containerPointToLatLng(p1);
-        const ll2 = m.containerPointToLatLng(p2);
-        const bounds = L.latLngBounds(ll1, ll2);
-        m.fitBounds(bounds, { padding: [30, 30], animate: true });
-      } catch (_) {}
-      setArmed(false);
+
+      mapEl.addEventListener('mousedown', (e) => {
+        if (!armed) return;
+        if (e.button !== 0) return;
+        if (e.target && e.target.closest && e.target.closest('.db-map-fs-btn')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        dragging = true;
+        startPt = localXY(e);
+        removeBox();
+        boxEl = document.createElement('div');
+        boxEl.className = 'db-map-draw-box';
+        boxEl.style.left = startPt.x + 'px';
+        boxEl.style.top  = startPt.y + 'px';
+        boxEl.style.width  = '0px';
+        boxEl.style.height = '0px';
+        wrap.appendChild(boxEl);
+      }, true);
+
+      // mousemove on the document so we still track movement if the pointer
+      // briefly leaves the map (e.g. drags out over a toolbar overlay).
+      document.addEventListener('mousemove', (e) => {
+        if (!armed || !dragging || !startPt || !boxEl) return;
+        const cur = localXY(e);
+        const x = Math.min(startPt.x, cur.x);
+        const y = Math.min(startPt.y, cur.y);
+        const w = Math.abs(cur.x - startPt.x);
+        const h = Math.abs(cur.y - startPt.y);
+        boxEl.style.left = x + 'px';
+        boxEl.style.top  = y + 'px';
+        boxEl.style.width  = w + 'px';
+        boxEl.style.height = h + 'px';
+      });
+
+      document.addEventListener('mouseup', (e) => {
+        if (!armed || !dragging) return;
+        const mp = getMap();
+        const endPt = localXY(e);
+        const w = Math.abs(endPt.x - (startPt ? startPt.x : endPt.x));
+        const h = Math.abs(endPt.y - (startPt ? startPt.y : endPt.y));
+        // Ignore tiny boxes (accidental clicks).
+        if (w < 8 || h < 8) { removeBox(); setArmed(false); return; }
+        if (mp && startPt) {
+          try {
+            const mapEl2 = mp.getContainer();
+            const wrapRect = wrap.getBoundingClientRect();
+            const mapRect  = mapEl2.getBoundingClientRect();
+            const offX = mapRect.left - wrapRect.left;
+            const offY = mapRect.top  - wrapRect.top;
+            const p1 = L.point(startPt.x - offX, startPt.y - offY);
+            const p2 = L.point(endPt.x   - offX, endPt.y   - offY);
+            const ll1 = mp.containerPointToLatLng(p1);
+            const ll2 = mp.containerPointToLatLng(p2);
+            const bounds = L.latLngBounds(ll1, ll2);
+            mp.fitBounds(bounds, { padding: [30, 30], animate: true });
+          } catch (_) {}
+        }
+        removeBox();
+        setArmed(false);
+      });
+
+      wrap.dataset.dbMapDrawHandlersAttached = '1';
     };
 
-    wrap.addEventListener('mouseup',   finish);
-    wrap.addEventListener('mouseleave', () => { if (dragging) { removeBox(); setArmed(false); } });
+    // The map may not exist yet at wire time; poll briefly for it.
+    if (getMap()) attachHandlers();
+    else {
+      let tries = 0;
+      const timer = setInterval(() => {
+        if (getMap() || tries > 50) { clearInterval(timer); attachHandlers(); }
+        tries++;
+      }, 200);
+    }
   }
 
   // Generic wiring for a per-map fullscreen toggle. Handles icon swap,

@@ -543,6 +543,54 @@
       border-color: #d97706;
       color: #7c2d12;
     }
+    /* Fullscreen-only floating search box. Anchored top-left of the map;
+       hidden inline (display:none) and revealed with flex layout when the
+       wrap enters fullscreen mode. Feeds into the same worldSearchTerm
+       state as the inline search input below the map. */
+    .db-map-fs-search {
+      display: none;
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      z-index: 1200;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+      min-width: 320px;
+      max-width: 420px;
+    }
+    .db-map-world-wrap.is-fullscreen .db-map-fs-search {
+      display: inline-flex;
+    }
+    .db-map-fs-search svg {
+      width: 16px; height: 16px;
+      color: #52525b;
+      flex-shrink: 0;
+    }
+    .db-map-fs-search input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 0.95rem;
+      color: #18181b;
+      padding: 2px 0;
+    }
+    .db-map-fs-search input::placeholder { color: #71717a; }
+    .db-map-fs-search__clear {
+      background: transparent;
+      border: none;
+      color: #71717a;
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+    .db-map-fs-search__clear:hover { color: #18181b; }
     /* When draw mode is armed on the world map, swap the cursor to a
        crosshair over the map surface and suppress Leaflet's default drag
        cursor. Rules only apply while .is-drawing is set, so normal panning
@@ -3093,6 +3141,16 @@
         <div class="db-world-wide">
           <div class="db-map-world-wrap" data-db-map-world-wrap>
             <div id="db-map-world" role="application" aria-label="World map of iTaukei graduate studies"></div>
+            <!-- Fullscreen-only floating search box. Hidden inline (via CSS)
+                 and revealed when .db-map-world-wrap.is-fullscreen is set.
+                 Types into the same worldSearchTerm state as the below-map
+                 search input, so hits highlight countries in the map exactly
+                 the same way. -->
+            <label class="db-map-fs-search" data-db-map-fs-search-wrap>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+              <input type="search" placeholder="Search country, university, or scholar…" data-db-map-fs-search aria-label="Search countries, universities, and scholars" />
+              <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
+            </label>
             <button type="button" class="db-map-fs-btn db-map-draw-btn" data-db-map-draw-btn
                     aria-label="Draw a box to zoom"
                     title="Draw a rectangle on the map to zoom to that area"
@@ -3734,6 +3792,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-16" defer></script>
+<script src="js/itaukei-database.js?v=20260709-17" defer></script>
 </body>
 </html>
