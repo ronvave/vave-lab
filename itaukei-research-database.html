@@ -545,6 +545,8 @@
       z-index: 1200;
       align-items: center;
       gap: 8px;
+      /* Anchor for the multi-degree dropdown. Dropdown is positioned
+         absolute inside this label so it hangs under the search input. */
       padding: 8px 12px;
       background: rgba(255, 255, 255, 0.96);
       border: 1px solid #d4d4d8;
@@ -581,6 +583,49 @@
       padding: 0 4px;
     }
     .db-map-fs-search__clear:hover { color: #18181b; }
+    /* Scholar-multi-degree dropdown. Anchored inside .db-map-fs-search-wrap
+       so it hangs directly under the search input. */
+    .db-map-fs-search-dd {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #ffffff;
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+      padding: 6px;
+      z-index: 1300;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .db-map-fs-search-dd__header {
+      padding: 6px 10px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #18181b;
+      border-bottom: 1px solid #f1f1f1;
+      margin-bottom: 2px;
+    }
+    .db-map-fs-search-dd__item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 8px 10px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: #18181b;
+      font-size: 0.9rem;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .db-map-fs-search-dd__item:hover,
+    .db-map-fs-search-dd__item:focus {
+      background: #f4f4f5;
+      outline: none;
+    }
     /* When the map is fullscreen, hide page scroll behind it. */
     body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
@@ -3793,6 +3838,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-24" defer></script>
+<script src="js/itaukei-database.js?v=20260709-27" defer></script>
 </body>
 </html>

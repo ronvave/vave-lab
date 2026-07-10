@@ -1277,13 +1277,96 @@
   // with a comma separator makes the boundaries between people hard to see.
   // Alternating each person's colour (even = blue, odd = dark) and using
   // semicolons as separators fixes that visual ambiguity per Ron's request.
+  // Shorten a full "First Middle1 Middle2 ... Last" or
+  // "First Middle1 ... Last-Hyphenated" name for display. Rules:
+  //   • First name kept as-is
+  //   • Last token kept as-is (hyphenated surnames are one token, e.g.
+  //     "Tausere-Tiko")
+  //   • Every middle token collapses to its first letter + ".", with all
+  //     middle initials concatenated (no space between them) so
+  //     "Virisila Qolisaya Lidise Puamau" → "Virisila Q.L. Puamau"
+  //   • 2-token names are unchanged ("Ron Vave" → "Ron Vave")
+  //   • Already-initialled middles get a period added if missing
+  //     ("Timaima T Tuvuki" → "Timaima T. Tuvuki")
+  // This is display-only — the original full name is still stored in the
+  // data-scholar-name attribute so search, hover-preselect, and thesis
+  // lookups all continue to work against the full name.
+  // Cached, normalized surname set built from all scholar profiles. Used by
+  // shortenScholarName to recognize compound / hyphenated surnames that
+  // appear space-separated in the graduate-studies feed (e.g. "Tausere Tiko"
+  // → profile last = "Tausere-Tiko"). Rebuilt lazily whenever the profile
+  // map identity changes.
+  const _shortenNameCache = { profileMap: null, lastnames: null, hits: new Map() };
+  function _rebuildShortenIndex() {
+    const pm = (state && state.scholarProfilesByName) || new Map();
+    if (_shortenNameCache.profileMap === pm && _shortenNameCache.lastnames) return;
+    const norm = x => String(x || '').toLowerCase().replace(/[\s\-]+/g, '');
+    const set = new Set();
+    pm.forEach(p => { if (p && p.last) set.add(norm(p.last)); });
+    _shortenNameCache.profileMap = pm;
+    _shortenNameCache.lastnames = set;
+    _shortenNameCache.hits.clear();
+  }
+
+  function shortenScholarName(full) {
+    if (typeof full !== 'string') return '';
+    const s = full.trim();
+    if (!s) return '';
+    _rebuildShortenIndex();
+    const cached = _shortenNameCache.hits.get(s);
+    if (cached !== undefined) return cached;
+    // Strip parenthetical name-variants like "Asesela D. (Asesela Drekeivalu)
+    // Ravuvu" — the parens are metadata, not part of the person's display name.
+    const cleaned = s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const toks = cleaned.split(/\s+/);
+    if (toks.length < 3) {
+      _shortenNameCache.hits.set(s, cleaned);
+      return cleaned;
+    }
+    const first = toks[0];
+    let last  = toks[toks.length - 1];
+    let middleTokens = toks.slice(1, -1);
+    // Compound-surname absorb: look for the longest trailing group of tokens
+    // (up to 3) that matches a known scholar-profile surname when hyphens/
+    // spaces are normalized away. So "Tausere Tiko" → "Tausere-Tiko" (2 tokens
+    // absorbed as one compound last name).
+    const normalize = x => String(x || '').toLowerCase().replace(/[\s\-]+/g, '');
+    for (let take = Math.min(3, middleTokens.length + 1); take >= 2; take--) {
+      const candidate = toks.slice(toks.length - take).join(' ');
+      if (_shortenNameCache.lastnames.has(normalize(candidate))) {
+        // Reconstruct the display form: prefer the profile's canonical form
+        // (hyphenated) when we can find it, so the popup renders exactly like
+        // the scholar card.
+        let display = candidate;
+        _shortenNameCache.profileMap.forEach(p => {
+          if (p && p.last && normalize(p.last) === normalize(candidate)) {
+            display = p.last;
+          }
+        });
+        last = display;
+        middleTokens = toks.slice(1, toks.length - take);
+        break;
+      }
+    }
+    const initials = middleTokens.map(t => {
+      // Grab the first alphanumeric character. "T." → "T", "T" → "T".
+      const m = t.match(/[\p{L}\p{N}]/u);
+      return m ? (m[0].toUpperCase() + '.') : '';
+    }).filter(Boolean).join('');
+    const out = initials ? `${first} ${initials} ${last}` : `${first} ${last}`;
+    _shortenNameCache.hits.set(s, out);
+    return out;
+  }
+
   function renderScholarNameList(names) {
     if (!names || !names.length) return '';
     const parts = names.map((n, i) => {
       const cls = (i % 2 === 0) ? 'is-blue' : 'is-dark';
-      // data-scholar-name lets popup mouseover handlers look up the person's
-      // thesis title + year and reveal the expanded detail slot.
-      return `<span class="db-scholar-name ${cls}" data-scholar-name="${escapeHtml(n)}">${escapeHtml(n)}</span>`;
+      // data-scholar-name keeps the FULL name so popup mouseover handlers can
+      // look up the person's thesis + reveal the detail slot, and so search
+      // still matches on middle names. Only the visible text is shortened.
+      const shown = shortenScholarName(n);
+      return `<span class="db-scholar-name ${cls}" data-scholar-name="${escapeHtml(n)}">${escapeHtml(shown)}</span>`;
     });
     return `<span class="db-scholar-list">${parts.join('<span class="db-scholar-sep">;</span>')}</span>`;
   }
@@ -1503,7 +1586,7 @@
         detail.innerHTML =
           photoHtml +
           `<div class="db-popup-scholar-detail__body">` +
-            `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
+            `<div class="db-popup-scholar-detail__name">${escapeHtml(shortenScholarName(nm))} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
             villageLine +
             `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
           `</div>`;
@@ -1628,6 +1711,177 @@
     if (uniBack) {
       uniBack.addEventListener('click', (e) => { e.preventDefault(); clearWorldUniversity(); });
     }
+    // ------------------------------------------------------------------
+    // Shared search-execute helper.
+    //
+    // When the user hits Enter in either search box, we want a scholar-first
+    // experience: if the query resolves to a specific scholar we should zoom
+    // straight to their university and pre-open the popup with their name
+    // pre-selected (photo + thesis visible without hover). If the scholar has
+    // 2+ degrees at different universities, we pop a small dropdown so they
+    // can pick which one. Only when the query doesn't match a single scholar
+    // do we fall back to the classic country/university substring behaviour.
+    // ------------------------------------------------------------------
+    function executeWorldSearch(rawQ, dropdownAnchor) {
+      const q = (rawQ || '').trim().toLowerCase();
+      if (!q) return;
+      const m = state.worldMap;
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const points = grad.worldPoints || [];
+      if (!m || !points.length) return;
+
+      // --- Step 1: scholar-first index ---------------------------------
+      // Build the set of (scholar, point, level) triples whose scholar name
+      // matches the query. "Matches" = case-insensitive substring on the
+      // scholar name as it appears in worldPoints.
+      const scholarHits = [];
+      points.forEach(p => {
+        const walk = (list, level) => {
+          if (!list) return;
+          list.forEach(n => {
+            if ((n || '').toLowerCase().includes(q)) {
+              scholarHits.push({ point: p, level, name: n });
+            }
+          });
+        };
+        walk(p.phdScholars, 'PhD');
+        walk(p.mastersScholars, "Master's");
+        walk(p.unknownScholars, 'Other');
+      });
+
+      // Group hits by canonical scholar name. Substring queries like "vave"
+      // could match one person under multiple spellings — but each entry
+      // in worldPoints uses the graduate-studies canonical form so we can
+      // group by the raw name string safely.
+      const byScholar = new Map();
+      scholarHits.forEach(h => {
+        if (!byScholar.has(h.name)) byScholar.set(h.name, []);
+        byScholar.get(h.name).push(h);
+      });
+
+      // Scholar-first behaviour only kicks in when the query resolves to
+      // exactly one scholar. If several scholars share the substring (e.g.
+      // typing just a common surname), fall through to the classic branch
+      // so the user sees all their universities.
+      if (byScholar.size === 1) {
+        const [name, hits] = byScholar.entries().next().value;
+        if (hits.length === 1) {
+          zoomAndPreselect(m, hits[0].point, name);
+          hideSearchDropdown(dropdownAnchor);
+          return;
+        }
+        // Multiple degrees for the same scholar — show dropdown.
+        showSearchDropdown(dropdownAnchor, name, hits, (chosen) => {
+          zoomAndPreselect(m, chosen.point, name);
+          hideSearchDropdown(dropdownAnchor);
+        });
+        return;
+      }
+
+      // --- Step 2: classic country/university/scholar substring --------
+      hideSearchDropdown(dropdownAnchor);
+      const matches = points.filter(p => {
+        if ((p.country || '').toLowerCase().includes(q)) return true;
+        if ((p.university || '').toLowerCase().includes(q)) return true;
+        const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
+        for (const list of lists) {
+          if (!list) continue;
+          for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
+        }
+        return false;
+      });
+      if (matches.length === 0) return;
+      if (matches.length === 1) {
+        const p = matches[0];
+        m.setView([p.lat, p.lng], 6, { animate: true });
+        setTimeout(() => openMarkerPopupAt(m, p), 320);
+      } else {
+        const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
+        m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
+      }
+    }
+
+    // Find and open the popup for the circle marker at a given point, then
+    // return the popup DOM node once it's rendered.
+    function openMarkerPopupAt(m, p, cb) {
+      let opened = false;
+      m.eachLayer(layer => {
+        if (opened) return;
+        if (layer && layer.getLatLng && layer.getPopup) {
+          const ll = layer.getLatLng();
+          if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
+            layer.openPopup();
+            opened = true;
+            if (cb) setTimeout(() => cb(layer.getPopup().getElement()), 120);
+          }
+        }
+      });
+    }
+
+    // Zoom to a point, open its popup, then dispatch mouseenter on the
+    // matching scholar's name link so the detail slot pre-populates without
+    // requiring the user to hover.
+    function zoomAndPreselect(m, point, scholarName) {
+      m.setView([point.lat, point.lng], 6, { animate: true });
+      setTimeout(() => {
+        openMarkerPopupAt(m, point, (popupEl) => {
+          if (!popupEl) return;
+          const target = String(scholarName || '').toLowerCase();
+          const links = popupEl.querySelectorAll('.db-scholar-name[data-scholar-name]');
+          for (const el of links) {
+            const nm = (el.getAttribute('data-scholar-name') || '').toLowerCase();
+            if (nm === target) {
+              el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+              // Preselection is sticky: block the popup's default mouseleave
+              // clear so the detail slot stays visible until the user hovers
+              // another name or closes the popup.
+              el.addEventListener('mouseleave', (ev) => ev.stopImmediatePropagation(), { capture: true, once: true });
+              return;
+            }
+          }
+          // If exact match failed (rare — casing / whitespace drift), fall back
+          // to substring match against the query.
+          for (const el of links) {
+            const nm = (el.getAttribute('data-scholar-name') || '').toLowerCase();
+            if (nm.includes(target)) {
+              el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+              el.addEventListener('mouseleave', (ev) => ev.stopImmediatePropagation(), { capture: true, once: true });
+              return;
+            }
+          }
+        });
+      }, 320);
+    }
+
+    // Dropdown shown when a single scholar has 2+ degree entries. Anchored
+    // under the search box that triggered the query.
+    function showSearchDropdown(anchor, scholarName, hits, onPick) {
+      if (!anchor) return;
+      hideSearchDropdown(anchor);
+      const dd = document.createElement('div');
+      dd.className = 'db-map-fs-search-dd';
+      dd.setAttribute('data-db-map-fs-search-dd', '');
+      const header = document.createElement('div');
+      header.className = 'db-map-fs-search-dd__header';
+      // Header shows the shortened name for consistency with the popup lists.
+      header.textContent = `${shortenScholarName(scholarName)} \u2014 pick a degree:`;
+      dd.appendChild(header);
+      hits.forEach(h => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'db-map-fs-search-dd__item';
+        btn.textContent = `${h.point.country} \u2013 ${h.level} \u2013 ${h.point.university}`;
+        btn.addEventListener('click', () => onPick(h));
+        dd.appendChild(btn);
+      });
+      anchor.appendChild(dd);
+    }
+    function hideSearchDropdown(anchor) {
+      if (!anchor) return;
+      const existing = anchor.querySelector('[data-db-map-fs-search-dd]');
+      if (existing) existing.remove();
+    }
+
     // Search box above the country list — filters by country name, university
     // name, or scholar name substring. Any match at any level is kept.
     const searchInput = document.querySelector('[data-world-search]');
@@ -1638,48 +1892,16 @@
         if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
         renderWorldPanel();
       });
-      // Pressing Enter in the inline search does the same map action as the
-      // fullscreen search: fit or zoom to matching universities.
+      // Pressing Enter delegates to the shared scholar-first executor.
+      // The inline search doesn't have a floating anchor for dropdowns —
+      // when the user has multiple degrees we anchor to the fullscreen box
+      // instead (opening fullscreen isn't automatic, so the dropdown just
+      // opens under whichever box the user last used).
       searchInput.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
-        const q = (searchInput.value || '').trim().toLowerCase();
-        if (!q) return;
-        const m = state.worldMap;
-        const grad = state.graduateStudies || { worldPoints: [] };
-        const points = grad.worldPoints || [];
-        if (!m || !points.length) return;
-        const matches = points.filter(p => {
-          if ((p.country || '').toLowerCase().includes(q)) return true;
-          if ((p.university || '').toLowerCase().includes(q)) return true;
-          const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
-          for (const list of lists) {
-            if (!list) continue;
-            for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
-          }
-          return false;
-        });
-        if (matches.length === 0) return;
-        if (matches.length === 1) {
-          const p = matches[0];
-          m.setView([p.lat, p.lng], 6, { animate: true });
-          setTimeout(() => {
-            let opened = false;
-            m.eachLayer(layer => {
-              if (opened) return;
-              if (layer && layer.getLatLng && layer.getPopup) {
-                const ll = layer.getLatLng();
-                if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
-                  layer.openPopup();
-                  opened = true;
-                }
-              }
-            });
-          }, 320);
-        } else {
-          const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
-          m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
-        }
+        const fsAnchor = document.querySelector('[data-db-map-fs-search-wrap]');
+        executeWorldSearch(searchInput.value, fsAnchor);
       });
     }
     if (searchClear) {
@@ -1709,54 +1931,13 @@
         if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
         renderWorldPanel();
       });
-      // Enter fires the actual map action: locate all worldPoints whose country,
-      // university, or scholar name matches the query and zoom the map to fit
-      // them. Single match -> zoom in tight and open its popup. Multiple ->
-      // fitBounds. Zero -> no-op (search box already shows the empty state via
-      // its clear icon; nothing to do on the map).
+      // Enter delegates to the shared scholar-first executor. The fullscreen
+      // search wrapper is the dropdown anchor for the multi-degree case.
       fsSearchInput.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter') return;
         e.preventDefault();
-        const q = (fsSearchInput.value || '').trim().toLowerCase();
-        if (!q) return;
-        const m = state.worldMap;
-        const grad = state.graduateStudies || { worldPoints: [] };
-        const points = grad.worldPoints || [];
-        if (!m || !points.length) return;
-        const matches = points.filter(p => {
-          if ((p.country || '').toLowerCase().includes(q)) return true;
-          if ((p.university || '').toLowerCase().includes(q)) return true;
-          const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
-          for (const list of lists) {
-            if (!list) continue;
-            for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
-          }
-          return false;
-        });
-        if (matches.length === 0) return;
-        if (matches.length === 1) {
-          const p = matches[0];
-          m.setView([p.lat, p.lng], 6, { animate: true });
-          // Give the pan/zoom a beat before hunting for the marker; the layer
-          // is redrawn on every render but the circle at [p.lat, p.lng] with
-          // dx=0 offset is the canonical one to open.
-          setTimeout(() => {
-            let opened = false;
-            m.eachLayer(layer => {
-              if (opened) return;
-              if (layer && layer.getLatLng && layer.getPopup) {
-                const ll = layer.getLatLng();
-                if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
-                  layer.openPopup();
-                  opened = true;
-                }
-              }
-            });
-          }, 320);
-        } else {
-          const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
-          m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
-        }
+        const fsAnchor = document.querySelector('[data-db-map-fs-search-wrap]');
+        executeWorldSearch(fsSearchInput.value, fsAnchor);
       });
     }
     if (fsSearchClear) {
