@@ -1366,9 +1366,62 @@
         const title = rec.title || '(untitled)';
         const year = rec.year || '';
         const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
+        // Pull the same profile record the rest of the site uses for scholar
+        // cards, so the popup's photo / village / province stay in sync with
+        // every other view (main database, admin editor, panel filters).
+        const profile = (state.scholarProfilesByName && state.scholarProfilesByName.get(nm)) || {};
+        const village  = (profile.village || '').trim();
+        const province = effectivePaternalProvince(profile);
+        const slug     = (profile.slug || '').trim();
+        // Village + province chip. Ron's convention is to store the village
+        // with an optional island suffix already in parens, e.g.
+        // "Rukua vlg (Beqa Is)" for island villages, or plain "Naduri vlg"
+        // for mainland villages. In the popup we always want exactly one set
+        // of parens — reserved for the province — with the island (if any)
+        // rendered as a comma-separated suffix on the village. So an island
+        // village becomes "Rukua vlg, Beqa Is (Rewa)" and a mainland village
+        // becomes "Naduri vlg (Macuata)". Renders as a link when we have a
+        // slug so clicking deep-links to the scholar's card; renders as
+        // plain text when the profile isn't linkable. If both village and
+        // province are blank, the chip is omitted entirely.
+        function mergeVillageProvince(v, p) {
+          // Split off an existing trailing "(...)" from the village so we can
+          // reuse whatever's inside as an island / locality note.
+          let vBase = v;
+          let vNote = '';
+          if (v) {
+            const m = v.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+            if (m) {
+              vBase = m[1].trim();
+              vNote = m[2].trim();
+            }
+          }
+          const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
+          if (left && p) return `${left} (${p})`;
+          if (left)     return left;
+          if (p)        return `(${p})`;
+          return '';
+        }
+        let locChip = '';
+        if (village || province) {
+          const label = escapeHtml(mergeVillageProvince(village, province));
+          locChip = slug
+            ? ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></span>`
+            : ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village">${label}</span>`;
+        }
+        // Photo column: always rendered in the DOM but hidden via CSS unless
+        // the world map is in fullscreen mode (see .db-popup-scholar-detail__photo
+        // display rule). This keeps the inline popup compact and avoids a
+        // second DOM path for fullscreen rendering.
+        const photoStyle = profile.photo
+          ? `style="background-image:url('${escapeAttr(profile.photo)}')"`
+          : '';
         detail.innerHTML =
-          `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} · ${level}${year ? ' · <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
-          `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>`;
+          `<div class="db-popup-scholar-detail__photo" ${photoStyle} aria-hidden="true"></div>` +
+          `<div class="db-popup-scholar-detail__body">` +
+            `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}${locChip}</div>` +
+            `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
+          `</div>`;
         detail.classList.add('is-active');
       });
       nameEl.addEventListener('mouseleave', () => {
@@ -1567,6 +1620,7 @@
     // or right and the map keeps going instead of hitting a wall or
     // slicing Fiji. We also re-render the marker layer with duplicate
     // copies at ±360° longitude so dots appear in every world copy.
+    wireWorldMapDrawToZoom();
     wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
       onOpen: () => {
         const m = state.worldMap; if (!m) return;
@@ -1606,6 +1660,144 @@
 
   const MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';
   const MAP_FS_COLLAPSE_SVG = '<path d="M9 4v5H4"/><path d="M15 4v5h5"/><path d="M9 20v-5H4"/><path d="M15 20v-5h5"/>';
+
+  // Draw-a-rectangle-to-zoom tool for the fullscreen world map. When armed,
+  // the map's built-in drag is temporarily disabled and a mousedown+drag on
+  // the map surface draws a dashed rubber-band. On mouseup, the map fits its
+  // bounds to the drawn box and draw mode disarms. Idempotent — second call
+  // is a no-op via the wrap.dataset.dbMapDrawWired flag.
+  function wireWorldMapDrawToZoom() {
+    const wrap = document.querySelector('[data-db-map-world-wrap]');
+    const btn  = document.querySelector('[data-db-map-draw-btn]');
+    if (!wrap || !btn || wrap.dataset.dbMapDrawWired === '1') return;
+    wrap.dataset.dbMapDrawWired = '1';
+
+    let armed = false;         // Draw mode currently active
+    let dragging = false;      // Actively drawing a box
+    let startPt = null;        // {x, y} in wrap-local coords
+    let boxEl = null;          // Rubber-band DOM node
+
+    const getMap = () => state.worldMap;
+
+    // Toggle draw mode on/off. Off state fully cleans up the box, cursor,
+    // and re-enables map dragging so the user can pan again.
+    const setArmed = (on) => {
+      const m = getMap();
+      armed = !!on;
+      wrap.classList.toggle('is-drawing', armed);
+      btn.classList.toggle('is-active', armed);
+      btn.setAttribute('aria-pressed', armed ? 'true' : 'false');
+      btn.setAttribute('title', armed
+        ? 'Draw a rectangle on the map (Esc to cancel)'
+        : 'Draw a rectangle on the map to zoom to that area');
+      if (m) {
+        // Toggle map interactions so the mousedown+drag is captured by our
+        // handlers instead of Leaflet's pan/zoom.
+        if (armed) {
+          m.dragging.disable();
+          m.boxZoom.disable();
+          m.doubleClickZoom.disable();
+        } else {
+          m.dragging.enable();
+          m.boxZoom.enable();
+          m.doubleClickZoom.enable();
+        }
+      }
+      if (!armed) removeBox();
+    };
+
+    const removeBox = () => {
+      if (boxEl && boxEl.parentNode) boxEl.parentNode.removeChild(boxEl);
+      boxEl = null;
+      dragging = false;
+      startPt = null;
+    };
+
+    // Convert a mouse event to wrap-local coordinates. All drawing math is
+    // done relative to the wrap so the rubber-band lines up with the map
+    // regardless of page scroll or zoom.
+    const localXY = (e) => {
+      const r = wrap.getBoundingClientRect();
+      return { x: e.clientX - r.left, y: e.clientY - r.top };
+    };
+
+    btn.addEventListener('click', () => setArmed(!armed));
+
+    // Escape cancels an in-progress draw (or disarms if just armed).
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && armed) {
+        setArmed(false);
+      }
+    });
+
+    wrap.addEventListener('mousedown', (e) => {
+      if (!armed) return;
+      // Only left button.
+      if (e.button !== 0) return;
+      // Ignore clicks on the toolbar buttons themselves.
+      if (e.target.closest('.db-map-fs-btn')) return;
+      dragging = true;
+      startPt = localXY(e);
+      // Fresh box.
+      removeBox();
+      boxEl = document.createElement('div');
+      boxEl.className = 'db-map-draw-box';
+      boxEl.style.left = startPt.x + 'px';
+      boxEl.style.top  = startPt.y + 'px';
+      boxEl.style.width  = '0px';
+      boxEl.style.height = '0px';
+      wrap.appendChild(boxEl);
+      e.preventDefault();
+    });
+
+    wrap.addEventListener('mousemove', (e) => {
+      if (!armed || !dragging || !startPt || !boxEl) return;
+      const cur = localXY(e);
+      const x = Math.min(startPt.x, cur.x);
+      const y = Math.min(startPt.y, cur.y);
+      const w = Math.abs(cur.x - startPt.x);
+      const h = Math.abs(cur.y - startPt.y);
+      boxEl.style.left = x + 'px';
+      boxEl.style.top  = y + 'px';
+      boxEl.style.width  = w + 'px';
+      boxEl.style.height = h + 'px';
+    });
+
+    // On mouseup, translate the pixel box into geographic bounds and fit the
+    // map to it. Ignore tiny boxes (< 8px in either dimension) so accidental
+    // clicks don't launch a zoom.
+    const finish = (e) => {
+      if (!armed || !dragging) return;
+      const m = getMap();
+      const box = boxEl;
+      removeBox();
+      if (!m || !box) { return; }
+      const endPt = e ? localXY(e) : null;
+      if (!endPt || !startPt) { setArmed(false); return; }
+      const w = Math.abs(endPt.x - startPt.x);
+      const h = Math.abs(endPt.y - startPt.y);
+      if (w < 8 || h < 8) { setArmed(false); return; }
+      // Convert wrap-local corners to map container coordinates. #db-map-world
+      // sits at 0,0 inside the wrap in fullscreen, but be robust anyway.
+      const mapEl = m.getContainer();
+      const wrapRect = wrap.getBoundingClientRect();
+      const mapRect  = mapEl.getBoundingClientRect();
+      const offX = mapRect.left - wrapRect.left;
+      const offY = mapRect.top  - wrapRect.top;
+      const p1 = L.point(startPt.x - offX, startPt.y - offY);
+      const p2 = L.point(endPt.x   - offX, endPt.y   - offY);
+      try {
+        const ll1 = m.containerPointToLatLng(p1);
+        const ll2 = m.containerPointToLatLng(p2);
+        const bounds = L.latLngBounds(ll1, ll2);
+        m.fitBounds(bounds, { padding: [30, 30], animate: true });
+      } catch (_) {}
+      setArmed(false);
+    };
+
+    wrap.addEventListener('mouseup',   finish);
+    wrap.addEventListener('mouseleave', () => { if (dragging) { removeBox(); setArmed(false); } });
+  }
 
   // Generic wiring for a per-map fullscreen toggle. Handles icon swap,
   // aria-pressed/label sync, Esc-to-exit, body scroll lock, deferred
