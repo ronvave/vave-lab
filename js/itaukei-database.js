@@ -1407,17 +1407,27 @@
         function lookupProfile(name) {
           const map = state.scholarProfilesByName;
           if (!map || !name) return null;
-          let hit = map.get(name);
+          const aliases = state.nameAliases || new Map();
+          // Try alias resolution on the "Last, First" form first: many popup
+          // names arrive as "Lavinia Sauleca Tausere Tiko" while the profile
+          // is keyed "Tausere-Tiko, Lavinia" — the admin's alias map bridges
+          // that (e.g. "Tiko, Lavinia" → "Tausere-Tiko, Lavinia").
+          function resolveAlias(k) {
+            return aliases.get(k) || k;
+          }
+          let hit = map.get(name) || map.get(resolveAlias(name));
           if (hit) return hit;
           const parts = String(name).trim().split(/\s+/);
           if (parts.length >= 2) {
             const last  = parts[parts.length - 1];
             const first = parts.slice(0, -1).join(' ');
-            hit = map.get(`${last}, ${first}`);
+            const lastFirst = `${last}, ${first}`;
+            hit = map.get(lastFirst) || map.get(resolveAlias(lastFirst));
             if (hit) return hit;
             // Stripped: only the first given name.
             const firstTok = parts[0];
-            hit = map.get(`${last}, ${firstTok}`);
+            const lastFirstTok = `${last}, ${firstTok}`;
+            hit = map.get(lastFirstTok) || map.get(resolveAlias(lastFirstTok));
             if (hit) return hit;
           }
           return null;
