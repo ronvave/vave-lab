@@ -558,32 +558,68 @@
     .db-map-world-wrap.is-fullscreen .db-map-fs-btn {
       top: 14px; right: 14px;
     }
-    /* Fullscreen-only floating search box. Anchored top-center of the map so
-       it clears the top-left zoom controls and the top-right fullscreen /
-       draw buttons. Hidden inline (display:none) and revealed with flex
-       layout when the wrap enters fullscreen mode. Feeds into the same
-       worldSearchTerm state as the inline search input below the map. */
-    .db-map-fs-search {
+    /* Fullscreen-only floating toolbar. Sits top-center as a horizontal row
+       containing: search box → confederacy/province filter → stat readout.
+       Centered as a group so no single control is off-axis. Hidden inline
+       and revealed only when the wrap enters fullscreen. */
+    .db-map-fs-toolbar {
       display: none;
       position: absolute;
       top: 14px;
+      left: 70px;
+      right: 130px;
+      z-index: 1200;
+      align-items: stretch;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .db-map-fs-toolbar > * {
+      pointer-events: auto;
+    }
+    .db-map-world-wrap.is-fullscreen .db-map-fs-toolbar {
+      display: flex;
+    }
+
+    /* Coverage note — shows below the toolbar when the sector or
+       institutions-of-work filter is active, so users understand why
+       counts drop (those fields are only filled on curated profiles). */
+    .db-map-fs-coverage {
+      display: none;
+      position: absolute;
+      top: 78px;
       left: 50%;
       transform: translateX(-50%);
       z-index: 1200;
+      max-width: calc(100vw - 220px);
+      padding: 6px 12px;
+      background: rgba(255, 251, 235, 0.98);
+      border: 1px solid #F5D68A;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      font-size: 0.82rem;
+      color: #7A5A00;
+      text-align: center;
+    }
+    .db-map-world-wrap.is-fullscreen .db-map-fs-coverage:not([hidden]) {
+      display: inline-block;
+    }
+
+    /* Fullscreen search box — first child of the toolbar. Anchor for the
+       scholar-picker dropdown. Now flex-child, no longer self-centered. */
+    .db-map-fs-search {
+      display: inline-flex;
+      position: relative;
       align-items: center;
       gap: 8px;
-      /* Anchor for the multi-degree dropdown. Dropdown is positioned
-         absolute inside this label so it hangs under the search input. */
       padding: 8px 12px;
       background: rgba(255, 255, 255, 0.96);
       border: 1px solid #d4d4d8;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.10);
-      min-width: 320px;
-      max-width: 420px;
-    }
-    .db-map-world-wrap.is-fullscreen .db-map-fs-search {
-      display: inline-flex;
+      min-width: 220px;
+      max-width: 260px;
     }
     .db-map-fs-search svg {
       width: 16px; height: 16px;
@@ -723,6 +759,172 @@
       border-color: #d4d4d8;
       outline: none;
     }
+
+    /* Confederacy / Province filter dropdown — second toolbar cell. Button
+       toggles a two-column panel: left column lists confederacies with
+       scholar counts; hovering a confederacy reveals its provinces in the
+       right column. Selecting either applies a filter to the map. */
+    .db-map-fs-conf {
+      position: relative;
+      display: inline-flex;
+      align-items: stretch;
+    }
+    .db-map-fs-conf__btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+      font: inherit;
+      font-size: 0.95rem;
+      color: #18181b;
+      cursor: pointer;
+      min-width: 180px;
+      max-width: 260px;
+      white-space: nowrap;
+    }
+    .db-map-fs-conf__btn svg { width: 14px; height: 14px; color: #52525b; flex-shrink: 0; }
+    .db-map-fs-conf__btn:hover, .db-map-fs-conf__btn:focus {
+      border-color: #a1a1aa;
+      outline: none;
+    }
+    .db-map-fs-conf.is-filtered .db-map-fs-conf__btn {
+      border-color: #01696F;
+      color: #01696F;
+      font-weight: 600;
+    }
+    .db-map-fs-conf__label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .db-map-fs-conf__panel {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      display: flex;
+      background: #ffffff;
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+      z-index: 1300;
+      overflow: hidden;
+    }
+    .db-map-fs-conf__panel[hidden] { display: none; }
+    .db-map-fs-conf__col {
+      display: flex;
+      flex-direction: column;
+      min-width: 200px;
+    }
+    .db-map-fs-conf__col--conf {
+      background: #FBFAF3; /* soft cream, matches mockup */
+      border-right: 1px solid #EEEBD8;
+    }
+    .db-map-fs-conf__col-title {
+      padding: 10px 14px 6px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #52525b;
+    }
+    .db-map-fs-conf__list {
+      display: flex;
+      flex-direction: column;
+      padding: 2px 6px 8px;
+    }
+    .db-map-fs-conf__row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 8px 10px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      border-radius: 6px;
+      font: inherit;
+      font-size: 0.95rem;
+      color: #18181b;
+      text-align: left;
+      width: 100%;
+    }
+    .db-map-fs-conf__row:hover,
+    .db-map-fs-conf__row.is-active {
+      background: rgba(1, 105, 111, 0.08);
+    }
+    .db-map-fs-conf__row.is-selected {
+      background: rgba(1, 105, 111, 0.14);
+      color: #01696F;
+      font-weight: 600;
+    }
+    .db-map-fs-conf__row-count {
+      color: #71717a;
+      font-size: 0.85rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .db-map-fs-conf__row.is-selected .db-map-fs-conf__row-count { color: #01696F; }
+    .db-map-fs-conf__row-caret {
+      color: #a1a1aa;
+      margin-left: 2px;
+    }
+
+    /* Single-column variant used by the Sector dropdown. */
+    .db-map-fs-conf__panel--single .db-map-fs-conf__col { min-width: 220px; }
+
+    /* Simple wrapper class (no relative-position side dropdown) for the
+       Sector button. Behaves the same as .db-map-fs-conf visually. */
+    .db-map-fs-simple {
+      position: relative;
+      display: inline-flex;
+      align-items: stretch;
+    }
+    .db-map-fs-simple.is-filtered .db-map-fs-conf__btn {
+      border-color: #01696F;
+      color: #01696F;
+      font-weight: 600;
+    }
+    .db-map-fs-conf.is-filtered .db-map-fs-conf__btn {
+      /* redundant declaration but keeps the two wrappers visually consistent */
+    }
+
+    /* Stat readout (Countries / Universities / Scholars) — third toolbar
+       cell. Updates live as the search + confederacy filters change. */
+    .db-map-fs-stats {
+      display: inline-flex;
+      align-items: stretch;
+      gap: 0;
+      padding: 6px 4px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.10);
+    }
+    .db-map-fs-stats__cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2px 14px;
+      min-width: 70px;
+      border-right: 1px solid #ECECEC;
+    }
+    .db-map-fs-stats__cell:last-child { border-right: none; }
+    .db-map-fs-stats__num {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #01696F;
+      font-variant-numeric: tabular-nums lining-nums;
+      line-height: 1.1;
+    }
+    .db-map-fs-stats__label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #52525b;
+      margin-top: 2px;
+    }
+
     /* When the map is fullscreen, hide page scroll behind it. */
     body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
@@ -3302,16 +3504,78 @@
         <div class="db-world-wide">
           <div class="db-map-world-wrap" data-db-map-world-wrap>
             <div id="db-map-world" role="application" aria-label="World map of iTaukei graduate studies"></div>
-            <!-- Fullscreen-only floating search box. Hidden inline (via CSS)
-                 and revealed when .db-map-world-wrap.is-fullscreen is set.
-                 Types into the same worldSearchTerm state as the below-map
-                 search input, so hits highlight countries in the map exactly
-                 the same way. -->
-            <label class="db-map-fs-search" data-db-map-fs-search-wrap>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-              <input type="search" placeholder="Search country, university, or scholar…" data-db-map-fs-search aria-label="Search countries, universities, and scholars" />
-              <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
-            </label>
+            <!-- Fullscreen-only floating toolbar. Hidden inline (via CSS) and
+                 revealed when .db-map-world-wrap.is-fullscreen is set. Holds
+                 the search box, the confederacy/province filter, and the
+                 (countries / universities / scholars) stat readout — all
+                 centered as a single row across the top of the fullscreen
+                 map. -->
+            <div class="db-map-fs-toolbar" data-db-map-fs-toolbar>
+              <label class="db-map-fs-search" data-db-map-fs-search-wrap>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="search" placeholder="Search country, university, or scholar…" data-db-map-fs-search aria-label="Search countries, universities, and scholars" />
+                <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
+              </label>
+              <div class="db-map-fs-conf" data-db-map-fs-conf>
+                <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-conf-btn aria-haspopup="true" aria-expanded="false">
+                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All confederacies</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="db-map-fs-conf__panel" data-db-map-fs-conf-panel role="menu" hidden>
+                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
+                    <div class="db-map-fs-conf__col-title">Confederacy</div>
+                    <div class="db-map-fs-conf__list" data-db-map-fs-conf-list></div>
+                  </div>
+                  <div class="db-map-fs-conf__col db-map-fs-conf__col--prov" data-db-map-fs-conf-prov-col>
+                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Provinces</div>
+                    <div class="db-map-fs-conf__list" data-db-map-fs-conf-prov-list></div>
+                  </div>
+                </div>
+              </div>
+              <div class="db-map-fs-simple" data-db-map-fs-sector>
+                <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-sector-btn aria-haspopup="true" aria-expanded="false">
+                  <span class="db-map-fs-conf__label" data-db-map-fs-sector-label>All sectors</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="db-map-fs-conf__panel db-map-fs-conf__panel--single" data-db-map-fs-sector-panel role="menu" hidden>
+                  <div class="db-map-fs-conf__col">
+                    <div class="db-map-fs-conf__col-title">Sector</div>
+                    <div class="db-map-fs-conf__list" data-db-map-fs-sector-list></div>
+                  </div>
+                </div>
+              </div>
+              <div class="db-map-fs-conf" data-db-map-fs-work>
+                <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-work-btn aria-haspopup="true" aria-expanded="false">
+                  <span class="db-map-fs-conf__label" data-db-map-fs-work-label>All institutions of work</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                </button>
+                <div class="db-map-fs-conf__panel" data-db-map-fs-work-panel role="menu" hidden>
+                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
+                    <div class="db-map-fs-conf__col-title">Country</div>
+                    <div class="db-map-fs-conf__list" data-db-map-fs-work-country-list></div>
+                  </div>
+                  <div class="db-map-fs-conf__col db-map-fs-conf__col--prov" data-db-map-fs-work-inst-col>
+                    <div class="db-map-fs-conf__col-title" data-db-map-fs-work-inst-title>Institutions</div>
+                    <div class="db-map-fs-conf__list" data-db-map-fs-work-inst-list></div>
+                  </div>
+                </div>
+              </div>
+              <div class="db-map-fs-stats" data-db-map-fs-stats aria-live="polite">
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-countries>0</span>
+                  <span class="db-map-fs-stats__label">Countries</span>
+                </div>
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-unis>0</span>
+                  <span class="db-map-fs-stats__label">Universities</span>
+                </div>
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-scholars>0</span>
+                  <span class="db-map-fs-stats__label">Scholars</span>
+                </div>
+              </div>
+            </div>
+            <div class="db-map-fs-coverage" data-db-map-fs-coverage hidden></div>
             <button type="button" class="db-map-reset-btn" data-db-map-reset-btn
                     aria-label="Reset map view"
                     title="Reset map to default world view">
@@ -3951,6 +4215,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260710-03" defer></script>
+<script src="js/itaukei-database.js?v=20260710-04" defer></script>
 </body>
 </html>

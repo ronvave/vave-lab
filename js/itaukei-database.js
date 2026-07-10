@@ -1198,6 +1198,15 @@
   const WORLD_MAP_DEFAULT_CENTER = [15, 30];
   const WORLD_MAP_DEFAULT_ZOOM = 1;
 
+  // Fullscreen framing bounds — Pacific-centred rectangle wide enough to show
+  // Iceland/UK on the left through the Americas on the right. Ron's image-3
+  // reference: no cutoffs, room for future markers anywhere on the globe.
+  // Latitude band [-58, 62] keeps NZ and Iceland in frame while cropping the
+  // otherwise empty polar caps; longitude band [-140, 260] spans a full
+  // 400° window so the map shows more than one world width and every land
+  // mass stays visible without wrapping surprise.
+  const WORLD_MAP_FS_FIT_BOUNDS = [[-58, -140], [62, 260]];
+
   // -------- World-filter helpers --------
   // When a country or university is clicked in Panel B2, we filter every
   // downstream data panel (B1, C1, C2, D, E, F, G) to only items authored by
@@ -2204,6 +2213,9 @@
         m.setMaxBounds(null);
         m.options.worldCopyJump = true;
         state.worldMapFullscreen = true;
+        // Wire the fullscreen toolbar (idempotent) now that we know the
+        // graduate-studies data + scholar profiles are loaded.
+        try { wireWorldMapFilters(); } catch (e) { console.error('wireWorldMapFilters', e); }
         // Re-render markers so each point has copies in the adjacent
         // world panels (-360, 0, +360). Without this, dragging past
         // the antimeridian would show blank continents.
@@ -2213,7 +2225,7 @@
         // zoom that makes this rectangle fill the container; because
         // we widened the viewport to 16:9, the resulting view fills
         // the screen with no empty backdrop.
-        m.fitBounds([[-55, 60], [60, 260]], { animate: false, padding: [0, 0] });
+        m.fitBounds(WORLD_MAP_FS_FIT_BOUNDS, { animate: false, padding: [0, 0] });
       },
       onClose: () => {
         const m = state.worldMap; if (!m) return;
@@ -2239,8 +2251,18 @@
         e.stopPropagation();
         const m = state.worldMap; if (!m) return;
         m.closePopup();
+        // Clear every fullscreen filter (confederacy, province, sector,
+        // work country, work institution) so Reset truly returns the map
+        // to its clean-slate default.
+        state.worldConfFilter = null;
+        state.worldProvFilter = null;
+        state.worldSectorFilter = null;
+        state.worldWorkCountry = null;
+        state.worldWorkInst = null;
+        renderWorldMap();
+        try { refreshConfDropdownUi(); refreshSectorDropdownUi(); refreshWorkDropdownUi(); } catch (_) {}
         if (worldWrap.classList.contains('is-fullscreen')) {
-          m.fitBounds([[-55, 60], [60, 260]], { animate: true, padding: [0, 0] });
+          m.fitBounds(WORLD_MAP_FS_FIT_BOUNDS, { animate: true, padding: [0, 0] });
         } else {
           m.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM, { animate: true });
         }
@@ -2445,12 +2467,153 @@
     });
   }
 
+  // -------- Fullscreen world-map filter helpers (Popup v11) --------
+  // Filter state for the fullscreen toolbar. All null/'' means "no filter".
+  // These sit alongside the search term (state.worldSearchTerm) — the
+  // renderWorldMap pipeline applies every active filter in AND fashion.
+  state.worldConfFilter    = state.worldConfFilter    || null; // string | null
+  state.worldProvFilter    = state.worldProvFilter    || null; // string | null
+  state.worldSectorFilter  = state.worldSectorFilter  || null; // string | null
+  state.worldWorkCountry   = state.worldWorkCountry   || null; // string | null
+  state.worldWorkInst      = state.worldWorkInst      || null; // string | null
+
+  // Province → confederacy lookup (14 Fijian provinces + Rotuma). Ra is in
+  // Kubuna; Rotuma is Tovata-adjacent but historically listed under Tovata
+  // in the dashboard's confederacy tallies.
+  const PROVINCE_TO_CONFEDERACY = {
+    'Kadavu':         'Burebasaga',
+    'Nadroga/Navosa': 'Burebasaga',
+    'Namosi':         'Burebasaga',
+    'Rewa':           'Burebasaga',
+    'Serua':          'Burebasaga',
+    'Ba':             'Kubuna',
+    'Lomaiviti':      'Kubuna',
+    'Naitasiri':      'Kubuna',
+    'Ra':             'Kubuna',
+    'Tailevu':        'Kubuna',
+    'Bua':            'Tovata',
+    'Cakaudrove':     'Tovata',
+    'Lau':            'Tovata',
+    'Macuata':        'Tovata',
+    'Rotuma':         'Tovata'
+  };
+
+  // Alias-aware scholar-name → profile lookup. worldPoints store scholar
+  // names in "First Last" order, while state.scholarProfilesByName is keyed
+  // by "Last, First". This helper mirrors the alias/paren-stripping logic
+  // from executeWorldSearch so a name like "Asesela D. Ravuvu (Asesela
+  // Drekeivalu)" still resolves to the canonical profile.
+  function _worldBuildLastFirst(name) {
+    const parts = String(name || '').trim().split(/\s+/);
+    if (parts.length < 2) return String(name || '').trim();
+    const last = parts.pop();
+    return `${last}, ${parts.join(' ')}`;
+  }
+  function findProfileForScholarName(fullName) {
+    const profiles = state.scholarProfilesByName;
+    if (!profiles) return null;
+    const aliases = state.nameAliases || new Map();
+    const raw = String(fullName || '').trim();
+    if (!raw) return null;
+    const collapsed = raw.replace(/\s+/g, ' ');
+    const stripped = collapsed.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+    const candidates = [
+      _worldBuildLastFirst(collapsed),
+      _worldBuildLastFirst(stripped)
+    ];
+    // Try alias-resolved candidates first.
+    for (const c of candidates) {
+      if (aliases.has(c)) {
+        const canonical = aliases.get(c);
+        if (profiles.has(canonical)) return profiles.get(canonical);
+      }
+    }
+    // Then try candidates directly.
+    for (const c of candidates) {
+      if (profiles.has(c)) return profiles.get(c);
+    }
+    // Then stripped Last-First form (first-token fallback that
+    // scholarProfilesByName also indexes).
+    const fallback = _worldBuildLastFirst(stripped);
+    if (profiles.has(fallback)) return profiles.get(fallback);
+    return null;
+  }
+
+  // Confederacy for a scholar name (uses paternalProvince, then maternalProvince).
+  function scholarConfProv(name) {
+    const p = findProfileForScholarName(name);
+    const province = (p && (p.paternalProvince || p.maternalProvince) || '').trim();
+    const confederacy = (p && p.confederacy) || PROVINCE_TO_CONFEDERACY[province] || '';
+    return { profile: p, province, confederacy };
+  }
+
+  // Return true if a scholar name passes ALL the active fullscreen filters
+  // (confederacy, province, sector, work-country, work-institution).
+  function scholarPassesWorldFilters(name) {
+    const conf   = state.worldConfFilter;
+    const prov   = state.worldProvFilter;
+    const sector = state.worldSectorFilter;
+    const wcty   = state.worldWorkCountry;
+    const winst  = state.worldWorkInst;
+    if (!conf && !prov && !sector && !wcty && !winst) return true;
+
+    const { profile, province, confederacy } = scholarConfProv(name);
+
+    if (conf && confederacy !== conf) return false;
+    if (prov && province !== prov) return false;
+    if (sector) {
+      if (!profile || (profile.sector || '') !== sector) return false;
+    }
+    if (wcty) {
+      if (!profile || (profile.institutionCountry || '') !== wcty) return false;
+    }
+    if (winst) {
+      if (!profile || (profile.institution || '') !== winst) return false;
+    }
+    return true;
+  }
+
+  // True if any fullscreen filter (beyond search) is active. Used to decide
+  // whether to hide points whose scholar arrays become empty after filtering.
+  function worldHasFilter() {
+    return !!(state.worldConfFilter || state.worldProvFilter || state.worldSectorFilter
+              || state.worldWorkCountry || state.worldWorkInst);
+  }
+
+  // Apply active filters to a single worldPoint and return a shallow copy
+  // whose scholar arrays and counts reflect only scholars that pass. If
+  // the point has no matching scholars, returns null.
+  function filterWorldPoint(p) {
+    const active = worldHasFilter();
+    if (!active) return p;
+    const phdScholars = (p.phdScholars || []).filter(scholarPassesWorldFilters);
+    const mastersScholars = (p.mastersScholars || []).filter(scholarPassesWorldFilters);
+    const unknownScholars = (p.unknownScholars || []).filter(scholarPassesWorldFilters);
+    const total = phdScholars.length + mastersScholars.length + unknownScholars.length;
+    if (total === 0) return null;
+    return Object.assign({}, p, {
+      phdScholars, mastersScholars, unknownScholars,
+      phdCount: phdScholars.length,
+      mastersCount: mastersScholars.length,
+      unknownCount: unknownScholars.length,
+      total,
+      scholarsCount: total,
+      thesesCount: total
+    });
+  }
+
   function renderWorldMap() {
     if (!state.worldMap) return;
     if (state.worldLayer) { state.worldMap.removeLayer(state.worldLayer); state.worldLayer = null; }
 
     const grad = state.graduateStudies || { worldPoints: [] };
-    const points = grad.worldPoints || [];
+    const rawPoints = grad.worldPoints || [];
+    // Apply fullscreen toolbar filters. Points with no matching scholars
+    // drop out entirely. When no filter is active, this is a passthrough.
+    const points = rawPoints.map(filterWorldPoint).filter(Boolean);
+    // Refresh the stat readout every time we redraw — keeps it in sync
+    // with the current filtered set of points.
+    updateWorldMapStats(points);
 
     if (state.worldView === 'publish') {
       // Placeholder — publication-country tagging is a follow-up feature.
@@ -2531,6 +2694,416 @@
       }
     }
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
+  }
+
+  // -------- Fullscreen stat readout --------
+  // Update the (Countries / Universities / Scholars) numbers next to the
+  // toolbar. `pointsInView` is the already-filtered set of worldPoints
+  // renderWorldMap just drew.
+  function updateWorldMapStats(pointsInView) {
+    const countriesEl = document.querySelector('[data-db-map-fs-stats-countries]');
+    const unisEl      = document.querySelector('[data-db-map-fs-stats-unis]');
+    const scholarsEl  = document.querySelector('[data-db-map-fs-stats-scholars]');
+    if (!countriesEl || !unisEl || !scholarsEl) return;
+    const countries = new Set();
+    const scholars = new Set();
+    let unis = 0;
+    (pointsInView || []).forEach(p => {
+      if (p.country) countries.add(p.country);
+      unis += 1;
+      (p.phdScholars || []).forEach(n => scholars.add(n));
+      (p.mastersScholars || []).forEach(n => scholars.add(n));
+      (p.unknownScholars || []).forEach(n => scholars.add(n));
+    });
+    countriesEl.textContent = String(countries.size);
+    unisEl.textContent      = String(unis);
+    scholarsEl.textContent  = String(scholars.size);
+    // Coverage note — shown only when a filter that depends on curated
+    // profile fields (sector / work-country / work-institution) is active.
+    const noteEl = document.querySelector('[data-db-map-fs-coverage]');
+    if (noteEl) {
+      const needsProfile = !!(state.worldSectorFilter || state.worldWorkCountry || state.worldWorkInst);
+      if (needsProfile) {
+        const grad = state.graduateStudies || { worldPoints: [] };
+        const allScholars = new Set();
+        (grad.worldPoints || []).forEach(p => {
+          (p.phdScholars || []).forEach(n => allScholars.add(n));
+          (p.mastersScholars || []).forEach(n => allScholars.add(n));
+          (p.unknownScholars || []).forEach(n => allScholars.add(n));
+        });
+        // How many of the 302 scholars carry ANY of the profile fields the
+        // Sector / Institutions-of-work filters need? That's the pool the
+        // filter can "see". Counted here so the number stays honest as Ron
+        // fills in more profiles.
+        let profiled = 0;
+        allScholars.forEach(n => {
+          const p = findProfileForScholarName(n);
+          if (p && (p.sector || p.institutionCountry || p.institution)) profiled += 1;
+        });
+        noteEl.textContent = `Sector and Institutions-of-work data currently exist for ${profiled} / ${allScholars.size} scholars — unprofiled scholars are hidden while this filter is active.`;
+        noteEl.hidden = false;
+      } else {
+        noteEl.hidden = true;
+      }
+    }
+  }
+
+  // -------- Fullscreen dropdown UI helpers --------
+  // Rebuild the confederacy dropdown label + selection markers to reflect
+  // the current filter state. Called on every filter change and on reset.
+  function refreshConfDropdownUi() {
+    const wrap = document.querySelector('[data-db-map-fs-conf]');
+    if (!wrap) return;
+    const label = wrap.querySelector('[data-db-map-fs-conf-label]');
+    const conf = state.worldConfFilter;
+    const prov = state.worldProvFilter;
+    if (prov && conf) label.textContent = `${conf} › ${prov}`;
+    else if (conf)    label.textContent = `${conf} Confederacy`;
+    else              label.textContent = 'All confederacies';
+    wrap.classList.toggle('is-filtered', !!(conf || prov));
+    // Update per-row selection marks in the currently rendered lists.
+    wrap.querySelectorAll('[data-conf-row]').forEach(r => {
+      r.classList.toggle('is-selected', r.getAttribute('data-conf-row') === (conf || ''));
+    });
+    wrap.querySelectorAll('[data-prov-row]').forEach(r => {
+      r.classList.toggle('is-selected', r.getAttribute('data-prov-row') === (prov || ''));
+    });
+  }
+
+  function refreshSectorDropdownUi() {
+    const wrap = document.querySelector('[data-db-map-fs-sector]');
+    if (!wrap) return;
+    const label = wrap.querySelector('[data-db-map-fs-sector-label]');
+    const s = state.worldSectorFilter;
+    label.textContent = s || 'All sectors';
+    wrap.classList.toggle('is-filtered', !!s);
+    wrap.querySelectorAll('[data-sector-row]').forEach(r => {
+      r.classList.toggle('is-selected', r.getAttribute('data-sector-row') === (s || ''));
+    });
+  }
+
+  function refreshWorkDropdownUi() {
+    const wrap = document.querySelector('[data-db-map-fs-work]');
+    if (!wrap) return;
+    const label = wrap.querySelector('[data-db-map-fs-work-label]');
+    const c = state.worldWorkCountry;
+    const inst = state.worldWorkInst;
+    if (inst && c) label.textContent = `${c} › ${inst}`;
+    else if (c)    label.textContent = c;
+    else           label.textContent = 'All institutions of work';
+    wrap.classList.toggle('is-filtered', !!(c || inst));
+    wrap.querySelectorAll('[data-work-country-row]').forEach(r => {
+      r.classList.toggle('is-selected', r.getAttribute('data-work-country-row') === (c || ''));
+    });
+    wrap.querySelectorAll('[data-work-inst-row]').forEach(r => {
+      r.classList.toggle('is-selected', r.getAttribute('data-work-inst-row') === (inst || ''));
+    });
+  }
+
+  // Compute scholar counts per confederacy and per province across the
+  // *unfiltered* worldPoints. These populate the (N) badges next to each
+  // row in the confederacy panel. Recomputed on wire so future data
+  // updates flow through without rebuilding the dashboard.
+  function computeConfederacyScholarCounts() {
+    const perConf = { Burebasaga: new Set(), Kubuna: new Set(), Tovata: new Set(), Unclassified: new Set() };
+    const perProv = new Map(); // province -> Set of scholar names
+    const grad = state.graduateStudies || { worldPoints: [] };
+    (grad.worldPoints || []).forEach(p => {
+      const names = [].concat(p.phdScholars || [], p.mastersScholars || [], p.unknownScholars || []);
+      names.forEach(n => {
+        const { province, confederacy } = scholarConfProv(n);
+        const cf = confederacy || 'Unclassified';
+        if (perConf[cf]) perConf[cf].add(n); else perConf.Unclassified.add(n);
+        if (province) {
+          if (!perProv.has(province)) perProv.set(province, new Set());
+          perProv.get(province).add(n);
+        }
+      });
+    });
+    const confCounts = {};
+    Object.keys(perConf).forEach(k => { confCounts[k] = perConf[k].size; });
+    const provCounts = {};
+    perProv.forEach((set, prov) => { provCounts[prov] = set.size; });
+    return { confCounts, provCounts };
+  }
+
+  // Compute (country -> Set of institutions -> Set of scholars) for the
+  // Institutions-of-work dropdown. Only scholars whose profile carries an
+  // institution/country field contribute.
+  function computeWorkTree() {
+    const countries = new Map(); // country -> Map<institution, Set<scholarName>>
+    const grad = state.graduateStudies || { worldPoints: [] };
+    (grad.worldPoints || []).forEach(p => {
+      const names = [].concat(p.phdScholars || [], p.mastersScholars || [], p.unknownScholars || []);
+      names.forEach(n => {
+        const profile = findProfileForScholarName(n);
+        if (!profile) return;
+        const c = (profile.institutionCountry || '').trim();
+        const inst = (profile.institution || '').trim();
+        if (!c && !inst) return;
+        const country = c || 'Unknown';
+        if (!countries.has(country)) countries.set(country, new Map());
+        const insts = countries.get(country);
+        if (inst) {
+          if (!insts.has(inst)) insts.set(inst, new Set());
+          insts.get(inst).add(n);
+        }
+      });
+    });
+    return countries;
+  }
+
+  function computeSectorCounts() {
+    const counts = new Map();
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const seen = new Set();
+    (grad.worldPoints || []).forEach(p => {
+      const names = [].concat(p.phdScholars || [], p.mastersScholars || [], p.unknownScholars || []);
+      names.forEach(n => {
+        if (seen.has(n)) return;
+        seen.add(n);
+        const profile = findProfileForScholarName(n);
+        const s = (profile && profile.sector || '').trim();
+        if (!s) return;
+        counts.set(s, (counts.get(s) || 0) + 1);
+      });
+    });
+    return counts;
+  }
+
+  // -------- Wire the four fullscreen dropdowns to the DOM. --------
+  // Idempotent — second call is a no-op via a wired flag. Called after the
+  // graduate-studies data + scholar profiles finish loading, so counts are
+  // populated on first paint.
+  function wireWorldMapFilters() {
+    const toolbar = document.querySelector('[data-db-map-fs-toolbar]');
+    if (!toolbar || toolbar.dataset.dbFsWired === '1') return;
+    toolbar.dataset.dbFsWired = '1';
+
+    // Generic dropdown open/close helper. `wrap` is the outer container,
+    // `btn` its trigger, `panel` the absolutely-positioned menu. Only one
+    // fullscreen dropdown is open at a time — opening one closes the rest.
+    const dropdowns = [];
+    function wireDropdown(wrap, btn, panel) {
+      if (!wrap || !btn || !panel) return null;
+      const api = {
+        open() {
+          dropdowns.forEach(d => { if (d !== api) d.close(); });
+          panel.hidden = false;
+          btn.setAttribute('aria-expanded', 'true');
+          document.addEventListener('mousedown', outside, true);
+          document.addEventListener('keydown', esc);
+        },
+        close() {
+          panel.hidden = true;
+          btn.setAttribute('aria-expanded', 'false');
+          document.removeEventListener('mousedown', outside, true);
+          document.removeEventListener('keydown', esc);
+        }
+      };
+      function outside(ev) {
+        if (!wrap.contains(ev.target)) api.close();
+      }
+      function esc(ev) { if (ev.key === 'Escape') api.close(); }
+      btn.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (panel.hidden) api.open(); else api.close();
+      });
+      dropdowns.push(api);
+      return api;
+    }
+
+    // --- Confederacy dropdown ---
+    const confWrap  = document.querySelector('[data-db-map-fs-conf]');
+    const confBtn   = document.querySelector('[data-db-map-fs-conf-btn]');
+    const confPanel = document.querySelector('[data-db-map-fs-conf-panel]');
+    const confList  = document.querySelector('[data-db-map-fs-conf-list]');
+    const provList  = document.querySelector('[data-db-map-fs-conf-prov-list]');
+    const provTitle = document.querySelector('[data-db-map-fs-conf-prov-title]');
+    const confDd = wireDropdown(confWrap, confBtn, confPanel);
+
+    function renderConfList() {
+      if (!confList) return;
+      const { confCounts } = computeConfederacyScholarCounts();
+      const rows = [];
+      // "All confederacies" reset row at top.
+      rows.push({ key: '', label: 'All confederacies', count: null, hasChildren: false });
+      ['Burebasaga', 'Kubuna', 'Tovata'].forEach(cf => {
+        rows.push({ key: cf, label: cf, count: confCounts[cf] || 0, hasChildren: true });
+      });
+      const unc = confCounts['Unclassified'] || 0;
+      if (unc > 0) rows.push({ key: 'Unclassified', label: 'Unclassified', count: unc, hasChildren: false });
+      confList.innerHTML = rows.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-conf-row="${r.key}">
+          <span>${r.label}</span>
+          <span>
+            ${r.count === null ? '' : `<span class="db-map-fs-conf__row-count">${r.count}</span>`}
+            ${r.hasChildren ? '<span class="db-map-fs-conf__row-caret">›</span>' : ''}
+          </span>
+        </button>
+      `).join('');
+      confList.querySelectorAll('[data-conf-row]').forEach(row => {
+        const key = row.getAttribute('data-conf-row');
+        row.addEventListener('mouseenter', () => renderProvList(key));
+        row.addEventListener('click', () => {
+          state.worldConfFilter = key || null;
+          state.worldProvFilter = null;
+          renderProvList(key);
+          renderWorldMap();
+          refreshConfDropdownUi();
+          if (!key) confDd && confDd.close();
+        });
+      });
+      // Initial province column: reflect current selection.
+      renderProvList(state.worldConfFilter || 'Burebasaga');
+    }
+
+    function renderProvList(confKey) {
+      if (!provList || !provTitle) return;
+      if (!confKey || confKey === 'Unclassified') {
+        provTitle.textContent = confKey === 'Unclassified' ? 'Unclassified' : 'Provinces';
+        provList.innerHTML = confKey === 'Unclassified'
+          ? '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">No province data available.</div>'
+          : '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">Hover a confederacy to see its provinces.</div>';
+        return;
+      }
+      provTitle.textContent = `Provinces in ${confKey}`;
+      const provinces = CONFEDERACY_PROVINCES[confKey] || [];
+      const { provCounts } = computeConfederacyScholarCounts();
+      const rows = provinces.map(prov => ({ prov, count: provCounts[prov] || 0 }));
+      provList.innerHTML = rows.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-prov-row="${r.prov}">
+          <span>${r.prov}</span>
+          <span class="db-map-fs-conf__row-count">${r.count}</span>
+        </button>
+      `).join('');
+      provList.querySelectorAll('[data-prov-row]').forEach(row => {
+        const prov = row.getAttribute('data-prov-row');
+        row.addEventListener('click', () => {
+          state.worldConfFilter = confKey;
+          state.worldProvFilter = prov;
+          renderWorldMap();
+          refreshConfDropdownUi();
+          confDd && confDd.close();
+        });
+      });
+      // Re-apply selection classes.
+      refreshConfDropdownUi();
+    }
+
+    // --- Sector dropdown (single column) ---
+    const secWrap  = document.querySelector('[data-db-map-fs-sector]');
+    const secBtn   = document.querySelector('[data-db-map-fs-sector-btn]');
+    const secPanel = document.querySelector('[data-db-map-fs-sector-panel]');
+    const secList  = document.querySelector('[data-db-map-fs-sector-list]');
+    const secDd = wireDropdown(secWrap, secBtn, secPanel);
+
+    function renderSectorList() {
+      if (!secList) return;
+      const counts = computeSectorCounts();
+      // Sort by count desc so most-common sectors sit at the top.
+      const entries = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+      const rows = [{ key: '', label: 'All sectors', count: null }].concat(
+        entries.map(([k, v]) => ({ key: k, label: k, count: v }))
+      );
+      secList.innerHTML = rows.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-sector-row="${(r.key || '').replace(/"/g,'&quot;')}">
+          <span>${r.label}</span>
+          ${r.count === null ? '' : `<span class="db-map-fs-conf__row-count">${r.count}</span>`}
+        </button>
+      `).join('');
+      secList.querySelectorAll('[data-sector-row]').forEach(row => {
+        row.addEventListener('click', () => {
+          const key = row.getAttribute('data-sector-row');
+          state.worldSectorFilter = key || null;
+          renderWorldMap();
+          refreshSectorDropdownUi();
+          secDd && secDd.close();
+        });
+      });
+    }
+
+    // --- Institutions-of-work dropdown (two columns: country → institution) ---
+    const workWrap    = document.querySelector('[data-db-map-fs-work]');
+    const workBtn     = document.querySelector('[data-db-map-fs-work-btn]');
+    const workPanel   = document.querySelector('[data-db-map-fs-work-panel]');
+    const workCList   = document.querySelector('[data-db-map-fs-work-country-list]');
+    const workIList   = document.querySelector('[data-db-map-fs-work-inst-list]');
+    const workITitle  = document.querySelector('[data-db-map-fs-work-inst-title]');
+    const workDd = wireDropdown(workWrap, workBtn, workPanel);
+
+    function renderWorkCountryList() {
+      if (!workCList) return;
+      const tree = computeWorkTree();
+      const entries = Array.from(tree.entries()).map(([c, insts]) => {
+        // scholar count per country = union of scholar Sets across institutions
+        const scholars = new Set();
+        insts.forEach(set => set.forEach(n => scholars.add(n)));
+        return { country: c, count: scholars.size };
+      }).sort((a, b) => b.count - a.count);
+      const rows = [{ country: '', count: null }].concat(entries);
+      workCList.innerHTML = rows.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-work-country-row="${(r.country || '').replace(/"/g,'&quot;')}">
+          <span>${r.country || 'All countries of work'}</span>
+          <span>
+            ${r.count === null ? '' : `<span class="db-map-fs-conf__row-count">${r.count}</span>`}
+            ${r.country ? '<span class="db-map-fs-conf__row-caret">›</span>' : ''}
+          </span>
+        </button>
+      `).join('');
+      workCList.querySelectorAll('[data-work-country-row]').forEach(row => {
+        const c = row.getAttribute('data-work-country-row');
+        row.addEventListener('mouseenter', () => renderWorkInstList(c));
+        row.addEventListener('click', () => {
+          state.worldWorkCountry = c || null;
+          state.worldWorkInst = null;
+          renderWorkInstList(c);
+          renderWorldMap();
+          refreshWorkDropdownUi();
+          if (!c) workDd && workDd.close();
+        });
+      });
+      // Populate the right column with a hint on first render.
+      renderWorkInstList(state.worldWorkCountry || '');
+    }
+
+    function renderWorkInstList(country) {
+      if (!workIList || !workITitle) return;
+      if (!country) {
+        workITitle.textContent = 'Institutions';
+        workIList.innerHTML = '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">Hover a country to see its institutions.</div>';
+        return;
+      }
+      workITitle.textContent = `Institutions in ${country}`;
+      const tree = computeWorkTree();
+      const insts = tree.get(country) || new Map();
+      const entries = Array.from(insts.entries()).map(([inst, set]) => ({ inst, count: set.size }))
+        .sort((a, b) => b.count - a.count);
+      workIList.innerHTML = entries.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-work-inst-row="${r.inst.replace(/"/g,'&quot;')}">
+          <span>${r.inst}</span>
+          <span class="db-map-fs-conf__row-count">${r.count}</span>
+        </button>
+      `).join('');
+      workIList.querySelectorAll('[data-work-inst-row]').forEach(row => {
+        row.addEventListener('click', () => {
+          state.worldWorkCountry = country;
+          state.worldWorkInst = row.getAttribute('data-work-inst-row');
+          renderWorldMap();
+          refreshWorkDropdownUi();
+          workDd && workDd.close();
+        });
+      });
+      refreshWorkDropdownUi();
+    }
+
+    // Populate all three list-based dropdowns.
+    renderConfList();
+    renderSectorList();
+    renderWorkCountryList();
+    refreshConfDropdownUi();
+    refreshSectorDropdownUi();
+    refreshWorkDropdownUi();
   }
 
   function renderChoropleth() {
