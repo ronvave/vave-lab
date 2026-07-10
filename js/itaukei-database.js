@@ -1448,12 +1448,16 @@
           if (p)        return `(${p})`;
           return '';
         }
-        let locChip = '';
+        // Village + province render on their own line under the name so the
+        // 3-line body (name / village / thesis) gives the photo column a
+        // predictable block to align against in fullscreen. Link styling
+        // (teal + underline) is kept via the __village a rule.
+        let villageLine = '';
         if (village || province) {
           const label = escapeHtml(mergeVillageProvince(village, province));
-          locChip = slug
-            ? ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></span>`
-            : ` &nbsp;|&nbsp; <span class="db-popup-scholar-detail__village">${label}</span>`;
+          villageLine = slug
+            ? `<div class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></div>`
+            : `<div class="db-popup-scholar-detail__village">${label}</div>`;
         }
         // Photo column: only rendered when the profile actually has a photo
         // URL. Skipping the div when there's no photo prevents the empty
@@ -1467,7 +1471,8 @@
         detail.innerHTML =
           photoHtml +
           `<div class="db-popup-scholar-detail__body">` +
-            `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}${locChip}</div>` +
+            `<div class="db-popup-scholar-detail__name">${escapeHtml(nm)} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
+            villageLine +
             `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
           `</div>`;
         detail.classList.add('is-active');
