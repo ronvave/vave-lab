@@ -1408,14 +1408,35 @@
     .leaflet-popup-content { font-family: var(--font-body); font-size: 0.9rem; }
     .db-popup-title { font-weight: 700; margin: 0 0 4px; color: var(--color-text); font-family: var(--font-display); font-size: 1.05rem; line-height: 1.25; }
     .db-popup-meta  { margin: 0; color: var(--color-text-muted); font-size: 0.82rem; }
-    .db-popup-count { font-weight: 700; color: var(--color-primary); font-size: 1.5rem; vertical-align: -0.15em; margin-right: 4px; }
-    /* Trailing-text sizing tiers so the sentence fills the popup width regardless of digit count. */
-    .db-popup-count-row.is-count-1 { font-size: 1rem; }
-    .db-popup-count-row.is-count-1 .db-popup-count { font-size: 1.9rem; }
-    .db-popup-count-row.is-count-2 { font-size: 0.92rem; }
-    .db-popup-count-row.is-count-2 .db-popup-count { font-size: 1.7rem; }
-    .db-popup-count-row.is-count-3 { font-size: 0.82rem; }
-    .db-popup-count-row.is-count-3 .db-popup-count { font-size: 1.5rem; }
+    /* Count row — fixed-size number + fixed-size sentence.
+       Number stays 2.6rem regardless of digit count; sentence stays 1.05rem
+       and wraps to 2 lines beside it. align-items:center vertically centers
+       the number against the wrapped sentence so top/bottom edges align. */
+    .db-popup-count-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 4px 0 0;
+      color: var(--color-text);
+    }
+    .db-popup-count {
+      font-weight: 700;
+      color: #6B2011; /* deep terracotta — matches village accent */
+      font-size: 2.6rem;
+      line-height: 1;
+      flex: 0 0 auto;
+      font-variant-numeric: tabular-nums;
+    }
+    .db-popup-count-text {
+      font-size: 1.05rem;
+      line-height: 1.2;
+      /* Constrain width so the sentence always wraps to 2 lines regardless
+         of popup width — matches Ron's sketch. ~15em fits
+         'iTaukei scholars completed' on line 1 and 'graduate work here' on
+         line 2 at 1.05rem. */
+      flex: 0 1 15em;
+      min-width: 0;
+    }
 
     /* ============ Panel B/B1/B2 metadata + tabs ============ */
     /* Meta strip — the row above each chart showing 'Grouped by / Scope / Authors'.
@@ -3772,6 +3793,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-21" defer></script>
+<script src="js/itaukei-database.js?v=20260709-23" defer></script>
 </body>
 </html>
