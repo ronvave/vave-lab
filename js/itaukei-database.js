@@ -1203,14 +1203,13 @@
   const WORLD_MAP_DEFAULT_CENTER = [15, 30];
   const WORLD_MAP_DEFAULT_ZOOM = 1;
 
-  // Fullscreen framing bounds — Pacific-centred rectangle wide enough to show
-  // Iceland/UK on the left through the Americas on the right. Ron's image-3
-  // reference: no cutoffs, room for future markers anywhere on the globe.
-  // Latitude band [-58, 62] keeps NZ and Iceland in frame while cropping the
-  // otherwise empty polar caps; longitude band [-140, 260] spans a full
-  // 400° window so the map shows more than one world width and every land
-  // mass stays visible without wrapping surprise.
-  const WORLD_MAP_FS_FIT_BOUNDS = [[-58, -140], [62, 260]];
+  // Fullscreen framing bounds — Pacific-centred rectangle 260° wide so
+  // the map shows exactly ONE world copy (no wrap duplication). Latitude
+  // band [-58, 62] keeps NZ and Iceland in frame while cropping the empty
+  // polar caps; longitude band [30, 290] spans Africa east coast through
+  // the Pacific to USA east coast, keeping Fiji (178°E) near center. To
+  // avoid Leaflet drawing duplicate marker copies, we stay under 360°.
+  const WORLD_MAP_FS_FIT_BOUNDS = [[-58, 30], [62, 290]];
 
   // -------- World-filter helpers --------
   // When a country or university is clicked in Panel B2, we filter every
@@ -2187,6 +2186,12 @@
     // Google Hybrid tiles (satellite imagery + labels). Tiles wrap so
     // the world repeats horizontally and no empty backdrop shows on
     // widescreen or fullscreen views.
+    // Google tiles are kept wrap-enabled (noWrap:false, the Leaflet
+    // default) so wide fullscreen viewports don't show an empty ocean
+    // half. Marker wraparound (ghost dots off West Africa / Central
+    // America) is handled separately by lngOffsets=[0] in both
+    // renderWorldMap and renderWorkplaceMap — markers are single-copy
+    // even when the tiles behind them repeat.
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
       attribution: 'Imagery &copy; Google',
       subdomains: ['0', '1', '2', '3'],
@@ -2211,12 +2216,20 @@
       onOpen: () => {
         const m = state.worldMap; if (!m) return;
         state.worldMapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
-        // Remove the boxed-world constraints so tiles wrap seamlessly
-        // across the antimeridian. Google's tile server returns tiles
-        // for any x (wrapping modulo the world width), so with the
-        // Leaflet tileLayer default (noWrap:false) the map repeats.
+        // Constrain fullscreen to the same 260° Pacific-centered window
+        // used for the initial fit. Google's tile server wraps tiles
+        // (noWrap:false) so panning slightly beyond an edge doesn't leave
+        // a blank backdrop, but we no longer allow the user to drag into
+        // a second full world copy — which is what caused the duplicated
+        // Fiji / Sydney markers off the coasts of West Africa and
+        // Central America. maxBoundsViscosity keeps the pan snappy.
+        // Removed maxBounds in fullscreen — with a tight 260° lng window
+        // and 170° lat window, Leaflet snaps zoom-out to fit both
+        // dimensions and stays at zoom 1, causing the wraparound + strip
+        // rendering. Instead we keep the map free-pan in fullscreen and
+        // rely on marker single-copy (lngOffsets=[0]) to prevent ghosts.
         m.setMaxBounds(null);
-        m.options.worldCopyJump = true;
+        m.options.worldCopyJump = false;
         state.worldMapFullscreen = true;
         // Wire the fullscreen toolbar (idempotent) now that we know the
         // graduate-studies data + scholar profiles are loaded.
@@ -2225,12 +2238,14 @@
         // world panels (-360, 0, +360). Without this, dragging past
         // the antimeridian would show blank continents.
         renderWorldMap();
-        // Frame the useful latitude band (~55S to 60N) centered on the
-        // Pacific so Fiji sits mid-screen. Leaflet's fitBounds picks a
-        // zoom that makes this rectangle fill the container; because
-        // we widened the viewport to 16:9, the resulting view fills
-        // the screen with no empty backdrop.
-        m.fitBounds(WORLD_MAP_FS_FIT_BOUNDS, { animate: false, padding: [0, 0] });
+        // Frame the Pacific with a fixed center + zoom rather than
+        // fitBounds. fitBounds picks the min zoom that fits both lat +
+        // lng dimensions; on wide-latitude bounds it lands at zoom 1
+        // where the world is only 512px wide, causing wrapped tiles to
+        // paint ghost markers off West Africa (the wraparound bug we
+        // shipped v12 to fix). Zoom 2 renders one clean world copy
+        // 1024px wide and 512px tall, centered on Fiji at 160°E.
+        m.setView([15, 160], 2, { animate: false });
       },
       onClose: () => {
         const m = state.worldMap; if (!m) return;
@@ -2866,7 +2881,13 @@
     _updateWorkplaceStats(points);
 
     const isFs = !!state.worldMapFullscreen;
-    const lngOffsets = isFs ? [-360, 0, 360] : [0];
+    // Single-copy markers: the fullscreen viewport is 260° wide (see
+    // WORLD_MAP_FS_FIT_BOUNDS), so we never need to paint duplicate copies
+    // at ±360° — those would only show if the user dragged the map, and
+    // in practice they created ghost dots off the coasts of West Africa /
+    // Central America. If dragging behaviour changes later, restore the
+    // [-360, 0, 360] offsets here.
+    const lngOffsets = [0];
     const markers = [];
     const latlngs = [];
     points.forEach(p => {
@@ -2910,6 +2931,21 @@
       } else {
         state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
       }
+    }
+    // In fullscreen, snap back to the Pacific-centred framing on every
+    // Work-mode render — unless a country/institution drill-down is
+    // already active. invalidateSize() runs FIRST so Leaflet knows the
+    // container is now fullscreen before computing the view.
+    //
+    // We use setView with a fixed center + zoom rather than fitBounds
+    // because fitBounds picks the min zoom that fits both lat and lng in
+    // the viewport — on a wide-latitude window (–58 to 62), that lands
+    // at zoom 1 where the world is only 512px wide, so 1500px viewports
+    // show ~3 wrapped world copies (the ghost-Africa bug). setView(zoom 2)
+    // renders one world (1024px) with a clean Pacific-centred crop.
+    if (isFs && !state.worldWorkCountry && !state.worldWorkInst) {
+      state.worldMap.invalidateSize();
+      state.worldMap.setView([15, 160], 2, { animate: false });
     }
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
   }
@@ -3000,13 +3036,13 @@
     }
 
     // Where iTaukei graduates study.
-    // Inline view: single-copy world (no tile wrap). Markers plotted once at
-    // their real coordinates, then auto-framed to marker bounds below.
-    // Fullscreen view: tiles wrap seamlessly, so we plot each marker three
-    // times — at lng-360, lng, lng+360 — so dragging across the antimeridian
-    // shows dots on every visible world copy.
+    // Both inline and fullscreen views use single-copy markers. The
+    // fullscreen viewport (WORLD_MAP_FS_FIT_BOUNDS) is 260° wide, so we
+    // never need the ±360° duplicate copies that previously caused ghost
+    // dots off the coasts of West Africa / Central America. If dragging
+    // behaviour changes later, restore the [-360, 0, 360] offsets here.
     const isFs = !!state.worldMapFullscreen;
-    const lngOffsets = isFs ? [-360, 0, 360] : [0];
+    const lngOffsets = [0];
     const markers = [];
     const latlngs = [];
     points.forEach(p => {
@@ -3458,7 +3494,16 @@
           // Row picks keep the map in Workplace mode; picking a country
           // zooms/filters within workplace view.
           if (c) _zoomWorkplaceCountry(c);
-          else state.worldMap && state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+          else if (state.worldMap) {
+            // In fullscreen, reset to Pacific-centred zoom-2 view (setView
+            // inside renderWorkplaceMap does this too, but doing it here
+            // first avoids a brief zoom-out flicker to DEFAULT_ZOOM=1).
+            if (state.worldMapFullscreen) {
+              state.worldMap.setView([15, 160], 2, { animate: false });
+            } else {
+              state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+            }
+          }
           renderWorldMap();
           refreshWorkDropdownUi();
           if (!c) workDd && workDd.close();
