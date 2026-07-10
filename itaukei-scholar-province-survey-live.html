@@ -49,29 +49,27 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .hero__body a{color:var(--brown);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
 .hero__body a:hover{color:var(--brown-ink)}
 
-/* ===== DATABASE OVERVIEW (stats panel + tiles) ===== */
-.db-overview{margin:26px 0 16px;position:relative}
-/* light-gray panel sits behind the heading + first 4 tiles (approx 2/3 width) */
-.db-panel{position:absolute;top:0;left:0;width:66.5%;height:100%;background:#f1f2f0;border-radius:14px;z-index:0}
-.db-inner{position:relative;z-index:1;padding:18px 20px 20px}
+/* ===== DATABASE OVERVIEW (stats tiles) ===== */
+.db-overview{margin:26px 0 0;position:relative}
+.db-inner{position:relative;z-index:1}
 .db-panel__head{margin:0 0 14px}
 .db-panel__title{font-family:"Fraunces",serif;font-weight:600;font-size:1.35rem;line-height:1.1;color:#1f2937;margin:0}
-.db-panel__sub{font-size:.9rem;color:#6b7280;margin:4px 0 0}
-/* 6-tile row spanning full overview width; last 2 visually extend past the panel */
+.db-panel__sub{font-size:1rem;color:#000;margin:4px 0 0}
+/* 6-tile row */
 .db-tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
 .stat-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;color:#fff;min-width:0}
 .stat-tile__badge{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
 .stat-tile__badge svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8}
 .stat-tile__body{display:flex;flex-direction:column;min-width:0}
-.stat-tile__num{font-family:"Fraunces",serif;font-weight:700;font-size:1.5rem;line-height:1.05;color:#fff;font-variant-numeric:tabular-nums}
+.stat-tile__num{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:1.5rem;line-height:1.05;color:#fff;font-variant-numeric:tabular-nums}
 .stat-tile__label{font-size:.76rem;line-height:1.2;color:rgba(255,255,255,.82);font-weight:500;margin-top:2px}
 .stats__note{margin:12px 0 0;font-size:.88rem;color:var(--ink);font-style:italic}
 .stats__note a{color:var(--brown);text-decoration:underline;text-underline-offset:3px}
-@media(max-width:1080px){.db-tiles{grid-template-columns:repeat(3,1fr)}.db-panel{width:100%}}
+@media(max-width:1080px){.db-tiles{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.db-tiles{grid-template-columns:repeat(2,1fr)}}
 
 /* ===== MAP CTA ROW (below stats) ===== */
-.map-cta-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px auto 26px;max-width:1000px}
+.map-cta-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px auto 26px;max-width:1000px}
 @media(max-width:640px){.map-cta-row{grid-template-columns:1fr}}
 .map-card{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;background:#0F6E56;border:1px solid #fff;color:#fff;text-decoration:none;cursor:zoom-in;transition:background .15s ease,transform .15s ease}
 .map-card:hover,.map-card:focus{background:#0c5b47;transform:translateY(-1px);outline:none}
@@ -289,7 +287,6 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     <p class="hero__body">The Facebook group only reaches its members, though, and each post is a one-off — it doesn't stay accessible to iTaukei outside the group, to iTaukei communities, to other iTaukei scholars, or to anyone else who'd benefit from knowing about this research. So I built a public database and dashboard: <strong>publications in and on Fiji, by iTaukei scholars and others, including publications by iTaukei scholars living outside Fiji.</strong> The purpose is the same as it's always been — showcase and elevate our scholarly work, and make it accessible to the wider public, especially decision-makers.</p>
 
     <div class="db-overview">
-      <div class="db-panel" aria-hidden="true"></div>
       <div class="db-inner">
         <div class="db-panel__head">
           <p class="db-panel__title">Database overview</p>
@@ -302,7 +299,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
           </div>
           <div class="stat-tile" style="background:#993C1D">
             <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M14 2v4h4"/><path d="M8 12h8M8 16h8"/></svg></span>
-            <span class="stat-tile__body"><span class="stat-tile__num">1,380</span><span class="stat-tile__label">iTaukei publications</span></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">1,380</span><span class="stat-tile__label">Publications by iTaukei</span></span>
           </div>
           <div class="stat-tile" style="background:#854F0B">
             <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M2 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15 20a5 5 0 0 1 7-4.6"/></svg></span>
@@ -333,7 +330,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
       </a>
       <a href="#" class="map-card" data-lb="itaukei-grad-sch-map-popup-expl-3.jpg" aria-label="Map with popup info — view full screen">
         <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-        <span class="map-card__body"><span class="map-card__title">Map with popup info</span><span class="map-card__sub">View full screen</span></span>
+        <span class="map-card__body"><span class="map-card__title">Sample dashboard map with popup info</span><span class="map-card__sub">View full screen</span></span>
         <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </a>
     </div>
