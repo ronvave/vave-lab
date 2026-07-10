@@ -69,8 +69,8 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 @media(max-width:640px){.db-tiles{grid-template-columns:repeat(2,1fr)}}
 
 /* ===== MAP CTA ROW (below stats) ===== */
-.map-cta-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px auto 26px;max-width:1000px}
-@media(max-width:640px){.map-cta-row{grid-template-columns:1fr}}
+.map-cta-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px auto 26px;max-width:1100px}
+@media(max-width:860px){.map-cta-row{grid-template-columns:1fr}}
 .map-card{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;background:#0F6E56;border:1px solid #fff;color:#fff;text-decoration:none;cursor:zoom-in;transition:background .15s ease,transform .15s ease}
 .map-card:hover,.map-card:focus{background:#0c5b47;transform:translateY(-1px);outline:none}
 .map-card__badge{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
@@ -277,7 +277,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     <span class="hero__mark">Vave Lab · community crowdsourcing</span>
     <p class="hero__lede"><strong>Help us tag every iTaukei Postgraduate scholar to their village and province.</strong></p>
 
-    <p class="hero__body"><strong>Bula vinaka.</strong> My name is Ron Vave, and I have paternal links to Sawana village (Vanua Balavu, Lau Province) and maternal links to Tiliva village (Bua Province). I currently work at the University of Hawaiʻi at Mānoa in Honolulu.</p>
+    <p class="hero__body"><strong>Bula vinaka!! Na yacaqu o Ron Vave, kau gone ni Yavusa Tonga ena koro ko Sawana (Vanua balavu, Lau), kau vasu kina koro ko Tiliva ena yasana vaka turaga o Bua. Ena gauna qo, au veiqaravi tiko ena University of Hawaiʻi at Mānoa e Honolulu.</strong> My name is Ron Vave, and I have paternal links to Sawana village (Vanua Balavu, Lau Province) and maternal links to Tiliva village (Bua Province). I currently work at the University of Hawaiʻi at Mānoa in Honolulu.</p>
 
     <p class="hero__body">For the past two years, I've been curating a database of iTaukei scholarly work, sharing it along the way in a <a href="https://www.facebook.com/groups/651412128782477" target="_blank" rel="noopener">closed Facebook group for iTaukei scholars and iTaukei at large</a>.</p>
 
@@ -321,14 +321,19 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     </div>
 
     <div class="map-cta-row">
-      <a href="#" class="map-card" data-lb="itaukei-grad-sch-global-map-4.jpg" aria-label="Sample dashboard map — view full screen">
+      <a href="#" class="map-card" data-lb="dash-card1-country-totals.jpg" aria-label="Sample dashboard map with study-country totals — view full screen">
         <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2Z"/><path d="M9 3v16M15 5v16"/></svg></span>
-        <span class="map-card__body"><span class="map-card__title">Sample dashboard map</span><span class="map-card__sub">View full screen</span></span>
+        <span class="map-card__body"><span class="map-card__title">Sample dashboard map</span><span class="map-card__sub">Study-country totals · view full screen</span></span>
         <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </a>
-      <a href="#" class="map-card" data-lb="itaukei-grad-sch-map-popup-expl-3.jpg" aria-label="Map with popup info — view full screen">
+      <a href="#" class="map-card" data-lb="dash-card2-scholar-popup.jpg" aria-label="Sample dashboard map with scholar popup info — view full screen">
         <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
-        <span class="map-card__body"><span class="map-card__title">Sample dashboard map with popup info</span><span class="map-card__sub">View full screen</span></span>
+        <span class="map-card__body"><span class="map-card__title">Sample dashboard map with popup info</span><span class="map-card__sub">Scholar popup details · view full screen</span></span>
+        <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </a>
+      <a href="#" class="map-card" data-lb="dash-card3-tovata-confederacy.jpg" aria-label="Confederacy filter for Tovata showing its scholars and thesis details — view full screen">
+        <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="1.6" fill="#fff" stroke="none"/><circle cx="14" cy="12" r="1.6" fill="#fff" stroke="none"/><circle cx="10" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>
+        <span class="map-card__body"><span class="map-card__title">Confederacy filter — Tovata</span><span class="map-card__sub">Scholars, theses &amp; universities · view full screen</span></span>
         <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
       </a>
     </div>
