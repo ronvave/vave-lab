@@ -357,6 +357,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 
   <section id="screen2" class="card hidden">
     <p class="card__sub">For each scholar you picked, share their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span>. All fields are optional — partial info still helps.</p>
+    <p class="card__note" style="margin:-6px 0 18px;padding:10px 14px;background:var(--gold-tint,#faf3d8);border-left:3px solid var(--gold,#d4a017);border-radius:6px;font-size:.9rem;color:#5c4a12;line-height:1.5"><strong>Not sure about a field?</strong> Please leave it blank rather than guessing. A scholar counts as <em>fully tagged</em> only when all four — paternal village, paternal province, maternal village, and maternal province — are filled in. If any are blank, it's saved as <em>partial info</em>, which still helps.</p>
 
     <div class="informant-grid">
       <div class="informant-field">
@@ -380,6 +381,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
         <label for="fileInput">Attach files (optional)</label>
         <label for="fileInput" class="filedrop__zone" id="fileZone">
           <p><strong>Click to browse</strong> or drag and drop — head-and-shoulders photos of the scholar, Zotero/EndNote/RIS files, PDFs, anything relevant.</p>
+          <p style="margin:6px 0 0;font-size:.85rem;color:var(--muted,#6b6257);line-height:1.45">Tip: feel free to add the <strong>preferred profile photo</strong> of the person — the one you'd like used on their profile page — especially if you are that person.</p>
         </label>
         <input id="fileInput" type="file" multiple accept="image/*,.ris,.bib,.enw,.xml,.zot,.zotero,.pdf,.doc,.docx,.txt">
         <div id="fileList" class="filedrop__list"></div>
@@ -559,6 +561,26 @@ function renderFileList(){
 }
 
 // --------- SUBMISSIONS ---------
+// Read a File into a base64 string (strips the data: prefix) so it can be
+// sent inside the JSON payload and rebuilt on the Apps Script side.
+function readFileAsBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result || '';
+      const comma = result.indexOf(',');
+      resolve({
+        name: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        sizeKB: Math.round(file.size / 1024),
+        data: comma >= 0 ? result.slice(comma + 1) : result
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
 async function submitBatch(){
   const informantName = $('informantName').value.trim();
   const informantEmail = $('informantEmail').value.trim();
@@ -579,11 +601,18 @@ async function submitBatch(){
   });
 
   const attachmentNames = attachedFiles.map(f => `${f.name} (${Math.round(f.size/1024)} KB)`);
-  const payload = { type: 'batch', entries, wrapUpNotes, attachmentNames };
 
   const status = $('batchStatus');
   status.textContent = 'Sending…'; status.className = 'status';
   try {
+    // Read any attached files into base64 so they can travel in the payload
+    // and be saved to Google Drive by the backend.
+    const attachments = [];
+    for (const f of attachedFiles) {
+      try { attachments.push(await readFileAsBase64(f)); }
+      catch (err) { /* skip a file that fails to read, keep the rest */ }
+    }
+    const payload = { type: 'batch', entries, wrapUpNotes, attachmentNames, attachments };
     // NOTE: use text/plain (not application/json) so the browser does NOT fire a
     // CORS preflight OPTIONS request. Apps Script web apps don't answer preflight,
     // which is what caused "Submission failed. Check your connection and try again."
@@ -604,6 +633,7 @@ async function submitBatch(){
   }
 }
 $('submitBatch').addEventListener('click', submitBatch);
+// end submitBatch
 
 // "not on list" flow
 $('showNotList').addEventListener('click', () => {
