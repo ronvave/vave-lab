@@ -1339,10 +1339,17 @@
     // popup stays compact even for countries with hundreds of scholars
     // (Fiji, USP). The detail slot sits ABOVE the scroll container so it
     // remains visible regardless of scroll position.
+    // Trailing-text sizing tier keyed by digit count of total.
+    // 1 digit  → largest, so 7 scholars looks visually balanced against the '7'.
+    // 2 digits → medium.
+    // 3+ digits → small (default).
+    const totalStr = String(total);
+    const countTier = totalStr.length === 1 ? 'is-count-1'
+                   : totalStr.length === 2 ? 'is-count-2'
+                   : 'is-count-3';
     return (
-      `<div class="db-popup-title">${escapeHtml(p.university)}</div>` +
-      `<p class="db-popup-meta">${escapeHtml(p.country)}</p>` +
-      `<p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
+      `<div class="db-popup-title">${escapeHtml(p.university)} (${escapeHtml(p.country)})</div>` +
+      `<p class="db-popup-meta db-popup-count-row ${countTier}" style="margin-top:6px;"><span class="db-popup-count" style="color:${color};">${total}</span> iTaukei scholar${total === 1 ? '' : 's'} completed graduate work here</p>` +
       `<div class="db-popup-scholar-detail" data-popup-detail></div>` +
       `<div class="db-popup-scroll">` + sections.join('') + `</div>`
     );
