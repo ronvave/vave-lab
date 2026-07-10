@@ -234,7 +234,7 @@ a:hover{color:var(--brown-ink)}
 </main>
 
 <script>
-const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpnr7wi_ir55QboVj5FEIHUjtUX9gzdlLDpCTNIjQiLINWD1VrmOlB49YFo3DDERBJ/exec';
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
 
 // -------- STATE --------
 let ALL_ROWS = [];
@@ -257,15 +257,21 @@ async function loadProgress(){
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    const result = data.result || data;
-    ALL_ROWS = (result.rows || []).map(r => ({
+    // The backend getProgress() returns a plain ARRAY of scholar rows.
+    // (Older code expected {rows, totalScholars} — support both shapes.)
+    const rowsArr = Array.isArray(data)
+      ? data
+      : (data.result && Array.isArray(data.result) ? data.result
+         : (data.rows || (data.result && data.result.rows) || []));
+    ALL_ROWS = rowsArr.map(r => ({
       id: r.id,
       lastName: r.lastName || '',
       firstName: r.firstName || '',
       count: Number(r.count) || 0,
       status: (r.status || 'needs').toLowerCase()
     }));
-    TOTAL_SCHOLARS = result.totalScholars || ALL_ROWS.length;
+    TOTAL_SCHOLARS = (!Array.isArray(data) && (data.totalScholars || (data.result && data.result.totalScholars)))
+      || ALL_ROWS.length;
     renderAll();
     updateRefreshTime();
   } catch (err) {
