@@ -1962,34 +1962,29 @@
     .db-world-country-list, .db-world-uni-list {
       margin-top: var(--space-2);
     }
-    /* Two-column table-like grid for the countries/universities list.
-       Reduces the huge horizontal gap between the name (left) and the
-       Masters/PhD counts (right) that appeared in the previous single-column
-       layout. A subtle vertical divider between columns reinforces the
-       split without shouting. */
+    /* Two-column layout for the countries/universities list, using CSS
+       multi-column so rows flow TOP-TO-BOTTOM then wrap to the next column.
+       That way the highest-ranking rows (Fiji, Australia, NZ...) all sit in
+       the left column, and only after the left column is full do items
+       spill into the right column — which reads naturally as descending
+       order down the left side, continuing down the right side.
+       column-fill: balance keeps both columns roughly equal height.
+       break-inside: avoid on each row prevents a row from splitting across
+       the column boundary mid-content. */
     .db-world-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-count: 2;
       column-gap: var(--space-4);
-      row-gap: 0;
+      column-rule: 1px solid rgba(15,23,42,0.10);
+      column-fill: balance;
     }
-    .db-world-grid > .db-world-country-row:nth-child(odd),
-    .db-world-grid > .db-world-uni-row:nth-child(odd) {
-      border-right: 1px solid rgba(15,23,42,0.10);
-      padding-right: var(--space-3);
-    }
-    .db-world-grid > .db-world-country-row:nth-child(even),
-    .db-world-grid > .db-world-uni-row:nth-child(even) {
-      padding-left: var(--space-3);
+    .db-world-grid > .db-world-country-row,
+    .db-world-grid > .db-world-uni-row {
+      break-inside: avoid;
+      -webkit-column-break-inside: avoid;
+      page-break-inside: avoid;
     }
     @media (max-width: 720px) {
-      .db-world-grid { grid-template-columns: 1fr; }
-      .db-world-grid > .db-world-country-row:nth-child(odd),
-      .db-world-grid > .db-world-uni-row:nth-child(odd) {
-        border-right: none; padding-right: 0;
-      }
-      .db-world-grid > .db-world-country-row:nth-child(even),
-      .db-world-grid > .db-world-uni-row:nth-child(even) { padding-left: 0; }
+      .db-world-grid { column-count: 1; column-rule: none; }
     }
     .db-world-country-row, .db-world-uni-row {
       display: grid;
@@ -3739,6 +3734,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-15" defer></script>
+<script src="js/itaukei-database.js?v=20260709-16" defer></script>
 </body>
 </html>
