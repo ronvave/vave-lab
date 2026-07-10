@@ -1,8 +1,10 @@
+<!-- Vave Lab iTaukei Research Database — Authored by Ron Vave, 2026 -->
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved.">
 <title>Crowdsourcing progress — iTaukei Postgraduate scholar village & province</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -134,6 +136,13 @@ a:hover{color:var(--brown-ink)}
 
 .footer-note{margin-top:28px;text-align:center;font-size:.88rem;color:var(--ink);font-style:italic}
 .footer-note a{font-weight:600}
+/* reusable legal footer */
+.legal-footer{margin-top:22px;padding-top:20px;border-top:1px solid var(--line-soft,#ece2c8);text-align:center;font-size:.82rem;line-height:1.7;color:var(--ink-soft,#28251d);font-style:normal}
+.legal-footer__copy{font-weight:600;color:var(--brown-ink,#4a2c06)}
+.legal-footer__license{display:block;margin-top:4px}
+.legal-footer a{color:var(--brown,#854F0B);text-decoration:underline;text-underline-offset:2px}
+.legal-footer a:hover{color:var(--brown-ink,#4a2c06)}
+.legal-footer__sep{opacity:.5;margin:0 6px}
 
 /* LOADING */
 .loading{display:flex;align-items:center;justify-content:center;gap:10px;padding:80px 22px;color:var(--ink)}
@@ -151,7 +160,7 @@ a:hover{color:var(--brown-ink)}
   <section class="hero">
     <span class="hero__mark">Vave Lab · community crowdsourcing · progress</span>
     <h1>How the <em>village &amp; province tagging</em> is going.</h1>
-    <p class="hero__lede">This page is a live look at what the iTaukei community has tagged so far — one row per iTaukei Postgraduate scholar or other researcher such as a community member in the database, showing whether we already know their village and province, or whether we still need help.</p>
+    <p class="hero__lede">This page is a live look at what the iTaukei community has tagged so far — one row per iTaukei Postgraduate scholar in the database, showing whether we already know their village and province, or whether we still need help.</p>
     <div class="hero__meta">
       <span><span class="status-dot"></span> <strong>Live</strong> · updates every time someone submits</span>
       <span>· Last refreshed <span id="lastRefresh">just now</span></span>
@@ -235,6 +244,19 @@ a:hover{color:var(--brown-ink)}
     Nothing on this page is anonymised — the whole point is to show that our scholars, and the communities who know them, are being credited by name.
     <br>Have info to share? <a href="itaukei-scholar-province-survey-live.html">Head to the survey →</a>
   </p>
+
+  <div class="legal-footer" role="contentinfo">
+    <span class="legal-footer__copy">&copy; 2026 Ron Vave / Vave Lab. All rights reserved.</span>
+    <span class="legal-footer__license">
+      Content licensed under
+      <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a>
+      (Attribution &middot; Non-Commercial &middot; No Derivatives).
+      <span class="legal-footer__sep">|</span>
+      <a href="terms.html">Terms of Use</a>
+      <span class="legal-footer__sep">|</span>
+      <a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a>
+    </span>
+  </div>
 
 </main>
 
