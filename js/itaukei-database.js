@@ -1787,14 +1787,62 @@
         walk(p.unknownScholars, 'Other');
       });
 
-      // Group hits by canonical scholar name. Substring queries like "vave"
-      // could match one person under multiple spellings — but each entry
-      // in worldPoints uses the graduate-studies canonical form so we can
-      // group by the raw name string safely.
+      // Group hits by canonical scholar identity. Two different spellings
+      // that resolve to the same person via the alias map (e.g. "Asesela
+      // Ravuvu" and "Asesela D. (Asesela Drekeivalu) Ravuvu" both map to
+      // "Ravuvu, Asesela") should combine into a single row — otherwise
+      // the dropdown looks like the person is two people with one degree
+      // each, when in fact it's one person with two degrees.
+      //
+      // We keep the human-readable display name (the shortest/simplest
+      // variant we've seen for this canonical key) so the row header reads
+      // naturally.
+      const aliases = state.nameAliases || new Map();
+      // Convert a raw worldPoints name into its canonical "Last, First" key,
+      // applying the admin's alias map so variant spellings resolve to the
+      // same scholar. We try three candidate keys before giving up:
+      //   1. The raw name as-is (with parenthetical) → "Last, First (Alt)"
+      //   2. Same after collapsing whitespace
+      //   3. Paren-stripped: "Last, First"
+      // The first candidate whose alias exists wins; otherwise we return
+      // the paren-stripped Last-First form so distinct-but-similar names
+      // still bucket sensibly.
+      const buildLastFirst = (n) => {
+        const parts = String(n || '').trim().split(/\s+/);
+        if (parts.length < 2) return String(n || '').trim();
+        const last = parts.pop();
+        return `${last}, ${parts.join(' ')}`;
+      };
+      const toCanonicalKey = (fullName) => {
+        const raw = String(fullName || '').trim();
+        if (!raw) return '';
+        const collapsed = raw.replace(/\s+/g, ' ');
+        const stripped = collapsed.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
+        // Build candidate keys in preference order (most specific first).
+        const candidates = [
+          buildLastFirst(collapsed),
+          buildLastFirst(stripped)
+        ];
+        for (const c of candidates) {
+          if (aliases.has(c)) return aliases.get(c);
+        }
+        // No alias hit — fall back to the stripped Last-First form so name
+        // variants that differ only by parenthetical detail bucket together.
+        return buildLastFirst(stripped);
+      };
       const byScholar = new Map();
       scholarHits.forEach(h => {
-        if (!byScholar.has(h.name)) byScholar.set(h.name, []);
-        byScholar.get(h.name).push(h);
+        const key = toCanonicalKey(h.name);
+        if (!byScholar.has(key)) {
+          byScholar.set(key, { key, displayName: h.name, hits: [] });
+        } else {
+          // Prefer the shortest variant as the display name so we don't
+          // show "Asesela D. (Asesela Drekeivalu) Ravuvu" when "Asesela
+          // Ravuvu" also exists in the hits.
+          const bucket = byScholar.get(key);
+          if (h.name.length < bucket.displayName.length) bucket.displayName = h.name;
+        }
+        byScholar.get(key).hits.push(h);
       });
 
       // Scholar-first behaviour: if the query resolves to any scholar name
@@ -1805,14 +1853,14 @@
       // the same substring) opens the dropdown with one row per scholar and
       // their degree buttons laid out horizontally.
       if (byScholar.size === 1) {
-        const [name, hits] = byScholar.entries().next().value;
-        if (hits.length === 1) {
-          zoomAndPreselect(m, hits[0].point, name, hits[0].level);
+        const only = byScholar.values().next().value;
+        if (only.hits.length === 1) {
+          zoomAndPreselect(m, only.hits[0].point, only.hits[0].name, only.hits[0].level);
           hideSearchDropdown(dropdownAnchor);
           return;
         }
-        showSearchDropdown(dropdownAnchor, [{ name, hits }], (chosen) => {
-          zoomAndPreselect(m, chosen.point, chosen.name, chosen.level);
+        showSearchDropdown(dropdownAnchor, [{ name: only.displayName, hits: only.hits }], (chosen) => {
+          zoomAndPreselect(m, chosen.point, chosen.hitName || chosen.name, chosen.level);
           hideSearchDropdown(dropdownAnchor);
         });
         return;
@@ -1824,9 +1872,9 @@
         // somewhere useful.
         const MAX_SCHOLARS_IN_DROPDOWN = 12;
         if (byScholar.size <= MAX_SCHOLARS_IN_DROPDOWN) {
-          const groups = Array.from(byScholar.entries()).map(([name, hits]) => ({ name, hits }));
+          const groups = Array.from(byScholar.values()).map(g => ({ name: g.displayName, hits: g.hits }));
           showSearchDropdown(dropdownAnchor, groups, (chosen) => {
-            zoomAndPreselect(m, chosen.point, chosen.name, chosen.level);
+            zoomAndPreselect(m, chosen.point, chosen.hitName || chosen.name, chosen.level);
             hideSearchDropdown(dropdownAnchor);
           });
           return;
@@ -1911,14 +1959,19 @@
       }, 320);
     }
 
-    // Dropdown anchored under the search box. Renders one row per scholar
-    // group, with the scholar's shortened name on the left and their
-    // degree buttons laid out horizontally to the right — so results stay
-    // compact when multiple people match a substring query.
+    // Dropdown anchored under the search box. Compact vertical list, one
+    // row per canonical scholar. Each row shows the shortened name plus a
+    // "(N)" degree-count badge when the scholar has multiple degrees; on
+    // hover, a side panel expands to the right of the row listing those
+    // degrees as clickable buttons formatted "Master's: Fiji" (colon
+    // separator). Rows with only one degree pick that degree on direct
+    // click — no expansion needed.
+    //
     // `groups` is an array of { name, hits } where each hit is
     // { point, level, name }. onPick(hit) fires with the chosen degree,
-    // enriched with { name } so the caller knows which scholar was picked
-    // (matters when multiple people share the same substring).
+    // enriched with { name, hitName } so the caller knows which scholar
+    // display name to use for popup preselect (`hitName` is the raw
+    // worldPoints name that matches the popup's data-scholar-name).
     function showSearchDropdown(anchor, groups, onPick) {
       if (!anchor || !groups || !groups.length) return;
       hideSearchDropdown(anchor);
@@ -1930,38 +1983,73 @@
       if (groups.length === 1) {
         header.textContent = `${shortenScholarName(groups[0].name)} \u2014 pick a degree:`;
       } else {
-        header.textContent = `${groups.length} matches \u2014 pick a scholar and degree:`;
+        header.textContent = `${groups.length} matches \u2014 hover a name to see degrees:`;
       }
       dd.appendChild(header);
-      groups.forEach(g => {
+
+      // Sort degrees within each group so PhD comes first, then Master's,
+      // then Other. Predictable reading order across rows.
+      const levelRank = (lvl) => (/phd/i.test(lvl) ? 0 : /master/i.test(lvl) ? 1 : 2);
+      const sortedGroups = groups.map(g => ({
+        name: g.name,
+        hits: g.hits.slice().sort((a, b) => levelRank(a.level) - levelRank(b.level))
+      }));
+
+      sortedGroups.forEach(g => {
         const row = document.createElement('div');
         row.className = 'db-map-fs-search-dd__row';
-        // In the single-scholar case the header already names the person
-        // — skip the per-row name label to keep the row compact and avoid
-        // repetition. In the multi-scholar case, show the name so each row
-        // is labelled.
-        if (groups.length > 1) {
-          const nameEl = document.createElement('span');
-          nameEl.className = 'db-map-fs-search-dd__name';
-          nameEl.textContent = shortenScholarName(g.name);
-          row.appendChild(nameEl);
+
+        const nameEl = document.createElement('button');
+        nameEl.type = 'button';
+        nameEl.className = 'db-map-fs-search-dd__name-btn';
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'db-map-fs-search-dd__name';
+        nameSpan.textContent = shortenScholarName(g.name);
+        nameEl.appendChild(nameSpan);
+        if (g.hits.length > 1) {
+          const count = document.createElement('span');
+          count.className = 'db-map-fs-search-dd__count';
+          count.textContent = ` (${g.hits.length})`;
+          nameEl.appendChild(count);
         }
-        const degrees = document.createElement('span');
-        degrees.className = 'db-map-fs-search-dd__degrees';
+        row.appendChild(nameEl);
+
+        // Side panel with degree buttons. Sits absolute-positioned to the
+        // right of the row and is revealed on row hover (or when the name
+        // button gets focus). Always present in the DOM so keyboard users
+        // can tab into it.
+        const panel = document.createElement('div');
+        panel.className = 'db-map-fs-search-dd__panel';
         g.hits.forEach(h => {
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = 'db-map-fs-search-dd__item';
-          // Compact chip: level + country. University shown as tooltip so we
-          // don't blow out the row width when many degrees pile up.
-          btn.textContent = `${h.level} \u2013 ${h.point.country}`;
+          btn.className = 'db-map-fs-search-dd__degree';
+          // Format: "Master's: Fiji" or "PhD: Australia" — colon separator.
+          btn.textContent = `${h.level}: ${h.point.country}`;
           btn.title = `${h.point.university} (${h.point.country})`;
-          btn.addEventListener('click', () => onPick({ ...h, name: g.name }));
-          degrees.appendChild(btn);
+          btn.addEventListener('click', (ev) => {
+            ev.stopPropagation();
+            onPick({ ...h, name: g.name, hitName: h.name });
+          });
+          panel.appendChild(btn);
         });
-        row.appendChild(degrees);
+        row.appendChild(panel);
+
+        // Single-degree rows: clicking the name picks that degree directly.
+        // Multi-degree rows: clicking the name toggles the panel visible so
+        // touch / non-hover users can still see it. On hover-capable
+        // pointers, the CSS handles show/hide via :hover.
+        nameEl.addEventListener('click', () => {
+          if (g.hits.length === 1) {
+            onPick({ ...g.hits[0], name: g.name, hitName: g.hits[0].name });
+          } else {
+            row.classList.toggle('is-open');
+          }
+        });
+
         dd.appendChild(row);
       });
+
       anchor.appendChild(dd);
     }
     function hideSearchDropdown(anchor) {

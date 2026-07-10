@@ -610,16 +610,16 @@
       padding: 0 4px;
     }
     .db-map-fs-search__clear:hover { color: #18181b; }
-    /* Scholar-multi-degree dropdown. Anchored inside .db-map-fs-search-wrap
-       so it hangs directly under the search input. Each row is a scholar,
-       with their name on the left and degree buttons laid out horizontally
-       to the right — so multi-scholar results stay compact instead of
-       becoming a long vertical list. */
+    /* Scholar picker dropdown. Anchored inside .db-map-fs-search-wrap so
+       it hangs directly under the search input. Compact vertical list of
+       scholar names — each row shows the person plus a (N) count when
+       they have multiple degrees; hovering the row expands a side panel
+       to the right showing those degrees as clickable buttons. Rows with
+       a single degree click straight through. */
     .db-map-fs-search-dd {
       position: absolute;
       top: calc(100% + 6px);
       left: 0;
-      right: 0;
       background: #ffffff;
       border: 1px solid #d4d4d8;
       border-radius: 8px;
@@ -628,9 +628,14 @@
       z-index: 1300;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      max-height: 60vh;
-      overflow-y: auto;
+      gap: 2px;
+      /* Do NOT set overflow here — the row's absolute-positioned side
+         panel needs to escape the dropdown box. If a huge result list
+         ever needs vertical scrolling, wrap the rows in an inner
+         overflow:auto container instead. */
+      min-width: 100%;
+      width: max-content;
+      max-width: min(360px, calc(100vw - 40px));
     }
     .db-map-fs-search-dd__header {
       padding: 4px 4px 6px;
@@ -641,46 +646,81 @@
       margin-bottom: 4px;
     }
     .db-map-fs-search-dd__row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 6px 4px;
-      flex-wrap: wrap;
+      position: relative;
+      display: block;
     }
-    .db-map-fs-search-dd__row + .db-map-fs-search-dd__row {
-      border-top: 1px solid #f4f4f5;
+    .db-map-fs-search-dd__name-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 6px 10px;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: #18181b;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 120ms ease;
+    }
+    .db-map-fs-search-dd__name-btn:hover,
+    .db-map-fs-search-dd__name-btn:focus,
+    .db-map-fs-search-dd__row.is-open .db-map-fs-search-dd__name-btn {
+      background: #f4f4f5;
+      outline: none;
     }
     .db-map-fs-search-dd__name {
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       font-weight: 600;
       color: #18181b;
       white-space: nowrap;
     }
-    .db-map-fs-search-dd__degrees {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      flex: 1 1 auto;
-    }
-    .db-map-fs-search-dd__item {
-      display: inline-flex;
-      align-items: center;
-      text-align: left;
-      padding: 4px 10px;
-      background: #f4f4f5;
-      border: 1px solid #e4e4e7;
-      border-radius: 999px;
+    .db-map-fs-search-dd__count {
+      font-size: 0.9rem;
+      font-weight: 600;
       color: #18181b;
-      font-size: 0.85rem;
-      cursor: pointer;
+    }
+    /* Side panel with the scholar's degree buttons. Absolute-positioned to
+       the right of the row so it doesn't push other rows down. Revealed on
+       row hover / focus-within, or when the row has .is-open (click / touch). */
+    .db-map-fs-search-dd__panel {
+      position: absolute;
+      top: 0;
+      left: calc(100% + 6px);
+      display: none;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 10px;
+      background: #ffffff;
+      border: 1px solid #d4d4d8;
+      border-radius: 8px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.14);
+      z-index: 1301;
+      min-width: 160px;
+    }
+    .db-map-fs-search-dd__row:hover .db-map-fs-search-dd__panel,
+    .db-map-fs-search-dd__row:focus-within .db-map-fs-search-dd__panel,
+    .db-map-fs-search-dd__row.is-open .db-map-fs-search-dd__panel {
+      display: flex;
+    }
+    .db-map-fs-search-dd__degree {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 6px 10px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      color: #18181b;
+      font-size: 0.9rem;
       font-family: inherit;
+      cursor: pointer;
       white-space: nowrap;
       transition: background 120ms ease, border-color 120ms ease;
     }
-    .db-map-fs-search-dd__item:hover,
-    .db-map-fs-search-dd__item:focus {
-      background: #e4e4e7;
-      border-color: #a1a1aa;
+    .db-map-fs-search-dd__degree:hover,
+    .db-map-fs-search-dd__degree:focus {
+      background: #f4f4f5;
+      border-color: #d4d4d8;
       outline: none;
     }
     /* When the map is fullscreen, hide page scroll behind it. */
@@ -3911,6 +3951,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-31" defer></script>
+<script src="js/itaukei-database.js?v=20260710-03" defer></script>
 </body>
 </html>
