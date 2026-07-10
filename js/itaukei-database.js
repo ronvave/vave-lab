@@ -851,6 +851,22 @@
       // Fullscreen toggle for the Fiji choropleth map. On expand we
       // re-fit to the province layer bounds so the map re-centers on
       // Fiji at the wider aspect ratio; on collapse we restore.
+      // Reset-view button for the Fiji choropleth map. Fits back to the
+      // stored default bounds and closes any open popup. Same defaults are
+      // reused for inline and fullscreen — the bounds already frame Fiji
+      // tightly, so both aspect ratios read well.
+      const fijiWrap = document.querySelector('[data-db-map-fiji-wrap]');
+      const fijiResetBtn = document.querySelector('[data-db-map-fiji-reset-btn]');
+      if (fijiWrap && fijiResetBtn) {
+        fijiResetBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const m = state.map; if (!m) return;
+          m.closePopup();
+          const bounds = state.mapDefaultBounds || [[-19.6, 176.8], [-15.9, 180.9]];
+          m.fitBounds(bounds, { padding: [4, 4], animate: true });
+        });
+      }
       wireMapFullscreen('[data-db-map-fiji-wrap]', '[data-db-map-fiji-fs-btn]', () => state.map, {
         onOpen: () => {
           const m = state.map; if (!m) return;
@@ -1448,10 +1464,32 @@
     if (!grad || !grad.scholars) return null;
     const rec = grad.scholars[name];
     if (!rec) return null;
-    // Prefer records whose university matches this point.
+    // One-shot level preference set by zoomAndPreselect when the user explicitly
+    // picks a degree in the search dropdown. Ensures we surface the PhD record
+    // (not Master's) when someone picks "PhD" at a university where the same
+    // scholar earned both degrees.
+    const preferredLevel = state.preselectPreferredLevel;
+    const preferMatches = (t) => {
+      if (!preferredLevel) return false;
+      const wantsPhd = /phd/i.test(preferredLevel);
+      const wantsMasters = /master/i.test(preferredLevel);
+      if (wantsPhd && t.level === 'phd') return true;
+      if (wantsMasters && t.level === 'masters') return true;
+      return false;
+    };
+    // Prefer records whose university matches this point AND whose level
+    // matches the user's dropdown pick, if any.
     if (rec.all && point) {
+      if (preferredLevel) {
+        const match = rec.all.find(t => t.university === point.university && t.country === point.country && preferMatches(t));
+        if (match) return match;
+      }
       const match = rec.all.find(t => t.university === point.university && t.country === point.country);
       if (match) return match;
+    }
+    if (preferredLevel) {
+      if (/phd/i.test(preferredLevel) && rec.phd) return rec.phd;
+      if (/master/i.test(preferredLevel) && rec.masters) return rec.masters;
     }
     return rec.phd || rec.masters || (rec.all && rec.all[0]) || null;
   }
@@ -1759,23 +1797,40 @@
         byScholar.get(h.name).push(h);
       });
 
-      // Scholar-first behaviour only kicks in when the query resolves to
-      // exactly one scholar. If several scholars share the substring (e.g.
-      // typing just a common surname), fall through to the classic branch
-      // so the user sees all their universities.
+      // Scholar-first behaviour: if the query resolves to any scholar name
+      // hit(s), open a compact picker instead of falling straight through to
+      // the classic country/university branch. Single scholar + single hit
+      // still short-circuits to a direct zoom+preselect. Everything else
+      // (one scholar with multiple degrees, or several scholars matching
+      // the same substring) opens the dropdown with one row per scholar and
+      // their degree buttons laid out horizontally.
       if (byScholar.size === 1) {
         const [name, hits] = byScholar.entries().next().value;
         if (hits.length === 1) {
-          zoomAndPreselect(m, hits[0].point, name);
+          zoomAndPreselect(m, hits[0].point, name, hits[0].level);
           hideSearchDropdown(dropdownAnchor);
           return;
         }
-        // Multiple degrees for the same scholar — show dropdown.
-        showSearchDropdown(dropdownAnchor, name, hits, (chosen) => {
-          zoomAndPreselect(m, chosen.point, name);
+        showSearchDropdown(dropdownAnchor, [{ name, hits }], (chosen) => {
+          zoomAndPreselect(m, chosen.point, chosen.name, chosen.level);
           hideSearchDropdown(dropdownAnchor);
         });
         return;
+      }
+      if (byScholar.size > 1) {
+        // Cap at 12 scholars so a very common substring (e.g. "Ana") doesn't
+        // produce an overwhelming picker. Beyond that, fall through to the
+        // classic country/university substring match so results still appear
+        // somewhere useful.
+        const MAX_SCHOLARS_IN_DROPDOWN = 12;
+        if (byScholar.size <= MAX_SCHOLARS_IN_DROPDOWN) {
+          const groups = Array.from(byScholar.entries()).map(([name, hits]) => ({ name, hits }));
+          showSearchDropdown(dropdownAnchor, groups, (chosen) => {
+            zoomAndPreselect(m, chosen.point, chosen.name, chosen.level);
+            hideSearchDropdown(dropdownAnchor);
+          });
+          return;
+        }
       }
 
       // --- Step 2: classic country/university/scholar substring --------
@@ -1820,59 +1875,92 @@
 
     // Zoom to a point, open its popup, then dispatch mouseenter on the
     // matching scholar's name link so the detail slot pre-populates without
-    // requiring the user to hover.
-    function zoomAndPreselect(m, point, scholarName) {
+    // requiring the user to hover. `preferredLevel` ("PhD" or "Master's") is
+    // set when the user picked a specific degree in the search dropdown —
+    // it biases the thesis lookup so we surface that record even when the
+    // scholar has multiple degrees at the same university.
+    function zoomAndPreselect(m, point, scholarName, preferredLevel) {
+      state.preselectPreferredLevel = preferredLevel || null;
       m.setView([point.lat, point.lng], 6, { animate: true });
       setTimeout(() => {
         openMarkerPopupAt(m, point, (popupEl) => {
           if (!popupEl) return;
           const target = String(scholarName || '').toLowerCase();
           const links = popupEl.querySelectorAll('.db-scholar-name[data-scholar-name]');
+          const trigger = (el) => {
+            el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+            // Preselection is sticky: block the popup's default mouseleave
+            // clear so the detail slot stays visible until the user hovers
+            // another name or closes the popup.
+            el.addEventListener('mouseleave', (ev) => ev.stopImmediatePropagation(), { capture: true, once: true });
+            // Clear the one-shot level preference right after we've applied
+            // it so subsequent free hovering behaves normally.
+            setTimeout(() => { state.preselectPreferredLevel = null; }, 50);
+          };
           for (const el of links) {
             const nm = (el.getAttribute('data-scholar-name') || '').toLowerCase();
-            if (nm === target) {
-              el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-              // Preselection is sticky: block the popup's default mouseleave
-              // clear so the detail slot stays visible until the user hovers
-              // another name or closes the popup.
-              el.addEventListener('mouseleave', (ev) => ev.stopImmediatePropagation(), { capture: true, once: true });
-              return;
-            }
+            if (nm === target) { trigger(el); return; }
           }
-          // If exact match failed (rare — casing / whitespace drift), fall back
-          // to substring match against the query.
           for (const el of links) {
             const nm = (el.getAttribute('data-scholar-name') || '').toLowerCase();
-            if (nm.includes(target)) {
-              el.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
-              el.addEventListener('mouseleave', (ev) => ev.stopImmediatePropagation(), { capture: true, once: true });
-              return;
-            }
+            if (nm.includes(target)) { trigger(el); return; }
           }
+          // If we never found the name, still clear the preference.
+          state.preselectPreferredLevel = null;
         });
       }, 320);
     }
 
-    // Dropdown shown when a single scholar has 2+ degree entries. Anchored
-    // under the search box that triggered the query.
-    function showSearchDropdown(anchor, scholarName, hits, onPick) {
-      if (!anchor) return;
+    // Dropdown anchored under the search box. Renders one row per scholar
+    // group, with the scholar's shortened name on the left and their
+    // degree buttons laid out horizontally to the right — so results stay
+    // compact when multiple people match a substring query.
+    // `groups` is an array of { name, hits } where each hit is
+    // { point, level, name }. onPick(hit) fires with the chosen degree,
+    // enriched with { name } so the caller knows which scholar was picked
+    // (matters when multiple people share the same substring).
+    function showSearchDropdown(anchor, groups, onPick) {
+      if (!anchor || !groups || !groups.length) return;
       hideSearchDropdown(anchor);
       const dd = document.createElement('div');
       dd.className = 'db-map-fs-search-dd';
       dd.setAttribute('data-db-map-fs-search-dd', '');
       const header = document.createElement('div');
       header.className = 'db-map-fs-search-dd__header';
-      // Header shows the shortened name for consistency with the popup lists.
-      header.textContent = `${shortenScholarName(scholarName)} \u2014 pick a degree:`;
+      if (groups.length === 1) {
+        header.textContent = `${shortenScholarName(groups[0].name)} \u2014 pick a degree:`;
+      } else {
+        header.textContent = `${groups.length} matches \u2014 pick a scholar and degree:`;
+      }
       dd.appendChild(header);
-      hits.forEach(h => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'db-map-fs-search-dd__item';
-        btn.textContent = `${h.point.country} \u2013 ${h.level} \u2013 ${h.point.university}`;
-        btn.addEventListener('click', () => onPick(h));
-        dd.appendChild(btn);
+      groups.forEach(g => {
+        const row = document.createElement('div');
+        row.className = 'db-map-fs-search-dd__row';
+        // In the single-scholar case the header already names the person
+        // — skip the per-row name label to keep the row compact and avoid
+        // repetition. In the multi-scholar case, show the name so each row
+        // is labelled.
+        if (groups.length > 1) {
+          const nameEl = document.createElement('span');
+          nameEl.className = 'db-map-fs-search-dd__name';
+          nameEl.textContent = shortenScholarName(g.name);
+          row.appendChild(nameEl);
+        }
+        const degrees = document.createElement('span');
+        degrees.className = 'db-map-fs-search-dd__degrees';
+        g.hits.forEach(h => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'db-map-fs-search-dd__item';
+          // Compact chip: level + country. University shown as tooltip so we
+          // don't blow out the row width when many degrees pile up.
+          btn.textContent = `${h.level} \u2013 ${h.point.country}`;
+          btn.title = `${h.point.university} (${h.point.country})`;
+          btn.addEventListener('click', () => onPick({ ...h, name: g.name }));
+          degrees.appendChild(btn);
+        });
+        row.appendChild(degrees);
+        dd.appendChild(row);
       });
       anchor.appendChild(dd);
     }
@@ -2052,6 +2140,24 @@
         if (prev) m.setView(prev.center, prev.zoom, { animate: false });
       }
     });
+    // Reset-view button for the world map. Restores the default framing for
+    // whichever mode the map is currently in (inline or fullscreen) and
+    // closes any open popup so the user gets a clean slate.
+    const worldWrap = document.querySelector('[data-db-map-world-wrap]');
+    const worldResetBtn = document.querySelector('[data-db-map-reset-btn]');
+    if (worldWrap && worldResetBtn) {
+      worldResetBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const m = state.worldMap; if (!m) return;
+        m.closePopup();
+        if (worldWrap.classList.contains('is-fullscreen')) {
+          m.fitBounds([[-55, 60], [60, 260]], { animate: true, padding: [0, 0] });
+        } else {
+          m.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM, { animate: true });
+        }
+      });
+    }
   }
 
   const MAP_FS_EXPAND_SVG = '<path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>';

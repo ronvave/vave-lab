@@ -514,6 +514,33 @@
       outline: 2px solid #0f766e; outline-offset: 2px;
     }
     .db-map-fs-btn svg { width: 18px; height: 18px; display: block; }
+    /* Reset-view button. Shares visual style with .db-map-fs-btn but sits
+       to its left (right: 54px = 34px width + 10px gap + 10px right offset
+       of the fs button, minus 34 for the reset button width → arithmetic
+       aside, they're two 34x34 buttons with 10px between them). Shows the
+       label "Reset" so the affordance is obvious even without hover text. */
+    .db-map-reset-btn {
+      position: absolute; top: 10px; right: 54px; z-index: 1000;
+      height: 34px; padding: 0 10px;
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(15, 23, 42, 0.18);
+      border-radius: 6px;
+      color: #0f172a;
+      font: 600 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+      transition: background 120ms ease, transform 120ms ease;
+    }
+    .db-map-reset-btn:hover { background: #ffffff; }
+    .db-map-reset-btn:active { transform: scale(0.96); }
+    .db-map-reset-btn:focus-visible {
+      outline: 2px solid #0f766e; outline-offset: 2px;
+    }
+    .db-map-reset-btn svg { width: 14px; height: 14px; display: block; }
+    .db-map-world-wrap.is-fullscreen .db-map-reset-btn {
+      top: 14px; right: 58px;
+    }
     /* When the wrapper is marked fullscreen, pin it to the viewport and
        let the inner map fill it. Leaflet's invalidateSize() is called on
        toggle so tiles re-render at the new size. */
@@ -584,7 +611,10 @@
     }
     .db-map-fs-search__clear:hover { color: #18181b; }
     /* Scholar-multi-degree dropdown. Anchored inside .db-map-fs-search-wrap
-       so it hangs directly under the search input. */
+       so it hangs directly under the search input. Each row is a scholar,
+       with their name on the left and degree buttons laid out horizontally
+       to the right — so multi-scholar results stay compact instead of
+       becoming a long vertical list. */
     .db-map-fs-search-dd {
       position: absolute;
       top: calc(100% + 6px);
@@ -594,36 +624,63 @@
       border: 1px solid #d4d4d8;
       border-radius: 8px;
       box-shadow: 0 6px 16px rgba(0,0,0,0.14);
-      padding: 6px;
+      padding: 6px 8px 8px;
       z-index: 1300;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 4px;
+      max-height: 60vh;
+      overflow-y: auto;
     }
     .db-map-fs-search-dd__header {
-      padding: 6px 10px;
+      padding: 4px 4px 6px;
       font-size: 0.85rem;
       font-weight: 600;
       color: #18181b;
       border-bottom: 1px solid #f1f1f1;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
+    }
+    .db-map-fs-search-dd__row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px;
+      flex-wrap: wrap;
+    }
+    .db-map-fs-search-dd__row + .db-map-fs-search-dd__row {
+      border-top: 1px solid #f4f4f5;
+    }
+    .db-map-fs-search-dd__name {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #18181b;
+      white-space: nowrap;
+    }
+    .db-map-fs-search-dd__degrees {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      flex: 1 1 auto;
     }
     .db-map-fs-search-dd__item {
-      display: block;
-      width: 100%;
+      display: inline-flex;
+      align-items: center;
       text-align: left;
-      padding: 8px 10px;
-      background: transparent;
-      border: none;
-      border-radius: 6px;
+      padding: 4px 10px;
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      border-radius: 999px;
       color: #18181b;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       cursor: pointer;
       font-family: inherit;
+      white-space: nowrap;
+      transition: background 120ms ease, border-color 120ms ease;
     }
     .db-map-fs-search-dd__item:hover,
     .db-map-fs-search-dd__item:focus {
-      background: #f4f4f5;
+      background: #e4e4e7;
+      border-color: #a1a1aa;
       outline: none;
     }
     /* When the map is fullscreen, hide page scroll behind it. */
@@ -3119,6 +3176,14 @@
           <div>
             <div class="db-map-world-wrap" data-db-map-fiji-wrap>
               <div id="db-map" role="application" aria-label="Fiji choropleth map of publications by province"></div>
+              <button type="button" class="db-map-reset-btn" data-db-map-fiji-reset-btn
+                      aria-label="Reset map view"
+                      title="Reset map to default view">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
+                </svg>
+                <span>Reset</span>
+              </button>
               <button type="button" class="db-map-fs-btn" data-db-map-fiji-fs-btn
                       aria-label="Expand map to full screen"
                       title="Expand map to full screen (Esc to exit)"
@@ -3207,6 +3272,14 @@
               <input type="search" placeholder="Search country, university, or scholar…" data-db-map-fs-search aria-label="Search countries, universities, and scholars" />
               <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
             </label>
+            <button type="button" class="db-map-reset-btn" data-db-map-reset-btn
+                    aria-label="Reset map view"
+                    title="Reset map to default world view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
+              </svg>
+              <span>Reset</span>
+            </button>
             <button type="button" class="db-map-fs-btn" data-db-map-fs-btn
                     aria-label="Expand map to full screen"
                     title="Expand map to full screen (Esc to exit)"
@@ -3838,6 +3911,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-27" defer></script>
+<script src="js/itaukei-database.js?v=20260709-31" defer></script>
 </body>
 </html>
