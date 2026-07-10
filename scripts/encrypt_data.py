@@ -55,6 +55,10 @@ TARGETS = [
     "last-sync.json",
     "itaukei-graduate-studies.json",
     "scholar-insights.json",
+    # Workplace coord lookup for the fullscreen "Institutions of work"
+    # map mode. Curated static file; encrypted so an anonymous visitor
+    # can't scrape the workplace list without the passcode.
+    "workplace-coords.json",
     # Also encrypt the province GeoJSON so nobody can enumerate scholars
     # by joining lat/lng to villages. Small, negligible cost.
     "fiji-provinces.geojson",

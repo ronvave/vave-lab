@@ -249,7 +249,7 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc, workplaceCoordsDoc] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
@@ -265,7 +265,11 @@
       // Optional — pre-generated "Explain their research" insight cache.
       // Written by scripts/build_scholar_insights.py; regenerated whenever
       // the Zotero snapshot changes so keywords and summary stay in sync.
-      fetchJson('data/scholar-insights.json').catch(() => ({ insights: {} }))
+      fetchJson('data/scholar-insights.json').catch(() => ({ insights: {} })),
+      // Curated coord table for the fullscreen "Institutions of work"
+      // view (workplaces not present in the study worldPoints, e.g. SPC,
+      // Fiji Ministry of Forestry, University of Central Lancashire).
+      fetchJson('data/workplace-coords.json').catch(() => ({ coords: {} }))
     ]);
     state.snapshot = snap;
     state.provinces = geo;
@@ -273,6 +277,7 @@
     state.lastSync = sync;
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
+    state.workplaceCoords = (workplaceCoordsDoc && workplaceCoordsDoc.coords) || {};
 
     // Name-variant aliases. Curated by the admin in the merge panel and pushed
     // via data/scholar-profiles.json. Keys are Zotero-creator variants and
@@ -2259,6 +2264,9 @@
         state.worldSectorFilter = null;
         state.worldWorkCountry = null;
         state.worldWorkInst = null;
+        // Reset also returns the map to Study mode so users always land
+        // on the same clean-slate view.
+        state.worldMode = 'study';
         renderWorldMap();
         try { refreshConfDropdownUi(); refreshSectorDropdownUi(); refreshWorkDropdownUi(); } catch (_) {}
         if (worldWrap.classList.contains('is-fullscreen')) {
@@ -2476,6 +2484,10 @@
   state.worldSectorFilter  = state.worldSectorFilter  || null; // string | null
   state.worldWorkCountry   = state.worldWorkCountry   || null; // string | null
   state.worldWorkInst      = state.worldWorkInst      || null; // string | null
+  // Map view mode: 'study' (default) plots where scholars completed
+  // graduate work; 'work' plots where they currently work. Triggered by
+  // opening the fullscreen "All institutions of work" dropdown.
+  state.worldMode          = state.worldMode          || 'study';
 
   // Province → confederacy lookup (14 Fijian provinces + Rotuma). Ra is in
   // Kubuna; Rotuma is Tovata-adjacent but historically listed under Tovata
@@ -2580,6 +2592,112 @@
               || state.worldWorkCountry || state.worldWorkInst);
   }
 
+  // -------- Workplace-mode support --------
+  // The fullscreen "All institutions of work" dropdown flips the world
+  // map into a Workplace view: instead of plotting where each scholar
+  // studied, we plot where each scholar currently works. One dot per
+  // institution, sized by the number of profiled scholars stationed
+  // there. Only scholars with a curated profile (institution +
+  // institutionCountry) appear; the yellow coverage note explains the
+  // gap for unprofiled scholars. Mode lives in state.worldMode ∈
+  // {'study', 'work'}; default is 'study'.
+
+  // Resolve the lat/lng for a scholar profile's institution. Tries the
+  // curated workplace-coords table first (small hand-maintained list),
+  // then falls back to matching against the existing study university
+  // worldPoints (so we don't duplicate coords for USP, University of
+  // Sydney, etc.). Returns { lat, lng } or null.
+  function _lookupWorkplaceCoord(country, institution) {
+    if (!institution) return null;
+    const wc = state.workplaceCoords || {};
+    if (wc[institution] && typeof wc[institution].lat === 'number') {
+      return { lat: wc[institution].lat, lng: wc[institution].lng };
+    }
+    const stripped = institution.split(' (')[0].trim();
+    if (wc[stripped] && typeof wc[stripped].lat === 'number') {
+      return { lat: wc[stripped].lat, lng: wc[stripped].lng };
+    }
+    const wps = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
+    for (const w of wps) {
+      if (w.country !== country) continue;
+      if (w.university === institution || w.university === stripped) {
+        return { lat: w.lat, lng: w.lng };
+      }
+    }
+    return null;
+  }
+
+  // Aggregate profiled scholars into one point per (country, institution).
+  // Only profiles that have both `institution` and `institutionCountry`
+  // contribute; unprofiled scholars are silently skipped (the coverage
+  // note in the toolbar explains the gap). Also applies the confederacy /
+  // province / sector filters so cross-filtering still works.
+  function buildWorkplacePoints() {
+    const profiles = state.scholarProfilesByName;
+    if (!profiles || !profiles.size) return [];
+    // Dedupe scholars: profiles is keyed by both "Last, First" and its
+    // no-middle-initial stripped variant, so the same person can appear
+    // twice. Track by slug (or Last-First fallback) so each real person
+    // counts once.
+    const seen = new Set();
+    const buckets = new Map(); // key -> { country, institution, lat, lng, scholars: [] }
+    profiles.forEach((p) => {
+      const key = p.slug || `${p.last || ''}|${p.first || ''}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const inst = (p.institution || '').trim();
+      const country = (p.institutionCountry || '').trim();
+      if (!inst || !country) return;
+      // Workplace-mode drill-downs: when a country/institution is picked
+      // in the work dropdown, restrict the points to that selection.
+      if (state.worldWorkCountry && country !== state.worldWorkCountry) return;
+      if (state.worldWorkInst && inst !== state.worldWorkInst) return;
+      // Apply the cross-filters (confederacy / province / sector). These
+      // reuse the same predicate the Study view uses so filter behaviour
+      // is consistent across modes.
+      const nameFirstLast = `${p.first || ''} ${p.last || ''}`.trim();
+      if (!_scholarPassesCrossFilters(nameFirstLast, p)) return;
+      const coord = _lookupWorkplaceCoord(country, inst);
+      if (!coord) return;
+      const bkey = `${country}|${inst}`;
+      let b = buckets.get(bkey);
+      if (!b) {
+        b = { country, institution: inst, lat: coord.lat, lng: coord.lng, scholars: [] };
+        buckets.set(bkey, b);
+      }
+      b.scholars.push(p);
+    });
+    return Array.from(buckets.values());
+  }
+
+  // The cross-filter predicate for Workplace mode. Runs the confederacy,
+  // province, and sector checks against a scholar profile. Skips the
+  // work-country / work-institution filters because those are handled by
+  // the workplace aggregation itself.
+  function _scholarPassesCrossFilters(nameFirstLast, profile) {
+    const conf = state.worldConfFilter;
+    const prov = state.worldProvFilter;
+    const sector = state.worldSectorFilter;
+    if (conf) {
+      const c = (profile.confederacy || '').trim();
+      if (c !== conf) {
+        // Try inferring from province if confederacy was blank.
+        const pp = (profile.paternalProvince || profile.maternalProvince || '').trim();
+        if (!pp || PROVINCE_TO_CONFEDERACY[pp] !== conf) return false;
+      }
+    }
+    if (prov) {
+      const pp = (profile.paternalProvince || '').trim();
+      const mp = (profile.maternalProvince || '').trim();
+      if (pp !== prov && mp !== prov) return false;
+    }
+    if (sector) {
+      const s = (profile.sector || '').trim();
+      if (s !== sector) return false;
+    }
+    return true;
+  }
+
   // Apply active filters to a single worldPoint and return a shallow copy
   // whose scholar arrays and counts reflect only scholars that pass. If
   // the point has no matching scholars, returns null.
@@ -2602,9 +2720,268 @@
     });
   }
 
+  // -------- Workplace popup card --------
+  // Matches the reference mockup uploaded 2026-07-09 (image-2 in the
+  // attachments): confederacy-tinted top bar with the institution name,
+  // then a card per scholar showing photo + name + village line +
+  // department + position. When multiple scholars share an institution
+  // (rare so far but planned for SPC/USP), we stack cards separated by a
+  // hairline divider inside a scrollable container so the popup stays
+  // compact.
+  const _WORK_CONF_BAR = {
+    Burebasaga: 'linear-gradient(90deg, #FF5A6E 0%, #c93e50 100%)',
+    Kubuna:     'linear-gradient(90deg, #4ECDE6 0%, #0891b2 100%)',
+    Tovata:     'linear-gradient(90deg, #FFD84A 0%, #f7b500 100%)'
+  };
+  const _WORK_CONF_TEXT = {
+    // Kubuna/Burebasaga bars are dark enough to carry white text; Tovata
+    // (bright yellow) needs near-black for AA contrast.
+    Burebasaga: '#ffffff',
+    Kubuna:     '#ffffff',
+    Tovata:     '#28251D'
+  };
+
+  function _workplaceProvinceForProfile(p) {
+    return (p.paternalProvince || p.maternalProvince || '').trim();
+  }
+
+  function _workplaceVillageLine(p) {
+    const village = (p.village || '').trim();
+    const pat = (p.paternalProvince || '').trim();
+    const mat = (p.maternalProvince || '').trim();
+    // Format matches user's canonical convention: "Rukua vlg, Beqa Is
+    // (Rewa) – Burebasaga". When the village string already carries an
+    // island suffix in parens, promote that into the base village.
+    let vBase = village;
+    let vNote = '';
+    if (village) {
+      const m = village.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+      if (m) { vBase = m[1].trim(); vNote = m[2].trim(); }
+    }
+    const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
+    // Show the paternal province with its confederacy tag; if the scholar
+    // also has a maternal province of a different confederacy, append it
+    // in a small muted suffix so the mixed-heritage split is visible.
+    const conf = pat ? PROVINCE_TO_CONFEDERACY[pat] : '';
+    const provinceTag = pat ? (conf ? `(${pat}) \u2013 ${conf}` : `(${pat})`) : '';
+    const patMerged = left && provinceTag ? `${left} ${provinceTag}` : (left || provinceTag || '');
+    // Second-line maternal-side note when maternal province differs.
+    let matNote = '';
+    if (mat && mat !== pat) {
+      const mconf = PROVINCE_TO_CONFEDERACY[mat] || '';
+      matNote = mconf ? `maternal: ${mat} \u2013 ${mconf}` : `maternal: ${mat}`;
+    }
+    return { primary: patMerged, maternal: matNote };
+  }
+
+  function buildWorkplacePopupHtml(point) {
+    const scholars = point.scholars || [];
+    const total = scholars.length;
+    const country = escapeHtml(point.country || '');
+    const inst = escapeHtml(point.institution || '');
+    // Header/bar colour: use the majority-confederacy tint at the
+    // institution. Ties fall back to the neutral teal.
+    const confTally = { Burebasaga: 0, Kubuna: 0, Tovata: 0 };
+    scholars.forEach(p => {
+      const c = (p.confederacy || '').trim() || PROVINCE_TO_CONFEDERACY[(p.paternalProvince || '').trim()] || '';
+      if (confTally[c] !== undefined) confTally[c] += 1;
+    });
+    let topConf = '';
+    let topN = 0;
+    ['Burebasaga', 'Kubuna', 'Tovata'].forEach(c => { if (confTally[c] > topN) { topConf = c; topN = confTally[c]; } });
+    const bar = _WORK_CONF_BAR[topConf] || 'linear-gradient(90deg, #0e7490 0%, #062f35 100%)';
+    const barText = _WORK_CONF_TEXT[topConf] || '#ffffff';
+
+    const cards = scholars.map(p => {
+      const salutation = (p.salutation || '').trim();
+      const displayName = `${salutation ? salutation + ' ' : ''}${p.first || ''} ${p.last || ''}`.trim();
+      const nameHtml = escapeHtml(displayName || p.name || '');
+      const photo = (p.photo || '').trim();
+      const photoHtml = photo
+        ? `<img class="db-work-popup__photo" src="${escapeHtml(photo)}" alt="${nameHtml}" onerror="this.style.display='none'">`
+        : `<div class="db-work-popup__photo db-work-popup__photo--placeholder">${escapeHtml(((p.first || '')[0] || '') + ((p.last || '')[0] || '')).toUpperCase()}</div>`;
+      const vline = _workplaceVillageLine(p);
+      // Show the standard village-line only when we actually have a village.
+      // If the profile has a province but no village, mark it as “not yet
+      // added” and still show the province on a small suffix line so we
+      // never lose the confederacy context.
+      const hasVillage = !!((p.village || '').trim());
+      let villageHtml;
+      if (hasVillage) {
+        villageHtml = `<div class="db-work-popup__village">${escapeHtml(vline.primary)}</div>`;
+      } else {
+        const patTag = vline.primary ? ` <span class="db-work-popup__village-prov">${escapeHtml(vline.primary)}</span>` : '';
+        villageHtml = `<div class="db-work-popup__village db-work-popup__village--muted">Village not yet added${patTag}</div>`;
+      }
+      const maternalHtml = vline.maternal
+        ? `<div class="db-work-popup__maternal">${escapeHtml(vline.maternal)}</div>`
+        : '';
+      const dept = (p.department || '').trim();
+      const title = (p.title || '').trim();
+      const deptHtml = dept ? `<div class="db-work-popup__dept">${escapeHtml(dept)}</div>` : '';
+      const titleHtml = title ? `<div class="db-work-popup__title">${escapeHtml(title)}</div>` : '';
+      const slug = (p.slug || '').trim();
+      const nameLink = slug
+        ? `<a class="db-work-popup__name-link" href="#scholar=${encodeURIComponent(slug)}">${nameHtml}</a>`
+        : nameHtml;
+      return (
+        `<div class="db-work-popup__card">` +
+          `<div class="db-work-popup__row">` +
+            photoHtml +
+            `<div class="db-work-popup__meta">` +
+              `<div class="db-work-popup__name">${nameLink}</div>` +
+              villageHtml +
+              maternalHtml +
+              deptHtml +
+              titleHtml +
+            `</div>` +
+          `</div>` +
+        `</div>`
+      );
+    }).join('<div class="db-work-popup__divider"></div>');
+
+    return (
+      `<div class="db-work-popup">` +
+        `<div class="db-work-popup__bar" style="background:${bar};color:${barText};">` +
+          `<div class="db-work-popup__bar-inst">${inst}</div>` +
+          `<div class="db-work-popup__bar-country">${country}</div>` +
+        `</div>` +
+        `<div class="db-work-popup__count">${total} · iTaukei scholar${total === 1 ? '' : 's'} working here</div>` +
+        `<div class="db-work-popup__scroll">${cards}</div>` +
+      `</div>`
+    );
+  }
+
+  // Workplace-view renderer. Behaves like renderWorldMap's study path
+  // but sources points from buildWorkplacePoints() and swaps the popup.
+  function renderWorkplaceMap() {
+    if (!state.worldMap) return;
+    if (state.worldLayer) { state.worldMap.removeLayer(state.worldLayer); state.worldLayer = null; }
+
+    const points = buildWorkplacePoints();
+    // Reuse the study-mode stats readout but express counts in workplace
+    // terms. Countries = distinct workplace countries; Universities = "
+    // distinct workplaces"; Scholars = profiled scholars appearing on the
+    // map.
+    _updateWorkplaceStats(points);
+
+    const isFs = !!state.worldMapFullscreen;
+    const lngOffsets = isFs ? [-360, 0, 360] : [0];
+    const markers = [];
+    const latlngs = [];
+    points.forEach(p => {
+      const total = p.scholars.length;
+      const radius = Math.min(28, 6 + total * 3);
+      const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
+      const popupHtml = buildWorkplacePopupHtml(p);
+      const popupOpts = {
+        maxWidth: 460,
+        minWidth: 320,
+        className: 'db-world-popup db-world-popup--work',
+        autoClose: false,
+        closeOnClick: false,
+        autoPan: true,
+        autoPanPadding: [40, 40],
+        keepInView: true
+      };
+      lngOffsets.forEach(dx => {
+        const m = L.circleMarker([p.lat, p.lng + dx], {
+          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
+        });
+        m.bindPopup(popupHtml, popupOpts);
+        m.on('mouseover', () => m.openPopup());
+        m.on('popupopen', (evt) => {
+          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+          try { wirePopupAutoClose(el, evt.popup, m); } catch (_) {}
+          setTimeout(() => { try { nudgePopupIntoView(el, state.worldMap); } catch (_) {} }, 40);
+        });
+        markers.push(m);
+        if (dx === 0) latlngs.push([p.lat, p.lng]);
+      });
+    });
+    state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
+
+    if (!state.worldSelectedCountry && !isFs) {
+      if (latlngs.length > 1) {
+        const b = L.latLngBounds(latlngs);
+        state.worldMap.fitBounds(b, { padding: [40, 60], maxZoom: 3, animate: false });
+      } else if (latlngs.length === 1) {
+        state.worldMap.setView(latlngs[0], 3, { animate: false });
+      } else {
+        state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
+      }
+    }
+    setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
+  }
+
+  // Zoom the map to a specific workplace country in Work mode. Averages
+  // the lat/lng of all workplaces in that country and picks a reasonable
+  // zoom level based on span.
+  function _zoomWorkplaceCountry(country) {
+    if (!state.worldMap) return;
+    const wc = state.workplaceCoords || {};
+    const points = [];
+    const profiles = state.scholarProfilesByName || new Map();
+    const seen = new Set();
+    profiles.forEach(p => {
+      const key = p.slug || `${p.last||''}|${p.first||''}`;
+      if (seen.has(key)) return; seen.add(key);
+      const c = (p.institutionCountry || '').trim();
+      const inst = (p.institution || '').trim();
+      if (c !== country || !inst) return;
+      const coord = _lookupWorkplaceCoord(c, inst);
+      if (coord) points.push([coord.lat, coord.lng]);
+    });
+    if (!points.length) return;
+    if (points.length === 1) {
+      state.worldMap.setView(points[0], 5, { animate: true });
+    } else {
+      state.worldMap.fitBounds(L.latLngBounds(points), { padding: [40, 40], maxZoom: 5, animate: true });
+    }
+  }
+
+  function _zoomWorkplaceInstitution(country, inst) {
+    if (!state.worldMap) return;
+    const coord = _lookupWorkplaceCoord(country, inst);
+    if (!coord) return;
+    state.worldMap.setView([coord.lat, coord.lng], 8, { animate: true });
+  }
+
+  function _updateWorkplaceStats(points) {
+    const countriesEl = document.querySelector('[data-db-map-fs-stats-countries]');
+    const unisEl      = document.querySelector('[data-db-map-fs-stats-unis]');
+    const scholarsEl  = document.querySelector('[data-db-map-fs-stats-scholars]');
+    if (!countriesEl || !unisEl || !scholarsEl) return;
+    const countries = new Set();
+    let scholarCount = 0;
+    (points || []).forEach(p => {
+      if (p.country) countries.add(p.country);
+      scholarCount += (p.scholars || []).length;
+    });
+    countriesEl.textContent = String(countries.size);
+    unisEl.textContent      = String((points || []).length);
+    scholarsEl.textContent  = String(scholarCount);
+    // Coverage note is always relevant in workplace view because ~262/302
+    // scholars lack a curated workplace. Force it on.
+    const noteEl = document.querySelector('[data-db-map-fs-coverage]');
+    if (noteEl) {
+      noteEl.style.display = '';
+      noteEl.textContent = `Workplace view shows profiled scholars only. ${scholarCount} scholar${scholarCount === 1 ? '' : 's'} across ${(points || []).length} institution${(points || []).length === 1 ? '' : 's'} — unprofiled scholars are hidden until their workplace is added.`;
+    }
+  }
+
   function renderWorldMap() {
     if (!state.worldMap) return;
     if (state.worldLayer) { state.worldMap.removeLayer(state.worldLayer); state.worldLayer = null; }
+
+    // Workplace view: one dot per (country, institution) sourced from the
+    // curated profile data instead of the study worldPoints. Everything
+    // downstream — auto-frame, stats, popups — is handled inside the
+    // workplace renderer so this branch stays isolated.
+    if (state.worldMode === 'work') {
+      renderWorkplaceMap();
+      return;
+    }
 
     const grad = state.graduateStudies || { worldPoints: [] };
     const rawPoints = grad.worldPoints || [];
@@ -2791,7 +3168,12 @@
     if (inst && c) label.textContent = `${c} › ${inst}`;
     else if (c)    label.textContent = c;
     else           label.textContent = 'All institutions of work';
-    wrap.classList.toggle('is-filtered', !!(c || inst));
+    // is-filtered marks the pill as “active” whenever the map is in
+    // Workplace mode too — not only when a country/institution row was
+    // picked. That way the pill visually reflects that clicking the label
+    // switched the map view.
+    wrap.classList.toggle('is-filtered', !!(c || inst) || state.worldMode === 'work');
+    wrap.classList.toggle('is-work-mode', state.worldMode === 'work');
     wrap.querySelectorAll('[data-work-country-row]').forEach(r => {
       r.classList.toggle('is-selected', r.getAttribute('data-work-country-row') === (c || ''));
     });
@@ -2828,27 +3210,24 @@
   }
 
   // Compute (country -> Set of institutions -> Set of scholars) for the
-  // Institutions-of-work dropdown. Only scholars whose profile carries an
-  // institution/country field contribute.
+  // Institutions-of-work dropdown. Sources directly from the curated
+  // scholar profiles so scholars who don't appear in the graduate-studies
+  // worldPoints (e.g. Jioji Ravulo at University of Sydney) still show up.
   function computeWorkTree() {
-    const countries = new Map(); // country -> Map<institution, Set<scholarName>>
-    const grad = state.graduateStudies || { worldPoints: [] };
-    (grad.worldPoints || []).forEach(p => {
-      const names = [].concat(p.phdScholars || [], p.mastersScholars || [], p.unknownScholars || []);
-      names.forEach(n => {
-        const profile = findProfileForScholarName(n);
-        if (!profile) return;
-        const c = (profile.institutionCountry || '').trim();
-        const inst = (profile.institution || '').trim();
-        if (!c && !inst) return;
-        const country = c || 'Unknown';
-        if (!countries.has(country)) countries.set(country, new Map());
-        const insts = countries.get(country);
-        if (inst) {
-          if (!insts.has(inst)) insts.set(inst, new Set());
-          insts.get(inst).add(n);
-        }
-      });
+    const countries = new Map(); // country -> Map<institution, Set<slug>>
+    const profiles = state.scholarProfilesByName || new Map();
+    const seen = new Set();
+    profiles.forEach((profile) => {
+      const key = profile.slug || `${profile.last || ''}|${profile.first || ''}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      const c = (profile.institutionCountry || '').trim();
+      const inst = (profile.institution || '').trim();
+      if (!c || !inst) return;
+      if (!countries.has(c)) countries.set(c, new Map());
+      const insts = countries.get(c);
+      if (!insts.has(inst)) insts.set(inst, new Set());
+      insts.get(inst).add(key);
     });
     return countries;
   }
@@ -3031,6 +3410,24 @@
     const workIList   = document.querySelector('[data-db-map-fs-work-inst-list]');
     const workITitle  = document.querySelector('[data-db-map-fs-work-inst-title]');
     const workDd = wireDropdown(workWrap, workBtn, workPanel);
+    // Clicking the work-dropdown button flips the map into Workplace mode
+    // instantly. Any other dropdown (or the Reset button) flips it back to
+    // Study mode. Cross-filters (confederacy / sector) stay applied
+    // across the flip so the user's selection carries over.
+    if (workBtn) {
+      workBtn.addEventListener('click', () => {
+        if (state.worldMode !== 'work') {
+          state.worldMode = 'work';
+          // Drop the study-view work-filters when entering workplace mode —
+          // in workplace mode each institution IS a marker, so those
+          // filters would just hide the whole map.
+          state.worldWorkCountry = null;
+          state.worldWorkInst = null;
+          try { renderWorldMap(); } catch (_) {}
+          try { refreshWorkDropdownUi(); } catch (_) {}
+        }
+      });
+    }
 
     function renderWorkCountryList() {
       if (!workCList) return;
@@ -3058,6 +3455,10 @@
           state.worldWorkCountry = c || null;
           state.worldWorkInst = null;
           renderWorkInstList(c);
+          // Row picks keep the map in Workplace mode; picking a country
+          // zooms/filters within workplace view.
+          if (c) _zoomWorkplaceCountry(c);
+          else state.worldMap && state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
           renderWorldMap();
           refreshWorkDropdownUi();
           if (!c) workDd && workDd.close();
@@ -3089,6 +3490,7 @@
         row.addEventListener('click', () => {
           state.worldWorkCountry = country;
           state.worldWorkInst = row.getAttribute('data-work-inst-row');
+          _zoomWorkplaceInstitution(country, state.worldWorkInst);
           renderWorldMap();
           refreshWorkDropdownUi();
           workDd && workDd.close();
