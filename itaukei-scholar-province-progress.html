@@ -99,22 +99,27 @@ a:hover{color:var(--brown-ink)}
 
 /* LIST */
 .list-wrap{margin-top:22px;background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
-.list-head{display:grid;grid-template-columns:1fr 130px 160px;gap:12px;padding:14px 22px;background:var(--paper-2);border-bottom:1px solid var(--line);font-size:.78rem;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em}
+.list-head{display:grid;grid-template-columns:1fr 120px 150px 150px;gap:12px;padding:14px 22px;background:var(--paper-2);border-bottom:1px solid var(--line);font-size:.78rem;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.05em}
 .list-head span{cursor:pointer;user-select:none}
 .list-head span:hover{color:var(--brown)}
 .list-head span.sort-active{color:var(--brown)}
 .list-head span.sort-active::after{content:" ▾";font-size:.7em}
 .list-head span.sort-active.asc::after{content:" ▴"}
-@media(max-width:640px){.list-head{grid-template-columns:1fr 90px}.list-head span:nth-child(2){display:none}}
-.list-item{display:grid;grid-template-columns:1fr 130px 160px;gap:12px;align-items:center;padding:14px 22px;border-top:1px solid var(--line-soft);transition:background .1s}
+@media(max-width:640px){.list-head{grid-template-columns:1fr 90px}.list-head span:nth-child(2),.list-head span:nth-child(3){display:none}}
+.list-item{display:grid;grid-template-columns:1fr 120px 150px 150px;gap:12px;align-items:center;padding:14px 22px;border-top:1px solid var(--line-soft);transition:background .1s}
 .list-item:first-child{border-top:none}
 .list-item:hover{background:var(--paper-2)}
-@media(max-width:640px){.list-item{grid-template-columns:1fr 90px}.list-item__count{display:none}}
+@media(max-width:640px){.list-item{grid-template-columns:1fr 90px}.list-item__count,.list-item__xval{display:none}}
 .list-item__name{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .list-item__last{font-weight:600;color:var(--ink);font-size:1rem}
 .list-item__first{color:var(--ink);opacity:.75;font-size:.94rem}
 .list-item__count{font-size:.9rem;color:var(--ink)}
 .list-item__count strong{font-family:"Fraunces",serif;font-size:1.15rem;font-weight:600;color:var(--brown)}
+.list-item__xval{font-size:.85rem;color:var(--ink)}
+.xval-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:999px;font-size:.78rem;font-weight:600;line-height:1.2}
+.xval-pill--multi{background:#e3f0e2;color:#2f6d3a}
+.xval-pill--single{background:var(--paper-2,#f3efe6);color:#8a7a5c}
+.xval-pill--none{background:transparent;color:var(--muted,#9a8f7d)}
 .badge{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;font-size:.78rem;font-weight:600;letter-spacing:.02em;text-transform:uppercase;white-space:nowrap}
 .badge--needs{background:var(--pat-tint);color:var(--pat)}
 .badge--partial{background:var(--gold-tint);color:#7a5a13}
@@ -204,7 +209,6 @@ a:hover{color:var(--brown-ink)}
       <span class="chip active" data-filter="all">All <span class="count" id="cntAll">—</span></span>
       <span class="chip" data-filter="needs">Still need help <span class="count" id="cntNeeds">—</span></span>
       <span class="chip" data-filter="partial">Partial <span class="count" id="cntPartial">—</span></span>
-      <span class="chip" data-filter="done">Fully tagged <span class="count" id="cntDone">—</span></span>
     </div>
   </div>
 
@@ -218,6 +222,7 @@ a:hover{color:var(--brown-ink)}
     <div class="list-head">
       <span data-sort="name">Scholar</span>
       <span data-sort="count">Submissions</span>
+      <span data-sort="count">Cross-validation</span>
       <span data-sort="status">Status</span>
     </div>
     <div id="listBody">
@@ -309,7 +314,7 @@ function renderStats(){
   $('sparkNeeds').style.width   = (needs / totalForPct * 100).toFixed(1) + '%';
 
   $('cntAll').textContent     = ALL_ROWS.length;
-  $('cntDone').textContent    = done;
+  const cntDoneEl = $('cntDone'); if (cntDoneEl) cntDoneEl.textContent = done; // chip removed; guard
   $('cntPartial').textContent = partial;
   $('cntNeeds').textContent   = needs;
 }
@@ -350,7 +355,12 @@ function renderList(){
   const html = rows.map(r => {
     const badgeClass = 'badge--' + (r.status === 'done' ? 'done' : r.status === 'partial' ? 'partial' : 'needs');
     const badgeText = r.status === 'done' ? 'Fully tagged' : r.status === 'partial' ? 'Partial' : 'Needs help';
-    const submLabel = r.count === 1 ? '1 submission' : `${r.count} submissions`;
+    // Cross-validation: how many independent submissions corroborate this scholar.
+    // 2+ = corroborated by multiple people; 1 = single source; 0 = none yet.
+    let xvalClass, xvalText;
+    if (r.count >= 2)      { xvalClass = 'xval-pill--multi';  xvalText = `✓ ${r.count} sources`; }
+    else if (r.count === 1){ xvalClass = 'xval-pill--single'; xvalText = '1 source'; }
+    else                   { xvalClass = 'xval-pill--none';   xvalText = '—'; }
     return `
       <div class="list-item">
         <div class="list-item__name">
@@ -358,6 +368,7 @@ function renderList(){
           <span class="list-item__first">${escapeHtml(r.firstName)}</span>
         </div>
         <div class="list-item__count"><strong>${r.count}</strong> ${r.count === 1 ? 'submission' : 'submissions'}</div>
+        <div class="list-item__xval"><span class="xval-pill ${xvalClass}">${xvalText}</span></div>
         <div><span class="badge ${badgeClass}"><span class="badge__dot"></span>${badgeText}</span></div>
       </div>`;
   }).join('');
@@ -429,10 +440,52 @@ function renderAlphaTabs(){
 const _origRenderAll = renderAll;
 renderAll = function(){ _origRenderAll(); renderAlphaTabs(); };
 
+// -------- SMART REFRESH --------
+// Instead of blindly re-downloading all 397 rows on a timer, we only pull the
+// full data when the backend's "version" (row count + last submission time)
+// actually changes — i.e. after someone has submitted. This keeps the page
+// current across all visitors while barely touching the Apps Script quota.
+let LAST_VERSION = null;
+
+async function fetchVersion(){
+  const url = `${GOOGLE_SCRIPT_URL}?mode=version&_=${Date.now()}`;
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const v = await res.json();
+  // Normalise to a single comparable string.
+  return `${v.rows || 0}|${v.lastTs || ''}`;
+}
+
+// Check the tiny version signal; only reload full data if it changed.
+async function checkForUpdates(){
+  try {
+    const v = await fetchVersion();
+    if (LAST_VERSION === null) { LAST_VERSION = v; return; }
+    if (v !== LAST_VERSION) {
+      LAST_VERSION = v;
+      await loadProgress();   // someone submitted — refresh the full list
+    }
+  } catch (err) {
+    // Silent: a failed version check just means we try again next tick.
+  }
+}
+
 // -------- BOOT --------
-loadProgress();
-// Auto-refresh every 60s
-setInterval(loadProgress, 60000);
+(async () => {
+  await loadProgress();                 // full load once on visit
+  try { LAST_VERSION = await fetchVersion(); } catch (e) { /* ignore */ }
+})();
+
+// Poll only the lightweight version signal every 60s. This does NOT re-download
+// the full data — it only triggers a full reload when a new submission exists.
+setInterval(checkForUpdates, 60 * 1000);
+
+// Also check the moment a visitor returns to the tab, so they see fresh data
+// immediately when they come back to the page.
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') checkForUpdates();
+});
+window.addEventListener('focus', checkForUpdates);
 </script>
 
 </body>
