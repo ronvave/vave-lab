@@ -2245,7 +2245,12 @@
         // paint ghost markers off West Africa (the wraparound bug we
         // shipped v12 to fix). Zoom 2 renders one clean world copy
         // 1024px wide and 512px tall, centered on Fiji at 160°E.
-        m.setView([15, 160], 2, { animate: false });
+        // Ron's preferred default: centre near 80°E at zoom 3 so Europe
+        // (Iceland/UK/Portugal) sits on the left, Fiji cluster sits
+        // centre-right, and the Pacific expanse on the right leaves room
+        // for the wrapped Hawai‘i / US-mainland markers to appear when
+        // the user pans east. Fills the whole viewport at 1500×900+.
+        m.setView([10, 80], 3, { animate: false });
       },
       onClose: () => {
         const m = state.worldMap; if (!m) return;
@@ -2285,7 +2290,7 @@
         renderWorldMap();
         try { refreshConfDropdownUi(); refreshSectorDropdownUi(); refreshWorkDropdownUi(); } catch (_) {}
         if (worldWrap.classList.contains('is-fullscreen')) {
-          m.fitBounds(WORLD_MAP_FS_FIT_BOUNDS, { animate: true, padding: [0, 0] });
+          m.setView([10, 80], 3, { animate: true });
         } else {
           m.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM, { animate: true });
         }
@@ -2882,12 +2887,21 @@
 
     const isFs = !!state.worldMapFullscreen;
     // Single-copy markers: the fullscreen viewport is 260° wide (see
-    // WORLD_MAP_FS_FIT_BOUNDS), so we never need to paint duplicate copies
-    // at ±360° — those would only show if the user dragged the map, and
-    // in practice they created ghost dots off the coasts of West Africa /
-    // Central America. If dragging behaviour changes later, restore the
-    // [-360, 0, 360] offsets here.
-    const lngOffsets = [0];
+    // Fullscreen only: shift each workplace marker to the wrap-copy
+    // closest to 140°E so American markers render east of the anti-
+    // meridian and stay reachable by panning right. Inline view keeps
+    // canonical positions — Leaflet's tile wrap handles rendering there.
+    const wrapAnchor = 140;
+    const wrapLng = (lng) => {
+      if (!isFs) return lng;
+      const candidates = [lng - 360, lng, lng + 360];
+      let best = lng, bestDist = Math.abs(lng - wrapAnchor);
+      candidates.forEach(c => {
+        const d = Math.abs(c - wrapAnchor);
+        if (d < bestDist) { bestDist = d; best = c; }
+      });
+      return best;
+    };
     const markers = [];
     const latlngs = [];
     points.forEach(p => {
@@ -2905,20 +2919,19 @@
         autoPanPadding: [40, 40],
         keepInView: true
       };
-      lngOffsets.forEach(dx => {
-        const m = L.circleMarker([p.lat, p.lng + dx], {
-          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
-        });
-        m.bindPopup(popupHtml, popupOpts);
-        m.on('mouseover', () => m.openPopup());
-        m.on('popupopen', (evt) => {
-          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
-          try { wirePopupAutoClose(el, evt.popup, m); } catch (_) {}
-          setTimeout(() => { try { nudgePopupIntoView(el, state.worldMap); } catch (_) {} }, 40);
-        });
-        markers.push(m);
-        if (dx === 0) latlngs.push([p.lat, p.lng]);
+      const displayLng = wrapLng(p.lng);
+      const m = L.circleMarker([p.lat, displayLng], {
+        radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
       });
+      m.bindPopup(popupHtml, popupOpts);
+      m.on('mouseover', () => m.openPopup());
+      m.on('popupopen', (evt) => {
+        const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+        try { wirePopupAutoClose(el, evt.popup, m); } catch (_) {}
+        setTimeout(() => { try { nudgePopupIntoView(el, state.worldMap); } catch (_) {} }, 40);
+      });
+      markers.push(m);
+      latlngs.push([p.lat, displayLng]);
     });
     state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
 
@@ -2945,7 +2958,7 @@
     // renders one world (1024px) with a clean Pacific-centred crop.
     if (isFs && !state.worldWorkCountry && !state.worldWorkInst) {
       state.worldMap.invalidateSize();
-      state.worldMap.setView([15, 160], 2, { animate: false });
+      state.worldMap.setView([10, 80], 3, { animate: false });
     }
     setTimeout(() => { if (state.worldMap) state.worldMap.invalidateSize(); }, 0);
   }
@@ -3036,13 +3049,24 @@
     }
 
     // Where iTaukei graduates study.
-    // Both inline and fullscreen views use single-copy markers. The
-    // fullscreen viewport (WORLD_MAP_FS_FIT_BOUNDS) is 260° wide, so we
-    // never need the ±360° duplicate copies that previously caused ghost
-    // dots off the coasts of West Africa / Central America. If dragging
-    // behaviour changes later, restore the [-360, 0, 360] offsets here.
+    // Fullscreen only: shift each marker to the wrap-copy closest to the
+    // reference longitude (140°E) so Hawai‘i and US-mainland markers
+    // render east of the antimeridian and are reachable by dragging the
+    // map right, rather than falling off the left edge of a Pacific-
+    // centred fullscreen viewport. Inline view keeps canonical positions
+    // — Leaflet's tile wrap already renders them correctly there.
     const isFs = !!state.worldMapFullscreen;
-    const lngOffsets = [0];
+    const wrapAnchor = 140;
+    const wrapLng = (lng) => {
+      if (!isFs) return lng;
+      const candidates = [lng - 360, lng, lng + 360];
+      let best = lng, bestDist = Math.abs(lng - wrapAnchor);
+      candidates.forEach(c => {
+        const d = Math.abs(c - wrapAnchor);
+        if (d < bestDist) { bestDist = d; best = c; }
+      });
+      return best;
+    };
     const markers = [];
     const latlngs = [];
     points.forEach(p => {
@@ -3070,24 +3094,23 @@
         keepInView: true
       };
 
-      lngOffsets.forEach(dx => {
-        const m = L.circleMarker([p.lat, p.lng + dx], {
-          radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
-        });
-        m.bindPopup(popupHtml, popupOpts);
-        m.on('mouseover', () => m.openPopup());
-        m.on('popupopen', (evt) => {
-          const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
-          wirePopupScholarHovers(el, p);
-          wirePopupAutoClose(el, evt.popup, m);
-          // Give autoPan a beat, then verify the popup is fully inside the map
-          // viewport. If it isn't (common for Fiji's huge popups near the map
-          // edges), pan the map manually so the popup sits comfortably.
-          setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
-        });
-        markers.push(m);
-        if (dx === 0) latlngs.push([p.lat, p.lng]);
+      const displayLng = wrapLng(p.lng);
+      const m = L.circleMarker([p.lat, displayLng], {
+        radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
       });
+      m.bindPopup(popupHtml, popupOpts);
+      m.on('mouseover', () => m.openPopup());
+      m.on('popupopen', (evt) => {
+        const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
+        wirePopupScholarHovers(el, p);
+        wirePopupAutoClose(el, evt.popup, m);
+        // Give autoPan a beat, then verify the popup is fully inside the map
+        // viewport. If it isn't (common for Fiji's huge popups near the map
+        // edges), pan the map manually so the popup sits comfortably.
+        setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
+      });
+      markers.push(m);
+      latlngs.push([p.lat, displayLng]);
     });
 
     state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
@@ -3499,7 +3522,7 @@
             // inside renderWorkplaceMap does this too, but doing it here
             // first avoids a brief zoom-out flicker to DEFAULT_ZOOM=1).
             if (state.worldMapFullscreen) {
-              state.worldMap.setView([15, 160], 2, { animate: false });
+              state.worldMap.setView([10, 80], 3, { animate: false });
             } else {
               state.worldMap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
             }
