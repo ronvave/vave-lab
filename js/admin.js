@@ -20,7 +20,7 @@
   'use strict';
 
   // SHA-256 of the admin password. Change here + in memory to update.
-  const PASSWORD_HASH = '801e61f51a774fc3b896ec5b4ae80d2bea4972145678a144598766ccc57cee54';
+  const PASSWORD_HASH = 'd4d3d9ac6a90ffff854263c3edade0c83c5cc1836cb581f67aa91789ece296d6';
   const SESSION_KEY = 'vavelab_admin_session';
   const SHEET_URL_KEY = 'vavelab_scholar_sheet_url';
   const GH_TOKEN_KEY  = 'vavelab_gh_token';
