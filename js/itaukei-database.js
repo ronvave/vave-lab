@@ -1430,6 +1430,16 @@
         // slug so clicking deep-links to the scholar's card; renders as
         // plain text when the profile isn't linkable. If both village and
         // province are blank, the chip is omitted entirely.
+        // Static province -> confederacy lookup. Kept inline here (rather than
+        // pulling from CONFEDERACY_PROVINCES lower in the file) because this
+        // popup render path runs before that constant is in scope.
+        const PROVINCE_TO_CONFEDERACY = {
+          Kadavu: 'Burebasaga', 'Nadroga/Navosa': 'Burebasaga', Namosi: 'Burebasaga',
+          Rewa: 'Burebasaga', Serua: 'Burebasaga',
+          Ba: 'Kubuna', Lomaiviti: 'Kubuna', Naitasiri: 'Kubuna',
+          Ra: 'Kubuna', Tailevu: 'Kubuna',
+          Bua: 'Tovata', Cakaudrove: 'Tovata', Lau: 'Tovata', Macuata: 'Tovata'
+        };
         function mergeVillageProvince(v, p) {
           // Split off an existing trailing "(...)" from the village so we can
           // reuse whatever's inside as an island / locality note.
@@ -1443,9 +1453,14 @@
             }
           }
           const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
-          if (left && p) return `${left} (${p})`;
-          if (left)     return left;
-          if (p)        return `(${p})`;
+          // Append confederacy after the province, separated by an en-dash,
+          // when the province maps to a known confederacy. Format:
+          //   "Rukua vlg, Beqa Is (Rewa) \u2013 Burebasaga"
+          const conf = p ? PROVINCE_TO_CONFEDERACY[p] : '';
+          const provinceTag = p ? (conf ? `(${p}) \u2013 ${conf}` : `(${p})`) : '';
+          if (left && provinceTag) return `${left} ${provinceTag}`;
+          if (left)                return left;
+          if (provinceTag)         return provinceTag;
           return '';
         }
         // Village + province render on their own line under the name so the
@@ -1606,6 +1621,49 @@
         if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
         renderWorldPanel();
       });
+      // Pressing Enter in the inline search does the same map action as the
+      // fullscreen search: fit or zoom to matching universities.
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const q = (searchInput.value || '').trim().toLowerCase();
+        if (!q) return;
+        const m = state.worldMap;
+        const grad = state.graduateStudies || { worldPoints: [] };
+        const points = grad.worldPoints || [];
+        if (!m || !points.length) return;
+        const matches = points.filter(p => {
+          if ((p.country || '').toLowerCase().includes(q)) return true;
+          if ((p.university || '').toLowerCase().includes(q)) return true;
+          const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
+          for (const list of lists) {
+            if (!list) continue;
+            for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
+          }
+          return false;
+        });
+        if (matches.length === 0) return;
+        if (matches.length === 1) {
+          const p = matches[0];
+          m.setView([p.lat, p.lng], 6, { animate: true });
+          setTimeout(() => {
+            let opened = false;
+            m.eachLayer(layer => {
+              if (opened) return;
+              if (layer && layer.getLatLng && layer.getPopup) {
+                const ll = layer.getLatLng();
+                if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
+                  layer.openPopup();
+                  opened = true;
+                }
+              }
+            });
+          }, 320);
+        } else {
+          const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
+          m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
+        }
+      });
     }
     if (searchClear) {
       searchClear.addEventListener('click', () => {
@@ -1633,6 +1691,55 @@
         if (searchInput) searchInput.value = fsSearchInput.value;
         if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
         renderWorldPanel();
+      });
+      // Enter fires the actual map action: locate all worldPoints whose country,
+      // university, or scholar name matches the query and zoom the map to fit
+      // them. Single match -> zoom in tight and open its popup. Multiple ->
+      // fitBounds. Zero -> no-op (search box already shows the empty state via
+      // its clear icon; nothing to do on the map).
+      fsSearchInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        e.preventDefault();
+        const q = (fsSearchInput.value || '').trim().toLowerCase();
+        if (!q) return;
+        const m = state.worldMap;
+        const grad = state.graduateStudies || { worldPoints: [] };
+        const points = grad.worldPoints || [];
+        if (!m || !points.length) return;
+        const matches = points.filter(p => {
+          if ((p.country || '').toLowerCase().includes(q)) return true;
+          if ((p.university || '').toLowerCase().includes(q)) return true;
+          const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
+          for (const list of lists) {
+            if (!list) continue;
+            for (const n of list) if ((n || '').toLowerCase().includes(q)) return true;
+          }
+          return false;
+        });
+        if (matches.length === 0) return;
+        if (matches.length === 1) {
+          const p = matches[0];
+          m.setView([p.lat, p.lng], 6, { animate: true });
+          // Give the pan/zoom a beat before hunting for the marker; the layer
+          // is redrawn on every render but the circle at [p.lat, p.lng] with
+          // dx=0 offset is the canonical one to open.
+          setTimeout(() => {
+            let opened = false;
+            m.eachLayer(layer => {
+              if (opened) return;
+              if (layer && layer.getLatLng && layer.getPopup) {
+                const ll = layer.getLatLng();
+                if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
+                  layer.openPopup();
+                  opened = true;
+                }
+              }
+            });
+          }, 320);
+        } else {
+          const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
+          m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
+        }
       });
     }
     if (fsSearchClear) {
@@ -1711,7 +1818,7 @@
     // or right and the map keeps going instead of hitting a wall or
     // slicing Fiji. We also re-render the marker layer with duplicate
     // copies at ±360° longitude so dots appear in every world copy.
-    wireWorldMapDrawToZoom();
+    // Draw-a-rectangle-to-zoom was removed in favor of the fullscreen search box.
     wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
       onOpen: () => {
         const m = state.worldMap; if (!m) return;

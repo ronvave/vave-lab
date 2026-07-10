@@ -531,18 +531,6 @@
     .db-map-world-wrap.is-fullscreen .db-map-fs-btn {
       top: 14px; right: 14px;
     }
-    /* The draw-box-to-zoom button sits just left of the fullscreen button.
-       It's hidden inline (see inline style=display:none on the button) and
-       switched on only when the wrapper enters fullscreen mode. */
-    .db-map-world-wrap.is-fullscreen .db-map-draw-btn {
-      display: inline-flex !important;
-      top: 14px; right: 56px;
-    }
-    .db-map-draw-btn.is-active {
-      background: #fef3c7;
-      border-color: #d97706;
-      color: #7c2d12;
-    }
     /* Fullscreen-only floating search box. Anchored top-center of the map so
        it clears the top-left zoom controls and the top-right fullscreen /
        draw buttons. Hidden inline (display:none) and revealed with flex
@@ -593,26 +581,6 @@
       padding: 0 4px;
     }
     .db-map-fs-search__clear:hover { color: #18181b; }
-    /* When draw mode is armed on the world map, swap the cursor to a
-       crosshair over the map surface and suppress Leaflet's default drag
-       cursor. Rules only apply while .is-drawing is set, so normal panning
-       still works when draw mode is off. */
-    .db-map-world-wrap.is-drawing #db-map-world,
-    .db-map-world-wrap.is-drawing #db-map-world .leaflet-container,
-    .db-map-world-wrap.is-drawing #db-map-world .leaflet-interactive {
-      cursor: crosshair !important;
-    }
-    /* Rubber-band selection rectangle drawn during a click-drag. Positioned
-       inline via JS (top/left/width/height); this class just gives it a
-       consistent look on top of the map. */
-    .db-map-draw-box {
-      position: absolute;
-      border: 2px dashed #f59e0b;
-      background: rgba(245, 158, 11, 0.15);
-      pointer-events: none;
-      z-index: 1100;
-      border-radius: 2px;
-    }
     /* When the map is fullscreen, hide page scroll behind it. */
     body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
@@ -2211,25 +2179,25 @@
     }
     .db-popup-scholar-detail__body { flex: 1 1 auto; min-width: 0; }
     .db-popup-scholar-detail__name {
-      font-weight: 700; font-size: 0.9rem; color: var(--color-primary);
+      font-weight: 700; font-size: 0.9rem; color: var(--color-text);
       margin-bottom: 2px;
     }
     /* Village line: rendered on its own row underneath the name so the photo
        has a clean 3-line block (name / village / thesis) to size against.
-       Keeps the primary link color + underline treatment. */
+       Uses the primary color of the name row (no underline) so the village +
+       province + confederacy reads as one continuous label. */
     .db-popup-scholar-detail__village {
       display: block;
-      color: var(--color-text);
+      color: var(--color-primary);
       margin-bottom: 2px;
     }
     .db-popup-scholar-detail__thesis { font-style: italic; }
-    .db-popup-scholar-detail__year { color: var(--color-text-muted); }
+    .db-popup-scholar-detail__year { color: var(--color-text); }
     .db-popup-scholar-detail__village a {
       color: var(--color-primary);
-      text-decoration: underline;
-      text-underline-offset: 2px;
+      text-decoration: none;
     }
-    .db-popup-scholar-detail__village a:hover { text-decoration-thickness: 2px; }
+    .db-popup-scholar-detail__village a:hover { text-decoration: underline; text-underline-offset: 2px; }
     /* Only show the photo column when the world map is in fullscreen mode.
        The .is-fullscreen class is toggled on .db-map-world-wrap by the
        wireMapFullscreen helper, and Leaflet popup DOM is a descendant of
@@ -3164,16 +3132,6 @@
               <input type="search" placeholder="Search country, university, or scholar…" data-db-map-fs-search aria-label="Search countries, universities, and scholars" />
               <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
             </label>
-            <button type="button" class="db-map-fs-btn db-map-draw-btn" data-db-map-draw-btn
-                    aria-label="Draw a box to zoom"
-                    title="Draw a rectangle on the map to zoom to that area"
-                    aria-pressed="false"
-                    style="display:none;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="4" y="6" width="16" height="12" rx="1" stroke-dasharray="3 2"/>
-                <path d="M9 12h6M12 9v6"/>
-              </svg>
-            </button>
             <button type="button" class="db-map-fs-btn" data-db-map-fs-btn
                     aria-label="Expand map to full screen"
                     title="Expand map to full screen (Esc to exit)"
@@ -3805,6 +3763,6 @@
 </div>
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
-<script src="js/itaukei-database.js?v=20260709-18" defer></script>
+<script src="js/itaukei-database.js?v=20260709-19" defer></script>
 </body>
 </html>
