@@ -394,7 +394,22 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 
     <div id="notListForm" class="notlist-form hidden">
       <h3 style="font-family:'Fraunces',serif;font-weight:600;margin:0 0 6px;color:var(--ink)">Add someone not on the list</h3>
-      <p style="margin:0 0 16px;font-size:.94rem;color:var(--ink)">These go to a separate <strong>NewScholars</strong> stream. If you know their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span> village and province, you can add that below too — all of it is optional.</p>
+      <p style="margin:0 0 14px;font-size:.94rem;color:var(--ink)">These go to a separate <strong>NewScholars</strong> stream for review. If you know their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span> village and province, you can add that below too.</p>
+
+      <div style="margin:0 0 18px;padding:12px 15px;background:var(--gold-tint,#faf3d8);border-left:3px solid var(--gold,#d4a017);border-radius:6px;font-size:.9rem;color:#5c4a12;line-height:1.55">
+        <strong>Before you add someone — please read.</strong> This database is primarily for <strong>scholars</strong>: Masters &amp; PhD by-thesis students, and those who have published journal articles, books, book chapters, and/or reports. For each person, a <strong>link to their thesis or a scientific publication is required</strong> — this is the easiest way to skip the vetting process and have them added quickly. If you can't find one, you may still submit, but you'll need to explain in the <em>notes</em> field (e.g. degree evidence, a news link of their graduation) so they can be researched before being added.
+      </div>
+
+      <div class="informant-grid" style="margin:0 0 18px">
+        <div class="informant-field">
+          <label for="newInformantName">Your name (optional)</label>
+          <input id="newInformantName" type="text" placeholder="e.g. Ron Vave" autocomplete="name">
+        </div>
+        <div class="informant-field">
+          <label for="newInformantEmail">Your email (optional)</label>
+          <input id="newInformantEmail" type="email" placeholder="e.g. name@example.com" autocomplete="email">
+        </div>
+      </div>
 
       <div class="notlist-count">
         <div class="notlist-count__field">
@@ -734,7 +749,7 @@ function renderNewScholarBlocks(n){
         <div><label for="newDegree_${i}">Degree</label><select id="newDegree_${i}"><option value="">Select…</option><option>Masters</option><option>PhD</option><option>Other</option></select></div>
         <div><label for="newYear_${i}">Graduation year</label><input id="newYear_${i}" type="text" placeholder="e.g. 2018"></div>
         <div><label for="newUni_${i}">University</label><input id="newUni_${i}" type="text"></div>
-        <div><label for="newLink_${i}">Thesis or profile link</label><input id="newLink_${i}" type="url" placeholder="https://…"></div>
+        <div><label for="newLink_${i}">Thesis or publication link <span style="color:var(--pat,#a3341f)">*</span></label><input id="newLink_${i}" type="url" class="nlink" placeholder="https://… (thesis, journal article, book, chapter or report)"><span style="display:block;margin-top:4px;font-size:.78rem;color:var(--muted,#7a7266)">Required. If you can't find one, leave blank and explain in notes below.</span></div>
       </div>
       <div class="entry__body newScholar-block__sides">
         <div class="side side--pat">
@@ -753,6 +768,10 @@ function renderNewScholarBlocks(n){
             <div class="side__field"><label for="newMatProvince_${i}">Province</label><select id="newMatProvince_${i}" class="nmp">${provinceOptions()}</select></div>
           </div>
         </div>
+      </div>
+      <div class="newScholar-block__notes" style="margin-top:14px">
+        <label for="newNotes_${i}" style="display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:4px">Notes or comments (optional)</label>
+        <textarea id="newNotes_${i}" rows="3" placeholder="If you couldn't find a thesis or publication link above, please explain how you know this person is a Masters or PhD graduate — e.g. a news link of their graduation, the institution and year, or any detail that helps us research and verify them before adding." style="width:100%;padding:10px 12px;border:1px solid var(--border,#d9d3c7);border-radius:8px;font:inherit;font-size:.9rem;background:#fff;resize:vertical"></textarea>
       </div>`;
     wrap.appendChild(block);
   }
@@ -771,21 +790,32 @@ async function submitNewScholar(){
     const first = ($('newFirst_'+i)?.value || '').trim();
     if (!last && !first) continue; // skip blanks
     if (!last || !first) { status.className='status err'; status.textContent = `Scholar ${i+1}: please provide both first and last name (or leave both blank to skip).`; return; }
+    const thesisLink = ($('newLink_'+i)?.value || '').trim();
+    const notes = ($('newNotes_'+i)?.value || '').trim();
+    // A thesis/publication link is required. If it's missing, the informant must
+    // explain in notes so the person can be vetted before being added.
+    if (!thesisLink && !notes) {
+      status.className='status err';
+      status.textContent = `Scholar ${i+1} (${last}, ${first}): please add a thesis or publication link, or — if you can't find one — explain in the notes field so they can be researched before being added.`;
+      $('newLink_'+i)?.focus();
+      return;
+    }
     scholars.push({
       lastName: last,
       firstName: first,
       degree: ($('newDegree_'+i)?.value || ''),
       gradYear: ($('newYear_'+i)?.value || '').trim(),
       university: ($('newUni_'+i)?.value || '').trim(),
-      thesisLink: ($('newLink_'+i)?.value || '').trim(),
+      thesisLink: thesisLink,
       paternalVillage: ($('newPatVillage_'+i)?.value || '').trim(),
       paternalProvince: ($('newPatProvince_'+i)?.value || ''),
       maternalVillage: ($('newMatVillage_'+i)?.value || '').trim(),
-      maternalProvince: ($('newMatProvince_'+i)?.value || '')
+      maternalProvince: ($('newMatProvince_'+i)?.value || ''),
+      notes: notes
     });
   }
   if (!scholars.length){ status.className='status err'; status.textContent='Please fill in at least one scholar (first and last name).'; return; }
-  const payload = { type: 'newBatch', scholars: scholars, informantName: ($('informantName')?.value || '').trim(), informantEmail: ($('informantEmail')?.value || '').trim() };
+  const payload = { type: 'newBatch', scholars: scholars, informantName: ($('newInformantName')?.value || '').trim(), informantEmail: ($('newInformantEmail')?.value || '').trim() };
   status.textContent = 'Sending…'; status.className='status';
   try {
     // Same preflight-free approach as submitBatch(): text/plain + no-cors.

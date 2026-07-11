@@ -845,6 +845,10 @@
           + fieldRow('Maternal province', r.maternalProvince)
           + fieldRow('Informant name', r.informantName)
           + fieldRow('Informant email', r.informantEmail)
+          + (r.notes ? '<div style="margin-top:8px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:8px;">'
+              + '<div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px;">Notes / explanation</div>'
+              + '<div style="font-size:0.85rem;white-space:pre-wrap;">' + esc(r.notes) + '</div></div>' : '')
+          + (!r.thesisLink ? '<div style="margin-top:8px;font-size:0.8rem;color:#b3261e;font-weight:600;">⚠ No thesis/publication link — needs research before adding</div>' : '')
         + '</div>'
       + '</div>';
     }).join('');
