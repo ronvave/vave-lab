@@ -52,13 +52,15 @@ a:hover{color:var(--brown-ink)}
 @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
 
 /* STAT BAND */
-.stat-band{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:24px}
-@media(max-width:840px){.stat-band{grid-template-columns:repeat(2,1fr)}}
+.stat-band{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:24px}
+@media(max-width:1080px){.stat-band{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.stat-band{grid-template-columns:repeat(2,1fr)}}
 .stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden}
 .stat--needs{background:linear-gradient(180deg,var(--paper) 0%,#fbf3ef 100%);border-color:#e5c7bf}
 .stat--partial{background:linear-gradient(180deg,var(--paper) 0%,#fbf7e4 100%);border-color:#ecd88f}
 .stat--done{background:linear-gradient(180deg,var(--paper) 0%,#eff5ef 100%);border-color:#bfd3c5}
 .stat--total{background:linear-gradient(180deg,var(--paper) 0%,var(--brown-soft) 100%);border-color:#e8c48b}
+.stat--new{background:linear-gradient(180deg,var(--paper) 0%,#eaf3f2 100%);border-color:#b7d5d0}
 .stat__num{font-family:"Fraunces",serif;font-weight:600;font-size:2.6rem;line-height:1;color:var(--ink);letter-spacing:-.02em}
 .stat__label{font-size:.88rem;color:var(--ink);text-transform:uppercase;letter-spacing:.04em;margin-top:8px;font-weight:600}
 .stat__hint{font-size:.82rem;color:var(--ink);opacity:.75;margin-top:2px;font-style:italic}
@@ -68,6 +70,7 @@ a:hover{color:var(--brown-ink)}
 .stat--partial .stat__spark-fill{background:var(--gold)}
 .stat--done .stat__spark-fill{background:var(--mat)}
 .stat--total .stat__spark-fill{background:var(--brown)}
+.stat--new .stat__spark-fill{background:#2b8a83}
 
 /* SUPPORTED CONTEXT PANEL */
 .supports{margin-top:26px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:24px 26px}
@@ -178,7 +181,7 @@ a.badge--link:hover .badge__go{opacity:1;transform:translateX(2px)}
     <div class="stat stat--total">
       <div class="stat__num" id="statTotal">—</div>
       <div class="stat__label">Scholars in database</div>
-      <div class="stat__hint">iTaukei Postgraduates only</div>
+      <div class="stat__hint">iTaukei Researchers only</div>
       <div class="stat__spark"><div class="stat__spark-fill" style="width:100%"></div></div>
     </div>
     <div class="stat stat--done">
@@ -192,6 +195,12 @@ a.badge--link:hover .badge__go{opacity:1;transform:translateX(2px)}
       <div class="stat__label">Partial info</div>
       <div class="stat__hint">Some fields still open</div>
       <div class="stat__spark"><div class="stat__spark-fill" id="sparkPartial" style="width:0%"></div></div>
+    </div>
+    <div class="stat stat--new">
+      <div class="stat__num" id="statNew">—</div>
+      <div class="stat__label">New scholars added</div>
+      <div class="stat__hint">Submitted &amp; approved by the community</div>
+      <div class="stat__spark"><div class="stat__spark-fill" id="sparkNew" style="width:0%"></div></div>
     </div>
     <div class="stat stat--needs">
       <div class="stat__num" id="statNeeds">—</div>
@@ -283,6 +292,36 @@ const listBody = $('listBody');
 const searchInput = $('searchInput');
 
 // -------- FETCH --------
+// How many crowdsourced "Add someone not on the list" submissions have been
+// approved into the master list. We hit the same backend endpoint the admin
+// uses (mode=newScholars) and count non-pending, non-rejected rows. If the
+// fetch fails, the card falls back to — so the rest of the page still loads.
+let NEW_SCHOLARS_APPROVED = null;
+async function loadNewScholarsCount(){
+  try {
+    const url = `${GOOGLE_SCRIPT_URL}?mode=newScholars&_=${Date.now()}`;
+    const res = await fetch(url, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const rows = Array.isArray(data)
+      ? data
+      : (data.rows || (data.result && data.result.rows) || []);
+    // Anything that has been approved (backend marks status='approved').
+    // Defensive: also accept alternate spellings so we don't miss counts if the
+    // backend evolves.
+    const approved = rows.filter(r => {
+      const s = (r.status || '').toString().trim().toLowerCase();
+      return s === 'approved' || s === 'accepted' || s === 'added';
+    });
+    NEW_SCHOLARS_APPROVED = approved.length;
+    renderStats();
+  } catch (err) {
+    console.warn('[progress] could not fetch new-scholars count:', err);
+    NEW_SCHOLARS_APPROVED = null;
+    // Leave the card showing — rather than 0, so we don't misrepresent as "none yet".
+  }
+}
+
 async function loadProgress(){
   try {
     const url = `${GOOGLE_SCRIPT_URL}?mode=progress&_=${Date.now()}`;
@@ -334,11 +373,25 @@ function renderStats(){
   $('statDone').textContent    = done.toLocaleString();
   $('statPartial').textContent = partial.toLocaleString();
   $('statNeeds').textContent   = needs.toLocaleString();
+  const statNewEl = $('statNew');
+  if (statNewEl) statNewEl.textContent = (NEW_SCHOLARS_APPROVED == null)
+    ? '\u2014'
+    : NEW_SCHOLARS_APPROVED.toLocaleString();
 
   const totalForPct = Math.max(TOTAL_SCHOLARS, ALL_ROWS.length, 1);
   $('sparkDone').style.width    = (done / totalForPct * 100).toFixed(1) + '%';
   $('sparkPartial').style.width = (partial / totalForPct * 100).toFixed(1) + '%';
   $('sparkNeeds').style.width   = (needs / totalForPct * 100).toFixed(1) + '%';
+  const sparkNewEl = $('sparkNew');
+  if (sparkNewEl) {
+    // "New scholars added" is not a share-of-total — it's an additive count
+    // coming from outside the existing 399. Show the bar as new-vs-total-so-far
+    // (capped at 100%) so it reads as "community contribution to the list".
+    const pct = (NEW_SCHOLARS_APPROVED == null)
+      ? 0
+      : Math.min(NEW_SCHOLARS_APPROVED / totalForPct * 100, 100);
+    sparkNewEl.style.width = pct.toFixed(1) + '%';
+  }
 
   $('cntAll').textContent     = ALL_ROWS.length;
   const cntDoneEl = $('cntDone'); if (cntDoneEl) cntDoneEl.textContent = done; // chip removed; guard
@@ -498,6 +551,7 @@ async function checkForUpdates(){
     if (v !== LAST_VERSION) {
       LAST_VERSION = v;
       await loadProgress();   // someone submitted — refresh the full list
+      loadNewScholarsCount(); // and refresh the community-added counter
     }
   } catch (err) {
     // Silent: a failed version check just means we try again next tick.
@@ -507,6 +561,7 @@ async function checkForUpdates(){
 // -------- BOOT --------
 (async () => {
   await loadProgress();                 // full load once on visit
+  loadNewScholarsCount();               // community-added count (independent fetch)
   try { LAST_VERSION = await fetchVersion(); } catch (e) { /* ignore */ }
 })();
 
