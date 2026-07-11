@@ -1087,6 +1087,9 @@
     $('#profile-modal-title').textContent = `Edit profile: ${author.name}`;
     $('#profile-modal-subtitle').textContent = `${author.total} publications, ${author.firstAuthored} first-authored.`;
     $('#pf-salutation').value = p.salutation || '';
+    const [openLast, openFirst] = (author.name || '').split(',').map(s => (s || '').trim());
+    $('#pf-last').value = openLast || p.last || '';
+    $('#pf-first').value = openFirst || p.first || '';
     $('#pf-village').value = p.village || '';
     $('#pf-paternal-province').value = p.paternalProvince || '';
     // Maternal province + non-iTaukei-dad flag. For scholars whose father is
@@ -1360,6 +1363,128 @@
       nameAliases,
       dismissedVariantGroups
     }, null, 2) + '\n';
+  }
+
+  // ==================== Rename + auto-merge stub ====================
+  // Considered a "stub" if the row has no village, no institution, no ORCID,
+  // no photo, and total publications is either missing or zero. These are the
+  // hollow rows created accidentally through the Zotero author list or when a
+  // rename was previously attempted through a manual add-scholar flow.
+  function isStubProfileRow(row) {
+    if (!row) return false;
+    const hasVillage = !!(row.village && row.village.trim());
+    const hasInstitution = !!(row.institution && row.institution.trim());
+    const hasOrcid = !!(row.orcidUrl && row.orcidUrl.trim());
+    const hasPhoto = !!(row.photo && row.photo.trim());
+    const hasPubs = !!(row.total && Number(row.total) > 0);
+    return !hasVillage && !hasInstitution && !hasOrcid && !hasPhoto && !hasPubs;
+  }
+
+  // Fill blanks on `into` with any non-empty value from `from`. Never overwrites
+  // populated fields on `into`. Skips identity fields (name/slug/last/first) so
+  // the caller controls those explicitly after the merge.
+  function mergeStubInto(into, from) {
+    if (!from) return into;
+    const identity = new Set(['name', 'slug', 'last', 'first']);
+    Object.entries(from).forEach(([k, v]) => {
+      if (identity.has(k)) return;
+      if (v === undefined || v === null) return;
+      const existing = into[k];
+      const existingBlank = existing === undefined
+        || existing === null
+        || (typeof existing === 'string' && !existing.trim())
+        || (Array.isArray(existing) && !existing.length);
+      if (existingBlank) into[k] = v;
+    });
+    return into;
+  }
+
+  // Rename an in-memory scholar from oldName to newName, auto-merging any
+  // stub row that already holds newName. Returns { renamed: true, mergedStub }
+  // or { renamed: false } if nothing to do. Does NOT push — caller decides.
+  function applyRenameInMemory(oldName, newName, newLast, newFirst) {
+    if (!oldName || !newName || oldName === newName) return { renamed: false };
+    const oldRow = state.profilesByKey.get(oldName);
+    if (!oldRow) throw new Error(`No profile found for "${oldName}".`);
+
+    // Refuse if newName already resolves to a non-stub (would clobber a real
+    // scholar). Ron can dismiss aliases separately.
+    const existingNewRow = state.profilesByKey.get(newName);
+    let mergedStub = false;
+    if (existingNewRow) {
+      if (!isStubProfileRow(existingNewRow)) {
+        throw new Error(`A scholar named "${newName}" already exists with real data \u2014 merge them through the Variants tab first.`);
+      }
+      // Absorb any non-empty fields from the stub, then drop it.
+      mergeStubInto(oldRow, existingNewRow);
+      state.profilesByKey.delete(newName);
+      mergedStub = true;
+    }
+
+    // Rename identity fields on the row (slug stays for URL / photo path
+    // stability; Ron can rename the slug manually if desired).
+    oldRow.name = newName;
+    oldRow.last = newLast;
+    oldRow.first = newFirst;
+
+    // Re-key the map.
+    state.profilesByKey.delete(oldName);
+    state.profilesByKey.set(newName, oldRow);
+
+    // Repoint every alias that pointed at oldName, then add oldName itself as
+    // an alias to newName so past Zotero creators (e.g. "Nunia Thomas" →
+    // "Thomas, Nunia") still resolve.
+    state.nameAliases.forEach((canonical, variant) => {
+      if (canonical === oldName) state.nameAliases.set(variant, newName);
+    });
+    state.nameAliases.set(oldName, newName);
+
+    return { renamed: true, mergedStub };
+  }
+
+  // Fetch, patch, re-encrypt, and push scholar-insights.json.enc so the AI
+  // summary follows a rename. If the old name has no insight entry, this is a
+  // silent no-op (still returns { pushed: false }). Requires an unlocked db.
+  async function pushInsightsRenameToGitHub(oldName, newName) {
+    if (!localStorage.getItem(GH_TOKEN_KEY)) return { skipped: true };
+    if (!window.dbGate || !window.dbGate.isUnlocked()) {
+      throw new Error('Database is locked \u2014 unlock first (Reload from source and enter passcode).');
+    }
+    // Pull the current decrypted insights file.
+    let insightsJson;
+    try {
+      insightsJson = await window.dbGate.fetchJson('data/scholar-insights.json.enc');
+    } catch (err) {
+      // Insights bundle isn't essential for the rename. Log and skip so the
+      // profile-only rename still ships.
+      console.warn('[rename] could not fetch insights bundle:', err);
+      return { skipped: true, reason: 'fetch-failed' };
+    }
+    if (!insightsJson || !insightsJson.insights) return { skipped: true, reason: 'no-insights-map' };
+    const map = insightsJson.insights;
+    if (!Object.prototype.hasOwnProperty.call(map, oldName)) {
+      return { pushed: false, reason: 'no-insight-for-old-name' };
+    }
+    // Rebuild the object with keys in the same order, swapping the renamed one.
+    // If the new name already had an insight (extremely unlikely for a stub),
+    // we keep the new-name insight and drop the old one silently.
+    const newMap = {};
+    Object.entries(map).forEach(([k, v]) => {
+      if (k === oldName) {
+        if (!Object.prototype.hasOwnProperty.call(map, newName)) newMap[newName] = v;
+      } else {
+        newMap[k] = v;
+      }
+    });
+    insightsJson.insights = newMap;
+    insightsJson.generatedAt = new Date().toISOString();
+    insightsJson.source = 'admin-dashboard';
+
+    const json = JSON.stringify(insightsJson, null, 2) + '\n';
+    const encBytes = await window.dbGate.encryptForUpload(json);
+    const encBlob = new Blob([encBytes], { type: 'application/octet-stream' });
+    await githubUploadFile('data/scholar-insights.json.enc', encBlob, `admin: rename insight key ${oldName} \u2192 ${newName}`);
+    return { pushed: true, bytes: encBytes.length };
   }
 
   // Push data/scholar-profiles.json.enc to GitHub. The plaintext .json is
@@ -1800,10 +1925,35 @@
         toast('No author is being edited — close and reopen the modal.');
         return;
       }
-      const p = state.profilesByKey.get(editingAuthor.name) || {};
-      const [last, first] = editingAuthor.name.split(',').map(s => s.trim());
+      const oldName = editingAuthor.name;
+      const inputLast = ($('#pf-last').value || '').trim();
+      const inputFirst = ($('#pf-first').value || '').trim();
+      if (!inputLast || !inputFirst) {
+        toast('Last and first name are both required.');
+        return;
+      }
+      const newName = `${inputLast}, ${inputFirst}`;
+      const isRename = newName !== oldName;
+
+      // Auto-merge stub + repoint aliases before writing form fields, so
+      // subsequent state.profilesByKey.get(...) calls see the renamed row.
+      let renameSummary = null;
+      if (isRename) {
+        try {
+          renameSummary = applyRenameInMemory(oldName, newName, inputLast, inputFirst);
+        } catch (err) {
+          console.error('[rename] failed:', err);
+          toast('Rename blocked: ' + err.message);
+          return;
+        }
+      }
+
+      const workingName = isRename ? newName : oldName;
+      const p = state.profilesByKey.get(workingName) || {};
+      const last = inputLast;
+      const first = inputFirst;
       Object.assign(p, {
-        name: editingAuthor.name,
+        name: workingName,
         slug: p.slug || slugify(`${first}-${last}`),
         last, first,
         salutation: $('#pf-salutation').value,
@@ -1835,24 +1985,49 @@
         firstAuthored: editingAuthor.firstAuthored,
         types: editingAuthor.types
       });
-      const savedName = editingAuthor.name;   // capture before closeEdit() nulls it
+      const savedName = workingName;   // capture before closeEdit() nulls it
       state.profilesByKey.set(savedName, p);
+      // Keep editingAuthor.name in sync so any downstream code that reads it
+      // before closeEdit() nulls it (e.g. photo-download flow) sees the new
+      // canonical name.
+      editingAuthor.name = savedName;
       closeEdit();
+      // Rebuild the authors index so publications reflow onto the renamed
+      // scholar (via the freshly-added alias). Skip when nothing changed.
+      if (isRename && state.snapshot) rebuildAuthors(state.snapshot);
       render();
 
       // Auto-push data/scholar-profiles.json to GitHub if a token is set,
       // eliminating the copy-paste-into-Sheets round-trip.
       if (localStorage.getItem(GH_TOKEN_KEY)) {
-        toast(`Saved locally. Pushing to GitHub…`);
+        toast(isRename
+          ? `Saved locally. Renaming ${oldName} → ${savedName} on GitHub…`
+          : `Saved locally. Pushing to GitHub…`);
         try {
-          await pushProfilesToGitHub(savedName);
-          toast(`Saved & pushed to GitHub. Public site updates within ~1 min.`);
+          await pushProfilesToGitHub(isRename ? `rename: ${oldName} → ${savedName}` : savedName);
+          let insightsMsg = '';
+          if (isRename) {
+            try {
+              const r = await pushInsightsRenameToGitHub(oldName, savedName);
+              if (r && r.pushed) insightsMsg = ' Insight key updated.';
+            } catch (err) {
+              console.error('[rename] insights push failed:', err);
+              insightsMsg = ' Insight key push failed — see console.';
+            }
+          }
+          const mergeBit = renameSummary && renameSummary.mergedStub ? ' (stub auto-merged)' : '';
+          toast(isRename
+            ? `Renamed ${oldName} → ${savedName}${mergeBit}.${insightsMsg} Public site updates within ~1 min.`
+            : `Saved & pushed to GitHub. Public site updates within ~1 min.`);
         } catch (err) {
           console.error(err);
           toast('Saved locally, but GitHub push failed: ' + err.message);
         }
       } else {
-        toast(`Saved profile for ${savedName}. Set a GitHub token in Data source to sync automatically.`);
+        const mergeBit = renameSummary && renameSummary.mergedStub ? ' (stub auto-merged)' : '';
+        toast(isRename
+          ? `Renamed ${oldName} → ${savedName}${mergeBit} locally. Set a GitHub token in Data source to sync.`
+          : `Saved profile for ${savedName}. Set a GitHub token in Data source to sync automatically.`);
       }
     }
 
