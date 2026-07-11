@@ -130,6 +130,11 @@ a:hover{color:var(--brown-ink)}
 .badge--needs .badge__dot{background:var(--pat)}
 .badge--partial .badge__dot{background:var(--gold)}
 .badge--done .badge__dot{background:var(--mat)}
+/* Clickable badges (needs/partial) deep-link into the survey form */
+a.badge--link{text-decoration:none;cursor:pointer;transition:filter .15s ease,transform .15s ease,box-shadow .15s ease}
+a.badge--link:hover,a.badge--link:focus{filter:brightness(.95);transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.12);outline:none}
+a.badge--link .badge__go{font-weight:700;margin-left:2px;opacity:.55;transition:transform .15s ease,opacity .15s ease}
+a.badge--link:hover .badge__go{opacity:1;transform:translateX(2px)}
 
 .empty{padding:60px 22px;text-align:center;color:var(--ink)}
 .empty p{margin:0;font-size:1rem}
@@ -377,6 +382,11 @@ function renderList(){
   const html = rows.map(r => {
     const badgeClass = 'badge--' + (r.status === 'done' ? 'done' : r.status === 'partial' ? 'partial' : 'needs');
     const badgeText = r.status === 'done' ? 'Fully tagged' : r.status === 'partial' ? 'Partial' : 'Needs help';
+    // Actionable statuses (needs / partial) link straight to the survey form,
+    // pre-selected on this scholar and jumped to the data-entry step.
+    const actionable = r.status !== 'done';
+    const surveyHref = 'itaukei-scholar-province-survey-live.html?id=' + encodeURIComponent(r.id)
+      + '&name=' + encodeURIComponent((r.lastName || '') + ', ' + (r.firstName || ''));
     // Cross-validation: how many independent submissions corroborate this scholar.
     // 2+ = corroborated by multiple people; 1 = single source; 0 = none yet.
     let xvalClass, xvalText;
@@ -391,7 +401,9 @@ function renderList(){
         </div>
         <div class="list-item__count"><strong>${r.count}</strong> ${r.count === 1 ? 'submission' : 'submissions'}</div>
         <div class="list-item__xval"><span class="xval-pill ${xvalClass}">${xvalText}</span></div>
-        <div><span class="badge ${badgeClass}"><span class="badge__dot"></span>${badgeText}</span></div>
+        <div>${actionable
+          ? `<a class="badge ${badgeClass} badge--link" href="${surveyHref}" title="Enter this scholar’s village &amp; province…"><span class="badge__dot"></span>${badgeText}<span class="badge__go">→</span></a>`
+          : `<span class="badge ${badgeClass}"><span class="badge__dot"></span>${badgeText}</span>`}</div>
       </div>`;
   }).join('');
   listBody.innerHTML = html;
