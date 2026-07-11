@@ -145,8 +145,14 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .btn:hover .btn__arrow{transform:translateX(3px)}
 
 /* "not on list" toggle */
-.notlist-toggle{margin-top:18px;text-align:center}
-.notlist-toggle a{color:var(--brown);text-decoration:underline;text-underline-offset:3px;font-size:.94rem;cursor:pointer}
+.notlist-toggle{margin-top:18px}
+.notlist-cta{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:20px 16px;background:#085041;color:#fff;border-radius:12px;text-decoration:none;cursor:pointer;transition:background .18s ease,transform .18s ease,box-shadow .18s ease}
+.notlist-cta:hover,.notlist-cta:focus{background:#0a6152;transform:translateY(-1px);box-shadow:0 4px 14px rgba(8,80,65,.28);outline:none}
+.notlist-cta:focus-visible{box-shadow:0 0 0 3px rgba(8,80,65,.35)}
+.notlist-cta__icon{flex:0 0 auto;color:#fff}
+.notlist-cta__text{flex:1 1 auto;font-size:16px;font-weight:600;color:#fff;line-height:1.3}
+.notlist-cta__arrow{flex:0 0 auto;color:#fff;transition:transform .18s ease}
+.notlist-cta:hover .notlist-cta__arrow,.notlist-cta:focus .notlist-cta__arrow{transform:translateX(3px)}
 .notlist-form{margin-top:22px;padding:24px;background:var(--paper-2);border:1px dashed var(--line);border-radius:14px}
 .notlist-form.hidden{display:none}
 .notlist-form__grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
@@ -390,7 +396,13 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
       <button id="continueBtn" class="btn btn-primary" disabled>Continue with 0 selected <span class="btn__arrow">→</span></button>
     </div>
 
-    <div class="notlist-toggle"><a id="showNotList">＋ Scholar not on the list? Add them here.</a></div>
+    <div class="notlist-toggle">
+      <a id="showNotList" class="notlist-cta" role="button" tabindex="0">
+        <svg class="notlist-cta__icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>
+        <span class="notlist-cta__text">Scholar not on the list? Add them here.</span>
+        <svg class="notlist-cta__arrow" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+      </a>
+    </div>
 
     <div id="notListForm" class="notlist-form hidden">
       <h3 style="font-family:'Fraunces',serif;font-weight:600;margin:0 0 6px;color:var(--ink)">Add someone not on the list</h3>
