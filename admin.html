@@ -406,6 +406,28 @@
       <div class="stat"><div class="num" id="stat-itaukei">—</div><div class="label">Marked as iTaukei</div></div>
       <div class="stat"><div class="num" id="stat-enriched">—</div><div class="label">Profiles filled in</div></div>
       <div class="stat alert"><div class="num" id="stat-new">—</div><div class="label">New authors to triage</div></div>
+      <div class="stat alert"><div class="num" id="stat-pending">—</div><div class="label">Pending new scholars</div></div>
+    </div>
+
+    <!-- Pending new-scholar submissions (from public survey "Add someone not on the list") -->
+    <div class="panel" id="pending-panel">
+      <details open>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Pending new scholars — review before adding</span>
+          <span class="variants-count-badge" id="pending-count">—</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 8px;font-size:0.85rem;">
+            People submitted through the public survey’s “Scholar not on the list?” flow land here <b>for your review</b> — they are <b>not</b> added to the searchable list automatically. Submissions are anonymous (no informant name/email required), so verify each one before approving. <b>Approve</b> adds the scholar to the master list (they become searchable and appear on the progress page). <b>Reject</b> removes the submission.
+          </p>
+          <div class="panel-actions" style="margin-bottom:10px;">
+            <button class="btn ghost" id="pending-reload">Refresh pending list</button>
+            <span id="pending-status" style="color:var(--muted);font-size:0.82rem;"></span>
+          </div>
+          <div id="pending-body"></div>
+        </div>
+      </details>
     </div>
 
     <!-- Data source config -->
@@ -764,5 +786,139 @@
 
 <script src="js/db-gate.js?v=20260709-03" defer></script>
 <script src="js/admin.js?v=20260708-04" defer></script>
+
+<!-- ==== Pending new-scholar review (self-contained) ==== -->
+<script defer>
+(function(){
+  'use strict';
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
+  var $ = function(s){ return document.querySelector(s); };
+  var bodyEl, countEl, statEl, statusEl;
+  var loadedOnce = false;
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]; }); }
+
+  function setStatus(msg, isErr){
+    if (!statusEl) return;
+    statusEl.textContent = msg || '';
+    statusEl.style.color = isErr ? '#b3261e' : 'var(--muted)';
+  }
+
+  function fieldRow(label, val){
+    if (!val) return '';
+    return '<div style="display:flex;gap:8px;font-size:0.83rem;margin:2px 0;">'
+      + '<span style="min-width:132px;color:var(--muted);">' + esc(label) + '</span>'
+      + '<span style="color:var(--ink,#222);">' + esc(val) + '</span></div>';
+  }
+
+  function render(rows){
+    if (!bodyEl) return;
+    var n = rows.length;
+    if (countEl) countEl.textContent = n;
+    if (statEl)  statEl.textContent  = n;
+    if (!n){
+      bodyEl.innerHTML = '<p class="subtitle" style="margin:0;">No pending submissions right now. New public submissions will appear here for review.</p>';
+      return;
+    }
+    var html = rows.map(function(r){
+      var name = esc((r.lastName||'') + ', ' + (r.firstName||''));
+      var ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+      return '<div class="pending-item" data-row="' + esc(r.row) + '" '
+        + 'style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fbfaf3;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'
+          + '<div style="font-weight:700;font-size:0.98rem;color:var(--teal-dark,#0f6e56);">' + name
+            + (ts ? ' <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">· submitted ' + esc(ts) + '</span>' : '') + '</div>'
+          + '<div style="display:flex;gap:8px;">'
+            + '<button class="btn" data-act="approve" data-row="' + esc(r.row) + '">Approve</button>'
+            + '<button class="btn ghost" data-act="reject" data-row="' + esc(r.row) + '">Reject</button>'
+          + '</div>'
+        + '</div>'
+        + '<div style="margin-top:8px;">'
+          + fieldRow('Degree', r.degree)
+          + fieldRow('Graduation year', r.gradYear)
+          + fieldRow('University', r.university)
+          + fieldRow('Thesis link', r.thesisLink)
+          + fieldRow('Paternal village', r.paternalVillage)
+          + fieldRow('Paternal province', r.paternalProvince)
+          + fieldRow('Maternal village', r.maternalVillage)
+          + fieldRow('Maternal province', r.maternalProvince)
+          + fieldRow('Informant name', r.informantName)
+          + fieldRow('Informant email', r.informantEmail)
+        + '</div>'
+      + '</div>';
+    }).join('');
+    bodyEl.innerHTML = html;
+  }
+
+  function load(){
+    setStatus('Loading…');
+    return fetch(SCRIPT_URL + '?mode=newScholars&_=' + Date.now(), { redirect:'follow' })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var rows = Array.isArray(data) ? data : (data.rows || (data.result && data.result.rows) || []);
+        // Only show rows still pending (backend marks approved/rejected ones).
+        rows = rows.filter(function(r){ return !r.status || r.status === 'pending'; });
+        render(rows);
+        setStatus(rows.length ? '' : 'All caught up.');
+      })
+      .catch(function(e){
+        setStatus('Could not load pending submissions. If you just deployed the backend, wait a moment and refresh.', true);
+        if (bodyEl) bodyEl.innerHTML = '';
+      });
+  }
+
+  function act(action, row, btn){
+    if (action === 'reject' && !confirm('Reject and remove this submission? This cannot be undone.')) return;
+    if (action === 'approve' && !confirm('Approve this scholar and add them to the master list?')) return;
+    var item = btn.closest('.pending-item');
+    if (item){ item.style.opacity = '0.5'; item.querySelectorAll('button').forEach(function(b){ b.disabled = true; }); }
+    setStatus(action === 'approve' ? 'Approving…' : 'Rejecting…');
+    // no-cors text/plain POST to avoid CORS preflight (same pattern as survey submissions)
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'newScholarAction', action: action, row: Number(row) })
+    }).then(function(){
+      // no-cors gives an opaque response; assume success and reload after a beat
+      setTimeout(function(){ load(); }, 900);
+      setStatus(action === 'approve' ? 'Approved — added to master list.' : 'Rejected.');
+    }).catch(function(){
+      setStatus('Action failed — please refresh and try again.', true);
+      if (item){ item.style.opacity = ''; item.querySelectorAll('button').forEach(function(b){ b.disabled = false; }); }
+    });
+  }
+
+  function wire(){
+    bodyEl   = $('#pending-body');
+    countEl  = $('#pending-count');
+    statEl   = $('#stat-pending');
+    statusEl = $('#pending-status');
+    var reload = $('#pending-reload');
+    if (reload) reload.addEventListener('click', load);
+    if (bodyEl) bodyEl.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-act]');
+      if (!b) return;
+      act(b.getAttribute('data-act'), b.getAttribute('data-row'), b);
+    });
+  }
+
+  // The dashboard is hidden until login. Poll for it becoming visible, then load once.
+  function watchForDashboard(){
+    var dash = document.getElementById('dashboard');
+    if (dash && dash.offsetParent !== null && !loadedOnce){
+      loadedOnce = true;
+      load();
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ wire(); setInterval(watchForDashboard, 800); });
+  } else {
+    wire(); setInterval(watchForDashboard, 800);
+  }
+})();
+</script>
 </body>
 </html>

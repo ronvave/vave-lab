@@ -816,50 +816,9 @@ lb.addEventListener('click', e => { if (e.target === lb || e.target === lbImg) c
 lbClose.addEventListener('click', closeLb);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('open')) closeLb(); });
 
-// --------- LIVE MERGE + DEEP LINK ---------
-// The SCHOLARS array above is baked in at build time. New scholars submitted via
-// the "not on the list" flow land in the sheet and show up on the live progress
-// page, but would otherwise be missing here until the next rebuild. To self-heal,
-// we fetch the live roster and merge in anyone we don't already have (matched by id),
-// so the picker always matches the progress page.
-function initialOf(lastName){
-  const c = (String(lastName||'').trim()[0] || '').toUpperCase();
-  return /[A-Z]/.test(c) ? c : 'All';
-}
-
-async function mergeLiveScholars(){
-  try {
-    const url = `${GOOGLE_SCRIPT_URL}?mode=progress&_=${Date.now()}`;
-    const res = await fetch(url, { redirect: 'follow' });
-    if (!res.ok) return;
-    const data = await res.json();
-    const rows = Array.isArray(data) ? data
-      : (data.result && Array.isArray(data.result) ? data.result : (data.rows || (data.result && data.result.rows) || []));
-    const haveIds = new Set(SCHOLARS.map(s => s.id));
-    let added = 0;
-    rows.forEach(r => {
-      const id = Number(r.id);
-      if (!id || haveIds.has(id)) return;
-      SCHOLARS.push({
-        id,
-        lastName: r.lastName || '',
-        firstName: r.firstName || '',
-        initial: initialOf(r.lastName)
-      });
-      haveIds.add(id);
-      added++;
-    });
-    if (added){
-      SCHOLARS.sort((a,b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
-      // refresh which initials have data now
-      initialsInData.clear();
-      SCHOLARS.forEach(s => initialsInData.add(s.initial));
-    }
-  } catch (e) { /* offline / blocked: fall back to baked-in list */ }
-}
-
 // If arriving from the progress page ("Needs help" link), preselect that scholar
-// and jump straight to the data-entry screen.
+// and jump straight to the data-entry screen. Matches against the built-in list
+// only — new/pending scholars are not auto-included (they await admin review).
 function applyDeepLink(){
   const params = new URLSearchParams(location.search);
   const idParam = Number(params.get('id'));
@@ -882,11 +841,7 @@ function applyDeepLink(){
 
 // --------- INIT ---------
 renderTabs(); renderScholarList();
-(async () => {
-  await mergeLiveScholars();
-  renderTabs(); renderScholarList();
-  applyDeepLink();
-})();
+applyDeepLink();
 </script>
 </body>
 </html>
