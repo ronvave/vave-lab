@@ -626,6 +626,20 @@
       wrap.innerHTML = '<p class="subtitle" style="margin:0;color:var(--muted);font-size:0.9rem;">No unreviewed name variants right now. If you see a duplicate that isn\u2019t showing here, use the search in the authors table below and we can teach the detector.</p>';
     }
 
+    // Bulk-merge bar (top). We render another one at the bottom below.
+    if (groups.length > 1) {
+      const bulkTop = document.createElement('div');
+      bulkTop.className = 'variant-bulk-bar';
+      bulkTop.dataset.bulkBar = 'top';
+      bulkTop.innerHTML = `
+        <div class="variant-bulk-text">
+          <strong>Batch merge</strong> \u2014 pick the canonical radio in every group you\u2019re sure about, then merge them all in one push.
+        </div>
+        <button type="button" class="btn" data-merge-all>Merge all <span data-merge-all-count>${groups.length}</span> groups</button>`;
+      bulkTop.querySelector('[data-merge-all]').addEventListener('click', () => mergeAllVariantGroups());
+      wrap.appendChild(bulkTop);
+    }
+
     groups.forEach(g => {
       const card = document.createElement('div');
       card.className = 'variant-group';
@@ -658,6 +672,20 @@
       wrap.appendChild(card);
     });
 
+    // Bulk-merge bar (bottom) \u2014 mirror of the top bar so long lists don\u2019t force a scroll back up.
+    if (groups.length > 1) {
+      const bulkBottom = document.createElement('div');
+      bulkBottom.className = 'variant-bulk-bar';
+      bulkBottom.dataset.bulkBar = 'bottom';
+      bulkBottom.innerHTML = `
+        <div class="variant-bulk-text">
+          Done reviewing? Batch-merge every group whose canonical you\u2019ve chosen \u2014 single GitHub push.
+        </div>
+        <button type="button" class="btn" data-merge-all>Merge all <span data-merge-all-count>${groups.length}</span> groups</button>`;
+      bulkBottom.querySelector('[data-merge-all]').addEventListener('click', () => mergeAllVariantGroups());
+      wrap.appendChild(bulkBottom);
+    }
+
     // Render existing merges list
     if (aliasList) {
       aliasList.innerHTML = '';
@@ -687,13 +715,17 @@
     }
   }
 
-  async function mergeVariantGroup(cardEl, group) {
+  // Apply one card's merge to in-memory state only — shared by the per-group
+  // "Merge into canonical" button and the batch "Merge all groups" button.
+  // Returns { canonName, chosen } on success, or { error } describing why the
+  // card was skipped. Callers decide when to re-render, toast, and push.
+  function applyVariantMergeInMemory(cardEl) {
     const canonical = cardEl.querySelector('[data-canonical]:checked');
-    if (!canonical) { toast('Pick a canonical name first.', 'error'); return; }
+    if (!canonical) return { error: 'no-canonical' };
     const canonName = canonical.value;
     const chosen = Array.from(cardEl.querySelectorAll('[data-member]:checked'))
       .map(cb => cb.value).filter(n => n !== canonName);
-    if (!chosen.length) { toast('Select at least one variant to merge into the canonical name.', 'error'); return; }
+    if (!chosen.length) return { error: 'no-variants' };
 
     // Add aliases. Also compose transitively (if the canonical was itself the
     // target of an alias, we'd never overwrite — but here the canonical is a
@@ -719,6 +751,15 @@
       state.hiddenScholars.delete(variant);
     });
 
+    return { canonName, chosen };
+  }
+
+  async function mergeVariantGroup(cardEl, group) {
+    const result = applyVariantMergeInMemory(cardEl);
+    if (result.error === 'no-canonical') { toast('Pick a canonical name first.', 'error'); return; }
+    if (result.error === 'no-variants')  { toast('Select at least one variant to merge into the canonical name.', 'error'); return; }
+
+    const { canonName, chosen } = result;
     rebuildAuthors();
     render();
     renderVariantPanel();
@@ -734,6 +775,62 @@
       }
     } else {
       toast('No GitHub token set \u2014 merge is only in this browser.', 'error');
+    }
+  }
+
+  // Batch-merge every currently-rendered variant card in one shot with a
+  // single GitHub push at the end. Skips cards where no canonical is picked
+  // or no non-canonical checkboxes are ticked (nothing to merge).
+  async function mergeAllVariantGroups() {
+    const cards = Array.from(document.querySelectorAll('#variants-body .variant-group'));
+    if (!cards.length) { toast('No variant groups to merge.', 'error'); return; }
+
+    // Freeze the batch buttons so the admin can't double-click during the push.
+    const bulkButtons = Array.from(document.querySelectorAll('#variants-body [data-merge-all]'));
+    bulkButtons.forEach(b => { b.disabled = true; b.classList.add('is-busy'); });
+
+    const mergedGroups = [];   // [{ canonName, chosen: [...] }]
+    const skipped = [];        // [{ title, reason }]
+
+    cards.forEach(card => {
+      const title = (card.querySelector('.variant-title')?.textContent || '').trim();
+      const result = applyVariantMergeInMemory(card);
+      if (result.error) {
+        skipped.push({ title, reason: result.error });
+      } else {
+        mergedGroups.push(result);
+      }
+    });
+
+    if (!mergedGroups.length) {
+      bulkButtons.forEach(b => { b.disabled = false; b.classList.remove('is-busy'); });
+      toast('Nothing to merge — every group is missing a canonical selection or has all variants unchecked.', 'error');
+      return;
+    }
+
+    rebuildAuthors();
+    render();
+    renderVariantPanel();
+
+    const totalVariants = mergedGroups.reduce((n, g) => n + g.chosen.length, 0);
+    const groupWord = mergedGroups.length === 1 ? 'group' : 'groups';
+    const variantWord = totalVariants === 1 ? 'variant' : 'variants';
+    toast(`Batch merging ${mergedGroups.length} ${groupWord} (${totalVariants} ${variantWord}). Saving in a single push\u2026`);
+
+    if (localStorage.getItem(GH_TOKEN_KEY)) {
+      try {
+        const trigger = mergedGroups.length === 1
+          ? `batch merge into ${mergedGroups[0].canonName}`
+          : `batch merge ${mergedGroups.length} groups (${totalVariants} variants)`;
+        await pushProfilesToGitHub(trigger);
+        const tail = skipped.length ? ` ${skipped.length} group${skipped.length===1?'':'s'} skipped (no canonical picked).` : '';
+        toast(`Batch merge saved — ${mergedGroups.length} ${groupWord}, ${totalVariants} ${variantWord} folded in one push. Public dashboard updates in ~1 minute.${tail}`, 'success');
+      } catch (err) {
+        console.error('batch merge push failed:', err);
+        toast(`GitHub push failed — merges applied in this browser only. ${err.message}`, 'error');
+      }
+    } else {
+      toast('No GitHub token set — merges applied in this browser only.', 'error');
     }
   }
 
