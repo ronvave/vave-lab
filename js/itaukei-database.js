@@ -1741,13 +1741,15 @@
     const pts = (grad.worldPoints || []).filter(p => p.country === name);
     if (!pts.length || !state.worldMap) return;
     // Use the points' native longitudes now that the whole-world view is
-    // equator-centred rather than Pacific-centric.
+    // equator-centred rather than Pacific-centric. maxZoom bumped to 8 so
+    // country-level zoom actually shows the country, not the whole region
+    // (typing "Fiji" and hitting Enter used to leave AU + NZ in frame).
     const latlngs = pts.map(p => [p.lat, p.lng]);
     if (latlngs.length === 1) {
-      state.worldMap.setView(latlngs[0], 5, { animate: true });
+      state.worldMap.setView(latlngs[0], 7, { animate: true });
     } else {
       const bounds = L.latLngBounds(latlngs);
-      state.worldMap.fitBounds(bounds, { padding: [40, 40], maxZoom: 6, animate: true });
+      state.worldMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 8, animate: true });
     }
   }
   function zoomToWorldUniversity(uniName) {
@@ -1911,13 +1913,31 @@
         return false;
       });
       if (matches.length === 0) return;
+
+      // Country-first zoom: if every match sits in the same country AND
+      // the query is a substring of that country name (e.g. "Fiji" or
+      // "new zea"), route through zoomToWorldCountry so the framing is
+      // tight (maxZoom 8) rather than the wide multi-country fitBounds
+      // used for arbitrary multi-point matches. Also stash the country
+      // as the search scope so the toolbar counter rescopes to that
+      // country's totals (updateWorldMapStatsForScope runs on moveend).
+      const uniqueCountries = new Set(matches.map(p => p.country).filter(Boolean));
+      if (uniqueCountries.size === 1) {
+        const only = [...uniqueCountries][0];
+        if ((only || '').toLowerCase().includes(q)) {
+          state.worldSearchScope = { country: only };
+          zoomToWorldCountry(only);
+          return;
+        }
+      }
+
       if (matches.length === 1) {
         const p = matches[0];
-        m.setView([p.lat, p.lng], 6, { animate: true });
+        m.setView([p.lat, p.lng], 7, { animate: true });
         setTimeout(() => openMarkerPopupAt(m, p), 320);
       } else {
         const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
-        m.fitBounds(bounds, { padding: [60, 60], maxZoom: 5, animate: true });
+        m.fitBounds(bounds, { padding: [60, 60], maxZoom: 6, animate: true });
       }
     }
 
@@ -2137,6 +2157,10 @@
       fsSearchClear.addEventListener('click', () => {
         if (fsSearchInput) fsSearchInput.value = '';
         state.worldSearchTerm = '';
+        // Clearing the search box also clears the country scope so
+        // the toolbar returns to full totals (14 / 66 / 308).
+        state.worldSearchScope = null;
+        try { updateWorldMapStatsForScope(); } catch (_) {}
         fsSearchClear.style.display = 'none';
         if (searchInput) searchInput.value = '';
         if (searchClear) searchClear.style.display = 'none';
@@ -2203,6 +2227,17 @@
     }).addTo(wmap);
     wmap.setView(WORLD_MAP_DEFAULT_CENTER, WORLD_MAP_DEFAULT_ZOOM);
     state.worldMap = wmap;
+    // Rescope the toolbar stats + re-run the overlap-spider layout
+    // whenever the map settles at a new zoom/pan. Overlap layout runs
+    // unconditionally so USP / FNU / UoF fan out at every zoom level.
+    // Stats only rescope when a search-driven country zoom is active
+    // (otherwise incidental hand-panning would change the totals in
+    // ways Ron didn't ask for).
+    wmap.on('moveend', () => {
+      if (state.worldMode === 'work') return; // workplace has its own stats path
+      applyOverlapSpider();
+      if (state.worldSearchScope) updateWorldMapStatsForScope();
+    });
     // Render markers immediately if data has already arrived; otherwise the
     // deferred call inside the data-fetch chain will pick them up.
     if (state.graduateStudies) renderWorldMap();
@@ -2288,6 +2323,16 @@
         state.worldSectorFilter = null;
         state.worldWorkCountry = null;
         state.worldWorkInst = null;
+        // Clear the search-scope so the toolbar counter goes back to
+        // the full totals (14 / 66 / 308) rather than the country
+        // subset the last search zoomed to.
+        state.worldSearchScope = null;
+        // Also empty the fullscreen search input so the visible box
+        // matches the cleared scope (otherwise "Fiji" would sit stale
+        // in the box after Reset).
+        const fsInput = document.querySelector('[data-db-map-fs-search]');
+        if (fsInput) fsInput.value = '';
+        state.worldSearchTerm = '';
         // Reset also returns the map to Study mode so users always land
         // on the same clean-slate view.
         state.worldMode = 'study';
@@ -3125,6 +3170,13 @@
       const m = L.circleMarker([p.lat, displayLng], {
         radius, fillColor: color, color: '#fff', weight: 2, opacity: 1, fillOpacity: 0.85
       });
+      // Tag the marker with its worldPoint + home lat/lng so viewport-
+      // scoped stat updates and overlap-spider layout can walk
+      // state.worldLayer.getLayers() and reach the underlying data
+      // without a parallel array.
+      m._worldPoint = p;
+      m._worldHome = [p.lat, displayLng];
+      m._worldRadius = radius;
       m.bindPopup(popupHtml, popupOpts);
       m.on('mouseover', () => m.openPopup());
       m.on('popupopen', (evt) => {
@@ -3141,6 +3193,10 @@
     });
 
     state.worldLayer = L.layerGroup(markers).addTo(state.worldMap);
+
+    // Run the overlap-spider layout for the current zoom so USP/FNU/UoF
+    // don't overlap on first paint. moveend handles subsequent redraws.
+    setTimeout(() => applyOverlapSpider(), 0);
 
     // Auto-frame to marker bounds (with side buffer) whenever we (re)draw
     // the base world markers, but only when there's no active drill-down
@@ -3220,6 +3276,153 @@
         noteEl.hidden = true;
       }
     }
+  }
+
+  // -------- Viewport-scoped stats + overlap-spider --------
+  //
+  // When Ron types "Fiji" and hits Enter, the map zooms in but the toolbar
+  // still says "14 Countries / 66 Universities / 308 Scholars". These
+  // helpers rescope the counter to whatever is currently visible in the
+  // viewport, and fan out overlapping circles so USP, FNU, and UoF are
+  // all hoverable in Suva (instead of USP hiding under FNU).
+  //
+  // Both hook off `moveend`, so panning or zooming out to see the whole
+  // world restores the global totals and collapses the spider layout.
+
+  // Recompute Countries / Universities / Scholars / Masters / PhD from
+  // the current search scope (set by executeWorldSearch on a single-
+  // country match, cleared by the Reset button). This is intentionally
+  // narrower than "anything in the viewport" so hand-panning around at
+  // the default zoom doesn't churn the totals; the counter only
+  // rescopes when Ron actively narrowed the map via search.
+  function updateWorldMapStatsForScope() {
+    if (!state.worldLayer) return;
+    const scope = state.worldSearchScope;
+    const all = state.worldLayer.getLayers().filter(l => l && l._worldHome && l._worldPoint);
+    let matching;
+    if (scope && scope.country) {
+      matching = all.filter(l => l._worldPoint.country === scope.country);
+    } else {
+      matching = all;
+    }
+    updateWorldMapStats(matching.map(l => l._worldPoint));
+  }
+
+  // Fan out markers whose centers are within `threshold` screen pixels of
+  // each other at the current zoom. Each cluster's markers get placed on
+  // a small circle around the group's home centroid; hovering over one
+  // collapses the others back to their homes so the hovered popup has
+  // room. Moving the mouse off the cluster respreads them.
+  function applyOverlapSpider() {
+    const m = state.worldMap;
+    if (!m || !state.worldLayer) return;
+    const layers = state.worldLayer.getLayers().filter(l => l && l._worldHome);
+    // First pass: restore every marker to its home before recomputing
+    // clusters. This is what lets the spider layout "collapse" when the
+    // user zooms out enough that markers no longer overlap.
+    layers.forEach(l => {
+      const h = l._worldHome;
+      if (l.getLatLng) {
+        const cur = l.getLatLng();
+        if (Math.abs(cur.lat - h[0]) > 1e-9 || Math.abs(cur.lng - h[1]) > 1e-9) {
+          l.setLatLng(h);
+        }
+      }
+      l._spiderCluster = null;
+    });
+
+    // Cluster markers whose screen-space distance is under the threshold.
+    // Threshold = 2 * radius so any pair whose disks touch or overlap ends
+    // up in the same cluster. We use marker._worldRadius (set at draw
+    // time) as a proxy for size — the largest of the pair drives the
+    // threshold.
+    const pxOf = (ll) => m.latLngToLayerPoint(ll);
+    const clusters = [];
+    layers.forEach(l => {
+      const home = L.latLng(l._worldHome[0], l._worldHome[1]);
+      const homePt = pxOf(home);
+      let joined = false;
+      for (const c of clusters) {
+        for (const other of c.markers) {
+          const otherPt = pxOf(L.latLng(other._worldHome[0], other._worldHome[1]));
+          const dx = homePt.x - otherPt.x;
+          const dy = homePt.y - otherPt.y;
+          const dist = Math.hypot(dx, dy);
+          const r1 = l._worldRadius || 10;
+          const r2 = other._worldRadius || 10;
+          const threshold = Math.max(r1, r2) * 2.2;
+          if (dist < threshold) {
+            c.markers.push(l);
+            joined = true;
+            break;
+          }
+        }
+        if (joined) break;
+      }
+      if (!joined) clusters.push({ markers: [l] });
+    });
+
+    // Fan out any cluster with 2+ markers. Radius scales with the largest
+    // marker in the cluster + a base offset so labels/popups don't collide.
+    // Angles start at -90° (12 o'clock) and go clockwise so the layout
+    // reads naturally.
+    clusters.forEach(c => {
+      if (c.markers.length < 2) return;
+      const centerPt = c.markers
+        .map(l => pxOf(L.latLng(l._worldHome[0], l._worldHome[1])))
+        .reduce((acc, p, _, arr) => ({ x: acc.x + p.x / arr.length, y: acc.y + p.y / arr.length }), { x: 0, y: 0 });
+      const maxR = Math.max(...c.markers.map(l => l._worldRadius || 10));
+      const spiderR = Math.max(maxR * 2.4, 32);
+      const n = c.markers.length;
+      c.markers.forEach((l, i) => {
+        const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+        const px = centerPt.x + spiderR * Math.cos(angle);
+        const py = centerPt.y + spiderR * Math.sin(angle);
+        const ll = m.layerPointToLatLng(L.point(px, py));
+        l.setLatLng(ll);
+        l._spiderPos = ll;
+        l._spiderCluster = c;
+      });
+      // Wire hover-to-focus: hovering one marker collapses the others in
+      // the same cluster back to their homes so the popup has visual
+      // priority. Leaving that marker (and not entering another in the
+      // cluster) respreads them.
+      c.markers.forEach(l => {
+        if (l._spiderHoverWired) return;
+        l._spiderHoverWired = true;
+        l.on('mouseover', () => {
+          if (l._respreadTimer) { clearTimeout(l._respreadTimer); l._respreadTimer = null; }
+          _spiderCollapseOthers(l);
+        });
+        l.on('mouseout',  () => _spiderRespreadCluster(l));
+      });
+    });
+  }
+
+  function _spiderCollapseOthers(hovered) {
+    const c = hovered._spiderCluster;
+    if (!c) return;
+    c.markers.forEach(other => {
+      if (other === hovered) return;
+      other.setLatLng(other._worldHome);
+    });
+  }
+
+  function _spiderRespreadCluster(hovered) {
+    // Restore every cluster member (except the hovered marker) to its
+    // last spider position. Uses the cached _spiderPos so we don't
+    // re-run the whole clustering pass on every mouseout — that was
+    // causing layout thrash when the mouse crossed between siblings.
+    // Delayed so a rapid mouseover→mouseout on the way to a sibling
+    // has a chance to cancel the respread via _cancelSpiderRespread.
+    if (hovered._respreadTimer) clearTimeout(hovered._respreadTimer);
+    hovered._respreadTimer = setTimeout(() => {
+      const c = hovered._spiderCluster;
+      if (!c) return;
+      c.markers.forEach(l => {
+        if (l._spiderPos) l.setLatLng(l._spiderPos);
+      });
+    }, 80);
   }
 
   // -------- Fullscreen dropdown UI helpers --------
