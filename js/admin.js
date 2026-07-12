@@ -2097,7 +2097,9 @@
           ? '<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Replace</span>'
           : r.action === 'new'
             ? '<span style="background:#e3f2fd; color:#0d47a1; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">New</span>'
-            : '<span style="background:#fdecea; color:#8a2b2b; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Skip</span>';
+            : r.action === 'apply'
+              ? '<span style="background:#fff4d6; color:#7a4b00; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Apply</span>'
+              : '<span style="background:#fdecea; color:#8a2b2b; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Skip</span>';
         const via = r.pastedName !== r.canonicalName ? ` <span style="color:var(--muted); font-size:0.8rem;">(via alias)</span>` : '';
         return `<tr>
           <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${escapeHtml(r.pastedName)}</td>
@@ -2110,7 +2112,10 @@
       }),
       '</tbody></table></div>',
       '<div style="display:flex; gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap;">',
-      `<button type="button" class="btn primary" id="insights-paste-apply">Apply ${rows.filter(r=>r.action!=='skip').length} change${rows.filter(r=>r.action!=='skip').length===1?'':'s'} and push to GitHub</button>`,
+      (() => {
+        const applyCount = rows.filter(r=>r.action!=='skip').length;
+        return `<button type="button" class="btn primary" id="insights-paste-apply">Apply ${applyCount} change${applyCount===1?'':'s'} and push to GitHub</button>`;
+      })(),
       '<button type="button" class="btn ghost" id="insights-paste-cancel">Cancel</button>',
       '<span style="color:var(--muted); font-size:0.85rem;">Public dashboard updates in ~1 minute after push.</span>',
       '</div>'
@@ -2142,15 +2147,20 @@
       return;
     }
 
-    // Load existing insights so we can label replace vs new.
-    if (!window.dbGate || !window.dbGate.isUnlocked()) {
-      toast('Database is locked — click "Reload from source" and enter your passcode first.', 'error');
-      return;
+    // Load existing insights so we can label replace vs new. dbGate.fetchJson
+    // takes the PLAINTEXT path (it maps to .enc internally); passing the .enc
+    // path bypasses the decrypt step and returns raw ciphertext.
+    let existingMap = {};
+    let dbLocked = !(window.dbGate && window.dbGate.isUnlocked());
+    if (!dbLocked) {
+      try {
+        const existing = await window.dbGate.fetchJson('data/scholar-insights.json');
+        existingMap = (existing && existing.insights) || {};
+      } catch (err) {
+        console.warn('[insights-paste] preview fetch failed, will still allow apply:', err);
+        dbLocked = true;
+      }
     }
-    let existing;
-    try { existing = await window.dbGate.fetchJson('data/scholar-insights.json.enc'); }
-    catch (err) { toast(`Could not load current insights: ${err.message}`, 'error'); return; }
-    const existingMap = (existing && existing.insights) || {};
 
     const rows = [];
     for (const [pastedName, rawEntry] of Object.entries(parsed)) {
@@ -2161,7 +2171,9 @@
                     keywordCount: 0, summaryChars: 0, sourceCount: 0, normalized: null });
         continue;
       }
-      const action = Object.prototype.hasOwnProperty.call(existingMap, canonical) ? 'replace' : 'new';
+      const action = dbLocked
+        ? 'apply'
+        : (Object.prototype.hasOwnProperty.call(existingMap, canonical) ? 'replace' : 'new');
       rows.push({
         pastedName,
         canonicalName: canonical,
@@ -2191,7 +2203,7 @@
     status.textContent = 'Fetching current insights bundle…';
 
     let insightsJson;
-    try { insightsJson = await window.dbGate.fetchJson('data/scholar-insights.json.enc'); }
+    try { insightsJson = await window.dbGate.fetchJson('data/scholar-insights.json'); }
     catch (err) { toast(`Fetch failed: ${err.message}`, 'error'); status.textContent = ''; return; }
     if (!insightsJson || typeof insightsJson !== 'object') insightsJson = { insights: {} };
     if (!insightsJson.insights) insightsJson.insights = {};
