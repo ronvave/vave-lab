@@ -373,7 +373,7 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
     <p class="hero__body">For more info or questions, contact <strong><a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a></strong>.</p>
 
     <div class="progress-cta">
-      <p>Curious how the crowdsourcing is going? <a href="itaukei-scholar-province-progress.html">See the public progress page →</a></p>
+      <p>Curious how the crowdsourcing is going? <a href="itaukei-scholar-province-progress.html" target="_blank" rel="noopener">See the public progress page →</a></p>
     </div>
   </section>
 
@@ -771,7 +771,7 @@ async function submitBatch(){
     // With mode:'no-cors' the response is opaque (can't read status/body), so if
     // fetch resolves without throwing, the request left the browser successfully.
     status.className = 'status ok';
-    status.innerHTML = `Vinaka vakalevu — your submission was received. <br><a href="itaukei-scholar-province-progress.html" style="color:var(--brown);text-decoration:underline">See the public progress page →</a>`;
+    status.innerHTML = `Vinaka vakalevu — your submission was received. <br><a href="itaukei-scholar-province-progress.html" target="_blank" rel="noopener" style="color:var(--brown);text-decoration:underline">See the public progress page →</a>`;
   } catch (e) {
     status.className = 'status err';
     status.textContent = 'Submission failed. Check your connection and try again.';
