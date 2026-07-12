@@ -378,6 +378,57 @@
     var wrap = document.createElement('div');
     wrap.innerHTML = buildShellHtml(reason);
     main.insertBefore(wrap.firstElementChild, main.firstChild);
+    wireAdminUnlockAffordances();
+  }
+
+  // Admin-unlock affordances (undocumented on purpose):
+  //   1. Keyboard: Ctrl+Shift+D  (or Cmd+Shift+D on Mac) prompts for the
+  //      passcode. Correct passcode marks the device dev + reloads.
+  //   2. Mouse:   triple-click the padlock badge on the public shell.
+  //
+  // Both give Ron a way back in on any browser after a hard refresh /
+  // cache wipe, without exposing an obvious "admin" button to the public.
+  var adminUnlockWired = false;
+  function wireAdminUnlockAffordances() {
+    if (adminUnlockWired) return;
+    adminUnlockWired = true;
+
+    document.addEventListener('keydown', function (e) {
+      var isCombo = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd');
+      if (isCombo) {
+        e.preventDefault();
+        promptAdminUnlock();
+      }
+    });
+
+    var badge = document.querySelector('.demo-gate-shell__badge');
+    if (badge) {
+      badge.style.cursor = 'default';
+      var clicks = 0;
+      var clickTimer = null;
+      badge.addEventListener('click', function () {
+        clicks++;
+        if (clickTimer) clearTimeout(clickTimer);
+        clickTimer = setTimeout(function () { clicks = 0; }, 900);
+        if (clicks >= 3) {
+          clicks = 0;
+          promptAdminUnlock();
+        }
+      });
+    }
+  }
+
+  function promptAdminUnlock() {
+    var entered = window.prompt('Admin passcode:');
+    if (entered === null) return;
+    if (entered === BAKED_PASSCODE) {
+      markDev();
+      // Reload without any query string so the fresh session boots as dev.
+      var url = location.pathname + location.hash;
+      location.replace(url);
+    } else {
+      showToast('Wrong passcode.', true);
+    }
   }
 
   function removePublicShell() {
