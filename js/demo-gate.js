@@ -378,7 +378,7 @@
     var wrap = document.createElement('div');
     wrap.innerHTML = buildShellHtml(reason);
     main.insertBefore(wrap.firstElementChild, main.firstChild);
-    wireAdminUnlockAffordances();
+    wireBadgeTripleClick();
   }
 
   // Admin-unlock affordances (undocumented on purpose):
@@ -389,20 +389,19 @@
   //      Ctrl+Shift+D was avoided because Chrome / Safari reserve it
   //      for the browser's own "Bookmark all tabs" chord and swallow
   //      keydown events for it before the page ever sees them.
+  //      NOTE: the keyboard listener MUST be wired regardless of mode
+  //      (public / demo / dev). Previously it was only wired inside
+  //      renderPublicShell() so keys did nothing on a demo URL, which
+  //      stranded Ron when he opened his own demo link on a fresh
+  //      device.
   //   2. Mouse:   triple-click the padlock badge on the public shell.
-  //
-  // Both give Ron a way back in on any browser after a hard refresh /
-  // cache wipe, without exposing an obvious "admin" button to the public.
-  var adminUnlockWired = false;
-  function wireAdminUnlockAffordances() {
-    if (adminUnlockWired) return;
-    adminUnlockWired = true;
-
+  //      Only relevant when the shell is visible (i.e. public mode).
+  var adminKeysWired = false;
+  function wireAdminUnlockKeys() {
+    if (adminKeysWired) return;
+    adminKeysWired = true;
     document.addEventListener('keydown', function (e) {
       // Ctrl+Alt+D  (Windows/Linux)  =  Ctrl+Option+D  (macOS).
-      // Do NOT accept metaKey here — Cmd+Alt+D on macOS is "Show/hide
-      // Dock" at the OS level and won't reach the page anyway; keeping
-      // it off the combo avoids confusing failures.
       var comboA = e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
       // Fallback: Alt+Shift+A (browser-safe on Chrome/Firefox/Safari).
       var comboB = e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && (e.key === 'A' || e.key === 'a' || e.code === 'KeyA');
@@ -411,35 +410,55 @@
         promptAdminUnlock();
       }
     });
+  }
 
+  function wireBadgeTripleClick() {
     var badge = document.querySelector('.demo-gate-shell__badge');
-    if (badge) {
-      badge.style.cursor = 'default';
-      var clicks = 0;
-      var clickTimer = null;
-      badge.addEventListener('click', function () {
-        clicks++;
-        if (clickTimer) clearTimeout(clickTimer);
-        clickTimer = setTimeout(function () { clicks = 0; }, 900);
-        if (clicks >= 3) {
-          clicks = 0;
-          promptAdminUnlock();
-        }
-      });
-    }
+    if (!badge || badge.dataset.tripleClickWired === '1') return;
+    badge.dataset.tripleClickWired = '1';
+    badge.style.cursor = 'default';
+    var clicks = 0;
+    var clickTimer = null;
+    badge.addEventListener('click', function () {
+      clicks++;
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(function () { clicks = 0; }, 900);
+      if (clicks >= 3) {
+        clicks = 0;
+        promptAdminUnlock();
+      }
+    });
   }
 
   function promptAdminUnlock() {
     var entered = window.prompt('Admin passcode:');
     if (entered === null) return;
-    if (entered === BAKED_PASSCODE) {
-      markDev();
-      // Reload without any query string so the fresh session boots as dev.
-      var url = location.pathname + location.hash;
-      location.replace(url);
-    } else {
+    if (entered !== BAKED_PASSCODE) {
       showToast('Wrong passcode.', true);
+      return;
     }
+    // Correct passcode. What happens next depends on the current mode.
+    if (mode === 'demo') {
+      // Live demo in progress: reveal the End-demo pill so Ron can
+      // wind it down. Do NOT mark the device dev — that would strip
+      // the token from the URL on next reload.
+      revealDemoControls();
+      showToast('Demo controls revealed.');
+      return;
+    }
+    if (mode === 'dev' && readTokenFromHash()) {
+      // Ron is on his own dev machine and there's a demo token in the
+      // URL (he just clicked Share). Expose the End-demo pill so he
+      // can revoke without reloading in a non-dev browser.
+      revealDevEndDemoControls();
+      showToast('End-demo controls revealed.');
+      return;
+    }
+    // Public shell (or any other state): mark the device dev + reload
+    // without any query string.
+    markDev();
+    var url = location.pathname + location.hash;
+    location.replace(url);
   }
 
   function removePublicShell() {
@@ -474,6 +493,13 @@
   function injectDevControls() {
     injectShellStyles();
     if (document.getElementById('demo-gate-controls')) return;
+    // If Ron already has a demo token in the URL (i.e. he generated one
+    // earlier and hasn't ended it yet), don't show the Share pill — he
+    // asked for the dev screen to look quiet during a live demo, and
+    // clicking Share again would just mint another token. Ron can still
+    // reset by clearing the hash or pressing Ctrl+Alt+D + entering the
+    // passcode to reveal the End-demo pill.
+    if (readTokenFromHash()) return;
     var wrap = document.createElement('div');
     wrap.id = 'demo-gate-controls';
     wrap.className = 'demo-gate-controls';
@@ -484,8 +510,33 @@
   }
 
   function injectDemoControls() {
+    // On a demo URL we intentionally show NOTHING on-screen — no
+    // countdown, no "End demo" pill, no "this is a demo" banner. Ron
+    // shares the link, gives the demo, and nothing on the page hints
+    // at the time limit. To end a demo early Ron opens the Admin page
+    // (which reads the same GitHub revocations file) or uses the
+    // admin-key chord below to expose the pill for one session.
+    //
+    // Behind the scenes the token is still parsed, verified, and
+    // enforced (expiry + revocations). The countdown runs invisibly
+    // so an expired token still forces a reload into the public shell.
     injectShellStyles();
+    startCountdown();
+  }
+
+  // Dev-mode variant: Ron is on his own machine (mode === 'dev') but
+  // there's a demo token in the URL. Parse it, populate activeToken,
+  // then render the End-demo pill so he can revoke without leaving
+  // dev mode.
+  async function revealDevEndDemoControls() {
     if (document.getElementById('demo-gate-controls')) return;
+    var rawToken = readTokenFromHash();
+    if (!rawToken) return;
+    if (!activeToken) {
+      var verified = await parseAndVerifyToken(rawToken);
+      if (!verified) { showToast('Token in URL is not valid.', true); return; }
+      activeToken = verified;
+    }
     var wrap = document.createElement('div');
     wrap.id = 'demo-gate-controls';
     wrap.className = 'demo-gate-controls';
@@ -497,21 +548,45 @@
     startCountdown();
   }
 
+  // Reveal the demo pill (timer + End-demo button) on-demand. Called
+  // from promptAdminUnlock when the current mode is 'demo' — lets Ron
+  // wind down a live demo without leaving "Demo · 1h 23m" on-screen
+  // for the whole session.
+  function revealDemoControls() {
+    if (mode !== 'demo') return;
+    if (document.getElementById('demo-gate-controls')) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'demo-gate-controls';
+    wrap.className = 'demo-gate-controls';
+    wrap.innerHTML = ''
+      + '<span class="demo-gate-controls__timer" data-demo-timer></span>'
+      + '<button type="button" class="is-danger" data-demo-end title="End the demo and revoke the URL for everyone">End demo</button>';
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-demo-end]').addEventListener('click', onEndDemo);
+    // Kick off / refresh the countdown so the newly-inserted timer
+    // pill starts populating right away.
+    startCountdown();
+  }
+
   var countdownTimer = null;
   function startCountdown() {
     stopCountdown();
-    var timerEl = document.querySelector('[data-demo-timer]');
-    if (!timerEl || !activeToken) return;
+    if (!activeToken) return;
+    // The timer element is optional — it only exists when the demo pill
+    // has been revealed via the admin-key chord. When it's absent the
+    // countdown still runs so an expired token forces a reload into
+    // the public shell.
     var update = function () {
       var remaining = activeToken.payload.exp - Date.now();
+      var timerEl = document.querySelector('[data-demo-timer]');
       if (remaining <= 0) {
-        timerEl.textContent = 'Demo expired';
+        if (timerEl) timerEl.textContent = 'Demo expired';
         stopCountdown();
         // Force reload into public shell after a short grace pause.
         setTimeout(function () { location.reload(); }, 1200);
         return;
       }
-      timerEl.textContent = 'Demo \u00b7 ' + formatRemaining(remaining);
+      if (timerEl) timerEl.textContent = 'Demo \u00b7 ' + formatRemaining(remaining);
     };
     update();
     countdownTimer = setInterval(update, 1000);
@@ -521,21 +596,28 @@
   }
 
   async function onShareDemo() {
+    // Hide the Share pill immediately so the moment the URL flips to
+    // demo, no "Demo" wording is visible on-screen. The reload will
+    // rebuild controls; in demo mode nothing is rendered by default.
+    var pill = document.getElementById('demo-gate-controls');
+    if (pill) pill.style.display = 'none';
     try {
       var t = await mintToken(DEMO_TTL_MS);
       writeTokenToHash(t.raw);
       var fullUrl = location.origin + location.pathname + location.search + location.hash;
       try {
         await navigator.clipboard.writeText(fullUrl);
-        showToast('Demo URL copied. Valid for 2 hours or until you press End demo.');
+        showToast('URL copied to clipboard.');
       } catch (e) {
-        showToast('Demo URL is in the address bar (clipboard copy blocked).');
+        showToast('URL is in the address bar (clipboard copy blocked).');
       }
-      // Reload so the page comes up in demo mode with the countdown and
-      // End-demo button, exactly as a visitor would see it.
+      // Reload so the page comes up in demo mode. Nothing on-screen will
+      // say "demo" — Ron can end the demo any time with the admin-key
+      // chord and revoke the URL through the Admin page.
       setTimeout(function () { location.reload(); }, 600);
     } catch (e) {
-      showToast('Could not create demo URL: ' + e.message, true);
+      if (pill) pill.style.display = '';
+      showToast('Could not create URL: ' + e.message, true);
     }
   }
 
@@ -616,6 +698,9 @@
   async function boot(onReady) {
     handleDevOptIn();
     injectShellStyles();
+    // Wire the admin unlock keyboard chords immediately so they work
+    // regardless of which mode we end up in (public / demo / dev).
+    wireAdminUnlockKeys();
 
     // Dev mode wins over everything.
     if (isDevMarked()) {
