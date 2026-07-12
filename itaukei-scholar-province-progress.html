@@ -372,7 +372,7 @@ function renderStats(){
   const sparkNewEl = $('sparkNew');
   if (sparkNewEl) {
     // "New scholars added" is not a share-of-total — it's an additive count
-    // coming from outside the existing 399. Show the bar as new-vs-total-so-far
+    // coming from outside the current master roster. Show the bar as new-vs-total-so-far
     // (capped at 100%) so it reads as "community contribution to the list".
     const pct = (NEW_SCHOLARS_APPROVED == null)
       ? 0
@@ -525,7 +525,7 @@ const _origRenderAll = renderAll;
 renderAll = function(){ _origRenderAll(); renderAlphaTabs(); };
 
 // -------- SMART REFRESH --------
-// Instead of blindly re-downloading all 397 rows on a timer, we only pull the
+// Instead of blindly re-downloading the whole roster on a timer, we only pull the
 // full data when the backend's "version" (row count + last submission time)
 // actually changes — i.e. after someone has submitted. This keeps the page
 // current across all visitors while barely touching the Apps Script quota.
