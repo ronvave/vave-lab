@@ -393,9 +393,13 @@ function statusRank(s){
 
 function renderList(){
   const q = searchQuery.trim().toLowerCase();
+  // When the user is searching, ignore the last-name-initial filter so a
+  // name typed while a letter tab is active still returns results across the
+  // full list (e.g. typing "savou" while on the V tab should show Savou).
+  const initialFilterActive = !q && activeInitial !== 'All';
   let rows = ALL_ROWS.filter(r => {
     if (currentFilter !== 'all' && r.status !== currentFilter) return false;
-    if (activeInitial !== 'All' && (r.lastName[0] || '').toUpperCase() !== activeInitial) return false;
+    if (initialFilterActive && (r.lastName[0] || '').toUpperCase() !== activeInitial) return false;
     if (q && !r.lastName.toLowerCase().includes(q) && !r.firstName.toLowerCase().includes(q)) return false;
     return true;
   });
@@ -484,6 +488,12 @@ document.querySelectorAll('.list-head span').forEach(span => {
 
 searchInput.addEventListener('input', (e) => {
   searchQuery = e.target.value;
+  // Typing a query auto-resets the alphabet strip so the visual state matches
+  // the actual filter behaviour (search runs across the entire list).
+  if (searchQuery.trim() && activeInitial !== 'All') {
+    activeInitial = 'All';
+    renderAlphaTabs();
+  }
   renderList();
 });
 
