@@ -299,21 +299,13 @@ const searchInput = $('searchInput');
 let NEW_SCHOLARS_APPROVED = null;
 async function loadNewScholarsCount(){
   try {
-    const url = `${GOOGLE_SCRIPT_URL}?mode=newScholars&_=${Date.now()}`;
+    // Lean dedicated endpoint that returns { approved: N } — no PII, no full
+    // submission rows. Backed by getNewScholarsCount() in the Apps Script.
+    const url = `${GOOGLE_SCRIPT_URL}?mode=newScholarsCount&_=${Date.now()}`;
     const res = await fetch(url, { redirect: 'follow' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    const rows = Array.isArray(data)
-      ? data
-      : (data.rows || (data.result && data.result.rows) || []);
-    // Anything that has been approved (backend marks status='approved').
-    // Defensive: also accept alternate spellings so we don't miss counts if the
-    // backend evolves.
-    const approved = rows.filter(r => {
-      const s = (r.status || '').toString().trim().toLowerCase();
-      return s === 'approved' || s === 'accepted' || s === 'added';
-    });
-    NEW_SCHOLARS_APPROVED = approved.length;
+    NEW_SCHOLARS_APPROVED = Number(data && data.approved) || 0;
     renderStats();
   } catch (err) {
     console.warn('[progress] could not fetch new-scholars count:', err);
