@@ -560,6 +560,26 @@
       </div>
     </div>
 
+    <!-- Paste-in Insights (keywords + summary + sources) -->
+    <div class="panel" id="insights-paste-panel">
+      <h2>Paste research insights (keywords + summary)</h2>
+      <p style="color:var(--muted); font-size:0.92rem; margin:4px 0 12px 0;">Paste one or more scholar insight objects here to update <code>data/scholar-insights.json.enc</code>. Format is the same shape you get from the AI-generation pipeline. Names are matched exactly first, then through the alias table, so <code>&quot;Savou, Rusila&quot;</code> and <code>&quot;Savou-Wara, Rusila&quot;</code> both land in the right canonical entry. Existing keys are replaced in place; unknown names are added as new entries.</p>
+      <textarea id="insights-paste-input" placeholder='{
+  "Savou-Wara, Rusila": {
+    "keywords": ["Mangrove Restoration", "Octopus Fishery Biology"],
+    "summary": "HTML summary with <a href=&quot;...&quot;>links</a>.",
+    "summaryFormat": "html",
+    "sources": [ { "title": "...", "url": "https://..." } ]
+  }
+}' style="width:100%; min-height:220px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; padding:10px 12px; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; background:#fff; color:#111;" spellcheck="false"></textarea>
+      <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn primary" id="insights-paste-preview">Preview changes</button>
+        <button type="button" class="btn ghost" id="insights-paste-clear">Clear</button>
+        <span id="insights-paste-status" style="color:var(--muted); font-size:0.9rem;"></span>
+      </div>
+      <div id="insights-paste-report" style="margin-top:12px; display:none;"></div>
+    </div>
+
     <!-- Instructions -->
     <div class="panel">
       <h2>How to sync your profile changes to the public site</h2>

@@ -2031,6 +2031,9 @@
       }
     }
 
+    // Paste-in insights panel
+    wireInsightsPastePanel();
+
     // Output modal
     $('#output-close').addEventListener('click', () => $('#output-modal').classList.remove('is-visible'));
     $('#output-copy').addEventListener('click', () => {
@@ -2038,6 +2041,210 @@
       t.select();
       document.execCommand('copy');
       toast('Copied to clipboard.');
+    });
+  }
+
+  // ============ Paste-in Insights (keywords + summary + sources) ============
+  // Lets Ron paste one or more scholar insight objects (same shape the AI
+  // pipeline emits) directly into the admin and push them into
+  // data/scholar-insights.json.enc without hand-editing the file. Names are
+  // resolved through the alias table so pasting "Savou, Rusila" or
+  // "Savou-Wara, Rusila" both land on the current canonical entry.
+
+  function normalizeInsightEntry(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const out = {};
+    if (Array.isArray(raw.keywords)) out.keywords = raw.keywords.filter(k => typeof k === 'string' && k.trim()).map(k => k.trim());
+    if (typeof raw.summary === 'string') out.summary = raw.summary;
+    if (typeof raw.summaryFormat === 'string') out.summaryFormat = raw.summaryFormat;
+    if (Array.isArray(raw.sources)) {
+      out.sources = raw.sources
+        .filter(s => s && typeof s === 'object' && typeof s.url === 'string' && s.url.trim())
+        .map(s => ({ title: (typeof s.title === 'string' ? s.title.trim() : '') || s.url.trim(), url: s.url.trim() }));
+    }
+    // Preserve any extra fields the pipeline may have added (publicationCount,
+    // signature, regeneratedAt, etc.) so we don't strip metadata when re-saving.
+    for (const [k, v] of Object.entries(raw)) {
+      if (['keywords','summary','summaryFormat','sources'].includes(k)) continue;
+      out[k] = v;
+    }
+    return out;
+  }
+
+  function resolveInsightTargetName(rawName) {
+    // Try exact match in existing insights first, then alias table, then
+    // profile keys, then fall back to the raw name (creates a new entry).
+    return state.nameAliases.get(rawName) || rawName;
+  }
+
+  function renderInsightsPasteReport(rows) {
+    const box = document.getElementById('insights-paste-report');
+    if (!box) return;
+    if (!rows.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    const html = [
+      '<div style="border:1px solid var(--border); border-radius:8px; overflow:hidden;">',
+      '<table style="width:100%; border-collapse:collapse; font-size:0.88rem;">',
+      '<thead style="background:#f6f5f0;"><tr>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Pasted name</th>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Resolves to</th>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Action</th>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Keywords</th>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Summary length</th>',
+      '<th style="text-align:left; padding:8px 12px; border-bottom:1px solid var(--border);">Sources</th>',
+      '</tr></thead><tbody>',
+      ...rows.map(r => {
+        const badge = r.action === 'replace'
+          ? '<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Replace</span>'
+          : r.action === 'new'
+            ? '<span style="background:#e3f2fd; color:#0d47a1; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">New</span>'
+            : '<span style="background:#fdecea; color:#8a2b2b; padding:2px 8px; border-radius:99px; font-size:0.78rem; font-weight:600;">Skip</span>';
+        const via = r.pastedName !== r.canonicalName ? ` <span style="color:var(--muted); font-size:0.8rem;">(via alias)</span>` : '';
+        return `<tr>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${escapeHtml(r.pastedName)}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);"><strong>${escapeHtml(r.canonicalName)}</strong>${via}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${badge}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${r.keywordCount}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${r.summaryChars}</td>
+          <td style="padding:8px 12px; border-bottom:1px solid var(--border);">${r.sourceCount}</td>
+        </tr>`;
+      }),
+      '</tbody></table></div>',
+      '<div style="display:flex; gap:10px; margin-top:12px; align-items:center; flex-wrap:wrap;">',
+      `<button type="button" class="btn primary" id="insights-paste-apply">Apply ${rows.filter(r=>r.action!=='skip').length} change${rows.filter(r=>r.action!=='skip').length===1?'':'s'} and push to GitHub</button>`,
+      '<button type="button" class="btn ghost" id="insights-paste-cancel">Cancel</button>',
+      '<span style="color:var(--muted); font-size:0.85rem;">Public dashboard updates in ~1 minute after push.</span>',
+      '</div>'
+    ].join('');
+    box.innerHTML = html;
+    box.style.display = '';
+
+    document.getElementById('insights-paste-cancel').addEventListener('click', () => {
+      box.style.display = 'none';
+      box.innerHTML = '';
+    });
+    document.getElementById('insights-paste-apply').addEventListener('click', async () => {
+      await applyInsightsPaste(rows);
+    });
+  }
+
+  async function previewInsightsPaste() {
+    const ta = document.getElementById('insights-paste-input');
+    const status = document.getElementById('insights-paste-status');
+    const raw = (ta.value || '').trim();
+    if (!raw) { toast('Paste at least one insight object first.', 'error'); return; }
+
+    let parsed;
+    try { parsed = JSON.parse(raw); }
+    catch (err) { toast(`Invalid JSON: ${err.message}`, 'error'); return; }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      toast('Expected an object mapping scholar names to insight objects.', 'error');
+      return;
+    }
+
+    // Load existing insights so we can label replace vs new.
+    if (!window.dbGate || !window.dbGate.isUnlocked()) {
+      toast('Database is locked — click "Reload from source" and enter your passcode first.', 'error');
+      return;
+    }
+    let existing;
+    try { existing = await window.dbGate.fetchJson('data/scholar-insights.json.enc'); }
+    catch (err) { toast(`Could not load current insights: ${err.message}`, 'error'); return; }
+    const existingMap = (existing && existing.insights) || {};
+
+    const rows = [];
+    for (const [pastedName, rawEntry] of Object.entries(parsed)) {
+      const canonical = resolveInsightTargetName(pastedName);
+      const normalized = normalizeInsightEntry(rawEntry);
+      if (!normalized) {
+        rows.push({ pastedName, canonicalName: canonical, action: 'skip',
+                    keywordCount: 0, summaryChars: 0, sourceCount: 0, normalized: null });
+        continue;
+      }
+      const action = Object.prototype.hasOwnProperty.call(existingMap, canonical) ? 'replace' : 'new';
+      rows.push({
+        pastedName,
+        canonicalName: canonical,
+        action,
+        keywordCount: (normalized.keywords || []).length,
+        summaryChars: (normalized.summary || '').length,
+        sourceCount: (normalized.sources || []).length,
+        normalized,
+      });
+    }
+
+    const applyCount = rows.filter(r => r.action !== 'skip').length;
+    status.textContent = `Parsed ${rows.length} entr${rows.length===1?'y':'ies'} — ${applyCount} to apply, ${rows.length - applyCount} skipped.`;
+    renderInsightsPasteReport(rows);
+  }
+
+  async function applyInsightsPaste(rows) {
+    const status = document.getElementById('insights-paste-status');
+    if (!localStorage.getItem(GH_TOKEN_KEY)) {
+      toast('No GitHub token set — cannot push. Add a token in Data source.', 'error');
+      return;
+    }
+    if (!window.dbGate || !window.dbGate.isUnlocked()) {
+      toast('Database is locked — reload from source with the passcode first.', 'error');
+      return;
+    }
+    status.textContent = 'Fetching current insights bundle…';
+
+    let insightsJson;
+    try { insightsJson = await window.dbGate.fetchJson('data/scholar-insights.json.enc'); }
+    catch (err) { toast(`Fetch failed: ${err.message}`, 'error'); status.textContent = ''; return; }
+    if (!insightsJson || typeof insightsJson !== 'object') insightsJson = { insights: {} };
+    if (!insightsJson.insights) insightsJson.insights = {};
+
+    const applied = [];
+    rows.forEach(r => {
+      if (r.action === 'skip' || !r.normalized) return;
+      // Preserve pre-existing metadata fields the paste didn't overwrite (e.g.
+      // publicationCount, signature, regeneratedAt) so we don't wipe them.
+      const prior = insightsJson.insights[r.canonicalName] || {};
+      const merged = Object.assign({}, prior, r.normalized);
+      merged.regeneratedAt = new Date().toISOString();
+      insightsJson.insights[r.canonicalName] = merged;
+      applied.push(r.canonicalName);
+    });
+
+    if (!applied.length) { toast('Nothing to apply.', 'error'); status.textContent = ''; return; }
+
+    insightsJson.generatedAt = new Date().toISOString();
+    insightsJson.source = 'admin-paste';
+
+    status.textContent = `Encrypting and pushing ${applied.length} entr${applied.length===1?'y':'ies'} to GitHub…`;
+
+    try {
+      const jsonStr = JSON.stringify(insightsJson, null, 2) + '\n';
+      const encBytes = await window.dbGate.encryptForUpload(jsonStr);
+      const encBlob = new Blob([encBytes], { type: 'application/octet-stream' });
+      const label = applied.length <= 3 ? applied.join(', ') : `${applied.length} scholars`;
+      await githubUploadFile('data/scholar-insights.json.enc', encBlob, `admin: paste-in insights (${label})`);
+    } catch (err) {
+      console.error('[insights-paste] push failed:', err);
+      toast(`GitHub push failed: ${err.message}`, 'error');
+      status.textContent = '';
+      return;
+    }
+
+    status.textContent = `Pushed. Public dashboard updates in ~1 minute.`;
+    toast(`Saved insights for ${applied.length} scholar${applied.length===1?'':'s'}.`, 'success');
+    // Clear input + report on success.
+    document.getElementById('insights-paste-input').value = '';
+    const box = document.getElementById('insights-paste-report');
+    if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  }
+
+  function wireInsightsPastePanel() {
+    const previewBtn = document.getElementById('insights-paste-preview');
+    const clearBtn = document.getElementById('insights-paste-clear');
+    if (previewBtn) previewBtn.addEventListener('click', previewInsightsPaste);
+    if (clearBtn) clearBtn.addEventListener('click', () => {
+      document.getElementById('insights-paste-input').value = '';
+      const box = document.getElementById('insights-paste-report');
+      if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+      document.getElementById('insights-paste-status').textContent = '';
     });
   }
 
