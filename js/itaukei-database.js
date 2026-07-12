@@ -1900,11 +1900,14 @@
         }
       }
 
-      // --- Step 2: classic country/university/scholar substring --------
+      // --- Step 2: scholar-name-only fallback --------------------------
+      // The search bar is scoped to scholar names only (the Region › Country
+      // › University dropdown is where country/university navigation lives).
+      // If the scholar-first index above didn't resolve, try one more pass
+      // matching scholar-name substrings across all points; this handles
+      // partial matches that didn't hit the aliased canonical index.
       hideSearchDropdown(dropdownAnchor);
       const matches = points.filter(p => {
-        if ((p.country || '').toLowerCase().includes(q)) return true;
-        if ((p.university || '').toLowerCase().includes(q)) return true;
         const lists = [p.phdScholars, p.mastersScholars, p.unknownScholars];
         for (const list of lists) {
           if (!list) continue;
@@ -1913,23 +1916,6 @@
         return false;
       });
       if (matches.length === 0) return;
-
-      // Country-first zoom: if every match sits in the same country AND
-      // the query is a substring of that country name (e.g. "Fiji" or
-      // "new zea"), route through zoomToWorldCountry so the framing is
-      // tight (maxZoom 8) rather than the wide multi-country fitBounds
-      // used for arbitrary multi-point matches. Also stash the country
-      // as the search scope so the toolbar counter rescopes to that
-      // country's totals (updateWorldMapStatsForScope runs on moveend).
-      const uniqueCountries = new Set(matches.map(p => p.country).filter(Boolean));
-      if (uniqueCountries.size === 1) {
-        const only = [...uniqueCountries][0];
-        if ((only || '').toLowerCase().includes(q)) {
-          state.worldSearchScope = { country: only };
-          zoomToWorldCountry(only);
-          return;
-        }
-      }
 
       if (matches.length === 1) {
         const p = matches[0];
@@ -2338,6 +2324,14 @@
         state.worldMode = 'study';
         renderWorldMap();
         try { refreshConfDropdownUi(); refreshSectorDropdownUi(); refreshWorkDropdownUi(); } catch (_) {}
+        // Region dropdown lives inside the same fullscreen toolbar init as
+        // the confederacy dropdown — refresh its label/selection UI when
+        // Reset nukes the scope so the pill returns to "All regions".
+        try {
+          const rWrap = document.querySelector('[data-db-map-fs-region]');
+          if (rWrap && rWrap._refreshLabel) rWrap._refreshLabel();
+          if (rWrap && rWrap._refreshSelectionUi) rWrap._refreshSelectionUi();
+        } catch (_) {}
         if (worldWrap.classList.contains('is-fullscreen')) {
           m.setView([10, 80], 3, { animate: true });
         } else {
@@ -3300,8 +3294,13 @@
     const scope = state.worldSearchScope;
     const all = state.worldLayer.getLayers().filter(l => l && l._worldHome && l._worldPoint);
     let matching;
-    if (scope && scope.country) {
+    if (scope && scope.university) {
+      matching = all.filter(l => l._worldPoint.university === scope.university);
+    } else if (scope && scope.country) {
       matching = all.filter(l => l._worldPoint.country === scope.country);
+    } else if (scope && scope.region && Array.isArray(scope.regionCountries)) {
+      const set = new Set(scope.regionCountries);
+      matching = all.filter(l => set.has(l._worldPoint.country));
     } else {
       matching = all;
     }
@@ -3853,13 +3852,254 @@
       refreshWorkDropdownUi();
     }
 
-    // Populate all three list-based dropdowns.
+    // --- Region › Country › University drilldown ---
+    // Progressive drilldown modeled on the confederacies dropdown but three
+    // columns wide. Regions come from the WORLD_REGIONS constant; countries
+    // and universities are pulled from graduate-studies.worldPoints so a
+    // region with 0 present countries silently drops out.
+    const regionWrap    = document.querySelector('[data-db-map-fs-region]');
+    const regionBtn     = document.querySelector('[data-db-map-fs-region-btn]');
+    const regionPanel   = document.querySelector('[data-db-map-fs-region-panel]');
+    const regionList    = document.querySelector('[data-db-map-fs-region-list]');
+    const regionCList   = document.querySelector('[data-db-map-fs-region-country-list]');
+    const regionCTitle  = document.querySelector('[data-db-map-fs-region-country-title]');
+    const regionUList   = document.querySelector('[data-db-map-fs-region-uni-list]');
+    const regionUTitle  = document.querySelector('[data-db-map-fs-region-uni-title]');
+    const regionLabel   = document.querySelector('[data-db-map-fs-region-label]');
+    const regionDd = (regionWrap && regionBtn && regionPanel) ? wireDropdown(regionWrap, regionBtn, regionPanel) : null;
+
+    // Which region row the mouse is currently over. Determines what shows
+    // in the middle (country) column. Country hover in turn drives the
+    // right (university) column.
+    let hoveredRegion = null;
+    let hoveredCountry = null;
+
+    // Compute per-region country counts and per-country uni counts from the
+    // live worldPoints so the (N) badges always reflect what's on the map.
+    function computeRegionCounts() {
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const points = grad.worldPoints || [];
+      const countriesPresent = new Set(points.map(p => p.country).filter(Boolean));
+      const unisByCountry = new Map();
+      points.forEach(p => {
+        if (!p.country || !p.university) return;
+        if (!unisByCountry.has(p.country)) unisByCountry.set(p.country, new Set());
+        unisByCountry.get(p.country).add(p.university);
+      });
+      const regionRows = [];
+      Object.keys(WORLD_REGIONS).forEach(region => {
+        const countries = WORLD_REGIONS[region].filter(c => countriesPresent.has(c));
+        if (!countries.length) return;
+        regionRows.push({ region, countries });
+      });
+      return { regionRows, unisByCountry };
+    }
+
+    function refreshRegionLabel() {
+      if (!regionLabel) return;
+      const scope = state.worldSearchScope || {};
+      if (scope.university) {
+        regionLabel.textContent = scope.university;
+        regionWrap.classList.add('is-filtered');
+      } else if (scope.country) {
+        regionLabel.textContent = scope.country;
+        regionWrap.classList.add('is-filtered');
+      } else if (scope.region) {
+        regionLabel.textContent = scope.region;
+        regionWrap.classList.add('is-filtered');
+      } else {
+        regionLabel.textContent = 'All regions';
+        regionWrap.classList.remove('is-filtered');
+      }
+    }
+
+    function renderRegionList() {
+      if (!regionList) return;
+      const { regionRows } = computeRegionCounts();
+      const rows = [{ key: '', label: 'All regions', count: null, hasChildren: false }]
+        .concat(regionRows.map(r => ({ key: r.region, label: r.region, count: r.countries.length, hasChildren: true })));
+      regionList.innerHTML = rows.map(r => `
+        <button type="button" class="db-map-fs-conf__row" data-region-row="${escapeAttr(r.key)}">
+          <span>${escapeHtml(r.label)}</span>
+          <span>
+            ${r.count === null ? '' : `<span class="db-map-fs-conf__row-count">(${r.count})</span>`}
+            ${r.hasChildren ? '<span class="db-map-fs-conf__row-caret">\u203A</span>' : ''}
+          </span>
+        </button>
+      `).join('');
+      regionList.querySelectorAll('[data-region-row]').forEach(row => {
+        const key = row.getAttribute('data-region-row');
+        row.addEventListener('mouseenter', () => {
+          hoveredRegion = key || null;
+          hoveredCountry = null;
+          renderRegionCountryList(key);
+          renderRegionUniList(null);
+          refreshRegionSelectionUi();
+        });
+        row.addEventListener('click', () => {
+          if (!key) {
+            // "All regions" resets scope entirely.
+            state.worldSearchScope = null;
+            refreshRegionLabel();
+            refreshRegionSelectionUi();
+            zoomToDefaultWorldView();
+            regionDd && regionDd.close();
+            return;
+          }
+          const rowData = regionRows.find(r => r.region === key);
+          if (!rowData) return;
+          state.worldSearchScope = { region: key, regionCountries: rowData.countries.slice() };
+          refreshRegionLabel();
+          refreshRegionSelectionUi();
+          zoomToRegion(rowData.countries);
+          regionDd && regionDd.close();
+        });
+      });
+      // Default the middle column to the first available region on open.
+      if (!hoveredRegion && regionRows.length) {
+        hoveredRegion = regionRows[0].region;
+      }
+      renderRegionCountryList(hoveredRegion);
+      renderRegionUniList(hoveredCountry);
+    }
+
+    function renderRegionCountryList(regionKey) {
+      if (!regionCList) return;
+      if (!regionKey) {
+        regionCTitle.textContent = 'Country';
+        regionCList.innerHTML = '<div style="padding:10px 12px;color:#52525b;font-size:0.9rem;">Hover a region to see its countries.</div>';
+        return;
+      }
+      const { regionRows, unisByCountry } = computeRegionCounts();
+      const rowData = regionRows.find(r => r.region === regionKey);
+      const countries = rowData ? rowData.countries : [];
+      regionCTitle.textContent = `Countries in ${regionKey}`;
+      regionCList.innerHTML = countries.map(c => {
+        const uniCount = (unisByCountry.get(c) || new Set()).size;
+        return `
+          <button type="button" class="db-map-fs-conf__row" data-region-country-row="${escapeAttr(c)}">
+            <span>${escapeHtml(c)}</span>
+            <span>
+              <span class="db-map-fs-conf__row-count">(${uniCount})</span>
+              <span class="db-map-fs-conf__row-caret">\u203A</span>
+            </span>
+          </button>
+        `;
+      }).join('');
+      regionCList.querySelectorAll('[data-region-country-row]').forEach(row => {
+        const country = row.getAttribute('data-region-country-row');
+        row.addEventListener('mouseenter', () => {
+          hoveredCountry = country;
+          renderRegionUniList(country);
+          refreshRegionSelectionUi();
+        });
+        row.addEventListener('click', () => {
+          state.worldSearchScope = { country };
+          refreshRegionLabel();
+          refreshRegionSelectionUi();
+          zoomToWorldCountry(country);
+          regionDd && regionDd.close();
+        });
+      });
+    }
+
+    function renderRegionUniList(countryName) {
+      if (!regionUList) return;
+      if (!countryName) {
+        regionUTitle.textContent = 'University';
+        regionUList.innerHTML = '<div style="padding:10px 12px;color:#52525b;font-size:0.9rem;">Hover a country to see its universities.</div>';
+        return;
+      }
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const unis = (grad.worldPoints || [])
+        .filter(p => p.country === countryName)
+        .map(p => ({ name: p.university, total: p.scholarsCount || 0 }))
+        .sort((a, b) => (b.total - a.total) || a.name.localeCompare(b.name));
+      regionUTitle.textContent = `Universities in ${countryName}`;
+      if (!unis.length) {
+        regionUList.innerHTML = '<div style="padding:10px 12px;color:#52525b;font-size:0.9rem;">No university data available.</div>';
+        return;
+      }
+      regionUList.innerHTML = unis.map(u => `
+        <button type="button" class="db-map-fs-conf__row" data-region-uni-row="${escapeAttr(u.name)}">
+          <span>${escapeHtml(u.name)}</span>
+          <span class="db-map-fs-conf__row-count">${u.total}</span>
+        </button>
+      `).join('');
+      regionUList.querySelectorAll('[data-region-uni-row]').forEach(row => {
+        const uniName = row.getAttribute('data-region-uni-row');
+        row.addEventListener('click', () => {
+          state.worldSearchScope = { university: uniName };
+          refreshRegionLabel();
+          refreshRegionSelectionUi();
+          zoomToWorldUniversity(uniName);
+          regionDd && regionDd.close();
+        });
+      });
+    }
+
+    // Visual selected/highlighted styling across all three columns.
+    function refreshRegionSelectionUi() {
+      const scope = state.worldSearchScope || {};
+      if (regionList) {
+        regionList.querySelectorAll('[data-region-row]').forEach(el => {
+          const key = el.getAttribute('data-region-row');
+          el.classList.toggle('is-highlighted', key && key === hoveredRegion);
+          el.classList.toggle('is-selected', key && key === scope.region);
+        });
+      }
+      if (regionCList) {
+        regionCList.querySelectorAll('[data-region-country-row]').forEach(el => {
+          const c = el.getAttribute('data-region-country-row');
+          el.classList.toggle('is-highlighted', c === hoveredCountry);
+          el.classList.toggle('is-selected', c === scope.country);
+        });
+      }
+      if (regionUList) {
+        regionUList.querySelectorAll('[data-region-uni-row]').forEach(el => {
+          const u = el.getAttribute('data-region-uni-row');
+          el.classList.toggle('is-selected', u === scope.university);
+        });
+      }
+    }
+
+    // Zoom the fullscreen map so the passed countries all fit in view.
+    // Falls back to the default world view when no points match.
+    function zoomToRegion(countries) {
+      const m = state.worldMap;
+      if (!m) return;
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const set = new Set(countries);
+      const pts = (grad.worldPoints || []).filter(p => set.has(p.country));
+      if (!pts.length) return;
+      const bounds = L.latLngBounds(pts.map(p => [p.lat, p.lng]));
+      m.fitBounds(bounds, { padding: [80, 80], maxZoom: 5, animate: true });
+    }
+
+    // Reset the fullscreen map to its default whole-world framing.
+    function zoomToDefaultWorldView() {
+      const m = state.worldMap;
+      if (!m) return;
+      m.setView([10, 80], 3, { animate: true });
+    }
+
+    // Expose the region-label refresher so the Reset button (which nukes
+    // worldSearchScope) can pull the pill back to "All regions".
+    if (regionWrap) {
+      regionWrap._refreshLabel = refreshRegionLabel;
+      regionWrap._refreshSelectionUi = refreshRegionSelectionUi;
+    }
+
+    // Populate all four list-based dropdowns.
     renderConfList();
     renderSectorList();
     renderWorkCountryList();
+    renderRegionList();
     refreshConfDropdownUi();
     refreshSectorDropdownUi();
     refreshWorkDropdownUi();
+    refreshRegionLabel();
+    refreshRegionSelectionUi();
   }
 
   function renderChoropleth() {
@@ -4882,6 +5122,19 @@
     Burebasaga: ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
     Kubuna:     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
     Tovata:     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
+  };
+
+  // World-map Region › Country grouping. Regions are ordered so the Pacific
+  // (Ron's home region and the largest cohort) sits at the top of the
+  // dropdown. Every country present in graduate-studies.worldPoints must
+  // appear here — the render code silently drops any region whose countries
+  // aren't in the current dataset (so a region with 0 countries never shows
+  // a stale entry).
+  const WORLD_REGIONS = {
+    Pacific:         ['Fiji', 'Australia', 'New Zealand'],
+    Asia:            ['Japan', 'South Korea', 'Indonesia', 'Philippines'],
+    Europe:          ['UK', 'Germany', 'Sweden', 'Portugal', 'Malta'],
+    'North America': ['USA', 'Canada']
   };
 
   // =========================================================================
