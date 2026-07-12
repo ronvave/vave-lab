@@ -51,26 +51,21 @@ a:hover{color:var(--brown-ink)}
 .status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mat);margin-right:6px;vertical-align:middle;animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.55}50%{opacity:1}}
 
-/* STAT BAND */
+/* STAT BAND — solid dark cards, white text (matches the main iTaukei DB KPI band) */
 .stat-band{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-top:24px}
 @media(max-width:1080px){.stat-band{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:640px){.stat-band{grid-template-columns:repeat(2,1fr)}}
-.stat{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden}
-.stat--needs{background:linear-gradient(180deg,var(--paper) 0%,#fbf3ef 100%);border-color:#e5c7bf}
-.stat--partial{background:linear-gradient(180deg,var(--paper) 0%,#fbf7e4 100%);border-color:#ecd88f}
-.stat--done{background:linear-gradient(180deg,var(--paper) 0%,#eff5ef 100%);border-color:#bfd3c5}
-.stat--total{background:linear-gradient(180deg,var(--paper) 0%,var(--brown-soft) 100%);border-color:#e8c48b}
-.stat--new{background:linear-gradient(180deg,var(--paper) 0%,#eaf3f2 100%);border-color:#b7d5d0}
-.stat__num{font-family:"Fraunces",serif;font-weight:600;font-size:2.6rem;line-height:1;color:var(--ink);letter-spacing:-.02em}
-.stat__label{font-size:.88rem;color:var(--ink);text-transform:uppercase;letter-spacing:.04em;margin-top:8px;font-weight:600}
-.stat__hint{font-size:.82rem;color:var(--ink);opacity:.75;margin-top:2px;font-style:italic}
-.stat__spark{margin-top:10px;height:6px;background:var(--line-soft);border-radius:99px;overflow:hidden}
-.stat__spark-fill{height:100%;border-radius:99px;transition:width .8s cubic-bezier(.22,.61,.36,1)}
-.stat--needs .stat__spark-fill{background:var(--pat)}
-.stat--partial .stat__spark-fill{background:var(--gold)}
-.stat--done .stat__spark-fill{background:var(--mat)}
-.stat--total .stat__spark-fill{background:var(--brown)}
-.stat--new .stat__spark-fill{background:#2b8a83}
+.stat{background:var(--kpi-bg);border:1px solid rgba(0,0,0,0);border-radius:14px;padding:20px 22px;position:relative;overflow:hidden;color:#ffffff;box-shadow:var(--shadow);font-family:Arial,Helvetica,sans-serif}
+.stat--total  {--kpi-bg:#085041}
+.stat--done   {--kpi-bg:#712B13}
+.stat--partial{--kpi-bg:#3C3489}
+.stat--new    {--kpi-bg:#0C447C}
+.stat--needs  {--kpi-bg:#72243E}
+.stat__num{font-family:Arial,Helvetica,sans-serif;font-weight:800;font-size:2.6rem;line-height:1;color:#ffffff;letter-spacing:-.02em}
+.stat__label{font-family:Arial,Helvetica,sans-serif;font-size:.88rem;color:#ffffff;text-transform:uppercase;letter-spacing:.04em;margin-top:8px;font-weight:700}
+.stat__hint{font-family:Arial,Helvetica,sans-serif;font-size:.82rem;color:rgba(255,255,255,.82);margin-top:2px;font-style:italic}
+.stat__spark{margin-top:10px;height:6px;background:rgba(255,255,255,.18);border-radius:99px;overflow:hidden}
+.stat__spark-fill{height:100%;border-radius:99px;background:rgba(255,255,255,.85);transition:width .8s cubic-bezier(.22,.61,.36,1)}
 
 /* SUPPORTED CONTEXT PANEL */
 .supports{margin-top:26px;background:var(--paper-2);border:1px solid var(--line);border-radius:14px;padding:24px 26px}
