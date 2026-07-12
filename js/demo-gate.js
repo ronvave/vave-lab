@@ -382,8 +382,13 @@
   }
 
   // Admin-unlock affordances (undocumented on purpose):
-  //   1. Keyboard: Ctrl+Shift+D  (or Cmd+Shift+D on Mac) prompts for the
+  //   1. Keyboard: Ctrl+Alt+D  (or Ctrl+Option+D on Mac) prompts for the
   //      passcode. Correct passcode marks the device dev + reloads.
+  //      Alt+Shift+A is a second fallback chord in case an extension
+  //      has claimed Ctrl+Alt+D on Ron's device.
+  //      Ctrl+Shift+D was avoided because Chrome / Safari reserve it
+  //      for the browser's own "Bookmark all tabs" chord and swallow
+  //      keydown events for it before the page ever sees them.
   //   2. Mouse:   triple-click the padlock badge on the public shell.
   //
   // Both give Ron a way back in on any browser after a hard refresh /
@@ -394,8 +399,14 @@
     adminUnlockWired = true;
 
     document.addEventListener('keydown', function (e) {
-      var isCombo = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'D' || e.key === 'd');
-      if (isCombo) {
+      // Ctrl+Alt+D  (Windows/Linux)  =  Ctrl+Option+D  (macOS).
+      // Do NOT accept metaKey here — Cmd+Alt+D on macOS is "Show/hide
+      // Dock" at the OS level and won't reach the page anyway; keeping
+      // it off the combo avoids confusing failures.
+      var comboA = e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
+      // Fallback: Alt+Shift+A (browser-safe on Chrome/Firefox/Safari).
+      var comboB = e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && (e.key === 'A' || e.key === 'a' || e.code === 'KeyA');
+      if (comboA || comboB) {
         e.preventDefault();
         promptAdminUnlock();
       }
