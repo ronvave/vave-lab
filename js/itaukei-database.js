@@ -3308,18 +3308,22 @@
     updateWorldMapStats(matching.map(l => l._worldPoint));
   }
 
-  // Fan out markers whose centers are within `threshold` screen pixels of
-  // each other at the current zoom. Each cluster's markers get placed on
-  // a small circle around the group's home centroid; hovering over one
-  // collapses the others back to their homes so the hovered popup has
-  // room. Moving the mouse off the cluster respreads them.
+  // Silent overlap detection + hover-triggered spider layout.
+  //
+  // Markers stay in their real (overlapping) positions by default. On every
+  // moveend we recompute which markers overlap in screen space and assign
+  // them a shared cluster reference. Hovering ANY marker in a 2+ cluster
+  // fans that cluster out; leaving the whole cluster area collapses it back
+  // home. Hovering an individual fanned marker keeps just that one visible
+  // (the popup owner) and pulls the others back to home so the popup has
+  // visual priority.
   function applyOverlapSpider() {
     const m = state.worldMap;
     if (!m || !state.worldLayer) return;
     const layers = state.worldLayer.getLayers().filter(l => l && l._worldHome);
-    // First pass: restore every marker to its home before recomputing
-    // clusters. This is what lets the spider layout "collapse" when the
-    // user zooms out enough that markers no longer overlap.
+
+    // Collapse any currently-fanned cluster from the previous zoom level and
+    // clear its cluster tag. New clusters will be assigned below.
     layers.forEach(l => {
       const h = l._worldHome;
       if (l.getLatLng) {
@@ -3329,29 +3333,24 @@
         }
       }
       l._spiderCluster = null;
+      l._spiderPos = null;
     });
 
-    // Cluster markers whose screen-space distance is under the threshold.
-    // Threshold = 2 * radius so any pair whose disks touch or overlap ends
-    // up in the same cluster. We use marker._worldRadius (set at draw
-    // time) as a proxy for size — the largest of the pair drives the
-    // threshold.
+    // Cluster markers whose disks overlap in screen space at the current
+    // zoom. Threshold uses the larger of the two radii so any pair whose
+    // circles touch ends up in the same cluster.
     const pxOf = (ll) => m.latLngToLayerPoint(ll);
     const clusters = [];
     layers.forEach(l => {
-      const home = L.latLng(l._worldHome[0], l._worldHome[1]);
-      const homePt = pxOf(home);
+      const homePt = pxOf(L.latLng(l._worldHome[0], l._worldHome[1]));
       let joined = false;
       for (const c of clusters) {
         for (const other of c.markers) {
           const otherPt = pxOf(L.latLng(other._worldHome[0], other._worldHome[1]));
-          const dx = homePt.x - otherPt.x;
-          const dy = homePt.y - otherPt.y;
-          const dist = Math.hypot(dx, dy);
+          const dist = Math.hypot(homePt.x - otherPt.x, homePt.y - otherPt.y);
           const r1 = l._worldRadius || 10;
           const r2 = other._worldRadius || 10;
-          const threshold = Math.max(r1, r2) * 2.2;
-          if (dist < threshold) {
+          if (dist < Math.max(r1, r2) * 2.2) {
             c.markers.push(l);
             joined = true;
             break;
@@ -3359,70 +3358,116 @@
         }
         if (joined) break;
       }
-      if (!joined) clusters.push({ markers: [l] });
+      if (!joined) clusters.push({ markers: [l], expanded: false });
     });
 
-    // Fan out any cluster with 2+ markers. Radius scales with the largest
-    // marker in the cluster + a base offset so labels/popups don't collide.
-    // Angles start at -90° (12 o'clock) and go clockwise so the layout
-    // reads naturally.
+    // Tag each marker in a 2+ cluster with the cluster reference AND wire
+    // hover handlers once. No positions are changed here — markers stay
+    // overlapped until a mouseover triggers the fan.
     clusters.forEach(c => {
       if (c.markers.length < 2) return;
-      const centerPt = c.markers
-        .map(l => pxOf(L.latLng(l._worldHome[0], l._worldHome[1])))
-        .reduce((acc, p, _, arr) => ({ x: acc.x + p.x / arr.length, y: acc.y + p.y / arr.length }), { x: 0, y: 0 });
-      const maxR = Math.max(...c.markers.map(l => l._worldRadius || 10));
-      const spiderR = Math.max(maxR * 2.4, 32);
-      const n = c.markers.length;
-      c.markers.forEach((l, i) => {
-        const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
-        const px = centerPt.x + spiderR * Math.cos(angle);
-        const py = centerPt.y + spiderR * Math.sin(angle);
-        const ll = m.layerPointToLatLng(L.point(px, py));
-        l.setLatLng(ll);
-        l._spiderPos = ll;
-        l._spiderCluster = c;
-      });
-      // Wire hover-to-focus: hovering one marker collapses the others in
-      // the same cluster back to their homes so the popup has visual
-      // priority. Leaving that marker (and not entering another in the
-      // cluster) respreads them.
       c.markers.forEach(l => {
+        l._spiderCluster = c;
         if (l._spiderHoverWired) return;
         l._spiderHoverWired = true;
+        // mouseover: if the cluster is not yet expanded, fan it out. Then
+        // (whether newly expanded or already open) collapse the siblings so
+        // the hovered marker's popup owns the visual space.
         l.on('mouseover', () => {
-          if (l._respreadTimer) { clearTimeout(l._respreadTimer); l._respreadTimer = null; }
-          _spiderCollapseOthers(l);
+          if (l._collapseTimer) { clearTimeout(l._collapseTimer); l._collapseTimer = null; }
+          const cluster = l._spiderCluster;
+          if (!cluster) return;
+          if (!cluster.expanded) {
+            // First hover on this cluster — fan the SIBLINGS out around
+            // this marker so the user can see and pick any of them.
+            _expandSpiderCluster(cluster, l);
+          } else {
+            // Cluster is already fanned; the user landed on THIS marker,
+            // so pull the other siblings home and let this popup own the
+            // visual space. The current marker keeps its spider position.
+            _spiderCollapseOthers(l);
+          }
         });
-        l.on('mouseout',  () => _spiderRespreadCluster(l));
+        // mouseout: schedule a collapse of the entire cluster back home.
+        // A quick re-enter (onto a sibling or back onto this marker)
+        // cancels via the mouseover handler above.
+        l.on('mouseout', () => _scheduleClusterCollapse(l));
       });
     });
+  }
+
+  function _expandSpiderCluster(cluster, seedMarker) {
+    // Fan the SIBLINGS of `seedMarker` out on a circle around the seed's
+    // home position. The seed stays put so the mouse cursor stays over
+    // the marker that triggered the expansion (otherwise the fan happens
+    // and mouseout fires immediately, collapsing everything).
+    const m = state.worldMap;
+    if (!m || !cluster || cluster.expanded) return;
+    const siblings = seedMarker
+      ? cluster.markers.filter(l => l !== seedMarker)
+      : cluster.markers;
+    if (!siblings.length) return;
+    const anchor = seedMarker || cluster.markers[0];
+    const anchorPt = m.latLngToLayerPoint(L.latLng(anchor._worldHome[0], anchor._worldHome[1]));
+    const maxR = Math.max(...cluster.markers.map(l => l._worldRadius || 10));
+    const spiderR = Math.max(maxR * 2.4, 32);
+    const n = siblings.length;
+    siblings.forEach((l, i) => {
+      // Distribute siblings starting at 12 o'clock, clockwise.
+      const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+      const ll = m.layerPointToLatLng(L.point(
+        anchorPt.x + spiderR * Math.cos(angle),
+        anchorPt.y + spiderR * Math.sin(angle)
+      ));
+      l.setLatLng(ll);
+      l._spiderPos = ll;
+    });
+    // The seed keeps _spiderPos = its home so a later re-spread lands it
+    // back where the cursor already is.
+    if (seedMarker) seedMarker._spiderPos = L.latLng(seedMarker._worldHome[0], seedMarker._worldHome[1]);
+    cluster.expanded = true;
+    cluster.anchor = anchor;
+  }
+
+  function _collapseSpiderCluster(cluster) {
+    if (!cluster) return;
+    cluster.markers.forEach(l => {
+      if (l._worldHome) l.setLatLng(l._worldHome);
+      l._spiderPos = null;
+    });
+    cluster.expanded = false;
   }
 
   function _spiderCollapseOthers(hovered) {
+    // While a cluster is fanned, hovering one marker pulls the SIBLINGS
+    // back to their home positions (so the popup for the hovered marker
+    // is unambiguous). The hovered marker stays at its spider position.
     const c = hovered._spiderCluster;
-    if (!c) return;
+    if (!c || !c.expanded) return;
     c.markers.forEach(other => {
       if (other === hovered) return;
-      other.setLatLng(other._worldHome);
+      if (other._worldHome) other.setLatLng(other._worldHome);
     });
   }
 
-  function _spiderRespreadCluster(hovered) {
-    // Restore every cluster member (except the hovered marker) to its
-    // last spider position. Uses the cached _spiderPos so we don't
-    // re-run the whole clustering pass on every mouseout — that was
-    // causing layout thrash when the mouse crossed between siblings.
-    // Delayed so a rapid mouseover→mouseout on the way to a sibling
-    // has a chance to cancel the respread via _cancelSpiderRespread.
-    if (hovered._respreadTimer) clearTimeout(hovered._respreadTimer);
-    hovered._respreadTimer = setTimeout(() => {
-      const c = hovered._spiderCluster;
-      if (!c) return;
-      c.markers.forEach(l => {
-        if (l._spiderPos) l.setLatLng(l._spiderPos);
-      });
-    }, 80);
+  function _scheduleClusterCollapse(fromMarker) {
+    // Give the mouse ~180ms to land on a sibling (or come back). If it
+    // does, the sibling's mouseover clears this timer. If it doesn't,
+    // collapse the whole cluster back to overlapped home positions.
+    const c = fromMarker._spiderCluster;
+    if (!c) return;
+    if (fromMarker._collapseTimer) clearTimeout(fromMarker._collapseTimer);
+    // Also clear any collapse timer on siblings so we don't have two
+    // competing timers racing.
+    c.markers.forEach(s => { if (s._collapseTimer) { clearTimeout(s._collapseTimer); s._collapseTimer = null; } });
+    fromMarker._collapseTimer = setTimeout(() => {
+      // If a sibling ended up hovered in the meantime, the cluster was
+      // re-focused — leave it expanded. Detect by checking whether ANY
+      // sibling has been moved back to spider position within the last
+      // interaction. Simpler heuristic: collapse unconditionally; a
+      // pending re-hover will fire mouseover and re-expand.
+      _collapseSpiderCluster(c);
+    }, 180);
   }
 
   // -------- Fullscreen dropdown UI helpers --------
