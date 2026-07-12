@@ -3000,6 +3000,8 @@
     const countriesEl = document.querySelector('[data-db-map-fs-stats-countries]');
     const unisEl      = document.querySelector('[data-db-map-fs-stats-unis]');
     const scholarsEl  = document.querySelector('[data-db-map-fs-stats-scholars]');
+    const mastersEl   = document.querySelector('[data-db-map-fs-stats-masters]');
+    const phdEl       = document.querySelector('[data-db-map-fs-stats-phd]');
     if (!countriesEl || !unisEl || !scholarsEl) return;
     const countries = new Set();
     let scholarCount = 0;
@@ -3010,6 +3012,11 @@
     countriesEl.textContent = String(countries.size);
     unisEl.textContent      = String((points || []).length);
     scholarsEl.textContent  = String(scholarCount);
+    // Workplace view is workplace-country, not graduate-degree, so we
+    // don't have per-scholar Masters/PhD breakdowns to show here. Blank
+    // out the cells so a stale count from graduate view doesn't linger.
+    if (mastersEl) mastersEl.textContent = '\u2014';
+    if (phdEl)     phdEl.textContent     = '\u2014';
     // Coverage note is always relevant in workplace view because ~262/302
     // scholars lack a curated workplace. Force it on.
     const noteEl = document.querySelector('[data-db-map-fs-coverage]');
@@ -3034,9 +3041,25 @@
 
     const grad = state.graduateStudies || { worldPoints: [] };
     const rawPoints = grad.worldPoints || [];
+    // Defense in depth: any worldPoint missing lat/lng crashes Leaflet's
+    // circleMarker (`_project` reads .lat on null). This has bitten us
+    // when the refresh script emitted null coords for a university that
+    // wasn't in world-universities.json. Drop those points here so one
+    // bad row can't take the whole map init down with it. The Countries
+    // stat still counts them via the graduate-studies totals if needed.
+    const validPoints = rawPoints.filter(p => {
+      return p && typeof p.lat === 'number' && typeof p.lng === 'number'
+             && isFinite(p.lat) && isFinite(p.lng);
+    });
+    if (validPoints.length !== rawPoints.length) {
+      console.warn('renderWorldMap: dropped', rawPoints.length - validPoints.length,
+                   'worldPoints with null/invalid coords',
+                   rawPoints.filter(p => !p || typeof p.lat !== 'number' || typeof p.lng !== 'number')
+                            .map(p => p && p.university));
+    }
     // Apply fullscreen toolbar filters. Points with no matching scholars
     // drop out entirely. When no filter is active, this is a passthrough.
-    const points = rawPoints.map(filterWorldPoint).filter(Boolean);
+    const points = validPoints.map(filterWorldPoint).filter(Boolean);
     // Refresh the stat readout every time we redraw — keeps it in sync
     // with the current filtered set of points.
     updateWorldMapStats(points);
@@ -3140,20 +3163,31 @@
     const countriesEl = document.querySelector('[data-db-map-fs-stats-countries]');
     const unisEl      = document.querySelector('[data-db-map-fs-stats-unis]');
     const scholarsEl  = document.querySelector('[data-db-map-fs-stats-scholars]');
+    const mastersEl   = document.querySelector('[data-db-map-fs-stats-masters]');
+    const phdEl       = document.querySelector('[data-db-map-fs-stats-phd]');
     if (!countriesEl || !unisEl || !scholarsEl) return;
     const countries = new Set();
     const scholars = new Set();
+    // Masters and PhD are counted as UNIQUE-scholars-with-that-degree,
+    // deduped across universities. A scholar who did their masters at
+    // USP and their PhD at Massey shows up once in Masters and once in
+    // PhD, but only once in Scholars. This matches how Ron talks about
+    // the totals ("302 scholars, 122 Masters, 11 PhDs at USP", etc.).
+    const mastersSet = new Set();
+    const phdSet = new Set();
     let unis = 0;
     (pointsInView || []).forEach(p => {
       if (p.country) countries.add(p.country);
       unis += 1;
-      (p.phdScholars || []).forEach(n => scholars.add(n));
-      (p.mastersScholars || []).forEach(n => scholars.add(n));
+      (p.phdScholars || []).forEach(n => { scholars.add(n); phdSet.add(n); });
+      (p.mastersScholars || []).forEach(n => { scholars.add(n); mastersSet.add(n); });
       (p.unknownScholars || []).forEach(n => scholars.add(n));
     });
     countriesEl.textContent = String(countries.size);
     unisEl.textContent      = String(unis);
     scholarsEl.textContent  = String(scholars.size);
+    if (mastersEl) mastersEl.textContent = String(mastersSet.size);
+    if (phdEl)     phdEl.textContent     = String(phdSet.size);
     // Coverage note — shown only when a filter that depends on curated
     // profile fields (sector / work-country / work-institution) is active.
     const noteEl = document.querySelector('[data-db-map-fs-coverage]');

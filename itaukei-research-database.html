@@ -911,6 +911,10 @@
       border-right: 1px solid rgba(255, 255, 255, 0.25);
     }
     .db-map-fs-stats__cell:last-child { border-right: none; }
+    /* Masters + PhD tint the cell itself in shades of blue with white text.
+       Darker blue = PhD (higher degree), lighter blue = Masters. */
+    .db-map-fs-stats__cell--phd     { background: #1e3a8a; }
+    .db-map-fs-stats__cell--masters { background: #3b82f6; }
     .db-map-fs-stats__num {
       font-size: 1.05rem;
       font-weight: 700;
@@ -3648,6 +3652,14 @@
                   <span class="db-map-fs-stats__num" data-db-map-fs-stats-scholars>0</span>
                   <span class="db-map-fs-stats__label">Scholars</span>
                 </div>
+                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--masters">
+                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-masters>0</span>
+                  <span class="db-map-fs-stats__label">Masters</span>
+                </div>
+                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--phd">
+                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-phd>0</span>
+                  <span class="db-map-fs-stats__label">PhD</span>
+                </div>
               </div>
             </div>
             <div class="db-map-fs-coverage" data-db-map-fs-coverage hidden></div>
@@ -4301,7 +4313,7 @@
   </div>
 </div>
 
-<script src="js/db-gate.js?v=20260709-03" defer></script>
+<script src="js/demo-gate.js?v=20260712-01" defer></script>
 <script src="js/itaukei-database.js?v=20260710-20" defer></script>
 </body>
 </html>
