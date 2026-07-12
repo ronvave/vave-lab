@@ -123,6 +123,16 @@ main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-i
 .scholar-row__meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:.72rem;flex-shrink:0}
 .scholar-row__pubs{background:var(--brown-soft);color:var(--brown-ink);padding:3px 8px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums}
 .scholar-row__gap{font-size:.68rem;color:var(--ink);letter-spacing:.02em;text-transform:uppercase;font-weight:600}
+/* Status chips mirror the progress page (Fully tagged / Partial / Needs info). */
+.scholar-row__status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:.66rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.scholar-row__status .scholar-row__dot{width:6px;height:6px;border-radius:50%}
+.scholar-row__status--done{background:#c8d9cd;color:#2d5743}
+.scholar-row__status--done .scholar-row__dot{background:#2d5743}
+.scholar-row__status--partial{background:#f7ecc9;color:#7a5a13}
+.scholar-row__status--partial .scholar-row__dot{background:#c99a2f}
+.scholar-row__status--needs{background:#e8c4bc;color:#7c332d}
+.scholar-row__status--needs .scholar-row__dot{background:#7c332d}
+.scholar-row__hint{font-size:.68rem;color:#28251D;font-style:italic;font-weight:500;margin-top:2px;text-align:right}
 .scholar-row__alt{font-size:.75rem;color:var(--ink);line-height:1.3;margin-top:3px}
 .scholar-row__alt strong{font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:.66rem;color:var(--brown-ink);margin-right:4px}
 .scholar-row.selected{background:#fffbf3;border-color:var(--brown)}
@@ -602,12 +612,20 @@ function renderScholarList(){
     nameWrap.innerHTML = `<div class="scholar-row__last">${s.lastName}</div><div class="scholar-row__first">${s.firstName}</div>${altHtml}`;
     const meta = document.createElement('div');
     meta.className = 'scholar-row__meta';
-    // show a small note if this scholar has NO province info yet — flags priority
-    if (!s.hasPaternalProvince && !s.hasMaternalProvince) {
-      const gap = document.createElement('span');
-      gap.className = 'scholar-row__gap';
-      gap.textContent = 'no province yet';
-      meta.appendChild(gap);
+    // Status chip mirrors the progress page. All three statuses stay selectable
+    // — anyone (including the scholar themselves) can add corrections or extra
+    // sources on top of an already-tagged record.
+    const status = s.status || 'needs';
+    const label = status === 'done' ? 'Fully tagged' : status === 'partial' ? 'Partial info' : 'Needs info';
+    const chip = document.createElement('span');
+    chip.className = 'scholar-row__status scholar-row__status--' + status;
+    chip.innerHTML = `<span class="scholar-row__dot"></span>${label}`;
+    meta.appendChild(chip);
+    if (status !== 'needs') {
+      const hint = document.createElement('span');
+      hint.className = 'scholar-row__hint';
+      hint.textContent = status === 'done' ? 'You can still add corrections' : 'You can add more info';
+      meta.appendChild(hint);
     }
     row.append(cb, nameWrap, meta);
     listEl.appendChild(row);
@@ -931,7 +949,8 @@ async function loadScholars(){
           id: Number(r.id),
           lastName: lastName,
           firstName: firstName,
-          initial: (lastName[0] || firstName[0] || '#').toUpperCase()
+          initial: (lastName[0] || firstName[0] || '#').toUpperCase(),
+          status: (r.status || 'needs').toLowerCase()
         };
         if (NAME_ALT_NAMES[key]) out.altNames = NAME_ALT_NAMES[key];
         return out;
