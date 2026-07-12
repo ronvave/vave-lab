@@ -40,6 +40,11 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 SNAP = REPO / "data" / "itaukei-zotero-snapshot.json"
 OUT = REPO / "data" / "itaukei-graduate-studies.json"
+# world-universities.json is the canonical coordinate source. If a university
+# has an entry there, we use those coords instead of (or in addition to) the
+# hardcoded UNIVERSITY_COORDS dict below. Keeps the two datasets in sync so a
+# new Japan uni in world-universities.json immediately gets plotted here.
+WORLD_UNIS = REPO / "data" / "world-universities.json"
 
 # Root of the country/university tree in Zotero. This is the canonical
 # source of truth for which theses are iTaukei-graduate work.
@@ -60,6 +65,7 @@ COUNTRY_ISO = {
     "Sweden":          "SE",
     "United Kingdom":  "GB",
     "USA":             "US",
+    "Japan":           "JP",
     # UK sub-buckets — resolve back to GB.
     "England":         "GB",
     "Scotland":        "GB",
@@ -177,7 +183,51 @@ UNIVERSITY_COORDS = {
     # Japan
     "Kagoshima University":                  (31.581, 130.545),
     "University of Tokyo":                   (35.712, 139.762),
+    "Kyoto University":                      (35.0261, 135.7807),
+    "Tohoku University":                     (38.256, 140.842),
+    "Sophia University":                     (35.684, 139.734),
+    "University of Tsukuba":                 (36.108, 140.101),
 }
+
+
+def load_world_universities():
+    """Return two dicts sourced from world-universities.json:
+
+        coords[name]  -> (lat, lng)
+        country[name] -> "Japan" | "Fiji" | ...
+
+    world-universities.json is the canonical lookup for the dashboard's world
+    map, so mirroring its data keeps the two datasets in sync. When a name
+    appears both here and in UNIVERSITY_COORDS below, world-universities.json
+    wins (it is easier to edit and reviewed alongside the map data).
+
+    The country map lets us salvage theses that are tagged onto the thesis
+    tree root without a country sub-collection — e.g. items filed directly
+    under "iTaukei Thesis by Country/Universities" whose only country signal
+    is the free-text university field. Previously those got silently dropped.
+    """
+    if not WORLD_UNIS.exists():
+        return {}, {}
+    try:
+        wu = json.loads(WORLD_UNIS.read_text())
+    except Exception as e:
+        print(f"WARN: could not read {WORLD_UNIS.name}: {e}", file=sys.stderr)
+        return {}, {}
+    coords, country = {}, {}
+    for u in wu.get("universities", []):
+        name = u.get("name")
+        if not name:
+            continue
+        loc = u.get("location")
+        if loc and len(loc) >= 2:
+            try:
+                coords[name] = (float(loc[0]), float(loc[1]))
+            except (TypeError, ValueError):
+                pass
+        c = u.get("country")
+        if c:
+            country[name] = c
+    return coords, country
 
 
 # thesisType strings from Zotero can be anything the author typed. Classify.
@@ -279,6 +329,12 @@ def main() -> None:
 
     country_of, university_of, root_key, tree_keys = build_country_and_university_maps(cols)
 
+    # world-universities.json is the canonical coord lookup; it overrides the
+    # hardcoded UNIVERSITY_COORDS below so we don't have to edit two files
+    # when a new country/university is added to the map. The country map is
+    # also used to salvage items whose Zotero tags miss a country parent.
+    wu_coords, wu_country = load_world_universities()
+
     unknown_countries    = set()
     unknown_universities = set()
 
@@ -319,15 +375,25 @@ def main() -> None:
         if picked_uni is None and item.get("university"):
             picked_uni = item["university"].strip()
 
+        # If Zotero didn't put the item under a country sub-collection, try to
+        # infer the country from world-universities.json using the picked_uni.
+        # (Prevents theses tagged directly on the tree root from being dropped.)
+        if picked_country is None and picked_uni:
+            picked_country = wu_country.get(picked_uni)
+
         if picked_country is None:
-            # Very rare — item tagged into the root itself. Skip.
+            # Genuine unknown — no country sub-collection and no university
+            # lookup match. Skip.
             continue
 
         iso = COUNTRY_ISO.get(picked_country)
         if not iso:
             unknown_countries.add(picked_country)
 
-        coords = UNIVERSITY_COORDS.get(picked_uni) if picked_uni else None
+        # Prefer world-universities.json; fall back to the hardcoded dict.
+        coords = None
+        if picked_uni:
+            coords = wu_coords.get(picked_uni) or UNIVERSITY_COORDS.get(picked_uni)
         if picked_uni and not coords:
             unknown_universities.add(picked_uni)
 

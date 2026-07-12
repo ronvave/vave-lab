@@ -740,8 +740,12 @@
     setText('[data-kpi="db-works"]',     fmt(totalWorks));
     setText('[data-kpi="db-authors"]',   fmt(uniqueAuthors));
     setText('[data-kpi="db-theses"]',    fmt(totalTheses));
-    setText('[data-kpi="db-unis"]',      fmt(state.universities.totalUniversities));
-    setText('[data-kpi="db-countries"]', fmt(state.universities.totalCountries));
+    // A1 Universities/Countries mirror the graduate-set numbers (A2 uses the
+    // same values) so the two panels stay in sync. The old `world-universities`
+    // totals lag whenever the refresh script emits worldPoints for schools that
+    // aren't yet in world-universities.json.
+    setText('[data-kpi="db-unis"]',      fmt(gradUnis.size));
+    setText('[data-kpi="db-countries"]', fmt(gradCountries.size));
     setText('[data-kpi="db-provinces"]', fmt(provsStudied.size));
 
     // iTaukei scholarship
