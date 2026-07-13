@@ -205,8 +205,14 @@
   // Convert Zotero creator string to canonical "Last, First"
   function canonicalName(creator) {
     if (!creator) return null;
-    if (creator.includes(',')) return creator.trim();
-    const parts = creator.trim().split(/\s+/);
+    // Normalize Unicode hyphen variants (U+2010, U+2011, U+2013, U+2212) to a
+    // plain ASCII hyphen so 'Fong\u2010Lomavatu' and 'Fong-Lomavatu' collapse
+    // into a single row before alias resolution runs. Without this the alias
+    // map treats them as different strings and a single merge only catches
+    // one of the two rows.
+    const c = creator.replace(/[\u2010\u2011\u2013\u2212]/g, '-').trim();
+    if (c.includes(',')) return c;
+    const parts = c.split(/\s+/);
     if (parts.length < 2) return null;
     const last = parts[parts.length - 1];
     const first = parts.slice(0, -1).join(' ');
@@ -764,7 +770,19 @@
     return { canonName, chosen };
   }
 
+  // Refuse to merge (or toggle iTaukei) without a GitHub token. Otherwise the
+  // change lives in memory only and vanishes on reload, which looks exactly
+  // like the merge "reverting" \u2014 the confusing failure mode Ron kept hitting.
+  function requireGitHubToken(actionLabel) {
+    if (localStorage.getItem(GH_TOKEN_KEY)) return true;
+    toast(`Paste your GitHub token first \u2014 ${actionLabel} won\u2019t persist without it.`, 'error');
+    const input = document.getElementById('gh-token');
+    if (input) { input.focus(); input.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    return false;
+  }
+
   async function mergeVariantGroup(cardEl, group) {
+    if (!requireGitHubToken('this merge')) return;
     const result = applyVariantMergeInMemory(cardEl);
     if (result.error === 'no-canonical') { toast('Pick a canonical name first.', 'error'); return; }
     if (result.error === 'no-variants')  { toast('Select at least one variant to merge into the canonical name.', 'error'); return; }
@@ -919,6 +937,7 @@
   }
 
   async function confirmManualMerge() {
+    if (!requireGitHubToken('this merge')) return;
     const chosen = document.querySelector('#mm-radio-list input[name="mm-canonical"]:checked');
     if (!chosen) { toast('Pick a canonical name first.', 'error'); return; }
     const canonName = chosen.value;
@@ -1016,7 +1035,7 @@
         </td>
       `;
       tr.querySelector('[data-toggle-itaukei]').addEventListener('change', ev => {
-        toggleItaukei(a, ev.target.checked);
+        toggleItaukei(a, ev.target.checked, ev.target);
       });
       tr.querySelector('[data-mm-select]').addEventListener('change', ev => {
         toggleManualMergeSelect(a.name, ev.target.checked, tr);
@@ -1039,7 +1058,11 @@
     $('#stat-new').textContent = newC;
   }
 
-  async function toggleItaukei(author, on) {
+  async function toggleItaukei(author, on, checkboxEl) {
+    if (!requireGitHubToken(on ? 'this iTaukei tag' : 'this iTaukei removal')) {
+      if (checkboxEl) checkboxEl.checked = !on;
+      return;
+    }
     if (on) {
       // Re-adding: clear from hide-list AND add empty profile
       state.hiddenScholars.delete(author.name);
