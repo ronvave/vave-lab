@@ -921,21 +921,30 @@
       //      ({itPhd} PhD, {itMasters} Master’s), undertaken in {gradUnis} universities across {gradCountries} countries.
       // Percentages are shown alongside every number — do not drop them.
       const parts = [];
-      const itTheses = (x.itMasters || 0) + (x.itPhd || 0);
+      // Use the KPI's itTheses total (matches A2 card 4) rather than
+      // itPhd+itMasters, because a handful of iTaukei theses lack a
+      // Master's/PhD level tag in Zotero and would otherwise be dropped.
+      const itTheses = (typeof x.itTheses === 'number')
+        ? x.itTheses
+        : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
       parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with iTaukei.`);
       if (x.itWorks > 0) {
         parts.push(`Of this ${fmt(x.itWorks)}, iTaukei are lead authors on ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%), which shows substantial leadership in research and authorship.`);
         parts.push(`Of the ${fmt(x.itWorks)}, ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors with others \u2014 people of other ethnicities, from within Fiji and abroad, are leading authorship.`);
       }
       if (itTheses > 0) {
-        parts.push(`Of the ${fmt(x.itWorks)} publications by iTaukei, ${fmt(itTheses)} (${pct(itTheses, x.itWorks)}%) are theses (${fmt(x.itPhd)} PhD, ${fmt(x.itMasters)} Master\u2019s), undertaken in ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
+        parts.push(`These ${fmt(x.itWorks)} publications include ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}%) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 completed at ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
       }
       parts.push('This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
       bodyEl.textContent = parts.join(' ');
     }
     const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };
     const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
-    const itTheses = (x.itMasters || 0) + (x.itPhd || 0);
+    // Use the KPI itTheses (matches A2 card 4) so the insight card doesn't
+    // report a lower thesis count than the KPI cards above it.
+    const itTheses = (typeof x.itTheses === 'number')
+      ? x.itTheses
+      : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
     setText('[data-insight="participation"]',
       `${fmt(x.itWorks)} of ${fmt(x.totalWorks)} indexed works (${pct(x.itWorks, x.totalWorks)}%) include at least one identified iTaukei author.`);
     setText('[data-insight="leadership"]',

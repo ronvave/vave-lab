@@ -230,8 +230,10 @@
       line-height: 1.55;
     }
     .db-narrative__body {
+      /* Body must match the lede size above it (0.98rem). Do not shrink;
+         see docs/NAMES-DO-NOT-MERGE.md “A2 narrative typography”. */
       margin: 0 0 var(--space-3);
-      color: var(--color-text); font-size: 0.9rem; line-height: 1.6;
+      color: var(--color-text); font-size: 0.98rem; line-height: 1.6;
     }
     .db-narrative__insights {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
