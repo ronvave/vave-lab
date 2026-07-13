@@ -34,7 +34,10 @@
   // roster so newly-tagged scholars flow into the public survey without
   // a manual CSV paste.
   const SURVEY_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
-  const SURVEY_SHEET_KEY = 'lsP_d8k-SSrjYQnHJAfofuZEEVsyoBynZLbSB77wam8';
+  // The shared key that matches ADMIN_KEY in the Apps Script backend is
+  // prompted once per browser and cached in localStorage under this key.
+  // Deliberately NOT hard-coded here so it stays out of the public repo.
+  const SURVEY_SHEET_KEY_STORAGE = 'vavelab_survey_sheet_key';
 
   const CONFEDERACY_BY_PROVINCE = {
     'Burebasaga': ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
@@ -1908,7 +1911,7 @@
     // submissions POST does, since the Apps Script endpoint doesn't set CORS
     // headers. Response is opaque, so we do a follow-up progress fetch to
     // report what actually landed.
-    $('#sync-to-sheet').addEventListener('click', async () => {
+    $('#sync-to-sheet').addEventListener('click', async (ev) => {
       const btn = $('#sync-to-sheet');
       const scholars = Array.from(state.profilesByKey.values())
         .map(p => ({ lastName: (p.last || '').trim(), firstName: (p.first || '').trim() }))
@@ -1917,6 +1920,25 @@
         toast('No iTaukei scholars in memory to sync.');
         return;
       }
+
+      // Fetch (or prompt for) the shared key that matches ADMIN_KEY in the
+      // Apps Script backend. Cached in localStorage so you're only asked once
+      // per browser. If a sync ever fails with "Unauthorized", clear it via
+      // the browser devtools or shift-click the button (see below).
+      let surveyKey = localStorage.getItem(SURVEY_SHEET_KEY_STORAGE) || '';
+      const wantsReset = ev && (ev.shiftKey || ev.altKey);
+      if (!surveyKey || wantsReset) {
+        const entered = prompt(
+          wantsReset
+            ? 'Enter the survey-sheet admin key (this replaces the one saved in this browser):'
+            : 'Enter the survey-sheet admin key. This is the ADMIN_KEY value from your Apps Script \u2014 saved locally in this browser so you\'re only asked once. Shift-click Sync later to change it.'
+        );
+        if (!entered) return;
+        surveyKey = entered.trim();
+        if (!surveyKey) return;
+        localStorage.setItem(SURVEY_SHEET_KEY_STORAGE, surveyKey);
+      }
+
       if (!confirm(
         `Sync ${scholars.length} iTaukei scholars to the survey sheet?\n\n` +
         `This appends any names that aren't already on the sheet. It never overwrites, deletes, or reorders existing rows. Safe to run repeatedly.`
@@ -1940,7 +1962,7 @@
           method: 'POST',
           mode: 'no-cors',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ type: 'upsertRoster', key: SURVEY_SHEET_KEY, scholars })
+          body: JSON.stringify({ type: 'upsertRoster', key: surveyKey, scholars })
         });
       } catch (err) {
         console.error(err);
