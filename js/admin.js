@@ -29,6 +29,13 @@
   const GH_BRANCH = 'main';
   const GH_PHOTO_DIR = 'img/scholars';
 
+  // Google Apps Script endpoint that backs the survey + progress pages.
+  // Used by the "Sync to survey sheet" button below — posts the iTaukei
+  // roster so newly-tagged scholars flow into the public survey without
+  // a manual CSV paste.
+  const SURVEY_SHEET_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
+  const SURVEY_SHEET_KEY = 'lsP_d8k-SSrjYQnHJAfofuZEEVsyoBynZLbSB77wam8';
+
   const CONFEDERACY_BY_PROVINCE = {
     'Burebasaga': ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
     'Kubuna':     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
@@ -1894,6 +1901,77 @@
         scholars: rows
       }, null, 2);
       openOutput('Copy this JSON into data/scholar-profiles.json', 'Replace the entire contents of data/scholar-profiles.json in the repo, then commit.', json);
+    });
+
+    // Sync to survey sheet: append any admin-tagged iTaukei scholar not
+    // already on the survey's Google Sheet. Uses no-cors like the pending-
+    // submissions POST does, since the Apps Script endpoint doesn't set CORS
+    // headers. Response is opaque, so we do a follow-up progress fetch to
+    // report what actually landed.
+    $('#sync-to-sheet').addEventListener('click', async () => {
+      const btn = $('#sync-to-sheet');
+      const scholars = Array.from(state.profilesByKey.values())
+        .map(p => ({ lastName: (p.last || '').trim(), firstName: (p.first || '').trim() }))
+        .filter(s => s.lastName || s.firstName);
+      if (!scholars.length) {
+        toast('No iTaukei scholars in memory to sync.');
+        return;
+      }
+      if (!confirm(
+        `Sync ${scholars.length} iTaukei scholars to the survey sheet?\n\n` +
+        `This appends any names that aren't already on the sheet. It never overwrites, deletes, or reorders existing rows. Safe to run repeatedly.`
+      )) return;
+
+      btn.disabled = true;
+      const origLabel = btn.textContent;
+      btn.textContent = 'Syncing\u2026';
+      toast(`Syncing ${scholars.length} scholars to survey sheet\u2026`);
+
+      // Snapshot current sheet size so we can report what actually landed.
+      let beforeCount = null;
+      try {
+        const before = await fetch(`${SURVEY_SHEET_URL}?mode=progress&_=${Date.now()}`, { redirect: 'follow' });
+        const beforeJson = await before.json();
+        beforeCount = Array.isArray(beforeJson) ? beforeJson.length : null;
+      } catch (e) { /* non-fatal */ }
+
+      try {
+        await fetch(SURVEY_SHEET_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ type: 'upsertRoster', key: SURVEY_SHEET_KEY, scholars })
+        });
+      } catch (err) {
+        console.error(err);
+        btn.disabled = false;
+        btn.textContent = origLabel;
+        toast('Sync failed \u2014 check your connection and try again.');
+        return;
+      }
+
+      // Give Apps Script a moment to write, then re-fetch to compute the diff.
+      await new Promise(r => setTimeout(r, 1500));
+      try {
+        const after = await fetch(`${SURVEY_SHEET_URL}?mode=progress&_=${Date.now()}`, { redirect: 'follow' });
+        const afterJson = await after.json();
+        const afterCount = Array.isArray(afterJson) ? afterJson.length : null;
+        if (beforeCount != null && afterCount != null) {
+          const added = afterCount - beforeCount;
+          if (added > 0) {
+            toast(`Sync complete \u2014 added ${added} scholar${added === 1 ? '' : 's'} to the survey sheet (sheet total: ${afterCount}).`);
+          } else {
+            toast(`Sync complete \u2014 nothing new to add (sheet total: ${afterCount}). All ${scholars.length} admin scholars are already on the sheet.`);
+          }
+        } else {
+          toast('Sync request sent \u2014 refresh the survey page to see the update.');
+        }
+      } catch (e) {
+        toast('Sync request sent, but could not verify \u2014 refresh the survey page to check.');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = origLabel;
+      }
     });
 
     // Profile modal
