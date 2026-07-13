@@ -324,3 +324,78 @@ without an explicit Ron instruction changing the standard.
 - Do NOT reorder these cards without an explicit Ron instruction — not
   for aesthetic reasons, not to match a mockup, not to align with
   numerical size. If a mockup contradicts this table, the table wins.
+
+# Panel B3 — Where iTaukei research has been undertaken (standing preference)
+
+Standing UX contract for the B3 world map (pie-per-country) added
+2026-07-13. This panel visualises the Zotero "Where study was done"
+collection (key `V3HLPDPL`), which Ron curates by dragging every item
+into the appropriate country sub-collection.
+
+## Country enrichment source
+
+- Countries come from the **direct sub-collections of `V3HLPDPL`** in
+  the Zotero snapshot, not from item tags, not from creator-affiliation
+  parsing.
+- `js/itaukei-database.js` `initB3Map()` reads `state.snapshot.collections`,
+  finds the `Where study was done` root by key or name, walks every
+  descendant collection, and buckets each item that appears in any
+  descendant into that top-level country.
+- Fiji provincial folders (Rewa, Ba, Cakaudrove, …) nested under
+  `Fiji Provinces` are collapsed to the country "Fiji Provinces" for
+  the B3 map. Province-level views live in Panel C1, not here.
+
+## Others-as-Lead rule (do not weaken)
+
+- A publication is counted **"Led by iTaukei"** only if the
+  **first-listed creator** matches the master iTaukei roster
+  (`state.itaukeiCanonicalKeys` — union of admin canonicals + progress
+  Sheet roster + alias variants).
+- Everything else counts under **"Others as Lead"**, including papers
+  where an iTaukei author appears further down the byline. This is the
+  same semantics as A2's Lead / co-author cards, and it must not be
+  softened to "any iTaukei on the byline". See `itaukeiAuthorship()`
+  (line 539) — reuse that function; do not reimplement.
+
+## Marker semantics
+
+- Each country renders as an **SVG pie divIcon**: rust slice (`#712B13`)
+  = iTaukei-led, teal slice (`#01696F`) = Others-as-lead.
+- Radius scales with the sqrt of the toggled bucket count so Fiji
+  Provinces (~234) does not dwarf tail countries (1–2).
+- Pill toggle values:
+  - `With iTaukei` (default): pie shows both slices, radius by total.
+  - `Led by iTaukei`: pie collapses to rust only, radius by led count,
+    countries with zero led work drop off entirely.
+
+## Popup contract (do not restructure without asking Ron)
+
+Order top-to-bottom inside every country popup:
+
+1. Country title (`.db-popup-title`).
+2. Count row: total publications + short caption.
+3. **Work-detail slot** (`.b3-work-detail`) — one-work card that
+   populates on citation hover. Photo + author name + `(year)` on one
+   row; title in italic below; venue muted below that. Placed ABOVE the
+   citation list so the user's eye stays in one spot.
+4. Scrollable citation list (`.db-popup-scroll`) with two headers:
+   - `iTaukei as Lead (N):` — rust color, rust border on chips.
+   - `Others as Lead (N):` — teal color, teal border on chips.
+
+Citation format is in-text style: `Surname (Year)`, `Surname &
+Surname (Year)`, or `Surname et al. (Year)`. Newest year first inside
+each bucket.
+
+## Photo lookup
+
+`b3LookupProfile()` resolves a Zotero creator string against
+`state.scholarProfilesByName` with these fallbacks (in order):
+
+1. Direct hit.
+2. `state.nameAliases` → canonical.
+3. `"First Last"` flipped to `"Last, First"`.
+4. Drop middle-initial: `"Fong, Patrick S."` → `"Fong, Patrick"`.
+
+Do NOT collapse Fong James / Fong Sakiusa / Fong Patrick S. /
+Fong-Lomavatu Mereia in this lookup — the alias table already
+enforces separation (see the Fongs section above).

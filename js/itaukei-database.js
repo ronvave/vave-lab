@@ -1052,6 +1052,8 @@
       // Wrapped in try/catch because the world map is a progressive
       // enhancement — Panel A1 must still work if this fails.
       try { initWorldMap(); } catch (e) { console.error('World map init failed', e); }
+      // Initialise Panel B3 — Where iTaukei research has been undertaken.
+      try { initB3Map(); } catch (e) { console.error('B3 map init failed', e); }
 
       // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
       // three confederacies (Viti Levu + Vanua Levu + Lau) without wasting
@@ -8676,6 +8678,456 @@
         btn.classList.add('is-active');
         state.impactFilter = btn.dataset.impactFilter;
         renderImpactView(state.impactFilter);
+      });
+    });
+  }
+
+  // ==========================================================================
+  // PANEL B3 — Where iTaukei research has been undertaken
+  //
+  // Data model:
+  //   The Zotero "Where study was done" collection (key V3HLPDPL) contains
+  //   one sub-collection per country. Every item in a country sub-collection
+  //   is a publication whose research was carried out in that country.
+  //   For each item we compute the first-author's iTaukei status via
+  //   itaukeiAuthorship(item): 'lead' = iTaukei first-author (rust bucket),
+  //   'coauth' | 'none' = someone else first-authored (teal bucket).
+  //
+  //   The pill above the map toggles which count drives the marker size:
+  //     - With iTaukei: total items with an iTaukei author on the byline
+  //                     (lead + coauth). Both slices of the pie visible.
+  //     - Led by iTaukei: only items where an iTaukei is first author.
+  //                       Pie collapses to the rust slice.
+  //
+  // Popup:
+  //   Two-tier scrollable citation list — iTaukei as Lead (rust) then
+  //   Others as Lead (teal). Hovering a citation chip fills a detail slot
+  //   with the lead author's photo/name/year + publication title.
+  // ==========================================================================
+  //
+  // Hand-curated centroids for the 23 sub-collections currently under
+  // V3HLPDPL. If Ron adds a new country later, the runtime falls back to
+  // WORLD_COUNTRY_APPROX (loose lookup on the country name).
+  const B3_COUNTRY_COORDS = {
+    'Fiji Provinces': { lat: -17.7134, lng: 178.0650, mapCountry: 'Fiji' },
+    'Australia':      { lat: -25.2744, lng: 133.7751 },
+    'New Zealand':    { lat: -41.2865, lng: 174.7762 },
+    'Tonga':          { lat: -21.1789, lng: -175.1982 },
+    'Samoa':          { lat: -13.7590, lng: -172.1046 },
+    'Solomon Islands':{ lat:  -9.6457, lng: 160.1562 },
+    'Vanuatu':        { lat: -15.3767, lng: 166.9592 },
+    'Japan':          { lat:  36.2048, lng: 138.2529 },
+    'Kiribati':       { lat:  -3.3704, lng: -168.7340 },
+    'Indonesia':      { lat:  -0.7893, lng: 113.9213 },
+    'China':          { lat:  35.8617, lng: 104.1954 },
+    'Cook Islands':   { lat: -21.2367, lng: -159.7777 },
+    'Papua New Guinea': { lat: -6.3149, lng: 143.9555 },
+    'India':          { lat:  20.5937, lng:  78.9629 },
+    'Philippines':    { lat:  12.8797, lng: 121.7740 },
+    'Nauru':          { lat:  -0.5228, lng: 166.9315 },
+    'Federated States of Micronesia': { lat: 7.4256, lng: 150.5508 },
+    'Marshall Islands': { lat: 7.1315, lng: 171.1845 },
+    'France':         { lat:  46.6034, lng:   1.8883 },
+    'Tuvalu':         { lat:  -7.1095, lng: 177.6493 },
+    'Tahiti':         { lat: -17.6509, lng: -149.4260 },
+    'United States':  { lat:  39.8283, lng: -98.5795 }
+  };
+
+  function initB3Map() {
+    const el = document.getElementById('db-map-b3');
+    if (!el || typeof L === 'undefined') return;
+    if (!state.snapshot) return; // fires again from data load path
+
+    // ---- 1. Build sub-collection -> country name map ----
+    // "Where study was done" root (V3HLPDPL). Every direct child is a country.
+    const cols = state.snapshot.collections || [];
+    const byKey = new Map(cols.map(c => [c.key, c]));
+    const whereRoot = cols.find(c => c.name === 'Where study was done' && !c.parent)
+                   || byKey.get('V3HLPDPL')
+                   || null;
+    if (!whereRoot) {
+      const err = document.querySelector('[data-db-b3-map-error]');
+      if (err) { err.style.display = 'block'; err.textContent = 'Zotero "Where study was done" collection not found in snapshot.'; }
+      return;
+    }
+    // countryOfKey[<any descendant key>] = <country name>
+    const countryOfKey = new Map();
+    const countries = [];
+    cols.filter(c => c.parent === whereRoot.key).forEach(country => {
+      countries.push(country.name);
+      countryOfKey.set(country.key, country.name);
+      // Recurse into any nested sub-collections (Fiji Provinces has none today,
+      // but future country trees might).
+      const stack = cols.filter(c => c.parent === country.key);
+      while (stack.length) {
+        const c = stack.shift();
+        countryOfKey.set(c.key, country.name);
+        cols.filter(x => x.parent === c.key).forEach(x => stack.push(x));
+      }
+    });
+
+    // ---- 2. Bucket items by country + lead/other ----
+    // Each item picks up ALL matching countries (an item filed in both Fiji
+    // and Australia counts for both). Works with a byline of length 0 are
+    // treated as "others as lead" (no known iTaukei first author).
+    const perCountry = new Map(); // name -> { led: [items], others: [items] }
+    const ensure = (name) => {
+      if (!perCountry.has(name)) perCountry.set(name, { led: [], others: [] });
+      return perCountry.get(name);
+    };
+    state.snapshot.items.forEach(item => {
+      const hits = new Set();
+      (item.collections || []).forEach(k => {
+        const cn = countryOfKey.get(k);
+        if (cn) hits.add(cn);
+      });
+      if (!hits.size) return;
+      const kind = itaukeiAuthorship(item); // 'lead' | 'coauth' | 'none'
+      hits.forEach(cn => {
+        const bucket = ensure(cn);
+        if (kind === 'lead') bucket.led.push(item);
+        else bucket.others.push(item);
+      });
+    });
+
+    // Country records with coords, sorted by total desc for stable rendering.
+    const records = [];
+    countries.forEach(name => {
+      const b = perCountry.get(name);
+      if (!b || (!b.led.length && !b.others.length)) return;
+      const coord = B3_COUNTRY_COORDS[name];
+      if (!coord) {
+        console.warn('B3: no coord for', name);
+        return;
+      }
+      records.push({
+        country: name,
+        lat: coord.lat,
+        lng: coord.lng,
+        led: b.led,
+        others: b.others,
+        total: b.led.length + b.others.length
+      });
+    });
+    records.sort((a, b) => b.total - a.total);
+
+    state.b3Records = records;
+    state.b3View = 'with'; // 'with' | 'led'
+
+    // ---- 3. Build the Leaflet map ----
+    const bmap = L.map(el, {
+      zoomSnap: 0.25,
+      worldCopyJump: false,
+      minZoom: 1,
+      maxZoom: 10,
+      maxBounds: [[-85, -210], [85, 210]],
+      maxBoundsViscosity: 0.85
+    });
+    L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+      attribution: 'Imagery &copy; Google',
+      subdomains: ['0', '1', '2', '3'],
+      maxZoom: 20
+    }).addTo(bmap);
+    bmap.setView([-5, 165], 2.25);
+    state.b3Map = bmap;
+
+    renderB3Layer();
+    renderB3CountryList();
+    updateB3Stats();
+
+    setTimeout(() => { if (state.b3Map) state.b3Map.invalidateSize(); }, 100);
+
+    // Pill toggle
+    document.querySelectorAll('[data-mapscope-panel="b3"] button').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.disabled) return;
+        document.querySelectorAll('[data-mapscope-panel="b3"] button').forEach(b => {
+          b.classList.remove('is-active');
+          b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('is-active');
+        btn.setAttribute('aria-selected', 'true');
+        state.b3View = btn.dataset.b3view;
+        renderB3Layer();
+        renderB3CountryList();
+        updateB3Stats();
+      });
+    });
+  }
+
+  // Build the pie-per-country SVG icon: rust slice = led, teal slice = others.
+  // Radius scales with the toggled bucket's total. In 'with' mode both slices
+  // show; in 'led' mode only the rust slice, sized by led count alone.
+  function b3MakePieIcon(rec, radius, mode) {
+    const RUST = '#712B13';
+    const TEAL = '#01696F';
+    const ledN = rec.led.length;
+    const othN = rec.others.length;
+    const totalForPie = (mode === 'led') ? ledN : (ledN + othN);
+    if (totalForPie === 0) return null;
+    const cx = radius + 2, cy = radius + 2;
+    const size = (radius + 2) * 2;
+
+    // Case 1: Led-only mode, or country is 100% led — draw solid rust circle.
+    if (mode === 'led' || othN === 0) {
+      return L.divIcon({
+        className: 'b3-pie',
+        html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${RUST}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+        </svg>`,
+        iconSize: [size, size],
+        iconAnchor: [cx, cy]
+      });
+    }
+    // Case 2: 100% others — solid teal.
+    if (ledN === 0) {
+      return L.divIcon({
+        className: 'b3-pie',
+        html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${TEAL}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+        </svg>`,
+        iconSize: [size, size],
+        iconAnchor: [cx, cy]
+      });
+    }
+    // Case 3: mixed — two-slice pie. Rust slice = led / total.
+    const ledFrac = ledN / totalForPie;
+    const angle = ledFrac * 2 * Math.PI;
+    const x2 = cx + radius * Math.sin(angle);
+    const y2 = cy - radius * Math.cos(angle);
+    const largeArc = ledFrac > 0.5 ? 1 : 0;
+    const rustPath = `M ${cx} ${cy} L ${cx} ${cy - radius} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`;
+    return L.divIcon({
+      className: 'b3-pie',
+      html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${TEAL}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+        <path d="${rustPath}" fill="${RUST}" stroke="#fff" stroke-width="1.5" opacity="0.95"/>
+      </svg>`,
+      iconSize: [size, size],
+      iconAnchor: [cx, cy]
+    });
+  }
+
+  function renderB3Layer() {
+    const bmap = state.b3Map;
+    if (!bmap) return;
+    if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
+    const records = state.b3Records || [];
+    const mode = state.b3View || 'with';
+    // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
+    // we sqrt-scale to keep tail countries readable.
+    const countFor = (r) => (mode === 'led') ? r.led.length : r.total;
+    const maxN = Math.max(1, ...records.map(countFor));
+    const markers = [];
+    records.forEach(rec => {
+      const n = countFor(rec);
+      if (n === 0) return;
+      const radius = Math.max(6, Math.min(28, 6 + Math.sqrt(n / maxN) * 22));
+      const icon = b3MakePieIcon(rec, radius, mode);
+      if (!icon) return;
+      const m = L.marker([rec.lat, rec.lng], { icon });
+      m._b3Record = rec;
+      const html = b3BuildCountryPopupHtml(rec);
+      m.bindPopup(html, {
+        maxWidth: 460,
+        minWidth: 340,
+        className: 'db-world-popup db-world-popup--b3',
+        autoClose: false,
+        closeOnClick: false,
+        autoPan: true,
+        autoPanPadding: [40, 40],
+        keepInView: true
+      });
+      m.on('mouseover', () => m.openPopup());
+      m.on('popupopen', (evt) => {
+        const popupEl = evt.popup && evt.popup.getElement && evt.popup.getElement();
+        b3WirePopupHovers(popupEl, rec);
+        // Reuse the B2 marker/popup auto-close bridge so moving the mouse
+        // between the pie and its popup doesn't close it prematurely.
+        if (typeof wirePopupAutoClose === 'function') {
+          wirePopupAutoClose(popupEl, evt.popup, m);
+        }
+        setTimeout(() => {
+          if (typeof nudgePopupIntoView === 'function') {
+            nudgePopupIntoView(popupEl, state.b3Map);
+          }
+        }, 40);
+      });
+      markers.push(m);
+    });
+    state.b3Layer = L.layerGroup(markers).addTo(bmap);
+  }
+
+  function updateB3Stats() {
+    const records = state.b3Records || [];
+    let led = 0, others = 0;
+    records.forEach(r => { led += r.led.length; others += r.others.length; });
+    const setNum = (sel, n) => { const el = document.querySelector(sel); if (el) el.textContent = String(n); };
+    setNum('[data-b3-stats-countries]', records.length);
+    setNum('[data-b3-stats-total]', led + others);
+    setNum('[data-b3-stats-led]', led);
+    setNum('[data-b3-stats-others]', others);
+  }
+
+  function b3InTextCitation(item) {
+    // "Seniloli (2002)", "Morris et al. (2014)", "(No creators, 2010)" fallbacks.
+    const creators = item.creators || [];
+    const year = item.year || 'n.d.';
+    if (!creators.length) return `Unknown (${year})`;
+    const first = creators[0];
+    // Extract surname — handles both "Last, First" and "First Last" forms.
+    const surname = first.includes(',')
+      ? first.split(',', 1)[0].trim()
+      : (first.trim().split(/\s+/).pop() || first);
+    if (creators.length === 1) return `${surname} (${year})`;
+    if (creators.length === 2) {
+      const second = creators[1];
+      const surname2 = second.includes(',')
+        ? second.split(',', 1)[0].trim()
+        : (second.trim().split(/\s+/).pop() || second);
+      return `${surname} & ${surname2} (${year})`;
+    }
+    return `${surname} et al. (${year})`;
+  }
+
+  function b3BuildCountryPopupHtml(rec) {
+    const total = rec.led.length + rec.others.length;
+    const renderList = (items, kind) => {
+      if (!items.length) return '';
+      // Sort newest first so recent work surfaces at the top of each bucket.
+      const sorted = items.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
+      const header = (kind === 'led')
+        ? `<div class="db-popup-scholar-header is-led">iTaukei as Lead (${sorted.length}):</div>`
+        : `<div class="db-popup-scholar-header is-others">Others as Lead (${sorted.length}):</div>`;
+      const rows = sorted.map(it => {
+        const cite = b3InTextCitation(it);
+        return `<span class="b3-cite is-${kind}" data-b3-item-key="${escapeHtml(it.key)}">${escapeHtml(cite)}</span>`;
+      }).join('');
+      return header + `<div class="b3-cite-list">` + rows + `</div>`;
+    };
+    return (
+      `<div class="db-popup-title">${escapeHtml(rec.country)}</div>` +
+      `<div class="db-popup-count-row">` +
+        `<span class="db-popup-count">${total}</span>` +
+        `<span class="db-popup-count-text">publication${total === 1 ? '' : 's'} where research was undertaken here</span>` +
+      `</div>` +
+      `<div class="b3-work-detail" data-b3-work-detail></div>` +
+      `<div class="db-popup-scroll">` +
+        renderList(rec.led, 'led') +
+        renderList(rec.others, 'others') +
+      `</div>`
+    );
+  }
+
+  // Wire hover-to-detail behaviour: hovering a citation chip fills the
+  // .b3-work-detail slot with the lead author's photo + name + year + title.
+  function b3WirePopupHovers(popupEl, rec) {
+    if (!popupEl) return;
+    const detail = popupEl.querySelector('[data-b3-work-detail]');
+    if (!detail) return;
+    // Build a quick lookup: item key -> item record. Cheaper than a linear
+    // scan of state.snapshot.items every hover.
+    const byKey = new Map();
+    rec.led.forEach(it => byKey.set(it.key, { item: it, isLed: true }));
+    rec.others.forEach(it => byKey.set(it.key, { item: it, isLed: false }));
+    const chips = popupEl.querySelectorAll('.b3-cite[data-b3-item-key]');
+    chips.forEach(chip => {
+      chip.addEventListener('mouseenter', () => {
+        const key = chip.getAttribute('data-b3-item-key');
+        const rec = byKey.get(key);
+        if (!rec) { detail.classList.remove('is-active'); detail.innerHTML = ''; return; }
+        const it = rec.item;
+        const firstAuthor = (it.creators && it.creators[0]) || 'Unknown';
+        const profile = b3LookupProfile(firstAuthor);
+        const photo = (profile && profile.photo) ? profile.photo : '';
+        const displayName = profile ? profile.name : firstAuthor;
+        const year = it.year || '';
+        const title = it.title || '(untitled)';
+        const venue = it.publicationTitle || it.university || '';
+        detail.classList.add('is-active');
+        detail.innerHTML = (
+          `<div class="b3-work-detail__row">` +
+            (photo ? `<div class="b3-work-detail__photo" style="background-image:url('${escapeHtml(photo)}')"></div>`
+                   : `<div class="b3-work-detail__photo"></div>`) +
+            `<div class="b3-work-detail__body">` +
+              `<div class="b3-work-detail__name">${escapeHtml(displayName)}` +
+                (year ? `<span class="b3-work-detail__year">(${escapeHtml(String(year))})</span>` : '') +
+              `</div>` +
+              `<div class="b3-work-detail__title">${escapeHtml(title)}</div>` +
+              (venue ? `<div class="b3-work-detail__venue">${escapeHtml(venue)}</div>` : '') +
+            `</div>` +
+          `</div>`
+        );
+      });
+    });
+    // Leave detail visible on mouseleave so the user can move over it if they
+    // want; it clears when the popup closes.
+  }
+
+  // Resolve a Zotero creator name to a scholar-profile record so we can pull
+  // the photo. Tries direct lookup, then alias resolution.
+  function b3LookupProfile(creatorName) {
+    if (!creatorName) return null;
+    const map = state.scholarProfilesByName;
+    if (!map) return null;
+    const aliases = state.nameAliases || new Map();
+    // Direct hit
+    if (map.has(creatorName)) return map.get(creatorName);
+    // Alias -> canonical
+    if (aliases.has && aliases.has(creatorName)) {
+      const canon = aliases.get(creatorName);
+      if (map.has(canon)) return map.get(canon);
+    }
+    // Flip "First Last" -> "Last, First"
+    const s = String(creatorName).trim();
+    if (!s.includes(',')) {
+      const toks = s.split(/\s+/);
+      if (toks.length >= 2) {
+        const flipped = toks[toks.length - 1] + ', ' + toks.slice(0, -1).join(' ');
+        if (map.has(flipped)) return map.get(flipped);
+        if (aliases.has && aliases.has(flipped)) {
+          const canon = aliases.get(flipped);
+          if (map.has(canon)) return map.get(canon);
+        }
+      }
+    } else {
+      // Drop middle initial(s): "Fong, Patrick S." -> "Fong, Patrick"
+      const parts = s.split(',', 2);
+      const first = (parts[1] || '').trim().split(/\s+/)[0] || '';
+      if (first) {
+        const trimmed = parts[0].trim() + ', ' + first;
+        if (map.has(trimmed)) return map.get(trimmed);
+      }
+    }
+    return null;
+  }
+
+  function renderB3CountryList() {
+    const host = document.querySelector('[data-b3-country-list]');
+    if (!host) return;
+    const records = state.b3Records || [];
+    const mode = state.b3View || 'with';
+    const rows = records.map(rec => {
+      const shown = (mode === 'led') ? rec.led.length : (rec.led.length + rec.others.length);
+      return (
+        `<div class="db-world-country-row" data-b3-country="${escapeHtml(rec.country)}">` +
+          `<span class="db-world-country-row__name">${escapeHtml(rec.country)}</span>` +
+          `<span class="db-world-country-row__count">${shown}</span>` +
+        `</div>`
+      );
+    }).join('');
+    host.innerHTML = rows;
+    // Click a country to zoom the map on it.
+    host.querySelectorAll('[data-b3-country]').forEach(row => {
+      row.addEventListener('click', () => {
+        const name = row.getAttribute('data-b3-country');
+        const rec = (state.b3Records || []).find(r => r.country === name);
+        if (!rec || !state.b3Map) return;
+        state.b3Map.setView([rec.lat, rec.lng], 4.5, { animate: true });
+        // Open the popup for that country.
+        const layers = state.b3Layer ? state.b3Layer.getLayers() : [];
+        const m = layers.find(l => l._b3Record && l._b3Record.country === name);
+        if (m) setTimeout(() => m.openPopup(), 350);
       });
     });
   }

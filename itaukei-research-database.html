@@ -509,6 +509,14 @@
       border-radius: var(--radius-md);
       background: #d6ecf0;
     }
+    /* Panel B3 map — same sizing as the B2 world map so the pie-per-country
+       layer has consistent visual weight. Wrapper reuses .db-map-world-wrap. */
+    #db-map-b3 {
+      width: 100%;
+      height: 460px;
+      border-radius: var(--radius-md);
+      background: #d6ecf0;
+    }
     /* Fullscreen affordance for the B2 graduates map (only this map).
        Wrapper is position:relative so the button can sit over the map's
        top-right corner without clashing with Leaflet's own zoom controls
@@ -1010,6 +1018,45 @@
     .db-popup-scholar-header.is-phd { color: #228B22; }
     .db-popup-scholar-header.is-masters { color: #5f9c5f; }
     .db-popup-scholar-header.is-other { color: #888; }
+    /* ---- B3 popup: two-tier citation list ---- */
+    .db-popup-scholar-header.is-led { color: #712B13; }
+    .db-popup-scholar-header.is-others { color: #01696F; }
+    .b3-cite-list { margin: 4px 0 8px; display: flex; flex-direction: column; gap: 3px; }
+    .b3-cite {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      color: #222;
+      cursor: default;
+      transition: background 0.12s;
+      border-left: 2px solid transparent;
+    }
+    .b3-cite.is-led { border-left-color: #712B13; }
+    .b3-cite.is-others { border-left-color: #01696F; }
+    .b3-cite:hover { background: rgba(0,0,0,0.05); }
+    .b3-work-detail {
+      background: #fafaf7;
+      border: 1px solid #e5e2d8;
+      border-radius: 6px;
+      padding: 8px 10px;
+      margin: 6px 0 8px;
+      min-height: 0;
+      display: none;
+    }
+    .b3-work-detail.is-active { display: block; }
+    .b3-work-detail__row { display: flex; gap: 10px; align-items: flex-start; }
+    .b3-work-detail__photo {
+      width: 48px; height: 48px; border-radius: 50%;
+      background: #ddd center/cover no-repeat;
+      flex: 0 0 48px;
+      border: 1px solid #ccc;
+    }
+    .b3-work-detail__body { flex: 1; min-width: 0; }
+    .b3-work-detail__name { font-weight: 700; color: #222; font-size: 0.92rem; }
+    .b3-work-detail__year { color: #666; font-weight: 500; margin-left: 4px; }
+    .b3-work-detail__title { color: #444; font-size: 0.85rem; margin-top: 2px; font-style: italic; line-height: 1.3; }
+    .b3-work-detail__venue { color: #666; font-size: 0.8rem; margin-top: 3px; }
     /* Clickable university names in the country drill-down list. */
     .db-world-uni-row__name.is-clickable {
       color: var(--color-primary-teal);
@@ -3767,6 +3814,68 @@
             </div>
             <div class="db-sync-inline">
               <b>Note:</b> Only theses catalogued in each scholar&rsquo;s iTaukei sub-collection are counted.
+            </div>
+          </aside>
+        </div>
+      </div>
+
+      <!-- Panel B3 — Where iTaukei research has been undertaken. Sourced from the
+           Zotero "Where study was done" collection (V3HLPDPL). Each country sub-
+           collection under it is a research location; items are bucketed as
+           "Led by iTaukei" (first-author matches the master roster) or
+           "Others as Lead". Pie marker per country shows the split. -->
+      <div class="db-panel reveal db-panel--wide" data-panel="B3">
+        <span class="db-panel__label">B3</span>
+        <h2 class="db-panel__title">WHERE ITAUKEI RESEARCH HAS BEEN UNDERTAKEN</h2>
+        <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = iTaukei as first author; teal = others as first author (an iTaukei author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail.</p>
+        <div class="db-map-toggle" role="tablist" aria-label="Research-location view" data-mapscope-panel="b3">
+          <button type="button" class="is-active" data-b3view="with" aria-selected="true">With iTaukei</button>
+          <button type="button" data-b3view="led" aria-selected="false">Led by iTaukei</button>
+        </div>
+        <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
+          <strong>Note:</strong> Only items catalogued in a country sub-collection of the Zotero &ldquo;Where study was done&rdquo; collection are counted.
+        </p>
+        <div class="db-world-wide">
+          <div class="db-map-world-wrap" data-db-b3-map-wrap>
+            <div id="db-map-b3" role="application" aria-label="World map of iTaukei research locations"></div>
+            <div class="db-map-fs-toolbar" data-db-b3-fs-toolbar>
+              <div class="db-map-fs-stats" data-db-b3-stats aria-live="polite">
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-b3-stats-countries>0</span>
+                  <span class="db-map-fs-stats__label">Countries</span>
+                </div>
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-b3-stats-total>0</span>
+                  <span class="db-map-fs-stats__label">Publications</span>
+                </div>
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-b3-stats-led>0</span>
+                  <span class="db-map-fs-stats__label">Led by iTaukei</span>
+                </div>
+                <div class="db-map-fs-stats__cell">
+                  <span class="db-map-fs-stats__num" data-b3-stats-others>0</span>
+                  <span class="db-map-fs-stats__label">Others as lead</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" class="db-map-fs-btn" data-db-b3-fs-btn
+                    aria-label="Expand map to full screen"
+                    title="Expand map to full screen (Esc to exit)"
+                    aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
+              </svg>
+            </button>
+          </div>
+          <div class="db-map-error" data-db-b3-map-error>Map couldn&rsquo;t load &mdash; the country list below is still available.</div>
+          <aside class="db-world-panel-wide">
+            <div>
+              <h4>Countries where research was undertaken</h4>
+              <p class="db-conf-explain">Click a country to zoom the map. Hover a country marker to see the citation list; hover a citation for the work detail.</p>
+              <div class="db-world-country-list db-world-grid" data-b3-country-list></div>
+            </div>
+            <div class="db-sync-inline">
+              <b>Note:</b> A publication is &ldquo;Led by iTaukei&rdquo; when the first-listed author matches the master iTaukei roster. Everything else counts under &ldquo;Others as lead&rdquo; even if an iTaukei author appears further down the byline.
             </div>
           </aside>
         </div>
