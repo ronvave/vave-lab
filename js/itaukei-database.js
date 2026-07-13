@@ -911,14 +911,18 @@
     if (bodyEl) {
       // Contract the paragraph gracefully when counts are zero.
       const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
-      // Narrative structure (Ron's preferred cascade, do not restructure):
-      //   1. Of the {totalWorks} publications in the database, {itWorks} ({pct of total}) are by or with iTaukei.
-      //   2. Of this {itWorks}, iTaukei are lead authors on {itLed} ({pct of itWorks}), which shows
-      //      substantial leadership in research and authorship.
-      //   3. Of the {itWorks}, {itCoauth} ({pct of itWorks}) are as co-authors with others (people of other
-      //      ethnicities, from within Fiji and abroad, are leading authorship).
-      //   4. Of the {itWorks} publications by iTaukei, {itTheses} ({pct of itWorks}) are theses
-      //      ({itPhd} PhD, {itMasters} Master’s), undertaken in {gradUnis} universities across {gradCountries} countries.
+      // Narrative wording — Ron-approved "Variant A" (Jul 2026). Do not
+      // rewrite the sentence openers; the rotation is deliberate so no
+      // two consecutive sentences begin with "Of the 1,606". See
+      // docs/NAMES-DO-NOT-MERGE.md “A2 narrative — iTaukei scholarly
+      // research at a glance” for the full pinned template.
+      //
+      // Openers, in order:
+      //   1. Of the {totalWorks} publications in the database, ...
+      //   2. Within this iTaukei-authored body of work, ...
+      //   3. A further {itCoauth} ({pct}) are ...
+      //   4. These {itWorks} publications include ...
+      //   5. Together, this scholarship ...
       // Percentages are shown alongside every number — do not drop them.
       const parts = [];
       // Use the KPI's itTheses total (matches A2 card 4) rather than
@@ -927,15 +931,15 @@
       const itTheses = (typeof x.itTheses === 'number')
         ? x.itTheses
         : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
-      parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with iTaukei.`);
+      parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with iTaukei authors.`);
       if (x.itWorks > 0) {
-        parts.push(`Of this ${fmt(x.itWorks)}, iTaukei are lead authors on ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%), which shows substantial leadership in research and authorship.`);
-        parts.push(`Of the ${fmt(x.itWorks)}, ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors with others \u2014 people of other ethnicities, from within Fiji and abroad, are leading authorship.`);
+        parts.push(`Within this iTaukei-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by an iTaukei first author \u2014 a substantial signal of research leadership.`);
+        parts.push(`A further ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are co-authored with scholars of other ethnicities, from within Fiji and abroad, who are leading the authorship.`);
       }
       if (itTheses > 0) {
         parts.push(`These ${fmt(x.itWorks)} publications include ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}%) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 completed at ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
       }
-      parts.push('This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
+      parts.push('Together, this scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
       bodyEl.textContent = parts.join(' ');
     }
     const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };

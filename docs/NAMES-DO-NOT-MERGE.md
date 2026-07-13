@@ -145,34 +145,66 @@ update this doc in the same commit.
 
 # A2 narrative — "iTaukei scholarly research at a glance"
 
-The narrative paragraph and four insight blocks below the A2 KPIs must
-follow Ron's cascading logic. Do not restructure or drop the percentages.
+The narrative paragraph and four insight blocks below the A2 KPIs are
+pinned wording. **Do not rewrite sentence openers, do not restructure
+the cascade, and do not drop percentages.** Ron reviewed three drafts
+on 2026-07-13 and chose "Variant A — varied sentence openers". The
+variation of openers is deliberate so no two consecutive sentences
+begin with "Of the 1,606".
 
-**Paragraph cascade (in order):**
+**Paragraph cascade (verbatim template — Variant A):**
 
-1. Of the {totalWorks} publications in the database, {itWorks} ({pct of total}) are by or with iTaukei.
-2. Of this {itWorks}, iTaukei are lead authors on {itLed} ({pct of itWorks}), which shows substantial leadership in research and authorship.
-3. Of the {itWorks}, {itCoauth} ({pct of itWorks}) are as co-authors with others — people of other ethnicities, from within Fiji and abroad, are leading authorship.
-4. Of the {itWorks} publications by iTaukei, {itTheses} ({pct of itWorks}) are theses ({itPhd} PhD, {itMasters} Master’s), undertaken in {gradUnis} universities across {gradCountries} countries.
-5. Closing: "This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji."
+1. `Of the {totalWorks} publications in the database, {itWorks} ({pct of totalWorks}%) are by or with iTaukei authors.`
+2. `Within this iTaukei-authored body of work, {itLed} ({pct of itWorks}%) are led by an iTaukei first author — a substantial signal of research leadership.`
+3. `A further {itCoauth} ({pct of itWorks}%) are co-authored with scholars of other ethnicities, from within Fiji and abroad, who are leading the authorship.`
+4. `These {itWorks} publications include {itTheses} theses ({pct of itWorks}%) — {itPhd} PhD and {itMasters} Master’s — completed at {gradUnis} universities across {gradCountries} countries.`
+5. `Together, this scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.`
 
-**Percentage rule.** Every raw count in the narrative and the four
+**Opener rotation (do not collapse):**
+
+| # | Opener |
+| - | ------ |
+| 1 | "Of the {totalWorks} …" |
+| 2 | "Within this iTaukei-authored body of work, …" |
+| 3 | "A further {itCoauth} …" |
+| 4 | "These {itWorks} publications include …" |
+| 5 | "Together, this scholarship …" |
+
+Do NOT rewrite these to all start with "Of the {itWorks}" — that was
+the pre-Variant-A wording Ron explicitly rejected.
+
+**Percentage rule.** Every raw count in the paragraph and the four
 insight cards must be accompanied by a percentage in parentheses. The
 denominators are:
 
 - "by or with iTaukei": % of `totalWorks`
 - Lead / co-author / theses: % of `itWorks` (the iTaukei-involved subset)
 
-**Insight cards under the paragraph:**
+**`itTheses` denominator.** The thesis count in sentence 4 AND in the
+GRADUATE SCHOLARSHIP insight card is `itTheses` — the A2 card-4 value
+(`itMasters + itPhd + itThesesOther`), NOT `itMasters + itPhd`. A
+handful of iTaukei theses lack a Master's/PhD level tag in Zotero;
+using the reduced sum would make the paragraph disagree with the KPI
+card above it. The PhD/Master's breakdown in parentheses is the tagged
+subset only; the two do not have to add to `itTheses` exactly.
+
+**Insight cards under the paragraph (verbatim templates):**
 
 - ITAUKEI PARTICIPATION: `{itWorks} of {totalWorks} indexed works ({pct}%) include at least one identified iTaukei author.`
 - RESEARCH LEADERSHIP: `{itLed} of {itWorks} iTaukei-involved works ({pct}%) are led by an iTaukei first author; the remaining {itCoauth} ({pct}%) are as co-authors.`
 - GRADUATE SCHOLARSHIP: `iTaukei scholars completed {itTheses} theses ({pct}% of iTaukei-involved works) — {itPhd} PhD and {itMasters} Master’s — across {gradUnis} universities in {gradCountries} countries.`
 - GEOGRAPHIC REACH: `iTaukei scholarship extends across {gradCountries} countries and connects with all 14 provinces of Fiji.`
 
-Do not remove or paraphrase the "people of other ethnicities, from
-within Fiji and abroad, are leading authorship" clause — that context is
-intentional.
+Do not remove or paraphrase the "scholars of other ethnicities, from
+within Fiji and abroad, who are leading the authorship" clause — that
+context is intentional.
+
+# A2 narrative typography
+
+`.db-narrative__body` (the cascade paragraph) must share the SAME
+`font-size` as `.db-narrative__lede` immediately above it. Current
+value: `0.98rem`. Do not shrink the body paragraph to visually separate
+it from the lede — they belong together as one voice.
 
 # A1 Panel — DB-wide universities/countries
 
