@@ -25,3 +25,33 @@ repeating the assumption.
   there, treat them as **different people** — do not infer from surname,
   first-name overlap, or partial matches.
 - When in doubt, ask Ron. Do not "helpfully" propose a merge.
+
+---
+
+# Rosters — what counts as the master iTaukei scholar list
+
+- **The progress-dashboard Google Sheet is the exhaustive master roster** of iTaukei
+  scholars — the list Ron considers most comprehensive. It is generated from
+  every unique iTaukei author or co-author in Zotero and is what
+  `itaukei-scholar-province-progress.html` shows (currently ~474 rows).
+- `data/scholar-profiles.json` is a **subset** — only scholars that have
+  been opened / enriched in the admin dashboard. Do not treat its length
+  as the true iTaukei population.
+- KPIs, panel counters, and Excel exports that claim to represent the
+  full iTaukei population must be reconciled against the Sheet roster,
+  not against admin's opened-profiles count.
+
+# Progress-Sheet append behaviour (Ron's standing preference)
+
+- When a new scholar is checked as iTaukei in the admin dashboard and
+  approved into the master list, the progress-dashboard Google Sheet
+  **must append that person at the top of the list**, and the row
+  number / id must **continue increasing** (never reset, never renumber
+  existing rows).
+- Rationale: newest additions are visible immediately at the top, but
+  existing ids stay stable so links, bookmarks, and past screenshots
+  keep pointing at the same person.
+- This is the append-top-with-increasing-id pattern already wired into
+  the Apps Script `upsertRoster` flow. Do not "tidy" it into
+  chronological or alphabetical order, and do not renumber.
+
