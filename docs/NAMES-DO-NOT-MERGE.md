@@ -143,6 +143,37 @@ Implementation: `js/itaukei-database.js` around the enriched-rows
 "Scholar-card leaderboard sort order"). Any future ordering change must
 update this doc in the same commit.
 
+# A2 narrative — "iTaukei scholarly research at a glance"
+
+The narrative paragraph and four insight blocks below the A2 KPIs must
+follow Ron's cascading logic. Do not restructure or drop the percentages.
+
+**Paragraph cascade (in order):**
+
+1. Of the {totalWorks} publications in the database, {itWorks} ({pct of total}) are by or with iTaukei.
+2. Of this {itWorks}, iTaukei are lead authors on {itLed} ({pct of itWorks}), which shows substantial leadership in research and authorship.
+3. Of the {itWorks}, {itCoauth} ({pct of itWorks}) are as co-authors with others — people of other ethnicities, from within Fiji and abroad, are leading authorship.
+4. Of the {itWorks} publications by iTaukei, {itTheses} ({pct of itWorks}) are theses ({itPhd} PhD, {itMasters} Master’s), undertaken in {gradUnis} universities across {gradCountries} countries.
+5. Closing: "This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji."
+
+**Percentage rule.** Every raw count in the narrative and the four
+insight cards must be accompanied by a percentage in parentheses. The
+denominators are:
+
+- "by or with iTaukei": % of `totalWorks`
+- Lead / co-author / theses: % of `itWorks` (the iTaukei-involved subset)
+
+**Insight cards under the paragraph:**
+
+- ITAUKEI PARTICIPATION: `{itWorks} of {totalWorks} indexed works ({pct}%) include at least one identified iTaukei author.`
+- RESEARCH LEADERSHIP: `{itLed} of {itWorks} iTaukei-involved works ({pct}%) are led by an iTaukei first author; the remaining {itCoauth} ({pct}%) are as co-authors.`
+- GRADUATE SCHOLARSHIP: `iTaukei scholars completed {itTheses} theses ({pct}% of iTaukei-involved works) — {itPhd} PhD and {itMasters} Master’s — across {gradUnis} universities in {gradCountries} countries.`
+- GEOGRAPHIC REACH: `iTaukei scholarship extends across {gradCountries} countries and connects with all 14 provinces of Fiji.`
+
+Do not remove or paraphrase the "people of other ethnicities, from
+within Fiji and abroad, are leading authorship" clause — that context is
+intentional.
+
 # A1 Panel — DB-wide universities/countries
 
 Before 2026-07-13 the A1 Panel's "Universities represented" and
@@ -196,15 +227,20 @@ without an explicit Ron instruction changing the standard.
 | Position | data-kpi        | Label                                                |
 | -------- | --------------- | ---------------------------------------------------- |
 | 1 teal   | `it-works`      | Publications with or by iTaukei                      |
-| 2 rust   | `it-coauth`     | With iTaukei as co-author                            |
-| 3 amber  | `it-led`        | With iTaukei as Lead author                          |
+| 2 rust   | `it-led`        | With iTaukei as Lead author                          |
+| 3 amber  | `it-coauth`     | With iTaukei as co-author                            |
 | 4 blue   | `it-theses`     | Theses by iTaukei scholars                           |
 | 5 purple | `it-unis`       | Universities attended by iTaukei graduate researchers |
 | 6 pink   | `it-countries`  | Countries of iTaukei graduate study                  |
 
-- Co-author card (`it-coauth`) is position 2 (rust). Lead-author card
-  (`it-led`) is position 3 (amber). Do not swap them back to the older
-  "iTaukei-led works" first / "co-authors" second order.
-- Card 3 uses "Lead author" (capital L, singular), matching the original
-  mockup wording.
-- Icons follow the labels: handshake for co-author, star for Lead author.
+- **Card 2 is Lead author, card 3 is co-author.** This ordering is a
+  standing Ron preference and follows the A2 narrative cascade: after the
+  "by or with iTaukei" total (card 1), leadership comes first because it
+  shows substantial authorship leadership, then co-authorship, then
+  theses, then universities, then countries.
+- Card 2 uses "Lead author" (capital L, singular), matching Ron's wording.
+- Icons follow the labels: star for Lead author (card 2), handshake for
+  co-author (card 3).
+- Do NOT reorder these cards without an explicit Ron instruction — not
+  for aesthetic reasons, not to match a mockup, not to align with
+  numerical size. If a mockup contradicts this table, the table wins.

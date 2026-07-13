@@ -911,28 +911,43 @@
     if (bodyEl) {
       // Contract the paragraph gracefully when counts are zero.
       const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
+      // Narrative structure (Ron's preferred cascade, do not restructure):
+      //   1. Of the {totalWorks} publications in the database, {itWorks} ({pct of total}) are by or with iTaukei.
+      //   2. Of this {itWorks}, iTaukei are lead authors on {itLed} ({pct of itWorks}), which shows
+      //      substantial leadership in research and authorship.
+      //   3. Of the {itWorks}, {itCoauth} ({pct of itWorks}) are as co-authors with others (people of other
+      //      ethnicities, from within Fiji and abroad, are leading authorship).
+      //   4. Of the {itWorks} publications by iTaukei, {itTheses} ({pct of itWorks}) are theses
+      //      ({itPhd} PhD, {itMasters} Master’s), undertaken in {gradUnis} universities across {gradCountries} countries.
+      // Percentages are shown alongside every number — do not drop them.
       const parts = [];
-      parts.push(`Of the ${fmt(x.totalWorks)} works currently indexed, ${fmt(x.itWorks)} include at least one identified iTaukei author.`);
+      const itTheses = (x.itMasters || 0) + (x.itPhd || 0);
+      parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with iTaukei.`);
       if (x.itWorks > 0) {
-        parts.push(`Of these, ${fmt(x.itLed)} are led by an iTaukei first author, while ${fmt(x.itCoauth)} include an iTaukei scholar as a co-author.`);
+        parts.push(`Of this ${fmt(x.itWorks)}, iTaukei are lead authors on ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%), which shows substantial leadership in research and authorship.`);
+        parts.push(`Of the ${fmt(x.itWorks)}, ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors with others \u2014 people of other ethnicities, from within Fiji and abroad, are leading authorship.`);
       }
-      if (x.itMasters + x.itPhd > 0) {
-        parts.push(`The database documents ${fmt(x.itMasters)} Master\u2019s theses and ${fmt(x.itPhd)} PhD theses by iTaukei scholars, completed across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
+      if (itTheses > 0) {
+        parts.push(`Of the ${fmt(x.itWorks)} publications by iTaukei, ${fmt(itTheses)} (${pct(itTheses, x.itWorks)}%) are theses (${fmt(x.itPhd)} PhD, ${fmt(x.itMasters)} Master\u2019s), undertaken in ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
       }
       parts.push('This scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
       bodyEl.textContent = parts.join(' ');
     }
     const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };
+    const fmt = n => (typeof n === 'number') ? n.toLocaleString() : String(n);
+    const itTheses = (x.itMasters || 0) + (x.itPhd || 0);
     setText('[data-insight="participation"]',
-      `${pct(x.itWorks, x.totalWorks)}% of indexed works include at least one identified iTaukei author.`);
+      `${fmt(x.itWorks)} of ${fmt(x.totalWorks)} indexed works (${pct(x.itWorks, x.totalWorks)}%) include at least one identified iTaukei author.`);
     setText('[data-insight="leadership"]',
       x.itWorks > 0
-        ? `${pct(x.itLed, x.itWorks)}% of works involving iTaukei scholars are led by an iTaukei first author.`
+        ? `${fmt(x.itLed)} of ${fmt(x.itWorks)} iTaukei-involved works (${pct(x.itLed, x.itWorks)}%) are led by an iTaukei first author; the remaining ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors.`
         : 'No iTaukei-authored works have been indexed yet.');
     setText('[data-insight="grad"]',
-      `iTaukei scholars completed ${x.itMasters} Master\u2019s and ${x.itPhd} PhD theses across ${x.gradUnis} universities.`);
+      x.itWorks > 0
+        ? `iTaukei scholars completed ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}% of iTaukei-involved works) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`
+        : `iTaukei scholars completed ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s theses across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
     setText('[data-insight="geo"]',
-      `iTaukei scholarship extends across ${x.gradCountries} countries and connects with all 14 provinces of Fiji.`);
+      `iTaukei scholarship extends across ${fmt(x.gradCountries)} countries and connects with all 14 provinces of Fiji.`);
   }
 
   // ============ MAP ============
