@@ -206,6 +206,54 @@ context is intentional.
 value: `0.98rem`. Do not shrink the body paragraph to visually separate
 it from the lede — they belong together as one voice.
 
+# A1 / A2 KPI card colors — concept → color rule
+
+Ron-approved on 2026-07-13 (Option 1 from the alignment mockup). When
+A1 (all DB) and A2 (iTaukei subset) both show a KPI card for the same
+concept, those two cards MUST share the same color. Do not remap.
+
+**Concept → color → CSS class:**
+
+| Concept                        | Color  | CSS class          | A1 card | A2 card |
+| ------------------------------ | ------ | ------------------ | ------- | ------- |
+| Publications                   | teal   | `.db-kpi--teal`    | 1       | 1       |
+| Theses                         | brown  | `.db-kpi--amber`   | 3       | 4       |
+| Universities                   | blue   | `.db-kpi--blue`    | 4       | 5       |
+| Countries                      | purple | `.db-kpi--purple`  | 5       | 6       |
+| Fiji provinces (A1 only)       | pink   | `.db-kpi--pink`    | 6       | —       |
+| A1 unique authors (A1 only)    | rust   | `.db-kpi--rust`    | 2       | —       |
+| A2 iTaukei as Lead author      | rust   | `.db-kpi--rust`    | —       | 2       |
+| A2 iTaukei as co-author        | olive  | `.db-kpi--olive`   | —       | 3       |
+
+**Hex references** (background / icon tint):
+
+- teal `#085041` / `#4a9384`
+- rust `#712B13` / `#b3705c`
+- amber (brown) `#633806` / `#a17942`
+- blue `#0C447C` / `#567ba9`
+- purple `#3C3489` / `#7d75be`
+- pink `#72243E` / `#b26978`
+- olive `#5A5A2E` / `#9a9a5f`
+
+**Rules to preserve:**
+
+1. If a new KPI card is added to A1 or A2 for one of the shared
+   concepts above, use the concept's assigned color. Do not invent a
+   new color for it.
+2. `.db-kpi--olive` is reserved for A2 co-author. Do not reuse it
+   elsewhere in the KPI strip.
+3. Both `.db-kpi--rust` cards (A1 authors, A2 Lead author) live in
+   different panels; Option 2 (Lead=pink, Co-author=rust) was
+   explicitly rejected.
+4. When adjusting colors, also update the code comment above
+   `.db-kpi--teal` in `itaukei-research-database.html` and this table.
+5. Icons per card do NOT change with color remaps: A1 book / users /
+   cap / building / globe / pin; A2 users / star / handshake / scroll
+   / building / plane.
+6. Percentages and narrative wording (see "A2 narrative" section above)
+   are independent of card color — don't touch one when editing the
+   other.
+
 # A1 Panel — DB-wide universities/countries
 
 Before 2026-07-13 the A1 Panel's "Universities represented" and

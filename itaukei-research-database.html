@@ -194,12 +194,26 @@
       letter-spacing: 0.01em;
     }
     /* Per-card palette. Icon tint is a lighter version of the same bg color. */
+    /*
+      A1/A2 KPI card colors — concept → color rule (Ron-approved 2026-07-13).
+      Same concept must use the same color across the two panels:
+        Publications     → teal    (A1 card 1, A2 card 1)
+        Theses           → amber   (A1 card 3, A2 card 4)
+        Universities     → blue    (A1 card 4, A2 card 5)
+        Countries        → purple  (A1 card 5, A2 card 6)
+        Fiji provinces   → pink    (A1 card 6 only)
+        A1 unique authors→ rust    (A1 card 2)
+        A2 Lead author   → rust    (echoes authors)
+        A2 Co-author     → olive   (Option 1 — A2 only)
+      Do not remap without re-reading docs/NAMES-DO-NOT-MERGE.md.
+    */
     .db-kpi--teal   { --kpi-bg: #085041; --kpi-icon: #4a9384; }
     .db-kpi--rust   { --kpi-bg: #712B13; --kpi-icon: #b3705c; }
     .db-kpi--amber  { --kpi-bg: #633806; --kpi-icon: #a17942; }
     .db-kpi--blue   { --kpi-bg: #0C447C; --kpi-icon: #567ba9; }
     .db-kpi--purple { --kpi-bg: #3C3489; --kpi-icon: #7d75be; }
     .db-kpi--pink   { --kpi-bg: #72243E; --kpi-icon: #b26978; }
+    .db-kpi--olive  { --kpi-bg: #5A5A2E; --kpi-icon: #9a9a5f; }
     /* Database overview keeps the shared pale-teal shell so both sections
        read as sibling containers. Solid cards render on top of it. */
 
@@ -3452,19 +3466,19 @@
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-star"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">With iTaukei as Lead author</div></div>
           </div>
-          <div class="db-kpi db-kpi--solid db-kpi--amber">
+          <div class="db-kpi db-kpi--solid db-kpi--olive">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-handshake"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">With iTaukei as co-author</div></div>
           </div>
-          <div class="db-kpi db-kpi--solid db-kpi--blue">
+          <div class="db-kpi db-kpi--solid db-kpi--amber">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
           </div>
-          <div class="db-kpi db-kpi--solid db-kpi--purple">
+          <div class="db-kpi db-kpi--solid db-kpi--blue">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by iTaukei graduate researchers</div></div>
           </div>
-          <div class="db-kpi db-kpi--solid db-kpi--pink">
+          <div class="db-kpi db-kpi--solid db-kpi--purple">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-plane"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of iTaukei graduate study</div></div>
           </div>
