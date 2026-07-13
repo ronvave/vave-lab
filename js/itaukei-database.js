@@ -5441,7 +5441,20 @@
         enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
         return enriched;
       })
-      .sort((a, b) => (Number(b.total) || 0) - (Number(a.total) || 0));
+      // Scholar-card leaderboard sort order (see docs/NAMES-DO-NOT-MERGE.md
+      // “Scholar-card ordering rule”):
+      //   1. total publications descending,
+      //   2. first-authored publications descending (tiebreaker),
+      //   3. canonical name ascending (final deterministic fallback — never
+      //      the primary tiebreaker; alphabet order must not decide ranking
+      //      when two scholars have the same total).
+      .sort((a, b) => {
+        const totalDiff = (Number(b.total) || 0) - (Number(a.total) || 0);
+        if (totalDiff) return totalDiff;
+        const firstDiff = (Number(b.firstAuthored) || 0) - (Number(a.firstAuthored) || 0);
+        if (firstDiff) return firstDiff;
+        return String(a.name || '').localeCompare(String(b.name || ''));
+      });
 
     // Populate the disciplines cache once. Uses keyword pills + institution
     // + department + title for each scholar. Rebuilt on every render so a

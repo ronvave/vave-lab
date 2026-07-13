@@ -116,3 +116,22 @@ false-positive surname match, etc.).
   before they're wired to production. If a mockup ships with a
   non-Arial number, that is a bug: fix it before sharing.
 - Ron has repeated this rule multiple times. Do not let him repeat it again.
+
+# Scholar-card ordering rule (public dashboard)
+
+Scholar cards on `itaukei-research-database.html` are ordered by:
+
+1. **Total publications** — descending.
+2. **First-authored publications** — descending (tiebreaker).
+3. **Canonical name** — ascending (final deterministic fallback only,
+   never the primary tiebreaker).
+
+Rationale: when two scholars have the same total publication count,
+first-authored output is a better signal of scholarly contribution than
+alphabetical order. Example: Finau and Meo both have 31 publications,
+but Finau has 12 first-authored vs Meo's 1 — Finau appears first.
+
+Implementation: `js/itaukei-database.js` around the enriched-rows
+`.sort(...)` in the panel-render pipeline (search for
+"Scholar-card leaderboard sort order"). Any future ordering change must
+update this doc in the same commit.
