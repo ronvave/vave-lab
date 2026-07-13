@@ -171,3 +171,40 @@ names those two datasets don't cover.
 
 Never re-collapse A1 back to `gradUnis`/`gradCountries`. A1 and A2 SHOULD
 diverge on these two counters — A1 is broader by design.
+
+# Panel A1 / A2 card labels and order (standing preference)
+
+The public database KPI cards on `itaukei-research-database.html` must use
+these exact labels and order. Do NOT rename, abbreviate, or reorder them
+without an explicit Ron instruction changing the standard.
+
+## Panel A1 — Database overview (all cards)
+
+| Position | data-kpi         | Label                     |
+| -------- | ---------------- | ------------------------- |
+| 1 teal   | `db-works`       | Publications              |
+| 2 rust   | `db-authors`     | Unique authors            |
+| 3 amber  | `db-theses`      | Theses                    |
+| 4 blue   | `db-unis`        | Universities represented  |
+| 5 purple | `db-countries`   | Countries represented     |
+| 6 pink   | `db-provinces`   | Fiji provinces studied    |
+
+- Card 1 is "Publications" — NOT "Indexed works", NOT "Works", NOT "Total works".
+
+## Panel A2 — iTaukei scholarship (all cards)
+
+| Position | data-kpi        | Label                                                |
+| -------- | --------------- | ---------------------------------------------------- |
+| 1 teal   | `it-works`      | Publications with or by iTaukei                      |
+| 2 rust   | `it-coauth`     | With iTaukei as co-author                            |
+| 3 amber  | `it-led`        | With iTaukei as Lead author                          |
+| 4 blue   | `it-theses`     | Theses by iTaukei scholars                           |
+| 5 purple | `it-unis`       | Universities attended by iTaukei graduate researchers |
+| 6 pink   | `it-countries`  | Countries of iTaukei graduate study                  |
+
+- Co-author card (`it-coauth`) is position 2 (rust). Lead-author card
+  (`it-led`) is position 3 (amber). Do not swap them back to the older
+  "iTaukei-led works" first / "co-authors" second order.
+- Card 3 uses "Lead author" (capital L, singular), matching the original
+  mockup wording.
+- Icons follow the labels: handshake for co-author, star for Lead author.
