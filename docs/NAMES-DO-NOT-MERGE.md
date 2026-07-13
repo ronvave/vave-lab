@@ -74,9 +74,16 @@ not surname matching:
 - **Never** classify solely on surname. `Fong, James` sharing a surname
   with `Fong, Patrick S.` does not make James's papers count as Patrick's,
   and vice versa. See "Fongs" section above.
-- **Universities / countries** for both A1 and A2 come from
-  `data/itaukei-graduate-studies.json` `worldPoints`. These are already
-  reconciled and are the same source for both panels.
+- **Universities / countries for A2** come from
+  `data/itaukei-graduate-studies.json` `worldPoints` — iTaukei-scoped
+  graduate study only. A2 must NOT be broadened to include non-iTaukei
+  author universities. See the “A1 Panel — DB-wide universities/countries”
+  section below for how A1 differs.
+- **A1 and A2 universities/countries MUST diverge.** A1 counts every
+  thesis in the database (iTaukei + non-iTaukei author theses); A2 counts
+  only iTaukei graduate study. If A1 and A2 ever show the same numbers
+  for universities or countries, that is a bug — A1 has been
+  incorrectly re-wired to the graduate-set. Fix A1, not A2.
 - **Province coverage** comes from Zotero collection tags per item, not
   from scholar profiles.
 
@@ -91,8 +98,8 @@ Pipeline: admin canonicals + aliases + progress-Sheet master roster
 | A1 | Indexed works | 2,225 |
 | A1 | Unique authors | 4,250 |
 | A1 | Theses | 1,007 |
-| A1 | Universities represented | 68 |
-| A1 | Countries represented | 15 |
+| A1 | Universities represented | 191 |
+| A1 | Countries represented | 21 |
 | A1 | Fiji provinces studied | 14 |
 | A2 | Publications with or by iTaukei | 1,578 |
 | A2 | With iTaukei as Lead author | 1,056 |
@@ -135,3 +142,32 @@ Implementation: `js/itaukei-database.js` around the enriched-rows
 `.sort(...)` in the panel-render pipeline (search for
 "Scholar-card leaderboard sort order"). Any future ordering change must
 update this doc in the same commit.
+
+# A1 Panel — DB-wide universities/countries
+
+Before 2026-07-13 the A1 Panel's "Universities represented" and
+"Countries represented" counters were wired to `gradUnis` / `gradCountries`
+— the same set that feeds A2. This was wrong: A1 is supposed to describe
+the ENTIRE database, including theses by non-iTaukei authors.
+
+**Fixed methodology (current):**
+
+- Iterate every Zotero item with `itemType == "thesis"`.
+- Collect the raw `university` field (Zotero-populated per record).
+- Skip only placeholder values (`Institution not stated in source catalog`,
+  `UNSPECIFIED`).
+- Resolve each university name to a country via, in order:
+  1. `data/itaukei-graduate-studies.json` `worldPoints` (has coord+country for iTaukei-linked schools)
+  2. `data/world-universities.json` (49 entries, curated for the iTaukei sub-collections)
+  3. `data/uni-country-overrides.json` (curated fallback map covering ~127 non-iTaukei-author universities: USP variants, Fiji National University sub-schools, most US/UK/AU/NZ/CA universities, and orthographic variants like "The Univesity of the South Pacific")
+- Match is case-insensitive; a leading "The " prefix is stripped as a fallback.
+
+**When new theses land whose university strings aren't recognised**, add
+them to `data/uni-country-overrides.json` (plaintext) and re-encrypt with
+`VAVELAB_PASSCODE='…' python3 scripts/encrypt_data.py uni-country-overrides.json`.
+Leave iTaukei-populated schools in `itaukei-graduate-studies.json` /
+`world-universities.json` untouched — the override file is only for
+names those two datasets don't cover.
+
+Never re-collapse A1 back to `gradUnis`/`gradCountries`. A1 and A2 SHOULD
+diverge on these two counters — A1 is broader by design.

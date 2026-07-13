@@ -249,7 +249,7 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc, workplaceCoordsDoc, progressRoster] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc, workplaceCoordsDoc, uniCountryDoc, progressRoster] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
@@ -270,6 +270,12 @@
       // view (workplaces not present in the study worldPoints, e.g. SPC,
       // Fiji Ministry of Forestry, University of Central Lancashire).
       fetchJson('data/workplace-coords.json').catch(() => ({ coords: {} })),
+      // University → country overrides for the A1 Panel DB-wide totals.
+      // Covers thesis "university" values not present in world-universities.json
+      // or itaukei-graduate-studies.json (e.g. USP variants, Fiji National
+      // University sub-schools, non-iTaukei author universities). Absence is
+      // fine — A1 counts fall back to the graduate-set numbers.
+      fetchJson('data/uni-country-overrides.json').catch(() => ({ countryByUniversity: {} })),
       // Progress-Sheet master roster — the exhaustive iTaukei scholar list
       // (~474 rows, ~461 unique). Merged into itaukeiCanonicalKeys so A2 KPIs
       // classify authors present in the Sheet but not yet in admin scholar-profiles.
@@ -285,6 +291,7 @@
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
     state.workplaceCoords = (workplaceCoordsDoc && workplaceCoordsDoc.coords) || {};
+    state.uniCountryOverrides = (uniCountryDoc && uniCountryDoc.countryByUniversity) || {};
 
     // Extract canonical-name keys from the progress-Sheet master roster payload.
     // The Apps Script endpoint returns an array of rows or { rows: […] }.
@@ -803,12 +810,44 @@
     setText('[data-kpi="db-works"]',     fmt(totalWorks));
     setText('[data-kpi="db-authors"]',   fmt(uniqueAuthors));
     setText('[data-kpi="db-theses"]',    fmt(totalTheses));
-    // A1 Universities/Countries mirror the graduate-set numbers (A2 uses the
-    // same values) so the two panels stay in sync. The old `world-universities`
-    // totals lag whenever the refresh script emits worldPoints for schools that
-    // aren't yet in world-universities.json.
-    setText('[data-kpi="db-unis"]',      fmt(gradUnis.size));
-    setText('[data-kpi="db-countries"]', fmt(gradCountries.size));
+    // A1 Universities/Countries — cover the ENTIRE database of theses (iTaukei
+    // + non-iTaukei author theses). Reads the raw thesis "university" field on
+    // every Zotero item with itemType="thesis" and resolves to a country via
+    // (a) itaukei-graduate-studies.json worldPoints, (b) world-universities.json,
+    // (c) data/uni-country-overrides.json for names not covered by (a) or (b).
+    // See docs/NAMES-DO-NOT-MERGE.md “A1 Panel — DB-wide universities/countries”.
+    const dbUnis = new Set();
+    const dbCountries = new Set();
+    {
+      const lookup = new Map();
+      const put = (name, country) => {
+        if (!name || !country) return;
+        const k = String(name).trim().toLowerCase();
+        if (!k) return;
+        if (!lookup.has(k)) lookup.set(k, country);
+      };
+      ((state.universities && state.universities.universities) || []).forEach(u => put(u.name, u.country));
+      ((state.graduateStudies && state.graduateStudies.worldPoints) || []).forEach(w => put(w.university, w.country));
+      Object.entries(state.uniCountryOverrides || {}).forEach(([k, v]) => lookup.set(String(k).toLowerCase(), v));
+      const resolveCountry = raw => {
+        const s = String(raw || '').trim().toLowerCase();
+        if (!s) return null;
+        if (lookup.has(s)) return lookup.get(s);
+        if (s.startsWith('the ') && lookup.has(s.slice(4))) return lookup.get(s.slice(4));
+        return null;
+      };
+      theses.forEach(t => {
+        const u = (t.university || '').trim();
+        if (!u) return;
+        const uLower = u.toLowerCase();
+        if (uLower.startsWith('institution not') || uLower === 'unspecified') return;
+        dbUnis.add(u);
+        const c = resolveCountry(u);
+        if (c) dbCountries.add(c);
+      });
+    }
+    setText('[data-kpi="db-unis"]',      fmt(dbUnis.size));
+    setText('[data-kpi="db-countries"]', fmt(dbCountries.size));
     setText('[data-kpi="db-provinces"]', fmt(provsStudied.size));
 
     // iTaukei scholarship

@@ -62,6 +62,11 @@ TARGETS = [
     # Also encrypt the province GeoJSON so nobody can enumerate scholars
     # by joining lat/lng to villages. Small, negligible cost.
     "fiji-provinces.geojson",
+    # University → country overrides used by A1 Panel to compute DB-wide
+    # "Universities represented" and "Countries represented" across ALL theses
+    # (iTaukei + non-iTaukei), covering names not present in
+    # world-universities.json or itaukei-graduate-studies.json.
+    "uni-country-overrides.json",
 ]
 
 

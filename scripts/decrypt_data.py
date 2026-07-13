@@ -43,6 +43,8 @@ TARGETS = [
     "itaukei-graduate-studies.json",
     "scholar-insights.json",
     "fiji-provinces.geojson",
+    "workplace-coords.json",
+    "uni-country-overrides.json",
 ]
 
 
