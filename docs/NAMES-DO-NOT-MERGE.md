@@ -55,3 +55,64 @@ repeating the assumption.
   the Apps Script `upsertRoster` flow. Do not "tidy" it into
   chronological or alphabetical order, and do not renumber.
 
+
+# Reconciled KPI methodology (A2 panel — iTaukei scholarship)
+
+The `A2 — iTaukei scholarship` panel on the public database (and its Excel
+mirror) classifies every Zotero item using the **union roster** below,
+not surname matching:
+
+- **Canonical set for classification** = admin canonicals
+  (`scholar-profiles.json .scholars[].name`) ∪ every alias variant
+  (`scholar-profiles.json .nameAliases` keys AND values) ∪ every
+  progress-Sheet canonical (fetched at runtime from the `?mode=progress`
+  endpoint, built as `"lastName, firstName"`).
+- **Classification rule** (see `js/itaukei-database.js :: creatorIsItaukei`):
+  a Zotero creator counts as iTaukei only if the keyified name resolves
+  to a member of that canonical set — either directly, in
+  "Last, First" flipped form, or with a middle initial dropped.
+- **Never** classify solely on surname. `Fong, James` sharing a surname
+  with `Fong, Patrick S.` does not make James's papers count as Patrick's,
+  and vice versa. See "Fongs" section above.
+- **Universities / countries** for both A1 and A2 come from
+  `data/itaukei-graduate-studies.json` `worldPoints`. These are already
+  reconciled and are the same source for both panels.
+- **Province coverage** comes from Zotero collection tags per item, not
+  from scholar profiles.
+
+## Standing KPI values as of 2026-07-13
+
+Pipeline: admin canonicals + aliases + progress-Sheet master roster
+(union of 461 unique iTaukei scholars), classified against
+`itaukei-zotero-snapshot.json`.
+
+| Panel | KPI | Value |
+| ----- | --- | -----:|
+| A1 | Indexed works | 2,225 |
+| A1 | Unique authors | 4,250 |
+| A1 | Theses | 1,007 |
+| A1 | Universities represented | 68 |
+| A1 | Countries represented | 15 |
+| A1 | Fiji provinces studied | 14 |
+| A2 | Publications with or by iTaukei | 1,578 |
+| A2 | With iTaukei as Lead author | 1,056 |
+| A2 | With iTaukei as co-author | 522 |
+| A2 | Theses by iTaukei scholars | 381 |
+| A2 | Universities of iTaukei graduate study | 68 |
+| A2 | Countries of iTaukei graduate study | 15 |
+
+If a future refresh moves any of these numbers, update this table in the
+same commit and note the reason (new roster additions, cleanup of a
+false-positive surname match, etc.).
+
+# Typography — Arial-only rule for KPI numbers (standing preference)
+
+- **Every KPI number, count, percentage, or numeric value** displayed on
+  the vave-lab site (iTaukei survey, progress dashboard, admin, public
+  research database, mockups shared for review) must be set in **Arial**.
+- Never use Fraunces, Georgia, Cambria, or any serif / display face for
+  numeric values. Serifs are fine for prose headings only.
+- This applies to A1, A2, and any future panel — including all mockups
+  before they're wired to production. If a mockup ships with a
+  non-Arial number, that is a bug: fix it before sharing.
+- Ron has repeated this rule multiple times. Do not let him repeat it again.

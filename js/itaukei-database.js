@@ -249,7 +249,7 @@
 
   // ============ DATA LOAD ============
   async function loadAll() {
-    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc, workplaceCoordsDoc] = await Promise.all([
+    const [snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc, workplaceCoordsDoc, progressRoster] = await Promise.all([
       fetchJson('data/itaukei-zotero-snapshot.json'),
       fetchJson('data/fiji-provinces.geojson'),
       fetchJson('data/world-universities.json'),
@@ -269,7 +269,14 @@
       // Curated coord table for the fullscreen "Institutions of work"
       // view (workplaces not present in the study worldPoints, e.g. SPC,
       // Fiji Ministry of Forestry, University of Central Lancashire).
-      fetchJson('data/workplace-coords.json').catch(() => ({ coords: {} }))
+      fetchJson('data/workplace-coords.json').catch(() => ({ coords: {} })),
+      // Progress-Sheet master roster — the exhaustive iTaukei scholar list
+      // (~474 rows, ~461 unique). Merged into itaukeiCanonicalKeys so A2 KPIs
+      // classify authors present in the Sheet but not yet in admin scholar-profiles.
+      // Absence is fine; A2 numbers will fall back to admin-only classification.
+      // See docs/NAMES-DO-NOT-MERGE.md “Rosters” section for details.
+      fetch('https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec?mode=progress')
+        .then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
     state.snapshot = snap;
     state.provinces = geo;
@@ -278,6 +285,26 @@
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
     state.workplaceCoords = (workplaceCoordsDoc && workplaceCoordsDoc.coords) || {};
+
+    // Extract canonical-name keys from the progress-Sheet master roster payload.
+    // The Apps Script endpoint returns an array of rows or { rows: […] }.
+    {
+      const rosterDoc = progressRoster || null;
+      const rosterRows = Array.isArray(rosterDoc) ? rosterDoc
+                       : (rosterDoc && Array.isArray(rosterDoc.rows) ? rosterDoc.rows
+                       : (rosterDoc && Array.isArray(rosterDoc.result) ? rosterDoc.result : []));
+      const _hyph = /[\u2010\u2011\u2013\u2212]/g;
+      const _keyify = s => (s || '').replace(_hyph, '-').toLowerCase().replace(/[^a-z0-9]/g, '');
+      state.progressRosterKeys = rosterRows.flatMap(r => {
+        if (!r) return [];
+        const canonical = r.canonical || r.canonicalName || r.name || r.scholar;
+        const first = r.firstName || r.first || '';
+        const last  = r.lastName  || r.last  || '';
+        const built = last && first ? `${last}, ${first}` : (last || first || '');
+        const flipped = first && last ? `${first} ${last}` : '';
+        return [canonical, built, flipped].map(_keyify).filter(k => k);
+      });
+    }
 
     // Name-variant aliases. Curated by the admin in the merge panel and pushed
     // via data/scholar-profiles.json. Keys are Zotero-creator variants and
@@ -420,6 +447,32 @@
     });
     state.itaukeiLastNames = itaukeiLastNames;
 
+    // ---- iTaukei canonical-name set (master roster) ----
+    // For A2 KPI classification we do NOT use surname matching — that over-fires on
+    // non-iTaukei people who happen to share an iTaukei surname (e.g. James Fong,
+    // Sakiusa Fong, Patrick Fong are all different people; see docs/NAMES-DO-NOT-MERGE.md).
+    // Instead, we resolve every Zotero creator through the admin nameAliases map
+    // (variant → canonical) and check membership in the union of:
+    //   (a) admin scholar canonicals (data/scholar-profiles.json .scholars[].name), and
+    //   (b) progress-Sheet canonicals (master roster; ~474 rows, fetched at runtime).
+    // Field data (province, institution, degrees) still comes from admin only.
+    const itaukeiCanonicalKeys = new Set();
+    const HYPH_RE = /[\u2010\u2011\u2013\u2212]/g;
+    const keyifyName = s => (s || '').replace(HYPH_RE, '-').toLowerCase().replace(/[^a-z0-9]/g, '');
+    state.scholarProfilesByName.forEach((_, name) => {
+      const k = keyifyName(name);
+      if (k) itaukeiCanonicalKeys.add(k);
+    });
+    // Include every alias variant so "Fong, Patrick Sakiusa" → "Fong, Patrick S." resolves
+    (state.nameAliases || new Map()).forEach((canonical, variant) => {
+      itaukeiCanonicalKeys.add(keyifyName(canonical));
+      itaukeiCanonicalKeys.add(keyifyName(variant));
+    });
+    // Also merge the progress-Sheet master roster (async — doesn't block first paint)
+    (state.progressRosterKeys || []).forEach(k => itaukeiCanonicalKeys.add(k));
+    state.itaukeiCanonicalKeys = itaukeiCanonicalKeys;
+    state._keyifyName = keyifyName;
+
     snap.items.forEach(it => {
       const disc = new Set();
       const provs = new Set();
@@ -441,23 +494,33 @@
     });
   }
 
-  // Match a Zotero creator string ("Ron Vave", "R. Vave", "Nabobo-Baba, Unaisi", etc.)
-  // against the set of known iTaukei scholar surnames.
+  // Resolve a Zotero creator ("Ron Vave", "R. Vave", "Nabobo-Baba, Unaisi", etc.)
+  // against the union of admin canonicals AND progress-Sheet canonicals via nameAliases.
+  // Returns true only if the creator matches a KNOWN canonical iTaukei scholar (not
+  // just a shared surname). See docs/NAMES-DO-NOT-MERGE.md for the rationale.
   function creatorIsItaukei(name) {
     if (!name) return false;
-    const lastNames = state.itaukeiLastNames;
-    if (!lastNames || !lastNames.size) return false;
-    // Handle "Last, First" form
-    let candidate = name;
-    if (name.includes(',')) candidate = name.split(',')[0].trim();
-    const cleaned = candidate.toLowerCase().replace(/[.]/g, '').trim();
-    const tokens = cleaned.split(/\s+/);
-    if (!tokens.length) return false;
-    // Try last single token, last two joined, last two hyphenated
-    if (lastNames.has(tokens[tokens.length - 1])) return true;
-    if (tokens.length >= 2) {
-      if (lastNames.has(tokens.slice(-2).join(' '))) return true;
-      if (lastNames.has(tokens.slice(-2).join('-'))) return true;
+    const canon = state.itaukeiCanonicalKeys;
+    if (!canon || !canon.size) return false;
+    const keyify = state._keyifyName || (s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    // 1) Try the creator string as-is (handles "Last, First" from admin variants)
+    if (canon.has(keyify(name))) return true;
+    // 2) Try flipped "First Last" → "Last, First"
+    const s = String(name).trim();
+    if (!s.includes(',')) {
+      const tokens = s.split(/\s+/);
+      if (tokens.length >= 2) {
+        const flipped = tokens[tokens.length - 1] + ', ' + tokens.slice(0, -1).join(' ');
+        if (canon.has(keyify(flipped))) return true;
+      }
+    } else {
+      // 3) Also try dropping middle initial(s) — "Fong, Patrick S." vs "Fong, Patrick"
+      const parts = s.split(',', 2);
+      const first = (parts[1] || '').trim().split(/\s+/)[0] || '';
+      if (first) {
+        const trimmed = parts[0].trim() + ', ' + first;
+        if (canon.has(keyify(trimmed))) return true;
+      }
     }
     return false;
   }
