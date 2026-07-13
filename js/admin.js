@@ -69,7 +69,20 @@
     // table so they can merge duplicates the automatic finder missed
     // (e.g. "Movono, Api" + "Movono, Apisalome"). Survives search/filter
     // re-renders because it lives on state, not the DOM.
-    manualMergeSelection: new Set()
+    manualMergeSelection: new Set(),
+    // Author names whose iTaukei checkbox has been flipped since the last
+    // GitHub push. Flushed by the "Save iTaukei toggles" button or by
+    // "Push all to GitHub". Requested behavior \u2014 do not go back to per-click pushes.
+    pendingItaukeiToggles: new Set(),
+    // Authors Ron has explicitly marked as NOT iTaukei. Persisted to
+    // scholar-profiles.json.notItaukeiAuthors so future admin sessions exclude
+    // them from the "New (needs triage)" filter. Very intentionally different
+    // from hiddenScholars, which is for iTaukei people we want hidden from the
+    // public dashboard.
+    notItaukeiAuthors: new Set(),
+    // Triage-mode ticks (from the checkbox in the leftmost column when
+    // the "New (needs triage)" filter is active). Not persisted.
+    triageSelection: new Set()
   };
 
   // Resolve a raw Zotero creator name to its canonical form via the alias map.
@@ -389,16 +402,23 @@
     // even though they still exist as Zotero collection subs.
     state.hiddenScholars = new Set(Array.isArray(profilesJson.hiddenScholars) ? profilesJson.hiddenScholars : []);
 
-    // Load persisted name-variant aliases (variant → canonical).
+    // Load persisted name-variant aliases (variant \u2192 canonical).
     state.nameAliases = new Map(Object.entries(profilesJson.nameAliases || {}));
     // Load list of dismissed variant groups (admin said "these are NOT the same person").
     state.dismissedVariantGroups = new Set(Array.isArray(profilesJson.dismissedVariantGroups)
       ? profilesJson.dismissedVariantGroups : []);
+    // Load list of authors explicitly marked NOT iTaukei. These are removed
+    // from "New (needs triage)" so we don\u2019t keep scrolling past them.
+    state.notItaukeiAuthors = new Set(Array.isArray(profilesJson.notItaukeiAuthors)
+      ? profilesJson.notItaukeiAuthors : []);
 
     // Build unique-author list from Zotero items. Alias resolution here folds
     // variant-name items into their canonical author so the admin table shows
     // one row per real person (with the combined pub count) after merges.
     rebuildAuthors(snap);
+    // Buttons start in their empty-state text.
+    updateFlushBar();
+    updateTriageBar();
   }
 
   function rebuildAuthors(snapshot) {
@@ -514,8 +534,11 @@
     if (f.status === 'enriched' && statusFlag(author) !== 'filled') return false;
     if (f.status === 'pending'  && statusFlag(author) !== 'pending') return false;
     if (f.status === 'new') {
-      // "New" = author with 2+ publications but no iTaukei profile yet. Simple heuristic.
+      // "New" = untriaged. Excludes anyone already tagged iTaukei AND anyone
+      // Ron has explicitly marked as non-iTaukei. Also requires \u2265 2 publications
+      // so single one-off co-authors don\u2019t clutter the triage view.
       if (isItaukei(author)) return false;
+      if (state.notItaukeiAuthors.has(author.name)) return false;
       if (author.total < 2) return false;
     }
     return true;
@@ -1003,6 +1026,7 @@
     const authors = state.authors.filter(passesFilter);
     const body = $('#authors-body');
     body.innerHTML = '';
+    const triageMode = state.filter.status === 'new';
     authors.slice(0, 500).forEach(a => {
       const iT = isItaukei(a);
       const stat = statusFlag(a);
@@ -1010,12 +1034,18 @@
       const displayName = p && p.salutation ? `${p.salutation} ${a.name}` : a.name;
       const tr = document.createElement('tr');
       if (iT) tr.classList.add('is-itaukei');
-      if (state.filter.status === 'new' || (!iT && a.total >= 3)) tr.classList.add('is-new');
+      if (triageMode || (!iT && a.total >= 3)) tr.classList.add('is-new');
       const isMMSel = state.manualMergeSelection.has(a.name);
+      const isTriageSel = state.triageSelection.has(a.name);
       if (isMMSel) tr.classList.add('is-mm-selected');
+      // In triage mode the leftmost checkbox is used for the batch
+      // "mark as non-iTaukei" flow instead of the manual-merge picker.
+      const leftCheckbox = triageMode
+        ? `<input type="checkbox" data-triage-select title="Tick to include in the non-iTaukei batch" ${isTriageSel ? 'checked' : ''} />`
+        : `<input type="checkbox" data-mm-select title="Select for manual merge" ${isMMSel ? 'checked' : ''} />`;
       tr.innerHTML = `
         <td class="select-col">
-          <input type="checkbox" data-mm-select title="Select for manual merge" ${isMMSel ? 'checked' : ''} />
+          ${leftCheckbox}
         </td>
         <td class="name-col">${displayName}</td>
         <td class="count-col">${a.total}</td>
@@ -1037,9 +1067,20 @@
       tr.querySelector('[data-toggle-itaukei]').addEventListener('change', ev => {
         toggleItaukei(a, ev.target.checked, ev.target);
       });
-      tr.querySelector('[data-mm-select]').addEventListener('change', ev => {
-        toggleManualMergeSelect(a.name, ev.target.checked, tr);
-      });
+      const mmCb = tr.querySelector('[data-mm-select]');
+      if (mmCb) {
+        mmCb.addEventListener('change', ev => {
+          toggleManualMergeSelect(a.name, ev.target.checked, tr);
+        });
+      }
+      const triageCb = tr.querySelector('[data-triage-select]');
+      if (triageCb) {
+        triageCb.addEventListener('change', ev => {
+          if (ev.target.checked) state.triageSelection.add(a.name);
+          else state.triageSelection.delete(a.name);
+          updateTriageBar();
+        });
+      }
       const editBtn = tr.querySelector('[data-edit]');
       editBtn.addEventListener('click', () => { if (!editBtn.disabled) openEdit(a); });
       body.appendChild(tr);
@@ -1058,6 +1099,11 @@
     $('#stat-new').textContent = newC;
   }
 
+  // iTaukei toggling is BATCHED. Each click updates in-memory state and pushes
+  // the author name onto state.pendingItaukeiToggles. Nothing hits GitHub until
+  // Ron clicks "Save iTaukei toggles" (or "Push all to GitHub"). This is by
+  // request \u2014 tagging 200+ scholars one push at a time was unusable.
+  // NEVER revert this to per-click GitHub pushes without an explicit ask.
   async function toggleItaukei(author, on, checkboxEl) {
     if (!requireGitHubToken(on ? 'this iTaukei tag' : 'this iTaukei removal')) {
       if (checkboxEl) checkboxEl.checked = !on;
@@ -1069,34 +1115,129 @@
       if (!state.profilesByKey.has(author.name)) {
         const [last, first] = author.name.split(',').map(s => s.trim());
         // Do NOT bake author.total / firstAuthored / types into the saved
-        // profile — those are Zotero-derived counts that change every sync.
+        // profile \u2014 those are Zotero-derived counts that change every sync.
         // Public dashboard always reads them fresh from the snapshot instead.
         state.profilesByKey.set(author.name, {
           name: author.name, slug: slugify(`${first}-${last}`),
           last, first, salutation: '', village: '', paternalProvince: '',
           institution: '', institutionUrl: '', googleScholarUrl: '', photo: ''
         });
-        toast(`Marked ${author.name} as iTaukei. Click "Edit" to add their profile.`);
       }
     } else {
       // Removing: drop profile AND add to explicit hide-list so the public
       // dashboard hides them even though they still exist as a Zotero collection.
       state.profilesByKey.delete(author.name);
       state.hiddenScholars.add(author.name);
-      toast(`Removed ${author.name} from iTaukei list. Saving\u2026`);
     }
+    state.pendingItaukeiToggles.add(author.name);
     render();
-    // Persist to GitHub so the change survives refresh AND propagates to the public dashboard.
-    if (localStorage.getItem(GH_TOKEN_KEY)) {
-      try {
-        await pushProfilesToGitHub(on ? `toggle on ${author.name}` : `toggle off ${author.name}`);
-        toast(on ? `${author.name} saved.` : `${author.name} removed and hidden from public dashboard.`, 'success');
-      } catch (err) {
-        console.error('toggleItaukei push failed:', err);
-        toast(`GitHub push failed \u2014 change is only in this browser. ${err.message}`, 'error');
-      }
-    } else {
-      toast('No GitHub token set \u2014 change is only in this browser. Paste a token to persist.', 'error');
+    updateFlushBar();
+  }
+
+  // Batched save. One GitHub push covers every pending toggle.
+  async function flushPendingToggles() {
+    if (!requireGitHubToken('this save')) return;
+    if (state.pendingItaukeiToggles.size === 0) {
+      toast('No pending iTaukei toggles to save.', 'error');
+      return;
+    }
+    const n = state.pendingItaukeiToggles.size;
+    const btn = document.getElementById('flush-itaukei-toggles');
+    if (btn) { btn.disabled = true; btn.textContent = `Saving ${n}\u2026`; }
+    toast(`Saving ${n} iTaukei toggle${n===1?'':'s'} in one push\u2026`);
+    try {
+      await pushProfilesToGitHub(`batch iTaukei toggles (${n} authors)`);
+      state.pendingItaukeiToggles.clear();
+      toast(`Saved ${n} toggle${n===1?'':'s'}. Public dashboard updates in ~1 minute.`, 'success');
+    } catch (err) {
+      console.error('flushPendingToggles push failed:', err);
+      toast(`GitHub push failed \u2014 toggles are still only in this browser. ${err.message}`, 'error');
+    } finally {
+      updateFlushBar();
+    }
+  }
+
+  function updateFlushBar() {
+    const btn = document.getElementById('flush-itaukei-toggles');
+    if (!btn) return;
+    const n = state.pendingItaukeiToggles.size;
+    btn.disabled = n === 0;
+    btn.textContent = n === 0
+      ? 'Save iTaukei toggles'
+      : `Save ${n} iTaukei toggle${n===1?'':'s'}`;
+    btn.title = n === 0
+      ? 'No pending toggles \u2014 the checkbox changes will queue here.'
+      : `Push these ${n} iTaukei check/uncheck change${n===1?'':'s'} to GitHub in a single commit.`;
+  }
+
+  // ==================== Triage batch (mark non-iTaukei) ====================
+  // Show the triage bar whenever the filter is set to "New (needs triage)".
+  // Update the mark-selected button label with the tick count.
+  function updateTriageBar() {
+    const bar = document.getElementById('triage-bar');
+    if (!bar) return;
+    const show = state.filter.status === 'new';
+    bar.style.display = show ? '' : 'none';
+    if (!show) return;
+    const btn = document.getElementById('triage-mark-not-itaukei');
+    if (!btn) return;
+    const n = state.triageSelection.size;
+    btn.disabled = n === 0;
+    btn.textContent = n === 0
+      ? 'Mark selected as non-iTaukei'
+      : `Mark ${n} selected as non-iTaukei`;
+  }
+
+  // Tick every visible row\u2019s triage checkbox. Only affects the currently
+  // filtered set (rows in the DOM), so no risk of accidentally marking
+  // authors Ron hasn\u2019t seen.
+  function triageSelectAllVisible() {
+    const boxes = document.querySelectorAll('#authors-body [data-triage-select]');
+    boxes.forEach(cb => {
+      const row = cb.closest('tr');
+      const nameCell = row && row.querySelector('.name-col');
+      if (!nameCell) return;
+      // Salutation might prepend to the display name, so use author lookup
+      // via row order instead. Grab the name via the author list we filtered.
+      cb.checked = true;
+    });
+    // Rebuild the selection set from all visible rows.
+    const visibleAuthors = state.authors.filter(passesFilter);
+    visibleAuthors.forEach(a => state.triageSelection.add(a.name));
+    updateTriageBar();
+  }
+
+  function triageClearAll() {
+    document.querySelectorAll('#authors-body [data-triage-select]').forEach(cb => { cb.checked = false; });
+    state.triageSelection.clear();
+    updateTriageBar();
+  }
+
+  async function markSelectedAsNotItaukei() {
+    if (!requireGitHubToken('this batch')) return;
+    const names = Array.from(state.triageSelection);
+    if (!names.length) { toast('No authors ticked.', 'error'); return; }
+    const btn = document.getElementById('triage-mark-not-itaukei');
+    if (btn) { btn.disabled = true; btn.textContent = `Saving ${names.length}\u2026`; }
+
+    // Add every ticked name to the persistent non-iTaukei list. If any of
+    // them is currently tagged iTaukei (edge case: Ron re-triaged someone),
+    // do NOT touch their profile \u2014 the checkbox already reflects the
+    // canonical state.
+    names.forEach(n => state.notItaukeiAuthors.add(n));
+    state.triageSelection.clear();
+    render();
+    updateTriageBar();
+    toast(`Marking ${names.length} authors as non-iTaukei in one push\u2026`);
+
+    try {
+      await pushProfilesToGitHub(`batch mark ${names.length} authors non-iTaukei`);
+      toast(`Marked ${names.length}. They won\u2019t show in "New (needs triage)" again.`, 'success');
+    } catch (err) {
+      console.error('markSelectedAsNotItaukei push failed:', err);
+      toast(`GitHub push failed \u2014 change is still only in this browser. ${err.message}`, 'error');
+    } finally {
+      updateTriageBar();
     }
   }
 
@@ -1388,13 +1529,15 @@
       .sort((a, b) => a[0].localeCompare(b[0]))
       .forEach(([variant, canonical]) => { nameAliases[variant] = canonical; });
     const dismissedVariantGroups = Array.from(state.dismissedVariantGroups).sort();
+    const notItaukeiAuthors = Array.from(state.notItaukeiAuthors).sort();
     return JSON.stringify({
       generatedAt: new Date().toISOString(),
       source: 'admin-dashboard',
       scholars,
       hiddenScholars,
       nameAliases,
-      dismissedVariantGroups
+      dismissedVariantGroups,
+      notItaukeiAuthors
     }, null, 2) + '\n';
   }
 
@@ -1757,7 +1900,33 @@
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => { state.filter.q = ev.target.value.trim(); render(); }, 150);
     });
-    $('#filter-status').addEventListener('change', ev => { state.filter.status = ev.target.value; render(); });
+    $('#filter-status').addEventListener('change', ev => {
+      state.filter.status = ev.target.value;
+      // Leaving triage mode clears the ticks so re-entering doesn\u2019t inherit stale state.
+      if (ev.target.value !== 'new') state.triageSelection.clear();
+      render();
+      updateTriageBar();
+    });
+
+    // Batch iTaukei-toggle save (one commit for all queued check/unchecks).
+    const flushBtn = document.getElementById('flush-itaukei-toggles');
+    if (flushBtn) flushBtn.addEventListener('click', flushPendingToggles);
+
+    // Triage-mode batch buttons.
+    const triageAllBtn = document.getElementById('triage-select-all');
+    if (triageAllBtn) triageAllBtn.addEventListener('click', triageSelectAllVisible);
+    const triageNoneBtn = document.getElementById('triage-select-none');
+    if (triageNoneBtn) triageNoneBtn.addEventListener('click', triageClearAll);
+    const triageMarkBtn = document.getElementById('triage-mark-not-itaukei');
+    if (triageMarkBtn) triageMarkBtn.addEventListener('click', markSelectedAsNotItaukei);
+
+    // Warn on page-close if there\u2019s unsaved queued work.
+    window.addEventListener('beforeunload', ev => {
+      if (state.pendingItaukeiToggles.size > 0 || state.triageSelection.size > 0) {
+        ev.preventDefault();
+        ev.returnValue = 'You have unsaved iTaukei changes. Save them before leaving?';
+      }
+    });
 
     // Manual-merge bar + modal wiring
     const mmBarMerge = document.getElementById('mm-bar-merge');
@@ -1905,6 +2074,10 @@
       toast(`Pushing ${count} profiles to GitHub…`);
       try {
         await pushProfilesToGitHub('bulk push');
+        // Bulk push commits every in-memory change including any queued
+        // iTaukei toggles, so the pending set is now empty.
+        state.pendingItaukeiToggles.clear();
+        updateFlushBar();
         toast(`Pushed ${count} profiles to data/scholar-profiles.json.enc. Public site updates within ~1 min.`);
       } catch (err) {
         console.error(err);

@@ -523,13 +523,14 @@
     <div class="panel">
       <h2>Authors extracted from Zotero
         <div class="panel-actions">
+          <button class="btn" id="flush-itaukei-toggles" disabled title="No pending toggles — the checkbox changes will queue here." style="color:#000;">Save iTaukei toggles</button>
           <button class="btn" id="push-github" title="Push data/scholar-profiles.json to GitHub. Uses the token you saved in Data source. Public site updates within ~1 minute after the push.">Push all to GitHub</button>
           <button class="btn" id="sync-to-sheet" title="Add every iTaukei scholar tagged here to the survey and progress pages' Google Sheet. Only appends people who aren't already on the sheet — safe to run repeatedly.">Sync to survey sheet</button>
           <button class="btn ghost" id="export-csv" title="Copies a tab-separated table — paste into Google Sheets and each column lands in its own cell">Copy for Google Sheets</button>
           <button class="btn ghost" id="export-json">Copy all as JSON</button>
         </div>
       </h2>
-      <p class="subtitle">Every unique author across the 531 publications, ranked by publication count. Toggle "iTaukei" per person; only iTaukei rows are editable and included in your Google Sheet.</p>
+      <p class="subtitle" style="color:#000;">Every unique author across the 531 publications, ranked by publication count. Toggle "iTaukei" per person; only iTaukei rows are editable and included in your Google Sheet. iTaukei toggles queue up and save in one push when you click "Save iTaukei toggles".</p>
 
       <div class="filters">
         <input type="search" id="filter-search" placeholder="Search author name…" />
@@ -541,6 +542,22 @@
           <option value="enriched">Profile filled in</option>
         </select>
         <span id="filter-count" style="color:var(--muted);font-size:0.85rem;margin-left:auto;"></span>
+      </div>
+
+      <!-- Triage bar — shown only when the "New (needs triage)" filter is active.
+           Lets Ron mark everyone in the untriaged list as non-iTaukei in one push
+           so they never clutter the triage view again. Any iTaukei found in there
+           can be unchecked before saving. -->
+      <div id="triage-bar" style="display:none;padding:12px 16px;background:#FFF9DB;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#000;">
+          <strong style="color:#000;">Triage mode.</strong>
+          <span style="color:#000;">Everyone here is untriaged. Tick the ones that ARE iTaukei (or leave them all ticked and untick the iTaukei ones), then mark the rest as non-iTaukei so they never appear in this list again.</span>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn ghost" id="triage-select-all" style="color:#000;" title="Tick every visible author's triage checkbox.">Select all visible</button>
+            <button class="btn ghost" id="triage-select-none" style="color:#000;" title="Clear all triage ticks.">Clear</button>
+            <button class="btn" id="triage-mark-not-itaukei" disabled style="color:#000;" title="Mark every ticked author as non-iTaukei in one GitHub push. They will be excluded from this triage view going forward.">Mark selected as non-iTaukei</button>
+          </div>
+        </div>
       </div>
 
       <div style="max-height: 640px; overflow-y: auto; border-top: 1px solid var(--border);">
