@@ -9713,7 +9713,7 @@
               }
             }
             const nameText = `${first} ${last}`.trim() || String(c.name || '');
-            const chip = c.profile ? mergeVillageProvince(c.profile.village || '', c.profile.province || '') : '';
+            const chip = c.profile ? mergeVillageProvince(c.profile.village || '', (c.profile.paternalProvince || c.profile.maternalProvince || '')) : '';
             const chipHtml = chip ? ` <span class="b3-work-detail__coauth-chip">${escapeHtml(chip)}</span>` : '';
             return `<span class="b3-work-detail__coauth ${cls}">${escapeHtml(nameText)}</span>${chipHtml}`;
           });
@@ -9725,7 +9725,7 @@
         // village info inline next to each co-author instead.
         let villageLine = '';
         if (rec.isLed && leadProfile) {
-          const label = mergeVillageProvince(leadProfile.village || '', leadProfile.province || '');
+          const label = mergeVillageProvince(leadProfile.village || '', (leadProfile.paternalProvince || leadProfile.maternalProvince || ''));
           if (label) {
             villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
           }
