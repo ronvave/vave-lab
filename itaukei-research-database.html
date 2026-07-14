@@ -1139,6 +1139,20 @@
       font-weight: 700;
       margin-bottom: 2px;
     }
+    /* Two-up variant: 8-column grid mirroring the CSS-columns layout below.
+       Column 1-4 label the left list column, column 5-8 label the right. The
+       middle rule/gap between the two halves mirrors the column-rule on
+       .db-world-grid so the header visually aligns with each list column. */
+    .b3-country-table-head--two-up {
+      grid-template-columns: minmax(0,1fr) 44px 44px 44px 16px minmax(0,1fr) 44px 44px 44px;
+    }
+    @media (max-width: 720px) {
+      .b3-country-table-head--two-up {
+        grid-template-columns: minmax(0,1fr) 44px 44px 44px;
+      }
+      .b3-country-table-head--two-up > span:nth-child(n+5) { display: none; }
+    }
+    .b3-country-table-head__spacer { display: block; }
     .b3-country-table-head__name { text-align: left; }
     .b3-country-table-head__num  { text-align: right; }
     .b3-country-table-head .b3-cell--led    { color: #712B13; }
@@ -4053,7 +4067,12 @@
             <div>
               <h4>Countries where research was undertaken</h4>
               <p class="db-conf-explain">Click a country to zoom the map. Hover a country marker to see the citation list; hover a citation for the work detail.</p>
-              <div class="b3-country-table-head" data-b3-country-thead>
+              <div class="b3-country-table-head b3-country-table-head--two-up" data-b3-country-thead>
+                <span class="b3-country-table-head__name">Country</span>
+                <span class="b3-country-table-head__num b3-cell--led" title="Publications where an iTaukei is the first author">iTaukei</span>
+                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (an iTaukei may still be on the byline)">Others</span>
+                <span class="b3-country-table-head__num b3-cell--total">Total</span>
+                <span class="b3-country-table-head__spacer" aria-hidden="true"></span>
                 <span class="b3-country-table-head__name">Country</span>
                 <span class="b3-country-table-head__num b3-cell--led" title="Publications where an iTaukei is the first author">iTaukei</span>
                 <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (an iTaukei may still be on the byline)">Others</span>
