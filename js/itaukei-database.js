@@ -8787,6 +8787,8 @@
     'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific',
                         mergeInto: 'United States' },
     'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific',
+                        mergeInto: 'FSM' },
+    'Chuuk (FSM)':    { lat:   7.4467, lng:  151.8500, region: 'Pacific',
                         mergeInto: 'FSM' }
   };
 
