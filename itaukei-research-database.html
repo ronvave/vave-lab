@@ -974,6 +974,38 @@
       color: #ffffff;
       margin-top: 2px;
     }
+    /* Clear-filters button in the fullscreen toolbar. Disabled = invisible
+       so the toolbar stays quiet when nothing is filtered; enabled = white
+       pill matching the dropdown buttons. */
+    .db-map-fs-clear {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: #ffffff;
+      color: #712B13;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.10);
+      transition: opacity 180ms ease, transform 180ms ease, background 180ms ease;
+    }
+    .db-map-fs-clear:hover:not(:disabled) {
+      background: #fff5eb;
+      transform: translateY(-1px);
+    }
+    .db-map-fs-clear:focus-visible {
+      outline: 2px solid #712B13;
+      outline-offset: 2px;
+    }
+    .db-map-fs-clear:disabled {
+      opacity: 0;
+      pointer-events: none;
+    }
+    .db-map-fs-clear svg { flex: 0 0 auto; }
 
     /* When the map is fullscreen, hide page scroll behind it. */
     body.db-map-fullscreen-lock { overflow: hidden; }
@@ -3962,6 +3994,18 @@
                   <span class="db-map-fs-stats__label">Total</span>
                 </div>
               </div>
+              <!-- Clear filters button. Only enabled when at least one filter
+                   is active; resets state.b3Filter to the empty shape and
+                   repaints map, labels, table, stats, and dropdowns. -->
+              <button type="button" class="db-map-fs-clear" data-db-b3-clear
+                      aria-label="Clear all filters"
+                      title="Clear all filters"
+                      disabled>
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+                </svg>
+                <span>Clear filters</span>
+              </button>
             </div>
             <button type="button" class="db-map-fs-btn" data-db-b3-fs-btn
                     aria-label="Expand map to full screen"

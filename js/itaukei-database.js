@@ -9053,6 +9053,14 @@
       if (state.b3Filter.confederacy) parts.push(state.b3Filter.confederacy);
       if (state.b3Filter.province)    parts.push(state.b3Filter.province);
       regionLabel.textContent = parts.length ? parts.join(' › ') : 'All regions';
+      // Enable Clear button only when at least one filter is set.
+      const clearBtn = document.querySelector('[data-db-b3-clear]');
+      if (clearBtn) {
+        const hasFilter = !!(state.b3Filter.region || state.b3Filter.country ||
+                             state.b3Filter.confederacy || state.b3Filter.province ||
+                             state.b3Filter.authorship);
+        clearBtn.disabled = !hasFilter;
+      }
     }
 
     function applyFilter() {
@@ -9060,6 +9068,23 @@
       renderB3CountryList();
       updateB3Stats();
       repaintAllDropdowns();
+      paintAuthList(); // keep authorship label + active row in sync when reset
+    }
+
+    // ---- Clear filters button ----
+    const clearBtn = document.querySelector('[data-db-b3-clear]');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        state.b3Filter.region      = null;
+        state.b3Filter.country     = null;
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province    = null;
+        state.b3Filter.authorship  = null;
+        // Close any open dropdowns for a clean reset.
+        if (regionPanel) { regionPanel.hidden = true; regionBtn && regionBtn.setAttribute('aria-expanded', 'false'); }
+        applyFilter();
+      });
     }
 
     // Wire the region-panel button clicks (event delegation).
