@@ -8734,7 +8734,14 @@
     'France':         { lat:  46.6034, lng:   1.8883, region: 'Europe' },
     'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
     'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
-    'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' }
+    'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' },
+    // Hawaii lives in the Zotero tree as its own sub-collection "Hawaii
+    // (U.S.)" alongside the mainland U.S. entry, since research done on
+    // the Hawaiian Islands is geographically Pacific even though the
+    // jurisdiction is U.S. Pin the pie on the main island chain
+    // (~20.5N, -157.5W) but keep the parenthetical U.S. tag visible in
+    // the popup title and country-row label.
+    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific' }
   };
 
   // Display-name transform — the Zotero collection key is unchanged.
