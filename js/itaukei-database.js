@@ -8764,7 +8764,11 @@
     'Nauru':          { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
     // Zotero collection is named 'FSM'; displayName expands it for the
     // country-row label and popup title.
-    'FSM':            { lat:   7.4256, lng: 150.5508, region: 'Pacific',
+    // FSM parent center is placed in empty ocean between Yap (west) and
+    // Chuuk (east) so it does not visually collide with the Chuuk pie when
+    // both are present. Items filed in the FSM root (not in a state
+    // sub-collection) render here.
+    'FSM':            { lat:   8.5000, lng: 148.0000, region: 'Pacific',
                         displayName: 'Federated States of Micronesia' },
     'Marshall Islands': { lat: 7.1315, lng: 171.1845, region: 'Pacific' },
     // The France sub-collection today holds a single study conducted in
@@ -8776,26 +8780,24 @@
     'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
     'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
     'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' },
-    // Hawaii and the four FSM states (Pohnpei, Chuuk, Kosrae, Yap) are
-    // Zotero sub-collections that count towards their parent
-    // jurisdictions (United States and Federated States of Micronesia
-    // respectively), NOT as separate country rows on the map or the
-    // table. Their entries here are consumed by the mergeInto resolver
-    // in initB3Map: items get filed under the parent country bucket,
-    // and the parent country's map coords are overridden to the
-    // sub-collection's coordinates so the pie renders at Hawaii /
-    // Pohnpei / Chuuk / Kosrae / Yap rather than the mainland U.S. or
-    // the FSM geographic center.
-    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific',
-                        mergeInto: 'United States' },
-    'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific',
-                        mergeInto: 'FSM' },
-    'Chuuk (FSM)':    { lat:   7.4467, lng:  151.8500, region: 'Pacific',
-                        mergeInto: 'FSM' },
-    'Kosrae (FSM)':   { lat:   5.3167, lng:  162.9833, region: 'Pacific',
-                        mergeInto: 'FSM' },
-    'Yap (FSM)':      { lat:   9.5497, lng:  138.1103, region: 'Pacific',
-                        mergeInto: 'FSM' }
+  };
+
+  // Sub-locations are Zotero sub-collections nested INSIDE a parent country
+  // (e.g. FSM/Chuuk, FSM/Pohnpei, United States/Hawaii). Items filed in a
+  // sub-collection still count toward the parent country's total in the
+  // sidebar/table, but the map renders a separate pie at the sub-location's
+  // coordinates instead of the parent country's center. The Zotero key is
+  // the leaf collection name; the value carries lat/lng for the pie anchor.
+  const B3_SUBLOCATIONS = {
+    'FSM': {
+      'Chuuk':   { lat:  7.4467, lng: 151.8500, region: 'Pacific' },
+      'Pohnpei': { lat:  6.8547, lng: 158.2189, region: 'Pacific' },
+      'Kosrae':  { lat:  5.3167, lng: 162.9833, region: 'Pacific' },
+      'Yap':     { lat:  9.5497, lng: 138.1103, region: 'Pacific' }
+    },
+    'United States': {
+      'Hawaii':  { lat: 20.5000, lng: -157.5000, region: 'Pacific' }
+    }
   };
 
   // Display-name transform — the Zotero collection key is unchanged.
@@ -8828,82 +8830,93 @@
       return;
     }
     // countryOfKey[<any descendant key>] = <country name>
+    // subLocOfKey[<any descendant key>] = <sub-location name> | null
+    // A key is a sub-location if its collection sits under a country and its
+    // NAME (not path) matches a B3_SUBLOCATIONS entry for that country. This
+    // lets sub-collections like FSM/Chuuk and United States/Hawaii render as
+    // separate pies at their own coords while still counting toward the
+    // parent country total.
     const countryOfKey = new Map();
+    const subLocOfKey = new Map();
     const countries = [];
     cols.filter(c => c.parent === whereRoot.key).forEach(country => {
       countries.push(country.name);
       countryOfKey.set(country.key, country.name);
-      // Recurse into any nested sub-collections (Fiji Provinces has none today,
-      // but future country trees might).
-      const stack = cols.filter(c => c.parent === country.key);
+      subLocOfKey.set(country.key, null);
+      const subDef = B3_SUBLOCATIONS[country.name] || null;
+      // Recurse into descendants. A descendant whose name matches a known
+      // sub-location for this country is tagged with that sub-location; deeper
+      // descendants inherit the same tag. Non-matching descendants inherit
+      // the parent's sub-location (so an untagged nested tree behaves the
+      // same as it always did — items count toward the country center).
+      const stack = cols.filter(c => c.parent === country.key).map(c => ({ col: c, subLoc: subDef && subDef[c.name] ? c.name : null }));
       while (stack.length) {
-        const c = stack.shift();
-        countryOfKey.set(c.key, country.name);
-        cols.filter(x => x.parent === c.key).forEach(x => stack.push(x));
+        const { col, subLoc } = stack.shift();
+        countryOfKey.set(col.key, country.name);
+        subLocOfKey.set(col.key, subLoc);
+        cols.filter(x => x.parent === col.key).forEach(x => stack.push({
+          col: x,
+          subLoc: (subLoc || (subDef && subDef[x.name])) ? (subLoc || x.name) : null
+        }));
       }
     });
 
-    // ---- 2. Bucket items by country + lead/other ----
-    // Each item picks up ALL matching countries (an item filed in both Fiji
-    // and Australia counts for both). Works with a byline of length 0 are
-    // treated as "others as lead" (no known iTaukei first author).
-    const perCountry = new Map(); // name -> { led: [items], others: [items] }
-    const ensure = (name) => {
-      if (!perCountry.has(name)) perCountry.set(name, { led: [], others: [] });
-      return perCountry.get(name);
-    };
-    // Resolve mergeInto: a sub-collection like "Hawaii (U.S.)" contributes
-    // its items to its parent country's bucket (United States) instead of
-    // its own. Also track which parent countries had their coords
-    // overridden by a merged sub-collection so the map pie can render at
-    // the sub-location (Hawaii, Pohnpei) rather than the parent center.
-    const coordOverride = new Map(); // parentCountry -> { lat, lng, region }
-    Object.keys(B3_COUNTRY_COORDS).forEach(sub => {
-      const meta = B3_COUNTRY_COORDS[sub];
-      if (meta && meta.mergeInto) {
-        coordOverride.set(meta.mergeInto, { lat: meta.lat, lng: meta.lng, region: meta.region });
-      }
-    });
-    const resolveCountry = (cn) => {
-      const meta = B3_COUNTRY_COORDS[cn];
-      return (meta && meta.mergeInto) ? meta.mergeInto : cn;
+    // ---- 2. Bucket items by (country, subLocation) + lead/other ----
+    // Each item picks up ALL matching (country, subLocation) pairs. An item
+    // filed in both Fiji and Australia counts for both; an item filed in
+    // FSM/Chuuk counts toward Chuuk pie only (not the FSM main pie).
+    // Bucket key: `${country}\u0001${subLoc || ''}`. subLoc = null → parent pie.
+    const perBucket = new Map();
+    const bucketKey = (country, subLoc) => country + '\u0001' + (subLoc || '');
+    const ensure = (country, subLoc) => {
+      const k = bucketKey(country, subLoc);
+      if (!perBucket.has(k)) perBucket.set(k, { country, subLoc, led: [], others: [] });
+      return perBucket.get(k);
     };
 
     state.snapshot.items.forEach(item => {
+      // Collect (country, subLoc) hits — a Set so an item filed in both a
+      // sub-collection and its parent country (transitional / legacy) is
+      // counted once per unique bucket, not double.
       const hits = new Set();
       (item.collections || []).forEach(k => {
         const cn = countryOfKey.get(k);
-        if (cn) hits.add(resolveCountry(cn));
+        if (!cn) return;
+        const sub = subLocOfKey.get(k) || null;
+        hits.add(cn + '\u0001' + (sub || ''));
       });
       if (!hits.size) return;
       const kind = itaukeiAuthorship(item); // 'lead' | 'coauth' | 'none'
-      hits.forEach(cn => {
-        const bucket = ensure(cn);
+      hits.forEach(key => {
+        const [country, subRaw] = key.split('\u0001');
+        const subLoc = subRaw || null;
+        const bucket = ensure(country, subLoc);
         if (kind === 'lead') bucket.led.push(item);
         else bucket.others.push(item);
       });
     });
 
     // Country records with coords, sorted by total desc for stable rendering.
-    // Skip sub-collections that were merged into a parent (their items now
-    // live under the parent's bucket, and rendering both would double count).
+    // One record per (country, subLocation) pair — sub-locations render as
+    // separate map pies at their own coords, while the sidebar aggregates
+    // records with the same country name.
     const records = [];
-    countries.forEach(name => {
-      const meta = B3_COUNTRY_COORDS[name];
-      if (meta && meta.mergeInto) return; // merged into parent; do not render separately
-      const b = perCountry.get(name);
-      if (!b || (!b.led.length && !b.others.length)) return;
-      // Prefer a merged sub-collection's coords as the display anchor when
-      // present; otherwise fall back to the country's own coords.
-      const anchor = coordOverride.get(name) || meta;
-      if (!anchor) {
-        console.warn('B3: no coord for', name);
-        return;
+    perBucket.forEach(b => {
+      if (!b.led.length && !b.others.length) return;
+      let lat, lng, region;
+      if (b.subLoc) {
+        const subDef = (B3_SUBLOCATIONS[b.country] || {})[b.subLoc];
+        if (!subDef) { console.warn('B3: no coord for sub-location', b.country, b.subLoc); return; }
+        lat = subDef.lat; lng = subDef.lng; region = subDef.region;
+      } else {
+        const meta = B3_COUNTRY_COORDS[b.country];
+        if (!meta) { console.warn('B3: no coord for country', b.country); return; }
+        lat = meta.lat; lng = meta.lng; region = meta.region;
       }
       records.push({
-        country: name,
-        lat: anchor.lat,
-        lng: anchor.lng,
+        country: b.country,
+        subLoc: b.subLoc,
+        lat, lng, region,
         led: b.led,
         others: b.others,
         total: b.led.length + b.others.length
@@ -9015,7 +9028,12 @@
   // then rerenders everything. Running tallies on each option reflect the
   // count that would remain if that option were the active leaf.
   function initB3ToolbarDropdowns() {
-    const recs = state.b3Records || [];
+    // Use country summaries (one row per parent country with sub-locations
+    // rolled up) for region/country counts so numbers match the sidebar and
+    // world table. Pass unfiltered=true so the full country universe is
+    // available for the region/country dropdowns; the authorship gate is
+    // applied by paintCountryList/paintRegionList themselves.
+    const recs = b3CountrySummaries(true);
     if (!recs.length) return;
 
     // Precompute per-region totals (respecting authorship filter).
@@ -9383,11 +9401,48 @@
       if (!led.length && !others.length) return null;
       return {
         country: rec.country,
+        subLoc: rec.subLoc,
         lat: rec.lat, lng: rec.lng,
         led, others,
         total: led.length + others.length
       };
     }).filter(Boolean);
+  }
+
+  // Aggregate records by parent country. Used by the sidebar table and the
+  // country-dropdown drilldown so an item filed in FSM/Chuuk still rolls up
+  // under the single "Federated States of Micronesia" row. Pass
+  // `unfiltered=true` when you want the full country universe (e.g. to
+  // populate dropdowns) instead of the current filter's visible set.
+  function b3CountrySummaries(unfiltered) {
+    const recs = unfiltered ? (state.b3Records || []) : b3FilteredRecords();
+    const byCountry = new Map();
+    recs.forEach(r => {
+      if (!byCountry.has(r.country)) {
+        // Use the country's own coords as the summary anchor (not any
+        // sub-location's), so clicking the row zooms to the parent country.
+        const meta = B3_COUNTRY_COORDS[r.country] || { lat: r.lat, lng: r.lng };
+        byCountry.set(r.country, {
+          country: r.country,
+          lat: meta.lat, lng: meta.lng,
+          led: [], others: []
+        });
+      }
+      const s = byCountry.get(r.country);
+      s.led = s.led.concat(r.led);
+      s.others = s.others.concat(r.others);
+    });
+    const out = [];
+    byCountry.forEach(s => {
+      // Dedupe items that appear in multiple sub-locations (e.g. an item
+      // filed in both FSM and FSM/Chuuk during a transition).
+      const seenLed = new Set(), seenOth = new Set();
+      s.led = s.led.filter(it => !seenLed.has(it.key) && (seenLed.add(it.key), true));
+      s.others = s.others.filter(it => !seenOth.has(it.key) && (seenOth.add(it.key), true));
+      s.total = s.led.length + s.others.length;
+      out.push(s);
+    });
+    return out.sort((a, b) => b.total - a.total);
   }
 
   function renderB3Layer() {
@@ -9584,8 +9639,14 @@
         parts.join(`<span class="b3-cite-sep">;</span> `) +
         `</span>`;
     };
+    // Sub-location pies (FSM/Chuuk, United States/Hawaii, …) show the
+    // sub-location as the primary popup title with the parent country name
+    // in parentheses. Parent-country pies keep their existing title.
+    const title = rec.subLoc
+      ? `${rec.subLoc} (${b3DisplayName(rec.country)})`
+      : b3DisplayName(rec.country);
     return (
-      `<div class="db-popup-title">${escapeHtml(b3DisplayName(rec.country))}</div>` +
+      `<div class="db-popup-title">${escapeHtml(title)}</div>` +
       `<div class="db-popup-count-row">` +
         `<span class="db-popup-count">${total}</span>` +
         `<span class="db-popup-count-text">publication${total === 1 ? '' : 's'} where research was undertaken here</span>` +
@@ -9828,8 +9889,11 @@
     const host = document.querySelector('[data-b3-country-list]');
     if (!host) return;
     // The list respects the active filter so it stays in sync with the map.
-    const records = b3FilteredRecords();
-    const rows = records.map(rec => {
+    // One row per parent country — sub-locations (Chuuk, Hawaii, …) are
+    // aggregated into their parent so the sidebar count matches the country
+    // total in the world table.
+    const summaries = b3CountrySummaries();
+    const rows = summaries.map(rec => {
       const ledN = rec.led.length;
       const othN = rec.others.length;
       return (
@@ -9846,10 +9910,13 @@
     host.querySelectorAll('[data-b3-country]').forEach(row => {
       row.addEventListener('click', () => {
         const name = row.getAttribute('data-b3-country');
-        const rec = (state.b3Records || []).find(r => r.country === name);
-        if (!rec || !state.b3Map) return;
-        state.b3Map.setView([rec.lat, rec.lng], 4.5, { animate: true });
-        // Open the popup for that country.
+        const summary = summaries.find(s => s.country === name);
+        if (!summary || !state.b3Map) return;
+        // Prefer the parent country's center for the zoom; if the parent has
+        // no items of its own and all items live in sub-locations, this still
+        // frames the sub-location pies since the parent center is nearby.
+        state.b3Map.setView([summary.lat, summary.lng], 4.5, { animate: true });
+        // Open the popup for the first matching pie (parent, then sub-locs).
         const layers = state.b3Layer ? state.b3Layer.getLayers() : [];
         const m = layers.find(l => l._b3Record && l._b3Record.country === name);
         if (m) setTimeout(() => m.openPopup(), 350);
