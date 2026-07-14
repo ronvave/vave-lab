@@ -9340,9 +9340,12 @@
       m._b3Record = rec;
       m._b3Radius = radius;
       const html = b3BuildCountryPopupHtml(rec);
+      // maxWidth/minWidth are 1.5× the default world-popup dimensions so long
+      // report/thesis titles fit in the hover-detail slot without wrapping to
+      // 4+ lines. Requested in the Revised-Panel-B3 spec (Jul 2026).
       m.bindPopup(html, {
-        maxWidth: 460,
-        minWidth: 340,
+        maxWidth: 690,
+        minWidth: 510,
         className: 'db-world-popup db-world-popup--b3',
         autoClose: false,
         closeOnClick: false,
@@ -9465,18 +9468,29 @@
 
   function b3BuildCountryPopupHtml(rec) {
     const total = rec.led.length + rec.others.length;
-    const renderList = (items, kind) => {
+    // Render one section (iTaukei-led OR others-led) as a single flowing
+    // sentence: `Ali (2020); Bola et al. (2021); Cakau (2019)` with the
+    // citation text alternating between two colors so the eye can pick out
+    // where one citation ends and the next begins. Same visual pattern as
+    // the B2 popup name lists (renderScholarNameList above). Requested in
+    // the Revised-Panel-B3 spec (Jul 2026): the previous per-line list
+    // wasted vertical space.
+    const renderInlineList = (items, kind) => {
       if (!items.length) return '';
-      // Sort newest first so recent work surfaces at the top of each bucket.
       const sorted = items.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
       const header = (kind === 'led')
         ? `<div class="db-popup-scholar-header is-led">iTaukei as Lead (${sorted.length}):</div>`
         : `<div class="db-popup-scholar-header is-others">Others as Lead (${sorted.length}):</div>`;
-      const rows = sorted.map(it => {
+      const parts = sorted.map((it, i) => {
+        // Alternate between two color classes so consecutive citations are
+        // visually distinct even without punctuation cues.
+        const cls = (i % 2 === 0) ? 'is-alt-a' : 'is-alt-b';
         const cite = b3InTextCitation(it);
-        return `<span class="b3-cite is-${kind}" data-b3-item-key="${escapeHtml(it.key)}">${escapeHtml(cite)}</span>`;
-      }).join('');
-      return header + `<div class="b3-cite-list">` + rows + `</div>`;
+        return `<span class="b3-cite is-${kind} ${cls}" data-b3-item-key="${escapeHtml(it.key)}">${escapeHtml(cite)}</span>`;
+      });
+      return header + `<span class="b3-cite-list b3-cite-list--inline">` +
+        parts.join(`<span class="b3-cite-sep">;</span> `) +
+        `</span>`;
     };
     return (
       `<div class="db-popup-title">${escapeHtml(b3DisplayName(rec.country))}</div>` +
@@ -9486,23 +9500,52 @@
       `</div>` +
       `<div class="b3-work-detail" data-b3-work-detail></div>` +
       `<div class="db-popup-scroll">` +
-        renderList(rec.led, 'led') +
-        renderList(rec.others, 'others') +
+        renderInlineList(rec.led, 'led') +
+        renderInlineList(rec.others, 'others') +
       `</div>`
     );
   }
 
   // Wire hover-to-detail behaviour: hovering a citation chip fills the
-  // .b3-work-detail slot with the lead author's photo + name + year + title.
+  // .b3-work-detail slot with a Panel-B2-style card — a picture-fill vertical
+  // strip on the left, and a body on the right containing the lead author's
+  // name + venue + title, plus a village/(province) – Confederacy chip when
+  // the lead is iTaukei and their profile has that data.
   function b3WirePopupHovers(popupEl, rec) {
     if (!popupEl) return;
     const detail = popupEl.querySelector('[data-b3-work-detail]');
     if (!detail) return;
-    // Build a quick lookup: item key -> item record. Cheaper than a linear
-    // scan of state.snapshot.items every hover.
+    // Build a quick lookup: item key -> { item, isLed }. Cheaper than a
+    // linear scan of state.snapshot.items every hover.
     const byKey = new Map();
     rec.led.forEach(it => byKey.set(it.key, { item: it, isLed: true }));
     rec.others.forEach(it => byKey.set(it.key, { item: it, isLed: false }));
+    // Province → Confederacy lookup (same table used by buildWorldPopupHtml
+    // above). Inlined so we don't reach for the module-scope constant that
+    // isn't guaranteed to be in scope this early in the popup lifecycle.
+    const PROV_TO_CONF = {
+      Kadavu: 'Burebasaga', 'Nadroga/Navosa': 'Burebasaga', Namosi: 'Burebasaga',
+      Rewa: 'Burebasaga', Serua: 'Burebasaga',
+      Ba: 'Kubuna', Lomaiviti: 'Kubuna', Naitasiri: 'Kubuna',
+      Ra: 'Kubuna', Tailevu: 'Kubuna',
+      Bua: 'Tovata', Cakaudrove: 'Tovata', Lau: 'Tovata', Macuata: 'Tovata'
+    };
+    // Assemble "Rukua vlg, Beqa Is (Rewa) – Burebasaga" from a profile's
+    // village + province, matching the format B2's buildWorldPopupHtml uses
+    // for its hover chip. Returns '' when both fields are empty.
+    function mergeVillageProvince(village, province) {
+      let vBase = village || '';
+      let vNote = '';
+      if (vBase) {
+        const m = vBase.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
+        if (m) { vBase = m[1].trim(); vNote = m[2].trim(); }
+      }
+      const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
+      const conf = province ? PROV_TO_CONF[province] : '';
+      const tag = province ? (conf ? `(${province}) \u2013 ${conf}` : `(${province})`) : '';
+      if (left && tag) return `${left} ${tag}`;
+      return left || tag || '';
+    }
     const chips = popupEl.querySelectorAll('.b3-cite[data-b3-item-key]');
     chips.forEach(chip => {
       chip.addEventListener('mouseenter', () => {
@@ -9517,15 +9560,31 @@
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
+        // Only surface the village/province chip when the lead author is iTaukei
+        // (the request is scoped to that case) AND their scholar profile has
+        // village + province data. Others-as-lead entries omit the chip.
+        let villageLine = '';
+        if (rec.isLed && profile) {
+          const label = mergeVillageProvince(profile.village || '', profile.province || '');
+          if (label) {
+            villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
+          }
+        }
         detail.classList.add('is-active');
+        // Picture-fill vertical strip on the left; body on the right. When
+        // there's no photo we still render an empty strip so the body's left
+        // edge stays in the same place — prevents the popup from jumping
+        // horizontally as the user hovers different citations.
         detail.innerHTML = (
           `<div class="b3-work-detail__row">` +
-            (photo ? `<div class="b3-work-detail__photo" style="background-image:url('${escapeHtml(photo)}')"></div>`
-                   : `<div class="b3-work-detail__photo"></div>`) +
+            `<div class="b3-work-detail__photo${photo ? '' : ' is-empty'}"` +
+              (photo ? ` style="background-image:url('${escapeHtml(photo)}')"` : '') +
+            `></div>` +
             `<div class="b3-work-detail__body">` +
               `<div class="b3-work-detail__name">${escapeHtml(displayName)}` +
-                (year ? `<span class="b3-work-detail__year">(${escapeHtml(String(year))})</span>` : '') +
+                (year ? ` <span class="b3-work-detail__year">(${escapeHtml(String(year))})</span>` : '') +
               `</div>` +
+              villageLine +
               `<div class="b3-work-detail__title">${escapeHtml(title)}</div>` +
               (venue ? `<div class="b3-work-detail__venue">${escapeHtml(venue)}</div>` : '') +
             `</div>` +

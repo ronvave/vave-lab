@@ -959,6 +959,17 @@
        Darker blue = PhD (higher degree), lighter blue = Masters. */
     .db-map-fs-stats__cell--phd     { background: #1e3a8a; }
     .db-map-fs-stats__cell--masters { background: #3b82f6; }
+    /* Panel B3 tinted cells: iTaukei-led = rust with white text; Other-led =
+       amber-gold with black text. Matches the pie-slice colors so the
+       counter reads like a mini-legend. */
+    .db-map-fs-stats__cell--led { background: #712B13; }
+    .db-map-fs-stats__cell--others {
+      background: #E8AF34;
+    }
+    .db-map-fs-stats__cell--others .db-map-fs-stats__num,
+    .db-map-fs-stats__cell--others .db-map-fs-stats__label {
+      color: #171614;
+    }
     .db-map-fs-stats__num {
       font-size: 1.05rem;
       font-weight: 700;
@@ -1054,20 +1065,25 @@
     /* ---- B3 popup: two-tier citation list ---- */
     .db-popup-scholar-header.is-led { color: #712B13; }
     .db-popup-scholar-header.is-others { color: #8A6100; }
-    .b3-cite-list { margin: 4px 0 8px; display: flex; flex-direction: column; gap: 3px; }
+    /* Panel B3 citation list. Old layout was one citation per line — wasted
+       vertical space when a country had dozens of hits. New layout is a
+       single flowing sentence separated by "; " with alternating text
+       colors so consecutive citations stay visually distinct. */
+    .b3-cite-list { margin: 4px 0 8px; }
+    .b3-cite-list--inline { display: block; line-height: 1.5; }
     .b3-cite {
-      display: inline-block;
-      padding: 2px 6px;
-      border-radius: 4px;
+      display: inline;
+      padding: 0;
+      border-radius: 0;
       font-size: 0.88rem;
-      color: #222;
       cursor: default;
-      transition: background 0.12s;
-      border-left: 2px solid transparent;
+      border: none;
     }
-    .b3-cite.is-led { border-left-color: #712B13; }
-    .b3-cite.is-others { border-left-color: #E8AF34; }
-    .b3-cite:hover { background: rgba(0,0,0,0.05); }
+    /* Alternating text colors, styled like B2's blue/dark scholar-name list. */
+    .b3-cite.is-alt-a { color: #01696F; }
+    .b3-cite.is-alt-b { color: #171614; }
+    .b3-cite:hover { text-decoration: underline; }
+    .b3-cite-sep { color: #171614; margin: 0 1px; }
     .b3-work-detail {
       background: #fafaf7;
       border: 1px solid #e5e2d8;
@@ -1078,16 +1094,32 @@
       display: none;
     }
     .b3-work-detail.is-active { display: block; }
-    .b3-work-detail__row { display: flex; gap: 10px; align-items: flex-start; }
+    .b3-work-detail__row { display: flex; gap: 12px; align-items: stretch; }
+    /* Picture-fill vertical strip mirrors the B2 expanded-map photo tile:
+       fixed width, full row height, square corners so it reads as a photo
+       panel rather than an avatar bubble. is-empty renders a neutral gray
+       block so the body's left edge doesn't shift between hover states. */
     .b3-work-detail__photo {
-      width: 48px; height: 48px; border-radius: 50%;
+      width: 72px;
+      align-self: stretch;
       background: #ddd center/cover no-repeat;
-      flex: 0 0 48px;
+      flex: 0 0 72px;
       border: 1px solid #ccc;
+      border-radius: 4px;
+      min-height: 96px;
     }
+    .b3-work-detail__photo.is-empty { background: #efece4; }
     .b3-work-detail__body { flex: 1; min-width: 0; }
     .b3-work-detail__name { font-weight: 700; color: #222; font-size: 0.92rem; }
     .b3-work-detail__year { color: #666; font-weight: 500; margin-left: 4px; }
+    /* Village + (province) – Confederacy chip. Same look as the B2 hover
+       chip: teal text, no underline. Only shown for iTaukei-led entries. */
+    .b3-work-detail__village {
+      color: #01696F;
+      font-size: 0.82rem;
+      margin-top: 2px;
+      font-weight: 500;
+    }
     .b3-work-detail__title { color: #444; font-size: 0.85rem; margin-top: 2px; font-style: italic; line-height: 1.3; }
     .b3-work-detail__venue { color: #666; font-size: 0.8rem; margin-top: 3px; }
 
@@ -3981,11 +4013,11 @@
                   <span class="db-map-fs-stats__num" data-b3-stats-countries>0</span>
                   <span class="db-map-fs-stats__label">Countries</span>
                 </div>
-                <div class="db-map-fs-stats__cell">
+                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--led">
                   <span class="db-map-fs-stats__num" data-b3-stats-led>0</span>
                   <span class="db-map-fs-stats__label">iTaukei led</span>
                 </div>
-                <div class="db-map-fs-stats__cell">
+                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--others">
                   <span class="db-map-fs-stats__num" data-b3-stats-others>0</span>
                   <span class="db-map-fs-stats__label">Other led</span>
                 </div>
