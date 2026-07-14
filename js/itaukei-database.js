@@ -8741,7 +8741,12 @@
     // jurisdiction is U.S. Pin the pie on the main island chain
     // (~20.5N, -157.5W) but keep the parenthetical U.S. tag visible in
     // the popup title and country-row label.
-    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific' }
+    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific' },
+    // Pohnpei is a Zotero sibling of Federated States of Micronesia (not
+    // nested underneath it), so render it as its own pie at Pohnpei
+    // Island's coordinates (~6.85N, 158.22E). Same jurisdiction as FSM
+    // but separated in the taxonomy to distinguish island-specific work.
+    'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific' }
   };
 
   // Display-name transform — the Zotero collection key is unchanged.
