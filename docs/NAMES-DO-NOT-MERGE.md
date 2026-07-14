@@ -357,16 +357,62 @@ into the appropriate country sub-collection.
   softened to "any iTaukei on the byline". See `itaukeiAuthorship()`
   (line 539) — reuse that function; do not reimplement.
 
-## Marker semantics
+## Marker semantics (revised 2026-07-13)
 
+- Panel title is **`GLOBAL LOCATIONS OF ITAUKEI RESEARCH`** — do not
+  rename back to "Where iTaukei research has been undertaken".
 - Each country renders as an **SVG pie divIcon**: rust slice (`#712B13`)
-  = iTaukei-led, teal slice (`#01696F`) = Others-as-lead.
-- Radius scales with the sqrt of the toggled bucket count so Fiji
-  Provinces (~234) does not dwarf tail countries (1–2).
-- Pill toggle values:
-  - `With iTaukei` (default): pie shows both slices, radius by total.
-  - `Led by iTaukei`: pie collapses to rust only, radius by led count,
-    countries with zero led work drop off entirely.
+  = iTaukei-led, **amber-gold slice (`#E8AF34`)** = Others-as-lead. The
+  earlier teal `#01696F` blended into the ocean tiles and got lost;
+  keep the gold.
+- Radius scales with the sqrt of the total count so Fiji Provinces
+  (~234) does not dwarf tail countries (1–2).
+- **Z-order rule:** larger pies must render UNDER smaller pies so tiny
+  countries stay visible. `renderB3Layer()` sorts markers by radius
+  descending, adds them to the layer in that order (largest first), and
+  assigns `zIndexOffset = Math.round(-1000 * radius/30)` so the small
+  markers sit on top. Do not "clean up" this ordering.
+- **Pill toggle removed.** The old `With iTaukei` / `Led by iTaukei`
+  pill row above the map is gone. Authorship is now filtered via the
+  fullscreen `Authorship` dropdown (`All authorship` / `iTaukei led` /
+  `Other led`). The pie always shows both slices for the current
+  filter — when authorship=`led` the gold slice zeroes; when
+  authorship=`others` the rust slice zeroes; countries with zero in
+  the selected bucket drop off.
+
+## Fullscreen behavior (revised 2026-07-13)
+
+- **Click anywhere on the B2 or B3 map** opens the fullscreen view.
+  Marker/popup clicks are excluded (Leaflet's `map.on('click')` fires
+  only on tile-pane clicks). The corner expand icon remains as the
+  discoverable affordance.
+- **B3 fullscreen toolbar** (mirrors B2's toolbar pattern):
+  - Region dropdown: `All regions › Region › Country`. When
+    `Country === 'Fiji Provinces'`, two more columns appear:
+    `Confederacy` and `Province`. `PROVINCE_TO_CONFEDERACY` at line
+    ~2690 is the source of truth.
+  - Authorship dropdown: `All authorship` / `iTaukei led` / `Other led`.
+  - Running tally counter (`Countries` / `iTaukei led` / `Other led`
+    / `Total`) recomputes on every filter change.
+  - Country-name labels render in **white text with a dark shadow** next
+    to each pie, greedy-culled to avoid overlaps at the current zoom.
+- Filters flow through `b3FilteredRecords()`, which every renderer
+  (`renderB3Layer`, `renderB3CountryList`, `updateB3Stats`, the
+  fullscreen labels) reads. Do not add filter logic in more than one
+  place.
+
+## Country list under the map (revised 2026-07-13)
+
+- The list respects the active filter — countries drop off when the
+  filter excludes them.
+- Layout is **4 columns**: `Country / iTaukei / Others / Total`. The
+  `.db-world-grid` parent keeps `column-count: 2`, so the list flows
+  into two side-by-side blocks (giving 8 visible columns). Numeric
+  cells are right-justified, color-matched to the legend (rust for
+  iTaukei, gold for Others), Total in black bold.
+- `Fiji Provinces` displays as `Fiji (Provinces)` — same string is used
+  in the dropdown and the popup title. Country lookup key remains the
+  raw `Fiji Provinces` string.
 
 ## Popup contract (do not restructure without asking Ron)
 
@@ -379,8 +425,9 @@ Order top-to-bottom inside every country popup:
    row; title in italic below; venue muted below that. Placed ABOVE the
    citation list so the user's eye stays in one spot.
 4. Scrollable citation list (`.db-popup-scroll`) with two headers:
-   - `iTaukei as Lead (N):` — rust color, rust border on chips.
-   - `Others as Lead (N):` — teal color, teal border on chips.
+   - `iTaukei as Lead (N):` — rust color (`#712B13`), rust border on chips.
+   - `Others as Lead (N):` — amber-gold color (`#8A6100` text on white,
+     `#E8AF34` chip border), matches the map pie's gold slice.
 
 Citation format is in-text style: `Surname (Year)`, `Surname &
 Surname (Year)`, or `Surname et al. (Year)`. Newest year first inside

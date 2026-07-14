@@ -8708,30 +8708,44 @@
   // Hand-curated centroids for the 23 sub-collections currently under
   // V3HLPDPL. If Ron adds a new country later, the runtime falls back to
   // WORLD_COUNTRY_APPROX (loose lookup on the country name).
+  //
+  // Key = Zotero collection name (unchanged — do NOT rename "Fiji Provinces"
+  // in Zotero). displayName is what the UI shows; region drives the fullscreen
+  // dropdown. "Fiji Provinces" renders as "Fiji (Provinces)" everywhere.
   const B3_COUNTRY_COORDS = {
-    'Fiji Provinces': { lat: -17.7134, lng: 178.0650, mapCountry: 'Fiji' },
-    'Australia':      { lat: -25.2744, lng: 133.7751 },
-    'New Zealand':    { lat: -41.2865, lng: 174.7762 },
-    'Tonga':          { lat: -21.1789, lng: -175.1982 },
-    'Samoa':          { lat: -13.7590, lng: -172.1046 },
-    'Solomon Islands':{ lat:  -9.6457, lng: 160.1562 },
-    'Vanuatu':        { lat: -15.3767, lng: 166.9592 },
-    'Japan':          { lat:  36.2048, lng: 138.2529 },
-    'Kiribati':       { lat:  -3.3704, lng: -168.7340 },
-    'Indonesia':      { lat:  -0.7893, lng: 113.9213 },
-    'China':          { lat:  35.8617, lng: 104.1954 },
-    'Cook Islands':   { lat: -21.2367, lng: -159.7777 },
-    'Papua New Guinea': { lat: -6.3149, lng: 143.9555 },
-    'India':          { lat:  20.5937, lng:  78.9629 },
-    'Philippines':    { lat:  12.8797, lng: 121.7740 },
-    'Nauru':          { lat:  -0.5228, lng: 166.9315 },
-    'Federated States of Micronesia': { lat: 7.4256, lng: 150.5508 },
-    'Marshall Islands': { lat: 7.1315, lng: 171.1845 },
-    'France':         { lat:  46.6034, lng:   1.8883 },
-    'Tuvalu':         { lat:  -7.1095, lng: 177.6493 },
-    'Tahiti':         { lat: -17.6509, lng: -149.4260 },
-    'United States':  { lat:  39.8283, lng: -98.5795 }
+    'Fiji Provinces': { lat: -17.7134, lng: 178.0650, mapCountry: 'Fiji', displayName: 'Fiji (Provinces)', region: 'Pacific' },
+    'Australia':      { lat: -25.2744, lng: 133.7751, region: 'Oceania' },
+    'New Zealand':    { lat: -41.2865, lng: 174.7762, region: 'Oceania' },
+    'Tonga':          { lat: -21.1789, lng: -175.1982, region: 'Pacific' },
+    'Samoa':          { lat: -13.7590, lng: -172.1046, region: 'Pacific' },
+    'Solomon Islands':{ lat:  -9.6457, lng: 160.1562, region: 'Pacific' },
+    'Vanuatu':        { lat: -15.3767, lng: 166.9592, region: 'Pacific' },
+    'Japan':          { lat:  36.2048, lng: 138.2529, region: 'Asia' },
+    'Kiribati':       { lat:  -3.3704, lng: -168.7340, region: 'Pacific' },
+    'Indonesia':      { lat:  -0.7893, lng: 113.9213, region: 'Asia' },
+    'China':          { lat:  35.8617, lng: 104.1954, region: 'Asia' },
+    'Cook Islands':   { lat: -21.2367, lng: -159.7777, region: 'Pacific' },
+    'Papua New Guinea': { lat: -6.3149, lng: 143.9555, region: 'Pacific' },
+    'India':          { lat:  20.5937, lng:  78.9629, region: 'Asia' },
+    'Philippines':    { lat:  12.8797, lng: 121.7740, region: 'Asia' },
+    'Nauru':          { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
+    'Federated States of Micronesia': { lat: 7.4256, lng: 150.5508, region: 'Pacific' },
+    'Marshall Islands': { lat: 7.1315, lng: 171.1845, region: 'Pacific' },
+    'France':         { lat:  46.6034, lng:   1.8883, region: 'Europe' },
+    'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
+    'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
+    'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' }
   };
+
+  // Display-name transform — the Zotero collection key is unchanged.
+  function b3DisplayName(country) {
+    const meta = B3_COUNTRY_COORDS[country];
+    return (meta && meta.displayName) ? meta.displayName : country;
+  }
+  function b3RegionOf(country) {
+    const meta = B3_COUNTRY_COORDS[country];
+    return (meta && meta.region) ? meta.region : 'Other';
+  }
 
   function initB3Map() {
     const el = document.getElementById('db-map-b3');
@@ -8853,14 +8867,313 @@
         updateB3Stats();
       });
     });
+
+    // ---- 4. Wire the fullscreen expand button + click-to-expand ----
+    // Reuses the generic wireMapFullscreen() helper (same one B2 uses).
+    // On enter/exit we re-render the layer so labels + label culling match
+    // the new pixel viewport. Also fit-to-bounds so the fullscreen view
+    // frames all populated countries by default.
+    wireMapFullscreen('[data-db-b3-map-wrap]', '[data-db-b3-fs-btn]', () => state.b3Map, {
+      onOpen: () => {
+        // Fit fullscreen view to all currently-plotted markers so the label
+        // layer has room to breathe.
+        setTimeout(() => {
+          if (!state.b3Map || !state.b3Layer) return;
+          const layers = state.b3Layer.getLayers();
+          if (layers.length) {
+            const group = L.featureGroup(layers);
+            try { state.b3Map.fitBounds(group.getBounds().pad(0.2), { animate: false }); } catch (_) {}
+          }
+          renderB3Layer(); // recompute label placements at new zoom
+        }, 180);
+      },
+      onClose: () => {
+        setTimeout(() => {
+          if (!state.b3Map) return;
+          state.b3Map.setView([-5, 165], 2.25, { animate: false });
+          renderB3Layer();
+        }, 180);
+      }
+    });
+
+    // Click anywhere on the map (not on a marker or popup) opens fullscreen.
+    // We attach to the map instance rather than the wrap div so Leaflet's own
+    // "originalEvent.target ancestor is a marker/popup" logic can filter
+    // marker clicks out. In Leaflet: 'click' on the map fires only for clicks
+    // that reach the tile pane (not clicks that bubble from markers or popups).
+    bmap.on('click', () => {
+      const wrap = document.querySelector('[data-db-b3-map-wrap]');
+      if (!wrap || wrap.classList.contains('is-fullscreen')) return;
+      const fsBtn = document.querySelector('[data-db-b3-fs-btn]');
+      if (fsBtn) fsBtn.click();
+    });
+
+    // ---- 5. Wire the fullscreen dropdown toolbar ----
+    initB3ToolbarDropdowns();
+
+    // ---- 6. Wire B2 world-map click-to-expand (once) ----
+    // Same UX rule applies to Panel B2's world map.
+    if (state.worldMap && !state.worldMapClickWired) {
+      state.worldMapClickWired = true;
+      state.worldMap.on('click', () => {
+        const wrap = document.querySelector('[data-db-map-world-wrap]');
+        if (!wrap || wrap.classList.contains('is-fullscreen')) return;
+        const fsBtn = document.querySelector('[data-db-map-fs-btn]');
+        if (fsBtn) fsBtn.click();
+      });
+    }
   }
 
-  // Build the pie-per-country SVG icon: rust slice = led, teal slice = others.
+  // Fills and wires the fullscreen dropdown toolbar (Region › Country ›
+  // Confederacy › Province + Authorship). Each pick sets state.b3Filter,
+  // then rerenders everything. Running tallies on each option reflect the
+  // count that would remain if that option were the active leaf.
+  function initB3ToolbarDropdowns() {
+    const recs = state.b3Records || [];
+    if (!recs.length) return;
+
+    // Precompute per-region totals (respecting authorship filter).
+    const totalFor = (subset, authorship) => {
+      let n = 0;
+      subset.forEach(r => {
+        n += (authorship === 'led') ? r.led.length
+           : (authorship === 'others') ? r.others.length
+           : (r.led.length + r.others.length);
+      });
+      return n;
+    };
+
+    // ---- Region dropdown ----
+    const regionBtn   = document.querySelector('[data-db-b3-region-btn]');
+    const regionLabel = document.querySelector('[data-db-b3-region-label]');
+    const regionPanel = document.querySelector('[data-db-b3-region-panel]');
+    const regionList  = document.querySelector('[data-db-b3-region-list]');
+    const countryList = document.querySelector('[data-db-b3-country-drilldown]');
+    const confCol     = document.querySelector('[data-db-b3-conf-col]');
+    const confList    = document.querySelector('[data-db-b3-conf-list]');
+    const provCol     = document.querySelector('[data-db-b3-prov-col]');
+    const provList    = document.querySelector('[data-db-b3-prov-list]');
+
+    // Build region → [country records] index.
+    const regionMap = new Map();
+    recs.forEach(r => {
+      const region = b3RegionOf(r.country);
+      if (!regionMap.has(region)) regionMap.set(region, []);
+      regionMap.get(region).push(r);
+    });
+    const regionOrder = ['Pacific', 'Oceania', 'Asia', 'Americas', 'Europe', 'Africa', 'Other']
+      .filter(r => regionMap.has(r));
+
+    const escapeAttr = (s) => escapeHtml(String(s));
+
+    function paintRegionList() {
+      const auth = state.b3Filter.authorship;
+      const allTotal = totalFor(recs, auth);
+      let html = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.region ? 'is-active' : ''}" data-region-pick="">All regions <span class="db-map-fs-conf__row-count">${allTotal}</span></button>`;
+      regionOrder.forEach(region => {
+        const subset = regionMap.get(region);
+        const n = totalFor(subset, auth);
+        const active = state.b3Filter.region === region ? 'is-active' : '';
+        html += `<button type="button" class="db-map-fs-conf__row ${active}" data-region-pick="${escapeAttr(region)}">${escapeAttr(region)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
+      });
+      regionList.innerHTML = html;
+    }
+
+    function paintCountryList() {
+      const auth = state.b3Filter.authorship;
+      const subset = state.b3Filter.region ? (regionMap.get(state.b3Filter.region) || []) : recs;
+      let html = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.country ? 'is-active' : ''}" data-country-pick="">All countries <span class="db-map-fs-conf__row-count">${totalFor(subset, auth)}</span></button>`;
+      subset.slice().sort((a, b) => b.total - a.total).forEach(r => {
+        const n = (auth === 'led') ? r.led.length : (auth === 'others') ? r.others.length : r.total;
+        if (n === 0) return;
+        const active = state.b3Filter.country === r.country ? 'is-active' : '';
+        html += `<button type="button" class="db-map-fs-conf__row ${active}" data-country-pick="${escapeAttr(r.country)}">${escapeAttr(b3DisplayName(r.country))} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
+      });
+      countryList.innerHTML = html;
+    }
+
+    function paintConfProv() {
+      const isFiji = state.b3Filter.country === 'Fiji Provinces';
+      confCol.hidden = !isFiji;
+      provCol.hidden = !isFiji;
+      if (!isFiji) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
+
+      // Compute per-confederacy and per-province counts against the Fiji record.
+      const fijiRec = recs.find(r => r.country === 'Fiji Provinces');
+      if (!fijiRec) return;
+      const provOfItem = state.provincesByItem || new Map();
+      const auth = state.b3Filter.authorship;
+      const items = (auth === 'led') ? fijiRec.led
+                 : (auth === 'others') ? fijiRec.others
+                 : fijiRec.led.concat(fijiRec.others);
+
+      const confCount = new Map();
+      const provCount = new Map();
+      items.forEach(it => {
+        const ps = provOfItem.get(it.key);
+        if (!ps) return;
+        ps.forEach(p => {
+          provCount.set(p, (provCount.get(p) || 0) + 1);
+          const c = PROVINCE_TO_CONFEDERACY[p];
+          if (c) confCount.set(c, (confCount.get(c) || 0) + 1);
+        });
+      });
+
+      const totalConf = Array.from(confCount.values()).reduce((a, b) => a + b, 0);
+      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.confederacy ? 'is-active' : ''}" data-conf-pick="">All confederacies <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
+      ['Burebasaga', 'Kubuna', 'Tovata'].forEach(c => {
+        const n = confCount.get(c) || 0;
+        const active = state.b3Filter.confederacy === c ? 'is-active' : '';
+        cHtml += `<button type="button" class="db-map-fs-conf__row ${active}" data-conf-pick="${escapeAttr(c)}">${escapeAttr(c)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
+      });
+      confList.innerHTML = cHtml;
+
+      // Province list: filter by active confederacy if set.
+      const provOrder = Object.keys(PROVINCE_TO_CONFEDERACY);
+      const filteredProvs = state.b3Filter.confederacy
+        ? provOrder.filter(p => PROVINCE_TO_CONFEDERACY[p] === state.b3Filter.confederacy)
+        : provOrder;
+      const provTotal = filteredProvs.reduce((a, p) => a + (provCount.get(p) || 0), 0);
+      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All provinces <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
+      filteredProvs.forEach(p => {
+        const n = provCount.get(p) || 0;
+        const active = state.b3Filter.province === p ? 'is-active' : '';
+        pHtml += `<button type="button" class="db-map-fs-conf__row ${active}" data-prov-pick="${escapeAttr(p)}">${escapeAttr(p)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
+      });
+      provList.innerHTML = pHtml;
+    }
+
+    function repaintAllDropdowns() {
+      paintRegionList();
+      paintCountryList();
+      paintConfProv();
+      const parts = [];
+      if (state.b3Filter.region)      parts.push(state.b3Filter.region);
+      if (state.b3Filter.country)     parts.push(b3DisplayName(state.b3Filter.country));
+      if (state.b3Filter.confederacy) parts.push(state.b3Filter.confederacy);
+      if (state.b3Filter.province)    parts.push(state.b3Filter.province);
+      regionLabel.textContent = parts.length ? parts.join(' › ') : 'All regions';
+    }
+
+    function applyFilter() {
+      renderB3Layer();
+      renderB3CountryList();
+      updateB3Stats();
+      repaintAllDropdowns();
+    }
+
+    // Wire the region-panel button clicks (event delegation).
+    regionPanel.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-region-pick],[data-country-pick],[data-conf-pick],[data-prov-pick]');
+      if (!t) return;
+      if (t.hasAttribute('data-region-pick')) {
+        const v = t.getAttribute('data-region-pick') || null;
+        state.b3Filter.region = v;
+        // Changing region invalidates the deeper selections.
+        state.b3Filter.country = null;
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province = null;
+      } else if (t.hasAttribute('data-country-pick')) {
+        const v = t.getAttribute('data-country-pick') || null;
+        state.b3Filter.country = v;
+        // Changing country invalidates Fiji-only sub-selections.
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province = null;
+        // Auto-set region to match the country if not already scoped.
+        if (v && !state.b3Filter.region) state.b3Filter.region = b3RegionOf(v);
+      } else if (t.hasAttribute('data-conf-pick')) {
+        state.b3Filter.confederacy = t.getAttribute('data-conf-pick') || null;
+        state.b3Filter.province = null;
+      } else if (t.hasAttribute('data-prov-pick')) {
+        state.b3Filter.province = t.getAttribute('data-prov-pick') || null;
+      }
+      applyFilter();
+    });
+
+    // Panel open/close.
+    regionBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = regionPanel.hidden;
+      regionPanel.hidden = !open;
+      regionBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // ---- Authorship dropdown ----
+    const authBtn   = document.querySelector('[data-db-b3-auth-btn]');
+    const authLabel = document.querySelector('[data-db-b3-auth-label]');
+    const authPanel = document.querySelector('[data-db-b3-auth-panel]');
+    const authList  = document.querySelector('[data-db-b3-auth-list]');
+
+    function paintAuthList() {
+      const total   = totalFor(recs, null);
+      const ledN    = totalFor(recs, 'led');
+      const othersN = totalFor(recs, 'others');
+      const rows = [
+        { key: null,     label: 'All authorship', n: total },
+        { key: 'led',    label: 'iTaukei led',    n: ledN   },
+        { key: 'others', label: 'Other led',      n: othersN }
+      ];
+      authList.innerHTML = rows.map(r => {
+        const active = state.b3Filter.authorship === r.key ? 'is-active' : '';
+        return `<button type="button" class="db-map-fs-conf__row ${active}" data-auth-pick="${escapeAttr(r.key == null ? '' : r.key)}">${escapeAttr(r.label)} <span class="db-map-fs-conf__row-count">${r.n}</span></button>`;
+      }).join('');
+      authLabel.textContent = state.b3Filter.authorship === 'led' ? 'iTaukei led'
+                            : state.b3Filter.authorship === 'others' ? 'Other led'
+                            : 'All authorship';
+    }
+
+    authPanel.addEventListener('click', (e) => {
+      const t = e.target.closest('[data-auth-pick]');
+      if (!t) return;
+      const v = t.getAttribute('data-auth-pick') || null;
+      state.b3Filter.authorship = v || null;
+      applyFilter();
+      paintAuthList();
+    });
+    authBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = authPanel.hidden;
+      authPanel.hidden = !open;
+      authBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    // Close panels on outside click.
+    document.addEventListener('click', (e) => {
+      if (!regionPanel.hidden && !regionPanel.contains(e.target) && e.target !== regionBtn && !regionBtn.contains(e.target)) {
+        regionPanel.hidden = true; regionBtn.setAttribute('aria-expanded', 'false');
+      }
+      if (!authPanel.hidden && !authPanel.contains(e.target) && e.target !== authBtn && !authBtn.contains(e.target)) {
+        authPanel.hidden = true; authBtn.setAttribute('aria-expanded', 'false');
+      }
+    });
+
+    paintRegionList();
+    paintCountryList();
+    paintConfProv();
+    paintAuthList();
+  }
+
+  // B3 palette. Amber-gold reads against both dark-blue ocean tiles and land
+  // imagery; teal blended into the ocean and got lost. Update both here and
+  // in itaukei-research-database.html (.b3-cite.is-others, .db-popup-scholar-
+  // header.is-others) if you change it.
+  const B3_RUST = '#712B13';
+  const B3_GOLD = '#E8AF34';
+
+  // Filter state for the fullscreen toolbar. All null = no filter.
+  // authorship: null | 'led' | 'others'.
+  state.b3Filter = state.b3Filter || {
+    region: null,
+    country: null,
+    confederacy: null,
+    province: null,
+    authorship: null
+  };
+
+  // Build the pie-per-country SVG icon: rust slice = led, gold slice = others.
   // Radius scales with the toggled bucket's total. In 'with' mode both slices
   // show; in 'led' mode only the rust slice, sized by led count alone.
   function b3MakePieIcon(rec, radius, mode) {
-    const RUST = '#712B13';
-    const TEAL = '#01696F';
     const ledN = rec.led.length;
     const othN = rec.others.length;
     const totalForPie = (mode === 'led') ? ledN : (ledN + othN);
@@ -8873,18 +9186,18 @@
       return L.divIcon({
         className: 'b3-pie',
         html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${RUST}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${B3_RUST}" stroke="#fff" stroke-width="1.5" opacity="0.92"/>
         </svg>`,
         iconSize: [size, size],
         iconAnchor: [cx, cy]
       });
     }
-    // Case 2: 100% others — solid teal.
+    // Case 2: 100% others — solid gold.
     if (ledN === 0) {
       return L.divIcon({
         className: 'b3-pie',
         html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${TEAL}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+          <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${B3_GOLD}" stroke="#fff" stroke-width="1.5" opacity="0.92"/>
         </svg>`,
         iconSize: [size, size],
         iconAnchor: [cx, cy]
@@ -8900,33 +9213,107 @@
     return L.divIcon({
       className: 'b3-pie',
       html: `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
-        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${TEAL}" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
-        <path d="${rustPath}" fill="${RUST}" stroke="#fff" stroke-width="1.5" opacity="0.95"/>
+        <circle cx="${cx}" cy="${cy}" r="${radius}" fill="${B3_GOLD}" stroke="#fff" stroke-width="1.5" opacity="0.92"/>
+        <path d="${rustPath}" fill="${B3_RUST}" stroke="#fff" stroke-width="1.5" opacity="0.95"/>
       </svg>`,
       iconSize: [size, size],
       iconAnchor: [cx, cy]
     });
   }
 
+  // Apply the current filter to a records array (country records) and produce
+  // filtered per-country buckets. When authorship='led' or 'others', the other
+  // bucket is emptied. When a Fiji province is active, non-Fiji records drop
+  // and the Fiji record is narrowed to items whose provincesByItem set
+  // contains that province. Confederacy filter narrows the same way.
+  function b3FilteredRecords() {
+    const filter = state.b3Filter || {};
+    const recs = state.b3Records || [];
+    const provOfItem = state.provincesByItem || new Map();
+
+    return recs.map(rec => {
+      // Region gate.
+      if (filter.region && b3RegionOf(rec.country) !== filter.region) return null;
+      // Country gate.
+      if (filter.country && rec.country !== filter.country) return null;
+
+      let led = rec.led;
+      let others = rec.others;
+
+      // Fiji-only: confederacy/province narrowing. Applies only when the
+      // active country is Fiji Provinces (or the Fiji-Provinces branch of
+      // the drilldown is selected).
+      const isFiji = rec.country === 'Fiji Provinces';
+      if (isFiji && (filter.confederacy || filter.province)) {
+        const matchItem = (it) => {
+          const set = provOfItem.get(it.key);
+          if (!set || !set.size) return false;
+          if (filter.province) return set.has(filter.province);
+          if (filter.confederacy) {
+            for (const p of set) {
+              if (PROVINCE_TO_CONFEDERACY[p] === filter.confederacy) return true;
+            }
+            return false;
+          }
+          return true;
+        };
+        led = led.filter(matchItem);
+        others = others.filter(matchItem);
+      } else if (!isFiji && (filter.confederacy || filter.province)) {
+        // Non-Fiji countries have no province tagging; drop them when the user
+        // is drilling into a Fiji sub-scope.
+        return null;
+      }
+
+      // Authorship gate.
+      if (filter.authorship === 'led') others = [];
+      else if (filter.authorship === 'others') led = [];
+
+      if (!led.length && !others.length) return null;
+      return {
+        country: rec.country,
+        lat: rec.lat, lng: rec.lng,
+        led, others,
+        total: led.length + others.length
+      };
+    }).filter(Boolean);
+  }
+
   function renderB3Layer() {
     const bmap = state.b3Map;
     if (!bmap) return;
     if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
-    const records = state.b3Records || [];
+    if (state.b3LabelLayer) { bmap.removeLayer(state.b3LabelLayer); state.b3LabelLayer = null; }
+    const records = b3FilteredRecords();
     const mode = state.b3View || 'with';
     // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
     // we sqrt-scale to keep tail countries readable.
     const countFor = (r) => (mode === 'led') ? r.led.length : r.total;
     const maxN = Math.max(1, ...records.map(countFor));
+
+    // Sort LARGEST first so we add largest markers first. In Leaflet, later-
+    // added markers render on top of earlier ones, so this puts the smaller
+    // pies visually on top of the larger ones. Belt-and-braces: also set
+    // zIndexOffset inversely proportional to radius.
+    const withMeta = records
+      .map(rec => ({ rec, n: countFor(rec) }))
+      .filter(x => x.n > 0)
+      .map(x => ({
+        ...x,
+        radius: Math.max(6, Math.min(28, 6 + Math.sqrt(x.n / maxN) * 22))
+      }))
+      .sort((a, b) => b.radius - a.radius); // largest first
+
     const markers = [];
-    records.forEach(rec => {
-      const n = countFor(rec);
-      if (n === 0) return;
-      const radius = Math.max(6, Math.min(28, 6 + Math.sqrt(n / maxN) * 22));
+    withMeta.forEach(({ rec, radius }) => {
       const icon = b3MakePieIcon(rec, radius, mode);
       if (!icon) return;
-      const m = L.marker([rec.lat, rec.lng], { icon });
+      // Larger radius → lower zIndexOffset so smaller markers rise to the top.
+      // Range: -1000 for the largest, up to 0 for the smallest.
+      const zOffset = Math.round(-1000 * (radius / 30));
+      const m = L.marker([rec.lat, rec.lng], { icon, zIndexOffset: zOffset });
       m._b3Record = rec;
+      m._b3Radius = radius;
       const html = b3BuildCountryPopupHtml(rec);
       m.bindPopup(html, {
         maxWidth: 460,
@@ -8956,10 +9343,71 @@
       markers.push(m);
     });
     state.b3Layer = L.layerGroup(markers).addTo(bmap);
+
+    // Fullscreen-only: draw white country labels beside each pie. Non-overlap
+    // check is greedy: sort by radius desc, drop later labels whose pixel bbox
+    // would collide with any already-placed label. Labels use a divIcon so we
+    // can position them relative to the pie anchor via CSS transform.
+    renderB3CountryLabels(withMeta);
+  }
+
+  // Draw country-name labels next to each pie (fullscreen-only — CSS hides
+  // them inline). Uses a greedy non-overlap heuristic based on projected
+  // pixel coordinates so tightly-clustered pies (e.g. Pacific islands) don't
+  // pile labels on top of each other.
+  function renderB3CountryLabels(withMeta) {
+    const bmap = state.b3Map;
+    if (!bmap) return;
+    // Convert lat/lng → container px so we can compute rough label bboxes.
+    const items = withMeta.map(({ rec, radius }) => {
+      const pt = bmap.latLngToContainerPoint([rec.lat, rec.lng]);
+      return { rec, radius, x: pt.x, y: pt.y };
+    }).sort((a, b) => b.radius - a.radius);
+
+    // Rough label bbox: assume ~7px per character, height ~16px, anchored at
+    // pt.x + radius + 6, pt.y - 8 (matches the CSS transform).
+    const placed = [];
+    const overlaps = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
+    const labelMarkers = [];
+
+    items.forEach(({ rec, radius, x, y }) => {
+      const text = b3DisplayName(rec.country);
+      const w = text.length * 7 + 6;
+      const bbox = {
+        x0: x + radius + 4,
+        y0: y - 10,
+        x1: x + radius + 4 + w,
+        y1: y + 6
+      };
+      // Skip if it collides with an already-placed label.
+      if (placed.some(p => overlaps(p, bbox))) return;
+      placed.push(bbox);
+      const icon = L.divIcon({
+        className: 'b3-country-label',
+        html: escapeHtml(text),
+        iconSize: [w, 20],
+        iconAnchor: [-radius - 4, 10]  // offset to right of the pie
+      });
+      labelMarkers.push(L.marker([rec.lat, rec.lng], {
+        icon,
+        interactive: false,
+        keyboard: false,
+        zIndexOffset: 1000
+      }));
+    });
+
+    state.b3LabelLayer = L.layerGroup(labelMarkers).addTo(bmap);
+
+    // Labels are anchored by lat/lng, so Leaflet reprojects them on pan/zoom
+    // automatically. The non-overlap culling is computed once at the current
+    // zoom — users pan around freely; labels won't retile until the next
+    // full renderB3Layer() (which fires on filter/mode changes and on
+    // enter/exit fullscreen).
   }
 
   function updateB3Stats() {
-    const records = state.b3Records || [];
+    // Stats always reflect the current filter/view.
+    const records = b3FilteredRecords();
     let led = 0, others = 0;
     records.forEach(r => { led += r.led.length; others += r.others.length; });
     const setNum = (sel, n) => { const el = document.querySelector(sel); if (el) el.textContent = String(n); };
@@ -9006,7 +9454,7 @@
       return header + `<div class="b3-cite-list">` + rows + `</div>`;
     };
     return (
-      `<div class="db-popup-title">${escapeHtml(rec.country)}</div>` +
+      `<div class="db-popup-title">${escapeHtml(b3DisplayName(rec.country))}</div>` +
       `<div class="db-popup-count-row">` +
         `<span class="db-popup-count">${total}</span>` +
         `<span class="db-popup-count-text">publication${total === 1 ? '' : 's'} where research was undertaken here</span>` +
@@ -9105,18 +9553,21 @@
   function renderB3CountryList() {
     const host = document.querySelector('[data-b3-country-list]');
     if (!host) return;
-    const records = state.b3Records || [];
-    const mode = state.b3View || 'with';
+    // The list respects the active filter so it stays in sync with the map.
+    const records = b3FilteredRecords();
     const rows = records.map(rec => {
-      const shown = (mode === 'led') ? rec.led.length : (rec.led.length + rec.others.length);
+      const ledN = rec.led.length;
+      const othN = rec.others.length;
       return (
         `<div class="db-world-country-row" data-b3-country="${escapeHtml(rec.country)}">` +
-          `<span class="db-world-country-row__name">${escapeHtml(rec.country)}</span>` +
-          `<span class="db-world-country-row__count">${shown}</span>` +
+          `<span class="db-world-country-row__name">${escapeHtml(b3DisplayName(rec.country))}</span>` +
+          `<span class="db-world-country-row__num b3-cell--led">${ledN}</span>` +
+          `<span class="db-world-country-row__num b3-cell--others">${othN}</span>` +
+          `<span class="db-world-country-row__num b3-cell--total">${ledN + othN}</span>` +
         `</div>`
       );
     }).join('');
-    host.innerHTML = rows;
+    host.innerHTML = rows || '<div class="db-world-empty" style="padding:8px 0;color:#666;">No countries match the current filter.</div>';
     // Click a country to zoom the map on it.
     host.querySelectorAll('[data-b3-country]').forEach(row => {
       row.addEventListener('click', () => {
