@@ -8776,19 +8776,25 @@
     'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
     'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
     'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' },
-    // Hawaii and Pohnpei are Zotero sub-collections that count towards
-    // their parent jurisdictions (United States and Federated States of
-    // Micronesia respectively), NOT as separate country rows on the map
-    // or the table. Their entries here are consumed by the mergeInto
-    // resolver in initB3Map: items get filed under the parent country
-    // bucket, and the parent country's map coords are overridden to the
+    // Hawaii and the four FSM states (Pohnpei, Chuuk, Kosrae, Yap) are
+    // Zotero sub-collections that count towards their parent
+    // jurisdictions (United States and Federated States of Micronesia
+    // respectively), NOT as separate country rows on the map or the
+    // table. Their entries here are consumed by the mergeInto resolver
+    // in initB3Map: items get filed under the parent country bucket,
+    // and the parent country's map coords are overridden to the
     // sub-collection's coordinates so the pie renders at Hawaii /
-    // Pohnpei Island rather than the mainland U.S. / FSM center.
+    // Pohnpei / Chuuk / Kosrae / Yap rather than the mainland U.S. or
+    // the FSM geographic center.
     'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific',
                         mergeInto: 'United States' },
     'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific',
                         mergeInto: 'FSM' },
     'Chuuk (FSM)':    { lat:   7.4467, lng:  151.8500, region: 'Pacific',
+                        mergeInto: 'FSM' },
+    'Kosrae (FSM)':   { lat:   5.3167, lng:  162.9833, region: 'Pacific',
+                        mergeInto: 'FSM' },
+    'Yap (FSM)':      { lat:   9.5497, lng:  138.1103, region: 'Pacific',
                         mergeInto: 'FSM' }
   };
 
