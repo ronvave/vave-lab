@@ -8729,24 +8729,32 @@
     'India':          { lat:  20.5937, lng:  78.9629, region: 'Asia' },
     'Philippines':    { lat:  12.8797, lng: 121.7740, region: 'Asia' },
     'Nauru':          { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
-    'Federated States of Micronesia': { lat: 7.4256, lng: 150.5508, region: 'Pacific' },
+    // Zotero collection is named 'FSM'; displayName expands it for the
+    // country-row label and popup title.
+    'FSM':            { lat:   7.4256, lng: 150.5508, region: 'Pacific',
+                        displayName: 'Federated States of Micronesia' },
     'Marshall Islands': { lat: 7.1315, lng: 171.1845, region: 'Pacific' },
-    'France':         { lat:  46.6034, lng:   1.8883, region: 'Europe' },
+    // The France sub-collection today holds a single study conducted in
+    // waters off Mayotte (French overseas territory in the Indian Ocean),
+    // so anchor the France pie there rather than mainland France. Region
+    // stays 'Europe' to preserve the France regional-filter grouping.
+    // Anchor is 12°49'26.0"S 45°09'19.3"E from a user-supplied Maps pin.
+    'France':         { lat: -12.8239, lng:  45.1554, region: 'Europe' },
     'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
     'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
     'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' },
-    // Hawaii lives in the Zotero tree as its own sub-collection "Hawaii
-    // (U.S.)" alongside the mainland U.S. entry, since research done on
-    // the Hawaiian Islands is geographically Pacific even though the
-    // jurisdiction is U.S. Pin the pie on the main island chain
-    // (~20.5N, -157.5W) but keep the parenthetical U.S. tag visible in
-    // the popup title and country-row label.
-    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific' },
-    // Pohnpei is a Zotero sibling of Federated States of Micronesia (not
-    // nested underneath it), so render it as its own pie at Pohnpei
-    // Island's coordinates (~6.85N, 158.22E). Same jurisdiction as FSM
-    // but separated in the taxonomy to distinguish island-specific work.
-    'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific' }
+    // Hawaii and Pohnpei are Zotero sub-collections that count towards
+    // their parent jurisdictions (United States and Federated States of
+    // Micronesia respectively), NOT as separate country rows on the map
+    // or the table. Their entries here are consumed by the mergeInto
+    // resolver in initB3Map: items get filed under the parent country
+    // bucket, and the parent country's map coords are overridden to the
+    // sub-collection's coordinates so the pie renders at Hawaii /
+    // Pohnpei Island rather than the mainland U.S. / FSM center.
+    'Hawaii (U.S.)':  { lat:  20.5000, lng: -157.5000, region: 'Pacific',
+                        mergeInto: 'United States' },
+    'Pohnpei (FSM)':  { lat:   6.8547, lng:  158.2189, region: 'Pacific',
+                        mergeInto: 'FSM' }
   };
 
   // Display-name transform — the Zotero collection key is unchanged.
@@ -8801,11 +8809,28 @@
       if (!perCountry.has(name)) perCountry.set(name, { led: [], others: [] });
       return perCountry.get(name);
     };
+    // Resolve mergeInto: a sub-collection like "Hawaii (U.S.)" contributes
+    // its items to its parent country's bucket (United States) instead of
+    // its own. Also track which parent countries had their coords
+    // overridden by a merged sub-collection so the map pie can render at
+    // the sub-location (Hawaii, Pohnpei) rather than the parent center.
+    const coordOverride = new Map(); // parentCountry -> { lat, lng, region }
+    Object.keys(B3_COUNTRY_COORDS).forEach(sub => {
+      const meta = B3_COUNTRY_COORDS[sub];
+      if (meta && meta.mergeInto) {
+        coordOverride.set(meta.mergeInto, { lat: meta.lat, lng: meta.lng, region: meta.region });
+      }
+    });
+    const resolveCountry = (cn) => {
+      const meta = B3_COUNTRY_COORDS[cn];
+      return (meta && meta.mergeInto) ? meta.mergeInto : cn;
+    };
+
     state.snapshot.items.forEach(item => {
       const hits = new Set();
       (item.collections || []).forEach(k => {
         const cn = countryOfKey.get(k);
-        if (cn) hits.add(cn);
+        if (cn) hits.add(resolveCountry(cn));
       });
       if (!hits.size) return;
       const kind = itaukeiAuthorship(item); // 'lead' | 'coauth' | 'none'
@@ -8817,19 +8842,25 @@
     });
 
     // Country records with coords, sorted by total desc for stable rendering.
+    // Skip sub-collections that were merged into a parent (their items now
+    // live under the parent's bucket, and rendering both would double count).
     const records = [];
     countries.forEach(name => {
+      const meta = B3_COUNTRY_COORDS[name];
+      if (meta && meta.mergeInto) return; // merged into parent; do not render separately
       const b = perCountry.get(name);
       if (!b || (!b.led.length && !b.others.length)) return;
-      const coord = B3_COUNTRY_COORDS[name];
-      if (!coord) {
+      // Prefer a merged sub-collection's coords as the display anchor when
+      // present; otherwise fall back to the country's own coords.
+      const anchor = coordOverride.get(name) || meta;
+      if (!anchor) {
         console.warn('B3: no coord for', name);
         return;
       }
       records.push({
         country: name,
-        lat: coord.lat,
-        lng: coord.lng,
+        lat: anchor.lat,
+        lng: anchor.lng,
         led: b.led,
         others: b.others,
         total: b.led.length + b.others.length
