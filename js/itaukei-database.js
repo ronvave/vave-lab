@@ -320,6 +320,20 @@
     // "Tabunakawai, Kesaia" for pub counts and scholar-card totals.
     state.nameAliases = new Map(Object.entries((profiles && profiles.nameAliases) || {}));
 
+    // Explicit "not iTaukei" blocklist — surnames + full names that have shown up
+    // in publications alongside iTaukei co-authors but who are NOT themselves
+    // iTaukei scholars. Persisted in data/scholar-profiles.json.notItaukeiAuthors
+    // (curated by the admin dashboard). Applied as a veto in creatorIsItaukei so
+    // that name-alias pollution or Zotero collection membership can't accidentally
+    // upgrade someone like Morris/McCabe/Mounsey to iTaukei-lead. This list is the
+    // safeguard the Scholars master roster relies on: only names in the Scholars
+    // tab (progress roster) or admin scholar-profiles count as iTaukei.
+    state.notItaukeiCanonicalKeys = new Set(
+      (Array.isArray(profiles && profiles.notItaukeiAuthors) ? profiles.notItaukeiAuthors : [])
+        .map(n => (n || '').replace(/[\u2010\u2011\u2013\u2212]/g, '-').toLowerCase().replace(/[^a-z0-9]/g, ''))
+        .filter(k => k)
+    );
+
     // Build the scholar-name look-up. Starts with the local JSON snapshot, then
     // overlays Google Sheet CSV if the admin has configured one (URL stored in
     // localStorage under 'vavelab_scholar_sheet_url').
@@ -466,17 +480,32 @@
     const itaukeiCanonicalKeys = new Set();
     const HYPH_RE = /[\u2010\u2011\u2013\u2212]/g;
     const keyifyName = s => (s || '').replace(HYPH_RE, '-').toLowerCase().replace(/[^a-z0-9]/g, '');
+    // Seed the canonical set with admin scholar-profile names (curated iTaukei list).
     state.scholarProfilesByName.forEach((_, name) => {
       const k = keyifyName(name);
       if (k) itaukeiCanonicalKeys.add(k);
     });
-    // Include every alias variant so "Fong, Patrick Sakiusa" → "Fong, Patrick S." resolves
-    (state.nameAliases || new Map()).forEach((canonical, variant) => {
-      itaukeiCanonicalKeys.add(keyifyName(canonical));
-      itaukeiCanonicalKeys.add(keyifyName(variant));
-    });
-    // Also merge the progress-Sheet master roster (async — doesn't block first paint)
+    // Also seed with the progress-Sheet master roster (the Scholars tab of
+    // https://docs.google.com/spreadsheets/d/12N31Xcyn1VnqRYmKt8umPeS94ctCv-MFRLt3zRJP3SU
+    // — ~473 rows). This is the source of truth per the July 2026 admin directive.
     (state.progressRosterKeys || []).forEach(k => itaukeiCanonicalKeys.add(k));
+    // Only NOW merge nameAliases — and only for entries whose canonical (or variant)
+    // is already a known iTaukei scholar. The aliases map is a general variant→canonical
+    // dictionary that also contains non-iTaukei co-authors (Morris, McCabe, Mounsey,
+    // etc.) and would otherwise pollute the iTaukei set. Filtering here keeps
+    // "Fong, Patrick Sakiusa" → "Fong, Patrick S." resolving while blocking
+    // "Morris, C." → "Morris, Cherie" from being treated as iTaukei.
+    (state.nameAliases || new Map()).forEach((canonical, variant) => {
+      const ck = keyifyName(canonical);
+      const vk = keyifyName(variant);
+      if (itaukeiCanonicalKeys.has(ck) || itaukeiCanonicalKeys.has(vk)) {
+        if (ck) itaukeiCanonicalKeys.add(ck);
+        if (vk) itaukeiCanonicalKeys.add(vk);
+      }
+    });
+    // Final veto: remove any key that the admin has explicitly marked as NOT iTaukei.
+    // Belt-and-suspenders in case a name slipped into aliases or profiles by mistake.
+    (state.notItaukeiCanonicalKeys || new Set()).forEach(k => itaukeiCanonicalKeys.delete(k));
     state.itaukeiCanonicalKeys = itaukeiCanonicalKeys;
     state._keyifyName = keyifyName;
 
@@ -9382,6 +9411,12 @@
       const m = L.marker([rec.lat, rec.lng], { icon, zIndexOffset: zOffset });
       m._b3Record = rec;
       m._b3Radius = radius;
+      // Tag the marker's DOM element with the country name so QA/automation can
+      // locate a specific pie without hunting through Leaflet internals.
+      m.on('add', () => {
+        const el = m.getElement && m.getElement();
+        if (el) el.setAttribute('data-b3-country', rec.country);
+      });
       const html = b3BuildCountryPopupHtml(rec);
       // maxWidth/minWidth are 1.5× the default world-popup dimensions so long
       // report/thesis titles fit in the hover-detail slot without wrapping to
@@ -9589,30 +9624,113 @@
       if (left && tag) return `${left} ${tag}`;
       return left || tag || '';
     }
+    // Track any active photo-rotation interval so we can clear it when the user
+    // moves to a different citation. Multiple iTaukei co-authors rotate every 2s.
+    let photoRotationTimer = null;
+    const clearPhotoRotation = () => {
+      if (photoRotationTimer) { clearInterval(photoRotationTimer); photoRotationTimer = null; }
+    };
     const chips = popupEl.querySelectorAll('.b3-cite[data-b3-item-key]');
     chips.forEach(chip => {
       chip.addEventListener('mouseenter', () => {
+        clearPhotoRotation();
         const key = chip.getAttribute('data-b3-item-key');
         const rec = byKey.get(key);
         if (!rec) { detail.classList.remove('is-active'); detail.innerHTML = ''; return; }
         const it = rec.item;
         const firstAuthor = (it.creators && it.creators[0]) || 'Unknown';
-        const profile = b3LookupProfile(firstAuthor);
-        const photo = (profile && profile.photo) ? profile.photo : '';
-        const displayName = profile ? profile.name : firstAuthor;
+        const leadProfile = b3LookupProfile(firstAuthor);
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
-        // Only surface the village/province chip when the lead author is iTaukei
-        // (the request is scoped to that case) AND their scholar profile has
-        // village + province data. Others-as-lead entries omit the chip.
+
+        // Collect iTaukei co-authors (used only on Others-as-Lead entries per the
+        // July 2026 spec: elevate iTaukei scholarship visually even when the paper
+        // isn't led by an iTaukei scholar). Each entry keeps its profile so we can
+        // pull photo + village + province.
+        const itaukeiCoauthors = [];
+        if (!rec.isLed) {
+          const seen = new Set();
+          (it.creators || []).forEach((nm, idx) => {
+            if (idx === 0) return; // skip lead (already known non-iTaukei on Others rows)
+            if (!creatorIsItaukei(nm)) return;
+            const prof = b3LookupProfile(nm);
+            // Dedupe on the profile canonical name (or the raw creator string when
+            // no profile exists) so a paper doesn't list the same person twice if
+            // Zotero recorded a name variant on both a first and last creator slot.
+            const dedupeKey = (prof && prof.name) ? prof.name : String(nm).toLowerCase();
+            if (seen.has(dedupeKey)) return;
+            seen.add(dedupeKey);
+            itaukeiCoauthors.push({ name: nm, profile: prof });
+          });
+        }
+
+        // ---- Left photo strip ----
+        // iTaukei-led:    use the lead's photo (unchanged behaviour).
+        // Others + 1 iT: permanent photo of the sole iTaukei co-author.
+        // Others + >=2:  rotate through iTaukei co-author photos every 2s.
+        // Others + 0:    empty strip (same as before).
+        let photoUrl = '';
+        let rotationUrls = [];
+        if (rec.isLed) {
+          photoUrl = (leadProfile && leadProfile.photo) ? leadProfile.photo : '';
+        } else if (itaukeiCoauthors.length) {
+          rotationUrls = itaukeiCoauthors.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
+          photoUrl = rotationUrls[0] || '';
+        }
+
+        // ---- Header line: lead name + year + (for Others rows) inline iTaukei
+        // co-authors, semicolon-separated with alternating tones, each followed
+        // by their (Village, Province) chip. Uses the lead's name in bold/dark
+        // grey as the anchor so the reader still knows who first-authored.
+        const displayLead = leadProfile ? leadProfile.name : firstAuthor;
+        let coauthInline = '';
+        if (!rec.isLed && itaukeiCoauthors.length) {
+          const parts = itaukeiCoauthors.map((c, i) => {
+            const cls = (i % 2 === 0) ? 'is-alt-a' : 'is-alt-b';
+            // Prefer the profile's canonical "Last, First" split; fall back to a
+            // best-effort flip of the raw Zotero string.
+            let first = '', last = '';
+            if (c.profile) {
+              first = c.profile.first || '';
+              last  = c.profile.last  || '';
+              if (!first && !last && c.profile.name) {
+                const p = String(c.profile.name).split(',', 2);
+                last = (p[0] || '').trim();
+                first = (p[1] || '').trim();
+              }
+            }
+            if (!first && !last) {
+              const s = String(c.name || '').trim();
+              if (s.includes(',')) {
+                const p = s.split(',', 2);
+                last = (p[0] || '').trim();
+                first = (p[1] || '').trim();
+              } else {
+                const toks = s.split(/\s+/);
+                if (toks.length >= 2) { last = toks[toks.length-1]; first = toks.slice(0,-1).join(' '); }
+                else { last = s; }
+              }
+            }
+            const nameText = `${first} ${last}`.trim() || String(c.name || '');
+            const chip = c.profile ? mergeVillageProvince(c.profile.village || '', c.profile.province || '') : '';
+            const chipHtml = chip ? ` <span class="b3-work-detail__coauth-chip">${escapeHtml(chip)}</span>` : '';
+            return `<span class="b3-work-detail__coauth ${cls}">${escapeHtml(nameText)}</span>${chipHtml}`;
+          });
+          coauthInline = ' ' + parts.join('<span class="b3-work-detail__coauth-sep">;</span> ');
+        }
+
+        // Village/(province) chip on the *lead* line — only shown for iTaukei-led
+        // entries whose profile has village + province. Others-led rows carry the
+        // village info inline next to each co-author instead.
         let villageLine = '';
-        if (rec.isLed && profile) {
-          const label = mergeVillageProvince(profile.village || '', profile.province || '');
+        if (rec.isLed && leadProfile) {
+          const label = mergeVillageProvince(leadProfile.village || '', leadProfile.province || '');
           if (label) {
             villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
           }
         }
+
         detail.classList.add('is-active');
         // Picture-fill vertical strip on the left; body on the right. When
         // there's no photo we still render an empty strip so the body's left
@@ -9620,12 +9738,13 @@
         // horizontally as the user hovers different citations.
         detail.innerHTML = (
           `<div class="b3-work-detail__row">` +
-            `<div class="b3-work-detail__photo${photo ? '' : ' is-empty'}"` +
-              (photo ? ` style="background-image:url('${escapeHtml(photo)}')"` : '') +
+            `<div class="b3-work-detail__photo${photoUrl ? '' : ' is-empty'}" data-b3-photo-slot` +
+              (photoUrl ? ` style="background-image:url('${escapeHtml(photoUrl)}')"` : '') +
             `></div>` +
             `<div class="b3-work-detail__body">` +
-              `<div class="b3-work-detail__name">${escapeHtml(displayName)}` +
+              `<div class="b3-work-detail__name">${escapeHtml(displayLead)}` +
                 (year ? ` <span class="b3-work-detail__year">(${escapeHtml(String(year))})</span>` : '') +
+                coauthInline +
               `</div>` +
               villageLine +
               `<div class="b3-work-detail__title">${escapeHtml(title)}</div>` +
@@ -9633,8 +9752,22 @@
             `</div>` +
           `</div>`
         );
+
+        // If multiple iTaukei co-authors, cycle photos every 2s. Skips missing
+        // photos so the strip only shows real portraits and doesn't briefly
+        // flash the empty tile between real images.
+        if (rotationUrls.length > 1) {
+          const slot = detail.querySelector('[data-b3-photo-slot]');
+          let idx = 0;
+          photoRotationTimer = setInterval(() => {
+            idx = (idx + 1) % rotationUrls.length;
+            if (slot) slot.style.backgroundImage = `url('${rotationUrls[idx]}')`;
+          }, 2000);
+        }
       });
     });
+    // Clear any running rotation when the popup itself closes (Leaflet fires this).
+    popupEl.addEventListener('remove', clearPhotoRotation, { once: true });
     // Leave detail visible on mouseleave so the user can move over it if they
     // want; it clears when the popup closes.
   }

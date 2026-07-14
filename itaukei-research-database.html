@@ -1121,7 +1121,29 @@
       font-weight: 500;
     }
     .b3-work-detail__title { color: #444; font-size: 0.85rem; margin-top: 2px; font-style: italic; line-height: 1.3; }
-    .b3-work-detail__venue { color: #666; font-size: 0.8rem; margin-top: 3px; }
+    /* Journal / venue line — dark blue italic per the July 2026 spec. Used for
+       the full reference on both iTaukei-led and Others-led hovers. */
+    .b3-work-detail__venue { color: #0B3A66; font-size: 0.82rem; margin-top: 3px; font-style: italic; }
+    /* Inline iTaukei co-author names on Others-as-Lead hovers — alternating
+       two tones so consecutive names separated by semicolons are visually
+       distinct. Rust (iTaukei-led red) and dark teal, same alt-tone pattern
+       B2 uses for its scholar-name lists. */
+    .b3-work-detail__coauth {
+      display: inline;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .b3-work-detail__coauth.is-alt-a { color: #712B13; }
+    .b3-work-detail__coauth.is-alt-b { color: #1B474D; }
+    .b3-work-detail__coauth-sep { color: #171614; font-weight: 500; margin: 0 2px; }
+    /* Village/(province) chip inline next to each co-author name. Teal to
+       match the existing village chip on iTaukei-led hovers. */
+    .b3-work-detail__coauth-chip {
+      color: #01696F;
+      font-size: 0.78rem;
+      font-weight: 500;
+      margin-left: 3px;
+    }
 
     /* ---- B3 country table (4 columns per row, single flowing 2-up grid) ---- */
     /* Header row above the country list. Same 4-column template as each row. */
