@@ -415,7 +415,11 @@
     if (byWith) itaukeiParentKeys.add(byWith.key);
 
     // Recursively add every descendant under the iTaukei Thesis tree.
-    const thesisRoot = snap.collections.find(c => c.name === 'iTaukei Thesis by Country/Universities');
+    // Match by stable Zotero key first so panel-prefix renames (e.g. 'B2-'
+    // in front of the collection name) don't silently break the classifier.
+    const thesisRoot = snap.collections.find(c => c.key === '9XHGQJE6')
+                    || snap.collections.find(c => c.name === 'B2-iTaukei Thesis by Country/Universities')
+                    || snap.collections.find(c => c.name === 'iTaukei Thesis by Country/Universities');
     if (thesisRoot) {
       itaukeiParentKeys.add(thesisRoot.key);
       // Iterate breadth-first through the collection list until no new keys are added.
@@ -8805,8 +8809,10 @@
     // "Where study was done" root (V3HLPDPL). Every direct child is a country.
     const cols = state.snapshot.collections || [];
     const byKey = new Map(cols.map(c => [c.key, c]));
-    const whereRoot = cols.find(c => c.name === 'Where study was done' && !c.parent)
-                   || byKey.get('V3HLPDPL')
+    // Prefer stable key so panel-prefix renames (B3- etc.) don't break lookup.
+    const whereRoot = byKey.get('V3HLPDPL')
+                   || cols.find(c => c.name === 'B3-Where study was done (with iTaukei lead & co-author)' && !c.parent)
+                   || cols.find(c => c.name === 'Where study was done' && !c.parent)
                    || null;
     if (!whereRoot) {
       const err = document.querySelector('[data-db-b3-map-error]');

@@ -48,7 +48,13 @@ WORLD_UNIS = REPO / "data" / "world-universities.json"
 
 # Root of the country/university tree in Zotero. This is the canonical
 # source of truth for which theses are iTaukei-graduate work.
-THESIS_ROOT_NAME = "iTaukei Thesis by Country/Universities"
+# Match by stable Zotero key first (survives renames like the B2- prefix
+# convention), then fall back to name matching for legacy snapshots.
+THESIS_ROOT_KEY = "9XHGQJE6"
+THESIS_ROOT_NAME_CANDIDATES = (
+    "B2-iTaukei Thesis by Country/Universities",
+    "iTaukei Thesis by Country/Universities",
+)
 
 # ISO2 codes for each country-level collection under THESIS_ROOT_NAME.
 COUNTRY_ISO = {
@@ -59,6 +65,7 @@ COUNTRY_ISO = {
     "Indonesia":       "ID",
     "Malta":           "MT",
     "New Zealand":     "NZ",
+    "Papua New Guinea": "PG",
     "Philippines":     "PH",
     "Portugal":        "PT",
     "South Korea":     "KR",
@@ -187,6 +194,9 @@ UNIVERSITY_COORDS = {
     "Tohoku University":                     (38.256, 140.842),
     "Sophia University":                     (35.684, 139.734),
     "University of Tsukuba":                 (36.108, 140.101),
+    "Tokyo Medical and Dental University":   (35.7024, 139.7645),
+    # Papua New Guinea
+    "Papua New Guinea University of Technology": (-6.6640, 146.9865),
 }
 
 
@@ -270,12 +280,18 @@ def build_country_and_university_maps(collections):
                             country-only membership like the direct '_Australia' items)
     """
     by_key = {c["key"]: c for c in collections}
-    # The 'iTaukei Thesis by Country/Universities' collection lives under the
-    # top-level 'Thesis' collection in Ron's Zotero group, so match by name
-    # alone rather than requiring parent == None.
-    root = next((c for c in collections if c.get("name") == THESIS_ROOT_NAME), None)
+    # The thesis-country root lives under the top-level 'Thesis' collection
+    # in Ron's Zotero group. Match by stable key first so panel-prefix
+    # renames (e.g. adding a 'B2-' prefix) don't break the workflow; fall
+    # back to any known display name for older snapshots.
+    root = by_key.get(THESIS_ROOT_KEY)
     if not root:
-        raise SystemExit(f"ERROR: cannot find root collection '{THESIS_ROOT_NAME}' in snapshot")
+        root = next((c for c in collections if c.get("name") in THESIS_ROOT_NAME_CANDIDATES), None)
+    if not root:
+        raise SystemExit(
+            "ERROR: cannot find thesis-country root in snapshot "
+            f"(key={THESIS_ROOT_KEY!r}, tried names={THESIS_ROOT_NAME_CANDIDATES!r})"
+        )
 
     # Countries = direct children of the root.
     countries = {c["key"]: c["name"] for c in collections if c.get("parent") == root["key"]}
@@ -319,7 +335,7 @@ def build_country_and_university_maps(collections):
         if node["key"] not in has_children and node["key"] != cur["key"]:
             university_of[k] = node["name"]
 
-    return country_of, university_of, root["key"], tree_keys
+    return country_of, university_of, root["key"], root.get("name", ""), tree_keys
 
 
 def main() -> None:
@@ -327,7 +343,7 @@ def main() -> None:
     items = snap.get("items", [])
     cols  = snap.get("collections", [])
 
-    country_of, university_of, root_key, tree_keys = build_country_and_university_maps(cols)
+    country_of, university_of, root_key, root_name, tree_keys = build_country_and_university_maps(cols)
 
     # world-universities.json is the canonical coord lookup; it overrides the
     # hardcoded UNIVERSITY_COORDS below so we don't have to edit two files
@@ -491,7 +507,7 @@ def main() -> None:
         "generatedAt": datetime.now(timezone.utc).isoformat(),
         "sourceSnapshot": snap.get("generatedAt"),
         "source": {
-            "rootCollection": THESIS_ROOT_NAME,
+            "rootCollection": root_name,
             "rootCollectionKey": root_key,
             "url": f"https://www.zotero.org/groups/{snap.get('source', {}).get('groupId', '')}/collections/{root_key}/collection",
         },
