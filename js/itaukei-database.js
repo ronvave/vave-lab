@@ -387,6 +387,14 @@
     state.provinceMetaByName = new Map();
     provFlat.provinces.forEach(p => state.provinceMetaByName.set(p.name, p));
 
+    // Zotero C1 root and Non-provincial/Fiji sub-collection keys. Both come
+    // from data/fiji-provinces.json (top-level). C1 root (RNKFUZ6M) parents the
+    // 14 provincial sub-collections plus '_Non-Provincial/Fiji' (AREH32KK) —
+    // Fiji-wide publications not tied to a single province. The non-provincial
+    // key drives the bottom bar in Panel C1.
+    state.c1RootKey = provFlat.zoteroCollectionKey_c1Root || null;
+    state.nonProvincialFijiKey = provFlat.zoteroCollectionKey_nonProvincialFiji || null;
+
     // Province collection key lookups
     geo.features.forEach(f => {
       const p = f.properties;
@@ -4626,9 +4634,12 @@
     });
 
     // ============ Non-provincial/Fiji bottom bar ============
-    // Aggregates publications that ARE about Fiji broadly (title mentions Fiji /
-    // Fijian / iTaukei) but have no specific province tag — e.g. "Fiji national
-    // legislation", "Fiji mental health policy", national-scale studies.
+    // Aggregates publications that live in the Zotero '_Non-Provincial/Fiji'
+    // sub-collection under C1 (RNKFUZ6M/AREH32KK). These are Fiji-wide topics
+    // (e.g. national legislation, national mental health policy, nationwide
+    // studies) that aren't tied to a specific province. Membership is now a
+    // curator decision, not a title heuristic — the collection is the source
+    // of truth.
     //
     // Rendering differs from the province bars in three key ways:
     //   1. Anchored at the bottom regardless of ranking.
@@ -4638,19 +4649,18 @@
     //      re-normalises the remaining segments back to 100%.
     // No confederacy dot on the label; an "i" tooltip explains the category.
     const nonProv = { total: 0, types: {} };
-    state.snapshot.items.forEach(it => {
-      const vt = visualType(it);
-      if (!state.typeSet.has(vt)) return;
-      if (authorsMode === 'itaukei' && !isItaukei(it)) return;
-      const ps = state.provincesByItem.get(it.key);
-      if (ps && ps.size > 0) return; // has province tag — already counted above
-      // Require an explicit Fiji signal so we don't sweep in unrelated diaspora
-      // or Pacific-broad papers by iTaukei authors.
-      const hay = String(it.title || '');
-      if (!/\bfiji\b|\bfijian\b|\bitaukei\b|\bi-taukei\b/i.test(hay)) return;
-      nonProv.total += 1;
-      nonProv.types[vt] = (nonProv.types[vt] || 0) + 1;
-    });
+    const nonProvKey = state.nonProvincialFijiKey;
+    if (nonProvKey) {
+      state.snapshot.items.forEach(it => {
+        const vt = visualType(it);
+        if (!state.typeSet.has(vt)) return;
+        if (authorsMode === 'itaukei' && !isItaukei(it)) return;
+        const cols = it.collections || [];
+        if (cols.indexOf(nonProvKey) === -1) return;
+        nonProv.total += 1;
+        nonProv.types[vt] = (nonProv.types[vt] || 0) + 1;
+      });
+    }
 
     if (nonProv.total > 0) {
       // Column 1 — label + info icon (no confederacy dot).
