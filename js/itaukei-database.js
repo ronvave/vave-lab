@@ -1168,11 +1168,240 @@
   // Aggregates worldPoints by country, sorts descending by total degrees, and
   // supports a drill-down into any country to reveal its universities. Clicks
   // are wired here; the map zoom is delegated to zoomToWorldCountry().
+  // Module-scope profile lookup used by the confederacy/province rollup so it
+  // matches the popup's `lookupProfile` behaviour (direct hit → "First Last"
+  // → "Last, First" flip → first-token strip). Kept small on purpose — the
+  // confederacy view only needs a Boolean + provinces, no photo/village work.
+  function b2LookupScholarProfile(name) {
+    const map = state && state.scholarProfilesByName;
+    if (!map || !name) return null;
+    const aliases = (state && state.nameAliases) || new Map();
+    function resolveAlias(k) { return aliases.get(k) || k; }
+    let hit = map.get(name) || map.get(resolveAlias(name));
+    if (hit) return hit;
+    const parts = String(name).trim().split(/\s+/);
+    if (parts.length >= 2) {
+      const last  = parts[parts.length - 1];
+      const first = parts.slice(0, -1).join(' ');
+      const lastFirst = `${last}, ${first}`;
+      hit = map.get(lastFirst) || map.get(resolveAlias(lastFirst));
+      if (hit) return hit;
+      const firstTok = parts[0];
+      const lastFirstTok = `${last}, ${firstTok}`;
+      hit = map.get(lastFirstTok) || map.get(resolveAlias(lastFirstTok));
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  // Confederacy · Province rollup for Panel B2 tabulated summary.
+  // Traverses every worldPoints thesis and joins the scholar to a paternal
+  // (falling back to maternal) province via scholarProfilesByName, then
+  // groups by confederacy. Scholars with no matched profile / no province
+  // are counted separately as "Unmatched" so no thesis is silently dropped.
+  function buildB2ConfederacyRollup() {
+    const CONF_ORDER = ['Tovata', 'Kubuna', 'Burebasaga'];
+    const grad = state.graduateStudies || { worldPoints: [] };
+    const points = grad.worldPoints || [];
+
+    const provAgg = new Map();      // province name -> { masters, phd, conf }
+    const confAgg = new Map();      // conf name -> { masters, phd }
+    CONF_ORDER.forEach(c => confAgg.set(c, { masters: 0, phd: 0 }));
+    let unmatchedM = 0, unmatchedP = 0, unmatchedU = 0;
+    let totalM = 0, totalP = 0, totalU = 0;
+
+    function addToProv(name, conf, kind) {
+      if (!provAgg.has(name)) provAgg.set(name, { name, conf, masters: 0, phd: 0 });
+      const row = provAgg.get(name);
+      if (kind === 'masters') row.masters += 1;
+      else if (kind === 'phd') row.phd += 1;
+    }
+
+    points.forEach(p => {
+      const groups = [
+        { kind: 'masters', names: p.mastersScholars || [] },
+        { kind: 'phd',     names: p.phdScholars     || [] },
+        { kind: 'unknown', names: p.unknownScholars || [] }
+      ];
+      groups.forEach(g => {
+        g.names.forEach(nm => {
+          if (g.kind === 'masters') totalM += 1;
+          else if (g.kind === 'phd') totalP += 1;
+          else totalU += 1;
+
+          const profile = b2LookupScholarProfile(nm);
+          const province = profile ? effectivePaternalProvince(profile) : '';
+          const conf = province ? PROVINCE_TO_CONFEDERACY[province] : '';
+          if (!province || !conf) {
+            if (g.kind === 'masters') unmatchedM += 1;
+            else if (g.kind === 'phd') unmatchedP += 1;
+            else unmatchedU += 1;
+            return;
+          }
+          // Only Masters + PhD contribute to the tally (matches the mockup).
+          if (g.kind === 'masters' || g.kind === 'phd') {
+            const c = confAgg.get(conf);
+            if (c) {
+              if (g.kind === 'masters') c.masters += 1;
+              else c.phd += 1;
+            }
+            addToProv(province, conf, g.kind);
+          }
+        });
+      });
+    });
+
+    const confRows = CONF_ORDER.map(name => {
+      const c = confAgg.get(name) || { masters: 0, phd: 0 };
+      return { name, masters: c.masters, phd: c.phd, total: c.masters + c.phd };
+    });
+
+    const provRows = Array.from(provAgg.values())
+      .map(r => Object.assign(r, { total: r.masters + r.phd }))
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+    return {
+      confRows,
+      provRows,
+      totals: {
+        masters: totalM,
+        phd:     totalP,
+        other:   totalU,
+        matched: provRows.reduce((a, r) => a + r.total, 0),
+        unmatchedMasters: unmatchedM,
+        unmatchedPhd:     unmatchedP,
+        unmatchedOther:   unmatchedU
+      }
+    };
+  }
+
+  function renderWorldPanelConfederacyView(host) {
+    if (!host) return;
+    const { confRows, provRows, totals } = buildB2ConfederacyRollup();
+    const parts = [];
+    parts.push('<div class="db-world-conf-list__label">By Confederacy</div>');
+    confRows.forEach(c => {
+      const total = c.total || 1;
+      const mPct = (c.masters / total) * 100;
+      const pPct = (c.phd / total) * 100;
+      parts.push(
+        '<div class="db-world-conf-list__conf-card">' +
+          '<span class="db-world-conf-list__conf-name">' +
+            `<span class="db-world-conf-list__conf-dot" style="background:${CONF_COLORS[c.name] || '#94a3b8'};"></span>` +
+            escapeHtml(c.name) +
+          '</span>' +
+          '<span class="db-world-conf-list__bar" role="img" ' +
+            `aria-label="${escapeHtml(c.name)}: Masters ${c.masters}, PhD ${c.phd}, Total ${c.total}">` +
+            `<span class="seg-m" style="width:${mPct.toFixed(1)}%;"></span>` +
+            `<span class="seg-p" style="width:${pPct.toFixed(1)}%;"></span>` +
+          '</span>' +
+          '<span class="db-world-conf-list__counts">' +
+            `<b>Masters</b> ${c.masters}` +
+            '<span class="pipe"></span>' +
+            `<b>PhD</b> ${c.phd}` +
+            '<span class="pipe"></span>' +
+            `<span class="db-world-total">Total ${c.total}</span>` +
+          '</span>' +
+        '</div>'
+      );
+    });
+    parts.push(
+      '<div class="db-world-conf-list__legend">' +
+        '<span><span class="sw" style="background:#8FBC8F;"></span>Masters</span>' +
+        '<span><span class="sw" style="background:#228B22;"></span>PhD</span>' +
+      '</div>'
+    );
+    parts.push('<div class="db-world-conf-list__prov-label">By Province · descending by total</div>');
+    if (provRows.length === 0) {
+      parts.push('<p class="db-conf-narrative">No provinces matched yet.</p>');
+    } else {
+      provRows.forEach(r => {
+        parts.push(
+          '<div class="db-world-conf-list__prov-row">' +
+            `<span class="db-world-conf-list__prov-swatch" style="background:${CONF_COLORS[r.conf] || '#94a3b8'};"></span>` +
+            `<span class="db-world-conf-list__prov-name">${escapeHtml(r.name)}</span>` +
+            '<span class="db-world-conf-list__counts">' +
+              `<b>Masters</b> ${r.masters}` +
+              '<span class="pipe"></span>' +
+              `<b>PhD</b> ${r.phd}` +
+              '<span class="pipe"></span>' +
+              `<span class="db-world-total">Total ${r.total}</span>` +
+            '</span>' +
+          '</div>'
+        );
+      });
+    }
+
+    const missing = totals.unmatchedMasters + totals.unmatchedPhd;
+    const other   = totals.other;
+    if (missing || other) {
+      const bits = [];
+      if (missing) bits.push(`${missing} Masters/PhD theses could not be joined to a paternal or maternal province yet`);
+      if (other)   bits.push(`${other} other higher-degree ${other === 1 ? 'thesis is' : 'theses are'} not included in the Masters/PhD tally`);
+      parts.push(
+        '<p class="db-world-conf-list__note">' +
+          '<b>Note.</b> ' + bits.join('; ') + '. Coverage grows as village and province fields are completed in the Scholars sheet.' +
+        '</p>'
+      );
+    }
+
+    host.innerHTML = parts.join('');
+  }
+
+  function applyWorldListView() {
+    const view = state.worldListView || 'country';
+    const listView = document.querySelector('[data-world-list-view]');
+    if (!listView) return;
+    const tabs = listView.querySelectorAll('[data-world-list-tab]');
+    tabs.forEach(btn => {
+      const on = btn.dataset.worldListTab === view;
+      btn.classList.toggle('is-active', on);
+      btn.setAttribute('aria-selected', on ? 'true' : 'false');
+      btn.tabIndex = on ? 0 : -1;
+    });
+    const searchWrap = listView.querySelector('[data-world-search-wrap]');
+    const countryList = listView.querySelector('[data-world-country-list]');
+    const emptyEl = listView.querySelector('[data-world-empty]');
+    const narrEl = listView.querySelector('[data-world-narrative]');
+    const confHost = listView.querySelector('[data-world-confederacy-list]');
+    const titleEl = listView.querySelector('[data-world-list-title]');
+    const explainEl = listView.querySelector('[data-world-list-explain]');
+    const showCountry = view === 'country';
+    if (searchWrap)  searchWrap.style.display  = showCountry ? '' : 'none';
+    if (countryList) countryList.style.display = showCountry ? '' : 'none';
+    if (narrEl)      narrEl.style.display      = showCountry ? '' : 'none';
+    if (confHost)    confHost.style.display    = showCountry ? 'none' : '';
+    if (emptyEl && !showCountry) emptyEl.style.display = 'none';
+    if (titleEl) titleEl.textContent = showCountry
+      ? 'Countries of iTaukei graduate study'
+      : 'iTaukei graduates by Confederacy · Province';
+    if (explainEl) explainEl.textContent = showCountry
+      ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
+      : 'Masters and PhD theses grouped by the scholar’s chiefly Confederacy (Tovata, Kubuna, Burebasaga), then broken down by home Province in descending order by total.';
+    if (!showCountry && confHost) renderWorldPanelConfederacyView(confHost);
+  }
+
+  function bindWorldListTabs() {
+    if (bindWorldListTabs._bound) return;
+    const listView = document.querySelector('[data-world-list-view]');
+    if (!listView) return;
+    const tabs = listView.querySelectorAll('[data-world-list-tab]');
+    if (!tabs.length) return;
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.worldListView = btn.dataset.worldListTab || 'country';
+        applyWorldListView();
+      });
+    });
+    bindWorldListTabs._bound = true;
+  }
+
   function renderWorldPanel() {
     const listView   = document.querySelector('[data-world-list-view]');
     const detailView = document.querySelector('[data-world-detail-view]');
     const listHost   = document.querySelector('[data-world-country-list]');
     if (!listHost || !listView || !detailView) return;
+    bindWorldListTabs();
 
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
@@ -1371,6 +1600,11 @@
         `${(totM + totP) === 1 ? 'degree' : 'degrees'}${otherClause} across ${countries.length} ` +
         `${countries.length === 1 ? 'country' : 'countries'}.`;
     }
+
+    // Apply the active list view (country vs confederacy). This shows/hides
+    // the country list + search vs the confederacy rollup, and re-renders the
+    // rollup so it reflects the latest scholarProfilesByName state.
+    applyWorldListView();
   }
 
   // -------- Panel B2 world-map default framing --------

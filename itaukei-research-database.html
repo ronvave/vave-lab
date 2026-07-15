@@ -2790,6 +2790,103 @@
       color: var(--color-text-muted); font-size: 0.9rem; font-style: italic;
     }
 
+    /* Confederacy · Province view for Panel B2 tabulated summary.
+       Aligned with the Panel C1 legend: sage-green (#8FBC8F) for Masters and
+       forest-green (#228B22) for PhD. */
+    .db-world-conf-list {
+      --wclist-masters: #8FBC8F;
+      --wclist-phd:     #228B22;
+      --wclist-rule:    rgba(15,23,42,0.10);
+      --wclist-rule-strong: rgba(15,23,42,0.28);
+      --wclist-ink:     #0f172a;
+      --wclist-muted:   #4b5563;
+      margin-top: var(--space-2);
+      color: var(--wclist-ink);
+    }
+    .db-world-conf-list__label {
+      font-size: 0.72rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--wclist-ink);
+      margin: 0 0 6px;
+    }
+    .db-world-conf-list__conf-card {
+      background: #fff;
+      border: 1px solid var(--wclist-rule);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: grid;
+      grid-template-columns: 130px 1fr auto;
+      column-gap: 14px;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .db-world-conf-list__conf-name {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: 700; color: var(--wclist-ink);
+    }
+    .db-world-conf-list__conf-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      display: inline-block;
+    }
+    .db-world-conf-list__bar {
+      position: relative; display: flex;
+      height: 12px; border-radius: 999px; overflow: hidden;
+      background: rgba(15,23,42,0.05);
+    }
+    .db-world-conf-list__bar .seg-m { background: var(--wclist-masters); }
+    .db-world-conf-list__bar .seg-p { background: var(--wclist-phd); }
+    .db-world-conf-list__counts {
+      font-variant-numeric: tabular-nums;
+      font-size: 0.85rem;
+      color: var(--wclist-ink);
+      white-space: nowrap;
+    }
+    .db-world-conf-list__counts .pipe {
+      display: inline-block; width: 1px; height: 0.85em;
+      background: rgba(15,23,42,0.25);
+      margin: 0 6px; vertical-align: middle;
+    }
+    .db-world-conf-list__legend {
+      display: flex; gap: 14px; align-items: center;
+      font-size: 0.78rem; color: var(--wclist-muted);
+      margin: 4px 0 var(--space-3);
+    }
+    .db-world-conf-list__legend .sw {
+      display: inline-block; width: 10px; height: 10px;
+      margin-right: 6px; border-radius: 2px; vertical-align: middle;
+    }
+    .db-world-conf-list__prov-label {
+      font-size: 0.72rem; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--wclist-ink);
+      margin: var(--space-2) 0 4px;
+      border-bottom: 1px solid var(--wclist-rule-strong);
+      padding-bottom: 4px;
+    }
+    .db-world-conf-list__prov-row {
+      display: grid;
+      grid-template-columns: 12px 1fr auto;
+      column-gap: 10px;
+      align-items: baseline;
+      padding: 8px 0;
+      border-bottom: 1px dashed var(--wclist-rule);
+      font-size: 0.9rem;
+      color: var(--wclist-ink);
+    }
+    .db-world-conf-list__prov-row:last-child { border-bottom: none; }
+    .db-world-conf-list__prov-swatch {
+      width: 10px; height: 10px; border-radius: 2px;
+      align-self: center;
+    }
+    .db-world-conf-list__prov-name {
+      font-weight: 600;
+      color: var(--wclist-ink);
+    }
+    .db-world-conf-list__note {
+      margin-top: var(--space-3);
+      font-size: 0.78rem;
+      color: var(--wclist-muted);
+      line-height: 1.5;
+    }
+
     /* Per-panel 'Filtered' indicator. Shown inline in a panel's title bar when
        the panel's data has been narrowed by a world-map country/university
        selection. The word 'Filtered' blinks in blue to draw the eye; 'Clear
@@ -3956,8 +4053,12 @@
           <div class="db-map-error" data-db-worldmap-error>Map couldn't load — the country list below is still available.</div>
           <aside class="db-world-panel-wide">
             <div data-world-list-view>
-              <h4>Countries of iTaukei graduate study</h4>
-              <p class="db-conf-explain">Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
+              <h4 data-world-list-title>Countries of iTaukei graduate study</h4>
+              <p class="db-conf-explain" data-world-list-explain>Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
+              <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
+                <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="confederacy" aria-selected="false" tabindex="-1">By Confederacy &amp; Province</button>
+              </div>
               <label class="db-world-search" data-world-search-wrap>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
                 <input type="search" placeholder="Search country, university, or scholar…" data-world-search aria-label="Search countries, universities, and scholars" />
@@ -3966,6 +4067,7 @@
               <div class="db-world-country-list db-world-grid" data-world-country-list></div>
               <p class="db-world-empty" data-world-empty style="display:none;">No countries, universities, or scholars match that search.</p>
               <p class="db-conf-narrative" data-world-narrative>—</p>
+              <div class="db-world-conf-list" data-world-confederacy-list style="display:none;"></div>
             </div>
             <div data-world-detail-view style="display:none;">
               <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
