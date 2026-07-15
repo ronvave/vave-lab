@@ -30,18 +30,21 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 # Symptoms that indicate a commit *claims* to be a data change. Extend as
-# new data files or key namespaces get added. Case-insensitive match on
-# the raw commit message body.
-DATA_SYMPTOMS = [
+# new data files or key namespaces get added.
+#
+# Two flavors:
+#   * Path/name symptoms: matched case-insensitively (README wording,
+#     lowercase filenames, capitalized panel names, etc.)
+#   * Zotero collection keys: matched case-sensitively so English words
+#     in ALL-CAPS commit messages ("FIX B2 CHART", "UPDATE B3 POPUP")
+#     don't trip the check. Every real Zotero key is exactly 8 chars
+#     and mixes letters with digits, which no English word does.
+PATH_SYMPTOMS = [
     r"\bdata/",
     r"\.enc\b",
     r"\.json\b",
     r"\.geojson\b",
     r"\bzoteroCollectionKey\w*",
-    r"\bRNKFUZ6M\b",
-    r"\bAREH32KK\b",
-    r"\bV3HLPDPL\b",              # B3 root
-    r"\b9XHGQJE6\b",              # B2 root
     r"\bfiji-provinces\b",
     r"\bscholar-profiles\b",
     r"\bitaukei-zotero-snapshot\b",
@@ -51,7 +54,51 @@ DATA_SYMPTOMS = [
     r"\buni-country-overrides\b",
     r"\bitaukei-graduate-studies\b",
 ]
-SYMPTOM_RE = re.compile("|".join(DATA_SYMPTOMS), re.IGNORECASE)
+
+# Named panel-root Zotero keys we already know about. Extend when a new
+# panel or sub-collection root is introduced. Names are for the operator's
+# benefit only; the value strings are never regex-matched.
+ZOTERO_ROOT_KEYS = {
+    "RNKFUZ6M": "C1 root — Where study was done in Fiji",
+    "AREH32KK": "C1 sub — _Non-Provincial/Fiji",
+    "V3HLPDPL": "B3 root — Where study was done (with iTaukei lead & co-author)",
+    "9XHGQJE6": "B2 root — iTaukei Thesis by Country/Universities",
+    "QGHHHAAC": "B3 sub — FSM (holds Chuuk, Pohnpei)",
+    "FLF6KCLK": "B3 sub — Province(s) covered by research",
+    "WWUJNIF4": "B3 sub — Fiji Provinces",
+}
+
+_PATH_SYMPTOM_RE = re.compile("|".join(PATH_SYMPTOMS), re.IGNORECASE)
+
+_ZOTERO_ROOT_KEYS_RE = re.compile(
+    r"\b(" + "|".join(re.escape(k) for k in ZOTERO_ROOT_KEYS) + r")\b"
+)
+
+# Generic Zotero-key shape: 8 alphanumeric chars, uppercase, mixing at
+# least one letter and one digit. Matches any B2/B3/C1 child key (Ba
+# `97DILJ4T`, Rewa `ARS78SQY`, FSM `QGHHHAAC`, Vietnam `I96RVKH7`, etc.)
+# without also matching English words like `BUREBASA`, `PROVINCE`, or
+# `COLLAPSE`.
+#
+# Known false-positive shape: identifiers that mix letters and digits
+# in an 8-char span (e.g. `MAX86400` for a timestamp constant) will
+# also match. Rare in real commit messages; override with
+# VAVELAB_SKIP_ENC_CHECK=1 when it happens.
+_ZOTERO_KEY_RE = re.compile(
+    r"\b(?=[A-Z0-9]{8}\b)(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]{8}\b"
+)
+
+
+def find_symptoms(message: str) -> list[str]:
+    """Return unique symptom snippets found in a commit message."""
+    hits: set[str] = set()
+    for m in _PATH_SYMPTOM_RE.findall(message):
+        hits.add(m.lower())
+    for m in _ZOTERO_ROOT_KEYS_RE.findall(message):
+        hits.add(m)  # keep original case so operator recognises it
+    for m in _ZOTERO_KEY_RE.findall(message):
+        hits.add(m)
+    return sorted(hits)
 
 # Commits older than this ref are already on the remote and out of our
 # control; we only ever inspect the new commits being pushed.
@@ -128,11 +175,10 @@ def check_message_matches_diff(
     hits: list[str] = []
     for sha in commits:
         msg = commit_message(sha)
-        matches = SYMPTOM_RE.findall(msg)
-        if matches:
+        symptoms = find_symptoms(msg)
+        if symptoms:
             first_line = msg.strip().splitlines()[0] if msg.strip() else "(no message)"
-            unique_terms = sorted({m.lower() for m in matches})
-            hits.append(f"  {sha[:8]}  {first_line}\n            symptoms: {', '.join(unique_terms)}")
+            hits.append(f"  {sha[:8]}  {first_line}\n            symptoms: {', '.join(symptoms)}")
     return hits
 
 

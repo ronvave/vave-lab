@@ -136,15 +136,34 @@ That wires `.githooks/pre-push` into git and enables two checks on every push:
 1. **Decrypt sanity** — every `.enc` file being pushed must decrypt with
    `$VAVELAB_PASSCODE` and parse as JSON. Blocks corrupted blobs.
 2. **Message vs. diff consistency** — if any commit message in the push
-   range mentions a data-file symptom (`data/`, `.enc`, a Zotero collection
-   key like `RNKFUZ6M`, a filename like `fiji-provinces`…) but no `.enc`
-   file is in the diff, the push is blocked. Catches the rebase-drop
-   failure mode where `git checkout --ours` silently resolves an `.enc`
-   conflict to the wrong side and the data change never actually ships.
+   range mentions a data-file symptom but no `.enc` file is in the diff,
+   the push is blocked. Catches the rebase-drop failure mode where
+   `git checkout --ours` silently resolves an `.enc` conflict to the
+   wrong side and the data change never actually ships.
+
+   Symptoms include:
+   - filenames under `data/`, the `.enc` / `.json` / `.geojson` extensions
+   - JSON field names like `zoteroCollectionKey*`
+   - known data files: `fiji-provinces`, `scholar-profiles`,
+     `itaukei-zotero-snapshot`, `scholar-insights`, `world-universities`,
+     `workplace-coords`, `uni-country-overrides`, `itaukei-graduate-studies`
+   - named panel-root Zotero keys: `RNKFUZ6M` (C1), `AREH32KK` (C1 non-
+     provincial), `V3HLPDPL` (B3), `9XHGQJE6` (B2), `QGHHHAAC` (B3 FSM),
+     `FLF6KCLK` (B3 provinces), `WWUJNIF4` (B3 Fiji provinces)
+   - any Zotero collection key shape (8 alphanumeric chars mixing letters
+     and digits), so per-province and per-country child keys like
+     `97DILJ4T` (Ba), `ARS78SQY` (Rewa), or `I96RVKH7` (Vietnam) trigger
+     the check even when the panel root isn't named
+
+Unit tests: `python3 scripts/tests/test_symptom_regex.py`. Extend the
+coverage lists in `scripts/verify_enc_freshness.py` when new panel roots
+or data files land.
 
 Export `VAVELAB_PASSCODE` in your shell so check #1 runs. Set
 `VAVELAB_SKIP_ENC_CHECK=1` for a one-off override when you genuinely mean
-to push a JS-only commit that happens to name a data file.
+to push a JS-only commit that happens to name a data file, or when a
+rare English identifier collides with the Zotero-key shape (e.g.
+`MAX86400`).
 
 ### Refreshing from Zotero
 
