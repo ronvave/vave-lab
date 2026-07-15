@@ -2800,6 +2800,7 @@
       --wclist-rule-strong: rgba(15,23,42,0.28);
       --wclist-ink:     #0f172a;
       --wclist-muted:   #4b5563;
+      --wclist-link:    #0F5B60;
       margin-top: var(--space-2);
       color: var(--wclist-ink);
     }
@@ -2808,20 +2809,25 @@
       text-transform: uppercase; color: var(--wclist-ink);
       margin: 0 0 6px;
     }
+    /* Single grouped card holding all three confederacy rows plus the legend. */
     .db-world-conf-list__conf-card {
       background: #fff;
       border: 1px solid var(--wclist-rule);
       border-radius: 8px;
-      padding: 10px 14px;
+      padding: 14px 18px 10px;
+      margin-bottom: var(--space-3);
+    }
+    .db-world-conf-list__conf-row {
       display: grid;
       grid-template-columns: 130px 1fr auto;
       column-gap: 14px;
       align-items: center;
-      margin-bottom: 6px;
+      padding: 6px 0;
     }
     .db-world-conf-list__conf-name {
       display: inline-flex; align-items: center; gap: 8px;
       font-weight: 700; color: var(--wclist-ink);
+      font-size: 0.95rem;
     }
     .db-world-conf-list__conf-dot {
       width: 10px; height: 10px; border-radius: 50%;
@@ -2845,14 +2851,19 @@
       background: rgba(15,23,42,0.25);
       margin: 0 6px; vertical-align: middle;
     }
+    /* Legend now lives inside the same white card, aligned with the labels. */
     .db-world-conf-list__legend {
       display: flex; gap: 14px; align-items: center;
       font-size: 0.78rem; color: var(--wclist-muted);
-      margin: 4px 0 var(--space-3);
+      margin: 4px 0 0;
+      padding-left: 2px;
     }
     .db-world-conf-list__legend .sw {
       display: inline-block; width: 10px; height: 10px;
       margin-right: 6px; border-radius: 2px; vertical-align: middle;
+    }
+    .db-world-conf-list__legend em {
+      font-style: italic; color: var(--wclist-ink);
     }
     .db-world-conf-list__prov-label {
       font-size: 0.72rem; letter-spacing: 0.08em;
@@ -2860,6 +2871,14 @@
       margin: var(--space-2) 0 4px;
       border-bottom: 1px solid var(--wclist-rule-strong);
       padding-bottom: 4px;
+    }
+    /* Two-column province flow (single column at narrow widths). */
+    .db-world-conf-list__prov-grid {
+      column-count: 2;
+      column-gap: 32px;
+    }
+    @media (max-width: 720px) {
+      .db-world-conf-list__prov-grid { column-count: 1; }
     }
     .db-world-conf-list__prov-row {
       display: grid;
@@ -2870,6 +2889,7 @@
       border-bottom: 1px dashed var(--wclist-rule);
       font-size: 0.9rem;
       color: var(--wclist-ink);
+      break-inside: avoid;
     }
     .db-world-conf-list__prov-row:last-child { border-bottom: none; }
     .db-world-conf-list__prov-swatch {
@@ -2878,7 +2898,9 @@
     }
     .db-world-conf-list__prov-name {
       font-weight: 600;
-      color: var(--wclist-ink);
+      color: var(--wclist-link);
+      text-decoration: underline;
+      text-underline-offset: 2px;
     }
     .db-world-conf-list__note {
       margin-top: var(--space-3);

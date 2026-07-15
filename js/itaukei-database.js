@@ -1200,7 +1200,8 @@
   // groups by confederacy. Scholars with no matched profile / no province
   // are counted separately as "Unmatched" so no thesis is silently dropped.
   function buildB2ConfederacyRollup() {
-    const CONF_ORDER = ['Tovata', 'Kubuna', 'Burebasaga'];
+    // Confederacy order matches the approved Panel B2 mockup.
+    const CONF_ORDER = ['Kubuna', 'Burebasaga', 'Tovata'];
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
 
@@ -1280,12 +1281,14 @@
     const { confRows, provRows, totals } = buildB2ConfederacyRollup();
     const parts = [];
     parts.push('<div class="db-world-conf-list__label">By Confederacy</div>');
+    // Single white card holds all three confederacy rows + the legend.
+    parts.push('<div class="db-world-conf-list__conf-card">');
     confRows.forEach(c => {
       const total = c.total || 1;
       const mPct = (c.masters / total) * 100;
       const pPct = (c.phd / total) * 100;
       parts.push(
-        '<div class="db-world-conf-list__conf-card">' +
+        '<div class="db-world-conf-list__conf-row">' +
           '<span class="db-world-conf-list__conf-name">' +
             `<span class="db-world-conf-list__conf-dot" style="background:${CONF_COLORS[c.name] || '#94a3b8'};"></span>` +
             escapeHtml(c.name) +
@@ -1296,7 +1299,7 @@
             `<span class="seg-p" style="width:${pPct.toFixed(1)}%;"></span>` +
           '</span>' +
           '<span class="db-world-conf-list__counts">' +
-            `<b>Masters</b> ${c.masters}` +
+            `<b>M</b> ${c.masters}` +
             '<span class="pipe"></span>' +
             `<b>PhD</b> ${c.phd}` +
             '<span class="pipe"></span>' +
@@ -1307,29 +1310,32 @@
     });
     parts.push(
       '<div class="db-world-conf-list__legend">' +
-        '<span><span class="sw" style="background:#8FBC8F;"></span>Masters</span>' +
-        '<span><span class="sw" style="background:#228B22;"></span>PhD</span>' +
+        '<span><span class="sw" style="background:#8FBC8F;"></span><em>Masters</em></span>' +
+        '<span><span class="sw" style="background:#228B22;"></span><em>PhD</em></span>' +
       '</div>'
     );
+    parts.push('</div>');
     parts.push('<div class="db-world-conf-list__prov-label">By Province · descending by total</div>');
     if (provRows.length === 0) {
       parts.push('<p class="db-conf-narrative">No provinces matched yet.</p>');
     } else {
+      parts.push('<div class="db-world-conf-list__prov-grid">');
       provRows.forEach(r => {
         parts.push(
           '<div class="db-world-conf-list__prov-row">' +
             `<span class="db-world-conf-list__prov-swatch" style="background:${CONF_COLORS[r.conf] || '#94a3b8'};"></span>` +
             `<span class="db-world-conf-list__prov-name">${escapeHtml(r.name)}</span>` +
             '<span class="db-world-conf-list__counts">' +
-              `<b>Masters</b> ${r.masters}` +
+              `<b>M</b> ${r.masters}` +
               '<span class="pipe"></span>' +
               `<b>PhD</b> ${r.phd}` +
               '<span class="pipe"></span>' +
-              `<span class="db-world-total">Total ${r.total}</span>` +
+              `<span class="db-world-total">Tot ${r.total}</span>` +
             '</span>' +
           '</div>'
         );
       });
+      parts.push('</div>');
     }
 
     const missing = totals.unmatchedMasters + totals.unmatchedPhd;
