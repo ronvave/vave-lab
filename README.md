@@ -174,6 +174,22 @@ python3 data/refresh-graduate-studies.py
 
 Both write encrypted snapshots into `data/`.
 
+#### Collection-membership drift validator
+
+The Zotero paged `/items/top` endpoint occasionally returns items whose
+`collections[]` field is short by one or more keys, even when the per-item
+`/items/{key}` endpoint returns the correct list. This was the root cause
+of Panel B3/C1 provinces showing zero items when Zotero desktop showed
+several (Serua, Cakaudrove, Macuata on 2026-07-14).
+
+`data/refresh-zotero-snapshot.py` now cross-checks every collection's
+item list against the authoritative `/collections/{key}/items?format=keys`
+endpoint after the bulk pull. Any short-fall re-fetches the offending
+items directly and merges the true `collections[]` back into the
+snapshot before it's written. The core repair function lives in
+`data/drift_validator.py` and is unit-tested at
+`scripts/tests/test_drift_validator.py` (nine cases, no network required).
+
 ### Using the admin dashboard
 
 Open [admin.html](https://ronvave.github.io/vave-lab/admin.html), enter the

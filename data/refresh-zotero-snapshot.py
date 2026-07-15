@@ -8,8 +8,12 @@ Run this whenever you've added or edited items in the iTaukei Academic Research 
 After running, commit the updated JSON:
   git add data/itaukei-zotero-snapshot.json && git commit -m "Refresh Zotero snapshot" && git push
 """
-import json, os, re, time, urllib.request
+import json, os, re, sys, time, urllib.request, urllib.error
 from datetime import datetime, timezone
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from drift_validator import reconcile_drift  # noqa: E402
 
 GROUP_ID = 5983386
 
@@ -147,6 +151,96 @@ collections = [{
     "parent": c["data"].get("parentCollection") or None,
     "numItems": c["meta"]["numItems"],
 } for c in cols_raw]
+
+# ---------------------------------------------------------------------------
+# Cross-check: reconcile items[].collections[] with each collection's
+# authoritative numItems (from /collections). This defends against the
+# transient Zotero API bug where the paged /items/top endpoint returns
+# items with an incomplete collections[] field even though the per-item
+# /items/{key} endpoint returns the correct list.
+#
+# Only top-level items (theses, books, articles, reports, chapters) count
+# toward the client-side panel totals; child notes/attachments live under
+# the same collections but were already filtered out above. We compare
+# against a top-level-only variant of numItems that we recompute from the
+# /collections/{key}/itemKeys endpoint, filtered to keys we kept.
+# ---------------------------------------------------------------------------
+def _get_with_backoff(url: str, attempts: int = 4) -> bytes | None:
+    """GET url with exponential backoff on 429/5xx. Returns raw body or None.
+
+    Honors Retry-After when the server sends it. Sleeps 1s, 2s, 4s, 8s
+    between attempts otherwise. Any other HTTPError is raised so the
+    caller can decide.
+    """
+    req = urllib.request.Request(url, headers={"Zotero-API-Version": "3"})
+    for attempt in range(attempts):
+        try:
+            with urllib.request.urlopen(req) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code == 429 or (500 <= e.code < 600):
+                retry_after = e.headers.get("Retry-After") if hasattr(e, "headers") else None
+                delay = int(retry_after) if (retry_after and retry_after.isdigit()) else (1 << attempt)
+                if attempt < attempts - 1:
+                    time.sleep(delay)
+                    continue
+            raise
+    return None
+
+
+def fetch_collection_item_keys(col_key: str) -> list[str]:
+    """Return the list of item keys directly in a collection.
+
+    Uses /collections/{key}/items?format=keys, which returns one
+    newline-delimited key per line. Cheap: no JSON parsing, no item
+    bodies, no pagination for collections under ~5k items.
+    """
+    u = f"https://api.zotero.org/groups/{GROUP_ID}/collections/{col_key}/items?format=keys"
+    body = _get_with_backoff(u) or b""
+    text = body.decode("utf-8", errors="replace")
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def fetch_item(item_key: str) -> dict | None:
+    """Fetch a single item's data payload, or None if the API errors."""
+    u = f"https://api.zotero.org/groups/{GROUP_ID}/items/{item_key}?format=json"
+    try:
+        body = _get_with_backoff(u)
+        return json.loads(body) if body else None
+    except Exception as e:
+        print(f"  ! fetch_item({item_key}) failed: {e}")
+        return None
+
+
+# Cap the repair budget so a genuinely broken API can't hang the refresh.
+MAX_COLLECTIONS_TO_CHECK = 400   # we currently have ~355 collections
+MAX_ITEMS_TO_REPAIR      = 500   # safety net; typical drift is <30
+API_DELAY_SECONDS        = 0.20  # unauthenticated tier throttles hard
+
+print("Validating collection membership against authoritative /collections "
+      "key lists\u2026")
+stats = reconcile_drift(
+    items, collections,
+    key_fetcher=fetch_collection_item_keys,
+    item_fetcher=fetch_item,
+    api_delay=API_DELAY_SECONDS,
+    max_collections=MAX_COLLECTIONS_TO_CHECK,
+    max_items=MAX_ITEMS_TO_REPAIR,
+)
+
+if stats["skipped_collections"]:
+    print(f"Note: {stats['skipped_collections']} collection(s) skipped due to API errors; "
+          "drift within those is not detected on this run.")
+if stats["repaired_items"]:
+    print(f"Repaired {stats['repaired_items']} item collection-list(s) across "
+          f"{stats['repaired_collections']} collection(s).")
+    print("Drift summary:")
+    for col_key, name, recon, auth in stats["drift_report"]:
+        print(f"  {col_key}  {name!r:40}  reconstructed {recon:>4} → authoritative {auth:>4}")
+elif not stats["skipped_collections"]:
+    print("No drift detected — all collection memberships consistent.")
+else:
+    print("No drift detected in checked collections.")
 
 snapshot = {
     "generatedAt": datetime.now(timezone.utc).isoformat(),
