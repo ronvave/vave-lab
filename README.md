@@ -123,6 +123,29 @@ git push
 
 **Never commit a plaintext `.json` for any file that also has a `.enc` sibling.**
 
+### Pre-push guardrail
+
+After a fresh clone, run once:
+
+```bash
+bash scripts/install_hooks.sh
+```
+
+That wires `.githooks/pre-push` into git and enables two checks on every push:
+
+1. **Decrypt sanity** — every `.enc` file being pushed must decrypt with
+   `$VAVELAB_PASSCODE` and parse as JSON. Blocks corrupted blobs.
+2. **Message vs. diff consistency** — if any commit message in the push
+   range mentions a data-file symptom (`data/`, `.enc`, a Zotero collection
+   key like `RNKFUZ6M`, a filename like `fiji-provinces`…) but no `.enc`
+   file is in the diff, the push is blocked. Catches the rebase-drop
+   failure mode where `git checkout --ours` silently resolves an `.enc`
+   conflict to the wrong side and the data change never actually ships.
+
+Export `VAVELAB_PASSCODE` in your shell so check #1 runs. Set
+`VAVELAB_SKIP_ENC_CHECK=1` for a one-off override when you genuinely mean
+to push a JS-only commit that happens to name a data file.
+
 ### Refreshing from Zotero
 
 ```bash
