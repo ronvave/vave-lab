@@ -1021,16 +1021,14 @@
     /* When the map is fullscreen, hide page scroll behind it. */
     body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
-      background: var(--color-primary-highlight);
+      /* Panels B2 & B3 aside — light cool off-white matches the approved
+         Panel B2 confederacy mockup. */
+      background: #F4F8F9;
       border-radius: var(--radius-md);
       padding: var(--space-4);
       font-size: 1rem; color: var(--color-text);
       display: flex; flex-direction: column; gap: var(--space-3);
     }
-    /* Panel B2 world-panel background — matches the approved confederacy
-       mockup (light cool off-white #F4F8F9). Panel B3 continues to use the
-       original --color-primary-highlight teal. */
-    [data-panel="B2"] .db-world-panel-wide { background: #F4F8F9; }
     .db-world-panel-wide h4 {
       margin: 0 0 6px; font-size: 0.85rem; font-weight: 700;
       text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-text);
@@ -1252,7 +1250,8 @@
       font-size: 0.9rem;
     }
     .db-map-legend-panel {
-      background: var(--color-primary-highlight);
+      /* Panel B1 aside — light cool off-white matches Panels B2 & B3. */
+      background: #F4F8F9;
       border-radius: var(--radius-md);
       padding: var(--space-4);
       font-size: 1rem; color: var(--color-text);
