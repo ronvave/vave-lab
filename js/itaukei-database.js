@@ -284,6 +284,21 @@
       fetch('https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec?mode=progress')
         .then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
+    // Filter out conference papers globally (July 2026 admin directive).
+    // Ron's rule: conference papers must not appear on scholar profile cards
+    // (Panel F), publication tallies, BibTeX exports, or any other panel.
+    // Dropping them from state.snapshot.items here is the single chokepoint —
+    // every downstream reader (Panels A, B1, B2, B3, C1, C2, D, E, F, G,
+    // BibTeX export, item lists, counters) reads state.snapshot.items and
+    // therefore inherits this filter with no per-site changes.
+    // TYPE_ORDER already excludes conferencePaper (see comment ~line 78) so
+    // the visualization filter row also stays consistent. See
+    // docs/CONFERENCE-PAPERS-HIDDEN.md for the full rationale.
+    if (snap && Array.isArray(snap.items)) {
+      const beforeCount = snap.items.length;
+      snap.items = snap.items.filter(it => it && it.itemType !== 'conferencePaper');
+      state.hiddenConferencePapers = beforeCount - snap.items.length;
+    }
     state.snapshot = snap;
     state.provinces = geo;
     state.universities = unis;
