@@ -2868,6 +2868,13 @@
     .db-world-conf-list__legend em {
       font-style: italic; color: var(--wclist-ink);
     }
+    /* Panel B2 summary — one-size-up bumps to match the confederacy/province
+       name hierarchy. Scoped so Panel B3 country list stays unchanged. */
+    [data-panel="B2"] .db-world-conf-list__legend { font-size: 0.88rem; }
+    [data-panel="B2"] .db-world-conf-list__label,
+    [data-panel="B2"] .db-world-conf-list__prov-label { font-size: 0.82rem; }
+    [data-panel="B2"] .db-world-country-row__name { font-size: 1.08rem; }
+    [data-panel="B2"] .db-world-country-row__counts { font-size: 0.98rem; }
     .db-world-conf-list__prov-label {
       font-size: 0.72rem; letter-spacing: 0.08em;
       text-transform: uppercase; color: var(--wclist-ink);
