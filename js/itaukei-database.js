@@ -1610,16 +1610,39 @@
       listHost.appendChild(row);
     });
 
+    // Global totals for both the summary sentence below the panel AND the
+    // Panel B2 title suffix. Kept as one computation so the two never drift.
+    const totM = countries.reduce((a, r) => a + r.masters, 0);
+    const totP = countries.reduce((a, r) => a + r.phd, 0);
+    const totU = countries.reduce((a, r) => a + (r.unknown || 0), 0);
+    const totalTheses = totM + totP + totU;
+    // Distinct universities across all countries — each worldPoint corresponds
+    // to one (country, university) pair, so the size of `points` is the count.
+    const totalUnis = new Set(points.map(p => `${p.country}||${p.university}`)).size;
+    const totalCountries = countries.length;
+
     const narrEl = document.querySelector('[data-world-narrative]');
     if (narrEl) {
-      const totM = countries.reduce((a, r) => a + r.masters, 0);
-      const totP = countries.reduce((a, r) => a + r.phd, 0);
-      const totU = countries.reduce((a, r) => a + (r.unknown || 0), 0);
-      const totalDeg = totM + totP + totU;
       const otherClause = totU > 0 ? `, and ${totU} other higher-degree ${totU === 1 ? 'thesis' : 'theses'}` : '';
       narrEl.textContent = `iTaukei scholars completed ${totM} Master\u2019s and ${totP} PhD ` +
-        `${(totM + totP) === 1 ? 'degree' : 'degrees'}${otherClause} across ${countries.length} ` +
-        `${countries.length === 1 ? 'country' : 'countries'}.`;
+        `${(totM + totP) === 1 ? 'degree' : 'degrees'}${otherClause} across ${totalCountries} ` +
+        `${totalCountries === 1 ? 'country' : 'countries'}.`;
+    }
+
+    // Panel B2 title totals suffix — always shown so Ron can see the count at
+    // a glance without scrolling to the panel footer. July 2026 spec:
+    //   (TOTAL: 348 Theses; 215 Masters + 111 PhD; 17 countries; 73 universities)
+    // The optional "unknown" bucket (theses whose thesisType couldn't be
+    // classified) is rolled into TOTAL but not broken out separately — the
+    // summary sentence below the panel still names it as "other higher-degree
+    // theses".
+    const titleTotalsEl = document.querySelector('[data-b2-title-totals]');
+    if (titleTotalsEl) {
+      titleTotalsEl.textContent =
+        ` (TOTAL: ${totalTheses} ${totalTheses === 1 ? 'Thesis' : 'Theses'}; ` +
+        `${totM} ${totM === 1 ? 'Master' : 'Masters'} + ${totP} PhD; ` +
+        `${totalCountries} ${totalCountries === 1 ? 'country' : 'countries'}; ` +
+        `${totalUnis} ${totalUnis === 1 ? 'university' : 'universities'})`;
     }
 
     // Apply the active list view (country vs confederacy). This shows/hides

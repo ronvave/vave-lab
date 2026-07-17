@@ -430,6 +430,19 @@
       text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text);
       padding-right: 34px;
     }
+    /* Panel B2 title suffix: dynamic totals — (TOTAL: 348 Theses; 215 Masters + 111 PhD).
+       Rendered by renderWorldPanel() in js/itaukei-database.js after graduate-studies
+       loads. Empty until then, so no layout shift. Stays black per Ron's rule (no muted
+       greys). Not uppercase-forced — the numbers read cleaner as-is. */
+    .db-panel__title-totals {
+      font-weight: 500;
+      color: var(--color-text);
+      margin-left: 0.35em;
+      letter-spacing: 0;
+      text-transform: none;
+      white-space: nowrap;
+    }
+    .db-panel__title-totals:empty { display: none; }
     .db-panel__hint {
       font-size: 0.9rem; color: var(--color-text); margin: 0 0 var(--space-3);
       text-transform: none; letter-spacing: 0; font-weight: 400; line-height: 1.5;
@@ -3978,7 +3991,7 @@
       <!-- Panel A2 — Whole-world map of iTaukei graduate studies (wide layout) -->
       <div class="db-panel reveal db-panel--wide" data-panel="B2">
         <span class="db-panel__label">B2</span>
-        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
+        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE<span class="db-panel__title-totals" data-b2-title-totals aria-live="polite"></span> <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
         <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
         <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
           <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>

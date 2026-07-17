@@ -32,6 +32,7 @@ Output: data/itaukei-graduate-studies.json  (public dashboard reads this).
 """
 
 import json
+import os
 import re
 import sys
 from datetime import datetime, timezone
@@ -60,8 +61,10 @@ THESIS_ROOT_NAME_CANDIDATES = (
 COUNTRY_ISO = {
     "Australia":       "AU",
     "Canada":          "CA",
+    "China":           "CN",
     "Fiji":            "FJ",
     "Germany":         "DE",
+    "India":           "IN",
     "Indonesia":       "ID",
     "Malta":           "MT",
     "New Zealand":     "NZ",
@@ -197,6 +200,14 @@ UNIVERSITY_COORDS = {
     "Tokyo Medical and Dental University":   (35.7024, 139.7645),
     # Papua New Guinea
     "Papua New Guinea University of Technology": (-6.6640, 146.9865),
+    # India
+    "Mangalore University":                  (12.816, 74.928),
+    # China
+    "Tsinghua University":                   (40.001, 116.326),
+    # New Zealand — additions
+    "Auckland University of Technology":     (-36.853, 174.766),
+    # Japan — additions
+    "Hokkaido University":                   (43.073, 141.339),
 }
 
 
@@ -533,14 +544,48 @@ def main() -> None:
     print(f"theses tracked: {output['totals']['thesesTracked']}")
     print(f"universities: {output['totals']['universities']}")
     print(f"countries: {output['totals']['countries']}")
+
+    # ------------------------------------------------------------------
+    # Coverage gaps — surface loudly.
+    #
+    # A university without coordinates renders in the Panel B2 by-country
+    # list but has NO bubble on the world map (silent visualization gap).
+    # A country without an ISO2 code drops the ISO field from every one of
+    # its universities — which may break flag icons or downstream joins.
+    #
+    # Both are recoverable by editing COUNTRY_ISO / UNIVERSITY_COORDS at the
+    # top of this file. Docs: docs/DATA-COVERAGE-GAPS.md.
+    #
+    # In CI (VAVELAB_STRICT_COVERAGE=1) these become fatal so a silent map
+    # regression can't ship. Locally the script only warns.
+    # ------------------------------------------------------------------
+    strict = os.environ.get("VAVELAB_STRICT_COVERAGE") == "1"
+    gap_exit = 0
     if unknown_countries:
-        print("Country-level collections without ISO mapping (add to COUNTRY_ISO):")
+        gap_exit = 1
+        print("")
+        print("=" * 72)
+        print(f"WARNING: {len(unknown_countries)} country/countries without an ISO mapping")
+        print("Fix: add to COUNTRY_ISO in data/refresh-graduate-studies.py")
+        print("See docs/DATA-COVERAGE-GAPS.md")
+        print("=" * 72)
         for c in sorted(unknown_countries):
             print(f"  - {c!r}")
     if unknown_universities:
-        print("Universities without coord mapping (add to UNIVERSITY_COORDS to plot on the map):")
+        gap_exit = 1
+        print("")
+        print("=" * 72)
+        print(f"WARNING: {len(unknown_universities)} university/universities without coordinates")
+        print("These render in the country list but WILL NOT show a bubble on the map.")
+        print("Fix: add to UNIVERSITY_COORDS in data/refresh-graduate-studies.py")
+        print("See docs/DATA-COVERAGE-GAPS.md for a checklist and coordinate sources.")
+        print("=" * 72)
         for u in sorted(unknown_universities):
             print(f"  - {u!r}")
+    if gap_exit and strict:
+        print("")
+        print("VAVELAB_STRICT_COVERAGE=1 — failing build until gaps are resolved.")
+        sys.exit(2)
 
 
 def _reencrypt_if_configured():

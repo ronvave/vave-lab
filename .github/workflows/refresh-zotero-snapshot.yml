@@ -68,6 +68,15 @@ jobs:
           python3 data/refresh-zotero-snapshot.py
 
       - name: Regenerate graduate-studies from snapshot
+        env:
+          # Fail the workflow (and email Ron via GitHub notification) if a
+          # new country appears without an ISO mapping OR a new university
+          # appears without coordinates in the hardcoded lookups. Prevents
+          # silent map regressions where a country renders in the by-country
+          # list but has no bubble on the world map. Fix by editing the
+          # COUNTRY_ISO / UNIVERSITY_COORDS blocks in
+          # data/refresh-graduate-studies.py. See docs/DATA-COVERAGE-GAPS.md.
+          VAVELAB_STRICT_COVERAGE: "1"
         run: |
           python3 data/refresh-graduate-studies.py
 
