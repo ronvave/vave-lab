@@ -430,6 +430,18 @@
       text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text);
       padding-right: 34px;
     }
+    /* Panel-title row that puts the panel label + title on the left and an
+       inline pill selector on the right (Panel D uses this for its Authors
+       filter next to the source-type histogram title). The h2 keeps its
+       own bottom margin so the hint text below still flows naturally.
+       On narrow screens the pills wrap under the title. */
+    .db-panel__titlebar {
+      display: flex; flex-wrap: wrap; align-items: center;
+      gap: var(--space-3); justify-content: space-between;
+      margin: 0 0 var(--space-2);
+    }
+    .db-panel__titlebar > .db-panel__title { margin: 0; }
+    .db-panel__titlebar > .db-panel-b2__tabs { margin: 0; flex-shrink: 0; }
     /* Panel B2 KPI tiles — 5-across on wide screens, matching the A1/A2
        6-across grid density. Sits between the panel description and the
        map/list. Numbers always show global totals (not filter-scoped) so
@@ -4421,8 +4433,29 @@
       <!-- Panel D — stacked-by-type histogram over time -->
       <div class="db-panel reveal" data-panel="D">
         <span class="db-panel__label">D</span>
-        <h2 class="db-panel__title">Publications over time, by source type</h2>
-        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Reflects the item types enabled in panel B.</p>
+        <div class="db-panel__titlebar">
+          <h2 class="db-panel__title">Publications over time, by source type</h2>
+          <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel D authors filter" data-hist-authors-tabs>
+            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="lead" aria-selected="false" tabindex="-1" title="Only publications where the first-listed author is iTaukei">iTaukei lead</button>
+            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="coauth" aria-selected="false" tabindex="-1" title="Only publications where an iTaukei author appears but is not first-listed">iTaukei coauthor</button>
+            <button type="button" role="tab" class="db-b2-tab is-active" data-hist-authors="both" aria-selected="true" tabindex="0" title="Publications with any iTaukei author (lead or coauthor)">iTaukei both</button>
+            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="all" aria-selected="false" tabindex="-1" title="All publications in the database regardless of author ethnicity">All authors</button>
+          </div>
+        </div>
+        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Use the checkboxes to toggle source types independently of Panel B.</p>
+        <div class="db-type-filter" data-hist-type-filter>
+          <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
+          <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Masters Thesis</label>
+          <label><input type="checkbox" value="journalArticle" checked><i style="background:#0e7490;"></i> Journal Article</label>
+          <label><input type="checkbox" value="bookSection" checked><i style="background:#7a1419;"></i> Book Chapter</label>
+          <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
+          <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
+          <label><input type="checkbox" value="preprint" checked><i style="background:#6b7280;"></i> Preprint</label>
+          <span class="db-type-filter__actions">
+            <button type="button" data-hist-type-all>Check all</button>
+            <button type="button" data-hist-type-none>Clear</button>
+          </span>
+        </div>
         <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
         <div class="db-hist-controls" data-db-hist-controls>
           <label>From <input type="number" data-hist-start step="1" /></label>
@@ -4888,6 +4921,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=35a435da" defer></script>
+<script src="js/itaukei-database.js?v=a474e395" defer></script>
 </body>
 </html>

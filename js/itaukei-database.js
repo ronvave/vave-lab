@@ -126,8 +126,17 @@
     worldView: 'study',                  // 'study' | 'publish'
     worldLayer: null,                    // Leaflet layer holding world-map markers
     mapView: 'all',                      // 'all' | 'lead' | 'coauth'
-    typeSet: new Set(TYPE_ORDER),        // which types are shown in panels B, C, D
-    // Panel C x-axis range — null means "use full data range" (default: All)
+    typeSet: new Set(TYPE_ORDER),        // which types are shown in panels B, C
+    // Panel D has its own independent type filter so the timeline can be
+    // interrogated without disturbing Panels B/C. Also has its own authors
+    // filter with four modes, driven by the pills next to the title:
+    //   'lead'   — iTaukei is first-listed author
+    //   'coauth' — iTaukei appears but is not first-listed
+    //   'both'   — lead + coauth (any iTaukei involvement; default)
+    //   'all'    — every publication in the database
+    histTypeSet: new Set(TYPE_ORDER),
+    histAuthors: 'both',                 // 'lead' | 'coauth' | 'both' | 'all'
+    // Panel D x-axis range — null means "use full data range" (default: All)
     histRange: { start: null, end: null, preset: 'all' },
     filter: {
       q: '',
@@ -298,6 +307,27 @@
       const beforeCount = snap.items.length;
       snap.items = snap.items.filter(it => it && it.itemType !== 'conferencePaper');
       state.hiddenConferencePapers = beforeCount - snap.items.length;
+
+      // Client-side year backfill. The Python snapshot builder used to reject
+      // any date containing a hyphen (its token-split checked isdigit(), so
+      // ISO dates like '2019-03' and '2019-03-15' failed and the item was
+      // stored with year = null). That silently dropped ~200 items (8% of
+      // the library) from Panel D. The Python side has been fixed, but we
+      // also re-derive year here so older snapshots and any future stray
+      // date formats don't leak. We search for the first 4-digit run in the
+      // stored date string and accept it if it looks like a plausible pub
+      // year. This runs before every panel reads state.snapshot.items, so
+      // Panels B/C/D/E/G all pick up the recovered items automatically.
+      let recoveredYears = 0;
+      snap.items.forEach(it => {
+        if (it.year) return;
+        const d = it.date || '';
+        const m = String(d).match(/\b(\d{4})\b/);
+        if (!m) return;
+        const y = parseInt(m[1], 10);
+        if (y >= 1900 && y <= 2035) { it.year = y; recoveredYears++; }
+      });
+      state.recoveredYears = recoveredYears;
     }
     state.snapshot = snap;
     state.provinces = geo;
@@ -5132,7 +5162,9 @@
       visibleBoxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
       renderPanelB();
       renderPanelD();
-      renderHistogram();
+      // Panel D histogram has its own type filter (state.histTypeSet) wired
+      // by wireHistTypeFilter — do NOT rerender it here so Panel B toggles
+      // no longer cascade into the timeline.
     };
     visibleBoxes.forEach(b => b.addEventListener('change', syncChecked));
     const allBtn = host.querySelector('[data-db-type-all]');
@@ -5140,6 +5172,78 @@
     if (allBtn)  allBtn.addEventListener('click',  () => { visibleBoxes.forEach(b => b.checked = true);  syncChecked(); });
     if (noneBtn) noneBtn.addEventListener('click', () => { visibleBoxes.forEach(b => b.checked = false); syncChecked(); });
     syncChecked();
+  }
+
+  // ============ Panel D type filter (independent of Panel B) ============
+  // Same visual pattern as Panel C2's wireB2TypeFilter — checkbox row with
+  // Check-all / Clear buttons. State lives in state.histTypeSet, which only
+  // renderHistogram() reads, so toggling here does not affect Panels B/C.
+  // Hidden item types (zero items in the snapshot) are stripped so the row
+  // matches the actual data.
+  function wireHistTypeFilter() {
+    const host = $('[data-hist-type-filter]');
+    if (!host) return;
+
+    // Count items per (visual) type so we can hide zero-item checkboxes.
+    const typeCounts = new Map();
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      typeCounts.set(vt, (typeCounts.get(vt) || 0) + 1);
+    });
+
+    const boxes = Array.from(host.querySelectorAll('input[type="checkbox"]'));
+    const visibleBoxes = [];
+    boxes.forEach(b => {
+      const n = typeCounts.get(b.value) || 0;
+      const label = b.closest('label');
+      if (n === 0) {
+        if (label) label.style.display = 'none';
+        b.checked = false;
+        state.histTypeSet.delete(b.value);
+      } else {
+        visibleBoxes.push(b);
+      }
+    });
+
+    const syncChecked = () => {
+      state.histTypeSet = new Set(visibleBoxes.filter(b => b.checked).map(b => b.value));
+      visibleBoxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
+      renderHistogram();
+    };
+    visibleBoxes.forEach(b => b.addEventListener('change', syncChecked));
+    const allBtn  = host.querySelector('[data-hist-type-all]');
+    const noneBtn = host.querySelector('[data-hist-type-none]');
+    if (allBtn)  allBtn.addEventListener('click',  () => { visibleBoxes.forEach(b => b.checked = true);  syncChecked(); });
+    if (noneBtn) noneBtn.addEventListener('click', () => { visibleBoxes.forEach(b => b.checked = false); syncChecked(); });
+    syncChecked();
+  }
+
+  // ============ Panel D authors pills (lead / coauth / both / all) ============
+  // Four-state selector that lives to the right of the Panel D title. Writes
+  // to state.histAuthors and re-renders only the histogram. See renderHistogram
+  // for how each mode maps onto itaukeiAuthorship(item).
+  function wireHistAuthorsTabs() {
+    const wrap = $('[data-hist-authors-tabs]');
+    if (!wrap) return;
+    const tabs = Array.from(wrap.querySelectorAll('[data-hist-authors]'));
+    tabs.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const v = btn.dataset.histAuthors;
+        if (!v || state.histAuthors === v) return;
+        state.histAuthors = v;
+        tabs.forEach(t => {
+          const active = t === btn;
+          t.classList.toggle('is-active', active);
+          t.setAttribute('aria-selected', active ? 'true' : 'false');
+          t.setAttribute('tabindex', active ? '0' : '-1');
+        });
+        // X-axis range depends on the current authors filter (yearsAll changes),
+        // so reset the histogram range preset to "all" and let renderHistogram
+        // recompute the data-min/max from the newly filtered set.
+        state.histRange = { start: null, end: null, preset: 'all' };
+        renderHistogram();
+      });
+    });
   }
 
   // ============ Panel C legend (item-type colour key) ============
@@ -5252,20 +5356,41 @@
     });
   }
 
-  // ============ STACKED-BY-TYPE YEAR HISTOGRAM (Panel C) ============
-  // Bars per year, stacked bottom-up by item type. Reflects Panel B checkboxes.
+  // ============ STACKED-BY-TYPE YEAR HISTOGRAM (Panel D) ============
+  // Bars per year, stacked bottom-up by item type. Panel D owns its own
+  // type filter (state.histTypeSet, wired via wireHistTypeFilter) and its own
+  // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
+  // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
   function renderHistogram() {
     const items = state.snapshot.items;
+    const authorsMode = state.histAuthors || 'both';
+
+    // Authors filter shared with itaukeiAuthorship() upstream:
+    //   'lead'   — first-listed creator is iTaukei
+    //   'coauth' — iTaukei is present but not first-listed
+    //   'both'   — any iTaukei involvement (lead OR coauth)
+    //   'all'    — no author filter
+    const passesAuthors = (it) => {
+      if (authorsMode === 'all') return true;
+      const role = itaukeiAuthorship(it);        // 'lead' | 'coauth' | 'none'
+      if (authorsMode === 'lead')   return role === 'lead';
+      if (authorsMode === 'coauth') return role === 'coauth';
+      return role !== 'none';                    // 'both'
+    };
 
     // Aggregate: year -> { itemType: n } and keep list of years present in data
     const perYear = new Map();
     const yearsAll = [];
     items.forEach(it => {
       if (!it.year) return;
+      // Authors filter applied first so the x-axis range (yearsAll) also
+      // reflects it — switching modes shrinks the visible time window when
+      // the mode drops the earliest items in the data.
+      if (!passesAuthors(it)) return;
       yearsAll.push(it.year);
       const vt = visualType(it);
-      if (!state.typeSet.has(vt)) return;
+      if (!state.histTypeSet.has(vt)) return;
       let bucket = perYear.get(it.year);
       if (!bucket) { bucket = {}; perYear.set(it.year, bucket); }
       bucket[vt] = (bucket[vt] || 0) + 1;
@@ -5292,9 +5417,11 @@
       return;
     }
 
-    // Layout constants
+    // Layout constants. PAD_TOP was 44 when the in-SVG legend sat above
+    // the plot area; the checkable filter row now serves that role, so we
+    // tighten the top gutter to reclaim vertical space for the bars.
     const W = 900, H = 340;
-    const PAD_LEFT = 44, PAD_RIGHT = 20, PAD_TOP = 44, PAD_BOTTOM = 46;
+    const PAD_LEFT = 44, PAD_RIGHT = 20, PAD_TOP = 12, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
 
@@ -5344,27 +5471,9 @@
     const yScale = n => plotH * (n / niceMax);
     const yZero = PAD_TOP + plotH; // bottom of plot
 
-    // Legend inside the SVG so the caption sits directly over the chart
-    const legendY = PAD_TOP - 26;
-    let legendX = PAD_LEFT;
-    visibleTypes.forEach(t => {
-      const sw = document.createElementNS('http://www.w3.org/2000/svg','rect');
-      sw.setAttribute('x', legendX);
-      sw.setAttribute('y', legendY);
-      sw.setAttribute('width', 12); sw.setAttribute('height', 12);
-      sw.setAttribute('rx', 2);
-      sw.setAttribute('fill', TYPE_COLOR[t]);
-      svg.appendChild(sw);
-      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
-      lbl.setAttribute('x', legendX + 17);
-      lbl.setAttribute('y', legendY + 10);
-      lbl.setAttribute('font-family','DM Sans');
-      lbl.setAttribute('font-size','12');
-      lbl.setAttribute('fill','#1a1a1a');
-      lbl.textContent = TYPE_LABELS[t] || t;
-      svg.appendChild(lbl);
-      legendX += 17 + measureTextWidth(TYPE_LABELS[t] || t, 12) + 20;
-    });
+    // (In-SVG legend removed — the checkable source-type row above the chart
+    // now serves as both the legend and the filter, so drawing it twice is
+    // redundant and eats vertical space.)
 
     // Gridlines + Y axis ticks (0, niceMax/2, niceMax)
     const ticks = [0, niceMax / 2, niceMax];
@@ -7737,6 +7846,8 @@
     wireScholarFilterRow();
     wire();
     wireTypeFilter();
+    wireHistTypeFilter();
+    wireHistAuthorsTabs();
     wirePanelB1();
     wireWorldPanel();
     // Panel A2 country list is standalone (no toggle to reveal it),

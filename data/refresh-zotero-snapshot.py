@@ -40,10 +40,24 @@ def creators(cs):
     return parts
 
 def year_of(dt):
+    """Extract a 4-digit publication year from a Zotero date string.
+
+    Zotero stores dates in whatever shape the item entry uses — the same
+    library holds bare years ('2019'), month-only ISO ('2019-03'), full ISO
+    ('2019-03-15'), month names ('March 15, 2019'), season+year ('Winter
+    2019'), and free-text ('c. 2019'). We accept any of these, otherwise
+    ~200 items (8% of the database) silently drop out of Panel D.
+    """
     if not dt: return None
-    for tok in dt.replace(",", " ").split():
-        if tok.isdigit() and 1900 <= int(tok) <= 2035:
-            return int(tok)
+    import re
+    # Look for the first 4-digit run anywhere in the string. Handles
+    # ISO ('2019-03', '2019-03-15'), month-first, day-first, and anything
+    # else the token-split path used to miss.
+    m = re.search(r'\b(\d{4})\b', str(dt))
+    if m:
+        y = int(m.group(1))
+        if 1900 <= y <= 2035:
+            return y
     return None
 
 def classify_thesis_level(thesis_type: str, title: str = "") -> str:
