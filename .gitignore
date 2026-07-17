@@ -16,3 +16,4 @@ __pycache__/
 .env
 .venv/
 node_modules/
+scripts/add_grad_only_scholars_audit.txt
