@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Backfill scholar-profiles.json with the graduate-studies-only scholars.
+"""Backfill scholar-profiles.json with the graduate-studies-only scholars,
+AND copy each scholar's masters/phd degree metadata from graduate-studies
+onto their profile when the profile hasn't captured it yet.
 
 Context — the graduate-studies pipeline (data/itaukei-graduate-studies.json)
 lists every iTaukei scholar with at least one thesis in Zotero. Historically
@@ -9,9 +11,21 @@ scholar-mobility spreadsheet (`itaukei_scholar_mobility.xlsx`) couldn't
 attach a paternal province to their rows, and future admin-dashboard edits
 had no anchor.
 
-This script adds a stub profile row for every grad-only scholar so the join
-stops leaking. Empty province / institution / photo — the admin dashboard
-fills those in over time.
+This script does two things:
+
+1. Adds a stub profile row for every grad-only scholar so the join stops
+   leaking. Empty province / institution / photo — the admin dashboard
+   fills those in over time.
+
+2. Backfills `masters` and `phd` degree objects onto every profile (new
+   stubs AND older stubs where the fields are still None/empty) using
+   whatever graduate-studies has for the same person. This is the fix for
+   the "Countries of study" filter on the public dashboard — that combo
+   only shows a country if at least one profile's `masters.country` or
+   `phd.country` names it, so scholars whose degrees were only known via
+   the world-map pipeline (e.g. China / India grad students) were invisible.
+   The copy is one-way and idempotent: it only writes when the profile
+   field is empty. Admin-entered edits are never overwritten.
 
 Duplicate safety: we NEVER add a name whose canonical form (or any known
 alias) already resolves to an existing profile. The check runs the same
@@ -106,6 +120,37 @@ def split_canonical(name: str) -> tuple[str, str]:
     return parts[-1], " ".join(parts[:-1])
 
 
+# Which fields to lift out of a graduate-studies degree record and drop onto
+# the profile. We intentionally keep this narrow — the profile is admin-
+# owned and only needs the identity fields that the public dashboard's
+# study filters and mobility spreadsheet read. Coordinates and ISO codes
+# stay in graduate-studies where they belong.
+_DEGREE_FIELDS = ("level", "thesisType", "university", "country")
+
+
+def _degree_from_grad(grad_deg):
+    """Project a graduate-studies degree dict onto the fields we store on
+    the profile. Returns None if the input is missing or has no country."""
+    if not grad_deg or not isinstance(grad_deg, dict):
+        return None
+    country = (grad_deg.get("country") or "").strip()
+    if not country:
+        return None
+    return {k: grad_deg.get(k) for k in _DEGREE_FIELDS if grad_deg.get(k)}
+
+
+def _profile_degree_empty(prof_deg):
+    """True when the profile has no meaningful degree data yet. Treats
+    None, missing, and empty-dict as empty; also treats a dict with no
+    country as empty (a country-less degree is not useful for the
+    Countries-of-study filter)."""
+    if not prof_deg:
+        return True
+    if not isinstance(prof_deg, dict):
+        return True
+    return not (prof_deg.get("country") or "").strip()
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true",
@@ -117,6 +162,9 @@ def main():
 
     existing_names = {s["name"] for s in profiles["scholars"]}
     aliases: dict[str, str] = profiles.get("nameAliases") or {}
+
+    # Fast lookup: canonical-profile-name -> profile object (mutable).
+    profile_by_name = {s["name"]: s for s in profiles["scholars"]}
 
     def resolves_to_existing(name: str) -> str | None:
         """Return canonical existing profile name if `name` already resolves
@@ -137,20 +185,51 @@ def main():
     resolved: list[tuple[str, str]] = []
     already_canonical: list[str] = []
 
-    for grad_key in grad["scholars"]:
+    # Graduate-studies keys `scholars` as a name -> {masters, phd, ...} dict
+    # (see data/refresh-graduate-studies.py). Iterating the mapping lets us
+    # attach the degree metadata to whichever profile the name resolves to,
+    # whether that's an existing profile, an alias, or a new stub we're
+    # about to add in this run.
+    grad_scholars = grad["scholars"] if isinstance(grad["scholars"], dict) else {
+        n: {} for n in grad["scholars"]
+    }
+
+    degree_backfills: list[tuple[str, str, str]] = []  # (profile_name, degree, source)
+
+    def apply_degree_backfill(target_profile: dict, grad_rec: dict, grad_name: str) -> None:
+        """Write `masters` and `phd` from graduate-studies onto the profile
+        wherever the profile has an empty field. Records what we changed."""
+        for key in ("masters", "phd"):
+            src = _degree_from_grad(grad_rec.get(key))
+            if src is None:
+                continue
+            if _profile_degree_empty(target_profile.get(key)):
+                target_profile[key] = src
+                degree_backfills.append((target_profile["name"], key, grad_name))
+
+    for grad_key, grad_rec in grad_scholars.items():
         c = _clean(grad_key)
-        if c in existing_names:
-            already_canonical.append(c)
-            continue
-        existing = resolves_to_existing(c)
+        existing = c if c in existing_names else resolves_to_existing(c)
         if existing:
-            resolved.append((c, existing))
+            if c in existing_names:
+                already_canonical.append(c)
+            else:
+                resolved.append((c, existing))
+            # Even when the profile already existed, opportunistically
+            # backfill its degree metadata from graduate-studies.
+            target = profile_by_name.get(existing)
+            if target is not None:
+                apply_degree_backfill(target, grad_rec or {}, c)
             continue
         # Genuinely new — build the profile stub
         canonical = flip_first_last(c) if "," not in c else c
         # Guard against a same-batch duplicate (two grad keys mapping to same canonical)
         if canonical in {row["name"] for row in to_add}:
             resolved.append((c, canonical + "  [in this batch]"))
+            # Attach degrees to the earlier stub too.
+            earlier = next((row for row in to_add if row["name"] == canonical), None)
+            if earlier is not None:
+                apply_degree_backfill(earlier, grad_rec or {}, c)
             continue
         last, first = split_canonical(canonical)
         stub = {
@@ -166,12 +245,28 @@ def main():
             "googleScholarUrl": "",
             "photo": "",
         }
+        apply_degree_backfill(stub, grad_rec or {}, c)
         to_add.append(stub)
+        profile_by_name[canonical] = stub  # future iterations can find it
 
-    print(f"grad-studies scholars total : {len(grad['scholars'])}")
+    print(f"grad-studies scholars total : {len(grad_scholars)}")
     print(f"already in profiles          : {len(already_canonical)}")
     print(f"resolved via alias/flip      : {len(resolved)}")
     print(f"NEW stubs to add             : {len(to_add)}")
+    print(f"degree backfills (masters/phd): {len(degree_backfills)}")
+    if degree_backfills:
+        # Country-level summary so Ron can eyeball which study countries
+        # just came online.
+        from collections import Counter
+        by_country: Counter[str] = Counter()
+        for pname, key, _src in degree_backfills:
+            prof = profile_by_name.get(pname) or {}
+            deg = prof.get(key) or {}
+            country = (deg.get("country") or "").strip() or "(unknown)"
+            by_country[country] += 1
+        print("  by country:")
+        for c, n in by_country.most_common():
+            print(f"    {c:30s} {n}")
 
     if resolved:
         print("\nSample of alias/flip resolutions (first 10):")
@@ -201,6 +296,9 @@ def main():
             f.write(f"  name={row['name']!r:55}  last={row['last']!r:20}  first={row['first']!r}\n")
     print(f"\naudit written to {audit_path.relative_to(ROOT)}")
 
+    # Dry run vs write. In dry-run mode we still ran apply_degree_backfill
+    # against the in-memory profile objects, but since we won't write the
+    # file below, no on-disk state changes.
     if not args.apply:
         print("\n(dry run — pass --apply to write)")
         return
@@ -209,7 +307,8 @@ def main():
     profiles["scholars"].sort(key=lambda s: s["name"].lower())
 
     PROFILE_PATH.write_text(json.dumps(profiles, indent=2, ensure_ascii=False) + "\n")
-    print(f"\nwrote {PROFILE_PATH}  ({len(profiles['scholars'])} scholars total)")
+    print(f"\nwrote {PROFILE_PATH}  ({len(profiles['scholars'])} scholars total,"
+          f" {len(degree_backfills)} degree backfills applied)")
 
 
 if __name__ == "__main__":

@@ -1,11 +1,37 @@
 name: Refresh iTaukei Zotero snapshot
 
 # Runs every 3 hours and any time you want to trigger manually from the
-# Actions tab. Regenerates data/itaukei-zotero-snapshot.json from the public
-# Zotero API, compares against the version in the repo, and commits + pushes
-# only if any critical total (total items, journalArticle, thesis, bookSection,
-# report, book, Burebasaga, Kubuna, Tovata, non-Fiji iTaukei) has shifted by
-# MORE than 2%. Small drift is ignored so we don't spam commits.
+# Actions tab ("Run workflow"). Regenerates ALL public-dashboard data files
+# from source, so every panel on
+# https://ronvave.github.io/vave-lab/itaukei-research-database.html
+# refreshes on the same cadence and against the same commit.
+#
+# The pipeline is:
+#
+#   1. Decrypt existing .enc blobs into plaintext .json / .geojson.
+#   2. Regenerate itaukei-zotero-snapshot.json from the Zotero public API.
+#   3. Regenerate itaukei-graduate-studies.json (world-map degrees) from
+#      the fresh snapshot.
+#   4. Backfill scholar-profiles.json with any grad-only scholars AND copy
+#      their masters / phd degree metadata onto every profile whose
+#      admin-entered fields are still empty. This is what keeps the public
+#      dashboard's "Countries / Universities of study" filter and the
+#      scholar-mobility spreadsheet in sync with any new country a
+#      graduate has studied in (see scripts/add_grad_only_scholars.py).
+#      Admin-entered profile edits are never overwritten — the copy only
+#      writes when the target field is empty.
+#   5. Diff the snapshot vs the previous one, update data/last-sync.json.
+#   6. Re-encrypt every data file so ONLY the .enc blobs are tracked.
+#   7. Commit and push. Commit body is one of two forms depending on
+#      whether any tracked total moved by more than 2%:
+#        - "Auto-refresh Zotero snapshot ..." when the data shifted
+#        - "chore: refresh last-sync heartbeat ..." when it didn't
+#
+# EVERY dashboard panel reads from one of the .enc blobs this workflow
+# rewrites, so a completed run is the definition of "all panels are in
+# sync". A forced sync (workflow_dispatch) uses the same steps as the
+# scheduled run, plus FORCE_COMMIT so the snapshot commits even when no
+# tracked total moved by more than the 2% threshold.
 #
 # Since 2026-07-08 the shipped data files are AES-GCM encrypted (.enc). The
 # plaintext .json versions are gitignored. This workflow uses VAVELAB_PASSCODE
@@ -79,6 +105,21 @@ jobs:
           VAVELAB_STRICT_COVERAGE: "1"
         run: |
           python3 data/refresh-graduate-studies.py
+
+      - name: Backfill scholar profiles + degrees from graduate-studies
+        run: |
+          # Ensures the public dashboard's Countries / Universities of study
+          # filter tracks every country a grad student has studied in — the
+          # world map already knew about (e.g.) China / India from the
+          # graduate-studies pipeline, but scholar-profiles.json only had
+          # name stubs for those students and none of their masters / phd
+          # country data, so those countries never appeared in the dropdown.
+          #
+          # Safety: the script only writes when the target profile field is
+          # empty. Admin-dashboard edits (institution, village, province,
+          # sector, discipline, hand-corrected masters / phd, etc.) are
+          # left untouched. See scripts/add_grad_only_scholars.py docstring.
+          python3 scripts/add_grad_only_scholars.py --apply
 
       - name: Compare vs previous snapshot & write last-sync tracker
         id: diff

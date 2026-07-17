@@ -47,6 +47,11 @@ paternal/maternal village and province data for scholars in the database.
 See [`docs/itaukei-survey-sync.md`](docs/itaukei-survey-sync.md) for the
 architecture of the admin ↔ survey-sheet sync.
 
+The public dashboard refreshes on a fixed schedule and every panel refreshes
+together — see [`docs/SYNC-CADENCE.md`](docs/SYNC-CADENCE.md) for the
+every-3-hour / forced-sync guarantee, the pipeline steps, and which data
+file drives which panel.
+
 ### CPWB / FPA Surveys
 
 Country-specific web surveys documenting **Culturally Protected Water Bodies**
