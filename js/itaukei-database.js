@@ -1621,27 +1621,24 @@
     const totalUnis = new Set(points.map(p => `${p.country}||${p.university}`)).size;
     const totalCountries = countries.length;
 
+    // Panel B2 narrative sentence intentionally left blank — Ron removed it
+    // July 2026 because it duplicated the title tally and drifted from truth
+    // when the pipeline reclassified theses. The title suffix below is now the
+    // single source of truth for the panel-level totals.
     const narrEl = document.querySelector('[data-world-narrative]');
-    if (narrEl) {
-      const otherClause = totU > 0 ? `, and ${totU} other higher-degree ${totU === 1 ? 'thesis' : 'theses'}` : '';
-      narrEl.textContent = `iTaukei scholars completed ${totM} Master\u2019s and ${totP} PhD ` +
-        `${(totM + totP) === 1 ? 'degree' : 'degrees'}${otherClause} across ${totalCountries} ` +
-        `${totalCountries === 1 ? 'country' : 'countries'}.`;
-    }
+    if (narrEl) { narrEl.textContent = ''; }
 
     // Panel B2 title totals suffix — always shown so Ron can see the count at
-    // a glance without scrolling to the panel footer. July 2026 spec:
-    //   (TOTAL: 348 Theses; 215 Masters + 111 PhD; 17 countries; 73 universities)
+    // a glance without scrolling. July 2026 spec (pipe separator, bold):
+    //   (TOTAL: 348 Theses | 215 Masters + 111 PhD | 17 countries | 73 universities)
     // The optional "unknown" bucket (theses whose thesisType couldn't be
-    // classified) is rolled into TOTAL but not broken out separately — the
-    // summary sentence below the panel still names it as "other higher-degree
-    // theses".
+    // classified) is rolled into TOTAL but not broken out separately.
     const titleTotalsEl = document.querySelector('[data-b2-title-totals]');
     if (titleTotalsEl) {
       titleTotalsEl.textContent =
-        ` (TOTAL: ${totalTheses} ${totalTheses === 1 ? 'Thesis' : 'Theses'}; ` +
-        `${totM} ${totM === 1 ? 'Master' : 'Masters'} + ${totP} PhD; ` +
-        `${totalCountries} ${totalCountries === 1 ? 'country' : 'countries'}; ` +
+        ` (TOTAL: ${totalTheses} ${totalTheses === 1 ? 'Thesis' : 'Theses'} | ` +
+        `${totM} ${totM === 1 ? 'Master' : 'Masters'} + ${totP} PhD | ` +
+        `${totalCountries} ${totalCountries === 1 ? 'country' : 'countries'} | ` +
         `${totalUnis} ${totalUnis === 1 ? 'university' : 'universities'})`;
     }
 
