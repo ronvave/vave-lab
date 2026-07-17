@@ -1,0 +1,45 @@
+name: Verify cache-bust hashes
+
+# Belt-and-braces for scripts/bust_cache.py. The pre-commit hook rewrites
+# `?v=<sha>` on every `<script src="js/...">` / `<link href="css/...">` when
+# JS or CSS changes, but the hook only runs for contributors who ran
+# scripts/install_hooks.sh. This job runs on every push and every PR and
+# fails if the committed hashes don't match the current file contents.
+#
+# History: July 2026 "Fiji click zooms to Sapporo" — the HTML shipped with
+# a fresh KPI-tile row while the referenced js/itaukei-database.js was
+# still pinned to the previous hand-maintained `?v=20260712-09`. Returning
+# visitors ran new markup against cached old JS and every country map
+# click framed the wrong region. This workflow makes that impossible to
+# reintroduce silently.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.html'
+      - 'js/**'
+      - 'css/**'
+      - 'scripts/bust_cache.py'
+  pull_request:
+    paths:
+      - '**/*.html'
+      - 'js/**'
+      - 'css/**'
+      - 'scripts/bust_cache.py'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify every ?v= hash matches its file contents
+        run: python3 scripts/bust_cache.py --check
