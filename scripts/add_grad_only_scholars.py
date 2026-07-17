@@ -127,16 +127,41 @@ def split_canonical(name: str) -> tuple[str, str]:
 # stay in graduate-studies where they belong.
 _DEGREE_FIELDS = ("level", "thesisType", "university", "country")
 
+# Country-name normalization applied when we write a country string onto a
+# profile degree. This mirrors data/refresh-graduate-studies.py's
+# COUNTRY_DISPLAY map so the two pipelines stay in lockstep — without this,
+# a scholar whose thesis Zotero collection is named "England" or "United
+# Kingdom" would show up as a distinct country on the public dashboard's
+# "Countries / Universities of study" filter, splitting one country into
+# three. Keep this in sync with COUNTRY_DISPLAY in refresh-graduate-studies.
+_COUNTRY_DISPLAY = {
+    "United Kingdom":  "UK",
+    "England":         "UK",
+    "Scotland":        "UK",
+    "Wales":           "UK",
+    "Northern Ireland":"UK",
+}
+
+
+def _canonical_country(name):
+    if not isinstance(name, str):
+        return name
+    return _COUNTRY_DISPLAY.get(name.strip(), name.strip() or name)
+
 
 def _degree_from_grad(grad_deg):
     """Project a graduate-studies degree dict onto the fields we store on
-    the profile. Returns None if the input is missing or has no country."""
+    the profile. Returns None if the input is missing or has no country.
+    Country names are normalized via _canonical_country so UK variants
+    (England / Scotland / Wales / United Kingdom) collapse to "UK"."""
     if not grad_deg or not isinstance(grad_deg, dict):
         return None
     country = (grad_deg.get("country") or "").strip()
     if not country:
         return None
-    return {k: grad_deg.get(k) for k in _DEGREE_FIELDS if grad_deg.get(k)}
+    out = {k: grad_deg.get(k) for k in _DEGREE_FIELDS if grad_deg.get(k)}
+    out["country"] = _canonical_country(out["country"])
+    return out
 
 
 def _profile_degree_empty(prof_deg):
@@ -196,6 +221,26 @@ def main():
 
     degree_backfills: list[tuple[str, str, str]] = []  # (profile_name, degree, source)
 
+    # One-shot normalization: fix any existing profile whose degree country
+    # is still "England" / "Scotland" / "Wales" / "United Kingdom" so the
+    # public dashboard's country pills collapse them into a single "UK"
+    # bucket. This runs on every invocation and is a no-op once every
+    # variant has been rewritten. Only the `country` string changes;
+    # the university and thesisType stay untouched.
+    country_normalizations: list[tuple[str, str, str, str]] = []
+    for prof in profiles["scholars"]:
+        for key in ("masters", "phd"):
+            deg = prof.get(key)
+            if not isinstance(deg, dict):
+                continue
+            old = (deg.get("country") or "").strip()
+            if not old:
+                continue
+            new = _canonical_country(old)
+            if new != old:
+                deg["country"] = new
+                country_normalizations.append((prof["name"], key, old, new))
+
     def apply_degree_backfill(target_profile: dict, grad_rec: dict, grad_name: str) -> None:
         """Write `masters` and `phd` from graduate-studies onto the profile
         wherever the profile has an empty field. Records what we changed."""
@@ -254,6 +299,10 @@ def main():
     print(f"resolved via alias/flip      : {len(resolved)}")
     print(f"NEW stubs to add             : {len(to_add)}")
     print(f"degree backfills (masters/phd): {len(degree_backfills)}")
+    print(f"country normalizations       : {len(country_normalizations)}")
+    if country_normalizations:
+        for pname, key, old, new in country_normalizations:
+            print(f"    {pname:40s} {key:8s} {old!r:20s} -> {new!r}")
     if degree_backfills:
         # Country-level summary so Ron can eyeball which study countries
         # just came online.

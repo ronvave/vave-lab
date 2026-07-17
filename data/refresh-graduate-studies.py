@@ -85,8 +85,19 @@ COUNTRY_ISO = {
 
 # Display label used in country pills. Same as the collection name unless we
 # want a slightly different presentation.
+#
+# We collapse every UK variant to a single "UK" display label so the world
+# map, the by-country list, and the Countries / Universities of study filter
+# all treat theses from England, Scotland, Wales, Northern Ireland, and the
+# older "United Kingdom" collection as one country. The `countryCollection`
+# field on each record still preserves the original Zotero collection name,
+# so region-level drill-down remains possible if we ever add it.
 COUNTRY_DISPLAY = {
-    "United Kingdom": "UK",
+    "United Kingdom":  "UK",
+    "England":         "UK",
+    "Scotland":        "UK",
+    "Wales":           "UK",
+    "Northern Ireland":"UK",
 }
 
 # Rough campus coordinates for every university that appears (or is likely
