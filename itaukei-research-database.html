@@ -430,20 +430,16 @@
       text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text);
       padding-right: 34px;
     }
-    /* Panel B2 title suffix: dynamic totals —
-       (TOTAL: 348 Theses | 215 Masters + 111 PhD | 17 countries | 73 universities).
-       Rendered by renderWorldPanel() in js/itaukei-database.js after graduate-studies
-       loads. Empty until then, so no layout shift. Bold + black per Ron's July 2026
-       spec. Not uppercase-forced — the numbers read cleaner as-is. */
-    .db-panel__title-totals {
-      font-weight: 700;
-      color: var(--color-text);
-      margin-left: 0.35em;
-      letter-spacing: 0;
-      text-transform: none;
-      white-space: nowrap;
+    /* Panel B2 KPI tiles — 5-across on wide screens, matching the A1/A2
+       6-across grid density. Sits between the panel description and the
+       map/list. Numbers always show global totals (not filter-scoped) so
+       the tiles read as a stable database summary. */
+    .db-kpis--b2 {
+      grid-template-columns: repeat(5, 1fr);
+      margin: 0 0 var(--space-3);
     }
-    .db-panel__title-totals:empty { display: none; }
+    @media (max-width: 1100px) { .db-kpis--b2 { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 620px)  { .db-kpis--b2 { grid-template-columns: repeat(2, 1fr); } }
     /* Narrative sentence below Panel B2 is now blank (Ron removed it July 2026
        because it duplicated the title tally). Hide the empty element so it
        doesn't leave phantom whitespace between the map and the country list. */
@@ -3996,8 +3992,37 @@
       <!-- Panel A2 — Whole-world map of iTaukei graduate studies (wide layout) -->
       <div class="db-panel reveal db-panel--wide" data-panel="B2">
         <span class="db-panel__label">B2</span>
-        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE<span class="db-panel__title-totals" data-b2-title-totals aria-live="polite"></span> <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
+        <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
         <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
+        <!-- Panel B2 KPI tiles — mirror the A1/A2 solid-tile family so B2 reads as
+             part of the same visual system. Numbers are populated by
+             renderWorldPanel() in js/itaukei-database.js from the same
+             graduate-studies data the map/list already use, so they stay in sync
+             with database growth. Tiles always reflect the full-database
+             totals — they intentionally do not respond to country / university
+             / confederacy / province selection. -->
+        <div class="db-kpis db-kpis--b2" data-b2-kpis>
+          <div class="db-kpi db-kpi--solid db-kpi--teal">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="theses">—</div><div class="db-kpi__label">Theses total</div></div>
+          </div>
+          <div class="db-kpi db-kpi--solid db-kpi--rust">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="masters">—</div><div class="db-kpi__label">Masters</div></div>
+          </div>
+          <div class="db-kpi db-kpi--solid db-kpi--olive">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="phd">—</div><div class="db-kpi__label">PhD</div></div>
+          </div>
+          <div class="db-kpi db-kpi--solid db-kpi--blue">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="unis">—</div><div class="db-kpi__label">Universities</div></div>
+          </div>
+          <div class="db-kpi db-kpi--solid db-kpi--purple">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="countries">—</div><div class="db-kpi__label">Countries</div></div>
+          </div>
+        </div>
         <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
           <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where iTaukei graduates study</button>
           <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where iTaukei have published</button>

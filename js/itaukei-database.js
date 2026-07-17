@@ -1622,25 +1622,38 @@
     const totalCountries = countries.length;
 
     // Panel B2 narrative sentence intentionally left blank — Ron removed it
-    // July 2026 because it duplicated the title tally and drifted from truth
-    // when the pipeline reclassified theses. The title suffix below is now the
-    // single source of truth for the panel-level totals.
+    // July 2026 because it duplicated the panel tally and drifted from truth
+    // when the pipeline reclassified theses. The KPI tile row above the map
+    // is now the single source of truth for panel-level totals.
     const narrEl = document.querySelector('[data-world-narrative]');
     if (narrEl) { narrEl.textContent = ''; }
 
-    // Panel B2 title totals suffix — always shown so Ron can see the count at
-    // a glance without scrolling. July 2026 spec (pipe separator, bold):
-    //   (TOTAL: 348 Theses | 215 Masters + 111 PhD | 17 countries | 73 universities)
-    // The optional "unknown" bucket (theses whose thesisType couldn't be
-    // classified) is rolled into TOTAL but not broken out separately.
-    const titleTotalsEl = document.querySelector('[data-b2-title-totals]');
-    if (titleTotalsEl) {
-      titleTotalsEl.textContent =
-        ` (TOTAL: ${totalTheses} ${totalTheses === 1 ? 'Thesis' : 'Theses'} | ` +
-        `${totM} ${totM === 1 ? 'Master' : 'Masters'} + ${totP} PhD | ` +
-        `${totalCountries} ${totalCountries === 1 ? 'country' : 'countries'} | ` +
-        `${totalUnis} ${totalUnis === 1 ? 'university' : 'universities'})`;
-    }
+    // -----------------------------------------------------------------
+    // Panel B2 KPI tiles — 5 solid-fill tiles matching the A1/A2 family.
+    // Numbers are always the full-database totals, regardless of
+    // country/university/confederacy/province selection. Ron's July 2026
+    // call: keep the tiles stable so they read as a global summary of the
+    // whole indexed database, not a filter-follower.
+    //
+    // Tab awareness: today the panel only has one live dataset
+    // (state.worldView === 'study', backed by graduate-studies
+    // worldPoints). The 'publish' tab is disabled in markup until the
+    // admin-tagged publications dataset lands. When it does, aggregate a
+    // parallel points array under state.worldView === 'publish' and feed
+    // it in here in place of `points` so the same tile logic renders both
+    // tabs from the active dataset.
+    // -----------------------------------------------------------------
+    const kpiPairs = [
+      ['theses',    totalTheses],
+      ['masters',   totM],
+      ['phd',       totP],
+      ['unis',      totalUnis],
+      ['countries', totalCountries],
+    ];
+    kpiPairs.forEach(([key, value]) => {
+      const numEl = document.querySelector(`[data-b2-kpi="${key}"]`);
+      if (numEl) numEl.textContent = String(value);
+    });
 
     // Apply the active list view (country vs confederacy). This shows/hides
     // the country list + search vs the confederacy rollup, and re-renders the
