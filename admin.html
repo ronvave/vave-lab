@@ -772,6 +772,30 @@
           <small>Paste the scholar’s ORCID URL (usually <code>https://orcid.org/</code> followed by their 16-digit iD). Leave blank if not linked yet.</small>
         </div>
 
+        <!-- Memorial (deceased scholars) -->
+        <div class="full" style="margin-top:8px;padding-top:16px;border-top:1px dashed #cbd5e1;">
+          <h4 style="margin:0 0 4px;font-size:0.92rem;text-transform:uppercase;letter-spacing:0.05em;color:#334155;">Memorial (deceased scholars)</h4>
+          <small style="display:block;margin-bottom:8px;color:#64748b;">
+            When “Scholar has passed away” is ticked, a small dark memorial band is shown under the profile photo on the public card. Text is either the full lifespan (e.g. “1942 – 2024”) when both years are known, “d. 2024” when only the death year is known, or “In memoriam” as a fallback. Living scholars are unaffected.
+          </small>
+        </div>
+        <div class="full">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;">
+            <input type="checkbox" id="pf-deceased" />
+            Scholar has passed away
+          </label>
+        </div>
+        <div>
+          <label for="pf-year-of-birth">Year of birth</label>
+          <input type="number" id="pf-year-of-birth" placeholder="e.g. 1938" min="1800" max="2100" step="1" />
+          <small>Optional. Shown in the memorial band when known.</small>
+        </div>
+        <div>
+          <label for="pf-year-of-death">Year of death</label>
+          <input type="number" id="pf-year-of-death" placeholder="e.g. 2024" min="1800" max="2100" step="1" />
+          <small>Required when “passed away” is ticked, if known.</small>
+        </div>
+
         <!-- Graduate studies -->
         <div class="full" style="margin-top:8px;padding-top:16px;border-top:1px dashed #cbd5e1;">
           <h4 style="margin:0 0 4px;font-size:0.92rem;text-transform:uppercase;letter-spacing:0.05em;color:#334155;">Graduate studies</h4>

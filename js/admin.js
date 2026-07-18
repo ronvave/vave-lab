@@ -1286,6 +1286,11 @@
     $('#pf-department').value = p.department || '';
     $('#pf-department-url').value = p.departmentUrl || '';
     $('#pf-profile-url').value = p.profileUrl || '';
+    // Memorial fields — dark plinth on the public card for deceased scholars.
+    // deceased is boolean; yearOfBirth / yearOfDeath are optional integers.
+    $('#pf-deceased').checked = !!p.deceased;
+    $('#pf-year-of-birth').value = Number.isFinite(p.yearOfBirth) ? p.yearOfBirth : '';
+    $('#pf-year-of-death').value = Number.isFinite(p.yearOfDeath) ? p.yearOfDeath : '';
     $('#pf-masters-uni').value = (p.masters && p.masters.university) || '';
     $('#pf-masters-country').value = (p.masters && p.masters.country) || '';
     $('#pf-phd-uni').value = (p.phd && p.phd.university) || '';
@@ -2276,6 +2281,22 @@
         googleScholarUrl: $('#pf-scholar-url').value.trim(),
         orcidUrl: $('#pf-orcid-url').value.trim(),
         photo: $('#pf-photo').value.trim(),
+        // Memorial fields. Only persist when the deceased flag is on — if
+        // Ron unticks the box we clear all three so the public card reverts
+        // to the standard living-scholar treatment on the next render.
+        ...(function(){
+          const dec = !!$('#pf-deceased').checked;
+          if (!dec) return { deceased: false, yearOfBirth: null, yearOfDeath: null };
+          const yobRaw = $('#pf-year-of-birth').value.trim();
+          const yodRaw = $('#pf-year-of-death').value.trim();
+          const yob = yobRaw ? parseInt(yobRaw, 10) : null;
+          const yod = yodRaw ? parseInt(yodRaw, 10) : null;
+          return {
+            deceased: true,
+            yearOfBirth: Number.isFinite(yob) ? yob : null,
+            yearOfDeath: Number.isFinite(yod) ? yod : null,
+          };
+        })(),
         lastUpdate: new Date().toISOString(),
         total: editingAuthor.total,
         firstAuthored: editingAuthor.firstAuthored,

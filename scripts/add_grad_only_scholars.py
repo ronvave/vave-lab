@@ -11,6 +11,12 @@ scholar-mobility spreadsheet (`itaukei_scholar_mobility.xlsx`) couldn't
 attach a paternal province to their rows, and future admin-dashboard edits
 had no anchor.
 
+Memorial fields (deceased / yearOfBirth / yearOfDeath) are OPTIONAL and
+never populated by this script — they are edited exclusively via the admin
+dashboard's “Memorial (deceased scholars)” section. New stubs simply omit
+them (treated as “living” by the public renderer). If an existing profile
+already has them set, this script leaves them untouched.
+
 This script does two things:
 
 1. Adds a stub profile row for every grad-only scholar so the join stops

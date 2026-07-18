@@ -1652,6 +1652,34 @@
       font-weight: 700; font-size: 2.3rem; color: #fff;
       background: linear-gradient(135deg, var(--conf-from, #0e7490) 0%, var(--conf-to, #062f35) 100%);
     }
+    /* Memorial plinth — a dark band that sits flush against the bottom edge
+       of the profile photo for deceased scholars. Same width as the 110px
+       square photo above it, rounded only on the bottom corners so it reads
+       as an attached base rather than a floating pill. Rendered only when
+       the profile is flagged `deceased: true` (see renderCardMemorialBand
+       in itaukei-database.js). Text is either the full lifespan
+       ("1942 - 2024"), death year only ("d. 2024"), or the fallback
+       "In memoriam" when yearOfDeath is somehow missing. */
+    .db-scholar-card__memorial {
+      width: 110px;
+      /* The photo-col is a flex column with `gap: 10px`. To make the band
+         look fused to the base of the 110px photo we cancel that gap with
+         a matching negative top margin — so the band's top edge sits
+         exactly against the photo's bottom edge, with the 'Update info'
+         button still 10px below via the normal column gap. */
+      margin-top: -10px;
+      padding: 4px 6px;
+      background: #2c2c2a;
+      color: #ffffff;
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      line-height: 1.2;
+      text-align: center;
+      border-radius: 0 0 4px 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      box-sizing: border-box;
+    }
     .db-scholar-card__info { padding-top: 4px; min-width: 0; }
     /* Specificity boost — wins over `.db-leaderboard h3` which forces uppercase on all h3s */
     .db-scholar-card h3.db-scholar-card__name {
