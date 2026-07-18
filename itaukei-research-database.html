@@ -1670,9 +1670,16 @@
        ring for black on cards flagged `deceased: true`, matching the dark
        memorial plinth directly beneath the photo. Scoped under the
        .db-scholar-card__photo-col--is-deceased modifier (added by
-       renderScholarCard) so living scholars are unaffected. */
+       renderScholarCard) so living scholars are unaffected.
+
+       We also carry over the outer 1px box-shadow "outline" in the same
+       dark tone. Without this, the light `--color-border` outline visually
+       disappears against the black border, making the deceased photo look
+       ~2px smaller than a living scholar's photo. Keeping the outline in
+       the darker tone preserves the exact same 110px total footprint. */
     .db-scholar-card__photo-col--is-deceased .db-scholar-card__photo {
       border-color: #2c2c2a;
+      box-shadow: 0 0 0 1px #2c2c2a, 0 4px 10px rgba(6,47,53,0.12);
     }
     .db-scholar-card__memorial {
       width: 110px;
@@ -4963,6 +4970,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=e7bc3d1b" defer></script>
+<script src="js/itaukei-database.js?v=49a8e358" defer></script>
 </body>
 </html>
