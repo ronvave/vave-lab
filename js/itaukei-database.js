@@ -7134,8 +7134,16 @@
     // info button in the same flex column). Returns '' for living scholars
     // — no DOM added when deceased is false or unset.
     const memorialHtml = renderCardMemorialBand(r);
+    // When the scholar is flagged deceased, we tag the photo-col with an
+    // `is-deceased` modifier. That single class lets our CSS switch the
+    // photo's white border to black so it visually matches the dark
+    // memorial plinth directly beneath it — no changes to the photo
+    // element itself and no effect on living scholars.
+    const photoColClass = (r && r.deceased === true)
+      ? 'db-scholar-card__photo-col db-scholar-card__photo-col--is-deceased'
+      : 'db-scholar-card__photo-col';
     const photoHtml = `
-      <div class="db-scholar-card__photo-col">
+      <div class="${photoColClass}">
         ${photoInnerHtml}
         ${memorialHtml}
         <button type="button" class="db-scholar-card__submit" data-submit-info

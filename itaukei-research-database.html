@@ -1666,6 +1666,14 @@
        in itaukei-database.js). Text is either the full lifespan
        ("1942 - 2024"), death year only ("d. 2024"), or the fallback
        "In memoriam" when yearOfDeath is somehow missing. */
+    /* Deceased-scholar photo border override — swaps the default white photo
+       ring for black on cards flagged `deceased: true`, matching the dark
+       memorial plinth directly beneath the photo. Scoped under the
+       .db-scholar-card__photo-col--is-deceased modifier (added by
+       renderScholarCard) so living scholars are unaffected. */
+    .db-scholar-card__photo-col--is-deceased .db-scholar-card__photo {
+      border-color: #2c2c2a;
+    }
     .db-scholar-card__memorial {
       width: 110px;
       /* The photo-col is a flex column with `gap: 10px`. To make the band
