@@ -1618,18 +1618,24 @@
     }
     /* Submit info button — lets scholars (or those close to them) propose
        corrections. Sits directly under the profile photo so it never runs
-       into wider confederacy titles like “BUREBASAGA CONFEDERACY”. */
+       into wider confederacy titles like “BUREBASAGA CONFEDERACY”.
+       Blue fill (#185FA5) rather than a dark neutral so it stays visually
+       distinct from the dark memorial date band shown under deceased
+       scholars' photos — the button must not be confused with, or read as,
+       a mourning signal. Applies identically on every card, living or
+       deceased, so its color never accidentally becomes a signal of who
+       has passed away. */
     .db-scholar-card__submit {
       display: inline-flex; align-items: center; justify-content: center;
       width: 110px; height: 32px; padding: 0 12px;
-      background: #062f35; color: #fff;
-      font: inherit; font-size: 0.82rem; font-weight: 600;
+      background: #185FA5; color: #FFFFFF;
+      font: inherit; font-size: 0.82rem; font-weight: 500;
       border: none; border-radius: 8px; cursor: pointer;
-      box-shadow: 0 2px 6px rgba(6,47,53,0.18);
+      box-shadow: 0 2px 6px rgba(24,95,165,0.22);
       transition: transform .12s, background .12s;
     }
-    .db-scholar-card__submit:hover { transform: scale(1.04); background: #0e7490; }
-    .db-scholar-card__submit:focus-visible { outline: 2px solid #062f35; outline-offset: 2px; }
+    .db-scholar-card__submit:hover { transform: scale(1.04); background: #0C447C; }
+    .db-scholar-card__submit:focus-visible { outline: 2px solid #185FA5; outline-offset: 2px; }
     /* Body row: avatar + info */
     .db-scholar-card__body {
       padding: 18px 22px 20px;
@@ -4949,6 +4955,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=a474e395" defer></script>
+<script src="js/itaukei-database.js?v=e7bc3d1b" defer></script>
 </body>
 </html>
