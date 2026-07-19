@@ -1261,6 +1261,9 @@
     $('#profile-modal-title').textContent = `Edit profile: ${author.name}`;
     $('#profile-modal-subtitle').textContent = `${author.total} publications, ${author.firstAuthored} first-authored.`;
     $('#pf-salutation').value = p.salutation || '';
+    // Gender — admin-only field. Never rendered on the public site. Legacy
+    // rows without the field just fall to the '(unspecified)' option.
+    $('#pf-gender').value = (p.gender && ['male','female','unknown'].includes(p.gender)) ? p.gender : '';
     const [openLast, openFirst] = (author.name || '').split(',').map(s => (s || '').trim());
     $('#pf-last').value = openLast || p.last || '';
     $('#pf-first').value = openFirst || p.first || '';
@@ -2107,6 +2110,138 @@
       openOutput('Copy this JSON into data/scholar-profiles.json', 'Replace the entire contents of data/scholar-profiles.json in the repo, then commit.', json);
     });
 
+    // ---------------------------------------------------------------------
+    // Bulk gender CSV export/import. Gender is an admin-only field on the
+    // scholar profile — filled in bulk via a CSV round-trip and never
+    // rendered on the public site. Export lists every iTaukei scholar
+    // (i.e. every row in profilesByKey); import touches ONLY the gender
+    // column so existing province / institution / memorial data is safe.
+    // ---------------------------------------------------------------------
+    function toGenderCsv(rows) {
+      // Real CSV (not TSV) because Ron will save it back from a spreadsheet.
+      // Quote every value so commas in names ('Finau, Glenn') survive.
+      const escape = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+      const lines = ['name,gender'];
+      rows.forEach(p => {
+        if (!p || !p.name) return;
+        const g = (p.gender && ['male','female','unknown'].includes(p.gender)) ? p.gender : '';
+        lines.push(`${escape(p.name)},${escape(g)}`);
+      });
+      return lines.join('\n');
+    }
+
+    function downloadTextFile(filename, text) {
+      const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 200);
+    }
+
+    const genderStatus = document.getElementById('gender-status');
+    const setGenderStatus = (msg, colour) => {
+      if (!genderStatus) return;
+      genderStatus.style.color = colour || '#000';
+      genderStatus.textContent = msg;
+    };
+
+    const genderExportBtn = document.getElementById('gender-export-csv');
+    if (genderExportBtn) {
+      genderExportBtn.addEventListener('click', () => {
+        const rows = Array.from(state.profilesByKey.values())
+          .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        if (!rows.length) {
+          setGenderStatus('No iTaukei scholars loaded yet — wait for the data source to finish loading.', '#a12c7b');
+          return;
+        }
+        const csv = toGenderCsv(rows);
+        const stamp = new Date().toISOString().slice(0, 10);
+        downloadTextFile(`itaukei-scholar-genders-${stamp}.csv`, csv);
+        const filled = rows.filter(r => r.gender && ['male','female','unknown'].includes(r.gender)).length;
+        setGenderStatus(`Exported ${rows.length} scholars. ${filled} already have a gender set; ${rows.length - filled} are blank.`, '#000');
+      });
+    }
+
+    const genderImportBtn = document.getElementById('gender-import-csv');
+    const genderImportFile = document.getElementById('gender-import-file');
+    if (genderImportBtn && genderImportFile) {
+      genderImportBtn.addEventListener('click', () => genderImportFile.click());
+      genderImportFile.addEventListener('change', async () => {
+        const file = genderImportFile.files && genderImportFile.files[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const parsed = parseCsv(text);
+          if (!parsed.length) {
+            setGenderStatus('CSV is empty or unreadable.', '#a12c7b');
+            return;
+          }
+          // Case-insensitive column pick so 'Name' / 'Gender' / 'GENDER' all work.
+          const firstRow = parsed[0];
+          const keys = Object.keys(firstRow);
+          const nameCol = keys.find(k => k.toLowerCase() === 'name');
+          const genderCol = keys.find(k => k.toLowerCase() === 'gender');
+          if (!nameCol || !genderCol) {
+            setGenderStatus('CSV must have both a "name" and a "gender" column. Got: ' + keys.join(', '), '#a12c7b');
+            return;
+          }
+          let matched = 0, updated = 0, unchanged = 0, blanked = 0, unknownName = 0, invalidValue = 0;
+          const invalidValues = [];
+          const missingNames = [];
+          parsed.forEach(r => {
+            const name = (r[nameCol] || '').trim();
+            if (!name) return;
+            if (!state.profilesByKey.has(name)) {
+              unknownName++;
+              if (missingNames.length < 5) missingNames.push(name);
+              return;
+            }
+            matched++;
+            const p = state.profilesByKey.get(name);
+            const raw = (r[genderCol] || '').trim().toLowerCase();
+            let newVal;
+            if (raw === '' || raw === '(unspecified)') {
+              newVal = null;
+            } else if (['male','female','unknown','m','f'].includes(raw)) {
+              newVal = raw === 'm' ? 'male' : raw === 'f' ? 'female' : raw;
+            } else {
+              invalidValue++;
+              if (invalidValues.length < 5) invalidValues.push(`${name} → "${raw}"`);
+              return;
+            }
+            const prev = p.gender || null;
+            if (newVal === prev) { unchanged++; return; }
+            if (newVal === null) blanked++;
+            p.gender = newVal;
+            p.lastUpdate = new Date().toISOString();
+            updated++;
+          });
+          const summaryParts = [
+            `Matched ${matched} rows.`,
+            `${updated} updated`,
+            `${unchanged} unchanged`,
+          ];
+          if (blanked) summaryParts.push(`${blanked} blanked`);
+          if (unknownName) summaryParts.push(`${unknownName} unknown names (skipped)`);
+          if (invalidValue) summaryParts.push(`${invalidValue} invalid gender values (skipped)`);
+          let details = summaryParts.join(' · ');
+          if (missingNames.length) details += ` — unknown examples: ${missingNames.slice(0, 3).join('; ')}`;
+          if (invalidValues.length) details += ` — invalid examples: ${invalidValues.slice(0, 3).join('; ')}`;
+          if (updated) details += ' — remember to click "Push all to GitHub" to save the changes.';
+          setGenderStatus(details, updated ? '#437a22' : '#000');
+        } catch (err) {
+          console.error('[gender-import] failed:', err);
+          setGenderStatus('Import failed: ' + (err && err.message || String(err)), '#a12c7b');
+        } finally {
+          genderImportFile.value = ''; // allow re-picking the same file
+        }
+      });
+    }
+
     // Sync to survey sheet: append any admin-tagged iTaukei scholar not
     // already on the survey's Google Sheet. Uses no-cors like the pending-
     // submissions POST does, since the Apps Script endpoint doesn't set CORS
@@ -2258,6 +2393,12 @@
         slug: p.slug || slugify(`${first}-${last}`),
         last, first,
         salutation: $('#pf-salutation').value,
+        // Gender — admin-only. Empty string is stored as null so a scholar
+        // whose gender is intentionally cleared doesn't carry a stale value.
+        gender: (function(){
+          const g = ($('#pf-gender').value || '').trim();
+          return ['male','female','unknown'].includes(g) ? g : null;
+        })(),
         village: $('#pf-village').value.trim(),
         paternalProvince: $('#pf-paternal-province').value,
         maternalProvince: $('#pf-maternal-province').value,

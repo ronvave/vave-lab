@@ -598,6 +598,27 @@
       <div id="insights-paste-report" style="margin-top:12px; display:none;"></div>
     </div>
 
+    <!-- Bulk gender editor -->
+    <div class="panel" id="bulk-gender-panel">
+      <h2>Bulk edit gender (admin only)
+        <div class="panel-actions">
+          <button class="btn ghost" id="gender-export-csv" title="Download a CSV listing every iTaukei scholar with a gender column. Fill it in a spreadsheet, save as CSV, then upload here.">Export CSV</button>
+          <button class="btn" id="gender-import-csv" title="Upload the filled CSV. Only the gender column is applied — all other scholar fields are left untouched." style="color:#000;">Import CSV…</button>
+          <input type="file" id="gender-import-file" accept=".csv,text/csv" style="display:none;" />
+        </div>
+      </h2>
+      <p class="subtitle" style="color:#000;">
+        Fill in every iTaukei scholar's gender in bulk. This field is stored in <code>scholar-profiles.json</code> and used only in this admin dashboard — the public database, survey, graduate-studies map, and cards never surface it.
+      </p>
+      <ol style="color:#000; font-size:0.9rem; padding-left:20px; margin:0 0 8px;">
+        <li>Click <strong>Export CSV</strong> to download the current roster with a gender column (blank rows are ones you still need to fill).</li>
+        <li>Open the CSV in Google Sheets or Excel. In the <code>gender</code> column, type <code>male</code>, <code>female</code>, or <code>unknown</code> for each scholar.</li>
+        <li>Save as CSV, click <strong>Import CSV…</strong>, and pick the file. Only the gender column is applied.</li>
+        <li>Then click <strong>Push all to GitHub</strong> above to persist the changes to <code>scholar-profiles.json</code>.</li>
+      </ol>
+      <div id="gender-status" style="font-size:0.9rem; color:#000; margin-top:6px;"></div>
+    </div>
+
     <!-- Instructions -->
     <div class="panel">
       <h2>How to sync your profile changes to the public site</h2>
@@ -651,6 +672,16 @@
             <option>Ms.</option>
             <option>Prof.</option>
           </select>
+        </div>
+        <div>
+          <label for="pf-gender">Gender <span style="color:#64748b;font-weight:normal;font-size:0.85em;">(admin only, not shown publicly)</span></label>
+          <select id="pf-gender">
+            <option value="">(unspecified)</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="unknown">Unknown</option>
+          </select>
+          <small>For your analysis only. Never rendered on the public dashboard, never exported into the survey sheet or graduate-studies map.</small>
         </div>
         <div>
           <label for="pf-last">Last name</label>
@@ -869,7 +900,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="js/db-gate.js?v=0965cf91" defer></script>
-<script src="js/admin.js?v=8fe6e3f4" defer></script>
+<script src="js/admin.js?v=6cecb84c" defer></script>
 
 <!-- ==== Pending new-scholar review (self-contained) ==== -->
 <script defer>
