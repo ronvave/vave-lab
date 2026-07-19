@@ -2891,6 +2891,22 @@
       text-transform: uppercase; color: var(--wclist-ink);
       margin: 0 0 6px;
     }
+    /* Total | Masters | PhD suffix appended to the BY CONFEDERACY
+       label. Same case + weight as the label itself so the two read
+       as one line; kept black per Ron's “never small grey text” rule. */
+    .db-world-conf-list__label-totals {
+      color: var(--wclist-ink);
+      font-variant-numeric: tabular-nums;
+      margin-left: 6px;
+    }
+    /* Untagged row: same layout as a confederacy row, with a hairline
+       separator on top so it visually sits apart from the 3
+       confederacies without needing its own card. */
+    .db-world-conf-list__conf-row--untagged {
+      border-top: 1px dashed var(--wclist-rule);
+      margin-top: 4px;
+      padding-top: 10px;
+    }
     /* Single grouped card holding all three confederacy rows plus the legend. */
     .db-world-conf-list__conf-card {
       background: #fff;
@@ -4978,6 +4994,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=08e44870" defer></script>
+<script src="js/itaukei-database.js?v=fb9f545e" defer></script>
 </body>
 </html>

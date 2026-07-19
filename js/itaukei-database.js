@@ -1325,10 +1325,38 @@
     if (!host) return;
     const { confRows, provRows, totals } = buildB2ConfederacyRollup();
     const parts = [];
-    parts.push('<div class="db-world-conf-list__label">By Confederacy</div>');
-    // Single white card holds all three confederacy rows + the legend.
+
+    // "BY CONFEDERACY" label is appended with running totals for the
+    // 3 confederacies only (untagged is called out separately below).
+    // Order: Total | Masters | PhD, separated by | signs, per Ron's
+    // instruction. Numbers refresh automatically because the label is
+    // rebuilt on every render from confRows.
+    const confTotals = confRows.reduce(
+      (a, r) => ({ masters: a.masters + r.masters, phd: a.phd + r.phd, total: a.total + r.total }),
+      { masters: 0, phd: 0, total: 0 }
+    );
+    parts.push(
+      '<div class="db-world-conf-list__label">' +
+        'By Confederacy ' +
+        '<span class="db-world-conf-list__label-totals">' +
+          `Total ${confTotals.total}` +
+          ' | ' +
+          `Masters ${confTotals.masters}` +
+          ' | ' +
+          `PhD ${confTotals.phd}` +
+        '</span>' +
+      '</div>'
+    );
+
+    // Single white card holds all three confederacy rows + the
+    // Untagged row + the legend. Confederacies are sorted descending
+    // by total (Masters + PhD) so the largest is always on top; ties
+    // break alphabetically.
     parts.push('<div class="db-world-conf-list__conf-card">');
-    confRows.forEach(c => {
+    const sortedConfRows = confRows.slice().sort(
+      (a, b) => b.total - a.total || a.name.localeCompare(b.name)
+    );
+    sortedConfRows.forEach(c => {
       const total = c.total || 1;
       const mPct = (c.masters / total) * 100;
       const pPct = (c.phd / total) * 100;
@@ -1353,6 +1381,39 @@
         '</div>'
       );
     });
+
+    // 4th row: Untagged theses (unmatched to a paternal/maternal
+    // province, and therefore to a confederacy). Same visual pattern
+    // as the confederacy rows so Ron sees at a glance how many theses
+    // still need province data on the Scholars sheet. This row is
+    // ALWAYS shown — even when zero — so its absence never gets
+    // mistaken for perfect coverage.
+    const untaggedM = totals.unmatchedMasters || 0;
+    const untaggedP = totals.unmatchedPhd || 0;
+    const untaggedT = untaggedM + untaggedP;
+    const untaggedDen = untaggedT || 1;
+    const untaggedMPct = (untaggedM / untaggedDen) * 100;
+    const untaggedPPct = (untaggedP / untaggedDen) * 100;
+    parts.push(
+      '<div class="db-world-conf-list__conf-row db-world-conf-list__conf-row--untagged">' +
+        '<span class="db-world-conf-list__conf-name">' +
+          '<span class="db-world-conf-list__conf-dot" style="background:#94a3b8;"></span>' +
+          'Untagged' +
+        '</span>' +
+        '<span class="db-world-conf-list__bar" role="img" ' +
+          `aria-label="Untagged: Masters ${untaggedM}, PhD ${untaggedP}, Total ${untaggedT}">` +
+          `<span class="seg-m" style="width:${untaggedMPct.toFixed(1)}%;"></span>` +
+          `<span class="seg-p" style="width:${untaggedPPct.toFixed(1)}%;"></span>` +
+        '</span>' +
+        '<span class="db-world-conf-list__counts">' +
+          `<b>M</b> ${untaggedM}` +
+          '<span class="pipe"></span>' +
+          `<b>PhD</b> ${untaggedP}` +
+          '<span class="pipe"></span>' +
+          `<span class="db-world-total">Total ${untaggedT}</span>` +
+        '</span>' +
+      '</div>'
+    );
     parts.push(
       '<div class="db-world-conf-list__legend">' +
         '<span><span class="sw" style="background:#8FBC8F;"></span><em>Masters</em></span>' +
@@ -1383,15 +1444,17 @@
       parts.push('</div>');
     }
 
-    const missing = totals.unmatchedMasters + totals.unmatchedPhd;
-    const other   = totals.other;
-    if (missing || other) {
-      const bits = [];
-      if (missing) bits.push(`${missing} Masters/PhD theses could not be joined to a paternal or maternal province yet`);
-      if (other)   bits.push(`${other} other higher-degree ${other === 1 ? 'thesis is' : 'theses are'} not included in the Masters/PhD tally`);
+    // Note only calls out non-Masters/PhD higher-degree theses now
+    // that the Untagged row surfaces missing-province Masters/PhD
+    // theses visually. Coverage-grows reminder stays because it
+    // tells Ron how to shrink the Untagged bar over time.
+    const other = totals.other;
+    if (other) {
       parts.push(
         '<p class="db-world-conf-list__note">' +
-          '<b>Note.</b> ' + bits.join('; ') + '. Coverage grows as village and province fields are completed in the Scholars sheet.' +
+          '<b>Note.</b> ' +
+          `${other} other higher-degree ${other === 1 ? 'thesis is' : 'theses are'} not included in the Masters/PhD tally. ` +
+          'The Untagged row shrinks as village and province fields are completed on the Scholars sheet.' +
         '</p>'
       );
     }
