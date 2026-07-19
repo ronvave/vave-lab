@@ -76,6 +76,7 @@ COUNTRY_ISO = {
     "United Kingdom":  "GB",
     "USA":             "US",
     "Japan":           "JP",
+    "Tonga":           "TO",
     # UK sub-buckets — resolve back to GB.
     "England":         "GB",
     "Scotland":        "GB",
@@ -119,6 +120,7 @@ COUNTRY_REGION = {
     "Australia":        "Pacific",
     "New Zealand":      "Pacific",
     "Papua New Guinea": "Pacific",
+    "Tonga":            "Pacific",
     # Asia
     "China":            "Asia",
     "India":            "Asia",
@@ -158,6 +160,14 @@ UNIVERSITY_COORDS = {
     # the pre-rename institution string. Coords: 78 Vuya Road, Nasese, Suva.
     "Pasifika Communities University":       (-18.1583, 178.4356),
     "Pacific Theological College":           (-18.1583, 178.4356),
+    # Tonga
+    # Christ's University in Pacific (CUP) — Maseia Plaza, 29A
+    # Taufa'ahau Road, Nuku'alofa. Zotero has been seen using the
+    # variant spellings "Christ's University of Pacific" and "Christ's
+    # University in the Pacific"; all three resolve to the same campus.
+    "Christ's University in Pacific":        (-21.1394, -175.2049),
+    "Christ's University of Pacific":        (-21.1394, -175.2049),
+    "Christ's University in the Pacific":    (-21.1394, -175.2049),
     # New Zealand
     "Massey University":                     (-40.383, 175.612),
     "University of Otago":                   (-45.865, 170.514),
