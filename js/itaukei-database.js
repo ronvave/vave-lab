@@ -4367,20 +4367,61 @@
 
     // Compute per-region country counts and per-country uni counts from the
     // live worldPoints so the (N) badges always reflect what's on the map.
+    //
+    // Region assignment comes from worldPoints[].region (emitted by
+    // data/refresh-graduate-studies.py). That file's COUNTRY_REGION table
+    // is the single source of truth — the hardcoded WORLD_REGIONS below is
+    // only a fallback for older graduate-studies files that predate the
+    // region field, and to guarantee an ordering for the dropdown when
+    // multiple regions are present. A country whose region is unknown
+    // sinks into 'Other' rather than disappearing from the dropdown.
     function computeRegionCounts() {
       const grad = state.graduateStudies || { worldPoints: [] };
       const points = grad.worldPoints || [];
       const countriesPresent = new Set(points.map(p => p.country).filter(Boolean));
       const unisByCountry = new Map();
-      points.forEach(p => {
-        if (!p.country || !p.university) return;
-        if (!unisByCountry.has(p.country)) unisByCountry.set(p.country, new Set());
-        unisByCountry.get(p.country).add(p.university);
-      });
-      const regionRows = [];
+      // Build country -> region map from the data file first; fall back to
+      // the hardcoded WORLD_REGIONS table if the data file didn't emit a
+      // region for this country (older snapshots, or a brand-new country
+      // the refresh script hasn't been taught about yet).
+      const regionOfCountry = new Map();
+      const fallbackRegionOf = new Map();
       Object.keys(WORLD_REGIONS).forEach(region => {
-        const countries = WORLD_REGIONS[region].filter(c => countriesPresent.has(c));
-        if (!countries.length) return;
+        WORLD_REGIONS[region].forEach(c => fallbackRegionOf.set(c, region));
+      });
+      points.forEach(p => {
+        if (!p.country) return;
+        if (p.university) {
+          if (!unisByCountry.has(p.country)) unisByCountry.set(p.country, new Set());
+          unisByCountry.get(p.country).add(p.university);
+        }
+        if (regionOfCountry.has(p.country)) return;
+        const region = p.region || fallbackRegionOf.get(p.country) || 'Other';
+        regionOfCountry.set(p.country, region);
+      });
+      // Group countries by resolved region, preserving the display order
+      // from WORLD_REGIONS (Pacific, Asia, Europe, North America) and
+      // trailing 'Other' at the end so unclassified additions stay visible.
+      const byRegion = new Map();
+      countriesPresent.forEach(c => {
+        const r = regionOfCountry.get(c) || 'Other';
+        if (!byRegion.has(r)) byRegion.set(r, new Set());
+        byRegion.get(r).add(c);
+      });
+      const knownOrder = Object.keys(WORLD_REGIONS);
+      const extraRegions = Array.from(byRegion.keys())
+        .filter(r => !knownOrder.includes(r) && r !== 'Other')
+        .sort();
+      const orderedRegions = [
+        ...knownOrder.filter(r => byRegion.has(r)),
+        ...extraRegions,
+        ...(byRegion.has('Other') ? ['Other'] : [])
+      ];
+      const regionRows = [];
+      orderedRegions.forEach(region => {
+        const set = byRegion.get(region);
+        if (!set || !set.size) return;
+        const countries = Array.from(set).sort();
         regionRows.push({ region, countries });
       });
       return { regionRows, unisByCountry };
@@ -5702,9 +5743,14 @@
   // appear here — the render code silently drops any region whose countries
   // aren't in the current dataset (so a region with 0 countries never shows
   // a stale entry).
+  // Fallback region→country map. Only used when worldPoints[].region is
+  // missing (older data files). Source of truth is COUNTRY_REGION in
+  // data/refresh-graduate-studies.py. This copy is kept in sync so that
+  // ordering and grouping still work if the workflow ever emits a
+  // pre-region-field snapshot.
   const WORLD_REGIONS = {
-    Pacific:         ['Fiji', 'Australia', 'New Zealand'],
-    Asia:            ['Japan', 'South Korea', 'Indonesia', 'Philippines'],
+    Pacific:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea'],
+    Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea'],
     Europe:          ['UK', 'Germany', 'Sweden', 'Portugal', 'Malta'],
     'North America': ['USA', 'Canada']
   };

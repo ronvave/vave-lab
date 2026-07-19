@@ -100,6 +100,49 @@ COUNTRY_DISPLAY = {
     "Northern Ireland":"UK",
 }
 
+# Region grouping used by the fullscreen world-map region dropdown. Every
+# country that can appear in worldPoints[] MUST have an entry here so the
+# dropdown renders it under the correct region. If a scholar's graduate
+# country lands in world_points without a region, strict coverage fails
+# the build — same pattern as UNIVERSITY_COORDS. The region field is emitted
+# on every worldPoints entry so js/itaukei-database.js can build the
+# region→countries mapping from the data file instead of maintaining a
+# second hardcoded copy in JS.
+#
+# Region names match the client's regionOrder: 'Pacific', 'Oceania', 'Asia',
+# 'Americas', 'Europe', 'Africa', 'Other'. Australia + New Zealand live in
+# 'Pacific' here (not 'Oceania') because that is where the graduate-studies
+# dropdown has always grouped them.
+COUNTRY_REGION = {
+    # Pacific
+    "Fiji":             "Pacific",
+    "Australia":        "Pacific",
+    "New Zealand":      "Pacific",
+    "Papua New Guinea": "Pacific",
+    # Asia
+    "China":            "Asia",
+    "India":            "Asia",
+    "Indonesia":        "Asia",
+    "Japan":            "Asia",
+    "Philippines":      "Asia",
+    "South Korea":      "Asia",
+    # Europe
+    "Germany":          "Europe",
+    "Malta":            "Europe",
+    "Portugal":         "Europe",
+    "Sweden":           "Europe",
+    "UK":               "Europe",
+    "United Kingdom":   "Europe",
+    "England":          "Europe",
+    "Scotland":         "Europe",
+    "Wales":            "Europe",
+    "Northern Ireland": "Europe",
+    # North America
+    "Canada":           "North America",
+    "USA":              "North America",
+    "United States":    "North America",
+}
+
 # Rough campus coordinates for every university that appears (or is likely
 # to appear) as a leaf collection under the thesis tree. Only used to place
 # a circle on the Leaflet world map. Add new rows here when Ron adds a new
@@ -505,10 +548,16 @@ def main() -> None:
     #  and drill into each name.
     # ------------------------------------------------------------------
     world_points = []
+    unknown_regions = set()
     for (iso, country, uni, lat, lng), buckets in by_uni.items():
+        region = COUNTRY_REGION.get(country)
+        if not region:
+            unknown_regions.add(country)
+            region = "Other"
         world_points.append({
             "iso": iso,
             "country": country,
+            "region": region,
             "university": uni,
             "lat": lat,
             "lng": lng,
@@ -599,6 +648,18 @@ def main() -> None:
         print("=" * 72)
         for u in sorted(unknown_universities):
             print(f"  - {u!r}")
+    if unknown_regions:
+        gap_exit = 1
+        print("")
+        print("=" * 72)
+        print(f"WARNING: {len(unknown_regions)} country/countries without a region assignment")
+        print("These plot on the map but will NOT appear in the fullscreen region")
+        print("dropdown until a region is assigned.")
+        print("Fix: add to COUNTRY_REGION in data/refresh-graduate-studies.py")
+        print("See docs/DATA-COVERAGE-GAPS.md")
+        print("=" * 72)
+        for c in sorted(unknown_regions):
+            print(f"  - {c!r}")
     if gap_exit and strict:
         print("")
         print("VAVELAB_STRICT_COVERAGE=1 — failing build until gaps are resolved.")
