@@ -58,16 +58,15 @@ vanishes.
 
 The 3-hourly refresh workflow
 (`.github/workflows/refresh-zotero-snapshot.yml`) runs the script with
-`VAVELAB_STRICT_COVERAGE=1`, which converts any gap into a non-zero exit.
-GitHub Actions marks the run failed and emails Ron, so silent map
-regressions cannot ship. To fix:
+`VAVELAB_STRICT_COVERAGE=1`. That flag ONLY fails the build when the
+auto-resolver (below) also could not identify the new country or
+university. In the normal case, a new Zotero entry is resolved on the
+fly and the build succeeds.
 
-1. Open the failed workflow log, scroll to the "Regenerate graduate-studies
-   from snapshot" step, and copy the missing names from the WARNING blocks.
-2. Add entries to `COUNTRY_ISO`, `UNIVERSITY_COORDS`, and/or `COUNTRY_REGION`
-   in `data/refresh-graduate-studies.py`.
-3. Commit and push — the next scheduled (or manually re-run) workflow will
-   succeed.
+Manual override remains available: adding an entry to `COUNTRY_ISO`,
+`UNIVERSITY_COORDS`, or `COUNTRY_REGION` in
+`data/refresh-graduate-studies.py` takes precedence over any
+auto-resolved value.
 
 Locally the script still only warns (no exit failure) so ad-hoc refreshes
 do not block the workflow. To reproduce the CI behavior locally:
@@ -75,6 +74,67 @@ do not block the workflow. To reproduce the CI behavior locally:
 ```bash
 VAVELAB_STRICT_COVERAGE=1 python3 data/refresh-graduate-studies.py
 ```
+
+To bypass the auto-resolver (e.g. offline debug or reproducing the
+pre-July-2026 strict behavior):
+
+```bash
+VAVELAB_STRICT_COVERAGE=1 VAVELAB_DISABLE_AUTO_RESOLVE=1 \
+    python3 data/refresh-graduate-studies.py
+```
+
+## Auto-resolve policy (July 2026)
+
+Ron's mandate: "Allow the backend system to automatically search for
+new country ISO code, and also university website and its location,
+without requiring input from you."
+
+Implementation: `data/auto_resolve.py`, invoked from
+`refresh-graduate-studies.py` right before the strict-coverage exit.
+
+Resolvers, tried in order per gap:
+
+| Gap type | Source | Rate limit |
+|----------|--------|------------|
+| Country → ISO2 + region | `restcountries.com/v3.1/name/{name}` | none |
+| University → lat/lng | Wikipedia page-summary REST (`en.wikipedia.org/api/rest_v1/page/summary/{title}`) | none |
+| University → lat/lng | Wikipedia OpenSearch + summary | none |
+| University → lat/lng | OpenStreetMap Nominatim (`nominatim.openstreetmap.org/search`) | 1 req/sec (module enforces) |
+
+Rules:
+
+- **Hardcoded dicts always win.** If a name is in `COUNTRY_ISO`,
+  `UNIVERSITY_COORDS`, or `COUNTRY_REGION`, the auto-resolver never
+  runs for it. This lets us pin canonical spellings or overrule an
+  incorrect Wikipedia coordinate.
+- **Cache is authoritative for 7 days.** Successful lookups are cached
+  in `data/auto-resolved.json` (encrypted at rest as
+  `data/auto-resolved.json.enc`). Failed lookups also cache for 7 days
+  so a permanently misspelled name doesn't hammer the APIs every 3
+  hours.
+- **Cache lives with the other .enc data** — encrypt/decrypt scripts
+  handle it via `--all`. When editing the cache by hand, use the same
+  encrypt/decrypt pattern as every other data blob.
+- **Region mapping is by ISO2.** `data/auto_resolve.py` ships an
+  `ISO_TO_REGION` dict that maps ISO codes to Ron's dropdown buckets
+  (Pacific / Asia / Europe / North America / Americas / Africa).
+  restcountries' own `region` field is only used as a fallback when we
+  haven't classified the ISO yet.
+- **Provenance is logged.** Every auto-resolved entry prints the URL
+  it came from into the CI log (searchable as `auto-resolved country`
+  / `auto-resolved university`) and is saved into
+  `output["autoResolved"]` for admin-side inspection.
+- **Strict-coverage still guards genuinely unresolvable names.** A
+  typo in Zotero (e.g. "Univresity of X") is unlikely to match any of
+  the three resolvers and will still fail the build so we notice.
+
+When the auto-resolver identifies a country or university you want to
+pin permanently (canonical spelling, hand-verified coordinates), copy
+the values from `data/auto-resolved.json` into `COUNTRY_ISO` /
+`COUNTRY_REGION` / `UNIVERSITY_COORDS` in
+`data/refresh-graduate-studies.py` and delete the entry from the
+cache. Manual entries take precedence and are documented alongside
+their sources in the commit body.
 
 ## Coordinate sources
 
@@ -110,3 +170,4 @@ for name in ('COUNTRY_ISO', 'UNIVERSITY_COORDS', 'COUNTRY_REGION'):
 | 2026-07-16 | Mangalore University (India), Tsinghua University (China), Auckland University of Technology (New Zealand), Hokkaido University (Japan) — plus India+China missing from COUNTRY_ISO | India and China appeared in Panel B2 by-country list; no bubbles on map | added constants + `VAVELAB_STRICT_COVERAGE=1` in CI |
 | 2026-07-19 | Central China Normal University coords | Force sync failed at strict-coverage step — new PhD scholar's institution not in `UNIVERSITY_COORDS` | added `Central China Normal University` and `Central China University` alias |
 | 2026-07-19 | Region assignments for China, India, Papua New Guinea | Panel B2 region dropdown listed only Japan/South Korea/Indonesia/Philippines under Asia; China and India rows were visible in the by-country list but absent from the region drilldown | added `COUNTRY_REGION` map + emit `region` on every `worldPoints[]` entry + client reads from data file with fallback |
+| 2026-07-19 | Tonga (COUNTRY_ISO + COUNTRY_REGION) and Christ's University in Pacific (UNIVERSITY_COORDS) | Second strict-coverage failure in a week — Zotero pulled a new Tonga PhD scholar and blocked the force sync | manual patch + built `data/auto_resolve.py` (restcountries + Wikipedia + Nominatim) so future new countries/universities self-resolve during the refresh without engineer intervention |

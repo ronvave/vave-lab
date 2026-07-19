@@ -95,13 +95,16 @@ jobs:
 
       - name: Regenerate graduate-studies from snapshot
         env:
-          # Fail the workflow (and email Ron via GitHub notification) if a
-          # new country appears without an ISO mapping OR a new university
-          # appears without coordinates in the hardcoded lookups. Prevents
-          # silent map regressions where a country renders in the by-country
-          # list but has no bubble on the world map. Fix by editing the
-          # COUNTRY_ISO / UNIVERSITY_COORDS blocks in
-          # data/refresh-graduate-studies.py. See docs/DATA-COVERAGE-GAPS.md.
+          # STRICT_COVERAGE=1 fails the workflow only if the auto-resolver
+          # (data/auto_resolve.py) ALSO couldn't find the country or
+          # university. New Zotero entries no longer block the refresh:
+          # data/auto_resolve.py queries restcountries.com for country ISO,
+          # Wikipedia + OpenStreetMap Nominatim for university coordinates,
+          # caches results in data/auto-resolved.json.enc, and patches this
+          # run's world-map JSON so the new location plots on the same run.
+          # Set VAVELAB_DISABLE_AUTO_RESOLVE=1 to bypass the resolver (e.g.
+          # for a hermetic debug). See docs/DATA-COVERAGE-GAPS.md, section
+          # 'Auto-resolve policy'.
           VAVELAB_STRICT_COVERAGE: "1"
         run: |
           python3 data/refresh-graduate-studies.py

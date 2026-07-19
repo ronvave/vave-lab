@@ -639,15 +639,104 @@ def main() -> None:
     #
     # In CI (VAVELAB_STRICT_COVERAGE=1) these become fatal so a silent map
     # regression can't ship. Locally the script only warns.
+    #
+    # July 2026: gaps are now auto-resolved via data/auto_resolve.py
+    # before the strict-coverage check fails the build. See
+    # docs/DATA-COVERAGE-GAPS.md 'Auto-resolve policy'. A gap is only
+    # fatal if the auto-resolver ALSO couldn't find the entity.
     # ------------------------------------------------------------------
     strict = os.environ.get("VAVELAB_STRICT_COVERAGE") == "1"
+    disable_auto = os.environ.get("VAVELAB_DISABLE_AUTO_RESOLVE") == "1"
+    auto_healed = False
+
+    # ---- Auto-resolve loop --------------------------------------------
+    # Try to fill each gap via web APIs (restcountries, Wikipedia,
+    # Nominatim). If successful, patch the in-memory maps AND the
+    # output JSON so the world map plots correctly THIS run. Cache
+    # every result in data/auto-resolved.json so we don't hit the
+    # network again for the same name.
+    if (unknown_countries or unknown_universities or unknown_regions) and not disable_auto:
+        try:
+            from auto_resolve import (
+                open_cache, save_cache, resolve_country, resolve_university,
+            )
+        except ImportError:
+            # Data folder isn't on sys.path when invoked from repo root;
+            # add it and retry.
+            sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+            from auto_resolve import (  # type: ignore  # noqa: E501
+                open_cache, save_cache, resolve_country, resolve_university,
+            )
+
+        cache = open_cache()
+        resolved_countries: dict[str, dict] = {}
+        resolved_unis: dict[str, dict] = {}
+
+        for country in sorted(unknown_countries | unknown_regions):
+            hit = resolve_country(country, cache)
+            if hit:
+                resolved_countries[country] = hit
+                print(f"  auto-resolved country {country!r} -> "
+                      f"iso={hit['iso']} region={hit['region']} "
+                      f"src={hit.get('source')}")
+
+        for uni in sorted(unknown_universities):
+            # Pass the country from the first world_point that mentions
+            # this university, so Nominatim can disambiguate.
+            country_hint = None
+            for p in world_points:
+                if p.get("university") == uni:
+                    country_hint = p.get("country")
+                    break
+            hit = resolve_university(uni, country_hint, cache)
+            if hit:
+                resolved_unis[uni] = hit
+                print(f"  auto-resolved university {uni!r} -> "
+                      f"lat={hit['lat']:.4f} lng={hit['lng']:.4f} "
+                      f"resolver={hit.get('resolver')} "
+                      f"src={hit.get('source')}")
+
+        save_cache(cache)
+
+        # ---- Patch the in-memory outputs so this run's JSON is complete --
+        if resolved_countries or resolved_unis:
+            auto_healed = True
+            for p in world_points:
+                if p.get("country") in resolved_countries:
+                    hit = resolved_countries[p["country"]]
+                    if not p.get("iso"):
+                        p["iso"] = hit["iso"]
+                    if p.get("region") in (None, "Other"):
+                        p["region"] = hit["region"]
+                if p.get("university") in resolved_unis:
+                    hit = resolved_unis[p["university"]]
+                    if p.get("lat") is None:
+                        p["lat"] = hit["lat"]
+                    if p.get("lng") is None:
+                        p["lng"] = hit["lng"]
+            # Rewrite the OUT file with patched world_points.
+            output["worldPoints"] = world_points
+            output["autoResolved"] = {
+                "countries": resolved_countries,
+                "universities": resolved_unis,
+            }
+            OUT.write_text(json.dumps(output, indent=2, ensure_ascii=False) + "\n")
+
+            # Drop resolved entries from the unknown sets so the guards
+            # below only fire on truly-unresolvable names.
+            unknown_countries -= set(resolved_countries)
+            unknown_regions -= set(resolved_countries)
+            unknown_universities -= set(resolved_unis)
+
+    # ---- Report residual gaps (auto-resolver couldn't help) -----------
     gap_exit = 0
     if unknown_countries:
         gap_exit = 1
         print("")
         print("=" * 72)
         print(f"WARNING: {len(unknown_countries)} country/countries without an ISO mapping")
-        print("Fix: add to COUNTRY_ISO in data/refresh-graduate-studies.py")
+        print("Auto-resolver could not identify these. Add manually to COUNTRY_ISO")
+        print("in data/refresh-graduate-studies.py, or check the spelling in Zotero.")
         print("See docs/DATA-COVERAGE-GAPS.md")
         print("=" * 72)
         for c in sorted(unknown_countries):
@@ -657,8 +746,9 @@ def main() -> None:
         print("")
         print("=" * 72)
         print(f"WARNING: {len(unknown_universities)} university/universities without coordinates")
+        print("Auto-resolver (Wikipedia + Nominatim) could not locate these.")
         print("These render in the country list but WILL NOT show a bubble on the map.")
-        print("Fix: add to UNIVERSITY_COORDS in data/refresh-graduate-studies.py")
+        print("Add manually to UNIVERSITY_COORDS or check the spelling in Zotero.")
         print("See docs/DATA-COVERAGE-GAPS.md for a checklist and coordinate sources.")
         print("=" * 72)
         for u in sorted(unknown_universities):
@@ -668,13 +758,16 @@ def main() -> None:
         print("")
         print("=" * 72)
         print(f"WARNING: {len(unknown_regions)} country/countries without a region assignment")
-        print("These plot on the map but will NOT appear in the fullscreen region")
-        print("dropdown until a region is assigned.")
-        print("Fix: add to COUNTRY_REGION in data/refresh-graduate-studies.py")
+        print("Auto-resolver could not classify these. Add manually to COUNTRY_REGION.")
         print("See docs/DATA-COVERAGE-GAPS.md")
         print("=" * 72)
         for c in sorted(unknown_regions):
             print(f"  - {c!r}")
+
+    if auto_healed and not gap_exit:
+        print("")
+        print("Auto-resolver healed all gaps this run \u2014 build continues.")
+
     if gap_exit and strict:
         print("")
         print("VAVELAB_STRICT_COVERAGE=1 — failing build until gaps are resolved.")

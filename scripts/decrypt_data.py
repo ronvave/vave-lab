@@ -45,6 +45,8 @@ TARGETS = [
     "fiji-provinces.geojson",
     "workplace-coords.json",
     "uni-country-overrides.json",
+    # Auto-resolver cache — see encrypt_data.py comment.
+    "auto-resolved.json",
 ]
 
 

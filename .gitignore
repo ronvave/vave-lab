@@ -8,6 +8,8 @@ data/scholar-insights.json
 data/scholar-profiles.json
 data/workplace-coords.json
 data/world-universities.json
+data/uni-country-overrides.json
+data/auto-resolved.json
 
 # Local artefacts
 .DS_Store

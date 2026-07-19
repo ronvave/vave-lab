@@ -67,6 +67,12 @@ TARGETS = [
     # (iTaukei + non-iTaukei), covering names not present in
     # world-universities.json or itaukei-graduate-studies.json.
     "uni-country-overrides.json",
+    # Auto-resolver cache — country ISO + region + university coord
+    # lookups sourced from restcountries / Wikipedia / Nominatim so a
+    # new Zotero entry doesn't block the 3-hourly refresh. Written by
+    # data/auto_resolve.py; encrypted so we don't leak the full
+    # university list. See docs/DATA-COVERAGE-GAPS.md 'Auto-resolve'.
+    "auto-resolved.json",
 ]
 
 
