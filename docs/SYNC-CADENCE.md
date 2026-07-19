@@ -1,5 +1,10 @@
 # Public-dashboard sync cadence
 
+> **See also: [`DATA-COVERAGE-GAPS.md`](DATA-COVERAGE-GAPS.md)** —
+> end-to-end flow for new countries / universities entering Zotero,
+> the auto-resolver, the E2E test, and how each panel picks them up.
+> All numbered sections, searchable in one place.
+
 ## The rule
 
 **Every panel on the public dashboard refreshes on the same cadence, from
