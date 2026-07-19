@@ -470,10 +470,10 @@
       <p class="subtitle" style="margin-top:0;"><b>GitHub upload (optional):</b> paste a Personal Access Token here so dropped profile photos upload directly to <code>img/scholars/</code> in the repo instead of embedding as base64. Stored in your browser only, never committed.</p>
       <div class="config-row">
         <label for="gh-token">GitHub PAT</label>
-        <input type="password" id="gh-token" placeholder="github_pat_… or ghp_… (needs contents:write on ronvave/vave-lab)" autocomplete="off" />
+        <input type="password" id="gh-token" placeholder="github_pat_… or ghp_… (needs contents:write + actions:write on ronvave/vave-lab)" autocomplete="off" />
         <button class="btn" id="gh-token-save">Save token</button>
       </div>
-      <p class="subtitle" style="margin-top:6px;font-size:0.82rem;">Create a <b>fine-grained</b> token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <b>ronvave</b> → Repository access: <b>Only select → ronvave/vave-lab</b> → Repository permissions → <b>Contents: Read and write</b>. That’s it — no other scopes needed. Set an expiration you’re comfortable with (e.g. 90 days). Without a token, dropped photos fall back to inline base64 + “Download for repo”.</p>
+      <p class="subtitle" style="margin-top:6px;font-size:0.82rem;">Create a <b>fine-grained</b> token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <b>ronvave</b> → Repository access: <b>Only select → ronvave/vave-lab</b> → Repository permissions → <b>Contents: Read and write</b> AND <b>Actions: Read and write</b> (the second one is what lets the “Force sync from Zotero” button trigger the refresh workflow). Set an expiration you’re comfortable with (e.g. 90 days). Without a token, dropped photos fall back to inline base64 + “Download for repo”, and the Force sync button won’t work.</p>
     </div>
 
     <!-- Name-variant merge panel -->
