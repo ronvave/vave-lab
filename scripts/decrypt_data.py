@@ -99,10 +99,19 @@ def main() -> int:
         return 2
 
     ok = 0
+    missing = 0
     for name in names:
+        src = DATA_DIR / (name + ".enc")
+        if not src.exists():
+            missing += 1
         if decrypt_one(name, passcode):
             ok += 1
     print(f"decrypted {ok}/{len(names)} file(s)")
+    # In --all mode, tolerate a target that hasn't been encrypted yet
+    # (bootstrap case for new files like data/auto-resolved.json).
+    # Individual-name invocations still fail loudly.
+    if args.all:
+        return 0 if ok + missing == len(names) else 1
     return 0 if ok == len(names) else 1
 
 
