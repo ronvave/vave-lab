@@ -1673,8 +1673,28 @@
     // it in here in place of `points` so the same tile logic renders both
     // tabs from the active dataset.
     // -----------------------------------------------------------------
+    // Unique scholars across the world-map dataset. Each worldPoint carries
+    // three name arrays — mastersScholars, phdScholars, unknownScholars — so
+    // a scholar with both a Masters and a PhD, or two theses at the same
+    // university, is counted once. Names are trimmed to avoid whitespace-only
+    // duplicates. This is the count of iTaukei graduates represented on the
+    // world map (matches graduate-studies totals.scholars in the pipeline).
+    const scholarNames = new Set();
+    for (const p of points) {
+      for (const key of ['phdScholars', 'mastersScholars', 'unknownScholars']) {
+        const list = p[key];
+        if (!Array.isArray(list)) continue;
+        for (const n of list) {
+          const trimmed = (n || '').trim();
+          if (trimmed) scholarNames.add(trimmed);
+        }
+      }
+    }
+    const totalScholars = scholarNames.size;
+
     const kpiPairs = [
       ['theses',    totalTheses],
+      ['scholars',  totalScholars],
       ['masters',   totM],
       ['phd',       totP],
       ['unis',      totalUnis],

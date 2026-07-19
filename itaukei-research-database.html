@@ -205,6 +205,10 @@
         A1 unique authors→ rust    (A1 card 2)
         A2 Lead author   → rust    (echoes authors)
         A2 Co-author     → olive   (Option 1 — A2 only)
+        B2 Scholars      → amber   (unique graduates on the world map —
+                                    B2 card 2, inserted July 2026 — reuses
+                                    the amber slot because B2 already breaks
+                                    the concept-color rule for Theses)
       Do not remap without re-reading docs/NAMES-DO-NOT-MERGE.md.
     */
     .db-kpi--teal   { --kpi-bg: #085041; --kpi-icon: #4a9384; }
@@ -442,12 +446,12 @@
     }
     .db-panel__titlebar > .db-panel__title { margin: 0; }
     .db-panel__titlebar > .db-panel-b2__tabs { margin: 0; flex-shrink: 0; }
-    /* Panel B2 KPI tiles — 5-across on wide screens, matching the A1/A2
+    /* Panel B2 KPI tiles — 6-across on wide screens, matching the A1/A2
        6-across grid density. Sits between the panel description and the
        map/list. Numbers always show global totals (not filter-scoped) so
        the tiles read as a stable database summary. */
     .db-kpis--b2 {
-      grid-template-columns: repeat(5, 1fr);
+      grid-template-columns: repeat(6, 1fr);
       margin: 0 0 var(--space-3);
     }
     @media (max-width: 1100px) { .db-kpis--b2 { grid-template-columns: repeat(3, 1fr); } }
@@ -4067,6 +4071,10 @@
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="theses">—</div><div class="db-kpi__label">Theses total</div></div>
           </div>
+          <div class="db-kpi db-kpi--solid db-kpi--amber">
+            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="scholars">—</div><div class="db-kpi__label">Scholars</div></div>
+          </div>
           <div class="db-kpi db-kpi--solid db-kpi--rust">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
             <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="masters">—</div><div class="db-kpi__label">Masters</div></div>
@@ -4970,6 +4978,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=b1ed5813" defer></script>
+<script src="js/itaukei-database.js?v=08e44870" defer></script>
 </body>
 </html>
