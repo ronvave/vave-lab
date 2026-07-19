@@ -153,6 +153,11 @@ UNIVERSITY_COORDS = {
     "University of the South Pacific":       (-18.148, 178.446),
     "Fiji National University":              (-18.152, 178.437),
     "University of Fiji":                    (-17.667, 177.450),
+    # PCU (renamed from Pacific Theological College in April 2025). Both
+    # spellings kept as fallbacks in case older Zotero items still carry
+    # the pre-rename institution string. Coords: 78 Vuya Road, Nasese, Suva.
+    "Pasifika Communities University":       (-18.1583, 178.4356),
+    "Pacific Theological College":           (-18.1583, 178.4356),
     # New Zealand
     "Massey University":                     (-40.383, 175.612),
     "University of Otago":                   (-45.865, 170.514),
