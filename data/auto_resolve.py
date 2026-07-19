@@ -30,10 +30,19 @@ under 'Auto-resolve policy'):
 
 External services used (all free, no auth):
 
-  * https://restcountries.com/v3.1/name/{name}    country ISO + region
+  * https://api.worldbank.org/v2/country          country ISO + region
+                                                  (bulk download, 295 rows)
   * https://en.wikipedia.org/api/rest_v1/page/summary/{title}
                                                   university location
+                                                  + country fallback
   * https://nominatim.openstreetmap.org/search    fallback geocoder
+
+Historical note (2026-07-19): restcountries.com deprecated all its
+free /v1 -> /v4 endpoints and now requires an API key for /v5. We
+switched to World Bank's public API instead — no key, stable
+long-term, ships ISO2 + country name + geographic region for every
+country in a single request. See docs/DATA-COVERAGE-GAPS.md for the
+full auto-resolve policy.
 
 Nominatim requires a descriptive User-Agent per its usage policy
 (https://operations.osmfoundation.org/policies/nominatim/); we set one
@@ -157,41 +166,110 @@ def _get_json(url: str) -> Optional[dict | list]:
 # ------------------------------------------------------------------
 # Country resolver
 # ------------------------------------------------------------------
+_WB_COUNTRIES_URL = (
+    "https://api.worldbank.org/v2/country?format=json&per_page=400"
+)
+_wb_countries_cache: Optional[list] = None  # module-level, one fetch per run
+
+# Common name / alias overrides for entries the World Bank feed spells
+# differently from Zotero. Extend as new mismatches surface.
+_COUNTRY_ALIASES = {
+    "usa": "United States",
+    "united states of america": "United States",
+    "uk": "United Kingdom",
+    "england": "United Kingdom",
+    "scotland": "United Kingdom",
+    "wales": "United Kingdom",
+    "northern ireland": "United Kingdom",
+    "south korea": "Korea, Rep.",
+    "north korea": "Korea, Dem. People's Rep.",
+    "russia": "Russian Federation",
+    "iran": "Iran, Islamic Rep.",
+    "egypt": "Egypt, Arab Rep.",
+    "venezuela": "Venezuela, RB",
+    "vietnam": "Viet Nam",
+    "laos": "Lao PDR",
+    "czech republic": "Czechia",
+    "ivory coast": "Cote d'Ivoire",
+    "tanzania": "Tanzania",
+    "kyrgyzstan": "Kyrgyz Republic",
+    "slovakia": "Slovak Republic",
+    "syria": "Syrian Arab Republic",
+    "turkey": "Turkiye",
+}
+
+# World Bank uses macro-region strings (e.g. 'Europe & Central Asia').
+# Map those to the dashboard's dropdown buckets.
+_WB_REGION_TO_OURS = {
+    "East Asia & Pacific": "Asia",  # Overridden by ISO_TO_REGION per country.
+    "Europe & Central Asia": "Europe",
+    "Latin America & Caribbean": "Americas",
+    "Middle East & North Africa": "Asia",
+    "North America": "North America",
+    "South Asia": "Asia",
+    "Sub-Saharan Africa": "Africa",
+}
+
+
+def _load_world_bank_countries() -> list:
+    """Fetch the full country list from World Bank once per process."""
+    global _wb_countries_cache
+    if _wb_countries_cache is not None:
+        return _wb_countries_cache
+    data = _get_json(_WB_COUNTRIES_URL)
+    # World Bank's shape is [meta, [rows]]; anything else means failure.
+    if not isinstance(data, list) or len(data) < 2 or not isinstance(data[1], list):
+        _wb_countries_cache = []
+        return _wb_countries_cache
+    # Filter out aggregate 'regions' (which have empty iso2Code or 'X'/'Z' codes).
+    rows = [r for r in data[1]
+            if r.get("iso2Code") and not r["iso2Code"].startswith(("X", "Z"))]
+    _wb_countries_cache = rows
+    return rows
+
+
 def _resolve_country_uncached(name: str) -> Optional[dict]:
-    q = urllib.parse.quote(name, safe="")
-    url = f"https://restcountries.com/v3.1/name/{q}?fields=cca2,name,region"
-    data = _get_json(url)
-    if not isinstance(data, list) or not data:
+    rows = _load_world_bank_countries()
+    if not rows:
         return None
-    # Prefer an exact common-name match; else take the first result.
+    needle = name.strip().lower()
+    # 1. Alias lookup (Zotero-friendly names -> World Bank canonical).
+    canonical_needle = _COUNTRY_ALIASES.get(needle, name).strip().lower()
+    # 2. Exact match on World Bank's `name` field.
     best = None
-    for row in data:
-        common = ((row.get("name") or {}).get("common") or "").strip()
-        if common.lower() == name.strip().lower():
-            best = row
-            break
+    for r in rows:
+        if (r.get("name") or "").strip().lower() == canonical_needle:
+            best = r; break
+    # 3. Fallback: case-insensitive substring match.
     if best is None:
-        best = data[0]
-    iso = best.get("cca2")
-    if not iso:
+        candidates = [r for r in rows
+                      if canonical_needle in (r.get("name") or "").lower()]
+        if len(candidates) == 1:
+            best = candidates[0]
+        elif len(candidates) > 1:
+            # Multiple hits — prefer the shortest name (usually the
+            # canonical country over 'Something Republic of X').
+            best = min(candidates, key=lambda r: len(r.get("name") or ""))
+    if best is None:
         return None
-    iso = iso.upper()
+
+    iso = (best.get("iso2Code") or "").strip().upper()
+    if not iso or len(iso) != 2:
+        return None
+
+    # Region: prefer our ISO2 -> region map (matches Ron's dropdown
+    # buckets); fall back to translating World Bank's macro-region.
     region = ISO_TO_REGION.get(iso)
     if not region:
-        # Fall back to restcountries' region field, remapped to our buckets.
-        raw_region = (best.get("region") or "").strip()
-        region = {
-            "Oceania": "Pacific",
-            "Asia": "Asia",
-            "Europe": "Europe",
-            "Americas": "Americas",
-            "Africa": "Africa",
-            "Antarctic": "Other",
-        }.get(raw_region, "Other")
+        wb_region = ((best.get("region") or {}).get("value") or "").strip()
+        region = _WB_REGION_TO_OURS.get(wb_region, "Other")
+
     return {
         "iso": iso,
         "region": region,
-        "source": url,
+        "canonicalName": best.get("name"),
+        "capitalCity": best.get("capitalCity"),
+        "source": _WB_COUNTRIES_URL,
     }
 
 

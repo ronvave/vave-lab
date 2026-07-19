@@ -96,10 +96,14 @@ Resolvers, tried in order per gap:
 
 | Gap type | Source | Rate limit |
 |----------|--------|------------|
-| Country → ISO2 + region | `restcountries.com/v3.1/name/{name}` | none |
+| Country → ISO2 + region | World Bank public API (`api.worldbank.org/v2/country`) | none, no key |
 | University → lat/lng | Wikipedia page-summary REST (`en.wikipedia.org/api/rest_v1/page/summary/{title}`) | none |
 | University → lat/lng | Wikipedia OpenSearch + summary | none |
 | University → lat/lng | OpenStreetMap Nominatim (`nominatim.openstreetmap.org/search`) | 1 req/sec (module enforces) |
+
+Historical note: originally used `restcountries.com/v3.1`, but they
+deprecated all free `/v1`–`/v4` endpoints on 2026-07 and moved v5 to
+an API-key model. Switched to World Bank on 2026-07-19 (see below).
 
 Rules:
 
@@ -118,8 +122,8 @@ Rules:
 - **Region mapping is by ISO2.** `data/auto_resolve.py` ships an
   `ISO_TO_REGION` dict that maps ISO codes to Ron's dropdown buckets
   (Pacific / Asia / Europe / North America / Americas / Africa).
-  restcountries' own `region` field is only used as a fallback when we
-  haven't classified the ISO yet.
+  World Bank's macro-region strings (e.g. `Europe & Central Asia`) are
+  only used as a fallback when we haven't classified the ISO yet.
 - **Provenance is logged.** Every auto-resolved entry prints the URL
   it came from into the CI log (searchable as `auto-resolved country`
   / `auto-resolved university`) and is saved into
@@ -170,4 +174,5 @@ for name in ('COUNTRY_ISO', 'UNIVERSITY_COORDS', 'COUNTRY_REGION'):
 | 2026-07-16 | Mangalore University (India), Tsinghua University (China), Auckland University of Technology (New Zealand), Hokkaido University (Japan) — plus India+China missing from COUNTRY_ISO | India and China appeared in Panel B2 by-country list; no bubbles on map | added constants + `VAVELAB_STRICT_COVERAGE=1` in CI |
 | 2026-07-19 | Central China Normal University coords | Force sync failed at strict-coverage step — new PhD scholar's institution not in `UNIVERSITY_COORDS` | added `Central China Normal University` and `Central China University` alias |
 | 2026-07-19 | Region assignments for China, India, Papua New Guinea | Panel B2 region dropdown listed only Japan/South Korea/Indonesia/Philippines under Asia; China and India rows were visible in the by-country list but absent from the region drilldown | added `COUNTRY_REGION` map + emit `region` on every `worldPoints[]` entry + client reads from data file with fallback |
-| 2026-07-19 | Tonga (COUNTRY_ISO + COUNTRY_REGION) and Christ's University in Pacific (UNIVERSITY_COORDS) | Second strict-coverage failure in a week — Zotero pulled a new Tonga PhD scholar and blocked the force sync | manual patch + built `data/auto_resolve.py` (restcountries + Wikipedia + Nominatim) so future new countries/universities self-resolve during the refresh without engineer intervention |
+| 2026-07-19 | Tonga (COUNTRY_ISO + COUNTRY_REGION) and Christ's University in Pacific (UNIVERSITY_COORDS) | Second strict-coverage failure in a week — Zotero pulled a new Tonga PhD scholar and blocked the force sync | manual patch + built `data/auto_resolve.py` (World Bank + Wikipedia + Nominatim) so future new countries/universities self-resolve during the refresh without engineer intervention |
+| 2026-07-19 | Added `scripts/test_auto_resolve.py` E2E test + `.github/workflows/test-auto-resolve.yml` weekly CI heartbeat | Ron: "Add a test that intentionally introduces a fake country in Zotero to confirm the resolver heals it end-to-end." | Test injects Netherlands + Leiden University into a doctored snapshot copy, runs the refresh script under `STRICT_COVERAGE=1`, and asserts both resolve with valid provenance URLs. Test caught the restcountries deprecation on first run — switched to World Bank in the same commit. |
