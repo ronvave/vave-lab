@@ -215,6 +215,12 @@ UNIVERSITY_COORDS = {
     "Mangalore University":                  (12.816, 74.928),
     # China
     "Tsinghua University":                   (40.001, 116.326),
+    # Central China Normal University — Wuhan, Hubei. Coords per Wikipedia +
+    # Wikidata Q1397589. Aliasing the common short form 'Central China
+    # University' to the same coords because that is how it currently
+    # appears in Zotero for at least one scholar's PhD institution.
+    "Central China Normal University":       (30.522, 114.369),
+    "Central China University":              (30.522, 114.369),
     # New Zealand — additions
     "Auckland University of Technology":     (-36.853, 174.766),
     # Japan — additions
