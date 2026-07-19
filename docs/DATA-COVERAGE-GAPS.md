@@ -14,20 +14,20 @@ Ron's mandate driving all of this:
 university under normal operation.** The auto-resolver and E2E test
 enforce that promise.
 
-Search this doc by section heading (`## …`). Sections:
+## Table of contents
 
-1. Zotero as the source of truth
-2. The 3-hour refresh pipeline
-3. Auto-resolver (`data/auto_resolve.py`)
-4. E2E test + CI heartbeat
-5. Panels that update automatically
-6. Where the hardcoded mappings live
-7. How the script surfaces residual gaps
-8. Coordinate sources for manual pins
-9. Auditing what's currently mapped
-10. Force-sync recipe
-11. When to still touch code
-12. Historical incidents
+1. [Zotero as the source of truth](#1-zotero-as-the-source-of-truth)
+2. [The 3-hour refresh pipeline](#2-the-3-hour-refresh-pipeline)
+3. [Auto-resolver (`data/auto_resolve.py`)](#3-auto-resolver-dataauto_resolvepy)
+4. [E2E test + CI heartbeat](#4-e2e-test--ci-heartbeat)
+5. [Panels that update automatically](#5-panels-that-update-automatically)
+6. [Where the hardcoded mappings live](#6-where-the-hardcoded-mappings-live)
+7. [How the script surfaces residual gaps](#7-how-the-script-surfaces-residual-gaps)
+8. [Coordinate sources for manual pins](#8-coordinate-sources-for-manual-pins)
+9. [Auditing what's currently mapped](#9-auditing-whats-currently-mapped)
+10. [Force-sync recipe](#10-force-sync-recipe)
+11. [When to still touch code](#11-when-to-still-touch-code)
+12. [Historical incidents](#12-historical-incidents)
 
 ---
 
