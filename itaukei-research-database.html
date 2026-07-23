@@ -3165,6 +3165,22 @@
     .db-world-country-row.is-active .db-world-country-row__name {
       color: #062f35; text-decoration-color: currentColor;
     }
+    /* University count in parentheses next to the country name (Variant A,
+       approved 2026-07-23). Rust colour is the same accent already used on
+       the B2 Masters KPI tile, so the count reads as a stat, not as part of
+       the linked country name. Sits inside the same flex container as the
+       name so it wraps together on narrow screens. */
+    .db-world-country-row__name-wrap {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 0;
+    }
+    .db-world-country-row__uni-count {
+      color: #964219;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      text-decoration: none;
+    }
     .db-world-uni-row__name {
       color: var(--color-text);
       font-weight: 600; font-size: 0.94rem;
@@ -4994,6 +5010,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=fb9f545e" defer></script>
+<script src="js/itaukei-database.js?v=9dda236f" defer></script>
 </body>
 </html>

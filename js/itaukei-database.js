@@ -1686,13 +1686,31 @@
       const row = document.createElement('div');
       row.className = 'db-world-country-row';
       if (state.worldSelectedCountry === c.name) row.classList.add('is-filter-active');
+      // Country name is a real button so it stays keyboard-focusable and
+      // announces as interactive; the university count sits OUTSIDE the
+      // button so it isn't underlined and doesn't get read as part of the
+      // filter action's label.
+      const nameWrap = document.createElement('span');
+      nameWrap.className = 'db-world-country-row__name-wrap';
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'db-world-country-row__name';
       btn.textContent = c.name;
       btn.setAttribute('aria-label', 'Filter panels below by ' + c.name);
       btn.addEventListener('click', () => selectWorldCountry(c.name));
-      row.appendChild(btn);
+      nameWrap.appendChild(btn);
+      // University count in parentheses next to the country name.
+      // Number of unique universities the pipeline has for this country
+      // (each entry in c.unis is one distinct university leaf under the
+      // Zotero Thesis root). Rendered on every draw so it stays in sync
+      // with the 3-hour Zotero refresh / force sync.
+      const uniN = Array.isArray(c.unis) ? c.unis.length : 0;
+      const uniCount = document.createElement('span');
+      uniCount.className = 'db-world-country-row__uni-count';
+      uniCount.textContent = ` (${uniN})`;
+      uniCount.setAttribute('aria-label', `${uniN} ${uniN === 1 ? 'university' : 'universities'}`);
+      nameWrap.appendChild(uniCount);
+      row.appendChild(nameWrap);
       const counts = document.createElement('span');
       counts.className = 'db-world-country-row__counts';
       counts.innerHTML =
