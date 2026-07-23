@@ -1707,7 +1707,10 @@
       const uniN = Array.isArray(c.unis) ? c.unis.length : 0;
       const uniCount = document.createElement('span');
       uniCount.className = 'db-world-country-row__uni-count';
-      uniCount.textContent = ` (${uniN})`;
+      // Gap between the name and the paren is handled by CSS margin-left
+      // (see .db-world-country-row__uni-count) so it survives inline-flex
+      // whitespace collapsing.
+      uniCount.textContent = `(${uniN})`;
       uniCount.setAttribute('aria-label', `${uniN} ${uniN === 1 ? 'university' : 'universities'}`);
       nameWrap.appendChild(uniCount);
       row.appendChild(nameWrap);

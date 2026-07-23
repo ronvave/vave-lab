@@ -3169,7 +3169,10 @@
        approved 2026-07-23). Rust colour is the same accent already used on
        the B2 Masters KPI tile, so the count reads as a stat, not as part of
        the linked country name. Sits inside the same flex container as the
-       name so it wraps together on narrow screens. */
+       name so it wraps together on narrow screens. A single-character gap
+       between the name and the count is enforced with margin-left instead
+       of a whitespace text node so inline-flex whitespace collapsing can't
+       swallow it. */
     .db-world-country-row__name-wrap {
       display: inline-flex;
       align-items: baseline;
@@ -3180,6 +3183,7 @@
       font-weight: 700;
       font-variant-numeric: tabular-nums;
       text-decoration: none;
+      margin-left: 0.35em;
     }
     .db-world-uni-row__name {
       color: var(--color-text);
