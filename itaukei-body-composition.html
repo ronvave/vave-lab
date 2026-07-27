@@ -320,8 +320,14 @@ const TYPES = [
 /* Legend shows top-to-bottom (masters first) to read naturally. */
 const LEGEND_ORDER = ["masters","phd","journal","book","bookSection"];
 
-/* Human-body silhouette path (classic ECharts "human body" symbol). */
-const BODY_PATH = "path://M 493.6 259 c 5.4 -3.8 8.3 -9.4 8.7 -16.9 c 0.4 -8.2 -1.6 -15.5 -6.6 -22 c -0.5 -0.6 -1 -1.3 -1.3 -2 c -0.6 -1.4 -1.4 -3 -1.4 -4.5 c -0.1 -8.9 0.2 -17.8 0.3 -26.7 c 0.2 -8.2 -3.5 -14.4 -10.3 -18.7 c -3.4 -2.1 -7.1 -3.5 -11 -4.4 c -4.4 -1.1 -8.9 -2.2 -13.4 -2.7 c -6.7 -0.6 -13.4 -0.8 -20.1 -0.8 c -3.6 0 -7.3 0.9 -10.7 2 c -4.7 1.5 -9.5 3.2 -13.9 5.4 c -6.8 3.4 -10.5 9.3 -10.6 17.1 c -0.1 8.7 -0.2 17.4 -0.2 26.2 c 0 1.9 -0.6 3.9 -1.5 5.6 c -0.6 1.2 -1.3 2.3 -2.1 3.3 c -5 6.5 -7 13.8 -6.6 22 c 0.4 7.5 3.3 13.1 8.7 16.9 c 0.5 0.4 1.1 1.2 1.1 1.8 c 0.1 3.6 0.1 7.2 0 10.8 c 0 0.6 -0.4 1.4 -0.9 1.8 c -3.9 3.4 -6 7.7 -6.2 12.9 c -0.2 5.3 1.6 9.9 5.5 13.6 c 0.6 0.5 0.9 1.5 0.9 2.3 c 0.1 2.9 -0.1 5.9 0.1 8.8 c 0.1 1.3 -0.4 2 -1.4 2.7 c -3.5 2.6 -5.4 6.2 -5.7 10.5 c -0.3 4.5 0.9 8.5 4 11.9 c 0.8 0.9 1.2 2.4 1.3 3.6 c 0.4 4.8 0.6 9.5 0.9 14.3 c 0 0.2 0 0.3 0 0.5 c 0.1 8.2 0.1 16.4 0.3 24.6 c 0.1 4.2 3.5 7.4 7.7 7.4 c 4.2 0 7.7 -3.2 7.7 -7.4 c 0.2 -8.2 0.2 -16.4 0.3 -24.6 c 0 -0.2 0 -0.3 0 -0.5 c 0.3 -4.8 0.5 -9.5 0.9 -14.3 c 0.1 -1.2 0.5 -2.7 1.3 -3.6 c 3.1 -3.4 4.3 -7.4 4 -11.9 c -0.3 -4.3 -2.2 -7.9 -5.7 -10.5 c -1 -0.7 -1.5 -1.4 -1.4 -2.7 c 0.2 -2.9 0 -5.9 0.1 -8.8 c 0 -0.8 0.3 -1.8 0.9 -2.3 c 3.9 -3.7 5.7 -8.3 5.5 -13.6 c -0.2 -5.2 -2.3 -9.5 -6.2 -12.9 c -0.5 -0.4 -0.9 -1.2 -0.9 -1.8 c -0.1 -3.6 -0.1 -7.2 0 -10.8 C 492.5 260.2 493.1 259.4 493.6 259 Z";
+/* Gendered standing silhouettes (restroom-icon style). Each is drawn in a ~150
+   wide x ~330 tall box, head at top; ECharts scales the path to symbolSize.
+   WOMAN: narrow shoulders, fitted top, flared A-line skirt (dress silhouette).
+   MAN:   broad square shoulders, straight torso, straight legs. */
+const WOMAN_PATH = "path://M75 6 c-11 0 -19 8 -19 19 c0 8 4 14 11 17 c-6 2 -11 5 -15 10 c-4 5 -6 11 -8 17 c-3 11 -7 22 -13 32 c-2 4 2 8 6 6 c5 -2 8 -7 11 -12 c-1 4 -2 8 -3 12 l-2 0 c-4 15 -9 30 -13 45 c-2 6 2 10 8 10 l7 0 c-3 15 -7 30 -9 45 c-1 6 3 10 9 10 l52 0 c6 0 10 -4 9 -10 c-2 -15 -6 -30 -9 -45 l7 0 c6 0 10 -4 8 -10 c-4 -15 -9 -30 -13 -45 l-2 0 c-1 -4 -2 -8 -3 -12 c3 5 6 10 11 12 c4 2 8 -2 6 -6 c-6 -10 -10 -21 -13 -32 c-2 -6 -4 -12 -8 -17 c-4 -5 -9 -8 -15 -10 c7 -3 11 -9 11 -17 c0 -11 -8 -19 -19 -19 Z";
+const MAN_PATH   = "path://M75 6 c-11 0 -20 9 -20 20 c0 8 5 15 12 18 c-9 2 -18 5 -25 11 c-6 5 -8 13 -9 21 c-1 9 -2 18 -4 27 c-1 5 3 9 8 8 c4 -1 6 -5 7 -9 c2 -8 3 -16 5 -24 l1 0 c0 20 0 40 -1 60 c0 6 3 9 7 9 l0 0 c0 24 1 48 1 72 c0 6 4 10 10 10 c5 0 9 -4 9 -10 c0 -22 0 -44 1 -66 c0 -4 3 -4 3 0 c1 22 1 44 1 66 c0 6 4 10 9 10 c6 0 10 -4 10 -10 c0 -24 1 -48 1 -72 l0 0 c4 0 7 -3 7 -9 c-1 -20 -1 -40 -1 -60 l1 0 c2 8 3 16 5 24 c1 4 3 8 7 9 c5 1 9 -3 8 -8 c-2 -9 -3 -18 -4 -27 c-1 -8 -3 -16 -9 -21 c-7 -6 -16 -9 -25 -11 c7 -3 12 -10 12 -18 c0 -11 -9 -20 -20 -20 Z";
+/* Symbol lookup by gender label (data index 0 = Woman, 1 = Man). */
+const BODY_SYMBOLS = { "Woman": WOMAN_PATH, "Man": MAN_PATH };
 
 /* ---- Fallback snapshot (from the delivered workbook, before gender coded) --
    NOTE: these are placeholders showing the grand totals split evenly so the
@@ -393,7 +399,6 @@ function buildOption(data){
     series.push({
       name: t.label,
       type: "pictorialBar",
-      symbol: BODY_PATH,
       symbolClip: true,
       symbolBoundingData: 100,        // full body = 100%
       symbolSize: [BODY_W, BODY_H],
@@ -402,8 +407,9 @@ function buildOption(data){
       z: 10 + (TYPES.length - i),     // bottom bands in front
       itemStyle: { color: t.color },
       emphasis: { disabled: true },
-      // value = cumulative % up to and INCLUDING this band (clip fills from bottom)
-      data: genders.map(g=>cumTop[g][i]),
+      // value = cumulative % up to and INCLUDING this band (clip fills from bottom).
+      // Each gender carries its OWN silhouette (Woman = dress, Man = broad).
+      data: genders.map(g=>({ value: cumTop[g][i], symbol: BODY_SYMBOLS[g] })),
       // label drawn separately (a dedicated scatter series) to sit at band midpoint
       label: { show:false }
     });
@@ -414,7 +420,6 @@ function buildOption(data){
   const outline = {
     name: "__outline__",
     type: "pictorialBar",
-    symbol: BODY_PATH,
     symbolBoundingData: 100,
     symbolSize: [BODY_W, BODY_H],
     barGap: "-100%",
@@ -422,7 +427,7 @@ function buildOption(data){
     itemStyle: { color: "rgba(120,130,140,0.10)" },
     silent: true,
     z: 1,
-    data: genders.map(()=>100),
+    data: genders.map(g=>({ value: 100, symbol: BODY_SYMBOLS[g] })),
     tooltip: { show:false },
     legendHoverLink: false
   };
