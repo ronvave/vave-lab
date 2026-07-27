@@ -74,11 +74,36 @@
       padding:6px 16px; cursor:pointer; transition:background .15s ease, border-color .15s ease;
     }
     .btn-reset:hover{ background:var(--color-surface-offset); border-color:var(--color-primary); }
+    .btn-template{
+      font-size:var(--text-sm); font-weight:600; text-decoration:none;
+      color:var(--color-accent); border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-template:hover{ background:var(--color-surface-offset); border-color:var(--color-accent); }
     .upload-msg{ font-size:var(--text-sm); color:var(--color-text-muted); }
     .upload-msg.is-error{ color:var(--color-error); font-weight:600; }
     .upload-msg.is-ok{ color:var(--color-success); font-weight:600; }
     .uploader__help{ margin-top:var(--space-4); font-size:var(--text-xs); color:var(--color-text-muted); line-height:1.6; }
     .uploader__help code{ font-family:var(--font-mono); font-size:0.92em; background:var(--color-surface-offset); padding:1px 5px; border-radius:4px; color:var(--color-text); }
+
+    /* ---- ribbon / arc hover tooltip ---- */
+    #chord-tip{
+      position:fixed; z-index:60; pointer-events:none; opacity:0;
+      max-width:320px; transform:translate(-50%,-100%);
+      background:#1c2530; color:#fff; border-radius:8px;
+      padding:10px 12px; font-family:var(--font-body); font-size:12.5px; line-height:1.5;
+      box-shadow:0 6px 22px rgba(0,0,0,0.28); transition:opacity .12s ease;
+    }
+    #chord-tip .tip-path{ font-weight:700; margin-bottom:3px; }
+    #chord-tip .tip-count{ color:#9fb4c9; font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+    #chord-tip ul{ margin:0; padding:0; list-style:none; }
+    #chord-tip li{ margin:5px 0; }
+    #chord-tip li + li{ border-top:1px solid rgba(255,255,255,0.12); padding-top:5px; }
+    #chord-tip .tip-name{ font-weight:600; }
+    #chord-tip .tip-year{ color:#9fb4c9; }
+    #chord-tip .tip-title{ color:#d7dee6; font-style:italic; display:block; margin-top:1px; }
+    #chord-tip .tip-more{ color:#9fb4c9; font-size:11px; margin-top:6px; }
+    path.dim{ opacity:0.15 !important; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -181,6 +206,7 @@
       </div>
       <div class="uploader__actions">
         <button type="button" class="btn-reset" id="btn-reset">Reset to default data</button>
+        <a href="#" class="btn-template" id="btn-template" download="itaukei-chord-template.csv">&darr;&nbsp;Download CSV template</a>
       </div>
       <p class="uploader__help">
         Your file stays in your browser &mdash; nothing is uploaded to a server. The scholar CSV needs the columns
@@ -200,6 +226,7 @@
         <div id="status"></div>
       </div>
     </div>
+    <div id="chord-tip" role="tooltip"></div>
     <p class="chord-scroll-hint">Tip: on smaller screens, scroll the panel sideways to see the full wheel.</p>
 
     <div class="reveal" style="margin-top:var(--space-8);">
@@ -321,7 +348,9 @@ function buildModel(rows, unsdMap){
   rows.forEach(r=>{
     const mu=shorten(r.m_uni), pu=shorten(r.p_uni);
     if(!mu||!pu) return;
-    flows.push({source:mu,target:pu,scholar:r.scholar||""});
+    flows.push({source:mu,target:pu,scholar:r.scholar||"",
+      m_year:r.m_year||"", p_year:r.p_year||"", m_title:r.m_title||"", p_title:r.p_title||"",
+      m_full:(r.m_uni||"").trim(), p_full:(r.p_uni||"").trim()});
     unis[mu]={country:(r.m_country||"").trim(),region:regionOf((r.m_country||"").trim()),full:(r.m_uni||"").trim()};
     unis[pu]={country:(r.p_country||"").trim(),region:regionOf((r.p_country||"").trim()),full:(r.p_uni||"").trim()};
   });
@@ -338,6 +367,37 @@ function buildModel(rows, unsdMap){
   let fi=0;
   uni_list.forEach(it=>{ if(!countryColor[it.country]) countryColor[it.country]=FALLBACK_CCOLORS[fi++ % FALLBACK_CCOLORS.length]; });
   return {flows, unis, num, uni_list};
+}
+
+/* ---- 3b. TOOLTIP helpers (ribbon hover uses the extra CSV columns) --------- */
+const tipEl = document.getElementById("chord-tip");
+function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function showTip(ev, html){ tipEl.innerHTML=html; tipEl.style.opacity="1"; moveTip(ev); }
+function moveTip(ev){
+  const pad=14, w=tipEl.offsetWidth, h=tipEl.offsetHeight;
+  let x=ev.clientX, y=ev.clientY-pad;
+  x=Math.max(w/2+6, Math.min(x, window.innerWidth-w/2-6));
+  if(y-h<6) y=ev.clientY+pad+h;   // flip below the cursor near the top edge
+  tipEl.style.left=x+"px"; tipEl.style.top=y+"px";
+}
+function hideTip(){ tipEl.style.opacity="0"; }
+// Build the tooltip body for one Master's->PhD ribbon (may bundle several scholars).
+function tipForPair(srcFull, tgtFull, flows){
+  const arrow=" \u2192 ";
+  const self=(srcFull===tgtFull);
+  const head='<div class="tip-path">'+escapeHtml(srcFull)+(self?" (same institution)":arrow+escapeHtml(tgtFull))+'</div>';
+  const count='<div class="tip-count">'+flows.length+' scholar'+(flows.length===1?"":"s")+'</div>';
+  const SHOW=6;
+  const items=flows.slice(0,SHOW).map(f=>{
+    const name=escapeHtml(f.scholar||"(unnamed)");
+    const yrs=[f.m_year,f.p_year].filter(Boolean).join(arrow);
+    const yr=yrs?' <span class="tip-year">('+escapeHtml(yrs)+')</span>':"";
+    const title=f.p_title||f.m_title;
+    const t=title?'<span class="tip-title">'+escapeHtml(title)+'</span>':"";
+    return '<li><span class="tip-name">'+name+'</span>'+yr+t+'</li>';
+  }).join("");
+  const more=flows.length>SHOW?'<div class="tip-more">+ '+(flows.length-SHOW)+' more</div>':"";
+  return head+count+'<ul>'+items+'</ul>'+more;
 }
 
 /* ---- 4. DRAW --------------------------------------------------------------- */
@@ -362,13 +422,30 @@ function draw(data){
   const chords=chord(matrix);
   const grp=chords.groups;
 
+  // group the individual scholar flows by source->target so one ribbon
+  // (which may bundle several scholars) can list them all on hover.
+  const flowsByPair=new Map();
+  data.flows.forEach(f=>{ const k=f.source+"\u0001"+f.target; if(!flowsByPair.has(k)) flowsByPair.set(k,[]); flowsByPair.get(k).push(f); });
+  const nameOf=i=>{ const n=nodes[i]; const u=data.uni_list.find(x=>x.uni===n.name); return u?u.full:n.name; };
+
   // ribbons (coloured by Master's / source country)
   const ribbon=d3.ribbonArrow().radius(chordR).padAngle(0.006);
-  g.append("g").attr("fill-opacity",0.6).selectAll("path").data(chords).join("path")
+  const ribbonSel=g.append("g").attr("fill-opacity",0.6).selectAll("path").data(chords).join("path")
     .attr("d",ribbon)
     .attr("fill",d=>countryColor[nodes[d.source.index].country]||"#999")
     .attr("stroke",d=>d3.rgb(countryColor[nodes[d.source.index].country]||"#999").darker(0.6))
-    .attr("stroke-width",0.4);
+    .attr("stroke-width",0.4)
+    .style("cursor","pointer");
+
+  ribbonSel
+    .on("mouseover",function(ev,d){
+      const sName=nodes[d.source.index].name, tName=nodes[d.target.index].name;
+      const list=flowsByPair.get(sName+"\u0001"+tName)||[];
+      ribbonSel.classed("dim",true); d3.select(this).classed("dim",false);
+      showTip(ev, tipForPair(nameOf(d.source.index), nameOf(d.target.index), list));
+    })
+    .on("mousemove",moveTip)
+    .on("mouseout",function(){ ribbonSel.classed("dim",false); hideTip(); });
 
   // university numbered arcs (innermost ring)
   const uArc=d3.arc().innerRadius(uInner).outerRadius(uOuter);
@@ -455,9 +532,14 @@ function draw(data){
 /* ---- 5. LOAD: try live CSVs first, else embedded snapshot ------------------ */
 function rowsFromCsv(csvText){
   const rows=d3.csvParse(csvText);
+  // The chart only needs m_uni/m_country/p_uni/p_country (+ a scholar name);
+  // any other columns in the master CSV (year, thesis title, city, coords ...)
+  // are ignored for plotting but a few are carried through for the hover tooltip.
   return rows.map(r=>({
     m_uni:r.m_uni, m_country:r.m_country, p_uni:r.p_uni, p_country:r.p_country,
-    scholar:r.scholar || [r.first,r.last].filter(Boolean).join(" ")
+    scholar:r.scholar || [r.first,r.last].filter(Boolean).join(" "),
+    m_year:(r.m_year||"").trim(), p_year:(r.p_year||"").trim(),
+    m_title:(r.m_title||"").trim(), p_title:(r.p_title||"").trim()
   })).filter(r=>r.m_uni && r.p_uni);
 }
 function unsdMapFromCsv(csvText){
@@ -582,6 +664,19 @@ document.getElementById("btn-reset").addEventListener("click", ()=>{
   currentUnsd = Object.assign({}, EMBEDDED_UNSD);
   setMsg("Reset to the default dataset.", "ok");
   init();
+});
+
+// ---- downloadable CSV template (exact master format) ------------------------
+const TEMPLATE_CSV = "Degree(s),scholar_id,scholar,last,first,New?,m_uni,m_city,m_country,m_region,m_lon,m_lat,m_year,m_title,p_uni,p_city,p_country,p_region,p_lon,p_lat,p_year,p_title\nBoth,1,\"Example, Ana\",Example,Ana,,University of the South Pacific,Suva,Fiji,Pacific,178.447,-18.149,2015,\"Master's thesis title here\",University of Hawai\u02bbi at M\u0101noa,Honolulu,USA,North America,-157.8171,21.2969,2021,\"PhD thesis title here\"\nPhD only,2,\"Sample, Beni\",Sample,Beni,New,Massey University,Palmerston North,New Zealand,Pacific,175.618,-40.3855,,,University of Auckland,Auckland,New Zealand,Pacific,174.7679,-36.8523,2019,\"PhD thesis title here\"\n";
+document.getElementById("btn-template").addEventListener("click", (e)=>{
+  e.preventDefault();
+  const blob = new Blob(["\ufeff"+TEMPLATE_CSV], {type:"text/csv;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "itaukei-chord-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+  setMsg("Template downloaded \u2014 fill it in and drop it back above.", "ok");
 });
 
 init();
