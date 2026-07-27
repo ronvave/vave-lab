@@ -517,20 +517,21 @@ function buildOption(data){
       orient: "vertical",
       left: "center",
       top: "middle",
-      itemGap: 22,
-      itemWidth: 16,
-      itemHeight: 16,
+      itemGap: 24,
+      itemWidth: 18,
+      itemHeight: 18,
       icon: "circle",
       data: LEGEND_ORDER.map(k=> TYPES.find(t=>t.key===k).label ),
-      // Append each type's COMBINED share of all publications, in bold.
+      // Append each type's COMBINED share of all publications.
       formatter: name => {
         const t = TYPES.find(t=>t.label===name);
         if(!t) return name;
         return name + "  {bold|(" + pctStr(combPct[t.key]) + ")}";
       },
+      // Match the centre "337 scholars" block: DM Sans, 17px, bold, black.
       textStyle: {
-        fontFamily:"DM Sans, system-ui, sans-serif", fontSize:14, color:"#2a2f36",
-        rich: { bold: { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:14, fontWeight:700, color:"#1c2530" } }
+        fontFamily:"DM Sans, system-ui, sans-serif", fontSize:17, fontWeight:700, color:"#1c2530",
+        rich: { bold: { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:17, fontWeight:700, color:"#1c2530" } }
       },
       selectedMode: false
     },
