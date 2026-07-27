@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/animations.css" />
   <meta name="robots" content="noindex,follow" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     .chord-canvas{
       background:#ffffff;
@@ -216,21 +217,21 @@
     <!-- ================= CSV UPLOAD PANEL ================= -->
     <div class="uploader reveal">
       <div class="uploader__head">
-        <h3 class="uploader__title">Build the chart from your own CSV</h3>
+        <h3 class="uploader__title">Build the chart from your own CSV or Excel file</h3>
         <span class="upload-msg" id="upload-msg"></span>
       </div>
       <div class="uploader__row">
-        <div class="dropzone" id="dz-mobility" tabindex="0" role="button" aria-label="Upload scholar mobility CSV">
-          <span class="dropzone__label">Scholar mobility CSV</span>
-          <span class="dropzone__sub">Drag &amp; drop, or click to choose your <code style="font-family:var(--font-mono);">.csv</code></span>
+        <div class="dropzone" id="dz-mobility" tabindex="0" role="button" aria-label="Upload scholar mobility CSV or Excel file">
+          <span class="dropzone__label">Scholar mobility CSV or Excel</span>
+          <span class="dropzone__sub">Drag &amp; drop, or click to choose your <code style="font-family:var(--font-mono);">.csv</code> or <code style="font-family:var(--font-mono);">.xlsx</code></span>
           <span class="dropzone__file" id="file-mobility"></span>
-          <input type="file" id="input-mobility" accept=".csv,text/csv" hidden />
+          <input type="file" id="input-mobility" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
         </div>
-        <div class="dropzone" id="dz-unsd" tabindex="0" role="button" aria-label="Upload UNSD region CSV (optional)">
-          <span class="dropzone__label">UNSD region CSV <span class="dropzone__optional">optional</span></span>
+        <div class="dropzone" id="dz-unsd" tabindex="0" role="button" aria-label="Upload UNSD region CSV or Excel file (optional)">
+          <span class="dropzone__label">UNSD region CSV or Excel <span class="dropzone__optional">optional</span></span>
           <span class="dropzone__sub">Only if you want to override the built-in country&rarr;region reference</span>
           <span class="dropzone__file" id="file-unsd"></span>
-          <input type="file" id="input-unsd" accept=".csv,text/csv" hidden />
+          <input type="file" id="input-unsd" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
         </div>
       </div>
       <div class="uploader__actions">
@@ -238,7 +239,7 @@
         <a href="#" class="btn-template" id="btn-template" download="itaukei-chord-template.csv">&darr;&nbsp;Download CSV template</a>
       </div>
       <p class="uploader__help">
-        Your file stays in your browser &mdash; nothing is uploaded to a server. The scholar CSV needs the columns
+        Your file stays in your browser &mdash; nothing is uploaded to a server. CSV and Excel (<code>.xlsx</code>/<code>.xls</code>) files both work; for Excel the first worksheet is used. The scholar file needs the columns
         <code>m_uni</code>, <code>m_country</code>, <code>p_uni</code>, <code>p_country</code>, and either a
         <code>scholar</code> column or <code>first</code> + <code>last</code>. Regions are derived automatically from the
         UNSD reference; you only need the second file to change that mapping.
@@ -666,13 +667,43 @@ function renderMobility(csvText, label){
   return true;
 }
 
-function readFile(file){
+// Read a dropped/chosen file and always return CSV text.
+// .csv -> read as UTF-8 text (stripping any BOM). .xlsx/.xls -> parse first
+// worksheet with SheetJS and serialise it to CSV, so all downstream parsing
+// (d3.csvParse in rowsFromCsv / unsdMapFromCsv) stays identical.
+function isExcel(file){
+  return /\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)
+      || file.type==="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      || file.type==="application/vnd.ms-excel";
+}
+function readTextFile(file){
   return new Promise((resolve,reject)=>{
     const fr = new FileReader();
-    fr.onload  = () => resolve(fr.result);
+    fr.onload  = () => resolve(String(fr.result).replace(/^\ufeff/, ""));
     fr.onerror = () => reject(fr.error);
     fr.readAsText(file);
   });
+}
+function readExcelAsCsv(file){
+  return new Promise((resolve,reject)=>{
+    if(typeof XLSX==="undefined"){ reject(new Error("xlsx-lib-missing")); return; }
+    const fr = new FileReader();
+    fr.onload = () => {
+      try{
+        const wb = XLSX.read(new Uint8Array(fr.result), {type:"array"});
+        const first = wb.SheetNames[0];
+        if(!first){ reject(new Error("no-sheets")); return; }
+        // sheet_to_csv quotes fields containing commas/quotes/newlines, matching CSV rules
+        const csv = XLSX.utils.sheet_to_csv(wb.Sheets[first], {blankrows:false});
+        resolve(csv);
+      }catch(err){ reject(err); }
+    };
+    fr.onerror = () => reject(fr.error);
+    fr.readAsArrayBuffer(file);
+  });
+}
+function readFile(file){
+  return isExcel(file) ? readExcelAsCsv(file) : readTextFile(file);
 }
 
 // ---- default load: try the repo CSVs, else embedded snapshot -----------------
@@ -711,12 +742,18 @@ function wireDropzone(zoneId, inputId, fileLabelId, onFile){
   });
   input.addEventListener("change", ()=>{ const f=input.files && input.files[0]; if(f) handle(f); });
   async function handle(file){
-    if(!/\.csv$/i.test(file.name) && file.type!=="text/csv"){ setMsg("Please choose a .csv file.", "error"); return; }
+    const csvOk   = /\.csv$/i.test(file.name) || file.type==="text/csv";
+    const excelOk = isExcel(file);
+    if(!csvOk && !excelOk){ setMsg("Please choose a .csv or .xlsx file.", "error"); return; }
     try{
       const text = await readFile(file);
       const ok = onFile(text, file.name);
       if(ok){ fileLabel.textContent = file.name; zone.classList.add("is-loaded"); }
-    }catch(err){ setMsg("Could not read that file.", "error"); }
+    }catch(err){
+      if(err && err.message==="xlsx-lib-missing"){ setMsg("Excel support failed to load \u2014 check your connection, or upload a .csv instead.", "error"); }
+      else if(err && err.message==="no-sheets"){ setMsg("That Excel file has no worksheets.", "error"); }
+      else { setMsg("Could not read that file.", "error"); }
+    }
   }
 }
 
