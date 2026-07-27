@@ -517,8 +517,10 @@ function draw(data){
     const span=ext.end-ext.start;
     const clabel=COUNTRY_LABEL[c]||c;
     const ctxt=idealText(countryColor[c]||"#888");
+    // Only label arcs wide enough to hold text ON the ring. Narrow arcs are left
+    // unlabelled (identified by the number ring + legend) rather than spilling a
+    // radial label outside the outermost ring, which clipped and read upside-down.
     if(span>0.28) curvedLabel(g,ext,(cInner+cOuter)/2,clabel,"country-label",ctxt);
-    else radialLabel(g,ext,cOuter+6,clabel,"country-label",countryColor[c]);
   });
 
   // REGION ring (outer)
@@ -528,7 +530,7 @@ function draw(data){
     g.append("path").attr("d",rArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",regionColor[r]||"#888");
     const span=ext.end-ext.start;
     if(span>0.4) curvedLabel(g,ext,(rInner+rOuter)/2,r.toUpperCase(),"region-label");
-    else radialLabel(g,ext,rOuter+7,r.toUpperCase(),"region-label",regionColor[r]);
+    // Narrow region arcs (e.g. ASIA) get no outside-the-ring radial label.
   });
 
   // LEGEND (numbered, 4 columns)
