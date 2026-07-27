@@ -249,8 +249,8 @@
       <div id="wrap">
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
         <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country &nbsp;&middot;&nbsp; Outer ring = region</div>
-        <svg id="chart" width="1160" height="700" viewBox="0 0 1160 700"></svg>
-        <svg id="legend" width="1160" height="185" viewBox="0 -16 1160 185"></svg>
+        <svg id="chart" width="1160" height="668" viewBox="0 0 1160 668"></svg>
+        <svg id="legend" width="1160" height="177" viewBox="0 -8 1160 177"></svg>
         <div class="caption" id="cap">Source: iTaukei Research Database.</div>
         <div id="status"></div>
 
@@ -263,14 +263,14 @@
           <span class="dl-lock" title="Width and height stay in proportion">&#128279; locked</span>
           <div class="dl-field">
             <label for="dl-height">Height (px)</label>
-            <input id="dl-height" type="number" min="200" max="20000" step="1" value="885">
+            <input id="dl-height" type="number" min="200" max="20000" step="1" value="845">
           </div>
           <div class="dl-field">
             <label for="dl-dpi">DPI</label>
             <input id="dl-dpi" type="number" min="72" max="1200" step="1" value="300">
           </div>
           <button id="dl-btn" class="btn-download" type="button">Download PNG</button>
-          <div class="dl-hint" id="dl-hint">Output: 3625 &times; 2766 px at 300 DPI</div>
+          <div class="dl-hint" id="dl-hint">Output: 3625 &times; 2641 px at 300 DPI</div>
         </div>
       </div>
     </div>
@@ -768,8 +768,8 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
 // ---- PNG export (chart + legend stacked), aspect-locked, DPI-scalable -------
 (function(){
   const BASE_W = 1160;              // layout width used for both SVGs
-  const CHART_H = 700, LEGEND_H = 185;
-  const BASE_H = CHART_H + LEGEND_H; // 885 -> stacked composite height
+  const CHART_H = 668, LEGEND_H = 177;
+  const BASE_H = CHART_H + LEGEND_H; // 845 -> stacked composite height
   const ASPECT = BASE_H / BASE_W;    // height per unit width (locked)
   const wIn = document.getElementById("dl-width");
   const hIn = document.getElementById("dl-height");
