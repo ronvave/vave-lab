@@ -526,7 +526,7 @@ function buildOption(data){
       formatter: name => {
         const t = TYPES.find(t=>t.label===name);
         if(!t) return name;
-        return name + "  ({bold|" + pctStr(combPct[t.key]) + "})";
+        return name + "  {bold|(" + pctStr(combPct[t.key]) + ")}";
       },
       textStyle: {
         fontFamily:"DM Sans, system-ui, sans-serif", fontSize:14, color:"#2a2f36",
