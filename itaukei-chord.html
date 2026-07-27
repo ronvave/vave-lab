@@ -36,6 +36,49 @@
     #status{ text-align:center; font-size:11px; color:#b0b6bf; margin-top:6px; }
     .chord-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
     @media (min-width:1240px){ .chord-scroll-hint{ display:none; } }
+
+    /* ---- CSV upload panel (theme-aware, uses site tokens) ---- */
+    .uploader{
+      background:var(--color-surface);
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      padding:var(--space-6);
+      margin-bottom:var(--space-6);
+    }
+    .uploader__head{ display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4); }
+    .uploader__title{ font-family:var(--font-display); font-size:var(--text-lg); font-weight:600; color:var(--color-text); margin:0; }
+    .uploader__row{ display:flex; gap:var(--space-4); flex-wrap:wrap; }
+    .dropzone{
+      flex:1 1 320px;
+      min-height:118px;
+      border:2px dashed var(--color-border);
+      border-radius:var(--radius-md);
+      background:var(--color-surface-2);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+      padding:var(--space-5);
+      cursor:pointer;
+      transition:border-color .15s ease, background .15s ease;
+    }
+    .dropzone:hover{ border-color:var(--color-primary); }
+    .dropzone.is-dragover{ border-color:var(--color-primary); background:var(--color-primary-highlight); }
+    .dropzone.is-loaded{ border-style:solid; border-color:var(--color-primary); }
+    .dropzone__label{ font-weight:600; color:var(--color-text); font-size:var(--text-sm); }
+    .dropzone__sub{ color:var(--color-text-muted); font-size:var(--text-xs); margin-top:var(--space-1); }
+    .dropzone__file{ color:var(--color-primary); font-size:var(--text-xs); font-weight:600; margin-top:var(--space-2); word-break:break-all; }
+    .dropzone__optional{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--color-text-faint); border:1px solid var(--color-border); border-radius:var(--radius-full); padding:1px 8px; margin-left:6px; }
+    .uploader__actions{ display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap; margin-top:var(--space-4); }
+    .btn-reset{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:var(--color-primary); background:transparent;
+      border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; cursor:pointer; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-reset:hover{ background:var(--color-surface-offset); border-color:var(--color-primary); }
+    .upload-msg{ font-size:var(--text-sm); color:var(--color-text-muted); }
+    .upload-msg.is-error{ color:var(--color-error); font-weight:600; }
+    .upload-msg.is-ok{ color:var(--color-success); font-weight:600; }
+    .uploader__help{ margin-top:var(--space-4); font-size:var(--text-xs); color:var(--color-text-muted); line-height:1.6; }
+    .uploader__help code{ font-family:var(--font-mono); font-size:0.92em; background:var(--color-surface-offset); padding:1px 5px; border-radius:4px; color:var(--color-text); }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -113,6 +156,37 @@
         rings show <strong>region</strong> (UNSD M49), then <strong>country</strong>, then each numbered
         <strong>university</strong>. Self-loops (same institution for both degrees) are retained. It forms part of the
         <a href="research.html#current-projects" style="color:var(--color-primary);">iTaukei Research Database</a>.
+      </p>
+    </div>
+
+    <!-- ================= CSV UPLOAD PANEL ================= -->
+    <div class="uploader reveal">
+      <div class="uploader__head">
+        <h3 class="uploader__title">Build the chart from your own CSV</h3>
+        <span class="upload-msg" id="upload-msg"></span>
+      </div>
+      <div class="uploader__row">
+        <div class="dropzone" id="dz-mobility" tabindex="0" role="button" aria-label="Upload scholar mobility CSV">
+          <span class="dropzone__label">Scholar mobility CSV</span>
+          <span class="dropzone__sub">Drag &amp; drop, or click to choose your <code style="font-family:var(--font-mono);">.csv</code></span>
+          <span class="dropzone__file" id="file-mobility"></span>
+          <input type="file" id="input-mobility" accept=".csv,text/csv" hidden />
+        </div>
+        <div class="dropzone" id="dz-unsd" tabindex="0" role="button" aria-label="Upload UNSD region CSV (optional)">
+          <span class="dropzone__label">UNSD region CSV <span class="dropzone__optional">optional</span></span>
+          <span class="dropzone__sub">Only if you want to override the built-in country&rarr;region reference</span>
+          <span class="dropzone__file" id="file-unsd"></span>
+          <input type="file" id="input-unsd" accept=".csv,text/csv" hidden />
+        </div>
+      </div>
+      <div class="uploader__actions">
+        <button type="button" class="btn-reset" id="btn-reset">Reset to default data</button>
+      </div>
+      <p class="uploader__help">
+        Your file stays in your browser &mdash; nothing is uploaded to a server. The scholar CSV needs the columns
+        <code>m_uni</code>, <code>m_country</code>, <code>p_uni</code>, <code>p_country</code>, and either a
+        <code>scholar</code> column or <code>first</code> + <code>last</code>. Regions are derived automatically from the
+        UNSD reference; you only need the second file to change that mapping.
       </p>
     </div>
 
@@ -227,6 +301,9 @@ const countryColor = {
 const LIGHT_TEXT = new Set(["Fiji","Australia","USA","China","Germany"]); // dark fills -> white number
 const COUNTRY_LABEL = { "United Kingdom":"UK" }; // display overrides for tight arcs
 const FALLBACK_CCOLORS = ["#8E5FB0","#4F98A3","#B36FD0","#C48A2A","#6E8B3D","#9C6B2E","#5A7A8C"];
+
+/* Embedded UNSD M49 country -> region map (245 countries) so uploads work even via file:// */
+const EMBEDDED_UNSD = {"Algeria":"Africa","Egypt":"Africa","Libya":"Africa","Morocco":"Africa","Sudan":"Africa","Tunisia":"Africa","Western Sahara":"Africa","British Indian Ocean Territory":"Africa","Burundi":"Africa","Comoros":"Africa","Djibouti":"Africa","Eritrea":"Africa","Ethiopia":"Africa","French Southern Territories":"Africa","Kenya":"Africa","Madagascar":"Africa","Malawi":"Africa","Mauritius":"Africa","Mayotte":"Africa","Mozambique":"Africa","Réunion":"Africa","Rwanda":"Africa","Seychelles":"Africa","Somalia":"Africa","South Sudan":"Africa","Uganda":"Africa","United Republic of Tanzania":"Africa","Zambia":"Africa","Zimbabwe":"Africa","Angola":"Africa","Cameroon":"Africa","Central African Republic":"Africa","Chad":"Africa","Congo":"Africa","Democratic Republic of the Congo":"Africa","Equatorial Guinea":"Africa","Gabon":"Africa","Sao Tome and Principe":"Africa","Botswana":"Africa","Eswatini":"Africa","Lesotho":"Africa","Namibia":"Africa","South Africa":"Africa","Benin":"Africa","Burkina Faso":"Africa","Cabo Verde":"Africa","Côte d’Ivoire":"Africa","Gambia":"Africa","Ghana":"Africa","Guinea":"Africa","Guinea-Bissau":"Africa","Liberia":"Africa","Mali":"Africa","Mauritania":"Africa","Niger":"Africa","Nigeria":"Africa","Saint Helena":"Africa","Senegal":"Africa","Sierra Leone":"Africa","Togo":"Africa","Anguilla":"Americas","Antigua and Barbuda":"Americas","Aruba":"Americas","Bahamas":"Americas","Barbados":"Americas","Bonaire":"Americas","British Virgin Islands":"Americas","Cayman Islands":"Americas","Cuba":"Americas","Curaçao":"Americas","Dominica":"Americas","Dominican Republic":"Americas","Grenada":"Americas","Guadeloupe":"Americas","Haiti":"Americas","Jamaica":"Americas","Martinique":"Americas","Montserrat":"Americas","Puerto Rico":"Americas","Saint Barthélemy":"Americas","Saint Kitts and Nevis":"Americas","Saint Lucia":"Americas","Saint Martin (French Part)":"Americas","Saint Vincent and the Grenadines":"Americas","Sint Maarten (Dutch part)":"Americas","Trinidad and Tobago":"Americas","Turks and Caicos Islands":"Americas","United States Virgin Islands":"Americas","Belize":"Americas","Costa Rica":"Americas","El Salvador":"Americas","Guatemala":"Americas","Honduras":"Americas","Mexico":"Americas","Nicaragua":"Americas","Panama":"Americas","Argentina":"Americas","Bolivia (Plurinational State of)":"Americas","Bouvet Island":"Americas","Brazil":"Americas","Chile":"Americas","Colombia":"Americas","Ecuador":"Americas","Falkland Islands (Malvinas)":"Americas","French Guiana":"Americas","Guyana":"Americas","Paraguay":"Americas","Peru":"Americas","South Georgia and the South Sandwich Islands":"Americas","Suriname":"Americas","Uruguay":"Americas","Venezuela (Bolivarian Republic of)":"Americas","Bermuda":"Americas","Canada":"Americas","Greenland":"Americas","Saint Pierre and Miquelon":"Americas","United States of America":"Americas","Kazakhstan":"Asia","Kyrgyzstan":"Asia","Tajikistan":"Asia","Turkmenistan":"Asia","Uzbekistan":"Asia","China":"Asia","Democratic People's Republic of Korea":"Asia","Japan":"Asia","Mongolia":"Asia","Republic of Korea":"Asia","Brunei Darussalam":"Asia","Cambodia":"Asia","Indonesia":"Asia","Lao People's Democratic Republic":"Asia","Malaysia":"Asia","Myanmar":"Asia","Philippines":"Asia","Singapore":"Asia","Thailand":"Asia","Timor-Leste":"Asia","Viet Nam":"Asia","Afghanistan":"Asia","Bangladesh":"Asia","Bhutan":"Asia","India":"Asia","Iran (Islamic Republic of)":"Asia","Maldives":"Asia","Nepal":"Asia","Pakistan":"Asia","Sri Lanka":"Asia","Armenia":"Asia","Azerbaijan":"Asia","Bahrain":"Asia","Cyprus":"Asia","Georgia":"Asia","Iraq":"Asia","Israel":"Asia","Jordan":"Asia","Kuwait":"Asia","Lebanon":"Asia","Oman":"Asia","Qatar":"Asia","Saudi Arabia":"Asia","State of Palestine":"Asia","Syrian Arab Republic":"Asia","Türkiye":"Asia","United Arab Emirates":"Asia","Yemen":"Asia","Belarus":"Europe","Bulgaria":"Europe","Czechia":"Europe","Hungary":"Europe","Poland":"Europe","Republic of Moldova":"Europe","Romania":"Europe","Russian Federation":"Europe","Slovakia":"Europe","Ukraine":"Europe","Åland Islands":"Europe","Denmark":"Europe","Estonia":"Europe","Faroe Islands":"Europe","Finland":"Europe","Guernsey":"Europe","Iceland":"Europe","Ireland":"Europe","Isle of Man":"Europe","Jersey":"Europe","Latvia":"Europe","Lithuania":"Europe","Norway":"Europe","Svalbard and Jan Mayen Islands":"Europe","Sweden":"Europe","United Kingdom of Great Britain and Northern Ireland":"Europe","Albania":"Europe","Andorra":"Europe","Bosnia and Herzegovina":"Europe","Croatia":"Europe","Gibraltar":"Europe","Greece":"Europe","Holy See":"Europe","Italy":"Europe","Malta":"Europe","Montenegro":"Europe","North Macedonia":"Europe","Portugal":"Europe","San Marino":"Europe","Serbia":"Europe","Slovenia":"Europe","Spain":"Europe","Austria":"Europe","Belgium":"Europe","France":"Europe","Germany":"Europe","Liechtenstein":"Europe","Luxembourg":"Europe","Monaco":"Europe","Netherlands (Kingdom of the)":"Europe","Switzerland":"Europe","Australia":"Oceania","Christmas Island":"Oceania","Cocos (Keeling) Islands":"Oceania","Heard Island and McDonald Islands":"Oceania","New Zealand":"Oceania","Norfolk Island":"Oceania","Fiji":"Oceania","New Caledonia":"Oceania","Papua New Guinea":"Oceania","Solomon Islands":"Oceania","Vanuatu":"Oceania","Guam":"Oceania","Kiribati":"Oceania","Marshall Islands":"Oceania","Micronesia (Federated States of)":"Oceania","Nauru":"Oceania","Northern Mariana Islands":"Oceania","Palau":"Oceania","United States Minor Outlying Islands":"Oceania","American Samoa":"Oceania","Cook Islands":"Oceania","French Polynesia":"Oceania","Niue":"Oceania","Pitcairn":"Oceania","Samoa":"Oceania","Tokelau":"Oceania","Tonga":"Oceania","Tuvalu":"Oceania","Wallis and Futuna Islands":"Oceania"};
 
 /* ---- 2. EMBEDDED FALLBACK (snapshot of current 44-scholar dataset) --------- */
 const EMBEDDED_FALLBACK = 
@@ -389,21 +466,124 @@ function unsdMapFromCsv(csvText){
   rows.forEach(r=>{ if(r["Country or Area"]) m[r["Country or Area"]] = r["Region Name"]; });
   return m;
 }
+/* ---- 6. STATE + RENDER (default data on load, plus user CSV uploads) -------- */
+const statusEl = document.getElementById("status");
+const msgEl    = document.getElementById("upload-msg");
+// Region reference currently in effect. Starts with the embedded UNSD map so an
+// uploaded scholar CSV works immediately, even offline (file://). Replaced if the
+// default unsd.csv loads, or if the user uploads their own UNSD CSV.
+let currentUnsd = Object.assign({}, EMBEDDED_UNSD);
+
+function setMsg(text, kind){
+  msgEl.textContent = text || "";
+  msgEl.className = "upload-msg" + (kind ? " is-"+kind : "");
+}
+
+// Validate that the parsed CSV has the columns we need before drawing.
+function validateMobility(csvText){
+  const parsed = d3.csvParse(csvText);
+  const cols = parsed.columns || [];
+  const need = ["m_uni","m_country","p_uni","p_country"];
+  const missing = need.filter(c => !cols.includes(c));
+  if(missing.length) return { ok:false, error:"Missing column(s): "+missing.join(", ")+". Expected m_uni, m_country, p_uni, p_country (and scholar or first+last)." };
+  const rows = rowsFromCsv(csvText);
+  if(!rows.length) return { ok:false, error:"No usable rows found (each row needs both m_uni and p_uni)." };
+  return { ok:true, rows };
+}
+
+// Draw from a mobility CSV string using the region map currently in effect.
+function renderMobility(csvText, label){
+  const v = validateMobility(csvText);
+  if(!v.ok){ setMsg(v.error, "error"); return false; }
+  const model = buildModel(v.rows, currentUnsd);
+  draw(model);
+  statusEl.textContent = (label||"Uploaded CSV")+": "+model.flows.length+" scholars, "+model.uni_list.length+" universities.";
+  setMsg("Chart updated from "+(label||"your CSV")+" ("+model.flows.length+" scholars).", "ok");
+  return true;
+}
+
+function readFile(file){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onload  = () => resolve(fr.result);
+    fr.onerror = () => reject(fr.error);
+    fr.readAsText(file);
+  });
+}
+
+// ---- default load: try the repo CSVs, else embedded snapshot -----------------
+let lastMobilityText = null;   // remember uploaded scholar CSV so a later UNSD upload can re-render
 async function init(){
-  const status=document.getElementById("status");
   try{
     const [mob,unsd]=await Promise.all([
       fetch("itaukei-chord-data/mobility.csv").then(r=>{if(!r.ok)throw 0;return r.text();}),
       fetch("itaukei-chord-data/unsd.csv").then(r=>{if(!r.ok)throw 0;return r.text();})
     ]);
-    const model=buildModel(rowsFromCsv(mob), unsdMapFromCsv(unsd));
+    currentUnsd = unsdMapFromCsv(unsd);
+    const model=buildModel(rowsFromCsv(mob), currentUnsd);
     draw(model);
-    status.textContent="Live data: mobility.csv + unsd.csv ("+model.flows.length+" scholars, "+model.uni_list.length+" universities).";
+    statusEl.textContent="Default data ("+model.flows.length+" scholars, "+model.uni_list.length+" universities). Upload a CSV above to rebuild.";
   }catch(e){
     draw(EMBEDDED_FALLBACK);
-    status.textContent="Embedded snapshot ("+EMBEDDED_FALLBACK.flows.length+" scholars). To use live data, put updated CSVs in itaukei-chord-data/ and serve the folder over http.";
+    statusEl.textContent="Showing the built-in "+EMBEDDED_FALLBACK.flows.length+"-scholar snapshot. Upload a CSV above to rebuild.";
   }
 }
+
+// ---- upload wiring -----------------------------------------------------------
+function wireDropzone(zoneId, inputId, fileLabelId, onFile){
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  const fileLabel = document.getElementById(fileLabelId);
+  const open = () => input.click();
+  zone.addEventListener("click", open);
+  zone.addEventListener("keydown", e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  zone.addEventListener("dragover",  e=>{ e.preventDefault(); zone.classList.add("is-dragover"); });
+  zone.addEventListener("dragleave", ()=> zone.classList.remove("is-dragover"));
+  zone.addEventListener("drop", e=>{
+    e.preventDefault(); zone.classList.remove("is-dragover");
+    const f = e.dataTransfer.files && e.dataTransfer.files[0];
+    if(f) handle(f);
+  });
+  input.addEventListener("change", ()=>{ const f=input.files && input.files[0]; if(f) handle(f); });
+  async function handle(file){
+    if(!/\.csv$/i.test(file.name) && file.type!=="text/csv"){ setMsg("Please choose a .csv file.", "error"); return; }
+    try{
+      const text = await readFile(file);
+      const ok = onFile(text, file.name);
+      if(ok){ fileLabel.textContent = file.name; zone.classList.add("is-loaded"); }
+    }catch(err){ setMsg("Could not read that file.", "error"); }
+  }
+}
+
+wireDropzone("dz-mobility","input-mobility","file-mobility", (text, name)=>{
+  const ok = renderMobility(text, name);
+  if(ok) lastMobilityText = text;
+  return ok;
+});
+
+wireDropzone("dz-unsd","input-unsd","file-unsd", (text, name)=>{
+  const map = unsdMapFromCsv(text);
+  if(!Object.keys(map).length){ setMsg('That UNSD file has no rows with "Country or Area" + "Region Name" columns.', "error"); return false; }
+  currentUnsd = map;
+  // if a scholar CSV is already loaded, re-render with the new regions; otherwise just note it
+  if(lastMobilityText){ renderMobility(lastMobilityText, "Uploaded CSV"); }
+  setMsg("Region reference updated from "+name+" ("+Object.keys(map).length+" countries).", "ok");
+  return true;
+});
+
+document.getElementById("btn-reset").addEventListener("click", ()=>{
+  lastMobilityText = null;
+  document.getElementById("file-mobility").textContent = "";
+  document.getElementById("file-unsd").textContent = "";
+  document.getElementById("input-mobility").value = "";
+  document.getElementById("input-unsd").value = "";
+  document.getElementById("dz-mobility").classList.remove("is-loaded");
+  document.getElementById("dz-unsd").classList.remove("is-loaded");
+  currentUnsd = Object.assign({}, EMBEDDED_UNSD);
+  setMsg("Reset to the default dataset.", "ok");
+  init();
+});
+
 init();
 </script>
 <script src="js/main.js"></script>
