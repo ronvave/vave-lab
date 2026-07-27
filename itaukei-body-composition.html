@@ -453,6 +453,9 @@ function buildOption(data){
   // Dedicated label layer: a scatter point at each band's vertical midpoint on
   // the y (%) axis, showing the band %. Kept off the body-fill series so labels
   // never double up or collide with adjacent bands.
+  // Label EVERY non-zero band with a % pill placed INSIDE the band, same as all
+  // the others. (Previously bands under 6% were suppressed, which made small
+  // categories like Books look "missing" — now they always show.)
   const labelSeries = {
     name: "__labels__",
     type: "scatter",
@@ -466,7 +469,8 @@ function buildOption(data){
       genders.forEach((g,gi)=>{
         TYPES.forEach((t,i)=>{
           const v=bandPct[g][i];
-          if(v>=6) pts.push({ value:[gi, areaPctToHeightPct(g, cumMid[g][i])], _pct:Math.round(v), _color:t.color });
+          if(v>0) pts.push({ value:[gi, areaPctToHeightPct(g, cumMid[g][i])],
+                             _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
         });
       });
       return pts;
@@ -474,13 +478,11 @@ function buildOption(data){
     label: {
       show: true,
       position: "inside",
-      formatter: p => p.data._pct + " %",
+      formatter: p => p.data._lbl,
       color: "#ffffff",
       fontFamily: "DM Sans, system-ui, sans-serif",
       fontSize: 12.5,
       fontWeight: 700,
-      // A pill behind every label so it reads on the body OR on empty background
-      // (thin legs), instead of white-on-nothing turning grey.
       backgroundColor: "rgba(28,37,48,0.72)",
       borderRadius: 9,
       padding: [2,6]
