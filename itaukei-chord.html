@@ -470,7 +470,10 @@ function draw(data){
   }
   const defs=svg.append("defs"); let pid=0;
   function curvedLabel(parent,ext,radius,text,cls,textColor){
-    const mid=(ext.start+ext.end)/2; const flip=mid>Math.PI;
+    // Keep every label upright from the reader's vantage point: text on the
+    // bottom half of the circle (mid-angle between 90 deg and 270 deg, where the
+    // arc dips below centre) is flipped so it reads left-to-right, not inverted.
+    const mid=(ext.start+ext.end)/2; const flip=(mid>Math.PI/2 && mid<3*Math.PI/2);
     const a0=flip?ext.end-0.015:ext.start+0.015, a1=flip?ext.start+0.015:ext.end-0.015;
     const p0=[Math.cos(a0-Math.PI/2)*radius,Math.sin(a0-Math.PI/2)*radius];
     const p1=[Math.cos(a1-Math.PI/2)*radius,Math.sin(a1-Math.PI/2)*radius];
@@ -482,7 +485,7 @@ function draw(data){
     t.append("textPath").attr("href","#"+id).attr("startOffset","50%").attr("text-anchor","middle").text(text);
   }
   function radialLabel(parent,ext,radius,text,cls,color){
-    const mid=(ext.start+ext.end)/2; const flip=mid>Math.PI;
+    const mid=(ext.start+ext.end)/2; const flip=(mid>Math.PI/2 && mid<3*Math.PI/2);
     parent.append("text").attr("class",cls).attr("dy","0.35em").attr("fill",color)
       .attr("transform",`rotate(${mid*180/Math.PI-90}) translate(${radius}) ${flip?"rotate(180)":""}`)
       .attr("text-anchor",flip?"end":"start").text(text);
