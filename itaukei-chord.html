@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iTaukei Scholar Mobility — Chord Diagram — Prof. Ron Vave | UH Mānoa</title>
+  <meta name="description" content="Interactive chord diagram of iTaukei (Indigenous Fijian) scholars' Master's-to-PhD institutional mobility, part of the iTaukei Research Database." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <meta name="robots" content="noindex,follow" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    .chord-canvas{
+      background:#ffffff;
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      box-shadow:0 1px 3px rgba(0,0,0,0.06);
+      padding:var(--space-6) var(--space-4);
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #wrap{ width:1160px; height:1160px; margin:0 auto; position:relative; }
+    .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
+    .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
+    .unum{ font-size:11px; font-weight:700; fill:#1c2530; }
+    .country-label{ font-size:12px; font-weight:700; fill:#fff; }
+    .region-label{ font-size:13px; font-weight:800; fill:#fff; letter-spacing:1px; }
+    .caption{ text-align:center; font-size:11px; color:#8a93a0; margin-top:2px; }
+    .legend-title{ font-size:12.5px; font-weight:700; fill:#1c2530; }
+    .legend-item{ font-size:11.5px; fill:#2a2f36; }
+    .legend-num{ font-size:11.5px; font-weight:700; fill:#1c2530; }
+    #status{ text-align:center; font-size:11px; color:#b0b6bf; margin-top:6px; }
+    .chord-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
+    @media (min-width:1240px){ .chord-scroll-hint{ display:none; } }
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-7LJP79H70W');
+  </script>
+</head>
+<body>
+
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="currentColor" opacity="0.12"/>
+          <path d="M6 22 Q10 14 14 22 Q18 30 22 22 Q26 14 30 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M12 10 L18 20 L24 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="publications.html">Publications</a>
+      <a href="supervision.html">Supervision</a>
+      <a href="teaching.html">Teaching</a>
+      <a href="service.html">Service</a>
+      <a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-banner" aria-label="Page header">
+  <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <p class="page-banner__eyebrow">Vave Lab &middot; iTaukei Research Database</p>
+      <h1 class="page-banner__title">Scholar Mobility</h1>
+    </div>
+    <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
+  </div>
+</section>
+
+<main>
+<section class="section">
+  <div class="container">
+    <div class="reveal" style="max-width:820px;margin-bottom:var(--space-8);">
+      <p class="section__label">Interactive Visualization</p>
+      <h2 class="section__title" style="margin-top:var(--space-2);">Master&rsquo;s &rarr; PhD Institutional Pathways</h2>
+      <div class="divider"></div>
+      <p style="color:var(--color-text-muted);font-size:var(--text-base);line-height:1.65;margin-top:var(--space-5);">
+        This chord diagram traces where <em>iTaukei</em> (Indigenous Fijian) scholars completed their
+        Master&rsquo;s and PhD degrees. Each ribbon links a scholar&rsquo;s Master&rsquo;s institution to their
+        PhD institution, coloured by the country of the Master&rsquo;s degree. Reading from the outside in, the
+        rings show <strong>region</strong> (UNSD M49), then <strong>country</strong>, then each numbered
+        <strong>university</strong>. Self-loops (same institution for both degrees) are retained. It forms part of the
+        <a href="research.html#current-projects" style="color:var(--color-primary);">iTaukei Research Database</a>.
+      </p>
+    </div>
+
+    <div class="chord-canvas reveal">
+      <div id="wrap">
+        <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
+        <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country &nbsp;&middot;&nbsp; Outer ring = region</div>
+        <svg id="chart" width="1160" height="800"></svg>
+        <svg id="legend" width="1160" height="320"></svg>
+        <div class="caption" id="cap">Source: iTaukei Research Database.</div>
+        <div id="status"></div>
+      </div>
+    </div>
+    <p class="chord-scroll-hint">Tip: on smaller screens, scroll the panel sideways to see the full wheel.</p>
+
+    <div class="reveal" style="margin-top:var(--space-8);">
+      <a href="research.html" style="color:var(--color-primary);font-weight:500;">&larr; Back to Research</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>
+          Department of Pacific Islands Studies<br>
+          University of Hawaiʻi at Mānoa<br>
+          1890 East-West Road, Moore Hall 214<br>
+          Honolulu, Hawaiʻi, U.S.A.<br><br>
+          Office: <a href="tel:+18089560229">(808) 956-0229</a><br>
+          Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+        </address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener" style="font-size:var(--text-xs);color:var(--color-primary-highlight);opacity:0.7;text-decoration:none;">UH Faculty Profile &nearr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ============================================================================
+   iTaukei Scholar Mobility — chord diagram
+   Rings (outer -> inner): REGION (UNSD M49) -> COUNTRY -> UNIVERSITY (numbered).
+   Ribbons run Master's university -> PhD university, coloured by Master's country.
+   Self-loops (same university for Master's & PhD) are kept.
+
+   DATA SOURCES (auto-detected, in priority order):
+     1. mobility.csv + unsd.csv  sitting next to this file (served over http)
+     2. the EMBEDDED_FALLBACK snapshot below (always works, even via file://)
+   To refresh: drop updated CSVs beside this file and serve the folder, e.g.
+       python3 -m http.server   ->  open http://localhost:8000/itaukei_chord.html
+   ============================================================================ */
+
+/* ---- 1. CONFIG: display names, colours, label overrides -------------------- */
+// three institutions kept at FULL length on the wheel; others shortened:
+const SHORT = {
+  "University of the South Pacific":"University of the South Pacific", // keep full
+  "Australian National University":"Australian National University",   // keep full
+  "University of Hawai\u02bbi at M\u0101noa":"University of Hawai\u02bbi at M\u0101noa", // keep full
+  "Fiji National University":"FNU","University of Queensland":"UQ","Griffith University":"Griffith",
+  "University of Auckland":"Auckland","University of Waikato":"Waikato","University of Canterbury":"Canterbury",
+  "Massey University":"Massey","University of Otago":"Otago","Victoria University of Wellington":"VUW",
+  "University of Bremen":"Bremen","University of Aberdeen":"Aberdeen","University of Essex":"Essex",
+  "University of Sussex":"Sussex","UNSW Sydney":"UNSW","University of Newcastle":"Newcastle",
+  "University of New England":"New England","Tsinghua University":"Tsinghua","James Cook University":"James Cook",
+  "La Trobe university":"La Trobe","University of Adelaide":"Adelaide","University of Sydney":"Sydney",
+  "Lincoln University":"Lincoln","University of Malta":"Malta","University of Southampton":"Southampton",
+  "Tulane University":"Tulane"
+};
+const shorten = u => SHORT[(u||"").trim()] || (u||"").trim();
+
+// dataset country spelling -> UNSD "Country or Area" spelling (extend as needed)
+const COUNTRY_ALIAS = {
+  "USA":"United States of America",
+  "United Kingdom":"United Kingdom of Great Britain and Northern Ireland"
+};
+
+const regionOrder = ["Oceania","Asia","Americas","Europe","Africa","Antarctica","Other"];
+const regionColor = { "Oceania":"#1F6F78","Asia":"#7A4FA3","Americas":"#B0392E","Europe":"#2E6BA8","Africa":"#6E8B3D","Antarctica":"#5A7A8C","Other":"#7A7974" };
+const countryColor = {
+  "Fiji":"#20808D","New Zealand":"#E8AF34","Australia":"#DA7101","USA":"#A13544",
+  "Canada":"#D98695","Germany":"#3B7CB8","United Kingdom":"#6FA3D6","Portugal":"#7A39BB",
+  "Japan":"#B36FD0","China":"#C0392B","South Korea":"#A86FDF","Malta":"#8E5FB0"
+};
+const LIGHT_TEXT = new Set(["Fiji","Australia","USA","China","Germany"]); // dark fills -> white number
+const COUNTRY_LABEL = { "United Kingdom":"UK" }; // display overrides for tight arcs
+const FALLBACK_CCOLORS = ["#8E5FB0","#4F98A3","#B36FD0","#C48A2A","#6E8B3D","#9C6B2E","#5A7A8C"];
+
+/* ---- 2. EMBEDDED FALLBACK (snapshot of current 44-scholar dataset) --------- */
+const EMBEDDED_FALLBACK = 
+{"flows":[{"source":"University of the South Pacific","target":"Tsinghua","scholar":"Alifereti, Vasemaca Ledua"},{"source":"Massey","target":"Massey","scholar":"Aporosa, Apo"},{"source":"University of Hawaiʻi at Mānoa","target":"University of Hawaiʻi at Mānoa","scholar":"Cagivanua, Ulamila Monica"},{"source":"University of the South Pacific","target":"Bremen","scholar":"Cakacaka, Akuila"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Copeland, Lekima"},{"source":"Waikato","target":"Canterbury","scholar":"Dakuidreketi, Mesake Rawaikela"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Duaibe, Adi Salote Kuruibua"},{"source":"University of the South Pacific","target":"Australian National University","scholar":"Durutalo, Alumita Lawaniyavi"},{"source":"University of the South Pacific","target":"Sydney","scholar":"Finau, Glenn"},{"source":"University of the South Pacific","target":"Lincoln","scholar":"Fong, Patrick S."},{"source":"Malta","target":"Canterbury","scholar":"Kasanawaqa, Viliame"},{"source":"New England","target":"University of the South Pacific","scholar":"Lagi, Rosiana"},{"source":"University of the South Pacific","target":"Massey","scholar":"Leweniqila, Ilisoni"},{"source":"Tulane","target":"Massey","scholar":"Meo-Sewabu, Litea"},{"source":"University of the South Pacific","target":"Griffith","scholar":"Movono, Apisalome"},{"source":"University of the South Pacific","target":"Auckland","scholar":"Nabobo-Baba, Unaisi"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Naikatini, Alifereti Neisava"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Naisilisili, Sereima Volivoli"},{"source":"University of the South Pacific","target":"Essex","scholar":"Naqasima-Sobey, Milika"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Nasalo, Salote S."},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Osborne-Naikatini, Tamara"},{"source":"University of the South Pacific","target":"UQ","scholar":"Puamau, Virisila Qolisaya Lidise"},{"source":"University of the South Pacific","target":"La Trobe","scholar":"Raisele, Kolaia"},{"source":"Malta","target":"University of the South Pacific","scholar":"Rarokolutu, Ratu Tevita"},{"source":"University of the South Pacific","target":"Sussex","scholar":"Ratuva, Steven"},{"source":"University of the South Pacific","target":"UNSW","scholar":"Ravuvu, Amerita"},{"source":"University of the South Pacific","target":"Auckland","scholar":"Ravuvu, Asesela"},{"source":"University of Hawaiʻi at Mānoa","target":"University of Hawaiʻi at Mānoa","scholar":"Rokolekutu, Ponipate"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Sakai, Sevanaia"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Samuwai, Jale"},{"source":"University of the South Pacific","target":"Aberdeen","scholar":"Tabudravu, Jioji N."},{"source":"University of the South Pacific","target":"Newcastle","scholar":"Tagicakiverata, Isimeli Waibuta"},{"source":"University of Hawaiʻi at Mānoa","target":"University of the South Pacific","scholar":"Tamata, Apolonia"},{"source":"University of the South Pacific","target":"Adelaide","scholar":"Tikoca, Siteri"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Tokalauvere, Lanieta V."},{"source":"University of the South Pacific","target":"Massey","scholar":"Tuimavana, Ruveni W. R."},{"source":"University of the South Pacific","target":"Griffith","scholar":"Vada, Sera"},{"source":"University of the South Pacific","target":"University of Hawaiʻi at Mānoa","scholar":"Vave, Ron"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Veisa, Filipe"},{"source":"University of the South Pacific","target":"Australian National University","scholar":"Veitayaki, Joeli"},{"source":"James Cook","target":"Southampton","scholar":"Vuki, Veikila C."},{"source":"Waikato","target":"Auckland","scholar":"Vunidilo, Tarisi"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Waqa-Sakiti, Hilda"},{"source":"University of the South Pacific","target":"University of the South Pacific","scholar":"Yabaki-Goundar, Mere"}],"unis":{"University of the South Pacific":{"country":"Fiji","region":"Oceania","full":"University of the South Pacific"},"Tsinghua":{"country":"China","region":"Asia","full":"Tsinghua University"},"Massey":{"country":"New Zealand","region":"Oceania","full":"Massey University"},"University of Hawaiʻi at Mānoa":{"country":"USA","region":"Americas","full":"University of Hawaiʻi at Mānoa"},"Bremen":{"country":"Germany","region":"Europe","full":"University of Bremen"},"Waikato":{"country":"New Zealand","region":"Oceania","full":"University of Waikato"},"Canterbury":{"country":"New Zealand","region":"Oceania","full":"University of Canterbury"},"Australian National University":{"country":"Australia","region":"Oceania","full":"Australian National University"},"Sydney":{"country":"Australia","region":"Oceania","full":"University of Sydney"},"Lincoln":{"country":"New Zealand","region":"Oceania","full":"Lincoln University"},"Malta":{"country":"Malta","region":"Europe","full":"University of Malta"},"New England":{"country":"Australia","region":"Oceania","full":"University of New England"},"Tulane":{"country":"USA","region":"Americas","full":"Tulane University"},"Griffith":{"country":"Australia","region":"Oceania","full":"Griffith University"},"Auckland":{"country":"New Zealand","region":"Oceania","full":"University of Auckland"},"Essex":{"country":"United Kingdom","region":"Europe","full":"University of Essex"},"UQ":{"country":"Australia","region":"Oceania","full":"University of Queensland"},"La Trobe":{"country":"Australia","region":"Oceania","full":"La Trobe university"},"Sussex":{"country":"United Kingdom","region":"Europe","full":"University of Sussex"},"UNSW":{"country":"Australia","region":"Oceania","full":"UNSW Sydney"},"Aberdeen":{"country":"United Kingdom","region":"Europe","full":"University of Aberdeen"},"Newcastle":{"country":"Australia","region":"Oceania","full":"University of Newcastle"},"Adelaide":{"country":"Australia","region":"Oceania","full":"University of Adelaide"},"James Cook":{"country":"Australia","region":"Oceania","full":"James Cook University"},"Southampton":{"country":"United Kingdom","region":"Europe","full":"University of Southampton"}},"num":{"Adelaide":1,"Australian National University":2,"Griffith":3,"James Cook":4,"La Trobe":5,"New England":6,"Newcastle":7,"Sydney":8,"UNSW":9,"UQ":10,"University of the South Pacific":11,"Auckland":12,"Canterbury":13,"Lincoln":14,"Massey":15,"Waikato":16,"Tsinghua":17,"Tulane":18,"University of Hawaiʻi at Mānoa":19,"Bremen":20,"Malta":21,"Aberdeen":22,"Essex":23,"Southampton":24,"Sussex":25},"uni_list":[{"n":1,"uni":"Adelaide","country":"Australia","region":"Oceania","full":"University of Adelaide"},{"n":2,"uni":"Australian National University","country":"Australia","region":"Oceania","full":"Australian National University"},{"n":3,"uni":"Griffith","country":"Australia","region":"Oceania","full":"Griffith University"},{"n":4,"uni":"James Cook","country":"Australia","region":"Oceania","full":"James Cook University"},{"n":5,"uni":"La Trobe","country":"Australia","region":"Oceania","full":"La Trobe university"},{"n":6,"uni":"New England","country":"Australia","region":"Oceania","full":"University of New England"},{"n":7,"uni":"Newcastle","country":"Australia","region":"Oceania","full":"University of Newcastle"},{"n":8,"uni":"Sydney","country":"Australia","region":"Oceania","full":"University of Sydney"},{"n":9,"uni":"UNSW","country":"Australia","region":"Oceania","full":"UNSW Sydney"},{"n":10,"uni":"UQ","country":"Australia","region":"Oceania","full":"University of Queensland"},{"n":11,"uni":"University of the South Pacific","country":"Fiji","region":"Oceania","full":"University of the South Pacific"},{"n":12,"uni":"Auckland","country":"New Zealand","region":"Oceania","full":"University of Auckland"},{"n":13,"uni":"Canterbury","country":"New Zealand","region":"Oceania","full":"University of Canterbury"},{"n":14,"uni":"Lincoln","country":"New Zealand","region":"Oceania","full":"Lincoln University"},{"n":15,"uni":"Massey","country":"New Zealand","region":"Oceania","full":"Massey University"},{"n":16,"uni":"Waikato","country":"New Zealand","region":"Oceania","full":"University of Waikato"},{"n":17,"uni":"Tsinghua","country":"China","region":"Asia","full":"Tsinghua University"},{"n":18,"uni":"Tulane","country":"USA","region":"Americas","full":"Tulane University"},{"n":19,"uni":"University of Hawaiʻi at Mānoa","country":"USA","region":"Americas","full":"University of Hawaiʻi at Mānoa"},{"n":20,"uni":"Bremen","country":"Germany","region":"Europe","full":"University of Bremen"},{"n":21,"uni":"Malta","country":"Malta","region":"Europe","full":"University of Malta"},{"n":22,"uni":"Aberdeen","country":"United Kingdom","region":"Europe","full":"University of Aberdeen"},{"n":23,"uni":"Essex","country":"United Kingdom","region":"Europe","full":"University of Essex"},{"n":24,"uni":"Southampton","country":"United Kingdom","region":"Europe","full":"University of Southampton"},{"n":25,"uni":"Sussex","country":"United Kingdom","region":"Europe","full":"University of Sussex"}]}
+;
+
+/* ---- 3. Build the plotting model from raw rows + UNSD map ------------------ */
+function buildModel(rows, unsdMap){
+  // rows: [{m_uni,m_country,p_uni,p_country,scholar}]  (region derived from UNSD)
+  const regionOf = c => {
+    const key = COUNTRY_ALIAS[c] || c;
+    return unsdMap[key] || "Other";
+  };
+  const flows=[], unis={};
+  rows.forEach(r=>{
+    const mu=shorten(r.m_uni), pu=shorten(r.p_uni);
+    if(!mu||!pu) return;
+    flows.push({source:mu,target:pu,scholar:r.scholar||""});
+    unis[mu]={country:(r.m_country||"").trim(),region:regionOf((r.m_country||"").trim()),full:(r.m_uni||"").trim()};
+    unis[pu]={country:(r.p_country||"").trim(),region:regionOf((r.p_country||"").trim()),full:(r.p_uni||"").trim()};
+  });
+  const items=Object.entries(unis).map(([u,m])=>({uni:u,country:m.country,region:m.region,full:m.full}));
+  items.sort((a,b)=>{
+    const ra=regionOrder.indexOf(a.region), rb=regionOrder.indexOf(b.region);
+    if(ra!==rb) return (ra<0?99:ra)-(rb<0?99:rb);
+    if(a.country!==b.country) return a.country<b.country?-1:1;
+    return a.uni<b.uni?-1:1;
+  });
+  const uni_list=items.map((it,i)=>({n:i+1,uni:it.uni,country:it.country,region:it.region,full:it.full}));
+  const num={}; uni_list.forEach(it=>num[it.uni]=it.n);
+  // ensure fallback colours for any country lacking one
+  let fi=0;
+  uni_list.forEach(it=>{ if(!countryColor[it.country]) countryColor[it.country]=FALLBACK_CCOLORS[fi++ % FALLBACK_CCOLORS.length]; });
+  return {flows, unis, num, uni_list};
+}
+
+/* ---- 4. DRAW --------------------------------------------------------------- */
+function draw(data){
+  d3.select("#chart").selectAll("*").remove();
+  d3.select("#legend").selectAll("*").remove();
+  document.getElementById("cap").textContent =
+    data.flows.length + " iTaukei scholars who completed both a Master's and a PhD. Source: iTaukei Research Database.";
+
+  const nodes = data.uni_list.map(d=>({name:d.uni, n:d.n, country:d.country, region:d.region}));
+  const index = new Map(nodes.map((n,i)=>[n.name,i]));
+  const N = nodes.length;
+  const matrix = Array.from({length:N},()=>new Array(N).fill(0));
+  data.flows.forEach(f=>{ const s=index.get(f.source),t=index.get(f.target); if(s!=null&&t!=null) matrix[s][t]+=1; });
+
+  const W=1160,H=800, cx=W/2, cy=H/2+6;
+  const chordR=205, uInner=207,uOuter=226, cInner=230,cOuter=254, rInner=258,rOuter=284, ROT=0;
+
+  const svg=d3.select("#chart");
+  const g=svg.append("g").attr("transform",`translate(${cx},${cy}) rotate(${ROT})`);
+  const chord=d3.chordDirected().padAngle(0.03).sortSubgroups(d3.descending).sortChords(d3.descending);
+  const chords=chord(matrix);
+  const grp=chords.groups;
+
+  // ribbons (coloured by Master's / source country)
+  const ribbon=d3.ribbonArrow().radius(chordR).padAngle(0.006);
+  g.append("g").attr("fill-opacity",0.6).selectAll("path").data(chords).join("path")
+    .attr("d",ribbon)
+    .attr("fill",d=>countryColor[nodes[d.source.index].country]||"#999")
+    .attr("stroke",d=>d3.rgb(countryColor[nodes[d.source.index].country]||"#999").darker(0.6))
+    .attr("stroke-width",0.4);
+
+  // university numbered arcs (innermost ring)
+  const uArc=d3.arc().innerRadius(uInner).outerRadius(uOuter);
+  const gu=g.append("g").selectAll("g").data(grp).join("g");
+  gu.append("path").attr("d",uArc)
+    .attr("fill",d=>countryColor[nodes[d.index].country]||"#999")
+    .attr("stroke","#fff").attr("stroke-width",1);
+  gu.append("text")
+    .each(d=>{d.ang=(d.startAngle+d.endAngle)/2;})
+    .attr("dy","0.35em")
+    .attr("transform",d=>`rotate(${d.ang*180/Math.PI-90}) translate(${(uInner+uOuter)/2}) rotate(${90-d.ang*180/Math.PI})`)
+    .attr("text-anchor","middle").attr("class","unum")
+    .attr("fill",d=>LIGHT_TEXT.has(nodes[d.index].country)?"#fff":"#1c2530")
+    .text(d=>nodes[d.index].n);
+
+  function extents(keyFn){
+    const m={};
+    grp.forEach(gp=>{ const k=keyFn(nodes[gp.index]);
+      if(!m[k]) m[k]={start:gp.startAngle,end:gp.endAngle};
+      else { m[k].start=Math.min(m[k].start,gp.startAngle); m[k].end=Math.max(m[k].end,gp.endAngle);} });
+    return m;
+  }
+  const defs=svg.append("defs"); let pid=0;
+  function curvedLabel(parent,ext,radius,text,cls,textColor){
+    const mid=(ext.start+ext.end)/2; const flip=mid>Math.PI;
+    const a0=flip?ext.end-0.015:ext.start+0.015, a1=flip?ext.start+0.015:ext.end-0.015;
+    const p0=[Math.cos(a0-Math.PI/2)*radius,Math.sin(a0-Math.PI/2)*radius];
+    const p1=[Math.cos(a1-Math.PI/2)*radius,Math.sin(a1-Math.PI/2)*radius];
+    const large=Math.abs(a1-a0)>Math.PI?1:0, sweep=flip?0:1;
+    const id="p"+(pid++);
+    defs.append("path").attr("id",id).attr("d",`M ${p0[0]} ${p0[1]} A ${radius} ${radius} 0 ${large} ${sweep} ${p1[0]} ${p1[1]}`);
+    const t=parent.append("text").attr("class",cls).attr("dy","0.35em");
+    if(textColor) t.attr("fill",textColor);
+    t.append("textPath").attr("href","#"+id).attr("startOffset","50%").attr("text-anchor","middle").text(text);
+  }
+  function radialLabel(parent,ext,radius,text,cls,color){
+    const mid=(ext.start+ext.end)/2; const flip=mid>Math.PI;
+    parent.append("text").attr("class",cls).attr("dy","0.35em").attr("fill",color)
+      .attr("transform",`rotate(${mid*180/Math.PI-90}) translate(${radius}) ${flip?"rotate(180)":""}`)
+      .attr("text-anchor",flip?"end":"start").text(text);
+  }
+
+  // COUNTRY ring (middle)
+  const cArc=d3.arc().innerRadius(cInner).outerRadius(cOuter);
+  const cExt=extents(n=>n.country);
+  Object.entries(cExt).forEach(([c,ext])=>{
+    g.append("path").attr("d",cArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",countryColor[c]||"#888");
+    const span=ext.end-ext.start;
+    const clabel=COUNTRY_LABEL[c]||c;
+    const ctxt=LIGHT_TEXT.has(c)?"#fff":"#1c2530";
+    if(span>0.28) curvedLabel(g,ext,(cInner+cOuter)/2,clabel,"country-label",ctxt);
+    else radialLabel(g,ext,cOuter+6,clabel,"country-label",countryColor[c]);
+  });
+
+  // REGION ring (outer)
+  const rArc=d3.arc().innerRadius(rInner).outerRadius(rOuter);
+  const rExt=extents(n=>n.region);
+  Object.entries(rExt).forEach(([r,ext])=>{
+    g.append("path").attr("d",rArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",regionColor[r]||"#888");
+    const span=ext.end-ext.start;
+    if(span>0.4) curvedLabel(g,ext,(rInner+rOuter)/2,r.toUpperCase(),"region-label");
+    else radialLabel(g,ext,rOuter+7,r.toUpperCase(),"region-label",regionColor[r]);
+  });
+
+  // LEGEND (numbered, 4 columns)
+  const lg=d3.select("#legend");
+  const legG=lg.append("g").attr("transform","translate(0,14)");
+  legG.append("text").attr("x",W/2).attr("y",0).attr("text-anchor","middle").attr("class","legend-title").text("University key");
+  const cols=4, colW=278, startX=(W-cols*colW)/2+10, rowH=21, topY=22;
+  const perCol=Math.ceil(N/cols);
+  nodes.forEach((nd,i)=>{
+    const col=Math.floor(i/perCol), row=i%perCol;
+    const x=startX+col*colW, y=topY+row*rowH;
+    const gg=legG.append("g").attr("transform",`translate(${x},${y})`);
+    gg.append("circle").attr("cx",8).attr("cy",-4).attr("r",8).attr("fill",countryColor[nd.country]||"#999").attr("stroke","#fff");
+    gg.append("text").attr("x",8).attr("y",-4).attr("dy","0.35em").attr("text-anchor","middle").attr("class","legend-num")
+      .attr("fill",LIGHT_TEXT.has(nd.country)?"#fff":"#1c2530").text(nd.n);
+    const full=(data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
+    const disp=full.length>26 ? nd.name : full;
+    gg.append("text").attr("x",23).attr("y",-4).attr("dy","0.35em").attr("class","legend-item").text(disp);
+  });
+}
+
+/* ---- 5. LOAD: try live CSVs first, else embedded snapshot ------------------ */
+function rowsFromCsv(csvText){
+  const rows=d3.csvParse(csvText);
+  return rows.map(r=>({
+    m_uni:r.m_uni, m_country:r.m_country, p_uni:r.p_uni, p_country:r.p_country,
+    scholar:r.scholar || [r.first,r.last].filter(Boolean).join(" ")
+  })).filter(r=>r.m_uni && r.p_uni);
+}
+function unsdMapFromCsv(csvText){
+  const rows=d3.csvParse(csvText);
+  const m={};
+  rows.forEach(r=>{ if(r["Country or Area"]) m[r["Country or Area"]] = r["Region Name"]; });
+  return m;
+}
+async function init(){
+  const status=document.getElementById("status");
+  try{
+    const [mob,unsd]=await Promise.all([
+      fetch("itaukei-chord-data/mobility.csv").then(r=>{if(!r.ok)throw 0;return r.text();}),
+      fetch("itaukei-chord-data/unsd.csv").then(r=>{if(!r.ok)throw 0;return r.text();})
+    ]);
+    const model=buildModel(rowsFromCsv(mob), unsdMapFromCsv(unsd));
+    draw(model);
+    status.textContent="Live data: mobility.csv + unsd.csv ("+model.flows.length+" scholars, "+model.uni_list.length+" universities).";
+  }catch(e){
+    draw(EMBEDDED_FALLBACK);
+    status.textContent="Embedded snapshot ("+EMBEDDED_FALLBACK.flows.length+" scholars). To use live data, put updated CSVs in itaukei-chord-data/ and serve the folder over http.";
+  }
+}
+init();
+</script>
+<script src="js/main.js"></script>
+</body>
+</html>
