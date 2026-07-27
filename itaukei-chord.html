@@ -26,13 +26,17 @@
     #wrap{ width:1160px; height:1160px; margin:0 auto; position:relative; }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
-    .unum{ font-size:11px; font-weight:700; fill:#1c2530; }
-    .country-label{ font-size:12px; font-weight:700; fill:#fff; }
-    .region-label{ font-size:13px; font-weight:800; fill:#fff; letter-spacing:1px; }
+    /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
+       presentation attribute we set per-element with idealText(), which would
+       force every number/label to one colour. Leaving fill unset lets each
+       element's inline fill (white on dark arcs, dark on light) take effect. */
+    .unum{ font-size:11px; font-weight:700; }
+    .country-label{ font-size:12px; font-weight:700; }
+    .region-label{ font-size:13px; font-weight:800; letter-spacing:1px; }
     .caption{ text-align:center; font-size:11px; color:#8a93a0; margin-top:2px; }
     .legend-title{ font-size:12.5px; font-weight:700; fill:#1c2530; }
     .legend-item{ font-size:11.5px; fill:#2a2f36; }
-    .legend-num{ font-size:11.5px; font-weight:700; fill:#1c2530; }
+    .legend-num{ font-size:11.5px; font-weight:700; }
     #status{ text-align:center; font-size:11px; color:#b0b6bf; margin-top:6px; }
     .chord-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
     @media (min-width:1240px){ .chord-scroll-hint{ display:none; } }
