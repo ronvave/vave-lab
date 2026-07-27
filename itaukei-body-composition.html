@@ -506,8 +506,12 @@ function buildOption(data){
   // (counts enlarged and set in black per the reference).
   const axisLabelFmt = g => {
     const t = totals[g];
+    // Each gender's share of the combined totals (the two genders sum to 100%).
+    const scPct = (combScholarsKnown && combScholars>0 && t.scholars!=null)
+      ? "  ("+pctStr(t.scholars/combScholars*100)+")" : "";
+    const pubPct = (combPubs>0) ? "  ("+pctStr(t.pubs/combPubs*100)+")" : "";
     const sc = (t.scholars==null) ? "—" : t.scholars;
-    return "{name|"+DISPLAY[g]+"}\n{sub|"+sc+" scholars}\n{sub|"+t.pubs+" publications}";
+    return "{name|"+DISPLAY[g]+"}\n{sub|"+sc+" scholars"+scPct+"}\n{sub|"+t.pubs+" publications"+pubPct+"}";
   };
 
   return {
