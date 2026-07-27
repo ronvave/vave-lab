@@ -23,7 +23,8 @@
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
-    #wrap{ width:1160px; height:1160px; margin:0 auto; position:relative; }
+    #wrap{ width:1160px; margin:0 auto; position:relative; }
+    #chart, #legend{ display:block; }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
     /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
@@ -89,6 +90,30 @@
     .upload-msg.is-ok{ color:var(--color-success); font-weight:600; }
     .uploader__help{ margin-top:var(--space-4); font-size:var(--text-xs); color:var(--color-text-muted); line-height:1.6; }
     .uploader__help code{ font-family:var(--font-mono); font-size:0.92em; background:var(--color-surface-offset); padding:1px 5px; border-radius:4px; color:var(--color-text); }
+
+    /* ---- PNG download panel (theme-aware) ---- */
+    .dl-panel{
+      max-width:1160px; margin:var(--space-5) auto 0; padding-top:var(--space-4);
+      border-top:1px solid var(--color-border);
+      display:flex; align-items:flex-end; justify-content:center; gap:var(--space-4); flex-wrap:wrap;
+    }
+    .dl-field{ display:flex; flex-direction:column; gap:4px; }
+    .dl-field label{ font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--color-text-muted); }
+    .dl-field input{
+      width:92px; font:inherit; font-size:var(--text-sm); color:var(--color-text);
+      background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md);
+      padding:6px 9px; text-align:right;
+    }
+    .dl-field input:focus{ outline:none; border-color:var(--color-primary); }
+    .dl-lock{ font-size:var(--text-xs); color:var(--color-text-faint); align-self:center; padding-bottom:8px; }
+    .btn-download{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:#fff; background:var(--color-primary); border:1px solid var(--color-primary);
+      border-radius:var(--radius-full); padding:8px 20px; cursor:pointer;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-download:hover{ background:var(--color-primary-hover,#0C4E54); border-color:var(--color-primary-hover,#0C4E54); }
+    .dl-hint{ flex-basis:100%; text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:2px; }
 
     /* ---- ribbon / arc hover tooltip ---- */
     #chord-tip{
@@ -224,10 +249,29 @@
       <div id="wrap">
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
         <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country &nbsp;&middot;&nbsp; Outer ring = region</div>
-        <svg id="chart" width="1160" height="800"></svg>
+        <svg id="chart" width="1160" height="700" viewBox="0 0 1160 700"></svg>
         <svg id="legend" width="1160" height="320"></svg>
         <div class="caption" id="cap">Source: iTaukei Research Database.</div>
         <div id="status"></div>
+
+        <!-- PNG download controls: width/height lock aspect ratio; DPI scales pixels -->
+        <div class="dl-panel" aria-label="Download chart as image">
+          <div class="dl-field">
+            <label for="dl-width">Width (px)</label>
+            <input id="dl-width" type="number" min="200" max="20000" step="1" value="1160">
+          </div>
+          <span class="dl-lock" title="Width and height stay in proportion">&#128279; locked</span>
+          <div class="dl-field">
+            <label for="dl-height">Height (px)</label>
+            <input id="dl-height" type="number" min="200" max="20000" step="1" value="1020">
+          </div>
+          <div class="dl-field">
+            <label for="dl-dpi">DPI</label>
+            <input id="dl-dpi" type="number" min="72" max="1200" step="1" value="300">
+          </div>
+          <button id="dl-btn" class="btn-download" type="button">Download PNG</button>
+          <div class="dl-hint" id="dl-hint">Output: 4833 &times; 4250 px at 300 DPI</div>
+        </div>
       </div>
     </div>
     <div id="chord-tip" role="tooltip"></div>
@@ -349,6 +393,8 @@ const FALLBACK_CCOLORS = ["#8E5FB0","#4F98A3","#B36FD0","#C48A2A","#6E8B3D","#9C
 
 /* Embedded UNSD M49 country -> region map (245 countries) so uploads work even via file:// */
 const EMBEDDED_UNSD = {"Algeria":"Africa","Egypt":"Africa","Libya":"Africa","Morocco":"Africa","Sudan":"Africa","Tunisia":"Africa","Western Sahara":"Africa","British Indian Ocean Territory":"Africa","Burundi":"Africa","Comoros":"Africa","Djibouti":"Africa","Eritrea":"Africa","Ethiopia":"Africa","French Southern Territories":"Africa","Kenya":"Africa","Madagascar":"Africa","Malawi":"Africa","Mauritius":"Africa","Mayotte":"Africa","Mozambique":"Africa","Réunion":"Africa","Rwanda":"Africa","Seychelles":"Africa","Somalia":"Africa","South Sudan":"Africa","Uganda":"Africa","United Republic of Tanzania":"Africa","Zambia":"Africa","Zimbabwe":"Africa","Angola":"Africa","Cameroon":"Africa","Central African Republic":"Africa","Chad":"Africa","Congo":"Africa","Democratic Republic of the Congo":"Africa","Equatorial Guinea":"Africa","Gabon":"Africa","Sao Tome and Principe":"Africa","Botswana":"Africa","Eswatini":"Africa","Lesotho":"Africa","Namibia":"Africa","South Africa":"Africa","Benin":"Africa","Burkina Faso":"Africa","Cabo Verde":"Africa","Côte d’Ivoire":"Africa","Gambia":"Africa","Ghana":"Africa","Guinea":"Africa","Guinea-Bissau":"Africa","Liberia":"Africa","Mali":"Africa","Mauritania":"Africa","Niger":"Africa","Nigeria":"Africa","Saint Helena":"Africa","Senegal":"Africa","Sierra Leone":"Africa","Togo":"Africa","Anguilla":"Americas","Antigua and Barbuda":"Americas","Aruba":"Americas","Bahamas":"Americas","Barbados":"Americas","Bonaire":"Americas","British Virgin Islands":"Americas","Cayman Islands":"Americas","Cuba":"Americas","Curaçao":"Americas","Dominica":"Americas","Dominican Republic":"Americas","Grenada":"Americas","Guadeloupe":"Americas","Haiti":"Americas","Jamaica":"Americas","Martinique":"Americas","Montserrat":"Americas","Puerto Rico":"Americas","Saint Barthélemy":"Americas","Saint Kitts and Nevis":"Americas","Saint Lucia":"Americas","Saint Martin (French Part)":"Americas","Saint Vincent and the Grenadines":"Americas","Sint Maarten (Dutch part)":"Americas","Trinidad and Tobago":"Americas","Turks and Caicos Islands":"Americas","United States Virgin Islands":"Americas","Belize":"Americas","Costa Rica":"Americas","El Salvador":"Americas","Guatemala":"Americas","Honduras":"Americas","Mexico":"Americas","Nicaragua":"Americas","Panama":"Americas","Argentina":"Americas","Bolivia (Plurinational State of)":"Americas","Bouvet Island":"Americas","Brazil":"Americas","Chile":"Americas","Colombia":"Americas","Ecuador":"Americas","Falkland Islands (Malvinas)":"Americas","French Guiana":"Americas","Guyana":"Americas","Paraguay":"Americas","Peru":"Americas","South Georgia and the South Sandwich Islands":"Americas","Suriname":"Americas","Uruguay":"Americas","Venezuela (Bolivarian Republic of)":"Americas","Bermuda":"Americas","Canada":"Americas","Greenland":"Americas","Saint Pierre and Miquelon":"Americas","United States of America":"Americas","Kazakhstan":"Asia","Kyrgyzstan":"Asia","Tajikistan":"Asia","Turkmenistan":"Asia","Uzbekistan":"Asia","China":"Asia","Democratic People's Republic of Korea":"Asia","Japan":"Asia","Mongolia":"Asia","Republic of Korea":"Asia","Brunei Darussalam":"Asia","Cambodia":"Asia","Indonesia":"Asia","Lao People's Democratic Republic":"Asia","Malaysia":"Asia","Myanmar":"Asia","Philippines":"Asia","Singapore":"Asia","Thailand":"Asia","Timor-Leste":"Asia","Viet Nam":"Asia","Afghanistan":"Asia","Bangladesh":"Asia","Bhutan":"Asia","India":"Asia","Iran (Islamic Republic of)":"Asia","Maldives":"Asia","Nepal":"Asia","Pakistan":"Asia","Sri Lanka":"Asia","Armenia":"Asia","Azerbaijan":"Asia","Bahrain":"Asia","Cyprus":"Asia","Georgia":"Asia","Iraq":"Asia","Israel":"Asia","Jordan":"Asia","Kuwait":"Asia","Lebanon":"Asia","Oman":"Asia","Qatar":"Asia","Saudi Arabia":"Asia","State of Palestine":"Asia","Syrian Arab Republic":"Asia","Türkiye":"Asia","United Arab Emirates":"Asia","Yemen":"Asia","Belarus":"Europe","Bulgaria":"Europe","Czechia":"Europe","Hungary":"Europe","Poland":"Europe","Republic of Moldova":"Europe","Romania":"Europe","Russian Federation":"Europe","Slovakia":"Europe","Ukraine":"Europe","Åland Islands":"Europe","Denmark":"Europe","Estonia":"Europe","Faroe Islands":"Europe","Finland":"Europe","Guernsey":"Europe","Iceland":"Europe","Ireland":"Europe","Isle of Man":"Europe","Jersey":"Europe","Latvia":"Europe","Lithuania":"Europe","Norway":"Europe","Svalbard and Jan Mayen Islands":"Europe","Sweden":"Europe","United Kingdom of Great Britain and Northern Ireland":"Europe","Albania":"Europe","Andorra":"Europe","Bosnia and Herzegovina":"Europe","Croatia":"Europe","Gibraltar":"Europe","Greece":"Europe","Holy See":"Europe","Italy":"Europe","Malta":"Europe","Montenegro":"Europe","North Macedonia":"Europe","Portugal":"Europe","San Marino":"Europe","Serbia":"Europe","Slovenia":"Europe","Spain":"Europe","Austria":"Europe","Belgium":"Europe","France":"Europe","Germany":"Europe","Liechtenstein":"Europe","Luxembourg":"Europe","Monaco":"Europe","Netherlands (Kingdom of the)":"Europe","Switzerland":"Europe","Australia":"Oceania","Christmas Island":"Oceania","Cocos (Keeling) Islands":"Oceania","Heard Island and McDonald Islands":"Oceania","New Zealand":"Oceania","Norfolk Island":"Oceania","Fiji":"Oceania","New Caledonia":"Oceania","Papua New Guinea":"Oceania","Solomon Islands":"Oceania","Vanuatu":"Oceania","Guam":"Oceania","Kiribati":"Oceania","Marshall Islands":"Oceania","Micronesia (Federated States of)":"Oceania","Nauru":"Oceania","Northern Mariana Islands":"Oceania","Palau":"Oceania","United States Minor Outlying Islands":"Oceania","American Samoa":"Oceania","Cook Islands":"Oceania","French Polynesia":"Oceania","Niue":"Oceania","Pitcairn":"Oceania","Samoa":"Oceania","Tokelau":"Oceania","Tonga":"Oceania","Tuvalu":"Oceania","Wallis and Futuna Islands":"Oceania"};
+// country -> ISO-alpha3 (UNSD). Used to prefix legend names e.g. "AUS: University of Adelaide".
+const EMBEDDED_ISO3 = {"Algeria":"DZA","Egypt":"EGY","Libya":"LBY","Morocco":"MAR","Sudan":"SDN","Tunisia":"TUN","Western Sahara":"ESH","British Indian Ocean Territory":"IOT","Burundi":"BDI","Comoros":"COM","Djibouti":"DJI","Eritrea":"ERI","Ethiopia":"ETH","French Southern Territories":"ATF","Kenya":"KEN","Madagascar":"MDG","Malawi":"MWI","Mauritius":"MUS","Mayotte":"MYT","Mozambique":"MOZ","Réunion":"REU","Rwanda":"RWA","Seychelles":"SYC","Somalia":"SOM","South Sudan":"SSD","Uganda":"UGA","United Republic of Tanzania":"TZA","Zambia":"ZMB","Zimbabwe":"ZWE","Angola":"AGO","Cameroon":"CMR","Central African Republic":"CAF","Chad":"TCD","Congo":"COG","Democratic Republic of the Congo":"COD","Equatorial Guinea":"GNQ","Gabon":"GAB","Sao Tome and Principe":"STP","Botswana":"BWA","Eswatini":"SWZ","Lesotho":"LSO","Namibia":"NAM","South Africa":"ZAF","Benin":"BEN","Burkina Faso":"BFA","Cabo Verde":"CPV","Côte d’Ivoire":"CIV","Gambia":"GMB","Ghana":"GHA","Guinea":"GIN","Guinea-Bissau":"GNB","Liberia":"LBR","Mali":"MLI","Mauritania":"MRT","Niger":"NER","Nigeria":"NGA","Saint Helena":"SHN","Senegal":"SEN","Sierra Leone":"SLE","Togo":"TGO","Anguilla":"AIA","Antigua and Barbuda":"ATG","Aruba":"ABW","Bahamas":"BHS","Barbados":"BRB","British Virgin Islands":"VGB","Cayman Islands":"CYM","Cuba":"CUB","Curaçao":"CUW","Dominica":"DMA","Dominican Republic":"DOM","Grenada":"GRD","Guadeloupe":"GLP","Haiti":"HTI","Jamaica":"JAM","Martinique":"MTQ","Montserrat":"MSR","Puerto Rico":"PRI","Saint Barthélemy":"BLM","Saint Kitts and Nevis":"KNA","Saint Lucia":"LCA","Saint Martin (French Part)":"MAF","Saint Vincent and the Grenadines":"VCT","Sint Maarten (Dutch part)":"SXM","Trinidad and Tobago":"TTO","Turks and Caicos Islands":"TCA","United States Virgin Islands":"VIR","Belize":"BLZ","Costa Rica":"CRI","El Salvador":"SLV","Guatemala":"GTM","Honduras":"HND","Mexico":"MEX","Nicaragua":"NIC","Panama":"PAN","Argentina":"ARG","Bolivia (Plurinational State of)":"BOL","Bouvet Island":"BVT","Brazil":"BRA","Chile":"CHL","Colombia":"COL","Ecuador":"ECU","Falkland Islands (Malvinas)":"FLK","French Guiana":"GUF","Guyana":"GUY","Paraguay":"PRY","Peru":"PER","South Georgia and the South Sandwich Islands":"SGS","Suriname":"SUR","Uruguay":"URY","Venezuela (Bolivarian Republic of)":"VEN","Bermuda":"BMU","Canada":"CAN","Greenland":"GRL","Saint Pierre and Miquelon":"SPM","United States of America":"USA","Antarctica":"ATA","Kazakhstan":"KAZ","Kyrgyzstan":"KGZ","Tajikistan":"TJK","Turkmenistan":"TKM","Uzbekistan":"UZB","China":"CHN","Democratic People's Republic of Korea":"PRK","Japan":"JPN","Mongolia":"MNG","Republic of Korea":"KOR","Brunei Darussalam":"BRN","Cambodia":"KHM","Indonesia":"IDN","Lao People's Democratic Republic":"LAO","Malaysia":"MYS","Myanmar":"MMR","Philippines":"PHL","Singapore":"SGP","Thailand":"THA","Timor-Leste":"TLS","Viet Nam":"VNM","Afghanistan":"AFG","Bangladesh":"BGD","Bhutan":"BTN","India":"IND","Iran (Islamic Republic of)":"IRN","Maldives":"MDV","Nepal":"NPL","Pakistan":"PAK","Sri Lanka":"LKA","Armenia":"ARM","Azerbaijan":"AZE","Bahrain":"BHR","Cyprus":"CYP","Georgia":"GEO","Iraq":"IRQ","Israel":"ISR","Jordan":"JOR","Kuwait":"KWT","Lebanon":"LBN","Oman":"OMN","Qatar":"QAT","Saudi Arabia":"SAU","State of Palestine":"PSE","Syrian Arab Republic":"SYR","Türkiye":"TUR","United Arab Emirates":"ARE","Yemen":"YEM","Belarus":"BLR","Bulgaria":"BGR","Czechia":"CZE","Hungary":"HUN","Poland":"POL","Republic of Moldova":"MDA","Romania":"ROU","Russian Federation":"RUS","Slovakia":"SVK","Ukraine":"UKR","Åland Islands":"ALA","Denmark":"DNK","Estonia":"EST","Faroe Islands":"FRO","Finland":"FIN","Guernsey":"GGY","Iceland":"ISL","Ireland":"IRL","Isle of Man":"IMN","Jersey":"JEY","Latvia":"LVA","Lithuania":"LTU","Norway":"NOR","Svalbard and Jan Mayen Islands":"SJM","Sweden":"SWE","United Kingdom of Great Britain and Northern Ireland":"GBR","Albania":"ALB","Andorra":"AND","Bosnia and Herzegovina":"BIH","Croatia":"HRV","Gibraltar":"GIB","Greece":"GRC","Holy See":"VAT","Italy":"ITA","Malta":"MLT","Montenegro":"MNE","North Macedonia":"MKD","Portugal":"PRT","San Marino":"SMR","Serbia":"SRB","Slovenia":"SVN","Spain":"ESP","Austria":"AUT","Belgium":"BEL","France":"FRA","Germany":"DEU","Liechtenstein":"LIE","Luxembourg":"LUX","Monaco":"MCO","Netherlands (Kingdom of the)":"NLD","Switzerland":"CHE","Australia":"AUS","Christmas Island":"CXR","Cocos (Keeling) Islands":"CCK","Heard Island and McDonald Islands":"HMD","New Zealand":"NZL","Norfolk Island":"NFK","Fiji":"FJI","New Caledonia":"NCL","Papua New Guinea":"PNG","Solomon Islands":"SLB","Vanuatu":"VUT","Guam":"GUM","Kiribati":"KIR","Marshall Islands":"MHL","Micronesia (Federated States of)":"FSM","Nauru":"NRU","Northern Mariana Islands":"MNP","Palau":"PLW","United States Minor Outlying Islands":"UMI","American Samoa":"ASM","Cook Islands":"COK","French Polynesia":"PYF","Niue":"NIU","Pitcairn":"PCN","Samoa":"WSM","Tokelau":"TKL","Tonga":"TON","Tuvalu":"TUV","Wallis and Futuna Islands":"WLF"};
 
 /* ---- 2. EMBEDDED FALLBACK (snapshot of current 44-scholar dataset) --------- */
 const EMBEDDED_FALLBACK = 
@@ -431,7 +477,7 @@ function draw(data){
   const matrix = Array.from({length:N},()=>new Array(N).fill(0));
   data.flows.forEach(f=>{ const s=index.get(f.source),t=index.get(f.target); if(s!=null&&t!=null) matrix[s][t]+=1; });
 
-  const W=1160,H=800, cx=W/2, cy=H/2+6;
+  const W=1160,H=700, cx=W/2, cy=H/2+6;
   const chordR=205, uInner=207,uOuter=226, cInner=230,cOuter=254, rInner=258,rOuter=284, ROT=0;
 
   const svg=d3.select("#chart");
@@ -537,7 +583,7 @@ function draw(data){
   const lg=d3.select("#legend");
   const legG=lg.append("g").attr("transform","translate(0,14)");
   legG.append("text").attr("x",W/2).attr("y",0).attr("text-anchor","middle").attr("class","legend-title").text("University key");
-  const cols=4, colW=278, startX=(W-cols*colW)/2+10, rowH=21, topY=22;
+  const cols=4, colW=288, startX=(W-cols*colW)/2+8, rowH=21, topY=22;
   const perCol=Math.ceil(N/cols);
   nodes.forEach((nd,i)=>{
     const col=Math.floor(i/perCol), row=i%perCol;
@@ -547,7 +593,9 @@ function draw(data){
     gg.append("text").attr("x",8).attr("y",-4).attr("dy","0.35em").attr("text-anchor","middle").attr("class","legend-num")
       .attr("fill",idealText(countryColor[nd.country]||"#999")).text(nd.n);
     const full=(data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
-    const disp=full.length>26 ? nd.name : full;
+    const name=full.length>26 ? nd.name : full;
+    const iso=iso3Of(nd.country);
+    const disp=(iso?iso+": ":"")+name;   // e.g. "AUS: University of Adelaide"
     gg.append("text").attr("x",23).attr("y",-4).attr("dy","0.35em").attr("class","legend-item").text(disp);
   });
 }
@@ -571,6 +619,13 @@ function unsdMapFromCsv(csvText){
   rows.forEach(r=>{ if(r["Country or Area"]) m[r["Country or Area"]] = r["Region Name"]; });
   return m;
 }
+// Parse country -> ISO-alpha3 from the same UNSD CSV (used to prefix legend names).
+function iso3MapFromCsv(csvText){
+  const rows=d3.csvParse(csvText);
+  const m={};
+  rows.forEach(r=>{ if(r["Country or Area"] && r["ISO-alpha3 Code"]) m[r["Country or Area"]] = r["ISO-alpha3 Code"]; });
+  return m;
+}
 /* ---- 6. STATE + RENDER (default data on load, plus user CSV uploads) -------- */
 const statusEl = document.getElementById("status");
 const msgEl    = document.getElementById("upload-msg");
@@ -578,6 +633,10 @@ const msgEl    = document.getElementById("upload-msg");
 // uploaded scholar CSV works immediately, even offline (file://). Replaced if the
 // default unsd.csv loads, or if the user uploads their own UNSD CSV.
 let currentUnsd = Object.assign({}, EMBEDDED_UNSD);
+// ISO-alpha3 reference in effect; same lifecycle as currentUnsd.
+let currentIso3 = Object.assign({}, EMBEDDED_ISO3);
+// country -> ISO-alpha3 via the same alias map used for regions (USA, UK spellings).
+function iso3Of(c){ const key=COUNTRY_ALIAS[c]||c; return currentIso3[key] || ""; }
 
 function setMsg(text, kind){
   msgEl.textContent = text || "";
@@ -625,6 +684,7 @@ async function init(){
       fetch("itaukei-chord-data/unsd.csv").then(r=>{if(!r.ok)throw 0;return r.text();})
     ]);
     currentUnsd = unsdMapFromCsv(unsd);
+    currentIso3 = iso3MapFromCsv(unsd);
     const model=buildModel(rowsFromCsv(mob), currentUnsd);
     draw(model);
     statusEl.textContent="Default data ("+model.flows.length+" scholars, "+model.uni_list.length+" universities). Upload a CSV above to rebuild.";
@@ -670,6 +730,8 @@ wireDropzone("dz-unsd","input-unsd","file-unsd", (text, name)=>{
   const map = unsdMapFromCsv(text);
   if(!Object.keys(map).length){ setMsg('That UNSD file has no rows with "Country or Area" + "Region Name" columns.', "error"); return false; }
   currentUnsd = map;
+  const iso = iso3MapFromCsv(text);
+  if(Object.keys(iso).length) currentIso3 = iso;
   // if a scholar CSV is already loaded, re-render with the new regions; otherwise just note it
   if(lastMobilityText){ renderMobility(lastMobilityText, "Uploaded CSV"); }
   setMsg("Region reference updated from "+name+" ("+Object.keys(map).length+" countries).", "ok");
@@ -685,6 +747,7 @@ document.getElementById("btn-reset").addEventListener("click", ()=>{
   document.getElementById("dz-mobility").classList.remove("is-loaded");
   document.getElementById("dz-unsd").classList.remove("is-loaded");
   currentUnsd = Object.assign({}, EMBEDDED_UNSD);
+  currentIso3 = Object.assign({}, EMBEDDED_ISO3);
   setMsg("Reset to the default dataset.", "ok");
   init();
 });
@@ -701,6 +764,92 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
   setTimeout(()=>URL.revokeObjectURL(url), 1500);
   setMsg("Template downloaded \u2014 fill it in and drop it back above.", "ok");
 });
+
+// ---- PNG export (chart + legend stacked), aspect-locked, DPI-scalable -------
+(function(){
+  const BASE_W = 1160;              // layout width used for both SVGs
+  const CHART_H = 700, LEGEND_H = 320;
+  const BASE_H = CHART_H + LEGEND_H; // 1020 -> stacked composite height
+  const ASPECT = BASE_H / BASE_W;    // height per unit width (locked)
+  const wIn = document.getElementById("dl-width");
+  const hIn = document.getElementById("dl-height");
+  const dpiIn = document.getElementById("dl-dpi");
+  const hint = document.getElementById("dl-hint");
+  const btn = document.getElementById("dl-btn");
+  if(!wIn||!hIn||!dpiIn||!btn) return;
+
+  const clampNum=(v,min,max,dflt)=>{ v=parseFloat(v); if(!isFinite(v)) v=dflt; return Math.min(max,Math.max(min,v)); };
+  // The on-screen layout is 96 CSS-px/inch; multiply by dpi/96 for true print pixels.
+  function outPixels(){
+    const cssW=clampNum(wIn.value,200,20000,BASE_W);
+    const cssH=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT));
+    const dpi=clampNum(dpiIn.value,72,1200,300);
+    const scale=dpi/96;
+    return {cssW,cssH,dpi,pxW:Math.round(cssW*scale),pxH:Math.round(cssH*scale)};
+  }
+  function refreshHint(){ const o=outPixels(); hint.innerHTML="Output: "+o.pxW+" &times; "+o.pxH+" px at "+o.dpi+" DPI"; }
+  // Lock aspect ratio: editing width recomputes height, and vice-versa.
+  let syncing=false;
+  wIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); });
+  hIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT)); wIn.value=Math.round(h/ASPECT); syncing=false; refreshHint(); });
+  dpiIn.addEventListener("input", refreshHint);
+  refreshHint();
+
+  // Inline computed fill/stroke/font so the serialized SVG matches on-screen colours.
+  function inlineStyles(src){
+    const clone=src.cloneNode(true);
+    const from=src.querySelectorAll("*"), to=clone.querySelectorAll("*");
+    const props=["fill","stroke","stroke-width","opacity","fill-opacity","stroke-opacity","font-family","font-size","font-weight","letter-spacing","text-anchor"];
+    for(let i=0;i<from.length;i++){ const cs=getComputedStyle(from[i]); let s=""; props.forEach(p=>{ const v=cs.getPropertyValue(p); if(v) s+=p+":"+v+";"; }); to[i].setAttribute("style",s); }
+    return clone;
+  }
+  function svgToImage(svgEl,w,h){
+    return new Promise((resolve,reject)=>{
+      const clone=inlineStyles(svgEl);
+      clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+      clone.setAttribute("width",w); clone.setAttribute("height",h);
+      const s=new XMLSerializer().serializeToString(clone);
+      const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+s],{type:"image/svg+xml;charset=utf-8"});
+      const url=URL.createObjectURL(blob);
+      const img=new Image();
+      img.onload=()=>{ resolve({img,url}); };
+      img.onerror=(e)=>{ URL.revokeObjectURL(url); reject(e); };
+      img.src=url;
+    });
+  }
+  async function download(){
+    const o=outPixels();
+    btn.disabled=true; const label=btn.textContent; btn.textContent="Rendering\u2026";
+    try{
+      // Split the total pixel height between chart and legend by their layout share.
+      const chartPxH=Math.round(o.pxH*(CHART_H/BASE_H));
+      const legendPxH=o.pxH-chartPxH;
+      const chart=document.getElementById("chart");
+      const legend=document.getElementById("legend");
+      const [c,l]=await Promise.all([ svgToImage(chart,o.pxW,chartPxH), svgToImage(legend,o.pxW,legendPxH) ]);
+      const canvas=document.createElement("canvas");
+      canvas.width=o.pxW; canvas.height=o.pxH;
+      const ctx=canvas.getContext("2d");
+      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,o.pxW,o.pxH);   // chart canvas is white by design
+      ctx.drawImage(c.img,0,0,o.pxW,chartPxH);
+      ctx.drawImage(l.img,0,chartPxH,o.pxW,legendPxH);
+      URL.revokeObjectURL(c.url); URL.revokeObjectURL(l.url);
+      canvas.toBlob((blob)=>{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url; a.download="itaukei-chord_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1500);
+        btn.textContent=label; btn.disabled=false;
+      },"image/png");
+    }catch(err){
+      console.error("PNG export failed",err);
+      btn.textContent=label; btn.disabled=false;
+      alert("Sorry, the image could not be generated in this browser.");
+    }
+  }
+  btn.addEventListener("click", download);
+})();
 
 init();
 </script>
