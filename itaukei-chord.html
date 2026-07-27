@@ -325,7 +325,21 @@ const countryColor = {
   "Canada":"#D98695","Germany":"#3B7CB8","United Kingdom":"#6FA3D6","Portugal":"#7A39BB",
   "Japan":"#B36FD0","China":"#C0392B","South Korea":"#A86FDF","Malta":"#8E5FB0"
 };
-const LIGHT_TEXT = new Set(["Fiji","Australia","USA","China","Germany"]); // dark fills -> white number
+// Pick the text colour (white vs dark) that has the higher WCAG contrast against
+// a given fill, so numbers/labels stay readable on ANY arc colour, including
+// future uploads. Uses relative luminance per WCAG 2.x.
+const DARK_INK = "#1c2530";
+function relLum(hex){
+  const c = d3.rgb(hex);
+  const f = v => { v/=255; return v<=0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); };
+  return 0.2126*f(c.r)+0.7152*f(c.g)+0.0722*f(c.b);
+}
+function idealText(fill){
+  const L = relLum(fill), Ld = relLum(DARK_INK);
+  const cW = (1.0+0.05)/(L+0.05);            // contrast vs white
+  const cD = (Math.max(L,Ld)+0.05)/(Math.min(L,Ld)+0.05); // contrast vs dark ink
+  return cW >= cD ? "#fff" : DARK_INK;
+}
 const COUNTRY_LABEL = { "United Kingdom":"UK" }; // display overrides for tight arcs
 const FALLBACK_CCOLORS = ["#8E5FB0","#4F98A3","#B36FD0","#C48A2A","#6E8B3D","#9C6B2E","#5A7A8C"];
 
@@ -458,7 +472,7 @@ function draw(data){
     .attr("dy","0.35em")
     .attr("transform",d=>`rotate(${d.ang*180/Math.PI-90}) translate(${(uInner+uOuter)/2}) rotate(${90-d.ang*180/Math.PI})`)
     .attr("text-anchor","middle").attr("class","unum")
-    .attr("fill",d=>LIGHT_TEXT.has(nodes[d.index].country)?"#fff":"#1c2530")
+    .attr("fill",d=>idealText(countryColor[nodes[d.index].country]||"#999"))
     .text(d=>nodes[d.index].n);
 
   function extents(keyFn){
@@ -498,7 +512,7 @@ function draw(data){
     g.append("path").attr("d",cArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",countryColor[c]||"#888");
     const span=ext.end-ext.start;
     const clabel=COUNTRY_LABEL[c]||c;
-    const ctxt=LIGHT_TEXT.has(c)?"#fff":"#1c2530";
+    const ctxt=idealText(countryColor[c]||"#888");
     if(span>0.28) curvedLabel(g,ext,(cInner+cOuter)/2,clabel,"country-label",ctxt);
     else radialLabel(g,ext,cOuter+6,clabel,"country-label",countryColor[c]);
   });
@@ -525,7 +539,7 @@ function draw(data){
     const gg=legG.append("g").attr("transform",`translate(${x},${y})`);
     gg.append("circle").attr("cx",8).attr("cy",-4).attr("r",8).attr("fill",countryColor[nd.country]||"#999").attr("stroke","#fff");
     gg.append("text").attr("x",8).attr("y",-4).attr("dy","0.35em").attr("text-anchor","middle").attr("class","legend-num")
-      .attr("fill",LIGHT_TEXT.has(nd.country)?"#fff":"#1c2530").text(nd.n);
+      .attr("fill",idealText(countryColor[nd.country]||"#999")).text(nd.n);
     const full=(data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
     const disp=full.length>26 ? nd.name : full;
     gg.append("text").attr("x",23).attr("y",-4).attr("dy","0.35em").attr("class","legend-item").text(disp);
