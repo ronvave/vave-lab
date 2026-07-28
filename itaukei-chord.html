@@ -148,6 +148,22 @@
     body.is-embedded .section { padding:0; }
     body.is-embedded .container { max-width:none; padding:0; }
     body.is-embedded .chord-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; }
+
+    /* Ron's dashboard refinements (2026-07-27):
+       • Hide the standalone chart title — the panel already has its own title.
+       • Double the subtitle font-size and force black, and break "Outer ring =
+         region" onto its own line via an inline <br>.
+       • Hide the PNG-download dimensions/DPI controls and the scroll hint
+         under the chart. */
+    body.is-embedded .chord-title { display:none !important; }
+    body.is-embedded .chord-subtitle {
+      font-size:27px !important;
+      line-height:1.35 !important;
+      color:#000 !important;
+      margin:6px 0 12px !important;
+    }
+    body.is-embedded .dl-panel,
+    body.is-embedded .chord-scroll-hint { display:none !important; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -275,7 +291,7 @@
     <div class="chord-canvas reveal">
       <div id="wrap">
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
-        <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country &nbsp;&middot;&nbsp; Outer ring = region</div>
+        <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country<br>Outer ring = region</div>
         <svg id="chart" width="1160" height="668" viewBox="0 0 1160 668"></svg>
         <svg id="legend" width="1160" height="177" viewBox="0 -8 1160 177"></svg>
         <div class="caption" id="cap">Source: iTaukei Research Database.</div>

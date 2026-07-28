@@ -465,6 +465,57 @@
       text-transform: none; letter-spacing: 0; font-weight: 400; line-height: 1.5;
     }
 
+    /* -- Iframe-embed panels (B3 chord, C1 body-composition) fullscreen ------
+       Structure: .db-panel__embed wraps a corner .db-panel__embed-expand
+       button + a clickable overlay + the <iframe>. When the wrap gains
+       .is-fullscreen it pins to the viewport; a .db-panel__embed-close pill
+       becomes visible in the top-right. The overlay + expand button share
+       one click handler in JS so the whole chart area is a click target. */
+    .db-panel__embed {
+      position:relative; width:100%; overflow:hidden;
+      border-radius: var(--radius-lg);
+      border:1px solid var(--color-border);
+      background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06);
+    }
+    .db-panel__embed-click {
+      position:absolute; inset:0; z-index:2; cursor: zoom-in;
+      /* Transparent overlay only along the chart edges so the iframe still
+         receives hover/click on interactive elements. On desktop-narrow the
+         overlay is disabled to avoid stealing the ECharts tooltip. Instead
+         users click the corner expand button. */
+      pointer-events:none;
+    }
+    .db-panel__embed-expand {
+      position:absolute; top:10px; right:10px; z-index:3;
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; padding:0; border-radius:8px;
+      background:rgba(255,255,255,0.94); color:#000;
+      border:1px solid var(--color-border);
+      cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.12);
+      transition: background .15s ease, transform .15s ease;
+    }
+    .db-panel__embed-expand:hover { background:#fff; transform:scale(1.05); }
+    .db-panel__embed-expand svg { width:18px; height:18px; }
+    .db-panel__embed-close {
+      position:fixed; top:16px; right:16px; z-index:10001;
+      display:none;
+      align-items:center; gap:6px; padding:8px 14px;
+      background:#000; color:#fff; border:0; border-radius:999px;
+      font: 500 0.9rem 'Source Sans Pro', sans-serif; cursor:pointer;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .db-panel__embed-close:hover { background:#222; }
+    .db-panel__embed.is-fullscreen {
+      position: fixed !important; inset: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      z-index: 10000; border-radius: 0; border: 0; background:#fff;
+    }
+    .db-panel__embed.is-fullscreen iframe { height: 100vh !important; }
+    .db-panel__embed.is-fullscreen .db-panel__embed-expand { display:none; }
+    .db-panel__embed.is-fullscreen ~ .db-panel__embed-close,
+    .db-panel__embed.is-fullscreen .db-panel__embed-close { display:inline-flex; }
+    body.db-embed-fullscreen-lock { overflow: hidden; }
+
     /* Panel A — map */
     .db-map-scope {
       display: flex; gap: 6px; margin-bottom: 8px;
@@ -4277,8 +4328,16 @@
       <div class="db-panel reveal db-panel--wide" data-panel="B3">
         <span class="db-panel__label">B3</span>
         <h2 class="db-panel__title">iTAUKEI SCHOLARLY MOBILITY</h2>
-        <p class="db-panel__hint">Where iTaukei scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list; click the expand icon (top-right of the chord frame) to open the full standalone view. Source of truth: <a href="itaukei-chord.html" target="_top" rel="noopener" style="color:var(--color-primary);">itaukei-chord.html</a>.</p>
-        <div class="db-panel__embed" style="position:relative;width:100%;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <p class="db-panel__hint">Where iTaukei scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
+        <div class="db-panel__embed" id="db-embed-b3-chord">
+          <button type="button" class="db-panel__embed-expand" aria-label="Open chord chart full screen" title="Full screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
           <iframe
             src="itaukei-chord.html?embedded=1"
             title="iTaukei scholarly mobility (chord chart)"
@@ -4287,7 +4346,12 @@
             referrerpolicy="same-origin"
             sandbox="allow-same-origin allow-scripts allow-popups"
           ></iframe>
+          <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
         </div>
+        <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3-chord" aria-label="Close full-screen chord chart">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Close full screen
+        </button>
       </div>
 
       <!-- Panel B4 — Where iTaukei research has been undertaken. Sourced from the
@@ -4420,9 +4484,17 @@
            already unlocked. Per-scholar gender is never exposed. -->
       <div class="db-panel reveal db-panel--wide" data-panel="C1">
         <span class="db-panel__label">C1</span>
-        <h2 class="db-panel__title">BODY COMPOSITION BY GENDER</h2>
-        <p class="db-panel__hint">Scholars and publications by gender, shown as filled pictorial bodies. The two figures use the same visual scale so counts are directly comparable. Source of truth: <a href="itaukei-body-composition.html" target="_top" rel="noopener" style="color:var(--color-primary);">itaukei-body-composition.html</a>.</p>
-        <div class="db-panel__embed" style="position:relative;width:100%;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+        <h2 class="db-panel__title">ITAUKEI SCHOLARLY PUBLICATIONS BY GENDER</h2>
+        <p class="db-panel__hint">Scholars and publications by gender, shown as filled pictorial bodies. The two figures use the same visual scale so counts are directly comparable. Each body = 100 % of that gender&rsquo;s publications, split by type; bands fill bottom-to-top. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
+        <div class="db-panel__embed" id="db-embed-c1-bc">
+          <button type="button" class="db-panel__embed-expand" aria-label="Open body-composition chart full screen" title="Full screen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="15 3 21 3 21 9"></polyline>
+              <polyline points="9 21 3 21 3 15"></polyline>
+              <line x1="21" y1="3" x2="14" y2="10"></line>
+              <line x1="3" y1="21" x2="10" y2="14"></line>
+            </svg>
+          </button>
           <iframe
             src="itaukei-body-composition.html?embedded=1"
             title="iTaukei body composition by gender"
@@ -4431,7 +4503,12 @@
             referrerpolicy="same-origin"
             sandbox="allow-same-origin allow-scripts allow-popups"
           ></iframe>
+          <div class="db-panel__embed-click" data-embed-target="db-embed-c1-bc" aria-hidden="true"></div>
         </div>
+        <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-c1-bc" aria-label="Close full-screen body composition">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          Close full screen
+        </button>
       </div>
 
       <!-- Panel C2 — ranked bar chart, province-tagged research (study location) -->
@@ -5056,6 +5133,102 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=6529a7bf" defer></script>
+<script src="js/itaukei-database.js?v=4a81ff93" defer></script>
+<script>
+  /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
+     Two panels ship a .db-panel__embed wrapper with an expand button and a
+     transparent click overlay. Clicking either toggles .is-fullscreen on
+     the wrapper (which pins it to the viewport via CSS) and reveals the
+     matching .db-panel__embed-close pill. Escape also closes.
+
+     We DO NOT use the native Fullscreen API here because same-origin iframes
+     still lose their scroll/resize context when the browser enters full
+     fullscreen, and Ron's chord/body-comp pages already handle window resize
+     internally — a plain CSS pinned overlay is more reliable across desktops
+     and mobile. */
+  (function initEmbedFullscreen(){
+    var attached = false;
+    function toggleFullscreen(wrap, on){
+      if (!wrap) return;
+      wrap.classList.toggle('is-fullscreen', !!on);
+      document.body.classList.toggle('db-embed-fullscreen-lock', !!on);
+      // Nudge the iframe to resize its inner ECharts / SVG after the CSS
+      // repaints. Same-origin so we can safely poke its window.
+      try {
+        var iframe = wrap.querySelector('iframe');
+        if (iframe && iframe.contentWindow) {
+          setTimeout(function(){
+            try { iframe.contentWindow.dispatchEvent(new Event('resize')); } catch(e){}
+          }, 50);
+        }
+      } catch(e){}
+    }
+    function onDocClick(ev){
+      var overlay = ev.target.closest('.db-panel__embed-click');
+      var expand = ev.target.closest('.db-panel__embed-expand');
+      var close  = ev.target.closest('.db-panel__embed-close');
+      if (close){
+        var targetId = close.getAttribute('data-embed-close');
+        toggleFullscreen(document.getElementById(targetId), false);
+        return;
+      }
+      if (expand){
+        var wrap = expand.closest('.db-panel__embed');
+        toggleFullscreen(wrap, !wrap.classList.contains('is-fullscreen'));
+        return;
+      }
+      if (overlay){
+        var targetId2 = overlay.getAttribute('data-embed-target');
+        var wrap2 = document.getElementById(targetId2);
+        if (wrap2) toggleFullscreen(wrap2, !wrap2.classList.contains('is-fullscreen'));
+      }
+    }
+    function onKey(ev){
+      if (ev.key === 'Escape'){
+        document.querySelectorAll('.db-panel__embed.is-fullscreen').forEach(function(w){
+          toggleFullscreen(w, false);
+        });
+      }
+    }
+    // Same-origin iframes swallow clicks (they don't bubble up to the parent
+     // document). To make the chart itself clickable-to-expand, we reach into
+     // each iframe's document after load and add a plain click listener that
+     // toggles the parent wrapper. Any click on the iframe body — including
+     // on the ECharts canvas or the chord SVG — triggers fullscreen. The
+     // ECharts hover-tooltip still works normally because tooltips use
+     // mousemove/mouseover, not click.
+    function wireIframeClick(wrap){
+      var iframe = wrap.querySelector('iframe');
+      if (!iframe) return;
+      function bind(){
+        try {
+          var doc = iframe.contentDocument;
+          if (!doc) return;
+          doc.addEventListener('click', function(ev){
+            // Ignore clicks on real interactive controls inside the embedded
+            // page (buttons, inputs, links) — they should behave normally.
+            if (ev.target.closest('button, a, input, select, textarea, label')) return;
+            toggleFullscreen(wrap, !wrap.classList.contains('is-fullscreen'));
+          });
+          doc.body && (doc.body.style.cursor = 'zoom-in');
+        } catch(e){ /* cross-origin (shouldn't happen here) */ }
+      }
+      if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') bind();
+      iframe.addEventListener('load', bind);
+    }
+    function attach(){
+      if (attached) return;
+      attached = true;
+      document.addEventListener('click', onDocClick);
+      document.addEventListener('keydown', onKey);
+      document.querySelectorAll('.db-panel__embed').forEach(wireIframeClick);
+    }
+    if (document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', attach);
+    } else {
+      attach();
+    }
+  })();
+</script>
 </body>
 </html>

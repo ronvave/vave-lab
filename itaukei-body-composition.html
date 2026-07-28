@@ -117,7 +117,26 @@
     body.is-embedded main { padding:0; }
     body.is-embedded .section { padding:0; }
     body.is-embedded .container { max-width:none; padding:0; }
-    body.is-embedded .chord-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; }
+    body.is-embedded .chord-canvas,
+    body.is-embedded .bc-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; overflow:visible; }
+
+    /* Ron's dashboard refinements (2026-07-27):
+       • Hide the standalone chart title AND the chart's own subtitle
+         (the subtitle has been folded into the dashboard hint text).
+       • Fill the iframe width — drop the fixed 1160px so the two figures
+         paint at the panel's available width with minimal padding; remove
+         horizontal / vertical scrollbars.
+       • Hide the PNG-download dimensions/DPI controls and the scroll hint
+         under the chart. */
+    body.is-embedded .bc-title,
+    body.is-embedded .bc-subtitle,
+    body.is-embedded .dl-panel,
+    body.is-embedded .bc-scroll-hint,
+    body.is-embedded .caption { display:none !important; }
+    body.is-embedded #wrap { width:100% !important; max-width:none !important; margin:0 !important; padding:8px 12px !important; box-sizing:border-box; }
+    body.is-embedded #chart { width:100% !important; height:760px !important; margin:0 !important; }
+    body.is-embedded body,
+    body.is-embedded html { overflow:hidden !important; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -385,6 +404,18 @@ const GRAND = { scholars: 339, masters: 235, phd: 122, journal: 856, book: 89, b
 /* ---- Chart instance ------------------------------------------------------- */
 const chartDom = document.getElementById("chart");
 const chart = echarts.init(chartDom, null, { renderer: "canvas" });
+// When embedded in the research-database iframe the container flips from the
+// standalone 1160px fixed width to width:100% via the is-embedded CSS. ECharts
+// caches its own dimensions at init, so we resize once the layout settles and
+// again on any iframe resize — otherwise the two figures paint into the
+// old 1160px canvas and clip.
+if (document.body.classList.contains('is-embedded')) {
+  requestAnimationFrame(() => { try { chart.resize(); } catch(e){} });
+  window.addEventListener('load', () => { try { chart.resize(); } catch(e){} });
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => { try { chart.resize(); } catch(e){} }).observe(chartDom);
+  }
+}
 const statusEl = document.getElementById("status");
 const capEl = document.getElementById("cap");
 const msgEl = document.getElementById("upload-msg");
