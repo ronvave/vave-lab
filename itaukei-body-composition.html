@@ -465,11 +465,14 @@ function buildOption(data){
     tooltip: { show:false },
     data: (()=>{
       const pts=[];
+      const PHD_PILL_Y = 91.7;  // both PhD pills pinned level, sitting just above the heads (not touching)
       genders.forEach((g,gi)=>{
         TYPES.forEach((t,i)=>{
           const v=bandPct[g][i];
-          if(v>0) pts.push({ value:[gi, areaPctToHeightPct(g, cumMid[g][i])],
-                             _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
+          if(v>0){
+            const yPos = (t.key==="phd") ? PHD_PILL_Y : areaPctToHeightPct(g, cumMid[g][i]);
+            pts.push({ value:[gi, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
+          }
         });
       });
       return pts;
