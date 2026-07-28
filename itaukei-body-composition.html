@@ -433,6 +433,25 @@ function buildOption(data){
     TYPES.forEach(t=>{ const v=pct[g][t.key]; cumMid[g].push(acc+v/2); acc+=v; cumTop[g].push(acc); bandPct[g].push(v); });
   });
 
+  // --- PROPORTIONAL VERTICAL COMPRESSION (mapped into each body's VISIBLE head->feet span) ---
+  // Bands' heights = their % of publications straight down the body, NO width/area correction.
+  // The clip axis top (100) sits ABOVE the visible scalp (transparent padding), so we remap the
+  // cumulative % into [FEET_CLIP .. HEAD_CLIP] measured empirically per silhouette.
+  const HEAD_CLIP = { "Woman": 88, "Man": 85 };   // visible scalp-top in clip units
+  const FEET_CLIP = { "Woman": 0,  "Man": 0  };    // sole in clip units
+  const clipH = {};
+  const IDX_PHD_TOP = TYPES.findIndex(t=>t.key==="phd");
+  genders.forEach(g=>{
+    const lo=FEET_CLIP[g], hi=HEAD_CLIP[g], span=hi-lo;
+    clipH[g] = cumTop[g].map(c=> lo + (c/100)*span);   // cumTop is cumulative % (0..100)
+    // Topmost band (PhD) fills all the way to the crown (clip 100) so no blank cap sits above it.
+    if(IDX_PHD_TOP>=0) clipH[g][IDX_PHD_TOP] = 100;
+    // Raise the man's PhD bottom edge (= Masters top edge) so the black band reads ~half the woman's.
+    const IDX_MAS_ADJ = TYPES.findIndex(t=>t.key==="masters");
+    const PHD_BOTTOM_RAISE = { "Woman": 0, "Man": 2.4 };   // clip-units to raise masters top edge
+    if(IDX_MAS_ADJ>=0 && PHD_BOTTOM_RAISE[g]) clipH[g][IDX_MAS_ADJ] += PHD_BOTTOM_RAISE[g];
+  });
+
   // Draw order: LAST type (top of body) first so its full-height clip is behind,
   // and the FIRST type (bottom) last/in front. z increases toward the bottom band.
   const series = [];
@@ -452,7 +471,7 @@ function buildOption(data){
       // value = cumulative % up to and INCLUDING this band (clip fills from bottom).
       // Each gender carries its OWN silhouette (Woman = dress, Man = broad).
       // Clip by AREA-equivalent height so each band's visible area == its data %.
-      data: genders.map(g=>({ value: areaPctToHeightPct(g, cumTop[g][i]), symbol: BODY_SYMBOLS[g] })),
+      data: genders.map(g=>({ value: clipH[g][i], symbol: BODY_SYMBOLS[g] })),
       // label drawn separately (a dedicated scatter series) to sit at band midpoint
       label: { show:false }
     });
@@ -496,7 +515,7 @@ function buildOption(data){
         TYPES.forEach((t,i)=>{
           const v=bandPct[g][i];
           if(v>0){
-            const yPos = (t.key==="phd") ? PHD_PILL_Y : areaPctToHeightPct(g, cumMid[g][i]);
+            const yPos = (t.key==="phd") ? PHD_PILL_Y : (FEET_CLIP[g] + (cumMid[g][i]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]));
             pts.push({ value:[gi, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
           }
         });
