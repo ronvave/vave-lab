@@ -311,14 +311,16 @@
 /* Order chosen so the largest categories sit lower, matching the reference.
    Colours use the site's data-viz palette. */
 const TYPES = [
+  // Ordered BOTTOM -> TOP on the body (feet -> head).
+  // Top-to-bottom reads: PhD, Masters, Journal, Books, Book chapters.
   { key:"bookSection", label:"Book chapters",   color:"#A84B2F" },
   { key:"book",        label:"Books",           color:"#FFC553" },
   { key:"journal",     label:"Journal articles",color:"#20808D" },
-  { key:"phd",         label:"PhD theses",      color:"#1B474D" },
-  { key:"masters",     label:"Masters theses",  color:"#7FB2B8" }
+  { key:"masters",     label:"Masters theses",  color:"#1B474D" },  // original PhD dark teal
+  { key:"phd",         label:"PhD theses",      color:"#141414" }   // black (Fijians have black hair; top/head band)
 ];
 /* Legend shows top-to-bottom (masters first) to read naturally. */
-const LEGEND_ORDER = ["masters","phd","journal","book","bookSection"];
+const LEGEND_ORDER = ["phd","masters","journal","book","bookSection"];
 
 /* Gendered standing silhouettes — traced from iTaukei reference photo
    (broad male in bula shirt + sulu; female in afro + long-sleeve sulu).
@@ -539,15 +541,15 @@ function buildOption(data){
       },
       selectedMode: false
     },
-    // Centre grand-total block, sitting just ABOVE the legend.
+    // Centre grand-total block, shifted DOWN and enlarged (sits above the legend).
     graphic: {
-      type: "text", left: "center", top: "14%", z: 50, silent: true,
+      type: "text", left: "center", top: "22%", z: 50, silent: true,
       style: {
-        text: fmtInt(combScholars) + " scholars\n" +
+        text: fmtInt(combScholars) + " iTaukei scholars\n" +
               fmtInt(combPubs) + " publications (100%)",
         textAlign: "center", textVerticalAlign: "middle",
         fontFamily: "DM Sans, system-ui, sans-serif",
-        fontSize: 17, fontWeight: 700, lineHeight: 24, fill: "#1c2530"
+        fontSize: 21, fontWeight: 700, lineHeight: 29, fill: "#1c2530"
       }
     },
     tooltip: {
