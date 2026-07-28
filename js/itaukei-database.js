@@ -6888,8 +6888,25 @@
     const stripDots = s => String(s || '').replace(/\./g, '');
     const aliases = state.nameAliases || new Map();
 
+    // Walk the alias chain to a fixed point. Guards against cycles (which
+    // shouldn't occur post-repair, but were possible with earlier merge code
+    // — defense in depth).
+    function walkAlias(name) {
+      if (!name) return name;
+      let cur = name;
+      const seen = new Set([cur]);
+      for (let hop = 0; hop < 32; hop++) {
+        const next = aliases.get(cur);
+        if (!next || next === cur || seen.has(next)) return cur;
+        seen.add(next);
+        cur = next;
+      }
+      return cur;
+    }
+
     // Turn a raw Zotero creator string into a canonical "Last, First" form,
-    // applying the admin's alias map. Returns null on non-string / empty input.
+    // applying the admin's alias map (transitively). Returns null on
+    // non-string / empty input.
     function canonicalizeCreator(raw) {
       if (typeof raw !== 'string' || !raw.trim()) return null;
       const s = raw.trim();
@@ -6897,7 +6914,10 @@
         const toks = s.split(/\s+/);
         return `${toks[toks.length - 1]}, ${toks.slice(0, -1).join(' ')}`;
       })();
-      return aliases.get(asLastFirst) || aliases.get(s) || asLastFirst;
+      // Try both forms; walk the chain to a fixed point.
+      if (aliases.has(asLastFirst)) return walkAlias(asLastFirst);
+      if (aliases.has(s)) return walkAlias(s);
+      return asLastFirst;
     }
     // Build a reverse index (canonical → [variant strings]) so Source A can
     // sweep aliased variant items into the sub-collection scholar's totals.
@@ -6915,8 +6935,7 @@
     // sub-collection is only "Rakuita, Nawi". Without this fallback the sub-
     // collection would emit a duplicate row under its own name.
     function resolveSubName(rawName) {
-      const direct = aliases.get(rawName);
-      if (direct) return direct;
+      if (aliases.has(rawName)) return walkAlias(rawName);
       if (typeof rawName !== 'string' || !rawName.includes(',')) return rawName;
       const [lastPart, firstPart] = rawName.split(',', 2).map(s => (s || '').trim());
       const subTok = firstToken(firstPart).toLowerCase();
@@ -6926,7 +6945,7 @@
         if (typeof variant !== 'string' || !variant.includes(',')) continue;
         const [vLast, vFirst] = variant.split(',', 2).map(s => (s || '').trim());
         if (vLast.toLowerCase() !== lastLow) continue;
-        if (firstToken(vFirst).toLowerCase() === subTok) return canon;
+        if (firstToken(vFirst).toLowerCase() === subTok) return walkAlias(canon);
       }
       return rawName;
     }

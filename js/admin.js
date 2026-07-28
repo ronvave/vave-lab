@@ -85,11 +85,24 @@
     triageSelection: new Set()
   };
 
-  // Resolve a raw Zotero creator name to its canonical form via the alias map.
-  // Returns the input unchanged when no alias is registered.
+  // Resolve a raw Zotero creator name to its canonical form via the alias
+  // map. Walks the alias chain transitively so a merge "A→B" followed by a
+  // merge "B→C" resolves A all the way to C without needing a data-repair
+  // pass. Guards against cycles (which shouldn't exist post-repair, but if
+  // they ever get reintroduced we stop at the first repeat instead of
+  // hanging the UI).
   function resolveAlias(name) {
     if (!name) return name;
-    return state.nameAliases.get(name) || name;
+    let cur = name;
+    const seen = new Set([cur]);
+    for (let hop = 0; hop < 32; hop++) {
+      const next = state.nameAliases.get(cur);
+      if (!next || next === cur) return cur;
+      if (seen.has(next)) return cur;   // cycle guard — return current fixed point
+      seen.add(next);
+      cur = next;
+    }
+    return cur;
   }
 
   // ==================== Rule-based Sector / Country-of-work seeding ====================
@@ -766,10 +779,44 @@
       .map(cb => cb.value).filter(n => n !== canonName);
     if (!chosen.length) return { error: 'no-variants' };
 
-    // Add aliases. Also compose transitively (if the canonical was itself the
-    // target of an alias, we'd never overwrite — but here the canonical is a
-    // real author row, so it's a straight variant→canonical mapping).
+    // Add aliases, then collapse every chain that could form as a result so
+    // the map stays flat (no A→B→C or cycles). Without this, a subsequent
+    // merge of B→D would leave A still pointing at B and the resolver would
+    // have to walk hops — and prior bugs caused hop-only resolvers to keep
+    // surfacing already-merged variants in the variant panel.
     chosen.forEach(variant => { state.nameAliases.set(variant, canonName); });
+
+    // Any existing alias whose target equals one of the variants we just
+    // merged should now point directly at canonName. Same idea if canonName
+    // itself is somehow the source of an older alias: re-point it (and
+    // then re-point everything that pointed at it). We iterate until the
+    // map is a fixed point.
+    const collapseChains = () => {
+      let changed = false;
+      for (const [src, dst] of state.nameAliases) {
+        if (src === canonName) continue;
+        // Follow chain to its terminal target, with cycle guard.
+        let cur = dst;
+        const seen = new Set([src, cur]);
+        for (let hop = 0; hop < 32; hop++) {
+          const next = state.nameAliases.get(cur);
+          if (!next || next === cur || seen.has(next)) break;
+          seen.add(next);
+          cur = next;
+        }
+        if (cur !== dst) {
+          state.nameAliases.set(src, cur);
+          changed = true;
+        }
+      }
+      // Drop any self-loops that snuck in.
+      for (const [src, dst] of state.nameAliases) {
+        if (src === dst) { state.nameAliases.delete(src); changed = true; }
+      }
+      return changed;
+    };
+    // Two passes is plenty for a small map; guard with a cap regardless.
+    for (let i = 0; i < 4 && collapseChains(); i++) { /* keep collapsing */ }
 
     // If the canonical is iTaukei but any variant carried a scholar profile,
     // copy over any non-empty enriched fields into the canonical profile so
