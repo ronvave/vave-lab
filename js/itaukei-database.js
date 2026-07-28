@@ -8523,10 +8523,11 @@
     metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
 
     // Toggle tab active state + tabindex per aria-tablist pattern. The chart
-    // panel that owns these tabs is Panel C2 (Panel B2 is the world map above
-    // it, which has no such tabs). Historically this selector said B2 and the
-    // active pill never updated — fixed by scoping to the C2 panel.
-    const b2Root = document.querySelector('[data-panel="C2"]');
+    // panel that owns these tabs is Panel C3 (the province multi-view chart).
+    // Historically this selector said B2 and the active pill never updated —
+    // fixed by scoping to the correct panel. Renumbered 2026-07-27 from C2
+    // to C3 when Panel C1 (body composition) was inserted above.
+    const b2Root = document.querySelector('[data-panel="C3"]');
     if (b2Root) {
       b2Root.querySelectorAll('.db-b2-tab').forEach(btn => {
         const on = btn.dataset.b2Tab === view;

@@ -2415,7 +2415,7 @@
     /* Detailed layout expands panel vertically — no fixed height needed since
        we're a scrolling layout, but tighten spacing so the twin bars sit
        comfortably. */
-    .db-panel[data-panel="C2"].is-detailed .db-b2-blurb { margin-bottom: 10px; }
+    .db-panel[data-panel="C3"].is-detailed .db-b2-blurb { margin-bottom: 10px; }
 
     /* ---- Authorship view (compact, one-bar-per-province) ---- */
     .db-b2-province-note {
@@ -4269,13 +4269,34 @@
         </div>
       </div>
 
-      <!-- Panel B3 — Where iTaukei research has been undertaken. Sourced from the
+      <!-- Panel B3 — iTaukei scholarly mobility (region ↔ country ↔ university).
+           Renders itaukei-chord.html via <iframe> so the chord component stays
+           the single source of truth (avoids ID/globals collisions with the
+           other panels). Standalone visitors can still open the chord page
+           directly; embedded=1 tells that page to hide its own chrome. -->
+      <div class="db-panel reveal db-panel--wide" data-panel="B3">
+        <span class="db-panel__label">B3</span>
+        <h2 class="db-panel__title">iTAUKEI SCHOLARLY MOBILITY</h2>
+        <p class="db-panel__hint">Where iTaukei scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list; click the expand icon (top-right of the chord frame) to open the full standalone view. Source of truth: <a href="itaukei-chord.html" target="_top" rel="noopener" style="color:var(--color-primary);">itaukei-chord.html</a>.</p>
+        <div class="db-panel__embed" style="position:relative;width:100%;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <iframe
+            src="itaukei-chord.html?embedded=1"
+            title="iTaukei scholarly mobility (chord chart)"
+            loading="lazy"
+            style="width:100%;height:900px;border:0;display:block;"
+            referrerpolicy="same-origin"
+            sandbox="allow-same-origin allow-scripts allow-popups"
+          ></iframe>
+        </div>
+      </div>
+
+      <!-- Panel B4 — Where iTaukei research has been undertaken. Sourced from the
            Zotero "Where study was done" collection (V3HLPDPL). Each country sub-
            collection under it is a research location; items are bucketed as
            "Led by iTaukei" (first-author matches the master roster) or
            "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B3">
-        <span class="db-panel__label">B3</span>
+      <div class="db-panel reveal db-panel--wide" data-panel="B4">
+        <span class="db-panel__label">B4</span>
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF ITAUKEI RESEARCH</h2>
         <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = iTaukei as first author; gold = others as first author (an iTaukei author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
         <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
@@ -4392,9 +4413,30 @@
         </div>
       </div>
 
-      <!-- Panel C1 — ranked bar chart, province-tagged research (study location) -->
-      <div class="db-panel reveal" data-panel="C1">
+      <!-- Panel C1 — Body composition of iTaukei scholars by gender. Aggregated
+           counts (scholars, Masters, PhD, journal, book, book-section) are
+           stored encrypted at data/body-composition.json.enc; the embedded
+           page decrypts opportunistically via db-gate when the visitor is
+           already unlocked. Per-scholar gender is never exposed. -->
+      <div class="db-panel reveal db-panel--wide" data-panel="C1">
         <span class="db-panel__label">C1</span>
+        <h2 class="db-panel__title">BODY COMPOSITION BY GENDER</h2>
+        <p class="db-panel__hint">Scholars and publications by gender, shown as filled pictorial bodies. The two figures use the same visual scale so counts are directly comparable. Source of truth: <a href="itaukei-body-composition.html" target="_top" rel="noopener" style="color:var(--color-primary);">itaukei-body-composition.html</a>.</p>
+        <div class="db-panel__embed" style="position:relative;width:100%;overflow:hidden;border-radius:var(--radius-lg);border:1px solid var(--color-border);background:#fff;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <iframe
+            src="itaukei-body-composition.html?embedded=1"
+            title="iTaukei body composition by gender"
+            loading="lazy"
+            style="width:100%;height:820px;border:0;display:block;"
+            referrerpolicy="same-origin"
+            sandbox="allow-same-origin allow-scripts allow-popups"
+          ></iframe>
+        </div>
+      </div>
+
+      <!-- Panel C2 — ranked bar chart, province-tagged research (study location) -->
+      <div class="db-panel reveal" data-panel="C2">
+        <span class="db-panel__label">C2</span>
         <!-- Panel B1 tab row: publication-type stack (default) vs. authorship stack.
              Reuses the .db-panel-b2__tabs styling for visual consistency. -->
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B1 view" data-b1-tabs>
@@ -4435,9 +4477,9 @@
         </div>
       </div>
 
-      <!-- Panel C2 — interactive multi-view chart, grouped by author's paternal province -->
-      <div class="db-panel reveal" data-panel="C2">
-        <span class="db-panel__label">C2</span>
+      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal province -->
+      <div class="db-panel reveal" data-panel="C3">
+        <span class="db-panel__label">C3</span>
         <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
           <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Fiji topics or set in Fiji">Fiji-focused</button>
@@ -5014,6 +5056,6 @@
 </div>
 
 <script src="js/demo-gate.js?v=2825d4c0" defer></script>
-<script src="js/itaukei-database.js?v=9dda236f" defer></script>
+<script src="js/itaukei-database.js?v=6529a7bf" defer></script>
 </body>
 </html>

@@ -73,6 +73,12 @@ TARGETS = [
     # data/auto_resolve.py; encrypted so we don't leak the full
     # university list. See docs/DATA-COVERAGE-GAPS.md 'Auto-resolve'.
     "auto-resolved.json",
+    # Panel C1 body-composition chart — gender x publication-type
+    # aggregate counts (Female/Male/Total for Masters, PhD, journal,
+    # book, book chapters). Encrypted because the underlying gender
+    # coding is admin-only per Ron's rule (never shown publicly at the
+    # per-scholar level), even though this file only ships totals.
+    "body-composition.json",
 ]
 
 

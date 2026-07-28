@@ -58,7 +58,9 @@
     'data/scholar-profiles.json':        'data/scholar-profiles.json.enc',
     'data/last-sync.json':               'data/last-sync.json.enc',
     'data/itaukei-graduate-studies.json':'data/itaukei-graduate-studies.json.enc',
-    'data/scholar-insights.json':        'data/scholar-insights.json.enc'
+    'data/scholar-insights.json':        'data/scholar-insights.json.enc',
+    // Panel C1 body-composition chart — gender x publication-type aggregates.
+    'data/body-composition.json':        'data/body-composition.json.enc'
   };
 
   // In-memory state once the visitor is verified. Never leaves the page.
@@ -416,12 +418,36 @@
     renderLockScreen(onReady);
   }
 
+  // Best-effort unlock using localStorage only. Doesn't touch the UI — no
+  // lock screen is shown even if there is no stored session. Useful for
+  // side-panel pages (e.g. itaukei-body-composition.html embedded as an
+  // iframe in the research database) that want to opportunistically decrypt
+  // an .enc file when the visitor is already unlocked, without ever
+  // prompting a passcode of their own. Returns true if a valid session was
+  // adopted and future fetchJson() calls will decrypt cleanly.
+  async function tryUnlockFromStorage() {
+    if (cachedPasscode) return true;
+    var stored = loadStoredSession();
+    if (!stored) return false;
+    try {
+      var pass = new TextDecoder().decode(b64decode(stored.p));
+      var ok = await verifyPasscode(pass);
+      if (!ok) { clearSession(); return false; }
+      cachedPasscode = pass;
+      return true;
+    } catch (e) {
+      clearSession();
+      return false;
+    }
+  }
+
   // Expose the API for itaukei-database.js and admin.js.
   window.dbGate = {
     boot: boot,
     fetchJson: fetchJsonEncrypted,
     clearSession: clearSession,
     encryptForUpload: encryptForUpload,
-    isUnlocked: function () { return !!cachedPasscode; }
+    isUnlocked: function () { return !!cachedPasscode; },
+    tryUnlockFromStorage: tryUnlockFromStorage
   };
 })();

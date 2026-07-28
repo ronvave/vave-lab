@@ -175,13 +175,32 @@ deploy required**:
 
 Panels that **do not** touch this data:
 
-- **B3** (Where iTaukei research is done) — reads
+- **B3** (iTaukei scholarly mobility — chord chart) — embedded from
+  `itaukei-chord.html` via <iframe> so the chord component stays a
+  single source of truth. Reads `itaukei-chord-data/mobility.csv` +
+  `itaukei-chord-data/unsd.csv`. To refresh: replace the mobility CSV
+  (source workbook lives at `itaukei-chord-data/itaukei_reg-country-uni_mobility_data.xlsx`),
+  commit, and push. No code deploy is required for the chord chart
+  itself — only the CSV changes.
+- **B4** (Where iTaukei research is done — world map with pies) — reads
   `b3_publications_by_country.xlsx`, an independent feed. Only
-  updates when Ron edits that spreadsheet.
+  updates when Ron edits that spreadsheet. (Was Panel B3 until
+  2026-07-27; internal `[data-mapscope-panel="b3"]` selectors kept
+  their original key.)
 - **B1** (publications by type / authorship) — reads Zotero item
   types, not the graduate-studies feed.
-- **C1 / C2** (Fiji-side publications by province) — reads the Fiji
-  paternal-province tree, not the graduate-studies tree.
+- **C1** (Body composition by gender) — embedded from
+  `itaukei-body-composition.html` via <iframe>. Reads
+  `data/body-composition.json` (encrypted on disk as
+  `.json.enc`). Aggregated counts only — per-scholar gender is
+  admin-only and never exposed publicly. To refresh: Ron uploads a
+  new `iTaukei-Scholar-Publications-by-Gender.xlsx`, the aggregated
+  counts are written to `data/body-composition.json`, then
+  `VAVELAB_PASSCODE=... python3 scripts/encrypt_data.py body-composition.json`
+  writes the `.json.enc` payload before commit.
+- **C2 / C3** (Fiji-side publications by province) — reads the Fiji
+  paternal-province tree, not the graduate-studies tree. (Were
+  Panels C1 and C2 until 2026-07-27.)
 
 ---
 
@@ -349,3 +368,4 @@ thesis — should propagate automatically from the next refresh.
 | 2026-07-19 | Consolidated `NEW-COUNTRY-OR-UNIVERSITY.md` into this doc | Ron: "keep it all in one document which have clearly demarcated topics or headings so it's easier to search, find and reference" | Merged the runbook into `DATA-COVERAGE-GAPS.md` under numbered section headings; removed the standalone file. |
 | 2026-07-19 | Panel B2 confederacy summary — sort + Untagged row + label totals | Ron: "Confederacies should be listed in descending order based on total number of thesis (both Masters and PhD)... add a 4th one for Untagged thesis... For the text `BY CONFEDERACY`, append the total number of thesis, Masters Total, and PhD Total for the 3 confederacies, separated by \| sign." | `renderWorldPanelConfederacyView` in `js/itaukei-database.js` now (a) sorts `confRows` descending by total with alphabetical tiebreak, (b) appends a 4th `Untagged` row using the same M / PhD / Total layout with a dashed separator, and (c) suffixes the `BY CONFEDERACY` label with `Total N \| Masters N \| PhD N` for the 3 confederacies only. All values rebuild on every render, so the 3-hour refresh / force sync updates them automatically. |
 | 2026-07-23 | Panel B2 country list — university count in parentheses next to each country | Ron: "can this table below the map have university counts in parenthesis next to country names. For example, clicking on Australia in the table reveals 22 Australian universities. So I would like the main summary table for countries to show Australia (22) followed by the number of Masters, PhD, and Total as displayed now." (Variant A approved from mockup.) | `renderWorldPanel` in `js/itaukei-database.js` now appends a `<span class="db-world-country-row__uni-count">` after the country-name button reading ` (N)` where N = `c.unis.length` (distinct universities under that country's Zotero Thesis-root leaves). Rendered in the rust `#964219` (Masters KPI colour), semibold, tabular-nums, outside the underlined link so screenreaders don't mix it into the filter action. The count rebuilds on every render, so the 3-hour refresh / force sync keeps it in sync automatically. Screenreader label reads "N universities" (singular "university" for N=1). |
+| 2026-07-27 | Panels B3 (chord chart) + C1 (body composition by gender) added; existing B3 renumbered to B4, C1 to C2, C2 to C3 | Ron: "i want a new Panel B3 as the chord chart figure... which shouldn't require data upload. Current B3 becomes B4. And the iTaukei body composition by gender chart... becomes the new C1... Change the other Panel numbers appropriately." | Inserted two new panels in `itaukei-research-database.html` between existing B2 and B4 (chord), and between B4 and C2 (body composition). Both new panels render via `<iframe>` pointing at the standalone pages (`itaukei-chord.html?embedded=1`, `itaukei-body-composition.html?embedded=1`) so each chart stays a single source of truth and avoids ID / global collisions with sibling panels. The standalone pages sniff `?embedded=1` (or a cross-frame `window.self !== window.top`) at page-load and add `body.is-embedded`, which hides the header / footer / uploader / banner / intro / back-link so only the chart itself paints inside the iframe. Chord reads the plaintext CSVs already shipped in `itaukei-chord-data/`. Body composition reads `data/body-composition.json.enc`, opportunistically decrypting via a new `window.dbGate.tryUnlockFromStorage()` API that reuses the existing 30-day session in `localStorage` — no second passcode prompt, and standalone visitors with no session simply see the empty template. Aggregated gender counts only (per-scholar gender remains admin-only). Also renumbered the C3 tab-selector query (`js/itaukei-database.js` line ~8530) from `[data-panel="C2"]` to `[data-panel="C3"]` and the `.is-detailed .db-b2-blurb` CSS rule to match. Internal `[data-mapscope-panel="b3"]` selectors on the world map (now B4) kept their key. |

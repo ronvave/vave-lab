@@ -8,9 +8,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/tokens.css" />
-  <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/tokens.css?v=ec2c3516" />
+  <link rel="stylesheet" href="css/base.css?v=c71999b9" />
+  <link rel="stylesheet" href="css/animations.css?v=209516a8" />
   <meta name="robots" content="noindex,follow" />
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -134,6 +134,20 @@
     #chord-tip .tip-title{ color:#d7dee6; font-style:italic; display:block; margin-top:1px; }
     #chord-tip .tip-more{ color:#9fb4c9; font-size:11px; margin-top:6px; }
     path.dim{ opacity:0.15 !important; }
+
+    /* ---- Embedded mode (when hosted inside an <iframe> in the research
+       database with ?embedded=1). Hides the standalone-page chrome so the
+       chord chart itself fills the panel. The is-embedded class is toggled
+       in an inline <script> just after <body>, before any layout paints. */
+    body.is-embedded .site-header,
+    body.is-embedded .page-banner,
+    body.is-embedded .site-footer,
+    body.is-embedded .uploader,
+    body.is-embedded .chord-embedded-hide { display:none !important; }
+    body.is-embedded main { padding:0; }
+    body.is-embedded .section { padding:0; }
+    body.is-embedded .container { max-width:none; padding:0; }
+    body.is-embedded .chord-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
@@ -145,6 +159,18 @@
   </script>
 </head>
 <body>
+<script>
+  /* Add is-embedded before first paint when the page is loaded with ?embedded=1
+     (or is inside an iframe). Keeps standalone visits untouched. */
+  (function(){
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('embedded') === '1' || (window.self !== window.top)) {
+        document.body.classList.add('is-embedded');
+      }
+    } catch(e) { /* iframe cross-origin — fall through */ }
+  })();
+</script>
 
 <header class="site-header" role="banner">
   <div class="container">
@@ -200,7 +226,7 @@
 <main>
 <section class="section">
   <div class="container">
-    <div class="reveal" style="max-width:820px;margin-bottom:var(--space-8);">
+    <div class="reveal chord-embedded-hide" style="max-width:820px;margin-bottom:var(--space-8);">
       <p class="section__label">Interactive Visualization</p>
       <h2 class="section__title" style="margin-top:var(--space-2);">Master&rsquo;s &rarr; PhD Institutional Pathways</h2>
       <div class="divider"></div>
@@ -278,7 +304,7 @@
     <div id="chord-tip" role="tooltip"></div>
     <p class="chord-scroll-hint">Tip: on smaller screens, scroll the panel sideways to see the full wheel.</p>
 
-    <div class="reveal" style="margin-top:var(--space-8);">
+    <div class="reveal chord-embedded-hide" style="margin-top:var(--space-8);">
       <a href="research.html" style="color:var(--color-primary);font-weight:500;">&larr; Back to Research</a>
     </div>
   </div>
@@ -890,6 +916,6 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
 
 init();
 </script>
-<script src="js/main.js"></script>
+<script src="js/main.js?v=2cf4b3f9"></script>
 </body>
 </html>
