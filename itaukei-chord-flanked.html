@@ -68,7 +68,7 @@
       display:flex;
       flex-direction:column;
       gap:6px;
-      padding-top:24px;               /* align first row with the top of the chart wheel */
+      padding-top:2px;                /* first row aligns with top of the chart wheel */
       font-size:11.5px;
       color:#2a2f36;
       min-width:0;
@@ -392,13 +392,14 @@
           <div class="legend-flank__col legend-flank__col--left" id="legend-flank-left"></div>
           <div class="legend-flank__chart">
             <!-- The chord draw code uses an internal coordinate system of
-                 W=1160 H=700 (centre = 580,356). We keep that viewBox so the
-                 existing draw() logic stays untouched, but shrink the visual
-                 footprint via width/height so it fits between the two flank
-                 columns. The chord itself only occupies the middle 620px of
-                 that coordinate space — the extra width was previously used
-                 for the SVG legend under it. -->
-            <svg id="chart" width="720" height="720" viewBox="270 5 620 690" preserveAspectRatio="xMidYMid meet"></svg>
+                 W=1160 H=700 with centre (580, 356) and outermost radius 284,
+                 so the visible chord wheel + region labels occupy roughly
+                 x=[266,894] and y=[62,650] in that coordinate space. We hug
+                 that bounding box with a tight viewBox so the SVG element
+                 has minimal empty space above and below the wheel — which
+                 is the tall-figure look Ron wants for scientific manuscripts.
+                 The draw() logic itself stays untouched. -->
+            <svg id="chart" width="640" height="600" viewBox="266 62 628 588" preserveAspectRatio="xMidYMid meet"></svg>
           </div>
           <div class="legend-flank__col legend-flank__col--right" id="legend-flank-right"></div>
           <div class="legend-flank__bottom" id="legend-flank-bottom"></div>
@@ -779,17 +780,31 @@ function renderFlankedLegend(nodes, data){
   // bottom strip. The visible height budget = the rendered chart height.
   // We measure the chart wrapper live so the calc adapts to fullscreen and
   // container resizes; each legend row is ~22px tall (badge + line-height).
+  //
+  // Balance rule: while the total fits within 2 * perSide rows, split evenly
+  // between left and right so neither column is a lonely 6-item stub next to
+  // a 31-item wall (which was the imbalance in the first B3A cut). Only when
+  // items exceed 2 * perSide do we fill both sides to the cap and spill the
+  // remainder into the bottom strip.
   const chartWrap = document.querySelector(".legend-flank__chart");
-  const chartH = chartWrap ? chartWrap.getBoundingClientRect().height : 720;
+  const chartH = chartWrap ? chartWrap.getBoundingClientRect().height : 600;
   const ROW_H = 22;                 // matches gap:6 + line-height 1.25 @ 11.5px
-  const PAD_TOP = 24;
+  const PAD_TOP = 2;
   const avail = Math.max(0, chartH - PAD_TOP - 4);
   const perSide = Math.max(1, Math.floor(avail / ROW_H));
 
   const total = rows.length;
-  const sideCap = Math.min(total, perSide * 2);
-  const leftN  = Math.min(perSide, total);
-  const rightN = Math.min(perSide, Math.max(0, total - leftN));
+  let leftN, rightN;
+  if (total <= perSide * 2) {
+    // Balance evenly across the two side columns.
+    leftN  = Math.ceil(total / 2);
+    rightN = total - leftN;
+  } else {
+    // Both sides are full; the remainder wraps to the bottom strip.
+    leftN  = perSide;
+    rightN = perSide;
+  }
+  const sideCap = leftN + rightN;
 
   for (let i = 0; i < leftN; i++) leftEl.appendChild(rows[i]);
   for (let i = 0; i < rightN; i++) rightEl.appendChild(rows[leftN + i]);
