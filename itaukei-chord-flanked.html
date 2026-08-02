@@ -241,7 +241,11 @@
     body.is-embedded main { padding:0; }
     body.is-embedded .section { padding:0; }
     body.is-embedded .container { max-width:none; padding:0; }
-    body.is-embedded .chord-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; }
+    /* When embedded in the dashboard, the iframe body should blend with the
+       host panel's background instead of showing the standalone page's cream
+       body colour. Forcing white here matches Panel B2's clean look. */
+    body.is-embedded { background:#ffffff !important; }
+    body.is-embedded .chord-canvas { border:none; box-shadow:none; padding:0; margin:0; background:#ffffff; }
 
     /* Ron's dashboard refinements (2026-07-27):
        • Hide the standalone chart title — the panel already has its own title.

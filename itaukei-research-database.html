@@ -580,6 +580,10 @@
        reference image), and the country/university/scholar list stacks
        underneath in a light legend panel. */
     .db-panel--wide { grid-column: 1 / -1; }
+    /* Panel B3 (iTaukei scholarly mobility chord chart) sits on a pure-white
+       background so the chart and legend read cleanly against the neighbouring
+       cream panels — matches the flat, uniform look Ron requested (like B2). */
+    [data-panel="B3"] { background:#ffffff; }
     .db-world-wide {
       display: flex; flex-direction: column; gap: var(--space-4);
       margin-top: var(--space-2);
@@ -4341,7 +4345,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-chord-flanked.html?embedded=1&v=b3swap"
+            src="itaukei-chord-flanked.html?embedded=1&v=c0d80cd8"
             title="iTaukei scholarly mobility (chord chart)"
             loading="lazy"
             style="width:100%;height:680px;border:0;display:block;"
