@@ -44,7 +44,7 @@
       grid-template-rows: auto auto auto;
       column-gap: 12px;
       row-gap: 6px;
-      align-items: start;
+      align-items: center;              /* vertically center the flanks against the chord chart */
       justify-items: stretch;
       margin-top: 4px;
     }
@@ -68,20 +68,25 @@
       display:flex;
       flex-direction:column;
       gap:6px;
-      padding-top:2px;                /* first row aligns with top of the chart wheel */
       font-size:11.5px;
       color:#2a2f36;
       min-width:0;
+      align-self:center;              /* vertically center the column against the chord chart */
     }
     .legend-flank__col--left  { grid-column: 1 / 2; grid-row: 2 / 3; align-items:flex-end;  text-align:right; }
     .legend-flank__col--right { grid-column: 3 / 4; grid-row: 2 / 3; align-items:flex-start; text-align:left;  }
     .legend-flank__bottom {
       grid-column: 1 / 4;
       grid-row: 3 / 4;
-      display:grid;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      gap:6px 16px;
+      display:flex;                   /* flex row so partial rows center from the middle outward */
+      flex-wrap:wrap;
+      justify-content:center;
+      gap:6px 20px;
       margin-top:10px;
+    }
+    .legend-flank__bottom .legend-flank__item {
+      flex: 0 1 auto;                 /* items size to content, no forced column widths */
+      max-width:280px;
     }
     .legend-flank__bottom:empty { display:none; }
     .legend-flank__item {
@@ -786,11 +791,14 @@ function renderFlankedLegend(nodes, data){
   // a 31-item wall (which was the imbalance in the first B3A cut). Only when
   // items exceed 2 * perSide do we fill both sides to the cap and spill the
   // remainder into the bottom strip.
+  // Side columns are vertically centered against the chord chart. A column
+  // can hold as many rows as fit in the chart's rendered height at ROW_H
+  // pixels per row. Once both sides are full at chart height, extra items
+  // wrap into the bottom strip (centered from the middle outward).
   const chartWrap = document.querySelector(".legend-flank__chart");
   const chartH = chartWrap ? chartWrap.getBoundingClientRect().height : 600;
   const ROW_H = 22;                 // matches gap:6 + line-height 1.25 @ 11.5px
-  const PAD_TOP = 2;
-  const avail = Math.max(0, chartH - PAD_TOP - 4);
+  const avail = Math.max(0, chartH - 4);
   const perSide = Math.max(1, Math.floor(avail / ROW_H));
 
   const total = rows.length;

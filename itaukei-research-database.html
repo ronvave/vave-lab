@@ -4321,10 +4321,12 @@
       </div>
 
       <!-- Panel B3 — iTaukei scholarly mobility (region ↔ country ↔ university).
-           Renders itaukei-chord.html via <iframe> so the chord component stays
-           the single source of truth (avoids ID/globals collisions with the
-           other panels). Standalone visitors can still open the chord page
-           directly; embedded=1 tells that page to hide its own chrome. -->
+           Renders itaukei-chord-flanked.html via <iframe>: the chord chart
+           sits centred with the university-key legend flanking it left and
+           right, vertically centred against the chart. Extra items only wrap
+           to a bottom strip when both side columns are full at chart height.
+           Standalone visitors can still open the chord page directly;
+           embedded=1 tells that page to hide its own chrome. -->
       <div class="db-panel reveal db-panel--wide" data-panel="B3">
         <span class="db-panel__label">B3</span>
         <h2 class="db-panel__title">iTAUKEI SCHOLARLY MOBILITY</h2>
@@ -4339,51 +4341,16 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-chord.html?embedded=1"
+            src="itaukei-chord-flanked.html?embedded=1&v=b3swap"
             title="iTaukei scholarly mobility (chord chart)"
             loading="lazy"
-            style="width:100%;height:900px;border:0;display:block;"
+            style="width:100%;height:680px;border:0;display:block;"
             referrerpolicy="same-origin"
             sandbox="allow-same-origin allow-scripts allow-popups"
           ></iframe>
           <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
         </div>
         <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3-chord" aria-label="Close full-screen chord chart">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          Close full screen
-        </button>
-      </div>
-
-      <!-- Panel B3A — same iTaukei scholarly-mobility chord chart as B3, but
-           with the university-key legend flanking the chart on the left and
-           right instead of running along the bottom. Extra items only wrap to
-           a bottom strip when both side columns are full. Sources itaukei-
-           chord-flanked.html so the two panels can co-exist without touching
-           the original B3 layout. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B3A">
-        <span class="db-panel__label">B3A</span>
-        <h2 class="db-panel__title">iTAUKEI SCHOLARLY MOBILITY — FLANKED LEGEND</h2>
-        <p class="db-panel__hint">Same data as B3, laid out with the university key on the left and right of the chart. Any items that don&rsquo;t fit next to the chart wrap into a bottom strip. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
-        <div class="db-panel__embed" id="db-embed-b3a-chord">
-          <button type="button" class="db-panel__embed-expand" aria-label="Open flanked chord chart full screen" title="Full screen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <polyline points="9 21 3 21 3 15"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-          </button>
-          <iframe
-            src="itaukei-chord-flanked.html?embedded=1&v=4669800a"
-            title="iTaukei scholarly mobility (flanked-legend chord chart)"
-            loading="lazy"
-            style="width:100%;height:680px;border:0;display:block;"
-            referrerpolicy="same-origin"
-            sandbox="allow-same-origin allow-scripts allow-popups"
-          ></iframe>
-          <div class="db-panel__embed-click" data-embed-target="db-embed-b3a-chord" aria-hidden="true"></div>
-        </div>
-        <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3a-chord" aria-label="Close full-screen flanked chord chart">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
           Close full screen
         </button>
