@@ -416,7 +416,7 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
 // return the x0/x1 of each column's block bar in the 1600x900 viewport.
 function makeGeom(level){
   const VIEW_W = 1600, VIEW_H = 900;
-  const plotTop = 130;                      // room for 3-line headers on all levels
+  const plotTop = 118;                      // room for 3-line headers on all levels
   const plotBottom = VIEW_H - 40;
   const BAR_W = 24;                          // block bar width in px
   // Halved gaps vs. prior (in pixel units for the 900px-tall canvas)
@@ -791,8 +791,9 @@ function draw(flows, level){
     const rcols = right.cols;
     const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
     const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
+    // Sit the 3-line header close to the top of the bars.
     const FS = 15;
-    const y0 = 30, lineH = 22;
+    const y0 = 50, lineH = 20;
     function multi(cx, third){
       gHead.append("text").attr("class","col-header-line")
         .attr("x", cx).attr("y", y0)
@@ -853,7 +854,9 @@ function renderFromMobility(csvText, label){
   currentFlows = buildFlows(rows);
   draw(currentFlows, currentLevel);
   if(typeof refreshGeneratedStamp === "function") refreshGeneratedStamp();
-  statusEl.textContent = (label||"Uploaded CSV")+": "+currentFlows.length+" scholars.";
+  // The scholar count is now shown in the source caption itself, so the
+  // extra status line only mentions which dataset is active.
+  statusEl.textContent = (label||"Uploaded CSV");
   setMsg("Chart updated from "+(label||"your CSV")+" ("+currentFlows.length+" scholars).", "ok");
   return true;
 }
@@ -1103,14 +1106,16 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
       ctx.fillStyle = "#8a93a0";
       ctx.font = fs1+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "top";
-      ctx.fillText("Source: iTaukei Research Database.", o.pxW/2, o.pxH + Math.round(footerH*0.15));
+      const nSch = (currentFlows && currentFlows.length) || 0;
+      const srcTxt = "Source: iTaukei Research Database" + (nSch ? " (" + nSch + " scholars)" : "") + ".";
+      ctx.fillText(srcTxt, o.pxW/2, o.pxH + Math.round(footerH*0.15));
       ctx.font = fs2+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
       ctx.fillText("Generated "+stamp.longText, o.pxW/2, o.pxH + Math.round(footerH*0.55));
       canvas.toBlob((blob)=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement("a");
         a.href=url;
-        a.download="itaukei-alluvial_level"+currentLevel+"_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi_"+stamp.fileSuffix+".png";
+        a.download="itaukei-alluvial_level"+currentLevel+"_"+stamp.fileSuffix+".png";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1500);
         btn.textContent=label; btn.disabled=false;
@@ -1152,6 +1157,13 @@ function refreshGeneratedStamp(){
   window.__alluvialTimestamp = stamp;
   const el = document.getElementById("alluvial-generated");
   if(el) el.textContent = "Generated "+stamp.longText;
+  // Keep the on-page source line in sync with the current dataset size so it
+  // matches what appears in the exported PNG.
+  const src = document.getElementById("alluvial-cap");
+  const n = (typeof currentFlows !== "undefined" && currentFlows && currentFlows.length) ? currentFlows.length : 0;
+  if(src){
+    src.textContent = "Source: iTaukei Research Database" + (n ? " (" + n + " scholars)" : "") + ".";
+  }
 }
 
 /* ---------- Fullscreen expand/collapse ---------- */
