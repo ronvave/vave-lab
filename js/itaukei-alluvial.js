@@ -718,7 +718,7 @@ function draw(flows, level){
     const TAG_FS       = 10;                 // ISO3 code font size
     const TAG_PAD_X    = 8;                  // horizontal padding inside tag
     const TAG_H        = 18;                 // tag height
-    const TAG_GAP_REG  = 8;                  // gap from region column to tag
+    const TAG_GAP_REG  = 4;                  // gap from region column to tag (matches COL_GAP)
     const TAG_GAP_TXT  = 8;                  // gap from tag to label text
     const LABEL_FS     = 11;                 // uni label font size
 
