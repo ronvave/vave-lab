@@ -717,10 +717,10 @@ function draw(flows, level){
   if(level === 3){
     const TAG_FS       = 10;                 // ISO3 code font size
     const TAG_PAD_X    = 8;                  // horizontal padding inside tag
-    const TAG_H        = 18;                 // tag height
     const TAG_GAP_REG  = 4;                  // gap from region column to tag (matches COL_GAP)
     const TAG_GAP_TXT  = 8;                  // gap from tag to label text
     const LABEL_FS     = 11;                 // uni label font size
+    const TAG_TEXT_MIN = 11;                 // hide ISO3 text if tag shorter than this
 
     function drawLeafLabels(side, sideLayout){
       // The region column is the outermost column on each side.
@@ -734,22 +734,27 @@ function draw(flows, level){
         const label   = `${b.uni} (${b.count})`;
         const cy      = (b.y0 + b.y1)/2;
         const tagW    = approxTextWidth(codeIso, TAG_FS) + 2 * TAG_PAD_X;
+        // Tag height = university block height (i.e. matches this row's ribbon width).
+        const tagH    = Math.max(1, b.y1 - b.y0);
+        const tagY0   = b.y0;
+        const showTagText = tagH >= TAG_TEXT_MIN;
 
         if(side === "m"){
           const tagX1 = regionOuterX - TAG_GAP_REG;
           const tagX0 = tagX1 - tagW;
-          const tagY0 = cy - TAG_H/2;
           gLabels.append("rect").attr("class","swatch")
             .attr("x", tagX0).attr("y", tagY0)
-            .attr("width", tagW).attr("height", TAG_H)
+            .attr("width", tagW).attr("height", tagH)
             .attr("fill", color);
-          gLabels.append("text")
-            .attr("class","leaf-tag-text")
-            .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
-            .attr("text-anchor","middle").attr("dominant-baseline","middle")
-            .attr("fill", readableOn(color))
-            .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
-            .text(codeIso);
+          if(showTagText){
+            gLabels.append("text")
+              .attr("class","leaf-tag-text")
+              .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
+              .attr("text-anchor","middle").attr("dominant-baseline","middle")
+              .attr("fill", readableOn(color))
+              .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
+              .text(codeIso);
+          }
           gLabels.append("text")
             .attr("class","leaf-label")
             .attr("x", tagX0 - TAG_GAP_TXT).attr("y", cy)
@@ -760,18 +765,19 @@ function draw(flows, level){
         } else {
           const tagX0 = regionOuterX + TAG_GAP_REG;
           const tagX1 = tagX0 + tagW;
-          const tagY0 = cy - TAG_H/2;
           gLabels.append("rect").attr("class","swatch")
             .attr("x", tagX0).attr("y", tagY0)
-            .attr("width", tagW).attr("height", TAG_H)
+            .attr("width", tagW).attr("height", tagH)
             .attr("fill", color);
-          gLabels.append("text")
-            .attr("class","leaf-tag-text")
-            .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
-            .attr("text-anchor","middle").attr("dominant-baseline","middle")
-            .attr("fill", readableOn(color))
-            .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
-            .text(codeIso);
+          if(showTagText){
+            gLabels.append("text")
+              .attr("class","leaf-tag-text")
+              .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
+              .attr("text-anchor","middle").attr("dominant-baseline","middle")
+              .attr("fill", readableOn(color))
+              .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
+              .text(codeIso);
+          }
           gLabels.append("text")
             .attr("class","leaf-label")
             .attr("x", tagX1 + TAG_GAP_TXT).attr("y", cy)
