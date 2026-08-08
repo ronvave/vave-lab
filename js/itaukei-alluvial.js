@@ -26,7 +26,7 @@ const REGION_COLORS = {
 const COUNTRY_COLORS = {
   "Fiji":           "#20808E",
   "Australia":      "#DA7101",
-  "New Zealand":    "#E9AF34",
+  "New Zealand":    "#D97BA0",  // pink (disambiguated from Japan/China gold)
   "USA":            "#8B2E3F",
   "United Kingdom": "#2C6DA8",
   "Malta":          "#7B4F8A",
@@ -554,53 +554,70 @@ function draw(flows, level){
           .attr("width", b.x1 - b.x0).attr("height", b.y1 - b.y0)
           .attr("fill", color || "#999");
 
-        // Vertical label inside region and country columns (not on uni column)
-        if(b.kind === "region" && (b.y1 - b.y0) > 30){
-          const cx = (b.x0 + b.x1)/2;
-          const cy = (b.y0 + b.y1)/2;
+        // Vertical label inside region column — only render if the label
+        // (rotated 90°) fits within the block's height. Otherwise skip.
+        // Inside vertical label — only render if the rotated label fits
+        // the block height. When it doesn't, we fall back to a small side
+        // label placed to the outer side of the block below.
+        if(b.kind === "region"){
           const label = `${b.region} (${b.count})`;
-          gBlocks.append("text")
-            .attr("class","block-label")
-            .attr("x", cx).attr("y", cy)
-            .attr("text-anchor","middle").attr("dominant-baseline","middle")
-            .attr("transform", `rotate(-90 ${cx} ${cy})`)
-            .attr("fill", readableOn(color))
-            .attr("style","font-size:12px;")
-            .text(label);
+          const fs = 12;
+          if(approxTextWidth(label, fs) + 10 <= (b.y1 - b.y0)){
+            const cx = (b.x0 + b.x1)/2;
+            const cy = (b.y0 + b.y1)/2;
+            gBlocks.append("text")
+              .attr("class","block-label")
+              .attr("x", cx).attr("y", cy)
+              .attr("text-anchor","middle").attr("dominant-baseline","middle")
+              .attr("transform", `rotate(-90 ${cx} ${cy})`)
+              .attr("fill", readableOn(color))
+              .attr("style",`font-size:${fs}px; font-weight:600;`)
+              .text(label);
+            b._labelInside = true;
+          }
         }
-        if(b.kind === "country" && (b.y1 - b.y0) > 26){
-          const cx = (b.x0 + b.x1)/2;
-          const cy = (b.y0 + b.y1)/2;
+        if(b.kind === "country"){
           const label = `${shortCountry(b.country)} (${b.count})`;
-          gBlocks.append("text")
-            .attr("class","block-label")
-            .attr("x", cx).attr("y", cy)
-            .attr("text-anchor","middle").attr("dominant-baseline","middle")
-            .attr("transform", `rotate(-90 ${cx} ${cy})`)
-            .attr("fill", readableOn(color))
-            .attr("style","font-size:11px;")
-            .text(label);
+          const fs = 11;
+          if(approxTextWidth(label, fs) + 8 <= (b.y1 - b.y0)){
+            const cx = (b.x0 + b.x1)/2;
+            const cy = (b.y0 + b.y1)/2;
+            gBlocks.append("text")
+              .attr("class","block-label")
+              .attr("x", cx).attr("y", cy)
+              .attr("text-anchor","middle").attr("dominant-baseline","middle")
+              .attr("transform", `rotate(-90 ${cx} ${cy})`)
+              .attr("fill", readableOn(color))
+              .attr("style",`font-size:${fs}px; font-weight:600;`)
+              .text(label);
+            b._labelInside = true;
+          }
         }
       }
-      // Small-region side labels (for regions too short to fit on-bar text)
-      if(col.kind === "region"){
+      // Side labels for region blocks whose inside label was skipped.
+      // Only meaningful at level 1 and level 2, where the region column is
+      // outermost. At level 3 the leaf labels already carry country + uni info.
+      if(col.kind === "region" && level !== 3){
         for(const b of col.blocks){
-          if((b.y1 - b.y0) <= 30){
-            // Draw a horizontal label to the outer side of this block
-            const cy = (b.y0 + b.y1)/2;
-            if(side === "m"){
-              gBlocks.append("text")
-                .attr("class","region-side-label")
-                .attr("x", b.x0 - 8).attr("y", cy)
-                .attr("text-anchor","end").attr("dominant-baseline","middle")
-                .text(`${b.region} (${b.count})`);
-            } else {
-              gBlocks.append("text")
-                .attr("class","region-side-label")
-                .attr("x", b.x1 + 8).attr("y", cy)
-                .attr("text-anchor","start").attr("dominant-baseline","middle")
-                .text(`${b.region} (${b.count})`);
-            }
+          if(b._labelInside) continue;
+          const cy = (b.y0 + b.y1)/2;
+          const txt = `${b.region} (${b.count})`;
+          if(side === "m"){
+            gBlocks.append("text")
+              .attr("class","region-side-label")
+              .attr("x", b.x0 - 8).attr("y", cy)
+              .attr("text-anchor","end").attr("dominant-baseline","middle")
+              .attr("fill","#000")
+              .attr("style","font-size:11px;")
+              .text(txt);
+          } else {
+            gBlocks.append("text")
+              .attr("class","region-side-label")
+              .attr("x", b.x1 + 8).attr("y", cy)
+              .attr("text-anchor","start").attr("dominant-baseline","middle")
+              .attr("fill","#000")
+              .attr("style","font-size:11px;")
+              .text(txt);
           }
         }
       }
@@ -609,41 +626,76 @@ function draw(flows, level){
   drawSide("m", left);
   drawSide("p", right);
 
-  // ---- leaf labels (only for level 3, on the uni column) ----
+  // ---- leaf labels (only for level 3), placed OUTSIDE the region column ----
+  // ISO3 country code lives inside a padded colored tag; university label
+  // sits alongside the tag in black. Master's side is right-aligned;
+  // PhD side is left-aligned.
   const gLabels = svg.append("g").attr("class","labels");
   if(level === 3){
+    const TAG_FS       = 10;                 // ISO3 code font size
+    const TAG_PAD_X    = 8;                  // horizontal padding inside tag
+    const TAG_H        = 18;                 // tag height
+    const TAG_GAP_REG  = 8;                  // gap from region column to tag
+    const TAG_GAP_TXT  = 8;                  // gap from tag to label text
+    const LABEL_FS     = 11;                 // uni label font size
+
     function drawLeafLabels(side, sideLayout){
-      const uniCol = sideLayout.cols[sideLayout.cols.length - 1];
+      // The region column is the outermost column on each side.
+      const uniCol    = sideLayout.cols[sideLayout.cols.length - 1];
+      const regionCol = sideLayout.cols[0];
+      const regionOuterX = (side === "m") ? regionCol.blocks[0].x0 : regionCol.blocks[0].x1;
+
       for(const b of uniCol.blocks){
-        const color = COUNTRY_COLORS[b.country] || REGION_COLORS[b.region] || "#999";
+        const color   = COUNTRY_COLORS[b.country] || REGION_COLORS[b.region] || "#999";
         const codeIso = iso3(b.country);
-        const text = `${codeIso}: ${b.uni}  (${b.count})`;
-        const cy = (b.y0 + b.y1)/2;
-        const SW = 9;                    // swatch size (px)
-        const PAD = 6;                   // gap between swatch and text
+        const label   = `${b.uni} (${b.count})`;
+        const cy      = (b.y0 + b.y1)/2;
+        const tagW    = approxTextWidth(codeIso, TAG_FS) + 2 * TAG_PAD_X;
+
         if(side === "m"){
-          // swatch just left of the block, text to the left of the swatch
-          const sqX = b.x0 - PAD - SW;
-          const sqY = cy - SW/2;
+          const tagX1 = regionOuterX - TAG_GAP_REG;
+          const tagX0 = tagX1 - tagW;
+          const tagY0 = cy - TAG_H/2;
           gLabels.append("rect").attr("class","swatch")
-            .attr("x", sqX).attr("y", sqY).attr("width", SW).attr("height", SW)
+            .attr("x", tagX0).attr("y", tagY0)
+            .attr("width", tagW).attr("height", TAG_H)
             .attr("fill", color);
           gLabels.append("text")
+            .attr("class","leaf-tag-text")
+            .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
+            .attr("text-anchor","middle").attr("dominant-baseline","middle")
+            .attr("fill", readableOn(color))
+            .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
+            .text(codeIso);
+          gLabels.append("text")
             .attr("class","leaf-label")
-            .attr("x", sqX - PAD).attr("y", cy)
+            .attr("x", tagX0 - TAG_GAP_TXT).attr("y", cy)
             .attr("text-anchor","end").attr("dominant-baseline","middle")
-            .text(text);
+            .attr("fill","#000")
+            .attr("style",`font-size:${LABEL_FS}px;`)
+            .text(label);
         } else {
-          const sqX = b.x1 + PAD;
-          const sqY = cy - SW/2;
+          const tagX0 = regionOuterX + TAG_GAP_REG;
+          const tagX1 = tagX0 + tagW;
+          const tagY0 = cy - TAG_H/2;
           gLabels.append("rect").attr("class","swatch")
-            .attr("x", sqX).attr("y", sqY).attr("width", SW).attr("height", SW)
+            .attr("x", tagX0).attr("y", tagY0)
+            .attr("width", tagW).attr("height", TAG_H)
             .attr("fill", color);
           gLabels.append("text")
+            .attr("class","leaf-tag-text")
+            .attr("x", (tagX0 + tagX1)/2).attr("y", cy)
+            .attr("text-anchor","middle").attr("dominant-baseline","middle")
+            .attr("fill", readableOn(color))
+            .attr("style",`font-size:${TAG_FS}px; font-weight:600;`)
+            .text(codeIso);
+          gLabels.append("text")
             .attr("class","leaf-label")
-            .attr("x", sqX + SW + PAD).attr("y", cy)
+            .attr("x", tagX1 + TAG_GAP_TXT).attr("y", cy)
             .attr("text-anchor","start").attr("dominant-baseline","middle")
-            .text(text);
+            .attr("fill","#000")
+            .attr("style",`font-size:${LABEL_FS}px;`)
+            .text(label);
         }
       }
     }
@@ -662,7 +714,12 @@ function draw(flows, level){
     const FS = 15;
     const y0 = 30, lineH = 22;
     function multi(cx, third){
-      drawUnderlinedHeader(gHead, cx, y0,        "Where ", "iTaukei", "", FS);
+      // Header with "iTaukei" (no underline).
+      gHead.append("text").attr("class","col-header-line")
+        .attr("x", cx).attr("y", y0)
+        .attr("text-anchor","middle")
+        .attr("style", `font-size:${FS}px;`)
+        .text("Where iTaukei");
       gHead.append("text").attr("class","col-header-line")
         .attr("x", cx).attr("y", y0 + lineH)
         .attr("text-anchor","middle")
@@ -695,13 +752,21 @@ function draw(flows, level){
 }
 
 // Choose black/white text for readability on a filled block.
+// Stricter threshold — only truly dark fills flip to white so mid-tones
+// like AUS orange, NZL pink, and JPN gold stay black-text.
 function readableOn(hexColor){
   if(!hexColor) return "#000";
   const c = d3.color(hexColor);
   if(!c) return "#000";
   const {r,g,b} = c.rgb();
   const l = (0.299*r + 0.587*g + 0.114*b) / 255;
-  return l > 0.6 ? "#000" : "#fff";
+  return l < 0.5 ? "#fff" : "#000";
+}
+
+// Rough pixel width for a text string in the default UI font at the given size.
+// Used to decide whether a rotated label will fit inside a block.
+function approxTextWidth(text, fontSize){
+  return (text || "").length * fontSize * 0.55;
 }
 
 /* ------------------------- upload / render pipeline ------------------- */
@@ -768,16 +833,44 @@ function readExcelAsCsv(file){
 function readFile(file){ return isExcel(file) ? readExcelAsCsv(file) : readTextFile(file); }
 
 let lastMobilityText = null;
+// Persistence keys for the last uploaded datasets. On page load, whichever
+// was last used is restored; the Reset button clears both.
+const LS_MOBILITY_KEY  = "vavelab:alluvial:mobility";
+const LS_MOBILITY_NAME = "vavelab:alluvial:mobility:name";
+const LS_UNSD_KEY      = "vavelab:alluvial:unsd";
+const LS_UNSD_NAME     = "vavelab:alluvial:unsd:name";
+function lsGet(key){ try { return localStorage.getItem(key); } catch(_){ return null; } }
+function lsSet(key, val){ try { localStorage.setItem(key, val); } catch(_){} }
+function lsDel(key){ try { localStorage.removeItem(key); } catch(_){} }
+
 async function init(){
+  const savedMob      = lsGet(LS_MOBILITY_KEY);
+  const savedMobName  = lsGet(LS_MOBILITY_NAME) || "";
+  const savedUnsd     = lsGet(LS_UNSD_KEY);
+  const savedUnsdName = lsGet(LS_UNSD_NAME) || "";
   try{
-    const [mob, unsd] = await Promise.all([
-      fetch("itaukei-chord-data/mobility.csv").then(r => { if(!r.ok) throw 0; return r.text(); }),
-      fetch("itaukei-chord-data/unsd.csv").then(r => { if(!r.ok) throw 0; return r.text(); })
-    ]);
-    currentUnsd = unsdMapFromCsv(unsd);
-    currentIso3 = Object.assign({}, EMBEDDED_ISO3, iso3MapFromCsv(unsd));
-    lastMobilityText = mob;
-    renderFromMobility(mob, "Default data");
+    let unsdText = savedUnsd;
+    if(!unsdText){
+      unsdText = await fetch("itaukei-chord-data/unsd.csv").then(r => { if(!r.ok) throw 0; return r.text(); });
+    }
+    currentUnsd = unsdMapFromCsv(unsdText);
+    currentIso3 = Object.assign({}, EMBEDDED_ISO3, iso3MapFromCsv(unsdText));
+    if(savedUnsd && savedUnsdName){
+      const el = document.getElementById("file-unsd");
+      if(el){ el.textContent = savedUnsdName; document.getElementById("dz-unsd").classList.add("is-loaded"); }
+    }
+
+    let mobText = savedMob;
+    let mobLabel = savedMobName || "Previously uploaded CSV";
+    if(!mobText){
+      mobText = await fetch("itaukei-chord-data/mobility.csv").then(r => { if(!r.ok) throw 0; return r.text(); });
+      mobLabel = "Default data";
+    } else {
+      const el = document.getElementById("file-mobility");
+      if(el){ el.textContent = savedMobName; document.getElementById("dz-mobility").classList.add("is-loaded"); }
+    }
+    lastMobilityText = mobText;
+    renderFromMobility(mobText, mobLabel);
   } catch(e){
     setMsg("Could not load default data — upload a CSV to render the chart.", "error");
   }
@@ -817,7 +910,11 @@ function wireDropzone(zoneId, inputId, fileLabelId, onFile){
 
 wireDropzone("dz-mobility","input-mobility","file-mobility", (text, name)=>{
   const ok = renderFromMobility(text, name);
-  if(ok) lastMobilityText = text;
+  if(ok){
+    lastMobilityText = text;
+    lsSet(LS_MOBILITY_KEY, text);
+    lsSet(LS_MOBILITY_NAME, name || "Uploaded CSV");
+  }
   return ok;
 });
 
@@ -827,6 +924,8 @@ wireDropzone("dz-unsd","input-unsd","file-unsd", (text, name)=>{
   currentUnsd = map;
   const iso = iso3MapFromCsv(text);
   if(Object.keys(iso).length) currentIso3 = Object.assign({}, EMBEDDED_ISO3, iso);
+  lsSet(LS_UNSD_KEY, text);
+  lsSet(LS_UNSD_NAME, name || "Uploaded UNSD CSV");
   if(lastMobilityText){ renderFromMobility(lastMobilityText, "Uploaded CSV"); }
   setMsg("Region reference updated from "+name+" ("+Object.keys(map).length+" countries).", "ok");
   return true;
@@ -842,6 +941,9 @@ document.getElementById("btn-reset").addEventListener("click", ()=>{
   document.getElementById("dz-unsd").classList.remove("is-loaded");
   currentUnsd = Object.assign({}, EMBEDDED_UNSD);
   currentIso3 = Object.assign({}, EMBEDDED_ISO3);
+  // Wipe persisted uploads so a page reload also shows the shipped default.
+  lsDel(LS_MOBILITY_KEY); lsDel(LS_MOBILITY_NAME);
+  lsDel(LS_UNSD_KEY);     lsDel(LS_UNSD_NAME);
   setMsg("Reset to the default dataset.", "ok");
   init();
 });
