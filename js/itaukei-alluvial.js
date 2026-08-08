@@ -432,7 +432,9 @@ function makeGeom(level){
   const midW     = midEnd - midStart;         // width available for the ribbon area
 
   // Column gap between consecutive block bars on the same side.
-  const COL_GAP = 12;
+  // Tight gap (Ron's preferred spacing): Region and Country columns sit
+  // close together on both sides, at every level.
+  const COL_GAP = 4;
 
   function blockX(side, colIdx, colCount, lvl){
     // Left side, colIdx 0 = outermost (region), then country, then uni.
