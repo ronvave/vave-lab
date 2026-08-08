@@ -16,6 +16,28 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     /* ==== Alluvial canvas ==== */
+    /* ==== Fullscreen expand for the chart wrap ==== */
+    #alluvial-wrap{ position:relative; }
+    #alluvial-expand{
+      position:absolute; top:8px; right:8px; z-index:10;
+      appearance:none; background:rgba(255,255,255,0.9); color:#28251D;
+      border:1px solid #D4D1CA; border-radius:6px;
+      padding:5px 10px; font-family:var(--font-body); font-size:12px; font-weight:600;
+      cursor:pointer; line-height:1; letter-spacing:.01em;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    }
+    #alluvial-expand:hover{ background:#fff; border-color:#01696F; color:#01696F; }
+    body.alluvial-fs-on{ overflow:hidden; }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen{
+      position:fixed; inset:0; z-index:9999;
+      background:#ffffff; padding:24px 28px 16px;
+      overflow:auto; margin:0;
+    }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen #alluvial-chart{
+      width:100%; height:calc(100vh - 200px);
+    }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen .dl-panel{ display:none; }
+
     .alluvial-canvas{
       background:#ffffff;
       border:1px solid var(--color-border);
@@ -143,7 +165,15 @@
       box-shadow:0 6px 22px rgba(0,0,0,0.28); transition:opacity .12s ease;
     }
     #alluvial-tip .tip-path{ font-weight:700; margin-bottom:3px; }
-    #alluvial-tip .tip-count{ color:#9fb4c9; font-size:11px; text-transform:uppercase; letter-spacing:.04em; }
+    #alluvial-tip .tip-count{ color:#9fb4c9; font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+    #alluvial-tip ul{ margin:0; padding:0; list-style:none; }
+    #alluvial-tip li{ margin:5px 0; }
+    #alluvial-tip li + li{ border-top:1px solid rgba(255,255,255,0.12); padding-top:5px; }
+    #alluvial-tip .tip-name{ font-weight:600; }
+    #alluvial-tip .tip-year{ color:#9fb4c9; }
+    #alluvial-tip .tip-title{ color:#d7dee6; font-style:italic; display:block; margin-top:1px; }
+    #alluvial-tip .tip-more{ color:#9fb4c9; font-size:11px; margin-top:6px; }
+    path.ribbon.dim{ opacity:0.15 !important; }
 
     /* ==== Embedded mode (?embedded=1 or in iframe) ==== */
     body.is-embedded .site-header,
@@ -293,8 +323,10 @@
 
     <div class="alluvial-canvas reveal">
       <div id="alluvial-wrap">
+        <button id="alluvial-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
         <svg id="alluvial-chart" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg>
         <div class="alluvial-caption" id="alluvial-cap">Source: iTaukei Research Database.</div>
+        <div class="alluvial-caption" id="alluvial-generated"></div>
         <div id="alluvial-status"></div>
 
         <div class="dl-panel" aria-label="Download chart as image">
@@ -367,7 +399,7 @@
   </div>
 </footer>
 
-<script src="js/itaukei-alluvial.js?v=e5180b03"></script>
+<script src="js/itaukei-alluvial.js?v=27c4f4e9"></script>
 <script src="js/main.js?v=2cf4b3f9"></script>
 </body>
 </html>

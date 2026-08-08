@@ -72,12 +72,26 @@ function rowsFromCsv(csvText){
     const m_country = (d.m_country || "").trim();
     const p_country = (d.p_country || "").trim();
     if(!m_uni || !p_uni || !m_country || !p_country) return null;
+    // Build a scholar display name. Prefer explicit "scholar" column; else
+    // fall back to "last, first" if those columns exist.
+    let scholar = (d.scholar || d.Scholar || "").trim();
+    if(!scholar){
+      const last  = (d.last  || d.Last  || "").trim();
+      const first = (d.first || d.First || "").trim();
+      if(last && first) scholar = last + ", " + first;
+      else if(last)     scholar = last;
+      else if(first)    scholar = first;
+    }
     return {
       m_uni, m_country,
       m_region: (d.m_region || "").trim() || null,
       p_uni, p_country,
       p_region: (d.p_region || "").trim() || null,
-      scholar:  (d.scholar || d.Scholar || "").trim() || null
+      scholar:  scholar || null,
+      m_year:   (d.m_year   || "").toString().trim() || null,
+      p_year:   (d.p_year   || "").toString().trim() || null,
+      m_title:  (d.m_title  || "").trim() || null,
+      p_title:  (d.p_title  || "").trim() || null
     };
   });
 }
@@ -130,7 +144,9 @@ function normaliseRegion(r){
 }
 
 function buildFlows(rows){
-  // Turn each scholar into one flow with count 1 (aggregated later).
+  // Turn each scholar into one flow with count 1 (aggregated later). We carry
+  // through the scholar name, years, and thesis titles so the ribbon tooltip
+  // can list every scholar that flows through a given pair.
   const flows = [];
   for(const r of rows){
     flows.push({
@@ -139,10 +155,19 @@ function buildFlows(rows){
       m_uni:     r.m_uni,
       p_region:  resolveRegion(r, "p"),
       p_country: r.p_country,
-      p_uni:     r.p_uni
+      p_uni:     r.p_uni,
+      scholar:   r.scholar || null,
+      m_year:    r.m_year  || null,
+      p_year:    r.p_year  || null,
+      m_title:   r.m_title || null,
+      p_title:   r.p_title || null
     });
   }
   return flows;
+}
+
+function escapeHtmlA(s){
+  return String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 }
 
 function iso3(country){
@@ -314,8 +339,21 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
   const grouped = new Map();
   for(const f of flows){
     const k = key(f);
-    if(!grouped.has(k)) grouped.set(k, { ...f, count:0 });
-    grouped.get(k).count++;
+    if(!grouped.has(k)) grouped.set(k, { ...f, count:0, flows: [] });
+    const g = grouped.get(k);
+    g.count++;
+    // Keep the raw per-scholar record so the hover tooltip can list them.
+    g.flows.push({
+      scholar: f.scholar,
+      m_year:  f.m_year,
+      p_year:  f.p_year,
+      m_title: f.m_title,
+      p_title: f.p_title,
+      m_uni:   f._orig_m_uni     || f.m_uni,
+      p_uni:   f._orig_p_uni     || f.p_uni,
+      m_country: f._orig_m_country || f.m_country,
+      p_country: f._orig_p_country || f.p_country
+    });
   }
   const flowList = [...grouped.values()];
 
@@ -378,7 +416,7 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
 // return the x0/x1 of each column's block bar in the 1600x900 viewport.
 function makeGeom(level){
   const VIEW_W = 1600, VIEW_H = 900;
-  const plotTop = level === 3 ? 130 : 110;   // leave room for headers
+  const plotTop = 130;                      // room for 3-line headers on all levels
   const plotBottom = VIEW_H - 40;
   const BAR_W = 24;                          // block bar width in px
   // Halved gaps vs. prior (in pixel units for the 900px-tall canvas)
@@ -488,6 +526,12 @@ function draw(flows, level){
   // matches the leaf. We synthesize m_uni/p_uni to fit.
   const flowsForLayout = flows.map(f => ({
     ...f,
+    // Preserve the underlying per-scholar values so the hover tooltip can
+    // still name the exact institutions even at aggregated levels.
+    _orig_m_uni: f.m_uni,
+    _orig_p_uni: f.p_uni,
+    _orig_m_country: f.m_country,
+    _orig_p_country: f.p_country,
     m_uni: level === 3 ? f.m_uni : (level === 2 ? f.m_country : f.m_region),
     p_uni: level === 3 ? f.p_uni : (level === 2 ? f.p_country : f.p_region),
     m_country: level === 1 ? f.m_region : f.m_country,
@@ -500,13 +544,52 @@ function draw(flows, level){
   // ---- draw ribbons FIRST (behind blocks) ----
   const gRibbons = svg.append("g").attr("class","ribbons");
   const tooltip = document.getElementById("alluvial-tip");
+  // Chord-style tooltip positioning: keep it centered above the cursor and
+  // flip below when near the top edge.
+  function moveTip(ev){
+    const r = tooltip.getBoundingClientRect();
+    const w = r.width, h = r.height, pad = 14;
+    let x = ev.clientX, y = ev.clientY - pad;
+    x = Math.max(w/2 + 6, Math.min(x, window.innerWidth - w/2 - 6));
+    if(y - h < 6) y = ev.clientY + pad + h;
+    tooltip.style.left = x + "px";
+    tooltip.style.top  = y + "px";
+  }
   function showTip(evt, html){
     tooltip.innerHTML = html;
-    tooltip.style.left = evt.clientX + "px";
-    tooltip.style.top  = (evt.clientY - 12) + "px";
     tooltip.style.opacity = "1";
+    moveTip(evt);
   }
   function hideTip(){ tooltip.style.opacity = "0"; }
+
+  // Build tooltip HTML for one ribbon (may bundle several scholars).
+  function tipForFlow(f){
+    const arrow = " \u2192 ";
+    let label;
+    if(level === 3){
+      label = `${iso3(f._orig_m_country||f.m_country)}: ${f._orig_m_uni||f.m_uni}${arrow}${iso3(f._orig_p_country||f.p_country)}: ${f._orig_p_uni||f.p_uni}`;
+    } else if(level === 2){
+      label = `${f.m_country}${arrow}${f.p_country}`;
+    } else {
+      label = `${f.m_region}${arrow}${f.p_region}`;
+    }
+    const head  = '<div class="tip-path">' + escapeHtmlA(label) + '</div>';
+    const count = '<div class="tip-count">' + f.count + ' scholar' + (f.count===1?"":"s") + '</div>';
+    const rows  = (f.flows || []).slice();
+    // Sort scholars alphabetically for a stable list.
+    rows.sort((a,b) => (a.scholar||"").localeCompare(b.scholar||""));
+    const SHOW = 8;
+    const items = rows.slice(0, SHOW).map(s => {
+      const name = escapeHtmlA(s.scholar || "(unnamed)");
+      const yrs  = [s.m_year, s.p_year].filter(Boolean).join(arrow);
+      const yr   = yrs ? ' <span class="tip-year">('+escapeHtmlA(yrs)+')</span>' : "";
+      const title = s.p_title || s.m_title;
+      const t = title ? '<span class="tip-title">'+escapeHtmlA(title)+'</span>' : "";
+      return '<li><span class="tip-name">'+name+'</span>'+yr+t+'</li>';
+    }).join("");
+    const more = rows.length > SHOW ? '<div class="tip-more">+ '+(rows.length-SHOW)+' more</div>' : "";
+    return head + count + '<ul>' + items + '</ul>' + more;
+  }
 
   // Determine x anchors: right edge of the innermost left col, left edge of
   // innermost right col.
@@ -526,14 +609,12 @@ function draw(flows, level){
       .attr("fill", color)
       .attr("fill-opacity", 0.55)
       .attr("stroke","none")
-      .on("mousemove", (e) => {
-        const label = level === 3
-          ? `${iso3(f.m_country)}: ${f.m_uni} \u2192 ${iso3(f.p_country)}: ${f.p_uni}`
-          : (level === 2 ? `${f.m_country} \u2192 ${f.p_country}` : `${f.m_region} \u2192 ${f.p_region}`);
-        showTip(e, `<div class="tip-path">${label}</div><div class="tip-count">${f.count} scholar${f.count>1?"s":""}</div>`);
+      .on("mouseover", (e) => {
+        showTip(e, tipForFlow(f));
         gRibbons.selectAll("path.ribbon").classed("dim", true);
         d3.select(e.currentTarget).classed("dim", false);
       })
+      .on("mousemove", moveTip)
       .on("mouseleave", () => {
         hideTip();
         gRibbons.selectAll("path.ribbon").classed("dim", false);
@@ -703,18 +784,16 @@ function draw(flows, level){
     drawLeafLabels("p", right);
   }
 
-  // ---- column headers ----
+  // ---- column headers (identical wording at every level) ----
   const gHead = svg.append("g").attr("class","headers");
-  if(level === 3){
-    // Multi-line: "Where iTaukei / scholars did / their Masters" (or PhD)
-    const cols = left.cols;
-    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
+  {
+    const cols  = left.cols;
     const rcols = right.cols;
+    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
     const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
     const FS = 15;
     const y0 = 30, lineH = 22;
     function multi(cx, third){
-      // Header with "iTaukei" (no underline).
       gHead.append("text").attr("class","col-header-line")
         .attr("x", cx).attr("y", y0)
         .attr("text-anchor","middle")
@@ -733,21 +812,6 @@ function draw(flows, level){
     }
     multi(centerLeft,  "their Master\u2019s");
     multi(centerRight, "their PhD");
-  } else {
-    const cols = left.cols;
-    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
-    const rcols = right.cols;
-    const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
-    gHead.append("text").attr("class","col-header col-header-line")
-      .attr("x", centerLeft).attr("y", 60)
-      .attr("text-anchor","middle")
-      .attr("style","font-size:18px; font-weight:600;")
-      .text("Master\u2019s — flow from");
-    gHead.append("text").attr("class","col-header col-header-line")
-      .attr("x", centerRight).attr("y", 60)
-      .attr("text-anchor","middle")
-      .attr("style","font-size:18px; font-weight:600;")
-      .text("PhD — flow to");
   }
 }
 
@@ -788,6 +852,7 @@ function renderFromMobility(csvText, label){
   if(!rows.length){ setMsg("That file has no usable rows (need m_uni, m_country, p_uni, p_country).", "error"); return false; }
   currentFlows = buildFlows(rows);
   draw(currentFlows, currentLevel);
+  if(typeof refreshGeneratedStamp === "function") refreshGeneratedStamp();
   statusEl.textContent = (label||"Uploaded CSV")+": "+currentFlows.length+" scholars.";
   setMsg("Chart updated from "+(label||"your CSV")+" ("+currentFlows.length+" scholars).", "ok");
   return true;
@@ -968,7 +1033,7 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
     if(!lvl || lvl === currentLevel) return;
     currentLevel = lvl;
     document.querySelectorAll(".level-toggle button").forEach(b => b.classList.toggle("is-active", b === btn));
-    if(currentFlows) draw(currentFlows, currentLevel);
+    if(currentFlows) { draw(currentFlows, currentLevel); if(typeof refreshGeneratedStamp === "function") refreshGeneratedStamp(); }
   });
 });
 
@@ -1024,15 +1089,28 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
       const chart=document.getElementById("alluvial-chart");
       const c=await svgToImage(chart,o.pxW,o.pxH);
       const canvas=document.createElement("canvas");
-      canvas.width=o.pxW; canvas.height=o.pxH;
+      // Add a footer strip so "Source ..." + "Generated ..." appear inside the PNG.
+      const footerH = Math.max(48, Math.round(o.pxH * 0.05));
+      canvas.width=o.pxW; canvas.height=o.pxH + footerH;
       const ctx=canvas.getContext("2d");
-      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,o.pxW,o.pxH);
+      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.drawImage(c.img,0,0,o.pxW,o.pxH);
       URL.revokeObjectURL(c.url);
+      // Footer text: Source + generated timestamp (Hawaii long form).
+      const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
+      const fs1 = Math.max(11, Math.round(footerH * 0.30));
+      const fs2 = Math.max(10, Math.round(footerH * 0.24));
+      ctx.fillStyle = "#8a93a0";
+      ctx.font = fs1+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      ctx.fillText("Source: iTaukei Research Database.", o.pxW/2, o.pxH + Math.round(footerH*0.15));
+      ctx.font = fs2+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
+      ctx.fillText("Generated "+stamp.longText, o.pxW/2, o.pxH + Math.round(footerH*0.55));
       canvas.toBlob((blob)=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement("a");
-        a.href=url; a.download="itaukei-alluvial_level"+currentLevel+"_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
+        a.href=url;
+        a.download="itaukei-alluvial_level"+currentLevel+"_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi_"+stamp.fileSuffix+".png";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1500);
         btn.textContent=label; btn.disabled=false;
@@ -1046,4 +1124,55 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
   btn.addEventListener("click", download);
 })();
 
+/* ---------- Generated-at timestamp (Hawaii) ---------- */
+function nowHawaiiTimestamp(){
+  const MONTHS_SHORT = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const partsFrom = (opts) => Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", Object.assign({ timeZone: "Pacific/Honolulu" }, opts))
+      .formatToParts(new Date()).map(p => [p.type, p.value])
+  );
+  const numeric = partsFrom({ year:"numeric", month:"numeric", day:"numeric", hour:"numeric", minute:"2-digit", hour12:true });
+  const day    = parseInt(numeric.day, 10);
+  const month  = parseInt(numeric.month, 10);
+  const year   = numeric.year;
+  const hour   = parseInt(numeric.hour, 10);
+  const minute = numeric.minute;
+  const ampm   = (numeric.dayPeriod || "am").toLowerCase();
+  const fileSuffix = day + MONTHS_SHORT[month-1] + year + "_" + hour + minute + ampm;
+  // Long-form for the on-page caption + PNG footer.
+  const longText = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Pacific/Honolulu",
+    weekday: "long", year: "numeric", month: "long", day: "numeric",
+    hour: "numeric", minute: "2-digit", hour12: true, timeZoneName: "short"
+  }).format(new Date());
+  return { fileSuffix, longText };
+}
+function refreshGeneratedStamp(){
+  const stamp = nowHawaiiTimestamp();
+  window.__alluvialTimestamp = stamp;
+  const el = document.getElementById("alluvial-generated");
+  if(el) el.textContent = "Generated "+stamp.longText;
+}
+
+/* ---------- Fullscreen expand/collapse ---------- */
+(function initFullscreen(){
+  const btn  = document.getElementById("alluvial-expand");
+  const wrap = document.getElementById("alluvial-wrap");
+  if(!btn || !wrap) return;
+  function setFs(on){
+    document.body.classList.toggle("alluvial-fs-on", on);
+    wrap.classList.toggle("is-fullscreen", on);
+    btn.textContent = on ? "Close \u2715" : "Expand \u21f1";
+    btn.setAttribute("aria-label", on ? "Close fullscreen chart" : "Expand chart to fullscreen");
+  }
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setFs(!wrap.classList.contains("is-fullscreen"));
+  });
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && wrap.classList.contains("is-fullscreen")) setFs(false);
+  });
+})();
+
+refreshGeneratedStamp();
 init();
