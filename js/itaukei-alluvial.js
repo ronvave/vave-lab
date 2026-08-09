@@ -940,16 +940,33 @@ function draw(flows, level){
   if(typeof window.__alluvialSyncExportSize === "function") window.__alluvialSyncExportSize();
 }
 
-// Choose black/white text for readability on a filled block.
-// Stricter threshold — only truly dark fills flip to white so mid-tones
-// like AUS orange, NZL pink, and JPN gold stay black-text.
+// Uses the WCAG 2.x relative-luminance formula (sRGB gamma-decoded, then
+// weighted 0.2126 R / 0.7152 G / 0.0722 B) and picks whichever of black or
+// white gives more contrast against the fill. The simple YIQ average this
+// used to run leaned on green far too heavily, so muted mid-tone reds/blues
+// like "#8B2E3F" (Americas / USA), "#2C6DA8" (Europe / UK) and "#7B4F8A"
+// (Malta), plus warm oranges like "#DA7101" (Australia), came back as
+// "light" and got black text — which then reads poorly on those dark fills.
 function readableOn(hexColor){
   if(!hexColor) return "#000";
   const c = d3.color(hexColor);
   if(!c) return "#000";
   const {r,g,b} = c.rgb();
-  const l = (0.299*r + 0.587*g + 0.114*b) / 255;
-  return l < 0.5 ? "#fff" : "#000";
+  const chan = (v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? (s / 12.92) : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  const L = 0.2126*chan(r) + 0.7152*chan(g) + 0.0722*chan(b);
+  // WCAG contrast ratios against pure white (L=1) and pure black (L=0):
+  //   white: (1 + 0.05) / (L + 0.05)
+  //   black: (L + 0.05) / (0 + 0.05)
+  // We bias toward white so mid-tone chromatic fills like Germany’s
+  // "#5591C7" (mid blue) flip to white text — those read as “dark” to the
+  // eye even though the math is close to even. Black is chosen only when it
+  // wins by a comfortable margin (roughly, WCAG lightness above ~0.55).
+  const contrastWhite = 1.05 / (L + 0.05);
+  const contrastBlack = (L + 0.05) / 0.05;
+  return contrastBlack > 2.0 * contrastWhite ? "#000" : "#fff";
 }
 
 // Rough pixel width for a text string in the default UI font at the given size.

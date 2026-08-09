@@ -61,8 +61,11 @@
     .alluvial-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
     @media (min-width:1720px){ .alluvial-scroll-hint{ display:none; } }
 
-    /* Column headers, leaf & block labels — always black per Ron's rule (no small grey text) */
-    .col-header, .col-header-line, .block-label, .leaf-label{ fill:#000; }
+    /* Column headers + leaf labels are always black (labels sit on the white
+       page background). Block-labels are NOT pinned here — they need their
+       own inline fill (black or white) chosen for contrast against the
+       block's fill colour, see readableOn() in itaukei-alluvial.js. */
+    .col-header, .col-header-line, .leaf-label{ fill:#000; }
     .col-header-line{ font-family:var(--font-body); font-size:16px; font-weight:400; }
     .block-label{ font-family:var(--font-body); font-weight:700; }
     .leaf-label{ font-family:var(--font-body); font-size:12px; font-weight:400; }
