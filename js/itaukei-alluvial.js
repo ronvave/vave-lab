@@ -876,7 +876,7 @@ function draw(flows, level){
     const leftBlockX  = 140;
     const rightBlockX = 1460;
     const titleFS = 20;
-    const statFS  = 14;
+    const statFS  = 17;
     const y1 = 30; // main header baseline
     const y2 = 55; // stat line baseline
 
@@ -1233,22 +1233,16 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
       const chart=document.getElementById("alluvial-chart");
       const c=await svgToImage(chart,o.pxW,o.pxH);
       const canvas=document.createElement("canvas");
-      // Slim footer strip so only the "Generated ..." timestamp appears
-      // just below the chart. The Source line is dropped so the alluvial
-      // plot itself gets more vertical room in every exported PNG.
-      const footerH = Math.max(28, Math.round(o.pxH * 0.025));
-      canvas.width=o.pxW; canvas.height=o.pxH + footerH;
+      // No footer strip: the alluvial plot fills the entire exported canvas.
+      // Source + Generated captions were removed to give the ribbons and
+      // university labels as much vertical room as possible; the export
+      // filename already carries the timestamp.
+      const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
+      canvas.width=o.pxW; canvas.height=o.pxH;
       const ctx=canvas.getContext("2d");
       ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.drawImage(c.img,0,0,o.pxW,o.pxH);
       URL.revokeObjectURL(c.url);
-      // Footer text: generated timestamp only (Hawaii long form).
-      const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
-      const fs2 = Math.max(10, Math.round(footerH * 0.42));
-      ctx.fillStyle = "#8a93a0";
-      ctx.textAlign = "center"; ctx.textBaseline = "top";
-      ctx.font = fs2+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
-      ctx.fillText("Generated "+stamp.longText, o.pxW/2, o.pxH + Math.round(footerH*0.20));
       canvas.toBlob((blob)=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement("a");
