@@ -54,6 +54,24 @@
     body.chord-fs-on #wrap.is-fullscreen .dl-panel{ display:none; }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
+    /* ==== Level toggle (segmented control) — mirrors alluvial's control */
+    .chord-level-wrap{ display:flex; justify-content:center; padding:8px 0 6px; }
+    .level-toggle{
+      display:inline-flex; background:#F9F8F5;
+      border:1px solid #D4D1CA; border-radius:9999px;
+      padding:3px; gap:2px;
+    }
+    .level-toggle button{
+      font:inherit; font-size:13px; font-weight:600;
+      color:#7A7974;
+      background:transparent; border:none; padding:6px 14px;
+      border-radius:9999px; cursor:pointer;
+      transition:background .15s ease, color .15s ease;
+    }
+    .level-toggle button:hover{ color:#28251D; }
+    .level-toggle button.is-active{
+      background:#01696F; color:#fff;
+    }
     /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
        presentation attribute we set per-element with idealText(), which would
        force every number/label to one colour. Leaving fill unset lets each
@@ -317,6 +335,14 @@
       </p>
     </div>
 
+    <div class="chord-level-wrap">
+      <div class="level-toggle" role="tablist" aria-label="Diagram detail level">
+        <button type="button" data-level="1" role="tab">Region</button>
+        <button type="button" data-level="2" role="tab">Region + Country</button>
+        <button type="button" data-level="3" role="tab" class="is-active" aria-selected="true">Region + Country + University</button>
+      </div>
+    </div>
+
     <div class="chord-canvas reveal">
       <div id="wrap">
         <button id="chord-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
@@ -508,6 +534,62 @@ function buildModel(rows, unsdMap){
   return {flows, unis, num, uni_list};
 }
 
+// Aggregate a level-3 model down to country (level 2) or region (level 1). Each
+// level renders a different chord: arcs collapse from universities to countries
+// or regions and every flow is remapped to the coarser endpoint. Tooltip fields
+// on the flows are preserved so ribbon hovers still name individual scholars.
+function aggregateModel(base, level){
+  if(level === 3 || !base) return base;
+  const keyFor = (uniShort) => {
+    const meta = base.unis[uniShort];
+    if(!meta) return "Other";
+    if(level === 2) return (meta.country || "").trim() || "Other";
+    return (meta.region || "").trim() || "Other";
+  };
+  const seen = new Map();
+  base.uni_list.forEach(it => {
+    const k = level === 2 ? (it.country || "").trim() : (it.region || "").trim();
+    if(!k || seen.has(k)) return;
+    seen.set(k, {country: k, region: it.region || "Other", full: k});
+  });
+  const items = Array.from(seen.entries()).map(([k, m]) => ({uni:k, country:m.country, region:m.region, full:m.full}));
+  items.sort((a,b)=>{
+    const ra=regionOrder.indexOf(a.region), rb=regionOrder.indexOf(b.region);
+    if(ra!==rb) return (ra<0?99:ra)-(rb<0?99:rb);
+    if(level === 2 && a.country!==b.country) return a.country<b.country?-1:1;
+    return a.uni<b.uni?-1:1;
+  });
+  const uni_list = items.map((it,i)=>({n:i+1, uni:it.uni, country:it.country, region:it.region, full:it.full}));
+  const num = {}; uni_list.forEach(it => num[it.uni] = it.n);
+  const unis = {};
+  uni_list.forEach(it => { unis[it.uni] = {country:it.country, region:it.region, full:it.full}; });
+  const flows = base.flows.map(f => {
+    const s = keyFor(f.source);
+    const t = keyFor(f.target);
+    return Object.assign({}, f, {source:s, target:t});
+  }).filter(f => f.source && f.target);
+  let fi = 0;
+  uni_list.forEach(it => {
+    if(level === 1){
+      if(!countryColor[it.uni]) countryColor[it.uni] = regionColor[it.uni] || FALLBACK_CCOLORS[fi++ % FALLBACK_CCOLORS.length];
+    } else {
+      if(!countryColor[it.uni]) countryColor[it.uni] = FALLBACK_CCOLORS[fi++ % FALLBACK_CCOLORS.length];
+    }
+  });
+  return {flows, unis, num, uni_list};
+}
+
+// Level state + wrapper that re-renders on toggle. Default = 3 (matches
+// alluvial). Stores the level-3 model so switching levels doesn't require
+// re-parsing the CSV.
+let currentLevel = 3;
+let currentBaseModel = null;
+function drawAtLevel(baseModel){
+  if(baseModel) currentBaseModel = baseModel;
+  if(!currentBaseModel) return;
+  draw(aggregateModel(currentBaseModel, currentLevel), currentLevel);
+}
+
 /* ---- 3b. TOOLTIP helpers (ribbon hover uses the extra CSV columns) --------- */
 const tipEl = document.getElementById("chord-tip");
 function escapeHtml(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
@@ -540,7 +622,8 @@ function tipForPair(srcFull, tgtFull, flows){
 }
 
 /* ---- 4. DRAW --------------------------------------------------------------- */
-function draw(data){
+function draw(data, level){
+  level = level || 3; // default so callers without the arg still work
   d3.select("#chart").selectAll("*").remove();
   d3.select("#legend").selectAll("*").remove();
   // The Source / Generated / filename lines are set by updateChordSource()
@@ -591,16 +674,21 @@ function draw(data){
     .on("mousemove",moveTip)
     .on("mouseout",function(){ ribbonSel.classed("dim",false); hideTip(); });
 
-  // university numbered arcs (innermost ring)
-  const uArc=d3.arc().innerRadius(uInner).outerRadius(uOuter);
+  // Numbered arcs live on the innermost ring at level 3 (universities), on the
+  // country ring at level 2 (countries), and on the region ring at level 1
+  // (regions). Pick the radii accordingly so we don't render redundant empty
+  // rings for aggregated views.
+  const numInner = level === 3 ? uInner : (level === 2 ? cInner : rInner);
+  const numOuter = level === 3 ? uOuter : (level === 2 ? cOuter : rOuter);
+  const numArc=d3.arc().innerRadius(numInner).outerRadius(numOuter);
   const gu=g.append("g").selectAll("g").data(grp).join("g");
-  gu.append("path").attr("d",uArc)
+  gu.append("path").attr("d",numArc)
     .attr("fill",d=>countryColor[nodes[d.index].country]||"#999")
     .attr("stroke","#fff").attr("stroke-width",1);
   gu.append("text")
     .each(d=>{d.ang=(d.startAngle+d.endAngle)/2;})
     .attr("dy","0.35em")
-    .attr("transform",d=>`rotate(${d.ang*180/Math.PI-90}) translate(${(uInner+uOuter)/2}) rotate(${90-d.ang*180/Math.PI})`)
+    .attr("transform",d=>`rotate(${d.ang*180/Math.PI-90}) translate(${(numInner+numOuter)/2}) rotate(${90-d.ang*180/Math.PI})`)
     .attr("text-anchor","middle").attr("class","unum")
     .attr("fill",d=>idealText(countryColor[nodes[d.index].country]||"#999"))
     .text(d=>nodes[d.index].n);
@@ -635,35 +723,56 @@ function draw(data){
       .attr("text-anchor",flip?"end":"start").text(text);
   }
 
-  // COUNTRY ring (middle)
-  const cArc=d3.arc().innerRadius(cInner).outerRadius(cOuter);
-  const cExt=extents(n=>n.country);
-  Object.entries(cExt).forEach(([c,ext])=>{
-    g.append("path").attr("d",cArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",countryColor[c]||"#888");
-    const span=ext.end-ext.start;
-    const clabel=COUNTRY_LABEL[c]||c;
-    const ctxt=idealText(countryColor[c]||"#888");
-    // Only label arcs wide enough to hold text ON the ring. Narrow arcs are left
-    // unlabelled (identified by the number ring + legend) rather than spilling a
-    // radial label outside the outermost ring, which clipped and read upside-down.
-    if(span>0.28) curvedLabel(g,ext,(cInner+cOuter)/2,clabel,"country-label",ctxt);
-  });
+  // COUNTRY ring (middle) — only shown at level 3, where it groups the
+  // numbered university arcs by country. At level 2 the numbered arcs ARE
+  // countries so this ring would duplicate them.
+  if(level === 3){
+    const cArc=d3.arc().innerRadius(cInner).outerRadius(cOuter);
+    const cExt=extents(n=>n.country);
+    Object.entries(cExt).forEach(([c,ext])=>{
+      g.append("path").attr("d",cArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",countryColor[c]||"#888");
+      const span=ext.end-ext.start;
+      const clabel=COUNTRY_LABEL[c]||c;
+      const ctxt=idealText(countryColor[c]||"#888");
+      // Only label arcs wide enough to hold text ON the ring. Narrow arcs are left
+      // unlabelled (identified by the number ring + legend) rather than spilling a
+      // radial label outside the outermost ring, which clipped and read upside-down.
+      if(span>0.28) curvedLabel(g,ext,(cInner+cOuter)/2,clabel,"country-label",ctxt);
+    });
+  }
 
-  // REGION ring (outer)
-  const rArc=d3.arc().innerRadius(rInner).outerRadius(rOuter);
-  const rExt=extents(n=>n.region);
-  Object.entries(rExt).forEach(([r,ext])=>{
-    g.append("path").attr("d",rArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",regionColor[r]||"#888");
-    const span=ext.end-ext.start;
-    if(span>0.4) curvedLabel(g,ext,(rInner+rOuter)/2,r.toUpperCase(),"region-label");
-    // Narrow region arcs (e.g. ASIA) get no outside-the-ring radial label.
-  });
+  // REGION ring (outer) — only shown at levels 2 and 3. At level 1 the
+  // numbered arcs ARE regions so this ring would duplicate them.
+  if(level >= 2){
+    const rArc=d3.arc().innerRadius(rInner).outerRadius(rOuter);
+    const rExt=extents(n=>n.region);
+    Object.entries(rExt).forEach(([r,ext])=>{
+      g.append("path").attr("d",rArc({startAngle:ext.start+0.004,endAngle:ext.end-0.004})).attr("fill",regionColor[r]||"#888");
+      const span=ext.end-ext.start;
+      if(span>0.4) curvedLabel(g,ext,(rInner+rOuter)/2,r.toUpperCase(),"region-label");
+      // Narrow region arcs (e.g. ASIA) get no outside-the-ring radial label.
+    });
+  }
+
+  // Label used for the legend heading and the on-page chord subtitle. Changes
+  // with the aggregation level so users aren't looking at a "University key"
+  // heading on a region-only chart.
+  const keyHeading = level === 3 ? "University key" : (level === 2 ? "Country key" : "Region key");
+  window.__lastLegendLevel = level;
+  const subEl = document.querySelector(".chord-subtitle");
+  if(subEl){
+    subEl.innerHTML = level === 3
+      ? "Ribbons = scholars\u2019 Master\u2019s\u2192PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country<br>Outer ring = region"
+      : level === 2
+      ? "Ribbons = scholars\u2019 Master\u2019s\u2192PhD moves &nbsp;&middot;&nbsp; Inner ring = country &nbsp;&middot;&nbsp; Outer ring = region"
+      : "Ribbons = scholars\u2019 Master\u2019s\u2192PhD moves &nbsp;&middot;&nbsp; Ring = region";
+  }
 
   // LEGEND (numbered, 4 columns below chart) — auto-scales rows to N unis so
   // 100+ universities still fit without overflow.
   const lg=d3.select("#legend");
   const legG=lg.append("g").attr("transform","translate(0,18)");
-  legG.append("text").attr("x",W/2).attr("y",0).attr("text-anchor","middle").attr("class","legend-title").text("University key");
+  legG.append("text").attr("x",W/2).attr("y",0).attr("text-anchor","middle").attr("class","legend-title").text(keyHeading);
   const cols=4, colW=380, startX=(W-cols*colW)/2+8, rowH=22, topY=28;
   const perCol=Math.ceil(N/cols);
   nodes.forEach((nd,i)=>{
@@ -675,8 +784,11 @@ function draw(data){
       .attr("fill",idealText(countryColor[nd.country]||"#999")).text(nd.n);
     const full=(data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
     const name=full.length>34 ? nd.name : full;
+    // Skip the ISO3 prefix when the display name IS the country (level 2) or
+    // is a region name (level 1) — e.g. no "AUS: Australia" or "OCE: Oceania".
     const iso=iso3Of(nd.country);
-    const disp=(iso?iso+": ":"")+name;   // e.g. "AUS: University of Adelaide"
+    const showIso=(level===3) && iso && (name !== nd.country);
+    const disp=(showIso?iso+": ":"")+name;   // e.g. "AUS: University of Adelaide"
     gg.append("text").attr("x",24).attr("y",-4).attr("dy","0.35em").attr("class","legend-item").text(disp);
   });
 
@@ -746,7 +858,7 @@ function renderMobility(csvText, label){
   const v = validateMobility(csvText);
   if(!v.ok){ setMsg(v.error, "error"); return false; }
   const model = buildModel(v.rows, currentUnsd);
-  draw(model);
+  drawAtLevel(model);
   updateChordSource(model.flows.length, label || "Default data");
   statusEl.textContent = (label||"Uploaded CSV")+": "+model.flows.length+" scholars, "+model.uni_list.length+" universities.";
   setMsg("Chart updated from "+(label||"your CSV")+" ("+model.flows.length+" scholars).", "ok");
@@ -851,7 +963,7 @@ async function init(){
       if(el){ el.textContent = savedMobName; document.getElementById("dz-mobility").classList.add("is-loaded"); }
     }
     const model = buildModel(rowsFromCsv(mobText), currentUnsd);
-    draw(model);
+    drawAtLevel(model);
     updateChordSource(model.flows.length, mobLabel);
     lastMobilityText = mobText;
     statusEl.textContent = mobLabel + " ("+model.flows.length+" scholars, "+model.uni_list.length+" universities). Upload a CSV above to rebuild.";
@@ -1020,7 +1132,9 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
       canvas.toBlob((blob)=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement("a");
-        a.href=url; a.download="itaukei-chord_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
+        // Match the alluvial page's filename convention: itaukei-chord_level<N>_<day><mon><year>_<HHMM><am/pm>.png
+        const stamp = nowHawaiiTimestamp();
+        a.href=url; a.download="itaukei-chord_level"+currentLevel+"_"+stamp.fileSuffix+".png";
         document.body.appendChild(a); a.click(); a.remove();
         setTimeout(()=>URL.revokeObjectURL(url),1500);
         btn.textContent=label; btn.disabled=false;
@@ -1033,6 +1147,35 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
   }
   btn.addEventListener("click", download);
 })();
+
+// Hawaii-local timestamp helper used by the PNG download filename. Mirrors the
+// helper in itaukei-alluvial.js so both charts share the same convention.
+function nowHawaiiTimestamp(){
+  const d = new Date();
+  const opts = {timeZone:"Pacific/Honolulu", year:"numeric", month:"short", day:"numeric", hour:"numeric", minute:"2-digit", hour12:true};
+  const fmt = new Intl.DateTimeFormat("en-US", opts);
+  const parts = fmt.formatToParts(d);
+  const get = (t) => (parts.find(p=>p.type===t)||{}).value || "";
+  const day = get("day"), month = get("month"), year = get("year");
+  const hour = get("hour"), minute = get("minute"), ampm = (get("dayPeriod")||"AM").toLowerCase();
+  return { fileSuffix: `${day}${month}${year}_${hour}${minute}${ampm}` };
+}
+
+// Level-toggle click handler: swaps `.is-active` on the buttons and re-renders
+// the chord at the chosen aggregation level using the cached base model.
+document.querySelectorAll(".level-toggle button[data-level]").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    const newLevel = parseInt(btn.dataset.level, 10);
+    if(!newLevel || newLevel === currentLevel) return;
+    currentLevel = newLevel;
+    document.querySelectorAll(".level-toggle button[data-level]").forEach(b => {
+      const active = parseInt(b.dataset.level, 10) === currentLevel;
+      b.classList.toggle("is-active", active);
+      b.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    drawAtLevel();
+  });
+});
 
 init();
 
