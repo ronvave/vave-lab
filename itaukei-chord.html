@@ -24,7 +24,7 @@
       overflow-x:auto;
       -webkit-overflow-scrolling:touch;
     }
-    #wrap{ width:1160px; margin:0 auto; position:relative; }
+    #wrap{ width:100%; max-width:1240px; margin:0 auto; position:relative; }
     #chart, #legend{ display:block; }
 
     /* ==== Fullscreen expand for the chord wrap ==== */
@@ -45,13 +45,82 @@
       overflow:auto; margin:0;
       display:flex; flex-direction:column; align-items:center;
     }
-    body.chord-fs-on #wrap.is-fullscreen #chart{
-      width:auto; height:calc(100vh - 320px); max-width:100%;
+    body.chord-fs-on #wrap.is-fullscreen .legend-flank{
+      max-width:none; width:100%; height:calc(100vh - 160px);
+      grid-template-rows:auto 1fr auto;
     }
-    body.chord-fs-on #wrap.is-fullscreen #legend{
-      width:100%; max-width:1160px; height:auto;
+    body.chord-fs-on #wrap.is-fullscreen .legend-flank__chart{
+      height:100%;
+    }
+    body.chord-fs-on #wrap.is-fullscreen #chart{
+      width:auto; height:100%; max-width:100%;
     }
     body.chord-fs-on #wrap.is-fullscreen .dl-panel{ display:none; }
+
+    /* ==== Flanked legend layout (mirrors Panel B3 embed) ==== */
+    #legend.legend-flank__hidden { display:none; }
+    .legend-flank {
+      display:grid;
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+      column-gap:12px; row-gap:6px;
+      align-items:center;
+      margin:4px auto 0;
+      max-width:100%;
+    }
+    .legend-flank__title {
+      grid-column:1 / 4; grid-row:1 / 2;
+      text-align:center;
+      font-size:12.5px; font-weight:700; color:#1c2530;
+      padding-top:2px;
+    }
+    .legend-flank__chart {
+      grid-column:2 / 3; grid-row:2 / 3;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .legend-flank__chart #chart { display:block; }
+    .legend-flank__col {
+      display:flex; flex-direction:column; gap:6px;
+      font-size:11.5px; color:#2a2f36;
+      padding:0 4px;
+    }
+    .legend-flank__col--left  { grid-column:1 / 2; grid-row:2 / 3; align-items:flex-end;   text-align:right; }
+    .legend-flank__col--right { grid-column:3 / 4; grid-row:2 / 3; align-items:flex-start; text-align:left;  }
+    .legend-flank__bottom {
+      grid-column:1 / 4; grid-row:3 / 4;
+      display:flex; flex-wrap:wrap; justify-content:center;
+      gap:6px 20px;
+      font-size:11.5px; color:#2a2f36;
+      padding:6px 4px 0;
+    }
+    .legend-flank__bottom .legend-flank__item {
+      flex-direction:row;
+    }
+    .legend-flank__bottom:empty { display:none; }
+    .legend-flank__item {
+      display:flex; align-items:center; gap:6px;
+      line-height:1.25;
+    }
+    .legend-flank__col--left .legend-flank__item { flex-direction:row-reverse; }
+    .legend-flank__badge {
+      display:inline-flex; align-items:center; justify-content:center;
+      width:18px; height:18px; border-radius:50%;
+      font-weight:700; font-size:11px;
+      border:1.5px solid #fff;
+      box-shadow:0 0 0 0.5px rgba(0,0,0,0.15);
+      flex:0 0 auto;
+    }
+    .legend-flank__label { min-width:0; word-break:break-word; }
+    @media (max-width:900px) {
+      .legend-flank { grid-template-columns:1fr; }
+      .legend-flank__chart  { grid-column:1 / 2; }
+      .legend-flank__col--left,
+      .legend-flank__col--right {
+        grid-column:1 / 2;
+        align-items:flex-start; text-align:left;
+      }
+      .legend-flank__col--left .legend-flank__item { flex-direction:row; }
+      .legend-flank__bottom { grid-column:1 / 2; }
+    }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
     /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
@@ -319,8 +388,16 @@
         <button id="chord-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
         <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country<br>Outer ring = region</div>
-        <svg id="chart" width="1160" height="668" viewBox="0 0 1160 668"></svg>
-        <svg id="legend" width="1160" height="177" viewBox="0 -8 1160 177"></svg>
+        <div class="legend-flank" id="legend-flank">
+          <div class="legend-flank__title">University key</div>
+          <div class="legend-flank__col legend-flank__col--left" id="legend-flank-left"></div>
+          <div class="legend-flank__chart">
+            <svg id="chart" width="640" height="600" viewBox="266 62 628 588" preserveAspectRatio="xMidYMid meet"></svg>
+          </div>
+          <div class="legend-flank__col legend-flank__col--right" id="legend-flank-right"></div>
+          <div class="legend-flank__bottom" id="legend-flank-bottom"></div>
+        </div>
+        <svg id="legend" class="legend-flank__hidden" width="1160" height="177" viewBox="0 -8 1160 177" aria-hidden="true"></svg>
         <div class="caption" id="cap">Source: iTaukei Research Database.</div>
         <div id="status"></div>
 
@@ -649,7 +726,8 @@ function draw(data){
     // Narrow region arcs (e.g. ASIA) get no outside-the-ring radial label.
   });
 
-  // LEGEND (numbered, 4 columns)
+  // LEGEND (numbered, 4 columns) - hidden on screen; kept populated so the
+  // existing PNG export path (which rasterises SVG #legend) still works.
   const lg=d3.select("#legend");
   const legG=lg.append("g").attr("transform","translate(0,14)");
   legG.append("text").attr("x",W/2).attr("y",0).attr("text-anchor","middle").attr("class","legend-title").text("University key");
@@ -668,7 +746,84 @@ function draw(data){
     const disp=(iso?iso+": ":"")+name;   // e.g. "AUS: University of Adelaide"
     gg.append("text").attr("x",23).attr("y",-4).attr("dy","0.35em").attr("class","legend-item").text(disp);
   });
+
+  // FLANKED legend (on-screen): left column + right column + bottom overflow.
+  window.__lastLegendNodes = nodes;
+  window.__lastLegendData  = data;
+  renderFlankedLegend(nodes, data);
 }
+
+function renderFlankedLegend(nodes, data){
+  const leftEl   = document.getElementById("legend-flank-left");
+  const rightEl  = document.getElementById("legend-flank-right");
+  const bottomEl = document.getElementById("legend-flank-bottom");
+  if(!leftEl || !rightEl || !bottomEl) return;
+  leftEl.innerHTML = ""; rightEl.innerHTML = ""; bottomEl.innerHTML = "";
+
+  const rows = nodes.map(nd => {
+    const row = document.createElement("div");
+    row.className = "legend-flank__item";
+    const badge = document.createElement("span");
+    badge.className = "legend-flank__badge";
+    const bg = countryColor[nd.country] || "#999";
+    badge.style.background = bg;
+    badge.style.color = idealText(bg);
+    badge.textContent = String(nd.n);
+    const label = document.createElement("span");
+    label.className = "legend-flank__label";
+    const full = (data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
+    const name = full.length > 32 ? nd.name : full;
+    const iso  = iso3Of(nd.country);
+    label.textContent = (iso ? iso + ": " : "") + name;
+    row.appendChild(badge);
+    row.appendChild(label);
+    return row;
+  });
+
+  // Each side column can hold as many rows as fit in the rendered chart
+  // height at ~22 px per row (badge + line-height). Below that limit,
+  // balance items evenly across the two side columns; above it, cap both
+  // sides and spill the remainder into the bottom strip.
+  const chartWrap = document.querySelector(".legend-flank__chart");
+  const chartH = chartWrap ? chartWrap.getBoundingClientRect().height : 600;
+  const ROW_H = 22;
+  const avail = Math.max(0, chartH - 4);
+  const perSide = Math.max(1, Math.floor(avail / ROW_H));
+
+  const total = rows.length;
+  let leftN, rightN;
+  if (total <= perSide * 2) {
+    leftN  = Math.ceil(total / 2);
+    rightN = total - leftN;
+  } else {
+    leftN  = perSide;
+    rightN = perSide;
+  }
+  const sideCap = leftN + rightN;
+
+  for (let i = 0; i < leftN; i++) leftEl.appendChild(rows[i]);
+  for (let i = 0; i < rightN; i++) rightEl.appendChild(rows[leftN + i]);
+  for (let i = sideCap; i < total; i++) bottomEl.appendChild(rows[i]);
+}
+
+// Re-balance the flanked legend when the chart wrapper resizes (fullscreen
+// toggle, window resize). Debounced via requestAnimationFrame.
+(function installFlankedLegendResizeObserver(){
+  let queued = false;
+  const kick = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      if (window.__lastLegendNodes && window.__lastLegendData) {
+        renderFlankedLegend(window.__lastLegendNodes, window.__lastLegendData);
+      }
+    });
+  };
+  const target = document.querySelector(".legend-flank__chart") || document.getElementById("legend-flank");
+  if (window.ResizeObserver && target) new ResizeObserver(kick).observe(target);
+  window.addEventListener("resize", kick, { passive:true });
+})();
 
 /* ---- 5. LOAD: try live CSVs first, else embedded snapshot ------------------ */
 function rowsFromCsv(csvText){
