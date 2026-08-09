@@ -1233,25 +1233,22 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
       const chart=document.getElementById("alluvial-chart");
       const c=await svgToImage(chart,o.pxW,o.pxH);
       const canvas=document.createElement("canvas");
-      // Add a footer strip so "Source ..." + "Generated ..." appear inside the PNG.
-      const footerH = Math.max(48, Math.round(o.pxH * 0.05));
+      // Slim footer strip so only the "Generated ..." timestamp appears
+      // just below the chart. The Source line is dropped so the alluvial
+      // plot itself gets more vertical room in every exported PNG.
+      const footerH = Math.max(28, Math.round(o.pxH * 0.025));
       canvas.width=o.pxW; canvas.height=o.pxH + footerH;
       const ctx=canvas.getContext("2d");
       ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
       ctx.drawImage(c.img,0,0,o.pxW,o.pxH);
       URL.revokeObjectURL(c.url);
-      // Footer text: Source + generated timestamp (Hawaii long form).
+      // Footer text: generated timestamp only (Hawaii long form).
       const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
-      const fs1 = Math.max(11, Math.round(footerH * 0.30));
-      const fs2 = Math.max(10, Math.round(footerH * 0.24));
+      const fs2 = Math.max(10, Math.round(footerH * 0.42));
       ctx.fillStyle = "#8a93a0";
-      ctx.font = fs1+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
       ctx.textAlign = "center"; ctx.textBaseline = "top";
-      const nSch = (currentFlows && currentFlows.length) || 0;
-      const srcTxt = "Source: iTaukei Research Database" + (nSch ? " (" + nSch + " scholars)" : "") + ".";
-      ctx.fillText(srcTxt, o.pxW/2, o.pxH + Math.round(footerH*0.15));
       ctx.font = fs2+"px 'Inter', 'Helvetica Neue', Arial, sans-serif";
-      ctx.fillText("Generated "+stamp.longText, o.pxW/2, o.pxH + Math.round(footerH*0.55));
+      ctx.fillText("Generated "+stamp.longText, o.pxW/2, o.pxH + Math.round(footerH*0.20));
       canvas.toBlob((blob)=>{
         const url=URL.createObjectURL(blob);
         const a=document.createElement("a");
@@ -1298,13 +1295,8 @@ function refreshGeneratedStamp(){
   window.__alluvialTimestamp = stamp;
   const el = document.getElementById("alluvial-generated");
   if(el) el.textContent = "Generated "+stamp.longText;
-  // Keep the on-page source line in sync with the current dataset size so it
-  // matches what appears in the exported PNG.
-  const src = document.getElementById("alluvial-cap");
-  const n = (typeof currentFlows !== "undefined" && currentFlows && currentFlows.length) ? currentFlows.length : 0;
-  if(src){
-    src.textContent = "Source: iTaukei Research Database" + (n ? " (" + n + " scholars)" : "") + ".";
-  }
+  // The on-page Source caption was removed to give the alluvial plot more
+  // vertical room, so nothing to update here besides the generated stamp.
 }
 
 /* ---------- Fullscreen expand/collapse ---------- */
