@@ -804,6 +804,9 @@ function renderFlankedLegend(nodes, data){
   for (let i = 0; i < leftN; i++) leftEl.appendChild(rows[i]);
   for (let i = 0; i < rightN; i++) rightEl.appendChild(rows[leftN + i]);
   for (let i = sideCap; i < total; i++) bottomEl.appendChild(rows[i]);
+
+  // Keep the PNG-exporter aspect ratio in sync with the current node count.
+  if (typeof window.__refreshExporterHint === "function") window.__refreshExporterHint();
 }
 
 // Re-balance the flanked legend when the chart wrapper resizes (fullscreen
@@ -1026,12 +1029,19 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
   setMsg("Template downloaded \u2014 fill it in and drop it back above.", "ok");
 });
 
-// ---- PNG export (chart + legend stacked), aspect-locked, DPI-scalable -------
+// ---- PNG export: composites the flanked layout (left col + chart + right col + optional bottom) into one SVG, then rasterises. Aspect-locked, DPI-scalable.
 (function(){
-  const BASE_W = 1160;              // layout width used for both SVGs
-  const CHART_H = 668, LEGEND_H = 177;
-  const BASE_H = CHART_H + LEGEND_H; // 845 -> stacked composite height
-  const ASPECT = BASE_H / BASE_W;    // height per unit width (locked)
+  // Layout constants for the composed export SVG (in CSS px).
+  const BASE_W    = 1160;            // total canvas width
+  const TITLE_H   = 56;               // top band: chart title + subtitle + "University key"
+  const CHART_W   = 640, CHART_H = 600; // chart core (matches on-screen SVG intrinsic size)
+  const COL_W     = 240;              // width of each side column
+  const COL_GAP   = 12;               // gap between column and chart
+  const ROW_H     = 22;               // row pitch inside side columns
+  const BADGE_R   = 9;                // circle radius
+  const CAP_H     = 44;               // caption + status band at bottom
+  const BOT_ROW_H = 22;               // pitch for optional bottom-strip rows
+
   const wIn = document.getElementById("dl-width");
   const hIn = document.getElementById("dl-height");
   const dpiIn = document.getElementById("dl-dpi");
@@ -1040,20 +1050,51 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
   if(!wIn||!hIn||!dpiIn||!btn) return;
 
   const clampNum=(v,min,max,dflt)=>{ v=parseFloat(v); if(!isFinite(v)) v=dflt; return Math.min(max,Math.max(min,v)); };
-  // The on-screen layout is 96 CSS-px/inch; multiply by dpi/96 for true print pixels.
+
+  // Compute the base height of the composed SVG given the current legend node count.
+  function composeDims(){
+    const nodes = window.__lastLegendNodes || [];
+    const total = nodes.length;
+    // Rows the columns can hold before spilling to a bottom strip.
+    const perSide  = Math.max(1, Math.floor((CHART_H - 4) / ROW_H));
+    const sideCap  = perSide * 2;
+    // Balance items across left/right when they fit; otherwise cap both sides.
+    let leftN, rightN, botN;
+    if (total <= sideCap) {
+      leftN  = Math.ceil(total/2);
+      rightN = total - leftN;
+      botN   = 0;
+    } else {
+      leftN  = perSide;
+      rightN = perSide;
+      botN   = total - sideCap;
+    }
+    // How many bottom rows do we need? Estimate with 3 items per row at BASE_W.
+    const botCols = 3;
+    const botRows = Math.ceil(botN / botCols);
+    const botH    = botN > 0 ? (botRows * BOT_ROW_H) + 14 : 0; // padding above
+    const totalH  = TITLE_H + CHART_H + botH + CAP_H;
+    return { leftN, rightN, botN, botH, totalH, botCols, botRows };
+  }
+
   function outPixels(){
+    const d = composeDims();
+    const ASPECT = d.totalH / BASE_W;
     const cssW=clampNum(wIn.value,200,20000,BASE_W);
     const cssH=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT));
     const dpi=clampNum(dpiIn.value,72,1200,300);
     const scale=dpi/96;
-    return {cssW,cssH,dpi,pxW:Math.round(cssW*scale),pxH:Math.round(cssH*scale)};
+    return {cssW,cssH,dpi,pxW:Math.round(cssW*scale),pxH:Math.round(cssH*scale),dims:d,aspect:ASPECT};
   }
   function refreshHint(){ const o=outPixels(); hint.innerHTML="Output: "+o.pxW+" &times; "+o.pxH+" px at "+o.dpi+" DPI"; }
-  // Lock aspect ratio: editing width recomputes height, and vice-versa.
+
+  // Keep aspect locked. Recompute against the current node count each time.
   let syncing=false;
-  wIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); });
-  hIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT)); wIn.value=Math.round(h/ASPECT); syncing=false; refreshHint(); });
+  wIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const d=composeDims(); const ASPECT=d.totalH/BASE_W; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); });
+  hIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const d=composeDims(); const ASPECT=d.totalH/BASE_W; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT)); wIn.value=Math.round(h/ASPECT); syncing=false; refreshHint(); });
   dpiIn.addEventListener("input", refreshHint);
+  // Re-sync when data changes (upload rebuilds legend).
+  window.__refreshExporterHint = () => { const d=composeDims(); const ASPECT=d.totalH/BASE_W; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); };
   refreshHint();
 
   // Inline computed fill/stroke/font so the serialized SVG matches on-screen colours.
@@ -1064,43 +1105,198 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
     for(let i=0;i<from.length;i++){ const cs=getComputedStyle(from[i]); let s=""; props.forEach(p=>{ const v=cs.getPropertyValue(p); if(v) s+=p+":"+v+";"; }); to[i].setAttribute("style",s); }
     return clone;
   }
-  function svgToImage(svgEl,w,h){
+
+  // Escape XML special chars in text content injected into SVG.
+  function xml(s){ return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&apos;"}[c])); }
+
+  function labelFor(nd, data){
+    const full = (data && data.unis && data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
+    const name = full.length > 32 ? nd.name : full;
+    const iso  = (typeof iso3Of === "function") ? iso3Of(nd.country) : "";
+    return (iso ? iso + ": " : "") + name;
+  }
+
+  // Wrap a label to roughly maxChars per line (splitting on spaces). Returns an array of lines.
+  function wrap(text, maxChars){
+    const words = String(text).split(/\s+/);
+    const lines = [];
+    let cur = "";
+    for (const w of words){
+      if (!cur) { cur = w; continue; }
+      if ((cur.length + 1 + w.length) <= maxChars) cur += " " + w;
+      else { lines.push(cur); cur = w; }
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // Build a single legend-row group (badge + label) as SVG markup.
+  // side: "left" (right-aligned; badge on the right edge) or "right" (left-aligned; badge on the left edge).
+  function legendRowSVG(x, y, w, nd, data, side){
+    const bg = (typeof countryColor !== "undefined" && countryColor[nd.country]) ? countryColor[nd.country] : "#999";
+    const ink = (typeof idealText === "function") ? idealText(bg) : "#111";
+    const badgeR = BADGE_R;
+    const labelText = labelFor(nd, data);
+    const labelPad = 6; // gap between badge and text
+    const badgeCx = side === "left" ? (x + w - badgeR) : (x + badgeR);
+    const badgeCy = y + ROW_H/2;
+    const textX  = side === "left" ? (badgeCx - badgeR - labelPad) : (badgeCx + badgeR + labelPad);
+    const anchor = side === "left" ? "end" : "start";
+    // Wrap for narrow columns; roughly 26 chars per line for COL_W=240.
+    const lines = wrap(labelText, 26);
+    const lineH = 12;
+    const totalTextH = lines.length * lineH;
+    const firstY = badgeCy - totalTextH/2 + lineH*0.8;
+    let tspans = "";
+    for (let i=0;i<lines.length;i++){
+      const dy = i===0 ? 0 : lineH;
+      tspans += `<tspan x="${textX}" dy="${dy}">${xml(lines[i])}</tspan>`;
+    }
+    const badge = `<circle cx="${badgeCx}" cy="${badgeCy}" r="${badgeR}" fill="${bg}" stroke="#fff" stroke-width="1.5"/>` +
+                  `<text x="${badgeCx}" y="${badgeCy}" text-anchor="middle" dominant-baseline="central" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="10" font-weight="700" fill="${ink}">${xml(nd.n)}</text>`;
+    const label = `<text y="${firstY}" text-anchor="${anchor}" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="11.5" fill="#2a2f36">${tspans}</text>`;
+    return badge + label;
+  }
+
+  // Build a bottom-strip row (badge + inline label) for overflow items. Left-aligned within its cell.
+  function bottomRowSVG(x, y, w, nd, data){
+    const bg = (typeof countryColor !== "undefined" && countryColor[nd.country]) ? countryColor[nd.country] : "#999";
+    const ink = (typeof idealText === "function") ? idealText(bg) : "#111";
+    const cy = y + BOT_ROW_H/2;
+    const cx = x + BADGE_R;
+    const tx = cx + BADGE_R + 6;
+    const lbl = labelFor(nd, data);
+    // Truncate for the bottom strip so lines don't collide.
+    const maxChars = 40;
+    const shown = lbl.length > maxChars ? lbl.slice(0, maxChars-1)+"\u2026" : lbl;
+    return `<circle cx="${cx}" cy="${cy}" r="${BADGE_R}" fill="${bg}" stroke="#fff" stroke-width="1.5"/>` +
+           `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="10" font-weight="700" fill="${ink}">${xml(nd.n)}</text>` +
+           `<text x="${tx}" y="${cy}" dominant-baseline="central" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="11.5" fill="#2a2f36">${xml(shown)}</text>`;
+  }
+
+  // Serialise the on-screen chart SVG (with inlined styles) so we can nest it in the composed SVG.
+  function chartInnerSVG(){
+    const src = document.getElementById("chart");
+    if (!src) return "";
+    const clone = inlineStyles(src);
+    clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
+    // Force intrinsic pixel dimensions and preserve the viewBox for correct scaling.
+    clone.setAttribute("width",  CHART_W);
+    clone.setAttribute("height", CHART_H);
+    if (!clone.getAttribute("viewBox")) clone.setAttribute("viewBox", "266 62 628 588");
+    clone.setAttribute("preserveAspectRatio","xMidYMid meet");
+    return new XMLSerializer().serializeToString(clone);
+  }
+
+  // Return the caption + status strings as they appear on-screen (so the PNG mirrors the page).
+  function captionLines(){
+    const cap = document.getElementById("cap");
+    const stt = document.getElementById("status");
+    const capT = cap ? (cap.textContent || "").trim() : "";
+    const sttT = stt ? (stt.textContent || "").trim() : "";
+    return { cap: capT, status: sttT };
+  }
+
+  // Compose the whole export SVG as a string.
+  function buildExportSVG(){
+    const d       = composeDims();
+    const nodes   = window.__lastLegendNodes || [];
+    const data    = window.__lastLegendData || { unis:{} };
+    const totalH  = d.totalH;
+    const cx      = BASE_W/2;
+    const chartX  = cx - CHART_W/2;
+    const chartY  = TITLE_H;
+    const leftX   = chartX - COL_GAP - COL_W;
+    const rightX  = chartX + CHART_W + COL_GAP;
+
+    // Header band -----------------------------------------------------------
+    const titleText    = "iTaukei Scholar Mobility: Master\u2019s \u2192 PhD Institutions";
+    const subtitleText = "Ribbons = scholars\u2019 Master\u2019s\u2192PhD moves  \u00b7  Inner ring = university  \u00b7  Middle ring = country  \u00b7  Outer ring = region";
+    const keyText      = "University key";
+    let header = "";
+    header += `<text x="${cx}" y="22" text-anchor="middle" font-family="'Fraunces','Georgia',serif" font-size="18" font-weight="700" fill="#1a2027">${xml(titleText)}</text>`;
+    header += `<text x="${cx}" y="40" text-anchor="middle" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="10.5" fill="#4a5560">${xml(subtitleText)}</text>`;
+    header += `<text x="${cx}" y="54" text-anchor="middle" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="12.5" font-weight="700" fill="#1c2530">${xml(keyText)}</text>`;
+
+    // Legend columns --------------------------------------------------------
+    let cols = "";
+    for (let i=0;i<d.leftN;i++){
+      const nd = nodes[i]; if (!nd) continue;
+      const y = chartY + i*ROW_H;
+      cols += legendRowSVG(leftX, y, COL_W, nd, data, "left");
+    }
+    for (let i=0;i<d.rightN;i++){
+      const nd = nodes[d.leftN + i]; if (!nd) continue;
+      const y = chartY + i*ROW_H;
+      cols += legendRowSVG(rightX, y, COL_W, nd, data, "right");
+    }
+
+    // Bottom overflow strip -------------------------------------------------
+    let bot = "";
+    if (d.botN > 0){
+      const sideCap = d.leftN + d.rightN;
+      const cellW = Math.floor((BASE_W - 32) / d.botCols);
+      const startX = 16;
+      const startY = chartY + CHART_H + 10;
+      for (let i=0;i<d.botN;i++){
+        const nd = nodes[sideCap + i]; if (!nd) continue;
+        const row = Math.floor(i / d.botCols);
+        const col = i % d.botCols;
+        const x = startX + col*cellW;
+        const y = startY + row*BOT_ROW_H;
+        bot += bottomRowSVG(x, y, cellW, nd, data);
+      }
+    }
+
+    // Chart in the middle ---------------------------------------------------
+    const chartMarkup = chartInnerSVG();
+    const chartWrap = `<g transform="translate(${chartX},${chartY})">${chartMarkup.replace(/^<svg[^>]*>/,"<svg width=\""+CHART_W+"\" height=\""+CHART_H+"\" viewBox=\"266 62 628 588\" preserveAspectRatio=\"xMidYMid meet\" xmlns=\"http://www.w3.org/2000/svg\">")}</g>`;
+
+    // Caption + status footer ----------------------------------------------
+    const capL = captionLines();
+    const capY = totalH - CAP_H + 18;
+    const stY  = totalH - CAP_H + 34;
+    let cap = "";
+    if (capL.cap)    cap += `<text x="${cx}" y="${capY}" text-anchor="middle" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="11.5" fill="#3b4652">${xml(capL.cap)}</text>`;
+    if (capL.status) cap += `<text x="${cx}" y="${stY}" text-anchor="middle" font-family="'Inter','Segoe UI','Helvetica Neue',Arial,sans-serif" font-size="11" fill="#7a828c">${xml(capL.status)}</text>`;
+
+    // Assemble --------------------------------------------------------------
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="${BASE_W}" height="${totalH}" viewBox="0 0 ${BASE_W} ${totalH}">` +
+                `<rect width="${BASE_W}" height="${totalH}" fill="#ffffff"/>` +
+                header + cols + bot + chartWrap + cap +
+                `</svg>`;
+    return svg;
+  }
+
+  function svgStringToImage(svgStr){
     return new Promise((resolve,reject)=>{
-      const clone=inlineStyles(svgEl);
-      clone.setAttribute("xmlns","http://www.w3.org/2000/svg");
-      clone.setAttribute("width",w); clone.setAttribute("height",h);
-      const s=new XMLSerializer().serializeToString(clone);
-      const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+s],{type:"image/svg+xml;charset=utf-8"});
+      const blob=new Blob([svgStr],{type:"image/svg+xml;charset=utf-8"});
       const url=URL.createObjectURL(blob);
       const img=new Image();
-      img.onload=()=>{ resolve({img,url}); };
+      img.onload=()=>resolve({img,url});
       img.onerror=(e)=>{ URL.revokeObjectURL(url); reject(e); };
       img.src=url;
     });
   }
+
   async function download(){
     const o=outPixels();
     btn.disabled=true; const label=btn.textContent; btn.textContent="Rendering\u2026";
     try{
-      // Split the total pixel height between chart and legend by their layout share.
-      const chartPxH=Math.round(o.pxH*(CHART_H/BASE_H));
-      const legendPxH=o.pxH-chartPxH;
-      const chart=document.getElementById("chart");
-      const legend=document.getElementById("legend");
-      const [c,l]=await Promise.all([ svgToImage(chart,o.pxW,chartPxH), svgToImage(legend,o.pxW,legendPxH) ]);
+      const svgStr = buildExportSVG();
+      const {img,url} = await svgStringToImage(svgStr);
       const canvas=document.createElement("canvas");
       canvas.width=o.pxW; canvas.height=o.pxH;
       const ctx=canvas.getContext("2d");
-      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,o.pxW,o.pxH);   // chart canvas is white by design
-      ctx.drawImage(c.img,0,0,o.pxW,chartPxH);
-      ctx.drawImage(l.img,0,chartPxH,o.pxW,legendPxH);
-      URL.revokeObjectURL(c.url); URL.revokeObjectURL(l.url);
+      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,o.pxW,o.pxH);
+      ctx.drawImage(img,0,0,o.pxW,o.pxH);
+      URL.revokeObjectURL(url);
       canvas.toBlob((blob)=>{
-        const url=URL.createObjectURL(blob);
+        const url2=URL.createObjectURL(blob);
         const a=document.createElement("a");
-        a.href=url; a.download="itaukei-chord_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
+        a.href=url2; a.download="itaukei-chord_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
         document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),1500);
+        setTimeout(()=>URL.revokeObjectURL(url2),1500);
         btn.textContent=label; btn.disabled=false;
       },"image/png");
     }catch(err){
