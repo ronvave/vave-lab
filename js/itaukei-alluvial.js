@@ -414,16 +414,17 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
 
 // Column geometry: given side (m/p), column index, total cols, and level,
 // return the x0/x1 of each column's block bar in the 1600x900 viewport.
-function makeGeom(level){
-  const VIEW_W = 1600, VIEW_H = 900;
+function makeGeom(level, viewH){
+  const VIEW_W = 1600;
+  const VIEW_H = viewH || 900;
   const plotTop = 118;                      // room for 3-line headers on all levels
   const plotBottom = VIEW_H - 40;
   const BAR_W = 24;                          // block bar width in px
-  // Halved gaps vs. prior (in pixel units for the 900px-tall canvas)
-  const scale = (plotBottom - plotTop) / 100; // map 0-100 axis units to px
-  const leafGap    = 0.15 * scale;
-  const countryGap = 0.30 * scale;
-  const regionGap  = 0.75 * scale;
+  // Whitespace between leaf blocks, in pixels. Kept in absolute pixel units so
+  // the layout stays consistent when VIEW_H grows with the number of scholars.
+  const leafGap    = 1;    // between consecutive uni rows in the same country
+  const countryGap = 2;    // extra when country changes
+  const regionGap  = 5;    // extra when region changes
 
   // Horizontal positions: leave outer margin for labels+swatches
   const labelMargin = 340;  // px reserved on each outer side for uni labels
@@ -507,10 +508,75 @@ function drawUnderlinedHeader(g, x, y, before, word, after, fontSize){
   return grp;
 }
 
+// Count the leaf rows and running gap total that layoutSide will produce
+// for a given side, so we can size VIEW_H before the actual layout runs.
+function preScanSide(flows, level, side){
+  const regions = new Map();
+  for(const f of flows){
+    const reg = side === "m" ? f.m_region  : f.p_region;
+    const ctr = side === "m" ? f.m_country : f.p_country;
+    const uni = side === "m" ? f.m_uni     : f.p_uni;
+    if(!regions.has(reg)) regions.set(reg, { countries: new Map() });
+    const R = regions.get(reg);
+    if(!R.countries.has(ctr)) R.countries.set(ctr, { unis: new Map() });
+    const C = R.countries.get(ctr);
+    C.unis.set(uni, (C.unis.get(uni)||0) + 1);
+  }
+  // Build item sequence in the same order layoutSide does.
+  const items = [];
+  for(const [reg, R] of regions){
+    for(const [ctr, C] of R.countries){
+      for(const [uni, n] of C.unis){
+        items.push({ region: reg, country: ctr, uni, count: n });
+      }
+    }
+  }
+  return items;
+}
+
+// Given the item sequence and geom gaps, return the total gap px between rows.
+function gapSum(items, leafGap, countryGap, regionGap){
+  let g = 0;
+  for(let i=1; i<items.length; i++){
+    const p = items[i-1], c = items[i];
+    g += leafGap;
+    if(p.country !== c.country) g += countryGap;
+    if(p.region  !== c.region)  g += regionGap;
+  }
+  return g;
+}
+
 function draw(flows, level){
   const svg = d3.select("#alluvial-chart");
   svg.selectAll("*").remove();
-  const geom = makeGeom(level);
+
+  // Compute a dynamic canvas height so each leaf row has a legible minimum
+  // vertical space. Grows as more scholars are added.
+  const MIN_ROW_PX = 14;   // minimum block height (px) for a 1-scholar leaf at Level 3
+  const initGeom = makeGeom(level, 900);
+  const leftItems  = preScanSide(flows, level, "m");
+  const rightItems = preScanSide(flows, level, "p");
+  // Only the deepest level (uni leaves) benefits from the row-min guarantee.
+  // At Levels 1 and 2 there are far fewer leaves, so the 900px canvas is fine.
+  let viewH = 900;
+  if(level === 3){
+    const requiredForSide = (items) => {
+      const totalCount = items.reduce((s, it) => s + it.count, 0);
+      const gaps = gapSum(items, initGeom.leafGap, initGeom.countryGap, initGeom.regionGap);
+      // plotH must satisfy: (plotH - gaps) / totalCount >= MIN_ROW_PX * totalCount / totalCount
+      // But we care about the SHORTEST leaf, which is (count=1) row = unit px.
+      // Ensure unit = (plotH - gaps) / totalCount >= MIN_ROW_PX.
+      return MIN_ROW_PX * totalCount + gaps;
+    };
+    const requiredPlotH = Math.max(requiredForSide(leftItems), requiredForSide(rightItems));
+    // plotTop=118, bottom margin=40 → chrome = 158
+    const requiredViewH = Math.ceil(requiredPlotH + 158);
+    viewH = Math.max(900, requiredViewH);
+  }
+  // Update SVG viewBox so the browser scales the chart to the new height.
+  svg.attr("viewBox", `0 0 1600 ${viewH}`);
+
+  const geom = makeGeom(level, viewH);
   const { VIEW_W, VIEW_H, plotTop, plotBottom, midStart, midEnd, midW } = geom;
 
   const left  = layoutSide(flows, level, "m", geom);
@@ -822,6 +888,10 @@ function draw(flows, level){
     multi(centerLeft,  "their Master\u2019s");
     multi(centerRight, "their PhD");
   }
+
+  // Notify the PNG export controls that the SVG viewBox may have changed so
+  // the width/height inputs stay in sync with the current chart aspect.
+  if(typeof window.__alluvialSyncExportSize === "function") window.__alluvialSyncExportSize();
 }
 
 // Choose black/white text for readability on a filled block.
@@ -1050,26 +1120,43 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
 
 /* ------------------------- PNG download ------------------------------- */
 (function(){
-  const BASE_W = 1600, BASE_H = 900;
-  const ASPECT = BASE_H / BASE_W;
+  const BASE_W = 1600;
   const wIn = document.getElementById("dl-width");
   const hIn = document.getElementById("dl-height");
   const dpiIn = document.getElementById("dl-dpi");
   const hint = document.getElementById("dl-hint");
   const btn = document.getElementById("dl-btn");
   if(!wIn||!hIn||!dpiIn||!btn) return;
+  // Aspect ratio is derived from the SVG's current viewBox so the exported PNG
+  // matches the on-page chart when the canvas expands with more data.
+  function currentAspect(){
+    const svg = document.getElementById("alluvial-chart");
+    if(!svg) return 900/BASE_W;
+    const vb = (svg.getAttribute("viewBox") || "0 0 1600 900").trim().split(/\s+/);
+    const w = parseFloat(vb[2]) || BASE_W;
+    const h = parseFloat(vb[3]) || 900;
+    return h / w;
+  }
   const clampNum=(v,min,max,dflt)=>{ v=parseFloat(v); if(!isFinite(v)) v=dflt; return Math.min(max,Math.max(min,v)); };
   function outPixels(){
     const cssW=clampNum(wIn.value,200,20000,BASE_W);
-    const cssH=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT));
+    const cssH=clampNum(hIn.value,200,20000,Math.round(BASE_W*currentAspect()));
     const dpi=clampNum(dpiIn.value,72,1200,300);
     const scale=dpi/96;
     return {cssW,cssH,dpi,pxW:Math.round(cssW*scale),pxH:Math.round(cssH*scale)};
   }
   function refreshHint(){ const o=outPixels(); hint.innerHTML="Output: "+o.pxW+" &times; "+o.pxH+" px at "+o.dpi+" DPI"; }
+  // Called by draw() after the viewBox is updated. Resyncs the height input to
+  // the current aspect ratio, then refreshes the hint text.
+  window.__alluvialSyncExportSize = function(){
+    if(document.activeElement === hIn) return; // user editing height manually
+    const w = clampNum(wIn.value, 200, 20000, BASE_W);
+    hIn.value = Math.round(w * currentAspect());
+    refreshHint();
+  };
   let syncing=false;
-  wIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); });
-  hIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT)); wIn.value=Math.round(h/ASPECT); syncing=false; refreshHint(); });
+  wIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*currentAspect()); syncing=false; refreshHint(); });
+  hIn.addEventListener("input", ()=>{ if(syncing)return; syncing=true; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*currentAspect())); wIn.value=Math.round(h/currentAspect()); syncing=false; refreshHint(); });
   dpiIn.addEventListener("input", refreshHint);
   refreshHint();
   function inlineStyles(src){
