@@ -418,7 +418,7 @@ function makeGeom(level, viewH){
   const VIEW_W = 1600;
   const VIEW_H = viewH || 900;
   const plotTop = 118;                      // room for 3-line headers on all levels
-  const plotBottom = VIEW_H - 40;
+  const plotBottom = VIEW_H - 90;           // leaves ~90px for side-totals block
   const BAR_W = 24;                          // block bar width in px
   // Whitespace between leaf blocks, in pixels. Kept in absolute pixel units so
   // the layout stays consistent when VIEW_H grows with the number of scholars.
@@ -569,8 +569,8 @@ function draw(flows, level){
       return MIN_ROW_PX * totalCount + gaps;
     };
     const requiredPlotH = Math.max(requiredForSide(leftItems), requiredForSide(rightItems));
-    // plotTop=118, bottom margin=40 → chrome = 158
-    const requiredViewH = Math.ceil(requiredPlotH + 158);
+    // plotTop=118, bottom margin=90 → chrome = 208
+    const requiredViewH = Math.ceil(requiredPlotH + 208);
     viewH = Math.max(900, requiredViewH);
   }
   // Update SVG viewBox so the browser scales the chart to the new height.
@@ -887,6 +887,49 @@ function draw(flows, level){
     }
     multi(centerLeft,  "their Master\u2019s");
     multi(centerRight, "their PhD");
+  }
+
+  // ---- distinct-count totals under each side's column stack ----
+  // Lines shown depend on level: L1 = regions only; L2 = countries + regions;
+  // L3 = universities + countries + regions. Placed centered below plotBottom.
+  {
+    const gTot = svg.append("g").attr("class","side-totals");
+    const cols  = left.cols;
+    const rcols = right.cols;
+    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
+    const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
+    const nUniL = left.leafBlocks.length;
+    const nCtrL = left.countryBlocks.length;
+    const nRegL = left.regionBlocks.length;
+    const nUniR = right.leafBlocks.length;
+    const nCtrR = right.countryBlocks.length;
+    const nRegR = right.regionBlocks.length;
+    const linesLeft = [], linesRight = [];
+    if(level === 3){
+      linesLeft.push(nUniL + " " + (nUniL === 1 ? "university" : "universities"));
+      linesRight.push(nUniR + " " + (nUniR === 1 ? "university" : "universities"));
+    }
+    if(level >= 2){
+      linesLeft.push(nCtrL + " " + (nCtrL === 1 ? "country" : "countries"));
+      linesRight.push(nCtrR + " " + (nCtrR === 1 ? "country" : "countries"));
+    }
+    linesLeft.push(nRegL + " " + (nRegL === 1 ? "region" : "regions"));
+    linesRight.push(nRegR + " " + (nRegR === 1 ? "region" : "regions"));
+    const FS = 13;
+    const lineH = 17;
+    const yStart = plotBottom + 22;
+    function paint(cx, lines){
+      for(let i=0; i<lines.length; i++){
+        gTot.append("text")
+          .attr("x", cx)
+          .attr("y", yStart + i*lineH)
+          .attr("text-anchor", "middle")
+          .attr("style", `font-size:${FS}px; fill:#28251d; font-weight:500;`)
+          .text(lines[i]);
+      }
+    }
+    paint(centerLeft,  linesLeft);
+    paint(centerRight, linesRight);
   }
 
   // Notify the PNG export controls that the SVG viewBox may have changed so
