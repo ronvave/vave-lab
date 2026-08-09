@@ -417,8 +417,11 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
 function makeGeom(level, viewH){
   const VIEW_W = 1600;
   const VIEW_H = viewH || 900;
-  const plotTop = 118;                      // room for 3-line headers on all levels
-  const plotBottom = VIEW_H - 90;           // leaves ~90px for side-totals block
+  // 2-line side headers up top (title + stat line). No side-totals block at
+  // the bottom — the count breakdown was moved into the header line so the
+  // ribbon area can expand vertically.
+  const plotTop = 80;
+  const plotBottom = VIEW_H - 40;
   const BAR_W = 24;                          // block bar width in px
   // Whitespace between leaf blocks, in pixels. Kept in absolute pixel units so
   // the layout stays consistent when VIEW_H grows with the number of scholars.
@@ -569,8 +572,8 @@ function draw(flows, level){
       return MIN_ROW_PX * totalCount + gaps;
     };
     const requiredPlotH = Math.max(requiredForSide(leftItems), requiredForSide(rightItems));
-    // plotTop=118, bottom margin=90 → chrome = 208
-    const requiredViewH = Math.ceil(requiredPlotH + 208);
+    // plotTop=80, bottom margin=40 → chrome = 120
+    const requiredViewH = Math.ceil(requiredPlotH + 120);
     viewH = Math.max(900, requiredViewH);
   }
   // Update SVG viewBox so the browser scales the chart to the new height.
@@ -858,78 +861,78 @@ function draw(flows, level){
     drawLeafLabels("p", right);
   }
 
-  // ---- column headers (identical wording at every level) ----
-  const gHead = svg.append("g").attr("class","headers");
+  // ---- three-column header row (left / center / right) ----
+  // Wide single-line "Where iTaukei scholars did their <phase>" over the
+  // stack, with a second line summarising the level-3 counts (universities |
+  // countries | regions). Center column shows the total scholar count.
   {
+    const gHead = svg.append("g").attr("class","headers");
     const cols  = left.cols;
     const rcols = right.cols;
-    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
-    const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
-    // Sit the 3-line header close to the top of the bars.
-    const FS = 15;
-    const y0 = 50, lineH = 20;
-    function multi(cx, third){
-      gHead.append("text").attr("class","col-header-line")
-        .attr("x", cx).attr("y", y0)
-        .attr("text-anchor","middle")
-        .attr("style", `font-size:${FS}px;`)
-        .text("Where iTaukei");
-      gHead.append("text").attr("class","col-header-line")
-        .attr("x", cx).attr("y", y0 + lineH)
-        .attr("text-anchor","middle")
-        .attr("style", `font-size:${FS}px;`)
-        .text("scholars did");
-      gHead.append("text").attr("class","col-header-line")
-        .attr("x", cx).attr("y", y0 + 2*lineH)
-        .attr("text-anchor","middle")
-        .attr("style", `font-size:${FS}px;`)
-        .text(third);
-    }
-    multi(centerLeft,  "their Master\u2019s");
-    multi(centerRight, "their PhD");
-  }
+    // Left / right anchors for the flush-aligned side headers. The right
+    // anchor is pulled in ~100px so the on-page fullscreen expand button in
+    // the top-right of the canvas doesn't clip "...their PhD"; the left
+    // anchor is pushed in the same amount so the two sides stay balanced.
+    const leftBlockX  = 140;
+    const rightBlockX = 1460;
+    const titleFS = 20;
+    const statFS  = 14;
+    const y1 = 30; // main header baseline
+    const y2 = 55; // stat line baseline
 
-  // ---- distinct-count totals under each side's column stack ----
-  // Lines shown depend on level: L1 = regions only; L2 = countries + regions;
-  // L3 = universities + countries + regions. Placed centered below plotBottom.
-  {
-    const gTot = svg.append("g").attr("class","side-totals");
-    const cols  = left.cols;
-    const rcols = right.cols;
-    const centerLeft  = (cols[0].blocks[0].x0 + cols[cols.length-1].blocks[0].x1)/2;
-    const centerRight = (rcols[rcols.length-1].blocks[0].x0 + rcols[0].blocks[0].x1)/2;
-    const nUniL = left.leafBlocks.length;
-    const nCtrL = left.countryBlocks.length;
-    const nRegL = left.regionBlocks.length;
-    const nUniR = right.leafBlocks.length;
-    const nCtrR = right.countryBlocks.length;
-    const nRegR = right.regionBlocks.length;
-    const linesLeft = [], linesRight = [];
-    if(level === 3){
-      linesLeft.push(nUniL + " " + (nUniL === 1 ? "university" : "universities"));
-      linesRight.push(nUniR + " " + (nUniR === 1 ? "university" : "universities"));
+    // Level-adaptive count summary (matches the on-page footer that used to sit
+    // below the chart). L3 shows all three tiers; L2 drops the university tier;
+    // L1 shows only the region count.
+    function statLine(sideLayout){
+      const nUni = sideLayout.leafBlocks.length;
+      const nCtr = sideLayout.countryBlocks.length;
+      const nReg = sideLayout.regionBlocks.length;
+      const parts = [];
+      if(level === 3) parts.push(nUni + " " + (nUni === 1 ? "University" : "Universities"));
+      if(level >= 2)  parts.push(nCtr + " " + (nCtr === 1 ? "Country" : "Countries"));
+      parts.push(nReg + " " + (nReg === 1 ? "Region" : "Regions"));
+      return parts.join("  |  ");
     }
-    if(level >= 2){
-      linesLeft.push(nCtrL + " " + (nCtrL === 1 ? "country" : "countries"));
-      linesRight.push(nCtrR + " " + (nCtrR === 1 ? "country" : "countries"));
-    }
-    linesLeft.push(nRegL + " " + (nRegL === 1 ? "region" : "regions"));
-    linesRight.push(nRegR + " " + (nRegR === 1 ? "region" : "regions"));
-    const FS = 13;
-    const lineH = 17;
-    const yStart = plotBottom + 22;
-    function paint(cx, lines){
-      for(let i=0; i<lines.length; i++){
-        gTot.append("text")
-          .attr("x", cx)
-          .attr("y", yStart + i*lineH)
-          .attr("text-anchor", "middle")
-          .attr("style", `font-size:${FS}px; fill:#28251d; font-weight:500;`)
-          .text(lines[i]);
+
+    // Left title + stats (flush-left).
+    gHead.append("text").attr("class","col-header-line")
+      .attr("x", leftBlockX).attr("y", y1)
+      .attr("text-anchor", "start")
+      .attr("style", `font-size:${titleFS}px; font-weight:700; fill:#000;`)
+      .text("Where iTaukei scholars did their Masters");
+    gHead.append("text").attr("class","col-header-line")
+      .attr("x", leftBlockX).attr("y", y2)
+      .attr("text-anchor", "start")
+      .attr("style", `font-size:${statFS}px; fill:#000;`)
+      .text(statLine(left));
+
+    // Right title + stats (flush-right).
+    gHead.append("text").attr("class","col-header-line")
+      .attr("x", rightBlockX).attr("y", y1)
+      .attr("text-anchor", "end")
+      .attr("style", `font-size:${titleFS}px; font-weight:700; fill:#000;`)
+      .text("Where iTaukei scholars did their PhD");
+    gHead.append("text").attr("class","col-header-line")
+      .attr("x", rightBlockX).attr("y", y2)
+      .attr("text-anchor", "end")
+      .attr("style", `font-size:${statFS}px; fill:#000;`)
+      .text(statLine(right));
+
+    // Center title: total scholar count. Uses distinct scholar rows if
+    // available, otherwise falls back to the flow count.
+    const totalScholars = (function(){
+      const seen = new Set();
+      for(const f of flows){
+        if(f.scholar) seen.add(f.scholar);
       }
-    }
-    paint(centerLeft,  linesLeft);
-    paint(centerRight, linesRight);
+      return seen.size || flows.length;
+    })();
+    const centerX = (leftBlockX + rightBlockX) / 2;
+    gHead.append("text").attr("class","col-header-line")
+      .attr("x", centerX).attr("y", y1)
+      .attr("text-anchor", "middle")
+      .attr("style", `font-size:${titleFS}px; font-weight:700; fill:#000;`)
+      .text(totalScholars + " iTaukei Scholars");
   }
 
   // Notify the PNG export controls that the SVG viewBox may have changed so
