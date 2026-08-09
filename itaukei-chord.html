@@ -26,6 +26,32 @@
     }
     #wrap{ width:1160px; margin:0 auto; position:relative; }
     #chart, #legend{ display:block; }
+
+    /* ==== Fullscreen expand for the chord wrap ==== */
+    #chord-expand{
+      position:absolute; top:8px; right:8px; z-index:10;
+      appearance:none; background:rgba(255,255,255,0.9); color:#28251D;
+      border:1px solid #D4D1CA; border-radius:6px;
+      padding:5px 10px; font-family:var(--font-body); font-size:12px; font-weight:600;
+      cursor:pointer; line-height:1; letter-spacing:.01em;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    }
+    #chord-expand:hover{ background:#fff; border-color:#01696F; color:#01696F; }
+    body.chord-fs-on{ overflow:hidden; }
+    body.chord-fs-on #wrap.is-fullscreen{
+      position:fixed; inset:0; z-index:9999;
+      width:auto; max-width:none;
+      background:#ffffff; padding:24px 28px 16px;
+      overflow:auto; margin:0;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    body.chord-fs-on #wrap.is-fullscreen #chart{
+      width:auto; height:calc(100vh - 320px); max-width:100%;
+    }
+    body.chord-fs-on #wrap.is-fullscreen #legend{
+      width:100%; max-width:1160px; height:auto;
+    }
+    body.chord-fs-on #wrap.is-fullscreen .dl-panel{ display:none; }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
     /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
@@ -290,6 +316,7 @@
 
     <div class="chord-canvas reveal">
       <div id="wrap">
+        <button id="chord-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
         <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country<br>Outer ring = region</div>
         <svg id="chart" width="1160" height="668" viewBox="0 0 1160 668"></svg>
@@ -931,6 +958,23 @@ document.getElementById("btn-template").addEventListener("click", (e)=>{
 })();
 
 init();
+
+/* ---- Fullscreen expand toggle ---- */
+(function(){
+  const btn  = document.getElementById("chord-expand");
+  const wrap = document.getElementById("wrap");
+  if(!btn || !wrap) return;
+  const toggle = () => {
+    const on = !wrap.classList.contains("is-fullscreen");
+    wrap.classList.toggle("is-fullscreen", on);
+    document.body.classList.toggle("chord-fs-on", on);
+    btn.textContent = on ? "Close \u2715" : "Expand \u21F1";
+  };
+  btn.addEventListener("click", toggle);
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && wrap.classList.contains("is-fullscreen")) toggle();
+  });
+})();
 </script>
 <script src="js/main.js?v=2cf4b3f9"></script>
 </body>
