@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iTaukei Scholar Mobility — Alluvial v2 — Prof. Ron Vave | UH Mānoa</title>
+  <meta name="description" content="Six-column alluvial diagram of iTaukei (Indigenous Fijian) scholars' Master's-to-PhD institutional mobility. Every level (region, country, university) shown side by side on both left and right; each country a different colour." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css?v=ec2c3516" />
+  <link rel="stylesheet" href="css/base.css?v=c71999b9" />
+  <link rel="stylesheet" href="css/animations.css?v=209516a8" />
+  <meta name="robots" content="noindex,follow" />
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    /* ==== Alluvial canvas ==== */
+    /* ==== Fullscreen expand for the chart wrap ==== */
+    #alluvial-wrap{ position:relative; }
+    #alluvial-expand{
+      position:absolute; top:8px; right:8px; z-index:10;
+      appearance:none; background:rgba(255,255,255,0.9); color:#28251D;
+      border:1px solid #D4D1CA; border-radius:6px;
+      padding:5px 10px; font-family:var(--font-body); font-size:12px; font-weight:600;
+      cursor:pointer; line-height:1; letter-spacing:.01em;
+      box-shadow:0 1px 3px rgba(0,0,0,0.08);
+    }
+    #alluvial-expand:hover{ background:#fff; border-color:#01696F; color:#01696F; }
+    body.alluvial-fs-on{ overflow:hidden; }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen{
+      position:fixed; inset:0; z-index:9999;
+      background:#ffffff; padding:24px 28px 16px;
+      overflow:auto; margin:0;
+    }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen #alluvial-chart{
+      width:100%; height:calc(100vh - 200px);
+    }
+    body.alluvial-fs-on #alluvial-wrap.is-fullscreen .dl-panel{ display:none; }
+
+    .alluvial-canvas{
+      background:#ffffff;
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      box-shadow:0 1px 3px rgba(0,0,0,0.06);
+      padding:var(--space-6) var(--space-4);
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #alluvial-wrap{ margin:0 auto; position:relative; width:100%; }
+    #alluvial-chart{ display:block; margin:0 auto; width:100%; height:auto; max-width:100%; }
+    .alluvial-caption{ text-align:center; font-size:11px; color:#8a93a0; margin-top:6px; }
+    #alluvial-status{ text-align:center; font-size:11px; color:#b0b6bf; margin-top:6px; }
+    .alluvial-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
+    @media (min-width:1720px){ .alluvial-scroll-hint{ display:none; } }
+
+    /* Column headers, leaf & block labels — always black per Ron's rule (no small grey text) */
+    .col-header, .col-header-line, .block-label, .leaf-label{ fill:#000; }
+    .col-header-line{ font-family:var(--font-body); font-size:16px; font-weight:400; }
+    .block-label{ font-family:var(--font-body); font-weight:700; }
+    .leaf-label{ font-family:var(--font-body); font-size:12px; font-weight:400; }
+    .region-side-label{ font-family:var(--font-body); font-size:12px; font-weight:700; fill:#000; }
+    .swatch{ stroke:none; }
+    /* Ribbons */
+    path.ribbon{ mix-blend-mode:multiply; transition:opacity .12s ease; }
+    path.ribbon.dim{ opacity:0.08 !important; }
+
+    /* ==== Level toggle (segmented control) ==== */
+    .level-toggle{
+      display:inline-flex; background:var(--color-surface);
+      border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:3px; gap:2px;
+    }
+    .level-toggle button{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:var(--color-text-muted);
+      background:transparent; border:none; padding:6px 14px;
+      border-radius:var(--radius-full); cursor:pointer;
+      transition:background .15s ease, color .15s ease;
+    }
+    .level-toggle button:hover{ color:var(--color-text); }
+    .level-toggle button.is-active{
+      background:var(--color-primary); color:#fff;
+    }
+
+    /* ==== Uploader (copied 1:1 from itaukei-chord.html) ==== */
+    .uploader{
+      background:var(--color-surface);
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      padding:var(--space-6);
+      margin-bottom:var(--space-6);
+    }
+    .uploader__head{ display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4); }
+    .uploader__title{ font-family:var(--font-display); font-size:var(--text-lg); font-weight:600; color:var(--color-text); margin:0; }
+    .uploader__row{ display:flex; gap:var(--space-4); flex-wrap:wrap; }
+    .dropzone{
+      flex:1 1 320px;
+      min-height:118px;
+      border:2px dashed var(--color-border);
+      border-radius:var(--radius-lg);
+      background:var(--color-background);
+      padding:var(--space-4);
+      cursor:pointer;
+      display:flex; flex-direction:column; gap:6px;
+      transition:border-color .15s ease, background-color .15s ease;
+    }
+    .dropzone:hover{ border-color:var(--color-primary); }
+    .dropzone.is-dragover{ border-color:var(--color-primary); background:var(--color-primary-highlight); }
+    .dropzone.is-loaded{ border-style:solid; border-color:var(--color-primary); }
+    .dropzone__label{ font-weight:600; color:var(--color-text); font-size:var(--text-sm); }
+    .dropzone__sub{ color:var(--color-text-muted); font-size:var(--text-xs); margin-top:var(--space-1); }
+    .dropzone__file{ color:var(--color-primary); font-size:var(--text-xs); font-weight:600; margin-top:var(--space-2); word-break:break-all; }
+    .dropzone__optional{ display:inline-block; font-size:10px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; color:var(--color-text-faint); border:1px solid var(--color-border); border-radius:var(--radius-full); padding:1px 8px; margin-left:6px; }
+    .uploader__actions{ display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap; margin-top:var(--space-4); }
+    .btn-reset{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:var(--color-primary); background:transparent;
+      border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; cursor:pointer; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-reset:hover{ background:var(--color-surface-offset); border-color:var(--color-primary); }
+    .btn-template{
+      font-size:var(--text-sm); font-weight:600; text-decoration:none;
+      color:var(--color-accent); border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-template:hover{ background:var(--color-surface-offset); border-color:var(--color-accent); }
+    .upload-msg{ font-size:var(--text-sm); color:var(--color-text-muted); }
+    .upload-msg.is-error{ color:var(--color-error); font-weight:600; }
+    .upload-msg.is-ok{ color:var(--color-success); font-weight:600; }
+    .uploader__help{ margin-top:var(--space-4); font-size:var(--text-xs); color:var(--color-text-muted); line-height:1.6; }
+    .uploader__help code{ font-family:var(--font-mono); font-size:0.92em; background:var(--color-surface-offset); padding:1px 5px; border-radius:4px; color:var(--color-text); }
+
+    /* ==== PNG download panel (theme-aware, matches chord page) ==== */
+    .dl-panel{
+      max-width:1600px; margin:var(--space-5) auto 0; padding-top:var(--space-4);
+      border-top:1px solid var(--color-border);
+      display:flex; align-items:flex-end; justify-content:center; gap:var(--space-4); flex-wrap:wrap;
+    }
+    .dl-field{ display:flex; flex-direction:column; gap:4px; }
+    .dl-field label{ font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--color-text-muted); }
+    .dl-field input{
+      width:92px; font:inherit; font-size:var(--text-sm); color:var(--color-text);
+      background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md);
+      padding:6px 9px; text-align:right;
+    }
+    .dl-field input:focus{ outline:none; border-color:var(--color-primary); }
+    .dl-lock{ font-size:var(--text-xs); color:var(--color-text-faint); align-self:center; padding-bottom:8px; }
+    .btn-download{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:#fff; background:var(--color-primary); border:1px solid var(--color-primary);
+      border-radius:var(--radius-full); padding:8px 20px; cursor:pointer;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-download:hover{ background:var(--color-primary-hover,#0C4E54); border-color:var(--color-primary-hover,#0C4E54); }
+    .dl-hint{ flex-basis:100%; text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:2px; }
+
+    /* ==== Ribbon / block hover tooltip ==== */
+    #alluvial-tip{
+      position:fixed; z-index:10000; pointer-events:none; opacity:0;
+      max-width:320px; transform:translate(-50%,-100%);
+      background:#1c2530; color:#fff; border-radius:8px;
+      padding:10px 12px; font-family:var(--font-body); font-size:12.5px; line-height:1.5;
+      box-shadow:0 6px 22px rgba(0,0,0,0.28); transition:opacity .12s ease;
+    }
+    #alluvial-tip .tip-path{ font-weight:700; margin-bottom:3px; }
+    #alluvial-tip .tip-count{ color:#9fb4c9; font-size:11px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:6px; }
+    #alluvial-tip ul{ margin:0; padding:0; list-style:none; }
+    #alluvial-tip li{ margin:5px 0; }
+    #alluvial-tip li + li{ border-top:1px solid rgba(255,255,255,0.12); padding-top:5px; }
+    #alluvial-tip .tip-name{ font-weight:600; }
+    #alluvial-tip .tip-year{ color:#9fb4c9; }
+    #alluvial-tip .tip-title{ color:#d7dee6; font-style:italic; display:block; margin-top:1px; }
+    #alluvial-tip .tip-more{ color:#9fb4c9; font-size:11px; margin-top:6px; }
+    path.ribbon.dim{ opacity:0.15 !important; }
+
+    /* ==== Embedded mode (?embedded=1 or in iframe) ==== */
+    body.is-embedded .site-header,
+    body.is-embedded .page-banner,
+    body.is-embedded .site-footer,
+    body.is-embedded .uploader,
+    body.is-embedded .alluvial-embedded-hide { display:none !important; }
+    body.is-embedded main { padding:0; }
+    body.is-embedded .section { padding:0; }
+    body.is-embedded .container { max-width:none; padding:0; }
+    body.is-embedded .alluvial-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; }
+    body.is-embedded .dl-panel,
+    body.is-embedded .alluvial-scroll-hint { display:none !important; }
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-7LJP79H70W');
+  </script>
+</head>
+<body>
+<script>
+  (function(){
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('embedded') === '1' || (window.self !== window.top)) {
+        document.body.classList.add('is-embedded');
+      }
+    } catch(e) {}
+  })();
+</script>
+
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="currentColor" opacity="0.12"/>
+          <path d="M6 22 Q10 14 14 22 Q18 30 22 22 Q26 14 30 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M12 10 L18 20 L24 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="publications.html">Publications</a>
+      <a href="supervision.html">Supervision</a>
+      <a href="teaching.html">Teaching</a>
+      <a href="service.html">Service</a>
+      <a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-banner" aria-label="Page header">
+  <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <p class="page-banner__eyebrow">Vave Lab &middot; iTaukei Research Database</p>
+      <h1 class="page-banner__title">Scholar Mobility — Alluvial v2</h1>
+    </div>
+    <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
+  </div>
+</section>
+
+<main>
+<section class="section">
+  <div class="container">
+    <div class="reveal alluvial-embedded-hide" style="max-width:820px;margin-bottom:var(--space-8);">
+      <p class="section__label">Interactive Visualization</p>
+      <h2 class="section__title" style="margin-top:var(--space-2);">Where iTaukei scholars did their Master&rsquo;s &rarr; PhD</h2>
+      <div class="divider"></div>
+      <p style="color:var(--color-text-muted);font-size:var(--text-base);line-height:1.65;margin-top:var(--space-5);">
+        This alluvial diagram traces every <em>iTaukei</em> (Indigenous Fijian) scholar through all three
+        levels of detail on both sides at once. Left-to-right the six columns read: <strong>Master&rsquo;s region
+        &rarr; country &rarr; university &rarr; PhD university &rarr; country &rarr; region</strong>. Ribbon
+        width is proportional to the number of scholars and each country is given its own colour. See also the
+        <a href="itaukei-alluvial.html" style="color:var(--color-primary);">three-level toggle version</a> and
+        the <a href="itaukei-chord.html" style="color:var(--color-primary);">chord diagram</a> in the
+        <a href="research.html#current-projects" style="color:var(--color-primary);">iTaukei Research Database</a>.
+      </p>
+    </div>
+
+    <!-- ================= CSV UPLOAD PANEL ================= -->
+    <div class="uploader reveal">
+      <div class="uploader__head">
+        <h3 class="uploader__title">Build the chart from your own CSV or Excel file</h3>
+        <span class="upload-msg" id="upload-msg"></span>
+      </div>
+      <div class="uploader__row">
+        <div class="dropzone" id="dz-mobility" tabindex="0" role="button" aria-label="Upload scholar mobility CSV or Excel file">
+          <span class="dropzone__label">Scholar mobility CSV or Excel</span>
+          <span class="dropzone__sub">Drag &amp; drop, or click to choose your <code style="font-family:var(--font-mono);">.csv</code> or <code style="font-family:var(--font-mono);">.xlsx</code></span>
+          <span class="dropzone__file" id="file-mobility"></span>
+          <input type="file" id="input-mobility" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+        </div>
+        <div class="dropzone" id="dz-unsd" tabindex="0" role="button" aria-label="Upload UNSD region CSV or Excel file (optional)">
+          <span class="dropzone__label">UNSD region CSV or Excel <span class="dropzone__optional">optional</span></span>
+          <span class="dropzone__sub">Only if you want to override the built-in country&rarr;region reference</span>
+          <span class="dropzone__file" id="file-unsd"></span>
+          <input type="file" id="input-unsd" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+        </div>
+      </div>
+      <div class="uploader__actions">
+        <button type="button" class="btn-reset" id="btn-reset">Reset to default data</button>
+        <a href="#" class="btn-template" id="btn-template" download="itaukei-alluvial-template.csv">&darr;&nbsp;Download CSV template</a>
+      </div>
+      <p class="uploader__help">
+        Your file stays in your browser &mdash; nothing is uploaded to a server. CSV and Excel
+        (<code>.xlsx</code>/<code>.xls</code>) files both work; for Excel the first worksheet is used. The
+        scholar file needs the columns <code>m_uni</code>, <code>m_country</code>, <code>p_uni</code>,
+        <code>p_country</code>. Regions are derived automatically from the UNSD reference; you only need the
+        second file to change that mapping. ISO&nbsp;3-letter country codes are also read from the UNSD file
+        if present.
+      </p>
+    </div>
+
+    <div class="alluvial-canvas reveal">
+      <div id="alluvial-wrap">
+        <button id="alluvial-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
+        <svg id="alluvial-chart" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="alluvial-caption" id="alluvial-cap">Source: iTaukei Research Database.</div>
+        <div class="alluvial-caption" id="alluvial-generated"></div>
+        <div id="alluvial-status"></div>
+
+        <div class="dl-panel" aria-label="Download chart as image">
+          <div class="dl-field">
+            <label for="dl-width">Width (px)</label>
+            <input id="dl-width" type="number" min="200" max="20000" step="1" value="1600">
+          </div>
+          <span class="dl-lock" title="Width and height stay in proportion">&#128279; locked</span>
+          <div class="dl-field">
+            <label for="dl-height">Height (px)</label>
+            <input id="dl-height" type="number" min="200" max="20000" step="1" value="900">
+          </div>
+          <div class="dl-field">
+            <label for="dl-dpi">DPI</label>
+            <input id="dl-dpi" type="number" min="72" max="1200" step="1" value="300">
+          </div>
+          <button id="dl-btn" class="btn-download" type="button">Download PNG</button>
+          <div class="dl-hint" id="dl-hint">Output: 5000 &times; 2813 px at 300 DPI</div>
+        </div>
+      </div>
+    </div>
+    <div id="alluvial-tip" role="tooltip"></div>
+    <p class="alluvial-scroll-hint">Tip: on smaller screens, scroll the panel sideways to see the full chart.</p>
+
+    <div class="reveal alluvial-embedded-hide" style="margin-top:var(--space-8);">
+      <a href="research.html" style="color:var(--color-primary);font-weight:500;">&larr; Back to Research</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <p style="color:var(--color-text-muted);font-size:var(--text-sm);line-height:1.7;margin:0;">
+          Department of Indigenous Studies<br>
+          Hamilton Library, 401A<br>
+          2550 McCarthy Mall<br>
+          Honolulu, HI 96822
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
+    </div>
+  </div>
+</footer>
+
+<script src="js/itaukei-alluvial-v2.js?v=1"></script>
+<script src="js/main.js?v=2cf4b3f9"></script>
+</body>
+</html>
