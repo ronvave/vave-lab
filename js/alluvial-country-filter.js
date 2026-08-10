@@ -169,7 +169,31 @@
   // Expose refresh for the main alluvial script to call after every draw().
   window.__alluvialFilterRefresh = refresh;
 
-  // First run (in case data was already drawn by the time this script loads).
+  // Watch the chart for ribbon changes so we don’t rely on the alluvial
+  // script explicitly calling us. Any time D3 re-creates the ribbons group
+  // (initial draw, level toggle, CSV drop) this observer fires and we
+  // re-populate the checkbox row from the current DOM. This makes the filter
+  // robust to stale cached versions of the alluvial script.
+  const chart = document.getElementById("alluvial-chart");
+  if(chart){
+    let scheduled = false;
+    const scheduleRefresh = () => {
+      if(scheduled) return;
+      scheduled = true;
+      // Debounce to the next frame so we run once per draw, not per node.
+      requestAnimationFrame(() => {
+        scheduled = false;
+        if(document.querySelectorAll("#alluvial-chart .ribbons path.ribbon").length > 0){
+          refresh();
+        }
+      });
+    };
+    const observer = new MutationObserver(scheduleRefresh);
+    observer.observe(chart, { childList: true, subtree: true });
+  }
+
+  // Also try an immediate run in case data was already drawn by the time
+  // this script loads.
   if(document.querySelectorAll("#alluvial-chart .ribbons path.ribbon").length > 0){
     refresh();
   }
