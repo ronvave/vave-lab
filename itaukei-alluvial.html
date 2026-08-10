@@ -99,6 +99,20 @@
     }
     .country-filter-boxes input[type=checkbox]{ margin:0; }
 
+    /* Batch PNG export row */
+    .country-filter-batch{
+      display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-3);
+      margin-top:var(--space-3); padding-top:var(--space-3);
+      border-top:1px dashed var(--color-border);
+    }
+    .country-filter-batch-title{ font-family:var(--font-body); font-size:13px; font-weight:600; color:#000; }
+    .country-filter-batch label{
+      display:inline-flex; align-items:center; gap:6px;
+      font-family:var(--font-body); font-size:13px; color:#000; cursor:pointer;
+    }
+    .country-filter-batch label input[type=checkbox]{ margin:0; }
+    .country-filter-batch-status{ font-family:var(--font-body); font-size:12px; color:#000; }
+
     .level-toggle{
       display:inline-flex; background:var(--color-surface);
       border:1px solid var(--color-border); border-radius:var(--radius-full);
@@ -367,6 +381,19 @@
         <button type="button" id="country-filter-none" class="country-filter-btn">Clear</button>
       </div>
       <div class="country-filter-boxes" id="country-filter-boxes"></div>
+
+      <!-- Batch PNG export: automates the slide-by-slide download workflow.
+           A = individual countries (empty → Fiji only → Australia only → …)
+           B = additive (empty → Fiji → Fiji+Aus → Fiji+Aus+NZ → …)
+           Each mode starts with a "0" (no-ribbons) frame; subsequent frames
+           are numbered A1/B1, A2/B2, … in Masters-column top-to-bottom order.
+      -->
+      <div class="country-filter-batch">
+        <span class="country-filter-batch-title">Auto-export PNG series:</span>
+        <label><input type="checkbox" id="batch-individual"><span>Individual countries (A-series)</span></label>
+        <label><input type="checkbox" id="batch-additive"><span>Additive flow (B-series)</span></label>
+        <span id="batch-status" class="country-filter-batch-status" aria-live="polite"></span>
+      </div>
     </div>
 
     <div class="alluvial-canvas reveal">
@@ -446,8 +473,8 @@
   </div>
 </footer>
 
-<script src="js/itaukei-alluvial.js?v=73172d22"></script>
-<script src="js/alluvial-country-filter.js?v=ca5dbff1"></script>
+<script src="js/itaukei-alluvial.js?v=869d9c96"></script>
+<script src="js/alluvial-country-filter.js?v=c278af81"></script>
 <script src="js/main.js?v=2cf4b3f9"></script>
 </body>
 </html>

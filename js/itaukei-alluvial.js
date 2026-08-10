@@ -1264,36 +1264,56 @@ document.querySelectorAll(".level-toggle button").forEach(btn => {
       img.src=url;
     });
   }
-  async function download(){
-    const o=outPixels();
-    btn.disabled=true; const label=btn.textContent; btn.textContent="Rendering\u2026";
-    try{
-      const chart=document.getElementById("alluvial-chart");
-      const c=await svgToImage(chart,o.pxW,o.pxH);
-      const canvas=document.createElement("canvas");
-      // No footer strip: the alluvial plot fills the entire exported canvas.
-      // Source + Generated captions were removed to give the ribbons and
-      // university labels as much vertical room as possible; the export
-      // filename already carries the timestamp.
-      const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
-      canvas.width=o.pxW; canvas.height=o.pxH;
-      const ctx=canvas.getContext("2d");
-      ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(c.img,0,0,o.pxW,o.pxH);
-      URL.revokeObjectURL(c.url);
-      canvas.toBlob((blob)=>{
-        const url=URL.createObjectURL(blob);
-        const a=document.createElement("a");
-        a.href=url;
-        a.download="itaukei-alluvial_level"+currentLevel+"_"+stamp.fileSuffix+".png";
+  // Core render pipeline: builds a PNG blob at the current export size and
+  // triggers a browser download with the given filename. Exposed on window
+  // so external scripts (e.g. the origin-country batch exporter) can drive
+  // the same rendering path without duplicating the SVG-to-canvas plumbing.
+  async function renderPng(filename){
+    const o = outPixels();
+    const chart = document.getElementById("alluvial-chart");
+    const c = await svgToImage(chart, o.pxW, o.pxH);
+    const canvas = document.createElement("canvas");
+    canvas.width = o.pxW; canvas.height = o.pxH;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(c.img, 0, 0, o.pxW, o.pxH);
+    URL.revokeObjectURL(c.url);
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if(!blob){ reject(new Error("toBlob returned null")); return; }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
         document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(()=>URL.revokeObjectURL(url),1500);
-        btn.textContent=label; btn.disabled=false;
-      },"image/png");
-    }catch(err){
-      console.error("PNG export failed",err);
-      btn.textContent=label; btn.disabled=false;
+        setTimeout(() => URL.revokeObjectURL(url), 1500);
+        resolve(filename);
+      }, "image/png");
+    });
+  }
+
+  // Build the default filename for the manual Download PNG button and for
+  // external batch exports. External callers pass an optional prefix (e.g.
+  // "A2", "B0") that becomes the first segment of the filename.
+  function defaultFilename(prefix){
+    const stamp = window.__alluvialTimestamp || nowHawaiiTimestamp();
+    const base = "itaukei-alluvial_level" + currentLevel + "_" + stamp.fileSuffix + ".png";
+    return prefix ? (prefix + "_" + base) : base;
+  }
+
+  // Expose the render function and filename builder for the batch exporter.
+  window.__alluvialRenderPng = renderPng;
+  window.__alluvialDefaultFilename = defaultFilename;
+
+  async function download(){
+    btn.disabled = true; const label = btn.textContent; btn.textContent = "Rendering\u2026";
+    try{
+      await renderPng(defaultFilename());
+    } catch(err){
+      console.error("PNG export failed", err);
       alert("Sorry, the image could not be generated in this browser.");
+    } finally {
+      btn.textContent = label; btn.disabled = false;
     }
   }
   btn.addEventListener("click", download);

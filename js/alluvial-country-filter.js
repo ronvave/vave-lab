@@ -189,6 +189,129 @@
     applySelection(saved);
   }
 
+  // ---------------- Batch PNG export (A-series / B-series) ----------------
+  //
+  // Two “automation” checkboxes drive a slide-by-slide PNG export series:
+  //   • A (Individual countries): 0 no ribbons → A1 first country only → A2
+  //     second country only → … → AN last country only.
+  //   • B (Additive flow): 0 no ribbons → B1 first country → B2 first+second
+  //     → … → BN all countries.
+  //
+  // Both start with a shared 0-frame (empty state) whose filename begins with
+  // "0_" so it sorts before both series. Filenames after that use the
+  // existing itaukei-alluvial timestamp convention, prefixed with the series
+  // letter and the country index (e.g. A2_itaukei-alluvial_level3_9Aug2026_1147pm.png).
+  //
+  // The runner uses the existing PNG render pipeline exposed on window by
+  // itaukei-alluvial.js (__alluvialRenderPng, __alluvialDefaultFilename).
+  // Between frames we set the checkbox selection, apply it to ribbons, wait
+  // a short debounce so the SVG has repainted, then trigger a download. The
+  // browser downloads each PNG immediately — users may need to allow
+  // multiple downloads from the site the first time.
+  const batchStatus = document.getElementById("batch-status");
+  const batchIndCb  = document.getElementById("batch-individual");
+  const batchAddCb  = document.getElementById("batch-additive");
+  let batchRunning = false;
+
+  function setBatchStatus(text){
+    if(batchStatus) batchStatus.textContent = text || "";
+  }
+  function setBatchCheckboxesDisabled(disabled){
+    if(batchIndCb) batchIndCb.disabled = disabled;
+    if(batchAddCb) batchAddCb.disabled = disabled;
+  }
+  // Reflect a Set of country names onto the checkbox UI + ribbon fill-opacity.
+  function reflectSelection(set){
+    saveSelection(set);
+    boxesEl.querySelectorAll('input[type=checkbox]').forEach(cb => {
+      cb.checked = set.has(cb.value);
+    });
+    applySelection(set);
+  }
+  // Wait for one animation frame + a small buffer so the SVG repaints with
+  // the new fill-opacity values before we serialize it to PNG.
+  function waitForRepaint(ms){
+    return new Promise(resolve => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setTimeout(resolve, ms || 120));
+      });
+    });
+  }
+
+  async function runBatch(mode){
+    if(batchRunning) return;
+    if(typeof window.__alluvialRenderPng !== "function"
+       || typeof window.__alluvialDefaultFilename !== "function"){
+      setBatchStatus("Export pipeline not ready \u2014 reload the page and try again.");
+      return;
+    }
+    const countries = orderedOriginCountries();
+    if(countries.length === 0){
+      setBatchStatus("No countries to export \u2014 load data first.");
+      return;
+    }
+
+    batchRunning = true;
+    setBatchCheckboxesDisabled(true);
+    // Remember the user’s current selection so we can restore it when done.
+    const savedSelection = loadSelection() || new Set(countries);
+
+    try{
+      const total = 1 + countries.length; // 0-frame + one per country
+      // Frame 0: no ribbons. Shared prefix so both series start with the
+      // same file ("0_...") if the user runs them back-to-back.
+      setBatchStatus("Exporting frame 1 of " + total + " \u2026 (0 \u2014 no ribbons)");
+      reflectSelection(new Set());
+      await waitForRepaint();
+      await window.__alluvialRenderPng(window.__alluvialDefaultFilename("0"));
+
+      // Frames 1..N: one per country, either isolated (A) or additive (B).
+      const additive = new Set();
+      for(let i = 0; i < countries.length; i++){
+        const c = countries[i];
+        let sel;
+        if(mode === "individual"){
+          sel = new Set([c]);
+        } else {
+          additive.add(c);
+          sel = new Set(additive);
+        }
+        reflectSelection(sel);
+        await waitForRepaint();
+        const prefix = (mode === "individual" ? "A" : "B") + (i + 1);
+        setBatchStatus("Exporting frame " + (i + 2) + " of " + total
+          + " \u2026 (" + prefix + " \u2014 " + (mode === "individual" ? c : Array.from(additive).join(", ")) + ")");
+        await window.__alluvialRenderPng(window.__alluvialDefaultFilename(prefix));
+      }
+
+      setBatchStatus("Done \u2014 " + total + " PNG" + (total === 1 ? "" : "s") + " downloaded.");
+    } catch(err){
+      console.error("Batch export failed", err);
+      setBatchStatus("Export failed \u2014 see browser console.");
+    } finally {
+      // Restore user’s pre-batch selection so their manual work isn’t lost.
+      reflectSelection(savedSelection);
+      // Uncheck the automation checkbox so it’s ready to run again.
+      if(batchIndCb) batchIndCb.checked = false;
+      if(batchAddCb) batchAddCb.checked = false;
+      setBatchCheckboxesDisabled(false);
+      batchRunning = false;
+    }
+  }
+
+  if(batchIndCb){
+    batchIndCb.addEventListener("change", () => {
+      if(batchIndCb.checked) runBatch("individual");
+    });
+  }
+  if(batchAddCb){
+    batchAddCb.addEventListener("change", () => {
+      if(batchAddCb.checked) runBatch("additive");
+    });
+  }
+
+  // ---------------- End batch export ----------------
+
   btnAll.addEventListener("click", () => {
     const countries = orderedOriginCountries();
     const s = new Set(countries);
