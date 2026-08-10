@@ -674,8 +674,13 @@ function draw(flows, level){
     if(f.left_y0 == null || f.right_y0 == null) continue;
     const color = COUNTRY_COLORS[f.m_country] || REGION_COLORS[f.m_region] || "#999";
     const path = ribbonPath(leftInnerX, f.left_y0, f.left_y1, rightInnerX, f.right_y0, f.right_y1);
+    // Origin country (m_country) is exposed as a data-* attribute so external
+    // scripts (e.g. the slideshow QA tool that highlights ribbons by Masters
+    // origin) can filter ribbons without re-parsing the underlying data.
+    const mCountry = f._orig_m_country || f.m_country || "";
     gRibbons.append("path")
       .attr("class","ribbon")
+      .attr("data-m-country", mCountry)
       .attr("d", path)
       .attr("fill", color)
       .attr("fill-opacity", 0.55)
