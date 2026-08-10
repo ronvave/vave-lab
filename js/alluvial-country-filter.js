@@ -153,6 +153,16 @@
     for(const c of Array.from(saved)){
       if(!countries.includes(c)) saved.delete(c);
     }
+    // Add any newly-appearing countries to the selection so a fresh row in
+    // the source data (e.g. a scholar from a country we hadn't seen before)
+    // shows its ribbon by default instead of being silently hidden by a
+    // stale saved selection. Persist the merged set so subsequent loads
+    // are stable.
+    let addedNew = false;
+    for(const c of countries){
+      if(!saved.has(c)){ saved.add(c); addedNew = true; }
+    }
+    if(addedNew) saveSelection(saved);
 
     // Render checkboxes.
     boxesEl.innerHTML = "";
