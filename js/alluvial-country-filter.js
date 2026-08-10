@@ -49,13 +49,51 @@
   }
 
   // Return countries in the top-to-bottom order they appear on the Masters
-  // (left) side of the chart. We look at each ribbon's left-edge y position
-  // via getBBox() and dedupe by country name.
+  // (left) side of the chart.
+  //
+  // Primary source: the Masters-side country <rect> blocks, tagged with
+  // data-side="m" data-country="<name>" by the alluvial script. These rects
+  // have a real `y` attribute set explicitly by D3, so their vertical order
+  // is unambiguous and unaffected by ribbon assignment or fill-opacity
+  // hiding.
+  //
+  // Fallback: when the country column isn’t drawn (Level 1 = region only)
+  // or when the alluvial script is a stale cached version without the
+  // data-country attribute, sort by ribbon top-edge y using getBBox().
   function orderedOriginCountries(){
     const seen = new Set();
+    const ordered = [];
+
+    // Preferred path: read country rects on the Masters side.
+    const rects = document.querySelectorAll(
+      '#alluvial-chart .blocks rect[data-side="m"][data-country]'
+    );
+    if(rects.length > 0){
+      const rows = [];
+      rects.forEach(r => {
+        const c = r.getAttribute("data-country");
+        const y = parseFloat(r.getAttribute("y")) || 0;
+        rows.push({ c, y });
+      });
+      rows.sort((a, b) => a.y - b.y);
+      for(const r of rows){
+        if(seen.has(r.c)) continue;
+        seen.add(r.c);
+        ordered.push(r.c);
+      }
+      // Only include countries that actually have ribbons attached (skip
+      // any orphan country blocks with no scholar flow).
+      const withRibbons = new Set();
+      document.querySelectorAll("#alluvial-chart .ribbons path.ribbon").forEach(el => {
+        const c = el.getAttribute("data-m-country");
+        if(c) withRibbons.add(c);
+      });
+      return ordered.filter(c => withRibbons.has(c));
+    }
+
+    // Fallback: sort by ribbon path top-edge y.
     const rows = [];
-    const paths = document.querySelectorAll("#alluvial-chart .ribbons path.ribbon");
-    paths.forEach(el => {
+    document.querySelectorAll("#alluvial-chart .ribbons path.ribbon").forEach(el => {
       const c = el.getAttribute("data-m-country");
       if(!c) return;
       let bb;
@@ -63,7 +101,6 @@
       rows.push({ c, y: bb.y });
     });
     rows.sort((a, b) => a.y - b.y);
-    const ordered = [];
     for(const r of rows){
       if(seen.has(r.c)) continue;
       seen.add(r.c);

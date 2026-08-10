@@ -706,10 +706,20 @@ function draw(flows, level){
         const color = b.kind === "region" ? REGION_COLORS[b.region]
                     : b.kind === "country" ? (COUNTRY_COLORS[b.country] || REGION_COLORS[b.region])
                     : (COUNTRY_COLORS[b.country] || REGION_COLORS[b.region]);
-        gBlocks.append("rect")
+        // Tag country blocks with data-* so external scripts (e.g. the
+        // origin-country checkbox filter) can order countries by their
+        // top-to-bottom position on the Masters side without depending on
+        // ribbon geometry, which can be perturbed by ribbon assignment or
+        // by fill-opacity hiding.
+        const blockRect = gBlocks.append("rect")
           .attr("x", b.x0).attr("y", b.y0)
           .attr("width", b.x1 - b.x0).attr("height", b.y1 - b.y0)
           .attr("fill", color || "#999");
+        if(b.kind === "country"){
+          blockRect
+            .attr("data-side", side)
+            .attr("data-country", b.country);
+        }
 
         // Vertical label inside region column — only render if the label
         // (rotated 90°) fits within the block's height. Otherwise skip.
@@ -943,6 +953,12 @@ function draw(flows, level){
   // Notify the PNG export controls that the SVG viewBox may have changed so
   // the width/height inputs stay in sync with the current chart aspect.
   if(typeof window.__alluvialSyncExportSize === "function") window.__alluvialSyncExportSize();
+
+  // Notify the origin-country filter (checkbox row above the chart) that the
+  // ribbons have been redrawn so it can re-populate the checkboxes and
+  // re-apply the current selection. Ribbons are re-created on every draw so
+  // any previous inline fill-opacity is lost — the filter needs to re-run.
+  if(typeof window.__alluvialFilterRefresh === "function") window.__alluvialFilterRefresh();
 }
 
 // Uses the WCAG 2.x relative-luminance formula (sRGB gamma-decoded, then
