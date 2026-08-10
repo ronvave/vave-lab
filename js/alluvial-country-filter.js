@@ -197,10 +197,11 @@
   //   • B (Additive flow): 0 no ribbons → B1 first country → B2 first+second
   //     → … → BN all countries.
   //
-  // Both start with a shared 0-frame (empty state) whose filename begins with
-  // "0_" so it sorts before both series. Filenames after that use the
-  // existing itaukei-alluvial timestamp convention, prefixed with the series
-  // letter and the country index (e.g. A2_itaukei-alluvial_level3_9Aug2026_1147pm.png).
+  // Each series starts with its own 0-frame (empty state) prefixed with the
+  // series letter (A0 for individual, B0 for additive) so the two runs never
+  // overwrite each other on disk. Subsequent frames use the existing
+  // itaukei-alluvial timestamp convention, prefixed with the series letter
+  // and the country index (e.g. A2_itaukei-alluvial_level3_9Aug2026_1147pm.png).
   //
   // The runner uses the existing PNG render pipeline exposed on window by
   // itaukei-alluvial.js (__alluvialRenderPng, __alluvialDefaultFilename).
@@ -258,12 +259,15 @@
 
     try{
       const total = 1 + countries.length; // 0-frame + one per country
-      // Frame 0: no ribbons. Shared prefix so both series start with the
-      // same file ("0_...") if the user runs them back-to-back.
-      setBatchStatus("Exporting frame 1 of " + total + " \u2026 (0 \u2014 no ribbons)");
+      const seriesLetter = (mode === "individual" ? "A" : "B");
+      // Frame 0: no ribbons. Prefixed with the series letter (A0 / B0) so
+      // running both series back-to-back produces two distinct empty-state
+      // files rather than overwriting the same one.
+      const zeroPrefix = seriesLetter + "0";
+      setBatchStatus("Exporting frame 1 of " + total + " \u2026 (" + zeroPrefix + " \u2014 no ribbons)");
       reflectSelection(new Set());
       await waitForRepaint();
-      await window.__alluvialRenderPng(window.__alluvialDefaultFilename("0"));
+      await window.__alluvialRenderPng(window.__alluvialDefaultFilename(zeroPrefix));
 
       // Frames 1..N: one per country, either isolated (A) or additive (B).
       const additive = new Set();
@@ -278,7 +282,7 @@
         }
         reflectSelection(sel);
         await waitForRepaint();
-        const prefix = (mode === "individual" ? "A" : "B") + (i + 1);
+        const prefix = seriesLetter + (i + 1);
         setBatchStatus("Exporting frame " + (i + 2) + " of " + total
           + " \u2026 (" + prefix + " \u2014 " + (mode === "individual" ? c : Array.from(additive).join(", ")) + ")");
         await window.__alluvialRenderPng(window.__alluvialDefaultFilename(prefix));
