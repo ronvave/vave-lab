@@ -361,6 +361,13 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
   // what leaf block it corresponds to and what fraction each flow gets.
   const leftIdx  = new Map(leftLeaves.map(b  => [b.region+"|"+b.country+"|"+b.uni, b]));
   const rightIdx = new Map(rightLeaves.map(b => [b.region+"|"+b.country+"|"+b.uni, b]));
+  // Secondary lookup by (country|uni) alone so a flow whose m_region/p_region
+  // disagrees with the aggregation (e.g. a CSV row that spells the region
+  // differently from all the others under the same country+uni pair) still
+  // finds its leaf block. Without this fallback the ribbon is silently
+  // dropped even though the leaf visibly renders.
+  const leftIdxCountryUni  = new Map(leftLeaves.map(b  => [b.country+"|"+b.uni, b]));
+  const rightIdxCountryUni = new Map(rightLeaves.map(b => [b.country+"|"+b.uni, b]));
 
   // Ribbon vertical order within a leaf block: order left-side ribbons by
   // right-side region/country/uni order; and vice versa. Use REGION_ORDER
@@ -377,11 +384,23 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
     return 0;
   }
 
+  // Track flows whose leaf lookup only succeeded via the country+uni fallback
+  // so we can surface a console warning below.
+  const orphanLeft = [];
+  const orphanRight = [];
+
   // Group flowList by left leaf block, order within group by right-side rank.
   const byLeft = d3.group(flowList, f => f.m_region+"|"+f.m_country+"|"+f.m_uni);
   for(const [, fs] of byLeft){
     fs.sort((a,b) => cmp(rank(a.p_region,a.p_country,a.p_uni), rank(b.p_region,b.p_country,b.p_uni)));
-    const leaf = leftIdx.get(fs[0].m_region+"|"+fs[0].m_country+"|"+fs[0].m_uni);
+    let leaf = leftIdx.get(fs[0].m_region+"|"+fs[0].m_country+"|"+fs[0].m_uni);
+    if(!leaf){
+      leaf = leftIdxCountryUni.get(fs[0].m_country+"|"+fs[0].m_uni);
+      if(leaf){
+        orphanLeft.push({key: fs[0].m_region+"|"+fs[0].m_country+"|"+fs[0].m_uni,
+                          leafRegion: leaf.region, count: fs.length});
+      }
+    }
     if(!leaf) continue;
     const totalN = d3.sum(fs, d => d.count);
     const unit = (leaf.y1 - leaf.y0) / totalN;
@@ -396,7 +415,14 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
   const byRight = d3.group(flowList, f => f.p_region+"|"+f.p_country+"|"+f.p_uni);
   for(const [, fs] of byRight){
     fs.sort((a,b) => cmp(rank(a.m_region,a.m_country,a.m_uni), rank(b.m_region,b.m_country,b.m_uni)));
-    const leaf = rightIdx.get(fs[0].p_region+"|"+fs[0].p_country+"|"+fs[0].p_uni);
+    let leaf = rightIdx.get(fs[0].p_region+"|"+fs[0].p_country+"|"+fs[0].p_uni);
+    if(!leaf){
+      leaf = rightIdxCountryUni.get(fs[0].p_country+"|"+fs[0].p_uni);
+      if(leaf){
+        orphanRight.push({key: fs[0].p_region+"|"+fs[0].p_country+"|"+fs[0].p_uni,
+                           leafRegion: leaf.region, count: fs.length});
+      }
+    }
     if(!leaf) continue;
     const totalN = d3.sum(fs, d => d.count);
     const unit = (leaf.y1 - leaf.y0) / totalN;
@@ -406,6 +432,10 @@ function assignRibbonPositions(flows, leftLeaves, rightLeaves){
       f.right_y1 = cursor + f.count * unit;
       cursor = f.right_y1;
     }
+  }
+  if(orphanLeft.length || orphanRight.length){
+    console.warn("[alluvial] region mismatch recovered via country+uni fallback",
+                 { orphanLeft, orphanRight });
   }
   return flowList;
 }
