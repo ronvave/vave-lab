@@ -76,6 +76,29 @@
     path.ribbon.dim{ opacity:0.08 !important; }
 
     /* ==== Level toggle (segmented control) ==== */
+    /* Origin-country filter row */
+    #alluvial-country-filter{
+      max-width:1200px; margin:0 auto var(--space-5) auto; padding:var(--space-3) var(--space-4);
+      border:1px solid var(--color-border); border-radius:8px; background:var(--color-surface);
+    }
+    .country-filter-header{ display:flex; flex-wrap:wrap; align-items:center; gap:var(--space-3); margin-bottom:var(--space-2); }
+    .country-filter-title{ font-family:var(--font-body); font-size:13px; font-weight:600; color:#000; }
+    .country-filter-btn{
+      font-family:var(--font-body); font-size:12px; font-weight:500;
+      padding:4px 10px; border:1px solid var(--color-border); border-radius:4px;
+      background:#fff; color:#000; cursor:pointer;
+    }
+    .country-filter-btn:hover{ background:var(--color-surface-alt); }
+    .country-filter-boxes{ display:flex; flex-wrap:wrap; gap:var(--space-2) var(--space-4); }
+    .country-filter-boxes label{
+      display:inline-flex; align-items:center; gap:6px;
+      font-family:var(--font-body); font-size:13px; color:#000; cursor:pointer;
+    }
+    .country-filter-boxes .swatch{
+      display:inline-block; width:12px; height:12px; border-radius:2px; border:1px solid rgba(0,0,0,0.1);
+    }
+    .country-filter-boxes input[type=checkbox]{ margin:0; }
+
     .level-toggle{
       display:inline-flex; background:var(--color-surface);
       border:1px solid var(--color-border); border-radius:var(--radius-full);
@@ -331,6 +354,21 @@
       </div>
     </div>
 
+    <!-- ================= ORIGIN-COUNTRY FILTER =================
+         Checkboxes for each Masters-side origin country, populated after
+         data loads. Used to build presentation slides one origin at a time
+         (no ribbons → Fiji only → Australia only → …) by toggling ribbon
+         visibility and exporting a PNG per state. See alluvial-country-filter.js.
+    -->
+    <div id="alluvial-country-filter" class="alluvial-embedded-hide" aria-label="Show ribbons by Masters origin country">
+      <div class="country-filter-header">
+        <span class="country-filter-title">Show ribbons from Masters origin:</span>
+        <button type="button" id="country-filter-all" class="country-filter-btn">Check all</button>
+        <button type="button" id="country-filter-none" class="country-filter-btn">Clear</button>
+      </div>
+      <div class="country-filter-boxes" id="country-filter-boxes"></div>
+    </div>
+
     <div class="alluvial-canvas reveal">
       <div id="alluvial-wrap">
         <button id="alluvial-expand" type="button" aria-label="Expand chart to fullscreen" title="Click to expand chart. Click again or press Esc to close.">Expand ⇱</button>
@@ -409,6 +447,7 @@
 </footer>
 
 <script src="js/itaukei-alluvial.js?v=1070e7ec"></script>
+<script src="js/alluvial-country-filter.js?v=pending"></script>
 <script src="js/main.js?v=2cf4b3f9"></script>
 </body>
 </html>
