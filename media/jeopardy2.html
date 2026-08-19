@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<title>Pacific Islands Studies Jeopardy — CPIS, UH Mānoa</title>
+<title>Pacific Islands Studies Jeopardy (Coconut Edition) — CPIS, UH Mānoa</title>
 <style>
   :root{
     --bg:#060842;
@@ -130,6 +130,17 @@
   .tile.answered:hover{transform:none;background:#0a0d3e}
   .tile.dd::after{content:"★";position:absolute}
 
+  /* Coconut icons for value display */
+  .coco-row{display:flex;flex-wrap:nowrap;gap:3px;align-items:center;justify-content:center;max-width:100%}
+  .tile .coco-row img{height:clamp(18px,2.2vw,30px);width:auto;display:block;
+    filter:drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  .team .score .coco-row img{height:26px;width:auto;display:block}
+  .team .score{min-width:170px;display:flex;justify-content:flex-end;align-items:center}
+  .team .score.neg .coco-row img{filter:grayscale(.4) hue-rotate(-120deg) drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  #c-val .coco-row img{height:36px;width:auto;display:block}
+  #c-val{display:flex;justify-content:center;align-items:center}
+  .coco-neg{color:#ff8a8a;font-family:Georgia,serif;font-weight:bold;font-size:22px;text-shadow:1px 1px 0 #000;margin-right:6px}
+
   /* Modal / clue view */
   #overlay{
     position:fixed;inset:0;background:rgba(4,6,40,.94);z-index:100;
@@ -232,7 +243,7 @@
     <img class="logo-uh" src="images/uh_logo.jpg" alt="University of Hawaiʻi at Mānoa">
   </span>
   <div class="titles">
-    <h1>Pacific Islands Studies Jeopardy</h1>
+    <h1>Pacific Islands Studies Jeopardy <span style="font-size:.5em;vertical-align:middle;color:#a5d67a">🥥 Coconut Edition</span></h1>
     <div class="subtitle">Department of Pacific Islands Studies · University of Hawaiʻi at Mānoa</div>
   </div>
   <div class="brand-right">
@@ -288,6 +299,18 @@
 </footer>
 
 <script>
+/* ---- Coconut value renderer ----
+   Each $100 = 1 coconut. Value / 100 = number of coconuts to display. */
+function coconutHTML(value){
+  const n = Math.round(Math.abs(value) / 100);
+  const neg = value < 0 ? '<span class="coco-neg">−</span>' : '';
+  if (n === 0) return '<span class="coco-row"><span style="color:#c9b98a;font-family:Georgia,serif;font-weight:bold;font-size:22px;opacity:.5">0 🥥</span></span>';
+  let imgs = '';
+  for (let i = 0; i < n; i++){
+    imgs += '<img src="images/coconut.png" alt="coconut">';
+  }
+  return `${neg}<span class="coco-row">${imgs}</span>`;
+}
 /* ============================================================
    Pacific Islands Studies Jeopardy — CPIS UH Mānoa
    Single-file HTML page. No dependencies.
@@ -580,7 +603,7 @@ function renderScoreboard(){
     div.innerHTML = `
       <div style="flex:1">
         <input class="name" value="${t.name}" data-idx="${i}" />
-        <div class="score${t.score<0?' neg':''}" data-idx="${i}">$${t.score}</div>
+        <div class="score${t.score<0?' neg':''}" data-idx="${i}">${coconutHTML(t.score)}</div>
       </div>
       <div class="team-buttons">
         <button class="plus"  data-idx="${i}" data-op="plus">+</button>
@@ -643,7 +666,7 @@ function renderBoard(){
       t.className = 'tile';
       t.dataset.cat = ci;
       t.dataset.clue = vi;
-      t.textContent = `$${v}`;
+      t.innerHTML = coconutHTML(v);
       const answered = (STATE.answered[ci] || {})[vi];
       if (answered) t.classList.add('answered');
       t.addEventListener('click', ()=>openClue(ci, vi));
@@ -659,7 +682,7 @@ function openClue(catIndex, clueIndex){
   awardedThisClue = false;
 
   el('#c-cat').textContent = cat.title;
-  el('#c-val').textContent = `$${clue.value}`;
+  el('#c-val').innerHTML = coconutHTML(clue.value);
   el('#c-q').textContent = clue.q;
 
   // Media / map
