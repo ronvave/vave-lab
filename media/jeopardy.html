@@ -454,6 +454,7 @@ const BOARD = [
         credit: "Epeli Hauʻofa (1939–2009)",
         imageOnReveal: true,
         q: "Which Pacific anthropologist wrote: “Oceania is vast, Oceania is expanding, Oceania is hospitable and generous, Oceania is humanity rising from the depths of brine and regions of fire deeper still. Oceania is us. We are the sea, we are the ocean…”?",
+        qHTML: 'Which Pacific anthropologist wrote:<br><span style="color:#ffd971;font-style:italic;display:inline-block;margin-top:10px;line-height:1.4">“Oceania is vast, Oceania is expanding, Oceania is hospitable and generous, Oceania is humanity rising from the depths of brine and regions of fire deeper still. Oceania is us. We are the sea, we are the ocean…”</span>',
         choices: ["Konai Helu Thaman","Epeli Hauʻofa","Albert Wendt","Vilsoni Hereniko"],
         correct: 1,
         a: "Epeli Hauʻofa (1939–2009) — a Tongan-Fijian anthropologist, writer, and satirist, born in Papua New Guinea to Tongan missionary parents. His landmark 1993 essay “Our Sea of Islands” reframed Oceania not as scattered, remote, and small “islands in a far sea,” but as a vast, connected “sea of islands.” The essay reshaped Pacific Studies globally and inspired a generation of Pacific scholars, artists, and leaders to imagine the region on its own terms." }
@@ -686,7 +687,7 @@ function openClue(catIndex, clueIndex){
 
   el('#c-cat').textContent = cat.title;
   el('#c-val').textContent = `$${clue.value}`;
-  el('#c-q').textContent = clue.q;
+  if (clue.qHTML) { el('#c-q').innerHTML = clue.qHTML; } else { el('#c-q').textContent = clue.q; }
 
   // Media / map
   const media = el('#c-media');
