@@ -20,7 +20,7 @@
     --radius: 10px;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;padding:0;background:radial-gradient(ellipse at top,#0b1080 0%,#050740 55%,#020327 100%) fixed;color:var(--ink);font-family:'Helvetica Neue',Arial,sans-serif;min-height:100vh}
+  html,body{margin:0;padding:0;background:radial-gradient(ellipse at top,#0b1080 0%,#050740 55%,#020327 100%) fixed;color:var(--ink);font-family:'Helvetica Neue',Arial,sans-serif;min-height:100vh;overflow-x:hidden}
   header{
     padding:18px 26px 8px;
     display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
@@ -95,8 +95,8 @@
 
   /* Board */
   #board{
-    display:grid;grid-template-columns:repeat(7,1fr);gap:10px;
-    padding:6px 26px 26px;
+    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;
+    padding:6px 20px 26px;
   }
   .cat{
     background:linear-gradient(180deg,#0b1cad 0%, #071068 100%);
@@ -113,9 +113,9 @@
     border:2px solid rgba(255,255,255,.15);border-radius:var(--radius);
     color:var(--gold);font-family:Georgia,serif;font-weight:800;
     font-size:clamp(22px,2.6vw,42px);
-    padding:34px 8px;text-align:center;cursor:pointer;
+    padding:34px 6px;text-align:center;cursor:pointer;
     text-shadow:2px 2px 0 #000, 3px 3px 8px rgba(0,0,0,.7);
-    transition:.15s;user-select:none;min-height:110px;display:flex;align-items:center;justify-content:center
+    transition:.15s;user-select:none;min-height:110px;min-width:0;display:flex;align-items:center;justify-content:center;overflow:hidden
   }
   .tile:hover{background:linear-gradient(180deg,var(--tile-hover),#0a1a90);transform:scale(1.02)}
   .tile.answered{
@@ -380,6 +380,7 @@ const BOARD = [
       { value: 100,
         image: "images/nature_100_jellyfish.jpg",
         credit: "Jellyfish Lake, Palau",
+        hideCredit: true,
         q: "In which Pacific Island country can you swim in a lake full of jellyfish (pictured)?",
         choices: ["Fiji","Palau","Samoa","Solomon Islands"],
         correct: 1,
@@ -387,6 +388,7 @@ const BOARD = [
       { value: 200,
         image: "images/fijian_iguana.jpg",
         credit: "Brachylophus vitiensis · Wikimedia Commons",
+        hideCredit: true,
         q: "The Critically Endangered crested iguana pictured is found only in which country?",
         choices: ["Solomon Islands","Vanuatu","Fiji","Papua New Guinea"],
         correct: 2,
@@ -440,20 +442,21 @@ const BOARD = [
         correct: 2,
         a: "A double-hulled Polynesian voyaging canoe (waʻa kaulua) — Hōkūleʻa (‘Star of Gladness,’ the Hawaiian name for Arcturus) was built by the Polynesian Voyaging Society as a floating experiment to test theories of intentional migration. Since 1976 she has sailed over 245,000 nautical miles, including the Mālama Honua Worldwide Voyage (2013–2017), becoming a global symbol of indigenous knowledge, ocean stewardship, and cultural revival." },
       { value: 400,
-        image: "images/history_400_sapolu2.jpg",
-        credit: "NFL center in #61 red 49ers jersey",
-        hideCredit: true,
-        q: "This Samoan-born NFL center/guard won four Super Bowls with the San Francisco 49ers.",
-        choices: ["Troy Polamalu","Junior Seau","Jesse Sapolu","Mosi Tatupu"],
-        correct: 2,
-        a: "Jesse Sapolu — born in Western Samoa (1961), moved to Hawaiʻi as a child, and played high school football at Farrington High before starring at the University of Hawaiʻi. Over 15 seasons with the 49ers (1983–1997), he won four Super Bowls (XIX, XXIII, XXIV, XXIX) and was named to two Pro Bowls. He co-founded the Polynesian Football Hall of Fame in 2013 to honor Pacific Islanders in American football." },
-      { value: 500,
         image: "images/solomon_shell_money.jpg",
         credit: "Traditional shell money strings, Solomon Islands",
+        hideCredit: true,
         q: "What is the traditional currency that people in Solomon Islands use?",
         choices: ["Pearl Shell","Shell Money","Mats","Kava"],
         correct: 1,
-        a: "Shell Money (tafuliae in Are’are and Kwaio languages) — made in the Langalanga and Malaita lagoons by grinding, drilling, and threading small pieces of red, white, and black shell onto strings that can stretch several metres. Shell money remains active bride-price, compensation payment, and status wealth in the Solomon Islands today, existing alongside the national Solomon dollar. Different colours and lengths hold different values." }
+        a: "Shell Money (tafuliae in Are’are and Kwaio languages) — made in the Langalanga and Malaita lagoons by grinding, drilling, and threading small pieces of red, white, and black shell onto strings that can stretch several metres. Shell money remains active bride-price, compensation payment, and status wealth in the Solomon Islands today, existing alongside the national Solomon dollar. Different colours and lengths hold different values." },
+      { value: 500,
+        image: "images/epeli_hauofa.jpg",
+        credit: "Epeli Hauʻofa (1939–2009)",
+        imageOnReveal: true,
+        q: "Which Pacific anthropologist wrote: “Oceania is vast, Oceania is expanding, Oceania is hospitable and generous, Oceania is humanity rising from the depths of brine and regions of fire deeper still. Oceania is us. We are the sea, we are the ocean…”?",
+        choices: ["Konai Helu Thaman","Epeli Hauʻofa","Albert Wendt","Vilsoni Hereniko"],
+        correct: 1,
+        a: "Epeli Hauʻofa (1939–2009) — a Tongan-Fijian anthropologist, writer, and satirist, born in Papua New Guinea to Tongan missionary parents. His landmark 1993 essay “Our Sea of Islands” reframed Oceania not as scattered, remote, and small “islands in a far sea,” but as a vast, connected “sea of islands.” The essay reshaped Pacific Studies globally and inspired a generation of Pacific scholars, artists, and leaders to imagine the region on its own terms." }
     ]
   },
   {
@@ -470,6 +473,7 @@ const BOARD = [
       { value: 200,
         image: "images/hilda_heine.jpg",
         credit: "President Hilda Heine · Wikimedia Commons",
+        hideCredit: true,
         q: "This woman is the current President of which Pacific nation?",
         choices: ["Kiribati","Palau","Marshall Islands","Federated States of Micronesia"],
         correct: 2,
@@ -539,31 +543,35 @@ const BOARD = [
       { value: 100,
         image: "images/flags/pg.png",
         credit: "Flag of Papua New Guinea",
-        imageOnReveal: false,
+        hideCredit: true,
         q: "This flag features a golden bird-of-paradise over a red field, paired with the Southern Cross on black. Which country is it?",
         choices: ["Solomon Islands","Papua New Guinea","Vanuatu","Fiji"], correct:1,
         a: "Papua New Guinea — the largest Pacific island nation, sharing the island of New Guinea with Indonesia’s West Papua. Independent from Australia in 1975; capital Port Moresby; population ~10 million. PNG is home to more than 800 living languages — over 10% of all the world’s languages — and unmatched biological and cultural diversity. The bird-of-paradise (kumul) is a national symbol." },
       { value: 200,
         image: "images/flags/fj.png",
         credit: "Flag of Fiji",
+        hideCredit: true,
         q: "This flag keeps the Union Jack in the corner alongside a shield bearing sugar cane, coconuts, and a dove of peace. Which country is it?",
         choices: ["Tuvalu","Fiji","Cook Islands","New Zealand"], correct:1,
         a: "Fiji — an archipelago of 300+ islands (around 110 inhabited). Capital Suva; independent from Britain in 1970; population ~930,000. Fijian society blends iTaukei (indigenous Fijian) traditions with a large Indo-Fijian community whose ancestors arrived as indentured labourers under the British colonial girmit system (1879–1916). Fiji hosts the University of the South Pacific and the Pacific Islands Forum Secretariat." },
       { value: 300,
         image: "images/flags/ws.png",
         credit: "Flag of Samoa",
+        hideCredit: true,
         q: "A red field with a blue canton holding the Southern Cross — but unlike its neighbors, all its stars are plain white, with no smaller fifth star. Which country is it?",
         choices: ["Tonga","American Samoa","Samoa","Niue"], correct:2,
         a: "Samoa (formerly Western Samoa) — capital Apia. On 1 January 1962, Samoa became the first Pacific Island nation of the 20th century to gain independence (from New Zealand). Population ~213,000. Samoan society is organized around the faʻa Sāmoa (Samoan way) — a system of matai (chiefs), aiga (extended family), and reciprocal obligation that shapes governance, land, ceremonies, and everyday life." },
       { value: 400,
         image: "images/flags/vu.png",
         credit: "Flag of Vanuatu",
+        hideCredit: true,
         q: "This flag's black Y-shape, echoing the layout of its islands, frames a boar's tusk encircling two crossed namele leaves. Which country is it?",
         choices: ["Solomon Islands","New Caledonia","Vanuatu","Papua New Guinea"], correct:2,
         a: "Vanuatu — formerly the New Hebrides. Capital Port Vila; independent from a unique joint British–French condominium in 1980, a movement led by Father Walter Lini. 80+ islands stretch north to south in a Y-shape, echoed on the flag. Over 100 indigenous languages are spoken by a population of ~320,000 — the highest linguistic density per capita on Earth. The boar’s tusk symbolises prosperity; the namele leaf, peace." },
       { value: 500,
         image: "images/flags/ki.png",
         credit: "Flag of Kiribati",
+        hideCredit: true,
         q: "A rising sun with 17 rays over a wavy blue-and-white ocean, topped by a golden frigatebird in flight. Which country is it?",
         choices: ["Tuvalu","Nauru","Marshall Islands","Kiribati"], correct:3,
         a: "Kiribati (pronounced ‘Kiribas’) — 33 low-lying atolls scattered across 3.5 million km² of ocean, straddling the equator and the International Date Line. Capital South Tarawa; independent from Britain in 1979. The 17 rays represent 16 Gilbert Islands plus Banaba; the frigatebird symbolises authority and freedom. Kiribati is among the countries most immediately threatened by sea-level rise and is a leading voice at the UN on climate justice." }
