@@ -165,6 +165,24 @@
   .clue-media img{max-width:100%;max-height:44vh;border-radius:8px;border:2px solid rgba(255,255,255,.2);box-shadow:var(--shadow);transition:max-height .35s ease}
   /* Answer-state (revealed) image: hero-sized for drama; panel scrolls if needed */
   #clue-panel.answered .clue-media img{max-height:72vh}
+
+  /* ---- Presentation Mode ---- Toggle in header; scales everything up for a projector/classroom */
+  body.present #clue-panel{max-width:1600px;padding:40px 56px 32px}
+  body.present .clue-category{font-size:18px;letter-spacing:3px}
+  body.present .clue-value{font-size:32px}
+  body.present .clue-question{font-size:clamp(28px,3.6vw,52px);margin:24px 0 28px}
+  body.present .choices{gap:16px;margin:18px 0 24px}
+  body.present .choice{font-size:clamp(22px,2vw,30px);padding:20px 26px}
+  body.present .choice .letter{width:40px;height:40px;font-size:19px}
+  body.present .clue-answer{font-size:clamp(20px,1.8vw,26px);padding:20px 26px}
+  body.present .clue-answer .label{font-size:15px}
+  body.present .clue-media img{max-height:50vh}
+  body.present #clue-panel.answered .clue-media img{max-height:78vh}
+  body.present .clue-actions .btn{font-size:18px;padding:12px 22px}
+
+  /* Header toggle-button state */
+  #btn-present.active{background:var(--gold);color:#111;border-color:var(--gold)}
+  #btn-present.active:hover{background:#ffd76b}
   .clue-media .credit{font-size:12px;color:var(--dim);margin-top:4px}
   .clue-question{
     font-family:Georgia,serif;font-size:clamp(22px,3vw,40px);
@@ -258,6 +276,7 @@
       <img class="logo-dpis" src="images/dpis_logo.jpg" alt="Department of Pacific Islands Studies">
     </span>
     <div class="controls">
+      <button class="btn" id="btn-present" title="Presentation mode — bigger text and images for projector/classroom (P)">Present</button>
       <button class="btn" id="btn-final">Final Jeopardy →</button>
       <button class="btn danger" id="btn-reset">Reset Game</button>
     </div>
@@ -917,6 +936,33 @@ document.addEventListener('DOMContentLoaded', ()=>{
     el('#fj-answer').classList.add('open');
   });
   el('#btn-reset').addEventListener('click', resetGame);
+
+  // Presentation Mode: toggle body.present, persist to localStorage, keyboard shortcut P
+  const PRESENT_KEY = 'pis-jeopardy-present';
+  function applyPresent(on){
+    document.body.classList.toggle('present', !!on);
+    el('#btn-present').classList.toggle('active', !!on);
+    el('#btn-present').setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  let presentOn = false;
+  if (LS_OK){
+    try { presentOn = localStorage.getItem(PRESENT_KEY) === '1'; } catch(e){}
+  }
+  applyPresent(presentOn);
+  el('#btn-present').addEventListener('click', ()=>{
+    presentOn = !presentOn;
+    applyPresent(presentOn);
+    if (LS_OK){ try{ localStorage.setItem(PRESENT_KEY, presentOn ? '1' : '0'); }catch(e){} }
+  });
+  document.addEventListener('keydown', (e)=>{
+    // Only toggle on plain P (no modifiers, not in a text input)
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey){
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA'){
+        el('#btn-present').click();
+      }
+    }
+  });
 });
 </script>
 </body>
