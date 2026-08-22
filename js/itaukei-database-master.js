@@ -5977,7 +5977,14 @@
     let rollingRun = [];
     const drawRollingRun = () => {
       // Rolling women-authorship line drawn dashed, matching the mockup.
-      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '5 3' }));
+      // Slight transparency (opacity 0.55) so it visually recedes behind the
+      // milestone callout text when the line crosses through a label region
+      // (e.g. the 1994 milestone sits directly on the rising curve). SVG
+      // z-order already puts milestones on top since they're appended after,
+      // but individual letter gaps let the dashed line show through —
+      // reducing opacity keeps the line readable without competing for
+      // attention with the label text.
+      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '5 3', opacity: '0.55' }));
       rollingRun = [];
     };
     for (let year = yMin; year <= yMax; year++) {
@@ -6095,16 +6102,16 @@
       svg.appendChild(circle);
 
       // Line 1: headline — "YYYY: First male PhD"
-      //   The year token stays bold + colored (per Ron's spec: "Keep each
-      //   year bolded and also retain separate text color for years").
-      //   The rest of the headline is rendered in the muted grey used by
-      //   the body lines so the year still visually pops.
+      //   Entire headline is bold. The year token keeps the milestone color
+      //   so it still visually leads (per Ron's spec: "Keep each year bolded
+      //   and also retain separate text color for years"), while the rest
+      //   of the headline is bold in body-text grey.
       const headlineText = panelDSvg('text', {
         x: textX, y: headlineY, 'text-anchor': 'start',
-        'font-family': 'Arial', 'font-size': '11', fill: '#4b5563'
+        'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: '#4b5563'
       });
       const yearTspan = panelDSvg('tspan', {
-        'font-weight': '700', fill: milestone.color
+        fill: milestone.color
       }, `${milestone.year}: `);
       const restTspan = panelDSvg('tspan', {}, milestone.headline || milestone.shortLabel || '');
       headlineText.appendChild(yearTspan);
