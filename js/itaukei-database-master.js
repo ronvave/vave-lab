@@ -5536,6 +5536,12 @@
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
     const aggregates = master.aggregates || {};
     const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s.Gender || '').trim()]));
+    // Name breakdown lookups (Family / Given) for milestone labels that need
+    // "Given Family" order rather than the Scholar Name's "Family, Given" form.
+    // Both fields are already in the public field allowlist (master_file_config.py)
+    // so they arrive with the Master-file refresh.
+    const familyNameByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s['Family Name'] || '').trim()]));
+    const givenNamesByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s['Given Names'] || '').trim()]));
     const publicationById = new Map(publications.map(pub => [String(pub['Publication ID / BibTeX Key'] || '').trim(), pub]));
     const isMasters = row => /master/i.test(String(row['Degree Stage'] || ''));
     const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
@@ -5548,22 +5554,127 @@
       { key: 'firstMalePhD', label: '1st Male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
       { key: 'firstFemalePhD', label: '1st Female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
     ];
+    // Country name -> ISO-ish 2-letter code for compact milestone labels.
+    // Covers every country currently in the Master-file `Country` column plus
+    // a few obvious neighbours. Missing entries fall back to a best-effort
+    // first-two-letters uppercase (e.g. "Vanuatu" -> "VA") which is fine for
+    // rare cases and easy for Ron to override by adding a row here.
+    const COUNTRY_CODE = {
+      'Fiji': 'FJ',
+      'New Zealand': 'NZ',
+      'Australia': 'AU',
+      'United Kingdom': 'UK',
+      'United States': 'US',
+      'United States of America': 'US',
+      'USA': 'US',
+      'Canada': 'CA',
+      'Japan': 'JP',
+      'India': 'IN',
+      'China': 'CN',
+      'Papua New Guinea': 'PG',
+      'Solomon Islands': 'SB',
+      'Vanuatu': 'VU',
+      'Samoa': 'WS',
+      'Tonga': 'TO',
+      'France': 'FR',
+      'Germany': 'DE',
+      'Netherlands': 'NL',
+      'Norway': 'NO',
+      'Sweden': 'SE',
+      'Switzerland': 'CH',
+      'Malaysia': 'MY',
+      'Singapore': 'SG',
+      'South Korea': 'KR',
+      'Taiwan': 'TW',
+      'Philippines': 'PH',
+      'Indonesia': 'ID',
+      'Thailand': 'TH'
+    };
+    function countryCodeFor(name) {
+      const s = String(name || '').trim();
+      if (!s) return '';
+      if (COUNTRY_CODE[s]) return COUNTRY_CODE[s];
+      // Fallback: first two alphabetic characters, uppercase
+      const letters = s.replace(/[^A-Za-z]/g, '');
+      return letters.slice(0, 2).toUpperCase();
+    }
+    // Title mapping: PhD/doctorate -> Dr., Master's -> Mr./Ms based on gender.
+    // Falls back to no title if gender is not Male/Female (Ron requires the
+    // Gender field to be authoritative — we do not infer from names).
+    function titleFor(stage, gender) {
+      if (stage === 'phd') return 'Dr.';
+      if (stage === 'masters') {
+        if (gender === 'Male') return 'Mr.';
+        if (gender === 'Female') return 'Ms';
+      }
+      return '';
+    }
+    // Milestone display line 1 (e.g. "1963: First male PhD"). Kept in one
+    // place so we can tweak wording without editing SVG code.
+    function milestoneHeadline(def) {
+      const who = def.gender === 'Male' ? 'male' : 'female';
+      const what = def.stage === 'phd' ? 'PhD' : "Masters";
+      return `First ${who} ${what}`;
+    }
     const milestones = milestoneDefinitions.map(def => {
       const candidates = completedDatedRows
         .filter(({ row }) => (def.stage === 'masters' ? isMasters(row) : isPhd(row)) && genderByScholarId.get(String(row['Scholar ID'] || '').trim()) === def.gender)
-        .map(({ row, year }) => ({
-          year,
-          name: String(row['Scholar Name'] || '').trim(),
-          degree: String(row['Degree / Qualification'] || '').trim(),
-          uni: String(row['C_Uni name'] || row['O_Uni name'] || '').trim(),
-          country: String(row.Country || '').trim()
-        }))
+        .map(({ row, year }) => {
+          const scholarId = String(row['Scholar ID'] || '').trim();
+          const cUni = String(row['C_Uni name'] || '').trim();
+          const oUni = String(row['O_Uni name'] || '').trim();
+          // Milestone label uses O_Uni ("as-recorded" institution name) when
+          // present, because that matches how the user cites the scholar's
+          // actual awarding institution (e.g. "Pacific Theological College"
+          // rather than the umbrella "Pasifika Communities University").
+          // Aggregations elsewhere still use C_Uni per the transformer
+          // contract; this is display-only for the milestone callout.
+          const displayUni = oUni || cUni;
+          return {
+            year,
+            scholarId,
+            name: String(row['Scholar Name'] || '').trim(),
+            familyName: familyNameByScholarId.get(scholarId) || '',
+            givenNames: givenNamesByScholarId.get(scholarId) || '',
+            degree: String(row['Degree / Qualification'] || '').trim(),
+            uni: displayUni,
+            cUni,
+            oUni,
+            country: String(row.Country || '').trim()
+          };
+        })
         .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
       if (!candidates.length) throw new Error(`Panel D milestone data missing: ${def.key}`);
       const year = candidates[0].year;
       const tied = candidates.filter(candidate => candidate.year === year);
       const chosen = tied[0];
-      return { ...def, year, name: chosen.name, degree: chosen.degree, uni: chosen.uni, country: chosen.country, ties: tied };
+      // Build display strings: title + given family, uni (CC).
+      const title = titleFor(def.stage, def.gender);
+      const givenFirst = chosen.givenNames && chosen.familyName
+        ? `${chosen.givenNames} ${chosen.familyName}`
+        : (chosen.name || '');
+      const personLine = [title, givenFirst].filter(Boolean).join(' ');
+      const cc = countryCodeFor(chosen.country);
+      const uniLine = cc ? `${chosen.uni} (${cc})` : chosen.uni;
+      const headline = milestoneHeadline(def);
+      return {
+        ...def,
+        year,
+        name: chosen.name,
+        familyName: chosen.familyName,
+        givenNames: chosen.givenNames,
+        title,
+        personLine,
+        uniLine,
+        headline,
+        degree: chosen.degree,
+        uni: chosen.uni,
+        cUni: chosen.cUni,
+        oUni: chosen.oUni,
+        country: chosen.country,
+        countryCode: cc,
+        ties: tied
+      };
     });
 
     const authorshipByPublication = new Map();
@@ -5875,18 +5986,14 @@
     drawRollingRun();
 
     // Milestone callouts — floating inline in the low-bar whitespace, styled
-    // after the mockup (small colored dot with 2-3 line label anchored to its
-    // right). Vertical y is chosen per-milestone to sit above that year's
-    // stacked bar, with a collision-avoidance stagger for close year pairs.
-    //
-    // Line text is a short 2-word phrase split across two <tspan> lines so it
-    // reads like the mockup ("first male / master's").
-    const shortWords = {
-      firstMaleMasters:   ['first male',   "master's"],
-      firstFemaleMasters: ['first female', "master's"],
-      firstMalePhD:       ['first male',   'PhD'],
-      firstFemalePhD:     ['first female', 'PhD']
-    };
+    // after the mockup. Each callout is a 3-line block anchored to a small
+    // colored dot:
+    //   Line 1: "YYYY: First male/female PhD/Masters" (year bold+colored)
+    //   Line 2: "Dr./Mr./Ms Given Family"
+    //   Line 3: "University Name (CC)"
+    // Text and titles are pulled from panelDData (see getPanelDData) so they
+    // update automatically whenever the Master file refresh promotes a new
+    // scholar into a milestone slot.
     const visibleMilestones = panelDData.milestones
       .filter(milestone => milestone.year >= yMin && milestone.year <= yMax)
       .map(milestone => {
@@ -5905,9 +6012,11 @@
     // 1994 slightly lower). We use up to 4 tiers spread across the upper 60%
     // of the plot. Then, if a label would overlap the previous one
     // horizontally, lift it one extra tier so callouts stack cleanly.
-    const LABEL_W_EST = 92;                        // px, rough label footprint
-    const LABEL_LINE_H = 12;                       // px per text line
-    const LABEL_BLOCK_H = LABEL_LINE_H * 3 + 4;    // year + 2 body lines + padding
+    // Rough label footprint: labels are now ~3 lines (headline + name + uni),
+    // and the uni line is the widest, so we bump the width estimate up.
+    const LABEL_W_EST = 200;                       // px, rough label footprint
+    const LABEL_LINE_H = 11;                       // px per text line (tighter)
+    const LABEL_BLOCK_H = LABEL_LINE_H * 3 + 6;    // 3 lines + padding
     const MIN_Y = PAD_TOP + 6;
     // Tier 0 is highest (closest to plot top); higher index = lower on page.
     // Confine tiers to the upper ~60% of the plot so they stay in whitespace.
@@ -5949,20 +6058,21 @@
     visibleMilestones.forEach(({ milestone, labelBaseY }) => {
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
       // The label block spans [labelBaseY - LABEL_BLOCK_H, labelBaseY].
-      // Layout inside: bold year on line 1, then 2-line body.
-      const yearY = labelBaseY - LABEL_LINE_H * 2 - 2;
-      const bodyY1 = labelBaseY - LABEL_LINE_H;
-      const bodyY2 = labelBaseY;
+      // Layout inside (3 lines):
+      //   line 1 (headlineY) — "YYYY: First male PhD" (year bold+colored,
+      //                        rest of headline muted grey)
+      //   line 2 (nameY)     — "Dr./Mr./Ms Given Family"
+      //   line 3 (uniY)      — "University name (CC)"
+      const headlineY = labelBaseY - LABEL_LINE_H * 2;
+      const nameY     = labelBaseY - LABEL_LINE_H;
+      const uniY      = labelBaseY;
       const dotCX = x;
-      const dotCY = yearY - 3;                 // dot sits just left/above the year
+      const dotCY = headlineY - 3;             // dot sits just left/above the headline
       const textX = x + 7;                     // text starts a hair right of the dot
-      const [line1, line2] = shortWords[milestone.key] || [milestone.shortLabel || '', ''];
 
       // Thin dashed drop line in the milestone's color, from just below the
       // dot down to the x-axis baseline. Drawn first so it sits underneath
-      // any bar it may cross. Because each milestone sits at its own labelY,
-      // the four drop lines end up at four different heights, echoing the
-      // reference mockup while adding a clear visual link to the axis year.
+      // any bar it may cross.
       svg.appendChild(panelDSvg('line', {
         x1: dotCX, x2: dotCX,
         y1: dotCY + 4, y2: yZero,
@@ -5976,17 +6086,43 @@
       const circle = panelDSvg('circle', { cx: dotCX, cy: dotCY, r: '3.5', fill: milestone.color });
       const tiedScholars = milestone.ties && milestone.ties.length > 1
         ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
-      circle.appendChild(panelDSvg('title', {}, `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.name} · ${milestone.degree} · ${milestone.uni}, ${milestone.country}${tiedScholars}`));
+      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.name} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${tiedScholars}`;
+      circle.appendChild(panelDSvg('title', {}, tooltipText));
       svg.appendChild(circle);
 
-      // Year label (bold, colored)
-      const yearText = panelDSvg('text', { x: textX, y: yearY, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: milestone.color }, milestone.year);
-      yearText.appendChild(panelDSvg('title', {}, `${milestone.label} · ${milestone.name} · ${milestone.degree} · ${milestone.uni}, ${milestone.country}${tiedScholars}`));
-      svg.appendChild(yearText);
+      // Line 1: headline — "YYYY: First male PhD"
+      //   The year token stays bold + colored (per Ron's spec: "Keep each
+      //   year bolded and also retain separate text color for years").
+      //   The rest of the headline is rendered in the muted grey used by
+      //   the body lines so the year still visually pops.
+      const headlineText = panelDSvg('text', {
+        x: textX, y: headlineY, 'text-anchor': 'start',
+        'font-family': 'Arial', 'font-size': '11', fill: '#4b5563'
+      });
+      const yearTspan = panelDSvg('tspan', {
+        'font-weight': '700', fill: milestone.color
+      }, `${milestone.year}: `);
+      const restTspan = panelDSvg('tspan', {}, milestone.headline || milestone.shortLabel || '');
+      headlineText.appendChild(yearTspan);
+      headlineText.appendChild(restTspan);
+      headlineText.appendChild(panelDSvg('title', {}, tooltipText));
+      svg.appendChild(headlineText);
 
-      // Two-line body (small, muted grey), left-aligned under the year
-      if (line1) svg.appendChild(panelDSvg('text', { x: textX, y: bodyY1, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563' }, line1));
-      if (line2) svg.appendChild(panelDSvg('text', { x: textX, y: bodyY2, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563' }, line2));
+      // Line 2: scholar name ("Dr./Mr./Ms Given Family")
+      if (milestone.personLine) {
+        svg.appendChild(panelDSvg('text', {
+          x: textX, y: nameY, 'text-anchor': 'start',
+          'font-family': 'Arial', 'font-size': '10', fill: '#111827'
+        }, milestone.personLine));
+      }
+
+      // Line 3: university name + country code, e.g. "University of London (UK)"
+      if (milestone.uniLine) {
+        svg.appendChild(panelDSvg('text', {
+          x: textX, y: uniY, 'text-anchor': 'start',
+          'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563'
+        }, milestone.uniLine));
+      }
     });
 
     // X-axis baseline + tick marks. The baseline runs along yZero from the
