@@ -218,10 +218,14 @@ def extract_publications(rows: list[list]) -> list[dict]:
     )
     clean = sanitize(dicts, PUBLICATION_PUBLIC_FIELDS)
     # Normalize year + boolean fields + one-hot province fields
+    # NOTE: province columns in the Publications sheet are stored as
+    # 'Yes'/'' text values (not 1/0). Use is_truthy to normalise to bools,
+    # then keep numeric 0/1 in the output for compatibility with any
+    # frontend that reads the raw column value.
     for p in clean:
         p["Year"] = as_int(p.get("Year"))
         for label in ALL_FIJI_GEOGRAPHY_LABELS:
-            p[label] = as_int(p.get(label))
+            p[label] = 1 if is_truthy(p.get(label)) else 0
         # Aggregate: which provinces (and which confederacies) this pub is
         # associated with. Multi-province pubs are legitimate.
         p["_provinces"] = [prov for prov in PROVINCES if p.get(prov)]
