@@ -135,7 +135,7 @@
     //   'both'   — lead + coauth (any iTaukei involvement; default)
     //   'all'    — every publication in the database
     histTypeSet: new Set(TYPE_ORDER),
-    histAuthors: 'both',                 // 'lead' | 'coauth' | 'both' | 'all'
+    histAuthors: 'lead',                 // 'lead' | 'coauth' | 'both' | 'all' — Panel D default: iTaukei lead
     // Panel D x-axis range — null means "use full data range" (default: All)
     histRange: { start: null, end: null, preset: 'all' },
     filter: {
@@ -5697,7 +5697,13 @@
     const PAD_LEFT = 44, PAD_RIGHT = 64, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
-    const dataMin = Math.min(...yearsAll);
+    // dataMin/dataMax define the domain the timeline can span. We widen the
+    // lower bound to include milestone years so the default "All" view always
+    // captures every milestone (e.g. 1963 first male PhD is earlier than the
+    // earliest lead-authored publication). Preset ranges (Last 25/10/5 yrs)
+    // still hide milestones outside their window, per the spec.
+    const milestoneYears = Array.isArray(panelDData.milestones) ? panelDData.milestones.map(m => m.year).filter(y => Number.isFinite(y)) : [];
+    const dataMin = Math.min(...yearsAll, ...(milestoneYears.length ? milestoneYears : [Infinity]));
     const dataMax = Math.max(...yearsAll);
     let yMin = state.histRange.start != null ? state.histRange.start : dataMin;
     let yMax = state.histRange.end != null ? state.histRange.end : dataMax;
@@ -5837,27 +5843,49 @@
       })
       .sort((a, b) => a.milestone.year - b.milestone.year);
 
-    // Compute a target label anchor above each bar. Then walk left→right and
-    // if a label would overlap the previous label horizontally, lift it a bit
-    // higher so the two callouts stack cleanly instead of colliding.
-    const LABEL_W_EST = 88;                        // px, rough label footprint
+    // Assign each milestone a y-tier so the labels sit at visibly different
+    // heights (echoing the reference mockup where 1963 rides high, 1988 mid,
+    // 1994 slightly lower). We use up to 4 tiers spread across the upper 60%
+    // of the plot. Then, if a label would overlap the previous one
+    // horizontally, lift it one extra tier so callouts stack cleanly.
+    const LABEL_W_EST = 92;                        // px, rough label footprint
     const LABEL_LINE_H = 12;                       // px per text line
     const LABEL_BLOCK_H = LABEL_LINE_H * 3 + 4;    // year + 2 body lines + padding
     const MIN_Y = PAD_TOP + 6;
-    let lastX = -Infinity, lastY = 0;
-    visibleMilestones.forEach(entry => {
+    // Tier 0 is highest (closest to plot top); higher index = lower on page.
+    // Confine tiers to the upper ~60% of the plot so they stay in whitespace.
+    const TIER_COUNT = 4;
+    const tierTop = MIN_Y + LABEL_BLOCK_H;                           // tier-0 baseY
+    const tierBot = PAD_TOP + plotH * 0.55;                          // tier-3 baseY
+    const tierY = tier => tierTop + (tierBot - tierTop) * (tier / (TIER_COUNT - 1));
+    let prevX = -Infinity, prevTier = -1;
+    visibleMilestones.forEach((entry, idx) => {
       const { milestone, barTopY } = entry;
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
-      // Target: 10px above this year's bar top, but never below y=60 in the
-      // plot (keep milestones in the upper whitespace) and never above MIN_Y.
-      const defaultBaseY = Math.min(barTopY - 10, PAD_TOP + plotH * 0.55);
-      let baseY = Math.max(MIN_Y + LABEL_BLOCK_H, defaultBaseY); // baseY = bottom of label block
-      // Collision check: if x is within LABEL_W_EST of the previous label AND
-      // this label's block would overlap the previous label vertically, lift.
-      if (x - lastX < LABEL_W_EST && Math.abs(baseY - lastY) < LABEL_BLOCK_H) {
-        baseY = Math.max(MIN_Y + LABEL_BLOCK_H, lastY - LABEL_BLOCK_H - 4);
+      // Preferred tier: distribute the 1st/2nd/3rd/4th visible milestone
+      // across the 4 tiers in a zig-zag order that keeps early milestones
+      // (which sit above low bars) high and later ones progressively lower.
+      // Pattern for up to 4 milestones: [0, 2, 1, 3] gives visible stagger.
+      const zigzag = [0, 2, 1, 3];
+      let tier = zigzag[Math.min(idx, zigzag.length - 1)] % TIER_COUNT;
+      let baseY = tierY(tier);
+      // Push the label down toward the bar only if the bar top is already
+      // below the tier (i.e. the tier sits in empty whitespace above the bar
+      // — leave it there, don't slam it against a tall bar).
+      if (barTopY - 10 < baseY) baseY = Math.min(baseY, Math.max(tierTop, barTopY - 10));
+      // Horizontal collision guard: if we're close in x AND close in y to the
+      // previous label, pick a different tier (one step further from prevTier).
+      if (x - prevX < LABEL_W_EST) {
+        // Choose the tier furthest from prevTier that hasn't been used yet.
+        let bestTier = tier, bestDist = Math.abs(tier - prevTier);
+        for (let t = 0; t < TIER_COUNT; t++) {
+          const d = Math.abs(t - prevTier);
+          if (d > bestDist) { bestDist = d; bestTier = t; }
+        }
+        tier = bestTier;
+        baseY = tierY(tier);
       }
-      lastX = x; lastY = baseY;
+      prevX = x; prevTier = tier;
       entry.labelBaseY = baseY;
     });
 
@@ -5873,7 +5901,21 @@
       const textX = x + 7;                     // text starts a hair right of the dot
       const [line1, line2] = shortWords[milestone.key] || [milestone.shortLabel || '', ''];
 
-      // Small colored dot (no vertical guide line — cleaner, matches mockup)
+      // Thin dashed drop line in the milestone's color, from just below the
+      // dot down to the x-axis baseline. Drawn first so it sits underneath
+      // any bar it may cross. Because each milestone sits at its own labelY,
+      // the four drop lines end up at four different heights, echoing the
+      // reference mockup while adding a clear visual link to the axis year.
+      svg.appendChild(panelDSvg('line', {
+        x1: dotCX, x2: dotCX,
+        y1: dotCY + 4, y2: yZero,
+        stroke: milestone.color,
+        'stroke-width': '0.9',
+        'stroke-dasharray': '2 3',
+        opacity: '0.55'
+      }));
+
+      // Small colored dot (matches mockup)
       const circle = panelDSvg('circle', { cx: dotCX, cy: dotCY, r: '3.5', fill: milestone.color });
       const tiedScholars = milestone.ties && milestone.ties.length > 1
         ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
@@ -5967,11 +6009,55 @@
       });
     });
 
-    // Reset link
+    // Reset link — clears every Panel D filter back to its default so users
+    // can recover from any combination of author-mode / type / timeframe
+    // tweaks in one click. Defaults: authors = 'lead' (iTaukei lead), types =
+    // all checked, timeframe = All. Also reflects the state change in the DOM
+    // so the tab pills and checkboxes visually snap back into place.
     const resetBtn = $('[data-hist-reset]');
     if (resetBtn) resetBtn.addEventListener('click', () => {
+      // 1. Authors filter → 'lead'
+      state.histAuthors = 'lead';
+      const authorTabs = document.querySelectorAll('[data-hist-authors-tabs] [data-hist-authors]');
+      authorTabs.forEach(tab => {
+        const active = tab.dataset.histAuthors === 'lead';
+        tab.classList.toggle('is-active', active);
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        tab.setAttribute('tabindex', active ? '0' : '-1');
+      });
+      // 2. Types → all checked (respect TYPE_ORDER)
+      state.histTypeSet = new Set(TYPE_ORDER);
+      const typeBoxes = document.querySelectorAll('[data-hist-type-filter] input[type="checkbox"]');
+      typeBoxes.forEach(box => { box.checked = true; });
+      // 3. Timeframe → All (also clears preset button active state via renderHistogram)
       state.histRange = { start: null, end: null, preset: 'all' };
       renderHistogram();
+    });
+
+    // Fullscreen expand / close for Panel D chart. Toggles .is-fullscreen on
+    // the wrapper (CSS pins it to the viewport) and locks body scroll while
+    // active. Escape key also closes. The SVG is viewBox-based, so it scales
+    // naturally; renderHistogram doesn't need re-running — but we re-render
+    // anyway to give the layout a chance to reflow at the larger size.
+    const chartWrap = document.querySelector('[data-panel-d-chart]');
+    const expandBtn = document.querySelector('[data-panel-d-expand]');
+    const closeBtn = document.querySelector('[data-panel-d-close]');
+    const enterFullscreen = () => {
+      if (!chartWrap) return;
+      chartWrap.classList.add('is-fullscreen');
+      document.body.classList.add('db-panel-d-fs-lock');
+      renderHistogram();
+    };
+    const exitFullscreen = () => {
+      if (!chartWrap) return;
+      chartWrap.classList.remove('is-fullscreen');
+      document.body.classList.remove('db-panel-d-fs-lock');
+      renderHistogram();
+    };
+    if (expandBtn) expandBtn.addEventListener('click', enterFullscreen);
+    if (closeBtn) closeBtn.addEventListener('click', exitFullscreen);
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && chartWrap && chartWrap.classList.contains('is-fullscreen')) exitFullscreen();
     });
     // The author-mode default can have a narrower range than all publications;
     // redraw once after this wiring has initialized the input fields so Panel D

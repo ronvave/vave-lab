@@ -425,6 +425,72 @@
     @media (max-width:620px) {
       [data-panel="D"] .db-panel-d-kpis { grid-template-columns: repeat(2,1fr); }
     }
+    /* Panel D chart wrapper — hosts the histogram SVG and the corner
+       Expand/Close controls. In its normal (inline) state, the wrapper is
+       just a positioning context. In .is-fullscreen it pins to the viewport
+       and lets the SVG scale up to fill the screen. Scoped so it cannot
+       affect any other panel. */
+    [data-panel="D"] .db-panel-d__chart-wrap {
+      position: relative;
+      width: 100%;
+    }
+    [data-panel="D"] .db-panel-d__expand {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      z-index: 3;
+      width: 32px;
+      height: 32px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: rgba(255,255,255,0.92);
+      color: #4b5563;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      transition: transform 0.15s ease, background 0.15s ease, color 0.15s ease;
+    }
+    [data-panel="D"] .db-panel-d__expand:hover { background:#fff; color:#111; transform:scale(1.06); }
+    [data-panel="D"] .db-panel-d__close {
+      display: none;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 4;
+      padding: 6px 14px;
+      border: 0;
+      background: #111;
+      color: #fff;
+      border-radius: 999px;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.20);
+    }
+    [data-panel="D"] .db-panel-d__close:hover { background:#222; }
+    [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #fff;
+      padding: 48px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen svg#db-source-histogram {
+      height: calc(100vh - 96px) !important;
+      max-height: calc(100vh - 96px);
+      width: 100%;
+      max-width: 1600px;
+    }
+    [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__expand { display: none; }
+    [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__close { display: inline-flex; }
+    body.db-panel-d-fs-lock { overflow: hidden; }
     .db-panel {
       background: var(--color-surface);
       border: 1px solid var(--color-border);
@@ -4532,7 +4598,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-body-composition.html?embedded=1&src=master&v=mf11"
+            src="itaukei-body-composition.html?embedded=1&src=master&v=mf12"
             title="iTaukei body composition by gender"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
@@ -4684,9 +4750,9 @@
         <div class="db-panel__titlebar">
           <h2 class="db-panel__title">Publications over time, by source type</h2>
           <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel D authors filter" data-hist-authors-tabs>
-            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="lead" aria-selected="false" tabindex="-1" title="Only publications where the first-listed author is iTaukei">iTaukei lead</button>
+            <button type="button" role="tab" class="db-b2-tab is-active" data-hist-authors="lead" aria-selected="true" tabindex="0" title="Only publications where the first-listed author is iTaukei">iTaukei lead</button>
             <button type="button" role="tab" class="db-b2-tab" data-hist-authors="coauth" aria-selected="false" tabindex="-1" title="Only publications where an iTaukei author appears but is not first-listed">iTaukei coauthor</button>
-            <button type="button" role="tab" class="db-b2-tab is-active" data-hist-authors="both" aria-selected="true" tabindex="0" title="Publications with any iTaukei author (lead or coauthor)">iTaukei both</button>
+            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="both" aria-selected="false" tabindex="-1" title="Publications with any iTaukei author (lead or coauthor)">iTaukei both</button>
             <button type="button" role="tab" class="db-b2-tab" data-hist-authors="all" aria-selected="false" tabindex="-1" title="All publications in the database regardless of author ethnicity">All authors</button>
           </div>
         </div>
@@ -4704,7 +4770,13 @@
             <button type="button" data-hist-type-none>Clear</button>
           </span>
         </div>
-        <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
+        <div class="db-panel-d__chart-wrap" data-panel-d-chart>
+          <button type="button" class="db-panel-d__expand" data-panel-d-expand aria-label="Expand chart to full screen" title="Expand to full screen">
+            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button type="button" class="db-panel-d__close" data-panel-d-close aria-label="Close full-screen view" title="Close full-screen view">Close ✕</button>
+          <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
+        </div>
         <p class="db-panel__note" data-hist-note></p>
         <div class="db-hist-controls" data-db-hist-controls>
           <label>From <input type="number" data-hist-start step="1" /></label>
@@ -5217,10 +5289,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=mf11" defer></script>
-<script src="js/master-file-adapter.js?v=mf11" defer></script>
-<script src="js/itaukei-database-master.js?v=mf11" defer></script>
-<script src="js/master-file-panel-overrides.js?v=mf11" defer></script>
+<script src="js/demo-gate.js?v=mf12" defer></script>
+<script src="js/master-file-adapter.js?v=mf12" defer></script>
+<script src="js/itaukei-database-master.js?v=mf12" defer></script>
+<script src="js/master-file-panel-overrides.js?v=mf12" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a
