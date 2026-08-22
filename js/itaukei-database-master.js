@@ -5687,7 +5687,23 @@
     if (!svg) return;
     svg.innerHTML = '';
     const typesInData = new Set(items.map(item => visualType(item)));
-    const visibleTypes = TYPE_ORDER.filter(type => state.histTypeSet.has(type) && typesInData.has(type));
+    // Panel D stack order: force Master's to sit BELOW PhD in the bar stack
+    // (Master's is completed first, PhD comes after when a scholar continues).
+    // We build the base list from TYPE_ORDER (which many other panels share)
+    // and then swap thesisMasters ahead of thesisPhd for Panel D only, so we
+    // don't affect Panel B/C legend or stack behavior.
+    const rawVisible = TYPE_ORDER.filter(type => state.histTypeSet.has(type) && typesInData.has(type));
+    const visibleTypes = (() => {
+      const arr = rawVisible.slice();
+      const iP = arr.indexOf('thesisPhd');
+      const iM = arr.indexOf('thesisMasters');
+      if (iP !== -1 && iM !== -1 && iM > iP) {
+        // Move thesisMasters before thesisPhd
+        arr.splice(iM, 1);
+        arr.splice(iP, 0, 'thesisMasters');
+      }
+      return arr;
+    })();
     if (!visibleTypes.length || !perYear.size || !yearsAll.length) {
       svg.appendChild(panelDSvg('text', { x: 450, y: 170, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '15', fill: '#6b7280' }, 'No item types selected — check at least one source type.'));
       return;
@@ -5804,11 +5820,17 @@
     }
 
     // Authorship-based 5-year rolling women share uses lead Scholar IDs from
-    // the Master publications table and honors the active Panel D author mode.
+    // the Master publications table and honors both the active Panel D author
+    // mode AND the current source-type checkboxes — so unchecking types
+    // (e.g. leaving only Master's + PhD) recomputes the line against just
+    // those items, matching what the bars actually show.
+    const activeTypeSet = state.histTypeSet;
     const genderCountsByYear = new Map();
     filteredItems.forEach(item => {
       const year = Number(item.year);
       if (!Number.isInteger(year)) return;
+      // Only include items whose visual type is currently checked.
+      if (!activeTypeSet.has(visualType(item))) return;
       const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
       const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
       if (gender !== 'Female' && gender !== 'Male') return;
