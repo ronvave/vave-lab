@@ -64,7 +64,11 @@
     thesisMasters:  '#8FBC8F',   // dark sea green — lighter forest, Masters
     thesisUnknown:  '#4CAF50',   // material green — unclassified thesis
     journalArticle: '#0e7490',
-    bookSection:    '#7a1419',
+    // Book Chapter uses a lighter tint of the same burgundy so Book vs Book
+    // Chapter is visually distinguishable in stacks and legends (parallel to
+    // the PhD dark-green vs Master's light-green relationship). Book keeps
+    // the original heavier tone as the "parent" of the pair.
+    bookSection:    '#C08388',
     book:           '#7a1419',
     report:         '#1e40af',
     conferencePaper:'#92400e',
@@ -7615,7 +7619,11 @@
     thesisPhd:      { color: '#228B22', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis',       p: 'PhD theses' },
     thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: 'Masters thesis',   p: 'Masters theses' },
     thesisUnknown:  { color: '#4CAF50', bg: '#eaf5ea', border: '#b8dab8', s: 'Thesis',           p: 'Theses' },
-    bookSection:    { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter',     p: 'Book chapters' },
+    // Book Chapter uses the lighter tint (#C08388) to distinguish it from Book;
+    // Book keeps the darker burgundy (#7a1419). Chip bg/border tints stay in
+    // the same warm-red family for both so grouped-item chips still read as
+    // one visual cluster.
+    bookSection:    { color: '#C08388', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter',     p: 'Book chapters' },
     book:           { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book',             p: 'Books' },
     report:         { color: '#1e40af', bg: '#e6ecf7', border: '#a8b8dc', s: 'Report',           p: 'Reports' },
     conferencePaper:{ color: '#92400e', bg: '#f7ecdf', border: '#d9b58a', s: 'Conference paper', p: 'Conference papers' },
