@@ -483,15 +483,27 @@
       align-items: center;
     }
     /* Fill ≥ 75% of the viewport. The SVG viewBox is 900×340 (≈2.65:1) so
-       we let the chart use up to 95% of the viewport width and up to 82% of
+       we let the chart use up to 95% of the viewport width and up to 78% of
        the viewport height, whichever is smaller (preserves aspect ratio via
-       preserveAspectRatio). This produces ~78–85% area coverage in typical
-       16:9 windows. */
+       preserveAspectRatio). Slightly reduced height (was 82vh) to make room
+       for the type-filter legend that gets moved into the fullscreen wrap. */
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen svg#db-source-histogram {
       width: 95vw !important;
-      height: 82vh !important;
+      height: 78vh !important;
       max-width: 95vw;
-      max-height: 82vh;
+      max-height: 78vh;
+    }
+    /* Type-filter legend, when moved inside the fullscreen wrap, sits above
+       the SVG at ~95vw so it aligns with the chart. Keep the existing
+       .db-type-filter styling (spacing, wrapping) intact; just position and
+       constrain the width. */
+    [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-type-filter {
+      width: 95vw;
+      max-width: 95vw;
+      margin: 0 auto 8px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      row-gap: 6px;
     }
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__expand { display: none; }
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__close { display: inline-flex; }
@@ -4603,7 +4615,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-body-composition.html?embedded=1&src=master&v=mf14"
+            src="itaukei-body-composition.html?embedded=1&src=master&v=mf15"
             title="iTaukei body composition by gender"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
@@ -5294,10 +5306,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=mf14" defer></script>
-<script src="js/master-file-adapter.js?v=mf14" defer></script>
-<script src="js/itaukei-database-master.js?v=mf14" defer></script>
-<script src="js/master-file-panel-overrides.js?v=mf14" defer></script>
+<script src="js/demo-gate.js?v=mf15" defer></script>
+<script src="js/master-file-adapter.js?v=mf15" defer></script>
+<script src="js/itaukei-database-master.js?v=mf15" defer></script>
+<script src="js/master-file-panel-overrides.js?v=mf15" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a

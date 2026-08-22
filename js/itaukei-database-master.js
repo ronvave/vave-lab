@@ -6103,8 +6103,20 @@
     const chartWrap = document.querySelector('[data-panel-d-chart]');
     const expandBtn = document.querySelector('[data-panel-d-expand]');
     const closeBtn = document.querySelector('[data-panel-d-close]');
+    // Track the legend's original DOM position so we can restore it on exit.
+    // We MOVE the same node into the fullscreen container (rather than clone)
+    // so its existing event listeners and checkbox state stay intact.
+    const typeFilter = document.querySelector('[data-hist-type-filter]');
+    let typeFilterPlaceholder = null;
     const enterFullscreen = () => {
       if (!chartWrap) return;
+      if (typeFilter && !typeFilterPlaceholder) {
+        typeFilterPlaceholder = document.createComment('db-panel-d-type-filter-slot');
+        typeFilter.parentNode.insertBefore(typeFilterPlaceholder, typeFilter);
+        // Insert the legend as the first child of the chart wrap so it sits
+        // above the SVG in fullscreen.
+        chartWrap.insertBefore(typeFilter, chartWrap.firstChild);
+      }
       chartWrap.classList.add('is-fullscreen');
       document.body.classList.add('db-panel-d-fs-lock');
       renderHistogram();
@@ -6113,6 +6125,11 @@
       if (!chartWrap) return;
       chartWrap.classList.remove('is-fullscreen');
       document.body.classList.remove('db-panel-d-fs-lock');
+      if (typeFilter && typeFilterPlaceholder && typeFilterPlaceholder.parentNode) {
+        typeFilterPlaceholder.parentNode.insertBefore(typeFilter, typeFilterPlaceholder);
+        typeFilterPlaceholder.parentNode.removeChild(typeFilterPlaceholder);
+        typeFilterPlaceholder = null;
+      }
       renderHistogram();
     };
     if (expandBtn) expandBtn.addEventListener('click', enterFullscreen);
