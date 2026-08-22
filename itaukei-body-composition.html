@@ -515,7 +515,13 @@ function buildOption(data){
     if(IDX_PHD_TOP>=0) clipH[g][IDX_PHD_TOP] = 100;
     // Raise the man's PhD bottom edge (= Masters top edge) so the black band reads ~half the woman's.
     const IDX_MAS_ADJ = TYPES.findIndex(t=>t.key==="masters");
-    const PHD_BOTTOM_RAISE = { "Woman": 0, "Man": 2.4 };   // clip-units to raise masters top edge
+    // V1 nudged the Man's Masters-top up by 2.4 clip-units to make the black
+    // PhD cap read “half the woman's” visually. Master silhouettes are
+    // proportioned differently and don't need that tweak — skip it in
+    // master mode so PhD's visible height equals its true data share.
+    const PHD_BOTTOM_RAISE = IS_MASTER
+      ? { "Woman": 0, "Man": 0   }
+      : { "Woman": 0, "Man": 2.4 };
     if(IDX_MAS_ADJ>=0 && PHD_BOTTOM_RAISE[g]) clipH[g][IDX_MAS_ADJ] += PHD_BOTTOM_RAISE[g];
   });
 
@@ -577,12 +583,30 @@ function buildOption(data){
     tooltip: { show:false },
     data: (()=>{
       const pts=[];
-      const PHD_PILL_Y = 91.7;  // both PhD pills pinned level, sitting just above the heads (not touching)
+      // V1: PhD pill was pinned at a hardcoded 91.7 (just above the shoulder
+      // line of the V1 silhouettes, which top out at clip=85–88). Master
+      // silhouettes have almost no transparent space above the scalp, so
+      // 91.7 lands outside the head. In master mode we drop the pill inside
+      // the black head-band, computed from the band's actual centre.
+      const PHD_PILL_Y_V1 = 91.7;
       genders.forEach((g,gi)=>{
         TYPES.forEach((t,i)=>{
           const v=bandPct[g][i];
           if(v>0){
-            const yPos = (t.key==="phd") ? PHD_PILL_Y : (FEET_CLIP[g] + (cumMid[g][i]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]));
+            let yPos;
+            if(t.key==="phd"){
+              if(IS_MASTER){
+                // Centre of the PhD band inside the visible silhouette.
+                // Bottom of PhD = top of Masters band = clipH[g][masters_idx].
+                const idxMas = TYPES.findIndex(tt=>tt.key==="masters");
+                const phdBottom = (idxMas>=0) ? clipH[g][idxMas] : (FEET_CLIP[g]+(cumTop[g][TYPES.length-2]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]));
+                yPos = (phdBottom + HEAD_CLIP[g]) / 2;
+              } else {
+                yPos = PHD_PILL_Y_V1;
+              }
+            } else {
+              yPos = FEET_CLIP[g] + (cumMid[g][i]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]);
+            }
             pts.push({ value:[gi, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
           }
         });
