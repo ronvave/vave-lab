@@ -7993,27 +7993,39 @@
     if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
   }
 
-  // ============ LIVE REFRESH (background, non-blocking) ============
+  // ============ MASTER-FILE STATUS (V2) ============
+  // V2 preview: the authoritative data source is the iTaukei_Master_file
+  // Google Sheet snapshot refreshed every 2h. We do NOT contact Zotero from
+  // this build — Zotero is no longer this dashboard's data source of truth.
+  // Show the current snapshot timestamp instead, and only mark the sync
+  // badge as an error if the snapshot itself failed to load.
   async function backgroundRefresh() {
     try {
-      const r = await fetch('https://api.zotero.org/groups/5983386?format=json', { cache: 'no-cache' });
-      if (!r.ok) throw new Error('Zotero HTTP ' + r.status);
-      const d = await r.json();
-      const live = d && d.meta && d.meta.numItems;
-      const snapItems = state.snapshot.items.length;
-      if (live && live !== snapItems) {
-        const note = $('[data-db-sync-note]');
-        if (note) note.innerHTML = `Live library now has <strong>${live}</strong> items (snapshot: ${snapItems}). <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener">See latest additions</a>.`;
-      } else if (live) {
-        const note = $('[data-db-sync-note]');
-        if (note) note.textContent = `Live Zotero check confirmed · ${live} items`;
-      }
-    } catch (e) {
-      // Silent — snapshot remains the source of truth. Show a light fallback banner
-      // only if network is genuinely unreachable.
+      const snap = state.snapshot || { items: [] };
+      // state.lastSync comes from adapter bundle.sync (== master.lastSync,
+      // parsed from data/last-master-sync.json). Fall back to the raw master
+      // blob just in case a future adapter refactor changes the field.
+      const sync = state.lastSync
+        || (state.master && state.master.lastSync)
+        || null;
+      const ts = sync && (sync.finishedAt || sync.startedAt || sync.generated_at || sync.timestamp || sync.last_master_sync || sync.updated_at);
       const note = $('[data-db-sync-note]');
-      if (note) note.textContent = 'Live Zotero check offline · showing local snapshot';
-      showFallbackBanner('live-check-failed');
+      const parts = [];
+      parts.push('Master-file snapshot');
+      if (ts) {
+        let human = ts;
+        try {
+          const d = new Date(ts);
+          if (!isNaN(d.getTime())) human = d.toLocaleString();
+        } catch (e) { /* keep raw ts */ }
+        parts.push('Last Master File update: <strong>' + human + '</strong>');
+      }
+      parts.push(snap.items.length + ' publications');
+      if (note) note.innerHTML = parts.join(' · ');
+    } catch (e) {
+      // Snapshot load succeeded (we're here from loadAll's success path) so
+      // this is purely a badge-render issue — stay quiet.
+      console.warn('Master-file status badge failed to render:', e);
     }
   }
 
@@ -8029,10 +8041,10 @@
       await loadAll();
     } catch (err) {
       console.error('Failed to load database data', err);
-      setSyncBadge('error', 'Data unavailable', 'Local snapshot files failed to load — please refresh');
+      setSyncBadge('error', 'Master-file snapshot unavailable', 'The encrypted Master-file snapshot failed to load or decrypt — please refresh');
       showFallbackBanner('snapshot-load-failed');
       const items = $('[data-db-items]');
-      if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the database snapshot. Please refresh the page in a moment.</li>';
+      if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the Master-file snapshot. Please refresh the page in a moment.</li>';
       return;
     }
     // Wire the shared "Submit info" modal once (button per card wires open handler).

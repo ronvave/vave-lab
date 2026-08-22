@@ -171,6 +171,13 @@
   }
 
   // Encrypted-file map (same as db-gate.js).
+  //
+  // The Master-file V2 preview (itaukei-research-database-master.html) also
+  // uses this gate. Its eight `data/itaukei-master-*.json` + `last-master-sync.json`
+  // targets are registered here so `dbGate.fetchJson(masterUrl)` transparently
+  // fetches and decrypts the .enc counterpart. Production (Zotero) dashboard
+  // never fetches those URLs, so this map is a strict superset and does not
+  // affect production behaviour.
   var ENC_FILES = {
     'data/itaukei-zotero-snapshot.json': 'data/itaukei-zotero-snapshot.json.enc',
     'data/fiji-provinces.geojson':       'data/fiji-provinces.geojson.enc',
@@ -179,7 +186,18 @@
     'data/scholar-profiles.json':        'data/scholar-profiles.json.enc',
     'data/last-sync.json':               'data/last-sync.json.enc',
     'data/itaukei-graduate-studies.json':'data/itaukei-graduate-studies.json.enc',
-    'data/scholar-insights.json':        'data/scholar-insights.json.enc'
+    'data/scholar-insights.json':        'data/scholar-insights.json.enc',
+    // Master-file V2 preview snapshots (refreshed every 2h by
+    // .github/workflows/refresh-master-file.yml). Only the V2 preview page
+    // fetches these; the production dashboard does not.
+    'data/itaukei-master-scholars.json':     'data/itaukei-master-scholars.json.enc',
+    'data/itaukei-master-publications.json': 'data/itaukei-master-publications.json.enc',
+    'data/itaukei-master-authorship.json':   'data/itaukei-master-authorship.json.enc',
+    'data/itaukei-master-grad-degrees.json': 'data/itaukei-master-grad-degrees.json.enc',
+    'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
+    'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
+    'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
+    'data/last-master-sync.json':            'data/last-master-sync.json.enc'
   };
 
   async function fetchJsonEncrypted(url) {
