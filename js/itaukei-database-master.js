@@ -619,6 +619,14 @@
   //           'coauth' — an iTaukei author is present but not first
   //           'none'   — no iTaukei author on the record
   function itaukeiAuthorship(item) {
+    // Master-file source of truth: the adapter records the real first-author
+    // status on `item._masterAuthorship` (derived from the Authorship table's
+    // `Is First Author?` / `Author Position === 1` columns). The Master
+    // authorship table only stores iTaukei-scholar links, so creators[0]
+    // cannot reliably indicate first-authorship for Master data. When present,
+    // this flag wins over the creators-string heuristic below. See
+    // docs/MASTER-FILE-REBUILD.md and js/master-file-adapter.js.
+    if (item && item._masterAuthorship) return item._masterAuthorship;
     const creators = item.creators || [];
     if (creators.length && creatorIsItaukei(creators[0])) return 'lead';
     if (isItaukei(item)) return 'coauth';

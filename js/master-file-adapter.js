@@ -142,7 +142,13 @@
       fetchJson('data/itaukei-master-mobility.json').catch(function () { return []; }),
       fetchJson('data/itaukei-master-geography.json').catch(function () { return []; }),
       fetchJson('data/itaukei-master-aggregates.json'),
-      fetchJson('data/last-master-sync.json').catch(function () { return null; })
+      fetchJson('data/last-master-sync.json').catch(function () { return null; }),
+      // V1 graduate-studies snapshot — used only as a (country, university)
+      // coordinate lookup for Panel B2 world map. Master mobility only has 4
+      // coordinate rows; the V1 file has 79 curated worldPoints with lat/lng.
+      // If the file is unavailable we still render the panel with no markers
+      // rather than fail the whole build.
+      fetchJson('data/itaukei-graduate-studies.json').catch(function () { return null; })
     ]).then(function (arr) {
       return {
         scholars:     arr[0],
@@ -152,7 +158,8 @@
         mobility:     arr[4],
         geography:    arr[5],
         aggregates:   arr[6],
-        lastSync:     arr[7]
+        lastSync:     arr[7],
+        v1GradStudies: arr[8]
       };
     });
   }
@@ -169,6 +176,8 @@
     var COL_ROOT_PATERNAL    = 'PATRTROT';    // paternal-province root
     var COL_ROOT_DISCIPLINE  = 'DISCROT0';    // "Discipline" root
     var COL_ROOT_THESIS_UNI  = '9XHGQJE6';    // iTaukei Thesis by Country/Uni
+    var COL_ROOT_B3_WHERE    = 'V3HLPDPL';    // "Where study was done" root (Panel B4)
+    var COL_B3_FIJI          = 'B3FIJI00';    // Fiji country under B3 root
 
     // Master Scholar ID → Zotero collection key (author collection).
     // Every scholar becomes a fake iTaukei author sub-collection so the
@@ -218,7 +227,14 @@
       disciplineCollections.push({ key: k, name: d, parent: COL_ROOT_DISCIPLINE });
     });
 
-    // Root collections.
+    // Root collections. The B3-Where-study-was-done root uses the stable key
+    // production expects (V3HLPDPL); every direct child is a country. In the
+    // Master data model, only Fiji is a supported study location today (the
+    // Master geography table only records Fiji rows, and every publication
+    // tagged `Tagged Fiji? = Yes` is treated as done in Fiji), so we emit a
+    // single Fiji child. If additional countries land in future Master data,
+    // simply add more children under COL_ROOT_B3_WHERE and tag items via
+    // collections→country key mapping below.
     var rootCollections = [
       { key: COL_ROOT_ITAUKEI, name: 'iTaukei authors (>N papers)', parent: null },
       { key: COL_BY_WITH,      name: 'By or with iTaukei authors', parent: null },
@@ -226,7 +242,9 @@
       { key: COL_NONPROV_FIJI, name: '_Non-Provincial/Fiji',       parent: COL_ROOT_C1_PROV },
       { key: COL_ROOT_PATERNAL,name: 'Paternal Province',           parent: null },
       { key: COL_ROOT_DISCIPLINE, name: 'Discipline',               parent: null },
-      { key: COL_ROOT_THESIS_UNI, name: 'B2-iTaukei Thesis by Country/Universities', parent: null }
+      { key: COL_ROOT_THESIS_UNI, name: 'B2-iTaukei Thesis by Country/Universities', parent: null },
+      { key: COL_ROOT_B3_WHERE, name: 'B3-Where study was done (with iTaukei lead & co-author)', parent: null },
+      { key: COL_B3_FIJI,       name: 'Fiji',                        parent: COL_ROOT_B3_WHERE }
     ];
 
     // Build a Scholar ID → discipline collection key lookup for items.
@@ -268,39 +286,37 @@
 
       // Creators (ordered by Author Position). The Master authorship table only
       // records iTaukei-scholar-to-publication links, so an iTaukei co-author at
-      // position 3 would otherwise appear as creators[0] and be falsely counted
-      // as the lead author by production's `itaukeiAuthorship()`. To preserve
-      // true first-authorship, we (a) sort iTaukei creators by their recorded
-      // Author Position, and (b) prepend a non-iTaukei placeholder at position 0
-      // whenever the lowest-position iTaukei author is NOT the first author
-      // (either `Author Position > 1` or `Is First Author? === false`). The
-      // placeholder is a stable synthetic name that will never match any iTaukei
-      // canonical, so `creatorIsItaukei()` returns false and the item classifies
-      // as `coauth` instead of `lead`.
+      // position 3 will still end up at creators[0] after sorting. We do NOT
+      // insert a synthetic non-iTaukei placeholder here (it would leak into
+      // citation strings on Panel G). Instead we compute a per-item Master
+      // authorship role (`_masterAuthorship`) from the true `Is First Author?`
+      // / `Author Position === 1` signal, and the fork's `itaukeiAuthorship()`
+      // has been patched to prefer that field when present.
       var authRows = (authByPub[pid] || []).slice().sort(function (a, b) {
         var ap = Number(a['Author Position'] || 0);
         var bp = Number(b['Author Position'] || 0);
         return ap - bp;
       });
-      var iTaukeiCreatorsInOrder = authRows.map(function (a) {
+      var creators = authRows.map(function (a) {
         return scholarNameById[a['Scholar ID']] || (a['Author Name as Recorded'] || '');
       }).filter(Boolean);
-      var creators;
+
+      // Master-file authorship role for this publication:
+      //   'lead'   — at least one iTaukei scholar is recorded as first author
+      //   'coauth' — iTaukei scholar(s) linked but none is first author
+      //   'none'   — no iTaukei author linked (unreachable here because we only
+      //              emit items that ARE in authByPub; keep for symmetry)
+      var masterAuthorship;
       if (authRows.length === 0) {
-        creators = [];
+        masterAuthorship = 'none';
       } else {
-        var firstAuthorRow = authRows[0];
-        var firstIsFirstAuthor =
-          firstAuthorRow['Is First Author?'] === true ||
-          firstAuthorRow['Is First Author?'] === 'true' ||
-          firstAuthorRow._is_lead === true ||
-          Number(firstAuthorRow['Author Position'] || 0) === 1;
-        if (firstIsFirstAuthor) {
-          creators = iTaukeiCreatorsInOrder;
-        } else {
-          // Prepend a non-iTaukei placeholder so creators[0] is not iTaukei.
-          creators = ['NonITaukeiCoAuthor, N.'].concat(iTaukeiCreatorsInOrder);
-        }
+        var hasITaukeiFirst = authRows.some(function (a) {
+          return a['Is First Author?'] === true ||
+                 a['Is First Author?'] === 'true' ||
+                 a._is_lead === true ||
+                 Number(a['Author Position'] || 0) === 1;
+        });
+        masterAuthorship = hasITaukeiFirst ? 'lead' : 'coauth';
       }
 
       // Collections: iTaukei author sub-collections for every linked scholar,
@@ -339,6 +355,13 @@
           collections.push(provLocKeyByName[prov]);
         }
       });
+      // Panel B4 "Where study was done" — tag every publication with a Fiji
+      // study location into the B3/B4 Fiji country collection. Master's
+      // `Tagged Fiji?` column is the source of truth for Fiji-focused work.
+      if (String(p['Tagged Fiji?'] || '').toLowerCase() === 'yes') {
+        collections.push(COL_B3_FIJI);
+      }
+
       // Special province labels ("Fiji - no province specified", "Unsure").
       if (Number(p[PROVINCE_UNSPEC] || p['_fiji_unspecified'] || 0) > 0) {
         provincesInPub.push(PROVINCE_UNSPEC);
@@ -432,6 +455,7 @@
         _masterProvinces:   provincesInPub,
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
+        _masterAuthorship:  masterAuthorship,
         _masterPublicationId: pid
       };
     });
@@ -635,6 +659,39 @@
       }
     });
     var worldPoints = Array.from(wpByKey.values());
+
+    // Attach lat/lng from the V1 graduate-studies coordinate lookup, keyed
+    // primarily by university name (unique across the dataset) with a
+    // country+city fallback for universities present under multiple keys.
+    // This is why Panel B2 markers went missing in the Master port: Master
+    // mobility rows only carry 4 coordinate pairs, so a plain m_lat/m_lon
+    // join dropped ~99% of points and the map filtered them all out. The V1
+    // snapshot bundles 79 curated coordinates covering every university
+    // present in the Master grad-degrees table today.
+    var v1 = master.v1GradStudies;
+    if (v1 && Array.isArray(v1.worldPoints)) {
+      var coordByUni = new Map();
+      var coordByCountryUni = new Map();
+      v1.worldPoints.forEach(function (v) {
+        if (typeof v.lat === 'number' && typeof v.lng === 'number') {
+          if (v.university && !coordByUni.has(v.university)) {
+            coordByUni.set(v.university, { lat: v.lat, lng: v.lng, iso: v.iso, region: v.region });
+          }
+          if (v.country && v.university) {
+            coordByCountryUni.set(v.country + '|' + v.university, { lat: v.lat, lng: v.lng, iso: v.iso, region: v.region });
+          }
+        }
+      });
+      worldPoints.forEach(function (pt) {
+        var hit = coordByCountryUni.get(pt.country + '|' + pt.university) || coordByUni.get(pt.university);
+        if (hit) {
+          pt.lat = hit.lat;
+          pt.lng = hit.lng;
+          if (!pt.iso    && hit.iso)    pt.iso    = hit.iso;
+          if (!pt.region && hit.region) pt.region = hit.region;
+        }
+      });
+    }
 
     return { scholars: scholarsMap, worldPoints: worldPoints, universities: [] };
   }

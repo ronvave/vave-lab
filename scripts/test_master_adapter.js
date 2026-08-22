@@ -165,6 +165,37 @@ windowShim.MasterFileAdapter.load().then((bundle) => {
   info.push('grad.worldPoints: ' + bundle.grad.worldPoints.length);
   info.push('universities: ' + (bundle.unis && bundle.unis.universities && bundle.unis.universities.length));
 
+  // worldPoints must carry lat/lng for the Panel B2 map to render markers.
+  const wp = bundle.grad.worldPoints;
+  const wpWithCoords = wp.filter(p => typeof p.lat === 'number' && typeof p.lng === 'number' && isFinite(p.lat) && isFinite(p.lng));
+  info.push('worldPoints with lat/lng: ' + wpWithCoords.length + '/' + wp.length);
+  if (wpWithCoords.length < 20) {
+    errors.push('too few worldPoints with coords (' + wpWithCoords.length + '); Panel B2 world map will be empty');
+  }
+
+  // Every item that appears in the Master authorship table must carry
+  // _masterAuthorship of 'lead' or 'coauth' so itaukeiAuthorship() classifies
+  // it from the true first-author signal rather than from creators[0].
+  const badAuth = snap.items.filter(it => !it._masterAuthorship);
+  info.push('items with _masterAuthorship: ' + (snap.items.length - badAuth.length) + '/' + snap.items.length);
+  if ((snap.items.length - badAuth.length) < 1000) {
+    errors.push('too few items carry _masterAuthorship');
+  }
+  // No creators[] entry should ever contain the old placeholder string.
+  const hasPlaceholder = snap.items.filter(it => (it.creators || []).some(c => /NonITaukeiCoAuthor/.test(c)));
+  if (hasPlaceholder.length) {
+    errors.push('found ' + hasPlaceholder.length + ' items still carrying the NonITaukeiCoAuthor placeholder');
+  }
+
+  // Panel B4 ("Where study was done") root must exist with a Fiji child.
+  const whereRoot = snap.collections.find(c => c.key === 'V3HLPDPL');
+  const fijiChild = snap.collections.find(c => c.parent === 'V3HLPDPL' && c.name === 'Fiji');
+  if (!whereRoot) errors.push('Panel B4 "Where study was done" root (V3HLPDPL) missing');
+  if (!fijiChild) errors.push('Panel B4 Fiji country child missing');
+  const b4Tagged = snap.items.filter(it => (it.collections || []).indexOf(fijiChild ? fijiChild.key : '__none__') !== -1);
+  info.push('items tagged into B4/Fiji: ' + b4Tagged.length);
+  if (b4Tagged.length < 100) errors.push('too few items tagged into B4 Fiji (' + b4Tagged.length + ')');
+
   console.log('\n=== INFO ===');
   info.forEach(i => console.log('  ' + i));
   if (errors.length) {
