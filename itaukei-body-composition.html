@@ -500,11 +500,24 @@ function buildOption(data){
   // Bands' heights = their % of publications straight down the body, NO width/area correction.
   // The clip axis top (100) sits ABOVE the visible scalp (transparent padding), so we remap the
   // cumulative % into [FEET_CLIP .. HEAD_CLIP] measured empirically per silhouette.
+  // HEAD_CLIP / FEET_CLIP are BAR-DATA VALUES on the yAxis (0..100), where
+  // symbolBoundingData=100 and symbolSize=[BODY_W,"86%"] means the silhouette
+  // occupies yAxis 0..86 of the plot area. HEAD_CLIP is the yAxis position of
+  // the visible scalp; FEET_CLIP is the yAxis position of the visible sole.
+  //
+  // For master-mode traced silhouettes (150x360 viewBox; scalp at SVG y=1,
+  // sole at SVG y=359), scalp maps to yAxis = 86 * (360-1)/360 = 85.76 and
+  // sole maps to 86 * (360-359)/360 = 0.24. Previously we set these to 99.54
+  // and 0.43 which are the scalp/sole positions in the silhouette's OWN
+  // 0..100 internal clip space, NOT the yAxis. That mis-mapping caused
+  // label pills (drawn as a scatter overlay on the yAxis) to render outside
+  // the visible silhouette (PhD floating above the head, Masters at the scalp
+  // instead of the neck).
   const HEAD_CLIP = IS_MASTER
-    ? { "Woman": 99.54, "Man": 99.52 }    // traced-silhouette scalp-top
+    ? { "Woman": 85.76, "Man": 85.76 }    // yAxis position of traced-silhouette scalp
     : { "Woman": 88,    "Man": 85    };   // V1 original scalp-top
   const FEET_CLIP = IS_MASTER
-    ? { "Woman": 0.43,  "Man": 0.43  }    // traced-silhouette sole
+    ? { "Woman": 0.24,  "Man": 0.24  }    // yAxis position of traced-silhouette sole
     : { "Woman": 0,     "Man": 0     };   // V1 original sole
   const clipH = {};
   const IDX_PHD_TOP = TYPES.findIndex(t=>t.key==="phd");
