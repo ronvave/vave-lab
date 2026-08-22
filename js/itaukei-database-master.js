@@ -5811,15 +5811,83 @@
     }
     drawRollingRun();
 
-    panelDData.milestones.filter(milestone => milestone.year >= yMin && milestone.year <= yMax).forEach(milestone => {
+    // Milestone callouts — floating inline in the low-bar whitespace, styled
+    // after the mockup (small colored dot with 2-3 line label anchored to its
+    // right). Vertical y is chosen per-milestone to sit above that year's
+    // stacked bar, with a collision-avoidance stagger for close year pairs.
+    //
+    // Line text is a short 2-word phrase split across two <tspan> lines so it
+    // reads like the mockup ("first male / master's").
+    const shortWords = {
+      firstMaleMasters:   ['first male',   "master's"],
+      firstFemaleMasters: ['first female', "master's"],
+      firstMalePhD:       ['first male',   'PhD'],
+      firstFemalePhD:     ['first female', 'PhD']
+    };
+    const visibleMilestones = panelDData.milestones
+      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax)
+      .map(milestone => {
+        const barTotal = (() => {
+          const bucket = perYear.get(milestone.year);
+          if (!bucket) return 0;
+          return visibleTypes.reduce((sum, type) => sum + (bucket[type] || 0), 0);
+        })();
+        const barTopY = yZero - yScale(barTotal);
+        return { milestone, barTopY };
+      })
+      .sort((a, b) => a.milestone.year - b.milestone.year);
+
+    // Compute a target label anchor above each bar. Then walk left→right and
+    // if a label would overlap the previous label horizontally, lift it a bit
+    // higher so the two callouts stack cleanly instead of colliding.
+    const LABEL_W_EST = 88;                        // px, rough label footprint
+    const LABEL_LINE_H = 12;                       // px per text line
+    const LABEL_BLOCK_H = LABEL_LINE_H * 3 + 4;    // year + 2 body lines + padding
+    const MIN_Y = PAD_TOP + 6;
+    let lastX = -Infinity, lastY = 0;
+    visibleMilestones.forEach(entry => {
+      const { milestone, barTopY } = entry;
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
-      svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: PAD_TOP, y2: yZero, stroke: 'rgba(0,0,0,0.20)', 'stroke-dasharray': '2 4', 'stroke-width': '0.7' }));
-      const circle = panelDSvg('circle', { cx: x, cy: yZero, r: '4.5', fill: milestone.color });
-      const tiedScholars = milestone.ties.length > 1 ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
+      // Target: 10px above this year's bar top, but never below y=60 in the
+      // plot (keep milestones in the upper whitespace) and never above MIN_Y.
+      const defaultBaseY = Math.min(barTopY - 10, PAD_TOP + plotH * 0.55);
+      let baseY = Math.max(MIN_Y + LABEL_BLOCK_H, defaultBaseY); // baseY = bottom of label block
+      // Collision check: if x is within LABEL_W_EST of the previous label AND
+      // this label's block would overlap the previous label vertically, lift.
+      if (x - lastX < LABEL_W_EST && Math.abs(baseY - lastY) < LABEL_BLOCK_H) {
+        baseY = Math.max(MIN_Y + LABEL_BLOCK_H, lastY - LABEL_BLOCK_H - 4);
+      }
+      lastX = x; lastY = baseY;
+      entry.labelBaseY = baseY;
+    });
+
+    visibleMilestones.forEach(({ milestone, labelBaseY }) => {
+      const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
+      // The label block spans [labelBaseY - LABEL_BLOCK_H, labelBaseY].
+      // Layout inside: bold year on line 1, then 2-line body.
+      const yearY = labelBaseY - LABEL_LINE_H * 2 - 2;
+      const bodyY1 = labelBaseY - LABEL_LINE_H;
+      const bodyY2 = labelBaseY;
+      const dotCX = x;
+      const dotCY = yearY - 3;                 // dot sits just left/above the year
+      const textX = x + 7;                     // text starts a hair right of the dot
+      const [line1, line2] = shortWords[milestone.key] || [milestone.shortLabel || '', ''];
+
+      // Small colored dot (no vertical guide line — cleaner, matches mockup)
+      const circle = panelDSvg('circle', { cx: dotCX, cy: dotCY, r: '3.5', fill: milestone.color });
+      const tiedScholars = milestone.ties && milestone.ties.length > 1
+        ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
       circle.appendChild(panelDSvg('title', {}, `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.name} · ${milestone.degree} · ${milestone.uni}, ${milestone.country}${tiedScholars}`));
       svg.appendChild(circle);
-      svg.appendChild(panelDSvg('text', { x, y: PAD_TOP - 16, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: milestone.color }, milestone.year));
-      svg.appendChild(panelDSvg('text', { x, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '9', fill: '#6b7280' }, milestone.shortLabel));
+
+      // Year label (bold, colored)
+      const yearText = panelDSvg('text', { x: textX, y: yearY, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: milestone.color }, milestone.year);
+      yearText.appendChild(panelDSvg('title', {}, `${milestone.label} · ${milestone.name} · ${milestone.degree} · ${milestone.uni}, ${milestone.country}${tiedScholars}`));
+      svg.appendChild(yearText);
+
+      // Two-line body (small, muted grey), left-aligned under the year
+      if (line1) svg.appendChild(panelDSvg('text', { x: textX, y: bodyY1, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563' }, line1));
+      if (line2) svg.appendChild(panelDSvg('text', { x: textX, y: bodyY2, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563' }, line2));
     });
 
     const span = yMax - yMin + 1;
