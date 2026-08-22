@@ -149,6 +149,18 @@ windowShim.MasterFileAdapter.load().then((bundle) => {
     if (!(k in bundle)) errors.push('bundle missing ' + k);
   });
 
+  // Province one-hots flowed through adapter → province collections attached.
+  const PROVINCES = ['Kadavu','Nadroga/Navosa','Namosi','Rewa','Serua','Ba','Lomaiviti','Naitasiri','Ra','Tailevu','Bua','Cakaudrove','Lau','Macuata'];
+  let pubsWithProv = 0;
+  const provColKeys = new Set(snap.collections.filter(c => c.parent === 'C1ROOTKY').map(c => c.key));
+  snap.items.forEach(it => {
+    if (it.collections.some(k => provColKeys.has(k))) pubsWithProv += 1;
+  });
+  info.push('items with a province collection: ' + pubsWithProv);
+  if (pubsWithProv < 100) {
+    errors.push('too few pubs with a province collection (' + pubsWithProv + '); adapter or transformer province mapping broken');
+  }
+
   info.push('profiles.scholars: ' + bundle.profiles.scholars.length);
   info.push('grad.worldPoints: ' + bundle.grad.worldPoints.length);
   info.push('universities: ' + bundle.unis.length);
