@@ -79,6 +79,19 @@ TARGETS = [
     # coding is admin-only per Ron's rule (never shown publicly at the
     # per-scholar level), even though this file only ships totals.
     "body-composition.json",
+    # ==== Master-file V2 preview snapshots ====
+    # Sanitized JSON produced by scripts/master_file_transformer.py,
+    # refreshed every 2h by .github/workflows/refresh-master-file.yml.
+    # Encrypted so nobody can scrape the private roster or publication
+    # corpus (matches the existing Zotero-snapshot policy).
+    "itaukei-master-scholars.json",
+    "itaukei-master-publications.json",
+    "itaukei-master-authorship.json",
+    "itaukei-master-grad-degrees.json",
+    "itaukei-master-mobility.json",
+    "itaukei-master-geography.json",
+    "itaukei-master-aggregates.json",
+    "last-master-sync.json",
 ]
 
 

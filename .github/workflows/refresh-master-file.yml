@@ -1,0 +1,170 @@
+name: Refresh iTaukei Master File snapshot
+
+# Runs every 2 hours (guide requirement §5) and on manual dispatch.
+# Reads the iTaukei_Master_file Google Sheet via a service account,
+# transforms + sanitizes, encrypts, and commits.
+#
+# Requires GitHub Secrets:
+#   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
+#                                   key with Viewer access to the Master file
+#   VAVELAB_PASSCODE             — passcode used to derive AES-GCM key
+#                                   (already exists — same one used by
+#                                    refresh-zotero-snapshot.yml)
+
+on:
+  schedule:
+    - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
+  workflow_dispatch:
+    inputs:
+      force_commit:
+        description: "Commit even when totals drift <2% (heartbeat)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Run transformer + reconciliation but don't commit"
+        required: false
+        default: "false"
+
+concurrency:
+  group: refresh-master-file
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            google-api-python-client \
+            google-auth \
+            cryptography
+
+      - name: Decrypt current snapshot (bootstrap for diff)
+        env:
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+        run: |
+          set -euo pipefail
+          if [ -f data/last-master-sync.json.enc ]; then
+            python3 scripts/decrypt_data.py --all || \
+              echo "Bootstrap decrypt failed (first run?); continuing"
+          else
+            echo "No prior Master-file snapshot; first run"
+          fi
+
+      - name: Stash previous plaintext for diff
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/prev
+          for f in \
+            data/last-master-sync.json \
+            data/itaukei-master-aggregates.json \
+            data/itaukei-master-scholars.json \
+            data/itaukei-master-publications.json \
+            data/itaukei-master-authorship.json \
+            data/itaukei-master-grad-degrees.json \
+            data/itaukei-master-mobility.json \
+            data/itaukei-master-geography.json; do
+            [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
+          done
+
+      - name: Fetch, sanitize, and transform Master file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          python3 scripts/master_file_transformer.py \
+            --mode=production \
+            --out-dir=data
+
+      - name: Reconcile against Master-file Dashboard sheet
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          # We use --tolerance=10 because the Master-file `Dashboard`
+          # worksheet may be up to a few edits stale relative to the
+          # underlying data tabs (formulas recompute on open). Any drift
+          # larger than 10 in any metric is a real regression that fails
+          # the build (the previous .enc snapshots stay in place).
+          python3 scripts/master_file_reconcile.py \
+            --snapshot-dir=data \
+            --tolerance=10 \
+            --strict
+
+      - name: Diff vs previous snapshot
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/prev/itaukei-master-aggregates.json ]; then
+            python3 scripts/master_file_diff.py \
+              --prev=/tmp/prev/itaukei-master-aggregates.json \
+              --curr=data/itaukei-master-aggregates.json \
+              --output=/tmp/diff.txt || true
+            echo "delta_pct=$(cat /tmp/diff_pct.txt 2>/dev/null || echo '0')" >> "$GITHUB_OUTPUT"
+          else
+            echo "delta_pct=100" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Encrypt data files
+        env:
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/encrypt_data.py \
+            itaukei-master-scholars.json \
+            itaukei-master-publications.json \
+            itaukei-master-authorship.json \
+            itaukei-master-grad-degrees.json \
+            itaukei-master-mobility.json \
+            itaukei-master-geography.json \
+            itaukei-master-aggregates.json \
+            last-master-sync.json
+
+      - name: Commit
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
+          DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
+        run: |
+          set -euo pipefail
+          git config user.name "vavelab-bot"
+          git config user.email "bot@vavelab.example"
+          git add data/itaukei-master-*.json.enc data/last-master-sync.json.enc
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          # Compose message based on delta magnitude
+          MSG="chore: Master-file heartbeat"
+          if [ "${DELTA_PCT}" != "0" ] && [ "$(python3 -c "print(float('$DELTA_PCT') >= 2.0)")" = "True" ]; then
+            MSG="Auto-refresh: Master-file snapshot (delta ${DELTA_PCT}%)"
+          fi
+          if [ "${FORCE_COMMIT}" = "true" ]; then
+            MSG="${MSG} [manual]"
+          fi
+          git commit -m "$MSG"
+          # Rebase-retry push (pattern from Zotero workflow)
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            echo "Push attempt $attempt failed; retrying..."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1

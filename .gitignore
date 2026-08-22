@@ -10,6 +10,15 @@ data/workplace-coords.json
 data/world-universities.json
 data/uni-country-overrides.json
 data/auto-resolved.json
+# Master-file plaintext snapshots (only .enc versions are committed).
+data/itaukei-master-scholars.json
+data/itaukei-master-publications.json
+data/itaukei-master-authorship.json
+data/itaukei-master-grad-degrees.json
+data/itaukei-master-mobility.json
+data/itaukei-master-geography.json
+data/itaukei-master-aggregates.json
+data/last-master-sync.json
 
 # Local artefacts
 .DS_Store

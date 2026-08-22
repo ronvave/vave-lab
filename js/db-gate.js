@@ -60,7 +60,20 @@
     'data/itaukei-graduate-studies.json':'data/itaukei-graduate-studies.json.enc',
     'data/scholar-insights.json':        'data/scholar-insights.json.enc',
     // Panel C1 body-composition chart — gender x publication-type aggregates.
-    'data/body-composition.json':        'data/body-composition.json.enc'
+    'data/body-composition.json':        'data/body-composition.json.enc',
+    // ===== Master-file rebuild (V2) =====
+    // These are consumed by itaukei-research-database-master.html /
+    // js/itaukei-database-master.js and refreshed by the every-2h
+    // refresh-master-file.yml workflow. The plaintext .json paths are
+    // gitignored; only the .enc blobs are committed.
+    'data/itaukei-master-scholars.json':     'data/itaukei-master-scholars.json.enc',
+    'data/itaukei-master-publications.json': 'data/itaukei-master-publications.json.enc',
+    'data/itaukei-master-authorship.json':   'data/itaukei-master-authorship.json.enc',
+    'data/itaukei-master-grad-degrees.json': 'data/itaukei-master-grad-degrees.json.enc',
+    'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
+    'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
+    'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
+    'data/last-master-sync.json':            'data/last-master-sync.json.enc'
   };
 
   // In-memory state once the visitor is verified. Never leaves the page.
