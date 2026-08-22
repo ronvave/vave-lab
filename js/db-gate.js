@@ -61,6 +61,10 @@
     'data/scholar-insights.json':        'data/scholar-insights.json.enc',
     // Panel C1 body-composition chart — gender x publication-type aggregates.
     'data/body-composition.json':        'data/body-composition.json.enc',
+    // V2 (Master-file) variant — served to the iframe when the parent passes
+    // ?src=master. Same schema as the V1 file; the aggregates are derived
+    // from the Master authorship join instead of the Zotero snapshot.
+    'data/body-composition-master.json': 'data/body-composition-master.json.enc',
     // ===== Master-file rebuild (V2) =====
     // These are consumed by itaukei-research-database-master.html /
     // js/itaukei-database-master.js and refreshed by the every-2h

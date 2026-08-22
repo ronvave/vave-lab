@@ -197,7 +197,11 @@
     'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
     'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
     'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
-    'data/last-master-sync.json':            'data/last-master-sync.json.enc'
+    'data/last-master-sync.json':            'data/last-master-sync.json.enc',
+    // Panel C1 body-composition chart, V2 (Master-file) variant. Same schema
+    // as the V1 file; the iframe fetches this when the parent URL passes
+    // ?src=master.
+    'data/body-composition-master.json':     'data/body-composition-master.json.enc'
   };
 
   async function fetchJsonEncrypted(url) {
