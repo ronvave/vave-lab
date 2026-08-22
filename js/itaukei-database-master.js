@@ -5694,7 +5694,9 @@
     }
 
     const W = 900, H = 340;
-    const PAD_LEFT = 44, PAD_RIGHT = 64, PAD_TOP = 42, PAD_BOTTOM = 46;
+    // Padding widened on left (numeric labels + rotated axis title) and right
+    // (secondary %-axis + rotated "Women authorship" title).
+    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
     // dataMin/dataMax define the domain the timeline can span. We widen the
@@ -5725,27 +5727,57 @@
       if (year < yMin || year > yMax) return;
       maxStack = Math.max(maxStack, visibleTypes.reduce((sum, type) => sum + (bucket[type] || 0), 0));
     });
-    const niceMax = niceCeil(maxStack || 1);
+    // Y-axis breathing room: add ~5 units of headroom above the tallest bar
+    // before rounding to a nice number, so the tallest stack never touches
+    // the top of the plot.
+    const niceMax = niceCeil((maxStack || 1) + 5);
     const yScale = value => plotH * (value / niceMax);
     const yZero = PAD_TOP + plotH;
     const plotRight = W - PAD_RIGHT;
 
-    // Decade shading is painted first so it remains quietly behind every bar.
+    // Decade shading. Non-shaded decades are pure white; shaded decades are a
+    // slightly darker warm gray so the alternation reads clearly (previous
+    // values were 5%/2% which were invisible in the fullscreen view).
     let decadeIndex = 0;
     for (let decade = Math.floor(yMin / 10) * 10; decade <= yMax; decade += 10, decadeIndex++) {
       const startYear = Math.max(decade, yMin);
       const endYear = Math.min(decade + 10, yMax + 1);
       const x = PAD_LEFT + (startYear - yMin) * bandW;
       const width = (endYear - startYear) * bandW;
-      svg.appendChild(panelDSvg('rect', { x, y: PAD_TOP, width, height: plotH, fill: decadeIndex % 2 === 0 ? 'rgba(120,90,60,0.05)' : 'rgba(120,90,60,0.02)' }));
+      svg.appendChild(panelDSvg('rect', { x, y: PAD_TOP, width, height: plotH, fill: decadeIndex % 2 === 0 ? '#ffffff' : 'rgba(120,90,60,0.06)' }));
       svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${decade}s`));
     }
 
-    [0, niceMax / 2, niceMax].forEach(value => {
+    // Left y-axis: vertical line + ticks at 5 evenly-spaced values (0, 20, 40, 60, 80, 100 for niceMax=100).
+    // We compute a tick step that divides niceMax into ~5 gridlines using the
+    // same niceCeil family (5, 10, 20, 25, 50, 100).
+    const yAxisStep = (() => {
+      if (niceMax <= 5) return 1;
+      if (niceMax <= 10) return 2;
+      if (niceMax <= 20) return 5;
+      if (niceMax <= 50) return 10;
+      if (niceMax <= 100) return 20;
+      return Math.ceil(niceMax / 5 / 10) * 10;
+    })();
+    // Left vertical axis line (matches the x-axis stroke)
+    svg.appendChild(panelDSvg('line', { x1: PAD_LEFT, x2: PAD_LEFT, y1: PAD_TOP, y2: yZero, stroke: '#6b7280', 'stroke-width': '1' }));
+    for (let value = 0; value <= niceMax + 0.001; value += yAxisStep) {
       const y = yZero - yScale(value);
-      svg.appendChild(panelDSvg('line', { x1: PAD_LEFT, x2: plotRight, y1: y, y2: y, stroke: '#d1d5db', 'stroke-dasharray': value === 0 ? '0' : '2 3', 'stroke-width': value === 0 ? '1' : '0.7' }));
-      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 6, y: y + 4, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
-    });
+      // Gridline across the plot (dashed except at zero, which is the x-axis).
+      if (value > 0) {
+        svg.appendChild(panelDSvg('line', { x1: PAD_LEFT, x2: plotRight, y1: y, y2: y, stroke: '#e5e7eb', 'stroke-dasharray': '2 3', 'stroke-width': '0.7' }));
+      }
+      // Outward tick mark on the left axis
+      svg.appendChild(panelDSvg('line', { x1: PAD_LEFT - 4, x2: PAD_LEFT, y1: y, y2: y, stroke: '#6b7280', 'stroke-width': '1' }));
+      // Numeric label
+      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 7, y: y + 3.5, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
+    }
+    // Left y-axis title (rotated, like the mockup)
+    svg.appendChild(panelDSvg('text', {
+      x: PAD_LEFT - 42, y: PAD_TOP + plotH / 2,
+      transform: `rotate(-90 ${PAD_LEFT - 42} ${PAD_TOP + plotH / 2})`,
+      'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '11', fill: '#6b7280'
+    }, 'Number of publications'));
 
     for (let year = yMin; year <= yMax; year++) {
       const bucket = perYear.get(year);
@@ -5795,17 +5827,20 @@
       }
       if (female + male >= 3) rollingWomen.set(year, female / (female + male));
     }
+    // Secondary (right) y-axis for the 5-year rolling women-authorship share.
+    // Ticks at 0/25/50/75/100% (was 0/50/100) matching the reference mockup.
     const axisX = W - PAD_RIGHT + 4;
     svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX, y1: PAD_TOP, y2: yZero, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-    [0, 50, 100].forEach(percent => {
+    [0, 25, 50, 75, 100].forEach(percent => {
       const y = PAD_TOP + plotH * (1 - percent / 100);
-      svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 3, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-      svg.appendChild(panelDSvg('text', { x: axisX + 6, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
+      svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 4, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
+      svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
     });
     svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Women authorship (5-yr rolling)'));
     let rollingRun = [];
     const drawRollingRun = () => {
-      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.4' }));
+      // Rolling women-authorship line drawn dashed, matching the mockup.
+      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '5 3' }));
       rollingRun = [];
     };
     for (let year = yMin; year <= yMax; year++) {
@@ -5932,13 +5967,17 @@
       if (line2) svg.appendChild(panelDSvg('text', { x: textX, y: bodyY2, 'text-anchor': 'start', 'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563' }, line2));
     });
 
+    // X-axis baseline + tick marks. The baseline runs along yZero from the
+    // left axis to the right axis so the plot has a clear frame on both
+    // axes. Ticks extend below the baseline like the mockup.
+    svg.appendChild(panelDSvg('line', { x1: PAD_LEFT, x2: plotRight, y1: yZero, y2: yZero, stroke: '#6b7280', 'stroke-width': '1' }));
     const span = yMax - yMin + 1;
     const tickStep = span <= 8 ? 1 : span <= 20 ? 2 : span <= 40 ? 5 : 10;
     const firstTick = Math.ceil(yMin / tickStep) * tickStep;
     for (let year = firstTick; year <= yMax; year += tickStep) {
       const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
       svg.appendChild(panelDSvg('text', { x, y: H - PAD_BOTTOM + 20, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, year));
-      svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: yZero, y2: yZero + 4, stroke: '#9ca3af' }));
+      svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: yZero, y2: yZero + 6, stroke: '#6b7280', 'stroke-width': '1' }));
     }
     $$('[data-hist-presets] button').forEach(button => button.classList.toggle('is-active', button.dataset.preset === state.histRange.preset));
   }

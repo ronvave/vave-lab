@@ -476,17 +476,22 @@
       inset: 0;
       z-index: 9999;
       background: #fff;
-      padding: 48px 24px 24px;
+      padding: 40px 32px 32px;
       display: flex;
       flex-direction: column;
       justify-content: center;
       align-items: center;
     }
+    /* Fill ≥ 75% of the viewport. The SVG viewBox is 900×340 (≈2.65:1) so
+       we let the chart use up to 95% of the viewport width and up to 82% of
+       the viewport height, whichever is smaller (preserves aspect ratio via
+       preserveAspectRatio). This produces ~78–85% area coverage in typical
+       16:9 windows. */
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen svg#db-source-histogram {
-      height: calc(100vh - 96px) !important;
-      max-height: calc(100vh - 96px);
-      width: 100%;
-      max-width: 1600px;
+      width: 95vw !important;
+      height: 82vh !important;
+      max-width: 95vw;
+      max-height: 82vh;
     }
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__expand { display: none; }
     [data-panel="D"] .db-panel-d__chart-wrap.is-fullscreen .db-panel-d__close { display: inline-flex; }
@@ -4598,7 +4603,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-body-composition.html?embedded=1&src=master&v=mf12"
+            src="itaukei-body-composition.html?embedded=1&src=master&v=mf13"
             title="iTaukei body composition by gender"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
@@ -5289,10 +5294,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=mf12" defer></script>
-<script src="js/master-file-adapter.js?v=mf12" defer></script>
-<script src="js/itaukei-database-master.js?v=mf12" defer></script>
-<script src="js/master-file-panel-overrides.js?v=mf12" defer></script>
+<script src="js/demo-gate.js?v=mf13" defer></script>
+<script src="js/master-file-adapter.js?v=mf13" defer></script>
+<script src="js/itaukei-database-master.js?v=mf13" defer></script>
+<script src="js/master-file-panel-overrides.js?v=mf13" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a
