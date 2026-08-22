@@ -48,20 +48,35 @@
   var PROVINCE_UNSPEC = 'Fiji - no province specified';
   var PROVINCE_UNSURE = 'Unsure';
 
-  // Master publication-type → Zotero itemType mapping.
+  // Master publication-type → Zotero itemType mapping. Theses share the
+  // canonical Zotero base type 'thesis' and are further split by an item-level
+  // `thesisLevel` field ('phd' | 'masters' | 'other') so the production
+  // `visualType()` and every downstream `items.filter(i => i.itemType ===
+  // 'thesis')` reader keeps working unchanged.
   var TYPE_MAP = {
     "Journal Article":       'journalArticle',
-    "Master's Thesis":       'thesisMasters',
-    "PhD Thesis":            'thesisPhd',
+    "Master's Thesis":       'thesis',
+    "PhD Thesis":            'thesis',
+    "Other Thesis":          'thesis',
     "Book Chapter":          'bookSection',
     "Book":                  'book',
     "Report":                'report',
     "Conference Paper":      'conferencePaper',
     "Unpublished report":    'preprint',
-    "Others":                'document'
+    "Unpublished":           'preprint',
+    "Book Review":           'journalArticle',
+    "Others":                'document',
+    "Other":                 'document'
+  };
+  // Master publication-type → thesisLevel ('phd' | 'masters' | 'other').
+  var THESIS_LEVEL_MAP = {
+    "PhD Thesis":         'phd',
+    "Master's Thesis":    'masters',
+    "Other Thesis":       'other'
   };
   // Reverse for tag/itemType introspection.
   function zoteroTypeFor(pubType) { return TYPE_MAP[pubType] || 'document'; }
+  function thesisLevelFor(pubType) { return THESIS_LEVEL_MAP[pubType] || null; }
 
   // Deterministic 8-char Zotero-style keys ([A-Z0-9]) from arbitrary strings.
   // Used for synthesized `collections[]` entries so item.collections[] can
@@ -251,15 +266,42 @@
       var itemKey = hashKey('pub:' + pid);
       var itemType = zoteroTypeFor(p['Publication Type']);
 
-      // Creators (ordered by Author Position).
+      // Creators (ordered by Author Position). The Master authorship table only
+      // records iTaukei-scholar-to-publication links, so an iTaukei co-author at
+      // position 3 would otherwise appear as creators[0] and be falsely counted
+      // as the lead author by production's `itaukeiAuthorship()`. To preserve
+      // true first-authorship, we (a) sort iTaukei creators by their recorded
+      // Author Position, and (b) prepend a non-iTaukei placeholder at position 0
+      // whenever the lowest-position iTaukei author is NOT the first author
+      // (either `Author Position > 1` or `Is First Author? === false`). The
+      // placeholder is a stable synthetic name that will never match any iTaukei
+      // canonical, so `creatorIsItaukei()` returns false and the item classifies
+      // as `coauth` instead of `lead`.
       var authRows = (authByPub[pid] || []).slice().sort(function (a, b) {
         var ap = Number(a['Author Position'] || 0);
         var bp = Number(b['Author Position'] || 0);
         return ap - bp;
       });
-      var creators = authRows.map(function (a) {
+      var iTaukeiCreatorsInOrder = authRows.map(function (a) {
         return scholarNameById[a['Scholar ID']] || (a['Author Name as Recorded'] || '');
       }).filter(Boolean);
+      var creators;
+      if (authRows.length === 0) {
+        creators = [];
+      } else {
+        var firstAuthorRow = authRows[0];
+        var firstIsFirstAuthor =
+          firstAuthorRow['Is First Author?'] === true ||
+          firstAuthorRow['Is First Author?'] === 'true' ||
+          firstAuthorRow._is_lead === true ||
+          Number(firstAuthorRow['Author Position'] || 0) === 1;
+        if (firstIsFirstAuthor) {
+          creators = iTaukeiCreatorsInOrder;
+        } else {
+          // Prepend a non-iTaukei placeholder so creators[0] is not iTaukei.
+          creators = ['NonITaukeiCoAuthor, N.'].concat(iTaukeiCreatorsInOrder);
+        }
+      }
 
       // Collections: iTaukei author sub-collections for every linked scholar,
       // "By or with iTaukei authors" if any iTaukei scholar is linked, discipline
@@ -277,8 +319,9 @@
       if (linkedScholarIds.size > 0) collections.push(COL_BY_WITH);
 
       // Discipline: assign the discipline of the lead-author scholar, or
-      // the first linked scholar as fallback.
-      var lead = authRows.find(function (a) { return a._is_lead; });
+      // the first linked scholar as fallback. Lead here means the iTaukei-linked
+      // author flagged with `_is_lead` in the Master authorship table.
+      var lead = authRows.find(function (a) { return a._is_lead || Number(a['Author Position'] || 0) === 1 && (a['Is First Author?'] === true || a['Is First Author?'] === 'true'); });
       var leadDiscKey = null;
       if (lead && lead['Scholar ID']) {
         leadDiscKey = disciplineKeyByScholarId[lead['Scholar ID']];
@@ -358,8 +401,11 @@
       var publicationTitle = p['Journal / Book Title'] || '';
       var university = '';
       var thesisType = '';
-      if (itemType === 'thesisMasters' || itemType === 'thesisPhd') {
-        thesisType = (p['Thesis Level'] || (itemType === 'thesisPhd' ? 'PhD Thesis' : "Master's Thesis"));
+      var thesisLevel = thesisLevelFor(p['Publication Type']);
+      if (itemType === 'thesis') {
+        if (thesisLevel === 'phd')     thesisType = 'PhD Thesis';
+        else if (thesisLevel === 'masters') thesisType = "Master's Thesis";
+        else                                thesisType = p['Publication Type'] || 'Thesis';
         // Use publisher/institution/school as the university where present.
         university = p['Publisher / Institution / School'] || p['Journal / Book Title'] || '';
       }
@@ -376,6 +422,7 @@
         publicationTitle:   publicationTitle,
         university:         university,
         thesisType:         thesisType,
+        thesisLevel:        thesisLevel,
         DOI:                p['DOI'] || '',
         url:                p['URL'] || '',
         publisher:          p['Publisher / Institution / School'] || '',
@@ -571,6 +618,21 @@
         completed: /^Completed/i.test(g['Completion Status'] || '')
       });
       pt.scholarsCount = pt.scholars.length;
+      // Also emit the shape the production world-map / B2-KPI code reads:
+      // three parallel arrays of scholar names bucketed by degree level.
+      // Ron's Panel B2 KPI computation (renderPanelB2) sums the array
+      // lengths per country and derives Universities/Countries totals
+      // from the point set, so these arrays must exist on every point.
+      if (!pt.mastersScholars) pt.mastersScholars = [];
+      if (!pt.phdScholars)     pt.phdScholars = [];
+      if (!pt.unknownScholars) pt.unknownScholars = [];
+      var stage = (g['Degree Stage'] || '').toLowerCase();
+      var scholarName = g['Scholar Name'] || '';
+      if (scholarName) {
+        if (stage.indexOf('master') !== -1)               pt.mastersScholars.push(scholarName);
+        else if (stage.indexOf('phd') !== -1 || stage.indexOf('doctor') !== -1) pt.phdScholars.push(scholarName);
+        else                                              pt.unknownScholars.push(scholarName);
+      }
     });
     var worldPoints = Array.from(wpByKey.values());
 
@@ -579,7 +641,10 @@
 
   // -------------------------------------------------------------------
   // Build world-universities.json shape.
-  //   [{ university, country, lat, lng, region, zoteroCollectionKey }]
+  // Production code reads `state.universities.universities` as an array of
+  // { name, country } entries (see itaukei-database-master.js line 911), so we
+  // wrap the raw array into that envelope. Each entry also exposes the extra
+  // fields the map/panel-B2 renderers use.
   // -------------------------------------------------------------------
   function buildWorldUniversities(master, snap) {
     var byUni = new Map();
@@ -588,6 +653,7 @@
       if (!uni) return;
       if (byUni.has(uni)) return;
       byUni.set(uni, {
+        name: uni,
         university: uni,
         country: (g['Country'] || '').trim(),
         region: (g['Region'] || '').trim(),
@@ -606,7 +672,7 @@
         if (m.m_lon && !entry.lng) entry.lng = m.m_lon;
       }
     });
-    return Array.from(byUni.values());
+    return { universities: Array.from(byUni.values()) };
   }
 
   // -------------------------------------------------------------------

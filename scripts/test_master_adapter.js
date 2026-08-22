@@ -163,7 +163,7 @@ windowShim.MasterFileAdapter.load().then((bundle) => {
 
   info.push('profiles.scholars: ' + bundle.profiles.scholars.length);
   info.push('grad.worldPoints: ' + bundle.grad.worldPoints.length);
-  info.push('universities: ' + bundle.unis.length);
+  info.push('universities: ' + (bundle.unis && bundle.unis.universities && bundle.unis.universities.length));
 
   console.log('\n=== INFO ===');
   info.forEach(i => console.log('  ' + i));
