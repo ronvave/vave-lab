@@ -5511,205 +5511,326 @@
   // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
+  function panelDParseYear(value) {
+    const match = String(value == null ? '' : value).match(/^\s*(\d{4})\s*$/);
+    return match ? Number(match[1]) : null;
+  }
+
+  function panelDSvg(tag, attrs, text) {
+    const node = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    Object.entries(attrs || {}).forEach(([key, value]) => node.setAttribute(key, value));
+    if (text != null) node.textContent = text;
+    return node;
+  }
+
+  // Master-derived Panel D data is intentionally cached after the first build.
+  // Completion year is required only for a milestone dot: completed but undated
+  // degree records remain part of the dashboard's all-completion KPI totals.
+  function getPanelDData() {
+    if (state.panelDDataCache) return state.panelDDataCache;
+
+    const master = state.master || {};
+    const scholars = Array.isArray(master.scholars) ? master.scholars : [];
+    const gradDegrees = Array.isArray(master.gradDegrees) ? master.gradDegrees : [];
+    const publications = Array.isArray(master.publications) ? master.publications : [];
+    const authorship = Array.isArray(master.authorship) ? master.authorship : [];
+    const aggregates = master.aggregates || {};
+    const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s.Gender || '').trim()]));
+    const publicationById = new Map(publications.map(pub => [String(pub['Publication ID / BibTeX Key'] || '').trim(), pub]));
+    const isMasters = row => /master/i.test(String(row['Degree Stage'] || ''));
+    const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
+    const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
+    const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
+    const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
+    const milestoneDefinitions = [
+      { key: 'firstMaleMasters', label: "1st Male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemaleMasters', label: "1st Female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
+      { key: 'firstMalePhD', label: '1st Male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemalePhD', label: '1st Female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
+    ];
+    const milestones = milestoneDefinitions.map(def => {
+      const candidates = completedDatedRows
+        .filter(({ row }) => (def.stage === 'masters' ? isMasters(row) : isPhd(row)) && genderByScholarId.get(String(row['Scholar ID'] || '').trim()) === def.gender)
+        .map(({ row, year }) => ({
+          year,
+          name: String(row['Scholar Name'] || '').trim(),
+          degree: String(row['Degree / Qualification'] || '').trim(),
+          uni: String(row['C_Uni name'] || row['O_Uni name'] || '').trim(),
+          country: String(row.Country || '').trim()
+        }))
+        .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
+      if (!candidates.length) throw new Error(`Panel D milestone data missing: ${def.key}`);
+      const year = candidates[0].year;
+      const tied = candidates.filter(candidate => candidate.year === year);
+      const chosen = tied[0];
+      return { ...def, year, name: chosen.name, degree: chosen.degree, uni: chosen.uni, country: chosen.country, ties: tied };
+    });
+
+    const authorshipByPublication = new Map();
+    authorship.forEach(row => {
+      const publicationId = String(row['Publication ID / BibTeX Key'] || '').trim();
+      if (!publicationId) return;
+      const rows = authorshipByPublication.get(publicationId) || [];
+      rows.push(row);
+      authorshipByPublication.set(publicationId, rows);
+    });
+    const authorshipRoleByPublication = new Map();
+    authorshipByPublication.forEach((rows, publicationId) => {
+      const hasLead = rows.some(row => row['Is First Author?'] === true || row['Is First Author?'] === 'true' || row._is_lead === true || Number(row['Author Position'] || 0) === 1);
+      authorshipRoleByPublication.set(publicationId, hasLead ? 'lead' : 'coauth');
+    });
+
+    const mastersN = completedRows.filter(isMasters).length;
+    const phdN = completedRows.filter(isPhd).length;
+    const universities = new Set(completedRows.map(row => String(row['C_Uni name'] || row['O_Uni name'] || '').trim()).filter(Boolean));
+    const countries = new Set(completedRows.map(row => String(row.Country || '').trim()).filter(Boolean));
+    const kpis = {
+      'd-theses': completedRows.length,
+      'd-scholars': scholars.length,
+      'd-masters': mastersN,
+      'd-phds': phdN,
+      'd-unis': universities.size,
+      'd-countries': countries.size,
+      'd-milestones': milestones.length
+    };
+    const expectedKpis = { 'd-theses': 432, 'd-scholars': 472, 'd-masters': 315, 'd-phds': 117, 'd-unis': 101, 'd-countries': 22, 'd-milestones': 4 };
+    Object.entries(expectedKpis).forEach(([key, expected]) => {
+      if (kpis[key] !== expected) console.warn(`Panel D KPI data drift: ${key} is ${kpis[key]}, expected ${expected}.`);
+    });
+
+    state.milestonesCache = milestones;
+    state.panelDDataCache = {
+      milestones,
+      kpis,
+      mastersN,
+      phdN,
+      genderByScholarId,
+      publicationById,
+      authorshipByPublication,
+      authorshipRoleByPublication,
+      linkedScholarFallback: aggregates.totals && aggregates.totals.scholars_with_authorship_link
+    };
+    return state.panelDDataCache;
+  }
+
+  function updatePanelDKpis(panelDData) {
+    const subtitles = {
+      'd-theses': `${panelDData.phdN} PhDs • ${panelDData.mastersN} Master's`,
+      'd-scholars': 'Documented in total',
+      'd-masters': 'Degree completions',
+      'd-phds': 'Doctorate completions',
+      'd-unis': 'Where degrees were earned',
+      'd-countries': 'Across degree destinations',
+      'd-milestones': 'Firsts and turning points'
+    };
+    Object.entries(panelDData.kpis).forEach(([key, value]) => {
+      const number = $(`[data-kpi="${key}"]`);
+      const subtitle = $(`[data-kpi-sub="${key}"]`);
+      if (number) number.textContent = value;
+      if (subtitle) subtitle.textContent = subtitles[key];
+    });
+  }
+
+  // ============ STACKED-BY-TYPE YEAR HISTOGRAM (Panel D) ============
+  // Bars per year, stacked bottom-up by item type. Panel D owns its own
+  // type filter (state.histTypeSet, wired via wireHistTypeFilter) and its own
+  // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
+  // toggles here don't cascade into Panel B/C and vice versa.
+  // The x-axis window is controlled by state.histRange (start/end year).
   function renderHistogram() {
     const items = state.snapshot.items;
     const authorsMode = state.histAuthors || 'both';
+    const panelDData = getPanelDData();
+    updatePanelDKpis(panelDData);
 
-    // Authors filter shared with itaukeiAuthorship() upstream:
-    //   'lead'   — first-listed creator is iTaukei
-    //   'coauth' — iTaukei is present but not first-listed
-    //   'both'   — any iTaukei involvement (lead OR coauth)
-    //   'all'    — no author filter
     const passesAuthors = (it) => {
       if (authorsMode === 'all') return true;
-      const role = itaukeiAuthorship(it);        // 'lead' | 'coauth' | 'none'
-      if (authorsMode === 'lead')   return role === 'lead';
+      const role = itaukeiAuthorship(it);
+      if (authorsMode === 'lead') return role === 'lead';
       if (authorsMode === 'coauth') return role === 'coauth';
-      return role !== 'none';                    // 'both'
+      return role !== 'none';
     };
+    const roleMatches = role => authorsMode === 'all' || (authorsMode === 'lead' ? role === 'lead' : authorsMode === 'coauth' ? role === 'coauth' : role !== 'none');
 
-    // Aggregate: year -> { itemType: n } and keep list of years present in data
     const perYear = new Map();
     const yearsAll = [];
-    items.forEach(it => {
+    const filteredItems = items.filter(passesAuthors);
+    filteredItems.forEach(it => {
       if (!it.year) return;
-      // Authors filter applied first so the x-axis range (yearsAll) also
-      // reflects it — switching modes shrinks the visible time window when
-      // the mode drops the earliest items in the data.
-      if (!passesAuthors(it)) return;
       yearsAll.push(it.year);
-      const vt = visualType(it);
-      if (!state.histTypeSet.has(vt)) return;
-      let bucket = perYear.get(it.year);
-      if (!bucket) { bucket = {}; perYear.set(it.year, bucket); }
-      bucket[vt] = (bucket[vt] || 0) + 1;
+      const type = visualType(it);
+      if (!state.histTypeSet.has(type)) return;
+      const bucket = perYear.get(it.year) || {};
+      bucket[type] = (bucket[type] || 0) + 1;
+      perYear.set(it.year, bucket);
     });
 
-    // Keep decade dropdown populated for the item-list filter
-    if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
+    const linkedScholarIds = new Set();
+    panelDData.authorshipByPublication.forEach((rows, publicationId) => {
+      const role = panelDData.authorshipRoleByPublication.get(publicationId) || 'none';
+      if (!roleMatches(role)) return;
+      rows.forEach(row => {
+        const scholarId = String(row['Scholar ID'] || '').trim();
+        if (scholarId) linkedScholarIds.add(scholarId);
+      });
+    });
+    const headlineTypes = new Set(['journalArticle', 'thesisMasters', 'thesisPhd', 'bookSection', 'book']);
+    const note = $('[data-hist-note]');
+    if (note) {
+      const headlineTotal = filteredItems.filter(it => headlineTypes.has(visualType(it))).length;
+      const linkedTotal = linkedScholarIds.size || panelDData.linkedScholarFallback || 0;
+      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} iTaukei scholars. Women share is a 5-year rolling average of lead-author gender.`;
+    }
 
+    if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
     const svg = $('#db-source-histogram');
     if (!svg) return;
     svg.innerHTML = '';
-
-    // Which item types are enabled AND actually appear in the data
-    const typesInData = new Set(items.map(i => visualType(i)));
-    const visibleTypes = TYPE_ORDER.filter(t => state.typeSet.has(t) && typesInData.has(t));
-
-    if (!visibleTypes.length || !perYear.size) {
-      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
-      t.setAttribute('x', 450); t.setAttribute('y', 170);
-      t.setAttribute('text-anchor','middle'); t.setAttribute('font-family','DM Sans');
-      t.setAttribute('font-size','15'); t.setAttribute('fill','#6b7280');
-      t.textContent = 'No item types selected — check at least one in panel B.';
-      svg.appendChild(t);
+    const typesInData = new Set(items.map(item => visualType(item)));
+    const visibleTypes = TYPE_ORDER.filter(type => state.histTypeSet.has(type) && typesInData.has(type));
+    if (!visibleTypes.length || !perYear.size || !yearsAll.length) {
+      svg.appendChild(panelDSvg('text', { x: 450, y: 170, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '15', fill: '#6b7280' }, 'No item types selected — check at least one source type.'));
       return;
     }
 
-    // Layout constants. PAD_TOP was 44 when the in-SVG legend sat above
-    // the plot area; the checkable filter row now serves that role, so we
-    // tighten the top gutter to reclaim vertical space for the bars.
     const W = 900, H = 340;
-    const PAD_LEFT = 44, PAD_RIGHT = 20, PAD_TOP = 12, PAD_BOTTOM = 46;
+    const PAD_LEFT = 44, PAD_RIGHT = 64, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
-
-    // Data range (full)
     const dataMin = Math.min(...yearsAll);
     const dataMax = Math.max(...yearsAll);
-
-    // Apply the user-selected window. Clamp to data range so out-of-band values are ignored.
     let yMin = state.histRange.start != null ? state.histRange.start : dataMin;
-    let yMax = state.histRange.end   != null ? state.histRange.end   : dataMax;
+    let yMax = state.histRange.end != null ? state.histRange.end : dataMax;
     if (yMin > yMax) [yMin, yMax] = [yMax, yMin];
     yMin = Math.max(dataMin, Math.min(dataMax, yMin));
     yMax = Math.max(dataMin, Math.min(dataMax, yMax));
 
-    // Sync the input boxes to the resolved range (in case caller passed nulls
-    // or preset changed the range).
     const startEl = $('[data-hist-start]');
-    const endEl   = $('[data-hist-end]');
-    if (startEl) {
-      startEl.min = dataMin; startEl.max = dataMax;
-      if (document.activeElement !== startEl) startEl.value = yMin;
-    }
-    if (endEl) {
-      endEl.min = dataMin; endEl.max = dataMax;
-      if (document.activeElement !== endEl) endEl.value = yMax;
-    }
+    const endEl = $('[data-hist-end]');
+    if (startEl) { startEl.min = dataMin; startEl.max = dataMax; if (document.activeElement !== startEl) startEl.value = yMin; }
+    if (endEl) { endEl.min = dataMin; endEl.max = dataMax; if (document.activeElement !== endEl) endEl.value = yMax; }
 
     const yearCount = yMax - yMin + 1;
-    // Bars widen or narrow to fill the plot width equally at all zoom levels.
     const bandW = plotW / yearCount;
     const barW = Math.max(1.5, Math.min(40, bandW * 0.78));
     const bandGap = (bandW - barW) / 2;
-
-    // Y scale: max stacked total in any single year WITHIN THE VISIBLE WINDOW.
-    // Recomputing here means the y-axis tightens automatically when the user
-    // zooms into a narrower time range.
     let maxStack = 0;
-    perYear.forEach((b, yr) => {
-      if (yr < yMin || yr > yMax) return;
-      const total = visibleTypes.reduce((a,t) => a + (b[t] || 0), 0);
-      if (total > maxStack) maxStack = total;
+    perYear.forEach((bucket, year) => {
+      if (year < yMin || year > yMax) return;
+      maxStack = Math.max(maxStack, visibleTypes.reduce((sum, type) => sum + (bucket[type] || 0), 0));
     });
-    if (maxStack === 0) maxStack = 1;
-    // Nice round tick above maxStack
-    const niceMax = niceCeil(maxStack);
+    const niceMax = niceCeil(maxStack || 1);
+    const yScale = value => plotH * (value / niceMax);
+    const yZero = PAD_TOP + plotH;
+    const plotRight = W - PAD_RIGHT;
 
-    const yScale = n => plotH * (n / niceMax);
-    const yZero = PAD_TOP + plotH; // bottom of plot
+    // Decade shading is painted first so it remains quietly behind every bar.
+    let decadeIndex = 0;
+    for (let decade = Math.floor(yMin / 10) * 10; decade <= yMax; decade += 10, decadeIndex++) {
+      const startYear = Math.max(decade, yMin);
+      const endYear = Math.min(decade + 10, yMax + 1);
+      const x = PAD_LEFT + (startYear - yMin) * bandW;
+      const width = (endYear - startYear) * bandW;
+      svg.appendChild(panelDSvg('rect', { x, y: PAD_TOP, width, height: plotH, fill: decadeIndex % 2 === 0 ? 'rgba(120,90,60,0.05)' : 'rgba(120,90,60,0.02)' }));
+      svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${decade}s`));
+    }
 
-    // (In-SVG legend removed — the checkable source-type row above the chart
-    // now serves as both the legend and the filter, so drawing it twice is
-    // redundant and eats vertical space.)
-
-    // Gridlines + Y axis ticks (0, niceMax/2, niceMax)
-    const ticks = [0, niceMax / 2, niceMax];
-    ticks.forEach(v => {
-      const y = yZero - yScale(v);
-      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
-      line.setAttribute('x1', PAD_LEFT); line.setAttribute('x2', W - PAD_RIGHT);
-      line.setAttribute('y1', y);        line.setAttribute('y2', y);
-      line.setAttribute('stroke', '#d1d5db');
-      line.setAttribute('stroke-dasharray', v === 0 ? '0' : '2 3');
-      line.setAttribute('stroke-width', v === 0 ? '1' : '0.7');
-      svg.appendChild(line);
-      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-      label.setAttribute('x', PAD_LEFT - 6);
-      label.setAttribute('y', y + 4);
-      label.setAttribute('text-anchor', 'end');
-      label.setAttribute('font-family','DM Sans');
-      label.setAttribute('font-size','10');
-      label.setAttribute('fill','#6b7280');
-      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
-      svg.appendChild(label);
+    [0, niceMax / 2, niceMax].forEach(value => {
+      const y = yZero - yScale(value);
+      svg.appendChild(panelDSvg('line', { x1: PAD_LEFT, x2: plotRight, y1: y, y2: y, stroke: '#d1d5db', 'stroke-dasharray': value === 0 ? '0' : '2 3', 'stroke-width': value === 0 ? '1' : '0.7' }));
+      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 6, y: y + 4, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
     });
 
-    // Stacked bars per year (only within the visible window)
     for (let year = yMin; year <= yMax; year++) {
       const bucket = perYear.get(year);
       if (!bucket) continue;
       const xLeft = PAD_LEFT + (year - yMin) * bandW + bandGap;
-      let stackTop = 0; // running total from bottom up
-      visibleTypes.forEach(t => {
-        const n = bucket[t] || 0;
-        if (n === 0) return;
-        const h = yScale(n);
-        const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-        rect.setAttribute('x', xLeft);
-        rect.setAttribute('y', yZero - yScale(stackTop) - h);
-        rect.setAttribute('width', barW);
-        rect.setAttribute('height', h);
-        rect.setAttribute('fill', TYPE_COLOR[t]);
+      let stackTop = 0;
+      visibleTypes.forEach(type => {
+        const count = bucket[type] || 0;
+        if (!count) return;
+        const height = yScale(count);
+        const rect = panelDSvg('rect', { x: xLeft, y: yZero - yScale(stackTop) - height, width: barW, height, fill: TYPE_COLOR[type] });
         rect.style.cursor = 'pointer';
-        const total = visibleTypes.reduce((a,tt) => a + (bucket[tt] || 0), 0);
-        const parts = visibleTypes.filter(tt => (bucket[tt] || 0) > 0)
-          .map(tt => `${bucket[tt]} × ${TYPE_LABELS[tt] || tt}`).join(', ');
-        const ttl = document.createElementNS('http://www.w3.org/2000/svg','title');
-        ttl.textContent = `${year} · ${total} publication${total===1?'':'s'} (${parts})`;
-        rect.appendChild(ttl);
+        const total = visibleTypes.reduce((sum, current) => sum + (bucket[current] || 0), 0);
+        const parts = visibleTypes.filter(current => bucket[current]).map(current => `${bucket[current]} × ${TYPE_LABELS[current] || current}`).join(', ');
+        rect.appendChild(panelDSvg('title', {}, `${year} · ${total} publication${total === 1 ? '' : 's'} (${parts})`));
         rect.addEventListener('click', () => {
           state.filter.year = state.filter.year === year ? '' : year;
           state.shown = state.pageSize;
           afterFilterChange();
         });
         svg.appendChild(rect);
-        stackTop += n;
+        stackTop += count;
       });
     }
 
-    // X-axis year labels — tick interval adapts to visible window
+    // Authorship-based 5-year rolling women share uses lead Scholar IDs from
+    // the Master publications table and honors the active Panel D author mode.
+    const genderCountsByYear = new Map();
+    filteredItems.forEach(item => {
+      const year = Number(item.year);
+      if (!Number.isInteger(year)) return;
+      const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
+      const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
+      if (gender !== 'Female' && gender !== 'Male') return;
+      const bucket = genderCountsByYear.get(year) || { Female: 0, Male: 0 };
+      bucket[gender] += 1;
+      genderCountsByYear.set(year, bucket);
+    });
+    const rollingWomen = new Map();
+    for (let year = dataMin; year <= dataMax; year++) {
+      let female = 0, male = 0;
+      for (let rollingYear = year - 4; rollingYear <= year; rollingYear++) {
+        const bucket = genderCountsByYear.get(rollingYear);
+        if (!bucket) continue;
+        female += bucket.Female;
+        male += bucket.Male;
+      }
+      if (female + male >= 3) rollingWomen.set(year, female / (female + male));
+    }
+    const axisX = W - PAD_RIGHT + 4;
+    svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX, y1: PAD_TOP, y2: yZero, stroke: '#9ca3af', 'stroke-width': '0.7' }));
+    [0, 50, 100].forEach(percent => {
+      const y = PAD_TOP + plotH * (1 - percent / 100);
+      svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 3, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
+      svg.appendChild(panelDSvg('text', { x: axisX + 6, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
+    });
+    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Women authorship (5-yr rolling)'));
+    let rollingRun = [];
+    const drawRollingRun = () => {
+      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.4' }));
+      rollingRun = [];
+    };
+    for (let year = yMin; year <= yMax; year++) {
+      const share = rollingWomen.get(year);
+      if (share == null) { drawRollingRun(); continue; }
+      const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
+      const y = PAD_TOP + plotH * (1 - share);
+      rollingRun.push(`${x},${y}`);
+    }
+    drawRollingRun();
+
+    panelDData.milestones.filter(milestone => milestone.year >= yMin && milestone.year <= yMax).forEach(milestone => {
+      const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
+      svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: PAD_TOP, y2: yZero, stroke: 'rgba(0,0,0,0.20)', 'stroke-dasharray': '2 4', 'stroke-width': '0.7' }));
+      const circle = panelDSvg('circle', { cx: x, cy: yZero, r: '4.5', fill: milestone.color });
+      const tiedScholars = milestone.ties.length > 1 ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
+      circle.appendChild(panelDSvg('title', {}, `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.name} · ${milestone.degree} · ${milestone.uni}, ${milestone.country}${tiedScholars}`));
+      svg.appendChild(circle);
+      svg.appendChild(panelDSvg('text', { x, y: PAD_TOP - 16, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: milestone.color }, milestone.year));
+      svg.appendChild(panelDSvg('text', { x, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '9', fill: '#6b7280' }, milestone.shortLabel));
+    });
+
     const span = yMax - yMin + 1;
-    let tickStep;
-    if (span <= 8)       tickStep = 1;
-    else if (span <= 20) tickStep = 2;
-    else if (span <= 40) tickStep = 5;
-    else                 tickStep = 10;
+    const tickStep = span <= 8 ? 1 : span <= 20 ? 2 : span <= 40 ? 5 : 10;
     const firstTick = Math.ceil(yMin / tickStep) * tickStep;
     for (let year = firstTick; year <= yMax; year += tickStep) {
       const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
-      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
-      txt.setAttribute('x', x);
-      txt.setAttribute('y', H - PAD_BOTTOM + 20);
-      txt.setAttribute('text-anchor','middle');
-      txt.setAttribute('font-family','DM Sans');
-      txt.setAttribute('font-size','12');
-      txt.setAttribute('fill','#6b7280');
-      txt.textContent = year;
-      svg.appendChild(txt);
-      // Tick mark
-      const tick = document.createElementNS('http://www.w3.org/2000/svg','line');
-      tick.setAttribute('x1', x); tick.setAttribute('x2', x);
-      tick.setAttribute('y1', yZero); tick.setAttribute('y2', yZero + 4);
-      tick.setAttribute('stroke', '#9ca3af');
-      svg.appendChild(tick);
+      svg.appendChild(panelDSvg('text', { x, y: H - PAD_BOTTOM + 20, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, year));
+      svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: yZero, y2: yZero + 4, stroke: '#9ca3af' }));
     }
-
-    // Reflect active preset button (if any) in the controls row
-    $$('[data-hist-presets] button').forEach(btn => {
-      btn.classList.toggle('is-active', btn.dataset.preset === state.histRange.preset);
-    });
+    $$('[data-hist-presets] button').forEach(button => button.classList.toggle('is-active', button.dataset.preset === state.histRange.preset));
   }
 
   // Rough text width for SVG legend layout (DM Sans 12px ≈ 6.4 char width)
@@ -5784,6 +5905,10 @@
       state.histRange = { start: null, end: null, preset: 'all' };
       renderHistogram();
     });
+    // The author-mode default can have a narrower range than all publications;
+    // redraw once after this wiring has initialized the input fields so Panel D
+    // immediately shows the same resolved range in both places.
+    renderHistogram();
   }
   function populateDecadeSelect(y0, y1) {
     const sel = $('[data-db-filter="decade"]');
