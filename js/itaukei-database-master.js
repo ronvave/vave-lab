@@ -7798,10 +7798,25 @@
     const t = r.types || {};
     const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
 
-    // Meta line: village · paternal province
-    const metaBits = [];
-    if (village) metaBits.push(escapeHtml(village));
-    else metaBits.push('<span class="db-scholar-card__meta--empty">Village not yet added</span>');
+    // Meta line format (matches old dashboard's paternal-info line):
+    //   village + island populated →  'Malawai vlg, Gau Is · Lomaiviti Province'
+    //   village only            →  'Malawai vlg · Lomaiviti Province'
+    //   island only             →  'Gau Is · Lomaiviti Province'
+    //   neither                 →  '<em>Village not yet added</em> · Lomaiviti Province'
+    // The 'vlg' + 'Is' abbreviations are appended by the renderer so the
+    // Master and Admin V2 store the plain place-names ('Malawai', 'Gau')
+    // — no schema change. Village-and-island are joined with a comma
+    // (they belong to the same locality), then a middle-dot separator
+    // introduces the province (a higher-level administrative unit). See
+    // Ron's 2026-08-23 note.
+    const island = r.island || '';
+    const placeBits = [];
+    if (village) placeBits.push(escapeHtml(village) + ' vlg');
+    if (island)  placeBits.push(escapeHtml(island) + ' Is');
+    const placeHtml = placeBits.length
+      ? placeBits.join(', ')
+      : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
+    const metaBits = [placeHtml];
     if (paternal) metaBits.push(escapeHtml(paternal) + ' Province');
     const metaHtml = metaBits.join('<span class="sep">·</span>');
 
@@ -7823,12 +7838,20 @@
         ? `<a href="${escapeAttr(r.departmentUrl)}" target="_blank" rel="noopener">${escapeHtml(departmentText)}</a>`
         : escapeHtml(departmentText);
     }
-    // Professional title: linked to r.profileUrl (faculty profile page) if present
+    // Professional title: linked to r.profileUrl (faculty/job profile page)
+    // when populated. Both branches carry an explicit `title` attribute so
+    // the parent card's 'Click to filter items to <scholar>’s papers'
+    // tooltip never bleeds through on hover of the professional-title cell
+    // (which would otherwise be misleading — the title is a person’s job
+    // role, not a publication filter). See Ron's 2026-08-23 note.
     let titleHtml = '';
     if (title) {
+      const titleTooltip = r.profileUrl
+        ? `Open ${(displayName || r.name).replace(/"/g, '')}’s profile`
+        : `${title}`;
       titleHtml = r.profileUrl
-        ? `<a href="${escapeAttr(r.profileUrl)}" target="_blank" rel="noopener">${escapeHtml(title)}</a>`
-        : escapeHtml(title);
+        ? `<a href="${escapeAttr(r.profileUrl)}" target="_blank" rel="noopener noreferrer" title="${escapeAttr(titleTooltip)}">${escapeHtml(title)}</a>`
+        : `<span title="${escapeAttr(titleTooltip)}">${escapeHtml(title)}</span>`;
     }
 
     // Type chips (only non-zero, in CHIP_ORDER)
@@ -7848,8 +7871,13 @@
     card.style.setProperty('--conf-from', gradient.from);
     card.style.setProperty('--conf-to', gradient.to);
     card.addEventListener('click', ev => {
-      // Ignore clicks on external-profile icons or the Submit-info button
+      // Ignore clicks on external-profile icons, the Submit-info button,
+      // or any anchor inside the card body (institution/department/title
+      // links to external homepages/faculty profiles). Otherwise a click
+      // that was meant to open a profile URL would also toggle the
+      // publication filter on this card.
       if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid, .db-scholar-card__submit')) return;
+      if (ev.target.closest('.db-scholar-card__info a')) return;
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();

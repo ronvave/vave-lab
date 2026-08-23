@@ -662,6 +662,13 @@
         phdCountry:        phdRow ? phdRow['Country'] : '',
         phdOriginalName:   phdRow ? phdRow['O_Uni name'] : '',
         village: s['Village Paternal'] || s['Village Maternal'] || '',
+        // Island (paternal takes precedence over maternal, mirroring `village`).
+        // Renderer uses this to build the Panel F meta line as
+        // 'Malawai vlg, Gau Is · Lomaiviti Province' when both fields are
+        // populated, or 'Malawai vlg · Lomaiviti Province' when only village
+        // is known. (Ron's 2026-08-23 request for the V2 scholar-profile line
+        // to match the old dashboard's paternal-info format.)
+        island: (s['Island Paternal'] || s['Island Maternal'] || '').trim(),
         subject: s['Primary Discipline / Field'] || '',
         // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
         // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit
