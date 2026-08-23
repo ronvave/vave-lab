@@ -1786,12 +1786,20 @@
         if (!res.ok) throw new Error(path + ' GET failed: ' + res.status);
         var meta = await res.json();
         var content = b64ToUtf8_(meta.content);
-        var found = content.match(/\?v=mf(\d+)/g) || [];
-        found.forEach(function (m) {
-          var n = parseInt(m.slice(4), 10);
-          if (n > maxN) maxN = n;
-        });
-        loaded.push({ path: path, sha: meta.sha, content: content, hits: found.length });
+        // Extract the numeric part after '?v=mf' so we can find the highest
+        // cache-buster currently in use across the two HTML entrypoints and
+        // then bump by one. Regex uses a capture group; use exec() in a loop
+        // instead of a fragile slice() offset so a rename of the prefix
+        // (or accidental whitespace) can't silently return NaN.
+        var re = /\?v=mf(\d+)/g;
+        var found = 0;
+        var m;
+        while ((m = re.exec(content)) !== null) {
+          var n = parseInt(m[1], 10);
+          if (!isNaN(n) && n > maxN) maxN = n;
+          found++;
+        }
+        loaded.push({ path: path, sha: meta.sha, content: content, hits: found });
       }
       if (!maxN) throw new Error('No ?v=mfNN cache-buster found in any file.');
       var nextN = maxN + 1;
