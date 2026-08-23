@@ -201,7 +201,16 @@
     // Panel C1 body-composition chart, V2 (Master-file) variant. Same schema
     // as the V1 file; the iframe fetches this when the parent URL passes
     // ?src=master.
-    'data/body-composition-master.json':     'data/body-composition-master.json.enc'
+    'data/body-composition-master.json':     'data/body-composition-master.json.enc',
+    // Admin V2 enrichment sidecar (Scholar-ID keyed): photo path, sector,
+    // institutionUrl, departmentUrl, updatedAt. Written by Admin V2 on
+    // every save. Only the .enc variant exists on disk—this mapping tells
+    // the gate to transparently redirect the plaintext URL to the
+    // encrypted counterpart, matching how every other .enc-backed file
+    // works. Without this entry, master-file-adapter.js would silently
+    // 404 and lose photo/lastUpdate/institutionUrl/sector overlay data
+    // for every scholar. (Fix 2026-08-23 for Joeli's photo + Last update.)
+    'data/scholar-enrichment.json':          'data/scholar-enrichment.json.enc'
   };
 
   async function fetchJsonEncrypted(url) {
