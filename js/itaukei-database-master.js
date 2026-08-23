@@ -5816,14 +5816,17 @@
   }
 
   function updatePanelDKpis(panelDData) {
+    // Ron asked for a leaner KPI row on 2026-08-23: number + short label only,
+    // no descriptive sub-lines. The subtitle span still gets its textContent
+    // set (to ''), which also clears any stale sub-line from an earlier build.
     const subtitles = {
-      'd-theses': `${panelDData.phdN} PhDs • ${panelDData.mastersN} Master's`,
-      'd-scholars': 'Documented in total',
-      'd-masters': 'Degree completions',
-      'd-phds': 'Doctorate completions',
-      'd-unis': 'Where degrees were earned',
-      'd-countries': 'Across degree destinations',
-      'd-milestones': 'Firsts and turning points'
+      'd-theses': '',
+      'd-scholars': '',
+      'd-masters': '',
+      'd-phds': '',
+      'd-unis': '',
+      'd-countries': '',
+      'd-milestones': ''
     };
     Object.entries(panelDData.kpis).forEach(([key, value]) => {
       const number = $(`[data-kpi="${key}"]`);
@@ -6071,7 +6074,9 @@
       // but individual letter gaps let the dashed line show through —
       // reducing opacity keeps the line readable without competing for
       // attention with the label text.
-      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '5 3', opacity: '0.55' }));
+      // Dotted (1 3) rather than dashed so the 5-year rolling women-authorship
+      // line reads visually as a subtle trend indicator, not as a data series.
+      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '1 3', 'stroke-linecap': 'round', opacity: '0.7' }));
       rollingRun = [];
     };
     for (let year = yMin; year <= yMax; year++) {
@@ -6146,16 +6151,22 @@
     visibleMilestones.forEach((entry, idx) => {
       const { milestone, barTopY } = entry;
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
-      // Anchor decision — milestones in the right ~35% of the plot use a
+      // Anchor decision — milestones in the right ~half of the plot use a
       // right-anchored (text-anchor="end") label so text grows leftward and
-      // doesn't collide with the right y-axis or overflow bars to the right.
-      const rightAnchor = x > PAD_LEFT + plotW * 0.65;
+      // doesn't collide with the right y-axis or overflow the bars themselves.
+      // Threshold lowered from 0.65 → 0.50 on 2026-08-23 so the 1994 female-PhD
+      // milestone (dot at ~x = 0.54 of plotW when the range starts at 1956)
+      // flips to end-anchor and no longer overlaps the 1994 bar.
+      const rightAnchor = x > PAD_LEFT + plotW * 0.50;
       entry.anchor = rightAnchor ? 'end' : 'start';
       // Preferred tier: distribute the 1st/2nd/3rd/4th visible milestone
-      // across the 4 tiers in a zig-zag order that keeps early milestones
-      // (which sit above low bars) high and later ones progressively lower.
-      // Pattern for up to 4 milestones: [0, 2, 1, 3] gives visible stagger.
-      const zigzag = [0, 2, 1, 3];
+      // across four tiers. Pattern [0, 2, 0, 3] keeps BOTH Master's-thesis
+      // milestones (1st and 3rd in year order) on tier 0 so Nayacakalou 1956
+      // and Vuki 1987 sit at the same height; the two PhD milestones drop
+      // to tiers 2 and 3 so their longer callouts get more clearance from
+      // the busy 1990s+ bar tops. Same-tier horizontal collision is still
+      // caught by the LABEL_W_EST guard below.
+      const zigzag = [0, 2, 0, 3];
       let tier = zigzag[Math.min(idx, zigzag.length - 1)] % TIER_COUNT;
       let baseY = tierY(tier);
       // Push the label down toward the bar only if the bar top is already
