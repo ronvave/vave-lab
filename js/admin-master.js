@@ -472,7 +472,7 @@
     setMe('me-given',          s['Given Names'] || '');
     setMe('me-gender',         s['Gender'] || '');
     setMe('me-alive',          s['Alive / Deceased'] || s['Alive/Deceased'] || '');
-    setMe('me-discipline',     s['Discipline'] || s['Primary Discipline / Field'] || s['Primary Discipline/Field'] || '');
+    setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
     setMe('me-prov-paternal',  provPat);
     setMe('me-dist-paternal',  s['District Paternal'] || '');
     setMe('me-vil-paternal',   s['Village Paternal'] || s['Paternal Village'] || '');
@@ -481,15 +481,17 @@
     setMe('me-dist-maternal',  s['District Maternal'] || '');
     setMe('me-vil-maternal',   s['Village Maternal'] || s['Maternal Village'] || '');
     setMe('me-isl-maternal',   s['Island Maternal'] || '');
-    setMe('me-title',          s['Current Title'] || s['Current Title / Role'] || '');
-    setMe('me-role',           s['Current Role'] || '');
+    setMe('me-title',          s['Current Title / Role'] || s['Current Title'] || '');
     setMe('me-institution',    s['Current Institution'] || '');
-    setMe('me-inst-country',   s['Current Country'] || s['Institution Country'] || '');
-    setMe('me-department',     s['Current Department'] || s['Current Department / Unit'] || '');
-    setMe('me-orcid',          s['ORCID'] || '');
-    setMe('me-researcher-id',  s['Researcher ID'] || '');
+    setMe('me-inst-country',   s['Institution Country'] || s['Current Country'] || '');
+    setMe('me-department',     s['Current Department / Unit'] || s['Current Department'] || '');
+    setMe('me-pg-status',      s['Current PG Status'] || '');
+    setMe('me-orcid',          s['ORCID / Researcher ID'] || s['ORCID'] || '');
     setMe('me-gs-url',         s['Google Scholar URL'] || '');
     setMe('me-profile-url',    s['Current Profile URL'] || '');
+    setMe('me-name-variants',  s['Name Variants / Aliases'] || '');
+    setMe('me-vanua-notes',    s['Vanua / Provenance Notes'] || '');
+    setMe('me-record-notes',   s['Record Notes'] || '');
     // Derived confederacies (read-only, driven by province dropdowns).
     $('#me-confed-paternal-derived').value = PROVINCE_TO_CONFED[provPat.trim()] || (s['Paternal Confederacy'] || s['Confederacy'] || '');
     $('#me-confed-maternal-derived').value = PROVINCE_TO_CONFED[provMat.trim()] || '';
@@ -602,19 +604,20 @@
       return;
     }
     var fields = [
-      { name: 'Role Status',       label: 'Role status' },
-      { name: 'Title',             label: 'Title' },
-      { name: 'Academic Rank',     label: 'Academic rank' },
-      { name: 'Institution',       label: 'Institution' },
-      { name: 'Department/Unit',   label: 'Department / Unit' },
-      { name: 'Country',           label: 'Country' },
-      { name: 'Leadership Title',  label: 'Leadership title' },
-      { name: 'Leadership Category',label: 'Leadership category' },
-      { name: 'Leadership Level',  label: 'Leadership level' },
-      { name: 'Start Year',        label: 'Start year',        type: 'number' },
-      { name: 'End Year',          label: 'End year',          type: 'number' },
-      { name: 'Source URL',        label: 'Source URL',        type: 'url' },
-      { name: 'Evidence/Notes',    label: 'Evidence / notes' }
+      { name: 'Role Status',                                  label: 'Role status' },
+      { name: 'Academic / Professional Title (verbatim)',     label: 'Academic / professional title (verbatim)' },
+      { name: 'Standardized Academic Rank',                   label: 'Standardized academic rank' },
+      { name: 'Institution',                                  label: 'Institution' },
+      { name: 'Department / Unit',                            label: 'Department / unit' },
+      { name: 'Country',                                      label: 'Country' },
+      { name: 'Leadership Title (verbatim)',                  label: 'Leadership title (verbatim)' },
+      { name: 'Standardized Leadership Category',             label: 'Standardized leadership category' },
+      { name: 'Leadership Level',                             label: 'Leadership level' },
+      { name: 'Start Year',                                   label: 'Start year',        type: 'number' },
+      { name: 'End Year',                                     label: 'End year',          type: 'number' },
+      { name: 'Source URL',                                   label: 'Source URL',        type: 'url' },
+      { name: 'Evidence / Notes',                             label: 'Evidence / notes' },
+      { name: 'Last Verified',                                label: 'Last verified' }
     ];
     var html = '';
     rows.forEach(function (r, idx) {
@@ -655,21 +658,27 @@
       return;
     }
     var fields = [
-      { name: 'Degree Stage',      label: 'Degree stage' },
-      { name: 'Qualification',     label: 'Qualification' },
-      { name: 'Field',             label: 'Field' },
-      { name: 'C_Uni name',        label: 'University (current name)' },
-      { name: 'O_Uni name',        label: 'University (original name)' },
-      { name: 'Country',           label: 'Country' },
-      { name: 'International from Fiji?', label: 'International from Fiji?' },
-      { name: 'City',              label: 'City' },
-      { name: 'Region',            label: 'Region' },
-      { name: 'Year-Status',       label: 'Year status' },
-      { name: 'Completion Status', label: 'Completion status' },
-      { name: 'Thesis Title',      label: 'Thesis title' },
-      { name: 'Start Year',        label: 'Start year', type: 'number' },
-      { name: 'Finish Year',       label: 'Finish year', type: 'number' },
-      { name: 'Duration',          label: 'Duration' }
+      { name: 'Degree Stage',                label: 'Degree stage' },
+      { name: 'Degree / Qualification',      label: 'Degree / qualification' },
+      { name: 'Field / Discipline',          label: 'Field / discipline' },
+      { name: 'C_Uni name',                  label: 'University (current name)' },
+      { name: 'O_Uni name',                  label: 'University (original name)' },
+      { name: 'Country',                     label: 'Country' },
+      { name: 'International from Fiji?',    label: 'International from Fiji?' },
+      { name: 'City',                        label: 'City' },
+      { name: 'Region',                      label: 'Region' },
+      { name: 'Year / Status',               label: 'Year / status' },
+      { name: 'Completion Status',           label: 'Completion status' },
+      { name: 'Thesis / Research Title',     label: 'Thesis / research title' },
+      { name: 'Thesis / Repository URL',     label: 'Thesis / repository URL', type: 'url' },
+      { name: 'Evidence URL 1',              label: 'Evidence URL 1',  type: 'url' },
+      { name: 'Evidence URL 2',              label: 'Evidence URL 2',  type: 'url' },
+      { name: 'Verification',                label: 'Verification' },
+      { name: 'Notes',                       label: 'Notes' },
+      { name: 'Start Year',                  label: 'Start year',      type: 'number' },
+      { name: 'Finish / Completion Year',    label: 'Finish / completion year', type: 'number' },
+      { name: 'Duration (years)',            label: 'Duration (years)' },
+      { name: 'Study Date Evidence / Notes', label: 'Study date evidence / notes' }
     ];
     var html = '';
     rows.forEach(function (r) {

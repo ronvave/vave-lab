@@ -78,18 +78,27 @@ var TIMEZONE            = 'Pacific/Honolulu';
 // Full editable-field allowlist. Every writable field must appear here.
 // Sheets not listed are read-only. Fields on listed sheets not listed are
 // read-only. Enum values are validated against the `enum` array.
+// MAPPING reflects the ACTUAL Master Google Sheet headers (verified
+// 2026-08-22 against the live sheet). Field keys are the literal header
+// strings including spacing and slashes. Column names come from row 4 of
+// each sheet.
 var MAPPING = {
-  version: '1.0',
+  version: '1.2',
   worksheets: {
     'Scholars': {
       keyColumn: 'Scholar ID',
       headerRow: 4,
       fields: {
-        'Scholar Name':            { type: 'string', maxLen: 200 },
         'Family Name':             { type: 'string', maxLen: 120 },
         'Given Names':             { type: 'string', maxLen: 120 },
         'Gender':                  { type: 'enum',   enum: ['Male','Female','Unknown',''] },
-        'Alive/Deceased':          { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        // Alive / Deceased is a free-text descriptor in the sheet with a
+        // conventional vocabulary. Values seen: 'Alive / current record',
+        // 'Unknown / not checked', 'Deceased', 'Deceased \u2014 <date>'. Keep
+        // it string (with a client-side datalist) so long variants like
+        // 'Deceased \u2014 February 2021' remain writable.
+        'Alive / Deceased':        { type: 'string', maxLen: 120 },
+        'Paternal Confederacy':    { type: 'string', maxLen: 60 },
         'Province Paternal':       { type: 'string', maxLen: 60 },
         'District Paternal':       { type: 'string', maxLen: 80 },
         'Island Paternal':         { type: 'string', maxLen: 80 },
@@ -98,39 +107,50 @@ var MAPPING = {
         'District Maternal':       { type: 'string', maxLen: 80 },
         'Island Maternal':         { type: 'string', maxLen: 80 },
         'Village Maternal':        { type: 'string', maxLen: 120 },
-        'Primary Discipline/Field':{ type: 'string', maxLen: 120 },
-        'Current Title':           { type: 'string', maxLen: 240 },
-        'Current Role':            { type: 'string', maxLen: 120 },
+        'Vanua / Provenance Notes':{ type: 'string', maxLen: 2000 },
+        'Primary Discipline / Field': { type: 'string', maxLen: 120 },
+        'Current Title / Role':    { type: 'string', maxLen: 240 },
         'Current Institution':     { type: 'string', maxLen: 200 },
-        'Current Country':         { type: 'string', maxLen: 80 },
-        'Current Department':      { type: 'string', maxLen: 200 },
+        'Institution Country':     { type: 'string', maxLen: 80 },
+        'Current Department / Unit':{ type: 'string', maxLen: 200 },
+        'Current PG Status':       { type: 'string', maxLen: 120 },
         'Current Profile URL':     { type: 'url',    maxLen: 500 },
-        'ORCID':                   { type: 'string', maxLen: 40 },
-        'Researcher ID':           { type: 'string', maxLen: 40 },
-        'Google Scholar URL':      { type: 'url',    maxLen: 500 }
+        'ORCID / Researcher ID':   { type: 'string', maxLen: 200 },
+        'Google Scholar URL':      { type: 'url',    maxLen: 500 },
+        'Name Variants / Aliases': { type: 'string', maxLen: 500 },
+        'Record Notes':            { type: 'string', maxLen: 4000 }
+        // Non-editable Master computed columns intentionally OMITTED:
+        //   Scholar Name, Paternal Confederacy is derived by Lookups so read-only in UI,
+        //   Highest Completed Degree, Degree Episodes, International Degree Episodes,
+        //   Fiji Degree Episodes, Funding Episodes, Awards Count, Gold Medals / Prizes Count,
+        //   Linked Publication Count, First-Author Publication Count,
+        //   Current Leadership Category, Current Leadership Level,
+        //   Review Status, Roster Tier, Source Basis, BibTeX Author Match (roster),
+        //   BibTeX Author Occurrences (roster).
+        // These are computed/audit fields \u2014 do not expose as editable.
       }
     },
     'Positions': {
-      // Positions is edited per-row; row is identified by the internal
-      // positionId (Scholar ID + row index) or by an explicit rowNumber field.
+      // Positions is edited per-row; row is identified by an explicit
+      // rowNumber field carried by the client (1-based sheet row).
       keyColumn: 'Scholar ID',
       headerRow: 4,
       allowMultiRow: true,
       fields: {
-        'Institution':       { type: 'string', maxLen: 200 },
-        'Country':           { type: 'string', maxLen: 80 },
-        'Department/Unit':   { type: 'string', maxLen: 200 },
-        'Title':             { type: 'string', maxLen: 240 },
-        'Academic Rank':     { type: 'string', maxLen: 120 },
-        'Leadership Title':  { type: 'string', maxLen: 240 },
-        'Leadership Category': { type: 'string', maxLen: 120 },
-        'Leadership Level':  { type: 'string', maxLen: 60 },
-        'Role Status':       { type: 'string', maxLen: 60 },
-        'Start Year':        { type: 'int',    min: 1900, max: 2100 },
-        'End Year':           { type: 'int',    min: 1900, max: 2100, nullable: true },
-        'Source URL':        { type: 'url',    maxLen: 500 },
-        'Evidence/Notes':    { type: 'string', maxLen: 2000 },
-        'Last Verified':     { type: 'date' }
+        'Institution':                                  { type: 'string', maxLen: 200 },
+        'Country':                                      { type: 'string', maxLen: 80 },
+        'Department / Unit':                            { type: 'string', maxLen: 200 },
+        'Academic / Professional Title (verbatim)':     { type: 'string', maxLen: 240 },
+        'Standardized Academic Rank':                   { type: 'string', maxLen: 120 },
+        'Leadership Title (verbatim)':                  { type: 'string', maxLen: 240 },
+        'Standardized Leadership Category':             { type: 'string', maxLen: 120 },
+        'Leadership Level':                             { type: 'string', maxLen: 60 },
+        'Role Status':                                  { type: 'string', maxLen: 60 },
+        'Start Year':                                   { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'End Year':                                     { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Source URL':                                   { type: 'url',    maxLen: 500 },
+        'Evidence / Notes':                             { type: 'string', maxLen: 2000 },
+        'Last Verified':                                { type: 'string', maxLen: 60 }
       }
     },
     'Graduate Degrees': {
@@ -138,21 +158,29 @@ var MAPPING = {
       headerRow: 4,
       allowMultiRow: true,
       fields: {
-        'Degree Stage':          { type: 'enum',   enum: ['Masters','PhD','MPhil','EdD','DPhil','',''] },
-        'Qualification':         { type: 'string', maxLen: 200 },
-        'Field':                 { type: 'string', maxLen: 200 },
-        'C_Uni name':            { type: 'string', maxLen: 200 },
-        'O_Uni name':            { type: 'string', maxLen: 200 },
-        'Country':               { type: 'string', maxLen: 80 },
-        'International from Fiji?': { type: 'enum', enum: ['Yes','No','Unknown',''] },
-        'City':                  { type: 'string', maxLen: 120 },
-        'Region':                { type: 'string', maxLen: 120 },
-        'Year-Status':           { type: 'string', maxLen: 60 },
-        'Completion Status':     { type: 'string', maxLen: 60 },
-        'Thesis Title':          { type: 'string', maxLen: 500 },
-        'Start Year':            { type: 'int',    min: 1900, max: 2100, nullable: true },
-        'Finish Year':           { type: 'int',    min: 1900, max: 2100, nullable: true },
-        'Duration':              { type: 'string', maxLen: 40 }
+        // Sheet-observed values: 'Master\u0027s' and 'PhD/Doctorate'. Keep
+        // string to avoid rejecting existing rows.
+        'Degree Stage':                { type: 'string', maxLen: 60 },
+        'Degree / Qualification':      { type: 'string', maxLen: 200 },
+        'Field / Discipline':          { type: 'string', maxLen: 200 },
+        'C_Uni name':                  { type: 'string', maxLen: 200 },
+        'O_Uni name':                  { type: 'string', maxLen: 200 },
+        'Country':                     { type: 'string', maxLen: 80 },
+        'International from Fiji?':    { type: 'enum',   enum: ['Yes','No','Unknown',''] },
+        'City':                        { type: 'string', maxLen: 120 },
+        'Region':                      { type: 'string', maxLen: 120 },
+        'Year / Status':               { type: 'string', maxLen: 60 },
+        'Completion Status':           { type: 'string', maxLen: 120 },
+        'Thesis / Research Title':     { type: 'string', maxLen: 500 },
+        'Thesis / Repository URL':     { type: 'url',    maxLen: 500 },
+        'Evidence URL 1':              { type: 'url',    maxLen: 500 },
+        'Evidence URL 2':              { type: 'url',    maxLen: 500 },
+        'Verification':                { type: 'string', maxLen: 2000 },
+        'Notes':                       { type: 'string', maxLen: 2000 },
+        'Start Year':                  { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Finish / Completion Year':    { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Duration (years)':            { type: 'string', maxLen: 40 },
+        'Study Date Evidence / Notes': { type: 'string', maxLen: 2000 }
       }
     }
   }

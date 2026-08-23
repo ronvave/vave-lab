@@ -496,6 +496,14 @@
       <fieldset class="fieldset">
         <legend>Master fields — Identity <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
+          <div class="form-group">
+            <label>Title / Salutation <span class="hint" style="font-size:0.75rem;color:var(--muted);">(not yet in Master — awaiting decision)</span></label>
+            <select id="me-title-salutation" disabled title="No authoritative Master column exists for this yet. See action log for details.">
+              <option value="">(unavailable)</option>
+              <option value="Dr">Dr</option><option value="Prof">Prof</option><option value="Rev">Rev</option><option value="Rev Dr">Rev Dr</option>
+              <option value="Mr">Mr</option><option value="Mrs">Mrs</option><option value="Ms">Ms</option>
+            </select>
+          </div>
           <div class="form-group"><label>Family name</label><input type="text" id="me-family" data-ws="Scholars" data-field="Family Name" /></div>
           <div class="form-group"><label>Given names</label><input type="text" id="me-given" data-ws="Scholars" data-field="Given Names" /></div>
           <div class="form-group"><label>Gender</label>
@@ -504,13 +512,16 @@
               <option value="Male">Male</option><option value="Female">Female</option><option value="Unknown">Unknown</option>
             </select>
           </div>
-          <div class="form-group"><label>Alive / Deceased</label>
-            <select id="me-alive" data-ws="Scholars" data-field="Alive/Deceased">
-              <option value="">(unset)</option>
-              <option value="Alive">Alive</option><option value="Deceased">Deceased</option><option value="Unknown">Unknown</option>
-            </select>
+          <div class="form-group">
+            <label>Alive / Deceased <span class="hint" style="font-size:0.75rem;color:var(--muted);">(free text; suggestions provided)</span></label>
+            <input type="text" id="me-alive" data-ws="Scholars" data-field="Alive / Deceased" list="me-alive-suggest" placeholder="e.g. Alive / current record" />
+            <datalist id="me-alive-suggest">
+              <option value="Alive / current record"></option>
+              <option value="Unknown / not checked"></option>
+              <option value="Deceased"></option>
+            </datalist>
           </div>
-          <div class="form-group"><label>Discipline</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline/Field" /></div>
+          <div class="form-group"><label>Primary discipline / field</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline / Field" /></div>
         </div>
       </fieldset>
 
@@ -551,21 +562,29 @@
           <span class="hint" style="font-size:0.75rem;color:var(--muted);">Scholars-tab summary; edit underlying Positions rows below for a full history.</span>
         </legend>
         <div class="form-grid">
-          <div class="form-group"><label>Current title</label><input type="text" id="me-title" data-ws="Scholars" data-field="Current Title" /></div>
-          <div class="form-group"><label>Current role</label><input type="text" id="me-role" data-ws="Scholars" data-field="Current Role" /></div>
+          <div class="form-group"><label>Current title / role</label><input type="text" id="me-title" data-ws="Scholars" data-field="Current Title / Role" /></div>
           <div class="form-group"><label>Current institution</label><input type="text" id="me-institution" data-ws="Scholars" data-field="Current Institution" /></div>
-          <div class="form-group"><label>Current country</label><input type="text" id="me-inst-country" data-ws="Scholars" data-field="Current Country" /></div>
-          <div class="form-group"><label>Current department</label><input type="text" id="me-department" data-ws="Scholars" data-field="Current Department" /></div>
+          <div class="form-group"><label>Institution country</label><input type="text" id="me-inst-country" data-ws="Scholars" data-field="Institution Country" /></div>
+          <div class="form-group"><label>Current department / unit</label><input type="text" id="me-department" data-ws="Scholars" data-field="Current Department / Unit" /></div>
+          <div class="form-group"><label>Current PG status</label><input type="text" id="me-pg-status" data-ws="Scholars" data-field="Current PG Status" /></div>
         </div>
       </fieldset>
 
       <fieldset class="fieldset">
         <legend>Master fields — Public profile URLs <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group"><label>ORCID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID" placeholder="0000-0000-0000-0000" /></div>
-          <div class="form-group"><label>Researcher ID</label><input type="text" id="me-researcher-id" data-ws="Scholars" data-field="Researcher ID" /></div>
+          <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID / Researcher ID" placeholder="e.g. 0000-0000-0000-0000" /></div>
           <div class="form-group"><label>Google Scholar URL</label><input type="url" id="me-gs-url" data-ws="Scholars" data-field="Google Scholar URL" placeholder="https://scholar.google.com/citations?user=…" /></div>
           <div class="form-group"><label>Current profile URL</label><input type="url" id="me-profile-url" data-ws="Scholars" data-field="Current Profile URL" placeholder="https://…" /></div>
+          <div class="form-group"><label>Name variants / aliases</label><input type="text" id="me-name-variants" data-ws="Scholars" data-field="Name Variants / Aliases" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields — Provenance &amp; notes <span class="master-tag">editable via write-back</span></legend>
+        <div class="form-grid">
+          <div class="form-group" style="grid-column: span 2;"><label>Vanua / Provenance notes</label><textarea id="me-vanua-notes" data-ws="Scholars" data-field="Vanua / Provenance Notes" rows="3" style="width:100%;"></textarea></div>
+          <div class="form-group" style="grid-column: span 2;"><label>Record notes</label><textarea id="me-record-notes" data-ws="Scholars" data-field="Record Notes" rows="3" style="width:100%;"></textarea></div>
         </div>
       </fieldset>
 
@@ -664,11 +683,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf23" defer></script>
-<script src="js/master-file-adapter.js?v=mf23" defer></script>
-<script src="js/admin-insights-migration.js?v=mf23" defer></script>
-<script src="js/admin-writeback-client.js?v=mf23" defer></script>
-<script src="js/admin-master.js?v=mf23" defer></script>
+<script src="js/db-gate.js?v=mf24" defer></script>
+<script src="js/master-file-adapter.js?v=mf24" defer></script>
+<script src="js/admin-insights-migration.js?v=mf24" defer></script>
+<script src="js/admin-writeback-client.js?v=mf24" defer></script>
+<script src="js/admin-master.js?v=mf24" defer></script>
 
 </body>
 </html>

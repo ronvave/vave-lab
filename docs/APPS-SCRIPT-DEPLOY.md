@@ -147,3 +147,23 @@ None of these mutate the Master. They still require the shared secret. To pick t
 If you'd rather create a fresh deployment (which gets a new `/exec` URL), do that instead and paste the new URL into the admin's Data source tab.
 
 After redeploying, hit **Test connection** in the admin — the pill should stay green. The new Positions and Graduate Degrees editors, and the Master change log tab, only work once this update is deployed.
+
+## Phase 3.1 update — MAPPING corrected to real Master headers
+
+The previous MAPPING used approximate column names (e.g. `Alive/Deceased`, `Current Title`, `ORCID`, `Primary Discipline/Field`, `Department/Unit`, `Qualification`, `Field`, `Thesis Title`). The live Master sheet actually uses:
+
+- Scholars: `Alive / Deceased`, `Current Title / Role`, `ORCID / Researcher ID`, `Primary Discipline / Field`, `Institution Country`, `Current Department / Unit`, plus `Vanua / Provenance Notes`, `Current PG Status`, `Name Variants / Aliases`, `Record Notes`, and derived `Paternal Confederacy` — all with the exact spacing shown.
+- Positions: `Department / Unit`, `Academic / Professional Title (verbatim)`, `Standardized Academic Rank`, `Leadership Title (verbatim)`, `Standardized Leadership Category`, `Evidence / Notes`, `Last Verified`.
+- Graduate Degrees: `Degree / Qualification`, `Field / Discipline`, `Year / Status`, `Thesis / Research Title`, `Thesis / Repository URL`, `Evidence URL 1`, `Evidence URL 2`, `Verification`, `Notes`, `Finish / Completion Year`, `Duration (years)`, `Study Date Evidence / Notes`.
+
+`Alive / Deceased` is a free-text descriptor in the sheet (values like `Alive / current record`, `Deceased — February 2021`), not a strict `Alive|Deceased|Unknown` enum. It is now typed as `string` with a client-side datalist of suggestions.
+
+**Re-deploy sequence:**
+
+1. Open the Master's Apps Script project (Extensions → Apps Script).
+2. Fully overwrite `master-writeback.gs` in the editor with the current contents of `apps-script/master-writeback.gs` from this repo. If you skip this step, the deployment will still say "New version" but nothing will change.
+3. ⌘S to save.
+4. Deploy → Manage deployments → pencil on your existing Web App → **Version: New version** → Deploy. Same URL, same secret.
+5. Hard-refresh admin (⌘⇧R) so the new `mf24` assets load.
+6. In the admin's Data source tab, click **Test connection** — pill should stay green.
+7. Open Joeli (ITK-S0315). Confirm that Positions and Graduate Degrees no longer show `bad_request: unknown-action`, and that Alive / Deceased now shows `Alive / current record`.
