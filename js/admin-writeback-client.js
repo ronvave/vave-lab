@@ -85,7 +85,14 @@
   // Convenience wrappers.
   async function ping()     { return callGet('ping'); }
   async function describe() { return callGet('describe'); }
-  async function write(changes) { return callPost({ action: 'write', changes: changes }); }
+  // write(changes, opts) supports { dryRun: true } for the Phase 3.4
+  // three-way preview classification. Without opts it behaves identically
+  // to the old signature so existing callers keep working.
+  async function write(changes, opts) {
+    var payload = { action: 'write', changes: changes };
+    if (opts && opts.dryRun) payload.dryRun = true;
+    return callPost(payload);
+  }
   async function readScholar(scholarId) {
     return callGetWithParams('readScholar', { scholarId: scholarId });
   }

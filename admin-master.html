@@ -683,7 +683,7 @@
       <button class="close" id="preview-close" title="Close">&times;</button>
     </div>
     <div class="modal-body">
-      <p class="meta">Each row below will become one write to the Master sheet through the Apps Script endpoint. Blank <em>New value</em> = clear the cell. Cancel to keep editing.</p>
+      <p class="meta">Field-by-field classification of your edits against the <strong>current</strong> Master sheet. Only rows in <em>Will write</em> and rows in <em>Needs confirmation</em> that you explicitly change will be written; already-satisfied fields are skipped and stale-load fields adopt the current Master value silently. Blank <em>New value</em> = clear the cell.</p>
       <div id="preview-body"></div>
     </div>
     <div class="modal-footer">
@@ -696,11 +696,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf26" defer></script>
-<script src="js/master-file-adapter.js?v=mf26" defer></script>
-<script src="js/admin-insights-migration.js?v=mf26" defer></script>
-<script src="js/admin-writeback-client.js?v=mf26" defer></script>
-<script src="js/admin-master.js?v=mf26" defer></script>
+<script src="js/db-gate.js?v=mf27" defer></script>
+<script src="js/master-file-adapter.js?v=mf27" defer></script>
+<script src="js/admin-insights-migration.js?v=mf27" defer></script>
+<script src="js/admin-writeback-client.js?v=mf27" defer></script>
+<script src="js/admin-master.js?v=mf27" defer></script>
 
 </body>
 </html>

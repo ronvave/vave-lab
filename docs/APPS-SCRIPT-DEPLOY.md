@@ -249,3 +249,89 @@ Yes. `apps-script/master-writeback.gs` changed (MAPPING v1.3 -> v1.4 plus the Ch
 **Hard-refresh expected version.** After redeploying and hard-refreshing Admin V2 (Cmd-Shift-R) you should see `?v=mf26` on every script tag in DevTools Network. The Identity fieldset should now include the Year of Birth input between Gender and Alive / Deceased.
 
 **Do not start Phase 5 yet.** Phase 5 (Joeli round-trip write test) is still gated on your explicit approval after you verify: (1) Test connection stays green, (2) Joeli's row reads back Alive with Year of Birth / Year of Death blank, (3) Kuridrani's row reads back Deceased with Year of Death 2021, (4) Panel F strips render according to rules A-E.
+
+## Phase 3.4 - Field-level conflict handling and no-op adoption (2026-08-23)
+
+### What changed and why
+
+Phase 3.3 kept Admin V2's optimistic-lock check as an all-or-nothing gate at the batch level: if any field's loaded value differed from the current Master value, the entire save was rejected with `status: conflict`, even if that field's intended value already matched the current Master. Real-world scenario: Joeli Veitayaki's Alive/Deceased column was normalized from the legacy `Alive / current record` string to `Alive` between the modal opening and the save click. The modal held the stale `Alive / current record` as its `loaded` value; the user selected `Alive` (identical to current Master); Admin V2's server saw `loaded != currentMaster` and rejected the whole transaction. Nothing was writable until the page was reloaded.
+
+Phase 3.4 replaces the batch-level lock with a three-way per-field classifier (`loaded / currentMaster / intended`) and a two-phase commit (dry-run classify -> explicit user decision -> authorized commit with re-read-before-write). No worksheet renames, column renames, formula changes, or added columns. Only master-mode files. V1 dashboard and old admin remain untouched. Change Log stays five-column.
+
+### Per-field decision table
+
+For every field the modal collected as an intended change, `applyOneChange_(ss, c, dryRun)` returns exactly one of:
+
+| currentMaster vs intended | Always-confirm field? | currentMaster vs loaded | authorized? | Result | Written? |
+|---|---|---|---|---|---|
+| equal            | any | any     | any                     | `already_satisfied` | no |
+| differs          | yes | any     | no                      | `needs_confirmation` (reason: `always-confirm-field`) | no |
+| differs          | yes | any     | yes + expectedCurrent match | `ok` | yes |
+| differs          | no  | equal   | n/a                     | `ok` | yes |
+| differs          | no  | differs | no                      | `needs_confirmation` (reason: `master-changed`) | no |
+| differs          | no  | differs | yes + expectedCurrent match | `ok` | yes |
+
+`Always-confirm` is currently `{ 'Scholars.Alive / Deceased': true }`. Extend the `ALWAYS_CONFIRM` map at the top of `master-writeback.gs` to add more fields (e.g. life-status of a similarly sensitive column). `expectedCurrent` mismatch inside the lock means the Master changed a second time after the confirmation dialog was shown -> the server refuses the write and returns `needs_confirmation` again so the client re-classifies and re-prompts.
+
+Batch-level `status` returned to the client is one of `ok` (all `ok`), `partial` (mix of `ok` and `already_satisfied`), `needs_confirmation` (any field still requires user action), `rejected` (validation failures with no writable fields), or `conflict-only` (all fields are `needs_confirmation`). No transaction ever gets silently dropped.
+
+### Two-phase commit protocol
+
+Wire protocol additions (backward-compatible: legacy clients that don't send `dryRun` still work but only ever get the strict optimistic-lock behavior for their subset of changes):
+
+Request:
+- `dryRun: true` on the classification request. Server returns per-field statuses without writing anything.
+- Per-change `overrideAuthorized: true` + `expectedCurrent: "<stringified current value>"` on the commit request. Only accepted after the user explicitly confirmed the override in the preview modal.
+
+Response (per result):
+- `status`: one of `ok | already_satisfied | needs_confirmation | rejected`
+- `currentValue`, `loadedValue`, `intendedValue`: canonical strings for the preview UI
+- `willWrite`: bool
+- `reason`: for `needs_confirmation`, one of `always-confirm-field | master-changed`
+
+Response (overall): includes `dryRun`, `counts`, and per-field results in original submission order.
+
+### Preview UI (four sections)
+
+Admin V2's preview modal now renders four disjoint sections, in order:
+
+1. **Will write** - fields safe to write. Sends verbatim on Confirm.
+2. **Already satisfied** - fields where current Master already equals your intended value. Shown for transparency; never written.
+3. **Master changed - adopt** - fields where you did NOT change the loaded value but the Master value has moved. The preview shows the current Master; on close, `data-loaded` is refreshed to the current Master so a re-open starts from a truthful baseline.
+4. **Needs confirmation** - fields where your intended value contradicts the current Master. Each row has plain-language buttons; Alive/Deceased uses `Keep "Alive"` / `Change to "Deceased"` (or the equivalent for the specific values in play). Other fields use `Keep Master value` / `Overwrite Master`. The Confirm button remains disabled until every needs_confirmation row has a decision recorded.
+
+If any needs_confirmation row is still undecided when Confirm is pressed, the button is inactive. If the user picks `Keep` on all of them, the classified `ok` fields still commit; the kept fields silently adopt the current Master into `data-loaded`.
+
+### Second-race handling
+
+Between the dry-run and the commit, another editor may write Master again. Server re-reads currentMaster inside the write lock; if any authorized override's `expectedCurrent` no longer matches, that field returns `needs_confirmation` and no write happens for it. Admin V2 catches the second-race response, re-classifies the full pending set, and re-renders the preview with fresh values so the user decides again. The client only closes the preview modal when the commit finishes with zero `needs_confirmation` responses.
+
+### Change Log rule (unchanged from Phase 3.3)
+
+Only actual writes create Change Log rows. `already_satisfied` fields do NOT produce a row. `needs_confirmation` fields that the user resolved by choosing `Keep` do NOT produce a row (there was no write). Confirmed overrides that actually write produce exactly one strict five-column row (columns A-E only; F-J blank), same as Phase 3.3. The Change Log reader endpoint now also parses the folded Scope/Impact string (`"actor - SID - Worksheet.Field: old -> new"`) so the Admin log tab renders correctly for post-Phase-3.3 rows while still reading legacy F-J columns verbatim for older rows.
+
+### Files changed
+
+- `apps-script/master-writeback.gs` - full rewrite of `handleWrite_` and `applyOneChange_`; new `ALWAYS_CONFIRM` map; new `parseFoldedScope_` helper for the Change Log reader; `dryRun` plumbing on the write endpoint.
+- `js/admin-writeback-client.js` - `write(changes, opts)` now supports `opts.dryRun` and forwards `overrideAuthorized` / `expectedCurrent` on each change.
+- `js/admin-master.js` - `saveEditModal` now runs the dry-run classifier before any modal renders; new `renderPreviewClassification` / `renderPreviewSection_` / `renderConfirmButtons_` / `refreshConfirmButtonState_` / `changeAt_`; `executeSaveAfterPreview` rewritten for the two-phase commit with second-race handling; new `adoptCurrentMasterBaselines_` helper.
+- `admin-master.html` - preview modal intro rewritten to describe the four sections; cache-buster mf26 -> mf27 (5 tags).
+- `itaukei-research-database-master.html` - cache-buster mf26 -> mf27 (4 tags).
+
+### Redeploy sequence
+
+Yes. `apps-script/master-writeback.gs` changed (new `handleWrite_`, `applyOneChange_`, `ALWAYS_CONFIRM`, `parseFoldedScope_`). Follow the standard Phase 3.x redeploy sequence: paste the current server file into the Apps Script editor, Cmd-S, Deploy -> Manage deployments -> pencil -> New version -> Deploy (same URL, same secret).
+
+**Hard-refresh expected version.** After redeploying and hard-refreshing Admin V2 (Cmd-Shift-R) you should see `?v=mf27` on every script tag in DevTools Network. Test connection should stay green.
+
+### Regression checklist (before approving Phase 5)
+
+1. **Test A - stale but already-satisfied.** Open Joeli (ITK-S0315) in Admin V2 with the modal holding a stale `Alive / current record` load; the current Master is `Alive`; select `Alive` in the form; Save. Preview should classify Alive/Deceased as `already_satisfied` (or `needs_confirmation` under `always-confirm-field` rule; keeping `Alive` on that field must succeed with no writes). No Change Log row is added.
+2. **Test B - unrelated edits survive.** Same modal, add a Primary Discipline edit (e.g. blank -> `Marine biology`). Preview shows Discipline in Will write and Alive/Deceased in Already satisfied / Keep. Confirm. Discipline is written; Alive/Deceased is not; Change Log gets one row for Discipline only.
+3. **Test C - intentional Alive -> Deceased warning.** On a currently-Alive scholar, change Alive/Deceased to `Deceased`. Preview places the field in Needs confirmation with `Change to "Deceased"` / `Keep "Alive"`. Confirm button is disabled until you pick one. Picking Change and Confirm writes the row and creates one Change Log row; picking Keep and Confirm skips it entirely.
+4. **Test D - cancel contradiction.** Same as Test C but click Back to edit. No writes happen and the form still holds `Deceased` locally for you to revise.
+5. **Test E - concurrent change not made by user.** Have another editor bump Village Paternal on Master to a new value while Admin V2's modal is open. Do NOT edit Village Paternal in the modal. Trigger any other save. Village Paternal must NOT appear in Will write. If it appears anywhere it must be in Master changed - adopt (or be filtered out entirely because the intended value was never collected). Re-opening the modal should show the new Master value.
+6. **Test F - second race after confirmation.** In Test C flow, between picking Change and clicking Confirm, have another editor set Alive/Deceased to `Unknown` on Master. Confirm. The server should return `needs_confirmation` for that field; Admin V2 should re-render the preview with the new current Master value (`Unknown`), requiring a fresh decision. No write should happen.
+7. **Test G - Change Log strictness.** After Tests A-F, inspect Change Log rows via the Admin log tab: only actual writes appear; each row has A-E filled with `Actor -> SID -> Worksheet.Field: old -> new` in Scope/Impact; no rows for already_satisfied / kept fields.
+
+**Do not start Phase 5 yet.** Phase 5 (Joeli round-trip write test) is still gated on your explicit approval after redeploying and running Tests A-G.

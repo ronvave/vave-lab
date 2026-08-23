@@ -740,38 +740,194 @@
     return out;
   }
 
-  // ------------------------- Phase 4: preview + writeback flow -------------------------
-
-  function showPreviewModal (sid, changes) {
-    state.pendingChanges = changes;
-    $('#preview-sid').textContent = sid + ' · ' + changes.length + ' change' + (changes.length === 1 ? '' : 's');
-    var html = '<table class="table"><thead><tr><th>Worksheet</th><th>Row</th><th>Field</th><th>Old value</th><th>New value</th></tr></thead><tbody>';
-    changes.forEach(function (c) {
-      html += '<tr>' +
-        '<td>' + esc(c.worksheet) + '</td>' +
-        '<td>' + esc(c.rowNumber || '—') + '</td>' +
-        '<td>' + esc(c.field) + '</td>' +
-        '<td class="mono" style="color:var(--muted);">' + esc(c.oldValue || '(blank)') + '</td>' +
-        '<td class="mono">' + esc(c.newValue || '(blank)') + '</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table>';
-    $('#preview-body').innerHTML = html;
-    $('#preview-modal').classList.add('is-visible');
-  }
+  // ------------------------- Phase 3.4: field-level preview + writeback -------------
+  // Two-step flow (Ron 2026-08-23):
+  //
+  //   Step 1 — classify
+  //     Client sends every user-touched field to the server as a dry-run
+  //     write. Server compares three values per field (loaded, currentMaster,
+  //     intended) and returns one of:
+  //       ok                 — clean write; safe to commit now.
+  //       already_satisfied  — currentMaster == intended; will silently skip.
+  //       needs_confirmation — either a stale-load contradiction or a change to
+  //                           an ALWAYS_CONFIRM field (Alive / Deceased).
+  //       rejected           — validation error.
+  //
+  //   Step 2 — commit
+  //     User picks Keep/Change on each needs_confirmation row. On "Confirm and
+  //     write", client submits the approved subset with
+  //     `overrideAuthorized: true` + `expectedCurrent` for confirmed overrides.
+  //     The server re-reads inside its lock; if the current Master value
+  //     changed again since the preview, the server returns another
+  //     needs_confirmation for that field and refuses to overwrite the new
+  //     value.
 
   function closePreviewModal () {
     $('#preview-modal').classList.remove('is-visible');
+    state.previewClassification = null;
+    state.pendingChanges = null;
   }
 
-  // Actually execute the writeback batch. Returns { ok, response } where
-  // response is the raw server payload. Called by preview "Confirm".
-  async function executeMasterWriteback (changes) {
+  // Locate the change object for a given result row so the preview UI can
+  // key back to selectors, worksheet, row number, etc.
+  function changeAt_ (idx) {
+    return (state.pendingChanges && state.pendingChanges[idx]) || {};
+  }
+
+  // Build the 4-section preview HTML from the server's dry-run response.
+  // Sections:
+  //   Will write         — clean writes that will commit as-is.
+  //   Already satisfied  — stale load, current Master already equals intended.
+  //   Needs confirmation — Alive / Deceased changes OR stale-load contradictions.
+  //   Rejected           — validation errors.
+  function renderPreviewClassification (sid, res) {
+    var results = (res && res.results) || [];
+    state.previewClassification = res;
+    var will = [], already = [], needs = [], rejected = [];
+    results.forEach(function (r, i) {
+      var c = changeAt_(i);
+      var row = {
+        idx: i, change: c, result: r,
+        loaded:   (r.loadedValue   != null ? r.loadedValue   : c.oldValue || ''),
+        current:  (r.currentValue  != null ? r.currentValue  : ''),
+        intended: (r.intendedValue != null ? r.intendedValue : c.newValue || '')
+      };
+      if      (r.status === 'ok')                will.push(row);
+      else if (r.status === 'already_satisfied') already.push(row);
+      else if (r.status === 'needs_confirmation')needs.push(row);
+      else                                       rejected.push(row);
+    });
+    // Reset per-preview decisions.
+    state.overrideDecisions = {}; // key: idx → 'keep' | 'change'
+
+    var html = '';
+    html += renderPreviewSection_('Will write',
+      'Actual changes that will be sent to the Master when you click Confirm and write.',
+      will, 'ok');
+    html += renderPreviewSection_('Already satisfied — will be skipped',
+      'Current Master already equals the intended value. No write is needed and no Change Log row will be created.',
+      already, 'skip');
+    html += renderPreviewSection_('Needs confirmation',
+      'Either the Master value changed since you opened this scholar, or the field is a status field that always requires explicit confirmation. Pick Keep or Change for each row.',
+      needs, 'confirm');
+    if (rejected.length) {
+      html += renderPreviewSection_('Rejected',
+        'These fields cannot be written because they failed server-side validation. Fix the value or cancel.',
+        rejected, 'reject');
+    }
+    if (!will.length && !already.length && !needs.length && !rejected.length) {
+      html = '<p class="meta">No changes detected. Cancel to keep editing.</p>';
+    }
+
+    $('#preview-sid').textContent = sid + ' · ' +
+      will.length + ' will write, ' +
+      already.length + ' already satisfied, ' +
+      needs.length + ' needs confirmation' +
+      (rejected.length ? (', ' + rejected.length + ' rejected') : '');
+    $('#preview-body').innerHTML = html;
+    // Wire per-row keep/change buttons.
+    $$('#preview-body [data-override-idx]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var idx = parseInt(btn.getAttribute('data-override-idx'), 10);
+        var decision = btn.getAttribute('data-override-decision');
+        state.overrideDecisions[idx] = decision;
+        // Repaint just this row's buttons to reflect the choice.
+        $$('#preview-body [data-override-idx="' + idx + '"]').forEach(function (b) {
+          b.classList.toggle('is-active', b.getAttribute('data-override-decision') === decision);
+        });
+        refreshConfirmButtonState_();
+      });
+    });
+    refreshConfirmButtonState_();
+    $('#preview-modal').classList.add('is-visible');
+  }
+
+  function renderPreviewSection_ (title, help, rows, kind) {
+    if (!rows.length) return '';
+    var barColor = ({
+      ok:      'var(--ok, #158a3a)',
+      skip:    'var(--muted, #666)',
+      confirm: 'var(--warn, #b06a00)',
+      reject:  'var(--danger, #b02020)'
+    })[kind] || 'var(--muted)';
+    var html = '<section class="preview-section" style="border-left:3px solid ' + barColor + ';padding-left:0.75rem;margin:1rem 0;">';
+    html += '<h3 style="margin:0 0 0.25rem 0;font-size:0.95rem;">' + esc(title) + ' <span class="mono" style="color:var(--muted);font-weight:400;">(' + rows.length + ')</span></h3>';
+    html += '<p class="meta" style="margin:0 0 0.4rem 0;color:var(--muted);">' + esc(help) + '</p>';
+    html += '<table class="table"><thead><tr><th>Worksheet</th><th>Row</th><th>Field</th><th>Loaded</th><th>Current Master</th><th>Intended</th>';
+    if (kind === 'confirm') html += '<th>Decision</th>';
+    if (kind === 'reject')  html += '<th>Reason</th>';
+    html += '</tr></thead><tbody>';
+    rows.forEach(function (r) {
+      var c = r.change;
+      html += '<tr>' +
+        '<td>' + esc(c.worksheet || '') + '</td>' +
+        '<td>' + esc(c.rowNumber || '—') + '</td>' +
+        '<td>' + esc(c.field || '') + '</td>' +
+        '<td class="mono" style="color:var(--muted);">' + esc(r.loaded  || '(blank)') + '</td>' +
+        '<td class="mono">'                              + esc(r.current || '(blank)') + '</td>' +
+        '<td class="mono">'                              + esc(r.intended || '(blank)') + '</td>';
+      if (kind === 'confirm') {
+        html += '<td>' + renderConfirmButtons_(r) + '</td>';
+      }
+      if (kind === 'reject') {
+        html += '<td class="mono" style="color:var(--danger);">' + esc(r.result.reason || 'rejected') + '</td>';
+      }
+      html += '</tr>';
+    });
+    html += '</tbody></table></section>';
+    return html;
+  }
+
+  function renderConfirmButtons_ (r) {
+    // Field-specific labels for Alive / Deceased per Ron's plain-language spec.
+    var isAlive = (r.change.worksheet === 'Scholars' && r.change.field === 'Alive / Deceased');
+    var keepLabel   = isAlive ? ('Keep \u201C' + (r.current || 'blank') + '\u201D')   : 'Keep Master value';
+    var changeLabel = isAlive ? ('Change to \u201C' + (r.intended || 'blank') + '\u201D') : 'Overwrite Master';
+    return '<div class="preview-decision" style="display:flex;gap:0.4rem;">' +
+      '<button type="button" class="btn-secondary btn-small" data-override-idx="' + r.idx + '" data-override-decision="keep">' + esc(keepLabel) + '</button>' +
+      '<button type="button" class="btn-secondary btn-small" data-override-idx="' + r.idx + '" data-override-decision="change">' + esc(changeLabel) + '</button>' +
+      '</div>';
+  }
+
+  // Enable Confirm-and-write only when every needs_confirmation row has a
+  // decision. If there are no writable fields (nothing OK and no confirmed
+  // overrides), disable it and just close on Cancel.
+  function refreshConfirmButtonState_ () {
+    var btn = $('#preview-confirm');
+    if (!btn) return;
+    var res = state.previewClassification;
+    if (!res) { btn.disabled = true; return; }
+    var results = res.results || [];
+    var pendingConfirm = 0;
+    var willWriteCount = 0;
+    var changedCount = 0;
+    results.forEach(function (r, i) {
+      if (r.status === 'ok') willWriteCount++;
+      else if (r.status === 'needs_confirmation') {
+        var d = state.overrideDecisions && state.overrideDecisions[i];
+        if (!d) pendingConfirm++;
+        else if (d === 'change') changedCount++;
+      }
+    });
+    // Nothing to write and nothing to skip → no reason to "confirm".
+    // Keep the button enabled so "Confirm" is still meaningful even when
+    // everything is already_satisfied (user gets a clean acknowledgement).
+    btn.disabled = (pendingConfirm > 0);
+    if (pendingConfirm > 0) {
+      btn.textContent = 'Pick Keep or Change for ' + pendingConfirm + ' field' + (pendingConfirm === 1 ? '' : 's');
+    } else if (willWriteCount + changedCount === 0) {
+      btn.textContent = 'Acknowledge and close';
+    } else {
+      btn.textContent = 'Confirm and write (' + (willWriteCount + changedCount) + ')';
+    }
+  }
+
+  // Actually execute the writeback batch. Returns the raw server payload.
+  async function executeMasterWriteback (changes, opts) {
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
       throw new Error('Master write-back endpoint is not configured.');
     }
-    var res = await adminWriteback.write(changes);
-    return res;
+    return adminWriteback.write(changes, opts || {});
   }
 
   // After a successful (or partial) writeback, refresh the master snapshot
@@ -921,79 +1077,204 @@
     if (!state.editingSid) return;
     var sid = state.editingSid;
     var masterChanges = collectMasterChanges(sid);
-    if (masterChanges.length > 0) {
-      // Guard: block preview if the writeback endpoint isn't set.
-      if (!window.adminWriteback || !adminWriteback.isConfigured()) {
-        toast('Master edits require the write-back endpoint (Data source tab).', 'error', 8000);
-        return;
-      }
-      showPreviewModal(sid, masterChanges);
+    if (masterChanges.length === 0) {
+      // No master edits — push only enrichment/insights/photo.
+      await performNonMasterPush(sid);
       return;
     }
-    // No master edits — push only enrichment/insights/photo.
-    await performNonMasterPush(sid);
+    if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+      toast('Master edits require the write-back endpoint (Data source tab).', 'error', 8000);
+      return;
+    }
+    // Step 1: dry-run classify. Server compares loaded / currentMaster /
+    // intended for every field and returns per-field status so we can render
+    // a proper 4-section preview.
+    var saveBtn = $('#modal-save');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Classifying…';
+    try {
+      state.pendingChanges = masterChanges;
+      var res = await executeMasterWriteback(masterChanges, { dryRun: true });
+      if (res.status === 'unauthorized' || res.status === 'disabled') {
+        toast('Master write-back is not available: ' + res.status + '.', 'error', 8000);
+        log('Dry-run classify failed: ' + res.status, 'error');
+        return;
+      }
+      renderPreviewClassification(sid, res);
+    } catch (e) {
+      console.error(e);
+      toast('Classification failed: ' + (e.message || e), 'error', 9000);
+      log('Classification failed: ' + (e.message || e), 'error');
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = 'Save & push';
+    }
   }
 
-  // Called by preview modal Confirm: run the master write-back, handle
-  // conflicts/partials, then push non-master pieces on success.
+  // Step 2 — commit. Called by preview modal's Confirm button.
+  // Sends the approved subset of changes with per-field overrideAuthorized
+  // + expectedCurrent. Handles second-race conflicts (server may still
+  // return needs_confirmation if the Master changed again since the dry-run).
   async function executeSaveAfterPreview () {
     var sid = state.editingSid;
     if (!sid) { closePreviewModal(); return; }
-    var changes = state.pendingChanges || [];
+    var classification = state.previewClassification;
+    if (!classification) { closePreviewModal(); return; }
+
+    // Build the final change list: OK rows verbatim, plus confirmed
+    // overrides with the authorization envelope. Already-satisfied and
+    // Keep decisions are dropped so we do not write them.
+    var toSubmit = [];
+    var submittedIndex = []; // parallel array of original idxs, for re-mapping
+    (classification.results || []).forEach(function (r, i) {
+      var c = state.pendingChanges[i];
+      if (!c) return;
+      if (r.status === 'ok') {
+        toSubmit.push(c);
+        submittedIndex.push(i);
+      } else if (r.status === 'needs_confirmation') {
+        var decision = state.overrideDecisions && state.overrideDecisions[i];
+        if (decision !== 'change') return; // Keep or undecided → drop
+        toSubmit.push(Object.assign({}, c, {
+          overrideAuthorized: true,
+          expectedCurrent:    (r.currentValue != null ? r.currentValue : '')
+        }));
+        submittedIndex.push(i);
+      }
+      // already_satisfied and rejected: skip.
+    });
+
     var confirmBtn = $('#preview-confirm');
+    var previewCancelBtn = $('#preview-cancel');
     confirmBtn.disabled = true;
+    var wasLabel = confirmBtn.textContent;
+
+    // If there is nothing to commit (everything was already_satisfied or all
+    // Keep) just refresh baselines from the dry-run and close.
+    if (!toSubmit.length) {
+      // Adopt currentMaster into data-loaded for every stale-load field so
+      // future edits start from an accurate baseline (Test E behavior).
+      adoptCurrentMasterBaselines_(classification);
+      log('Preview closed with no writes: ' + ((classification.results || []).filter(function (r) { return r.status === 'already_satisfied'; }).length) + ' already-satisfied, ' +
+          ((classification.results || []).filter(function (r) { return r.status === 'needs_confirmation'; }).length) + ' kept-as-Master.', 'ok');
+      await refreshMasterForScholar(sid);
+      closePreviewModal();
+      // Still push non-master pieces if the user changed photo/insights/etc.
+      await performNonMasterPush(sid);
+      return;
+    }
+
     confirmBtn.textContent = 'Writing…';
+    if (previewCancelBtn) previewCancelBtn.disabled = true;
     try {
-      var res = await executeMasterWriteback(changes);
+      var res = await executeMasterWriteback(toSubmit, { dryRun: false });
       var results = res.results || [];
-      var okCount = 0, conflictCount = 0, rejectCount = 0, noopCount = 0;
+      var okCount = 0, confirmCount = 0, satisfiedCount = 0, rejectCount = 0;
       var messages = [];
-      results.forEach(function (r) {
-        if (r.status === 'ok') okCount++;
-        else if (r.status === 'noop') noopCount++;
-        else if (r.status === 'conflict') { conflictCount++;
-          var d = r.diff || {};
-          messages.push('CONFLICT ' + (d.worksheet || '?') + '.' + (d.field || '?') +
-                        ' (row ' + (r.change && r.change.rowNumber ? r.change.rowNumber : '—') +
-                        '): loaded="' + (d.loadedValue||'') + '" current="' + (d.currentValue||'') +
-                        '" attempted="' + (d.attemptedValue||'') + '"');
-        }
-        else { rejectCount++;
-          messages.push('REJECT ' + (r.change && r.change.field ? r.change.field : '?') + ': ' + (r.reason || r.status));
+      results.forEach(function (r, j) {
+        var origIdx = submittedIndex[j];
+        var c = state.pendingChanges[origIdx] || r.change || {};
+        if (r.status === 'ok') {
+          okCount++;
+          messages.push('WROTE ' + (c.worksheet || '?') + '.' + (c.field || '?') +
+                        ' (row ' + (c.rowNumber || '—') + '): "' +
+                        (r.currentValue || '') + '" → "' + (r.intendedValue || '') + '"');
+        } else if (r.status === 'already_satisfied') {
+          satisfiedCount++;
+          messages.push('ALREADY_SATISFIED ' + (c.worksheet || '?') + '.' + (c.field || '?') + ' — no write.');
+        } else if (r.status === 'needs_confirmation') {
+          confirmCount++;
+          messages.push('SECOND_RACE ' + (c.worksheet || '?') + '.' + (c.field || '?') +
+                        ': Master changed again to "' + (r.currentValue || '') + '" — refusing to overwrite; requires fresh confirmation.');
+        } else {
+          rejectCount++;
+          messages.push('REJECT ' + (c.worksheet || '?') + '.' + (c.field || '?') + ': ' + (r.reason || r.status));
         }
       });
-      log('Master write-back — ' + res.status + ': ' + okCount + ' ok, ' + noopCount + ' noop, ' + conflictCount + ' conflict, ' + rejectCount + ' reject.', res.status === 'ok' ? 'ok' : (res.status === 'partial' ? 'warn' : 'error'));
-      messages.forEach(function (m) { log(m, 'warn'); });
+      log('Master write-back — ' + res.status + ': ' +
+          okCount + ' wrote, ' + satisfiedCount + ' already satisfied, ' +
+          confirmCount + ' second-race, ' + rejectCount + ' rejected.',
+          res.status === 'ok' ? 'ok' :
+          (res.status === 'partial' ? 'warn' :
+           (confirmCount > 0 ? 'warn' : 'error')));
+      messages.forEach(function (m) { log(m, m.indexOf('WROTE ') === 0 ? 'ok' : 'warn'); });
 
-      if (res.status === 'rejected' || res.status === 'conflict') {
-        toast('Write-back rejected — see Action log for the conflict diff. Nothing was written to non-master files.', 'error', 9000);
-        confirmBtn.disabled = false;
-        confirmBtn.textContent = 'Confirm and write';
+      // Second-race: some override we tried was invalidated by a fresh
+      // Master change. Keep the modal open, re-classify from the new
+      // Master state, and re-render the preview so the user can decide
+      // again.
+      if (confirmCount > 0) {
+        toast('Master changed again for ' + confirmCount + ' field' + (confirmCount === 1 ? '' : 's') + '. Re-classifying so you can decide with fresh values.', 'warn', 9000);
+        // Update our pendingChanges baseline for the second-race fields:
+        // for each of them, the loaded value is now the freshly-returned
+        // currentValue (so a follow-up preview compares against reality).
+        results.forEach(function (r, j) {
+          if (r.status !== 'needs_confirmation') return;
+          var origIdx = submittedIndex[j];
+          var c = state.pendingChanges[origIdx];
+          if (c) c.oldValue = r.currentValue || '';
+        });
+        // Re-run the full dry-run on the ORIGINAL pending set so already-
+        // satisfied and previously-ok fields also refresh.
+        var reRes = await executeMasterWriteback(state.pendingChanges, { dryRun: true });
+        renderPreviewClassification(sid, reRes);
         return;
       }
-      // ok or partial — refresh master, then continue non-master push.
-      await refreshMasterForScholar(sid);
-      // Re-set data-loaded for successfully-written fields so a re-open shows fresh baselines.
-      results.forEach(function (r) {
-        if (r.status !== 'ok') return;
-        var c = r.change || {};
-        // Best-effort: update the me-* input's data-loaded to the newValue.
+
+      // Success (all ok / already_satisfied / at most some validation
+      // rejects). Update data-loaded baselines and continue.
+      results.forEach(function (r, j) {
+        var origIdx = submittedIndex[j];
+        var c = state.pendingChanges[origIdx] || {};
+        var final = null;
+        if (r.status === 'ok') final = (r.intendedValue != null ? r.intendedValue : c.newValue);
+        else if (r.status === 'already_satisfied') final = (r.currentValue != null ? r.currentValue : c.newValue);
+        if (final == null) return;
         var selector;
         if (c.rowNumber) selector = '#edit-modal .me-row-input[data-ws="' + c.worksheet + '"][data-field="' + c.field + '"][data-row="' + c.rowNumber + '"]';
         else             selector = '#edit-modal [id^="me-"][data-ws="' + c.worksheet + '"][data-field="' + c.field + '"]';
         var el = document.querySelector(selector);
-        if (el) el.setAttribute('data-loaded', c.newValue == null ? '' : String(c.newValue));
+        if (el) {
+          el.setAttribute('data-loaded', String(final));
+          el.value = String(final);
+        }
       });
+      // Also adopt currentMaster baselines for the already_satisfied /
+      // Keep rows we dropped, so a re-open shows fresh values.
+      adoptCurrentMasterBaselines_(classification);
+
+      await refreshMasterForScholar(sid);
       closePreviewModal();
-      await performNonMasterPush(sid, { keepModalOpen: res.status === 'partial' });
+      await performNonMasterPush(sid, { keepModalOpen: rejectCount > 0 });
     } catch (e) {
       console.error(e);
       toast('Write-back failed: ' + (e.message || e), 'error', 9000);
       log('Write-back failed: ' + (e.message || e), 'error');
     } finally {
       confirmBtn.disabled = false;
-      confirmBtn.textContent = 'Confirm and write';
+      confirmBtn.textContent = wasLabel || 'Confirm and write';
+      if (previewCancelBtn) previewCancelBtn.disabled = false;
     }
+  }
+
+  // For every field in a dry-run classification whose currentValue differs
+  // from what the modal originally loaded, refresh the input's data-loaded
+  // attribute to the currentValue. This implements Test E's "adopt current
+  // Master" behavior for fields the user did not intentionally overwrite.
+  function adoptCurrentMasterBaselines_ (classification) {
+    if (!classification || !classification.results) return;
+    classification.results.forEach(function (r, i) {
+      if (r.status !== 'already_satisfied' && r.status !== 'needs_confirmation') return;
+      var c = state.pendingChanges && state.pendingChanges[i];
+      if (!c) return;
+      var selector;
+      if (c.rowNumber) selector = '#edit-modal .me-row-input[data-ws="' + c.worksheet + '"][data-field="' + c.field + '"][data-row="' + c.rowNumber + '"]';
+      else             selector = '#edit-modal [id^="me-"][data-ws="' + c.worksheet + '"][data-field="' + c.field + '"]';
+      var el = document.querySelector(selector);
+      if (el && r.currentValue != null) {
+        el.setAttribute('data-loaded', String(r.currentValue));
+      }
+    });
   }
 
   async function performNonMasterPush (sid, opts) {

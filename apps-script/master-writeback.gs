@@ -43,13 +43,38 @@
  *   ('string' | 'enum' | 'int' | 'float' | 'date' | 'url') are validated per
  *   write. Enum values are checked against the `enum` array.
  *
- * ── Concurrency + conflict handling ──
+ * ── Concurrency + conflict handling (Phase 3.4, revised) ──
  *   Every write takes a script-scoped LockService lock (30s timeout). Inside
- *   the lock, the server reads the current cell value and compares it to the
- *   `oldValue` the client sent. If they differ, the write is rejected with a
- *   `conflict` response containing worksheet/field/loadedValue/currentValue/
- *   attemptedValue (approval-doc #5). Partial-failure reporting is supported:
- *   an incoming batch's per-field results are returned even if some fail.
+ *   the lock, the server compares three values per field:
+ *     loaded value   — what Admin V2 had when the modal opened (`oldValue`)
+ *     current value  — a fresh read of the Master cell right before write
+ *     intended value — what the user submitted (`newValue`)
+ *   Classification (per field, independently):
+ *     already_satisfied  — currentMaster == intended: silent skip, no write,
+ *                           no Change Log row. Fixes the stale-loaded but
+ *                           already-current case (e.g. Joeli's
+ *                           "Alive / current record" → "Alive").
+ *     needs_confirmation — user is changing a field to a value that
+ *                           contradicts the current Master value. Server
+ *                           refuses to write unless the client re-submits
+ *                           the change with `overrideAuthorized: true` and
+ *                           `expectedCurrent` equal to the currently
+ *                           returned Master value.
+ *                           Also fires for the ALWAYS_CONFIRM list
+ *                           (Alive / Deceased) whenever the user changes
+ *                           the value.
+ *     ok                 — clean write: currentMaster == loaded, currentMaster
+ *                           != intended, and either not in ALWAYS_CONFIRM or
+ *                           override authorized. Writes the cell and logs.
+ *     rejected           — validation failure or invalid target.
+ *   `dryRun: true` runs classification only — nothing is written and no
+ *   Change Log rows are appended, so the client can render a full preview
+ *   before user confirmation.
+ *   Batch-level `status` mirrors the field mix:
+ *     ok                 — every field was ok or already_satisfied
+ *     needs_confirmation — at least one needs_confirmation, no fatal reject
+ *     partial            — mix of ok and rejected
+ *     rejected           — every field rejected
  *
  * ── Change Log ──
  *   Every successful write appends ONE row using the real five-column schema
@@ -71,6 +96,15 @@ var SOURCE_TAG          = 'admin-master-webapp v1';
 var REPLAY_WINDOW_MS    = 5 * 60 * 1000;
 var LOCK_WAIT_MS        = 30 * 1000;
 var TIMEZONE            = 'Pacific/Honolulu';
+
+// Fields that ALWAYS require the user to explicitly confirm any change,
+// even when the loaded and current Master values match. These are
+// high-consequence status fields (drive memorial band, dashboard flags,
+// etc.) so any change gets a plain-language warning per Ron 2026-08-23.
+// Keyed by `<worksheet>.<field>`.
+var ALWAYS_CONFIRM = {
+  'Scholars.Alive / Deceased': true
+};
 
 // Full editable-field allowlist. Every writable field must appear here.
 // Sheets not listed are read-only. Fields on listed sheets not listed are
@@ -284,25 +318,69 @@ function handleReadChangeLog_(params) {
   if (lastRow <= headerRow) return jsonOut_({ status: 'ok', rows: [] });
   var take = Math.min(limit, lastRow - headerRow);
   var startRow = lastRow - take + 1;
+  // Read A–J so legacy rows with polluted F–J are still surfaced verbatim.
+  // New rows written by the strict 5-column writer only fill A–E, and F–J
+  // will be blank; we then parse actor / worksheet / field / old → new from
+  // the folded Scope/Impact string.
   var vals = sheet.getRange(startRow, 1, take, 10).getValues();
   var rows = [];
   for (var i = vals.length - 1; i >= 0; i--) {
     var v = vals[i];
+    var scope = normalizeForRead_(v[3]);
+    // Prefer legacy per-column fields when present (pre-2026-08-23 rows);
+    // fall back to parsing the folded Scope/Impact for new rows.
+    var legacyActor = normalizeForRead_(v[5]);
+    var parsed = parseFoldedScope_(scope);
     rows.push({
       rowNumber: startRow + i,
-      version: normalizeForRead_(v[0]),
-      date:    normalizeForRead_(v[1]),
-      change:  normalizeForRead_(v[2]),
-      scope:   normalizeForRead_(v[3]),
-      source:  normalizeForRead_(v[4]),
-      actor:   normalizeForRead_(v[5]),
-      worksheet: normalizeForRead_(v[6]),
-      field:   normalizeForRead_(v[7]),
-      oldValue:normalizeForRead_(v[8]),
-      newValue:normalizeForRead_(v[9])
+      version:  normalizeForRead_(v[0]),
+      date:     normalizeForRead_(v[1]),
+      change:   normalizeForRead_(v[2]),
+      scope:    scope,
+      source:   normalizeForRead_(v[4]),
+      actor:    legacyActor || parsed.actor || '',
+      worksheet: normalizeForRead_(v[6]) || parsed.worksheet || '',
+      field:    normalizeForRead_(v[7]) || parsed.field || '',
+      oldValue: normalizeForRead_(v[8]) || parsed.oldValue || '',
+      newValue: normalizeForRead_(v[9]) || parsed.newValue || ''
     });
   }
   return jsonOut_({ status: 'ok', rows: rows, serverTs: Date.now() });
+}
+
+// Best-effort parser for the folded Scope/Impact column written by the new
+// strict five-column Change Log writer. Format is:
+//   "<actor> · <SID> · <worksheet>.<field>: <old> → <new>"
+// If the scope doesn't match this pattern (e.g. structural rows like
+// "Structural insert of Year of Birth") returns empty strings so the reader
+// can still render the row without pretending to know internal fields.
+function parseFoldedScope_(scope) {
+  var out = { actor: '', worksheet: '', field: '', oldValue: '', newValue: '' };
+  if (!scope) return out;
+  var s = String(scope);
+  // Split on the arrow first — anything after is newValue.
+  var arrowIdx = s.indexOf(' → ');
+  if (arrowIdx < 0) return out;
+  var newValue = s.substring(arrowIdx + 3);
+  var before = s.substring(0, arrowIdx);
+  // Then split by "· " from the left three times: actor · sid · wsfield: old
+  var parts = before.split(' · ');
+  if (parts.length < 3) return out;
+  var actor = parts[0];
+  var wsFieldOld = parts.slice(2).join(' · '); // rejoin in case field contained ·
+  var colonIdx = wsFieldOld.indexOf(': ');
+  if (colonIdx < 0) return out;
+  var wsField = wsFieldOld.substring(0, colonIdx);
+  var oldValue = wsFieldOld.substring(colonIdx + 2);
+  var dotIdx = wsField.indexOf('.');
+  var worksheet = dotIdx < 0 ? wsField : wsField.substring(0, dotIdx);
+  var field     = dotIdx < 0 ? ''       : wsField.substring(dotIdx + 1);
+  out.actor     = actor;
+  out.worksheet = worksheet;
+  out.field     = field;
+  out.oldValue  = oldValue;
+  out.newValue  = newValue;
+  return out;
 }
 
 function normalizeForRead_(v) {
@@ -337,21 +415,28 @@ function doPost(e) {
  *   {
  *     secret:  "…64 hex chars…",
  *     clientTs: 1724369100000,
+ *     dryRun:  true | false,          // default false; true = classify only
  *     changes: [
  *       { worksheet: "Scholars", scholarId: "ITK-S0315", field: "Given Names",
- *         oldValue: "Joeli", newValue: "Joeli " },
+ *         oldValue: "Joeli", newValue: "Joeli ",
+ *         overrideAuthorized: false,  // optional; user confirmed override
+ *         expectedCurrent: "Alive"    // required with overrideAuthorized
+ *       },
  *       { worksheet: "Positions", scholarId: "ITK-S0195", rowNumber: 27,
- *         field: "Title", oldValue: "Prof", newValue: "Professor" }
+ *         field: "Standardized Academic Rank", oldValue: "Prof", newValue: "Professor" }
  *     ]
  *   }
  *
  * Response shape:
  *   {
- *     status: "ok" | "partial" | "conflict" | "rejected",
+ *     status: "ok" | "partial" | "needs_confirmation" | "rejected",
+ *     dryRun: true | false,
  *     results: [
- *       { index: 0, status: "ok",       change: {...}, writtenAt: "..." },
- *       { index: 1, status: "conflict", change: {...}, diff: {...} },
- *       { index: 2, status: "rejected", change: {...}, reason: "..." }
+ *       { index: 0, status: "ok",                 change: {...}, writtenAt: "..." },
+ *       { index: 1, status: "already_satisfied",  change: {...}, currentValue: "..." },
+ *       { index: 2, status: "needs_confirmation", change: {...}, currentValue: "...",
+ *                   loadedValue: "...", intendedValue: "...", reason: "override-required" },
+ *       { index: 3, status: "rejected",           change: {...}, reason: "..." }
  *     ],
  *     writeEnabled: true,
  *     serverTs: 1724369101234
@@ -360,6 +445,7 @@ function doPost(e) {
 function handleWrite_(body) {
   var changes = Array.isArray(body.changes) ? body.changes : [];
   if (!changes.length) return jsonOut_({ status: 'bad_request', reason: 'no-changes' }, 400);
+  var dryRun = body.dryRun === true;
 
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
   var lock = LockService.getScriptLock();
@@ -367,27 +453,55 @@ function handleWrite_(body) {
   if (!haveLock) return jsonOut_({ status: 'busy', reason: 'lock-timeout' }, 503);
 
   var results = [];
-  var anyOk = false, anyFail = false;
+  var counts = { ok: 0, already_satisfied: 0, needs_confirmation: 0, rejected: 0 };
   try {
     for (var i = 0; i < changes.length; i++) {
       var c = changes[i] || {};
-      var r = applyOneChange_(ss, c);
+      var r = applyOneChange_(ss, c, dryRun);
       r.index = i;
       r.change = c;
       results.push(r);
-      if (r.status === 'ok') anyOk = true; else anyFail = true;
+      if (counts[r.status] != null) counts[r.status]++;
     }
   } finally {
     try { lock.releaseLock(); } catch (_) {}
   }
 
-  var overall = 'ok';
-  if (anyOk && anyFail) overall = 'partial';
-  else if (!anyOk && anyFail) overall = 'rejected';
-  return jsonOut_({ status: overall, results: results, writeEnabled: true, serverTs: Date.now() });
+  var overall;
+  if (counts.rejected === results.length)               overall = 'rejected';
+  else if (counts.needs_confirmation > 0)               overall = 'needs_confirmation';
+  else if (counts.rejected > 0 && counts.ok > 0)        overall = 'partial';
+  else if (counts.rejected > 0)                         overall = 'rejected';
+  else                                                  overall = 'ok';
+  return jsonOut_({
+    status: overall,
+    dryRun: dryRun,
+    results: results,
+    counts: counts,
+    writeEnabled: true,
+    serverTs: Date.now()
+  });
 }
 
-function applyOneChange_(ss, c) {
+/**
+ * Classify + (if not dry-run) apply one field change.
+ *
+ * Decision table (three-way comparison per field, per approval doc 2026-08-23):
+ *
+ *   currentMaster == intended                       → already_satisfied (skip; no log)
+ *   Scholars.Alive / Deceased AND intended != currentMaster:
+ *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
+ *       otherwise                                   → needs_confirmation
+ *   currentMaster == loaded AND intended != currentMaster   → ok (write)
+ *   currentMaster != loaded AND intended != currentMaster (stale-load contradiction):
+ *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
+ *       otherwise                                   → needs_confirmation
+ *
+ * The old blanket `conflict` status is retired: every case that used to be
+ * `conflict` is now either `already_satisfied` (silent skip) or
+ * `needs_confirmation` (client must re-submit with overrideAuthorized).
+ */
+function applyOneChange_(ss, c, dryRun) {
   var ws = c.worksheet, sid = c.scholarId, field = c.field;
   if (!ws || !MAPPING.worksheets[ws])   return { status: 'rejected', reason: 'worksheet-not-allowed' };
   var wsCfg = MAPPING.worksheets[ws];
@@ -401,39 +515,71 @@ function applyOneChange_(ss, c) {
 
   var sheet = ss.getSheetByName(ws);
   if (!sheet) return { status: 'rejected', reason: 'worksheet-not-found' };
-  var headerRow = wsCfg.headerRow || 1;
 
-  // Locate row(s).
   var rowInfo = locateRow_(sheet, wsCfg, c);
   if (!rowInfo.ok) return { status: 'rejected', reason: rowInfo.reason };
-
-  // Read current cell value.
   var col = rowInfo.headers[field];
   if (!col) return { status: 'rejected', reason: 'field-header-not-found' };
-  var currentValue = sheet.getRange(rowInfo.row, col).getValue();
-  var currentValueStr = normalizeForCompare_(currentValue);
-  var oldValueStr    = normalizeForCompare_(c.oldValue);
-  if (currentValueStr !== oldValueStr) {
+
+  var currentRaw    = sheet.getRange(rowInfo.row, col).getValue();
+  var currentStr    = normalizeForCompare_(currentRaw);
+  var loadedStr     = normalizeForCompare_(c.oldValue);
+  var intendedStr   = normalizeForCompare_(newValue);
+
+  var alwaysKey     = ws + '.' + field;
+  var alwaysConfirm = ALWAYS_CONFIRM[alwaysKey] === true;
+
+  // 1. Already satisfied — currentMaster == intended.
+  // This is the fix for Joeli's regression: loaded="Alive / current record",
+  // currentMaster="Alive", intended="Alive" → silent skip.
+  if (currentStr === intendedStr) {
     return {
-      status: 'conflict',
-      diff: {
-        worksheet: ws, field: field, scholarId: sid,
-        loadedValue:    c.oldValue == null ? '' : String(c.oldValue),
-        currentValue:   currentValueStr,
-        attemptedValue: newValue == null ? '' : String(newValue)
-      }
+      status: 'already_satisfied',
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
     };
   }
 
-  // Idempotency: same-value writes are still logged, but flagged.
-  if (currentValueStr === normalizeForCompare_(newValue)) {
-    return { status: 'noop', writtenAt: new Date().toISOString() };
+  // 2. Genuine contradiction with current Master OR any change to an
+  //    ALWAYS_CONFIRM field → needs_confirmation unless the client has
+  //    explicitly authorized the override.
+  var authorized = c.overrideAuthorized === true &&
+                   normalizeForCompare_(c.expectedCurrent) === currentStr;
+  var mustConfirm = alwaysConfirm || (currentStr !== loadedStr);
+  if (mustConfirm && !authorized) {
+    return {
+      status: 'needs_confirmation',
+      reason: alwaysConfirm ? 'always-confirm-field' : 'master-changed',
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
+    };
   }
 
-  // Write + log.
+  // Dry-run: classify only, don't write.
+  if (dryRun) {
+    return {
+      status: 'ok',
+      willWrite: true,
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
+    };
+  }
+
+  // 3. Clean write. Value written is the validated coerced form; Change Log
+  //    records the true current old value (which may differ from what the
+  //    client had loaded, e.g. after a confirmed override).
   sheet.getRange(rowInfo.row, col).setValue(newValue);
-  appendChangeLog_(ss, ws, sid, field, currentValueStr, newValue);
-  return { status: 'ok', writtenAt: new Date().toISOString() };
+  appendChangeLog_(ss, ws, sid, field, currentStr, newValue);
+  return {
+    status: 'ok',
+    willWrite: true,
+    writtenAt: new Date().toISOString(),
+    currentValue: currentStr,
+    intendedValue: intendedStr
+  };
 }
 
 // ------------------------- HELPERS ----------------------------------------
