@@ -8228,7 +8228,13 @@
     const btnId   = `db-insight-btn-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const panelId = `db-insight-panel-${(r.key || r.name || '').replace(/[^a-zA-Z0-9_-]/g, '_')}`;
     const hasKeywords = !!insight && (insight.keywords || []).length >= 1;
-    const hasSummary  = !!insight && !!(insight.summary && insight.summary.trim());
+    // Accept both the V1 (`summary`) and V2 (`summaryHtml`) field names so a
+    // scholar authored via Admin V2's paste flow renders the plain-English
+    // paragraph. The V1 legacy file stored the paragraph in `summary`; the
+    // V2 Admin normaliser now writes it into `summaryHtml`. Panel F is
+    // agnostic — whichever field is populated wins.
+    const summaryText = insight ? (insight.summaryHtml || insight.summary || '') : '';
+    const hasSummary  = !!(summaryText && summaryText.trim());
     const hasInsight  = hasKeywords || hasSummary;
 
     const tagsHtml = hasKeywords ? (insight.keywords || []).map((k, i) =>
@@ -8243,7 +8249,7 @@
     // the summary honestly rather than falling back to a misleading
     // "not yet generated" placeholder.
     const summaryHtml = hasSummary
-      ? `<p class="db-scholar-card__insight-summary">${sanitizeSummaryHtml(insight.summary || '')}</p>`
+      ? `<p class="db-scholar-card__insight-summary">${sanitizeSummaryHtml(summaryText)}</p>`
       : `<p class="db-scholar-card__insight-summary db-scholar-card__insight-summary--empty">Insight not yet generated for this scholar. It will appear here after the next data refresh.</p>`;
 
     return `

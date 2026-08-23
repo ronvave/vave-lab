@@ -440,6 +440,13 @@
       </div>
 
       <div class="card">
+        <h2>Force public dashboard refresh</h2>
+        <p class="meta">Bumps the <span class="mono">?v=mfNN</span> cache-buster on every V2 script tag so viewers' browsers stop serving the stale copy immediately. Use this after an admin change (photo, insights, ORCID, etc.) if the public card still looks old even after a hard-refresh. <strong>Also dispatches</strong> the <span class="mono">refresh-master-file.yml</span> workflow for you, so any Master Sheet edits in the same session are picked up. GitHub Pages typically redeploys within ~30–90 seconds; then hard-refresh the public dashboard.</p>
+        <button class="btn btn-primary" id="force-cache-bust">Force refresh now</button>
+        <span class="mono" id="force-cache-bust-status" style="margin-left: 12px; color: var(--muted);"></span>
+      </div>
+
+      <div class="card">
         <h2>Legacy Year of Birth / Year of Death migration inspection</h2>
         <p class="meta">Phase 3.5 removed the duplicate Admin-owned Year of Birth / Year of Death inputs; those fields are now authoritative on the Master <span class="mono">Scholars</span> sheet. Any legacy values that were previously written into <span class="mono">scholar-enrichment.json.enc</span> are preserved verbatim in the encrypted file; nothing has been silently overwritten or discarded. Run this inspection to see whether any legacy sidecar values exist that need to be moved manually to the Master sheet.</p>
         <button class="btn" id="inspect-yob-yod">Inspect enrichment for legacy YoB/YoD</button>
@@ -713,11 +720,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf28" defer></script>
-<script src="js/master-file-adapter.js?v=mf28" defer></script>
-<script src="js/admin-insights-migration.js?v=mf28" defer></script>
-<script src="js/admin-writeback-client.js?v=mf28" defer></script>
-<script src="js/admin-master.js?v=mf28" defer></script>
+<script src="js/db-gate.js?v=mf33" defer></script>
+<script src="js/master-file-adapter.js?v=mf33" defer></script>
+<script src="js/admin-insights-migration.js?v=mf33" defer></script>
+<script src="js/admin-writeback-client.js?v=mf33" defer></script>
+<script src="js/admin-master.js?v=mf33" defer></script>
 
 </body>
 </html>

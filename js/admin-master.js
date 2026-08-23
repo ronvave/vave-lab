@@ -1049,6 +1049,69 @@
     box.innerHTML = '<img src="' + esc(src) + '" onerror="this.onerror=null;this.remove();" />';
   }
 
+  // Fold a pasted insights payload into the canonical Panel-F shape.
+  // Accepts common ChatGPT / user variants and returns a normalised record.
+  // Unknown top-level scaffolding keys (e.g. `"scholar": "..."`) are logged
+  // and discarded so they never reach the on-disk file. See
+  // docs/ADMIN-V2-ARCHITECTURE-AUDIT.md §C.3 for the canonical shape.
+  function normalizeInsightsPayload_ (raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      throw new Error('Insights JSON must be an object, e.g. { "keywords": [...], "summary": "..." }');
+    }
+    var out = {};
+    // keywords: only accept an array of strings; drop empties + trim.
+    if (Array.isArray(raw.keywords)) {
+      var kw = raw.keywords
+        .map(function (k) { return (typeof k === 'string' ? k.trim() : ''); })
+        .filter(function (k) { return !!k; });
+      if (kw.length) out.keywords = kw;
+    }
+    // summaryHtml: canonical name wins if present, else fall back through the
+    // common aliases users / ChatGPT actually emit. Empty strings ignored.
+    var summary = raw.summaryHtml || raw.summary || raw.plainEnglishSummary || raw.plain_english_summary || '';
+    if (typeof summary === 'string' && summary.trim()) {
+      out.summaryHtml = summary.trim();
+    }
+    // summaryFormat: default to 'html' when summaryHtml has any '<' tag,
+    // else 'plain'. Explicit `summaryFormat` / `summary_format` wins.
+    var explicitFmt = raw.summaryFormat || raw.summary_format || raw['summary-format'];
+    if (explicitFmt && /^(html|plain|markdown|md)$/i.test(explicitFmt)) {
+      out.summaryFormat = String(explicitFmt).toLowerCase().replace(/^md$/, 'markdown');
+    } else if (out.summaryHtml) {
+      out.summaryFormat = /<[a-z][\s\S]*>/i.test(out.summaryHtml) ? 'html' : 'plain';
+    }
+    // sources: array of {title, url, publicationId?}. Bare URL strings are
+    // also accepted and lifted into {title:url, url:url} records.
+    if (Array.isArray(raw.sources)) {
+      var src = raw.sources.map(function (s) {
+        if (typeof s === 'string') return { title: s, url: s };
+        if (!s || typeof s !== 'object') return null;
+        return {
+          title: (s.title || s.name || s.label || s.url || '').toString().trim(),
+          url: (s.url || s.href || '').toString().trim(),
+          publicationId: s.publicationId || undefined
+        };
+      }).filter(function (s) { return s && (s.url || s.title); });
+      if (src.length) out.sources = src;
+    }
+    // Anything else (e.g. `scholar`, `publicationCount`, `signature`,
+    // `regeneratedAt`, `generatedBy`, `generatedAt`) is passed through only
+    // if it's on the known-metadata allow-list; everything else is dropped
+    // with a log line so users can see the field wasn't persisted.
+    var META_ALLOWED = ['canonicalName', 'generatedBy', 'generatedAt', 'regeneratedAt',
+                        'publicationCount', 'signature'];
+    var dropped = [];
+    Object.keys(raw).forEach(function (k) {
+      if (META_ALLOWED.indexOf(k) >= 0) { out[k] = raw[k]; return; }
+      var KNOWN = { keywords:1, summaryHtml:1, summary:1, plainEnglishSummary:1,
+                    plain_english_summary:1, summaryFormat:1, summary_format:1,
+                    'summary-format':1, sources:1 };
+      if (!KNOWN[k]) dropped.push(k);
+    });
+    if (dropped.length) log('Insights paste: dropped unknown field(s) ' + dropped.join(', '), 'warn');
+    return out;
+  }
+
   function updateInsightsPreview () {
     var raw = $('#pf-insights-json').value.trim();
     var box = $('#pf-insights-preview');
@@ -1059,15 +1122,31 @@
       box.innerHTML = '<span style="color: var(--danger);">Invalid JSON: ' + esc(e.message) + '</span>';
       return;
     }
+    // Preview uses the same normaliser as save, so what Ron sees is
+    // exactly what will be persisted — including automatic acceptance of
+    // ChatGPT's default `summary` field.
+    var normalised;
+    try { normalised = normalizeInsightsPayload_(parsed); }
+    catch (e) {
+      box.innerHTML = '<span style="color: var(--danger);">' + esc(e.message) + '</span>';
+      return;
+    }
     var html = '';
-    if (Array.isArray(parsed.keywords) && parsed.keywords.length) {
-      html += '<div>' + parsed.keywords.map(function (k) { return '<span class="kw">' + esc(k) + '</span>'; }).join('') + '</div>';
+    if (Array.isArray(normalised.keywords) && normalised.keywords.length) {
+      html += '<div>' + normalised.keywords.map(function (k) { return '<span class="kw">' + esc(k) + '</span>'; }).join('') + '</div>';
     }
-    if (parsed.summaryHtml) {
-      // Preview only — inserted as innerHTML because the field is meant to hold sanitised markup Ron writes.
-      // Same trust model as the old admin's insights preview.
-      html += '<div class="summary">' + parsed.summaryHtml + '</div>';
+    if (normalised.summaryHtml) {
+      // Preview only — inserted as innerHTML because the field is meant to
+      // hold sanitised markup Ron writes. Same trust model as the old
+      // admin's insights preview. For plain-text summaries the raw string
+      // is safe because our normaliser has already trimmed it.
+      var safeSummary = normalised.summaryFormat === 'plain'
+        ? esc(normalised.summaryHtml).replace(/\n/g, '<br>')
+        : normalised.summaryHtml;
+      html += '<div class="summary">' + safeSummary + '</div>';
     }
+    // Rebind so the sources block below reads from the normalised copy.
+    parsed = normalised;
     if (Array.isArray(parsed.sources) && parsed.sources.length) {
       html += '<ul class="sources">' + parsed.sources.map(function (src) {
         return '<li><a href="' + esc(src.url || '#') + '" target="_blank" rel="noopener">' + esc(src.title || src.url || '(untitled)') + '</a></li>';
@@ -1420,12 +1499,25 @@
       // Determine what actually needs pushing:
       var willUploadPhoto = state.photoDirty && !!state.photoDataUrl && !!photoPath;
 
-      // 2) Parse insights (if any) BEFORE any push, so a syntax error aborts cleanly
+      // 2) Parse insights (if any) BEFORE any push, so a syntax error aborts cleanly.
+      // The paste is normalised through normalizeInsightsPayload_() so that:
+      //   - `summary` (ChatGPT default) is accepted as an alias for `summaryHtml`
+      //   - `plainEnglishSummary` is also accepted as an alias
+      //   - `summary_format`, `summary-format` etc. all fold to `summaryFormat`
+      //   - unknown top-level scaffolding like `"scholar": "Joeli Veitayaki"`
+      //     is dropped (with a log line) instead of persisted to the file
+      //   - the on-disk shape is always { keywords, summaryHtml, summaryFormat,
+      //     sources, updatedAt } matching docs/ADMIN-V2-ARCHITECTURE-AUDIT.md §C.3
       var insText = $('#pf-insights-json').value.trim();
       var newIns = null;
       if (insText) {
-        try { newIns = JSON.parse(insText); }
+        var parsed;
+        try { parsed = JSON.parse(insText); }
         catch (e) { throw new Error('Insights JSON is invalid: ' + e.message); }
+        newIns = normalizeInsightsPayload_(parsed);
+        if (!newIns.keywords && !newIns.summaryHtml && !(newIns.sources && newIns.sources.length)) {
+          throw new Error('Insights JSON has no `keywords`, `summaryHtml` (or `summary`), or `sources` field.');
+        }
         newIns.updatedAt = new Date().toISOString();
       }
 
@@ -1601,6 +1693,127 @@
     } catch (e) {
       el.textContent = 'network err'; el.style.background = 'var(--danger-bg)'; el.style.color = 'var(--danger)';
     }
+  }
+
+  // ------------------------- force cache bust -------------------------
+  // Force viewers to reload the V2 dashboard immediately after an admin
+  // change. Two-step operation:
+  //   1. Read each V2 HTML entrypoint from the repo via the GitHub Contents
+  //      API, find the highest `?v=mfNN` cache-buster in its script tags,
+  //      rewrite ALL of them to `?v=mf(NN+1)`, and PUT the updated file
+  //      back with the current sha (one commit per file).
+  //   2. Dispatch refresh-master-file.yml so any Master Sheet edits in the
+  //      same session are picked up in the next snapshot.
+  //
+  // Files bumped:
+  //   - itaukei-research-database-master.html  (public V2 dashboard)
+  //   - admin-master.html                       (this admin, so admin
+  //                                              viewers also get fresh JS)
+  //
+  // GitHub Pages typically redeploys within ~30–90 seconds. The status
+  // pill reports each step so Ron can see whether the commit landed and
+  // whether the workflow was dispatched.
+  var FORCE_CACHE_BUST_FILES = [
+    'itaukei-research-database-master.html',
+    'admin-master.html'
+  ];
+
+  async function forceCacheBust () {
+    var token = getGhToken();
+    var el = document.getElementById('force-cache-bust-status');
+    var btn = document.getElementById('force-cache-bust');
+    if (!token) {
+      if (el) el.textContent = 'no token';
+      toast('Save a GitHub PAT first (Data source tab).', 'error');
+      return;
+    }
+    if (btn) btn.disabled = true;
+    if (el) el.textContent = 'reading files…';
+    try {
+      // Step 1: fetch each file, find current mfNN, bump to next.
+      var maxN = 0;
+      var loaded = [];
+      for (var i = 0; i < FORCE_CACHE_BUST_FILES.length; i++) {
+        var path = FORCE_CACHE_BUST_FILES[i];
+        var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path) + '?ref=' + GH_BRANCH;
+        var res = await fetch(url, { headers: ghHeaders(token) });
+        if (!res.ok) throw new Error(path + ' GET failed: ' + res.status);
+        var meta = await res.json();
+        var content = b64ToUtf8_(meta.content);
+        var found = content.match(/\?v=mf(\d+)/g) || [];
+        found.forEach(function (m) {
+          var n = parseInt(m.slice(4), 10);
+          if (n > maxN) maxN = n;
+        });
+        loaded.push({ path: path, sha: meta.sha, content: content, hits: found.length });
+      }
+      if (!maxN) throw new Error('No ?v=mfNN cache-buster found in any file.');
+      var nextN = maxN + 1;
+      log('Force cache bust: current highest mf' + maxN + ' → bumping to mf' + nextN, 'info');
+      if (el) el.textContent = 'bumping mf' + maxN + ' → mf' + nextN + '…';
+
+      // Step 2: PUT each file with a global mfNN → mf(N+1) replacement.
+      // Non-matching mfXX values (lower) are ALSO normalised to nextN so we
+      // don't leave the file inconsistent.
+      for (var j = 0; j < loaded.length; j++) {
+        var f = loaded[j];
+        if (!f.hits) { log('Force cache bust: no ?v=mfNN in ' + f.path + ', skipping', 'warn'); continue; }
+        var updated = f.content.replace(/\?v=mf\d+/g, '?v=mf' + nextN);
+        if (updated === f.content) { log('Force cache bust: ' + f.path + ' unchanged after regex, skipping', 'warn'); continue; }
+        var putUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(f.path);
+        var body = {
+          message: 'admin(master): force cache bust mf' + maxN + ' → mf' + nextN + ' (' + f.path.split('/').pop() + ')',
+          content: utf8ToB64_(updated),
+          sha: f.sha,
+          branch: GH_BRANCH
+        };
+        var put = await fetch(putUrl, {
+          method: 'PUT',
+          headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders(token)),
+          body: JSON.stringify(body)
+        });
+        if (!put.ok) {
+          var txt = await put.text();
+          throw new Error(f.path + ' PUT failed: ' + put.status + ' ' + txt.slice(0, 200));
+        }
+        log('Force cache bust: pushed ' + f.path + ' with mf' + nextN, 'ok');
+      }
+
+      // Step 3: also kick off the Master-refresh workflow so Sheet edits
+      // in this session are picked up alongside the cache-buster bump.
+      if (el) el.textContent = 'mf' + nextN + ' pushed — dispatching workflow…';
+      var dispatched = await dispatchRefresh({ silent: true });
+
+      if (el) {
+        el.textContent = dispatched
+          ? 'done — mf' + nextN + ' live in ~30–90 s; workflow dispatched. Hard-refresh the public dashboard.'
+          : 'done — mf' + nextN + ' live in ~30–90 s. (Workflow dispatch skipped or failed — see Action log.)';
+      }
+      toast('Force refresh done. Hard-refresh the public dashboard in ~1 min.', 'ok', 8000);
+    } catch (e) {
+      log('Force cache bust error: ' + (e.message || e), 'error');
+      if (el) el.textContent = 'error: ' + (e.message || e);
+      toast('Force refresh failed: ' + (e.message || e), 'error', 10000);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  // Base64 helpers that survive multi-byte UTF-8 characters (needed for any
+  // file that contains iTaukei diacritics or the middle-dot separator). The
+  // GitHub Contents API returns/expects base64 of the raw byte sequence.
+  function b64ToUtf8_ (b64) {
+    var clean = String(b64 || '').replace(/\s+/g, '');
+    var bin = atob(clean);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new TextDecoder('utf-8').decode(bytes);
+  }
+  function utf8ToB64_ (str) {
+    var bytes = new TextEncoder().encode(str);
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
   }
 
   // ------------------------- refresh workflow dispatch -------------------------
@@ -2080,6 +2293,13 @@
     // dispatch
     $('#dispatch-refresh').addEventListener('click', function () { dispatchRefresh(); });
     $('#refresh-master').addEventListener('click', function () { dispatchRefresh(); });
+
+    // Force public dashboard refresh: bumps ?v=mfNN cache-buster across V2
+    // HTML entrypoints so viewer browsers stop serving stale JS/JSON, then
+    // also dispatches the Master-refresh workflow. See admin-master.html
+    // 'Force public dashboard refresh' card.
+    var forceBtn = document.getElementById('force-cache-bust');
+    if (forceBtn) forceBtn.addEventListener('click', function () { forceCacheBust(); });
 
     // Phase 3.5: legacy YoB / YoD migration inspection. Reads the already
     // decrypted enrichment doc from the current session state (state.enrichmentDoc)

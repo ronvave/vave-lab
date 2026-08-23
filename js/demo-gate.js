@@ -210,7 +210,16 @@
     // works. Without this entry, master-file-adapter.js would silently
     // 404 and lose photo/lastUpdate/institutionUrl/sector overlay data
     // for every scholar. (Fix 2026-08-23 for Joeli's photo + Last update.)
-    'data/scholar-enrichment.json':          'data/scholar-enrichment.json.enc'
+    'data/scholar-enrichment.json':          'data/scholar-enrichment.json.enc',
+    // Admin V2 research-insights sidecar (Scholar-ID keyed): keywords,
+    // summaryHtml, summaryFormat, sources. Written by Admin V2 whenever
+    // the 'Research insights' JSON is pasted + saved. Same registration
+    // pattern as scholar-enrichment.json above. Without this entry,
+    // master-file-adapter.js's fetchJson('data/scholar-insights-master.json')
+    // 404s and every Panel F card reports '(none yet)' + 'Insight not yet
+    // generated for this scholar', even after successful admin pushes.
+    // (Fix 2026-08-23 for Joeli's insights not surfacing after admin paste.)
+    'data/scholar-insights-master.json':     'data/scholar-insights-master.json.enc'
   };
 
   async function fetchJsonEncrypted(url) {
