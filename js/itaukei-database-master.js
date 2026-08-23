@@ -335,6 +335,9 @@
     state.lastSync = sync;
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
+    // Also expose Scholar-ID-keyed insights so any consumer (admin V2, future
+    // Panel F card renderer) can join by ID without a name round-trip.
+    state.scholarInsightsById = (insightsDoc && insightsDoc.byScholarId) || {};
     state.workplaceCoords = (workplaceCoordsDoc && workplaceCoordsDoc.coords) || {};
     state.uniCountryOverrides = (uniCountryDoc && uniCountryDoc.countryByUniversity) || {};
 

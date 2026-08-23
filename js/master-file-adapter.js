@@ -134,6 +134,12 @@
   // Load raw Master JSON (encrypted through the gate).
   // -------------------------------------------------------------------
   function loadRawMaster() {
+    // Empty-shell fallback for admin V2 files that may not exist yet on the
+    // first deploy. Both files are Scholar-ID keyed maps; a missing file
+    // simply means "no admin enrichment yet" and the dashboard degrades
+    // gracefully.
+    var EMPTY_ADMIN_DOC = { version: 1, scholars: {} };
+
     return Promise.all([
       fetchJson('data/itaukei-master-scholars.json'),
       fetchJson('data/itaukei-master-publications.json'),
@@ -148,7 +154,13 @@
       // coordinate rows; the V1 file has 79 curated worldPoints with lat/lng.
       // If the file is unavailable we still render the panel with no markers
       // rather than fail the whole build.
-      fetchJson('data/itaukei-graduate-studies.json').catch(function () { return null; })
+      fetchJson('data/itaukei-graduate-studies.json').catch(function () { return null; }),
+      // Admin V2 enrichment (Scholar-ID keyed): photo path, institution URL,
+      // department URL, sector, year of birth, year of death. Optional.
+      fetchJson('data/scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; }),
+      // Admin V2 research insights (Scholar-ID keyed): keywords, summaryHtml,
+      // sources. Optional.
+      fetchJson('data/scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })
     ]).then(function (arr) {
       return {
         scholars:     arr[0],
@@ -159,7 +171,9 @@
         geography:    arr[5],
         aggregates:   arr[6],
         lastSync:     arr[7],
-        v1GradStudies: arr[8]
+        v1GradStudies: arr[8],
+        adminEnrichment: arr[9] && arr[9].scholars ? arr[9] : EMPTY_ADMIN_DOC,
+        adminInsights:   arr[10] && arr[10].scholars ? arr[10] : EMPTY_ADMIN_DOC
       };
     });
   }
@@ -555,6 +569,14 @@
       var mastersRow = grads.find(function (g) { return /master/i.test((g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || '')); });
       var phdRow     = grads.find(function (g) { return /phd|doctor/i.test((g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || '')); });
 
+      // Admin V2 enrichment: Scholar-ID keyed supplementary fields. All
+      // optional; missing entry = no enrichment for that scholar.
+      var adminExtras = (master.adminEnrichment && master.adminEnrichment.scholars
+                          && master.adminEnrichment.scholars[s['Scholar ID']]) || {};
+
+      var isDeceased = /decease|deceased|d\./i.test(s['Alive / Deceased'] || '') ||
+                       Number.isFinite(adminExtras.yearOfDeath);
+
       return {
         scholarId: s['Scholar ID'],
         zoteroCollectionKey: snap._scholarKeyById[s['Scholar ID']],
@@ -579,7 +601,18 @@
         phdCountry:        phdRow ? phdRow['Country'] : '',
         phdOriginalName:   phdRow ? phdRow['O_Uni name'] : '',
         village: s['Village Paternal'] || s['Village Maternal'] || '',
-        subject: s['Primary Discipline / Field'] || ''
+        subject: s['Primary Discipline / Field'] || '',
+        orcid:            s['ORCID / Researcher ID'] || '',
+        googleScholarUrl: s['Google Scholar URL'] || '',
+        profileUrl:       s['Current Profile URL'] || '',
+        // ——— Admin V2 enrichment overlay ———
+        photo:            adminExtras.photo || '',
+        institutionUrl:   adminExtras.institutionUrl || '',
+        departmentUrl:    adminExtras.departmentUrl || '',
+        sector:           adminExtras.sector || '',
+        yearOfBirth:      Number.isFinite(adminExtras.yearOfBirth) ? adminExtras.yearOfBirth : null,
+        yearOfDeath:      Number.isFinite(adminExtras.yearOfDeath) ? adminExtras.yearOfDeath : null,
+        deceased:         isDeceased
       };
     });
     return {
@@ -744,6 +777,19 @@
         var profiles = buildProfiles(master, snap);
         var grad = buildGraduateStudies(master, snap, profiles);
         var unis = buildWorldUniversities(master, snap);
+        // Compose insightsDoc.insights (name-keyed) from the Scholar-ID-keyed
+        // admin insights map so the existing dashboard lookup (`state.scholarInsights[name]`)
+        // works with zero changes. Also expose the Scholar-ID map on the
+        // bundle for future consumers that prefer to join by Scholar ID.
+        var insightsByName = {};
+        var insightsById = (master.adminInsights && master.adminInsights.scholars) || {};
+        master.scholars.forEach(function (s) {
+          var rec = insightsById[s['Scholar ID']];
+          if (!rec) return;
+          var name = toZoteroCreator(s['Scholar Name'], s['Family Name'], s['Given Names']);
+          insightsByName[name] = rec;
+        });
+
         return {
           master: master,
           snap: snap,
@@ -753,7 +799,7 @@
           profiles: profiles,
           sync: master.lastSync,
           grad: grad,
-          insightsDoc: { insights: {} },
+          insightsDoc: { insights: insightsByName, byScholarId: insightsById },
           workplaceCoordsDoc: { coords: {} },
           uniCountryDoc: { countryByUniversity: {} },
           progressRoster: master.scholars.map(function (s) {

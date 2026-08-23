@@ -77,7 +77,12 @@
     'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
     'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
     'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
-    'data/last-master-sync.json':            'data/last-master-sync.json.enc'
+    'data/last-master-sync.json':            'data/last-master-sync.json.enc',
+    // Admin V2 supplementary layers (Scholar-ID keyed). Optional; adapter
+    // treats HTTP 404 on the .enc as an empty document so an admin can save
+    // once to create the file.
+    'data/scholar-enrichment.json':          'data/scholar-enrichment.json.enc',
+    'data/scholar-insights-master.json':     'data/scholar-insights-master.json.enc'
   };
 
   // In-memory state once the visitor is verified. Never leaves the page.

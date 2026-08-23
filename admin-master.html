@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Vave Lab · Master-file Admin (V2)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --teal: #0e7490;
+    --teal-dark: #062f35;
+    --coral: #b23a48;
+    --gold: #c8a84b;
+    --cream: #f9f6ee;
+    --border: #e2e0d4;
+    --border-strong: #c9c5b0;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --muted-2: #9ca3af;
+    --success: #16a34a;
+    --success-bg: #dcfce7;
+    --warning: #d97706;
+    --warning-bg: #fef3c7;
+    --danger: #b91c1c;
+    --danger-bg: #fee2e2;
+    --info-bg: #dbeafe;
+    --info: #1d4ed8;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'DM Sans', system-ui, sans-serif; background: var(--cream); color: var(--text); line-height: 1.5; }
+  h1, h2, h3 { font-family: 'Cormorant Garamond', serif; font-weight: 500; margin: 0 0 8px; }
+  h1 { color: var(--teal-dark); }
+  a { color: var(--teal); }
+  code, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 0.85em; }
+
+  /* login gate */
+  #login { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  #login-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 40px; max-width: 440px; width: 100%; box-shadow: 0 10px 40px rgba(6,47,53,0.10); }
+  #login-card h1 { font-size: 1.8rem; margin-bottom: 4px; }
+  #login-card .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+  #login-card label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--teal-dark); }
+  #login-card input[type="password"] { width: 100%; padding: 11px 14px; font: inherit; font-size: 1rem; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; background: #fff; }
+  #login-card input[type="password"]:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  #login-card button { width: 100%; padding: 12px; font: inherit; font-weight: 600; font-size: 1rem; background: var(--teal-dark); color: #fff; border: none; border-radius: 8px; cursor: pointer; }
+  #login-card button:hover { background: var(--teal); }
+  #login-error { margin-top: 10px; padding: 8px 12px; background: var(--danger-bg); color: var(--danger); border-radius: 6px; font-size: 0.85rem; display: none; }
+  #login-error.is-visible { display: block; }
+
+  /* dashboard shell */
+  #dashboard { display: none; }
+  #dashboard.is-visible { display: block; }
+  header.topbar { background: var(--teal-dark); color: #fff; padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+  header.topbar h1 { color: #fff; font-size: 1.35rem; margin: 0; }
+  header.topbar .subtitle { color: rgba(255,255,255,0.72); font-size: 0.8rem; margin-top: 2px; }
+  header.topbar .actions { display: flex; gap: 8px; align-items: center; }
+  header.topbar button { background: rgba(255,255,255,0.14); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-family: inherit; }
+  header.topbar button:hover { background: rgba(255,255,255,0.24); }
+  header.topbar .status-pill { padding: 4px 10px; border-radius: 999px; font-size: 0.72rem; background: rgba(255,255,255,0.14); }
+
+  main.wrap { padding: 24px 32px; max-width: 1600px; margin: 0 auto; }
+  .card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+  .card h2 { font-size: 1.35rem; margin-bottom: 6px; color: var(--teal-dark); }
+  .card .meta { color: var(--muted); font-size: 0.85rem; margin-bottom: 14px; }
+
+  /* tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .tabs button { background: transparent; border: none; padding: 10px 18px; font: inherit; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; }
+  .tabs button.active { color: var(--teal-dark); border-bottom-color: var(--teal); font-weight: 600; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* KPI row */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .kpi { background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .kpi .value { font-size: 1.8rem; font-weight: 600; color: var(--teal-dark); line-height: 1; }
+  .kpi .label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-top: 6px; }
+
+  /* filter row */
+  .filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+  .filter-row input[type="search"] { padding: 8px 12px; font: inherit; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 6px; min-width: 260px; }
+  .filter-row select { padding: 8px 10px; font: inherit; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+  .filter-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--border); font-size: 0.8rem; cursor: pointer; user-select: none; }
+  .filter-chip.active { background: var(--teal); color: #fff; border-color: var(--teal); }
+  .filter-chip .count { background: rgba(0,0,0,0.06); border-radius: 999px; padding: 1px 8px; font-size: 0.7rem; margin-left: 2px; }
+  .filter-chip.active .count { background: rgba(255,255,255,0.22); color: #fff; }
+  .row-count { margin-left: auto; color: var(--muted); font-size: 0.85rem; }
+
+  /* scholar table */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: #fff; max-height: 640px; overflow-y: auto; }
+  table.scholars { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+  table.scholars th, table.scholars td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  table.scholars thead { position: sticky; top: 0; background: #f7f4e9; z-index: 1; }
+  table.scholars thead th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; }
+  table.scholars thead th.sortable::after { content: ' ↕'; opacity: 0.4; }
+  table.scholars thead th.sort-asc::after { content: ' ↑'; opacity: 1; color: var(--teal); }
+  table.scholars thead th.sort-desc::after { content: ' ↓'; opacity: 1; color: var(--teal); }
+  table.scholars tbody tr { cursor: pointer; }
+  table.scholars tbody tr:hover { background: #fafaf0; }
+  table.scholars .sid { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+  table.scholars .conf-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 500; }
+  .conf-Burebasaga { background: #ffd8dd; color: #7a1728; }
+  .conf-Kubuna     { background: #cef0f6; color: #0e5f70; }
+  .conf-Tovata     { background: #fff2c0; color: #7a5c00; }
+  .conf-none       { background: #ececec; color: var(--muted); }
+  .pub-count { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 500; }
+  .pub-count.gap { color: var(--danger); }
+  .pub-count.sparse { color: var(--warning); }
+  .check { color: var(--success); font-weight: 700; }
+  .cross { color: var(--muted-2); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.7rem; font-weight: 500; }
+  .badge-gap { background: var(--danger-bg); color: var(--danger); }
+  .badge-incomplete { background: var(--warning-bg); color: var(--warning); }
+  .badge-ok { background: var(--success-bg); color: var(--success); }
+
+  /* edit modal */
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(6,47,53,0.5); display: none; align-items: flex-start; justify-content: center; padding: 40px 20px; z-index: 100; overflow-y: auto; }
+  .modal-backdrop.is-visible { display: flex; }
+  .modal { background: #fff; border-radius: 12px; width: 100%; max-width: 900px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+  .modal-header { padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .modal-header h2 { margin: 0; font-size: 1.4rem; }
+  .modal-header .close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--muted); }
+  .modal-body { padding: 24px 28px; }
+  .modal-footer { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; background: #fafaf0; border-radius: 0 0 12px 12px; }
+  .modal-footer button { padding: 9px 18px; font: inherit; font-size: 0.9rem; font-weight: 600; border-radius: 6px; cursor: pointer; }
+  .modal-footer .btn-primary { background: var(--teal-dark); color: #fff; border: none; }
+  .modal-footer .btn-primary:hover { background: var(--teal); }
+  .modal-footer .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+  .modal-footer .btn-secondary:hover { background: var(--cream); }
+  .modal-footer .btn-primary:disabled { background: var(--muted-2); cursor: not-allowed; }
+
+  .count-summary { background: #f6f9fa; border: 1px solid #d5e6ea; border-radius: 8px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.9rem; }
+  .count-summary .headline { font-weight: 600; font-size: 1rem; color: var(--teal-dark); }
+  .count-summary.gap { background: var(--danger-bg); border-color: #f4b8b8; }
+  .count-summary.sparse { background: var(--warning-bg); border-color: #f4d68a; }
+  .count-summary .flag-note { display: block; margin-top: 4px; font-size: 0.82rem; color: var(--danger); }
+  .count-summary.sparse .flag-note { color: var(--warning); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; }
+  .form-grid.wide { grid-template-columns: 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 8px 10px; font: inherit; font-size: 0.9rem; border: 1px solid var(--border); border-radius: 6px; background: #fff;
+  }
+  .form-group input:read-only, .form-group input:disabled {
+    background: #f5f2e8; color: var(--muted); cursor: not-allowed;
+  }
+  .form-group textarea { min-height: 120px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; }
+  .form-group .hint { font-size: 0.75rem; color: var(--muted); }
+
+  .fieldset { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px 16px; margin-top: 18px; }
+  .fieldset legend { font-size: 0.8rem; font-weight: 600; color: var(--teal-dark); padding: 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .fieldset .master-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.65rem; font-weight: 500; text-transform: none; letter-spacing: 0; background: #eae5d0; color: var(--teal-dark); }
+  .fieldset .admin-tag { background: #cfeef5; color: var(--teal-dark); }
+
+  /* photo widget */
+  .photo-widget { display: flex; gap: 16px; align-items: flex-start; }
+  .photo-preview { width: 120px; height: 120px; border-radius: 10px; overflow: hidden; border: 1px dashed var(--border-strong); background: #f5f2e8 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><text x="60" y="65" font-family="DM Sans" font-size="12" text-anchor="middle" fill="%239ca3af">no photo</text></svg>') center/contain no-repeat; flex-shrink: 0; }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-actions { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+  .photo-actions input[type="text"] { padding: 8px 10px; font: inherit; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px; }
+  .photo-actions .drop { padding: 10px 14px; border: 1.5px dashed var(--border-strong); border-radius: 8px; background: #fafaf0; text-align: center; color: var(--muted); font-size: 0.85rem; cursor: pointer; }
+  .photo-actions .drop.dragover { background: #d5e6ea; color: var(--teal-dark); border-color: var(--teal); }
+  .photo-actions .row { display: flex; gap: 8px; }
+  .photo-actions button { padding: 7px 12px; font: inherit; font-size: 0.82rem; border: 1px solid var(--border); border-radius: 6px; background: #fff; cursor: pointer; }
+  .photo-actions button:hover { background: var(--cream); }
+
+  /* insights fieldset */
+  .insights-preview { padding: 10px 12px; margin-top: 8px; background: #fafaf0; border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; max-height: 180px; overflow-y: auto; }
+  .insights-preview .kw { display: inline-block; margin: 2px 4px 2px 0; padding: 2px 8px; background: var(--info-bg); color: var(--info); border-radius: 999px; font-size: 0.78rem; }
+  .insights-preview .summary { margin-top: 6px; line-height: 1.5; }
+  .insights-preview .sources { margin-top: 6px; font-size: 0.8rem; }
+  .insights-preview .sources li { margin-bottom: 2px; }
+
+  /* toast */
+  .toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 18px; background: var(--teal-dark); color: #fff; border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,0.2); font-size: 0.88rem; z-index: 200; opacity: 0; transform: translateY(10px); transition: opacity 0.18s, transform 0.18s; pointer-events: none; max-width: 380px; }
+  .toast.is-visible { opacity: 1; transform: translateY(0); }
+  .toast.error { background: var(--danger); }
+  .toast.warn { background: var(--warning); }
+  .toast.ok { background: var(--success); }
+
+  /* action log */
+  #action-log { max-height: 200px; overflow-y: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; background: #1a1f24; color: #e6eef1; padding: 10px 12px; border-radius: 6px; }
+  #action-log .log-line { margin-bottom: 2px; }
+  #action-log .log-time { color: #8ba9b4; }
+  #action-log .log-error { color: #ff9b9b; }
+  #action-log .log-ok { color: #a3e0a3; }
+
+  /* linkage gap panel */
+  .gap-table th, .gap-table td { padding: 8px 10px; }
+  .gap-table td.reason { font-size: 0.78rem; }
+  .gap-table td .old-count { color: var(--muted); font-size: 0.8rem; }
+
+  /* utility */
+  .flex-row { display: flex; gap: 10px; align-items: center; }
+  .btn { padding: 8px 14px; font: inherit; font-size: 0.87rem; border-radius: 6px; cursor: pointer; border: 1px solid var(--border); background: #fff; color: var(--text); }
+  .btn:hover { background: var(--cream); }
+  .btn-primary { background: var(--teal-dark); color: #fff; border-color: var(--teal-dark); }
+  .btn-primary:hover { background: var(--teal); border-color: var(--teal); }
+  .btn-primary:disabled { background: var(--muted-2); border-color: var(--muted-2); cursor: not-allowed; }
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN GATE ============ -->
+<section id="login">
+  <div id="login-card">
+    <h1>Vave Lab · Master-file Admin (V2)</h1>
+    <p class="subtitle">Scholar-ID keyed enrichment for the iTaukei Scholar Master dashboard.</p>
+    <form id="login-form" autocomplete="off">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" required autofocus />
+      <button type="submit">Unlock</button>
+      <div id="login-error">Wrong password. Try again.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ============ DASHBOARD ============ -->
+<section id="dashboard">
+  <header class="topbar">
+    <div>
+      <h1>Master-file Admin (V2)</h1>
+      <div class="subtitle">Authoritative source: <a href="https://docs.google.com/spreadsheets/d/1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg/edit" target="_blank" rel="noopener">Master Google Sheet</a> · Admin edits supplementary fields only</div>
+    </div>
+    <div class="actions">
+      <span class="status-pill" id="db-status">unlocking…</span>
+      <button id="refresh-master">Refresh from Sheet</button>
+      <button id="logout">Log out</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- KPI strip -->
+    <div class="kpi-row" id="kpi-row"></div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="scholars">Scholar profiles</button>
+      <button class="tab-btn" data-tab="gaps">Authorship linkage gaps</button>
+      <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
+      <button class="tab-btn" data-tab="log">Action log</button>
+    </div>
+
+    <!-- ========= SCHOLARS TAB ========= -->
+    <div class="tab-panel active" id="tab-scholars">
+      <div class="card">
+        <h2>Scholar profiles</h2>
+        <p class="meta">Click any row to edit that scholar's admin-owned fields. Read-only fields are pulled from the Master sheet and cannot be changed here.</p>
+
+        <div class="filter-row">
+          <input type="search" id="search-scholars" placeholder="Search Scholar ID, name, institution…" />
+          <select id="filter-confederacy">
+            <option value="">All confederacies</option>
+            <option value="Burebasaga">Burebasaga</option>
+            <option value="Kubuna">Kubuna</option>
+            <option value="Tovata">Tovata</option>
+          </select>
+          <label class="filter-chip" data-chip="has-photo">Has photo <span class="count" data-chip-count="has-photo">0</span></label>
+          <label class="filter-chip" data-chip="missing-photo">Missing photo <span class="count" data-chip-count="missing-photo">0</span></label>
+          <label class="filter-chip" data-chip="has-insights">Has insights <span class="count" data-chip-count="has-insights">0</span></label>
+          <label class="filter-chip" data-chip="missing-insights">Missing insights <span class="count" data-chip-count="missing-insights">0</span></label>
+          <label class="filter-chip" data-chip="linkage-gap">Authorship gap <span class="count" data-chip-count="linkage-gap">0</span></label>
+          <span class="row-count" id="row-count">0 of 0</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="scholars">
+            <thead>
+              <tr>
+                <th class="sortable" data-sort="scholarId">Scholar ID</th>
+                <th class="sortable" data-sort="name">Name</th>
+                <th class="sortable" data-sort="confederacy">Confederacy</th>
+                <th class="sortable" data-sort="discipline">Discipline</th>
+                <th class="sortable" data-sort="total" title="Total publications (canonical, Master Authorship)">Pubs</th>
+                <th class="sortable" data-sort="firstAuthored" title="First-authored publications (canonical)">1st-auth</th>
+                <th>Photo</th>
+                <th>Insights</th>
+                <th>Links</th>
+                <th>Flags</th>
+              </tr>
+            </thead>
+            <tbody id="scholars-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========= GAPS TAB ========= -->
+    <div class="tab-panel" id="tab-gaps">
+      <div class="card">
+        <h2>Master Authorship linkage gaps</h2>
+        <p class="meta">Scholars whose Master <span class="mono">Authorship</span> table is empty or sparse. This is a read-only diagnostic — repair happens in the Master Google Sheet, not here.</p>
+
+        <div class="filter-row">
+          <select id="gap-filter-reason">
+            <option value="">All (0/1 rows)</option>
+            <option value="no-authorship-rows">Zero rows only</option>
+            <option value="sparse-authorship">Only 1 row</option>
+          </select>
+          <select id="gap-filter-status">
+            <option value="">All statuses</option>
+            <option value="Alive">Alive</option>
+            <option value="Deceased">Deceased</option>
+          </select>
+          <label class="filter-chip" data-gap-chip="has-old-count">Had Zotero pubs <span class="count" id="gap-chip-old-count">0</span></label>
+          <button class="btn" id="export-gaps-csv">Download CSV</button>
+          <span class="row-count" id="gap-row-count">0 of 0</span>
+        </div>
+
+        <div class="table-wrap">
+          <table class="scholars gap-table">
+            <thead>
+              <tr>
+                <th class="sortable" data-gap-sort="scholarId">Scholar ID</th>
+                <th class="sortable" data-gap-sort="name">Name</th>
+                <th class="sortable" data-gap-sort="total">Auth rows</th>
+                <th class="sortable" data-gap-sort="oldTotal" title="Old Zotero-dashboard total (diagnostic only)">Old Zotero total</th>
+                <th class="reason">Reason</th>
+                <th>Status</th>
+                <th>Discipline</th>
+                <th>Roster tier</th>
+              </tr>
+            </thead>
+            <tbody id="gaps-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========= DATA SOURCE TAB ========= -->
+    <div class="tab-panel" id="tab-data-source">
+      <div class="card">
+        <h2>GitHub authentication</h2>
+        <p class="meta">Paste a Personal Access Token so the admin can push encrypted enrichment / insights / photos to the repo. The token is stored only in this browser's <span class="mono">localStorage</span>. It is never sent anywhere except <span class="mono">api.github.com</span>. It never leaves this device.</p>
+        <div class="flex-row">
+          <input type="password" id="gh-token" placeholder="ghp_… or github_pat_…" style="flex:1; padding: 9px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px;" />
+          <button class="btn btn-primary" id="save-gh-token">Save token</button>
+          <button class="btn" id="clear-gh-token">Forget</button>
+          <span class="status-pill" id="gh-token-status" style="background: var(--cream); color: var(--muted);">unchecked</span>
+        </div>
+        <div class="hint" style="margin-top: 8px; color: var(--muted); font-size: 0.85rem;">
+          Required scopes: <span class="mono">Contents: Read and write</span> for the <a href="https://github.com/ronvave/vave-lab" target="_blank">ronvave/vave-lab</a> repo. Create at
+          <a href="https://github.com/settings/tokens?type=beta" target="_blank">github.com/settings/tokens</a>.
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Refresh Master data</h2>
+        <p class="meta">Triggers the <span class="mono">refresh-master-file.yml</span> workflow to pull the latest Master Google Sheet into the encrypted repo files. Runs automatically every 2 hours; use this if you just edited the sheet and want the change live sooner.</p>
+        <button class="btn btn-primary" id="dispatch-refresh">Trigger refresh</button>
+        <span class="mono" id="dispatch-status" style="margin-left: 12px; color: var(--muted);"></span>
+      </div>
+
+      <div class="card">
+        <h2>Data files</h2>
+        <p class="meta">Where the admin reads and writes.</p>
+        <table class="scholars" style="max-width: 900px;">
+          <thead><tr><th>File</th><th>Ownership</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">data/itaukei-master-scholars.json.enc</td><td>Master sheet</td><td>Read-only. Auto-refresh workflow updates.</td></tr>
+            <tr><td class="mono">data/itaukei-master-publications.json.enc</td><td>Master sheet</td><td>Read-only.</td></tr>
+            <tr><td class="mono">data/itaukei-master-authorship.json.enc</td><td>Master sheet</td><td>Read-only. Publication↔scholar linkage.</td></tr>
+            <tr><td class="mono">data/itaukei-master-grad-degrees.json.enc</td><td>Master sheet</td><td>Read-only.</td></tr>
+            <tr><td class="mono">data/scholar-enrichment.json.enc</td><td>This admin</td><td>Photo / URLs / sector / years — Scholar-ID keyed.</td></tr>
+            <tr><td class="mono">data/scholar-insights-master.json.enc</td><td>This admin</td><td>Keywords / summary / sources — Scholar-ID keyed.</td></tr>
+            <tr><td class="mono">img/scholars/&lt;ITK-Sxxxx&gt;.jpg</td><td>This admin</td><td>Photo files. Uploaded direct via PAT.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ========= LOG TAB ========= -->
+    <div class="tab-panel" id="tab-log">
+      <div class="card">
+        <h2>Action log</h2>
+        <p class="meta">Last 200 admin operations in this browser session.</p>
+        <div id="action-log"></div>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ============ EDIT MODAL ============ -->
+<div class="modal-backdrop" id="edit-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h2 id="modal-name">Scholar name</h2>
+        <div class="mono" id="modal-sid" style="color: var(--muted); font-size: 0.85rem;"></div>
+      </div>
+      <button class="close" id="modal-close" title="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="count-summary" id="modal-count-summary"></div>
+
+      <fieldset class="fieldset">
+        <legend>Photo <span class="admin-tag">admin</span></legend>
+        <div class="photo-widget">
+          <div class="photo-preview" id="pf-photo-preview"></div>
+          <div class="photo-actions">
+            <input type="text" id="pf-photo" placeholder="img/scholars/ITK-Sxxxx.jpg (auto)" />
+            <div class="drop" id="pf-photo-drop">Drop an image here or click to choose — resized to 400×400 JPEG</div>
+            <input type="file" id="pf-photo-file" accept="image/*" style="display: none;" />
+            <div class="row">
+              <button type="button" id="pf-photo-clear">Clear</button>
+              <span class="hint" id="pf-photo-hint" style="align-self: center; color: var(--muted); font-size: 0.8rem;"></span>
+            </div>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields <span class="master-tag">read-only</span></legend>
+        <div class="form-grid">
+          <div class="form-group"><label>Family name</label><input type="text" id="ro-family" disabled /></div>
+          <div class="form-group"><label>Given names</label><input type="text" id="ro-given" disabled /></div>
+          <div class="form-group"><label>Gender</label><input type="text" id="ro-gender" disabled /></div>
+          <div class="form-group"><label>Alive / Deceased</label><input type="text" id="ro-alive" disabled /></div>
+          <div class="form-group"><label>Confederacy</label><input type="text" id="ro-confed" disabled /></div>
+          <div class="form-group"><label>Discipline</label><input type="text" id="ro-discipline" disabled /></div>
+          <div class="form-group"><label>Paternal province</label><input type="text" id="ro-prov-paternal" disabled /></div>
+          <div class="form-group"><label>Maternal province</label><input type="text" id="ro-prov-maternal" disabled /></div>
+          <div class="form-group"><label>Paternal village</label><input type="text" id="ro-vil-paternal" disabled /></div>
+          <div class="form-group"><label>Maternal village</label><input type="text" id="ro-vil-maternal" disabled /></div>
+          <div class="form-group"><label>Current title / role</label><input type="text" id="ro-title" disabled /></div>
+          <div class="form-group"><label>Current institution</label><input type="text" id="ro-institution" disabled /></div>
+          <div class="form-group"><label>Institution country</label><input type="text" id="ro-inst-country" disabled /></div>
+          <div class="form-group"><label>Current department</label><input type="text" id="ro-department" disabled /></div>
+          <div class="form-group"><label>Masters university</label><input type="text" id="ro-masters-uni" disabled /></div>
+          <div class="form-group"><label>Masters country</label><input type="text" id="ro-masters-country" disabled /></div>
+          <div class="form-group"><label>PhD university</label><input type="text" id="ro-phd-uni" disabled /></div>
+          <div class="form-group"><label>PhD country</label><input type="text" id="ro-phd-country" disabled /></div>
+          <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="ro-orcid" disabled /></div>
+          <div class="form-group"><label>Google Scholar URL</label><input type="text" id="ro-gs-url" disabled /></div>
+          <div class="form-group"><label>Current profile URL</label><input type="text" id="ro-profile-url" disabled /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Admin-owned fields <span class="admin-tag">editable</span></legend>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="pf-sector">Sector</label>
+            <select id="pf-sector">
+              <option value="">(select)</option>
+              <option value="Academia">Academia</option>
+              <option value="Government">Government</option>
+              <option value="International Organisation">International Organisation</option>
+              <option value="Non-Government / Civil Society">Non-Government / Civil Society</option>
+              <option value="Private Sector">Private Sector</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="pf-institution-url">Institution URL</label>
+            <input type="url" id="pf-institution-url" placeholder="https://…" />
+          </div>
+          <div class="form-group">
+            <label for="pf-department-url">Department URL</label>
+            <input type="url" id="pf-department-url" placeholder="https://…" />
+          </div>
+          <div class="form-group"></div>
+          <div class="form-group">
+            <label for="pf-birth">Year of birth</label>
+            <input type="number" id="pf-birth" min="1800" max="2050" step="1" placeholder="e.g. 1958" />
+          </div>
+          <div class="form-group">
+            <label for="pf-death">Year of death</label>
+            <input type="number" id="pf-death" min="1800" max="2050" step="1" placeholder="(only if deceased)" />
+            <span class="hint">Setting this year will flag the profile as deceased on Panel F.</span>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Research insights <span class="admin-tag">editable · paste JSON</span></legend>
+        <div class="form-group">
+          <label for="pf-insights-json">Insights JSON</label>
+          <textarea id="pf-insights-json" placeholder='{"keywords":["…"], "summaryHtml":"…", "sources":[{"title":"…", "url":"…"}]}'></textarea>
+          <span class="hint">Shape: <span class="mono">{ keywords: string[], summaryHtml: string, summaryFormat?: "html" | "plain", sources?: [{title, url, publicationId?}] }</span>. Preview auto-updates as you type.</span>
+        </div>
+        <div class="insights-preview" id="pf-insights-preview">
+          <em style="color: var(--muted);">Preview appears here as you type valid JSON.</em>
+        </div>
+      </fieldset>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modal-cancel">Cancel</button>
+      <button class="btn-primary" id="modal-save">Save &amp; push</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- scripts -->
+<script src="js/db-gate.js?v=mf20" defer></script>
+<script src="js/master-file-adapter.js?v=mf20" defer></script>
+<script src="js/admin-master.js?v=mf20" defer></script>
+
+</body>
+</html>
