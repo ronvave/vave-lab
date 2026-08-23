@@ -1058,6 +1058,36 @@
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
       throw new Error('Insights JSON must be an object, e.g. { "keywords": [...], "summary": "..." }');
     }
+    // Outer-name-wrapper unwrap: Claude and some V1-shaped pastes wrap the
+    // record in `{ "Last, First": { keywords, summary, sources, ... } }`.
+    // If the payload has exactly one top-level key and that key does NOT
+    // look like a canonical insights field, and its value is an object that
+    // does contain at least one insights field, unwrap once. When the outer
+    // key looks like a person name (contains a comma or a space), preserve
+    // it as canonicalName so the sidecar keeps the exact string the user
+    // pasted.
+    var CANONICAL_FIELDS = ['keywords', 'summary', 'summaryHtml',
+                            'plainEnglishSummary', 'plain_english_summary',
+                            'summaryFormat', 'summary_format', 'summary-format',
+                            'sources'];
+    var topKeys = Object.keys(raw);
+    if (topKeys.length === 1) {
+      var outerKey = topKeys[0];
+      var isFieldName = CANONICAL_FIELDS.indexOf(outerKey) >= 0;
+      var inner = raw[outerKey];
+      var innerIsInsights = inner && typeof inner === 'object' && !Array.isArray(inner) &&
+        CANONICAL_FIELDS.some(function (f) { return Object.prototype.hasOwnProperty.call(inner, f); });
+      if (!isFieldName && innerIsInsights) {
+        log('Insights paste: unwrapped outer key ' + JSON.stringify(outerKey) + ' (name-wrapper shape from Claude / V1)', 'info');
+        // Preserve the wrapper string as canonicalName when the inner
+        // record didn't already declare one AND the wrapper actually
+        // looks like a name (comma or space — filters out junk keys).
+        if (!inner.canonicalName && /[,\s]/.test(outerKey)) {
+          inner = Object.assign({ canonicalName: outerKey }, inner);
+        }
+        raw = inner;
+      }
+    }
     var out = {};
     // keywords: only accept an array of strings; drop empties + trim.
     if (Array.isArray(raw.keywords)) {

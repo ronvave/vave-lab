@@ -691,7 +691,7 @@
               <li><span class="mono">summary</span> → <span class="mono">summaryHtml</span> (ChatGPT default)</li>
               <li><span class="mono">plainEnglishSummary</span> / <span class="mono">plain_english_summary</span> → <span class="mono">summaryHtml</span></li>
               <li><span class="mono">summary_format</span> / <span class="mono">summary-format</span> → <span class="mono">summaryFormat</span></li>
-              <li>Outer name wrapper (e.g. <span class="mono">{ "Veitayaki, Joeli": { … } }</span> from V1-style pastes) is <strong>not</strong> auto-unwrapped — paste only the inner object.</li>
+              <li>Outer name wrapper (e.g. <span class="mono">{ "Veitayaki, Joeli": { … } }</span> from Claude / V1-style pastes) is <strong>auto-unwrapped</strong>; the wrapper string is preserved as <span class="mono">canonicalName</span>.</li>
               <li>Unknown top-level keys (e.g. <span class="mono">scholar</span>, <span class="mono">notes</span>) are dropped with a warning in the Action log — never persisted.</li>
               <li><span class="mono">summaryFormat</span> auto-detects <span class="mono">html</span> vs <span class="mono">plain</span> from the content when omitted.</li>
               <li>Inline links inside <span class="mono">summaryHtml</span>: only <span class="mono">&lt;a href="http(s)://…"&gt;</span>, <span class="mono">&lt;em&gt;</span>, <span class="mono">&lt;strong&gt;</span> are rendered on the public card. Everything else is escape-encoded for safety.</li>
@@ -735,11 +735,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf34" defer></script>
-<script src="js/master-file-adapter.js?v=mf34" defer></script>
-<script src="js/admin-insights-migration.js?v=mf34" defer></script>
-<script src="js/admin-writeback-client.js?v=mf34" defer></script>
-<script src="js/admin-master.js?v=mf34" defer></script>
+<script src="js/db-gate.js?v=mf35" defer></script>
+<script src="js/master-file-adapter.js?v=mf35" defer></script>
+<script src="js/admin-insights-migration.js?v=mf35" defer></script>
+<script src="js/admin-writeback-client.js?v=mf35" defer></script>
+<script src="js/admin-master.js?v=mf35" defer></script>
 
 </body>
 </html>
