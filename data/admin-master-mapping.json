@@ -1,0 +1,79 @@
+{
+  "_note": "Mirror of the MAPPING object in apps-script/master-writeback.gs. The admin fetches this file at load to know which fields are writable. The Apps Script re-validates every write against its own MAPPING regardless, so tampering with this file cannot bypass the server allowlist.",
+  "version": "1.0",
+  "worksheets": {
+    "Scholars": {
+      "keyColumn": "Scholar ID",
+      "headerRow": 4,
+      "allowMultiRow": false,
+      "fields": {
+        "Scholar Name":            { "type": "string", "maxLen": 200 },
+        "Family Name":             { "type": "string", "maxLen": 120 },
+        "Given Names":             { "type": "string", "maxLen": 120 },
+        "Gender":                  { "type": "enum",   "enum": ["Male","Female","Unknown",""] },
+        "Alive/Deceased":          { "type": "enum",   "enum": ["Alive","Deceased","Unknown",""] },
+        "Province Paternal":       { "type": "string", "maxLen": 60 },
+        "District Paternal":       { "type": "string", "maxLen": 80 },
+        "Island Paternal":         { "type": "string", "maxLen": 80 },
+        "Village Paternal":        { "type": "string", "maxLen": 120 },
+        "Province Maternal":       { "type": "string", "maxLen": 60 },
+        "District Maternal":       { "type": "string", "maxLen": 80 },
+        "Island Maternal":         { "type": "string", "maxLen": 80 },
+        "Village Maternal":        { "type": "string", "maxLen": 120 },
+        "Primary Discipline/Field":{ "type": "string", "maxLen": 120 },
+        "Current Title":           { "type": "string", "maxLen": 240 },
+        "Current Role":            { "type": "string", "maxLen": 120 },
+        "Current Institution":     { "type": "string", "maxLen": 200 },
+        "Current Country":         { "type": "string", "maxLen": 80 },
+        "Current Department":      { "type": "string", "maxLen": 200 },
+        "Current Profile URL":     { "type": "url",    "maxLen": 500 },
+        "ORCID":                   { "type": "string", "maxLen": 40 },
+        "Researcher ID":           { "type": "string", "maxLen": 40 },
+        "Google Scholar URL":      { "type": "url",    "maxLen": 500 }
+      }
+    },
+    "Positions": {
+      "keyColumn": "Scholar ID",
+      "headerRow": 4,
+      "allowMultiRow": true,
+      "fields": {
+        "Institution":       { "type": "string", "maxLen": 200 },
+        "Country":           { "type": "string", "maxLen": 80 },
+        "Department/Unit":   { "type": "string", "maxLen": 200 },
+        "Title":             { "type": "string", "maxLen": 240 },
+        "Academic Rank":     { "type": "string", "maxLen": 120 },
+        "Leadership Title":  { "type": "string", "maxLen": 240 },
+        "Leadership Category": { "type": "string", "maxLen": 120 },
+        "Leadership Level":  { "type": "string", "maxLen": 60 },
+        "Role Status":       { "type": "string", "maxLen": 60 },
+        "Start Year":        { "type": "int",    "min": 1900, "max": 2100 },
+        "End Year":          { "type": "int",    "min": 1900, "max": 2100, "nullable": true },
+        "Source URL":        { "type": "url",    "maxLen": 500 },
+        "Evidence/Notes":    { "type": "string", "maxLen": 2000 },
+        "Last Verified":     { "type": "date" }
+      }
+    },
+    "Graduate Degrees": {
+      "keyColumn": "Scholar ID",
+      "headerRow": 4,
+      "allowMultiRow": true,
+      "fields": {
+        "Degree Stage":          { "type": "enum",   "enum": ["Masters","PhD","MPhil","EdD","DPhil",""] },
+        "Qualification":         { "type": "string", "maxLen": 200 },
+        "Field":                 { "type": "string", "maxLen": 200 },
+        "C_Uni name":            { "type": "string", "maxLen": 200 },
+        "O_Uni name":            { "type": "string", "maxLen": 200 },
+        "Country":               { "type": "string", "maxLen": 80 },
+        "International from Fiji?": { "type": "enum", "enum": ["Yes","No","Unknown",""] },
+        "City":                  { "type": "string", "maxLen": 120 },
+        "Region":                { "type": "string", "maxLen": 120 },
+        "Year-Status":           { "type": "string", "maxLen": 60 },
+        "Completion Status":     { "type": "string", "maxLen": 60 },
+        "Thesis Title":          { "type": "string", "maxLen": 500 },
+        "Start Year":            { "type": "int",    "min": 1900, "max": 2100, "nullable": true },
+        "Finish Year":           { "type": "int",    "min": 1900, "max": 2100, "nullable": true },
+        "Duration":              { "type": "string", "maxLen": 40 }
+      }
+    }
+  }
+}

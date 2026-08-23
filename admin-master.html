@@ -396,6 +396,26 @@
       </div>
 
       <div class="card">
+        <h2>Master write-back endpoint</h2>
+        <p class="meta">Apps Script Web App URL and shared secret used to write edits back to the Master sheet. Both are stored only in this browser's <span class="mono">localStorage</span> and are never sent to GitHub or any AI service. See <a href="docs/APPS-SCRIPT-DEPLOY.md">docs/APPS-SCRIPT-DEPLOY.md</a> for one-time setup.</p>
+        <div class="form-row">
+          <label for="writeback-endpoint">Endpoint URL</label>
+          <input id="writeback-endpoint" type="url" placeholder="https://script.google.com/macros/s/AKfyc.../exec" style="width: 100%; max-width: 700px;">
+        </div>
+        <div class="form-row">
+          <label for="writeback-secret">Shared secret</label>
+          <input id="writeback-secret" type="password" placeholder="paste the 64-char hex string from generateSecret()" style="width: 100%; max-width: 700px;" autocomplete="off">
+        </div>
+        <div class="flex-row" style="margin-top:10px">
+          <button class="btn btn-primary" id="writeback-save">Save endpoint</button>
+          <button class="btn" id="writeback-test">Test connection</button>
+          <button class="btn" id="writeback-clear">Clear</button>
+          <span class="status-pill" id="writeback-status" style="background: var(--cream); color: var(--muted);">unchecked</span>
+        </div>
+        <div class="meta" id="writeback-detail" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="card">
         <h2>Refresh Master data</h2>
         <p class="meta">Triggers the <span class="mono">refresh-master-file.yml</span> workflow to pull the latest Master Google Sheet into the encrypted repo files. Runs automatically every 2 hours; use this if you just edited the sheet and want the change live sooner.</p>
         <button class="btn btn-primary" id="dispatch-refresh">Trigger refresh</button>
@@ -551,6 +571,7 @@
 <script src="js/db-gate.js?v=mf22" defer></script>
 <script src="js/master-file-adapter.js?v=mf22" defer></script>
 <script src="js/admin-insights-migration.js?v=mf22" defer></script>
+<script src="js/admin-writeback-client.js?v=mf22" defer></script>
 <script src="js/admin-master.js?v=mf22" defer></script>
 
 </body>

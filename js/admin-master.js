@@ -1181,6 +1181,70 @@
     });
     $('#export-gaps-csv').addEventListener('click', exportGapsCsv);
 
+    // Master write-back endpoint (Phase 2, approval-doc #1). Endpoint URL +
+    // shared secret are held only in this browser's localStorage.
+    var wbEndpointInput = $('#writeback-endpoint');
+    var wbSecretInput   = $('#writeback-secret');
+    var wbStatus        = $('#writeback-status');
+    var wbDetail        = $('#writeback-detail');
+    function refreshWritebackStatus(pingResult) {
+      if (!window.adminWriteback) return;
+      var configured = window.adminWriteback.isConfigured();
+      if (!configured) {
+        wbStatus.textContent = 'unconfigured';
+        wbStatus.style.background = 'var(--cream)'; wbStatus.style.color = 'var(--muted)';
+        wbDetail.textContent = 'Paste the Web app URL + shared secret above, then click Test connection.';
+        return;
+      }
+      if (pingResult && pingResult.status === 'ok') {
+        wbStatus.textContent = 'connected';
+        wbStatus.style.background = '#e0f2e9'; wbStatus.style.color = '#0f5a3c';
+        wbDetail.textContent = 'ping ok · WRITE_ENABLED=' + pingResult.writeEnabled + ' · actor=' + (pingResult.actor || '(unknown)') + ' · tz=' + (pingResult.tz || '(unknown)');
+      } else if (pingResult) {
+        wbStatus.textContent = pingResult.status || 'error';
+        wbStatus.style.background = '#fde8e8'; wbStatus.style.color = '#7a1414';
+        wbDetail.textContent = 'Test failed: ' + (pingResult.error || pingResult.reason || JSON.stringify(pingResult));
+      } else {
+        wbStatus.textContent = 'unchecked';
+        wbStatus.style.background = 'var(--cream)'; wbStatus.style.color = 'var(--muted)';
+        wbDetail.textContent = 'Endpoint saved. Click Test connection to verify.';
+      }
+    }
+    // Prefill from localStorage on load (secret is shown as a placeholder-only mask).
+    if (window.adminWriteback) {
+      wbEndpointInput.value = window.adminWriteback.getEndpoint();
+      if (window.adminWriteback.getSecret()) wbSecretInput.placeholder = '••• secret already saved in this browser — leave blank to keep';
+      refreshWritebackStatus(null);
+    }
+    $('#writeback-save').addEventListener('click', function () {
+      var url = (wbEndpointInput.value || '').trim();
+      var sec = (wbSecretInput.value   || '').trim();
+      if (!url) { toast('Paste the endpoint URL first.', 'error'); return; }
+      if (!/^https:\/\/script\.google\.com\//.test(url)) { toast('Endpoint must be an https://script.google.com URL.', 'error'); return; }
+      window.adminWriteback.setEndpoint(url);
+      if (sec) { window.adminWriteback.setSecret(sec); wbSecretInput.value = ''; wbSecretInput.placeholder = '••• secret already saved in this browser — leave blank to keep'; }
+      toast('Endpoint saved locally.', 'ok');
+      refreshWritebackStatus(null);
+    });
+    $('#writeback-test').addEventListener('click', async function () {
+      try {
+        var r = await window.adminWriteback.ping();
+        refreshWritebackStatus(r);
+        toast(r.status === 'ok' ? 'Endpoint reachable.' : ('Endpoint test: ' + r.status), r.status === 'ok' ? 'ok' : 'error');
+      } catch (e) {
+        refreshWritebackStatus({ status: 'error', error: e.message });
+        toast('Endpoint test failed: ' + e.message, 'error');
+      }
+    });
+    $('#writeback-clear').addEventListener('click', function () {
+      window.adminWriteback.clear();
+      wbEndpointInput.value = '';
+      wbSecretInput.value = '';
+      wbSecretInput.placeholder = 'paste the 64-char hex string from generateSecret()';
+      refreshWritebackStatus(null);
+      toast('Endpoint cleared.', 'ok');
+    });
+
     // token
     $('#save-gh-token').addEventListener('click', function () {
       var tok = $('#gh-token').value.trim();
