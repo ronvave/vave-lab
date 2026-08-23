@@ -74,8 +74,11 @@
     // scholar appears first every time the dashboard loads (Doc 1 req #1).
     sortKey: 'total',
     sortDir: 'desc',
-    gapSortKey: 'oldTotal',
-    gapSortDir: 'desc',
+    // Default gap-table sort is by repair priority (VERY HIGH first) so the
+    // biggest expected-vs-canonical gaps land at the top of the repair queue
+    // (Doc 2 req #27; Doc 3 #9).
+    gapSortKey: 'priority',
+    gapSortDir: 'asc',
     editingSid: null,
     photoDataUrl: null,      // dataURL of the current (unsaved) resized JPEG
     photoDirty: false        // has the user changed the photo this session?
@@ -826,24 +829,72 @@
   }
 
   // ------------------------- linkage gap panel -------------------------
+  // Repair-priority ladder (Doc 2 req #29). Uses OLD-Zotero diagnostic
+  // counts as the driver of "expected volume" — old counts are NEVER
+  // treated as authoritative, only as a heuristic for prioritising Master
+  // repair work. Once the Master ⇄ Publication ⇄ Authorship linkages are
+  // repaired, the canonical Master totals rise naturally (Doc 3 #9).
+  function computeRepairPriority (canonicalTotal, oldTotal, reason) {
+    // No old-Zotero footprint ⇒ we have no diagnostic signal; treat as LOW
+    // and let alphabetical/roster ordering decide within the LOW bucket.
+    if (oldTotal == null || oldTotal === 0) return 'LOW';
+    // Delta between old-Zotero volume and current canonical volume drives
+    // priority. A large old footprint that dropped to zero is the highest
+    // repair value: e.g. Ravulo ITK-S0379 with old 68 / current 0.
+    var delta = oldTotal - (canonicalTotal || 0);
+    if (reason === 'no-authorship-rows') {
+      if (oldTotal >= 30) return 'VERY HIGH';
+      if (oldTotal >= 10) return 'HIGH';
+      if (oldTotal >= 3)  return 'MEDIUM';
+      return 'LOW';
+    }
+    // sparse-authorship: has 1 row but old count suggests more missing
+    if (delta >= 30) return 'VERY HIGH';
+    if (delta >= 10) return 'HIGH';
+    if (delta >= 3)  return 'MEDIUM';
+    return 'LOW';
+  }
+
   function gapRows () {
     var rows = [];
+    // Pre-index Authorship rows per scholar so gap-row counting is O(N+M)
+    // instead of O(N*M). Rebuilt once per call because Ron may reload the
+    // Master bundle after refresh.
+    var authRowsBySid = {};
+    if (state.bundle && state.bundle.master && state.bundle.master.authorship) {
+      state.bundle.master.authorship.forEach(function (a) {
+        var asid = a['Scholar ID'];
+        if (asid) authRowsBySid[asid] = (authRowsBySid[asid] || 0) + 1;
+      });
+    }
     state.scholars.forEach(function (s) {
       var sid = s['Scholar ID']; if (!sid) return;
       var st = classifyLinkage(sid);
       if (st !== 'no-authorship-rows' && st !== 'sparse-authorship') return;
       var c = state.counts[sid] || { total: 0, firstAuthored: 0 };
       var old = state.oldZoteroBySid[sid] || null;
+      var oldTotal = old ? old.total : null;
+      var oldFirst = old ? old.firstAuthored : null;
+      var authRows = authRowsBySid[sid] || 0;
+      var delta = (oldTotal == null) ? null : oldTotal - (c.total || 0);
       rows.push({
         scholarId:      sid,
         name:           s['Scholar Name'] || ((s['Family Name'] || '') + ', ' + (s['Given Names'] || '')),
         total:          c.total,
-        oldTotal:       old ? old.total : null,
-        oldFirst:       old ? old.firstAuthored : null,
+        firstAuthored:  c.firstAuthored,
+        oldTotal:       oldTotal,
+        oldFirst:       oldFirst,
+        authorshipRows: authRows,
+        delta:          delta,
+        // Human-readable linkage status per Doc 2 #29.
+        linkageStatus:  st === 'no-authorship-rows' ? 'INCOMPLETE'
+                       : st === 'sparse-authorship'  ? 'SPARSE'
+                       : 'OK',
         reason:         st,
+        priority:       computeRepairPriority(c.total, oldTotal, st),
         aliveDeceased:  s['Alive / Deceased'] || s['Alive/Deceased'] || '',
         discipline:     s['Discipline'] || s['Primary Discipline / Field'] || '',
-        confederacy:    s['Confederacy'] || '',
+        confederacy:    s['Paternal Confederacy'] || s['Confederacy'] || '',
         rosterTier:     s['Roster Tier'] || s['Roster Tier / Priority'] || ''
       });
     });
@@ -863,10 +914,13 @@
     if (state.gapChipOldOnly) rows = rows.filter(function (r) { return r.oldTotal && r.oldTotal > 0; });
 
     // Sort — default is by oldTotal DESC so scholars with the biggest old
-    // dashboard footprint float to the top of the repair queue.
+    // dashboard footprint float to the top of the repair queue. Priority is
+    // sorted by ordinal (VERY HIGH < HIGH < MEDIUM < LOW).
+    var priRankTable = { 'VERY HIGH': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
     var key = state.gapSortKey, dir = state.gapSortDir;
     rows.sort(function (a, b) {
       var va = a[key], vb = b[key];
+      if (key === 'priority') { va = priRankTable[va]; vb = priRankTable[vb]; }
       if (va == null && vb == null) return 0;
       if (va == null) return 1;   // nulls always last
       if (vb == null) return -1;
@@ -885,12 +939,15 @@
       var oldCol = r.oldTotal
         ? '<strong>' + esc(r.oldTotal) + '</strong>' + (r.oldFirst != null ? ' <span class="old-count">(' + esc(r.oldFirst) + ' 1st)</span>' : '')
         : '<span class="cross">—</span>';
+      var priCls = 'pri-' + r.priority.toLowerCase().replace(/\s+/g, '-');
+      var priBadge = '<span class="badge ' + priCls + '">' + esc(r.priority) + '</span>';
       return '<tr data-sid="' + esc(r.scholarId) + '">' +
         '<td class="sid">' + esc(r.scholarId) + '</td>' +
         '<td>' + esc(r.name) + '</td>' +
         '<td class="pub-count">' + esc(r.total) + '</td>' +
         '<td class="pub-count">' + oldCol + '</td>' +
         '<td class="reason">' + reasonBadge + '</td>' +
+        '<td>' + priBadge + '</td>' +
         '<td>' + esc(r.aliveDeceased || '—') + '</td>' +
         '<td>' + esc(r.discipline || '—') + '</td>' +
         '<td>' + esc(r.rosterTier || '—') + '</td>' +
@@ -913,25 +970,49 @@
 
   function exportGapsCsv () {
     var rows = gapRows();
+    // Sort by repair priority (VERY HIGH > HIGH > MEDIUM > LOW) then by
+    // delta desc so the biggest expected-vs-actual gaps float to the top.
+    // This matches Doc 2 req #27: "largest likely missing volume first".
+    var priRank = { 'VERY HIGH': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
     rows.sort(function (a, b) {
-      var va = a.oldTotal == null ? -1 : a.oldTotal;
-      var vb = b.oldTotal == null ? -1 : b.oldTotal;
-      return vb - va;
+      var pa = priRank[a.priority] == null ? 9 : priRank[a.priority];
+      var pb = priRank[b.priority] == null ? 9 : priRank[b.priority];
+      if (pa !== pb) return pa - pb;
+      var da = a.delta == null ? -1 : a.delta;
+      var db = b.delta == null ? -1 : b.delta;
+      if (da !== db) return db - da;
+      var oa = a.oldTotal == null ? -1 : a.oldTotal;
+      var ob = b.oldTotal == null ? -1 : b.oldTotal;
+      return ob - oa;
     });
-    var header = ['Scholar ID', 'Scholar Name', 'Confederacy', 'Discipline', 'Alive/Deceased',
-                  'Master Auth Rows', 'Old Zotero Total', 'Old Zotero First-Authored', 'Reason', 'Roster Tier'];
+    // Column order per Doc 2 req #26: Scholar ID, name, old total, old 1st,
+    // canonical total, canonical 1st, Authorship row count, delta,
+    // linkage status, repair priority — plus context columns for filtering.
+    var header = [
+      'Scholar ID', 'Scholar Name',
+      'Old-Zotero Total (diagnostic)', 'Old-Zotero First-Author (diagnostic)',
+      'Current Canonical Total', 'Current Canonical First-Author',
+      'Master Authorship Rows',
+      'Delta (Old - Canonical)',
+      'Linkage Status', 'Repair Priority',
+      'Alive/Deceased', 'Discipline', 'Paternal Confederacy', 'Roster Tier'
+    ];
     var lines = [header.join(',')];
     rows.forEach(function (r) {
       lines.push([
         csvCell(r.scholarId),
         csvCell(r.name),
-        csvCell(r.confederacy),
-        csvCell(r.discipline),
-        csvCell(r.aliveDeceased),
-        r.total,
         r.oldTotal == null ? '' : r.oldTotal,
         r.oldFirst == null ? '' : r.oldFirst,
-        r.reason,
+        r.total,
+        r.firstAuthored,
+        r.authorshipRows,
+        r.delta == null ? '' : r.delta,
+        csvCell(r.linkageStatus),
+        csvCell(r.priority),
+        csvCell(r.aliveDeceased),
+        csvCell(r.discipline),
+        csvCell(r.confederacy),
         csvCell(r.rosterTier)
       ].join(','));
     });
@@ -953,14 +1034,100 @@
   // ------------------------- event wiring -------------------------
   function wireControls () {
     // tabs
+    function activateTab(tab) {
+      $$('.tab-btn').forEach(function (x) { x.classList.remove('active'); });
+      $$('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
+      var btn = document.querySelector('.tab-btn[data-tab="' + tab + '"]');
+      if (btn) btn.classList.add('active');
+      var panel = document.getElementById('tab-' + tab);
+      if (panel) panel.classList.add('active');
+    }
     $$('.tab-btn').forEach(function (b) {
       b.addEventListener('click', function () {
-        $$('.tab-btn').forEach(function (x) { x.classList.remove('active'); });
-        $$('.tab-panel').forEach(function (x) { x.classList.remove('active'); });
-        b.classList.add('active');
-        var tab = b.getAttribute('data-tab');
-        $('#tab-' + tab).classList.add('active');
+        activateTab(b.getAttribute('data-tab'));
       });
+    });
+    $$('[data-jump-tab]').forEach(function (b) {
+      b.addEventListener('click', function () { activateTab(b.getAttribute('data-jump-tab')); });
+    });
+
+    // Migration tab (Doc 2 #22-#25) — client-side V1 → Scholar-ID insights.
+    var migRunBtn = $('#migration-run-btn');
+    var migWriteBtn = $('#migration-write-btn');
+    var migReportBtn = $('#migration-download-report-btn');
+    var migSummary = $('#migration-summary');
+    var migDetails = $('#migration-details');
+    var migState = { lastResult: null };
+    function renderMigrationSummary(result) {
+      var c = result.counts;
+      migSummary.innerHTML =
+        '<strong>V1 total:</strong> ' + c.v1Total + ' · ' +
+        '<strong>MATCHED:</strong> ' + c.matched + ' · ' +
+        '<strong>AMBIGUOUS:</strong> ' + c.ambiguous + ' · ' +
+        '<strong>UNMATCHED:</strong> ' + c.unmatched + ' · ' +
+        '<strong>INVALID:</strong> ' + c.invalid +
+        (c.duplicateCollisions ? ' · <strong>Duplicate SIDs:</strong> ' + c.duplicateCollisions : '') +
+        '<br><span class="muted">Existing V2 insights (kept): ' + c.v2ExistingBefore +
+        '. V2 total after this migration: ' + c.v2TotalAfter + '.</span>';
+      function sample(list) {
+        return list.slice(0, 8).map(function (x) {
+          return '<li><span class="mono">' + escapeHtml(x.v1Key || '') + '</span>' +
+            (x.sid ? ' → <span class="mono">' + escapeHtml(x.sid) + '</span>' : '') +
+            ' <span class="muted">(' + escapeHtml(x.reason || '') + ')</span></li>';
+        }).join('') + (list.length > 8 ? '<li class="muted">… and ' + (list.length - 8) + ' more (see full JSON report)</li>' : '');
+      }
+      migDetails.innerHTML =
+        '<details open><summary><strong>AMBIGUOUS (' + result.ambiguous.length + ')</strong> — need your review</summary><ul>' + sample(result.ambiguous) + '</ul></details>' +
+        '<details><summary><strong>UNMATCHED (' + result.unmatched.length + ')</strong> — no Master row found</summary><ul>' + sample(result.unmatched) + '</ul></details>' +
+        '<details><summary><strong>INVALID (' + result.invalid.length + ')</strong> — missing keywords/summary</summary><ul>' + sample(result.invalid) + '</ul></details>' +
+        '<details><summary><strong>MATCHED (' + result.matched.length + ')</strong> — first 8 shown</summary><ul>' + sample(result.matched) + '</ul></details>';
+    }
+    if (migRunBtn) migRunBtn.addEventListener('click', async function () {
+      migRunBtn.disabled = true;
+      migSummary.textContent = 'Running migration — this stays entirely in your browser…';
+      migDetails.innerHTML = '';
+      try {
+        if (!window.adminInsightsMigration) throw new Error('Migration module not loaded.');
+        window.adminInsightsMigration.install({
+          getMaster: function () { return state.master; },
+          getGhPushHelper: function () { return githubUploadBinary; },
+          logChange: function (evt) { if (Array.isArray(state.actionLog)) state.actionLog.push(Object.assign({ ts: new Date().toISOString() }, evt)); }
+        });
+        var result = await window.adminInsightsMigration.runMigration();
+        migState.lastResult = result;
+        renderMigrationSummary(result);
+        migWriteBtn.disabled = (result.counts.matched === 0);
+        migReportBtn.disabled = false;
+        toast('Dry run complete. Review, then click Write to publish.', 'ok');
+      } catch (e) {
+        migSummary.textContent = 'Migration failed: ' + e.message;
+        toast('Migration failed: ' + e.message, 'error');
+      } finally {
+        migRunBtn.disabled = false;
+      }
+    });
+    if (migWriteBtn) migWriteBtn.addEventListener('click', async function () {
+      if (!migState.lastResult) return;
+      if (!confirm('Publish ' + migState.lastResult.counts.v2TotalAfter + ' Scholar-ID-keyed insights to data/scholar-insights-master.json.enc?')) return;
+      migWriteBtn.disabled = true;
+      try {
+        await window.adminInsightsMigration.publishV2(migState.lastResult.v2Doc);
+        toast('Published data/scholar-insights-master.json.enc.', 'ok');
+      } catch (e) {
+        toast('Publish failed: ' + e.message, 'error');
+        migWriteBtn.disabled = false;
+      }
+    });
+    if (migReportBtn) migReportBtn.addEventListener('click', function () {
+      if (!migState.lastResult) return;
+      var text = window.adminInsightsMigration.serializeReport(migState.lastResult);
+      var blob = new Blob([text], { type: 'application/json' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'insights-migration-report-' + new Date().toISOString().replace(/[:.]/g, '-') + '.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
     });
 
     // scholar filters

@@ -193,6 +193,13 @@
   .gap-table th, .gap-table td { padding: 8px 10px; }
   .gap-table td.reason { font-size: 0.78rem; }
   .gap-table td .old-count { color: var(--muted); font-size: 0.8rem; }
+  /* Repair-priority badges (Doc 2 req #29). Uses old-Zotero counts as a
+     diagnostic heuristic to prioritise Master linkage repair work; the
+     old counts themselves are never authoritative. */
+  .badge.pri-very-high { background: #7a0000; color: #fff; }
+  .badge.pri-high      { background: #b23a00; color: #fff; }
+  .badge.pri-medium    { background: #b57f00; color: #fff; }
+  .badge.pri-low       { background: #e5e5e5; color: #444; }
 
   /* utility */
   .flex-row { display: flex; gap: 10px; align-items: center; }
@@ -243,6 +250,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="scholars">Scholar profiles</button>
       <button class="tab-btn" data-tab="gaps">Authorship linkage gaps</button>
+      <button class="tab-btn" data-tab="migration">Migration &amp; tools</button>
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
       <button class="tab-btn" data-tab="log">Action log</button>
     </div>
@@ -322,6 +330,7 @@
                 <th class="sortable" data-gap-sort="total">Auth rows</th>
                 <th class="sortable" data-gap-sort="oldTotal" title="Old Zotero-dashboard total (diagnostic only)">Old Zotero total</th>
                 <th class="reason">Reason</th>
+                <th class="sortable" data-gap-sort="priority" title="Repair priority (VERY HIGH → LOW). Uses old-Zotero counts as a diagnostic to prioritise which Master linkages to fix first — old counts are never authoritative.">Repair priority</th>
                 <th>Status</th>
                 <th>Discipline</th>
                 <th>Roster tier</th>
@@ -329,6 +338,42 @@
             </thead>
             <tbody id="gaps-tbody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========= MIGRATION & TOOLS TAB ========= -->
+    <!-- Client-side migration for Doc 2 req #22-#25. V1 insight file is
+         decrypted using the same passcode that already unlocked this admin
+         session, so no separate passcode entry is needed and no passcode ever
+         leaves the browser. Produces MATCHED / AMBIGUOUS / UNMATCHED / INVALID
+         buckets and writes the new Scholar-ID-keyed .enc file. -->
+    <div class="tab-panel" id="tab-migration">
+      <div class="card">
+        <h2>Migrate V1 research insights → Scholar-ID-keyed</h2>
+        <p class="meta">Reads the old <span class="mono">data/scholar-insights.json.enc</span> (V1, name-keyed), resolves each name to a Master Scholar&nbsp;ID using Family/Given/Scholar Name, and produces four buckets:</p>
+        <ul class="meta" style="margin-left:1.5em">
+          <li><strong>MATCHED</strong> — unambiguous name resolution, auto-migrated with full fidelity (keywords, summary HTML, hyperlinks, sources).</li>
+          <li><strong>AMBIGUOUS</strong> — name matches two or more Master rows; kept aside for your review, never discarded.</li>
+          <li><strong>UNMATCHED</strong> — name resolves to no Master row; kept aside for your review, never discarded.</li>
+          <li><strong>INVALID / MALFORMED</strong> — entry missing required fields; kept aside for inspection.</li>
+        </ul>
+        <p class="meta">Everything runs inside this unlocked admin session. Your passcode never leaves this browser and is never written to any log or migration report.</p>
+        <div class="flex-row" style="margin-top:14px">
+          <button id="migration-run-btn" class="btn btn-primary">Run migration (dry run)</button>
+          <button id="migration-write-btn" class="btn" disabled>Write scholar-insights-master.json.enc</button>
+          <button id="migration-download-report-btn" class="btn" disabled>Download migration report (JSON)</button>
+        </div>
+        <div id="migration-summary" class="meta" style="margin-top:14px"></div>
+        <div id="migration-details" style="margin-top:14px"></div>
+      </div>
+
+      <div class="card">
+        <h2>Prioritised authorship-gap CSV</h2>
+        <p class="meta">The <em>Authorship linkage gaps</em> tab already shows every scholar whose Master Authorship table is empty or sparse, prioritised by expected-vs-canonical delta. Download the same list as CSV to share or attach to a repair task.</p>
+        <p class="meta">Columns: Scholar ID, Scholar Name, Old-Zotero Total, Old-Zotero First-Author, Current Canonical Total, Current Canonical First-Author, Master Authorship Rows, Delta, Linkage Status, Repair Priority, Alive/Deceased, Discipline, Paternal Confederacy, Roster Tier. Old-Zotero counts are diagnostic only and never overwrite canonical Master values.</p>
+        <div class="flex-row" style="margin-top:14px">
+          <button class="btn btn-primary" data-jump-tab="gaps">Open Authorship linkage gaps tab</button>
         </div>
       </div>
     </div>
@@ -503,9 +548,10 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf20" defer></script>
-<script src="js/master-file-adapter.js?v=mf20" defer></script>
-<script src="js/admin-master.js?v=mf20" defer></script>
+<script src="js/db-gate.js?v=mf22" defer></script>
+<script src="js/master-file-adapter.js?v=mf22" defer></script>
+<script src="js/admin-insights-migration.js?v=mf22" defer></script>
+<script src="js/admin-master.js?v=mf22" defer></script>
 
 </body>
 </html>
