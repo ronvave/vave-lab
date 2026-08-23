@@ -683,7 +683,22 @@
         <div class="form-group">
           <label for="pf-insights-json">Insights JSON</label>
           <textarea id="pf-insights-json" placeholder='{"keywords":["…"], "summaryHtml":"…", "sources":[{"title":"…", "url":"…"}]}'></textarea>
-          <span class="hint">Shape: <span class="mono">{ keywords: string[], summaryHtml: string, summaryFormat?: "html" | "plain", sources?: [{title, url, publicationId?}] }</span>. Preview auto-updates as you type.</span>
+          <span class="hint">
+            <strong>Canonical shape:</strong> <span class="mono">{ keywords: string[], summaryHtml: string, summaryFormat?: "html" | "plain", sources?: [{title, url, publicationId?}] }</span>.
+            <br><br>
+            <strong>Auto-normalised on save</strong> — paste ChatGPT or Claude output directly, the admin will fold it into the canonical shape:
+            <ul style="margin: 6px 0 0 18px; padding: 0; font-size: 12px; color: var(--muted);">
+              <li><span class="mono">summary</span> → <span class="mono">summaryHtml</span> (ChatGPT default)</li>
+              <li><span class="mono">plainEnglishSummary</span> / <span class="mono">plain_english_summary</span> → <span class="mono">summaryHtml</span></li>
+              <li><span class="mono">summary_format</span> / <span class="mono">summary-format</span> → <span class="mono">summaryFormat</span></li>
+              <li>Outer name wrapper (e.g. <span class="mono">{ "Veitayaki, Joeli": { … } }</span> from V1-style pastes) is <strong>not</strong> auto-unwrapped — paste only the inner object.</li>
+              <li>Unknown top-level keys (e.g. <span class="mono">scholar</span>, <span class="mono">notes</span>) are dropped with a warning in the Action log — never persisted.</li>
+              <li><span class="mono">summaryFormat</span> auto-detects <span class="mono">html</span> vs <span class="mono">plain</span> from the content when omitted.</li>
+              <li>Inline links inside <span class="mono">summaryHtml</span>: only <span class="mono">&lt;a href="http(s)://…"&gt;</span>, <span class="mono">&lt;em&gt;</span>, <span class="mono">&lt;strong&gt;</span> are rendered on the public card. Everything else is escape-encoded for safety.</li>
+              <li>Sources accept either full objects <span class="mono">{title, url}</span> or bare URL strings.</li>
+            </ul>
+            Preview below auto-updates through the same normaliser — what you see is exactly what will be saved.
+          </span>
         </div>
         <div class="insights-preview" id="pf-insights-preview">
           <em style="color: var(--muted);">Preview appears here as you type valid JSON.</em>
@@ -720,11 +735,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf33" defer></script>
-<script src="js/master-file-adapter.js?v=mf33" defer></script>
-<script src="js/admin-insights-migration.js?v=mf33" defer></script>
-<script src="js/admin-writeback-client.js?v=mf33" defer></script>
-<script src="js/admin-master.js?v=mf33" defer></script>
+<script src="js/db-gate.js?v=mf34" defer></script>
+<script src="js/master-file-adapter.js?v=mf34" defer></script>
+<script src="js/admin-insights-migration.js?v=mf34" defer></script>
+<script src="js/admin-writeback-client.js?v=mf34" defer></script>
+<script src="js/admin-master.js?v=mf34" defer></script>
 
 </body>
 </html>
