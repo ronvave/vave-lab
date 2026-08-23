@@ -156,6 +156,22 @@
   .fieldset .master-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.65rem; font-weight: 500; text-transform: none; letter-spacing: 0; background: #eae5d0; color: var(--teal-dark); }
   .fieldset .admin-tag { background: #cfeef5; color: var(--teal-dark); }
 
+  /* Phase 3.5 (2026-08-23): Alternating 2px black / dark-blue borders on each
+     Master and Admin section to give the edit modal clearer visual grouping.
+     Photo stays on the neutral --border colour; the alternation starts at
+     Identity and proceeds Identity=black, Paternal=blue, Maternal=black,
+     Current position=blue, Public profile URLs=black, Provenance & notes=
+     blue, Positions=black, Graduate degrees=blue, Admin-owned=black, and
+     Research insights=blue. Spacing between fieldsets is increased so the
+     borders read as section dividers rather than a hairline. The two-column
+     .form-row layout inside each fieldset is untouched. */
+  .fieldset.section-border-black,
+  .fieldset.section-border-blue { margin-top: 26px; padding: 16px 18px 18px; }
+  .fieldset.section-border-black { border: 2px solid #111111; }
+  .fieldset.section-border-blue  { border: 2px solid #0b4a86; }
+  .fieldset.section-border-black > legend { color: #111111; }
+  .fieldset.section-border-blue  > legend { color: #0b4a86; }
+
   /* photo widget */
   .photo-widget { display: flex; gap: 16px; align-items: flex-start; }
   .photo-preview { width: 120px; height: 120px; border-radius: 10px; overflow: hidden; border: 1px dashed var(--border-strong); background: #f5f2e8 url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><text x="60" y="65" font-family="DM Sans" font-size="12" text-anchor="middle" fill="%239ca3af">no photo</text></svg>') center/contain no-repeat; flex-shrink: 0; }
@@ -418,9 +434,16 @@
 
       <div class="card">
         <h2>Refresh Master data</h2>
-        <p class="meta">Triggers the <span class="mono">refresh-master-file.yml</span> workflow to pull the latest Master Google Sheet into the encrypted repo files. Runs automatically every 2 hours; use this if you just edited the sheet and want the change live sooner.</p>
+        <p class="meta">Triggers the <span class="mono">refresh-master-file.yml</span> workflow to pull the latest Master Google Sheet into the encrypted repo files. Runs automatically every 2 hours; use this if you just edited the sheet and want the change live sooner. <strong>Since Phase 3.5, Save &amp; push in the edit modal auto-triggers this workflow whenever a Master-backed public field changed — so most of the time you no longer need this button.</strong></p>
         <button class="btn btn-primary" id="dispatch-refresh">Trigger refresh</button>
         <span class="mono" id="dispatch-status" style="margin-left: 12px; color: var(--muted);"></span>
+      </div>
+
+      <div class="card">
+        <h2>Legacy Year of Birth / Year of Death migration inspection</h2>
+        <p class="meta">Phase 3.5 removed the duplicate Admin-owned Year of Birth / Year of Death inputs; those fields are now authoritative on the Master <span class="mono">Scholars</span> sheet. Any legacy values that were previously written into <span class="mono">scholar-enrichment.json.enc</span> are preserved verbatim in the encrypted file; nothing has been silently overwritten or discarded. Run this inspection to see whether any legacy sidecar values exist that need to be moved manually to the Master sheet.</p>
+        <button class="btn" id="inspect-yob-yod">Inspect enrichment for legacy YoB/YoD</button>
+        <div id="inspect-yob-yod-out" class="mono" style="margin-top: 10px; white-space: pre-wrap; font-size: 12px; color: var(--muted);"></div>
       </div>
 
       <div class="card">
@@ -493,7 +516,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-black">
         <legend>Master fields — Identity <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group">
@@ -538,7 +561,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Paternal geography <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group">
@@ -554,7 +577,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-black">
         <legend>Master fields — Maternal geography <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group">
@@ -570,7 +593,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Current position <span class="master-tag">editable via write-back</span>
           <span class="hint" style="font-size:0.75rem;color:var(--muted);">Scholars-tab summary; edit underlying Positions rows below for a full history.</span>
         </legend>
@@ -583,7 +606,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-black">
         <legend>Master fields — Public profile URLs <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID / Researcher ID" placeholder="e.g. 0000-0000-0000-0000" /></div>
@@ -593,7 +616,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Provenance &amp; notes <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group" style="grid-column: span 2;"><label>Vanua / Provenance notes</label><textarea id="me-vanua-notes" data-ws="Scholars" data-field="Vanua / Provenance Notes" rows="3" style="width:100%;"></textarea></div>
@@ -601,7 +624,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-black">
         <legend>Positions <span class="master-tag">multi-row · editable via write-back</span>
           <span class="hint" style="font-size:0.75rem;color:var(--muted);">Fetched live from the Master sheet when the modal opens.</span>
         </legend>
@@ -610,7 +633,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-blue">
         <legend>Graduate Degrees <span class="master-tag">multi-row · editable via write-back</span>
           <span class="hint" style="font-size:0.75rem;color:var(--muted);">Fetched live from the Master sheet when the modal opens.</span>
         </legend>
@@ -619,7 +642,7 @@
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-black">
         <legend>Admin-owned fields <span class="admin-tag">editable</span></legend>
         <div class="form-grid">
           <div class="form-group">
@@ -641,20 +664,14 @@
             <label for="pf-department-url">Department URL</label>
             <input type="url" id="pf-department-url" placeholder="https://…" />
           </div>
-          <div class="form-group"></div>
-          <div class="form-group">
-            <label for="pf-birth">Year of birth</label>
-            <input type="number" id="pf-birth" min="1800" max="2050" step="1" placeholder="e.g. 1958" />
-          </div>
-          <div class="form-group">
-            <label for="pf-death">Year of death</label>
-            <input type="number" id="pf-death" min="1800" max="2050" step="1" placeholder="(only if deceased)" />
-            <span class="hint">Setting this year will flag the profile as deceased on Panel F.</span>
-          </div>
+          <!-- Phase 3.5 (2026-08-23): Duplicate Admin-owned Year of Birth /
+               Year of Death inputs removed. The authoritative fields live in
+               the Identity fieldset above (me-year-of-birth / me-year-of-death)
+               and now write straight to the Master Scholars sheet. -->
         </div>
       </fieldset>
 
-      <fieldset class="fieldset">
+      <fieldset class="fieldset section-border-blue">
         <legend>Research insights <span class="admin-tag">editable · paste JSON</span></legend>
         <div class="form-group">
           <label for="pf-insights-json">Insights JSON</label>
@@ -696,11 +713,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf27" defer></script>
-<script src="js/master-file-adapter.js?v=mf27" defer></script>
-<script src="js/admin-insights-migration.js?v=mf27" defer></script>
-<script src="js/admin-writeback-client.js?v=mf27" defer></script>
-<script src="js/admin-master.js?v=mf27" defer></script>
+<script src="js/db-gate.js?v=mf28" defer></script>
+<script src="js/master-file-adapter.js?v=mf28" defer></script>
+<script src="js/admin-insights-migration.js?v=mf28" defer></script>
+<script src="js/admin-writeback-client.js?v=mf28" defer></script>
+<script src="js/admin-master.js?v=mf28" defer></script>
 
 </body>
 </html>
