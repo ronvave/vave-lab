@@ -252,7 +252,9 @@
     </div>
     <div class="actions">
       <span class="status-pill" id="db-status">unlocking…</span>
-      <button id="refresh-master">Refresh from Sheet</button>
+      <button id="refresh-master" title="Re-read the Master Google Sheet and re-encrypt the repo files. Does NOT bump the cache-buster — viewers with cached JS won't see the change immediately.">Refresh from Sheet</button>
+      <button id="top-force-refresh" title="Bumps ?v=mfNN across V2 HTML entrypoints AND dispatches the Master refresh workflow. Use this after any admin change — viewers get fresh JS/JSON on their next reload.">Force refresh</button>
+      <span class="mono" id="top-force-refresh-status" style="font-size: 12px; color: var(--muted); margin-right: 8px;"></span>
       <button id="logout">Log out</button>
     </div>
   </header>
@@ -433,17 +435,13 @@
       </div>
 
       <div class="card">
-        <h2>Refresh Master data</h2>
-        <p class="meta">Triggers the <span class="mono">refresh-master-file.yml</span> workflow to pull the latest Master Google Sheet into the encrypted repo files. Runs automatically every 2 hours; use this if you just edited the sheet and want the change live sooner. <strong>Since Phase 3.5, Save &amp; push in the edit modal auto-triggers this workflow whenever a Master-backed public field changed — so most of the time you no longer need this button.</strong></p>
-        <button class="btn btn-primary" id="dispatch-refresh">Trigger refresh</button>
-        <span class="mono" id="dispatch-status" style="margin-left: 12px; color: var(--muted);"></span>
-      </div>
-
-      <div class="card">
-        <h2>Force public dashboard refresh</h2>
-        <p class="meta">Bumps the <span class="mono">?v=mfNN</span> cache-buster on every V2 script tag so viewers' browsers stop serving the stale copy immediately. Use this after an admin change (photo, insights, ORCID, etc.) if the public card still looks old even after a hard-refresh. <strong>Also dispatches</strong> the <span class="mono">refresh-master-file.yml</span> workflow for you, so any Master Sheet edits in the same session are picked up. GitHub Pages typically redeploys within ~30–90 seconds; then hard-refresh the public dashboard.</p>
-        <button class="btn btn-primary" id="force-cache-bust">Force refresh now</button>
-        <span class="mono" id="force-cache-bust-status" style="margin-left: 12px; color: var(--muted);"></span>
+        <h2>Refresh actions</h2>
+        <p class="meta">The two refresh buttons are also in the top bar for quick access. Their differences:</p>
+        <ul class="meta" style="margin: 6px 0 10px 18px; padding: 0;">
+          <li><strong>Refresh from Sheet</strong> — dispatches <span class="mono">refresh-master-file.yml</span> to re-read the Master Google Sheet and re-encrypt the repo files. Runs automatically every 2 hours. <strong>Does NOT bump the cache-buster</strong> — viewers with cached JS/HTML will still see the stale copy on their next load. Since Phase 3.5, Save &amp; push in the edit modal auto-dispatches this whenever a Master-backed public field changed, so most of the time you no longer need to click it manually.</li>
+          <li><strong>Force refresh</strong> — bumps <span class="mono">?v=mfNN</span> on every V2 script tag so viewers' browsers stop serving the stale copy immediately, <strong>and also</strong> dispatches <span class="mono">refresh-master-file.yml</span>. Use this after any admin change (photo, insights, ORCID, etc.). GitHub Pages typically redeploys within ~30–90 seconds; then hard-refresh the public dashboard.</li>
+        </ul>
+        <p class="meta" style="margin-top: 8px;">Rule of thumb: if you just edited the Master Sheet directly and can wait a couple of minutes, use <strong>Refresh from Sheet</strong>. If a viewer (including you) is looking at a stale public card right now, use <strong>Force refresh</strong>.</p>
       </div>
 
       <div class="card">
@@ -735,11 +733,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf35" defer></script>
-<script src="js/master-file-adapter.js?v=mf35" defer></script>
-<script src="js/admin-insights-migration.js?v=mf35" defer></script>
-<script src="js/admin-writeback-client.js?v=mf35" defer></script>
-<script src="js/admin-master.js?v=mf35" defer></script>
+<script src="js/db-gate.js?v=mf36" defer></script>
+<script src="js/master-file-adapter.js?v=mf36" defer></script>
+<script src="js/admin-insights-migration.js?v=mf36" defer></script>
+<script src="js/admin-writeback-client.js?v=mf36" defer></script>
+<script src="js/admin-master.js?v=mf36" defer></script>
 
 </body>
 </html>

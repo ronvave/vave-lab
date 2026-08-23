@@ -1748,17 +1748,33 @@
     'admin-master.html'
   ];
 
+  // Status pills the force-refresh flow writes to. The tab-card ID stays in
+  // the list even though the card was consolidated into the top bar, so any
+  // older cached HTML still receives status updates cleanly instead of
+  // silently swallowing them.
+  var FORCE_STATUS_IDS = ['top-force-refresh-status', 'force-cache-bust-status'];
+  function setForceStatus_ (txt) {
+    FORCE_STATUS_IDS.forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) el.textContent = txt;
+    });
+  }
+  function setForceButtonsDisabled_ (disabled) {
+    ['top-force-refresh', 'force-cache-bust'].forEach(function (id) {
+      var b = document.getElementById(id);
+      if (b) b.disabled = disabled;
+    });
+  }
+
   async function forceCacheBust () {
     var token = getGhToken();
-    var el = document.getElementById('force-cache-bust-status');
-    var btn = document.getElementById('force-cache-bust');
     if (!token) {
-      if (el) el.textContent = 'no token';
+      setForceStatus_('no token');
       toast('Save a GitHub PAT first (Data source tab).', 'error');
       return;
     }
-    if (btn) btn.disabled = true;
-    if (el) el.textContent = 'reading files…';
+    setForceButtonsDisabled_(true);
+    setForceStatus_('reading files…');
     try {
       // Step 1: fetch each file, find current mfNN, bump to next.
       var maxN = 0;
@@ -1780,7 +1796,7 @@
       if (!maxN) throw new Error('No ?v=mfNN cache-buster found in any file.');
       var nextN = maxN + 1;
       log('Force cache bust: current highest mf' + maxN + ' → bumping to mf' + nextN, 'info');
-      if (el) el.textContent = 'bumping mf' + maxN + ' → mf' + nextN + '…';
+      setForceStatus_('bumping mf' + maxN + ' → mf' + nextN + '…');
 
       // Step 2: PUT each file with a global mfNN → mf(N+1) replacement.
       // Non-matching mfXX values (lower) are ALSO normalised to nextN so we
@@ -1811,21 +1827,19 @@
 
       // Step 3: also kick off the Master-refresh workflow so Sheet edits
       // in this session are picked up alongside the cache-buster bump.
-      if (el) el.textContent = 'mf' + nextN + ' pushed — dispatching workflow…';
+      setForceStatus_('mf' + nextN + ' pushed — dispatching workflow…');
       var dispatched = await dispatchRefresh({ silent: true });
 
-      if (el) {
-        el.textContent = dispatched
-          ? 'done — mf' + nextN + ' live in ~30–90 s; workflow dispatched. Hard-refresh the public dashboard.'
-          : 'done — mf' + nextN + ' live in ~30–90 s. (Workflow dispatch skipped or failed — see Action log.)';
-      }
+      setForceStatus_(dispatched
+        ? 'done — mf' + nextN + ' live in ~30–90 s; workflow dispatched.'
+        : 'done — mf' + nextN + ' live in ~30–90 s. (Workflow dispatch failed — see Action log.)');
       toast('Force refresh done. Hard-refresh the public dashboard in ~1 min.', 'ok', 8000);
     } catch (e) {
       log('Force cache bust error: ' + (e.message || e), 'error');
-      if (el) el.textContent = 'error: ' + (e.message || e);
+      setForceStatus_('error: ' + (e.message || e));
       toast('Force refresh failed: ' + (e.message || e), 'error', 10000);
     } finally {
-      if (btn) btn.disabled = false;
+      setForceButtonsDisabled_(false);
     }
   }
 
@@ -2320,16 +2334,20 @@
       toast('Token forgotten.', 'ok');
     });
 
-    // dispatch
-    $('#dispatch-refresh').addEventListener('click', function () { dispatchRefresh(); });
+    // Refresh from Sheet (top bar). Dispatches refresh-master-file.yml only
+    // — does NOT bump the cache-buster.
     $('#refresh-master').addEventListener('click', function () { dispatchRefresh(); });
-
-    // Force public dashboard refresh: bumps ?v=mfNN cache-buster across V2
-    // HTML entrypoints so viewer browsers stop serving stale JS/JSON, then
-    // also dispatches the Master-refresh workflow. See admin-master.html
-    // 'Force public dashboard refresh' card.
-    var forceBtn = document.getElementById('force-cache-bust');
-    if (forceBtn) forceBtn.addEventListener('click', function () { forceCacheBust(); });
+    // Force refresh (top bar). Bumps ?v=mfNN across V2 HTML entrypoints AND
+    // dispatches the Master-refresh workflow. The old tab-card ID is kept
+    // for backwards compatibility with any cached admin HTML.
+    var topForceBtn = document.getElementById('top-force-refresh');
+    if (topForceBtn) topForceBtn.addEventListener('click', function () { forceCacheBust(); });
+    var tabForceBtn = document.getElementById('force-cache-bust');
+    if (tabForceBtn) tabForceBtn.addEventListener('click', function () { forceCacheBust(); });
+    // Legacy tab-card 'Trigger refresh' button (removed from HTML, kept
+    // wired defensively in case an older cached admin still renders it).
+    var legacyDispatchBtn = document.getElementById('dispatch-refresh');
+    if (legacyDispatchBtn) legacyDispatchBtn.addEventListener('click', function () { dispatchRefresh(); });
 
     // Phase 3.5: legacy YoB / YoD migration inspection. Reads the already
     // decrypted enrichment doc from the current session state (state.enrichmentDoc)
