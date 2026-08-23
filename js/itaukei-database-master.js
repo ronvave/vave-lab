@@ -6595,15 +6595,54 @@
     // the result set. Hidden scholars are excluded from both numerator and
     // denominator so the ratio stays meaningful.
     const unfilteredTotal = derived.filter(r => !hidden.has(r.name)).length;
+
+    // CANONICAL COUNT OVERRIDE (2026-08 rebuild):
+    // Publication counts + first-authorship are derived directly from the
+    // Master `Authorship` table via MasterFileAdapter.computePublicationTotals.
+    // This replaces the legacy Zotero-collection based counter (which was
+    // deriving first-authorship from `creators[0]` and drifting when non-
+    // iTaukei co-authors were dropped). Rows without a resolvable Scholar ID
+    // keep the derived counts as a graceful fallback.
+    const _canonAdapter = state.masterAdapter;
+    const _canonMaster  = state.master;
+    function _scholarIdFor(row) {
+      if (row && row.scholarId) return row.scholarId;
+      const prof = enrichedByName.get(row.name);
+      return prof && prof.scholarId ? prof.scholarId : null;
+    }
     let rows = derived
       .filter(r => !hidden.has(r.name))
       .map(r => {
         // Merge order matters: enrichment (village, institution, photo, etc.)
-        // sits UNDERNEATH the Zotero-derived counts (total, firstAuthored,
-        // types, key, name). Otherwise old totals baked into scholar-profiles
-        // .json at toggle-time would override the live Zotero numbers.
+        // sits UNDERNEATH the Zotero-derived counts, THEN the Master canonical
+        // counts override those. This preserves enrichment (photo, village,
+        // institution) while forcing Master `Authorship` to be authoritative
+        // for `total` / `firstAuthored` / `types`.
         const enrichment = enrichedByName.get(r.name) || {};
         const enriched = Object.assign({}, enrichment, r);
+
+        const sid = _scholarIdFor(enriched);
+        if (sid && _canonAdapter && typeof _canonAdapter.computePublicationTotals === 'function' && _canonMaster) {
+          const canon = _canonAdapter.computePublicationTotals(_canonMaster, sid);
+          enriched.scholarId = sid;
+          enriched.total = canon.total;
+          enriched.firstAuthored = canon.firstAuthored;
+          // Map canonical types tally onto Panel F chip buckets. `document` is
+          // intentionally excluded from Panel F chips (matches legacy behaviour).
+          enriched.types = {
+            journalArticle: canon.types.journalArticle,
+            thesisPhd:      canon.types.thesisPhd,
+            thesisMasters:  canon.types.thesisMasters,
+            thesisUnknown:  canon.types.thesisUnknown,
+            bookSection:    canon.types.bookSection,
+            book:           canon.types.book,
+            report:         canon.types.report,
+            conferencePaper: 0, // Panel F never shows conference papers (global filter)
+            preprint:       canon.types.preprint
+          };
+          enriched._authorshipGap = canon.gap;
+        }
+
         enriched._prov = effectivePaternalProvince(enrichment);
         enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
         return enriched;

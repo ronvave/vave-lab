@@ -770,6 +770,146 @@
     });
   }
 
+  // ----------------------------------------------------------------------
+  // CANONICAL PUBLICATION COUNTS (single source of truth)
+  //
+  // Reads master.authorship (authoritative) directly. Publication↔scholar
+  // links, first-authorship, and per-type breakdowns are all derived from
+  //   - `Scholar ID`         : identifies the scholar
+  //   - `Publication ID / BibTeX Key` : identifies the paper (deduped)
+  //   - `Is First Author?` OR `Author Position === 1` : first-author signal
+  //
+  // This function is called by both the public dashboard (Panel F card
+  // renderer) and the admin dashboard. There is exactly one place where
+  // scholar publication counts are computed — this one.
+  //
+  // Returns { total, firstAuthored, types, gap }
+  //   total          — distinct publication count for this scholar
+  //   firstAuthored  — distinct publications where this scholar is first author
+  //   types          — { journalArticle, thesisPhd, thesisMasters, thesisUnknown,
+  //                      bookSection, book, report, conferencePaper, preprint }
+  //   gap            — boolean; true if this scholar has zero rows in the
+  //                    Authorship table (data-quality flag, not an error).
+  //
+  // Conference papers are counted in `types.conferencePaper` for the admin's
+  // full audit view, but the public dashboard filters `state.snapshot.items`
+  // to exclude conferencePaper globally, so Panel F chips won't render them.
+  // (see js/itaukei-database-master.js around line 305)
+  // ----------------------------------------------------------------------
+  function _visualPubType(pubRow) {
+    // Mirrors js/itaukei-database-master.js `visualType()` for the
+    // Master-native `Publication Type` column, without needing the fully
+    // wired item object.
+    var t = (pubRow && pubRow['Publication Type']) || '';
+    if (t === 'Journal Article')      return 'journalArticle';
+    if (t === 'Book')                 return 'book';
+    if (t === 'Book Section' || t === 'Book Chapter') return 'bookSection';
+    if (t === 'Thesis (PhD)' || t === 'PhD Thesis')   return 'thesisPhd';
+    if (t === 'Thesis (Masters)' || t === 'Masters Thesis') return 'thesisMasters';
+    if (t === 'Thesis') return 'thesisUnknown';
+    if (t === 'Report')               return 'report';
+    if (t === 'Preprint')             return 'preprint';
+    if (t === 'Conference Paper')     return 'conferencePaper';
+    return 'document';
+  }
+
+  function _emptyTypesTally() {
+    return {
+      journalArticle: 0, thesisPhd: 0, thesisMasters: 0, thesisUnknown: 0,
+      bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0, document: 0
+    };
+  }
+
+  // Build a per-scholar count index once. Called by computePublicationTotals
+  // and cached on the master object so the admin + dashboard don't recount
+  // for every card in every render pass.
+  function _buildScholarCountIndex(master) {
+    if (master && master._scholarCountIndex) return master._scholarCountIndex;
+    var pubsById = {};
+    (master.publications || []).forEach(function (p) {
+      var pid = p['Publication ID / BibTeX Key'];
+      if (pid) pubsById[pid] = p;
+    });
+    // scholarId -> { total: Set<pid>, firstAuthored: Set<pid>, types: {...} }
+    var idx = {};
+    (master.authorship || []).forEach(function (row) {
+      var sid = row['Scholar ID'];
+      var pid = row['Publication ID / BibTeX Key'];
+      if (!sid || !pid) return;
+      var bucket = idx[sid];
+      if (!bucket) {
+        bucket = idx[sid] = {
+          totalSet: new Set(),
+          firstSet: new Set(),
+          typesTotalByPid: {}, // pid -> visualType (dedupes types)
+        };
+      }
+      bucket.totalSet.add(pid);
+      var isFirst = row['Is First Author?'] === true ||
+                    String(row['Is First Author?']).toLowerCase() === 'true' ||
+                    row._is_lead === true ||
+                    Number(row['Author Position'] || 0) === 1;
+      if (isFirst) bucket.firstSet.add(pid);
+      // Record the visualType once per pid — dedupes if a scholar has multiple
+      // authorship rows on the same paper.
+      if (bucket.typesTotalByPid[pid] === undefined) {
+        bucket.typesTotalByPid[pid] = _visualPubType(pubsById[pid] || {});
+      }
+    });
+    if (master) master._scholarCountIndex = idx;
+    return idx;
+  }
+
+  function computePublicationTotals(master, scholarId) {
+    if (!master || !scholarId) {
+      return { total: 0, firstAuthored: 0, types: _emptyTypesTally(), gap: true };
+    }
+    var idx = _buildScholarCountIndex(master);
+    var bucket = idx[scholarId];
+    if (!bucket) {
+      return { total: 0, firstAuthored: 0, types: _emptyTypesTally(), gap: true };
+    }
+    var types = _emptyTypesTally();
+    Object.keys(bucket.typesTotalByPid).forEach(function (pid) {
+      var vt = bucket.typesTotalByPid[pid];
+      if (types[vt] !== undefined) types[vt] += 1;
+    });
+    return {
+      total: bucket.totalSet.size,
+      firstAuthored: bucket.firstSet.size,
+      types: types,
+      gap: false
+    };
+  }
+
+  // Return a list of scholars whose Authorship table is empty or suspiciously
+  // sparse. Used by the admin's "Master Authorship linkage gaps" report so Ron
+  // can prioritise fixing them in the Master sheet.
+  function findAuthorshipLinkageGaps(master, options) {
+    options = options || {};
+    var threshold = typeof options.sparseBelow === 'number' ? options.sparseBelow : 2;
+    var idx = _buildScholarCountIndex(master);
+    var gaps = [];
+    (master.scholars || []).forEach(function (s) {
+      var sid = s['Scholar ID'];
+      if (!sid) return;
+      var b = idx[sid];
+      var total = b ? b.totalSet.size : 0;
+      var reason = null;
+      if (total === 0) reason = 'no-authorship-rows';
+      else if (total < threshold) reason = 'sparse-authorship';
+      if (reason) {
+        gaps.push({
+          scholarId: sid,
+          scholarName: s['Scholar Name'] || (s['Family Name'] + ', ' + s['Given Names']),
+          total: total,
+          reason: reason
+        });
+      }
+    });
+    return gaps;
+  }
+
   // Expose to production loadAll (which we patch to call this).
   window.MasterFileAdapter = {
     load: loadFromMaster,
@@ -782,6 +922,8 @@
       TYPE_MAP: TYPE_MAP
     },
     keyifyName: keyifyName,
-    hashKey: hashKey
+    hashKey: hashKey,
+    computePublicationTotals: computePublicationTotals,
+    findAuthorshipLinkageGaps: findAuthorshipLinkageGaps
   };
 })();
