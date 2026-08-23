@@ -518,6 +518,10 @@
             </select>
           </div>
           <div class="form-group">
+            <label>Year of Birth <span class="hint" style="font-size:0.75rem;color:var(--muted);">(YYYY; blank if unknown)</span></label>
+            <input type="text" id="me-year-of-birth" data-ws="Scholars" data-field="Year of Birth" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 1942" />
+          </div>
+          <div class="form-group">
             <label>Alive / Deceased</label>
             <select id="me-alive" data-ws="Scholars" data-field="Alive / Deceased">
               <option value="">(unset)</option>
@@ -692,11 +696,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf25" defer></script>
-<script src="js/master-file-adapter.js?v=mf25" defer></script>
-<script src="js/admin-insights-migration.js?v=mf25" defer></script>
-<script src="js/admin-writeback-client.js?v=mf25" defer></script>
-<script src="js/admin-master.js?v=mf25" defer></script>
+<script src="js/db-gate.js?v=mf26" defer></script>
+<script src="js/master-file-adapter.js?v=mf26" defer></script>
+<script src="js/admin-insights-migration.js?v=mf26" defer></script>
+<script src="js/admin-writeback-client.js?v=mf26" defer></script>
+<script src="js/admin-master.js?v=mf26" defer></script>
 
 </body>
 </html>

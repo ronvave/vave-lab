@@ -213,3 +213,39 @@ Your Aug 23 doc asks Panel F to display a lifespan `YYYY – YYYY` for deceased 
 - Or specify a graceful "birth year unknown" Panel F fallback for now (for example, show `? – 2021` for Kuridrani).
 
 I will not add a Year of Birth column without your explicit approval.
+
+## Phase 3.3 update — Year of Birth + Panel F rules + Change Log schema fix
+
+**Already written to the Master workbook (no more sheet writes needed for this phase):**
+
+- New column `Year of Birth` at Scholars position 7, immediately after `Gender` and before `Alive / Deceased`. Every scholar row is blank; no birth years were inferred.
+- The Vanua Evidence Audit FILTER and Dashboard's `AF`-based COUNTIF were auto-shifted by Google Sheets on the insert (verified `J5:S445`, `AN5:AN445`, and `$AG$5:$AG` respectively).
+- Change Log row 227 documents the structural insert using the real 5-column schema (Version | Date | Change | Scope/Impact | Source). The prior pollution in rows 224-226 (extra columns F-J) was deliberately left in place per your instruction.
+
+**Repo changes in Phase 3.3 (this commit):**
+
+- `apps-script/master-writeback.gs` MAPPING v1.3 -> v1.4: adds `Year of Birth` (string, pattern `^(\d{4})?$`) between `Gender` and `Alive / Deceased`. The Change Log writer `appendChangeLog_` was rewritten to write exactly five columns: `[Version, Date, Change, Scope/Impact, Source]`. Actor / worksheet / field / verbatim old / verbatim new now live inside column D (Scope/Impact) so nothing spills into columns F onward.
+- `data/admin-master-mapping.json` mirror bumped to 1.4 with the same field.
+- `admin-master.html` Identity fieldset gains a new `Year of Birth` input between Gender and Alive / Deceased, using the same `pattern="^\d{4}$" maxlength="4"` validation as Year of Death.
+- `js/admin-master.js` `openEditModal` reads `s['Year of Birth']` and populates the new field. Preview / write-back / optimistic-lock all flow through the existing `collectMasterChanges` + `writeBackScholarChanges` path (no per-field wiring required because it iterates every `[id^=me-][data-ws][data-field]` element in the modal).
+- `js/master-file-adapter.js` now sources `yearOfBirth`, `yearOfDeath`, `salutation`, and the `deceased` boolean from the Master's structured columns (`Year of Birth`, `Year of Death`, `Title / Salutation`, `Alive / Deceased`) with the pre-existing sidecar `adminExtras` as fallback. `isDeceased` uses the exact controlled-enum match on `'Deceased'` (with sidecar or Master YoD as belt-and-braces fallbacks). A new `parseYearOrNull_` helper isolates the 4-digit-string parsing rules.
+- `js/itaukei-database-master.js` `renderCardMemorialBand` is unchanged in behavior but its header comment now documents the approved Panel F rules A-E, calls out Ron's regression test (Jemesa Tudravu -> `d. YYYY`), and clarifies the data source (Master columns via the adapter, not `scholar-profiles.json`).
+- Cache-buster mf25 -> mf26 on both `admin-master.html` and `itaukei-research-database-master.html` (5 tags + 4 tags respectively).
+
+**Panel F rules implemented (in `renderCardMemorialBand`):**
+
+- Rule A - Year of Birth and Year of Death both known: `YYYY – YYYY` (en-dash, matches the existing Panel F design).
+- Rule B - only Year of Death known: `d. YYYY`. This is the Jemesa Tudravu regression form.
+- Rule C - only Year of Birth known but Alive / Deceased = `Deceased`: `In memoriam`. No death year is invented.
+- Rule D - neither year known but Alive / Deceased = `Deceased`: `In memoriam`.
+- Rule E - Alive / Deceased != `Deceased`: no strip rendered (living scholars unaffected).
+
+Jemesa Tudravu (ITK-S0381) currently has Year of Death blank in the Master, so his Panel F strip will render `In memoriam` until his Year of Death is populated. Once his `Year of Death` cell is set to `2025`, the strip will render exactly `d. 2025`. No inference is performed by the dashboard.
+
+**Redeploy required?**
+
+Yes. `apps-script/master-writeback.gs` changed (MAPPING v1.3 -> v1.4 plus the Change Log writer). Follow the standard Phase 3.x redeploy sequence: paste the current server file into the Apps Script editor, Cmd-S, Deploy -> Manage deployments -> pencil -> New version -> Deploy (same URL, same secret).
+
+**Hard-refresh expected version.** After redeploying and hard-refreshing Admin V2 (Cmd-Shift-R) you should see `?v=mf26` on every script tag in DevTools Network. The Identity fieldset should now include the Year of Birth input between Gender and Alive / Deceased.
+
+**Do not start Phase 5 yet.** Phase 5 (Joeli round-trip write test) is still gated on your explicit approval after you verify: (1) Test connection stays green, (2) Joeli's row reads back Alive with Year of Birth / Year of Death blank, (3) Kuridrani's row reads back Deceased with Year of Death 2021, (4) Panel F strips render according to rules A-E.

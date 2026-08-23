@@ -7731,29 +7731,40 @@
   const ORCID_SVG = '<svg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
   const GS_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
 
-  // ---- Memorial band ----------------------------------------------------
-  // Render a small dark plinth beneath the profile photo for scholars
-  // flagged deceased in scholar-profiles.json. Reads three optional fields:
-  //   deceased     : boolean flag (only true triggers the band)
-  //   yearOfBirth  : integer, optional — shown as first year of lifespan
-  //   yearOfDeath  : integer, the death year (may be missing on rare cases)
+  // ---- Memorial band (Panel F lifespan strip) --------------------------
+  // Render the small dark plinth beneath the scholar photograph. Master-
+  // mode dashboard: `profile.deceased`, `profile.yearOfBirth`, and
+  // `profile.yearOfDeath` are wired by js/master-file-adapter.js from the
+  // Master Scholars sheet (columns Alive / Deceased, Year of Birth, Year
+  // of Death) with legacy sidecar admin-extras as fallback.
   //
-  // Text priority:
-  //   1. yearOfBirth + yearOfDeath both known -> "1942 – 2024" (en-dash)
-  //   2. yearOfDeath only                     -> "d. 2024"
-  //   3. deceased flag with no year           -> "In memoriam"
+  // Approved display rules (2026-08-23 Perplexity_Pre_Redeployment doc):
+  //   Rule A — birth + death known    -> "1942 – 2024" (en-dash preserved
+  //                                       from existing Panel F design).
+  //   Rule B — only death known       -> "d. 2024"
+  //   Rule C — only birth known but
+  //            status = Deceased      -> "In memoriam" (restrained
+  //                                       fallback; never invent a death
+  //                                       year).
+  //   Rule D — no years, Deceased     -> "In memoriam".
+  //   Rule E — living scholar         -> render nothing (return '').
   //
-  // Returns '' (nothing rendered) when deceased is false / unset, so living
-  // scholars are unaffected. All styling lives in `.db-scholar-card__memorial`
-  // in itaukei-research-database.html.
+  // Ron's regression case: Dr. Jemesa Tudravu (ITK-S0381), Deceased with
+  // Year of Death known and Year of Birth unknown -> "d. YYYY". The
+  // adapter surfaces Year of Death from the Master; when the Master cell
+  // is populated this branch will produce that exact string.
+  //
+  // All styling lives in `.db-scholar-card__memorial` in the master-mode
+  // dashboard HTML; this function must not change the strip's markup or
+  // classnames.
   function renderCardMemorialBand(profile) {
-    if (!profile || profile.deceased !== true) return '';
+    if (!profile || profile.deceased !== true) return ''; // Rule E
     const yob = Number.isFinite(profile.yearOfBirth) ? profile.yearOfBirth : null;
     const yod = Number.isFinite(profile.yearOfDeath) ? profile.yearOfDeath : null;
     let text;
-    if (yob && yod)      text = `${yob} – ${yod}`;   // en-dash between years
-    else if (yod)        text = `d. ${yod}`;
-    else                 text = 'In memoriam';
+    if (yob && yod)      text = `${yob} – ${yod}`;   // Rule A
+    else if (yod)        text = `d. ${yod}`;         // Rule B (regression: Jemesa)
+    else                 text = 'In memoriam';       // Rules C, D — never invent
     return `<div class="db-scholar-card__memorial" aria-label="Memorial: ${escapeAttr(text)}">${escapeHtml(text)}</div>`;
   }
 

@@ -472,6 +472,7 @@
     setMe('me-family',         s['Family Name'] || '');
     setMe('me-given',          s['Given Names'] || '');
     setMe('me-gender',         s['Gender'] || '');
+    setMe('me-year-of-birth',  s['Year of Birth'] || '');
     setMe('me-alive',          s['Alive / Deceased'] || '');
     setMe('me-year-of-death',  s['Year of Death'] || '');
     setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');

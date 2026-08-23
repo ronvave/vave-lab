@@ -1,6 +1,6 @@
 {
   "_note": "Mirror of the MAPPING object in apps-script/master-writeback.gs. Verified 2026-08-23 against the live Master sheet's row-4 headers. Field keys are the literal header strings (spaces, slashes, punctuation) exactly as they appear in the sheet. The Apps Script re-validates every write against its own MAPPING regardless, so tampering with this file cannot bypass the server allowlist.",
-  "version": "1.3",
+  "version": "1.4",
   "worksheets": {
     "Scholars": {
       "keyColumn": "Scholar ID",
@@ -11,6 +11,7 @@
         "Family Name":                 { "type": "string", "maxLen": 120 },
         "Given Names":                 { "type": "string", "maxLen": 120 },
         "Gender":                      { "type": "enum",   "enum": ["Male","Female","Unknown",""] },
+        "Year of Birth":               { "type": "string", "maxLen": 4, "pattern": "^(\\d{4})?$" },
         "Alive / Deceased":            { "type": "enum",   "enum": ["Alive","Deceased","Unknown",""] },
         "Year of Death":               { "type": "string", "maxLen": 4, "pattern": "^(\\d{4})?$" },
         "Paternal Confederacy":        { "type": "string", "maxLen": 60,  "derived": true },

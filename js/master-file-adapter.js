@@ -78,6 +78,20 @@
   function zoteroTypeFor(pubType) { return TYPE_MAP[pubType] || 'document'; }
   function thesisLevelFor(pubType) { return THESIS_LEVEL_MAP[pubType] || null; }
 
+  // Parse a Master-sheet year cell into an integer 4-digit year, or return
+  // null when the cell is blank, non-numeric, or outside the 1800..2100 sane
+  // range. The Master stores Year of Birth / Year of Death as free-text with
+  // a ^(\d{4})?$ pattern; this helper isolates that assumption in one place.
+  function parseYearOrNull_(cell) {
+    if (cell == null) return null;
+    var s = String(cell).trim();
+    if (s === '') return null;
+    if (!/^\d{4}$/.test(s)) return null;
+    var n = parseInt(s, 10);
+    if (!Number.isFinite(n) || n < 1800 || n > 2100) return null;
+    return n;
+  }
+
   // Deterministic 8-char Zotero-style keys ([A-Z0-9]) from arbitrary strings.
   // Used for synthesized `collections[]` entries so item.collections[] can
   // reference them and every existing panel keeps working.
@@ -574,8 +588,16 @@
       var adminExtras = (master.adminEnrichment && master.adminEnrichment.scholars
                           && master.adminEnrichment.scholars[s['Scholar ID']]) || {};
 
-      var isDeceased = /decease|deceased|d\./i.test(s['Alive / Deceased'] || '') ||
-                       Number.isFinite(adminExtras.yearOfDeath);
+      // Alive / Deceased is a controlled enum in the Master (2026-08-22
+      // normalization): {Alive, Deceased, Unknown, ''}. Prefer the exact
+      // enum match; fall back to any pre-existing sidecar admin extras
+      // that already flag a death year.
+      var aliveEnum   = String(s['Alive / Deceased'] || '').trim();
+      var masterYoB   = parseYearOrNull_(s['Year of Birth']);
+      var masterYoD   = parseYearOrNull_(s['Year of Death']);
+      var isDeceased  = (aliveEnum === 'Deceased') ||
+                        Number.isFinite(masterYoD) ||
+                        Number.isFinite(adminExtras.yearOfDeath);
 
       return {
         scholarId: s['Scholar ID'],
@@ -604,6 +626,11 @@
         institutionCountry: s['Institution Country'] || '',
         department: s['Current Department / Unit'] || '',
         alive: s['Alive / Deceased'] || '',
+        // Title / Salutation authoritative in Master (Aug 22 approval).
+        // Sidecar adminExtras.salutation is a legacy fallback for any
+        // scholars whose Title was populated in the sidecar before it
+        // moved into the Master schema.
+        salutation:       (s['Title / Salutation'] || adminExtras.salutation || ''),
         // Degrees — mastersUniversity/phdUniversity use C_Uni ONLY per rule.
         mastersUniversity: mastersRow ? mastersRow['C_Uni name'] : '',
         mastersCountry:    mastersRow ? mastersRow['Country'] : '',
@@ -621,8 +648,15 @@
         institutionUrl:   adminExtras.institutionUrl || '',
         departmentUrl:    adminExtras.departmentUrl || '',
         sector:           adminExtras.sector || '',
-        yearOfBirth:      Number.isFinite(adminExtras.yearOfBirth) ? adminExtras.yearOfBirth : null,
-        yearOfDeath:      Number.isFinite(adminExtras.yearOfDeath) ? adminExtras.yearOfDeath : null,
+        // yearOfBirth / yearOfDeath are now sourced from the Master
+        // Scholars sheet's structured columns (2026-08-23 approval).
+        // Sidecar admin-extras values remain as legacy fallbacks so any
+        // pre-existing enrichment doesn't disappear if a Master cell is
+        // blank.
+        yearOfBirth:      Number.isFinite(masterYoB) ? masterYoB
+                          : (Number.isFinite(adminExtras.yearOfBirth) ? adminExtras.yearOfBirth : null),
+        yearOfDeath:      Number.isFinite(masterYoD) ? masterYoD
+                          : (Number.isFinite(adminExtras.yearOfDeath) ? adminExtras.yearOfDeath : null),
         deceased:         isDeceased
       };
     });

@@ -52,19 +52,16 @@
  *   an incoming batch's per-field results are returned even if some fail.
  *
  * ── Change Log ──
- *   Every successful write appends one row to `Change Log`:
- *     A Version     — "admin-YYYYMMDD-N"    (N = per-day counter)
- *     B Date        — ISO date              (Pacific/Honolulu)
- *     C Change      — short label           (e.g. "edit: Scholars.Given Names")
- *     D Scope       — one-line summary      (SID · Field: old → new)
- *     E Source      — "admin-master-webapp v1"
- *     F Actor       — "Ron Vave (admin)"
- *     G Worksheet   — sheet name
- *     H Field       — header name
- *     I Old Value   — verbatim
- *     J New Value   — verbatim
- *   Approach: no rename of existing Change Log headers (row 4). Additional
- *   context lives in columns F–J which already exist as unnamed columns.
+ *   Every successful write appends ONE row using the real five-column schema
+ *   (Ron's directive 2026-08-23):
+ *     A Version       — "admin-YYYYMMDD-HHMMSS"   (per-write timestamp version)
+ *     B Date          — ISO date                  (Pacific/Honolulu)
+ *     C Change        — short label               (e.g. "edit: Scholars.Given Names")
+ *     D Scope/Impact  — one-line summary          (actor · SID · worksheet.field: old → new)
+ *     E Source        — "admin-master-webapp v1"
+ *   Do not write into columns F onward. Actor / worksheet / field / verbatim
+ *   old / verbatim new all live inside column D so the sheet's actual header
+ *   row (Version | Date | Change | Scope/Impact | Source) stays consistent.
  */
 
 // ------------------------- CONFIG -----------------------------------------
@@ -83,7 +80,7 @@ var TIMEZONE            = 'Pacific/Honolulu';
 // strings including spacing and slashes. Column names come from row 4 of
 // each sheet.
 var MAPPING = {
-  version: '1.3',
+  version: '1.4',
   worksheets: {
     'Scholars': {
       keyColumn: 'Scholar ID',
@@ -95,6 +92,9 @@ var MAPPING = {
         'Family Name':             { type: 'string', maxLen: 120 },
         'Given Names':             { type: 'string', maxLen: 120 },
         'Gender':                  { type: 'enum',   enum: ['Male','Female','Unknown',''] },
+        // Year of Birth: four-digit year, blank when unknown. Do not infer.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Birth':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
         // Alive / Deceased is a controlled three-value vocabulary in the sheet
         // (normalized 2026-08-22): Alive, Deceased, Unknown. A sheet-level data
         // validation enforces the same enum.
@@ -524,11 +524,14 @@ function appendChangeLog_(ss, worksheet, sid, field, oldValue, newValue) {
   var today = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd');
   var version = 'admin-' + Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd-HHmmss');
   var change  = 'edit: ' + worksheet + '.' + field;
-  var scope   = sid + ' · ' + field + ': ' + truncate_(oldValue, 60) + ' → ' + truncate_(newValue, 60);
-  sheet.appendRow([
-    version, today, change, scope, SOURCE_TAG,
-    ACTOR_LABEL, worksheet, field, String(oldValue == null ? '' : oldValue), String(newValue == null ? '' : newValue)
-  ]);
+  // Scope/Impact folds actor, scholar id, worksheet, field, and the exact
+  // old → new values into one string. Old/new are truncated to keep the
+  // cell readable; the raw values are visible in the diff preview at
+  // write-time and can be reconstructed from Master history if needed.
+  var scope = ACTOR_LABEL + ' · ' + sid + ' · ' + worksheet + '.' + field +
+              ': ' + truncate_(oldValue, 120) + ' → ' + truncate_(newValue, 120);
+  // Strict five-column write. Do not write into columns F onward.
+  sheet.appendRow([version, today, change, scope, SOURCE_TAG]);
 }
 
 function truncate_(s, n) {
