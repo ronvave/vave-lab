@@ -86,16 +86,33 @@ def fetch_dashboard_local(dump_dir: Path) -> list[list]:
 
 def parse_dashboard(rows: list[list]) -> dict:
     """Extract expected values from the Master-file Dashboard worksheet.
-    Layout (as of v0.2):
-      row 5:  Active iTaukei scholars, (blank), Female, (blank), Male, (blank), Gender unknown
-              → row 5 vals cell 0/2/4/6 are the totals
-      row 8:  Grad degrees, (blank), International, (blank), Funding, (blank), Awards
-      row 11: Publications, Authorship links, Scholars w/ exact links, Current positions
-      row 38: Completed Master's | Male | Female | Total
-      row 39: Completed PhD | Male | Female | Total
-      row 42: PhD currently in progress ...
-      row 44: Both completed Master's + PhD ...
-      row 51-55: Publication type breakdown (headline 5)
+
+    Current layout (audited 2026-08-23 against the live Dashboard tab). Row
+    numbers are the 1-indexed sheet rows; parenthetical indices are the
+    0-indexed positions this parser uses.
+
+      row  4 (idx  3): header  — 'Active iTaukei scholars' | ... | 'Female' | ... | 'Male' | ... | 'Gender unknown / verify'
+      row  5 (idx  4): values  — [0]=scholars, [3]=female, [5]=male, [7]=gender unknown
+      row  7 (idx  6): header  — 'Graduate degree episodes' | ... | 'International degree episodes' | ... | 'Funding episodes' | ... | 'Award episodes'
+      row  8 (idx  7): values  — [0]=grad episodes, [3]=international, [5]=funding, [7]=awards
+      row 10 (idx  9): header  — 'Publication records' | ... | 'Authorship bridge links' | ... | 'Scholars with exact links' | ... | 'Current position records'
+      row 11 (idx 10): values  — [0]=pubs, [3]=authorship, [5]=scholars w/link, [7]=current positions
+
+      Postgraduate Degrees by Gender (unchanged):
+      row 37 (idx 36): header  — 'Status' | 'Male' | 'Female' | 'Total'
+      row 38 (idx 37): Completed Master's | M | F | T
+      row 39 (idx 38): Completed PhD | M | F | T
+      row 42 (idx 41): PhD currently in progress | M | F | T
+      row 44 (idx 43): Both completed Master's + completed PhD | M | F | T
+
+      Publication-type breakdown (five headline categories):
+      row 49 (idx 48): header — 'Publication type' | 'All publications' | 'iTaukei publications' | 'iTaukei Male' | 'iTaukei Female' | 'Lead author Male' | 'Lead author Female' | 'Co-author Male' | 'Co-author Female'
+      row 51-55 (idx 50-54): Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book
+      row 56 (idx 55): Total
+
+    Note: the Dashboard has no explicit 'non-iTaukei' column; the reconciler's
+    'publications_non_itaukei_only_headline' expected value is derived as
+    (All publications - iTaukei publications) on the total row.
     """
 
     def cell(r: int, c: int) -> str:
@@ -110,27 +127,25 @@ def parse_dashboard(rows: list[list]) -> dict:
 
     out = {}
 
-    # Top KPI block — row 5 (index 4) has scholars/female/male/unknown
-    # Rows are 1-indexed in the sheet, 0-indexed here.
+    # Top KPI block — row 5 (index 4). Values sit at cols 0/3/5/7.
     out["scholars"] = num(4, 0)
-    out["scholars_female"] = num(4, 2)
-    out["scholars_male"] = num(4, 4)
-    out["scholars_gender_other"] = num(4, 6)
+    out["scholars_female"] = num(4, 3)
+    out["scholars_male"] = num(4, 5)
+    out["scholars_gender_other"] = num(4, 7)
 
-    # Row 8 (index 7): grad episodes, international, funding, awards
+    # Row 8 (index 7): grad episodes, international, funding, awards at cols 0/3/5/7.
     out["grad_degree_episodes"] = num(7, 0)
-    out["grad_degree_international"] = num(7, 2)
-    out["funding_episodes"] = num(7, 4)
-    out["award_episodes"] = num(7, 6)
+    out["grad_degree_international"] = num(7, 3)
+    out["funding_episodes"] = num(7, 5)
+    out["award_episodes"] = num(7, 7)
 
-    # Row 11 (index 10): pubs, authorship, scholars-w-link, positions
+    # Row 11 (index 10): pubs, authorship, scholars-w-link, positions at cols 0/3/5/7.
     out["publications_total"] = num(10, 0)
-    out["authorship_links"] = num(10, 2)
-    out["scholars_with_authorship_link"] = num(10, 4)
-    out["current_positions"] = num(10, 6)
+    out["authorship_links"] = num(10, 3)
+    out["scholars_with_authorship_link"] = num(10, 5)
+    out["current_positions"] = num(10, 7)
 
-    # Grad stats rows 37, 38, 41, 43 (indices 37-43)
-    # Row 37 = "Completed Master's | 153 | 150 | 303"
+    # Grad stats rows 38/39/42/44 (indices 37/38/41/43). Layout unchanged.
     out["completed_masters_male"] = num(37, 1)
     out["completed_masters_female"] = num(37, 2)
     out["completed_masters_total"] = num(37, 3)
@@ -144,8 +159,9 @@ def parse_dashboard(rows: list[list]) -> dict:
     out["both_masters_and_phd_female"] = num(43, 2)
     out["both_masters_and_phd_total"] = num(43, 3)
 
-    # Publication-type breakdown (headline 5) — rows 50-54 (indices 50-54)
-    # Journal Article | 1083 | 423 | 660 | ...
+    # Publication-type breakdown — rows 51-55 (indices 50-54).
+    # Col 1 = All publications, col 2 = iTaukei publications (total).
+    # non_itaukei is derived as (all - itaukei); the Dashboard has no explicit column.
     by_type = {}
     row_map = {
         "Journal Article": 50,
@@ -155,17 +171,22 @@ def parse_dashboard(rows: list[list]) -> dict:
         "Book": 54,
     }
     for t, r in row_map.items():
+        all_pubs = num(r, 1)
+        itaukei = num(r, 2)
         by_type[t] = {
-            "all": num(r, 1),
-            "non_itaukei": num(r, 2),
-            "itaukei": num(r, 3),
+            "all": all_pubs,
+            "non_itaukei": max(all_pubs - itaukei, 0),
+            "itaukei": itaukei,
         }
     out["by_publication_type_headline"] = by_type
 
-    # Totals row 55
-    out["publications_headline_five"] = num(55, 1)
-    out["publications_non_itaukei_only_headline"] = num(55, 2)
-    out["publications_itaukei_associated_headline"] = num(55, 3)
+    # Totals row 56 (index 55). Col 1 = All, col 2 = iTaukei total.
+    # publications_non_itaukei_only_headline is derived (Dashboard has no such column).
+    total_all = num(55, 1)
+    total_itaukei = num(55, 2)
+    out["publications_headline_five"] = total_all
+    out["publications_itaukei_associated_headline"] = total_itaukei
+    out["publications_non_itaukei_only_headline"] = max(total_all - total_itaukei, 0)
 
     return out
 
