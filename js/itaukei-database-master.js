@@ -5560,21 +5560,41 @@
         confederacy: cleanPaternal(s['Paternal Confederacy'])
       }
     ]));
-    // Compose the Panel D Line-4 annotation string from the four paternal
-    // fields. Order matches Ron's mockup: "Village vlg, District District,
-    // Province Province (Confederacy)". Any field that comes back blank is
-    // omitted along with its trailing separator. If ALL four are blank the
-    // milestone gets no Line 4 at all (composePaternalLine returns '').
-    function composePaternalLine(info) {
-      if (!info) return '';
-      const parts = [];
-      if (info.village)  parts.push(`${info.village} vlg`);
-      if (info.district) parts.push(`${info.district} District`);
-      if (info.province) parts.push(`${info.province} Province`);
-      let line = parts.join(', ');
-      if (info.confederacy) line = line ? `${line} (${info.confederacy})` : `(${info.confederacy})`;
-      return line;
+    // Compose the Panel D Line-4/5 annotation from the four paternal fields.
+    // Ron's mockup wraps the geography onto TWO lines:
+    //   line 4: "Village vlg, District District,"     (village + district)
+    //   line 5: "Province Province (Confederacy)"    (province + confederacy)
+    // This keeps callouts compact horizontally so they don't overflow onto
+    // the neighboring bars. Any missing field is omitted along with its
+    // trailing separator. If every field is blank/Unclassified both lines
+    // are '' and the milestone renders only the 3 base lines.
+    //
+    // Returned shape:
+    //   { topLine, bottomLine, joined }
+    //     - topLine    → line 4 (village + district)
+    //     - bottomLine → line 5 (province + confederacy)
+    //     - joined     → single-line form used only for tooltips
+    function composePaternal(info) {
+      const out = { topLine: '', bottomLine: '', joined: '' };
+      if (!info) return out;
+      const topParts = [];
+      if (info.village)  topParts.push(`${info.village} vlg`);
+      if (info.district) topParts.push(`${info.district} District`);
+      const botParts = [];
+      if (info.province) botParts.push(`${info.province} Province`);
+      if (info.confederacy) botParts.push(`(${info.confederacy})`);
+      // Trailing comma on topLine when bottomLine follows (mockup shows
+      // "Matokana vlg, Ono-i-Lau District," then wraps to line 5).
+      out.topLine = topParts.join(', ');
+      if (out.topLine && botParts.length) out.topLine = `${out.topLine},`;
+      out.bottomLine = botParts.join(' ');
+      const both = [out.topLine.replace(/,\s*$/, ''), out.bottomLine].filter(Boolean);
+      out.joined = both.join(', ');
+      return out;
     }
+    // Back-compat helper — a few call sites (tooltip strings, tests) still
+    // want the flat single-line form.
+    function composePaternalLine(info) { return composePaternal(info).joined; }
     // Name breakdown lookups (Family / Given) for milestone labels that need
     // "Given Family" order rather than the Scholar Name's "Family, Given" form.
     // Both fields are already in the public field allowlist (master_file_config.py)
@@ -5717,7 +5737,10 @@
       // blanks for every one of them, paternalLine is empty and the
       // renderer draws only 3 lines for this milestone.
       const paternalInfo = paternalInfoByScholarId.get(chosen.scholarId) || {};
-      const paternalLine = composePaternalLine(paternalInfo);
+      const paternalPair = composePaternal(paternalInfo);
+      const paternalLine = paternalPair.joined;
+      const paternalTop = paternalPair.topLine;
+      const paternalBottom = paternalPair.bottomLine;
       return {
         ...def,
         year,
@@ -5732,6 +5755,8 @@
         uniRenamed,
         paternalInfo,
         paternalLine,
+        paternalTop,
+        paternalBottom,
         headline,
         degree: chosen.degree,
         uni: chosen.uni,
@@ -6087,28 +6112,45 @@
     // horizontally, lift it one extra tier so callouts stack cleanly.
     // Rough label footprint: labels are now ~3 lines (headline + name + uni),
     // and the uni line is the widest, so we bump the width estimate up.
-    const LABEL_W_EST = 200;                       // px, rough label footprint
-    const LABEL_LINE_H = 11;                       // px per text line (tighter)
+    const LABEL_W_EST = 220;                       // px, rough label footprint (uni line is widest)
+    const LABEL_LINE_H = 12;                       // px per text line (slightly roomier)
     // Label block height scales with the max number of lines actually
     // rendered across visible milestones. Panel D always draws headline +
     // name + uni (3 lines). Milestones whose scholar has any paternal field
-    // populated get a 4th line (paternal geography). To keep tier stacking
-    // consistent when at least one milestone shows Line 4, we size the block
-    // for 4 lines; otherwise we keep the tighter 3-line block.
-    const anyPaternalLine = (panelDData.milestones || []).some(m => m && m.paternalLine);
-    const LABEL_LINES = anyPaternalLine ? 4 : 3;
-    const LABEL_BLOCK_H = LABEL_LINE_H * LABEL_LINES + 6;
+    // populated get TWO more lines (paternalTop, paternalBottom) that wrap
+    // village + district onto one line and province + confederacy onto the
+    // next. To keep tier stacking consistent, we size the block for 5 lines
+    // whenever at least one milestone has any paternal data; otherwise we
+    // keep the tighter 3-line block.
+    const anyPaternalLine = (panelDData.milestones || []).some(m => m && (m.paternalTop || m.paternalBottom));
+    const LABEL_LINES = anyPaternalLine ? 5 : 3;
+    const LABEL_BLOCK_H = LABEL_LINE_H * LABEL_LINES + 10;
     const MIN_Y = PAD_TOP + 6;
     // Tier 0 is highest (closest to plot top); higher index = lower on page.
     // Confine tiers to the upper ~60% of the plot so they stay in whitespace.
     const TIER_COUNT = 4;
     const tierTop = MIN_Y + LABEL_BLOCK_H;                           // tier-0 baseY
-    const tierBot = PAD_TOP + plotH * 0.55;                          // tier-3 baseY
+    // Extend tier range further down the plot so callouts sit deeper in
+    // whitespace when the block is 5 lines tall — keeps callouts clear of
+    // bar tops in the crowded 1990s onwards.
+    const tierBot = PAD_TOP + plotH * (anyPaternalLine ? 0.70 : 0.55);
     const tierY = tier => tierTop + (tierBot - tierTop) * (tier / (TIER_COUNT - 1));
+    // For each milestone we also decide whether the label anchors LEFT of
+    // the dot (default) or RIGHT of it. When a milestone sits in the right
+    // portion of the plot the left-anchored label would overflow into the
+    // right y-axis / off-canvas; right-anchoring flips the block so it
+    // grows leftward instead. Threshold: right half of the plot.
+    // The renderer reads `entry.anchor` ("start" or "end") and reorders the
+    // headline year token accordingly.
     let prevX = -Infinity, prevTier = -1;
     visibleMilestones.forEach((entry, idx) => {
       const { milestone, barTopY } = entry;
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
+      // Anchor decision — milestones in the right ~35% of the plot use a
+      // right-anchored (text-anchor="end") label so text grows leftward and
+      // doesn't collide with the right y-axis or overflow bars to the right.
+      const rightAnchor = x > PAD_LEFT + plotW * 0.65;
+      entry.anchor = rightAnchor ? 'end' : 'start';
       // Preferred tier: distribute the 1st/2nd/3rd/4th visible milestone
       // across the 4 tiers in a zig-zag order that keeps early milestones
       // (which sit above low bars) high and later ones progressively lower.
@@ -6119,7 +6161,7 @@
       // Push the label down toward the bar only if the bar top is already
       // below the tier (i.e. the tier sits in empty whitespace above the bar
       // — leave it there, don't slam it against a tall bar).
-      if (barTopY - 10 < baseY) baseY = Math.min(baseY, Math.max(tierTop, barTopY - 10));
+      if (barTopY - 12 < baseY) baseY = Math.min(baseY, Math.max(tierTop, barTopY - 12));
       // Horizontal collision guard: if we're close in x AND close in y to the
       // previous label, pick a different tier (one step further from prevTier).
       if (x - prevX < LABEL_W_EST) {
@@ -6132,31 +6174,41 @@
         tier = bestTier;
         baseY = tierY(tier);
       }
+      // Extra guard: label block bottom must clear the bar top by ≥6px.
+      // If not, walk the label upward until it does (bounded by MIN_Y).
+      const labelTop = () => baseY - LABEL_BLOCK_H;
+      let safety = 8;
+      while (safety-- > 0 && baseY > barTopY - 6 && labelTop() > MIN_Y) {
+        baseY -= LABEL_LINE_H;
+      }
+      baseY = Math.max(baseY, MIN_Y + LABEL_BLOCK_H); // never above plot area
       prevX = x; prevTier = tier;
       entry.labelBaseY = baseY;
     });
 
-    visibleMilestones.forEach(({ milestone, labelBaseY }) => {
+    visibleMilestones.forEach(({ milestone, labelBaseY, anchor }) => {
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
+      const isEnd = anchor === 'end';
       // The label block spans [labelBaseY - LABEL_BLOCK_H, labelBaseY].
-      // Layout inside (3 lines):
-      //   line 1 (headlineY)  — "YYYY: First male PhD" (year bold+colored,
-      //                         rest of headline muted grey)
-      //   line 2 (nameY)      — "Dr./Mr./Ms Given Family"
-      //   line 3 (uniY)       — "University name (CC)"
-      //   line 4 (paternalY)  — "Village vlg, District District, Province
-      //                          Province (Confederacy)" — only when the
-      //                          scholar has any paternal field populated.
-      // When LABEL_LINES == 3 (no paternal data on any milestone),
-      // paternalY still gets computed but no <text> is emitted for it.
+      // Layout inside (up to 5 lines):
+      //   line 1 (headlineY)   — left anchor: "YYYY: First male PhD"
+      //                          right anchor: "First male PhD: YYYY"
+      //   line 2 (nameY)       — "Dr./Mr./Ms Given Family"
+      //   line 3 (uniY)        — "University name (CC)"
+      //   line 4 (pat1Y)       — "Village vlg, District District,"
+      //   line 5 (pat2Y)       — "Province Province (Confederacy)"
+      // Lines 4/5 only emit when the scholar has paternal fields populated.
       const topOffset = (LABEL_LINES - 1) * LABEL_LINE_H;
       const headlineY = labelBaseY - topOffset;
       const nameY     = headlineY + LABEL_LINE_H;
       const uniY      = nameY + LABEL_LINE_H;
-      const paternalY = uniY + LABEL_LINE_H;
+      const pat1Y     = uniY + LABEL_LINE_H;
+      const pat2Y     = pat1Y + LABEL_LINE_H;
       const dotCX = x;
       const dotCY = headlineY - 3;             // dot sits just left/above the headline
-      const textX = x + 7;                     // text starts a hair right of the dot
+      // Text anchor position — to the RIGHT of the dot for left-aligned
+      // labels, to the LEFT of the dot for right-aligned labels.
+      const textX = isEnd ? x - 7 : x + 7;
 
       // Thin dashed drop line in the milestone's color, from just below the
       // dot down to the x-axis baseline. Drawn first so it sits underneath
@@ -6186,28 +6238,30 @@
       circle.appendChild(panelDSvg('title', {}, tooltipText));
       svg.appendChild(circle);
 
-      // Line 1: headline — "YYYY: First male PhD"
-      //   Entire headline is bold. The year token keeps the milestone color
-      //   so it still visually leads (per Ron's spec: "Keep each year bolded
-      //   and also retain separate text color for years"), while the rest
-      //   of the headline is bold in body-text grey.
+      // Line 1: headline. Left-anchored form is "YYYY: rest"; right-anchored
+      //   flips to "rest: YYYY" so the year lands adjacent to the dot (which
+      //   is on the RIGHT edge of the text block when isEnd).
+      //   Entire headline is bold. The year token keeps the milestone color;
+      //   the rest of the headline is bold in body-text grey.
       const headlineText = panelDSvg('text', {
-        x: textX, y: headlineY, 'text-anchor': 'start',
+        x: textX, y: headlineY, 'text-anchor': anchor,
         'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: '#4b5563'
       });
-      const yearTspan = panelDSvg('tspan', {
-        fill: milestone.color
-      }, `${milestone.year}: `);
-      const restTspan = panelDSvg('tspan', {}, milestone.headline || milestone.shortLabel || '');
-      headlineText.appendChild(yearTspan);
-      headlineText.appendChild(restTspan);
+      const rest = milestone.headline || milestone.shortLabel || '';
+      if (isEnd) {
+        headlineText.appendChild(panelDSvg('tspan', {}, `${rest}: `));
+        headlineText.appendChild(panelDSvg('tspan', { fill: milestone.color }, String(milestone.year)));
+      } else {
+        headlineText.appendChild(panelDSvg('tspan', { fill: milestone.color }, `${milestone.year}: `));
+        headlineText.appendChild(panelDSvg('tspan', {}, rest));
+      }
       headlineText.appendChild(panelDSvg('title', {}, tooltipText));
       svg.appendChild(headlineText);
 
       // Line 2: scholar name ("Dr./Mr./Ms Given Family")
       if (milestone.personLine) {
         svg.appendChild(panelDSvg('text', {
-          x: textX, y: nameY, 'text-anchor': 'start',
+          x: textX, y: nameY, 'text-anchor': anchor,
           'font-family': 'Arial', 'font-size': '10', fill: '#111827'
         }, milestone.personLine));
       }
@@ -6215,22 +6269,29 @@
       // Line 3: university name + country code, e.g. "University of London (UK)"
       if (milestone.uniLine) {
         svg.appendChild(panelDSvg('text', {
-          x: textX, y: uniY, 'text-anchor': 'start',
+          x: textX, y: uniY, 'text-anchor': anchor,
           'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563'
         }, milestone.uniLine));
       }
 
-      // Line 4: paternal geography, e.g.
-      //   "Draubuta vlg, Bau District, Tailevu Province (Kubuna)"
-      // Empty string means Master has no paternal fields populated for this
-      // scholar (or only 'Unclassified' placeholders), in which case we
-      // deliberately draw nothing so the chart never shows fabricated
+      // Lines 4 + 5: paternal geography wrapped onto two lines. Rendered in
+      // italic dark-olive/green (per Ron's mockup) so the ancestry provenance
+      // is visually distinct from the scholarly-institution line above. If
+      // Master has no populated paternal fields for this scholar, both
+      // strings are '' and nothing is drawn — Panel D never fabricates
       // ancestry data.
-      if (milestone.paternalLine) {
+      const PATERNAL_FILL = '#4A6A2F'; // dark olive/forest green
+      if (milestone.paternalTop) {
         svg.appendChild(panelDSvg('text', {
-          x: textX, y: paternalY, 'text-anchor': 'start',
-          'font-family': 'Arial', 'font-size': '9', fill: '#6b7280', 'font-style': 'italic'
-        }, milestone.paternalLine));
+          x: textX, y: pat1Y, 'text-anchor': anchor,
+          'font-family': 'Arial', 'font-size': '9', fill: PATERNAL_FILL, 'font-style': 'italic'
+        }, milestone.paternalTop));
+      }
+      if (milestone.paternalBottom) {
+        svg.appendChild(panelDSvg('text', {
+          x: textX, y: pat2Y, 'text-anchor': anchor,
+          'font-family': 'Arial', 'font-size': '9', fill: PATERNAL_FILL, 'font-style': 'italic'
+        }, milestone.paternalBottom));
       }
     });
 

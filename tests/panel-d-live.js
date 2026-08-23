@@ -34,8 +34,29 @@ function titleFor(stage, gen) {
 }
 function firstGiven(g) { return (g || '').trim().split(/\s+/)[0] || ''; }
 function CC(country) {
-  const map = { 'New Zealand': 'NZ', 'United Kingdom': 'UK', Fiji: 'FJ', 'United States': 'US', 'United States of America': 'US' };
+  const map = { 'New Zealand': 'NZ', 'United Kingdom': 'UK', Fiji: 'FJ', 'United States': 'US', 'United States of America': 'US', Australia: 'AU' };
   return map[String(country || '').trim()] || '';
+}
+function clean(v) {
+  const t = String(v == null ? '' : v).trim();
+  return t && t.toLowerCase() !== 'unclassified' ? t : '';
+}
+const paternal = new Map(scholars.map(s => [s['Scholar ID'], {
+  village:     clean(s['Village Paternal']),
+  district:    clean(s['District Paternal']),
+  province:    clean(s['Province Paternal']),
+  confederacy: clean(s['Paternal Confederacy'])
+}]));
+function composePaternal(info) {
+  const top = [];
+  if (info.village)  top.push(`${info.village} vlg`);
+  if (info.district) top.push(`${info.district} District`);
+  const bot = [];
+  if (info.province) bot.push(`${info.province} Province`);
+  if (info.confederacy) bot.push(`(${info.confederacy})`);
+  let topLine = top.join(', ');
+  if (topLine && bot.length) topLine = `${topLine},`;
+  return { topLine, bottomLine: bot.join(' ') };
 }
 
 const completed = degrees.filter(r => isCompleted(r) && (isMasters(r) || isPhd(r)))
@@ -74,6 +95,9 @@ for (const def of defs) {
   console.log(`  O_Uni:           ${oUni}`);
   console.log(`  Display uni:     ${canonical}${renamed ? '*' : ''} (${cc || '??'})`);
   console.log(`  uniRenamed:      ${renamed}`);
+  const pat = composePaternal(paternal.get(sid) || {});
+  console.log(`  Line 4 (paternal top):    ${pat.topLine || '(none)'}`);
+  console.log(`  Line 5 (paternal bottom): ${pat.bottomLine || '(none)'}`);
   console.log(`  Annotation:      ${c.year}: ${def.label} — ${title} ${public_} — ${canonical}${renamed ? '*' : ''} (${cc})`);
   console.log('');
 }
