@@ -92,6 +92,24 @@
     return n;
   }
 
+  // Strip Master 'unknown-value' sentinel strings to '' so downstream
+  // renderers can treat them as absent. The Master convention is to
+  // populate village / island / district / province cells with the
+  // literal string 'Unclassified' when the fact isn't known. Other
+  // occasional variants ('Unknown', 'N/A', 'NA', '-') are also collapsed
+  // for defensive parity. Comparison is case-insensitive and whitespace-
+  // tolerant. Real place names never trigger these sentinels because
+  // no iTaukei village / island / district is literally called any of
+  // these. (Ron's 2026-08-23 note about Tabudravu's card showing
+  // 'Unclassified vlg, Unclassified Is'.)
+  var _SENTINELS = { '': 1, 'unclassified': 1, 'unknown': 1, 'n/a': 1, 'na': 1, '-': 1 };
+  function cleanSentinel_(cell) {
+    if (cell == null) return '';
+    var s = String(cell).trim();
+    if (!s) return '';
+    return _SENTINELS[s.toLowerCase()] ? '' : s;
+  }
+
   // Normalize a Master 'ORCID / Researcher ID' cell to the canonical URL
   // 'https://orcid.org/XXXX-XXXX-XXXX-XXXX'. Accepts either the bare 16-digit
   // ORCID identifier (4 groups of 4 digits/X separated by hyphens) or a full
@@ -598,8 +616,8 @@
       var parts = name.split(',');
       var last = (parts[0] || '').trim();
       var first = (parts[1] || '').trim();
-      var paternal = (s['Province Paternal'] || '').trim();
-      var maternal = (s['Province Maternal'] || '').trim();
+      var paternal = cleanSentinel_(s['Province Paternal']);
+      var maternal = cleanSentinel_(s['Province Maternal']);
 
       // Grad degrees for this scholar.
       var grads = master.gradDegrees.filter(function (g) { return g['Scholar ID'] === s['Scholar ID']; });
@@ -630,10 +648,10 @@
         last: last,
         paternalProvince: paternal,
         maternalProvince: maternal,
-        paternalDistrict: (s['District Paternal'] || '').trim(),
-        maternalDistrict: (s['District Maternal'] || '').trim(),
-        paternalIsland:   (s['Island Paternal'] || '').trim(),
-        maternalIsland:   (s['Island Maternal'] || '').trim(),
+        paternalDistrict: cleanSentinel_(s['District Paternal']),
+        maternalDistrict: cleanSentinel_(s['District Maternal']),
+        paternalIsland:   cleanSentinel_(s['Island Paternal']),
+        maternalIsland:   cleanSentinel_(s['Island Maternal']),
         effectivePaternalProvince: paternal || maternal || '',
         // Paternal confederacy: Master column if present, else derived from paternal province.
         // (Kept in existing `confederacy` field for backwards-compat with dashboards.)
@@ -661,14 +679,16 @@
         phdUniversity:     phdRow ? phdRow['C_Uni name'] : '',
         phdCountry:        phdRow ? phdRow['Country'] : '',
         phdOriginalName:   phdRow ? phdRow['O_Uni name'] : '',
-        village: s['Village Paternal'] || s['Village Maternal'] || '',
-        // Island (paternal takes precedence over maternal, mirroring `village`).
-        // Renderer uses this to build the Panel F meta line as
-        // 'Malawai vlg, Gau Is · Lomaiviti Province' when both fields are
-        // populated, or 'Malawai vlg · Lomaiviti Province' when only village
-        // is known. (Ron's 2026-08-23 request for the V2 scholar-profile line
-        // to match the old dashboard's paternal-info format.)
-        island: (s['Island Paternal'] || s['Island Maternal'] || '').trim(),
+        // Village + island: paternal wins, maternal is a fallback. Both are
+        // passed through cleanSentinel_() so Master placeholder strings
+        // like 'Unclassified' don't leak into the Panel F meta line.
+        // Renderer format:
+        //   village + island: 'Malawai vlg, Gau Is · Lomaiviti Province'
+        //   village only:     'Malawai vlg · Lomaiviti Province'
+        //   island only:      'Gau Is · Lomaiviti Province'
+        //   neither:          'Village not yet added · Lomaiviti Province'
+        village: cleanSentinel_(s['Village Paternal']) || cleanSentinel_(s['Village Maternal']) || '',
+        island:  cleanSentinel_(s['Island Paternal'])  || cleanSentinel_(s['Island Maternal'])  || '',
         subject: s['Primary Discipline / Field'] || '',
         // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
         // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit
