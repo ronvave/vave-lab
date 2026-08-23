@@ -460,37 +460,46 @@
       '<div class="headline">Canonical counts: ' + esc(c.total) + ' publications · ' + esc(c.firstAuthored) + ' first-authored</div>' +
       flagLine + oldRefLine;
 
-    // Master read-only
-    $('#ro-family').value           = s['Family Name'] || '';
-    $('#ro-given').value            = s['Given Names'] || '';
-    $('#ro-gender').value           = s['Gender'] || '';
-    $('#ro-alive').value            = s['Alive / Deceased'] || s['Alive/Deceased'] || '';
-    // Paternal confederacy: Master value if present, else derived via Lookups.
-    $('#ro-confed').value            = s['Paternal Confederacy'] || s['Confederacy'] || '';
-    // Maternal confederacy: currently derived read-only from Maternal Province
-    // via the Lookups tab (Doc 1 req #5). Becomes an editable Master column
-    // once write-back is approved.
-    // Derive maternal confederacy from Maternal Province via Lookups.
-    var _matProv = (s['Province Maternal'] || s['Maternal Province'] || '').trim();
-    $('#ro-confed-maternal').value   = PROVINCE_TO_CONFED[_matProv] || '';
-    $('#ro-discipline').value        = s['Discipline'] || s['Primary Discipline / Field'] || '';
-    $('#ro-prov-paternal').value     = s['Province Paternal'] || s['Paternal Province'] || '';
-    $('#ro-prov-maternal').value     = s['Province Maternal'] || s['Maternal Province'] || '';
-    if ($('#ro-dist-paternal')) $('#ro-dist-paternal').value = s['District Paternal'] || '';
-    if ($('#ro-dist-maternal')) $('#ro-dist-maternal').value = s['District Maternal'] || '';
-    $('#ro-vil-paternal').value      = s['Village Paternal'] || s['Paternal Village'] || '';
-    $('#ro-vil-maternal').value      = s['Village Maternal'] || s['Maternal Village'] || '';
-    $('#ro-title').value            = s['Current Title / Role'] || s['Current Title'] || '';
-    $('#ro-institution').value      = s['Current Institution'] || '';
-    $('#ro-inst-country').value     = s['Institution Country'] || s['Current Country'] || '';
-    $('#ro-department').value       = s['Current Department / Unit'] || s['Current Department'] || '';
-    $('#ro-masters-uni').value      = s['Masters University'] || '';
-    $('#ro-masters-country').value  = s['Masters Country'] || '';
-    $('#ro-phd-uni').value          = s['PhD University'] || '';
-    $('#ro-phd-country').value      = s['PhD Country'] || '';
-    $('#ro-orcid').value            = s['ORCID / Researcher ID'] || s['ORCID'] || '';
-    $('#ro-gs-url').value           = s['Google Scholar URL'] || '';
-    $('#ro-profile-url').value      = s['Current Profile URL'] || '';
+    // Master editable (Phase 3). Each me-* input's data-loaded attribute
+    // stores the exact value the modal was opened with; on save we compare
+    // against that snapshot to build a changes[] batch, and the server does
+    // an optimistic-lock check against the live cell.
+    // Populate province dropdowns from PROVINCE_TO_CONFED (canonical list).
+    populateProvinceDropdowns();
+    var provPat = s['Province Paternal'] || s['Paternal Province'] || '';
+    var provMat = s['Province Maternal'] || s['Maternal Province'] || '';
+    setMe('me-family',         s['Family Name'] || '');
+    setMe('me-given',          s['Given Names'] || '');
+    setMe('me-gender',         s['Gender'] || '');
+    setMe('me-alive',          s['Alive / Deceased'] || s['Alive/Deceased'] || '');
+    setMe('me-discipline',     s['Discipline'] || s['Primary Discipline / Field'] || s['Primary Discipline/Field'] || '');
+    setMe('me-prov-paternal',  provPat);
+    setMe('me-dist-paternal',  s['District Paternal'] || '');
+    setMe('me-vil-paternal',   s['Village Paternal'] || s['Paternal Village'] || '');
+    setMe('me-isl-paternal',   s['Island Paternal'] || '');
+    setMe('me-prov-maternal',  provMat);
+    setMe('me-dist-maternal',  s['District Maternal'] || '');
+    setMe('me-vil-maternal',   s['Village Maternal'] || s['Maternal Village'] || '');
+    setMe('me-isl-maternal',   s['Island Maternal'] || '');
+    setMe('me-title',          s['Current Title'] || s['Current Title / Role'] || '');
+    setMe('me-role',           s['Current Role'] || '');
+    setMe('me-institution',    s['Current Institution'] || '');
+    setMe('me-inst-country',   s['Current Country'] || s['Institution Country'] || '');
+    setMe('me-department',     s['Current Department'] || s['Current Department / Unit'] || '');
+    setMe('me-orcid',          s['ORCID'] || '');
+    setMe('me-researcher-id',  s['Researcher ID'] || '');
+    setMe('me-gs-url',         s['Google Scholar URL'] || '');
+    setMe('me-profile-url',    s['Current Profile URL'] || '');
+    // Derived confederacies (read-only, driven by province dropdowns).
+    $('#me-confed-paternal-derived').value = PROVINCE_TO_CONFED[provPat.trim()] || (s['Paternal Confederacy'] || s['Confederacy'] || '');
+    $('#me-confed-maternal-derived').value = PROVINCE_TO_CONFED[provMat.trim()] || '';
+
+    // Load Positions and Graduate Degrees rows asynchronously from the endpoint.
+    // We do not block the modal; each fieldset shows "Loading…" until fetched.
+    state.positionRows = null;
+    state.gradDegreeRows = null;
+    loadPositionsForModal(sid);
+    loadGradDegreesForModal(sid);
 
     // Admin editable
     $('#pf-sector').value            = enr.sector || '';
@@ -527,7 +536,297 @@
     state.editingSid = null;
     state.photoDataUrl = null;
     state.photoDirty = false;
+    state.positionRows = null;
+    state.gradDegreeRows = null;
+    state.pendingChanges = null;
   }
+
+  // ------------------------- Phase 3 helpers -------------------------
+
+  // Set a master-editable input's value AND capture the value under
+  // data-loaded, so saveEditModal can build changes[] against the exact
+  // snapshot that opened the modal (optimistic-lock oldValue).
+  function setMe (id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    var s = val == null ? '' : String(val);
+    el.value = s;
+    el.setAttribute('data-loaded', s);
+  }
+
+  var _provinceDropdownsFilled = false;
+  function populateProvinceDropdowns () {
+    if (_provinceDropdownsFilled) return;
+    var provinces = Object.keys(PROVINCE_TO_CONFED).sort();
+    ['me-prov-paternal', 'me-prov-maternal'].forEach(function (id) {
+      var sel = document.getElementById(id);
+      if (!sel) return;
+      provinces.forEach(function (p) {
+        var opt = document.createElement('option');
+        opt.value = p; opt.textContent = p;
+        sel.appendChild(opt);
+      });
+      sel.addEventListener('change', function () {
+        var conf = PROVINCE_TO_CONFED[sel.value] || '';
+        var derived = id === 'me-prov-paternal' ? 'me-confed-paternal-derived' : 'me-confed-maternal-derived';
+        var el = document.getElementById(derived);
+        if (el) el.value = conf;
+      });
+    });
+    _provinceDropdownsFilled = true;
+  }
+
+  // Load Positions rows for a scholar (Master live) and render an editable
+  // sub-form per row. Each field carries data-ws / data-field / data-row /
+  // data-loaded so the save flow can build changes[] uniformly.
+  async function loadPositionsForModal (sid) {
+    var container = $('#positions-container');
+    var status = $('#positions-status');
+    if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+      status.textContent = 'Write-back endpoint not configured — Positions edit disabled.';
+      return;
+    }
+    try {
+      var res = await adminWriteback.readRows('Positions', sid);
+      if (res.status !== 'ok') { status.textContent = 'Failed to load Positions: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
+      state.positionRows = res.rows || [];
+      renderPositionsRows(sid, state.positionRows, container);
+    } catch (e) {
+      status.textContent = 'Failed to load Positions: ' + esc(e.message || e);
+    }
+  }
+
+  function renderPositionsRows (sid, rows, container) {
+    if (!rows.length) {
+      container.innerHTML = '<div class="meta" style="color:var(--muted);">No Positions rows on the Master sheet for this scholar. Positions can only be added by editing the sheet directly (write-back is per-existing-row for now).</div>';
+      return;
+    }
+    var fields = [
+      { name: 'Role Status',       label: 'Role status' },
+      { name: 'Title',             label: 'Title' },
+      { name: 'Academic Rank',     label: 'Academic rank' },
+      { name: 'Institution',       label: 'Institution' },
+      { name: 'Department/Unit',   label: 'Department / Unit' },
+      { name: 'Country',           label: 'Country' },
+      { name: 'Leadership Title',  label: 'Leadership title' },
+      { name: 'Leadership Category',label: 'Leadership category' },
+      { name: 'Leadership Level',  label: 'Leadership level' },
+      { name: 'Start Year',        label: 'Start year',        type: 'number' },
+      { name: 'End Year',          label: 'End year',          type: 'number' },
+      { name: 'Source URL',        label: 'Source URL',        type: 'url' },
+      { name: 'Evidence/Notes',    label: 'Evidence / notes' }
+    ];
+    var html = '';
+    rows.forEach(function (r, idx) {
+      html += '<div class="row-block" style="border:1px solid var(--cream); border-radius:8px; padding:12px; margin-bottom:12px;">';
+      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(r.fields['Role Status'] || 'no status') + '</div>';
+      html += '<div class="form-grid">';
+      fields.forEach(function (f) {
+        var val = r.fields[f.name] == null ? '' : String(r.fields[f.name]);
+        var type = f.type || 'text';
+        var attrs = 'class="me-row-input" data-ws="Positions" data-field="' + esc(f.name) + '" data-row="' + r.rowNumber + '" data-loaded="' + esc(val) + '"';
+        html += '<div class="form-group"><label>' + esc(f.label) + '</label><input type="' + type + '" ' + attrs + ' value="' + esc(val) + '" /></div>';
+      });
+      html += '</div></div>';
+    });
+    container.innerHTML = html;
+  }
+
+  async function loadGradDegreesForModal (sid) {
+    var container = $('#graddegrees-container');
+    var status = $('#graddegrees-status');
+    if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+      status.textContent = 'Write-back endpoint not configured — Graduate Degrees edit disabled.';
+      return;
+    }
+    try {
+      var res = await adminWriteback.readRows('Graduate Degrees', sid);
+      if (res.status !== 'ok') { status.textContent = 'Failed to load Graduate Degrees: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
+      state.gradDegreeRows = res.rows || [];
+      renderGradDegreesRows(sid, state.gradDegreeRows, container);
+    } catch (e) {
+      status.textContent = 'Failed to load Graduate Degrees: ' + esc(e.message || e);
+    }
+  }
+
+  function renderGradDegreesRows (sid, rows, container) {
+    if (!rows.length) {
+      container.innerHTML = '<div class="meta" style="color:var(--muted);">No Graduate Degrees rows on the Master sheet for this scholar.</div>';
+      return;
+    }
+    var fields = [
+      { name: 'Degree Stage',      label: 'Degree stage' },
+      { name: 'Qualification',     label: 'Qualification' },
+      { name: 'Field',             label: 'Field' },
+      { name: 'C_Uni name',        label: 'University (current name)' },
+      { name: 'O_Uni name',        label: 'University (original name)' },
+      { name: 'Country',           label: 'Country' },
+      { name: 'International from Fiji?', label: 'International from Fiji?' },
+      { name: 'City',              label: 'City' },
+      { name: 'Region',            label: 'Region' },
+      { name: 'Year-Status',       label: 'Year status' },
+      { name: 'Completion Status', label: 'Completion status' },
+      { name: 'Thesis Title',      label: 'Thesis title' },
+      { name: 'Start Year',        label: 'Start year', type: 'number' },
+      { name: 'Finish Year',       label: 'Finish year', type: 'number' },
+      { name: 'Duration',          label: 'Duration' }
+    ];
+    var html = '';
+    rows.forEach(function (r) {
+      var stage = r.fields['Degree Stage'] || '';
+      html += '<div class="row-block" style="border:1px solid var(--cream); border-radius:8px; padding:12px; margin-bottom:12px;">';
+      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(stage) + '</div>';
+      html += '<div class="form-grid">';
+      fields.forEach(function (f) {
+        var val = r.fields[f.name] == null ? '' : String(r.fields[f.name]);
+        var type = f.type || 'text';
+        var attrs = 'class="me-row-input" data-ws="Graduate Degrees" data-field="' + esc(f.name) + '" data-row="' + r.rowNumber + '" data-loaded="' + esc(val) + '"';
+        html += '<div class="form-group"><label>' + esc(f.label) + '</label><input type="' + type + '" ' + attrs + ' value="' + esc(val) + '" /></div>';
+      });
+      html += '</div></div>';
+    });
+    container.innerHTML = html;
+  }
+
+  // Collect all master-editable inputs (me-* on Scholars + row-inputs on
+  // Positions/Graduate Degrees) into a changes[] batch. Compares live value
+  // to the data-loaded snapshot; only changed fields are included.
+  function collectMasterChanges (sid) {
+    var out = [];
+    // Scholars-tab me-* inputs.
+    $$('#edit-modal [id^="me-"][data-ws][data-field]').forEach(function (el) {
+      var loaded = el.getAttribute('data-loaded') || '';
+      var current = (el.value == null ? '' : String(el.value));
+      // Trim edges for comparison to match server's normalizeForCompare_.
+      var loadedT = loaded.replace(/^\s+|\s+$/g, '');
+      var currentT = current.replace(/^\s+|\s+$/g, '');
+      if (loadedT === currentT) return;
+      out.push({
+        worksheet: el.getAttribute('data-ws'),
+        scholarId: sid,
+        field:     el.getAttribute('data-field'),
+        oldValue:  loaded,
+        newValue:  current
+      });
+    });
+    // Positions / Graduate Degrees row-inputs.
+    $$('#edit-modal .me-row-input[data-ws][data-field][data-row]').forEach(function (el) {
+      var loaded = el.getAttribute('data-loaded') || '';
+      var current = (el.value == null ? '' : String(el.value));
+      var loadedT = loaded.replace(/^\s+|\s+$/g, '');
+      var currentT = current.replace(/^\s+|\s+$/g, '');
+      if (loadedT === currentT) return;
+      out.push({
+        worksheet: el.getAttribute('data-ws'),
+        scholarId: sid,
+        rowNumber: parseInt(el.getAttribute('data-row'), 10),
+        field:     el.getAttribute('data-field'),
+        oldValue:  loaded,
+        newValue:  current
+      });
+    });
+    return out;
+  }
+
+  // ------------------------- Phase 4: preview + writeback flow -------------------------
+
+  function showPreviewModal (sid, changes) {
+    state.pendingChanges = changes;
+    $('#preview-sid').textContent = sid + ' · ' + changes.length + ' change' + (changes.length === 1 ? '' : 's');
+    var html = '<table class="table"><thead><tr><th>Worksheet</th><th>Row</th><th>Field</th><th>Old value</th><th>New value</th></tr></thead><tbody>';
+    changes.forEach(function (c) {
+      html += '<tr>' +
+        '<td>' + esc(c.worksheet) + '</td>' +
+        '<td>' + esc(c.rowNumber || '—') + '</td>' +
+        '<td>' + esc(c.field) + '</td>' +
+        '<td class="mono" style="color:var(--muted);">' + esc(c.oldValue || '(blank)') + '</td>' +
+        '<td class="mono">' + esc(c.newValue || '(blank)') + '</td>' +
+        '</tr>';
+    });
+    html += '</tbody></table>';
+    $('#preview-body').innerHTML = html;
+    $('#preview-modal').classList.add('is-visible');
+  }
+
+  function closePreviewModal () {
+    $('#preview-modal').classList.remove('is-visible');
+  }
+
+  // Actually execute the writeback batch. Returns { ok, response } where
+  // response is the raw server payload. Called by preview "Confirm".
+  async function executeMasterWriteback (changes) {
+    if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+      throw new Error('Master write-back endpoint is not configured.');
+    }
+    var res = await adminWriteback.write(changes);
+    return res;
+  }
+
+  // After a successful (or partial) writeback, refresh the master snapshot
+  // for this scholar from the server so the modal reflects the new state
+  // and the underlying state.scholarById is consistent.
+  async function refreshMasterForScholar (sid) {
+    try {
+      var res = await adminWriteback.readScholar(sid);
+      if (res.status !== 'ok') return;
+      var live = res.fields || {};
+      var s = state.scholarById[sid];
+      if (s) {
+        Object.keys(live).forEach(function (k) { s[k] = live[k]; });
+      }
+    } catch (e) {
+      log('Master refresh failed for ' + sid + ': ' + (e.message || e), 'error');
+    }
+  }
+
+  // Load the Master sheet's Change Log via the endpoint and render it.
+  async function loadChangeLogTab () {
+    var wrap = $('#changelog-table-wrap');
+    var status = $('#changelog-status');
+    if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+      wrap.innerHTML = '<div class="meta" style="color:var(--muted);">Configure the write-back endpoint (Data source tab) to view the Master change log.</div>';
+      status.textContent = 'endpoint not configured';
+      return;
+    }
+    status.textContent = 'loading…';
+    try {
+      var res = await adminWriteback.readChangeLog(100);
+      if (res.status !== 'ok') {
+        wrap.innerHTML = '<div class="meta" style="color:var(--danger);">Change Log load failed: ' + esc(res.status + ' · ' + (res.error || res.reason || '')) + '</div>';
+        status.textContent = 'failed';
+        return;
+      }
+      var rows = res.rows || [];
+      if (!rows.length) {
+        wrap.innerHTML = '<div class="meta" style="color:var(--muted);">No entries in the Master Change Log yet.</div>';
+        status.textContent = '0 entries';
+        return;
+      }
+      var html = '<table class="table"><thead><tr>' +
+        '<th>Row</th><th>Version</th><th>Date</th><th>Actor</th><th>Worksheet</th><th>Field</th><th>Old value</th><th>New value</th><th>Source</th>' +
+        '</tr></thead><tbody>';
+      rows.forEach(function (r) {
+        html += '<tr>' +
+          '<td class="mono">' + esc(r.rowNumber) + '</td>' +
+          '<td class="mono">' + esc(r.version) + '</td>' +
+          '<td class="mono">' + esc(r.date) + '</td>' +
+          '<td>' + esc(r.actor) + '</td>' +
+          '<td>' + esc(r.worksheet) + '</td>' +
+          '<td>' + esc(r.field) + '</td>' +
+          '<td class="mono" style="color:var(--muted);">' + esc(r.oldValue) + '</td>' +
+          '<td class="mono">' + esc(r.newValue) + '</td>' +
+          '<td class="mono" style="color:var(--muted);">' + esc(r.source) + '</td>' +
+          '</tr>';
+      });
+      html += '</tbody></table>';
+      wrap.innerHTML = html;
+      status.textContent = rows.length + ' entries (most recent first)';
+    } catch (e) {
+      wrap.innerHTML = '<div class="meta" style="color:var(--danger);">Change Log load failed: ' + esc(e.message || e) + '</div>';
+      status.textContent = 'error';
+    }
+  }
+
 
   function setPhotoPreview (src) {
     var box = $('#pf-photo-preview');
@@ -600,13 +899,96 @@
   }
 
   // ------------------------- save flow -------------------------
+  // Two-phase flow:
+  //   1. Collect any master-editable field diffs. If there are any, show the
+  //      preview modal. The preview modal's "Confirm and write" button then
+  //      calls executeSaveAfterPreview() to do the writeback + rest of push.
+  //   2. If there are no master-editable diffs, skip preview and go straight
+  //      to the existing photo/enrichment/insights push.
   async function saveEditModal () {
     if (!state.editingSid) return;
     var sid = state.editingSid;
+    var masterChanges = collectMasterChanges(sid);
+    if (masterChanges.length > 0) {
+      // Guard: block preview if the writeback endpoint isn't set.
+      if (!window.adminWriteback || !adminWriteback.isConfigured()) {
+        toast('Master edits require the write-back endpoint (Data source tab).', 'error', 8000);
+        return;
+      }
+      showPreviewModal(sid, masterChanges);
+      return;
+    }
+    // No master edits — push only enrichment/insights/photo.
+    await performNonMasterPush(sid);
+  }
+
+  // Called by preview modal Confirm: run the master write-back, handle
+  // conflicts/partials, then push non-master pieces on success.
+  async function executeSaveAfterPreview () {
+    var sid = state.editingSid;
+    if (!sid) { closePreviewModal(); return; }
+    var changes = state.pendingChanges || [];
+    var confirmBtn = $('#preview-confirm');
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Writing…';
+    try {
+      var res = await executeMasterWriteback(changes);
+      var results = res.results || [];
+      var okCount = 0, conflictCount = 0, rejectCount = 0, noopCount = 0;
+      var messages = [];
+      results.forEach(function (r) {
+        if (r.status === 'ok') okCount++;
+        else if (r.status === 'noop') noopCount++;
+        else if (r.status === 'conflict') { conflictCount++;
+          var d = r.diff || {};
+          messages.push('CONFLICT ' + (d.worksheet || '?') + '.' + (d.field || '?') +
+                        ' (row ' + (r.change && r.change.rowNumber ? r.change.rowNumber : '—') +
+                        '): loaded="' + (d.loadedValue||'') + '" current="' + (d.currentValue||'') +
+                        '" attempted="' + (d.attemptedValue||'') + '"');
+        }
+        else { rejectCount++;
+          messages.push('REJECT ' + (r.change && r.change.field ? r.change.field : '?') + ': ' + (r.reason || r.status));
+        }
+      });
+      log('Master write-back — ' + res.status + ': ' + okCount + ' ok, ' + noopCount + ' noop, ' + conflictCount + ' conflict, ' + rejectCount + ' reject.', res.status === 'ok' ? 'ok' : (res.status === 'partial' ? 'warn' : 'error'));
+      messages.forEach(function (m) { log(m, 'warn'); });
+
+      if (res.status === 'rejected' || res.status === 'conflict') {
+        toast('Write-back rejected — see Action log for the conflict diff. Nothing was written to non-master files.', 'error', 9000);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = 'Confirm and write';
+        return;
+      }
+      // ok or partial — refresh master, then continue non-master push.
+      await refreshMasterForScholar(sid);
+      // Re-set data-loaded for successfully-written fields so a re-open shows fresh baselines.
+      results.forEach(function (r) {
+        if (r.status !== 'ok') return;
+        var c = r.change || {};
+        // Best-effort: update the me-* input's data-loaded to the newValue.
+        var selector;
+        if (c.rowNumber) selector = '#edit-modal .me-row-input[data-ws="' + c.worksheet + '"][data-field="' + c.field + '"][data-row="' + c.rowNumber + '"]';
+        else             selector = '#edit-modal [id^="me-"][data-ws="' + c.worksheet + '"][data-field="' + c.field + '"]';
+        var el = document.querySelector(selector);
+        if (el) el.setAttribute('data-loaded', c.newValue == null ? '' : String(c.newValue));
+      });
+      closePreviewModal();
+      await performNonMasterPush(sid, { keepModalOpen: res.status === 'partial' });
+    } catch (e) {
+      console.error(e);
+      toast('Write-back failed: ' + (e.message || e), 'error', 9000);
+      log('Write-back failed: ' + (e.message || e), 'error');
+    } finally {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = 'Confirm and write';
+    }
+  }
+
+  async function performNonMasterPush (sid, opts) {
+    opts = opts || {};
     var saveBtn = $('#modal-save');
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving…';
-
     try {
       var token = getGhToken();
       if (!token) throw new Error('Save a GitHub PAT under Data source before pushing.');
@@ -680,8 +1062,8 @@
         }
       }
 
-      toast('Saved ' + sid + ' — GitHub Pages will refresh in 1–2 minutes.', 'ok', 6000);
-      closeEditModal();
+      toast('Saved ' + sid + (opts.keepModalOpen ? ' (partial — some master edits blocked; see log).' : ' — GitHub Pages will refresh in 1–2 minutes.'), 'ok', 6000);
+      if (!opts.keepModalOpen) closeEditModal();
       renderKpi();
       renderScholars();
       renderGaps();
@@ -1275,7 +1657,27 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && $('#edit-modal').classList.contains('is-visible')) closeEditModal();
+      if (e.key === 'Escape' && $('#preview-modal').classList.contains('is-visible')) closePreviewModal();
     });
+
+    // Preview modal (Phase 4).
+    $('#preview-close').addEventListener('click', closePreviewModal);
+    $('#preview-cancel').addEventListener('click', closePreviewModal);
+    $('#preview-confirm').addEventListener('click', executeSaveAfterPreview);
+    $('#preview-modal').addEventListener('click', function (e) {
+      if (e.target && e.target.id === 'preview-modal') closePreviewModal();
+    });
+
+    // Master change log tab.
+    var changelogRefresh = $('#changelog-refresh');
+    if (changelogRefresh) {
+      changelogRefresh.addEventListener('click', loadChangeLogTab);
+      // Auto-load when tab activates.
+      var changelogBtn = document.querySelector('.tab-btn[data-tab="changelog"]');
+      if (changelogBtn) changelogBtn.addEventListener('click', function () {
+        if ($('#changelog-table-wrap').innerHTML === '') loadChangeLogTab();
+      });
+    }
 
     // photo widget
     var drop = $('#pf-photo-drop');

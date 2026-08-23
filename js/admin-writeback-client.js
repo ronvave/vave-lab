@@ -67,10 +67,34 @@
     return out;
   }
 
+  // Extra GET with named params.
+  async function callGetWithParams(action, params) {
+    requireConfigured();
+    var qs = 'action=' + encodeURIComponent(action) +
+             '&secret=' + encodeURIComponent(getSecret()) +
+             '&clientTs=' + Date.now();
+    Object.keys(params || {}).forEach(function (k) {
+      qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
+    });
+    var url = getEndpoint() + (getEndpoint().indexOf('?') === -1 ? '?' : '&') + qs;
+    var res = await fetch(url, { method: 'GET', redirect: 'follow' });
+    try { return await res.json(); }
+    catch (_) { return { status: 'error', error: 'non-JSON response (HTTP ' + res.status + ')' }; }
+  }
+
   // Convenience wrappers.
   async function ping()     { return callGet('ping'); }
   async function describe() { return callGet('describe'); }
   async function write(changes) { return callPost({ action: 'write', changes: changes }); }
+  async function readScholar(scholarId) {
+    return callGetWithParams('readScholar', { scholarId: scholarId });
+  }
+  async function readRows(worksheet, scholarId) {
+    return callGetWithParams('readRows', { worksheet: worksheet, scholarId: scholarId });
+  }
+  async function readChangeLog(limit) {
+    return callGetWithParams('readChangeLog', { limit: limit || 50 });
+  }
 
   window.adminWriteback = {
     getEndpoint: getEndpoint,
@@ -81,6 +105,9 @@
     ping:        ping,
     describe:    describe,
     write:       write,
+    readScholar: readScholar,
+    readRows:    readRows,
+    readChangeLog: readChangeLog,
     isConfigured: function () { return !!(getEndpoint() && getSecret()); }
   };
 })();

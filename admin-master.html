@@ -252,6 +252,7 @@
       <button class="tab-btn" data-tab="gaps">Authorship linkage gaps</button>
       <button class="tab-btn" data-tab="migration">Migration &amp; tools</button>
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
+      <button class="tab-btn" data-tab="changelog">Master change log</button>
       <button class="tab-btn" data-tab="log">Action log</button>
     </div>
 
@@ -441,6 +442,18 @@
     </div>
 
     <!-- ========= LOG TAB ========= -->
+    <div class="tab-panel" id="tab-changelog">
+      <div class="card">
+        <h2>Master change log</h2>
+        <p class="meta">Last write-back edits appended to the Master sheet's <span class="mono">Change Log</span> tab (via the Apps Script endpoint). Read-only view.</p>
+        <div class="flex-row" style="margin-bottom:10px">
+          <button class="btn" id="changelog-refresh">Refresh</button>
+          <span class="meta" id="changelog-status" style="align-self:center;color:var(--muted);">not yet loaded</span>
+        </div>
+        <div id="changelog-table-wrap"></div>
+      </div>
+    </div>
+
     <div class="tab-panel" id="tab-log">
       <div class="card">
         <h2>Action log</h2>
@@ -481,33 +494,96 @@
       </fieldset>
 
       <fieldset class="fieldset">
-        <legend>Master fields <span class="master-tag">read-only</span></legend>
+        <legend>Master fields — Identity <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group"><label>Family name</label><input type="text" id="ro-family" disabled /></div>
-          <div class="form-group"><label>Given names</label><input type="text" id="ro-given" disabled /></div>
-          <div class="form-group"><label>Gender</label><input type="text" id="ro-gender" disabled /></div>
-          <div class="form-group"><label>Alive / Deceased</label><input type="text" id="ro-alive" disabled /></div>
-          <div class="form-group"><label>Paternal confederacy</label><input type="text" id="ro-confed" disabled /></div>
-          <div class="form-group"><label>Maternal confederacy</label><input type="text" id="ro-confed-maternal" disabled /></div>
-          <div class="form-group"><label>Discipline</label><input type="text" id="ro-discipline" disabled /></div>
-          <div class="form-group"></div>
-          <div class="form-group"><label>Paternal province</label><input type="text" id="ro-prov-paternal" disabled /></div>
-          <div class="form-group"><label>Maternal province</label><input type="text" id="ro-prov-maternal" disabled /></div>
-          <div class="form-group"><label>Paternal district</label><input type="text" id="ro-dist-paternal" disabled /></div>
-          <div class="form-group"><label>Maternal district</label><input type="text" id="ro-dist-maternal" disabled /></div>
-          <div class="form-group"><label>Paternal village</label><input type="text" id="ro-vil-paternal" disabled /></div>
-          <div class="form-group"><label>Maternal village</label><input type="text" id="ro-vil-maternal" disabled /></div>
-          <div class="form-group"><label>Current title / role</label><input type="text" id="ro-title" disabled /></div>
-          <div class="form-group"><label>Current institution</label><input type="text" id="ro-institution" disabled /></div>
-          <div class="form-group"><label>Institution country</label><input type="text" id="ro-inst-country" disabled /></div>
-          <div class="form-group"><label>Current department</label><input type="text" id="ro-department" disabled /></div>
-          <div class="form-group"><label>Masters university</label><input type="text" id="ro-masters-uni" disabled /></div>
-          <div class="form-group"><label>Masters country</label><input type="text" id="ro-masters-country" disabled /></div>
-          <div class="form-group"><label>PhD university</label><input type="text" id="ro-phd-uni" disabled /></div>
-          <div class="form-group"><label>PhD country</label><input type="text" id="ro-phd-country" disabled /></div>
-          <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="ro-orcid" disabled /></div>
-          <div class="form-group"><label>Google Scholar URL</label><input type="text" id="ro-gs-url" disabled /></div>
-          <div class="form-group"><label>Current profile URL</label><input type="text" id="ro-profile-url" disabled /></div>
+          <div class="form-group"><label>Family name</label><input type="text" id="me-family" data-ws="Scholars" data-field="Family Name" /></div>
+          <div class="form-group"><label>Given names</label><input type="text" id="me-given" data-ws="Scholars" data-field="Given Names" /></div>
+          <div class="form-group"><label>Gender</label>
+            <select id="me-gender" data-ws="Scholars" data-field="Gender">
+              <option value="">(unset)</option>
+              <option value="Male">Male</option><option value="Female">Female</option><option value="Unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Alive / Deceased</label>
+            <select id="me-alive" data-ws="Scholars" data-field="Alive/Deceased">
+              <option value="">(unset)</option>
+              <option value="Alive">Alive</option><option value="Deceased">Deceased</option><option value="Unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Discipline</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline/Field" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields — Paternal geography <span class="master-tag">editable via write-back</span></legend>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Paternal province</label>
+            <select id="me-prov-paternal" data-ws="Scholars" data-field="Province Paternal">
+              <option value="">(unset)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Paternal confederacy <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived)</span></label><input type="text" id="me-confed-paternal-derived" disabled /></div>
+          <div class="form-group"><label>Paternal district</label><input type="text" id="me-dist-paternal" data-ws="Scholars" data-field="District Paternal" /></div>
+          <div class="form-group"><label>Paternal village</label><input type="text" id="me-vil-paternal" data-ws="Scholars" data-field="Village Paternal" /></div>
+          <div class="form-group"><label>Paternal island</label><input type="text" id="me-isl-paternal" data-ws="Scholars" data-field="Island Paternal" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields — Maternal geography <span class="master-tag">editable via write-back</span></legend>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Maternal province</label>
+            <select id="me-prov-maternal" data-ws="Scholars" data-field="Province Maternal">
+              <option value="">(unset)</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Maternal confederacy <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived via Lookups, no Master column)</span></label><input type="text" id="me-confed-maternal-derived" disabled /></div>
+          <div class="form-group"><label>Maternal district</label><input type="text" id="me-dist-maternal" data-ws="Scholars" data-field="District Maternal" /></div>
+          <div class="form-group"><label>Maternal village</label><input type="text" id="me-vil-maternal" data-ws="Scholars" data-field="Village Maternal" /></div>
+          <div class="form-group"><label>Maternal island</label><input type="text" id="me-isl-maternal" data-ws="Scholars" data-field="Island Maternal" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields — Current position <span class="master-tag">editable via write-back</span>
+          <span class="hint" style="font-size:0.75rem;color:var(--muted);">Scholars-tab summary; edit underlying Positions rows below for a full history.</span>
+        </legend>
+        <div class="form-grid">
+          <div class="form-group"><label>Current title</label><input type="text" id="me-title" data-ws="Scholars" data-field="Current Title" /></div>
+          <div class="form-group"><label>Current role</label><input type="text" id="me-role" data-ws="Scholars" data-field="Current Role" /></div>
+          <div class="form-group"><label>Current institution</label><input type="text" id="me-institution" data-ws="Scholars" data-field="Current Institution" /></div>
+          <div class="form-group"><label>Current country</label><input type="text" id="me-inst-country" data-ws="Scholars" data-field="Current Country" /></div>
+          <div class="form-group"><label>Current department</label><input type="text" id="me-department" data-ws="Scholars" data-field="Current Department" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Master fields — Public profile URLs <span class="master-tag">editable via write-back</span></legend>
+        <div class="form-grid">
+          <div class="form-group"><label>ORCID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID" placeholder="0000-0000-0000-0000" /></div>
+          <div class="form-group"><label>Researcher ID</label><input type="text" id="me-researcher-id" data-ws="Scholars" data-field="Researcher ID" /></div>
+          <div class="form-group"><label>Google Scholar URL</label><input type="url" id="me-gs-url" data-ws="Scholars" data-field="Google Scholar URL" placeholder="https://scholar.google.com/citations?user=…" /></div>
+          <div class="form-group"><label>Current profile URL</label><input type="url" id="me-profile-url" data-ws="Scholars" data-field="Current Profile URL" placeholder="https://…" /></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Positions <span class="master-tag">multi-row · editable via write-back</span>
+          <span class="hint" style="font-size:0.75rem;color:var(--muted);">Fetched live from the Master sheet when the modal opens.</span>
+        </legend>
+        <div id="positions-container">
+          <div class="meta" id="positions-status" style="color:var(--muted);">Loading Positions rows…</div>
+        </div>
+      </fieldset>
+
+      <fieldset class="fieldset">
+        <legend>Graduate Degrees <span class="master-tag">multi-row · editable via write-back</span>
+          <span class="hint" style="font-size:0.75rem;color:var(--muted);">Fetched live from the Master sheet when the modal opens.</span>
+        </legend>
+        <div id="graddegrees-container">
+          <div class="meta" id="graddegrees-status" style="color:var(--muted);">Loading Graduate Degrees rows…</div>
         </div>
       </fieldset>
 
@@ -565,14 +641,34 @@
   </div>
 </div>
 
+<!-- Change-preview modal (Phase 4) -->
+<div class="modal-backdrop" id="preview-modal">
+  <div class="modal" style="max-width: 900px;">
+    <div class="modal-header">
+      <div><h2>Preview changes before writing to Master</h2>
+        <div class="mono" id="preview-sid" style="color: var(--muted); font-size: 0.85rem;"></div>
+      </div>
+      <button class="close" id="preview-close" title="Close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p class="meta">Each row below will become one write to the Master sheet through the Apps Script endpoint. Blank <em>New value</em> = clear the cell. Cancel to keep editing.</p>
+      <div id="preview-body"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="preview-cancel">Back to edit</button>
+      <button class="btn-primary" id="preview-confirm">Confirm and write</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf22" defer></script>
-<script src="js/master-file-adapter.js?v=mf22" defer></script>
-<script src="js/admin-insights-migration.js?v=mf22" defer></script>
-<script src="js/admin-writeback-client.js?v=mf22" defer></script>
-<script src="js/admin-master.js?v=mf22" defer></script>
+<script src="js/db-gate.js?v=mf23" defer></script>
+<script src="js/master-file-adapter.js?v=mf23" defer></script>
+<script src="js/admin-insights-migration.js?v=mf23" defer></script>
+<script src="js/admin-writeback-client.js?v=mf23" defer></script>
+<script src="js/admin-master.js?v=mf23" defer></script>
 
 </body>
 </html>

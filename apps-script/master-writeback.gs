@@ -164,18 +164,119 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
+    if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
     if (action === 'describe') {
-      if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
       return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
     }
     if (action === 'ping') {
-      if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
       return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
+    }
+    if (action === 'readScholar') {
+      return handleReadScholar_(params);
+    }
+    if (action === 'readRows') {
+      return handleReadRows_(params);
+    }
+    if (action === 'readChangeLog') {
+      return handleReadChangeLog_(params);
     }
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
     return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
   }
+}
+
+// ------------------------- READ HANDLERS ----------------------------------
+
+function handleReadScholar_(params) {
+  var sid = String(params.scholarId || '').trim();
+  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var wsCfg = MAPPING.worksheets['Scholars'];
+  var sheet = ss.getSheetByName('Scholars');
+  if (!sheet) return jsonOut_({ status: 'error', error: 'Scholars sheet not found' }, 500);
+  var info = locateRow_(sheet, wsCfg, { scholarId: sid });
+  if (!info.ok) return jsonOut_({ status: 'not_found', reason: info.reason });
+  var lastCol = sheet.getLastColumn();
+  var rowValues = sheet.getRange(info.row, 1, 1, lastCol).getValues()[0] || [];
+  var headerVals = sheet.getRange(wsCfg.headerRow || 4, 1, 1, lastCol).getValues()[0] || [];
+  var row = {};
+  for (var i = 0; i < headerVals.length; i++) {
+    var h = String(headerVals[i] || '').trim();
+    if (h) row[h] = normalizeForRead_(rowValues[i]);
+  }
+  return jsonOut_({ status: 'ok', worksheet: 'Scholars', scholarId: sid, rowNumber: info.row, fields: row, serverTs: Date.now() });
+}
+
+function handleReadRows_(params) {
+  var ws = String(params.worksheet || '').trim();
+  var sid = String(params.scholarId || '').trim();
+  if (!ws || !MAPPING.worksheets[ws]) return jsonOut_({ status: 'bad_request', reason: 'worksheet-not-allowed' }, 400);
+  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
+  var wsCfg = MAPPING.worksheets[ws];
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) return jsonOut_({ status: 'error', error: ws + ' sheet not found' }, 500);
+  var headerRow = wsCfg.headerRow || 1;
+  var lastCol = sheet.getLastColumn();
+  var lastRow = sheet.getLastRow();
+  var headerVals = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  var keyIdx = -1;
+  for (var j = 0; j < headerVals.length; j++) {
+    if (String(headerVals[j] || '').trim() === wsCfg.keyColumn) { keyIdx = j; break; }
+  }
+  if (keyIdx < 0) return jsonOut_({ status: 'error', error: 'key-column-missing' }, 500);
+  var rows = [];
+  if (lastRow > headerRow) {
+    var all = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+    for (var r = 0; r < all.length; r++) {
+      if (String(all[r][keyIdx] || '').trim() !== sid) continue;
+      var obj = {};
+      for (var k = 0; k < headerVals.length; k++) {
+        var h = String(headerVals[k] || '').trim();
+        if (h) obj[h] = normalizeForRead_(all[r][k]);
+      }
+      rows.push({ rowNumber: headerRow + 1 + r, fields: obj });
+    }
+  }
+  return jsonOut_({ status: 'ok', worksheet: ws, scholarId: sid, rows: rows, serverTs: Date.now() });
+}
+
+function handleReadChangeLog_(params) {
+  var limit = Math.min(parseInt(params.limit, 10) || 50, 500);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName('Change Log');
+  if (!sheet) return jsonOut_({ status: 'ok', rows: [] });
+  var lastRow = sheet.getLastRow();
+  var headerRow = 4;
+  if (lastRow <= headerRow) return jsonOut_({ status: 'ok', rows: [] });
+  var take = Math.min(limit, lastRow - headerRow);
+  var startRow = lastRow - take + 1;
+  var vals = sheet.getRange(startRow, 1, take, 10).getValues();
+  var rows = [];
+  for (var i = vals.length - 1; i >= 0; i--) {
+    var v = vals[i];
+    rows.push({
+      rowNumber: startRow + i,
+      version: normalizeForRead_(v[0]),
+      date:    normalizeForRead_(v[1]),
+      change:  normalizeForRead_(v[2]),
+      scope:   normalizeForRead_(v[3]),
+      source:  normalizeForRead_(v[4]),
+      actor:   normalizeForRead_(v[5]),
+      worksheet: normalizeForRead_(v[6]),
+      field:   normalizeForRead_(v[7]),
+      oldValue:normalizeForRead_(v[8]),
+      newValue:normalizeForRead_(v[9])
+    });
+  }
+  return jsonOut_({ status: 'ok', rows: rows, serverTs: Date.now() });
+}
+
+function normalizeForRead_(v) {
+  if (v == null) return '';
+  if (v instanceof Date) return Utilities.formatDate(v, TIMEZONE, 'yyyy-MM-dd');
+  return v;
 }
 
 function doPost(e) {

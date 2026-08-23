@@ -128,3 +128,22 @@ Every worksheet, every field, and every enum value is enforced server-side. If y
 - [ ] Web app deployed as "Execute as: me, Access: anyone with the link".
 - [ ] Endpoint URL + secret pasted into admin, saved, and "Test connection" returns ok.
 - [ ] `Change Log` tab is still present with its 10 columns (do not rename headers).
+
+## Phase 3 update — re-deploying after a server-code change
+
+The Phase 3 build adds three read-only actions to `master-writeback.gs`:
+
+- `readScholar` — fetch a single Scholars row live from the sheet (used to refresh the modal after a write)
+- `readRows` — fetch all rows for a Scholar ID on `Positions` or `Graduate Degrees`
+- `readChangeLog` — fetch the most recent N Change Log rows for the admin Change Log tab
+
+None of these mutate the Master. They still require the shared secret. To pick them up:
+
+1. Open the Apps Script project (Extensions → Apps Script on the Master sheet).
+2. Overwrite the contents of `master-writeback.gs` with the new file in this repo (`apps-script/master-writeback.gs`).
+3. Save (⌘S).
+4. **Deploy → Manage deployments →** click the pencil on your existing Web App deployment → **Version: New version** → **Deploy**. This keeps the same URL you already pasted into the admin.
+
+If you'd rather create a fresh deployment (which gets a new `/exec` URL), do that instead and paste the new URL into the admin's Data source tab.
+
+After redeploying, hit **Test connection** in the admin — the pill should stay green. The new Positions and Graduate Degrees editors, and the Master change log tab, only work once this update is deployed.
