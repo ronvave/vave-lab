@@ -5543,6 +5543,38 @@
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
     const aggregates = master.aggregates || {};
     const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s.Gender || '').trim()]));
+    // Paternal-info lookup for Panel D milestone annotations. Fields come
+    // straight from Scholars (public allowlist covers all of them). We treat
+    // 'Unclassified' as blank so it doesn't leak into the rendered chart
+    // annotation.
+    const cleanPaternal = v => {
+      const t = String(v == null ? '' : v).trim();
+      return t && t.toLowerCase() !== 'unclassified' ? t : '';
+    };
+    const paternalInfoByScholarId = new Map(scholars.map(s => [
+      String(s['Scholar ID'] || '').trim(),
+      {
+        village:     cleanPaternal(s['Village Paternal']),
+        district:    cleanPaternal(s['District Paternal']),
+        province:    cleanPaternal(s['Province Paternal']),
+        confederacy: cleanPaternal(s['Paternal Confederacy'])
+      }
+    ]));
+    // Compose the Panel D Line-4 annotation string from the four paternal
+    // fields. Order matches Ron's mockup: "Village vlg, District District,
+    // Province Province (Confederacy)". Any field that comes back blank is
+    // omitted along with its trailing separator. If ALL four are blank the
+    // milestone gets no Line 4 at all (composePaternalLine returns '').
+    function composePaternalLine(info) {
+      if (!info) return '';
+      const parts = [];
+      if (info.village)  parts.push(`${info.village} vlg`);
+      if (info.district) parts.push(`${info.district} District`);
+      if (info.province) parts.push(`${info.province} Province`);
+      let line = parts.join(', ');
+      if (info.confederacy) line = line ? `${line} (${info.confederacy})` : `(${info.confederacy})`;
+      return line;
+    }
     // Name breakdown lookups (Family / Given) for milestone labels that need
     // "Given Family" order rather than the Scholar Name's "Family, Given" form.
     // Both fields are already in the public field allowlist (master_file_config.py)
@@ -5680,6 +5712,12 @@
       const uniDisplay = uniRenamed ? `${chosen.uni}*` : chosen.uni;
       const uniLine = cc ? `${uniDisplay} (${cc})` : uniDisplay;
       const headline = milestoneHeadline(def);
+      // Line 4 (paternal geography) is built from the chosen scholar's
+      // Scholars-sheet paternal fields. If Master has 'Unclassified' or
+      // blanks for every one of them, paternalLine is empty and the
+      // renderer draws only 3 lines for this milestone.
+      const paternalInfo = paternalInfoByScholarId.get(chosen.scholarId) || {};
+      const paternalLine = composePaternalLine(paternalInfo);
       return {
         ...def,
         year,
@@ -5692,6 +5730,8 @@
         personLine,
         uniLine,
         uniRenamed,
+        paternalInfo,
+        paternalLine,
         headline,
         degree: chosen.degree,
         uni: chosen.uni,
@@ -6049,7 +6089,15 @@
     // and the uni line is the widest, so we bump the width estimate up.
     const LABEL_W_EST = 200;                       // px, rough label footprint
     const LABEL_LINE_H = 11;                       // px per text line (tighter)
-    const LABEL_BLOCK_H = LABEL_LINE_H * 3 + 6;    // 3 lines + padding
+    // Label block height scales with the max number of lines actually
+    // rendered across visible milestones. Panel D always draws headline +
+    // name + uni (3 lines). Milestones whose scholar has any paternal field
+    // populated get a 4th line (paternal geography). To keep tier stacking
+    // consistent when at least one milestone shows Line 4, we size the block
+    // for 4 lines; otherwise we keep the tighter 3-line block.
+    const anyPaternalLine = (panelDData.milestones || []).some(m => m && m.paternalLine);
+    const LABEL_LINES = anyPaternalLine ? 4 : 3;
+    const LABEL_BLOCK_H = LABEL_LINE_H * LABEL_LINES + 6;
     const MIN_Y = PAD_TOP + 6;
     // Tier 0 is highest (closest to plot top); higher index = lower on page.
     // Confine tiers to the upper ~60% of the plot so they stay in whitespace.
@@ -6092,13 +6140,20 @@
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
       // The label block spans [labelBaseY - LABEL_BLOCK_H, labelBaseY].
       // Layout inside (3 lines):
-      //   line 1 (headlineY) — "YYYY: First male PhD" (year bold+colored,
-      //                        rest of headline muted grey)
-      //   line 2 (nameY)     — "Dr./Mr./Ms Given Family"
-      //   line 3 (uniY)      — "University name (CC)"
-      const headlineY = labelBaseY - LABEL_LINE_H * 2;
-      const nameY     = labelBaseY - LABEL_LINE_H;
-      const uniY      = labelBaseY;
+      //   line 1 (headlineY)  — "YYYY: First male PhD" (year bold+colored,
+      //                         rest of headline muted grey)
+      //   line 2 (nameY)      — "Dr./Mr./Ms Given Family"
+      //   line 3 (uniY)       — "University name (CC)"
+      //   line 4 (paternalY)  — "Village vlg, District District, Province
+      //                          Province (Confederacy)" — only when the
+      //                          scholar has any paternal field populated.
+      // When LABEL_LINES == 3 (no paternal data on any milestone),
+      // paternalY still gets computed but no <text> is emitted for it.
+      const topOffset = (LABEL_LINES - 1) * LABEL_LINE_H;
+      const headlineY = labelBaseY - topOffset;
+      const nameY     = headlineY + LABEL_LINE_H;
+      const uniY      = nameY + LABEL_LINE_H;
+      const paternalY = uniY + LABEL_LINE_H;
       const dotCX = x;
       const dotCY = headlineY - 3;             // dot sits just left/above the headline
       const textX = x + 7;                     // text starts a hair right of the dot
@@ -6126,7 +6181,8 @@
             const fg = (tie.givenNames || '').trim().split(/\s+/)[0] || '';
             return (fg && tie.familyName) ? `${fg} ${tie.familyName}` : (tie.name || '');
           }).join('; ')}` : '';
-      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.publicPerson || ''} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${tiedScholars}`;
+      const paternalTooltip = milestone.paternalLine ? ` · ${milestone.paternalLine}` : '';
+      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.publicPerson || ''} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${paternalTooltip}${tiedScholars}`;
       circle.appendChild(panelDSvg('title', {}, tooltipText));
       svg.appendChild(circle);
 
@@ -6162,6 +6218,19 @@
           x: textX, y: uniY, 'text-anchor': 'start',
           'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563'
         }, milestone.uniLine));
+      }
+
+      // Line 4: paternal geography, e.g.
+      //   "Draubuta vlg, Bau District, Tailevu Province (Kubuna)"
+      // Empty string means Master has no paternal fields populated for this
+      // scholar (or only 'Unclassified' placeholders), in which case we
+      // deliberately draw nothing so the chart never shows fabricated
+      // ancestry data.
+      if (milestone.paternalLine) {
+        svg.appendChild(panelDSvg('text', {
+          x: textX, y: paternalY, 'text-anchor': 'start',
+          'font-family': 'Arial', 'font-size': '9', fill: '#6b7280', 'font-style': 'italic'
+        }, milestone.paternalLine));
       }
     });
 
