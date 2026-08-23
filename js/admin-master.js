@@ -468,10 +468,12 @@
     populateProvinceDropdowns();
     var provPat = s['Province Paternal'] || s['Paternal Province'] || '';
     var provMat = s['Province Maternal'] || s['Maternal Province'] || '';
+    setMe('me-title-salutation', s['Title / Salutation'] || '');
     setMe('me-family',         s['Family Name'] || '');
     setMe('me-given',          s['Given Names'] || '');
     setMe('me-gender',         s['Gender'] || '');
-    setMe('me-alive',          s['Alive / Deceased'] || s['Alive/Deceased'] || '');
+    setMe('me-alive',          s['Alive / Deceased'] || '');
+    setMe('me-year-of-death',  s['Year of Death'] || '');
     setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
     setMe('me-prov-paternal',  provPat);
     setMe('me-dist-paternal',  s['District Paternal'] || '');

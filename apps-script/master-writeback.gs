@@ -83,21 +83,25 @@ var TIMEZONE            = 'Pacific/Honolulu';
 // strings including spacing and slashes. Column names come from row 4 of
 // each sheet.
 var MAPPING = {
-  version: '1.2',
+  version: '1.3',
   worksheets: {
     'Scholars': {
       keyColumn: 'Scholar ID',
       headerRow: 4,
       fields: {
+        // Title / Salutation is an authoritative scholar-level attribute
+        // (Aug 22 approval). Blank means no title.
+        'Title / Salutation':      { type: 'enum',   enum: ['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms',''] },
         'Family Name':             { type: 'string', maxLen: 120 },
         'Given Names':             { type: 'string', maxLen: 120 },
         'Gender':                  { type: 'enum',   enum: ['Male','Female','Unknown',''] },
-        // Alive / Deceased is a free-text descriptor in the sheet with a
-        // conventional vocabulary. Values seen: 'Alive / current record',
-        // 'Unknown / not checked', 'Deceased', 'Deceased \u2014 <date>'. Keep
-        // it string (with a client-side datalist) so long variants like
-        // 'Deceased \u2014 February 2021' remain writable.
-        'Alive / Deceased':        { type: 'string', maxLen: 120 },
+        // Alive / Deceased is a controlled three-value vocabulary in the sheet
+        // (normalized 2026-08-22): Alive, Deceased, Unknown. A sheet-level data
+        // validation enforces the same enum.
+        'Alive / Deceased':        { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        // Year of Death: four-digit year, blank for Alive or Unknown.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Death':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
         'Paternal Confederacy':    { type: 'string', maxLen: 60 },
         'Province Paternal':       { type: 'string', maxLen: 60 },
         'District Paternal':       { type: 'string', maxLen: 80 },
@@ -476,6 +480,7 @@ function validateValue_(value, cfg) {
   }
   var s = String(value);
   if (cfg.maxLen != null && s.length > cfg.maxLen) return { ok: false, reason: 'too-long' };
+  if (cfg.pattern != null && s !== '' && !(new RegExp(cfg.pattern)).test(s)) return { ok: false, reason: 'pattern-mismatch' };
   if (cfg.type === 'string') return { ok: true, coerced: s };
   if (cfg.type === 'enum')   return (cfg.enum || []).indexOf(s) >= 0 ? { ok: true, coerced: s } : { ok: false, reason: 'not-in-enum' };
   if (cfg.type === 'int') {

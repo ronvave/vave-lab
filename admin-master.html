@@ -497,11 +497,16 @@
         <legend>Master fields — Identity <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
           <div class="form-group">
-            <label>Title / Salutation <span class="hint" style="font-size:0.75rem;color:var(--muted);">(not yet in Master — awaiting decision)</span></label>
-            <select id="me-title-salutation" disabled title="No authoritative Master column exists for this yet. See action log for details.">
-              <option value="">(unavailable)</option>
-              <option value="Dr">Dr</option><option value="Prof">Prof</option><option value="Rev">Rev</option><option value="Rev Dr">Rev Dr</option>
-              <option value="Mr">Mr</option><option value="Mrs">Mrs</option><option value="Ms">Ms</option>
+            <label>Title / Salutation</label>
+            <select id="me-title-salutation" data-ws="Scholars" data-field="Title / Salutation">
+              <option value="">(no title)</option>
+              <option value="Dr">Dr</option>
+              <option value="Prof">Prof</option>
+              <option value="Rev">Rev</option>
+              <option value="Rev Dr">Rev Dr</option>
+              <option value="Mr">Mr</option>
+              <option value="Mrs">Mrs</option>
+              <option value="Ms">Ms</option>
             </select>
           </div>
           <div class="form-group"><label>Family name</label><input type="text" id="me-family" data-ws="Scholars" data-field="Family Name" /></div>
@@ -513,13 +518,17 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Alive / Deceased <span class="hint" style="font-size:0.75rem;color:var(--muted);">(free text; suggestions provided)</span></label>
-            <input type="text" id="me-alive" data-ws="Scholars" data-field="Alive / Deceased" list="me-alive-suggest" placeholder="e.g. Alive / current record" />
-            <datalist id="me-alive-suggest">
-              <option value="Alive / current record"></option>
-              <option value="Unknown / not checked"></option>
-              <option value="Deceased"></option>
-            </datalist>
+            <label>Alive / Deceased</label>
+            <select id="me-alive" data-ws="Scholars" data-field="Alive / Deceased">
+              <option value="">(unset)</option>
+              <option value="Alive">Alive</option>
+              <option value="Deceased">Deceased</option>
+              <option value="Unknown">Unknown</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Year of Death <span class="hint" style="font-size:0.75rem;color:var(--muted);">(YYYY; blank if Alive/Unknown)</span></label>
+            <input type="text" id="me-year-of-death" data-ws="Scholars" data-field="Year of Death" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 2021" />
           </div>
           <div class="form-group"><label>Primary discipline / field</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline / Field" /></div>
         </div>
@@ -683,11 +692,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=mf24" defer></script>
-<script src="js/master-file-adapter.js?v=mf24" defer></script>
-<script src="js/admin-insights-migration.js?v=mf24" defer></script>
-<script src="js/admin-writeback-client.js?v=mf24" defer></script>
-<script src="js/admin-master.js?v=mf24" defer></script>
+<script src="js/db-gate.js?v=mf25" defer></script>
+<script src="js/master-file-adapter.js?v=mf25" defer></script>
+<script src="js/admin-insights-migration.js?v=mf25" defer></script>
+<script src="js/admin-writeback-client.js?v=mf25" defer></script>
+<script src="js/admin-master.js?v=mf25" defer></script>
 
 </body>
 </html>

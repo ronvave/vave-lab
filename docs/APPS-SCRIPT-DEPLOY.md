@@ -167,3 +167,49 @@ The previous MAPPING used approximate column names (e.g. `Alive/Deceased`, `Curr
 5. Hard-refresh admin (⌘⇧R) so the new `mf24` assets load.
 6. In the admin's Data source tab, click **Test connection** — pill should stay green.
 7. Open Joeli (ITK-S0315). Confirm that Positions and Graduate Degrees no longer show `bad_request: unknown-action`, and that Alive / Deceased now shows `Alive / current record`.
+
+## Phase 3.2 update — Master structural + normalization changes applied
+
+**What already changed in the Master workbook (already written; no action needed):**
+
+- New column at Scholars position 3: `Title / Salutation` (values blank for all rows — awaiting your first edits via Admin V2).
+- New column at Scholars position 8: `Year of Death` (values blank except ITK-S0088 = `2021`, extracted from the legacy `Deceased — February 2021` cell).
+- Scholars column `Alive / Deceased` normalized to controlled vocabulary. Distribution before/after:
+  - 397 × `Alive / current record`      →   `Alive`
+  - 53 × `Unknown / not checked`        →   `Unknown`
+  - 1 × `Deceased — February 2021`      →   `Deceased` (with 2021 preserved in Year of Death)
+  - 24 × `Deceased`                     →   unchanged
+- Sheet-level data validation on Alive / Deceased column: strict `ONE_OF_LIST {Alive, Deceased, Unknown}`.
+- Change Log rows appended for both structural changes and the normalization.
+- Google Sheets auto-adjusted the one cross-sheet A1 formula that used Scholars column letters (`Vanua Evidence Audit!A5` FILTER); no manual formula fixes required.
+
+**Server MAPPING (v1.2 → v1.3) — needs redeploy:**
+
+- Added `Title / Salutation` field: strict enum `[Dr, Prof, Rev, Rev Dr, Mr, Mrs, Ms, ""]`.
+- Added `Year of Death` field: string, pattern `^(\d{4})?$` (four digits or blank).
+- `Alive / Deceased` changed from free-text string to strict enum `[Alive, Deceased, Unknown, ""]` matching the sheet's controlled vocabulary and its ONE_OF_LIST data-validation rule.
+- Added `pattern` support to `validateValue_` (only affects string-typed fields that declare a pattern).
+
+**Admin V2:**
+
+- Cache-buster mf24 → mf25.
+- Identity fieldset now shows a real Title / Salutation dropdown before Family Name, a strict Alive / Deceased dropdown, and a new Year of Death input (four-digit numeric, blank when Alive/Unknown).
+
+**Redeploy sequence (unchanged from Phase 3.1 — still required):**
+
+1. Master → Extensions → Apps Script.
+2. Fully overwrite `master-writeback.gs` in the editor with the current repo contents (v1.3).
+3. ⌘S.
+4. Deploy → Manage deployments → pencil → **Version: New version** → Deploy. Same URL, same secret.
+5. Hard-refresh Admin V2 (⌘⇧R) so `mf25` loads.
+6. **Test connection** — pill should stay green.
+7. Open ITK-S0315 (Joeli): Title / Salutation shows `(no title)`, Alive / Deceased shows `Alive`, Year of Death is blank. Open ITK-S0088 (Kuridrani): Alive / Deceased shows `Deceased`, Year of Death shows `2021`.
+
+**Panel F caveat — Year of Birth is not yet in the Master.**
+
+Your Aug 23 doc asks Panel F to display a lifespan `YYYY – YYYY` for deceased scholars. The Master now has Year of Death but no Year of Birth column. Adding a Year of Birth column is an additional structural change that I have NOT made, because it is not explicitly approved in the current doc set. Options for the next step:
+
+- Approve adding `Year of Birth` as a new Scholars column (recommended: position 5, immediately after `Given Names`, adjacent to identity attributes). Same string-with-pattern validation as Year of Death.
+- Or specify a graceful "birth year unknown" Panel F fallback for now (for example, show `? – 2021` for Kuridrani).
+
+I will not add a Year of Birth column without your explicit approval.
