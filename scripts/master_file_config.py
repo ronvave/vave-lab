@@ -106,10 +106,13 @@ PROVINCE_TO_CONFEDERACY = {
 SCHOLAR_PUBLIC_FIELDS = [
     "Scholar ID",
     "Scholar Name",
+    "Title / Salutation",
     "Family Name",
     "Given Names",
     "Gender",
+    "Year of Birth",
     "Alive / Deceased",
+    "Year of Death",
     "Paternal Confederacy",
     "Province Paternal",
     "District Paternal",
