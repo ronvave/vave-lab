@@ -5630,13 +5630,15 @@
           const scholarId = String(row['Scholar ID'] || '').trim();
           const cUni = String(row['C_Uni name'] || '').trim();
           const oUni = String(row['O_Uni name'] || '').trim();
-          // Milestone label uses O_Uni ("as-recorded" institution name) when
-          // present, because that matches how the user cites the scholar's
-          // actual awarding institution (e.g. "Pacific Theological College"
-          // rather than the umbrella "Pasifika Communities University").
-          // Aggregations elsewhere still use C_Uni per the transformer
-          // contract; this is display-only for the milestone callout.
-          const displayUni = oUni || cUni;
+          // Panel D milestones display the CANONICAL (C_Uni) name because
+          // that is how the awarding institution is known today (e.g.
+          // 'University of Auckland' rather than the 1956 historical
+          // 'University of New Zealand — Auckland University College').
+          // If the historical/as-recorded O_Uni differs from C_Uni, the
+          // rendered institution is suffixed with '*' and a footnote below
+          // the chart records the historical → canonical mapping. When O_Uni
+          // is blank we fall back to C_Uni (still canonical, no footnote).
+          const displayUni = cUni || oUni;
           return {
             year,
             scholarId,
@@ -5655,14 +5657,28 @@
       const year = candidates[0].year;
       const tied = candidates.filter(candidate => candidate.year === year);
       const chosen = tied[0];
-      // Build display strings: title + given family, uni (CC).
+      // Build display strings: title + FIRST-given + family, uni (CC).
+      //
+      // Public chart name privacy rule (culturally required in iTaukei
+      // context — see prompt v2): only the first token of Given Names is
+      // rendered on the public chart. Middle names, additional given names,
+      // initials, and any private/traditional names are omitted. This is a
+      // DISPLAY rule only — the canonical Scholar Name / Given Names stored
+      // in Master is untouched. Scholar ID remains the internal key so joins,
+      // dedup, and milestone matching are unaffected.
       const title = titleFor(def.stage, def.gender);
-      const givenFirst = chosen.givenNames && chosen.familyName
-        ? `${chosen.givenNames} ${chosen.familyName}`
+      const firstGiven = (chosen.givenNames || '').trim().split(/\s+/)[0] || '';
+      const publicPerson = firstGiven && chosen.familyName
+        ? `${firstGiven} ${chosen.familyName}`
         : (chosen.name || '');
-      const personLine = [title, givenFirst].filter(Boolean).join(' ');
+      const personLine = [title, publicPerson].filter(Boolean).join(' ');
       const cc = countryCodeFor(chosen.country);
-      const uniLine = cc ? `${chosen.uni} (${cc})` : chosen.uni;
+      // Suffix '*' when the historical/as-recorded institution (O_Uni)
+      // differs from the canonical (C_Uni) we are displaying. Footnote is
+      // rendered below the chart per Ron's spec.
+      const uniRenamed = !!(chosen.oUni && chosen.cUni && chosen.oUni !== chosen.cUni);
+      const uniDisplay = uniRenamed ? `${chosen.uni}*` : chosen.uni;
+      const uniLine = cc ? `${uniDisplay} (${cc})` : uniDisplay;
       const headline = milestoneHeadline(def);
       return {
         ...def,
@@ -5670,9 +5686,12 @@
         name: chosen.name,
         familyName: chosen.familyName,
         givenNames: chosen.givenNames,
+        firstGiven,
+        publicPerson,
         title,
         personLine,
         uniLine,
+        uniRenamed,
         headline,
         degree: chosen.degree,
         uni: chosen.uni,
@@ -6098,9 +6117,16 @@
 
       // Small colored dot (matches mockup)
       const circle = panelDSvg('circle', { cx: dotCX, cy: dotCY, r: '3.5', fill: milestone.color });
+      // Tooltip also honours the public-name privacy rule: never expose
+      // the full canonical Scholar Name here, only the shortened
+      // 'FirstGiven Family' form (built into milestone.personLine and
+      // milestone.publicPerson upstream).
       const tiedScholars = milestone.ties && milestone.ties.length > 1
-        ? ` · Tied scholars: ${milestone.ties.map(tie => tie.name).join('; ')}` : '';
-      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.name} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${tiedScholars}`;
+        ? ` · Tied scholars: ${milestone.ties.map(tie => {
+            const fg = (tie.givenNames || '').trim().split(/\s+/)[0] || '';
+            return (fg && tie.familyName) ? `${fg} ${tie.familyName}` : (tie.name || '');
+          }).join('; ')}` : '';
+      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.publicPerson || ''} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${tiedScholars}`;
       circle.appendChild(panelDSvg('title', {}, tooltipText));
       svg.appendChild(circle);
 
@@ -6152,6 +6178,35 @@
       svg.appendChild(panelDSvg('line', { x1: x, x2: x, y1: yZero, y2: yZero + 6, stroke: '#6b7280', 'stroke-width': '1' }));
     }
     $$('[data-hist-presets] button').forEach(button => button.classList.toggle('is-active', button.dataset.preset === state.histRange.preset));
+
+    // Milestone institution-rename footnote. Rendered into the existing
+    // [data-hist-note] paragraph below the chart. When a milestone displays
+    // the canonical (C_Uni) institution and that differs from the historical
+    // as-recorded (O_Uni) name, the annotation shows Uni* and the footnote
+    // records the mapping: 'University of Auckland (formerly recorded as
+    // University of New Zealand — Auckland University College).' No footnote
+    // is rendered when no milestone triggers the rename asterisk.
+    const histNoteEl = document.querySelector('[data-hist-note]');
+    if (histNoteEl) {
+      const renamed = (panelDData.milestones || []).filter(m => m && m.uniRenamed && m.cUni && m.oUni && m.cUni !== m.oUni);
+      // Dedupe on cUni|oUni pair so two milestones on the same institution
+      // (unlikely but possible) render only one footnote line.
+      const seen = new Set();
+      const pairs = renamed.filter(m => {
+        const key = `${m.cUni}||${m.oUni}`;
+        if (seen.has(key)) return false;
+        seen.add(key); return true;
+      });
+      if (pairs.length) {
+        const lines = pairs.map(m => `* ${m.cUni} (formerly recorded as ${m.oUni}).`);
+        histNoteEl.textContent = lines.join(' ');
+        histNoteEl.style.color = '#6b7280';
+        histNoteEl.style.fontSize = '11px';
+        histNoteEl.style.marginTop = '6px';
+      } else {
+        histNoteEl.textContent = '';
+      }
+    }
   }
 
   // Rough text width for SVG legend layout (DM Sans 12px ≈ 6.4 char width)
