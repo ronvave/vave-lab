@@ -7893,15 +7893,30 @@
     card.innerHTML = `
       <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label">${escapeHtml(bannerLabel)}</span></div>
       ${flagHtml}
-      <a class="db-scholar-card__orcid${r.orcidUrl ? '' : ' is-missing'}"
-         href="${escapeAttr(r.orcidUrl || '#')}"
-         ${r.orcidUrl ? 'target="_blank" rel="noopener"' : ''}
-         title="${r.orcidUrl ? 'Open ORCID iD' : 'ORCID iD not yet linked'}"
-         aria-label="ORCID iD${r.orcidUrl ? '' : ' not linked'}">${ORCID_SVG}</a>
-      <a class="db-scholar-card__gs${r.googleScholarUrl ? '' : ' is-missing'}"
-         href="${escapeAttr(r.googleScholarUrl || '#')}"
-         ${r.googleScholarUrl ? 'target="_blank" rel="noopener"' : ''}
-         title="${r.googleScholarUrl ? 'Open Google Scholar profile' : 'Google Scholar profile not yet linked'}">${GS_SVG}</a>
+      ${r.orcidUrl
+        ? `<a class="db-scholar-card__orcid"
+              href="${escapeAttr(r.orcidUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open ${escapeAttr(displayName || r.name)}’s ORCID profile"
+              aria-label="Open ${escapeAttr(displayName || r.name)}’s ORCID profile">${ORCID_SVG}</a>`
+        : `<span class="db-scholar-card__orcid is-missing"
+                role="img"
+                aria-disabled="true"
+                title="ORCID profile not yet linked"
+                aria-label="ORCID profile not yet linked">${ORCID_SVG}</span>`}
+      ${r.googleScholarUrl
+        ? `<a class="db-scholar-card__gs"
+              href="${escapeAttr(r.googleScholarUrl)}"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Open ${escapeAttr(displayName || r.name)}’s Google Scholar profile"
+              aria-label="Open ${escapeAttr(displayName || r.name)}’s Google Scholar profile">${GS_SVG}</a>`
+        : `<span class="db-scholar-card__gs is-missing"
+                role="img"
+                aria-disabled="true"
+                title="Google Scholar profile not yet linked"
+                aria-label="Google Scholar profile not yet linked">${GS_SVG}</span>`}
       <div class="db-scholar-card__body">
         ${photoHtml}
         <div class="db-scholar-card__info">

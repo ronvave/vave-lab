@@ -1988,7 +1988,8 @@
     }
     .db-scholar-card__orcid:hover { transform: scale(1.08); }
     .db-scholar-card__orcid svg { width: 34px; height: 34px; display: block; }
-    .db-scholar-card__orcid.is-missing { opacity: 0.55; pointer-events: none; box-shadow: none; }
+    .db-scholar-card__orcid.is-missing { opacity: 0.55; box-shadow: none; cursor: not-allowed; }
+    .db-scholar-card__orcid.is-missing:hover { transform: none; }
     .db-scholar-card__gs {
       position: absolute; top: 18px; right: 18px;
       width: 34px; height: 34px; border-radius: 8px;
@@ -2000,7 +2001,8 @@
     }
     .db-scholar-card__gs:hover { transform: scale(1.08); background: #f0f7ff; }
     .db-scholar-card__gs svg { width: 22px; height: 22px; }
-    .db-scholar-card__gs.is-missing { opacity: 0.55; pointer-events: none; box-shadow: none; }
+    .db-scholar-card__gs.is-missing { opacity: 0.55; box-shadow: none; cursor: not-allowed; }
+    .db-scholar-card__gs.is-missing:hover { transform: none; background: #fff; }
 
     /* Pagination controls */
     .db-pager {
@@ -5324,10 +5326,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=mf28" defer></script>
-<script src="js/master-file-adapter.js?v=mf28" defer></script>
-<script src="js/itaukei-database-master.js?v=mf28" defer></script>
-<script src="js/master-file-panel-overrides.js?v=mf28" defer></script>
+<script src="js/demo-gate.js?v=mf29" defer></script>
+<script src="js/master-file-adapter.js?v=mf29" defer></script>
+<script src="js/itaukei-database-master.js?v=mf29" defer></script>
+<script src="js/master-file-panel-overrides.js?v=mf29" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a

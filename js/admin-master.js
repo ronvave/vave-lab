@@ -1120,9 +1120,55 @@
   //      calls executeSaveAfterPreview() to do the writeback + rest of push.
   //   2. If there are no master-editable diffs, skip preview and go straight
   //      to the existing photo/enrichment/insights push.
+  // Normalize the Admin V2 ORCID input to the canonical URL form
+  // 'https://orcid.org/XXXX-XXXX-XXXX-XXXX'. Accepts either a bare
+  // 16-digit ORCID identifier (4 hyphenated groups of 4 digits, last char
+  // may be X) or an existing full URL. Trims edges. Returns:
+  //   { ok: true,  value: 'https://orcid.org/...' } on success
+  //   { ok: true,  value: '' }                     when the field is blank
+  //   { ok: false, value: <raw>, error: '<msg>' }  when malformed
+  // Called by saveEditModal() before collectMasterChanges() so validation
+  // happens client-side AND the input is rewritten in-place to the
+  // canonical URL. The V2 adapter's normalizeOrcidUrl_() is the
+  // second-line defense on read — both must agree.
+  function normalizeAdminOrcidInput (raw) {
+    if (raw == null) return { ok: true, value: '' };
+    var s = String(raw).trim();
+    if (!s) return { ok: true, value: '' };
+    // Match a full URL; else treat the whole input as an identifier.
+    var m = s.match(/orcid\.org\/([0-9Xx-]{19})$/i);
+    var id = (m ? m[1] : s).toUpperCase();
+    if (!/^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$/.test(id)) {
+      return {
+        ok: false, value: raw,
+        error: 'ORCID must be 16 digits in the form 0000-0000-0000-0000 (last character may be X), '
+             + 'or the full URL https://orcid.org/<ID>.'
+      };
+    }
+    return { ok: true, value: 'https://orcid.org/' + id };
+  }
+
   async function saveEditModal () {
     if (!state.editingSid) return;
     var sid = state.editingSid;
+    // ORCID: validate + rewrite the input to canonical URL BEFORE we snapshot
+    // changes. This way the user sees the normalized value, the diff engine
+    // only fires when the ORCID actually changed (URL-form vs URL-form or
+    // bare-vs-URL both collapse to the same canonical string), and the value
+    // sent to the Master is always the canonical URL.
+    var orcidInput = document.getElementById('me-orcid');
+    if (orcidInput) {
+      var norm = normalizeAdminOrcidInput(orcidInput.value);
+      if (!norm.ok) {
+        toast(norm.error, 'error', 9000);
+        log('ORCID validation failed for ' + sid + ': ' + norm.error, 'error');
+        try { orcidInput.focus(); } catch (e) {}
+        return;
+      }
+      // Only rewrite when the display value differs — avoids spurious
+      // input events / dirty-state churn when the field is already canonical.
+      if (orcidInput.value !== norm.value) orcidInput.value = norm.value;
+    }
     var masterChanges = collectMasterChanges(sid);
     if (masterChanges.length === 0) {
       // No master edits — push only enrichment/insights/photo.

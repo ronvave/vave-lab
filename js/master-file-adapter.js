@@ -92,6 +92,29 @@
     return n;
   }
 
+  // Normalize a Master 'ORCID / Researcher ID' cell to the canonical URL
+  // 'https://orcid.org/XXXX-XXXX-XXXX-XXXX'. Accepts either the bare 16-digit
+  // ORCID identifier (4 groups of 4 digits/X separated by hyphens) or a full
+  // https://orcid.org/ URL. Returns '' when the cell is blank, malformed, or
+  // fails the ORCID checksum-shape pattern. Used at the V2 adapter boundary
+  // so the composed public profile always exposes `orcidUrl` in canonical
+  // form, regardless of how the admin entered it into Admin V2. See the
+  // 2026-08-23 V2 ORCID normalization prompt.
+  function normalizeOrcidUrl_(cell) {
+    if (cell == null) return '';
+    var s = String(cell).trim();
+    if (!s) return '';
+    // Strip a full URL prefix if present (case-insensitive; accept http/https,
+    // sandbox / staging / regional ORCID mirrors would still keep their host,
+    // which is why we anchor on orcid.org only).
+    var m = s.match(/orcid\.org\/([0-9Xx-]{19})$/i);
+    var id = m ? m[1] : s;
+    id = id.toUpperCase();
+    // Strict ORCID identifier shape: 4 groups of 4 chars, last char may be X.
+    if (!/^[0-9]{4}-[0-9]{4}-[0-9]{4}-[0-9]{3}[0-9X]$/.test(id)) return '';
+    return 'https://orcid.org/' + id;
+  }
+
   // Deterministic 8-char Zotero-style keys ([A-Z0-9]) from arbitrary strings.
   // Used for synthesized `collections[]` entries so item.collections[] can
   // reference them and every existing panel keeps working.
@@ -640,11 +663,24 @@
         phdOriginalName:   phdRow ? phdRow['O_Uni name'] : '',
         village: s['Village Paternal'] || s['Village Maternal'] || '',
         subject: s['Primary Discipline / Field'] || '',
-        orcid:            s['ORCID / Researcher ID'] || '',
+        // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
+        // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit
+        // identifier or a full URL — normalizeOrcidUrl_() collapses both to
+        // 'https://orcid.org/<ID>' or '' if malformed. `orcid` is retained
+        // as an alias for any legacy V2 caller that still reads it.
+        orcidUrl:         normalizeOrcidUrl_(s['ORCID / Researcher ID']),
+        orcid:            normalizeOrcidUrl_(s['ORCID / Researcher ID']),
         googleScholarUrl: s['Google Scholar URL'] || '',
         profileUrl:       s['Current Profile URL'] || '',
         // ——— Admin V2 enrichment overlay ———
         photo:            adminExtras.photo || '',
+        // V2 per-scholar 'Last update' timestamp. Sourced from
+        // scholar-enrichment.json.enc scholars[<sid>].updatedAt, which is
+        // written by Admin V2 on every save. Renderer formats it as
+        // 'Last update: DD Mon YYYY'. Absent when the scholar has never
+        // been touched by Admin V2 — the renderer omits the line rather
+        // than fabricating a date. (Master schema unchanged.)
+        lastUpdate:       adminExtras.updatedAt || '',
         institutionUrl:   adminExtras.institutionUrl || '',
         departmentUrl:    adminExtras.departmentUrl || '',
         sector:           adminExtras.sector || '',
