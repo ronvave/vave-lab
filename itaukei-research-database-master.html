@@ -353,8 +353,12 @@
     .db-bars__prov > span:first-child { overflow: visible; }
     .db-bars__total { font-size: 1.15rem; }
 
-    /* Panel C — stacked-by-type histogram */
-    #db-source-histogram { max-height: 340px; width: 100%; display: block; }
+    /* Panel C/D — stacked-by-type histogram.
+       The SVG viewBox height grows when milestone footnote lines are
+       drawn inside the SVG (see js/itaukei-database-master.js). Cap at
+       420px so a heavy renames list can't visually overtake the plot,
+       but let the SVG size itself for the common 0- or 2-line case. */
+    #db-source-histogram { max-height: 420px; width: 100%; display: block; }
     .db-hist-controls {
       display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
       margin: var(--space-2) 0 var(--space-3); padding-top: var(--space-2);
@@ -5328,7 +5332,7 @@
 ===================================================================== -->
 <script src="js/demo-gate.js?v=e4bf01d8" defer></script>
 <script src="js/master-file-adapter.js?v=0ab1eaa3" defer></script>
-<script src="js/itaukei-database-master.js?v=2843b5cb" defer></script>
+<script src="js/itaukei-database-master.js?v=a5349dbd" defer></script>
 <script src="js/master-file-panel-overrides.js?v=acd05728" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

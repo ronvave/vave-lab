@@ -6179,33 +6179,53 @@
     }
     $$('[data-hist-presets] button').forEach(button => button.classList.toggle('is-active', button.dataset.preset === state.histRange.preset));
 
-    // Milestone institution-rename footnote. Rendered into the existing
-    // [data-hist-note] paragraph below the chart. When a milestone displays
-    // the canonical (C_Uni) institution and that differs from the historical
-    // as-recorded (O_Uni) name, the annotation shows Uni* and the footnote
-    // records the mapping: 'University of Auckland (formerly recorded as
-    // University of New Zealand — Auckland University College).' No footnote
-    // is rendered when no milestone triggers the rename asterisk.
-    const histNoteEl = document.querySelector('[data-hist-note]');
-    if (histNoteEl) {
-      const renamed = (panelDData.milestones || []).filter(m => m && m.uniRenamed && m.cUni && m.oUni && m.cUni !== m.oUni);
-      // Dedupe on cUni|oUni pair so two milestones on the same institution
-      // (unlikely but possible) render only one footnote line.
-      const seen = new Set();
-      const pairs = renamed.filter(m => {
-        const key = `${m.cUni}||${m.oUni}`;
-        if (seen.has(key)) return false;
-        seen.add(key); return true;
+    // Milestone institution-rename footnote.
+    //
+    // Rendered INSIDE the SVG (not in the [data-hist-note] paragraph) so it
+    // scales with the chart in the docked view AND survives the fullscreen
+    // expand path, which stretches only #db-source-histogram. The SVG
+    // viewBox height is grown by exactly the number of footnote lines
+    // needed, keeping the plot area unchanged. The general "[data-hist-note]"
+    // summary paragraph (written above at ~line 5819) is left in place.
+    //
+    // The footnote fires when a milestone displays the canonical (C_Uni)
+    // institution and that differs from the historical/as-recorded (O_Uni)
+    // name, in which case the annotation shows 'Uni*' and this footer
+    // records: 'University of Auckland (formerly recorded as University
+    // of New Zealand — Auckland University College).' No footer text and
+    // no viewBox growth when no milestone triggers the asterisk.
+    const renamedMilestones = (panelDData.milestones || []).filter(m => m && m.uniRenamed && m.cUni && m.oUni && m.cUni !== m.oUni);
+    const seenPairs = new Set();
+    const footnotePairs = renamedMilestones.filter(m => {
+      const key = `${m.cUni}||${m.oUni}`;
+      if (seenPairs.has(key)) return false;
+      seenPairs.add(key); return true;
+    });
+    if (footnotePairs.length) {
+      const FN_LINE_H = 13;                  // px per footnote line inside SVG
+      const FN_TOP_GAP = 10;                 // gap above first footnote line
+      const growH = FN_LINE_H * footnotePairs.length + FN_TOP_GAP + 4;
+      // Extend the SVG viewBox height (and DOM height attr so the docked
+      // view actually reserves the pixels; fullscreen CSS uses vh anyway).
+      svg.setAttribute('viewBox', `0 0 ${W} ${H + growH}`);
+      svg.setAttribute('height', String(H + growH));
+      footnotePairs.forEach((m, i) => {
+        const y = H + FN_TOP_GAP + i * FN_LINE_H;
+        svg.appendChild(panelDSvg('text', {
+          x: PAD_LEFT,
+          y,
+          'text-anchor': 'start',
+          'font-family': 'Arial',
+          'font-size': '11',
+          fill: '#6b7280'
+        }, `* ${m.cUni} (formerly recorded as ${m.oUni}).`));
       });
-      if (pairs.length) {
-        const lines = pairs.map(m => `* ${m.cUni} (formerly recorded as ${m.oUni}).`);
-        histNoteEl.textContent = lines.join(' ');
-        histNoteEl.style.color = '#6b7280';
-        histNoteEl.style.fontSize = '11px';
-        histNoteEl.style.marginTop = '6px';
-      } else {
-        histNoteEl.textContent = '';
-      }
+    } else {
+      // Reset to the base viewBox/height when no footnote is needed, so a
+      // later re-render (e.g. after a Master refresh removes a rename)
+      // shrinks the SVG back.
+      svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      svg.setAttribute('height', String(H));
     }
   }
 
