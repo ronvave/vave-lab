@@ -1927,6 +1927,24 @@
     .db-scholar-card__stat-label {
       font-size: 0.78rem; color: var(--color-text-muted); font-weight: 500;
     }
+    /* Panel F linkage-status flag (Doc 2 req #21). Public wording is
+       "Publication linkage being updated" — signals a canonical count of 0
+       while Authorship linking is in progress, so viewers do not mistake
+       a zero for genuine no-output. */
+    .db-scholar-card__linkage-flag {
+      display: flex; align-items: center; gap: 6px;
+      margin: 4px 22px 8px;
+      font-size: 0.78rem;
+      color: #7a4a00;
+      background: #fff5e0;
+      border: 1px solid #f0d28a;
+      border-radius: 6px;
+      padding: 6px 10px;
+      line-height: 1.3;
+    }
+    .db-scholar-card__linkage-flag-icon {
+      font-size: 0.9rem;
+    }
     /* Type chips (Panel B/C colors) */
     .db-scholar-card__types {
       display: flex; flex-wrap: wrap; gap: 6px;
@@ -4615,7 +4633,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-body-composition.html?embedded=1&src=master&v=mf20"
+            src="itaukei-body-composition.html?embedded=1&src=master&v=mf21"
             title="iTaukei body composition by gender"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
@@ -5306,10 +5324,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=mf20" defer></script>
-<script src="js/master-file-adapter.js?v=mf20" defer></script>
-<script src="js/itaukei-database-master.js?v=mf20" defer></script>
-<script src="js/master-file-panel-overrides.js?v=mf20" defer></script>
+<script src="js/demo-gate.js?v=mf21" defer></script>
+<script src="js/master-file-adapter.js?v=mf21" defer></script>
+<script src="js/itaukei-database-master.js?v=mf21" defer></script>
+<script src="js/master-file-panel-overrides.js?v=mf21" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a

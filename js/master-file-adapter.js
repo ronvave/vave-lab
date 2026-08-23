@@ -585,8 +585,19 @@
         last: last,
         paternalProvince: paternal,
         maternalProvince: maternal,
+        paternalDistrict: (s['District Paternal'] || '').trim(),
+        maternalDistrict: (s['District Maternal'] || '').trim(),
+        paternalIsland:   (s['Island Paternal'] || '').trim(),
+        maternalIsland:   (s['Island Maternal'] || '').trim(),
         effectivePaternalProvince: paternal || maternal || '',
-        confederacy: (s._effective_confederacy || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
+        // Paternal confederacy: Master column if present, else derived from paternal province.
+        // (Kept in existing `confederacy` field for backwards-compat with dashboards.)
+        confederacy: (s['Paternal Confederacy'] || s._effective_confederacy || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
+        paternalConfederacy: (s['Paternal Confederacy'] || PROVINCE_TO_CONFED[paternal] || ''),
+        // Maternal confederacy: derived from maternal province via Lookups tab
+        // (Doc 1 req #5, #14). Currently read-only — becomes editable once
+        // Master write-back auth is approved and Master column is added.
+        maternalConfederacy: (PROVINCE_TO_CONFED[maternal] || ''),
         gender: s['Gender'] || '',
         title: s['Current Title / Role'] || '',
         institution: s['Current Institution'] || '',

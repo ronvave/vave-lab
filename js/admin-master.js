@@ -35,6 +35,21 @@
   var GH_REPO       = 'vave-lab';
   var GH_BRANCH     = 'main';
 
+  // Province → Confederacy lookup (derived from the Master Sheet Lookups tab,
+  // columns I & J). Used to derive Maternal Confederacy read-only for display
+  // (Doc 1 req #5, #14) and, once write-back is enabled, to drive dependent
+  // dropdowns for Paternal Province → Paternal Confederacy and Maternal
+  // Province → Maternal Confederacy. Kubuna / Tovata / Burebasaga are the
+  // three canonical confederacies.
+  var PROVINCE_TO_CONFED = {
+    'Ba': 'Kubuna', 'Bua': 'Tovata', 'Cakaudrove': 'Tovata',
+    'Kadavu': 'Burebasaga', 'Lau': 'Tovata', 'Lomaiviti': 'Kubuna',
+    'Macuata': 'Tovata', 'Nadroga/Navosa': 'Burebasaga',
+    'Naitasiri': 'Kubuna', 'Namosi': 'Burebasaga', 'Ra': 'Kubuna',
+    'Rewa': 'Burebasaga', 'Serua': 'Burebasaga', 'Tailevu': 'Kubuna',
+    'Unclassified': 'Unclassified'
+  };
+
   var ENRICHMENT_URL = 'data/scholar-enrichment.json';
   var INSIGHTS_URL   = 'data/scholar-insights-master.json';
   var ENRICHMENT_ENC = 'data/scholar-enrichment.json.enc';
@@ -55,8 +70,10 @@
     gapFilterReason: '',
     gapFilterStatus: '',
     gapChipOldOnly: false,
-    sortKey: 'scholarId',
-    sortDir: 'asc',
+    // Default sort is publication count descending so the most-published
+    // scholar appears first every time the dashboard loads (Doc 1 req #1).
+    sortKey: 'total',
+    sortDir: 'desc',
     gapSortKey: 'oldTotal',
     gapSortDir: 'desc',
     editingSid: null,
@@ -339,8 +356,8 @@
       case 'name':         return (s['Scholar Name'] || (s['Family Name'] + ', ' + s['Given Names']) || '').toLowerCase();
       case 'confederacy':  return String(s['Confederacy'] || '');
       case 'discipline':   return String(s['Discipline'] || s['Primary Discipline / Field'] || '');
-      case 'total':        return -c.total;             // desc by default when clicked once
-      case 'firstAuthored':return -c.firstAuthored;
+      case 'total':        return c.total;
+      case 'firstAuthored':return c.firstAuthored;
       default:             return '';
     }
   }
@@ -445,12 +462,21 @@
     $('#ro-given').value            = s['Given Names'] || '';
     $('#ro-gender').value           = s['Gender'] || '';
     $('#ro-alive').value            = s['Alive / Deceased'] || s['Alive/Deceased'] || '';
-    $('#ro-confed').value           = s['Confederacy'] || '';
-    $('#ro-discipline').value       = s['Discipline'] || s['Primary Discipline / Field'] || '';
-    $('#ro-prov-paternal').value    = s['Province Paternal'] || s['Paternal Province'] || '';
-    $('#ro-prov-maternal').value    = s['Province Maternal'] || s['Maternal Province'] || '';
-    $('#ro-vil-paternal').value     = s['Village Paternal'] || s['Paternal Village'] || '';
-    $('#ro-vil-maternal').value     = s['Village Maternal'] || s['Maternal Village'] || '';
+    // Paternal confederacy: Master value if present, else derived via Lookups.
+    $('#ro-confed').value            = s['Paternal Confederacy'] || s['Confederacy'] || '';
+    // Maternal confederacy: currently derived read-only from Maternal Province
+    // via the Lookups tab (Doc 1 req #5). Becomes an editable Master column
+    // once write-back is approved.
+    // Derive maternal confederacy from Maternal Province via Lookups.
+    var _matProv = (s['Province Maternal'] || s['Maternal Province'] || '').trim();
+    $('#ro-confed-maternal').value   = PROVINCE_TO_CONFED[_matProv] || '';
+    $('#ro-discipline').value        = s['Discipline'] || s['Primary Discipline / Field'] || '';
+    $('#ro-prov-paternal').value     = s['Province Paternal'] || s['Paternal Province'] || '';
+    $('#ro-prov-maternal').value     = s['Province Maternal'] || s['Maternal Province'] || '';
+    if ($('#ro-dist-paternal')) $('#ro-dist-paternal').value = s['District Paternal'] || '';
+    if ($('#ro-dist-maternal')) $('#ro-dist-maternal').value = s['District Maternal'] || '';
+    $('#ro-vil-paternal').value      = s['Village Paternal'] || s['Paternal Village'] || '';
+    $('#ro-vil-maternal').value      = s['Village Maternal'] || s['Maternal Village'] || '';
     $('#ro-title').value            = s['Current Title / Role'] || s['Current Title'] || '';
     $('#ro-institution').value      = s['Current Institution'] || '';
     $('#ro-inst-country').value     = s['Institution Country'] || s['Current Country'] || '';

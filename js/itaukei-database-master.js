@@ -7907,6 +7907,11 @@
         <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num">${r.total}</span><span class="db-scholar-card__stat-label">Publication${r.total === 1 ? '' : 's'}</span></div>
         <div class="db-scholar-card__stat"><span class="db-scholar-card__stat-num accent">${r.firstAuthored}</span><span class="db-scholar-card__stat-label">First-authored</span></div>
       </div>
+      ${(r._authorshipGap === true && Number(r.total) === 0) ? `
+      <div class="db-scholar-card__linkage-flag" title="Some publications by this scholar are still being linked to their Scholar ID in the Master file. The count above reflects only currently-linked publications.">
+        <span class="db-scholar-card__linkage-flag-icon" aria-hidden="true">⚠</span>
+        Publication linkage being updated
+      </div>` : ''}
       ${chipsHtml ? `<div class="db-scholar-card__types">${chipsHtml}</div>` : ''}
     `;
     wireScholarInsight(card);
