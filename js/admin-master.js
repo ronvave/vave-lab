@@ -2446,8 +2446,21 @@
     $('#modal-close').addEventListener('click', closeEditModal);
     $('#modal-cancel').addEventListener('click', closeEditModal);
     $('#modal-save').addEventListener('click', saveEditModal);
+
+    // Backdrop-click-to-close, but only when the interaction BOTH started AND
+    // ended on the backdrop. Ron reported that selecting text or drag-releasing
+    // outside a field closes the editor and wipes typed input; that happens
+    // because a text drag inside a <input> fires `click` on the backdrop when
+    // the mouse lifts outside the modal panel. Guarding on the mousedown origin
+    // makes accidental drags safe while a genuine backdrop click still closes.
+    // See Ron's report 2026-08-23.
+    var editDownOnBackdrop = false;
+    $('#edit-modal').addEventListener('mousedown', function (e) {
+      editDownOnBackdrop = !!(e.target && e.target.id === 'edit-modal');
+    });
     $('#edit-modal').addEventListener('click', function (e) {
-      if (e.target && e.target.id === 'edit-modal') closeEditModal();
+      if (editDownOnBackdrop && e.target && e.target.id === 'edit-modal') closeEditModal();
+      editDownOnBackdrop = false;
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape' && $('#edit-modal').classList.contains('is-visible')) closeEditModal();
@@ -2458,8 +2471,13 @@
     $('#preview-close').addEventListener('click', closePreviewModal);
     $('#preview-cancel').addEventListener('click', closePreviewModal);
     $('#preview-confirm').addEventListener('click', executeSaveAfterPreview);
+    var previewDownOnBackdrop = false;
+    $('#preview-modal').addEventListener('mousedown', function (e) {
+      previewDownOnBackdrop = !!(e.target && e.target.id === 'preview-modal');
+    });
     $('#preview-modal').addEventListener('click', function (e) {
-      if (e.target && e.target.id === 'preview-modal') closePreviewModal();
+      if (previewDownOnBackdrop && e.target && e.target.id === 'preview-modal') closePreviewModal();
+      previewDownOnBackdrop = false;
     });
 
     // Master change log tab.
