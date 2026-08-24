@@ -1572,29 +1572,60 @@
         log('Uploaded ' + photoPath + ' (' + Math.round(jpegBytes.length / 1024) + ' KB)', 'ok');
       }
 
-      // 4) Merge back into full docs and push whichever changed
-      var enrDoc = deepCloneDoc(state.enrichmentDoc);
-      enrDoc.scholars[sid] = newEnr;
-      enrDoc.updatedAt = new Date().toISOString();
-      await pushEncryptedJson(ENRICHMENT_ENC, enrDoc, 'admin(master): update enrichment for ' + sid);
-      state.enrichmentDoc = enrDoc;
+      // 4) Merge this scholar's edit onto the freshest server copy of each
+      //    encrypted doc and push. pushEncryptedJsonMerged handles the entire
+      //    read → merge → write cycle with one automatic retry on a 409/422
+      //    sha race, so concurrent refresh-master-file runs (salt-only
+      //    rewrites) and other admin tabs editing different scholars in the
+      //    same file no longer surface as errors or silent overwrites.
+      var writtenEnr = await pushEncryptedJsonMerged(
+        ENRICHMENT_ENC,
+        ENRICHMENT_URL,
+        function (freshDoc) {
+          if (!freshDoc.scholars) freshDoc.scholars = {};
+          freshDoc.scholars[sid] = newEnr;
+          freshDoc.updatedAt = new Date().toISOString();
+          return freshDoc;
+        },
+        'admin(master): update enrichment for ' + sid
+      );
+      state.enrichmentDoc = writtenEnr;
       log('Pushed ' + ENRICHMENT_ENC, 'ok');
 
       if (newIns) {
-        var insDoc = deepCloneDoc(state.insightsDoc);
-        insDoc.scholars[sid] = newIns;
-        insDoc.updatedAt = new Date().toISOString();
-        await pushEncryptedJson(INSIGHTS_ENC, insDoc, 'admin(master): update insights for ' + sid);
-        state.insightsDoc = insDoc;
+        var writtenIns = await pushEncryptedJsonMerged(
+          INSIGHTS_ENC,
+          INSIGHTS_URL,
+          function (freshDoc) {
+            if (!freshDoc.scholars) freshDoc.scholars = {};
+            freshDoc.scholars[sid] = newIns;
+            freshDoc.updatedAt = new Date().toISOString();
+            return freshDoc;
+          },
+          'admin(master): update insights for ' + sid
+        );
+        state.insightsDoc = writtenIns;
         log('Pushed ' + INSIGHTS_ENC, 'ok');
       } else {
-        // If Ron clears the JSON, remove that scholar's entry
+        // If Ron clears the JSON, remove that scholar's entry — but only if
+        // it currently exists on the server, so we don't gratuitously rewrite
+        // the file when it never had a row for this scholar in the first
+        // place. The merged writer re-checks on the fresh copy.
         if (state.insightsDoc.scholars[sid]) {
-          var insDoc2 = deepCloneDoc(state.insightsDoc);
-          delete insDoc2.scholars[sid];
-          insDoc2.updatedAt = new Date().toISOString();
-          await pushEncryptedJson(INSIGHTS_ENC, insDoc2, 'admin(master): clear insights for ' + sid);
-          state.insightsDoc = insDoc2;
+          var writtenIns2 = await pushEncryptedJsonMerged(
+            INSIGHTS_ENC,
+            INSIGHTS_URL,
+            function (freshDoc) {
+              if (!freshDoc.scholars) freshDoc.scholars = {};
+              if (freshDoc.scholars[sid]) {
+                delete freshDoc.scholars[sid];
+                freshDoc.updatedAt = new Date().toISOString();
+              }
+              return freshDoc;
+            },
+            'admin(master): clear insights for ' + sid
+          );
+          state.insightsDoc = writtenIns2;
           log('Cleared insights for ' + sid + ' in ' + INSIGHTS_ENC, 'ok');
         }
       }
@@ -1646,6 +1677,43 @@
   }
 
   // ------------------------- encrypted JSON push -------------------------
+  //
+  // Two save modes:
+  //
+  //   pushEncryptedJson(path, doc, msg)
+  //       Legacy path: encrypt the caller-supplied doc verbatim and PUT it.
+  //       Vulnerable to the classic edit-race: if another writer touched the
+  //       same .enc file between when this browser loaded state.enrichmentDoc
+  //       and now, this write silently clobbers their edits (sha revalidation
+  //       stops the 409 error but not the data loss). Kept for one-off writes
+  //       where the caller has already reconciled against the server (e.g.
+  //       force-refresh cache bumps).
+  //
+  //   pushEncryptedJsonMerged(path, plaintextUrl, applyEdit, msg)
+  //       Race-safe path used by all scholar Save & push flows. Refetches the
+  //       current .enc from the server, decrypts to plaintext, runs the
+  //       caller's applyEdit(freshDoc) on the freshly loaded copy, re-encrypts,
+  //       and PUTs with the fresh sha. On a 409/422 sha-race from a write
+  //       that landed between our GET and our PUT, retries the entire
+  //       read → merge → write cycle once. Guarantees:
+  //         - No lost writes: another admin's concurrent edit on a *different*
+  //           scholar in the same file survives, because we merge on the
+  //           server's latest bytes, not our in-memory snapshot.
+  //         - No 409 error dialogs on the standard refresh-race: the retry
+  //           handles the salt-only rewrite that refresh-master-file.yml
+  //           produces every time it runs.
+  //         - state.<doc> is only updated *after* the write succeeds, so a
+  //           mid-save failure leaves the UI aligned with what is actually on
+  //           disk instead of showing the aspirational value.
+  //       The 2026-08-24 Save failed (409) 'does not match e77bafaaf8ed…'
+  //       report from admin-master.html was fixed by this path — the modal
+  //       had loaded state.enrichmentDoc at 12:52 UTC; between then and Save,
+  //       the refresh-master-file workflow ran twice (12:55 and 13:00) and
+  //       rewrote scholar-enrichment.json.enc with fresh salts. The old
+  //       single-shot sha retry in githubUploadBinary re-fetched sha #2 but
+  //       then PUT with the caller's stale in-memory encBytes; when the
+  //       second refresh landed mid-retry, GitHub replied 409 a second time
+  //       and the raw error string bubbled up to the toast.
   async function pushEncryptedJson (path, jsonObj, commitMsg) {
     if (!window.dbGate || typeof window.dbGate.encryptForUpload !== 'function') {
       throw new Error('dbGate.encryptForUpload not available (page not unlocked?)');
@@ -1653,6 +1721,106 @@
     var plaintext = JSON.stringify(jsonObj, null, 2);
     var encBytes = await window.dbGate.encryptForUpload(plaintext);
     return githubUploadBinary(path, encBytes, commitMsg);
+  }
+
+  // Race-safe encrypted push.
+  //
+  //   path          — repo-relative .enc file to PUT (e.g. ENRICHMENT_ENC).
+  //   plaintextUrl  — the *plaintext* URL that db-gate maps to `path`
+  //                   (e.g. ENRICHMENT_URL). Used with dbGate.fetchJson so we
+  //                   pick up the newest server bytes with cache: 'no-store'.
+  //   applyEdit     — sync function (freshDoc) => freshDoc. The doc arg is
+  //                   a brand-new object decrypted from the server; mutate in
+  //                   place or return a replacement — both are honored.
+  //   commitMsg     — GitHub commit message for the PUT.
+  //
+  // Returns the doc that was actually written (post-merge) so the caller can
+  // update state.<doc> to match.
+  async function pushEncryptedJsonMerged (path, plaintextUrl, applyEdit, commitMsg) {
+    if (!window.dbGate || typeof window.dbGate.encryptForUpload !== 'function') {
+      throw new Error('dbGate.encryptForUpload not available (page not unlocked?)');
+    }
+    if (!window.dbGate.fetchJson) {
+      throw new Error('dbGate.fetchJson not available (page not unlocked?)');
+    }
+    var token = getGhToken();
+    if (!token) throw new Error('No GitHub token');
+
+    var getUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path) + '?ref=' + GH_BRANCH;
+    var putUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path);
+
+    var attempts = 0;
+    var maxAttempts = 2; // one retry after a 409/422 sha race
+    var lastErrText = '';
+
+    while (attempts < maxAttempts) {
+      attempts += 1;
+
+      // 1) Read current metadata (sha) from GitHub Contents API.
+      var head = await fetch(getUrl, { headers: ghHeaders(token) });
+      var currentSha = null;
+      if (head.status === 200) {
+        var meta = await head.json();
+        currentSha = meta && meta.sha;
+      } else if (head.status !== 404) {
+        throw new Error('GitHub read failed (' + head.status + '): ' + await head.text());
+      }
+
+      // 2) Read the freshest plaintext through db-gate. This uses cache:
+      //    'no-store' + a busted URL so we bypass the browser cache and the
+      //    CDN. If the file doesn't exist yet (404 on sha), start from an
+      //    empty scaffold.
+      var freshDoc;
+      if (currentSha) {
+        try {
+          freshDoc = await window.dbGate.fetchJson(plaintextUrl);
+        } catch (e) {
+          throw new Error('Fresh decrypt of ' + path + ' failed: ' + (e && e.message ? e.message : e));
+        }
+        if (!freshDoc || typeof freshDoc !== 'object') {
+          freshDoc = { version: 1, scholars: {} };
+        }
+      } else {
+        freshDoc = { version: 1, scholars: {} };
+      }
+
+      // 3) Apply the caller's edit onto the fresh doc. applyEdit may mutate
+      //    the passed-in object or return a replacement.
+      var edited = applyEdit(freshDoc);
+      if (edited && typeof edited === 'object') freshDoc = edited;
+
+      // 4) Encrypt + PUT with the sha we just observed.
+      var plaintext = JSON.stringify(freshDoc, null, 2);
+      var encBytes = await window.dbGate.encryptForUpload(plaintext);
+      var body = {
+        message: commitMsg || ('admin(master): update ' + path),
+        content: b64encodeBytes(encBytes),
+        branch: GH_BRANCH
+      };
+      if (currentSha) body.sha = currentSha;
+
+      var put = await fetch(putUrl, {
+        method: 'PUT',
+        headers: Object.assign({ 'Content-Type': 'application/json' }, ghHeaders(token)),
+        body: JSON.stringify(body)
+      });
+
+      if (put.ok) {
+        return freshDoc;
+      }
+
+      lastErrText = await put.text();
+      if ((put.status === 409 || put.status === 422) && attempts < maxAttempts) {
+        // Someone else wrote to the same .enc between our GET and our PUT.
+        // Loop: re-read, re-merge, re-write once.
+        log('Save race on ' + path + ' — re-reading latest and retrying…', 'warn');
+        toast('Reloading latest — retrying save…', 'warn', 3000);
+        continue;
+      }
+      throw new Error('GitHub write failed (' + put.status + '): ' + lastErrText);
+    }
+
+    throw new Error('GitHub write failed after ' + maxAttempts + ' attempts: ' + lastErrText);
   }
 
   async function githubUploadBinary (path, bytes, commitMsg) {
