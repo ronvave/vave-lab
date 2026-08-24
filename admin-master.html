@@ -688,6 +688,8 @@
             <ul style="margin: 6px 0 0 18px; padding: 0; font-size: 12px; color: var(--muted);">
               <li><span class="mono">summary</span> → <span class="mono">summaryHtml</span> (ChatGPT default)</li>
               <li><span class="mono">plainEnglishSummary</span> / <span class="mono">plain_english_summary</span> → <span class="mono">summaryHtml</span></li>
+              <li><span class="mono">research_keywords</span> / <span class="mono">researchKeywords</span> → <span class="mono">keywords</span></li>
+              <li><span class="mono">scholar_id</span>, <span class="mono">name</span> (paste envelope) are accepted quietly — used for the Admin log but not persisted onto the record.</li>
               <li><span class="mono">summary_format</span> / <span class="mono">summary-format</span> → <span class="mono">summaryFormat</span></li>
               <li>Outer name wrapper (e.g. <span class="mono">{ "Veitayaki, Joeli": { … } }</span> from Claude / V1-style pastes) is <strong>auto-unwrapped</strong>; the wrapper string is preserved as <span class="mono">canonicalName</span>.</li>
               <li>Unknown top-level keys (e.g. <span class="mono">scholar</span>, <span class="mono">notes</span>) are dropped with a warning in the Action log — never persisted.</li>
@@ -737,7 +739,7 @@
 <script src="js/master-file-adapter.js?v=b7a484f1" defer></script>
 <script src="js/admin-insights-migration.js?v=6e8c88fd" defer></script>
 <script src="js/admin-writeback-client.js?v=780950d5" defer></script>
-<script src="js/admin-master.js?v=bfa6ee26" defer></script>
+<script src="js/admin-master.js?v=cd0ca971" defer></script>
 
 </body>
 </html>

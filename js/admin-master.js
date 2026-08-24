@@ -1066,7 +1066,8 @@
     // key looks like a person name (contains a comma or a space), preserve
     // it as canonicalName so the sidecar keeps the exact string the user
     // pasted.
-    var CANONICAL_FIELDS = ['keywords', 'summary', 'summaryHtml',
+    var CANONICAL_FIELDS = ['keywords', 'research_keywords', 'researchKeywords',
+                            'summary', 'summaryHtml',
                             'plainEnglishSummary', 'plain_english_summary',
                             'summaryFormat', 'summary_format', 'summary-format',
                             'sources'];
@@ -1089,9 +1090,15 @@
       }
     }
     var out = {};
-    // keywords: only accept an array of strings; drop empties + trim.
-    if (Array.isArray(raw.keywords)) {
-      var kw = raw.keywords
+    // keywords: accept `keywords`, `research_keywords` (snake_case), or
+    // `researchKeywords` (camelCase). Only arrays of non-empty strings are
+    // kept. First non-empty array wins so ambiguous pastes stay predictable.
+    var kwSource = Array.isArray(raw.keywords)          ? raw.keywords
+                 : Array.isArray(raw.research_keywords) ? raw.research_keywords
+                 : Array.isArray(raw.researchKeywords)  ? raw.researchKeywords
+                 : null;
+    if (kwSource) {
+      var kw = kwSource
         .map(function (k) { return (typeof k === 'string' ? k.trim() : ''); })
         .filter(function (k) { return !!k; });
       if (kw.length) out.keywords = kw;
@@ -1133,9 +1140,16 @@
     var dropped = [];
     Object.keys(raw).forEach(function (k) {
       if (META_ALLOWED.indexOf(k) >= 0) { out[k] = raw[k]; return; }
-      var KNOWN = { keywords:1, summaryHtml:1, summary:1, plainEnglishSummary:1,
-                    plain_english_summary:1, summaryFormat:1, summary_format:1,
-                    'summary-format':1, sources:1 };
+      var KNOWN = { keywords:1, research_keywords:1, researchKeywords:1,
+                    summaryHtml:1, summary:1,
+                    plainEnglishSummary:1, plain_english_summary:1,
+                    summaryFormat:1, summary_format:1, 'summary-format':1,
+                    sources:1,
+                    // Common paste envelope fields — silently accepted so users
+                    // don’t see spurious “dropped” warnings when they paste the
+                    // full AI-generation record. They aren’t persisted (not on
+                    // META_ALLOWED) but they don’t trigger the warning either.
+                    scholar_id:1, scholarId:1, name:1 };
       if (!KNOWN[k]) dropped.push(k);
     });
     if (dropped.length) log('Insights paste: dropped unknown field(s) ' + dropped.join(', '), 'warn');
