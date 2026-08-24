@@ -28,7 +28,7 @@
   'use strict';
 
   // ------------------------- constants -------------------------
-  var PASSWORD_HASH = 'd4d3d9ac6a90ffff854263c3edade0c83c5cc1836cb581f67aa91789ece296d6';
+  var PASSWORD_HASH = '262b560692084e4a8a838711a413a855803a46f8051b66c417b089d26f635023';
   var SESSION_KEY   = 'vavelab_admin_master_session';
   var GH_TOKEN_KEY  = 'vavelab_gh_token';
   var GH_OWNER      = 'ronvave';
