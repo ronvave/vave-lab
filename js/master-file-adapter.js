@@ -478,14 +478,57 @@
       if (authRows.length === 0) {
         masterAuthorship = 'none';
       } else if (bibLead) {
-        var bibLeadSurname = bibLead.split(',', 1)[0].trim().toLowerCase();
+        // Normalize surnames for matching: lowercase, replace unicode hyphens
+        // and dashes with ASCII '-', collapse whitespace, strip surrounding
+        // punctuation. Handles 'Meo\u2010Sewabu' vs 'Meo-Sewabu' and diacritic
+        // edge cases without pulling in a full unicode library.
+        function normSurn(s) {
+          return String(s || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, '-')
+            // Collapse ' Jnr'/'Jr'/'Junior'/'Snr'/'Sr'/'Senior' suffixes on a surname to a
+            // canonical 'jr'/'sr' token so 'Matanaicake Jnr' matches 'Matanaicake Junior'.
+            .replace(/\b(?:jnr|jr|junior)\b\.?/g, 'jr')
+            .replace(/\b(?:snr|sr|senior)\b\.?/g, 'sr')
+            // Normalize interior whitespace and hyphens so 'Vesikula Bai',
+            // 'Vesikula\u2010Bai', and 'vesikula-bai' all collapse to the same key.
+            .replace(/[\s\-]+/g, ' ')
+            .trim();
+        }
+        var bibLeadSurname = normSurn(bibLead.split(',', 1)[0]);
+        // A bib surname matches a scholar when it equals the scholar's
+        // Family Name, matches any hyphen segment of a compound family name
+        // (e.g. 'Kitolelei' matches 'Bukarau-Kitolelei'), OR matches the
+        // surname on the Authorship row's 'Author Name as Recorded' field
+        // (which often preserves the pre-marriage/pre-hyphen name used in
+        // the publication).
+        function surnameMatches(scholar, authRow) {
+          // Prefer exact-string match after normalization (handles hyphen /
+          // whitespace / non-ASCII dash variants and Jr/Jnr/Junior aliases).
+          var fam = normSurn((scholar && scholar['Family Name']) || '');
+          if (fam && fam === bibLeadSurname) return true;
+          // The Authorship row's own 'Author Name as Recorded' captures the
+          // publication-time surname, which sometimes differs from the current
+          // Family Name (e.g. pre-marriage / pre-hyphenation). Use its full
+          // surname, not individual tokens, to avoid false positives on shared
+          // components of compound surnames like 'Nabobo-Baba' vs 'Baba'.
+          var recorded = (authRow && authRow['Author Name as Recorded']) || '';
+          if (recorded) {
+            var recSurnRaw = recorded.includes(',')
+              ? recorded.split(',', 1)[0]
+              : (recorded.trim().split(/\s+/).slice(-2).join(' '));
+            var recSurn = normSurn(recSurnRaw);
+            if (recSurn && recSurn === bibLeadSurname) return true;
+          }
+          return false;
+        }
         var leadHit = null;
         authRows.forEach(function (a) {
           var sid = a['Scholar ID'];
           if (!sid) return;
           var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
-          var fam = ((scholar && scholar['Family Name']) || '').trim().toLowerCase();
-          if (!leadHit && fam && fam === bibLeadSurname) {
+          if (!leadHit && surnameMatches(scholar, a)) {
             leadHit = a;
           }
         });
