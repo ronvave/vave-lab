@@ -47,6 +47,21 @@ TARGETS = [
     "uni-country-overrides.json",
     # Auto-resolver cache — see encrypt_data.py comment.
     "auto-resolved.json",
+    # ==== Master-file V2 preview snapshots ====
+    # Must be decryptable in the refresh workflow so the "Stash previous
+    # plaintext for diff" step (see .github/workflows/refresh-master-file.yml)
+    # can compare fresh transformer output against the previous run's
+    # plaintext. Without these entries the diff step sees no prev files,
+    # falls into first-run mode, and re-encrypts every Master file on every
+    # run — defeating the plaintext-changed gate.
+    "itaukei-master-scholars.json",
+    "itaukei-master-publications.json",
+    "itaukei-master-authorship.json",
+    "itaukei-master-grad-degrees.json",
+    "itaukei-master-mobility.json",
+    "itaukei-master-geography.json",
+    "itaukei-master-aggregates.json",
+    "last-master-sync.json",
 ]
 
 
