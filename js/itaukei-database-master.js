@@ -100,6 +100,91 @@
     return (profile.paternalProvince || profile.maternalProvince || '').trim();
   }
 
+  // ------------------------------------------------------------------
+  // Shared scholar-geography formatter (V2 public display).
+  //
+  // Renders one canonical locality string from village / island /
+  // province Master values. Display-only — never mutates the Master.
+  //
+  //   village + island + province             → 'Malawai vlg (Gau Is), Lomaiviti Province.'
+  //   village + province, island suppressed   → 'Naduri vlg, Macuata Province.'      (Viti Levu / Vanua Levu)
+  //   village + province, no island           → 'Naduri vlg, Macuata Province.'
+  //   village + island, no province           → 'Malawai vlg (Gau Is)'                (no trailing province)
+  //   province only                           → 'Lau Province.'
+  //   outer island only                       → 'Gau Is'
+  //   nothing meaningful                      → ''
+  //
+  // Placeholders (Unclassified / Unknown / N/A / null / undefined /
+  // 'null' / 'undefined') are stripped before formatting, so the public
+  // string never leaks a sentinel.
+  //
+  // Island suffix normalization: strips a trailing ' Is' / ' Island' from
+  // the stored value (case-insensitive, whole word) so re-suffixing with
+  // ' Is' can never produce 'Moala Is Is' or 'Gau Island Is'.
+  //
+  // The trailing period appears only when the string ends in 'Province';
+  // 'Gau Is'-only or village-only forms stay unpunctuated so they read
+  // cleanly in chips.
+  // ------------------------------------------------------------------
+  const _MAINLAND_ISLANDS_SUPPRESS = /^(viti\s*levu|vanua\s*levu)$/i;
+  const _GEO_SENTINELS = /^(unclassified|unknown|n\/?a|na|null|undefined|none|-|\.|_)$/i;
+
+  function _cleanGeoField(v) {
+    var s = (v == null ? '' : String(v)).trim();
+    if (!s) return '';
+    if (_GEO_SENTINELS.test(s)) return '';
+    return s;
+  }
+
+  function _normalizeIslandStem(v) {
+    // Trim any pre-existing ' Is', ' Is.', ' Island' suffix so we can
+    // append a single canonical ' Is' without stacking. Whole-word only.
+    return v.replace(/\s+(is\.?|island)$/i, '').trim();
+  }
+
+  function formatScholarGeography(village, island, province) {
+    var v = _cleanGeoField(village);
+    var i = _cleanGeoField(island);
+    var p = _cleanGeoField(province);
+
+    // Suppress island name entirely for Fiji's two large mainlands.
+    if (i && _MAINLAND_ISLANDS_SUPPRESS.test(i)) i = '';
+
+    var islandStem = i ? _normalizeIslandStem(i) : '';
+    var vlgPart = v ? (v + ' vlg') : '';
+    var islPart = islandStem ? (islandStem + ' Is') : '';
+    var provPart = p ? (p + ' Province') : '';
+
+    // 1. Village + Province (with or without a shown island).
+    if (vlgPart && provPart) {
+      var localityPart = islPart ? (vlgPart + ' (' + islPart + ')') : vlgPart;
+      return localityPart + ', ' + provPart + '.';
+    }
+    // 2. Village + Island, no province — no trailing comma / fake province.
+    if (vlgPart && islPart) {
+      return vlgPart + ' (' + islPart + ')';
+    }
+    // 3. Village only.
+    if (vlgPart) return vlgPart;
+    // 4. Island + Province, no village — keep both instead of dropping
+    //    the island (happens when the village cell is blank OR a scrubbed
+    //    sentinel like 'Unclassified').
+    if (islPart && provPart) return islPart + ', ' + provPart + '.';
+    // 5. Province only.
+    if (provPart) return provPart + '.';
+    // 6. Outer island only (Viti Levu / Vanua Levu already suppressed above).
+    if (islPart) return islPart;
+    return '';
+  }
+
+  // Expose the formatter for tests / other modules (e.g. hover chips built
+  // outside this IIFE). Attach to a namespaced global rather than the
+  // window root so it's easy to grep for.
+  if (typeof window !== 'undefined') {
+    window.VaveLabV2 = window.VaveLabV2 || {};
+    window.VaveLabV2.formatScholarGeography = formatScholarGeography;
+  }
+
   // Find the top-level Zotero collection that groups every iTaukei-authored
   // sub-collection. Historically named 'iTaukei authors (>3 papers)' but Ron
   // has renamed it (e.g. '(>2 papers)'), so we match any top-level collection
@@ -2178,59 +2263,20 @@
         }
         const profile = lookupProfile(nm) || {};
         const village  = (profile.village || '').trim();
+        const island   = (profile.island || profile.paternalIsland || profile.maternalIsland || '').trim();
         const province = effectivePaternalProvince(profile);
         const slug     = (profile.slug || '').trim();
-        // Village + province chip. Ron's convention is to store the village
-        // with an optional island suffix already in parens, e.g.
-        // "Rukua vlg (Beqa Is)" for island villages, or plain "Naduri vlg"
-        // for mainland villages. In the popup we always want exactly one set
-        // of parens — reserved for the province — with the island (if any)
-        // rendered as a comma-separated suffix on the village. So an island
-        // village becomes "Rukua vlg, Beqa Is (Rewa)" and a mainland village
-        // becomes "Naduri vlg (Macuata)". Renders as a link when we have a
-        // slug so clicking deep-links to the scholar's card; renders as
-        // plain text when the profile isn't linkable. If both village and
-        // province are blank, the chip is omitted entirely.
-        // Static province -> confederacy lookup. Kept inline here (rather than
-        // pulling from CONFEDERACY_PROVINCES lower in the file) because this
-        // popup render path runs before that constant is in scope.
-        const PROVINCE_TO_CONFEDERACY = {
-          Kadavu: 'Burebasaga', 'Nadroga/Navosa': 'Burebasaga', Namosi: 'Burebasaga',
-          Rewa: 'Burebasaga', Serua: 'Burebasaga',
-          Ba: 'Kubuna', Lomaiviti: 'Kubuna', Naitasiri: 'Kubuna',
-          Ra: 'Kubuna', Tailevu: 'Kubuna',
-          Bua: 'Tovata', Cakaudrove: 'Tovata', Lau: 'Tovata', Macuata: 'Tovata'
-        };
-        function mergeVillageProvince(v, p) {
-          // Split off an existing trailing "(...)" from the village so we can
-          // reuse whatever's inside as an island / locality note.
-          let vBase = v;
-          let vNote = '';
-          if (v) {
-            const m = v.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
-            if (m) {
-              vBase = m[1].trim();
-              vNote = m[2].trim();
-            }
-          }
-          const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
-          // Append confederacy after the province, separated by an en-dash,
-          // when the province maps to a known confederacy. Format:
-          //   "Rukua vlg, Beqa Is (Rewa) \u2013 Burebasaga"
-          const conf = p ? PROVINCE_TO_CONFEDERACY[p] : '';
-          const provinceTag = p ? (conf ? `(${p}) \u2013 ${conf}` : `(${p})`) : '';
-          if (left && provinceTag) return `${left} ${provinceTag}`;
-          if (left)                return left;
-          if (provinceTag)         return provinceTag;
-          return '';
-        }
-        // Village + province render on their own line under the name so the
-        // 3-line body (name / village / thesis) gives the photo column a
-        // predictable block to align against in fullscreen. Link styling
-        // (teal + underline) is kept via the __village a rule.
+        // Village-line chip. V2 canonical format is
+        //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
+        //   'Naduri vlg, Macuata Province.'         (Viti Levu / Vanua Levu — island suppressed)
+        // formatScholarGeography() handles island suffix normalization
+        // ('Moala' → 'Moala Is', never 'Moala Is Is'), the Viti/Vanua Levu
+        // suppression, placeholder scrubbing, and every missing-field
+        // fallback. Chip is omitted entirely when the string is empty.
         let villageLine = '';
-        if (village || province) {
-          const label = escapeHtml(mergeVillageProvince(village, province));
+        const geoLabel = formatScholarGeography(village, island, province);
+        if (geoLabel) {
+          const label = escapeHtml(geoLabel);
           villageLine = slug
             ? `<div class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></div>`
             : `<div class="db-popup-scholar-detail__village">${label}</div>`;
@@ -3416,25 +3462,16 @@
 
   function _workplaceVillageLine(p) {
     const village = (p.village || '').trim();
+    const island  = (p.island || p.paternalIsland || p.maternalIsland || '').trim();
     const pat = (p.paternalProvince || '').trim();
     const mat = (p.maternalProvince || '').trim();
-    // Format matches user's canonical convention: "Rukua vlg, Beqa Is
-    // (Rewa) – Burebasaga". When the village string already carries an
-    // island suffix in parens, promote that into the base village.
-    let vBase = village;
-    let vNote = '';
-    if (village) {
-      const m = village.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
-      if (m) { vBase = m[1].trim(); vNote = m[2].trim(); }
-    }
-    const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
-    // Show the paternal province with its confederacy tag; if the scholar
-    // also has a maternal province of a different confederacy, append it
-    // in a small muted suffix so the mixed-heritage split is visible.
-    const conf = pat ? PROVINCE_TO_CONFEDERACY[pat] : '';
-    const provinceTag = pat ? (conf ? `(${pat}) \u2013 ${conf}` : `(${pat})`) : '';
-    const patMerged = left && provinceTag ? `${left} ${provinceTag}` : (left || provinceTag || '');
-    // Second-line maternal-side note when maternal province differs.
+    // V2 canonical primary line: 'Naroi vlg (Moala Is), Lau Province.' or
+    // 'Naduri vlg, Macuata Province.' (Viti/Vanua Levu suppressed). See
+    // formatScholarGeography() near the top of this file for the full spec.
+    const patMerged = formatScholarGeography(village, island, pat);
+    // Second-line maternal-side note when maternal province differs from
+    // paternal. We keep the confederacy tag on the maternal note so a
+    // mixed-heritage scholar still surfaces the maternal confederacy.
     let matNote = '';
     if (mat && mat !== pat) {
       const mconf = PROVINCE_TO_CONFEDERACY[mat] || '';
@@ -8014,27 +8051,24 @@
     const t = r.types || {};
     const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
 
-    // Meta line format (matches old dashboard's paternal-info line):
-    //   village + island populated →  'Malawai vlg, Gau Is · Lomaiviti Province'
-    //   village only            →  'Malawai vlg · Lomaiviti Province'
-    //   island only             →  'Gau Is · Lomaiviti Province'
-    //   neither                 →  '<em>Village not yet added</em> · Lomaiviti Province'
-    // The 'vlg' + 'Is' abbreviations are appended by the renderer so the
-    // Master and Admin V2 store the plain place-names ('Malawai', 'Gau')
-    // — no schema change. Village-and-island are joined with a comma
-    // (they belong to the same locality), then a middle-dot separator
-    // introduces the province (a higher-level administrative unit). See
-    // Ron's 2026-08-23 note.
+    // Meta line format (V2 canonical, per Ron's 2026-08-24 spec):
+    //   village + outer island + province  →  'Malawai vlg (Gau Is), Lomaiviti Province.'
+    //   village + Viti/Vanua Levu          →  'Naduri vlg, Macuata Province.'      (island suppressed)
+    //   village only                       →  'Malawai vlg'
+    //   island only (outer)                →  'Gau Is'
+    //   province only                      →  'Lomaiviti Province.'
+    //   nothing                            →  '<em>Village not yet added</em>' (empty-state chip)
+    //
+    // The 'vlg' + 'Is' abbreviations, the mainland-island suppression, the
+    // island-suffix normalization, and the sentinel/placeholder scrubbing
+    // are all handled by formatScholarGeography(); this renderer only wraps
+    // the string in a placeholder chip when it's empty. See the formatter
+    // definition near the top of this file.
     const island = r.island || '';
-    const placeBits = [];
-    if (village) placeBits.push(escapeHtml(village) + ' vlg');
-    if (island)  placeBits.push(escapeHtml(island) + ' Is');
-    const placeHtml = placeBits.length
-      ? placeBits.join(', ')
+    const geoLine = formatScholarGeography(village, island, paternal);
+    const metaHtml = geoLine
+      ? escapeHtml(geoLine)
       : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
-    const metaBits = [placeHtml];
-    if (paternal) metaBits.push(escapeHtml(paternal) + ' Province');
-    const metaHtml = metaBits.join('<span class="sep">·</span>');
 
     // Institution: linked to r.institutionUrl (institution homepage) if present
     let institutionHtml;
@@ -11234,21 +11268,21 @@
       Ra: 'Kubuna', Tailevu: 'Kubuna',
       Bua: 'Tovata', Cakaudrove: 'Tovata', Lau: 'Tovata', Macuata: 'Tovata'
     };
-    // Assemble "Rukua vlg, Beqa Is (Rewa) – Burebasaga" from a profile's
-    // village + province, matching the format B2's buildWorldPopupHtml uses
-    // for its hover chip. Returns '' when both fields are empty.
-    function mergeVillageProvince(village, province) {
-      let vBase = village || '';
-      let vNote = '';
-      if (vBase) {
-        const m = vBase.match(/^(.*?)\s*\(([^)]*)\)\s*$/);
-        if (m) { vBase = m[1].trim(); vNote = m[2].trim(); }
-      }
-      const left = vBase && vNote ? `${vBase}, ${vNote}` : (vBase || vNote || '');
-      const conf = province ? PROV_TO_CONF[province] : '';
-      const tag = province ? (conf ? `(${province}) \u2013 ${conf}` : `(${province})`) : '';
-      if (left && tag) return `${left} ${tag}`;
-      return left || tag || '';
+    // Assemble the V2 hover-chip locality line from a scholar profile.
+    //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
+    //   'Naduri vlg, Macuata Province.'         (Viti Levu / Vanua Levu — island suppressed)
+    // Delegates to the shared formatScholarGeography() defined at the top
+    // of this file. The `prof` argument is a scholar profile-shaped object;
+    // if only village + province strings are available (legacy call site),
+    // pass `{ village, paternalProvince: province }` — no island will be
+    // shown, which matches the pre-V2 behaviour for those chips. Returns
+    // '' when nothing meaningful can be rendered.
+    function mergeVillageProvince(prof) {
+      if (!prof) return '';
+      const village  = prof.village || '';
+      const island   = prof.island || prof.paternalIsland || prof.maternalIsland || '';
+      const province = prof.paternalProvince || prof.maternalProvince || prof.province || '';
+      return formatScholarGeography(village, island, province);
     }
     // Track any active photo-rotation interval so we can clear it when the user
     // moves to a different citation. Multiple iTaukei co-authors rotate every 2s.
@@ -11339,7 +11373,7 @@
               }
             }
             const nameText = `${first} ${last}`.trim() || String(c.name || '');
-            const chip = c.profile ? mergeVillageProvince(c.profile.village || '', (c.profile.paternalProvince || c.profile.maternalProvince || '')) : '';
+            const chip = c.profile ? mergeVillageProvince(c.profile) : '';
             const chipHtml = chip ? ` <span class="b3-work-detail__coauth-chip">${escapeHtml(chip)}</span>` : '';
             return `<span class="b3-work-detail__coauth ${cls}">${escapeHtml(nameText)}</span>${chipHtml}`;
           });
@@ -11351,7 +11385,7 @@
         // village info inline next to each co-author instead.
         let villageLine = '';
         if (rec.isLed && leadProfile) {
-          const label = mergeVillageProvince(leadProfile.village || '', (leadProfile.paternalProvince || leadProfile.maternalProvince || ''));
+          const label = mergeVillageProvince(leadProfile);
           if (label) {
             villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
           }
