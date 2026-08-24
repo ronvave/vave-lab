@@ -751,8 +751,53 @@
         mastersUniversity: p.mastersUniversity,
         mastersCountry: p.mastersCountry,
         phdUniversity: p.phdUniversity,
-        phdCountry: p.phdCountry
+        phdCountry: p.phdCountry,
+        // Per-degree records for Panel B2 popup scholar-name hover.
+        // V1 wirePopupScholarHovers reads rec.title / rec.year / rec.level
+        // (with rec.all[] preferred so hovering a scholar at the university
+        // popup they graduated from surfaces THAT university's thesis, not
+        // an unrelated one). Empty until the gradDegrees pass below fills
+        // them in. See lookupScholarThesisForPoint in itaukei-database-master.js.
+        phd: null,
+        masters: null,
+        all: []
       };
+    });
+
+    // Attach per-thesis records so Panel B2's scholar-name hover has
+    // { title, year, level, university, country } for every hovered name.
+    // Also index scholarsMap under the Graduate-Degrees `Scholar Name`
+    // spelling so name-shape mismatches between the two sheets can't drop
+    // the hover silently.
+    master.gradDegrees.forEach(function (g) {
+      var sid = g['Scholar ID'];
+      if (!sid) return;
+      // Find the profile entry for this scholar (canonical "Last, First" key).
+      var rec = null;
+      profilesDoc.scholars.some(function (p) {
+        if (p.scholarId === sid) { rec = scholarsMap[p.name]; return true; }
+        return false;
+      });
+      if (!rec) return;
+      var stage = String(g['Degree Stage'] || '').toLowerCase();
+      var level = stage.indexOf('phd') !== -1 || stage.indexOf('doctor') !== -1 ? 'phd'
+                : stage.indexOf('master') !== -1 ? 'masters'
+                : 'other';
+      var entry = {
+        title:      (g['Thesis / Research Title'] || '').trim(),
+        year:       (g['Finish / Completion Year'] || g['Year / Status'] || '').toString().trim(),
+        level:      level,
+        university: (g['C_Uni name'] || '').trim(),
+        country:    (g['Country'] || '').trim()
+      };
+      rec.all.push(entry);
+      if (level === 'phd'     && !rec.phd)     rec.phd     = entry;
+      if (level === 'masters' && !rec.masters) rec.masters = entry;
+      // Also index under the Master gradDegrees Scholar Name spelling if it
+      // differs from the profiles.name key (defensive — normally identical
+      // because both derive from Scholars sheet Family/Given cols).
+      var gname = (g['Scholar Name'] || '').trim();
+      if (gname && !scholarsMap[gname]) scholarsMap[gname] = rec;
     });
 
     // World points: group grad degrees by (Country, City, C_Uni name).
