@@ -1750,11 +1750,26 @@
     var putUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path);
 
     var attempts = 0;
-    var maxAttempts = 2; // one retry after a 409/422 sha race
+    // Bounded 409-retry ladder. Each retry re-reads the fresh sha AND
+    // the fresh plaintext, then re-applies the caller's edit onto the
+    // just-fetched doc — so we merge onto the latest server state rather
+    // than blindly re-PUTting stale bytes. With refresh-master-file.yml
+    // now only re-encrypting on real plaintext changes, genuine sha
+    // races should be rare; this ladder is the safety net for the
+    // remaining case: two admins editing the same second.
+    var maxAttempts = 5;
     var lastErrText = '';
 
     while (attempts < maxAttempts) {
       attempts += 1;
+      if (attempts > 1) {
+        // Exponential backoff with jitter: 400ms, 800ms, 1600ms, 3200ms.
+        // Bounded so a persistent race fails within ~6s and we surface
+        // it clearly instead of hanging forever.
+        var base = 200 * Math.pow(2, attempts - 1);
+        var delay = base + Math.floor(Math.random() * base);
+        await new Promise(function (r) { setTimeout(r, delay); });
+      }
 
       // 1) Read current metadata (sha) from GitHub Contents API.
       var head = await fetch(getUrl, { headers: ghHeaders(token) });
@@ -1812,15 +1827,15 @@
       lastErrText = await put.text();
       if ((put.status === 409 || put.status === 422) && attempts < maxAttempts) {
         // Someone else wrote to the same .enc between our GET and our PUT.
-        // Loop: re-read, re-merge, re-write once.
-        log('Save race on ' + path + ' — re-reading latest and retrying…', 'warn');
-        toast('Reloading latest — retrying save…', 'warn', 3000);
+        // Loop: back off, re-read, re-merge, re-write.
+        log('Save race on ' + path + ' (attempt ' + attempts + '/' + maxAttempts + ') — re-reading latest and retrying…', 'warn');
+        toast('Reloading latest — retrying save…', 'warn', 2000);
         continue;
       }
       throw new Error('GitHub write failed (' + put.status + '): ' + lastErrText);
     }
 
-    throw new Error('GitHub write failed after ' + maxAttempts + ' attempts: ' + lastErrText);
+    throw new Error('GitHub write failed after ' + maxAttempts + ' attempts (bounded 409 retries exhausted): ' + lastErrText);
   }
 
   async function githubUploadBinary (path, bytes, commitMsg) {

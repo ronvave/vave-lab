@@ -122,23 +122,64 @@ jobs:
             echo "delta_pct=100" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Detect plaintext content changes
+        id: changed
+        run: |
+          set -euo pipefail
+          # Only re-encrypt files whose *plaintext* actually changed.
+          # scripts/encrypt_data.py generates a fresh AES salt per run,
+          # so a naive re-encrypt would rewrite every .enc even when
+          # the underlying Master-file data is byte-identical. That
+          # salt churn used to (a) create a fresh git sha every 2 h and
+          # (b) collide with in-flight Admin V2 saves and cause 409
+          # sha-race errors. See scripts/plaintext_changed.py.
+          #
+          # last-master-sync.json embeds startedAt/finishedAt timestamps,
+          # so we exclude it from the plaintext-diff and rewrite it
+          # ONLY when at least one of the 7 content files changed.
+          CONTENT_FILES=(
+            itaukei-master-scholars.json
+            itaukei-master-publications.json
+            itaukei-master-authorship.json
+            itaukei-master-grad-degrees.json
+            itaukei-master-mobility.json
+            itaukei-master-geography.json
+            itaukei-master-aggregates.json
+          )
+          python3 scripts/plaintext_changed.py \
+            --prev-dir=/tmp/prev \
+            --curr-dir=data \
+            "${CONTENT_FILES[@]}" \
+            > /tmp/changed.txt
+          CHANGED_COUNT=$(wc -l < /tmp/changed.txt | tr -d ' ')
+          echo "content_changed_count=${CHANGED_COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${CHANGED_COUNT}" = "0" ]; then
+            echo "No plaintext content changes. Skipping encrypt + commit."
+          else
+            echo "Plaintext-changed files:"
+            cat /tmp/changed.txt
+          fi
+
       - name: Encrypt data files
+        if: steps.changed.outputs.content_changed_count != '0'
         env:
           VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
         run: |
           set -euo pipefail
-          python3 scripts/encrypt_data.py \
-            itaukei-master-scholars.json \
-            itaukei-master-publications.json \
-            itaukei-master-authorship.json \
-            itaukei-master-grad-degrees.json \
-            itaukei-master-mobility.json \
-            itaukei-master-geography.json \
-            itaukei-master-aggregates.json \
-            last-master-sync.json
+          # Encrypt ONLY the plaintext-changed content files, plus
+          # last-master-sync.json (safe to refresh timestamps when at
+          # least one content file changed — its .enc will end up in
+          # the same commit as the content changes).
+          TARGETS=()
+          while IFS= read -r name; do
+            [ -n "$name" ] && TARGETS+=("$name")
+          done < /tmp/changed.txt
+          TARGETS+=(last-master-sync.json)
+          echo "Encrypting: ${TARGETS[*]}"
+          python3 scripts/encrypt_data.py "${TARGETS[@]}"
 
       - name: Commit
-        if: ${{ github.event.inputs.dry_run != 'true' }}
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
         env:
           FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
           DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
@@ -148,7 +189,9 @@ jobs:
           git config user.email "bot@vavelab.example"
           git add data/itaukei-master-*.json.enc data/last-master-sync.json.enc
           if git diff --cached --quiet; then
-            echo "No changes to commit"
+            # Should be impossible given the content-changed guard above,
+            # but keep the safety net.
+            echo "No changes to commit (unexpected — plaintext_changed said yes)"
             exit 0
           fi
           # Compose message based on delta magnitude
