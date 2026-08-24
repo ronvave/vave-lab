@@ -246,7 +246,26 @@
     var COL_ROOT_DISCIPLINE  = 'DISCROT0';    // "Discipline" root
     var COL_ROOT_THESIS_UNI  = '9XHGQJE6';    // iTaukei Thesis by Country/Uni
     var COL_ROOT_B3_WHERE    = 'V3HLPDPL';    // "Where study was done" root (Panel B4)
-    var COL_B3_FIJI          = 'B3FIJI00';    // Fiji country under B3 root
+    var COL_B3_FIJI          = 'B3FIJI00';    // Fiji country under B3 root (stable key)
+
+    // Country normalization for Panel B4. Small explicit alias map (per
+    // spec: no fuzzy matching). Values must line up with the map's
+    // feature names. Extend cautiously.
+    var B4_COUNTRY_ALIASES = {
+      'FSM': 'Federated States of Micronesia',
+      'Federated States of Micronesia': 'Federated States of Micronesia',
+      'USA': 'United States',
+      'U.S.': 'United States',
+      'U.S.A.': 'United States',
+      'United States of America': 'United States',
+      // Preserve Hawaii and Tahiti as distinct pies (V1 behaviour).
+    };
+    function b4NormCountry(raw) {
+      if (!raw) return '';
+      var s = String(raw).trim();
+      if (!s) return '';
+      return B4_COUNTRY_ALIASES[s] || s;
+    }
 
     // Master Scholar ID → Zotero collection key (author collection).
     // Every scholar becomes a fake iTaukei author sub-collection so the
@@ -296,14 +315,34 @@
       disciplineCollections.push({ key: k, name: d, parent: COL_ROOT_DISCIPLINE });
     });
 
+    // Panel B4 country collections — one child of V3HLPDPL for every distinct
+    // Country value in Master `Research Geography`, plus Fiji (which is coded
+    // via province one-hots on Publications rather than as a country row in
+    // Research Geography). Fiji keeps its stable key `B3FIJI00`. Every other
+    // country receives a deterministic hashKey. Countries with no valid
+    // publication in this build will still be emitted so B4 can show a
+    // zero-value marker distinct from countries that were never coded.
+    var b4CountryKeyByName = { 'Fiji': COL_B3_FIJI };
+    var b4CountryCollections = [];
+    (master.geography || []).forEach(function (g) {
+      var c = b4NormCountry(g['Country']);
+      if (!c) return;
+      if (b4CountryKeyByName[c]) return;
+      b4CountryKeyByName[c] = hashKey('b4country:' + c);
+    });
+    // Emit collection rows in stable alphabetical order for display.
+    Object.keys(b4CountryKeyByName).sort().forEach(function (name) {
+      b4CountryCollections.push({
+        key: b4CountryKeyByName[name],
+        name: name,
+        parent: COL_ROOT_B3_WHERE
+      });
+    });
+
     // Root collections. The B3-Where-study-was-done root uses the stable key
-    // production expects (V3HLPDPL); every direct child is a country. In the
-    // Master data model, only Fiji is a supported study location today (the
-    // Master geography table only records Fiji rows, and every publication
-    // tagged `Tagged Fiji? = Yes` is treated as done in Fiji), so we emit a
-    // single Fiji child. If additional countries land in future Master data,
-    // simply add more children under COL_ROOT_B3_WHERE and tag items via
-    // collections→country key mapping below.
+    // production expects (V3HLPDPL); every direct child is a country emitted
+    // dynamically from Master `Research Geography` (see b4CountryCollections
+    // above). Fiji keeps the stable child key `B3FIJI00`.
     var rootCollections = [
       { key: COL_ROOT_ITAUKEI, name: 'iTaukei authors (>N papers)', parent: null },
       { key: COL_BY_WITH,      name: 'By or with iTaukei authors', parent: null },
@@ -312,9 +351,8 @@
       { key: COL_ROOT_PATERNAL,name: 'Paternal Province',           parent: null },
       { key: COL_ROOT_DISCIPLINE, name: 'Discipline',               parent: null },
       { key: COL_ROOT_THESIS_UNI, name: 'B2-iTaukei Thesis by Country/Universities', parent: null },
-      { key: COL_ROOT_B3_WHERE, name: 'B3-Where study was done (with iTaukei lead & co-author)', parent: null },
-      { key: COL_B3_FIJI,       name: 'Fiji',                        parent: COL_ROOT_B3_WHERE }
-    ];
+      { key: COL_ROOT_B3_WHERE, name: 'B3-Where study was done (with iTaukei lead & co-author)', parent: null }
+    ].concat(b4CountryCollections);
 
     // Build a Scholar ID → discipline collection key lookup for items.
     var disciplineKeyByScholarId = {};
@@ -424,12 +462,25 @@
           collections.push(provLocKeyByName[prov]);
         }
       });
-      // Panel B4 "Where study was done" — tag every publication with a Fiji
-      // study location into the B3/B4 Fiji country collection. Master's
-      // `Tagged Fiji?` column is the source of truth for Fiji-focused work.
+      // Panel B4 "Where study was done" — tag this publication into every
+      // country collection its Master `Research Geography` rows reference,
+      // plus Fiji when `Tagged Fiji? = Yes` (Fiji is coded via province
+      // one-hots on Publications rather than as a country row in Research
+      // Geography, so it needs a separate signal). Distinct countries only,
+      // to avoid inflating publication counts in a country whose Master
+      // geography has multiple rows for the same pub (e.g. multi-village).
+      var geoRowsForPub = geoByPub[pid] || [];
+      var b4CountriesForPub = new Set();
+      geoRowsForPub.forEach(function (g) {
+        var c = b4NormCountry(g['Country']);
+        if (c && b4CountryKeyByName[c]) b4CountriesForPub.add(c);
+      });
       if (String(p['Tagged Fiji?'] || '').toLowerCase() === 'yes') {
-        collections.push(COL_B3_FIJI);
+        b4CountriesForPub.add('Fiji');
       }
+      b4CountriesForPub.forEach(function (c) {
+        collections.push(b4CountryKeyByName[c]);
+      });
 
       // Special province labels ("Fiji - no province specified", "Unsure").
       if (Number(p[PROVINCE_UNSPEC] || p['_fiji_unspecified'] || 0) > 0) {
