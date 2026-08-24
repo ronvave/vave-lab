@@ -175,6 +175,11 @@ PUBLICATION_PUBLIC_FIELDS = [
     "Co-Auth_Scholar IDs",
     "Record Source",
     "Source Database / Repository",
+    # Bibliographic authorship (from BibTeX/Zotero, not Authorship worksheet).
+    # B4 citation uses these to render Last (Year) / Last & Last (Year) /
+    # Last et al. (Year) using the true first author of the record.
+    "Bibliographic Lead Author",
+    "Bibliographic Author Count",
     # 14 provinces + Fiji unspecified + Unsure — one-hot columns
     *PROVINCES,
     PROVINCE_FIJI_UNSPECIFIED,

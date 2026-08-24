@@ -234,6 +234,12 @@ def extract_publications(rows: list[list]) -> list[dict]:
         )
         p["_fiji_unspecified"] = bool(p.get(PROVINCE_FIJI_UNSPECIFIED))
         p["_fiji_unsure"] = bool(p.get(PROVINCE_UNSURE))
+        # Bibliographic-authorship fields (from BibTeX/Zotero, not the
+        # Authorship worksheet). Empty string when unresolved; the adapter
+        # falls back to the Authorship-derived lead in that case.
+        p["_bib_lead"] = (p.get("Bibliographic Lead Author") or "").strip()
+        bac = p.get("Bibliographic Author Count")
+        p["_bib_author_count"] = as_int(bac) if bac not in ("", None) else None
     return clean
 
 

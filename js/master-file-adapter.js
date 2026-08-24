@@ -424,32 +424,91 @@
       var itemKey = hashKey('pub:' + pid);
       var itemType = zoteroTypeFor(p['Publication Type']);
 
-      // Creators (ordered by Author Position). The Master authorship table only
-      // records iTaukei-scholar-to-publication links, so an iTaukei co-author at
-      // position 3 will still end up at creators[0] after sorting. We do NOT
-      // insert a synthetic non-iTaukei placeholder here (it would leak into
-      // citation strings on Panel G). Instead we compute a per-item Master
-      // authorship role (`_masterAuthorship`) from the true `Is First Author?`
-      // / `Author Position === 1` signal, and the fork's `itaukeiAuthorship()`
-      // has been patched to prefer that field when present.
+      // Bibliographic authorship (from BibTeX/Zotero) drives the citation.
+      // The Authorship worksheet is authoritative for iTaukei scholar links
+      // but records only iTaukei authors, so it CANNOT tell us who the true
+      // first author is when that author is non-iTaukei. Publications sheet
+      // column V ('Bibliographic Lead Author', 'Last, First') + column W
+      // ('Bibliographic Author Count') carry that ground truth.
+      var bibLead = (p['Bibliographic Lead Author'] || p['_bib_lead'] || '').trim();
+      var bibAuthorCountRaw = p['Bibliographic Author Count'];
+      if (bibAuthorCountRaw === undefined) bibAuthorCountRaw = p['_bib_author_count'];
+      var bibAuthorCount = null;
+      if (bibAuthorCountRaw !== '' && bibAuthorCountRaw !== null && bibAuthorCountRaw !== undefined) {
+        var _n = Number(bibAuthorCountRaw);
+        if (Number.isFinite(_n) && _n > 0) bibAuthorCount = _n;
+      }
+
+      // Authorship rows (ordered by Author Position) still drive the iTaukei
+      // Scholar-ID linkage — lead/co-author hover chips and Panel B2/D counts.
       var authRows = (authByPub[pid] || []).slice().sort(function (a, b) {
         var ap = Number(a['Author Position'] || 0);
         var bp = Number(b['Author Position'] || 0);
         return ap - bp;
       });
-      var creators = authRows.map(function (a) {
+
+      // creators[]: prefer bib lead when known (so downstream code that reads
+      // creators[0] — including V1's citation helper — sees the true first
+      // author). iTaukei co-authors follow; unresolved bib lead falls back to
+      // the Authorship-derived ordering so we still show something.
+      var itaukeiScholarNames = authRows.map(function (a) {
         return scholarNameById[a['Scholar ID']] || (a['Author Name as Recorded'] || '');
       }).filter(Boolean);
+      var creators;
+      if (bibLead) {
+        creators = [bibLead].concat(itaukeiScholarNames.filter(function (n) {
+          // Avoid duplicating the bib lead when the lead itself is an iTaukei
+          // scholar (compare surnames case-insensitively).
+          var leadSurn = bibLead.split(',', 1)[0].trim().toLowerCase();
+          var nSurn = n.includes(',') ? n.split(',', 1)[0].trim().toLowerCase()
+                                       : (n.trim().split(/\s+/).pop() || '').toLowerCase();
+          return leadSurn !== nSurn;
+        }));
+      } else {
+        creators = itaukeiScholarNames;
+      }
 
-      // Master-file authorship role for this publication:
-      //   'lead'   — at least one iTaukei scholar is recorded as first author
-      //   'coauth' — iTaukei scholar(s) linked but none is first author
-      //   'none'   — no iTaukei author linked (unreachable here because we only
-      //              emit items that ARE in authByPub; keep for symmetry)
+      // Master-file authorship role: 'lead' iff the true bib lead surname
+      // matches an iTaukei scholar's Family Name (case-insensitive). When
+      // bib lead is unresolved, fall back to the Authorship 'Is First Author?'
+      // / Author Position=1 heuristic so display never regresses.
       var masterAuthorship;
+      var itaukeiLeadScholarId = '';
+      var itaukeiCoauthorScholarIds = [];
       if (authRows.length === 0) {
         masterAuthorship = 'none';
+      } else if (bibLead) {
+        var bibLeadSurname = bibLead.split(',', 1)[0].trim().toLowerCase();
+        var leadHit = null;
+        authRows.forEach(function (a) {
+          var sid = a['Scholar ID'];
+          if (!sid) return;
+          var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
+          var fam = ((scholar && scholar['Family Name']) || '').trim().toLowerCase();
+          if (!leadHit && fam && fam === bibLeadSurname) {
+            leadHit = a;
+          }
+        });
+        if (leadHit) {
+          masterAuthorship = 'lead';
+          itaukeiLeadScholarId = leadHit['Scholar ID'];
+          authRows.forEach(function (a) {
+            var sid = a['Scholar ID'];
+            if (sid && sid !== itaukeiLeadScholarId && itaukeiCoauthorScholarIds.indexOf(sid) === -1) {
+              itaukeiCoauthorScholarIds.push(sid);
+            }
+          });
+        } else {
+          masterAuthorship = 'coauth';
+          authRows.forEach(function (a) {
+            var sid = a['Scholar ID'];
+            if (sid && itaukeiCoauthorScholarIds.indexOf(sid) === -1) {
+              itaukeiCoauthorScholarIds.push(sid);
+            }
+          });
+        }
       } else {
+        // Bib lead unresolved — fall back to Authorship heuristic.
         var hasITaukeiFirst = authRows.some(function (a) {
           return a['Is First Author?'] === true ||
                  a['Is First Author?'] === 'true' ||
@@ -457,6 +516,19 @@
                  Number(a['Author Position'] || 0) === 1;
         });
         masterAuthorship = hasITaukeiFirst ? 'lead' : 'coauth';
+        authRows.forEach(function (a) {
+          var sid = a['Scholar ID'];
+          if (!sid) return;
+          var isLead = (a['Is First Author?'] === true ||
+                        a['Is First Author?'] === 'true' ||
+                        a._is_lead === true ||
+                        Number(a['Author Position'] || 0) === 1);
+          if (masterAuthorship === 'lead' && isLead && !itaukeiLeadScholarId) {
+            itaukeiLeadScholarId = sid;
+          } else if (itaukeiCoauthorScholarIds.indexOf(sid) === -1) {
+            itaukeiCoauthorScholarIds.push(sid);
+          }
+        });
       }
 
       // Collections: iTaukei author sub-collections for every linked scholar,
@@ -609,7 +681,18 @@
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
         _masterAuthorship:  masterAuthorship,
-        _masterPublicationId: pid
+        _masterPublicationId: pid,
+        // Bibliographic authorship (from BibTeX/Zotero, not the Authorship
+        // worksheet). B4 citation uses these to render Last (Year) /
+        // Last & Last (Year) / Last et al. (Year) using the true first author.
+        _bibLead:           bibLead || '',
+        _bibAuthorCount:    bibAuthorCount,
+        // Scholar-ID linkage for the B4 hover chip: which iTaukei scholar is
+        // the lead (when the bib lead matches an iTaukei scholar) and which
+        // iTaukei scholars are co-authors. Authorship worksheet is the
+        // authoritative Scholar-ID source.
+        _itaukeiLeadScholarId:      itaukeiLeadScholarId,
+        _itaukeiCoauthorScholarIds: itaukeiCoauthorScholarIds
       };
     });
 

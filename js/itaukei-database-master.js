@@ -11111,22 +11111,55 @@
   }
 
   function b3InTextCitation(item) {
-    // "Seniloli (2002)", "Morris et al. (2014)", "(No creators, 2010)" fallbacks.
-    const creators = item.creators || [];
+    // V1-style citation, but sourced from the Master's bibliographic fields
+    // when available (adapter emits _bibLead + _bibAuthorCount from the
+    // Publications sheet). Falls back to Zotero-style item.creators for
+    // records with no BibTeX-derived lead (unresolved / edited volumes).
+    //   1 author  → "Grace (2020)"
+    //   2 authors → "Grace & Ravulo (2021)"
+    //   3+ authors→ "Grace et al. (2026)"
+    //   0 authors → "Unknown (…)"
+    // The et al. decision uses the TRUE bibliographic author count when known
+    // — never inferred from item.creators.length (which for iTaukei co-authored
+    // works only counts the iTaukei scholars linked in the Authorship
+    // worksheet plus the true first author, so it under-counts).
     const year = item.year || 'n.d.';
-    if (!creators.length) return `Unknown (${year})`;
-    const first = creators[0];
-    // Extract surname — handles both "Last, First" and "First Last" forms.
-    const surname = first.includes(',')
-      ? first.split(',', 1)[0].trim()
-      : (first.trim().split(/\s+/).pop() || first);
-    if (creators.length === 1) return `${surname} (${year})`;
-    if (creators.length === 2) {
-      const second = creators[1];
-      const surname2 = second.includes(',')
-        ? second.split(',', 1)[0].trim()
-        : (second.trim().split(/\s+/).pop() || second);
-      return `${surname} & ${surname2} (${year})`;
+    const creators = item.creators || [];
+    const bibLead = (item._bibLead || '').trim();
+    const bibCount = (typeof item._bibAuthorCount === 'number' && item._bibAuthorCount > 0)
+      ? item._bibAuthorCount
+      : null;
+
+    // Choose the primary surname: bib lead when present, else creators[0].
+    const primary = bibLead || (creators[0] || '');
+    if (!primary) return `Unknown (${year})`;
+    const surname = primary.includes(',')
+      ? primary.split(',', 1)[0].trim()
+      : (primary.trim().split(/\s+/).pop() || primary);
+
+    // Total author count for the et al. decision.
+    const total = bibCount != null
+      ? bibCount
+      : creators.length;
+
+    if (total <= 1) return `${surname} (${year})`;
+    if (total === 2) {
+      // Two-author citation is only rendered as "A & B" when we can name the
+      // second author reliably. When bib count says 2 but we don't have a
+      // second name (e.g. two iTaukei co-authors of a non-iTaukei work would
+      // still only expose one non-iTaukei lead via creators[0]), fall back
+      // to "A et al." so we don't mis-name the second author.
+      const second = (bibLead && creators[1]) || creators[1] || '';
+      if (second) {
+        const surname2 = second.includes(',')
+          ? second.split(',', 1)[0].trim()
+          : (second.trim().split(/\s+/).pop() || second);
+        // Guard against A & A rendering when creators duplicate the lead.
+        if (surname2 && surname2.toLowerCase() !== surname.toLowerCase()) {
+          return `${surname} & ${surname2} (${year})`;
+        }
+      }
+      return `${surname} et al. (${year})`;
     }
     return `${surname} et al. (${year})`;
   }
