@@ -322,20 +322,53 @@
     // country receives a deterministic hashKey. Countries with no valid
     // publication in this build will still be emitted so B4 can show a
     // zero-value marker distinct from countries that were never coded.
+    //
+    // Nested sub-locations — the consumer's B3_SUBLOCATIONS map (in
+    // itaukei-database-master.js) drives which named children of a country
+    // render at their own coords while rolling up into the parent country's
+    // totals (e.g. FSM/Chuuk, United States/Hawaii). Master `Research
+    // Geography` uses the human-readable Country label (e.g. `Hawaii (U.S.)`)
+    // for these sub-locations. We remap those values so their emitted
+    // collection sits under the correct parent country instead of at the
+    // V3HLPDPL root.
+    var B4_SUBLOC_PARENT = {
+      // Master canonical value for the Hawaii study is `Hawaii (U.S.)`;
+      // `Hawaii` is included as a defensive alias in case the Sheet value
+      // is ever entered without the (U.S.) suffix.
+      'Hawaii (U.S.)': 'United States',
+      'Hawaii':        'United States',
+      // FSM state-level sub-locations. Parent is the Master canonical value
+      // `Federated States of Micronesia`; the consumer's B3_SUBLOCATIONS
+      // block mirrors this under both `FSM` and the canonical name.
+      'Chuuk':         'Federated States of Micronesia',
+      'Pohnpei':       'Federated States of Micronesia',
+      'Kosrae':        'Federated States of Micronesia',
+      'Yap':           'Federated States of Micronesia'
+    };
     var b4CountryKeyByName = { 'Fiji': COL_B3_FIJI };
-    var b4CountryCollections = [];
+    // First pass — allocate a key for every unique Country value (including
+    // sub-location labels) and also make sure any implied parent country has
+    // a key allocated even if it never appears as its own Country row.
     (master.geography || []).forEach(function (g) {
       var c = b4NormCountry(g['Country']);
       if (!c) return;
-      if (b4CountryKeyByName[c]) return;
-      b4CountryKeyByName[c] = hashKey('b4country:' + c);
+      if (!b4CountryKeyByName[c]) b4CountryKeyByName[c] = hashKey('b4country:' + c);
+      var parent = B4_SUBLOC_PARENT[c];
+      if (parent && !b4CountryKeyByName[parent]) {
+        b4CountryKeyByName[parent] = hashKey('b4country:' + parent);
+      }
     });
-    // Emit collection rows in stable alphabetical order for display.
+    // Emit collection rows in stable alphabetical order for display; children
+    // hang off their parent country's key when B4_SUBLOC_PARENT applies.
+    var b4CountryCollections = [];
     Object.keys(b4CountryKeyByName).sort().forEach(function (name) {
+      var parent = B4_SUBLOC_PARENT[name]
+        ? b4CountryKeyByName[B4_SUBLOC_PARENT[name]]
+        : COL_ROOT_B3_WHERE;
       b4CountryCollections.push({
         key: b4CountryKeyByName[name],
         name: name,
-        parent: COL_ROOT_B3_WHERE
+        parent: parent
       });
     });
 

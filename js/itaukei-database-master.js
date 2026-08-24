@@ -10260,6 +10260,11 @@
     // sub-collection) render here.
     'FSM':            { lat:   8.5000, lng: 148.0000, region: 'Pacific',
                         displayName: 'Federated States of Micronesia' },
+    // Exact-match alias for the canonical Master `Research Geography` value.
+    // Both keys resolve to the same coord/region so items filed under either
+    // name render at the same anchor and roll up into the same country total.
+    'Federated States of Micronesia': { lat: 8.5000, lng: 148.0000, region: 'Pacific',
+                        displayName: 'Federated States of Micronesia' },
     'Marshall Islands': { lat: 7.1315, lng: 171.1845, region: 'Pacific' },
     // The France sub-collection today holds a single study conducted in
     // waters off Mayotte (French overseas territory in the Indian Ocean),
@@ -10270,6 +10275,18 @@
     'Tuvalu':         { lat:  -7.1095, lng: 177.6493, region: 'Pacific' },
     'Tahiti':         { lat: -17.6509, lng: -149.4260, region: 'Pacific' },
     'United States':  { lat:  39.8283, lng: -98.5795, region: 'Americas' },
+    // Additional top-level country entries so every distinct Master
+    // `Research Geography` Country value has an anchor coordinate. Adding
+    // these explicitly (no fuzzy matching) keeps the country list in sync
+    // with the Master file. Fiji here is the country-center anchor for
+    // studies coded at the country level (Master rows that name only
+    // 'Fiji' rather than a province).
+    'Canada':         { lat:  56.1304, lng: -106.3468, region: 'Americas' },
+    'Fiji':           { lat: -17.7134, lng:  178.0650, region: 'Pacific' },
+    'Ghana':          { lat:   7.9465, lng:   -1.0232, region: 'Africa' },
+    'South Africa':   { lat: -30.5595, lng:   22.9375, region: 'Africa' },
+    'Sri Lanka':      { lat:   7.8731, lng:   80.7718, region: 'Asia' },
+    'Vietnam':        { lat:  14.0583, lng:  108.2772, region: 'Asia' },
   };
 
   // Sub-locations are Zotero sub-collections nested INSIDE a parent country
@@ -10285,8 +10302,19 @@
       'Kosrae':  { lat:  5.3167, lng: 162.9833, region: 'Pacific' },
       'Yap':     { lat:  9.5497, lng: 138.1103, region: 'Pacific' }
     },
+    // Duplicate under the Master canonical name so items whose parent country
+    // is emitted as 'Federated States of Micronesia' (Master convention)
+    // still resolve their sub-location coords. Kept in sync with the 'FSM'
+    // block above; edit both when adding new FSM sub-locations.
+    'Federated States of Micronesia': {
+      'Chuuk':   { lat:  7.4467, lng: 151.8500, region: 'Pacific' },
+      'Pohnpei': { lat:  6.8547, lng: 158.2189, region: 'Pacific' },
+      'Kosrae':  { lat:  5.3167, lng: 162.9833, region: 'Pacific' },
+      'Yap':     { lat:  9.5497, lng: 138.1103, region: 'Pacific' }
+    },
     'United States': {
-      'Hawaii':  { lat: 20.5000, lng: -157.5000, region: 'Pacific' }
+      'Hawaii':        { lat: 20.5000, lng: -157.5000, region: 'Pacific' },
+      'Hawaii (U.S.)': { lat: 20.5000, lng: -157.5000, region: 'Pacific' }
     }
   };
 
