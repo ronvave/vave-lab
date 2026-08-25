@@ -79,12 +79,26 @@
   // PhD + Masters only — unclassified theses ('thesisUnknown') are intentionally
   // excluded from Panels B/C counts and legend per Ron's request. They still
   // appear individually in the item list at the bottom.
-  // NOTE: `conferencePaper` is intentionally omitted from TYPE_ORDER.
-  // The visualization panels (B1, B2, C, D) iterate over TYPE_ORDER, so this
-  // drops conference papers from bars, histogram, and type-filter checkboxes.
-  // The underlying items remain in the item list and BibTeX export (which do
-  // not depend on TYPE_ORDER).
-  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report','preprint'];
+  // NOTE: `conferencePaper` AND `preprint` are intentionally omitted from
+  // TYPE_ORDER. The visualization panels (B1, B2, C, D) iterate over
+  // TYPE_ORDER, so this drops conference papers and preprints from bars,
+  // histogram, and type-filter checkboxes.
+  //
+  // Preprint exclusion (Ron's 2026-08-24 directive): preprints must be
+  // globally excluded from every V2 dashboard calculation, statistic,
+  // visualization, ranking, summary, filter, publication total, first-
+  // author total, scholar-card chip, map, timeline, and table. This is
+  // enforced at THREE levels for defense in depth:
+  //   1) TYPE_ORDER omits `preprint` (this line)         — bars/legend/filters
+  //   2) CHIP_ORDER omits `preprint` (search this file)  — Panel F chips
+  //   3) state.snapshot.items is filtered at load time   — every counter
+  // The Master file KEEPS preprints in Publications and Authorship; this
+  // is a strict display/calculation exclusion only.
+  //
+  // The underlying items remain in BibTeX export (which does not depend
+  // on TYPE_ORDER); preprints are also dropped there because step (3)
+  // removes them from state.snapshot.items entirely.
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report'];
 
   // Effective paternal-province for a scholar profile: prefer the explicit
   // paternal province, but fall back to the maternal province when paternal
@@ -378,19 +392,38 @@
     const workplaceCoordsDoc = bundle.workplaceCoordsDoc;
     const uniCountryDoc = bundle.uniCountryDoc;
     const progressRoster = bundle.progressRoster;
-    // Filter out conference papers globally (July 2026 admin directive).
-    // Ron's rule: conference papers must not appear on scholar profile cards
-    // (Panel F), publication tallies, BibTeX exports, or any other panel.
-    // Dropping them from state.snapshot.items here is the single chokepoint —
-    // every downstream reader (Panels A, B1, B2, B3, C1, C2, D, E, F, G,
-    // BibTeX export, item lists, counters) reads state.snapshot.items and
-    // therefore inherits this filter with no per-site changes.
-    // TYPE_ORDER already excludes conferencePaper (see comment ~line 78) so
-    // the visualization filter row also stays consistent. See
-    // docs/CONFERENCE-PAPERS-HIDDEN.md for the full rationale.
+    // Filter out conference papers AND preprints globally.
+    //
+    // Conference papers: July 2026 admin directive. Must not appear on
+    //   scholar profile cards (Panel F), publication tallies, BibTeX
+    //   exports, or any other panel. See docs/CONFERENCE-PAPERS-HIDDEN.md.
+    //
+    // Preprints: 2026-08-24 Ron directive. Must be completely excluded
+    //   from ALL V2 dashboard calculations, statistics, visualisations,
+    //   rankings, summaries, filters, publication totals, first-author
+    //   totals, scholar-card chips, maps, timelines, tables, and any
+    //   other displayed metric. Behave as though preprints do not exist
+    //   for V2 display purposes. Preprints remain intact in the Master
+    //   file (Publications + Authorship worksheets); this filter is a
+    //   display/calculation exclusion only.
+    //   Master 'Publication Type' values that map to itemType=preprint
+    //   (via TYPE_MAP in master-file-adapter.js) are: 'Unpublished report'
+    //   and 'Unpublished'. Any pre-existing Zotero preprint is also caught.
+    //
+    // Dropping them from state.snapshot.items here is the single
+    // chokepoint — every downstream reader (Panels A, B1, B2, B3, C1, C2,
+    // D, E, F, G, BibTeX export, item lists, counters) reads
+    // state.snapshot.items and therefore inherits this filter with no
+    // per-site changes.
+    //
+    // TYPE_ORDER (see comment ~line 82) also excludes conferencePaper and
+    // preprint so the visualization filter row/legend/bars stay consistent
+    // even if a stray item ever slipped through the item filter.
     if (snap && Array.isArray(snap.items)) {
       const beforeCount = snap.items.length;
-      snap.items = snap.items.filter(it => it && it.itemType !== 'conferencePaper');
+      snap.items = snap.items.filter(it => it
+        && it.itemType !== 'conferencePaper'
+        && it.itemType !== 'preprint');
       state.hiddenConferencePapers = beforeCount - snap.items.length;
 
       // Client-side year backfill. The Python snapshot builder used to reject
@@ -4871,7 +4904,10 @@
     push(b.book,            b.book === 1 ? 'Book' : 'Books');
     push(b.conferencePaper, b.conferencePaper === 1 ? 'Conference Paper' : 'Conference Papers');
     push(b.report,          b.report === 1 ? 'Report' : 'Reports');
-    push(b.preprint,        b.preprint === 1 ? 'Preprint' : 'Preprints');
+    // Preprints intentionally not rendered here — preprints are globally
+    // excluded from every V2 display (2026-08-24 Ron directive). The count
+    // is also always zero because state.snapshot.items is preprint-filtered
+    // at load time; this omission is belt-and-suspenders.
     const rowsHtml = rows.length ? `<table style="border-collapse:collapse;margin-top:6px;">${rows.join('')}</table>` : '<p class="db-popup-meta" style="opacity:0.6;">No items in this view</p>';
     const scholarLine = b.scholars > 0
       ? `<p class="db-popup-meta" style="margin-top:8px;padding-top:6px;border-top:1px dashed #cbd5e1;"><span style="font-weight:700;color:${CONF_COLORS[p.confederacy]};font-variant-numeric:tabular-nums;">${b.scholars}</span> iTaukei scholar${b.scholars === 1 ? '' : 's'} on this map</p>`
@@ -7931,10 +7967,17 @@
     conferencePaper:{ color: '#92400e', bg: '#f7ecdf', border: '#d9b58a', s: 'Conference paper', p: 'Conference papers' },
     preprint:       { color: '#6b7280', bg: '#eef0f2', border: '#c7cbd1', s: 'Preprint',         p: 'Preprints' }
   };
-  // Order in which chips are rendered (only shown if count > 0)
-  // 'thesisUnknown' is intentionally omitted — "Thesis (unspecified)" is never
-  // surfaced on the public dashboard (per Ron's directive).
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper', 'preprint'];
+  // Order in which chips are rendered (only shown if count > 0).
+  // 'thesisUnknown' is intentionally omitted — "Thesis (unspecified)" is
+  //   never surfaced on the public dashboard (per Ron's directive).
+  // 'preprint' is intentionally omitted — preprints are globally excluded
+  //   from every V2 display (2026-08-24 Ron directive). Preprints are also
+  //   removed from state.snapshot.items at load time, so this line is
+  //   belt-and-suspenders — even if a stray preprint ever slipped past
+  //   the item filter, no chip would render.
+  // 'conferencePaper' likewise remains in the list purely as a legacy
+  //   safety net; conference papers are filtered out at load time too.
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper'];
 
   // Country name → ISO 3166-1 alpha-2 code, used for flag icons in the card header.
   // Only countries that actually appear in the current dataset (or are
