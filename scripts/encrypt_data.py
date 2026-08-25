@@ -87,6 +87,7 @@ TARGETS = [
     "itaukei-master-scholars.json",
     "itaukei-master-publications.json",
     "itaukei-master-authorship.json",
+    "itaukei-master-researcher-authorship.json",
     "itaukei-master-grad-degrees.json",
     "itaukei-master-mobility.json",
     "itaukei-master-geography.json",
