@@ -896,11 +896,19 @@
         last: last,
         paternalProvince: paternal,
         maternalProvince: maternal,
-        paternalDistrict: cleanSentinel_(s['District Paternal']),
-        maternalDistrict: cleanSentinel_(s['District Maternal']),
-        paternalIsland:   cleanSentinel_(s['Island Paternal']),
-        maternalIsland:   cleanSentinel_(s['Island Maternal']),
-        effectivePaternalProvince: paternal || maternal || '',
+        paternalDistrict:  cleanSentinel_(s['District Paternal']),
+        maternalDistrict:  cleanSentinel_(s['District Maternal']),
+        paternalIsland:    cleanSentinel_(s['Island Paternal']),
+        maternalIsland:    cleanSentinel_(s['Island Maternal']),
+        paternalVillage:   cleanSentinel_(s['Village Paternal']),
+        maternalVillage:   cleanSentinel_(s['Village Maternal']),
+        // effectivePaternalProvince: LEGACY name; the value is strictly the
+        // paternal province (no maternal fallback). Retained for backwards
+        // compatibility with older callers that read the name literally.
+        // Panel F's public identity geography must use paternalProvince
+        // directly and never rely on any "effective" or fallback field.
+        // (2026-08-25 Panel F Paternal Geography Isolation fix.)
+        effectivePaternalProvince: paternal,
         // Paternal confederacy: Master column if present, else derived from paternal province.
         // (Kept in existing `confederacy` field for backwards-compat with dashboards.)
         confederacy: (s['Paternal Confederacy'] || s._effective_confederacy || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
@@ -927,16 +935,22 @@
         phdUniversity:     phdRow ? phdRow['C_Uni name'] : '',
         phdCountry:        phdRow ? phdRow['Country'] : '',
         phdOriginalName:   phdRow ? phdRow['O_Uni name'] : '',
-        // Village + island: paternal wins, maternal is a fallback. Both are
-        // passed through cleanSentinel_() so Master placeholder strings
-        // like 'Unclassified' don't leak into the Panel F meta line.
-        // Renderer format:
-        //   village + island: 'Malawai vlg, Gau Is · Lomaiviti Province'
-        //   village only:     'Malawai vlg · Lomaiviti Province'
-        //   island only:      'Gau Is · Lomaiviti Province'
-        //   neither:          'Village not yet added · Lomaiviti Province'
-        village: cleanSentinel_(s['Village Paternal']) || cleanSentinel_(s['Village Maternal']) || '',
-        island:  cleanSentinel_(s['Island Paternal'])  || cleanSentinel_(s['Island Maternal'])  || '',
+        // NOTE: the flat `village` / `island` fields are DELIBERATELY set
+        // to the PATERNAL cells only — NO maternal fallback. Historically
+        // the adapter used `Village Paternal || Village Maternal` and
+        // `Island Paternal || Island Maternal` for these keys, which caused
+        // Panel F's identity geography to leak maternal-side data when the
+        // paternal cell was blank or a sentinel ("Unclassified"). That was
+        // the root cause of ITK-S0212 rendering "Naseyani vlg (Beqa Is), Ra
+        // Province." — Beqa is the MATERNAL island; Naseyani + Ra are
+        // paternal. See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+        //
+        // Any consumer that wants an explicit lineage should read
+        // `paternalVillage` / `maternalVillage` / `paternalIsland` /
+        // `maternalIsland` directly. Panel F reads the paternal-only
+        // fields. (2026-08-25 Panel F Paternal Geography Isolation fix.)
+        village: cleanSentinel_(s['Village Paternal']),
+        island:  cleanSentinel_(s['Island Paternal']),
         subject: s['Primary Discipline / Field'] || '',
         // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
         // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit

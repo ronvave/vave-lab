@@ -2309,9 +2309,11 @@
           return null;
         }
         const profile = lookupProfile(nm) || {};
-        const village  = (profile.village || '').trim();
-        const island   = (profile.island || profile.paternalIsland || profile.maternalIsland || '').trim();
-        const province = effectivePaternalProvince(profile);
+        // Identity geography must be strictly paternal. See
+        // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+        const village  = (profile.paternalVillage  || '').trim();
+        const island   = (profile.paternalIsland   || '').trim();
+        const province = (profile.paternalProvince || '').trim();
         const slug     = (profile.slug || '').trim();
         // Village-line chip. V2 canonical format is
         //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
@@ -3504,12 +3506,16 @@
   };
 
   function _workplaceProvinceForProfile(p) {
-    return (p.paternalProvince || p.maternalProvince || '').trim();
+    // Identity province is strictly paternal. See
+    // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+    return (p.paternalProvince || '').trim();
   }
 
   function _workplaceVillageLine(p) {
-    const village = (p.village || '').trim();
-    const island  = (p.island || p.paternalIsland || p.maternalIsland || '').trim();
+    // Primary line: paternal-only identity geography.
+    // See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+    const village = (p.paternalVillage || '').trim();
+    const island  = (p.paternalIsland  || '').trim();
     const pat = (p.paternalProvince || '').trim();
     const mat = (p.maternalProvince || '').trim();
     // V2 canonical primary line: 'Naroi vlg (Moala Is), Lau Province.' or
@@ -8129,8 +8135,18 @@
     const first = r.first || (r.name.includes(',') ? r.name.split(',')[1].trim() : '');
     const last  = r.last  || (r.name.includes(',') ? r.name.split(',')[0].trim() : r.name);
     const displayName = `${salutation ? salutation + ' ' : ''}${first} ${last}`.trim();
-    const village = r.village || '';
-    const paternal = effectivePaternalProvince(r);
+    // Panel F scholar-card identity geography: paternal fields ONLY. No
+    // maternal fallback, no `effectivePaternalProvince`, no merged village.
+    // See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md and the corresponding
+    // regression test for ITK-S0212 (Malelili Rokomatu — must render as
+    // "Naseyani vlg, Ra Province." NOT "Naseyani vlg (Beqa Is), Ra Province.").
+    const paternalGeography = {
+      village:  (r.paternalVillage  || '').trim(),
+      island:   (r.paternalIsland   || '').trim(),
+      province: (r.paternalProvince || '').trim()
+    };
+    const village = paternalGeography.village;
+    const paternal = paternalGeography.province;
     const confederacy = provinceToConfederacy(paternal);
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
     const bannerLabel = confederacy ? `${confederacy} Confederacy` : 'iTaukei Scholar';
@@ -8153,7 +8169,7 @@
     // are all handled by formatScholarGeography(); this renderer only wraps
     // the string in a placeholder chip when it's empty. See the formatter
     // definition near the top of this file.
-    const island = r.island || '';
+    const island = paternalGeography.island;
     const geoLine = formatScholarGeography(village, island, paternal);
     const metaHtml = geoLine
       ? escapeHtml(geoLine)
@@ -11368,9 +11384,11 @@
     // '' when nothing meaningful can be rendered.
     function mergeVillageProvince(prof) {
       if (!prof) return '';
-      const village  = prof.village || '';
-      const island   = prof.island || prof.paternalIsland || prof.maternalIsland || '';
-      const province = prof.paternalProvince || prof.maternalProvince || prof.province || '';
+      // Identity geography is strictly paternal. See
+      // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+      const village  = prof.paternalVillage  || '';
+      const island   = prof.paternalIsland   || '';
+      const province = prof.paternalProvince || '';
       return formatScholarGeography(village, island, province);
     }
     // Track any active photo-rotation interval so we can clear it when the user
