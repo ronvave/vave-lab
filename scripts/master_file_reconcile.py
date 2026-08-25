@@ -87,7 +87,7 @@ def fetch_dashboard_local(dump_dir: Path) -> list[list]:
 def parse_dashboard(rows: list[list]) -> dict:
     """Extract expected values from the Master-file Dashboard worksheet.
 
-    Current layout (audited 2026-08-23 against the live Dashboard tab). Row
+    Current layout (audited 2026-08-25 against the live Dashboard tab). Row
     numbers are the 1-indexed sheet rows; parenthetical indices are the
     0-indexed positions this parser uses.
 
@@ -96,7 +96,12 @@ def parse_dashboard(rows: list[list]) -> dict:
       row  7 (idx  6): header  — 'Graduate degree episodes' | ... | 'International degree episodes' | ... | 'Funding episodes' | ... | 'Award episodes'
       row  8 (idx  7): values  — [0]=grad episodes, [3]=international, [5]=funding, [7]=awards
       row 10 (idx  9): header  — 'Publication records' | ... | 'Authorship bridge links' | ... | 'Scholars with exact links' | ... | 'Current position records'
-      row 11 (idx 10): values  — [0]=pubs, [3]=authorship, [5]=scholars w/link, [7]=current positions
+      row 11 (idx 10): values  — layout shifted 2026-08-24 when the header
+                        gained two spacer cells before 'Scholars with exact
+                        links' and before 'Current position records'. We
+                        now locate each value by header label in row 10
+                        rather than hard-coding column indices, so the
+                        reconciler self-heals if columns move again.
 
       Postgraduate Degrees by Gender (unchanged):
       row 37 (idx 36): header  — 'Status' | 'Male' | 'Female' | 'Total'
@@ -125,6 +130,48 @@ def parse_dashboard(rows: list[list]) -> dict:
         v = re.sub(r"[,\s]", "", v)
         return int(v) if v.isdigit() else 0
 
+    def find_label_col(header_row: int, needle: str) -> int:
+        """Return the 0-indexed column of the first cell in `header_row`
+        whose stripped, case-folded text matches `needle` (also stripped
+        and case-folded). Returns -1 if not found. Used so we can locate
+        row-11 values by their row-10 header rather than by fragile
+        column indices — the Dashboard has already reflowed once.
+        """
+        wanted = needle.strip().casefold()
+        if header_row >= len(rows):
+            return -1
+        for i, v in enumerate(rows[header_row]):
+            if str(v or "").strip().casefold() == wanted:
+                return i
+        return -1
+
+    def find_value_near(value_row: int, start_col: int, end_col: int) -> int:
+        """Scan `value_row` from `start_col` to `end_col` inclusive and
+        return the first numeric value found (commas/whitespace stripped).
+        Returns 0 if nothing numeric is present.
+
+        This exists because the Dashboard's row-10 headers are visually
+        centered over merged ranges but the underlying value cell can
+        sit one column to the right of its header — e.g. 'Scholars with
+        exact links' has its header at col 6 but its value at col 7
+        (audited 2026-08-25). Matching header column alone would read
+        the empty col-6 cell and report 0. Widening the scan to the
+        adjacent columns fixes that without over-reaching into the
+        next block, because the Dashboard uses blank spacer columns
+        as visual separators.
+        """
+        if value_row >= len(rows):
+            return 0
+        row = rows[value_row]
+        lo = max(0, start_col)
+        hi = min(len(row) - 1, end_col)
+        for c in range(lo, hi + 1):
+            v = str(row[c] or "").strip()
+            v = re.sub(r"[,\s]", "", v)
+            if v.isdigit():
+                return int(v)
+        return 0
+
     out = {}
 
     # Top KPI block — row 5 (index 4). Values sit at cols 0/3/5/7.
@@ -139,11 +186,43 @@ def parse_dashboard(rows: list[list]) -> dict:
     out["funding_episodes"] = num(7, 5)
     out["award_episodes"] = num(7, 7)
 
-    # Row 11 (index 10): pubs, authorship, scholars-w-link, positions at cols 0/3/5/7.
-    out["publications_total"] = num(10, 0)
-    out["authorship_links"] = num(10, 3)
-    out["scholars_with_authorship_link"] = num(10, 5)
-    out["current_positions"] = num(10, 7)
+    # Row 11 (index 10): pubs, authorship, scholars-w-link, positions.
+    # Locate each value by its row-10 header label, then scan a small
+    # column window (header ± 2) on row 11 for the first numeric cell.
+    # The window handles two Dashboard quirks that hard-coded column
+    # indices can't survive:
+    #   1. Column-order drift when Ron reflows the block.
+    #   2. Header vs value being offset by one cell inside merged
+    #      header ranges (e.g. 'Scholars with exact links' header at
+    #      col 6, value at col 7 as of 2026-08-25).
+    # We compute the window from each label's neighbours so the scan
+    # never leaks past an adjacent block.
+    row11_labels = [
+        ("publications_total", "Publication records"),
+        ("authorship_links", "Authorship bridge links"),
+        ("scholars_with_authorship_link", "Scholars with exact links"),
+        ("current_positions", "Current position records"),
+    ]
+    header_cols = {key: find_label_col(9, label) for key, label in row11_labels}
+    for i, (key, label) in enumerate(row11_labels):
+        col = header_cols[key]
+        if col < 0:
+            print(
+                f"[reconcile] WARN: Dashboard row-10 header '{label}' not found; "
+                f"'{key}' will parse as 0 and trigger a reconcile mismatch.",
+                file=sys.stderr,
+            )
+            out[key] = 0
+            continue
+        # Right edge of this label's window = (next label's column - 1),
+        # or col + 2 if this is the last label. Left edge = col itself
+        # (values never appear to the LEFT of their own header).
+        next_cols = [
+            header_cols[k] for k, _ in row11_labels[i + 1:]
+            if header_cols[k] >= 0
+        ]
+        right = (min(next_cols) - 1) if next_cols else col + 2
+        out[key] = find_value_near(10, col, right)
 
     # Grad stats rows 38/39/42/44 (indices 37/38/41/43). Layout unchanged.
     out["completed_masters_male"] = num(37, 1)
