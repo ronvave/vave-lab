@@ -40,6 +40,10 @@ SHEETS = {
         "group_row": 3,  # confederacy group labels
     },
     "Authorship": {"header_row": 4, "first_data": 5},
+    # Non-iTaukei researcher authorship links (ITK-R IDs). Used together
+    # with `Authorship` to decide whether a publication is
+    # iTaukei-associated in Panel C2's iTaukei view.
+    "Researcher Authorship": {"header_row": 4, "first_data": 5},
     "Research Geography": {"header_row": 4, "first_data": 5},
     "Institutions": {"header_row": 4, "first_data": 5},
     "Dashboard": {"header_row": None, "first_data": 4},  # freeform QA sheet
@@ -202,6 +206,21 @@ AUTHORSHIP_PUBLIC_FIELDS = [
     "Is First Author?",
 ]
 
+# Non-iTaukei researcher authorship. Ron uses this sheet to record
+# publication‑researcher links (ITK-R IDs) for non‑iTaukei collaborators
+# whose Scholar ID does not appear in `Scholars`. Panel C2 iTaukei view
+# accepts either an `Authorship` (Scholar) or `Researcher Authorship`
+# (Researcher) link as the iTaukei-associated signal.
+RESEARCHER_AUTHORSHIP_PUBLIC_FIELDS = [
+    "Researcher Authorship ID",
+    "Researcher ID",
+    "Researcher Name",
+    "Publication ID / BibTeX Key",
+    "Author Name as Recorded",
+    "Author Position",
+    "Is First Author?",
+]
+
 # Graduate Degrees: C_Uni public, O_Uni allowed in tooltips/metadata ONLY
 # (never aggregated, mapped, filtered, or counted). Ron clarified this on
 # 2026-08-21: O_Uni is historical institutional metadata, not private, but
@@ -300,6 +319,7 @@ OUTPUT_FILES = {
     "scholars": "data/itaukei-master-scholars.json",
     "publications": "data/itaukei-master-publications.json",
     "authorship": "data/itaukei-master-authorship.json",
+    "researcher_authorship": "data/itaukei-master-researcher-authorship.json",
     "grad_degrees": "data/itaukei-master-grad-degrees.json",
     "mobility": "data/itaukei-master-mobility.json",
     "geography": "data/itaukei-master-geography.json",

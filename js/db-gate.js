@@ -73,6 +73,8 @@
     'data/itaukei-master-scholars.json':     'data/itaukei-master-scholars.json.enc',
     'data/itaukei-master-publications.json': 'data/itaukei-master-publications.json.enc',
     'data/itaukei-master-authorship.json':   'data/itaukei-master-authorship.json.enc',
+    'data/itaukei-master-researcher-authorship.json':
+      'data/itaukei-master-researcher-authorship.json.enc',
     'data/itaukei-master-grad-degrees.json': 'data/itaukei-master-grad-degrees.json.enc',
     'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
     'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',

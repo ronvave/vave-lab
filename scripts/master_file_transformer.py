@@ -56,6 +56,7 @@ from master_file_config import (
     PROVINCE_UNSURE,
     PROVINCES,
     PUBLICATION_PUBLIC_FIELDS,
+    RESEARCHER_AUTHORSHIP_PUBLIC_FIELDS,
     SCHOLAR_PUBLIC_FIELDS,
     SHEETS,
     SPREADSHEET_ID,
@@ -284,6 +285,26 @@ def extract_mobility(rows: list[list]) -> list[dict]:
     return clean
 
 
+def extract_researcher_authorship(rows: list[list]) -> list[dict]:
+    """Non-iTaukei researcher authorship links (ITK-R IDs).
+
+    Panel C2's iTaukei view treats a publication as iTaukei-associated if it
+    has EITHER a Scholar-level link (`Authorship`) OR a Researcher-level link
+    here. The two sheets share the same shape but different ID namespaces.
+    """
+    _, dicts = rows_to_dicts(
+        rows,
+        SHEETS["Researcher Authorship"]["header_row"],
+        SHEETS["Researcher Authorship"]["first_data"],
+    )
+    clean = sanitize(dicts, RESEARCHER_AUTHORSHIP_PUBLIC_FIELDS)
+    for a in clean:
+        a["Author Position"] = as_int(a.get("Author Position"))
+        a["Is First Author?"] = is_truthy(a.get("Is First Author?"))
+        a["_is_lead"] = a["Author Position"] == 1 or a["Is First Author?"]
+    return clean
+
+
 def extract_geography(rows: list[list]) -> list[dict]:
     _, dicts = rows_to_dicts(
         rows,
@@ -300,6 +321,10 @@ def extract_geography(rows: list[list]) -> list[dict]:
         "District",
         "Village / Site",
         "Confederacy (auto from Province)",
+        # Required by the Panel-C2 geography repair: the adapter filters to
+        # verified Fiji rows using this predicate:
+        #   startswith("Verified", case-insensitive) OR == "Strong".
+        "Verification",
     ]
     return sanitize(dicts, keep)
 
@@ -330,12 +355,17 @@ def compute_aggregates(
     authorship: list[dict],
     grad_degrees: list[dict],
     mobility: list[dict],
+    researcher_authorship: list[dict] | None = None,
 ) -> dict:
     """Compute every headline/panel aggregate. These map to the QA
     reference values in the Master-file Dashboard sheet."""
+    researcher_authorship = researcher_authorship or []
+
     # ----- Publications: iTaukei-associated bridge -----
-    # A publication is iTaukei-associated iff ≥1 Authorship row links it to
-    # a Scholar ID (guide §8). Never infer from author names/affiliations.
+    # A publication is iTaukei-associated iff it has ≥1 link in either the
+    # `Authorship` sheet (Scholar ID in `Scholars`) OR the `Researcher
+    # Authorship` sheet (ITK-R researcher; guide §8 extension for the C2
+    # geography repair). Never infer from author names/affiliations.
     scholar_ids = {s["Scholar ID"] for s in scholars if s.get("Scholar ID")}
     pubs_with_itaukei_link: dict[str, set[str]] = {}
     for a in authorship:
@@ -344,11 +374,20 @@ def compute_aggregates(
         if pid and sid and sid in scholar_ids:
             pubs_with_itaukei_link.setdefault(pid, set()).add(sid)
 
+    pubs_with_researcher_link: dict[str, set[str]] = {}
+    for a in researcher_authorship:
+        pid = a.get("Publication ID / BibTeX Key")
+        rid = a.get("Researcher ID")
+        if pid and rid:
+            pubs_with_researcher_link.setdefault(pid, set()).add(rid)
+
     for p in publications:
         pid = p.get("Publication ID / BibTeX Key")
         linked = pubs_with_itaukei_link.get(pid, set())
+        researcher_linked = pubs_with_researcher_link.get(pid, set())
         p["_linked_scholar_ids"] = sorted(linked)
-        p["_is_itaukei_associated"] = len(linked) > 0
+        p["_linked_researcher_ids"] = sorted(researcher_linked)
+        p["_is_itaukei_associated"] = bool(linked) or bool(researcher_linked)
 
     # ----- Publication-type breakdown (headline 5 types only) -----
     headline_pubs = [
@@ -518,6 +557,12 @@ def run(
     authorship = extract_authorship(fetch_fn("Authorship"))
     log(f"  → {len(authorship)} authorship links")
 
+    log("Fetching Researcher Authorship bridge...")
+    researcher_authorship = extract_researcher_authorship(
+        fetch_fn("Researcher Authorship")
+    )
+    log(f"  → {len(researcher_authorship)} researcher authorship links")
+
     log("Fetching Graduate Degrees...")
     grad_degrees = extract_grad_degrees(fetch_fn("Graduate Degrees"))
     log(f"  → {len(grad_degrees)} degree episodes")
@@ -532,7 +577,8 @@ def run(
 
     log("Computing aggregates...")
     aggregates = compute_aggregates(
-        scholars, publications, authorship, grad_degrees, mobility
+        scholars, publications, authorship, grad_degrees, mobility,
+        researcher_authorship=researcher_authorship,
     )
     t = aggregates["totals"]
     log(f"  → scholars={t['scholars']} pubs={t['publications_total']} "
@@ -547,6 +593,10 @@ def run(
     _write_json(out_dir / "itaukei-master-scholars.json", scholars)
     _write_json(out_dir / "itaukei-master-publications.json", publications)
     _write_json(out_dir / "itaukei-master-authorship.json", authorship)
+    _write_json(
+        out_dir / "itaukei-master-researcher-authorship.json",
+        researcher_authorship,
+    )
     _write_json(out_dir / "itaukei-master-grad-degrees.json", grad_degrees)
     _write_json(out_dir / "itaukei-master-mobility.json", mobility)
     _write_json(out_dir / "itaukei-master-geography.json", geography)

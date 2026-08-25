@@ -1,0 +1,34 @@
+Fetching Master data (this takes a moment)...
+✓ TEST 1 — Province source (RG, not Publications flags)
+    Dashboard!B66 formula head: =LET(x,IFNA(UNIQUE(FILTER('Research Geography'!$B$5:$B$2000,'Research Geography'!$E$5:$E$2000="Fiji",'Research Geography'!$F$5:$F$2000=B$65,REGEXMATCH('Research Geography'!$L$5:$L$2000,"^Verified"),XL...
+✓ TEST 2 — Reports increment C2 (previously excluded)
+    daurewa_building_capacity_redd_2018 -> ['Macuata', 'Nadroga/Navosa']
+    daurewa_understanding_women_spaces_2019 -> ['Ba', 'Bua']
+    daurewa_vitogo_river_flooding_2019 -> ['Ba']
+    fong_copeland_stakeholder_consultation_soasoa_2021 -> ['Macuata']
+    kedrayate_hunfeld_evaluation_married_couples_tutu_1983 -> ['Cakaudrove']
+✓ TEST 3 — Preprints excluded from C2
+    Fiji-verified preprints in RG: 0; of those still counted in named-province total: 0 (expected 0)
+    No 'Preprint' row in Dashboard province tables: True
+    Examples with RG rows: []
+✓ TEST 4 — Multi-province DISTINCT counting
+    multi-province examples:
+    daurewa_building_capacity_redd_2018 -> ['Macuata', 'Nadroga/Navosa']
+    daurewa_understanding_women_spaces_2019 -> ['Ba', 'Bua']
+    daveta_screening_pgrb_malolo_naviti_2023 -> ['Ba', 'Nadroga/Navosa']
+✓ TEST 5 — Authorship: lead/coauth/none
+    iTaukei lead:    baleivanualala_molecular_2024 (iTaukei=True)
+    iTaukei co-only: vakaciriwaqa_discovery_2022 (iTaukei=True)
+    Non-iTaukei:     sofer_twenty_2009 (iTaukei=False)
+✓ TEST 6 — Stable-ID iTaukei filter
+    iTaukei formula uses Authorship!$D + 'Researcher Authorship'!$D: True; no name-string matching: True
+✓ TEST 7 — Master vs V2 (manual after deploy)
+    → run scripts/refresh_master_snapshot.py, deploy, then diff public V2 C2 against Master rows 66-86.
+✓ TEST 8 — Confederacy totals = sum of named provinces
+✓ TEST 9 — Non-provincial not populated from legacy AL
+    Non-provincial formula at r66: =LET(x,IFNA(UNIQUE(FILTER('Research Geography'!$B$5:$B$2000,'Research Geography'!$E$5:$E$2000="Fiji",'Research Geography'!$F$5:$F$2000="Fiji - no province specified",REGEXMATCH('Research Geography'!$L
+    Overlap (named-prov + legacy AL=Yes in Publications): 45
+✓ TEST 10 — Refresh reproducibility (process test)
+    → RG-driven formulas: any RG edit changes numbers on next reload. Formulas contain no hard-coded totals.
+
+PASS: 10/10 tests passed

@@ -102,21 +102,64 @@ line("")
 # Panel B1 — Fiji province research map / analysis
 # ---------------------------------------------------------------------
 line("## Panel B1 — Fiji province publication analysis")
-line("  Source: publications[] one-hot columns per province (headline-5 only)")
+line("  Source: Research Geography (Fiji country + verified) joined to Publications")
+line("  Include set: Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book, Report (Preprint excluded)")
+INCLUDE_TYPES = {"Journal Article", "Master's Thesis", "PhD Thesis",
+                 "Book Chapter", "Book", "Report"}
+
+def _verif_ok(v):
+    v = (v or "").strip()
+    return v.lower().startswith("verified") or v.lower() == "strong"
+
+# Build RG-derived province membership for every publication.
+type_by_pub = {p["Publication ID / BibTeX Key"]: p.get("Publication Type", "")
+               for p in publications}
+is_it_by_pub = {p["Publication ID / BibTeX Key"]: bool(p.get("_is_itaukei_associated"))
+                for p in publications}
+rg_provs_by_pub = defaultdict(set)
+rg_nonprov_by_pub = defaultdict(bool)
+rg_unsure_by_pub = defaultdict(bool)
+for g in geo:
+    if (g.get("Country") or "").strip() != "Fiji":
+        continue
+    if not _verif_ok(g.get("Verification")):
+        continue
+    pid = g.get("Publication ID / BibTeX Key")
+    prov = (g.get("Fiji Province") or "").strip()
+    if not pid or not prov:
+        continue
+    if prov == "Fiji - no province specified":
+        rg_nonprov_by_pub[pid] = True
+    elif prov in ("Unsure", "Unclassified"):
+        rg_unsure_by_pub[pid] = True
+    else:
+        rg_provs_by_pub[pid].add(prov)
+
 by_prov_all = Counter()
 by_prov_it  = Counter()
-for p in publications:
-    if p["Publication Type"] not in HEADLINE:
+for pid, provs in rg_provs_by_pub.items():
+    if type_by_pub.get(pid) not in INCLUDE_TYPES:
         continue
-    it = bool(p.get("_is_itaukei_associated"))
-    for prov in PROVINCES:
-        if int(p.get(prov, 0) or 0) > 0:
-            by_prov_all[prov] += 1
-            if it: by_prov_it[prov] += 1
-line("  Province | All-headline | iTaukei-headline")
+    it = is_it_by_pub.get(pid, False)
+    for prov in provs:
+        by_prov_all[prov] += 1
+        if it: by_prov_it[prov] += 1
+line("  Province | All (include set) | iTaukei (include set)")
 for prov in PROVINCES:
     line(f"    {prov:22s} : {by_prov_all[prov]:5d}  |  {by_prov_it[prov]:5d}")
 line(f"  ALL          : {sum(by_prov_all.values())}  |  {sum(by_prov_it.values())}")
+np_all = sum(1 for pid, v in rg_nonprov_by_pub.items()
+             if v and type_by_pub.get(pid) in INCLUDE_TYPES)
+np_it  = sum(1 for pid, v in rg_nonprov_by_pub.items()
+             if v and type_by_pub.get(pid) in INCLUDE_TYPES
+             and is_it_by_pub.get(pid))
+un_all = sum(1 for pid, v in rg_unsure_by_pub.items()
+             if v and type_by_pub.get(pid) in INCLUDE_TYPES)
+un_it  = sum(1 for pid, v in rg_unsure_by_pub.items()
+             if v and type_by_pub.get(pid) in INCLUDE_TYPES
+             and is_it_by_pub.get(pid))
+line(f"  Non-prov/Fiji : {np_all:5d}  |  {np_it:5d}")
+line(f"  Unsure        : {un_all:5d}  |  {un_it:5d}")
 line("")
 
 # ---------------------------------------------------------------------

@@ -199,6 +199,12 @@
       fetchJson('data/itaukei-master-scholars.json'),
       fetchJson('data/itaukei-master-publications.json'),
       fetchJson('data/itaukei-master-authorship.json'),
+      // Non-iTaukei researcher authorship links (ITK-R IDs). Panel C2
+      // iTaukei view accepts either Scholar-level (`authorship`) or
+      // Researcher-level (`researcherAuthorship`) links as evidence that
+      // a publication is iTaukei-associated. Optional — empty on error.
+      fetchJson('data/itaukei-master-researcher-authorship.json')
+        .catch(function () { return []; }),
       fetchJson('data/itaukei-master-grad-degrees.json'),
       fetchJson('data/itaukei-master-mobility.json').catch(function () { return []; }),
       fetchJson('data/itaukei-master-geography.json').catch(function () { return []; }),
@@ -218,17 +224,18 @@
       fetchJson('data/scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })
     ]).then(function (arr) {
       return {
-        scholars:     arr[0],
-        publications: arr[1],
-        authorship:   arr[2],
-        gradDegrees:  arr[3],
-        mobility:     arr[4],
-        geography:    arr[5],
-        aggregates:   arr[6],
-        lastSync:     arr[7],
-        v1GradStudies: arr[8],
-        adminEnrichment: arr[9] && arr[9].scholars ? arr[9] : EMPTY_ADMIN_DOC,
-        adminInsights:   arr[10] && arr[10].scholars ? arr[10] : EMPTY_ADMIN_DOC
+        scholars:            arr[0],
+        publications:        arr[1],
+        authorship:          arr[2],
+        researcherAuthorship: arr[3],
+        gradDegrees:         arr[4],
+        mobility:            arr[5],
+        geography:           arr[6],
+        aggregates:          arr[7],
+        lastSync:            arr[8],
+        v1GradStudies:       arr[9],
+        adminEnrichment:     arr[10] && arr[10].scholars ? arr[10] : EMPTY_ADMIN_DOC,
+        adminInsights:       arr[11] && arr[11].scholars ? arr[11] : EMPTY_ADMIN_DOC
       };
     });
   }
@@ -601,45 +608,76 @@
       }
       if (leadDiscKey) collections.push(leadDiscKey);
 
-      // Fiji research geography — read from the 14 province one-hots + the
-      // two special columns embedded in each publication record.
+      // Fiji research geography — DERIVED FROM `Research Geography` sheet,
+      // NOT from the legacy per-Publication province Yes/blank columns. Per
+      // the C2 geography-repair contract, the authoritative geography path
+      // is Publication → Research Geography → verified Fiji location →
+      // (publication type filter applied downstream) → COUNT DISTINCT
+      // Publication ID. See `docs/panel-c2-geography.md` (added in this
+      // repair) for the full rationale.
+      //
+      // We accept any Research Geography row where:
+      //   • Country = "Fiji", AND
+      //   • Verification starts with "Verified" (case-insensitive) OR is
+      //     the sentinel value "Strong" (mirrors the Master Dashboard's
+      //     `REGEXMATCH(...,"^Verified")` predicate plus the small legacy
+      //     `Strong` bucket).
+      //
+      // A publication with verified evidence in multiple Fiji provinces
+      // counts once in EACH province (multi-province is not collapsed).
+      // A publication is placed into `Fiji - no province specified` iff
+      // Research Geography explicitly records that value for it — the
+      // legacy Publications!AL Yes flag is no longer consulted.
+      var geoRowsForPub = geoByPub[pid] || [];
       var provincesInPub = [];
-      PROVINCES.forEach(function (prov) {
-        if (Number(p[prov] || 0) > 0) {
+      var seenProvForPub = new Set();
+      var pubHasFijiCountryRow = false;
+      geoRowsForPub.forEach(function (g) {
+        if (String(g['Country'] || '').trim() !== 'Fiji') return;
+        var verif = String(g['Verification'] || '').trim();
+        var verifOk = /^verified/i.test(verif) || verif.toLowerCase() === 'strong';
+        if (!verifOk) return;
+        pubHasFijiCountryRow = true;
+        var prov = String(g['Fiji Province'] || '').trim();
+        if (!prov) return;
+        if (seenProvForPub.has(prov)) return;
+        seenProvForPub.add(prov);
+        if (PROVINCE_TO_CONFED[prov]) {
+          // Named province
           provincesInPub.push(prov);
           collections.push(provLocKeyByName[prov]);
+        } else if (prov === PROVINCE_UNSPEC) {
+          provincesInPub.push(PROVINCE_UNSPEC);
+          collections.push(provLocKeyByName[PROVINCE_UNSPEC]);
+          collections.push(COL_NONPROV_FIJI);
+        } else if (prov === PROVINCE_UNSURE || prov === 'Unclassified') {
+          provincesInPub.push(PROVINCE_UNSURE);
+          collections.push(provLocKeyByName[PROVINCE_UNSURE]);
         }
+        // Any other value (e.g. an ad-hoc note) is ignored; the province
+        // must match a known bucket to affect Panel C2.
       });
+
       // Panel B4 "Where study was done" — tag this publication into every
       // country collection its Master `Research Geography` rows reference,
-      // plus Fiji when `Tagged Fiji? = Yes` (Fiji is coded via province
-      // one-hots on Publications rather than as a country row in Research
-      // Geography, so it needs a separate signal). Distinct countries only,
-      // to avoid inflating publication counts in a country whose Master
-      // geography has multiple rows for the same pub (e.g. multi-village).
-      var geoRowsForPub = geoByPub[pid] || [];
+      // plus Fiji when `Tagged Fiji? = Yes` OR any verified Fiji RG row
+      // exists (Fiji is coded via Research Geography in this repair; the
+      // Tagged Fiji flag is retained as a safety net for records still in
+      // migration). Distinct countries only, to avoid inflating counts in
+      // a country whose Master geography has multiple rows for the same
+      // pub (e.g. multi-village).
       var b4CountriesForPub = new Set();
       geoRowsForPub.forEach(function (g) {
         var c = b4NormCountry(g['Country']);
         if (c && b4CountryKeyByName[c]) b4CountriesForPub.add(c);
       });
-      if (String(p['Tagged Fiji?'] || '').toLowerCase() === 'yes') {
+      if (pubHasFijiCountryRow ||
+          String(p['Tagged Fiji?'] || '').toLowerCase() === 'yes') {
         b4CountriesForPub.add('Fiji');
       }
       b4CountriesForPub.forEach(function (c) {
         collections.push(b4CountryKeyByName[c]);
       });
-
-      // Special province labels ("Fiji - no province specified", "Unsure").
-      if (Number(p[PROVINCE_UNSPEC] || p['_fiji_unspecified'] || 0) > 0) {
-        provincesInPub.push(PROVINCE_UNSPEC);
-        collections.push(provLocKeyByName[PROVINCE_UNSPEC]);
-        collections.push(COL_NONPROV_FIJI);
-      }
-      if (Number(p[PROVINCE_UNSURE] || p['_fiji_unsure'] || 0) > 0) {
-        provincesInPub.push(PROVINCE_UNSURE);
-        collections.push(provLocKeyByName[PROVINCE_UNSURE]);
-      }
 
       // Paternal province: for every linked iTaukei scholar, add their
       // paternal province collection (falling back to maternal) so Panel B
