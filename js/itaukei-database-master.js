@@ -6915,12 +6915,25 @@
 
         const sid = _scholarIdFor(enriched);
         if (sid && _canonAdapter && typeof _canonAdapter.computePublicationTotals === 'function' && _canonMaster) {
-          const canon = _canonAdapter.computePublicationTotals(_canonMaster, sid);
+          // Pass excludePreprints:true so total, firstAuthored, and
+          // types.preprint are all preprint-net. Preprints are globally
+          // excluded from every V2 dashboard metric (2026-08-24 Ron
+          // directive). The Master Authorship + Publications tables keep
+          // every preprint row intact — this option only affects the
+          // returned totals, not the underlying data.
+          const canon = _canonAdapter.computePublicationTotals(_canonMaster, sid, { excludePreprints: true });
           enriched.scholarId = sid;
           enriched.total = canon.total;
           enriched.firstAuthored = canon.firstAuthored;
-          // Map canonical types tally onto Panel F chip buckets. `document` is
-          // intentionally excluded from Panel F chips (matches legacy behaviour).
+          // Map canonical types tally onto Panel F chip buckets.
+          //   - `document` is intentionally excluded from Panel F chips
+          //     (matches legacy behaviour).
+          //   - `conferencePaper` is force-zeroed — Panel F never shows
+          //     conference papers (global filter, July 2026 directive).
+          //   - `preprint` is force-zeroed — preprints are globally
+          //     excluded from V2 (2026-08-24 directive). The adapter
+          //     also returns 0 here when excludePreprints:true, so this
+          //     is belt-and-suspenders.
           enriched.types = {
             journalArticle: canon.types.journalArticle,
             thesisPhd:      canon.types.thesisPhd,
@@ -6929,8 +6942,8 @@
             bookSection:    canon.types.bookSection,
             book:           canon.types.book,
             report:         canon.types.report,
-            conferencePaper: 0, // Panel F never shows conference papers (global filter)
-            preprint:       canon.types.preprint
+            conferencePaper: 0,
+            preprint:       0
           };
           enriched._authorshipGap = canon.gap;
         }
@@ -7152,9 +7165,14 @@
     if (!barII) return;
     // 'thesisUnknown' is intentionally excluded per Ron's directive —
     // "Thesis (unspecified)" is never surfaced on the public dashboard.
+    // 'preprint' is intentionally excluded per Ron's 2026-08-24 directive —
+    // preprints must not appear in the Panel F header summary strip (or any
+    // other V2 display). Preprints remain intact in the Master file.
+    // 'conferencePaper' stays here only as a defensive bucket — the load-time
+    // filter drops them before this code ever runs.
     const pub = {
       thesisPhd: 0, thesisMasters: 0, journalArticle: 0,
-      bookSection: 0, book: 0, report: 0, conferencePaper: 0, preprint: 0
+      bookSection: 0, book: 0, report: 0, conferencePaper: 0
     };
     let pubTotal = 0;
     (rows || []).forEach(r => {
@@ -7166,6 +7184,10 @@
       });
     });
     barII.querySelector('[data-count-pubs-total]').textContent = String(pubTotal);
+    // 'preprint' key is intentionally absent — the preprint chip is never
+    // updated or shown. If a stale `Preprint: N` chip exists in the initial
+    // HTML markup, the fallback loop below explicitly hides it so no
+    // pre-rendered stub can leak through.
     const chipMap = {
       thesisPhd: '[data-count-pub-phd]',
       thesisMasters: '[data-count-pub-masters]',
@@ -7173,8 +7195,7 @@
       bookSection: '[data-count-pub-chapter]',
       book: '[data-count-pub-book]',
       report: '[data-count-pub-report]',
-      conferencePaper: '[data-count-pub-conf]',
-      preprint: '[data-count-pub-preprint]'
+      conferencePaper: '[data-count-pub-conf]'
     };
     // Update counts + hide zero-count chips, then reorder the remaining
     // chips by count descending so the row reads as a natural ranking
@@ -7182,6 +7203,10 @@
     // container so wrapped rows align to the first-chip column (right after
     // the fixed-width label).
     const chipsHostII = barII.querySelector('[data-scholar-summary-ii-chips]') || barII;
+    // Belt-and-suspenders: hide any preprint chip stub baked into the initial
+    // HTML markup. Preprints are globally excluded from V2 (2026-08-24).
+    const preprintChipStub = chipsHostII.querySelector('[data-pub-chip="preprint"]');
+    if (preprintChipStub) preprintChipStub.style.display = 'none';
     Object.keys(chipMap).forEach(k => {
       const chip = chipsHostII.querySelector(`[data-pub-chip="${k}"]`);
       const num = chipsHostII.querySelector(chipMap[k]);

@@ -1269,7 +1269,20 @@
     return idx;
   }
 
-  function computePublicationTotals(master, scholarId) {
+  // Compute per-scholar publication totals from Master Authorship (linked by
+  // Scholar ID) and Publications (for the Publication Type).
+  //
+  // options.excludePreprints (default false): when true, preprints are removed
+  //   from `total`, `firstAuthored`, and `types.preprint` (which becomes 0).
+  //   Used by the V2 dashboard, which globally excludes preprints from every
+  //   displayed metric (2026-08-24 Ron directive). The Master file itself is
+  //   untouched — the Publications and Authorship worksheets keep every
+  //   preprint row intact; this is a display/calculation subtraction only.
+  //   The admin panel and any tooling that wants raw counts leaves this
+  //   option unset (default false) and still sees preprints.
+  function computePublicationTotals(master, scholarId, options) {
+    var opts = options || {};
+    var excludePreprints = opts.excludePreprints === true;
     if (!master || !scholarId) {
       return { total: 0, firstAuthored: 0, types: _emptyTypesTally(), gap: true };
     }
@@ -1279,13 +1292,26 @@
       return { total: 0, firstAuthored: 0, types: _emptyTypesTally(), gap: true };
     }
     var types = _emptyTypesTally();
+    var preprintPids = new Set();
     Object.keys(bucket.typesTotalByPid).forEach(function (pid) {
       var vt = bucket.typesTotalByPid[pid];
+      if (vt === 'preprint') preprintPids.add(pid);
       if (types[vt] !== undefined) types[vt] += 1;
     });
+    var total = bucket.totalSet.size;
+    var firstAuthored = bucket.firstSet.size;
+    if (excludePreprints) {
+      // Subtract preprint pids from both the total and the first-author
+      // count. bucket.totalSet is dedupe-by-pid so this subtraction is safe.
+      preprintPids.forEach(function (pid) {
+        if (bucket.totalSet.has(pid)) total -= 1;
+        if (bucket.firstSet.has(pid)) firstAuthored -= 1;
+      });
+      types.preprint = 0;
+    }
     return {
-      total: bucket.totalSet.size,
-      firstAuthored: bucket.firstSet.size,
+      total: total,
+      firstAuthored: firstAuthored,
       types: types,
       gap: false
     };
