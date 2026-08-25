@@ -1280,9 +1280,19 @@
   //   preprint row intact; this is a display/calculation subtraction only.
   //   The admin panel and any tooling that wants raw counts leaves this
   //   option unset (default false) and still sees preprints.
+  //
+  // options.excludeDocuments (default false): when true, items classified as
+  //   'document' (Master 'Publication Type' = 'Others' / 'Other' or any
+  //   unrecognised value that fell through TYPE_MAP) are removed from
+  //   `total`, `firstAuthored`, and `types.document` (which becomes 0).
+  //   Used by the V2 dashboard (2026-08-24 Ron directive): documents lack
+  //   enough metadata to be credibly counted as a publication. When a
+  //   Master row is later reclassified to a known Publication Type, it
+  //   automatically re-enters the count. Master data is untouched.
   function computePublicationTotals(master, scholarId, options) {
     var opts = options || {};
     var excludePreprints = opts.excludePreprints === true;
+    var excludeDocuments = opts.excludeDocuments === true;
     if (!master || !scholarId) {
       return { total: 0, firstAuthored: 0, types: _emptyTypesTally(), gap: true };
     }
@@ -1293,9 +1303,11 @@
     }
     var types = _emptyTypesTally();
     var preprintPids = new Set();
+    var documentPids = new Set();
     Object.keys(bucket.typesTotalByPid).forEach(function (pid) {
       var vt = bucket.typesTotalByPid[pid];
       if (vt === 'preprint') preprintPids.add(pid);
+      if (vt === 'document') documentPids.add(pid);
       if (types[vt] !== undefined) types[vt] += 1;
     });
     var total = bucket.totalSet.size;
@@ -1308,6 +1320,16 @@
         if (bucket.firstSet.has(pid)) firstAuthored -= 1;
       });
       types.preprint = 0;
+    }
+    if (excludeDocuments) {
+      // Same pattern as preprints: subtract document pids from both totals.
+      // Ensures a scholar whose only Master row is 'Others'/'Other' shows a
+      // Publications total of 0 in V2 rather than an inflated count.
+      documentPids.forEach(function (pid) {
+        if (bucket.totalSet.has(pid)) total -= 1;
+        if (bucket.firstSet.has(pid)) firstAuthored -= 1;
+      });
+      types.document = 0;
     }
     return {
       total: total,

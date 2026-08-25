@@ -392,7 +392,7 @@
     const workplaceCoordsDoc = bundle.workplaceCoordsDoc;
     const uniCountryDoc = bundle.uniCountryDoc;
     const progressRoster = bundle.progressRoster;
-    // Filter out conference papers AND preprints globally.
+    // Filter out conference papers, preprints, AND documents globally.
     //
     // Conference papers: July 2026 admin directive. Must not appear on
     //   scholar profile cards (Panel F), publication tallies, BibTeX
@@ -410,20 +410,34 @@
     //   (via TYPE_MAP in master-file-adapter.js) are: 'Unpublished report'
     //   and 'Unpublished'. Any pre-existing Zotero preprint is also caught.
     //
-    // Dropping them from state.snapshot.items here is the single
+    // Documents: 2026-08-24 Ron directive (second). Items classified as
+    //   `document` (itemType='document') are Master 'Publication Type' =
+    //   'Others' / 'Other', OR any unrecognised value that fell through
+    //   the TYPE_MAP default. These have insufficient metadata to justify
+    //   counting them as a credible publication (thesis, journal article,
+    //   book, book chapter, report). They must be excluded from counts
+    //   and tallies on every V2 panel. When enough information is added
+    //   to the Master row to reclassify the Publication Type to a known
+    //   category, the item automatically re-enters V2 with no code
+    //   change. Documents remain intact in the Master file — this filter
+    //   is a display/calculation exclusion only.
+    //
+    // Dropping these from state.snapshot.items here is the single
     // chokepoint — every downstream reader (Panels A, B1, B2, B3, C1, C2,
     // D, E, F, G, BibTeX export, item lists, counters) reads
     // state.snapshot.items and therefore inherits this filter with no
     // per-site changes.
     //
-    // TYPE_ORDER (see comment ~line 82) also excludes conferencePaper and
-    // preprint so the visualization filter row/legend/bars stay consistent
-    // even if a stray item ever slipped through the item filter.
+    // TYPE_ORDER (see comment ~line 82) also excludes conferencePaper,
+    // preprint, and document so the visualization filter row/legend/bars
+    // stay consistent even if a stray item ever slipped through the
+    // item filter.
     if (snap && Array.isArray(snap.items)) {
       const beforeCount = snap.items.length;
       snap.items = snap.items.filter(it => it
         && it.itemType !== 'conferencePaper'
-        && it.itemType !== 'preprint');
+        && it.itemType !== 'preprint'
+        && it.itemType !== 'document');
       state.hiddenConferencePapers = beforeCount - snap.items.length;
 
       // Client-side year backfill. The Python snapshot builder used to reject
@@ -6915,13 +6929,20 @@
 
         const sid = _scholarIdFor(enriched);
         if (sid && _canonAdapter && typeof _canonAdapter.computePublicationTotals === 'function' && _canonMaster) {
-          // Pass excludePreprints:true so total, firstAuthored, and
-          // types.preprint are all preprint-net. Preprints are globally
-          // excluded from every V2 dashboard metric (2026-08-24 Ron
-          // directive). The Master Authorship + Publications tables keep
-          // every preprint row intact — this option only affects the
-          // returned totals, not the underlying data.
-          const canon = _canonAdapter.computePublicationTotals(_canonMaster, sid, { excludePreprints: true });
+          // Pass excludePreprints:true AND excludeDocuments:true so total,
+          // firstAuthored, and both types buckets are net of preprints and
+          // documents. Preprints are globally excluded from every V2
+          // dashboard metric (2026-08-24 Ron directive). Documents
+          // (Master 'Publication Type' = 'Others' / 'Other' or any
+          // unrecognised value) lack enough metadata to be credibly counted
+          // as a publication and are excluded from all V2 counts and
+          // tallies (2026-08-24 Ron directive, second). Reclassifying the
+          // Master row to a known type reinstates the count automatically.
+          // The Master Authorship + Publications tables are untouched.
+          const canon = _canonAdapter.computePublicationTotals(_canonMaster, sid, {
+            excludePreprints: true,
+            excludeDocuments: true
+          });
           enriched.scholarId = sid;
           enriched.total = canon.total;
           enriched.firstAuthored = canon.firstAuthored;
