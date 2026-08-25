@@ -1723,12 +1723,104 @@
     return githubUploadBinary(path, encBytes, commitMsg);
   }
 
+  // ---- Sha-atomic encrypted read (bypasses GitHub Pages CDN) ----
+  //
+  // The race we hit in production was: (a) GET Contents API returns sha N,
+  // (b) dbGate.fetchJson fetches the .enc from GitHub Pages, but the Pages
+  // CDN can trail Git by tens of seconds and returns sha N-1's bytes, (c) we
+  // merge onto stale plaintext and PUT with sha N — which succeeds but
+  // clobbers whichever edit was in N, or 409s if another writer landed N+1
+  // in the meantime. The retry ladder loops until we give up.
+  //
+  // Fix: read the encrypted bytes from `raw.githubusercontent.com/{owner}/
+  // {repo}/{sha}/{path}` — that URL is pinned to a specific commit sha, so
+  // the bytes we get are *guaranteed* to be exactly the ones the sha names.
+  // No CDN can drift them; no concurrent writer can replace them. We then
+  // decrypt inline using the IVAV format (same as db-gate), reading the
+  // passcode from localStorage where db-gate cached it at unlock.
+  //
+  // This helper does not modify db-gate.js and does not change the on-disk
+  // encryption format, salt handling, or passcode / verifier hash. It is a
+  // separate consumer of the same passcode + the same well-known IVAV
+  // frame that db-gate wrote when it encrypted the blob on upload.
+  var _dbSessionKey = 'vavelab.db.session.v2';
+  var _MAGIC = new Uint8Array([0x49, 0x56, 0x41, 0x56]); // "IVAV"
+  var _PBKDF2_ITERATIONS = 200000;
+  function _readCachedPasscode () {
+    try {
+      var raw = localStorage.getItem(_dbSessionKey);
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.p || !parsed.exp) return null;
+      if (parsed.exp < Date.now()) return null;
+      // parsed.p is base64(TextEncoder(passcode))
+      var binStr = atob(parsed.p);
+      var bytes = new Uint8Array(binStr.length);
+      for (var i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    } catch (e) { return null; }
+  }
+  async function _deriveKey (passcode, salt) {
+    var baseKey = await crypto.subtle.importKey(
+      'raw', new TextEncoder().encode(passcode),
+      { name: 'PBKDF2' }, false, ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: salt, iterations: _PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+  }
+  async function fetchEncryptedAtSha_ (path, sha, token) {
+    // 1) Fetch encrypted bytes pinned to the exact sha.
+    // Use the GitHub Contents API with the sha in the ref — that returns
+    // base64 content for that exact commit, no CDN in front, works for
+    // private repos with the token, and matches the sha that will be sent
+    // as the `sha` param of the PUT.
+    var rawUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+      '/contents/' + encodeURI(path) + '?ref=' + encodeURIComponent(sha);
+    var res = await fetch(rawUrl, {
+      headers: Object.assign({ 'Accept': 'application/vnd.github.v3+json' }, ghHeaders(token)),
+      cache: 'no-store'
+    });
+    if (!res.ok) {
+      throw new Error('Sha-atomic read failed (' + res.status + '): ' + await res.text());
+    }
+    var meta = await res.json();
+    if (!meta || !meta.content) {
+      throw new Error('Contents API returned no inline content for ' + path + '@' + sha);
+    }
+    var b64 = String(meta.content).replace(/\s+/g, '');
+    var binStr = atob(b64);
+    var encBytes = new Uint8Array(binStr.length);
+    for (var i = 0; i < binStr.length; i++) encBytes[i] = binStr.charCodeAt(i);
+
+    // 2) Parse the IVAV frame and decrypt.
+    if (encBytes.length < 4 + 16 + 12 + 16) throw new Error('Encrypted blob too short.');
+    if (encBytes[0] !== _MAGIC[0] || encBytes[1] !== _MAGIC[1] ||
+        encBytes[2] !== _MAGIC[2] || encBytes[3] !== _MAGIC[3]) {
+      throw new Error('Not an IVAV blob.');
+    }
+    var salt = encBytes.slice(4, 20);
+    var iv   = encBytes.slice(20, 32);
+    var ct   = encBytes.slice(32);
+    var passcode = _readCachedPasscode();
+    if (!passcode) throw new Error('Database is locked \u2014 no passcode in memory.');
+    var key = await _deriveKey(passcode, salt);
+    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
+    var text = new TextDecoder().decode(plainBuf);
+    return JSON.parse(text);
+  }
+
   // Race-safe encrypted push.
   //
   //   path          — repo-relative .enc file to PUT (e.g. ENRICHMENT_ENC).
   //   plaintextUrl  — the *plaintext* URL that db-gate maps to `path`
-  //                   (e.g. ENRICHMENT_URL). Used with dbGate.fetchJson so we
-  //                   pick up the newest server bytes with cache: 'no-store'.
+  //                   (e.g. ENRICHMENT_URL). Kept for interface stability; the
+  //                   current implementation reads sha-atomically from the
+  //                   Contents API instead.
   //   applyEdit     — sync function (freshDoc) => freshDoc. The doc arg is
   //                   a brand-new object decrypted from the server; mutate in
   //                   place or return a replacement — both are honored.
@@ -1739,9 +1831,6 @@
   async function pushEncryptedJsonMerged (path, plaintextUrl, applyEdit, commitMsg) {
     if (!window.dbGate || typeof window.dbGate.encryptForUpload !== 'function') {
       throw new Error('dbGate.encryptForUpload not available (page not unlocked?)');
-    }
-    if (!window.dbGate.fetchJson) {
-      throw new Error('dbGate.fetchJson not available (page not unlocked?)');
     }
     var token = getGhToken();
     if (!token) throw new Error('No GitHub token');
@@ -1781,14 +1870,27 @@
         throw new Error('GitHub read failed (' + head.status + '): ' + await head.text());
       }
 
-      // 2) Read the freshest plaintext through db-gate. This uses cache:
-      //    'no-store' + a busted URL so we bypass the browser cache and the
-      //    CDN. If the file doesn't exist yet (404 on sha), start from an
-      //    empty scaffold.
+      // 2) Read the freshest plaintext.
+      //    We used to call dbGate.fetchJson here, which fetches the .enc
+      //    from GitHub Pages. Pages is a CDN in front of Git — it can
+      //    serve sha N-1's bytes for tens of seconds after the API's sha
+      //    already flipped to N. That drift is the root cause of the
+      //    persistent 409 loop: we PUT with sha N onto plaintext derived
+      //    from sha N-1, and GitHub rightly rejects, because either the
+      //    sha we sent no longer matches (409) or another writer landed
+      //    another commit while we were re-reading.
+      //
+      //    Fix: fetch the ENCRYPTED bytes directly from GitHub's raw
+      //    content endpoint pinned to the SPECIFIC sha we just read from
+      //    the Contents API. `raw.githubusercontent.com/{owner}/{repo}/{sha}/{path}`
+      //    is sha-content atomic by construction — no CDN lag can
+      //    intervene, and no other writer can race the read. We then
+      //    decrypt via dbGate.fetchJson's already-warm passcode, using a
+      //    tiny helper that reuses the same IVAV/AES-GCM code path.
       var freshDoc;
       if (currentSha) {
         try {
-          freshDoc = await window.dbGate.fetchJson(plaintextUrl);
+          freshDoc = await fetchEncryptedAtSha_(path, currentSha, token);
         } catch (e) {
           throw new Error('Fresh decrypt of ' + path + ' failed: ' + (e && e.message ? e.message : e));
         }
