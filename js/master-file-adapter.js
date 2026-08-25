@@ -1209,16 +1209,35 @@
     // Mirrors js/itaukei-database-master.js `visualType()` for the
     // Master-native `Publication Type` column, without needing the fully
     // wired item object.
-    var t = (pubRow && pubRow['Publication Type']) || '';
-    if (t === 'Journal Article')      return 'journalArticle';
-    if (t === 'Book')                 return 'book';
-    if (t === 'Book Section' || t === 'Book Chapter') return 'bookSection';
-    if (t === 'Thesis (PhD)' || t === 'PhD Thesis')   return 'thesisPhd';
-    if (t === 'Thesis (Masters)' || t === 'Masters Thesis') return 'thesisMasters';
-    if (t === 'Thesis') return 'thesisUnknown';
-    if (t === 'Report')               return 'report';
-    if (t === 'Preprint')             return 'preprint';
-    if (t === 'Conference Paper')     return 'conferencePaper';
+    //
+    // Normalisation: the Master sheet uses "Master's Thesis" (with a
+    // curly or straight apostrophe) and "Other Thesis", not "Masters
+    // Thesis" or "Thesis (Masters)". Earlier versions of this function
+    // only recognised the apostrophe-less spelling and every Master's
+    // thesis fell through to `return 'document'`. Combined with
+    // `excludeDocuments: true` in the scholar-card counter, that
+    // silently subtracted Master's theses from every affected
+    // scholar's Publications total AND kept the Panel F thesisMasters
+    // chip at 0. We now strip curly apostrophes and lowercase before
+    // matching, and accept every spelling variant that appears in the
+    // Master Publications sheet.
+    var raw = (pubRow && pubRow['Publication Type']) || '';
+    // Replace curly apostrophes with straight ones, collapse whitespace,
+    // and lowercase so "Master\u2019s Thesis" and "Master's Thesis" and
+    // "master's thesis" all normalise to the same key.
+    var t = String(raw).replace(/[\u2018\u2019\u02BC]/g, "'").trim().toLowerCase();
+    if (t === 'journal article')                                    return 'journalArticle';
+    if (t === 'book')                                               return 'book';
+    if (t === 'book section' || t === 'book chapter')               return 'bookSection';
+    if (t === 'thesis (phd)' || t === 'phd thesis')                 return 'thesisPhd';
+    if (t === 'thesis (masters)' || t === 'masters thesis' ||
+        t === "master's thesis")                                    return 'thesisMasters';
+    if (t === 'other thesis' || t === 'thesis')                     return 'thesisUnknown';
+    if (t === 'report')                                             return 'report';
+    if (t === 'preprint' ||
+        t === 'unpublished' || t === 'unpublished report')          return 'preprint';
+    if (t === 'conference paper')                                   return 'conferencePaper';
+    if (t === 'book review')                                        return 'journalArticle';
     return 'document';
   }
 
