@@ -253,7 +253,7 @@
     <div class="actions">
       <span class="status-pill" id="db-status">unlocking…</span>
       <button id="refresh-master" title="Re-read the Master Google Sheet and re-encrypt the repo files. Does NOT bump the cache-buster — viewers with cached JS won't see the change immediately.">Refresh from Sheet</button>
-      <button id="top-force-refresh" title="Bumps ?v=mfNN across V2 HTML entrypoints AND dispatches the Master refresh workflow. Use this after any admin change — viewers get fresh JS/JSON on their next reload.">Force refresh</button>
+      <button id="top-force-refresh" title="Refreshes content-hash cache-busters (?v=sha256[:8]) on every JS/CSS reference across the V2 HTML entrypoints AND dispatches the Master refresh workflow. Use this after any admin change — viewers get fresh JS/JSON on their next reload.">Force refresh</button>
       <span class="mono" id="top-force-refresh-status" style="font-size: 12px; color: var(--muted); margin-right: 8px;"></span>
       <button id="logout">Log out</button>
     </div>
@@ -439,7 +439,7 @@
         <p class="meta">The two refresh buttons are also in the top bar for quick access. Their differences:</p>
         <ul class="meta" style="margin: 6px 0 10px 18px; padding: 0;">
           <li><strong>Refresh from Sheet</strong> — dispatches <span class="mono">refresh-master-file.yml</span> to re-read the Master Google Sheet and re-encrypt the repo files. Runs automatically every 2 hours. <strong>Does NOT bump the cache-buster</strong> — viewers with cached JS/HTML will still see the stale copy on their next load. Since Phase 3.5, Save &amp; push in the edit modal auto-dispatches this whenever a Master-backed public field changed, so most of the time you no longer need to click it manually.</li>
-          <li><strong>Force refresh</strong> — bumps <span class="mono">?v=mfNN</span> on every V2 script tag so viewers' browsers stop serving the stale copy immediately, <strong>and also</strong> dispatches <span class="mono">refresh-master-file.yml</span>. Use this after any admin change (photo, insights, ORCID, etc.). GitHub Pages typically redeploys within ~30–90 seconds; then hard-refresh the public dashboard.</li>
+          <li><strong>Force refresh</strong> — refreshes the content-hash cache-buster (<span class="mono">?v=&lt;sha256[:8]&gt;</span>) on every V2 script/stylesheet tag so viewers' browsers stop serving the stale copy immediately, <strong>and also</strong> dispatches <span class="mono">refresh-master-file.yml</span>. Mirrors <span class="mono">scripts/bust_cache.py</span>. Use this after any admin change (photo, insights, ORCID, etc.). GitHub Pages typically redeploys within ~30–90 seconds; then hard-refresh the public dashboard.</li>
         </ul>
         <p class="meta" style="margin-top: 8px;">Rule of thumb: if you just edited the Master Sheet directly and can wait a couple of minutes, use <strong>Refresh from Sheet</strong>. If a viewer (including you) is looking at a stale public card right now, use <strong>Force refresh</strong>.</p>
       </div>
@@ -736,10 +736,10 @@
 
 <!-- scripts -->
 <script src="js/db-gate.js?v=a775140f" defer></script>
-<script src="js/master-file-adapter.js?v=d078bace" defer></script>
+<script src="js/master-file-adapter.js?v=e29c1e94" defer></script>
 <script src="js/admin-insights-migration.js?v=6e8c88fd" defer></script>
 <script src="js/admin-writeback-client.js?v=780950d5" defer></script>
-<script src="js/admin-master.js?v=4d184933" defer></script>
+<script src="js/admin-master.js?v=35ae0614" defer></script>
 
 </body>
 </html>

@@ -2029,26 +2029,43 @@
 
   // ------------------------- force cache bust -------------------------
   // Force viewers to reload the V2 dashboard immediately after an admin
-  // change. Two-step operation:
-  //   1. Read each V2 HTML entrypoint from the repo via the GitHub Contents
-  //      API, find the highest `?v=mfNN` cache-buster in its script tags,
-  //      rewrite ALL of them to `?v=mf(NN+1)`, and PUT the updated file
-  //      back with the current sha (one commit per file).
-  //   2. Dispatch refresh-master-file.yml so any Master Sheet edits in the
-  //      same session are picked up in the next snapshot.
+  // change. Mirrors what scripts/bust_cache.py does on commit:
   //
-  // Files bumped:
+  //   For each V2 HTML entrypoint, walk every
+  //     <script src="js/...?v=..."> / <link ... href="css/...?v=...">
+  //   tag, fetch the referenced JS/CSS from GitHub, compute
+  //   sha256(bytes)[:8], and rewrite the `?v=` to that value. Any tag
+  //   whose hash actually changed gets pushed back with a fresh commit.
+  //
+  // This replaces the old `?v=mfNN + 1` scheme (obsoleted when the site
+  // migrated to content-hash cache-busting on 2026-07-XX). The old
+  // regex `\?v=mf(\d+)` matched nothing after the migration, so the
+  // button threw "No ?v=mfNN cache-buster found in any file." (see
+  // Ron's 2026-08-25 report).
+  //
+  // Then step 2: dispatch refresh-master-file.yml so any Master Sheet
+  // edits in the same session are picked up in the next snapshot.
+  //
+  // Files scanned:
   //   - itaukei-research-database-master.html  (public V2 dashboard)
   //   - admin-master.html                       (this admin, so admin
   //                                              viewers also get fresh JS)
   //
   // GitHub Pages typically redeploys within ~30–90 seconds. The status
-  // pill reports each step so Ron can see whether the commit landed and
+  // pill reports each step so Ron can see whether commits landed and
   // whether the workflow was dispatched.
   var FORCE_CACHE_BUST_FILES = [
     'itaukei-research-database-master.html',
     'admin-master.html'
   ];
+
+  // Match <script src="js/..."> and <link ... href="css/..."> — same
+  // shape as scripts/bust_cache.py's SCRIPT_RE / LINK_RE. The `?v=...`
+  // group is optional so we can also seed cache-busters onto tags that
+  // don't have one yet (should never happen post-migration, but the
+  // rewrite is safe either way).
+  var CACHEBUST_SCRIPT_RE = /(<script\b[^>]*\bsrc=")(js\/[^"?#]+)(\?v=[^"]*)?(")/gi;
+  var CACHEBUST_LINK_RE   = /(<link\b[^>]*\bhref=")(css\/[^"?#]+)(\?v=[^"]*)?(")/gi;
 
   // Status pills the force-refresh flow writes to. The tab-card ID stays in
   // the list even though the card was consolidated into the top bar, so any
@@ -2068,6 +2085,37 @@
     });
   }
 
+  // Compute sha256(bytes)[:8] in the browser. Mirrors scripts/bust_cache.py's
+  // _hash_file(). Uses crypto.subtle.digest (available in every modern
+  // browser). Input is an ArrayBuffer; output is an 8-char lowercase hex string.
+  async function sha256Short_ (buf) {
+    var digest = await crypto.subtle.digest('SHA-256', buf);
+    var bytes = new Uint8Array(digest);
+    var hex = '';
+    for (var i = 0; i < bytes.length; i++) {
+      hex += bytes[i].toString(16).padStart(2, '0');
+    }
+    return hex.slice(0, 8);
+  }
+
+  // Fetch the raw bytes of a repo file (js/... or css/...) via the GitHub
+  // Contents API. Returns an ArrayBuffer so we can pass it straight into
+  // crypto.subtle.digest without any encoding round-trip that could
+  // change the byte sequence and drift the hash away from what
+  // scripts/bust_cache.py computes on disk.
+  async function fetchRepoFileBytes_ (path, token) {
+    var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path) + '?ref=' + GH_BRANCH;
+    var res = await fetch(url, { headers: ghHeaders(token) });
+    if (!res.ok) throw new Error(path + ' GET failed: ' + res.status);
+    var meta = await res.json();
+    // meta.content is base64 of the raw bytes with '\n' every 60 chars.
+    var b64 = (meta.content || '').replace(/\n/g, '');
+    var bin = atob(b64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes.buffer;
+  }
+
   async function forceCacheBust () {
     var token = getGhToken();
     if (!token) {
@@ -2076,11 +2124,13 @@
       return;
     }
     setForceButtonsDisabled_(true);
-    setForceStatus_('reading files…');
+    setForceStatus_('reading HTML entrypoints…');
     try {
-      // Step 1: fetch each file, find current mfNN, bump to next.
-      var maxN = 0;
+      // Step 1: load each HTML entrypoint and collect every referenced
+      // js/... and css/... path that carries (or should carry) a
+      // content-hash cache-buster.
       var loaded = [];
+      var assetSet = {};
       for (var i = 0; i < FORCE_CACHE_BUST_FILES.length; i++) {
         var path = FORCE_CACHE_BUST_FILES[i];
         var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(path) + '?ref=' + GH_BRANCH;
@@ -2088,37 +2138,60 @@
         if (!res.ok) throw new Error(path + ' GET failed: ' + res.status);
         var meta = await res.json();
         var content = b64ToUtf8_(meta.content);
-        // Extract the numeric part after '?v=mf' so we can find the highest
-        // cache-buster currently in use across the two HTML entrypoints and
-        // then bump by one. Regex uses a capture group; use exec() in a loop
-        // instead of a fragile slice() offset so a rename of the prefix
-        // (or accidental whitespace) can't silently return NaN.
-        var re = /\?v=mf(\d+)/g;
-        var found = 0;
+        var refs = [];
         var m;
-        while ((m = re.exec(content)) !== null) {
-          var n = parseInt(m[1], 10);
-          if (!isNaN(n) && n > maxN) maxN = n;
-          found++;
+        CACHEBUST_SCRIPT_RE.lastIndex = 0;
+        while ((m = CACHEBUST_SCRIPT_RE.exec(content)) !== null) {
+          refs.push(m[2]);
+          assetSet[m[2]] = true;
         }
-        loaded.push({ path: path, sha: meta.sha, content: content, hits: found });
+        CACHEBUST_LINK_RE.lastIndex = 0;
+        while ((m = CACHEBUST_LINK_RE.exec(content)) !== null) {
+          refs.push(m[2]);
+          assetSet[m[2]] = true;
+        }
+        loaded.push({ path: path, sha: meta.sha, content: content, refs: refs });
       }
-      if (!maxN) throw new Error('No ?v=mfNN cache-buster found in any file.');
-      var nextN = maxN + 1;
-      log('Force cache bust: current highest mf' + maxN + ' → bumping to mf' + nextN, 'info');
-      setForceStatus_('bumping mf' + maxN + ' → mf' + nextN + '…');
 
-      // Step 2: PUT each file with a global mfNN → mf(N+1) replacement.
-      // Non-matching mfXX values (lower) are ALSO normalised to nextN so we
-      // don't leave the file inconsistent.
+      var assetPaths = Object.keys(assetSet);
+      if (!assetPaths.length) {
+        throw new Error('No <script src="js/…"> or <link href="css/…"> refs found in HTML entrypoints.');
+      }
+
+      // Step 2: compute current sha256[:8] for every referenced asset.
+      setForceStatus_('hashing ' + assetPaths.length + ' asset' + (assetPaths.length === 1 ? '' : 's') + '…');
+      var hashes = {};
+      for (var a = 0; a < assetPaths.length; a++) {
+        var apath = assetPaths[a];
+        try {
+          var bytes = await fetchRepoFileBytes_(apath, token);
+          hashes[apath] = await sha256Short_(bytes);
+        } catch (err) {
+          // If a referenced asset is missing on the branch, bail loudly
+          // rather than silently leaving a stale ?v= behind.
+          throw new Error('hash failed for ' + apath + ': ' + (err.message || err));
+        }
+      }
+
+      // Step 3: rewrite each HTML with the fresh content-hash cache-busters
+      // and PUT it back if it actually changed.
+      var anyPushed = false;
       for (var j = 0; j < loaded.length; j++) {
         var f = loaded[j];
-        if (!f.hits) { log('Force cache bust: no ?v=mfNN in ' + f.path + ', skipping', 'warn'); continue; }
-        var updated = f.content.replace(/\?v=mf\d+/g, '?v=mf' + nextN);
-        if (updated === f.content) { log('Force cache bust: ' + f.path + ' unchanged after regex, skipping', 'warn'); continue; }
+        var updated = f.content
+          .replace(CACHEBUST_SCRIPT_RE, function (_, pre, jsPath, _oldV, post) {
+            return pre + jsPath + '?v=' + hashes[jsPath] + post;
+          })
+          .replace(CACHEBUST_LINK_RE, function (_, pre, cssPath, _oldV, post) {
+            return pre + cssPath + '?v=' + hashes[cssPath] + post;
+          });
+        if (updated === f.content) {
+          log('Force cache bust: ' + f.path + ' already up to date, skipping', 'info');
+          continue;
+        }
         var putUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + encodeURI(f.path);
         var body = {
-          message: 'admin(master): force cache bust mf' + maxN + ' → mf' + nextN + ' (' + f.path.split('/').pop() + ')',
+          message: 'admin(master): force cache bust — refresh content-hash ?v= (' + f.path.split('/').pop() + ')',
           content: utf8ToB64_(updated),
           sha: f.sha,
           branch: GH_BRANCH
@@ -2132,18 +2205,30 @@
           var txt = await put.text();
           throw new Error(f.path + ' PUT failed: ' + put.status + ' ' + txt.slice(0, 200));
         }
-        log('Force cache bust: pushed ' + f.path + ' with mf' + nextN, 'ok');
+        anyPushed = true;
+        log('Force cache bust: pushed ' + f.path + ' with refreshed content-hash ?v=', 'ok');
       }
 
-      // Step 3: also kick off the Master-refresh workflow so Sheet edits
+      // Step 4: also kick off the Master-refresh workflow so Sheet edits
       // in this session are picked up alongside the cache-buster bump.
-      setForceStatus_('mf' + nextN + ' pushed — dispatching workflow…');
+      setForceStatus_(anyPushed ? 'HTML pushed — dispatching workflow…' : 'HTML already fresh — dispatching workflow…');
       var dispatched = await dispatchRefresh({ silent: true });
 
-      setForceStatus_(dispatched
-        ? 'done — mf' + nextN + ' live in ~30–90 s; workflow dispatched.'
-        : 'done — mf' + nextN + ' live in ~30–90 s. (Workflow dispatch failed — see Action log.)');
-      toast('Force refresh done. Hard-refresh the public dashboard in ~1 min.', 'ok', 8000);
+      var doneMsg;
+      if (anyPushed && dispatched) {
+        doneMsg = 'done — cache-busters refreshed, live in ~30–90 s; workflow dispatched.';
+      } else if (anyPushed && !dispatched) {
+        doneMsg = 'done — cache-busters refreshed, live in ~30–90 s. (Workflow dispatch failed — see Action log.)';
+      } else if (!anyPushed && dispatched) {
+        doneMsg = 'done — HTML already fresh; workflow dispatched for data refresh.';
+      } else {
+        doneMsg = 'done — HTML already fresh. (Workflow dispatch failed — see Action log.)';
+      }
+      setForceStatus_(doneMsg);
+      toast(anyPushed
+        ? 'Force refresh done. Hard-refresh the public dashboard in ~1 min.'
+        : 'HTML already fresh; data refresh dispatched. Hard-refresh in ~1 min.',
+        'ok', 8000);
     } catch (e) {
       log('Force cache bust error: ' + (e.message || e), 'error');
       setForceStatus_('error: ' + (e.message || e));
