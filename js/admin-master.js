@@ -1774,13 +1774,16 @@
     );
   }
   async function fetchEncryptedAtSha_ (path, sha, token) {
-    // 1) Fetch encrypted bytes pinned to the exact sha.
-    // Use the GitHub Contents API with the sha in the ref — that returns
-    // base64 content for that exact commit, no CDN in front, works for
-    // private repos with the token, and matches the sha that will be sent
-    // as the `sha` param of the PUT.
+    // 1) Fetch encrypted bytes pinned to the exact blob sha.
+    //    The `sha` we got from the Contents API is a *blob* sha (the file's
+    //    own sha), NOT a commit sha — so we can't pass it as `ref=` (that
+    //    expects a branch/tag/commit-sha and 404s on blob shas). The correct
+    //    endpoint is `/git/blobs/{sha}` which takes a blob sha directly and
+    //    returns { content: base64, encoding: 'base64' } for that exact blob.
+    //    This is truly sha-atomic: the bytes are exactly the object named by
+    //    the sha, and no CDN sits in front of it.
     var rawUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
-      '/contents/' + encodeURI(path) + '?ref=' + encodeURIComponent(sha);
+      '/git/blobs/' + encodeURIComponent(sha);
     var res = await fetch(rawUrl, {
       headers: Object.assign({ 'Accept': 'application/vnd.github.v3+json' }, ghHeaders(token)),
       cache: 'no-store'
@@ -1790,7 +1793,7 @@
     }
     var meta = await res.json();
     if (!meta || !meta.content) {
-      throw new Error('Contents API returned no inline content for ' + path + '@' + sha);
+      throw new Error('git/blobs returned no content for ' + path + '@' + sha);
     }
     var b64 = String(meta.content).replace(/\s+/g, '');
     var binStr = atob(b64);
