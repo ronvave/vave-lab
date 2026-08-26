@@ -1199,10 +1199,19 @@
         }
       });
       worldPoints.forEach(function (pt) {
+        // Do not overwrite coords the authoritative Master B2 payload
+        // already resolved. The Master payload encodes country-specific
+        // campus overrides (e.g. USP Alafua for Samoa) which the V1
+        // graduate-studies lookup lacks — V1 has only a single USP row
+        // keyed to Fiji, so its fallback `coordByUni` match would drag
+        // Samoa/Vanuatu/Solomon Islands/Tonga USP rows back to Suva.
+        var hasCoord = typeof pt.lat === 'number' && typeof pt.lng === 'number';
         var hit = coordByCountryUni.get(pt.country + '|' + pt.university) || coordByUni.get(pt.university);
         if (hit) {
-          pt.lat = hit.lat;
-          pt.lng = hit.lng;
+          if (!hasCoord) {
+            pt.lat = hit.lat;
+            pt.lng = hit.lng;
+          }
           if (!pt.iso    && hit.iso)    pt.iso    = hit.iso;
           if (!pt.region && hit.region) pt.region = hit.region;
         }
