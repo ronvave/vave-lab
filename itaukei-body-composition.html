@@ -447,10 +447,29 @@ const chart = echarts.init(chartDom, null, { renderer: "canvas" });
 // again on any iframe resize — otherwise the two figures paint into the
 // old 1160px canvas and clip.
 if (document.body.classList.contains('is-embedded')) {
-  requestAnimationFrame(() => { try { chart.resize(); } catch(e){} });
-  window.addEventListener('load', () => { try { chart.resize(); } catch(e){} });
+  // Re-render (not just resize) on container width changes so BODY_W picks
+  // up the new chart width — buildOption() reads chartDom.clientWidth to
+  // scale the silhouettes into fullscreen. A bare chart.resize() only re-
+  // lays out the axes; the pictorialBar symbolSize is baked in at setOption.
+  let lastRenderW = 0;
+  const RENDER_EPSILON = 24;  // px — avoid rebuilds on 1-2 px jitter
+  const rerenderIfNeeded = () => {
+    try {
+      const w = chartDom.clientWidth || 0;
+      // Always call resize so ECharts recomputes its canvas.
+      chart.resize();
+      // Only re-run buildOption if we crossed a meaningful width change AND
+      // we have data on screen (render() sets window.__lastBcData).
+      if (Math.abs(w - lastRenderW) >= RENDER_EPSILON && window.__lastBcData) {
+        lastRenderW = w;
+        chart.setOption(buildOption(window.__lastBcData), true);
+      }
+    } catch(e){}
+  };
+  requestAnimationFrame(rerenderIfNeeded);
+  window.addEventListener('load', rerenderIfNeeded);
   if (window.ResizeObserver) {
-    new ResizeObserver(() => { try { chart.resize(); } catch(e){} }).observe(chartDom);
+    new ResizeObserver(rerenderIfNeeded).observe(chartDom);
   }
 }
 const statusEl = document.getElementById("status");
@@ -484,9 +503,25 @@ function buildOption(data){
     });
   });
 
-  // Body silhouette keeps a human aspect ratio: fixed pixel width, not a % of
-  // the (wide) category slot, so the figure looks like a person, not a blob.
-  const BODY_W = 150;   // px — matches the path's natural ~0.5 width:height ratio
+  // Body silhouette keeps a human aspect ratio: pixel width, not a % of the
+  // (wide) category slot, so the figure looks like a person, not a blob.
+  //
+  // Fullscreen fix (2026-08-26): when C1 is expanded to fill the viewport the
+  // chart width can exceed 1400px, but a fixed 150px BODY_W left both figures
+  // pinned to narrow columns with a huge empty middle. Scaling BODY_W with
+  // the current chart width lets each silhouette breathe into its slot while
+  // still preserving the human aspect ratio.
+  //
+  //   * embedded/standalone (≤ 900px):   BODY_W = 150
+  //   * fullscreen (≥ 1400px):            BODY_W = 260
+  //   * in between:                        linear interpolation
+  const chartW = (chartDom && chartDom.clientWidth) || 1160;
+  const BODY_W = (function(){
+    if (chartW <= 900)  return 150;
+    if (chartW >= 1400) return 260;
+    // Linear interpolation between the two anchors.
+    return Math.round(150 + (chartW - 900) * (260 - 150) / (1400 - 900));
+  })();
   const BODY_H = "86%";
 
   // -- CUMULATIVE-CLIP technique (no stacking) --------------------------------
@@ -747,6 +782,10 @@ function buildOption(data){
 
 /* Render helper + status text. */
 function render(data, label){
+  // Cache the last dataset so the embedded ResizeObserver can rebuild the
+  // option (and re-scale BODY_W) when the container width crosses the
+  // fullscreen threshold. See the is-embedded resize block above.
+  window.__lastBcData = data;
   chart.setOption(buildOption(data), true);
   const w = data.Woman||{}, m = data.Man||{};
   const wp = TYPES.reduce((s,t)=>s+(Number(w[t.key])||0),0);

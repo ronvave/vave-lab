@@ -96,6 +96,12 @@ TARGETS = [
     # → scholar drilldown). Built from Master Graduate Degrees by
     # scripts/master_b2_worldpoints.py.
     "itaukei-master-worldpoints.json",
+    # Panel C1 body-composition — Master-derived gendered per-type
+    # aggregate ({Woman, Man} × {scholars, masters, phd, journal, book,
+    # bookSection}). Built by scripts/master_file_transformer.py's
+    # compute_body_composition_master(). Encrypted for the same admin-
+    # only gender-privacy reason as body-composition.json (V1).
+    "body-composition-master.json",
     "last-master-sync.json",
 ]
 

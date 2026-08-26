@@ -21,6 +21,9 @@ data/itaukei-master-aggregates.json
 data/itaukei-master-worldpoints.json
 data/itaukei-master-researcher-authorship.json
 data/last-master-sync.json
+# Panel C1 body-composition plaintext (encrypted .enc is committed).
+data/body-composition.json
+data/body-composition-master.json
 
 # Local artefacts
 .DS_Store

@@ -554,6 +554,113 @@ def _compute_grad_stats(grad_degrees: list[dict], scholars: list[dict]) -> dict:
 
 
 # -----------------------------------------------------------------------------
+# Panel C1 body-composition — gendered per-type breakdown
+# -----------------------------------------------------------------------------
+
+# Panel C1 (itaukei-body-composition.html) expects an aggregate JSON with the
+# shape { Woman: {...}, Man: {...} }, one dict per gender. Each dict carries
+# the gender's scholar count plus one integer per publication-type key in
+# HEADLINE_PUBLICATION_TYPES. The five keys mirror the JS TYPES array in the
+# HTML file (masters, phd, journal, book, bookSection).
+#
+# Convention (matches the Master Dashboard row 51-55 columns 3 (iTaukei Male)
+# and 4 (iTaukei Female)):
+#   * A publication is credited to "Man" iff at least one linked iTaukei
+#     scholar has Gender="Male".
+#   * A publication is credited to "Woman" iff at least one linked iTaukei
+#     scholar has Gender="Female".
+# Mixed-gender publications (an iTaukei male + iTaukei female co-author) are
+# counted in BOTH columns because the two Dashboard columns are non-exclusive
+# by design and let each figure's total reflect that gender's honest
+# scholarly contribution rather than a mutually-exclusive partition.
+#
+# JS key -> Master-file Publication Type
+C1_TYPE_MAP = {
+    "masters":     "Master's Thesis",
+    "phd":         "PhD Thesis",
+    "journal":     "Journal Article",
+    "book":        "Book",
+    "bookSection": "Book Chapter",
+}
+
+
+def compute_body_composition_master(
+    scholars: list[dict],
+    publications: list[dict],
+    authorship: list[dict],
+) -> dict:
+    """Return {Woman, Man} payload for data/body-composition-master.json.
+
+    Reads the same Master snapshot the rest of the dashboard uses, so C1
+    stays in step with the Dashboard sheet on every 2h refresh instead of
+    being a hand-committed one-off.
+    """
+    gender_by_sid = {}
+    for s in scholars:
+        sid = s.get("Scholar ID")
+        g = (s.get("Gender") or "").strip()
+        if sid:
+            gender_by_sid[sid] = g
+
+    # Publication ID -> set of linked iTaukei Scholar IDs (already restricted
+    # to iTaukei-V2 scholars because the transformer excludes Part-iTaukei
+    # rows upstream and authorship rows only survive when their Scholar ID
+    # resolves inside `scholars`).
+    scholar_ids = {s.get("Scholar ID") for s in scholars if s.get("Scholar ID")}
+    pub_to_sids: dict[str, set[str]] = {}
+    for a in authorship:
+        pid = a.get("Publication ID / BibTeX Key")
+        sid = a.get("Scholar ID")
+        if pid and sid and sid in scholar_ids:
+            pub_to_sids.setdefault(pid, set()).add(sid)
+
+    payload: dict[str, dict] = {
+        "Woman": {"scholars": 0},
+        "Man":   {"scholars": 0},
+    }
+    for js_key in C1_TYPE_MAP:
+        payload["Woman"][js_key] = 0
+        payload["Man"][js_key] = 0
+
+    for s in scholars:
+        g = (s.get("Gender") or "").strip()
+        if g == "Female":
+            payload["Woman"]["scholars"] += 1
+        elif g == "Male":
+            payload["Man"]["scholars"] += 1
+
+    # Reverse: which JS keys does each Master Publication Type belong to.
+    master_to_js = {v: k for k, v in C1_TYPE_MAP.items()}
+    for p in publications:
+        ptype = p.get("Publication Type")
+        js_key = master_to_js.get(ptype)
+        if not js_key:
+            continue
+        pid = p.get("Publication ID / BibTeX Key")
+        sids = pub_to_sids.get(pid, set())
+        if not sids:
+            continue
+        linked_genders = {gender_by_sid.get(sid, "") for sid in sids}
+        if "Male" in linked_genders:
+            payload["Man"][js_key] += 1
+        if "Female" in linked_genders:
+            payload["Woman"][js_key] += 1
+
+    # Provenance so downstream readers can tell fresh vs stale at a glance.
+    payload["_meta"] = {
+        "source": "iTaukei_Master_file",
+        "generator": "scripts/master_file_transformer.py",
+        "convention": (
+            "Non-exclusive gender columns: a publication is counted in both "
+            "Man and Woman when co-authored by iTaukei scholars of both "
+            "genders. Matches Master Dashboard row 51-55 columns 3-4."
+        ),
+        "generatedAt": datetime.now(timezone.utc).isoformat(),
+    }
+    return payload
+
+
+# -----------------------------------------------------------------------------
 # Main pipeline
 # -----------------------------------------------------------------------------
 
@@ -721,6 +828,23 @@ def run(
     _write_json(out_dir / "itaukei-master-mobility.json", mobility)
     _write_json(out_dir / "itaukei-master-geography.json", geography)
     _write_json(out_dir / "itaukei-master-aggregates.json", aggregates)
+
+    # ----------------------------------------------------------------
+    # Panel C1 body-composition (gendered per-type breakdown)
+    # ----------------------------------------------------------------
+    # itaukei-body-composition.html?src=master reads this file. Rebuilding
+    # it on every refresh keeps the two Turaga/Marama silhouettes in step
+    # with the Master Dashboard instead of drifting from a stale one-off
+    # snapshot.
+    log("Building Panel C1 body-composition payload...")
+    body_comp = compute_body_composition_master(scholars, publications, authorship)
+    _write_json(out_dir / "body-composition-master.json", body_comp)
+    log(
+        f"  → C1 payload: Woman scholars={body_comp['Woman']['scholars']}, "
+        f"Man scholars={body_comp['Man']['scholars']}, "
+        f"Woman pubs={sum(body_comp['Woman'][k] for k in C1_TYPE_MAP)}, "
+        f"Man pubs={sum(body_comp['Man'][k] for k in C1_TYPE_MAP)}"
+    )
 
     # ----------------------------------------------------------------
     # Panel B2 Master-derived world-points payload
