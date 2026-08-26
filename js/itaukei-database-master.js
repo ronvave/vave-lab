@@ -3504,10 +3504,18 @@
     if (!raw) return null;
     const collapsed = raw.replace(/\s+/g, ' ');
     const stripped = collapsed.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
-    const candidates = [
-      _worldBuildLastFirst(collapsed),
-      _worldBuildLastFirst(stripped)
-    ];
+
+    // Popup / worldPoints names arrive already in canonical "Last, First"
+    // form, while B3 chart labels and other surfaces pass "First Last".
+    // We build candidates covering both, in the order most-likely-to-hit
+    // first: (1) verbatim if the input already has a comma, then (2) the
+    // "First Last" → "Last, First" rebuild.
+    const candidates = [];
+    if (collapsed.includes(',')) candidates.push(collapsed);
+    if (stripped.includes(',') && stripped !== collapsed) candidates.push(stripped);
+    candidates.push(_worldBuildLastFirst(collapsed));
+    if (stripped !== collapsed) candidates.push(_worldBuildLastFirst(stripped));
+
     // Try alias-resolved candidates first.
     for (const c of candidates) {
       if (aliases.has(c)) {
@@ -3519,7 +3527,7 @@
     for (const c of candidates) {
       if (profiles.has(c)) return profiles.get(c);
     }
-    // Then stripped Last-First form (first-token fallback that
+    // Finally the stripped Last-First form (first-token fallback that
     // scholarProfilesByName also indexes).
     const fallback = _worldBuildLastFirst(stripped);
     if (profiles.has(fallback)) return profiles.get(fallback);
@@ -3527,10 +3535,15 @@
   }
 
   // Confederacy for a scholar name (uses paternalProvince, then maternalProvince).
+  // Profile.confederacy may be the literal string 'Unclassified' — treat that
+  // as "not set" so the province → confederacy fallback still fires.
   function scholarConfProv(name) {
     const p = findProfileForScholarName(name);
     const province = (p && (p.paternalProvince || p.maternalProvince) || '').trim();
-    const confederacy = (p && p.confederacy) || PROVINCE_TO_CONFEDERACY[province] || '';
+    let confederacy = (p && p.confederacy || '').trim();
+    if (!confederacy || confederacy.toLowerCase() === 'unclassified') {
+      confederacy = PROVINCE_TO_CONFEDERACY[province] || '';
+    }
     return { profile: p, province, confederacy };
   }
 
