@@ -2627,15 +2627,32 @@
     rerenderAfterWorldFilterChange();
   }
 
+  // Normalize a longitude to the world-wrap copy nearest the map's current
+  // center. The world map is Pacific-centered (default view lng ~80), so
+  // Leaflet renders the world twice horizontally and North American markers
+  // (raw lng ~ -100) are actually visible on the right-hand wrap at lng
+  // ~ +260. Framing regions/countries/universities with their raw stored
+  // longitudes zooms to the empty left-hand copy; this helper picks the
+  // copy the user is currently looking at. Ron 2026-08-26.
+  function _normLngForWorldMap(lng) {
+    const m = state.worldMap;
+    if (!m) return lng;
+    const center = m.getCenter().lng;
+    let x = lng;
+    while (x - center >  180) x -= 360;
+    while (x - center < -180) x += 360;
+    return x;
+  }
+
   function zoomToWorldCountry(name) {
     const grad = state.graduateStudies || { worldPoints: [] };
     const pts = (grad.worldPoints || []).filter(p => p.country === name);
     if (!pts.length || !state.worldMap) return;
-    // Use the points' native longitudes now that the whole-world view is
-    // equator-centred rather than Pacific-centric. maxZoom bumped to 8 so
-    // country-level zoom actually shows the country, not the whole region
-    // (typing "Fiji" and hitting Enter used to leave AU + NZ in frame).
-    const latlngs = pts.map(p => [p.lat, p.lng]);
+    // maxZoom bumped to 8 so country-level zoom actually shows the country,
+    // not the whole region (typing "Fiji" used to leave AU + NZ in frame).
+    // Longitudes normalized to the visible world-wrap so North American
+    // countries don't frame the empty left-hand copy of the map.
+    const latlngs = pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]);
     if (latlngs.length === 1) {
       state.worldMap.setView(latlngs[0], 7, { animate: true });
     } else {
@@ -2647,7 +2664,7 @@
     const grad = state.graduateStudies || { worldPoints: [] };
     const p = (grad.worldPoints || []).find(x => x.university === uniName);
     if (!p || !state.worldMap) return;
-    state.worldMap.setView([p.lat, p.lng], 8, { animate: true });
+    state.worldMap.setView([p.lat, _normLngForWorldMap(p.lng)], 8, { animate: true });
   }
 
   function wireWorldPanel() {
@@ -4999,7 +5016,9 @@
       const set = new Set(countries);
       const pts = (grad.worldPoints || []).filter(p => set.has(p.country));
       if (!pts.length) return;
-      const bounds = L.latLngBounds(pts.map(p => [p.lat, p.lng]));
+      // Antimeridian fix: see _normLngForWorldMap. Framing raw longitudes
+      // for Americas would zoom to the empty left-hand US copy.
+      const bounds = L.latLngBounds(pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]));
       m.fitBounds(bounds, { padding: [80, 80], maxZoom: 5, animate: true });
     }
 
