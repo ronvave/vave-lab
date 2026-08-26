@@ -92,6 +92,10 @@ TARGETS = [
     "itaukei-master-mobility.json",
     "itaukei-master-geography.json",
     "itaukei-master-aggregates.json",
+    # Panel B2 Master-derived world-points payload (country → university
+    # → scholar drilldown). Built from Master Graduate Degrees by
+    # scripts/master_b2_worldpoints.py.
+    "itaukei-master-worldpoints.json",
     "last-master-sync.json",
 ]
 

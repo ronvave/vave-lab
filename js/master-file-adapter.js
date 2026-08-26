@@ -216,6 +216,15 @@
       // If the file is unavailable we still render the panel with no markers
       // rather than fail the whole build.
       fetchJson('data/itaukei-graduate-studies.json').catch(function () { return null; }),
+      // Master-derived Panel B2 world-points payload (country → university
+      // → scholar drill-down). Authoritative source per the 2026-08-25
+      // "V2 Panel B2 Country-University Drilldown Repair" spec. Built by
+      // scripts/master_b2_worldpoints.py. When present, this REPLACES the
+      // adapter's JS-side aggregation and ensures completion filtering,
+      // discipline-string rejection, and canonical C_Uni grouping match
+      // the Python contract. Optional — the JS adapter still contains a
+      // legacy path so an older deploy without this file still renders.
+      fetchJson('data/itaukei-master-worldpoints.json').catch(function () { return null; }),
       // Admin V2 enrichment (Scholar-ID keyed): photo path, institution URL,
       // department URL, sector, year of birth, year of death. Optional.
       fetchJson('data/scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; }),
@@ -234,8 +243,9 @@
         aggregates:          arr[7],
         lastSync:            arr[8],
         v1GradStudies:       arr[9],
-        adminEnrichment:     arr[10] && arr[10].scholars ? arr[10] : EMPTY_ADMIN_DOC,
-        adminInsights:       arr[11] && arr[11].scholars ? arr[11] : EMPTY_ADMIN_DOC
+        masterWorldPoints:   arr[10],
+        adminEnrichment:     arr[11] && arr[11].scholars ? arr[11] : EMPTY_ADMIN_DOC,
+        adminInsights:       arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC
       };
     });
   }
@@ -1107,6 +1117,64 @@
       }
     });
     var worldPoints = Array.from(wpByKey.values());
+
+    // ------------------------------------------------------------------
+    // AUTHORITATIVE OVERRIDE
+    //
+    // If scripts/master_b2_worldpoints.py has published a Master-derived
+    // world-points payload, use it verbatim for Panel B2 aggregation.
+    // That payload enforces:
+    //   • only Completed Master's + PhD/Doctorate episodes count
+    //     (including 'Completed / year unresolved' and every
+    //     'Completed — …' variant);
+    //   • discipline-shaped C_Uni values (e.g.
+    //     'Agriculture / Horticulture / Breadfruit Propagation') and
+    //     placeholders ('not found', 'TBD') are excluded;
+    //   • grouping is by canonical C_Uni across cities so PTC→PCU and
+    //     Alafua rows never split;
+    //   • country strings are validated so 'University of the South
+    //     Pacific' cannot leak into the country dimension.
+    // The legacy JS aggregation above is retained only as a fallback for
+    // older deploys that lack the Master B2 payload.
+    // ------------------------------------------------------------------
+    var mwp = master.masterWorldPoints;
+    if (mwp && Array.isArray(mwp.worldPoints) && mwp.worldPoints.length > 0) {
+      worldPoints = mwp.worldPoints.map(function (p) {
+        // The Python payload uses the same key names as the JS shape,
+        // but we defensively normalize numeric coord fields and ensure
+        // the scholar-arrays exist so downstream code that reads
+        // `pt.mastersScholars.length` never sees `undefined`.
+        var lat = (typeof p.lat === 'number') ? p.lat : null;
+        var lng = (typeof p.lng === 'number') ? p.lng : null;
+        return {
+          country:          p.country || '',
+          iso:              p.iso || '',
+          region:           p.region || '',
+          university:       p.university || '',
+          city:             p.city || '',
+          lat:              lat,
+          lng:              lng,
+          phdScholars:      Array.isArray(p.phdScholars)     ? p.phdScholars.slice()     : [],
+          mastersScholars:  Array.isArray(p.mastersScholars) ? p.mastersScholars.slice() : [],
+          unknownScholars:  Array.isArray(p.unknownScholars) ? p.unknownScholars.slice() : [],
+          // Panel B2 uses `.scholars` too for popup lists; synthesize
+          // from the per-degree records so hovering the university
+          // popup still lists every graduate. Each entry mirrors the
+          // legacy shape wirePopupScholarHovers reads.
+          scholars: (Array.isArray(p.degrees) ? p.degrees : []).map(function (d) {
+            return {
+              name:       d.scholarName || '',
+              scholarId:  d.scholarId  || '',
+              degree:     ((d.stage === 'Masters' ? "Master's " : d.stage === 'PhD' ? 'PhD/Doctorate ' : '') + (d.qualification || '')).trim(),
+              year:       d.year || '',
+              completed:  true   // Python side already enforces this.
+            };
+          }),
+          scholarsCount: Array.isArray(p.degrees) ? p.degrees.length : 0,
+          degrees:       Array.isArray(p.degrees) ? p.degrees.slice() : []
+        };
+      });
+    }
 
     // Attach lat/lng from the V1 graduate-studies coordinate lookup, keyed
     // primarily by university name (unique across the dataset) with a

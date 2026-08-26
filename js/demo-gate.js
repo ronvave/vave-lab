@@ -199,6 +199,12 @@
     'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
     'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
     'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
+    // Master-derived Panel B2 world-points payload. Built by
+    // scripts/master_b2_worldpoints.py from the authoritative Master
+    // Graduate Degrees snapshot. Drives the country → university →
+    // scholar drilldown in Panel B2 with completion filtering,
+    // discipline-string rejection, and canonical C_Uni grouping.
+    'data/itaukei-master-worldpoints.json':  'data/itaukei-master-worldpoints.json.enc',
     'data/last-master-sync.json':            'data/last-master-sync.json.enc',
     // Panel C1 body-composition chart, V2 (Master-file) variant. Same schema
     // as the V1 file; the iframe fetches this when the parent URL passes

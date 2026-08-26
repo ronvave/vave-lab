@@ -18,6 +18,8 @@ data/itaukei-master-grad-degrees.json
 data/itaukei-master-mobility.json
 data/itaukei-master-geography.json
 data/itaukei-master-aggregates.json
+data/itaukei-master-worldpoints.json
+data/itaukei-master-researcher-authorship.json
 data/last-master-sync.json
 
 # Local artefacts

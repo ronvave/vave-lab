@@ -602,6 +602,32 @@ def run(
     _write_json(out_dir / "itaukei-master-geography.json", geography)
     _write_json(out_dir / "itaukei-master-aggregates.json", aggregates)
 
+    # ----------------------------------------------------------------
+    # Panel B2 Master-derived world-points payload
+    # ----------------------------------------------------------------
+    # Builds the country → university → scholar drill-down for Panel
+    # B2 ("iTaukei Graduates — Global Database") strictly from Master
+    # Graduate Degrees. See scripts/master_b2_worldpoints.py for the
+    # validation contract enforced there.
+    from master_b2_worldpoints import write_worldpoints
+    log("Building Panel B2 world-points from Master Graduate Degrees...")
+    excluded_md = out_dir.parent / "docs" / "b2_excluded_rows.md"
+    excluded_md.parent.mkdir(exist_ok=True)
+    b2_payload = write_worldpoints(
+        grad_degrees,
+        repo=out_dir.parent,
+        out_path=out_dir / "itaukei-master-worldpoints.json",
+        excluded_md_path=excluded_md,
+    )
+    b2_totals = b2_payload["totals"]
+    log(
+        f"  → B2 payload: countries={b2_totals['countries']}, "
+        f"universities={b2_totals['universities']}, "
+        f"scholars={b2_totals['scholars']}, "
+        f"M={b2_totals['masters']}, P={b2_totals['phd']}, "
+        f"excluded={b2_payload['excludedCount']}"
+    )
+
     # last-sync
     last_sync = {
         "startedAt": started,
