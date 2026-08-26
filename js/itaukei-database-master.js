@@ -2212,21 +2212,24 @@
   // Build the shared popup HTML for a worldPoint. Split into PhD / Masters /
   // Other sections, each with the blue/black alternating scholar list.
   //
-  // Scholar name ordering inside each section: EARLIEST graduation year
-  // first, most-recent last (per Ron 2026-08-25). Names with no year drop
-  // to the bottom; ties are broken alphabetically so the ordering is stable
-  // and readable. The year comes from lookupScholarThesisForPoint() so it's
-  // the same thesis year shown in the hover-detail slot.
+  // Scholar name ordering inside each section: MOST RECENT graduation year
+  // first, oldest last (per Ron 2026-08-26 — e.g. Alifereti Naikatini PhD
+  // 2026 must appear right under "PhD (n)"). Names with no year drop to the
+  // bottom; ties are broken alphabetically so the ordering is stable and
+  // readable. The year comes from lookupScholarThesisForPoint() so it's
+  // the same thesis year shown in the hover-detail slot. Function name
+  // kept as *ByYearAsc for compatibility with existing callers even though
+  // the direction is now descending.
   function sortScholarsByYearAsc(names, point, sectionLevel) {
     if (!Array.isArray(names) || names.length <= 1) return names || [];
     return names.slice().sort((a, b) => {
       const ra = lookupScholarThesisForPoint(a, point, sectionLevel);
       const rb = lookupScholarThesisForPoint(b, point, sectionLevel);
-      // Names with no year sort AFTER named years; use +Infinity so they
-      // land at the bottom regardless of ascending direction.
-      const ya = ra && Number(ra.year) ? Number(ra.year) :  Infinity;
-      const yb = rb && Number(rb.year) ? Number(rb.year) :  Infinity;
-      if (ya !== yb) return ya - yb; // earliest first
+      // Names with no year sort AFTER named years; use -Infinity so they
+      // still land at the BOTTOM under descending-year order.
+      const ya = ra && Number(ra.year) ? Number(ra.year) : -Infinity;
+      const yb = rb && Number(rb.year) ? Number(rb.year) : -Infinity;
+      if (ya !== yb) return yb - ya; // most recent first
       return String(a).localeCompare(String(b));
     });
   }
