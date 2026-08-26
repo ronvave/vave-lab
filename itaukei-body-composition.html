@@ -137,6 +137,13 @@
     body.is-embedded #chart { width:100% !important; height:760px !important; margin:0 !important; }
     body.is-embedded body,
     body.is-embedded html { overflow:hidden !important; }
+    /* Fullscreen mode: parent toggles .is-embed-fullscreen on <body> when the
+       C1 panel is expanded. Fill the entire iframe viewport so the two figures
+       grow instead of leaving large empty margins. */
+    body.is-embedded.is-embed-fullscreen,
+    body.is-embedded.is-embed-fullscreen html { height:100vh !important; }
+    body.is-embedded.is-embed-fullscreen #wrap { height:100vh !important; padding:16px 24px !important; display:flex; flex-direction:column; }
+    body.is-embedded.is-embed-fullscreen #chart { flex:1 1 auto; height:auto !important; min-height:0 !important; width:100% !important; }
   </style>
   <!-- Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>

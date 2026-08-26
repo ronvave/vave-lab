@@ -4658,7 +4658,7 @@
             </svg>
           </button>
           <iframe
-            src="itaukei-body-composition.html?embedded=1&src=master&v=mf21"
+            src="itaukei-body-composition.html?embedded=1&src=master&v=mf22"
             title="iTaukei body composition by gender"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
@@ -5372,10 +5372,17 @@
       wrap.classList.toggle('is-fullscreen', !!on);
       document.body.classList.toggle('db-embed-fullscreen-lock', !!on);
       // Nudge the iframe to resize its inner ECharts / SVG after the CSS
-      // repaints. Same-origin so we can safely poke its window.
+      // repaints. Same-origin so we can safely poke its window. We also
+      // toggle an `is-embed-fullscreen` class on the iframe's <body> so the
+      // embedded page can grow its chart to fill the viewport (C1 body
+      // composition otherwise stays at its embedded 760px height).
       try {
         var iframe = wrap.querySelector('iframe');
         if (iframe && iframe.contentWindow) {
+          try {
+            var idoc = iframe.contentDocument;
+            if (idoc && idoc.body) idoc.body.classList.toggle('is-embed-fullscreen', !!on);
+          } catch(e2){}
           setTimeout(function(){
             try { iframe.contentWindow.dispatchEvent(new Event('resize')); } catch(e){}
           }, 50);
