@@ -615,6 +615,73 @@ def run(
     grad_degrees = [g for g in grad_degrees_all if g.get("Scholar ID") not in part_itaukei_ids]
     log(f"  → {len(grad_degrees)} degree episodes (pre-filter {len(grad_degrees_all)})")
 
+    # ------------------------------------------------------------------
+    # De-duplicate near-identical Master's / PhD rows.
+    #
+    # The Master sheet occasionally carries two rows for the same scholar,
+    # same qualification, at the same university (e.g. Nanise J. Young:
+    # DEG-0046 MA 2005 with a thesis title, and DEG-0047 MA 2011 with no
+    # thesis title). The V2 dashboard would then show her name twice in
+    # the UH popup Masters section. Ron 2026-08-26: hide DEG-0047 until
+    # the thesis title for the 2011 MA is recovered; do not touch the
+    # sheet.
+    #
+    # Dedup key: (Scholar ID, Degree Stage, C_Uni name, Degree /
+    # Qualification). When multiple rows share that key, keep the one
+    # with the most information filled in (non-empty thesis > empty
+    # thesis; then earliest completion year). Different qualifications
+    # at the same university stay (Nacanieli Rika legitimately holds an
+    # MA + MBA + MCom at USP).
+    # ------------------------------------------------------------------
+    def _grad_dedup_key(g: dict) -> tuple:
+        return (
+            (g.get("Scholar ID") or "").strip(),
+            (g.get("Degree Stage") or "").strip(),
+            (g.get("C_Uni name") or "").strip(),
+            (g.get("Degree / Qualification") or "").strip(),
+        )
+
+    def _grad_row_rank(g: dict) -> tuple:
+        # Lower tuple sorts FIRST: prefer rows with a thesis title, then
+        # the earliest completion year, then stable Degree ID order.
+        has_thesis = 1 if (g.get("Thesis / Research Title") or "").strip() else 0
+        year_raw = (g.get("Finish / Completion Year")
+                    or g.get("Year / Status")
+                    or "").strip()
+        try:
+            year_num = int(year_raw)
+        except (TypeError, ValueError):
+            year_num = 9999
+        return (-has_thesis, year_num, g.get("Degree ID") or "")
+
+    _grad_by_key: dict[tuple, dict] = {}
+    _grad_dupe_log: list[dict] = []
+    for g in grad_degrees:
+        k = _grad_dedup_key(g)
+        # Skip incomplete keys (missing Scholar ID or Uni) — leave as-is.
+        if not k[0] or not k[2]:
+            _grad_by_key[(id(g),)] = g  # unique dummy key
+            continue
+        prev = _grad_by_key.get(k)
+        if prev is None:
+            _grad_by_key[k] = g
+        else:
+            keep, drop = (g, prev) if _grad_row_rank(g) < _grad_row_rank(prev) else (prev, g)
+            _grad_by_key[k] = keep
+            _grad_dupe_log.append({
+                "scholar": drop.get("Scholar Name"),
+                "kept":    keep.get("Degree ID"),
+                "dropped": drop.get("Degree ID"),
+                "stage":   drop.get("Degree Stage"),
+                "uni":     drop.get("C_Uni name"),
+                "qual":    drop.get("Degree / Qualification"),
+            })
+    grad_degrees = list(_grad_by_key.values())
+    if _grad_dupe_log:
+        log(f"  → dedup: dropped {len(_grad_dupe_log)} near-duplicate grad-degree row(s)")
+        for d in _grad_dupe_log:
+            log(f"      dropped {d['dropped']} (kept {d['kept']}): {d['scholar']} — {d['stage']} {d['qual']} @ {d['uni']}")
+
     log("Fetching M>PhD mobility...")
     mobility_all = extract_mobility(fetch_fn("M>PhD mobility"))
     mobility = [m for m in mobility_all if m.get("Scholar ID") not in part_itaukei_ids]

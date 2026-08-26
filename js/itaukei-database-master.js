@@ -2240,6 +2240,10 @@
     // Pass sectionLevel so scholars who hold BOTH a Master's AND a PhD at
     // the same university sort by the correct year in each section (e.g.
     // Ponipate Rokolekutu → 2007 in Masters, 2017 in PhD).
+    // Names may legitimately repeat when a scholar holds multiple
+    // qualifications at the same stage + university (e.g. Nacanieli
+    // Rika: MA + MBA + MCom at USP) — keep every entry; genuine
+    // stub-duplicates are already removed at the transformer layer.
     const phdSorted     = sortScholarsByYearAsc(p.phdScholars, p, 'phd');
     const mastersSorted = sortScholarsByYearAsc(p.mastersScholars, p, 'masters');
     const otherSorted   = sortScholarsByYearAsc(p.unknownScholars || [], p, 'other');
