@@ -1780,10 +1780,15 @@
             nameBtn.addEventListener('click', () => selectWorldUniversity(u.university));
             const counts = document.createElement('span');
             counts.className = 'db-world-uni-row__counts';
+            // Include a Total column so the university rows mirror the
+            // country-list layout (Masters | PhD | Total). Total = Masters
+            // + PhD (+ Other when present).
+            const t = m + p + k;
             counts.innerHTML =
               `<b>Masters</b> ${m} ` +
               `<span class="pipe"></span> <b>PhD</b> ${p}` +
-              (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '');
+              (k ? ` <span class="pipe"></span> <b>Other</b> ${k}` : '') +
+              ` <span class="pipe"></span> <span class="db-world-total">Total ${t}</span>`;
             row.appendChild(nameBtn);
             row.appendChild(counts);
             uniHost.appendChild(row);
