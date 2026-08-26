@@ -279,6 +279,12 @@ UNI_ALIAS_TO_WU: dict[str, str] = {
     # Same-institution renames encoded in the Master (docx note).
     "Pacific Theological College": "Pasifika Communities University",
     "Fiji School of Medicine": "Fiji National University",
+    # Curly-apostrophe / word-order / trailing-comma variants that resolve
+    # to the canonical world-universities.json name.
+    "Japan Women\u2019s University": "Japan Women's University",
+    "Universitas Atma Jaya Yogyakarta": "Atma Jaya University Yogyakarta",
+    "University of Occupational and Environmental Health, Japan":
+        "University of Occupational and Environmental Health",
 }
 
 
@@ -342,9 +348,41 @@ def load_uni_coords(repo: Path) -> dict[str, dict[str, Any]]:
     return out
 
 
+# Country-specific campus overrides for multi-campus universities.
+# When a scholar's country differs from the primary campus country, use the
+# regional campus coord instead. Value: (lat, lng, city).
+_CAMPUS_OVERRIDES: dict[tuple[str, str], tuple[float, float, str]] = {
+    # USP Alafua Campus, Apia — School of Agriculture and Food Technology.
+    # Coord from Mapcarta / OpenStreetMap: -13.8607, -171.7929.
+    ("University of the South Pacific", "Samoa"): (
+        -13.8607, -171.7929, "Alafua Campus, Apia",
+    ),
+    # USP Emalus Campus, Port Vila — School of Law.
+    ("University of the South Pacific", "Vanuatu"): (
+        -17.7375, 168.3120, "Emalus Campus, Port Vila",
+    ),
+    # USP Solomon Islands Campus, Honiara.
+    ("University of the South Pacific", "Solomon Islands"): (
+        -9.4457, 159.9583, "Honiara Campus, Honiara",
+    ),
+    # USP Tonga Campus, Nuku'alofa.
+    ("University of the South Pacific", "Tonga"): (
+        -21.1394, -175.2018, "Nuku'alofa Campus, Nuku'alofa",
+    ),
+}
+
+
 def lookup_uni_coords(
-    canonical_name: str, coords: dict[str, dict[str, Any]]
+    canonical_name: str,
+    coords: dict[str, dict[str, Any]],
+    country: str | None = None,
 ) -> dict[str, Any] | None:
+    # Country-aware campus override takes precedence.
+    if country:
+        override = _CAMPUS_OVERRIDES.get((canonical_name, country))
+        if override:
+            lat, lng, city = override
+            return {"lat": lat, "lng": lng, "country": country, "city": city}
     if canonical_name in coords:
         return coords[canonical_name]
     alias = UNI_ALIAS_TO_WU.get(canonical_name)
@@ -461,7 +499,7 @@ def build_worldpoints(
     world_points: list[dict] = []
     for (country, cuni), bucket in buckets.items():
         iso, region = COUNTRY_META.get(country, ("", ""))
-        coord = lookup_uni_coords(cuni, coords_map)
+        coord = lookup_uni_coords(cuni, coords_map, country=country)
         point = {
             "country": country,
             "iso": iso,

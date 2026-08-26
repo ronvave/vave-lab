@@ -3331,6 +3331,25 @@
        wireMapFullscreen helper, and Leaflet popup DOM is a descendant of
        that wrapper, so this cascade catches every world-map popup naturally. */
     .db-map-world-wrap.is-fullscreen .db-popup-scholar-detail.is-active .db-popup-scholar-detail__photo { display: block; }
+    /* Floating hover card (uni-detail scholar table). Same visual language
+       as the map-popup detail slot, but sits over the page as a tooltip so
+       it needs a solid background and shadow. Photo column is always
+       visible in this variant (map popup keeps it inline / fullscreen). */
+    .db-scholar-hover-card.db-popup-scholar-detail {
+      background: #ffffff;
+      border-left: 3px solid var(--color-primary);
+      border-radius: 6px;
+      box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+      padding: 10px 12px;
+      max-width: 360px;
+    }
+    .db-scholar-hover-card.db-popup-scholar-detail .db-popup-scholar-detail__photo { display: block; }
+    /* Stage suffix inside the detail-card name line ("(PhD)" / "(Master's)").
+       Kept subtle so the first-last name stays the visual anchor. */
+    .db-popup-scholar-detail__stage {
+      color: #475569;
+      font-weight: 600;
+    }
     .db-scholar-list .db-scholar-name {
       cursor: help; padding: 1px 2px; border-radius: 2px;
       transition: background 0.12s;
@@ -5332,7 +5351,7 @@
 ===================================================================== -->
 <script src="js/demo-gate.js?v=1c0368f0" defer></script>
 <script src="js/master-file-adapter.js?v=e9377ab8" defer></script>
-<script src="js/itaukei-database-master.js?v=2864dc49" defer></script>
+<script src="js/itaukei-database-master.js?v=b7d4cc6b" defer></script>
 <script src="js/master-file-panel-overrides.js?v=acd05728" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

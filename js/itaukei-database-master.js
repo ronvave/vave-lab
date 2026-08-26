@@ -1713,10 +1713,13 @@
         }
         if (scholarsHost) {
           scholarsHost.innerHTML = '';
+          // Order each section earliest → most-recent graduation year, ties
+          // alphabetical (mirrors the map-popup ordering so the two surfaces
+          // stay consistent).
           const groups = [
-            { key: 'phd', label: 'PhD', cls: 'is-phd', names: uni.phdScholars },
-            { key: 'masters', label: 'Masters', cls: 'is-masters', names: uni.mastersScholars },
-            { key: 'other', label: 'Other', cls: 'is-other', names: uni.unknownScholars || [] }
+            { key: 'phd',     label: 'PhD',     cls: 'is-phd',     names: sortScholarsByYearAsc(uni.phdScholars, uni) },
+            { key: 'masters', label: 'Masters', cls: 'is-masters', names: sortScholarsByYearAsc(uni.mastersScholars, uni) },
+            { key: 'other',   label: 'Other',   cls: 'is-other',   names: sortScholarsByYearAsc(uni.unknownScholars || [], uni) }
           ];
           groups.forEach(g => {
             if (!g.names.length) return;
@@ -1727,6 +1730,10 @@
               renderScholarNameList(g.names);
             scholarsHost.appendChild(wrap);
           });
+          // Wire the same rich hover card the map popup uses so hovering a
+          // scholar name in the uni-detail table reveals photo / paternal-
+          // geography / thesis title, mirroring the map-popup experience.
+          wireScholarHoverCard(scholarsHost, uni);
         }
       } else {
         if (titleEl) titleEl.textContent = state.worldSelectedUniversity;
@@ -2084,6 +2091,24 @@
     _shortenNameCache.hits.clear();
   }
 
+  // Display formatter: return a scholar name as "First Last" only.
+  // Middle names / initials are dropped entirely.
+  //
+  // Motivation (Ron, 2026-08-25): people know each other by first name;
+  // "Bukarau-Kitolelei, S. Vilikia" hides the actual first name (Salanieta)
+  // and surfaces a middle-name initial instead. Compact first+last is what
+  // readers of the database use in conversation.
+  //
+  // Input feed shapes:
+  //   1. "Last, First Middle..."  — Master graduate-studies feed and Zotero
+  //   2. "First Middle Last"      — some legacy scholar-profile entries
+  //   3. "Last, First"            — trivial 2-token comma form
+  //   4. "First Last"             — already-flipped
+  //   5. "Asesela D. (Asesela Drekeivalu) Ravuvu" — parenthetical variant
+  //
+  // Compound / hyphenated surnames (e.g. "Bukarau-Kitolelei",
+  // "Tausere-Tiko") are preserved by consulting the scholar-profile
+  // last-name index built by _rebuildShortenIndex.
   function shortenScholarName(full) {
     if (typeof full !== 'string') return '';
     const s = full.trim();
@@ -2091,45 +2116,77 @@
     _rebuildShortenIndex();
     const cached = _shortenNameCache.hits.get(s);
     if (cached !== undefined) return cached;
+
     // Strip parenthetical name-variants like "Asesela D. (Asesela Drekeivalu)
-    // Ravuvu" — the parens are metadata, not part of the person's display name.
+    // Ravuvu" — the parens are metadata, not part of the display name.
     const cleaned = s.replace(/\s*\([^)]*\)\s*/g, ' ').replace(/\s+/g, ' ').trim();
-    const toks = cleaned.split(/\s+/);
-    if (toks.length < 3) {
-      _shortenNameCache.hits.set(s, cleaned);
-      return cleaned;
-    }
-    const first = toks[0];
-    let last  = toks[toks.length - 1];
-    let middleTokens = toks.slice(1, -1);
-    // Compound-surname absorb: look for the longest trailing group of tokens
-    // (up to 3) that matches a known scholar-profile surname when hyphens/
-    // spaces are normalized away. So "Tausere Tiko" → "Tausere-Tiko" (2 tokens
-    // absorbed as one compound last name).
-    const normalize = x => String(x || '').toLowerCase().replace(/[\s\-]+/g, '');
-    for (let take = Math.min(3, middleTokens.length + 1); take >= 2; take--) {
-      const candidate = toks.slice(toks.length - take).join(' ');
-      if (_shortenNameCache.lastnames.has(normalize(candidate))) {
-        // Reconstruct the display form: prefer the profile's canonical form
-        // (hyphenated) when we can find it, so the popup renders exactly like
-        // the scholar card.
-        let display = candidate;
-        _shortenNameCache.profileMap.forEach(p => {
-          if (p && p.last && normalize(p.last) === normalize(candidate)) {
-            display = p.last;
-          }
-        });
-        last = display;
-        middleTokens = toks.slice(1, toks.length - take);
-        break;
+
+    const normalize = x => String(x || '').toLowerCase().replace(/[\s\-.]+/g, '');
+
+    let first = '';
+    let last  = '';
+
+    const commaIdx = cleaned.indexOf(',');
+    if (commaIdx !== -1) {
+      // Comma form: "Last, First Middle...". Last is everything before the
+      // comma (may itself be multi-token or hyphenated); first is the first
+      // token after the comma.
+      const beforeComma = cleaned.slice(0, commaIdx).trim();
+      const afterComma  = cleaned.slice(commaIdx + 1).trim();
+      last = beforeComma;
+      const rest = afterComma.split(/\s+/).filter(Boolean);
+      // Skip leading tokens that are just an initial ("S.", "S") so
+      // "Bukarau-Kitolelei, S. Vilikia" resolves to first="Vilikia" — but
+      // real 2-letter+ first names win. In practice the Master feed always
+      // gives the FULL first name after the comma, so this only guards
+      // pathological rows.
+      first = rest.find(t => t.replace(/\W+/g, '').length >= 2) || rest[0] || '';
+    } else {
+      // No comma: "First Middle Last" or "First Last".
+      const toks = cleaned.split(/\s+/).filter(Boolean);
+      if (toks.length === 0) {
+        _shortenNameCache.hits.set(s, cleaned);
+        return cleaned;
+      }
+      if (toks.length === 1) {
+        _shortenNameCache.hits.set(s, toks[0]);
+        return toks[0];
+      }
+      first = toks[0];
+      last  = toks[toks.length - 1];
+      // Compound-surname absorb: try 2-token and 3-token trailing candidates
+      // against the profile last-name index so "Tausere Tiko" → "Tausere-Tiko".
+      for (let take = Math.min(3, toks.length - 1); take >= 2; take--) {
+        const candidate = toks.slice(toks.length - take).join(' ');
+        if (_shortenNameCache.lastnames.has(normalize(candidate))) {
+          let display = candidate;
+          _shortenNameCache.profileMap.forEach(p => {
+            if (p && p.last && normalize(p.last) === normalize(candidate)) {
+              display = p.last;
+            }
+          });
+          last = display;
+          break;
+        }
       }
     }
-    const initials = middleTokens.map(t => {
-      // Grab the first alphanumeric character. "T." → "T", "T" → "T".
-      const m = t.match(/[\p{L}\p{N}]/u);
-      return m ? (m[0].toUpperCase() + '.') : '';
-    }).filter(Boolean).join('');
-    const out = initials ? `${first} ${initials} ${last}` : `${first} ${last}`;
+
+    // Prefer the canonical hyphenated form of the surname when a profile
+    // entry matches (works for both comma and non-comma paths).
+    if (last) {
+      const normLast = normalize(last);
+      if (_shortenNameCache.lastnames.has(normLast)) {
+        _shortenNameCache.profileMap.forEach(p => {
+          if (p && p.last && normalize(p.last) === normLast) last = p.last;
+        });
+      }
+    }
+
+    // Strip any lingering trailing punctuation on the first name
+    // ("Vilikia." → "Vilikia").
+    first = first.replace(/[.,;]+$/g, '');
+
+    const out = (first && last) ? `${first} ${last}` : (first || last || cleaned);
     _shortenNameCache.hits.set(s, out);
     return out;
   }
@@ -2150,19 +2207,21 @@
   // Build the shared popup HTML for a worldPoint. Split into PhD / Masters /
   // Other sections, each with the blue/black alternating scholar list.
   //
-  // Scholar name ordering inside each section: most-recent graduation year
-  // first, oldest last. Names with no year drop to the bottom; ties are
-  // broken alphabetically so the ordering is stable and readable. The year
-  // comes from lookupScholarThesisForPoint() so it's the same thesis year
-  // shown in the hover-detail slot.
-  function sortScholarsByYearDesc(names, point) {
+  // Scholar name ordering inside each section: EARLIEST graduation year
+  // first, most-recent last (per Ron 2026-08-25). Names with no year drop
+  // to the bottom; ties are broken alphabetically so the ordering is stable
+  // and readable. The year comes from lookupScholarThesisForPoint() so it's
+  // the same thesis year shown in the hover-detail slot.
+  function sortScholarsByYearAsc(names, point) {
     if (!Array.isArray(names) || names.length <= 1) return names || [];
     return names.slice().sort((a, b) => {
       const ra = lookupScholarThesisForPoint(a, point);
       const rb = lookupScholarThesisForPoint(b, point);
-      const ya = ra && Number(ra.year) ? Number(ra.year) : -Infinity;
-      const yb = rb && Number(rb.year) ? Number(rb.year) : -Infinity;
-      if (ya !== yb) return yb - ya; // newest first
+      // Names with no year sort AFTER named years; use +Infinity so they
+      // land at the bottom regardless of ascending direction.
+      const ya = ra && Number(ra.year) ? Number(ra.year) :  Infinity;
+      const yb = rb && Number(rb.year) ? Number(rb.year) :  Infinity;
+      if (ya !== yb) return ya - yb; // earliest first
       return String(a).localeCompare(String(b));
     });
   }
@@ -2170,9 +2229,9 @@
   function buildWorldPopupHtml(p) {
     const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
     const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
-    const phdSorted     = sortScholarsByYearDesc(p.phdScholars, p);
-    const mastersSorted = sortScholarsByYearDesc(p.mastersScholars, p);
-    const otherSorted   = sortScholarsByYearDesc(p.unknownScholars || [], p);
+    const phdSorted     = sortScholarsByYearAsc(p.phdScholars, p);
+    const mastersSorted = sortScholarsByYearAsc(p.mastersScholars, p);
+    const otherSorted   = sortScholarsByYearAsc(p.unknownScholars || [], p);
     const sections = [];
     if (phdSorted.length) {
       sections.push(
@@ -2254,6 +2313,91 @@
     return rec.phd || rec.masters || (rec.all && rec.all[0]) || null;
   }
 
+  // Look up a scholar profile record by the graduate-studies-feed name.
+  // Handles the several key shapes used by scholar-profiles.json:
+  //   1. Direct "First Last" hit
+  //   2. Alias map ("Tiko, Lavinia" → "Tausere-Tiko, Lavinia")
+  //   3. Flipped comma form "Last, First (Middle)"
+  //   4. Collapsed first-token form ("Kuridrani, Litiana")
+  function _lookupScholarProfile(name) {
+    const map = state.scholarProfilesByName;
+    if (!map || !name) return null;
+    const aliases = state.nameAliases || new Map();
+    const resolveAlias = k => aliases.get(k) || k;
+    let hit = map.get(name) || map.get(resolveAlias(name));
+    if (hit) return hit;
+    // Feed shape may already be "Last, First" — also try flipping back to
+    // "First Last" for direct-hit profiles keyed that way.
+    const commaIdx = String(name).indexOf(',');
+    if (commaIdx !== -1) {
+      const last = name.slice(0, commaIdx).trim();
+      const rest = name.slice(commaIdx + 1).trim();
+      const firstTok = rest.split(/\s+/)[0] || '';
+      const asFirstLast = firstTok ? `${firstTok} ${last}` : last;
+      hit = map.get(asFirstLast) || map.get(resolveAlias(asFirstLast));
+      if (hit) return hit;
+    }
+    const parts = String(name).trim().split(/\s+/);
+    if (parts.length >= 2) {
+      const last  = parts[parts.length - 1];
+      const first = parts.slice(0, -1).join(' ');
+      const lastFirst = `${last}, ${first}`;
+      hit = map.get(lastFirst) || map.get(resolveAlias(lastFirst));
+      if (hit) return hit;
+      const firstTok = parts[0];
+      const lastFirstTok = `${last}, ${firstTok}`;
+      hit = map.get(lastFirstTok) || map.get(resolveAlias(lastFirstTok));
+      if (hit) return hit;
+    }
+    return null;
+  }
+
+  // Build the inner HTML for the rich scholar-detail card. Shared between
+  // the map popup's inline detail slot AND the floating hover card that the
+  // uni-detail scholar table shows. Format (Ron 2026-08-25):
+  //   First Last (PhD): 2021
+  //   Naduri vlg, Macuata Province.       [terracotta — paternal geography]
+  //   Thesis title in italics
+  // Returns '' when we have nothing useful to show.
+  function renderScholarDetailHTML(nm, point) {
+    const rec = lookupScholarThesisForPoint(nm, point);
+    if (!rec) return '';
+    const title = rec.title || '(untitled)';
+    const year  = rec.year  || '';
+    const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
+    const profile = _lookupScholarProfile(nm) || {};
+    // Identity geography is strictly paternal. See
+    // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
+    const village  = (profile.paternalVillage  || '').trim();
+    const island   = (profile.paternalIsland   || '').trim();
+    const province = (profile.paternalProvince || '').trim();
+    const slug     = (profile.slug || '').trim();
+    let villageLine = '';
+    const geoLabel = formatScholarGeography(village, island, province);
+    if (geoLabel) {
+      const label = escapeHtml(geoLabel);
+      villageLine = slug
+        ? `<div class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></div>`
+        : `<div class="db-popup-scholar-detail__village">${label}</div>`;
+    }
+    const photoHtml = profile.photo
+      ? `<div class="db-popup-scholar-detail__photo" style="background-image:url('${escapeAttr(profile.photo)}')" aria-hidden="true"></div>`
+      : '';
+    // Name / degree / year row ("First Last (PhD): 2021").
+    const nameLabel = escapeHtml(shortenScholarName(nm));
+    const nameLine  = year
+      ? `${nameLabel} <span class="db-popup-scholar-detail__stage">(${level})</span>: <span class="db-popup-scholar-detail__year">${escapeHtml(String(year))}</span>`
+      : `${nameLabel} <span class="db-popup-scholar-detail__stage">(${level})</span>`;
+    return (
+      photoHtml +
+      `<div class="db-popup-scholar-detail__body">` +
+        `<div class="db-popup-scholar-detail__name">${nameLine}</div>` +
+        villageLine +
+        `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
+      `</div>`
+    );
+  }
+
   // Wire mouseover / mouseout on scholar-name spans inside an open Leaflet
   // popup so hovering a name reveals the thesis title + year in the detail
   // slot at the top of the popup. Point context is passed so we can pick the
@@ -2266,91 +2410,13 @@
     names.forEach(nameEl => {
       nameEl.addEventListener('mouseenter', () => {
         const nm = nameEl.getAttribute('data-scholar-name');
-        const rec = lookupScholarThesisForPoint(nm, point);
-        if (!rec) {
+        const html = renderScholarDetailHTML(nm, point);
+        if (!html) {
           detail.classList.remove('is-active');
           detail.innerHTML = '';
           return;
         }
-        const title = rec.title || '(untitled)';
-        const year = rec.year || '';
-        const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
-        // Pull the same profile record the rest of the site uses for scholar
-        // cards, so the popup's photo / village / province stay in sync with
-        // every other view (main database, admin editor, panel filters). The
-        // profile map is keyed by "Last, First" (from scholar-profiles.json)
-        // but the popup receives names in "First Last" form (from the
-        // graduate-studies worldPoints feed), so we normalize before the
-        // lookup. Try direct hit first, then flip "First Last" → "Last, First",
-        // then the same with only the first-token of the given-names collapsed
-        // ("Litiana N Tuilaselase Kuridrani" → "Kuridrani, Litiana") to match
-        // the stripped-key fallback that scholarProfilesByName also indexes.
-        function lookupProfile(name) {
-          const map = state.scholarProfilesByName;
-          if (!map || !name) return null;
-          const aliases = state.nameAliases || new Map();
-          // Try alias resolution on the "Last, First" form first: many popup
-          // names arrive as "Lavinia Sauleca Tausere Tiko" while the profile
-          // is keyed "Tausere-Tiko, Lavinia" — the admin's alias map bridges
-          // that (e.g. "Tiko, Lavinia" → "Tausere-Tiko, Lavinia").
-          function resolveAlias(k) {
-            return aliases.get(k) || k;
-          }
-          let hit = map.get(name) || map.get(resolveAlias(name));
-          if (hit) return hit;
-          const parts = String(name).trim().split(/\s+/);
-          if (parts.length >= 2) {
-            const last  = parts[parts.length - 1];
-            const first = parts.slice(0, -1).join(' ');
-            const lastFirst = `${last}, ${first}`;
-            hit = map.get(lastFirst) || map.get(resolveAlias(lastFirst));
-            if (hit) return hit;
-            // Stripped: only the first given name.
-            const firstTok = parts[0];
-            const lastFirstTok = `${last}, ${firstTok}`;
-            hit = map.get(lastFirstTok) || map.get(resolveAlias(lastFirstTok));
-            if (hit) return hit;
-          }
-          return null;
-        }
-        const profile = lookupProfile(nm) || {};
-        // Identity geography must be strictly paternal. See
-        // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
-        const village  = (profile.paternalVillage  || '').trim();
-        const island   = (profile.paternalIsland   || '').trim();
-        const province = (profile.paternalProvince || '').trim();
-        const slug     = (profile.slug || '').trim();
-        // Village-line chip. V2 canonical format is
-        //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
-        //   'Naduri vlg, Macuata Province.'         (Viti Levu / Vanua Levu — island suppressed)
-        // formatScholarGeography() handles island suffix normalization
-        // ('Moala' → 'Moala Is', never 'Moala Is Is'), the Viti/Vanua Levu
-        // suppression, placeholder scrubbing, and every missing-field
-        // fallback. Chip is omitted entirely when the string is empty.
-        let villageLine = '';
-        const geoLabel = formatScholarGeography(village, island, province);
-        if (geoLabel) {
-          const label = escapeHtml(geoLabel);
-          villageLine = slug
-            ? `<div class="db-popup-scholar-detail__village"><a href="#scholar=${encodeURIComponent(slug)}">${label}</a></div>`
-            : `<div class="db-popup-scholar-detail__village">${label}</div>`;
-        }
-        // Photo column: only rendered when the profile actually has a photo
-        // URL. Skipping the div when there's no photo prevents the empty
-        // grey placeholder from showing next to scholars whose profile hasn't
-        // been photographed yet (or isn't in scholar-profiles.json at all).
-        // The photo is CSS-hidden inline and only shown in fullscreen (see
-        // .db-popup-scholar-detail__photo display rule).
-        const photoHtml = profile.photo
-          ? `<div class="db-popup-scholar-detail__photo" style="background-image:url('${escapeAttr(profile.photo)}')" aria-hidden="true"></div>`
-          : '';
-        detail.innerHTML =
-          photoHtml +
-          `<div class="db-popup-scholar-detail__body">` +
-            `<div class="db-popup-scholar-detail__name">${escapeHtml(shortenScholarName(nm))} \u2013 ${level}${year ? ' \u2013 <span class="db-popup-scholar-detail__year">' + year + '</span>' : ''}</div>` +
-            villageLine +
-            `<div class="db-popup-scholar-detail__thesis">${escapeHtml(title)}</div>` +
-          `</div>`;
+        detail.innerHTML = html;
         detail.classList.add('is-active');
       });
       nameEl.addEventListener('mouseleave', () => {
@@ -2358,6 +2424,94 @@
         detail.innerHTML = '';
       });
     });
+  }
+
+  // Floating hover card used by the uni-detail scholar table (below the
+  // country/uni map). Reuses the same detail HTML the map popup renders,
+  // but positions it as a fixed-position tooltip near the hovered name.
+  // The card element is created lazily on first use and reused; a data-*
+  // attribute keeps successive wireups from double-binding the same host.
+  let _hoverCardEl = null;
+  function _ensureHoverCardEl() {
+    if (_hoverCardEl && document.body.contains(_hoverCardEl)) return _hoverCardEl;
+    const el = document.createElement('div');
+    el.className = 'db-scholar-hover-card db-popup-scholar-detail';
+    el.setAttribute('data-scholar-hover-card', '');
+    el.style.position = 'fixed';
+    el.style.zIndex   = '9999';
+    el.style.maxWidth = '360px';
+    el.style.pointerEvents = 'none';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+    _hoverCardEl = el;
+    return el;
+  }
+  function _placeHoverCard(card, evt) {
+    const pad = 14;
+    const vw = window.innerWidth  || document.documentElement.clientWidth  || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    // Measure card by briefly making it visible off-screen.
+    card.style.left = '-9999px';
+    card.style.top  = '-9999px';
+    card.style.display = 'flex';
+    const rect = card.getBoundingClientRect();
+    let x = evt.clientX + pad;
+    let y = evt.clientY + pad;
+    if (x + rect.width  + pad > vw) x = Math.max(pad, evt.clientX - rect.width  - pad);
+    if (y + rect.height + pad > vh) y = Math.max(pad, evt.clientY - rect.height - pad);
+    card.style.left = `${Math.round(x)}px`;
+    card.style.top  = `${Math.round(y)}px`;
+  }
+  function wireScholarHoverCard(hostEl, point) {
+    if (!hostEl) return;
+    // Idempotent: replace host to strip previously-bound listeners.
+    if (hostEl.dataset.hoverCardWired === '1') {
+      // Clone and swap so any prior listeners get dropped along with the node.
+      const fresh = hostEl.cloneNode(true);
+      hostEl.parentNode.replaceChild(fresh, hostEl);
+      hostEl = fresh;
+    }
+    hostEl.dataset.hoverCardWired = '1';
+    const card = _ensureHoverCardEl();
+    const onEnter = (evt) => {
+      const t = evt.target;
+      if (!t || !t.classList || !t.classList.contains('db-scholar-name')) return;
+      const nm = t.getAttribute('data-scholar-name');
+      if (!nm) return;
+      const html = renderScholarDetailHTML(nm, point);
+      if (!html) { card.style.display = 'none'; card.classList.remove('is-active'); return; }
+      card.innerHTML = html;
+      // Force the photo column visible in the floating card even though the
+      // world map isn't in fullscreen (the CSS rule that gates the photo is
+      // scoped to .db-map-world-wrap.is-fullscreen).
+      const photoEl = card.querySelector('.db-popup-scholar-detail__photo');
+      if (photoEl) photoEl.style.display = 'block';
+      card.classList.add('is-active');
+      _placeHoverCard(card, evt);
+    };
+    const onMove = (evt) => {
+      if (card.style.display === 'none') return;
+      const t = evt.target;
+      if (!t || !t.classList || !t.classList.contains('db-scholar-name')) return;
+      _placeHoverCard(card, evt);
+    };
+    const onLeave = (evt) => {
+      const t = evt.target;
+      if (!t || !t.classList || !t.classList.contains('db-scholar-name')) return;
+      card.style.display = 'none';
+      card.classList.remove('is-active');
+      card.innerHTML = '';
+    };
+    hostEl.addEventListener('mouseover', onEnter);
+    hostEl.addEventListener('mousemove', onMove);
+    hostEl.addEventListener('mouseout',  onLeave);
+    // Also hide on scroll so the card can't get stranded off-target.
+    window.addEventListener('scroll', () => {
+      if (card.style.display !== 'none') {
+        card.style.display = 'none';
+        card.classList.remove('is-active');
+      }
+    }, { passive: true });
   }
 
   // With autoClose:false the popup no longer disappears on its own — we
