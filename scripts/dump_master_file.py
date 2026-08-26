@@ -36,6 +36,7 @@ SHEETS = [
     ("ICCR Cohort Audit", None),
     ("Publications", 4),  # row 3 is group labels, row 4 is real header
     ("Authorship", 4),
+    ("Researcher Authorship", 4),
     ("Degree Publication Metrics", None),
     ("Research Geography", 4),
     ("Institution Publication Requirements", None),

@@ -266,6 +266,28 @@ def extract_grad_degrees(rows: list[list]) -> list[dict]:
     return sanitize(dicts, GRAD_DEGREE_PUBLIC_FIELDS)
 
 
+def extract_part_itaukei_ids(rows: list[list]) -> set[str]:
+    """Return the set of Scholar IDs listed on the Part-iTaukei sheet.
+
+    iTaukei identity is patrilineal. Scholars whose father is not iTaukei
+    (mother is) are recorded here and must be excluded from every V2
+    dashboard surface: map popups, university drilldowns, scholar tables,
+    KPI counts, aggregates, publications, discipline breakdowns, and
+    mobility flows. The transformer only needs the Scholar ID column.
+    """
+    _, dicts = rows_to_dicts(
+        rows,
+        SHEETS["Part-iTaukei"]["header_row"],
+        SHEETS["Part-iTaukei"]["first_data"],
+    )
+    ids: set[str] = set()
+    for d in dicts:
+        sid = str(d.get("Scholar ID") or "").strip()
+        if sid:
+            ids.add(sid)
+    return ids
+
+
 def extract_mobility(rows: list[list]) -> list[dict]:
     _, dicts = rows_to_dicts(
         rows,
@@ -546,16 +568,41 @@ def run(
     log = lambda msg: print(f"[{time.strftime('%H:%M:%S')}] {msg}", flush=True)
 
     log("Fetching Scholars...")
-    scholars = extract_scholars(fetch_fn("Scholars"))
-    log(f"  → {len(scholars)} scholars")
+    scholars_all = extract_scholars(fetch_fn("Scholars"))
+    log(f"  → {len(scholars_all)} scholars (pre Part-iTaukei filter)")
+
+    log("Fetching Part-iTaukei exclusion set...")
+    part_itaukei_ids = extract_part_itaukei_ids(fetch_fn("Part-iTaukei"))
+    log(f"  → {len(part_itaukei_ids)} Part-iTaukei Scholar IDs excluded")
+    # iTaukei identity is patrilineal. Scholars whose father is not iTaukei
+    # are stored on the Part-iTaukei sheet and must be excluded from every
+    # V2 dashboard surface. Some of these IDs never appear on the main
+    # Scholars sheet but do appear on Graduate Degrees (e.g. Plange,
+    # Singh) — so we filter grad_degrees and authorship by ID as well.
+    scholars = [s for s in scholars_all if s.get("Scholar ID") not in part_itaukei_ids]
+    if len(scholars) != len(scholars_all):
+        log(f"  → filtered Scholars: {len(scholars_all)} → {len(scholars)}")
 
     log("Fetching Publications...")
     publications = extract_publications(fetch_fn("Publications"))
     log(f"  → {len(publications)} publications")
+    # Defensive scrub: strip Part-iTaukei IDs from lead/co-author ID fields.
+    # `Linked iTaukei Scholar Count` is recomputed off the filtered Authorship
+    # bridge downstream, so we only need to remove ID references here.
+    if part_itaukei_ids:
+        for p in publications:
+            lead = str(p.get("Auth_Lead Scholar ID") or "").strip()
+            if lead in part_itaukei_ids:
+                p["Auth_Lead Scholar ID"] = ""
+            co = str(p.get("Co-Auth_Scholar IDs") or "").strip()
+            if co:
+                kept = [x.strip() for x in co.split(";") if x.strip() and x.strip() not in part_itaukei_ids]
+                p["Co-Auth_Scholar IDs"] = "; ".join(kept)
 
     log("Fetching Authorship bridge...")
-    authorship = extract_authorship(fetch_fn("Authorship"))
-    log(f"  → {len(authorship)} authorship links")
+    authorship_all = extract_authorship(fetch_fn("Authorship"))
+    authorship = [a for a in authorship_all if a.get("Scholar ID") not in part_itaukei_ids]
+    log(f"  → {len(authorship)} authorship links (pre-filter {len(authorship_all)})")
 
     log("Fetching Researcher Authorship bridge...")
     researcher_authorship = extract_researcher_authorship(
@@ -564,16 +611,22 @@ def run(
     log(f"  → {len(researcher_authorship)} researcher authorship links")
 
     log("Fetching Graduate Degrees...")
-    grad_degrees = extract_grad_degrees(fetch_fn("Graduate Degrees"))
-    log(f"  → {len(grad_degrees)} degree episodes")
+    grad_degrees_all = extract_grad_degrees(fetch_fn("Graduate Degrees"))
+    grad_degrees = [g for g in grad_degrees_all if g.get("Scholar ID") not in part_itaukei_ids]
+    log(f"  → {len(grad_degrees)} degree episodes (pre-filter {len(grad_degrees_all)})")
 
     log("Fetching M>PhD mobility...")
-    mobility = extract_mobility(fetch_fn("M>PhD mobility"))
-    log(f"  → {len(mobility)} mobility records")
+    mobility_all = extract_mobility(fetch_fn("M>PhD mobility"))
+    mobility = [m for m in mobility_all if m.get("Scholar ID") not in part_itaukei_ids]
+    log(f"  → {len(mobility)} mobility records (pre-filter {len(mobility_all)})")
 
     log("Fetching Research Geography...")
-    geography = extract_geography(fetch_fn("Research Geography"))
-    log(f"  → {len(geography)} geography records")
+    geography_all = extract_geography(fetch_fn("Research Geography"))
+    geography = [
+        g for g in geography_all
+        if str(g.get("Scholar ID (optional)") or "").strip() not in part_itaukei_ids
+    ]
+    log(f"  → {len(geography)} geography records (pre-filter {len(geography_all)})")
 
     log("Computing aggregates...")
     aggregates = compute_aggregates(

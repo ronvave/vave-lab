@@ -1717,9 +1717,9 @@
           // alphabetical (mirrors the map-popup ordering so the two surfaces
           // stay consistent).
           const groups = [
-            { key: 'phd',     label: 'PhD',     cls: 'is-phd',     names: sortScholarsByYearAsc(uni.phdScholars, uni) },
-            { key: 'masters', label: 'Masters', cls: 'is-masters', names: sortScholarsByYearAsc(uni.mastersScholars, uni) },
-            { key: 'other',   label: 'Other',   cls: 'is-other',   names: sortScholarsByYearAsc(uni.unknownScholars || [], uni) }
+            { key: 'phd',     label: 'PhD',     cls: 'is-phd',     names: sortScholarsByYearAsc(uni.phdScholars, uni, 'phd') },
+            { key: 'masters', label: 'Masters', cls: 'is-masters', names: sortScholarsByYearAsc(uni.mastersScholars, uni, 'masters') },
+            { key: 'other',   label: 'Other',   cls: 'is-other',   names: sortScholarsByYearAsc(uni.unknownScholars || [], uni, 'other') }
           ];
           groups.forEach(g => {
             if (!g.names.length) return;
@@ -1727,7 +1727,7 @@
             wrap.className = `db-scholar-group ${g.cls}`;
             wrap.innerHTML =
               `<h5>${g.label} (${g.names.length})</h5>` +
-              renderScholarNameList(g.names);
+              renderScholarNameList(g.names, g.key);
             scholarsHost.appendChild(wrap);
           });
           // Wire the same rich hover card the map popup uses so hovering a
@@ -2191,7 +2191,11 @@
     return out;
   }
 
-  function renderScholarNameList(names) {
+  // `sectionLevel` — optional 'phd' | 'masters' | 'other'. When present,
+  // each rendered span is tagged with a data-scholar-section attribute
+  // so the hover card can surface the level-correct thesis record for
+  // scholars who hold both a Master's and a PhD at the same university.
+  function renderScholarNameList(names, sectionLevel) {
     if (!names || !names.length) return '';
     const parts = names.map((n, i) => {
       const cls = (i % 2 === 0) ? 'is-blue' : 'is-dark';
@@ -2199,7 +2203,8 @@
       // look up the person's thesis + reveal the detail slot, and so search
       // still matches on middle names. Only the visible text is shortened.
       const shown = shortenScholarName(n);
-      return `<span class="db-scholar-name ${cls}" data-scholar-name="${escapeHtml(n)}">${escapeHtml(shown)}</span>`;
+      const sectionAttr = sectionLevel ? ` data-scholar-section="${escapeHtml(sectionLevel)}"` : '';
+      return `<span class="db-scholar-name ${cls}" data-scholar-name="${escapeHtml(n)}"${sectionAttr}>${escapeHtml(shown)}</span>`;
     });
     return `<span class="db-scholar-list">${parts.join('<span class="db-scholar-sep">;</span>')}</span>`;
   }
@@ -2212,11 +2217,11 @@
   // to the bottom; ties are broken alphabetically so the ordering is stable
   // and readable. The year comes from lookupScholarThesisForPoint() so it's
   // the same thesis year shown in the hover-detail slot.
-  function sortScholarsByYearAsc(names, point) {
+  function sortScholarsByYearAsc(names, point, sectionLevel) {
     if (!Array.isArray(names) || names.length <= 1) return names || [];
     return names.slice().sort((a, b) => {
-      const ra = lookupScholarThesisForPoint(a, point);
-      const rb = lookupScholarThesisForPoint(b, point);
+      const ra = lookupScholarThesisForPoint(a, point, sectionLevel);
+      const rb = lookupScholarThesisForPoint(b, point, sectionLevel);
       // Names with no year sort AFTER named years; use +Infinity so they
       // land at the bottom regardless of ascending direction.
       const ya = ra && Number(ra.year) ? Number(ra.year) :  Infinity;
@@ -2229,26 +2234,29 @@
   function buildWorldPopupHtml(p) {
     const total = (p.phdScholars.length + p.mastersScholars.length + (p.unknownScholars || []).length);
     const color = total >= 5 ? '#7a1419' : total >= 3 ? '#c93e50' : total >= 2 ? '#e6550d' : '#fd8d3c';
-    const phdSorted     = sortScholarsByYearAsc(p.phdScholars, p);
-    const mastersSorted = sortScholarsByYearAsc(p.mastersScholars, p);
-    const otherSorted   = sortScholarsByYearAsc(p.unknownScholars || [], p);
+    // Pass sectionLevel so scholars who hold BOTH a Master's AND a PhD at
+    // the same university sort by the correct year in each section (e.g.
+    // Ponipate Rokolekutu → 2007 in Masters, 2017 in PhD).
+    const phdSorted     = sortScholarsByYearAsc(p.phdScholars, p, 'phd');
+    const mastersSorted = sortScholarsByYearAsc(p.mastersScholars, p, 'masters');
+    const otherSorted   = sortScholarsByYearAsc(p.unknownScholars || [], p, 'other');
     const sections = [];
     if (phdSorted.length) {
       sections.push(
         `<div class="db-popup-scholar-header is-phd">PhD (${phdSorted.length}):</div>` +
-        renderScholarNameList(phdSorted)
+        renderScholarNameList(phdSorted, 'phd')
       );
     }
     if (mastersSorted.length) {
       sections.push(
         `<div class="db-popup-scholar-header is-masters">Masters (${mastersSorted.length}):</div>` +
-        renderScholarNameList(mastersSorted)
+        renderScholarNameList(mastersSorted, 'masters')
       );
     }
     if (otherSorted.length) {
       sections.push(
         `<div class="db-popup-scholar-header is-other">Other (${otherSorted.length}):</div>` +
-        renderScholarNameList(otherSorted)
+        renderScholarNameList(otherSorted, 'other')
       );
     }
     // Detail slot appears between the header row and the scholar sections.
@@ -2278,7 +2286,14 @@
   // possible, so hovering "Ron Vave" in the University of Hawaii popup shows
   // his UH PhD, not (say) his USP Masters. Falls back to the first record if
   // no exact match is found.
-  function lookupScholarThesisForPoint(name, point) {
+  //
+  // `sectionLevel` — optional 'phd' | 'masters' | 'other'. When set, the
+  // lookup is scoped to the record whose level matches the section the
+  // caller is rendering. Critical for scholars who hold BOTH a Master's
+  // AND a PhD at the same university (e.g. Ponipate Rokolekutu at UH):
+  // the Masters section must surface his 2007 Masters, not his 2017 PhD,
+  // so the map popup chronological sort and hover card year both line up.
+  function lookupScholarThesisForPoint(name, point, sectionLevel) {
     const grad = state.graduateStudies;
     if (!grad || !grad.scholars) return null;
     const rec = grad.scholars[name];
@@ -2296,9 +2311,18 @@
       if (wantsMasters && t.level === 'masters') return true;
       return false;
     };
+    const sectionMatches = (t) => {
+      if (!sectionLevel) return false;
+      return t.level === sectionLevel;
+    };
     // Prefer records whose university matches this point AND whose level
-    // matches the user's dropdown pick, if any.
+    // matches the section we are rendering, then the user's dropdown pick,
+    // then any match at this university.
     if (rec.all && point) {
+      if (sectionLevel) {
+        const match = rec.all.find(t => t.university === point.university && t.country === point.country && sectionMatches(t));
+        if (match) return match;
+      }
       if (preferredLevel) {
         const match = rec.all.find(t => t.university === point.university && t.country === point.country && preferMatches(t));
         if (match) return match;
@@ -2306,6 +2330,8 @@
       const match = rec.all.find(t => t.university === point.university && t.country === point.country);
       if (match) return match;
     }
+    if (sectionLevel === 'phd'     && rec.phd)     return rec.phd;
+    if (sectionLevel === 'masters' && rec.masters) return rec.masters;
     if (preferredLevel) {
       if (/phd/i.test(preferredLevel) && rec.phd) return rec.phd;
       if (/master/i.test(preferredLevel) && rec.masters) return rec.masters;
@@ -2359,8 +2385,8 @@
   //   Naduri vlg, Macuata Province.       [terracotta — paternal geography]
   //   Thesis title in italics
   // Returns '' when we have nothing useful to show.
-  function renderScholarDetailHTML(nm, point) {
-    const rec = lookupScholarThesisForPoint(nm, point);
+  function renderScholarDetailHTML(nm, point, sectionLevel) {
+    const rec = lookupScholarThesisForPoint(nm, point, sectionLevel);
     if (!rec) return '';
     const title = rec.title || '(untitled)';
     const year  = rec.year  || '';
@@ -2410,7 +2436,8 @@
     names.forEach(nameEl => {
       nameEl.addEventListener('mouseenter', () => {
         const nm = nameEl.getAttribute('data-scholar-name');
-        const html = renderScholarDetailHTML(nm, point);
+        const sectionLevel = nameEl.getAttribute('data-scholar-section') || null;
+        const html = renderScholarDetailHTML(nm, point, sectionLevel);
         if (!html) {
           detail.classList.remove('is-active');
           detail.innerHTML = '';
@@ -2478,7 +2505,8 @@
       if (!t || !t.classList || !t.classList.contains('db-scholar-name')) return;
       const nm = t.getAttribute('data-scholar-name');
       if (!nm) return;
-      const html = renderScholarDetailHTML(nm, point);
+      const sectionLevel = t.getAttribute('data-scholar-section') || null;
+      const html = renderScholarDetailHTML(nm, point, sectionLevel);
       if (!html) { card.style.display = 'none'; card.classList.remove('is-active'); return; }
       card.innerHTML = html;
       // Force the photo column visible in the floating card even though the

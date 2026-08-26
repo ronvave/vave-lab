@@ -28,6 +28,12 @@ SPREADSHEET_HUMAN_URL = (
 
 SHEETS = {
     "Scholars": {"header_row": 4, "first_data": 5},
+    # Part-iTaukei: scholars whose father is NOT iTaukei (mother is). Because
+    # iTaukei identity is patrilineal, these are excluded from every V2
+    # dashboard surface (map popups, uni-detail lists, KPIs, aggregates,
+    # publications, discipline breakdowns, etc.). The transformer reads this
+    # sheet only to build the exclusion set of Scholar IDs.
+    "Part-iTaukei": {"header_row": 4, "first_data": 5},
     "Graduate Degrees": {"header_row": 4, "first_data": 5},
     "Non-Completed Degrees": {"header_row": 4, "first_data": 5},
     "Scholarships & Funding": {"header_row": 4, "first_data": 5},
