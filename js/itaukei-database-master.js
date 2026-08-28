@@ -63,7 +63,7 @@
     thesisPhd:      '#228B22',   // forest green — PhD
     thesisMasters:  '#8FBC8F',   // dark sea green — lighter forest, Masters
     thesisUnknown:  '#4CAF50',   // material green — unclassified thesis
-    journalArticle: '#0e7490',
+    journalArticle: '#B8860B',
     // Book Chapter uses a lighter tint of the same burgundy so Book vs Book
     // Chapter is visually distinguishable in stacks and legends (parallel to
     // the PhD dark-green vs Master's light-green relationship). Book keeps
@@ -8231,7 +8231,7 @@
 
   // Type styling matches the Panel B/C stacked-histogram palette.
   const TYPE_STYLES = {
-    journalArticle: { color: '#0e7490', bg: '#e6f3f5', border: '#a8d1d8', s: 'Journal article',  p: 'Journal articles' },
+    journalArticle: { color: '#B8860B', bg: '#f8efd6', border: '#e6c98a', s: 'Journal article',  p: 'Journal articles' },
     thesisPhd:      { color: '#228B22', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis',       p: 'PhD theses' },
     thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: 'Masters thesis',   p: 'Masters theses' },
     thesisUnknown:  { color: '#4CAF50', bg: '#eaf5ea', border: '#b8dab8', s: 'Thesis',           p: 'Theses' },

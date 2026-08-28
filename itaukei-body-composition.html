@@ -393,11 +393,16 @@ const MASTER_LUT_WOMAN = [0.0,0.00836,0.01084,0.01298,0.01511,0.01689,0.01884,0.
 const TYPES = [
   // Ordered BOTTOM -> TOP on the body (feet -> head).
   // Top-to-bottom reads: PhD, Masters, Journal, Books, Book chapters.
-  { key:"bookSection", label:"Book chapters",   color:"#A84B2F" },
-  { key:"book",        label:"Books",           color:"#FFC553" },
-  { key:"journal",     label:"Journal articles",color:"#1B474D" },  // swapped with Masters
-  { key:"masters",     label:"Masters theses",  color:"#20808D" },  // swapped with Journal (brighter teal under black PhD)
-  { key:"phd",         label:"PhD theses",      color:"#141414" }   // black (Fijians have black hair; top/head band)
+  // 2026-08-28: adopted the canonical C1 publication-type palette per Ron
+  // so every panel across the V2 dashboard uses the same fill for each type.
+  // Previous culturally-themed palette (black hair/teal body/gold belly)
+  // retired: bookSection #A84B2F, book #FFC553, journal #1B474D,
+  // masters #20808D, phd #141414.
+  { key:"bookSection", label:"Book chapters",   color:"#C08388" },  // dusty rose (C1 Book Chapter)
+  { key:"book",        label:"Books",           color:"#7a1419" },  // deep red (C1 Book)
+  { key:"journal",     label:"Journal articles",color:"#B8860B" },  // goldenrod (C1 Journal Article)
+  { key:"masters",     label:"Masters theses",  color:"#8FBC8F" },  // sage green (C1 Masters)
+  { key:"phd",         label:"PhD theses",      color:"#228B22" }   // forest green (C1 PhD)
 ];
 /* Legend shows top-to-bottom (masters first) to read naturally. */
 const LEGEND_ORDER = ["phd","masters","journal","book","bookSection"];
