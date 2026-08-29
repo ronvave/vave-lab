@@ -5985,16 +5985,17 @@
     const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
     const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
-    // Display labels use Tonga's Fefine/Tangata (never Male/Female text) per
-    // user decision; the underlying `gender` value still matches the Master
-    // sheet's Gender enum ('Male' | 'Female') for data-matching purposes
-    // (genderByScholarId lookups below), and the underlying iTaukei
-    // silhouette imagery for gender icons is kept unchanged per user decision.
+    // Tonga's Gender enum is stored on the Master sheet (and written by the
+    // Admin Panel / Apps Script) as the literal Tongan terms 'Tangata' (male)
+    // and 'Fefine' (female) per user decision -- not 'Male'/'Female' -- so
+    // `def.gender` below must match those literal stored values for the
+    // genderByScholarId lookups to actually match real data. The underlying
+    // iTaukei silhouette imagery for gender icons is kept unchanged per user decision.
     const milestoneDefinitions = [
-      { key: 'firstMaleMasters', label: "1st Tangata Master's", shortLabel: "1st tangata Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemaleMasters', label: "1st Fefine Master's", shortLabel: "1st fefine Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
-      { key: 'firstMalePhD', label: '1st Tangata PhD', shortLabel: '1st tangata PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemalePhD', label: '1st Fefine PhD', shortLabel: '1st fefine PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
+      { key: 'firstMaleMasters', label: "1st Tangata Master's", shortLabel: "1st tangata Master's", stage: 'masters', gender: 'Tangata', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemaleMasters', label: "1st Fefine Master's", shortLabel: "1st fefine Master's", stage: 'masters', gender: 'Fefine', color: '#B85450', isFemale: true },
+      { key: 'firstMalePhD', label: '1st Tangata PhD', shortLabel: '1st tangata PhD', stage: 'phd', gender: 'Tangata', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemalePhD', label: '1st Fefine PhD', shortLabel: '1st fefine PhD', stage: 'phd', gender: 'Fefine', color: '#B85450', isFemale: true }
     ];
     // Country name -> ISO-ish 2-letter code for compact milestone labels.
     // Covers every country currently in the Master-file `Country` column plus
@@ -6046,17 +6047,17 @@
     function titleFor(stage, gender) {
       if (stage === 'phd') return 'Dr.';
       if (stage === 'masters') {
-        if (gender === 'Male') return 'Mr.';
-        if (gender === 'Female') return 'Ms';
+        if (gender === 'Tangata') return 'Mr.';
+        if (gender === 'Fefine') return 'Ms';
       }
       return '';
     }
     // Milestone display line 1 (e.g. "1963: First tangata PhD"). Kept in one
     // place so we can tweak wording without editing SVG code. Display text
     // uses Fefine/Tangata (Tongan) instead of female/male; the underlying
-    // `def.gender` enum stays 'Male'/'Female' to match the Master sheet.
+    // `def.gender` enum stays 'Tangata'/'Fefine' to match the Master sheet.
     function milestoneHeadline(def) {
-      const who = def.gender === 'Male' ? 'tangata' : 'fefine';
+      const who = def.gender === 'Tangata' ? 'tangata' : 'fefine';
       const what = def.stage === 'phd' ? 'PhD' : "Masters";
       return `First ${who} ${what}`;
     }
@@ -6423,8 +6424,8 @@
       if (!activeTypeSet.has(visualType(item))) return;
       const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
       const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
-      if (gender !== 'Female' && gender !== 'Male') return;
-      const bucket = genderCountsByYear.get(year) || { Female: 0, Male: 0 };
+      if (gender !== 'Fefine' && gender !== 'Tangata') return;
+      const bucket = genderCountsByYear.get(year) || { Fefine: 0, Tangata: 0 };
       bucket[gender] += 1;
       genderCountsByYear.set(year, bucket);
     });
@@ -6434,8 +6435,8 @@
       for (let rollingYear = year - 4; rollingYear <= year; rollingYear++) {
         const bucket = genderCountsByYear.get(rollingYear);
         if (!bucket) continue;
-        female += bucket.Female;
-        male += bucket.Male;
+        female += bucket.Fefine;
+        male += bucket.Tangata;
       }
       if (female + male >= 3) rollingWomen.set(year, female / (female + male));
     }
