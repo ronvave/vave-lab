@@ -1080,6 +1080,9 @@ async function init(){
       try {
         await loadDbGate();
         if (window.dbGate && typeof window.dbGate.fetchJson === 'function'){
+          if (typeof window.dbGate.unlockEmbeddedRead === 'function'){
+            window.dbGate.unlockEmbeddedRead();
+          }
           // dbGate.boot() would show a lock screen; skip it and just try to
           // decrypt directly. If the cached passcode has been rotated the
           // fetch throws and we drop back to the empty template.

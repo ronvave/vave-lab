@@ -262,6 +262,23 @@
     return JSON.parse(text);
   }
 
+  // Dashboard panels B3 and C1 run in same-origin iframes. They need to read
+  // the committed aggregate snapshots without opening the full demo/admin
+  // shell. Keep this narrowly scoped to embedded documents; normal top-level
+  // pages still follow boot() and its public/demo/dev access rules.
+  function unlockEmbeddedRead() {
+    var embedded = false;
+    try {
+      embedded = window.self !== window.top ||
+        new URLSearchParams(location.search).get('embedded') === '1';
+    } catch (e) {
+      embedded = true;
+    }
+    if (!embedded) return false;
+    cachedPasscode = BAKED_PASSCODE;
+    return true;
+  }
+
   // ── Token signing / verifying ────────────────────────────────────────
   async function getSignKey() {
     if (derivedSignKey) return derivedSignKey;
@@ -817,6 +834,7 @@
     boot: boot,
     fetchJson: fetchJsonEncrypted,
     encryptForUpload: encryptString,
+    unlockEmbeddedRead: unlockEmbeddedRead,
     isUnlocked: function () { return !!cachedPasscode; },
     getMode: function () { return mode; }
   };

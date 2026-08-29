@@ -241,6 +241,7 @@
     body.is-embedded main { padding:0; }
     body.is-embedded .section { padding:0; }
     body.is-embedded .container { max-width:none; padding:0; }
+    body.is-embedded #wrap { width:100%; max-width:1160px; }
     /* When embedded in the dashboard, the iframe body should blend with the
        host panel's background instead of showing the standalone page's cream
        body colour. Forcing white here matches Panel B2's clean look. */
@@ -976,6 +977,9 @@ async function init(){
           s.onerror=()=>reject(new Error('Tongan data gate failed to load'));
           document.head.appendChild(s);
         });
+      }
+      if(window.dbGate && typeof window.dbGate.unlockEmbeddedRead === 'function'){
+        window.dbGate.unlockEmbeddedRead();
       }
       const [mobility, scholars] = await Promise.all([
         window.dbGate.fetchJson('data/tongan-master-mobility.json'),
