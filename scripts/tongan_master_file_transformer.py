@@ -38,8 +38,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -870,12 +872,49 @@ def run(
     log("Building Panel B2 world-points from Master Graduate Degrees...")
     excluded_md = out_dir.parent / "docs" / "b2_tongan_excluded_rows.md"
     excluded_md.parent.mkdir(exist_ok=True)
-    b2_payload = write_worldpoints(
-        grad_degrees,
-        repo=out_dir.parent,
-        out_path=out_dir / "tongan-master-worldpoints.json",
-        excluded_md_path=excluded_md,
-    )
+
+    # master_b2_worldpoints.load_uni_coords() hardcodes reading
+    # <repo>/data/world-universities.json (the shared, iTaukei-scoped,
+    # do-not-touch coordinate file — encrypted under VAVELAB_PASSCODE,
+    # which the Tongan workflow does not have). The Tongan-scoped
+    # counterpart lives at data/tongan-world-universities.json (encrypted
+    # under VAVELAB_TONGAN_PASSCODE, already decrypted to plaintext by
+    # the workflow's bootstrap step). To reuse write_worldpoints()
+    # unchanged, stage a throwaway repo dir whose data/world-universities
+    # .json is that Tongan file, and pass IT as `repo=` instead of the
+    # real repo root. This is additive-only: scripts/master_b2_worldpoints
+    # .py is never modified.
+    tongan_uni_coords_src = out_dir / "tongan-world-universities.json"
+    b2_repo = out_dir.parent
+    b2_tmp_dir = None
+    if tongan_uni_coords_src.exists():
+        b2_tmp_dir = Path(tempfile.mkdtemp(prefix="tongan-b2-repo-"))
+        (b2_tmp_dir / "data").mkdir(parents=True, exist_ok=True)
+        shutil.copy(
+            tongan_uni_coords_src,
+            b2_tmp_dir / "data" / "world-universities.json",
+        )
+        b2_repo = b2_tmp_dir
+        log(
+            f"  → using Tongan university-coordinates file "
+            f"({tongan_uni_coords_src.name}) for B2 lat/lng lookup"
+        )
+    else:
+        log(
+            "  → WARNING: data/tongan-world-universities.json not found; "
+            "B2 worldPoints will have no lat/lng (map will be empty)"
+        )
+
+    try:
+        b2_payload = write_worldpoints(
+            grad_degrees,
+            repo=b2_repo,
+            out_path=out_dir / "tongan-master-worldpoints.json",
+            excluded_md_path=excluded_md,
+        )
+    finally:
+        if b2_tmp_dir is not None:
+            shutil.rmtree(b2_tmp_dir, ignore_errors=True)
     b2_totals = b2_payload["totals"]
     log(
         f"  → B2 payload: countries={b2_totals['countries']}, "

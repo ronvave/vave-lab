@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Tongan Scholar Publications by Gender — Prof. Ron Vave | UH Mānoa</title>
-  <meta name="description" content="Body-composition chart of iTaukei (Indigenous Fijian) scholars' publications by gender, part of the iTaukei Research Database." />
+  <meta name="description" content="Body-composition chart of Tongan scholars' publications by gender, part of the Tongan Scholarly Research Database." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
@@ -212,7 +212,7 @@
 <section class="page-banner" aria-label="Page header">
   <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
     <div>
-      <p class="page-banner__eyebrow">Vave Lab &middot; iTaukei Research Database</p>
+      <p class="page-banner__eyebrow">Vave Lab &middot; Tongan Scholarly Research Database</p>
       <h1 class="page-banner__title">Publications by Gender</h1>
     </div>
     <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
@@ -232,7 +232,7 @@
         <em>book chapters</em>. The coloured bands fill each body bottom-to-top and sum to 100&nbsp;% of that
         gender&rsquo;s publications. The two numbers beside each label give the total scholars and total
         publications for that gender. It forms part of the
-        <a href="research.html#current-projects" style="color:var(--color-primary);">iTaukei Research Database</a>.
+        <a href="research.html#current-projects" style="color:var(--color-primary);">Tongan Scholarly Research Database</a>.
       </p>
     </div>
 
@@ -269,7 +269,7 @@
         <div class="bc-title">Tongan Scholar Publications by Gender</div>
         <div class="bc-subtitle">Each body = 100 % of that gender&rsquo;s publications, split by type &nbsp;&middot;&nbsp; bands fill bottom-to-top</div>
         <div id="chart"></div>
-        <div class="caption" id="cap">Source: iTaukei Research Database.</div>
+        <div class="caption" id="cap">Source: Tongan Scholarly Research Database.</div>
         <div id="status"></div>
 
         <!-- PNG download controls: width/height lock aspect ratio; DPI scales pixels -->
@@ -749,7 +749,7 @@ function buildOption(data){
     graphic: {
       type: "text", left: "center", top: "22%", z: 50, silent: true,
       style: {
-        text: fmtInt(combScholars) + " iTaukei scholars\n" +
+        text: fmtInt(combScholars) + " Tongan scholars\n" +
               fmtInt(combPubs) + " publications (100%)",
         textAlign: "center", textVerticalAlign: "middle",
         fontFamily: "DM Sans, system-ui, sans-serif",
@@ -803,10 +803,10 @@ function render(data, label){
   const coded = (w.scholars!=null || m.scholars!=null || wp>0 || mp>0);
   if(coded){
     statusEl.textContent = (label||"Uploaded file")+": Woman "+wp+" publications, Man "+mp+" publications.";
-    capEl.textContent = "iTaukei scholars who completed a Master's and/or PhD. Source: iTaukei Research Database.";
+    capEl.textContent = "Tongan scholars who completed a Master's and/or PhD. Source: Tongan Scholarly Research Database.";
   }else{
     statusEl.textContent = "No gender-coded data yet — showing an empty template. Enter Male/Female on the Scholars sheet, then upload the workbook.";
-    capEl.textContent = "Awaiting gender-coded data. Source: iTaukei Research Database.";
+    capEl.textContent = "Awaiting gender-coded data. Source: Tongan Scholarly Research Database.";
   }
 }
 

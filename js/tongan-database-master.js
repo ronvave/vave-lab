@@ -1314,13 +1314,11 @@
       // Initialise Panel B3 — Where iTaukei research has been undertaken.
       try { initB3Map(); } catch (e) { console.error('B3 map init failed', e); }
 
-      // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
-      // three confederacies (Viti Levu + Vanua Levu + Lau) without wasting
-      // vertical whitespace above Vanua Levu or below Kadavu.
-      // Tighter Tonga-focused framing (Ron's image-4 reference): Vanua Levu +
-      // Viti Levu + Lau grouped without wasted margins.
-      map.fitBounds([[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
-      state.mapDefaultBounds = [[-19.6, 176.8], [-15.9, 180.9]];
+      // Tonga-focused default framing: covers Tongatapu, Vava'u, Ha'apai,
+      // and 'Eua without wasted margins (same box used as the fullscreen-
+      // reset fallback below, so both entry points agree).
+      map.fitBounds([[-21.5, -176.2], [-15.5, -173.6]], { padding: [4, 4] });
+      state.mapDefaultBounds = [[-21.5, -176.2], [-15.5, -173.6]];
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
