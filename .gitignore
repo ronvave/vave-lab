@@ -25,6 +25,39 @@ data/last-master-sync.json
 data/body-composition.json
 data/body-composition-master.json
 
+# Tongan Scholar Database — plaintext database exports — never commit.
+# Only the .enc versions ship. Mirrors the iTaukei block above; encrypted
+# with a separate Tongan-specific passcode (see TONGAN-DASHBOARD-BUILD-NOTES.md).
+data/tonga-districts.geojson
+data/tonga-districts.json
+data/tongan-graduate-studies.json
+data/tongan-zotero-snapshot.json
+data/tongan-last-sync.json
+data/tongan-scholar-insights.json
+data/tongan-scholar-profiles.json
+data/tongan-body-composition.json
+data/tongan-body-composition-master.json
+# Tongan Master-file plaintext snapshots (only .enc versions are committed).
+data/tongan-master-scholars.json
+data/tongan-master-publications.json
+data/tongan-master-authorship.json
+data/tongan-master-researcher-authorship.json
+data/tongan-master-grad-degrees.json
+data/tongan-master-mobility.json
+data/tongan-master-geography.json
+data/tongan-master-aggregates.json
+data/tongan-master-worldpoints.json
+data/tongan-last-master-sync.json
+data/tongan-scholar-enrichment.json
+data/tongan-scholar-insights-master.json
+# Tongan-prefixed copies of otherwise-shared reference/lookup data —
+# re-encrypted with the Tongan passcode since tongan-demo-gate.js only
+# knows that passcode (cannot decrypt the shared iTaukei-encrypted files).
+data/tongan-world-universities.json
+data/tongan-workplace-coords.json
+data/tongan-uni-country-overrides.json
+data/tongan-auto-resolved.json
+
 # Local artefacts
 .DS_Store
 __pycache__/

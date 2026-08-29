@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tongan Scholar Publications by Gender — Prof. Ron Vave | UH Mānoa</title>
+  <meta name="description" content="Body-composition chart of iTaukei (Indigenous Fijian) scholars' publications by gender, part of the iTaukei Research Database." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/tokens.css?v=ec2c3516" />
+  <link rel="stylesheet" href="css/base.css?v=c71999b9" />
+  <link rel="stylesheet" href="css/animations.css?v=209516a8" />
+  <meta name="robots" content="noindex,follow" />
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    .bc-canvas{
+      background:#ffffff;
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      box-shadow:0 1px 3px rgba(0,0,0,0.06);
+      padding:var(--space-6) var(--space-4);
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+    }
+    #wrap{ width:1160px; margin:0 auto; position:relative; }
+    .bc-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
+    .bc-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; margin-bottom:6px; }
+    #chart{ width:1160px; height:742px; margin:0 auto; }
+    .caption{ text-align:center; font-size:11px; color:#8a93a0; margin-top:2px; }
+    #status{ text-align:center; font-size:11px; color:#b0b6bf; margin-top:6px; }
+    .bc-scroll-hint{ text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:var(--space-3); }
+    @media (min-width:1240px){ .bc-scroll-hint{ display:none; } }
+
+    /* ---- CSV/Excel upload panel (theme-aware, uses site tokens) ---- */
+    .uploader{
+      background:var(--color-surface);
+      border:1px solid var(--color-border);
+      border-radius:var(--radius-lg);
+      padding:var(--space-6);
+      margin-bottom:var(--space-6);
+    }
+    .uploader__head{ display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);margin-bottom:var(--space-4); }
+    .uploader__title{ font-family:var(--font-display); font-size:var(--text-lg); font-weight:600; color:var(--color-text); margin:0; }
+    .uploader__row{ display:flex; gap:var(--space-4); flex-wrap:wrap; }
+    .dropzone{
+      flex:1 1 320px;
+      min-height:118px;
+      border:2px dashed var(--color-border);
+      border-radius:var(--radius-md);
+      background:var(--color-surface-2);
+      display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+      padding:var(--space-5);
+      cursor:pointer;
+      transition:border-color .15s ease, background .15s ease;
+    }
+    .dropzone:hover{ border-color:var(--color-primary); }
+    .dropzone.is-dragover{ border-color:var(--color-primary); background:var(--color-primary-highlight); }
+    .dropzone.is-loaded{ border-style:solid; border-color:var(--color-primary); }
+    .dropzone__label{ font-weight:600; color:var(--color-text); font-size:var(--text-sm); }
+    .dropzone__sub{ color:var(--color-text-muted); font-size:var(--text-xs); margin-top:var(--space-1); }
+    .dropzone__file{ color:var(--color-primary); font-size:var(--text-xs); font-weight:600; margin-top:var(--space-2); word-break:break-all; }
+    .uploader__actions{ display:flex; align-items:center; gap:var(--space-4); flex-wrap:wrap; margin-top:var(--space-4); }
+    .btn-reset{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:var(--color-primary); background:transparent;
+      border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; cursor:pointer; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-reset:hover{ background:var(--color-surface-offset); border-color:var(--color-primary); }
+    .btn-template{
+      font-size:var(--text-sm); font-weight:600; text-decoration:none;
+      color:var(--color-accent); border:1px solid var(--color-border); border-radius:var(--radius-full);
+      padding:6px 16px; transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-template:hover{ background:var(--color-surface-offset); border-color:var(--color-accent); }
+    .upload-msg{ font-size:var(--text-sm); color:var(--color-text-muted); }
+    .upload-msg.is-error{ color:var(--color-error); font-weight:600; }
+    .upload-msg.is-ok{ color:var(--color-success); font-weight:600; }
+    .uploader__help{ margin-top:var(--space-4); font-size:var(--text-xs); color:var(--color-text-muted); line-height:1.6; }
+    .uploader__help code{ font-family:var(--font-mono); font-size:0.92em; background:var(--color-surface-offset); padding:1px 5px; border-radius:4px; color:var(--color-text); }
+
+    /* ---- PNG download panel (theme-aware) ---- */
+    .dl-panel{
+      max-width:1160px; margin:var(--space-5) auto 0; padding-top:var(--space-4);
+      border-top:1px solid var(--color-border);
+      display:flex; align-items:flex-end; justify-content:center; gap:var(--space-4); flex-wrap:wrap;
+    }
+    .dl-field{ display:flex; flex-direction:column; gap:4px; }
+    .dl-field label{ font-size:11px; font-weight:600; letter-spacing:.03em; text-transform:uppercase; color:var(--color-text-muted); }
+    .dl-field input{
+      width:92px; font:inherit; font-size:var(--text-sm); color:var(--color-text);
+      background:var(--color-surface); border:1px solid var(--color-border); border-radius:var(--radius-md);
+      padding:6px 9px; text-align:right;
+    }
+    .dl-field input:focus{ outline:none; border-color:var(--color-primary); }
+    .dl-lock{ font-size:var(--text-xs); color:var(--color-text-faint); align-self:center; padding-bottom:8px; }
+    .btn-download{
+      font:inherit; font-size:var(--text-sm); font-weight:600;
+      color:#fff; background:var(--color-primary); border:1px solid var(--color-primary);
+      border-radius:var(--radius-full); padding:8px 20px; cursor:pointer;
+      transition:background .15s ease, border-color .15s ease;
+    }
+    .btn-download:hover{ background:var(--color-primary-hover,#0C4E54); border-color:var(--color-primary-hover,#0C4E54); }
+    .dl-hint{ flex-basis:100%; text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:2px; }
+
+    /* ---- Embedded mode (when hosted inside an <iframe> in the research
+       database with ?embedded=1). Hides the standalone-page chrome so the
+       chart itself fills the panel. The is-embedded class is toggled
+       in an inline <script> just after <body>, before any layout paints. */
+    body.is-embedded .site-header,
+    body.is-embedded .page-banner,
+    body.is-embedded .site-footer,
+    body.is-embedded .uploader,
+    body.is-embedded .bc-embedded-hide { display:none !important; }
+    body.is-embedded main { padding:0; }
+    body.is-embedded .section { padding:0; }
+    body.is-embedded .container { max-width:none; padding:0; }
+    body.is-embedded .chord-canvas,
+    body.is-embedded .bc-canvas { border:none; box-shadow:none; padding:0; margin:0; background:transparent; overflow:visible; }
+
+    /* Ron's dashboard refinements (2026-07-27):
+       • Hide the standalone chart title AND the chart's own subtitle
+         (the subtitle has been folded into the dashboard hint text).
+       • Fill the iframe width — drop the fixed 1160px so the two figures
+         paint at the panel's available width with minimal padding; remove
+         horizontal / vertical scrollbars.
+       • Hide the PNG-download dimensions/DPI controls and the scroll hint
+         under the chart. */
+    body.is-embedded .bc-title,
+    body.is-embedded .bc-subtitle,
+    body.is-embedded .dl-panel,
+    body.is-embedded .bc-scroll-hint,
+    body.is-embedded .caption { display:none !important; }
+    body.is-embedded #wrap { width:100% !important; max-width:none !important; margin:0 !important; padding:8px 12px !important; box-sizing:border-box; }
+    body.is-embedded #chart { width:100% !important; height:760px !important; margin:0 !important; }
+    body.is-embedded body,
+    body.is-embedded html { overflow:hidden !important; }
+    /* Fullscreen mode: parent toggles .is-embed-fullscreen on <body> when the
+       C1 panel is expanded. Fill the entire iframe viewport so the two figures
+       grow instead of leaving large empty margins. */
+    body.is-embedded.is-embed-fullscreen,
+    body.is-embedded.is-embed-fullscreen html { height:100vh !important; }
+    body.is-embedded.is-embed-fullscreen #wrap { height:100vh !important; padding:16px 24px !important; display:flex; flex-direction:column; }
+    body.is-embedded.is-embed-fullscreen #chart { flex:1 1 auto; height:auto !important; min-height:0 !important; width:100% !important; }
+  </style>
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-7LJP79H70W');
+  </script>
+</head>
+<body>
+<script>
+  /* Add is-embedded before first paint when the page is loaded with ?embedded=1
+     (or is inside an iframe). Keeps standalone visits untouched. */
+  (function(){
+    try {
+      var qs = new URLSearchParams(location.search);
+      if (qs.get('embedded') === '1' || (window.self !== window.top)) {
+        document.body.classList.add('is-embedded');
+      }
+    } catch(e) { /* iframe cross-origin — fall through */ }
+  })();
+</script>
+
+<header class="site-header" role="banner">
+  <div class="container">
+    <div class="nav-inner">
+      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+          <rect width="36" height="36" rx="10" fill="currentColor" opacity="0.12"/>
+          <path d="M6 22 Q10 14 14 22 Q18 30 22 22 Q26 14 30 22" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+          <path d="M12 10 L18 20 L24 10" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        </svg>
+        Prof. Ron Vave
+      </a>
+      <nav aria-label="Main navigation">
+        <ul class="nav-links" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </nav>
+      <div class="nav-actions">
+        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
+        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
+      <a href="index.html">Home</a>
+      <a href="research.html">Research</a>
+      <a href="publications.html">Publications</a>
+      <a href="supervision.html">Supervision</a>
+      <a href="teaching.html">Teaching</a>
+      <a href="service.html">Service</a>
+      <a href="media.html">Media</a>
+    </div>
+  </div>
+</header>
+
+<section class="page-banner" aria-label="Page header">
+  <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
+    <div>
+      <p class="page-banner__eyebrow">Vave Lab &middot; iTaukei Research Database</p>
+      <h1 class="page-banner__title">Publications by Gender</h1>
+    </div>
+    <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
+  </div>
+</section>
+
+<main>
+<section class="section">
+  <div class="container">
+    <div class="reveal bc-embedded-hide" style="max-width:820px;margin-bottom:var(--space-8);">
+      <p class="section__label">Interactive Visualization</p>
+      <h2 class="section__title" style="margin-top:var(--space-2);">Publication Mix by Gender</h2>
+      <div class="divider"></div>
+      <p style="color:var(--color-text-muted);font-size:var(--text-base);line-height:1.65;margin-top:var(--space-5);">
+        Each figure shows how one gender&rsquo;s scholarly output divides across five publication types &mdash;
+        <em>Master&rsquo;s theses</em>, <em>PhD theses</em>, <em>journal articles</em>, <em>books</em>, and
+        <em>book chapters</em>. The coloured bands fill each body bottom-to-top and sum to 100&nbsp;% of that
+        gender&rsquo;s publications. The two numbers beside each label give the total scholars and total
+        publications for that gender. It forms part of the
+        <a href="research.html#current-projects" style="color:var(--color-primary);">iTaukei Research Database</a>.
+      </p>
+    </div>
+
+    <!-- ================= CSV/EXCEL UPLOAD PANEL ================= -->
+    <div class="uploader reveal">
+      <div class="uploader__head">
+        <h3 class="uploader__title">Build the chart from your own CSV or Excel file</h3>
+        <span class="upload-msg" id="upload-msg"></span>
+      </div>
+      <div class="uploader__row">
+        <div class="dropzone" id="dz-data" tabindex="0" role="button" aria-label="Upload publications-by-gender CSV or Excel file">
+          <span class="dropzone__label">Publications-by-gender CSV or Excel</span>
+          <span class="dropzone__sub">Drag &amp; drop, or click to choose your <code style="font-family:var(--font-mono);">.csv</code> or <code style="font-family:var(--font-mono);">.xlsx</code></span>
+          <span class="dropzone__file" id="file-data"></span>
+          <input type="file" id="input-data" accept=".csv,text/csv,.xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" hidden />
+        </div>
+      </div>
+      <div class="uploader__actions">
+        <button type="button" class="btn-reset" id="btn-reset">Reset to default data</button>
+        <a href="#" class="btn-template" id="btn-template" download="tongan-gender-template.csv">&darr;&nbsp;Download CSV template</a>
+      </div>
+      <p class="uploader__help">
+        Your file stays in your browser &mdash; nothing is uploaded to a server. CSV and Excel
+        (<code>.xlsx</code>/<code>.xls</code>) both work. Drop in the
+        <code>Tongan Scholar Publications by Gender.xlsx</code> file directly: the page reads the
+        <code>By Gender</code> worksheet automatically. Alternatively, a plain file works with a
+        <code>Type</code> column plus <code>Female</code> and <code>Male</code> count columns, one row per
+        publication type, and optional <code>Scholars</code> rows for the totals.
+      </p>
+    </div>
+
+    <div class="bc-canvas reveal">
+      <div id="wrap">
+        <div class="bc-title">Tongan Scholar Publications by Gender</div>
+        <div class="bc-subtitle">Each body = 100 % of that gender&rsquo;s publications, split by type &nbsp;&middot;&nbsp; bands fill bottom-to-top</div>
+        <div id="chart"></div>
+        <div class="caption" id="cap">Source: iTaukei Research Database.</div>
+        <div id="status"></div>
+
+        <!-- PNG download controls: width/height lock aspect ratio; DPI scales pixels -->
+        <div class="dl-panel" aria-label="Download chart as image">
+          <div class="dl-field">
+            <label for="dl-width">Width (px)</label>
+            <input id="dl-width" type="number" min="200" max="20000" step="1" value="1160">
+          </div>
+          <span class="dl-lock" title="Width and height stay in proportion">&#128279; locked</span>
+          <div class="dl-field">
+            <label for="dl-height">Height (px)</label>
+            <input id="dl-height" type="number" min="200" max="20000" step="1" value="742">
+          </div>
+          <div class="dl-field">
+            <label for="dl-dpi">DPI</label>
+            <input id="dl-dpi" type="number" min="72" max="1200" step="1" value="300">
+          </div>
+          <button id="dl-btn" class="btn-download" type="button">Download PNG</button>
+          <div class="dl-hint" id="dl-hint">Output: 3625 &times; 2319 px at 300 DPI</div>
+        </div>
+      </div>
+    </div>
+    <p class="bc-scroll-hint">Tip: on smaller screens, scroll the panel sideways to see both figures.</p>
+
+    <div class="reveal bc-embedded-hide" style="margin-top:var(--space-8);">
+      <a href="research.html" style="color:var(--color-primary);font-weight:500;">&larr; Back to Research</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="site-footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__tagline">Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.</p>
+        <div class="footer-social">
+          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
+          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener">ORCID</a>
+          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener">ResearchGate</a>
+          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener">LinkedIn</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Navigate</h3>
+        <ul class="footer-nav-list" role="list">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="research.html">Research</a></li>
+          <li><a href="publications.html">Publications</a></li>
+          <li><a href="supervision.html">Supervision</a></li>
+          <li><a href="teaching.html">Teaching</a></li>
+          <li><a href="service.html">Service</a></li>
+          <li><a href="media.html">Media</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h3 class="footer-section__title">Contact</h3>
+        <address>
+          Department of Pacific Islands Studies<br>
+          University of Hawaiʻi at Mānoa<br>
+          1890 East-West Road, Moore Hall 214<br>
+          Honolulu, Hawaiʻi, U.S.A.<br><br>
+          Office: <a href="tel:+18089560229">(808) 956-0229</a><br>
+          Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
+        </address>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
+      <a href="https://hawaii.edu/cpis/people/core-faculty/ron-vave/" target="_blank" rel="noopener" style="font-size:var(--text-xs);color:var(--color-primary-highlight);opacity:0.7;text-decoration:none;">UH Faculty Profile &nearr;</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ======================================================================
+   MASTER-FILE MODE (?src=master) — V2 dashboard iframe override.
+
+   When the parent research-database page passes ?src=master, we override
+   three things without touching V1 behaviour:
+     1. the two silhouette paths (traced Fijian figures from Ron's reference)
+     2. the per-figure AREA_H_LUT (recomputed from the new silhouette masks)
+     3. the HEAD_CLIP/FEET_CLIP scalp/sole anchors (per new silhouettes)
+     4. the gender column order — Turaga (Man) LEFT, Marama (Woman) RIGHT
+     5. the data URL — data/tongan-body-composition-master.json[.enc]
+   Absent the flag, the file behaves exactly as V1 production. */
+const SRC_MODE = (function(){
+  try {
+    const p = new URLSearchParams(window.location.search).get('src');
+    return (p === 'master') ? 'master' : 'v1';
+  } catch(e) { return 'v1'; }
+})();
+const IS_MASTER = (SRC_MODE === 'master');
+
+/* Traced Fijian silhouettes normalized to the same 150x360 pictorialBar box
+   V1 uses. Turaga = broad-shouldered male in bula shirt + sulu vakataga;
+   Marama = female in long-sleeve sulu. Both have feet at y=~360, head at y=~1. */
+const MASTER_MAN_PATH   = "path://M41.70,357.86C42.35,357.40 42.58,357.40 43.32,357.88C43.92,358.28 45.04,358.41 46.91,358.33C49.42,358.22 49.66,358.14 50.14,357.13C50.43,356.53 50.89,356.04 51.17,356.04C52.04,356.04 53.10,354.53 53.59,352.57C54.03,350.85 54.22,350.64 56.01,349.90C59.11,348.62 59.38,348.37 59.62,346.57C59.79,345.34 59.55,344.04 58.71,341.58C57.65,338.46 57.61,338.10 58.06,335.94C58.41,334.26 58.42,333.22 58.11,332.10C57.26,329.01 57.06,326.45 57.38,322.53C57.78,317.49 58.99,308.62 59.37,308.02C59.57,307.68 61.77,307.68 68.03,307.99C72.64,308.23 76.63,308.36 76.90,308.27C77.16,308.19 80.51,308.01 84.34,307.87L91.30,307.61L91.98,312.10C92.36,314.57 92.87,318.84 93.13,321.60C93.54,326.04 93.51,326.99 92.89,329.87C92.38,332.25 92.26,333.90 92.45,335.97C92.68,338.42 92.58,339.24 91.69,341.89C89.97,347.00 90.38,348.29 94.13,349.70C96.67,350.64 96.99,350.97 97.00,352.63C97.00,353.45 97.46,354.21 98.59,355.29C99.46,356.12 100.18,356.97 100.18,357.19C100.18,358.45 106.35,358.99 107.32,357.81C107.77,357.27 107.90,357.28 108.55,357.86C109.05,358.31 109.60,358.43 110.37,358.24C110.98,358.09 112.01,357.88 112.67,357.77C115.12,357.35 118.40,355.63 118.65,354.63C118.93,353.51 118.29,352.01 117.03,350.86C116.44,350.33 115.67,349.58 115.31,349.20C114.96,348.82 114.42,348.50 114.12,348.50C113.29,348.50 109.02,343.96 108.07,342.06C107.60,341.13 106.78,339.79 106.24,339.07C105.28,337.78 105.27,337.67 105.23,329.16C105.19,320.39 105.45,318.18 107.92,306.26C108.15,305.17 108.39,305.00 110.42,304.55C111.65,304.27 113.83,303.71 115.24,303.30C116.66,302.89 118.44,302.40 119.21,302.22L120.59,301.88L120.47,292.98C120.40,288.08 119.83,276.58 119.19,267.42C116.23,224.96 115.25,209.66 115.24,206.29C115.24,202.31 114.37,191.34 113.45,183.70C113.13,181.05 112.86,178.72 112.86,178.54C112.86,178.35 113.41,177.98 114.09,177.73C115.24,177.30 115.30,177.17 115.09,175.76C111.68,153.72 110.89,147.78 111.11,145.85C111.24,144.65 111.07,141.64 110.72,138.98C109.98,133.43 109.96,126.37 110.66,120.53C110.94,118.24 111.19,116.65 111.22,117.00C111.25,117.35 111.63,118.04 112.07,118.55C112.51,119.05 112.86,119.80 112.86,120.21C112.86,120.63 113.38,122.34 114.02,124.02C115.04,126.72 115.23,127.91 115.63,134.41C116.16,142.85 116.73,146.26 118.44,151.26C119.12,153.22 119.85,155.54 120.08,156.41C120.30,157.28 120.82,159.16 121.23,160.57C123.21,167.47 123.70,170.00 123.73,173.66C123.76,177.71 123.49,178.56 121.52,180.52C120.90,181.14 120.40,182.00 120.40,182.43C120.40,182.86 120.11,183.77 119.75,184.46C119.25,185.42 119.08,187.11 118.99,191.72C118.93,195.03 118.76,198.53 118.61,199.49C118.31,201.48 118.92,202.36 120.43,202.14C122.29,201.86 123.10,199.57 123.55,193.38C123.59,192.82 125.18,193.08 125.41,193.69C125.54,194.02 125.51,195.81 125.36,197.67L125.08,201.04L123.34,202.32C122.38,203.02 121.47,204.03 121.33,204.58C121.19,205.13 120.89,205.69 120.67,205.83C120.09,206.21 119.81,210.37 120.34,210.70C120.84,211.00 123.65,209.46 126.34,207.41C127.33,206.67 128.60,205.90 129.17,205.70C130.34,205.28 131.62,203.12 133.26,198.74C133.86,197.16 134.50,195.76 134.70,195.64C135.23,195.31 135.15,192.69 134.44,187.32C134.05,184.39 133.91,181.67 134.07,180.20C134.36,177.65 134.37,176.81 134.23,169.00C134.17,166.22 134.36,161.27 134.65,158.00C134.98,154.13 135.11,148.29 134.99,141.34L134.82,130.64L133.18,125.88C131.78,121.84 130.70,116.56 130.70,113.75C130.70,113.33 131.50,112.75 132.91,112.15C135.60,111.00 135.62,111.49 132.54,101.81C131.31,97.95 130.31,94.55 130.31,94.25C130.31,93.75 129.72,91.80 125.92,79.74C124.39,74.87 122.46,70.86 120.38,68.19C119.32,66.84 113.18,63.04 112.03,63.04C111.73,63.04 109.60,62.12 107.31,61.01C105.02,59.90 102.00,58.55 100.59,58.01C94.41,55.66 94.21,55.51 92.05,51.41C90.53,48.53 89.83,47.59 88.94,47.25C87.61,46.75 87.62,45.96 89.01,42.62C89.46,41.53 89.93,40.01 90.05,39.24C90.22,38.18 90.53,37.74 91.35,37.42C92.27,37.08 92.62,36.48 93.54,33.67C95.15,28.77 95.01,25.77 93.15,25.77C92.31,25.77 92.20,25.63 92.40,24.84C93.08,22.13 93.37,18.21 93.06,16.06C92.66,13.22 91.61,10.46 90.83,10.15C90.52,10.03 90.26,9.52 90.26,9.00C90.26,8.08 88.16,6.34 86.37,5.77C85.96,5.64 85.42,5.07 85.16,4.51C84.78,3.68 84.49,3.52 83.62,3.68C82.87,3.83 82.23,3.61 81.42,2.93C80.23,1.93 78.99,1.70 78.56,2.40C78.38,2.69 78.15,2.69 77.80,2.40C77.53,2.17 76.51,1.88 75.54,1.74C74.20,1.56 73.66,1.65 73.26,2.13C72.86,2.61 72.56,2.66 71.95,2.34C71.32,2.00 70.86,2.13 69.62,2.99C68.78,3.58 67.83,3.96 67.52,3.84C66.81,3.57 65.29,4.62 65.29,5.38C65.29,5.73 64.89,5.95 64.26,5.95C63.56,5.95 63.16,6.20 63.02,6.74C62.91,7.18 62.49,7.53 62.09,7.53C61.70,7.53 61.26,7.89 61.12,8.33C60.98,8.76 60.71,9.12 60.50,9.12C60.30,9.12 60.13,9.64 60.13,10.28C60.13,11.12 59.89,11.52 59.30,11.71C58.57,11.94 58.49,12.18 58.70,13.50C58.86,14.46 58.78,15.12 58.49,15.30C58.03,15.59 58.27,22.91 58.82,24.95C59.02,25.72 58.95,25.86 58.42,25.66C58.06,25.52 57.49,25.69 57.13,26.06C56.21,26.98 56.54,30.34 57.94,34.22C58.91,36.89 59.21,37.34 60.14,37.53C61.12,37.72 61.25,37.95 61.48,39.91C61.62,41.11 62.09,42.78 62.52,43.62C63.68,45.90 63.54,46.67 61.84,47.47C60.89,47.93 60.28,48.54 60.10,49.25C59.58,51.22 57.27,54.78 56.02,55.55C55.34,55.96 53.43,56.83 51.78,57.47C50.13,58.11 46.88,59.53 44.56,60.64C42.24,61.74 39.49,62.93 38.44,63.28C36.51,63.92 32.92,66.06 31.26,67.56C30.18,68.53 26.32,75.28 25.68,77.31C21.54,90.42 20.33,94.46 20.05,95.95C19.87,96.93 18.74,100.67 17.53,104.26C16.33,107.85 15.48,110.92 15.64,111.07C15.79,111.23 16.82,111.70 17.91,112.14L19.89,112.91L19.77,115.43C19.60,118.78 18.96,122.44 18.28,123.90C16.76,127.15 16.07,130.21 15.47,136.36C14.90,142.09 14.88,143.94 15.31,150.86C16.01,161.99 16.23,171.95 15.82,174.05C15.58,175.29 15.65,176.56 16.03,178.22C16.61,180.71 16.58,181.52 15.52,189.48C14.88,194.28 14.88,194.44 15.64,195.83C16.07,196.61 16.71,198.14 17.07,199.23C17.97,201.94 19.72,205.02 20.67,205.54C21.90,206.21 25.02,208.27 25.24,208.55C25.74,209.19 29.59,211.07 29.86,210.80C30.02,210.64 30.16,209.60 30.16,208.49C30.16,207.05 29.96,206.33 29.48,205.98C29.12,205.71 28.81,205.17 28.81,204.79C28.81,204.41 28.01,203.36 27.03,202.46L25.24,200.81L24.99,197.19C24.75,193.79 24.78,193.54 25.56,193.12C26.49,192.63 26.53,192.75 27.04,197.55C27.32,200.17 28.69,202.20 30.19,202.20C31.20,202.20 32.18,201.26 31.80,200.65C31.67,200.43 31.50,197.25 31.42,193.60C31.27,185.83 30.41,182.01 28.37,180.10C26.99,178.80 26.44,177.04 26.44,173.98C26.43,170.22 27.23,167.00 31.78,152.44C32.73,149.39 33.70,146.00 33.92,144.91C34.46,142.32 35.15,134.08 35.15,130.29C35.15,128.01 35.38,126.79 36.09,125.19C36.60,124.03 37.24,122.15 37.51,121.01C37.79,119.87 38.30,118.77 38.66,118.57C39.02,118.37 39.50,117.44 39.73,116.50C40.09,115.04 40.21,116.00 40.62,123.51C40.93,129.22 40.97,132.77 40.72,133.81C40.51,134.68 40.23,138.70 40.10,142.73C39.96,146.77 39.67,151.05 39.46,152.25C38.52,157.58 38.24,159.29 36.93,167.63C36.17,172.50 35.55,176.72 35.55,177.01C35.55,177.30 36.02,177.65 36.59,177.80C37.77,178.09 37.80,176.83 36.31,190.70C35.88,194.74 35.36,201.43 35.15,205.57C34.95,209.72 33.89,224.70 32.80,238.88C31.72,253.05 30.63,267.77 30.40,271.59C29.07,293.46 28.77,298.11 28.61,299.63C28.45,301.17 28.53,301.36 29.59,301.91C30.23,302.24 31.17,302.51 31.68,302.51C32.19,302.51 33.58,302.85 34.77,303.27C35.96,303.68 38.03,304.24 39.36,304.50C40.69,304.76 41.95,305.09 42.17,305.23C42.68,305.56 44.63,315.82 45.15,320.92C45.64,325.70 45.67,328.31 45.27,333.83C44.95,338.25 45.01,338.12 41.56,343.47C40.21,345.57 37.29,348.47 36.50,348.49C36.26,348.50 35.25,349.26 34.23,350.19C32.34,351.93 31.41,353.68 31.78,354.82C32.01,355.56 36.33,357.62 37.67,357.63C38.14,357.63 38.79,357.81 39.12,358.02C39.96,358.56 40.82,358.51 41.70,357.86Z";
+const MASTER_WOMAN_PATH = "path://M49.45,357.85C49.76,358.23 50.73,358.41 52.35,358.41C55.06,358.40 55.43,358.25 56.17,356.84C56.46,356.29 57.10,355.53 57.60,355.13C58.59,354.36 59.34,352.24 59.34,350.21C59.34,349.09 59.55,348.84 61.10,348.16C62.95,347.34 64.10,345.75 64.10,344.00C64.10,343.47 63.72,341.81 63.26,340.32C62.60,338.19 62.46,337.01 62.64,334.88C62.79,333.09 62.66,331.24 62.25,329.42C61.80,327.43 61.71,325.84 61.91,323.66L62.19,320.65L64.59,320.90C65.91,321.03 71.62,321.15 77.28,321.15L87.58,321.15L87.30,325.61C87.14,328.06 86.98,331.94 86.94,334.23C86.87,337.39 86.64,339.01 85.95,340.95C85.37,342.59 85.13,343.94 85.28,344.74C85.55,346.14 87.15,347.85 88.78,348.47C89.74,348.83 89.87,349.08 89.87,350.65C89.87,352.71 90.39,354.27 91.47,355.42C91.89,355.86 92.68,356.73 93.21,357.32C94.07,358.28 94.48,358.41 96.58,358.41C98.05,358.41 99.15,358.21 99.45,357.89C99.86,357.45 100.11,357.45 100.95,357.88C102.25,358.56 102.98,358.55 104.00,357.84C104.46,357.51 104.94,357.36 105.07,357.49C105.43,357.86 108.92,356.44 110.39,355.33C112.77,353.53 112.11,351.69 107.50,347.25C105.50,345.32 103.65,343.12 103.07,341.98C102.52,340.90 101.66,339.38 101.16,338.61C99.77,336.45 99.19,327.23 100.14,322.28C100.64,319.66 100.65,319.65 102.15,319.41C103.15,319.25 103.71,318.93 103.84,318.43C104.07,317.58 107.92,316.44 113.99,315.41C118.21,314.70 119.21,314.29 119.21,313.25C119.21,312.70 119.69,312.40 121.09,312.06C124.26,311.29 125.15,310.82 125.15,309.90C125.15,309.43 124.98,305.22 124.76,300.53C124.55,295.84 124.02,283.71 123.57,273.57C122.76,255.11 122.09,242.20 120.99,224.01C120.67,218.66 120.05,207.96 119.61,200.22C118.73,184.77 118.01,176.90 116.78,169.18C116.21,165.55 116.09,163.95 116.40,163.59C116.81,163.09 115.75,156.87 113.62,147.29C112.80,143.62 108.95,134.00 107.84,132.90C107.39,132.44 107.29,131.83 107.46,130.60C107.60,129.56 107.44,128.11 107.05,126.80C106.23,124.08 106.52,114.47 107.47,112.72L108.07,111.61L108.09,112.65C108.10,113.21 108.55,115.63 109.09,118.01C109.62,120.39 110.26,124.12 110.51,126.29C110.76,128.47 111.38,131.49 111.90,133.02C112.90,135.98 114.45,143.39 114.45,145.23C114.45,145.85 115.50,149.06 116.79,152.37C120.61,162.22 123.17,170.87 123.17,173.94C123.17,174.51 122.41,176.59 121.49,178.58L119.80,182.18L119.91,190.26C119.97,194.71 120.11,198.50 120.23,198.69C120.60,199.28 122.23,199.06 122.87,198.34C123.72,197.37 123.92,196.51 124.15,192.93C124.26,191.20 124.42,189.71 124.52,189.62C124.61,189.53 125.09,189.66 125.57,189.92C126.41,190.38 126.44,190.54 126.18,194.02C125.91,197.62 125.90,197.65 124.30,199.13C123.35,199.99 122.78,200.84 122.90,201.16C123.02,201.47 122.68,202.13 122.15,202.63C121.47,203.27 121.19,203.96 121.19,205.00C121.19,207.79 121.86,207.67 126.74,204.03C131.68,200.36 131.86,200.10 133.11,194.75C134.04,190.77 134.07,187.64 133.25,182.28C132.85,179.64 132.71,177.17 132.88,175.22C133.01,173.58 132.93,170.99 132.68,169.47C132.44,167.96 132.08,160.20 131.89,152.25C131.50,136.67 131.07,132.84 128.90,125.48C127.22,119.83 127.16,119.50 126.75,112.40C126.54,108.69 126.24,104.05 126.11,102.08L125.85,98.50L127.86,97.26L129.87,96.01L128.68,93.54C128.02,92.18 126.26,88.02 124.77,84.29C120.91,74.68 118.27,70.10 114.85,67.13C112.86,65.40 111.61,64.85 106.09,63.23C103.38,62.44 99.89,61.26 98.34,60.61C96.79,59.97 95.36,59.49 95.17,59.55C94.42,59.78 89.03,57.74 88.09,56.87C87.18,56.02 87.09,55.66 87.09,52.56C87.09,49.51 87.20,49.02 88.27,47.34C88.91,46.33 89.63,44.54 89.88,43.37C90.15,42.05 90.53,41.23 90.86,41.23C91.16,41.23 91.66,40.97 91.99,40.65C92.86,39.77 94.63,34.14 94.63,32.24C94.63,31.32 94.80,30.47 95.02,30.33C95.24,30.20 95.42,29.57 95.42,28.94C95.42,28.31 95.59,27.69 95.80,27.57C96.31,27.25 96.06,21.08 95.49,19.70C95.23,19.09 95.02,17.72 95.02,16.67C95.02,15.33 94.84,14.69 94.43,14.53C94.08,14.39 93.83,13.80 93.83,13.11C93.83,12.25 93.50,11.68 92.64,11.04C91.99,10.55 91.45,9.83 91.45,9.42C91.45,9.02 90.93,8.39 90.28,8.01C89.64,7.64 88.93,6.94 88.71,6.45C88.41,5.80 87.96,5.55 87.10,5.55C86.31,5.55 85.90,5.35 85.90,4.96C85.90,4.18 84.19,3.10 83.41,3.39C83.06,3.52 82.26,3.24 81.60,2.76C80.68,2.07 80.11,1.94 79.03,2.14C78.21,2.30 77.53,2.24 77.39,1.99C77.02,1.40 73.14,1.52 72.30,2.15C71.86,2.49 71.03,2.62 70.09,2.49C68.80,2.32 68.46,2.45 67.74,3.36C67.17,4.09 66.67,4.35 66.17,4.19C65.68,4.04 65.11,4.30 64.50,4.95C63.98,5.50 63.30,5.95 62.97,5.95C62.25,5.95 60.93,7.09 60.93,7.70C60.93,7.94 60.57,8.36 60.13,8.63C59.70,8.90 59.34,9.36 59.34,9.64C59.34,9.93 58.80,10.67 58.15,11.30C57.50,11.93 56.96,12.75 56.96,13.13C56.96,13.50 56.70,14.32 56.39,14.94C55.53,16.64 54.40,24.88 54.95,25.54C55.19,25.83 55.28,26.36 55.14,26.72C55.00,27.08 55.07,27.59 55.29,27.86C55.51,28.13 55.80,29.33 55.94,30.53C56.08,31.73 56.77,34.48 57.47,36.65C58.54,39.94 58.91,40.64 59.77,40.97C60.61,41.29 60.88,41.76 61.26,43.62C61.53,44.94 62.24,46.59 62.96,47.59C64.17,49.26 64.20,49.37 63.99,52.70C63.78,55.95 63.72,56.14 62.46,57.19C61.74,57.79 60.86,58.28 60.49,58.28C60.13,58.28 59.01,58.65 58.00,59.09C56.98,59.54 56.00,59.81 55.81,59.69C55.61,59.57 54.23,59.99 52.74,60.63C51.24,61.26 48.42,62.25 46.45,62.83C40.59,64.57 37.53,65.85 36.08,67.16C32.88,70.05 29.85,75.37 25.90,85.04C24.48,88.53 22.86,92.42 22.30,93.68C21.73,94.94 21.28,96.04 21.28,96.13C21.28,96.22 22.19,96.80 23.29,97.41C25.28,98.51 25.30,98.54 25.08,100.11C24.95,100.98 24.67,105.26 24.45,109.63C24.00,118.53 23.68,120.77 22.24,124.95C20.12,131.13 19.28,138.13 18.89,152.84C18.53,166.45 18.41,168.18 17.66,171.11C17.38,172.23 17.37,173.41 17.66,174.96C17.99,176.76 17.92,178.19 17.25,182.46C16.03,190.38 16.06,190.80 18.32,198.52C18.99,200.79 19.88,201.67 25.21,205.33C27.47,206.88 28.27,207.25 28.68,206.91C29.55,206.18 29.31,203.97 28.22,202.67C27.67,202.02 27.22,201.22 27.22,200.88C27.22,200.54 26.69,199.76 26.04,199.15C25.21,198.37 24.74,197.44 24.49,196.06C24.01,193.52 24.36,190.43 25.16,190.12C26.08,189.77 26.22,190.14 26.46,193.71C26.71,197.48 27.59,199.23 29.25,199.23C30.11,199.23 30.22,199.02 30.46,196.85C30.61,195.54 30.69,191.62 30.66,188.13L30.59,181.78L29.06,178.64C27.62,175.68 27.54,175.33 27.72,172.69C27.93,169.68 30.26,162.18 33.89,152.84C35.30,149.20 36.14,146.23 36.75,142.73C37.22,140.00 38.13,135.99 38.77,133.81C39.40,131.63 40.10,128.32 40.31,126.44C40.52,124.58 41.14,121.06 41.69,118.64C42.24,116.21 42.69,113.78 42.69,113.22C42.69,111.96 43.32,111.88 43.61,113.09C44.18,115.46 44.32,122.45 43.84,124.89C43.56,126.31 43.36,128.53 43.39,129.83C43.43,131.32 43.26,132.42 42.92,132.80C42.26,133.55 38.73,141.99 37.60,145.51C37.15,146.92 36.58,149.25 36.33,150.66C36.08,152.08 35.45,155.20 34.92,157.60C33.89,162.26 33.76,163.57 34.31,163.91C34.49,164.02 34.33,165.77 33.95,167.80C32.40,176.00 31.76,184.30 29.99,219.65C27.96,260.08 27.26,271.87 25.84,289.82C25.32,296.47 24.84,303.43 24.78,305.29C24.67,308.55 24.70,308.70 25.84,309.89C26.50,310.57 27.87,311.44 28.91,311.83C30.17,312.30 30.79,312.76 30.79,313.23C30.79,314.18 32.51,314.81 41.11,316.96C45.11,317.97 48.45,318.85 48.53,318.92C48.60,319.00 48.94,320.55 49.29,322.38C49.76,324.85 49.84,326.57 49.61,329.07C49.45,330.93 49.34,333.43 49.38,334.64C49.44,336.56 49.24,337.20 47.75,339.80C45.49,343.77 44.61,344.82 41.04,347.86C38.95,349.64 37.86,350.88 37.54,351.84C36.98,353.55 37.31,354.76 38.46,355.26C38.93,355.47 39.58,355.79 39.91,355.97C41.64,356.95 42.37,357.22 43.20,357.22C43.70,357.22 44.29,357.39 44.49,357.58C45.16,358.22 46.42,358.30 47.72,357.78C48.77,357.37 49.06,357.38 49.45,357.85Z";
+/* Empirically-measured area->height LUTs for the traced silhouettes. */
+const MASTER_LUT_MAN   = [0.0,0.008,0.01031,0.01244,0.01422,0.01618,0.01796,0.01973,0.02151,0.02329,0.02507,0.02684,0.02862,0.0304,0.03218,0.03378,0.03556,0.03733,0.03929,0.04124,0.0432,0.04533,0.04747,0.04978,0.05209,0.05458,0.05724,0.05991,0.06293,0.06578,0.0688,0.07164,0.07467,0.07751,0.08053,0.08373,0.08676,0.08996,0.09316,0.09653,0.09973,0.10276,0.10596,0.10898,0.112,0.11502,0.11787,0.12071,0.12356,0.1264,0.12907,0.13156,0.13422,0.13671,0.1392,0.14151,0.14382,0.14524,0.14649,0.14773,0.1488,0.15004,0.15111,0.15236,0.15342,0.15449,0.15556,0.15644,0.15751,0.1584,0.15929,0.16018,0.16107,0.16178,0.16267,0.16356,0.16427,0.16516,0.16604,0.16676,0.16764,0.16853,0.16924,0.17013,0.17102,0.17173,0.17262,0.17351,0.17422,0.17511,0.176,0.17671,0.1776,0.17849,0.1792,0.18009,0.18098,0.18169,0.18258,0.18347,0.18418,0.18507,0.18596,0.18667,0.18756,0.18844,0.18916,0.19004,0.19093,0.19164,0.19253,0.19342,0.19431,0.19502,0.19591,0.1968,0.19751,0.1984,0.19929,0.2,0.20089,0.20178,0.20267,0.20338,0.20427,0.20516,0.20587,0.20676,0.20764,0.20853,0.20924,0.21013,0.21102,0.21173,0.21262,0.21351,0.2144,0.21511,0.216,0.21689,0.21778,0.21849,0.21938,0.22027,0.22116,0.22187,0.22276,0.22364,0.22453,0.22524,0.22613,0.22702,0.22791,0.22862,0.22951,0.2304,0.23129,0.23218,0.23289,0.23378,0.23467,0.23556,0.23627,0.23716,0.23804,0.23893,0.23982,0.24053,0.24142,0.24231,0.2432,0.24409,0.2448,0.24569,0.24658,0.24747,0.24836,0.24907,0.24996,0.25084,0.25173,0.25262,0.25333,0.25422,0.25511,0.256,0.25689,0.25778,0.25849,0.25938,0.26027,0.26116,0.26204,0.26293,0.26382,0.26453,0.26542,0.26631,0.2672,0.26809,0.26898,0.26987,0.27058,0.27147,0.27236,0.27324,0.27413,0.27502,0.27591,0.2768,0.27769,0.2784,0.27929,0.28018,0.28107,0.28196,0.28284,0.28373,0.28462,0.28551,0.2864,0.28711,0.288,0.28889,0.28978,0.29067,0.29156,0.29244,0.29333,0.29422,0.29511,0.296,0.29689,0.29778,0.29867,0.29956,0.30044,0.30133,0.30222,0.30293,0.30382,0.30471,0.3056,0.30649,0.30738,0.30827,0.30916,0.31004,0.31093,0.31182,0.31271,0.3136,0.31449,0.31538,0.31627,0.31716,0.31804,0.31893,0.31982,0.32071,0.3216,0.32249,0.32338,0.32427,0.32533,0.32622,0.32711,0.328,0.32889,0.32978,0.33067,0.33156,0.33244,0.33333,0.33422,0.33511,0.336,0.33689,0.33778,0.33867,0.33956,0.34062,0.34151,0.3424,0.34329,0.34418,0.34507,0.34596,0.34684,0.34773,0.34862,0.34951,0.35058,0.35147,0.35236,0.35324,0.35413,0.35502,0.35591,0.3568,0.35787,0.35876,0.35964,0.36053,0.36142,0.36231,0.3632,0.36427,0.36516,0.36604,0.36693,0.36782,0.36871,0.36978,0.37067,0.37156,0.37244,0.37333,0.3744,0.37529,0.37618,0.37707,0.37796,0.37902,0.37991,0.3808,0.38169,0.38258,0.38364,0.38453,0.38542,0.38631,0.3872,0.38827,0.38916,0.39004,0.39093,0.392,0.39289,0.39378,0.39467,0.39573,0.39662,0.39751,0.3984,0.39947,0.40036,0.40124,0.40213,0.4032,0.40409,0.40498,0.40604,0.40693,0.40782,0.40871,0.40978,0.41067,0.41156,0.41262,0.41351,0.4144,0.41529,0.41636,0.41724,0.41796,0.41884,0.41973,0.42062,0.42151,0.42222,0.42311,0.424,0.42471,0.4256,0.42631,0.4272,0.42791,0.4288,0.42951,0.43022,0.43111,0.43182,0.43253,0.43342,0.43413,0.43502,0.43573,0.43644,0.43733,0.43804,0.43893,0.43964,0.44036,0.44107,0.44178,0.44267,0.44338,0.44409,0.4448,0.44551,0.44622,0.44711,0.44782,0.44853,0.44924,0.44996,0.45067,0.45138,0.45209,0.4528,0.45351,0.45422,0.45493,0.45564,0.45636,0.45707,0.45778,0.45849,0.4592,0.45991,0.46062,0.46133,0.46204,0.46276,0.46347,0.46418,0.46489,0.4656,0.46631,0.46702,0.46756,0.46827,0.46898,0.46969,0.4704,0.47111,0.47182,0.47253,0.47324,0.47396,0.47467,0.4752,0.47591,0.47662,0.47733,0.47804,0.47876,0.47947,0.48018,0.48089,0.4816,0.48231,0.48302,0.48373,0.48444,0.48516,0.48587,0.48658,0.48729,0.488,0.48871,0.4896,0.49031,0.49102,0.49173,0.49244,0.49316,0.49387,0.49458,0.49547,0.49618,0.49689,0.4976,0.49831,0.4992,0.49991,0.50062,0.50151,0.50222,0.50293,0.50382,0.50453,0.50524,0.50613,0.50684,0.50756,0.50827,0.50916,0.50987,0.51058,0.51129,0.51218,0.51289,0.5136,0.51431,0.5152,0.51591,0.51662,0.51733,0.51822,0.51893,0.51964,0.52053,0.52124,0.52196,0.52284,0.52356,0.52427,0.52498,0.52587,0.52658,0.52729,0.52818,0.52889,0.5296,0.53049,0.5312,0.53191,0.5328,0.53351,0.53422,0.53493,0.53582,0.53653,0.53724,0.53813,0.53884,0.53956,0.54044,0.54116,0.54187,0.54258,0.54347,0.54418,0.54489,0.5456,0.54649,0.5472,0.54791,0.54862,0.54951,0.55022,0.55093,0.55164,0.55253,0.55324,0.55396,0.55467,0.55538,0.55627,0.55698,0.55769,0.5584,0.55911,0.56,0.56071,0.56142,0.56213,0.56284,0.56356,0.56444,0.56516,0.56587,0.56658,0.56729,0.568,0.56871,0.5696,0.57031,0.57102,0.57173,0.57244,0.57316,0.57387,0.57458,0.57529,0.57618,0.57689,0.5776,0.57831,0.57902,0.57973,0.58044,0.58116,0.58187,0.58258,0.58329,0.584,0.58471,0.58542,0.58613,0.58684,0.58756,0.58827,0.58898,0.58969,0.5904,0.59111,0.59182,0.59253,0.59324,0.59396,0.59467,0.59538,0.59609,0.5968,0.59751,0.59822,0.59893,0.59964,0.60036,0.60107,0.60178,0.60249,0.6032,0.60373,0.60444,0.60516,0.60587,0.60658,0.60729,0.608,0.60871,0.60942,0.61013,0.61084,0.61156,0.61227,0.6128,0.61351,0.61422,0.61493,0.61564,0.61636,0.61707,0.61778,0.61849,0.6192,0.61991,0.62062,0.62133,0.62204,0.62276,0.62347,0.624,0.62471,0.62542,0.62613,0.62684,0.62756,0.62827,0.62898,0.62969,0.6304,0.63111,0.63182,0.63253,0.63324,0.63396,0.63467,0.63538,0.63609,0.6368,0.63751,0.63822,0.63893,0.63964,0.64036,0.64107,0.64178,0.64249,0.6432,0.64391,0.64462,0.64533,0.64604,0.64676,0.64747,0.64818,0.64889,0.6496,0.65031,0.65102,0.65173,0.65244,0.65316,0.65387,0.65458,0.65529,0.656,0.65671,0.65742,0.65813,0.65884,0.65956,0.66027,0.66098,0.66169,0.6624,0.66311,0.66382,0.66453,0.66524,0.66596,0.66667,0.66738,0.66809,0.6688,0.66951,0.67022,0.67093,0.67147,0.67218,0.67289,0.6736,0.67431,0.67502,0.67573,0.67644,0.67698,0.67769,0.6784,0.67911,0.67982,0.68053,0.68124,0.68178,0.68249,0.6832,0.68391,0.68462,0.68533,0.68604,0.68658,0.68729,0.688,0.68871,0.68924,0.68996,0.69067,0.6912,0.69191,0.69244,0.69316,0.69387,0.6944,0.69511,0.69564,0.69636,0.69707,0.6976,0.69831,0.69884,0.69956,0.70027,0.7008,0.70151,0.70222,0.70276,0.70347,0.70418,0.70471,0.70542,0.70596,0.70667,0.70738,0.70809,0.70862,0.70933,0.71004,0.71058,0.71129,0.712,0.71253,0.71324,0.71396,0.71467,0.7152,0.71591,0.71662,0.71733,0.71787,0.71858,0.71929,0.72,0.72053,0.72124,0.72196,0.72267,0.7232,0.72391,0.72462,0.72533,0.72604,0.72658,0.72729,0.728,0.72871,0.72942,0.73013,0.73084,0.73138,0.73209,0.7328,0.73351,0.73422,0.73493,0.73564,0.73618,0.73689,0.7376,0.73831,0.73902,0.73973,0.74044,0.74116,0.74187,0.74258,0.74329,0.74382,0.74453,0.74524,0.74596,0.74667,0.74738,0.74809,0.7488,0.74951,0.75022,0.75093,0.75164,0.75236,0.75307,0.75378,0.75449,0.7552,0.75591,0.75662,0.75733,0.75804,0.75876,0.75947,0.76036,0.76107,0.76178,0.76249,0.7632,0.76391,0.76462,0.76533,0.76604,0.76676,0.76764,0.76836,0.76907,0.76978,0.77049,0.7712,0.77209,0.7728,0.77351,0.77422,0.77493,0.77564,0.77653,0.77724,0.77796,0.77867,0.77956,0.78027,0.78098,0.78169,0.78258,0.78329,0.784,0.78489,0.7856,0.78631,0.7872,0.78791,0.78862,0.78951,0.79022,0.79093,0.79182,0.79253,0.79324,0.79413,0.79484,0.79573,0.79644,0.79733,0.79804,0.79893,0.79964,0.80053,0.80124,0.80213,0.80284,0.80373,0.80462,0.80533,0.80622,0.80711,0.80782,0.80871,0.8096,0.81049,0.8112,0.81209,0.81298,0.81387,0.81476,0.81564,0.81653,0.81742,0.81831,0.8192,0.82027,0.82116,0.82222,0.82311,0.82418,0.82524,0.82631,0.82738,0.82844,0.82969,0.83093,0.83218,0.83342,0.83467,0.83609,0.83751,0.83893,0.84053,0.84213,0.84391,0.84587,0.84782,0.84996,0.85209,0.8544,0.85653,0.85902,0.86133,0.86382,0.86631,0.86916,0.87218,0.8752,0.87804,0.88107,0.88373,0.88658,0.88924,0.89191,0.89458,0.89689,0.8992,0.90151,0.90364,0.90578,0.90791,0.91004,0.912,0.91413,0.91609,0.91822,0.92018,0.92213,0.92409,0.92622,0.92818,0.93049,0.9328,0.93493,0.93724,0.93938,0.94169,0.94382,0.94596,0.94809,0.9504,0.95253,0.95467,0.95698,0.95911,0.96142,0.96356,0.96587,0.96818,0.97067,0.97316,0.97564,0.97831,0.98116,0.98436,0.98827,0.9952];
+const MASTER_LUT_WOMAN = [0.0,0.00836,0.01084,0.01298,0.01511,0.01689,0.01884,0.02062,0.0224,0.02436,0.02613,0.02809,0.03004,0.03218,0.03396,0.03591,0.03787,0.03982,0.04178,0.04391,0.04587,0.048,0.05031,0.05262,0.05511,0.05778,0.06044,0.06329,0.06631,0.06916,0.07218,0.0752,0.07822,0.08124,0.08444,0.08764,0.09084,0.09404,0.09724,0.10044,0.10364,0.10667,0.1088,0.1104,0.11182,0.11342,0.11484,0.11609,0.11751,0.11876,0.12,0.12107,0.12213,0.1232,0.12427,0.12516,0.12622,0.12711,0.128,0.12889,0.12978,0.13067,0.13156,0.13244,0.13333,0.13422,0.13493,0.13582,0.13671,0.13742,0.13831,0.13902,0.13991,0.14062,0.14151,0.14222,0.14311,0.14382,0.14453,0.14542,0.14613,0.14702,0.14773,0.14862,0.14933,0.15022,0.15093,0.15182,0.15253,0.15324,0.15413,0.15484,0.15573,0.15644,0.15733,0.15804,0.15893,0.15964,0.16053,0.16124,0.16213,0.16284,0.16356,0.16444,0.16516,0.16604,0.16676,0.16764,0.16836,0.16924,0.16996,0.17084,0.17156,0.17244,0.17316,0.17404,0.17476,0.17564,0.17636,0.17724,0.17796,0.17884,0.17956,0.18044,0.18116,0.18204,0.18276,0.18364,0.18436,0.18524,0.18596,0.18684,0.18756,0.18844,0.18916,0.19004,0.19076,0.19164,0.19253,0.19324,0.19413,0.19484,0.19573,0.19644,0.19733,0.19804,0.19893,0.19964,0.20053,0.20124,0.20213,0.20302,0.20373,0.20462,0.20533,0.20622,0.20693,0.20782,0.20853,0.20942,0.21031,0.21102,0.21191,0.21262,0.21351,0.21422,0.21511,0.216,0.21671,0.2176,0.21831,0.2192,0.21991,0.2208,0.22169,0.2224,0.22329,0.224,0.22489,0.22578,0.22649,0.22738,0.22809,0.22898,0.22987,0.23058,0.23147,0.23218,0.23307,0.23396,0.23467,0.23556,0.23644,0.23716,0.23804,0.23876,0.23964,0.24053,0.24124,0.24213,0.24302,0.24373,0.24462,0.24533,0.24622,0.24711,0.24782,0.24871,0.2496,0.25031,0.2512,0.25209,0.2528,0.25369,0.2544,0.25529,0.25618,0.25689,0.25778,0.25867,0.25938,0.26027,0.26116,0.26187,0.26276,0.26364,0.26436,0.26524,0.26613,0.26684,0.26773,0.26862,0.26933,0.27022,0.27111,0.27182,0.27271,0.2736,0.27449,0.2752,0.27609,0.27698,0.27769,0.27858,0.27947,0.28018,0.28107,0.28196,0.28284,0.28356,0.28444,0.28533,0.28604,0.28693,0.28782,0.28853,0.28942,0.29031,0.2912,0.29191,0.2928,0.29369,0.29458,0.29529,0.29618,0.29707,0.29778,0.29867,0.29956,0.30044,0.30116,0.30204,0.30293,0.30382,0.30453,0.30542,0.30631,0.3072,0.30791,0.3088,0.30969,0.31058,0.31129,0.31218,0.31307,0.31396,0.31467,0.31556,0.31644,0.31733,0.31822,0.31893,0.31982,0.32071,0.3216,0.32231,0.3232,0.32409,0.32498,0.32587,0.32658,0.32747,0.32836,0.32924,0.32996,0.33084,0.33173,0.33262,0.33351,0.33422,0.33511,0.336,0.33689,0.33778,0.33867,0.33938,0.34027,0.34116,0.34204,0.34293,0.34364,0.34453,0.34542,0.34631,0.3472,0.34809,0.3488,0.34969,0.35058,0.35147,0.35236,0.35324,0.35396,0.35484,0.35573,0.35662,0.35751,0.3584,0.35929,0.36,0.36089,0.36178,0.36267,0.36356,0.36444,0.36533,0.36604,0.36693,0.36782,0.36871,0.3696,0.37049,0.37138,0.37227,0.37298,0.37387,0.37476,0.37564,0.37653,0.37742,0.37831,0.3792,0.38009,0.3808,0.38169,0.38258,0.38347,0.38436,0.38524,0.38613,0.38702,0.38791,0.3888,0.38969,0.3904,0.39129,0.39218,0.39307,0.39396,0.39484,0.39573,0.39662,0.39751,0.3984,0.39929,0.40018,0.40107,0.40196,0.40284,0.40356,0.40444,0.40533,0.40622,0.40711,0.408,0.40889,0.40978,0.41067,0.41156,0.41244,0.41333,0.41422,0.41511,0.416,0.41689,0.41778,0.41867,0.41956,0.42044,0.42133,0.42222,0.42311,0.424,0.42489,0.42578,0.42667,0.42738,0.42827,0.42916,0.42987,0.43076,0.43147,0.43236,0.43307,0.43396,0.43467,0.43556,0.43627,0.43698,0.43787,0.43858,0.43929,0.44018,0.44089,0.4416,0.44249,0.4432,0.44391,0.44462,0.44551,0.44622,0.44693,0.44782,0.44853,0.44924,0.44996,0.45067,0.45138,0.45209,0.4528,0.45351,0.4544,0.45511,0.45582,0.45653,0.45724,0.45796,0.45867,0.45938,0.46009,0.4608,0.46151,0.46222,0.46293,0.46364,0.46436,0.46507,0.46578,0.46649,0.4672,0.46791,0.46862,0.46933,0.47004,0.47076,0.47147,0.47218,0.47289,0.4736,0.47431,0.47502,0.47556,0.47627,0.47698,0.47769,0.4784,0.47911,0.47982,0.48053,0.48107,0.48178,0.48249,0.4832,0.48391,0.48462,0.48533,0.48604,0.48676,0.48747,0.488,0.48871,0.48942,0.49013,0.49084,0.49156,0.49227,0.49298,0.49369,0.4944,0.49511,0.49582,0.49653,0.49724,0.49796,0.49867,0.49938,0.50009,0.5008,0.50151,0.50222,0.50293,0.50364,0.50436,0.50524,0.50596,0.50667,0.50738,0.50809,0.5088,0.50969,0.5104,0.51111,0.51182,0.51271,0.51342,0.51413,0.51484,0.51573,0.51644,0.51716,0.51787,0.51876,0.51947,0.52018,0.52107,0.52178,0.52249,0.5232,0.52409,0.5248,0.52551,0.5264,0.52711,0.52782,0.52853,0.52942,0.53013,0.53084,0.53173,0.53244,0.53316,0.53404,0.53476,0.53547,0.53636,0.53707,0.53778,0.53849,0.53938,0.54009,0.5408,0.54169,0.5424,0.54311,0.54382,0.54471,0.54542,0.54613,0.54684,0.54773,0.54844,0.54916,0.54987,0.55058,0.55147,0.55218,0.55289,0.5536,0.55431,0.5552,0.55591,0.55662,0.55733,0.55804,0.55876,0.55964,0.56036,0.56107,0.56178,0.56249,0.5632,0.56391,0.5648,0.56551,0.56622,0.56693,0.56764,0.56836,0.56907,0.56978,0.57067,0.57138,0.57209,0.5728,0.57351,0.57422,0.57493,0.57564,0.57636,0.57724,0.57796,0.57867,0.57938,0.58009,0.5808,0.58151,0.58222,0.58293,0.58364,0.58436,0.58507,0.58578,0.58667,0.58738,0.58809,0.5888,0.58951,0.59022,0.59093,0.59164,0.59236,0.59307,0.59378,0.59449,0.5952,0.59591,0.59662,0.59733,0.59822,0.59893,0.59964,0.60036,0.60107,0.60178,0.60249,0.6032,0.60391,0.60462,0.60551,0.60622,0.60693,0.60764,0.60836,0.60907,0.60978,0.61067,0.61138,0.61209,0.6128,0.61351,0.61422,0.61511,0.61582,0.61653,0.61724,0.61796,0.61884,0.61956,0.62027,0.62098,0.62187,0.62258,0.62329,0.624,0.62489,0.6256,0.62631,0.6272,0.62791,0.62862,0.62951,0.63022,0.63093,0.63182,0.63253,0.63324,0.63413,0.63484,0.63556,0.63644,0.63716,0.63804,0.63876,0.63947,0.64036,0.64107,0.64196,0.64267,0.64338,0.64427,0.64498,0.64569,0.64658,0.64729,0.64818,0.64889,0.64978,0.65049,0.65138,0.65209,0.6528,0.65369,0.6544,0.65529,0.656,0.65689,0.6576,0.65849,0.65938,0.66009,0.66098,0.66169,0.66258,0.66329,0.66418,0.66489,0.66578,0.66649,0.66738,0.66809,0.66898,0.66969,0.67058,0.67147,0.67218,0.67307,0.67378,0.67467,0.67538,0.67627,0.67698,0.67787,0.67858,0.67947,0.68018,0.68107,0.68178,0.68249,0.68338,0.68409,0.68498,0.68569,0.68658,0.68729,0.688,0.68889,0.6896,0.69049,0.6912,0.69191,0.6928,0.69351,0.69422,0.69511,0.69582,0.69653,0.69742,0.69813,0.69902,0.69973,0.70044,0.70133,0.70204,0.70276,0.70364,0.70436,0.70524,0.70596,0.70667,0.70756,0.70827,0.70916,0.70987,0.71058,0.71147,0.71218,0.71307,0.71378,0.71449,0.71538,0.71609,0.71698,0.71769,0.7184,0.71929,0.72,0.72089,0.7216,0.72249,0.7232,0.72391,0.7248,0.72551,0.7264,0.72711,0.72782,0.72871,0.72942,0.73013,0.73102,0.73173,0.73244,0.73316,0.73387,0.73458,0.73529,0.73618,0.73689,0.7376,0.73831,0.73902,0.73973,0.74062,0.74133,0.74204,0.74276,0.74347,0.74436,0.74507,0.74578,0.74667,0.74738,0.74809,0.7488,0.74969,0.7504,0.75111,0.752,0.75271,0.75342,0.75431,0.75502,0.75591,0.75662,0.75733,0.75822,0.75893,0.75982,0.76053,0.76142,0.76213,0.76302,0.76373,0.76462,0.76533,0.76622,0.76693,0.76782,0.76853,0.76942,0.77013,0.77102,0.77191,0.77262,0.77351,0.7744,0.77511,0.776,0.77689,0.7776,0.77849,0.77938,0.78009,0.78098,0.78187,0.78276,0.78364,0.78436,0.78524,0.78613,0.78702,0.78791,0.7888,0.78969,0.7904,0.79129,0.79218,0.79307,0.79396,0.79484,0.79573,0.79662,0.79769,0.79858,0.79947,0.80036,0.80124,0.80213,0.8032,0.80409,0.80498,0.80587,0.80693,0.80782,0.80889,0.80978,0.81084,0.81173,0.8128,0.81369,0.81476,0.81582,0.81689,0.81796,0.81902,0.82009,0.82133,0.8224,0.82364,0.82507,0.82649,0.82791,0.82951,0.83111,0.83289,0.83484,0.83716,0.83982,0.84284,0.84622,0.8496,0.85298,0.85636,0.85991,0.86329,0.86649,0.86969,0.87271,0.87556,0.8784,0.88107,0.88373,0.8864,0.88871,0.8912,0.89333,0.89564,0.89778,0.90009,0.90222,0.90436,0.90649,0.90844,0.91058,0.91271,0.91467,0.91662,0.91876,0.92071,0.92267,0.92462,0.92658,0.92853,0.93049,0.93227,0.93422,0.93618,0.93813,0.94009,0.94204,0.944,0.94596,0.94791,0.94987,0.952,0.95396,0.95609,0.95804,0.96018,0.96231,0.96444,0.96658,0.96889,0.9712,0.97369,0.97618,0.97884,0.98169,0.98489,0.98862,0.99538];
+
+/* ============================================================================
+   Tongan Scholar Publications by Gender — body-composition chart (ECharts)
+   Two body silhouettes (Woman / Man). Each body is filled bottom-to-top with
+   five stacked coloured bands sized by that gender's share of publications
+   across: Masters theses, PhD theses, Journal articles, Books, Book chapters.
+   Each body sums to 100% of that gender's own publications.
+
+   DATA SOURCE (auto-detected):
+     1. the EMBEDDED_FALLBACK snapshot below (always works), OR
+     2. an uploaded CSV / Excel file (the "By Gender" worksheet of the
+        delivered workbook, or a simple Type/Female/Male table).
+   ============================================================================ */
+
+/* ---- Publication types, order (bottom -> top on the body) & colours ------- */
+/* Order chosen so the largest categories sit lower, matching the reference.
+   Colours use the site's data-viz palette. */
+const TYPES = [
+  // Ordered BOTTOM -> TOP on the body (feet -> head).
+  // Top-to-bottom reads: PhD, Masters, Journal, Books, Book chapters.
+  // 2026-08-28: adopted the canonical C1 publication-type palette per Ron
+  // so every panel across the V2 dashboard uses the same fill for each type.
+  // Previous culturally-themed palette (black hair/teal body/gold belly)
+  // retired: bookSection #A84B2F, book #FFC553, journal #1B474D,
+  // masters #20808D, phd #141414.
+  { key:"bookSection", label:"Book chapters",   color:"#C08388" },  // dusty rose (C1 Book Chapter)
+  { key:"book",        label:"Books",           color:"#7a1419" },  // deep red (C1 Book)
+  { key:"journal",     label:"Journal articles",color:"#B8860B" },  // goldenrod (C1 Journal Article)
+  { key:"masters",     label:"Masters theses",  color:"#8FBC8F" },  // sage green (C1 Masters)
+  { key:"phd",         label:"PhD theses",      color:"#228B22" }   // forest green (C1 PhD)
+];
+/* Legend shows top-to-bottom (masters first) to read naturally. */
+const LEGEND_ORDER = ["phd","masters","journal","book","bookSection"];
+
+/* Gendered standing silhouettes — traced from iTaukei reference photo
+   (broad male in bula shirt + sulu; female in afro + long-sleeve sulu).
+   Normalized to a shared 150x360 box, head at top. Man=male, Woman=female. */
+const WOMAN_PATH = "path://M 72.173,0.5509 C 71.733,0.9109 70.893,1.0309 69.933,0.9109 C 68.653,0.7509 68.2929,0.8709 67.5729,1.7909 C 67.0129,2.511 66.4929,2.791 65.9729,2.631 C 65.4929,2.471 64.9329,2.711 64.2928,3.391 C 63.7728,3.951 63.0528,4.391 62.6928,4.391 C 61.9728,4.391 60.6928,5.591 60.6928,6.231 C 60.6928,6.4311 60.3327,6.8311 59.8927,7.1111 C 59.4527,7.3911 59.0927,7.8311 59.0927,8.1111 C 59.0927,8.3911 58.5727,9.1511 57.8927,9.7911 C 57.2527,10.4312 56.6927,11.2712 56.6927,11.6312 C 56.6927,12.0312 56.4527,12.8312 56.1326,13.4712 C 55.2526,15.1913 54.1326,23.5115 54.6526,24.1515 C 54.8926,24.4315 55.0126,24.9915 54.8526,25.3515 C 54.7326,25.7115 54.7726,26.2316 55.0126,26.5116 C 55.2126,26.7516 55.5326,27.9916 55.6526,29.1916 C 55.8126,30.3917 56.4927,33.1917 57.2127,35.3518 C 58.2927,38.6719 58.6527,39.3919 59.5327,39.7119 C 60.3727,40.0319 60.6528,40.5119 61.0128,42.392 C 61.2928,43.752 62.0128,45.392 62.7328,46.3921 C 63.9728,48.0721 63.9728,48.1921 63.7728,51.5522 C 63.5728,54.8323 63.4928,55.0323 62.2528,56.0723 C 61.5328,56.7123 60.6128,57.1923 60.2527,57.1923 C 59.8927,57.1923 58.7727,57.5523 57.7327,58.0324 C 56.7327,58.4724 55.7326,58.7524 55.5326,58.6324 C 55.3326,58.5124 53.9326,58.9124 52.4125,59.5524 C 50.9325,60.1924 48.0924,61.1924 46.0924,61.7925 C 40.1722,63.5525 37.0922,64.8325 35.6121,66.1526 C 32.412,69.0726 29.332,74.4328 25.3719,84.193 C 23.9318,87.7131 22.2918,91.6332 21.7318,92.9132 C 21.1718,94.1933 20.6917,95.2733 20.6917,95.3933 C 20.6917,95.4733 21.6118,96.0333 22.7318,96.6733 C 24.7318,97.7934 24.7318,97.7934 24.5318,99.3934 C 24.4118,100.2734 24.0918,104.5935 23.8918,108.9936 C 23.4518,117.9539 23.0918,120.2339 21.6518,124.474 C 19.5317,130.6742 18.6917,137.7544 18.2917,152.5948 C 17.9317,166.3151 17.8117,168.0751 17.0517,171.0352 C 16.7716,172.1552 16.7716,173.3553 17.0517,174.9153 C 17.3717,176.7154 17.2917,178.1554 16.6516,182.4755 C 15.4116,190.4757 15.4116,190.8757 17.6917,198.6759 C 18.3717,200.956 19.2917,201.876 24.6518,205.5561 C 26.9319,207.1161 27.7319,207.4761 28.1719,207.1561 C 29.052,206.3961 28.812,204.1961 27.6919,202.876 C 27.1319,202.196 26.6919,201.396 26.6919,201.076 C 26.6919,200.716 26.1719,199.9159 25.4919,199.3159 C 23.5718,197.5159 22.9318,190.8357 24.6118,190.1957 C 25.5319,189.8357 25.6919,190.2357 25.9319,193.8358 C 26.1719,197.6359 27.0519,199.3959 28.7319,199.3959 C 29.612,199.3959 29.732,199.1959 29.972,196.9959 C 30.092,195.6758 30.172,191.7157 30.172,188.1957 C 30.092,181.7955 30.092,181.7955 28.5319,178.6354 C 27.0919,175.6353 27.0119,175.2753 27.2119,172.6353 C 27.4119,169.5952 29.772,162.035 33.4121,152.5948 C 34.8521,148.9147 35.6921,145.9146 36.2921,142.3945 C 36.7722,139.6344 37.6922,135.5943 38.3322,133.3943 C 38.9722,131.1942 39.6922,127.8341 39.8922,125.9541 C 40.0922,124.074 40.7323,120.5139 41.2923,118.0739 C 41.8523,115.6338 42.2923,113.1938 42.2923,112.6337 C 42.2923,111.3537 42.9323,111.2737 43.2123,112.4737 C 43.8123,114.8738 43.9323,121.954 43.4523,124.394 C 43.1723,125.8341 42.9723,128.0741 43.0123,129.3942 C 43.0523,130.8742 42.8523,131.9942 42.5323,132.3942 C 41.0523,134.0743 36.6521,146.0346 35.8921,150.3947 C 35.6121,151.8347 34.9721,154.9548 34.4521,157.3949 C 33.4121,162.115 33.2921,163.435 33.8521,163.755 C 34.0121,163.875 33.8521,165.6351 33.4921,167.6751 C 31.932,175.9553 31.292,184.3156 29.492,219.9965 C 27.4519,260.7975 26.7319,272.6778 25.2919,290.7982 C 23.8518,309.1587 23.8518,309.5187 25.2919,311.0388 C 25.9719,311.7188 27.3319,312.5988 28.4119,312.9988 C 29.652,313.4788 30.292,313.9188 30.292,314.3988 C 30.292,315.3589 32.012,315.9989 40.6923,318.1589 C 44.7324,319.199 48.0924,320.079 48.1724,320.159 C 48.8525,320.799 49.5325,327.4392 49.2925,330.3993 C 49.0925,332.2793 49.0125,334.7994 49.0525,335.9994 C 49.0925,337.9594 48.8925,338.5995 47.4124,341.2395 C 45.1324,345.2396 44.2523,346.2797 40.6122,349.3597 C 36.6121,352.7998 35.5721,355.7599 38.0122,356.8399 C 38.4922,357.0399 39.1722,357.3599 39.4922,357.5199 C 41.2523,358.52 41.9723,358.8 42.8123,358.8 C 43.3323,358.8 43.9323,359 44.1723,359.24 C 44.7324,359.8 46.7324,359.84 47.7724,359.28 C 48.4124,358.92 48.7325,358.96 49.0925,359.4 C 49.4525,359.8 50.3725,360 52.0525,360 C 54.7726,360 55.1326,359.84 55.8926,358.4 C 56.1726,357.8799 56.8527,357.0799 57.3327,356.6799 C 58.3327,355.9199 59.0927,353.7598 59.0927,351.7198 C 59.0927,350.5998 59.2927,350.3598 60.8528,349.6397 C 63.9328,348.3197 64.4529,346.3197 63.0528,341.7595 C 62.3728,339.5995 62.2528,338.3995 62.4128,336.2794 C 62.5728,334.4394 62.4528,332.5993 62.0128,330.7593 C 61.5728,328.7592 61.4928,327.1192 61.6928,324.9191 C 61.9728,321.879 61.9728,321.879 64.3729,322.159 C 65.7329,322.279 71.493,322.399 77.2132,322.399 L 87.5734,322.399 L 87.2934,326.8792 C 87.1334,329.3592 86.9734,333.2793 86.9334,335.5994 C 86.8534,338.7995 86.6134,340.4395 85.9334,342.3596 C 84.5734,346.2397 85.5334,348.7197 88.8135,349.9597 C 89.7735,350.3198 89.8935,350.5998 89.8935,352.1598 C 89.8935,354.2399 90.4135,355.8399 91.4935,356.9599 C 91.9335,357.4399 92.7336,358.28 93.2536,358.88 C 94.1336,359.88 94.5336,360 96.6537,360 C 98.1337,360 99.2537,359.8 99.5737,359.48 C 99.9738,359.04 100.2138,359.04 101.0938,359.48 C 102.3738,360.16 103.1338,360.12 104.1339,359.4 C 104.6139,359.08 105.0939,358.92 105.2139,359.08 C 105.6139,359.44 109.134,357.9999 110.614,356.8799 C 113.0141,355.0799 112.3341,353.1998 107.6939,348.7197 C 105.6539,346.7997 103.8138,344.5596 103.2138,343.3996 C 102.6538,342.3196 101.7738,340.7995 101.2938,339.9995 C 99.8937,337.8394 99.2937,328.5192 100.2538,323.5591 C 100.7738,320.879 100.7738,320.879 102.2938,320.639 C 103.2938,320.479 103.8538,320.159 103.9739,319.679 C 104.2139,318.799 108.094,317.6389 114.2141,316.5989 C 118.4942,315.9189 119.4942,315.4789 119.4942,314.4388 C 119.4942,313.8788 119.9743,313.5588 121.4143,313.2388 C 124.5744,312.4388 125.4944,311.9588 125.4944,311.0388 C 125.4944,310.5988 125.2944,306.3186 125.0944,301.5985 C 124.8944,296.8784 124.3344,284.6381 123.8944,274.3978 C 123.0943,255.7574 122.4143,242.757 121.2943,224.3966 C 120.9743,218.9964 120.3343,208.1962 119.8943,200.396 C 119.0142,184.7956 118.2942,176.8754 117.0542,169.0752 C 116.4542,165.4351 116.3742,163.795 116.6542,163.435 C 117.0542,162.955 116.0142,156.6749 113.8541,146.9946 C 113.0541,143.2745 109.134,133.5943 108.014,132.4742 C 107.5739,132.0342 107.4539,131.3942 107.6539,130.1542 C 107.7739,129.1142 107.6139,127.6341 107.2139,126.3141 C 106.4139,123.594 106.6939,113.8738 107.6539,112.1137 C 108.254,110.9937 108.254,110.9937 108.294,112.0337 C 108.294,112.6337 108.734,115.0338 109.294,117.4739 C 109.814,119.8739 110.454,123.634 110.734,125.7941 C 110.974,127.9941 111.614,131.0342 112.1341,132.5942 C 113.1341,135.5943 114.6941,143.0745 114.6941,144.9146 C 114.6941,145.5546 115.7742,148.7947 117.0542,152.1147 C 120.8943,162.075 123.4943,170.7952 123.4943,173.8753 C 123.4943,174.4353 122.7343,176.5554 121.8143,178.5554 C 120.0943,182.1955 120.0943,182.1955 120.2143,190.3557 C 120.2543,194.8358 120.4143,198.6759 120.5343,198.8359 C 120.8943,199.4359 122.5343,199.2359 123.1743,198.4759 C 124.0544,197.5159 124.2544,196.6359 124.4944,193.0358 C 124.6944,189.3957 124.7344,189.3557 125.8944,189.9957 C 126.7744,190.4757 126.7744,190.6357 126.5344,194.1558 C 126.2544,197.7559 126.2544,197.7959 124.6144,199.2759 C 123.6944,200.156 123.0943,201.036 123.2143,201.356 C 123.3343,201.676 123.0143,202.316 122.4543,202.836 C 121.3743,203.8761 121.1343,206.3961 122.0543,207.1561 C 122.8543,207.8362 131.3745,201.396 132.1746,199.5559 C 134.1746,194.7558 134.6946,188.9557 133.6546,182.2755 C 133.2546,179.6354 133.1346,177.1554 133.2946,175.1953 C 133.4146,173.5153 133.3346,170.9152 133.0946,169.3952 C 132.8546,167.8351 132.4946,160.0349 132.2946,151.9947 C 131.8946,136.2743 131.4545,132.4342 129.2545,124.9941 C 127.5744,119.2739 127.5344,118.9539 127.0944,111.7937 C 126.8944,108.0336 126.6144,103.3535 126.4544,101.3935 C 126.2144,97.7534 126.2144,97.7534 128.2145,96.5133 C 130.2545,95.2333 130.2545,95.2333 129.0545,92.7532 C 128.3745,91.3932 126.6144,87.1931 125.0944,83.433 C 121.2143,73.7128 118.5342,69.1126 115.0941,66.1126 C 113.0941,64.3925 111.8141,63.8325 106.2539,62.1925 C 103.5338,61.3924 100.0138,60.1924 98.4537,59.5524 C 96.8937,58.8724 95.4536,58.3924 95.2536,58.4724 C 94.4936,58.7124 89.0535,56.6323 88.0935,55.7523 C 87.1734,54.9123 87.0934,54.5523 87.0934,51.4322 C 87.0934,48.3521 87.2134,47.8321 88.2935,46.1521 C 88.9335,45.112 89.6535,43.312 89.8935,42.152 C 90.1735,40.8319 90.5735,39.9919 90.8935,39.9919 C 91.1735,39.9919 91.6935,39.7119 92.0135,39.3919 C 92.8936,38.5119 94.6936,32.8317 94.6936,30.9117 C 94.6936,29.9917 94.8936,29.1116 95.0936,28.9916 C 95.3336,28.8716 95.4936,28.2316 95.4936,27.5916 C 95.4936,26.9516 95.6536,26.3516 95.8536,26.1916 C 96.3737,25.8715 96.1337,19.6714 95.5736,18.2714 C 95.2936,17.6313 95.0936,16.2713 95.0936,15.1913 C 95.0936,13.8712 94.8936,13.1912 94.4936,13.0312 C 94.1336,12.9112 93.8936,12.3112 93.8936,11.6312 C 93.8936,10.7512 93.5736,10.1511 92.6936,9.5111 C 92.0536,9.0311 91.4935,8.3111 91.4935,7.9111 C 91.4935,7.4711 90.9735,6.8311 90.3335,6.4711 C 89.6535,6.111 88.9335,5.391 88.7335,4.911 C 88.4135,4.231 87.9734,3.991 87.0934,3.991 C 86.2934,3.991 85.8934,3.791 85.8934,3.391 C 85.8934,2.591 84.1734,1.5109 83.3733,1.8309 C 83.0133,1.9509 82.2133,1.6709 81.5733,1.1909 C 80.6133,0.4709 80.0532,0.3509 78.9732,0.5509 C 78.1332,0.7109 77.4532,0.6309 77.2932,0.3909 C 76.9332,-0.2091 73.0131,-0.0891 72.173,0.5509";
+const MAN_PATH   = "path://M 73.1852,0.4472 C 72.7852,0.9273 72.4651,0.9673 71.865,0.6472 C 71.2249,0.2872 70.7848,0.4472 69.5045,1.2874 C 68.6644,1.8875 67.7042,2.2875 67.3841,2.1675 C 66.704,1.8875 65.1437,2.9277 65.1437,3.7278 C 65.1437,4.0479 64.7436,4.2879 64.1035,4.2879 C 63.4234,4.2879 62.9833,4.528 62.8633,5.0881 C 62.7433,5.5282 62.3032,5.8882 61.9431,5.8882 C 61.543,5.8882 61.063,6.2483 60.9429,6.6884 C 60.8229,7.1285 60.5029,7.4885 60.3028,7.4885 C 60.1028,7.4885 59.9427,8.0086 59.9427,8.6487 C 59.9427,9.4889 59.7027,9.929 59.1026,10.089 C 58.3825,10.3291 58.3024,10.5691 58.5025,11.8894 C 58.6625,12.8895 58.5825,13.5297 58.3024,13.7297 C 57.8223,14.0098 58.0624,21.4111 58.6225,23.4515 C 58.8225,24.2517 58.7425,24.3717 58.2224,24.1717 C 56.062,23.3315 55.822,27.4923 57.7423,32.8133 C 58.7025,35.4938 59.0226,35.9739 59.9427,36.1739 C 60.9429,36.3339 61.063,36.574 61.303,38.5744 C 61.423,39.7746 61.9031,41.4549 62.3432,42.2951 C 63.5034,44.6155 63.3834,45.3756 61.6631,46.1758 C 60.7029,46.6559 60.1028,47.256 59.9027,47.9761 C 59.3826,49.9765 57.0622,53.5772 55.782,54.3373 C 55.1018,54.7774 53.1815,55.6176 51.5012,56.2977 C 49.8609,56.9378 46.5802,58.3781 44.2198,59.4583 C 41.8994,60.5785 39.0988,61.7787 38.0586,62.1388 C 36.0983,62.7789 32.4976,64.9393 30.8173,66.4596 C 29.7371,67.4198 25.8163,74.2611 25.1762,76.3015 C 21.0154,89.5439 19.7752,93.5847 19.4951,95.105 C 19.2951,96.1052 18.1749,99.8659 16.9747,103.5066 C 15.7344,107.1072 14.8943,110.2278 15.0543,110.3478 C 15.2143,110.5079 16.2545,110.988 17.3347,111.4281 C 19.3351,112.2282 19.3351,112.2282 19.2151,114.7487 C 19.0551,118.1493 18.4149,121.83 17.6948,123.3103 C 15.0143,129.0714 13.9741,138.5932 14.7343,150.5154 C 15.4144,161.7575 15.6544,171.7994 15.2143,173.9198 C 14.9743,175.16 15.0543,176.4403 15.4544,178.1206 C 16.0145,180.6411 15.9745,181.4412 14.9343,189.4827 C 14.2942,194.3236 14.2942,194.4837 15.0543,195.8839 C 15.4944,196.6841 16.1345,198.2044 16.4946,199.3246 C 17.4148,202.0451 19.1751,205.1657 20.1353,205.6858 C 21.3755,206.3659 24.4961,208.4463 24.7361,208.7263 C 25.2162,209.3665 29.137,211.2868 29.377,211.0068 C 30.0171,210.3666 29.7371,206.6459 29.0169,206.1258 C 28.6569,205.8458 28.3368,205.3257 28.3368,204.9256 C 28.3368,204.5655 27.5367,203.4853 26.5365,202.5652 C 24.7361,200.9249 24.7361,200.9249 24.4961,197.2842 C 24.256,193.8435 24.256,193.6035 25.0562,193.1634 C 25.9764,192.6833 26.0164,192.8033 26.5365,197.6442 C 26.8165,200.2847 28.2168,202.3251 29.7371,202.3251 C 30.7373,202.3251 31.7374,201.3649 31.3374,200.7648 C 31.2174,200.5248 31.0573,197.3242 30.9773,193.6435 C 30.8173,185.802 29.9371,181.9613 27.8967,180.0009 C 26.4965,178.7207 25.9364,176.9204 25.9364,173.8398 C 25.9364,170.0391 26.7365,166.7985 31.3374,152.1157 C 32.2976,149.0351 33.2577,145.5945 33.4978,144.5143 C 34.0179,141.9138 34.738,133.5922 34.738,129.7515 C 34.738,127.4711 34.9781,126.2308 35.6582,124.5905 C 36.1783,123.4303 36.8584,121.55 37.0985,120.3897 C 37.3785,119.2295 37.8986,118.1493 38.2587,117.9493 C 38.6587,117.7492 39.1388,116.7891 39.3389,115.8689 C 39.6989,114.3486 39.819,115.3488 40.259,122.9102 C 40.5791,128.6713 40.6191,132.272 40.3391,133.3122 C 40.139,134.1923 39.859,138.2331 39.739,142.3139 C 39.5789,146.3946 39.2989,150.7154 39.0988,151.9157 C 38.1387,157.3167 37.8586,159.037 36.5384,167.4386 C 34.858,178.1206 34.898,177.3604 36.1783,177.6805 C 37.3785,178.0006 37.4185,176.7203 35.8982,190.7229 C 35.4581,194.8037 34.938,201.525 34.738,205.7258 C 34.538,209.8865 33.4578,225.0094 32.3776,239.3321 C 31.2574,253.6148 30.1772,268.4976 29.9371,272.3383 C 28.5769,294.4224 28.2968,299.1033 28.1368,300.6236 C 27.9767,302.1839 28.0568,302.3839 29.137,302.944 C 29.7771,303.2641 30.7373,303.5441 31.2174,303.5441 C 31.7374,303.5441 33.1377,303.9042 34.3379,304.3043 C 35.5382,304.7444 37.6186,305.3045 38.9788,305.5445 C 40.3391,305.8246 41.6193,306.1446 41.8193,306.3047 C 42.3394,306.6247 44.2998,316.9867 44.8199,322.1076 C 45.34,326.9485 45.34,329.589 44.9399,335.1501 C 44.6199,339.6309 44.6599,339.4709 41.2192,344.8719 C 39.819,346.9923 36.8984,349.9129 36.0983,349.9529 C 35.8582,349.9529 34.818,350.713 33.8178,351.6332 C 31.8975,353.4335 30.9773,355.1538 31.3374,356.3141 C 31.5374,356.9942 35.8982,359.1546 37.0584,359.1546 C 37.3785,359.1546 38.2587,359.3546 38.9788,359.6347 C 40.059,359.9947 40.4591,359.9947 41.2192,359.4746 C 42.0594,358.9145 42.2594,358.9145 42.9396,359.4346 C 43.4997,359.7947 44.5799,359.9547 46.5402,359.8747 C 49.1407,359.7547 49.3808,359.6747 49.8609,358.6345 C 50.1409,358.0344 50.621,357.5543 50.901,357.5543 C 51.7812,357.5543 52.8614,356.034 53.3415,354.0736 C 53.7816,352.3133 53.9816,352.1133 55.782,351.3531 C 59.9828,349.6328 60.3828,348.4326 58.5025,342.9515 C 57.4623,339.831 57.3823,339.4709 57.8624,337.2705 C 58.2224,335.5902 58.2224,334.55 57.9024,333.3897 C 57.0622,330.2692 56.8622,327.7087 57.1422,323.7479 C 57.5823,318.667 58.7825,309.7053 59.1826,309.1052 C 59.3826,308.7451 61.5831,308.7451 67.9042,309.0652 C 72.5451,309.3052 76.5859,309.4252 76.8659,309.3452 C 77.146,309.2652 80.5066,309.1052 84.3873,308.9452 L 91.3887,308.7051 L 92.0688,313.226 C 93.5491,322.7878 93.7891,327.5086 92.989,331.1493 C 92.4689,333.5498 92.3488,335.2301 92.5489,337.3105 C 92.7889,339.791 92.6689,340.5911 91.7887,343.2716 C 90.0684,348.4326 90.4685,349.7528 94.2292,351.1531 C 96.7897,352.1133 97.1497,352.4333 97.1497,354.1136 C 97.1497,354.9538 97.5898,355.7139 98.75,356.7941 C 99.6302,357.6343 100.3503,358.5145 100.3503,358.7145 C 100.3503,359.9947 106.5915,360.5148 107.5517,359.3546 C 108.0318,358.7945 108.1518,358.7945 108.7919,359.3946 C 109.312,359.8347 109.8721,359.9547 110.6323,359.7947 C 111.2324,359.6347 112.3126,359.4346 112.9527,359.3146 C 115.4332,358.8745 118.7538,357.1542 118.9938,356.154 C 119.2739,354.9938 118.6338,353.4735 117.3535,352.3533 C 116.7534,351.7932 115.9933,351.0331 115.6332,350.633 C 115.2731,350.2729 114.713,349.9529 114.433,349.9529 C 113.5928,349.9529 109.272,345.352 108.3118,343.4316 C 107.8317,342.5115 107.0316,341.1512 106.4715,340.4311 C 105.5113,339.1508 105.4713,339.0308 105.4313,330.4292 C 105.3913,321.5875 105.6713,319.3471 108.1518,307.3449 C 108.3918,306.2246 108.6319,306.0646 110.6723,305.5845 C 111.9525,305.3045 114.1129,304.7444 115.5532,304.3443 C 116.9935,303.9042 118.7938,303.4241 119.5539,303.2641 C 120.9542,302.904 120.9542,302.904 120.8342,293.9423 C 120.7542,288.9814 120.1941,277.3792 119.5139,268.1375 C 116.5534,225.2894 115.5532,209.8465 115.5532,206.4459 C 115.5532,202.4452 114.673,191.3631 113.7529,183.6416 C 113.4328,180.9611 113.1527,178.6407 113.1527,178.4406 C 113.1527,178.2406 113.7128,177.8805 114.393,177.6405 C 115.5532,177.2004 115.6332,177.0404 115.3932,175.6401 C 111.9525,153.3959 111.1524,147.3948 111.3924,145.4744 C 111.5124,144.2342 111.3524,141.2337 110.9923,138.5131 C 110.2322,132.9121 110.2322,125.7908 110.9523,119.9096 C 111.2324,117.5892 111.4724,115.9889 111.5124,116.349 C 111.5124,116.709 111.9125,117.3892 112.3526,117.9093 C 112.7927,118.4294 113.1527,119.1895 113.1527,119.5896 C 113.1527,119.9897 113.6728,121.75 114.313,123.4303 C 115.3532,126.1508 115.5532,127.351 115.9533,133.9123 C 116.4734,142.4339 117.0735,145.8745 118.7938,150.9155 C 119.4739,152.8758 120.1941,155.2363 120.4341,156.1164 C 120.6742,156.9966 121.1943,158.877 121.5943,160.3172 C 123.5947,167.2785 124.0748,169.839 124.1148,173.5197 C 124.1548,177.6005 123.8748,178.4806 121.8744,180.441 C 121.2743,181.0811 120.7542,181.9213 120.7542,182.3614 C 120.7542,182.8015 120.4741,183.7216 120.1141,184.4018 C 119.594,185.4019 119.4339,187.0823 119.3539,191.7631 C 119.2739,195.0838 119.1139,198.6044 118.9538,199.6046 C 118.6338,201.605 119.2739,202.4852 120.7942,202.2451 C 122.6745,201.9651 123.4747,199.6446 123.9148,193.4035 C 123.9548,192.8433 125.5951,193.1234 125.7951,193.7235 C 125.9551,194.0836 125.9151,195.8839 125.7551,197.7643 C 125.4751,201.1649 125.4751,201.1649 123.7147,202.4452 C 122.7545,203.1653 121.8344,204.1655 121.7144,204.7256 C 121.5543,205.2857 121.2343,205.8458 121.0342,206.0058 C 120.4341,206.3659 120.1541,210.5667 120.7142,210.8867 C 121.1943,211.2068 124.0348,209.6465 126.7553,207.5661 C 127.7555,206.846 129.0357,206.0458 129.5958,205.8458 C 130.7961,205.4457 132.0763,203.2453 133.7566,198.8445 C 134.3167,197.2442 134.9968,195.8439 135.1969,195.6839 C 135.717,195.3638 135.637,192.7233 134.9168,187.3223 C 134.5168,184.3618 134.3967,181.6012 134.5568,180.121 C 134.8368,177.5605 134.8768,176.7203 134.7168,168.7988 C 134.6368,165.9983 134.8368,160.9974 135.1169,157.7167 C 135.4769,153.836 135.597,147.9149 135.4769,140.9136 C 135.3169,130.1116 135.3169,130.1116 133.6366,125.3107 C 132.2363,121.2299 131.1561,115.9089 131.1561,113.0684 C 131.1561,112.6283 131.9563,112.0682 133.3965,111.4681 C 136.077,110.3078 136.1171,110.7879 132.9965,101.0261 C 131.7562,97.1054 130.7561,93.7047 130.7561,93.3847 C 130.7561,92.9046 130.1559,90.9442 126.3152,78.7419 C 124.7949,73.821 122.8346,69.7802 120.7142,67.0997 C 119.674,65.7395 113.4728,61.8987 112.3126,61.8987 C 111.9925,61.8987 109.8721,60.9786 107.5517,59.8584 C 105.2313,58.7382 102.1907,57.3779 100.7504,56.8178 C 94.5092,54.4573 94.3492,54.2973 92.1488,50.1765 C 90.6285,47.256 89.9084,46.2958 89.0282,45.9758 C 87.668,45.4557 87.668,44.6555 89.0682,41.2949 C 89.5483,40.1747 90.0284,38.6544 90.1484,37.8942 C 90.3085,36.814 90.6285,36.374 91.4687,36.0539 C 92.3888,35.6938 92.7089,35.0937 93.6691,32.2532 C 95.2694,27.3323 95.1494,24.2917 93.269,24.2917 C 92.4289,24.2917 92.3088,24.1317 92.5089,23.3315 C 93.189,20.611 93.469,16.6502 93.189,14.4898 C 92.7489,11.6093 91.7087,8.8488 90.9086,8.5287 C 90.5885,8.4087 90.3485,7.8886 90.3485,7.3685 C 90.3485,6.4483 88.2281,4.688 86.4277,4.1279 C 85.9876,3.9679 85.4675,3.4078 85.1875,2.8477 C 84.8274,2.0075 84.5074,1.8475 83.6672,2.0075 C 82.8671,2.1675 82.2269,1.9275 81.4268,1.2474 C 80.2266,0.2472 78.9863,0.0071 78.5462,0.6872 C 78.3462,1.0073 78.1062,1.0073 77.7861,0.6872 C 76.8259,-0.0729 73.7853,-0.2729 73.1852,0.4472";
+/* Symbol lookup by gender label (data index 0 = Woman, 1 = Man). */
+const BODY_SYMBOLS = IS_MASTER
+  ? { "Woman": MASTER_WOMAN_PATH, "Man": MASTER_MAN_PATH }
+  : { "Woman": WOMAN_PATH, "Man": MAN_PATH };
+
+/* Area->height lookup: index i (0..1000) = area fraction i/1000 from the FEET up;
+   value = HEIGHT fraction from feet that encloses that much silhouette AREA.
+   Makes each coloured band's VISIBLE AREA equal its data %, correcting for
+   the body being narrow at the head and wide at the shoulders/torso. */
+const AREA_H_LUT = { "Woman":[0,0.00399,0.00642,0.00851,0.01059,0.01267,0.01441,0.01615,0.01823,0.01997,0.0217,0.02378,0.02587,0.0276,0.02969,0.03177,0.03351,0.03559,0.03733,0.03941,0.04184,0.04392,0.04601,0.04844,0.05087,0.05365,0.05642,0.0592,0.06233,0.0651,0.06823,0.07135,0.07448,0.0776,0.08073,0.08385,0.08698,0.0901,0.09358,0.0967,0.09983,0.10295,0.10503,0.10677,0.10816,0.1099,0.11128,0.11267,0.11406,0.1151,0.11649,0.11753,0.11858,0.11997,0.12066,0.1217,0.12274,0.12378,0.12448,0.12552,0.12622,0.12726,0.1283,0.12899,0.13003,0.13073,0.13177,0.13247,0.13316,0.1342,0.1349,0.13559,0.13663,0.13733,0.13802,0.13906,0.13976,0.14045,0.14115,0.14219,0.14288,0.14358,0.14462,0.14531,0.14601,0.14705,0.14774,0.14844,0.14913,0.15017,0.15087,0.15156,0.1526,0.1533,0.15399,0.15503,0.15573,0.15642,0.15747,0.15816,0.15885,0.15955,0.16059,0.16128,0.16198,0.16302,0.16372,0.16441,0.16545,0.16615,0.16684,0.16788,0.16858,0.16927,0.17031,0.17101,0.1717,0.1724,0.17344,0.17413,0.17483,0.17587,0.17656,0.17726,0.1783,0.17899,0.17969,0.18073,0.18142,0.18212,0.18316,0.18385,0.18455,0.18559,0.18628,0.18698,0.18802,0.18872,0.18941,0.19045,0.19115,0.19184,0.19288,0.19358,0.19427,0.19531,0.19601,0.1967,0.19774,0.19844,0.19948,0.20017,0.20087,0.20191,0.2026,0.2033,0.20434,0.20503,0.20573,0.20677,0.20747,0.20816,0.2092,0.2099,0.21059,0.21163,0.21233,0.21337,0.21406,0.21476,0.2158,0.21649,0.21719,0.21823,0.21892,0.21997,0.22066,0.22135,0.2224,0.22309,0.22378,0.22483,0.22552,0.22622,0.22726,0.22795,0.22899,0.22969,0.23038,0.23142,0.23212,0.23316,0.23385,0.23455,0.23559,0.23628,0.23698,0.23802,0.23872,0.23976,0.24045,0.24115,0.24219,0.24288,0.24392,0.24462,0.24531,0.24635,0.24705,0.24809,0.24878,0.24948,0.25052,0.25122,0.25226,0.25295,0.25365,0.25469,0.25538,0.25642,0.25712,0.25781,0.25885,0.25955,0.26059,0.26128,0.26198,0.26302,0.26372,0.26476,0.26545,0.26615,0.26719,0.26788,0.26892,0.26962,0.27066,0.27135,0.27205,0.27309,0.27378,0.27483,0.27552,0.27656,0.27726,0.27795,0.27899,0.27969,0.28073,0.28142,0.28247,0.28316,0.28385,0.2849,0.28559,0.28663,0.28733,0.28837,0.28906,0.28976,0.2908,0.29149,0.29253,0.29323,0.29427,0.29497,0.29566,0.2967,0.2974,0.29844,0.29913,0.30017,0.30087,0.30191,0.3026,0.30365,0.30434,0.30503,0.30608,0.30677,0.30781,0.30851,0.30955,0.31024,0.31128,0.31198,0.31302,0.31372,0.31441,0.31545,0.31615,0.31719,0.31788,0.31892,0.31962,0.32066,0.32135,0.3224,0.32309,0.32413,0.32483,0.32587,0.32656,0.32726,0.3283,0.32899,0.33003,0.33073,0.33177,0.33247,0.33351,0.3342,0.33524,0.33594,0.33698,0.33767,0.33872,0.33941,0.34045,0.34115,0.34219,0.34288,0.34392,0.34462,0.34566,0.34635,0.3474,0.34809,0.34913,0.34983,0.35087,0.35156,0.3526,0.3533,0.35434,0.35503,0.35608,0.35677,0.35781,0.35851,0.35955,0.36024,0.36128,0.36198,0.36302,0.36372,0.36476,0.36545,0.36649,0.36719,0.36823,0.36892,0.36997,0.37066,0.3717,0.3724,0.37344,0.37413,0.37517,0.37587,0.37691,0.37795,0.37865,0.37969,0.38038,0.38142,0.38212,0.38316,0.38385,0.3849,0.38559,0.38663,0.38733,0.38837,0.38906,0.3901,0.39115,0.39184,0.39288,0.39358,0.39462,0.39531,0.39635,0.39705,0.39809,0.39878,0.39983,0.40087,0.40156,0.4026,0.4033,0.40434,0.40503,0.40608,0.40677,0.40781,0.40885,0.40955,0.41059,0.41128,0.41233,0.41302,0.41406,0.4151,0.4158,0.41684,0.41753,0.41858,0.41927,0.42031,0.42135,0.42205,0.42309,0.42378,0.42483,0.42552,0.42656,0.42726,0.4283,0.42899,0.42969,0.43073,0.43142,0.43212,0.43316,0.43385,0.43455,0.43524,0.43628,0.43698,0.43767,0.43872,0.43941,0.4401,0.4408,0.44149,0.44253,0.44323,0.44392,0.44462,0.44531,0.44635,0.44705,0.44774,0.44844,0.44913,0.45017,0.45087,0.45156,0.45226,0.45295,0.45365,0.45434,0.45503,0.45573,0.45642,0.45747,0.45816,0.45885,0.45955,0.46024,0.46094,0.46163,0.46233,0.46302,0.46372,0.46441,0.46545,0.46615,0.46684,0.46753,0.46823,0.46892,0.46962,0.47031,0.47101,0.4717,0.4724,0.47309,0.47378,0.47448,0.47517,0.47587,0.47656,0.47726,0.47795,0.47865,0.47934,0.48003,0.48073,0.48142,0.48212,0.48281,0.48351,0.4842,0.4849,0.48559,0.48628,0.48698,0.48767,0.48837,0.48906,0.48976,0.49045,0.49115,0.49184,0.49288,0.49358,0.49427,0.49497,0.49566,0.49635,0.49705,0.49774,0.49844,0.49913,0.49983,0.50052,0.50122,0.50226,0.50295,0.50365,0.50434,0.50503,0.50573,0.50642,0.50747,0.50816,0.50885,0.50955,0.51024,0.51094,0.51198,0.51267,0.51337,0.51406,0.51476,0.5158,0.51649,0.51719,0.51788,0.51858,0.51962,0.52031,0.52101,0.5217,0.5224,0.52344,0.52413,0.52483,0.52552,0.52656,0.52726,0.52795,0.52865,0.52934,0.53038,0.53108,0.53177,0.53247,0.53351,0.5342,0.5349,0.53559,0.53628,0.53733,0.53802,0.53872,0.53941,0.54045,0.54115,0.54184,0.54253,0.54323,0.54427,0.54497,0.54566,0.54635,0.54705,0.54809,0.54878,0.54948,0.55017,0.55087,0.55156,0.5526,0.5533,0.55399,0.55469,0.55538,0.55608,0.55712,0.55781,0.55851,0.5592,0.5599,0.56059,0.56128,0.56233,0.56302,0.56372,0.56441,0.5651,0.5658,0.56649,0.56753,0.56823,0.56892,0.56962,0.57031,0.57101,0.5717,0.5724,0.57344,0.57413,0.57483,0.57552,0.57622,0.57691,0.5776,0.5783,0.57899,0.58003,0.58073,0.58142,0.58212,0.58281,0.58351,0.5842,0.5849,0.58559,0.58663,0.58733,0.58802,0.58872,0.58941,0.5901,0.5908,0.59149,0.59219,0.59288,0.59392,0.59462,0.59531,0.59601,0.5967,0.5974,0.59809,0.59878,0.59948,0.60017,0.60122,0.60191,0.6026,0.6033,0.60399,0.60469,0.60538,0.60608,0.60712,0.60781,0.60851,0.6092,0.6099,0.61059,0.61128,0.61233,0.61302,0.61372,0.61441,0.6151,0.6158,0.61684,0.61753,0.61823,0.61892,0.61962,0.62031,0.62135,0.62205,0.62274,0.62344,0.62413,0.62517,0.62587,0.62656,0.62726,0.62795,0.62899,0.62969,0.63038,0.63108,0.63212,0.63281,0.63351,0.6342,0.63524,0.63594,0.63663,0.63733,0.63837,0.63906,0.63976,0.6408,0.64149,0.64219,0.64288,0.64392,0.64462,0.64531,0.64601,0.64705,0.64774,0.64844,0.64948,0.65017,0.65087,0.65156,0.6526,0.6533,0.65399,0.65503,0.65573,0.65642,0.65747,0.65816,0.65885,0.6599,0.66059,0.66128,0.66233,0.66302,0.66372,0.66476,0.66545,0.66615,0.66719,0.66788,0.66858,0.66962,0.67031,0.67101,0.67205,0.67274,0.67344,0.67448,0.67517,0.67587,0.67691,0.6776,0.6783,0.67934,0.68003,0.68073,0.68177,0.68247,0.68316,0.6842,0.6849,0.68559,0.68628,0.68733,0.68802,0.68872,0.68976,0.69045,0.69115,0.69184,0.69288,0.69358,0.69427,0.69497,0.69601,0.6967,0.6974,0.69809,0.69913,0.69983,0.70052,0.70122,0.70226,0.70295,0.70365,0.70434,0.70538,0.70608,0.70677,0.70747,0.70851,0.7092,0.7099,0.71094,0.71163,0.71233,0.71302,0.71406,0.71476,0.71545,0.71615,0.71719,0.71788,0.71858,0.71962,0.72031,0.72101,0.7217,0.72274,0.72344,0.72413,0.72517,0.72587,0.72656,0.72726,0.7283,0.72899,0.72969,0.73038,0.73142,0.73212,0.73281,0.73351,0.7342,0.7349,0.73594,0.73663,0.73733,0.73802,0.73872,0.73941,0.7401,0.74115,0.74184,0.74253,0.74323,0.74392,0.74462,0.74566,0.74635,0.74705,0.74774,0.74844,0.74948,0.75017,0.75087,0.75156,0.7526,0.7533,0.75399,0.75469,0.75573,0.75642,0.75712,0.75781,0.75885,0.75955,0.76024,0.76094,0.76198,0.76267,0.76337,0.76441,0.7651,0.7658,0.76684,0.76753,0.76823,0.76927,0.76997,0.77066,0.7717,0.7724,0.77309,0.77413,0.77483,0.77587,0.77656,0.77726,0.7783,0.77899,0.78003,0.78073,0.78177,0.78247,0.78316,0.7842,0.7849,0.78594,0.78663,0.78767,0.78837,0.78941,0.7901,0.79115,0.79184,0.79288,0.79358,0.79462,0.79566,0.79635,0.7974,0.79809,0.79913,0.80017,0.80087,0.80191,0.80295,0.80365,0.80469,0.80573,0.80642,0.80747,0.80851,0.80955,0.81024,0.81128,0.81233,0.81337,0.81441,0.81545,0.81615,0.81719,0.81823,0.81927,0.82066,0.8217,0.82274,0.82378,0.82517,0.82622,0.8276,0.82899,0.83038,0.83212,0.83385,0.83559,0.83767,0.83976,0.84253,0.84566,0.84878,0.85226,0.85573,0.8592,0.86267,0.86615,0.86962,0.87274,0.87552,0.87865,0.88142,0.8842,0.88698,0.88941,0.89184,0.89427,0.8967,0.89878,0.90122,0.9033,0.90538,0.90747,0.9099,0.91198,0.91406,0.91615,0.91823,0.91997,0.92205,0.92413,0.92622,0.92795,0.93003,0.93212,0.93385,0.93594,0.93767,0.93976,0.94184,0.94358,0.94566,0.94774,0.94948,0.95156,0.95365,0.95573,0.95781,0.9599,0.96198,0.96406,0.96615,0.96823,0.97031,0.97274,0.97517,0.9776,0.98003,0.98281,0.98559,0.98906,0.99288,1], "Man":[0,0.00365,0.00608,0.00816,0.0099,0.01163,0.01372,0.01545,0.01719,0.01892,0.02101,0.02274,0.02448,0.02622,0.02795,0.02969,0.03142,0.03316,0.03524,0.03698,0.03906,0.04115,0.04358,0.04566,0.04809,0.05052,0.0533,0.05608,0.0592,0.06198,0.0651,0.06788,0.07101,0.07378,0.07691,0.08003,0.08316,0.08663,0.08976,0.09288,0.09635,0.09948,0.1026,0.10573,0.10885,0.11163,0.11476,0.11753,0.12031,0.12309,0.12587,0.12865,0.13108,0.13351,0.13628,0.13872,0.1408,0.14219,0.14358,0.14462,0.14566,0.14705,0.14809,0.14948,0.15052,0.15156,0.1526,0.15365,0.15434,0.15538,0.15642,0.15712,0.15816,0.15885,0.1599,0.16059,0.16128,0.16233,0.16302,0.16406,0.16476,0.16545,0.16649,0.16719,0.16823,0.16892,0.16997,0.17066,0.17135,0.1724,0.17309,0.17413,0.17483,0.17552,0.17656,0.17726,0.1783,0.17899,0.17969,0.18073,0.18142,0.18247,0.18316,0.1842,0.1849,0.18559,0.18663,0.18733,0.18837,0.18906,0.18976,0.1908,0.19149,0.19253,0.19323,0.19427,0.19497,0.19566,0.1967,0.1974,0.19844,0.19913,0.20017,0.20087,0.20156,0.2026,0.2033,0.20434,0.20503,0.20608,0.20677,0.20781,0.20851,0.2092,0.21024,0.21094,0.21198,0.21267,0.21372,0.21441,0.21545,0.21615,0.21684,0.21788,0.21858,0.21962,0.22031,0.22135,0.22205,0.22309,0.22378,0.22483,0.22552,0.22622,0.22726,0.22795,0.22899,0.22969,0.23073,0.23142,0.23247,0.23316,0.2342,0.2349,0.23594,0.23663,0.23767,0.23837,0.23906,0.2401,0.2408,0.24184,0.24253,0.24358,0.24427,0.24531,0.24601,0.24705,0.24774,0.24878,0.24948,0.25052,0.25122,0.25226,0.25295,0.25399,0.25469,0.25573,0.25642,0.25747,0.25816,0.2592,0.2599,0.26094,0.26163,0.26267,0.26337,0.26441,0.2651,0.26615,0.26684,0.26788,0.26858,0.26962,0.27031,0.27135,0.27205,0.27309,0.27378,0.27483,0.27587,0.27656,0.2776,0.2783,0.27934,0.28003,0.28108,0.28177,0.28281,0.28351,0.28455,0.28524,0.28628,0.28698,0.28802,0.28906,0.28976,0.2908,0.29149,0.29253,0.29323,0.29427,0.29497,0.29601,0.29705,0.29774,0.29878,0.29948,0.30052,0.30122,0.30226,0.30295,0.30399,0.30503,0.30573,0.30677,0.30747,0.30851,0.3092,0.31024,0.31128,0.31198,0.31302,0.31372,0.31476,0.3158,0.31649,0.31753,0.31823,0.31927,0.32031,0.32101,0.32205,0.32274,0.32378,0.32483,0.32552,0.32656,0.32726,0.3283,0.32934,0.33003,0.33108,0.33177,0.33281,0.33385,0.33455,0.33559,0.33628,0.33733,0.33837,0.33906,0.3401,0.34115,0.34184,0.34288,0.34358,0.34462,0.34566,0.34635,0.3474,0.34844,0.34913,0.35017,0.35122,0.35191,0.35295,0.35365,0.35469,0.35573,0.35642,0.35747,0.35851,0.3592,0.36024,0.36128,0.36198,0.36302,0.36406,0.36476,0.3658,0.36684,0.36753,0.36858,0.36962,0.37031,0.37135,0.3724,0.37309,0.37413,0.37517,0.37587,0.37691,0.37795,0.37899,0.37969,0.38073,0.38177,0.38247,0.38351,0.38455,0.38524,0.38628,0.38733,0.38802,0.38906,0.3901,0.39115,0.39184,0.39288,0.39392,0.39462,0.39566,0.3967,0.39774,0.39844,0.39948,0.40052,0.40122,0.40226,0.4033,0.40434,0.40503,0.40608,0.40712,0.40816,0.40885,0.4099,0.41094,0.41198,0.41267,0.41372,0.41476,0.41545,0.41649,0.41719,0.41823,0.41892,0.41997,0.42066,0.4217,0.4224,0.42344,0.42413,0.42483,0.42587,0.42656,0.42726,0.4283,0.42899,0.42969,0.43038,0.43142,0.43212,0.43281,0.43351,0.43455,0.43524,0.43594,0.43663,0.43767,0.43837,0.43906,0.43976,0.4408,0.44149,0.44219,0.44288,0.44358,0.44427,0.44497,0.44601,0.4467,0.4474,0.44809,0.44878,0.44948,0.45017,0.45087,0.45191,0.4526,0.4533,0.45399,0.45469,0.45538,0.45608,0.45677,0.45747,0.45816,0.45885,0.45955,0.46024,0.46128,0.46198,0.46267,0.46337,0.46406,0.46476,0.46545,0.46615,0.46684,0.46753,0.46823,0.46892,0.46962,0.47031,0.47101,0.4717,0.4724,0.47309,0.47378,0.47448,0.47517,0.47587,0.47656,0.47726,0.47795,0.47865,0.47934,0.48003,0.48073,0.48142,0.48212,0.48281,0.48351,0.48455,0.48524,0.48594,0.48663,0.48733,0.48802,0.48872,0.48941,0.4901,0.4908,0.49184,0.49253,0.49323,0.49392,0.49462,0.49531,0.49601,0.49705,0.49774,0.49844,0.49913,0.49983,0.50087,0.50156,0.50226,0.50295,0.50399,0.50469,0.50538,0.50608,0.50712,0.50781,0.50851,0.5092,0.5099,0.51094,0.51163,0.51233,0.51302,0.51372,0.51476,0.51545,0.51615,0.51684,0.51753,0.51858,0.51927,0.51997,0.52066,0.52135,0.5224,0.52309,0.52378,0.52448,0.52552,0.52622,0.52691,0.5276,0.52865,0.52934,0.53003,0.53073,0.53142,0.53247,0.53316,0.53385,0.53455,0.53559,0.53628,0.53698,0.53767,0.53837,0.53941,0.5401,0.5408,0.54149,0.54219,0.54323,0.54392,0.54462,0.54531,0.54601,0.54705,0.54774,0.54844,0.54913,0.54983,0.55087,0.55156,0.55226,0.55295,0.55365,0.55469,0.55538,0.55608,0.55677,0.55747,0.55816,0.5592,0.5599,0.56059,0.56128,0.56198,0.56267,0.56372,0.56441,0.5651,0.5658,0.56649,0.56719,0.56788,0.56892,0.56962,0.57031,0.57101,0.5717,0.5724,0.57309,0.57378,0.57483,0.57552,0.57622,0.57691,0.5776,0.5783,0.57899,0.57969,0.58038,0.58142,0.58212,0.58281,0.58351,0.5842,0.5849,0.58559,0.58628,0.58698,0.58767,0.58837,0.58906,0.5901,0.5908,0.59149,0.59219,0.59288,0.59358,0.59427,0.59497,0.59566,0.59635,0.59705,0.59774,0.59844,0.59913,0.59983,0.60052,0.60122,0.60191,0.6026,0.6033,0.60399,0.60503,0.60573,0.60642,0.60712,0.60781,0.60851,0.6092,0.6099,0.61059,0.61128,0.61198,0.61267,0.61337,0.61406,0.61476,0.61545,0.61615,0.61684,0.61753,0.61823,0.61892,0.61962,0.62031,0.62101,0.6217,0.6224,0.62309,0.62378,0.62448,0.62517,0.62587,0.62656,0.6276,0.6283,0.62899,0.62969,0.63038,0.63108,0.63177,0.63247,0.63316,0.63385,0.63455,0.63524,0.63594,0.63663,0.63733,0.63802,0.63872,0.63941,0.6401,0.64115,0.64184,0.64253,0.64323,0.64392,0.64462,0.64531,0.64601,0.6467,0.6474,0.64809,0.64878,0.64948,0.65017,0.65122,0.65191,0.6526,0.6533,0.65399,0.65469,0.65538,0.65608,0.65677,0.65747,0.65816,0.65885,0.65955,0.66024,0.66128,0.66198,0.66267,0.66337,0.66406,0.66476,0.66545,0.66615,0.66684,0.66753,0.66823,0.66892,0.66962,0.67031,0.67101,0.6717,0.6724,0.67309,0.67378,0.67448,0.67517,0.67587,0.67656,0.67726,0.67795,0.67865,0.67934,0.68003,0.68073,0.68142,0.68212,0.68281,0.68351,0.6842,0.6849,0.68559,0.68628,0.68698,0.68767,0.68837,0.68906,0.68976,0.69045,0.69115,0.69184,0.69253,0.69323,0.69358,0.69427,0.69497,0.69566,0.69635,0.69705,0.69774,0.69809,0.69878,0.69948,0.70017,0.70087,0.70156,0.70226,0.7026,0.7033,0.70399,0.70469,0.70538,0.70608,0.70677,0.70747,0.70816,0.70851,0.7092,0.7099,0.71059,0.71128,0.71198,0.71267,0.71337,0.71406,0.71476,0.71545,0.7158,0.71649,0.71719,0.71788,0.71858,0.71927,0.71997,0.72066,0.72135,0.72205,0.72274,0.72344,0.72413,0.72483,0.72552,0.72622,0.72691,0.72726,0.72795,0.72865,0.72934,0.73003,0.73073,0.73142,0.73212,0.73281,0.73351,0.7342,0.7349,0.73559,0.73628,0.73698,0.73767,0.73837,0.73906,0.73976,0.74045,0.74115,0.74184,0.74253,0.74323,0.74392,0.74462,0.74531,0.74601,0.74705,0.74774,0.74844,0.74913,0.74983,0.75052,0.75122,0.75191,0.7526,0.7533,0.75399,0.75469,0.75538,0.75608,0.75677,0.75747,0.75816,0.7592,0.7599,0.76059,0.76128,0.76198,0.76267,0.76337,0.76406,0.76476,0.76545,0.76649,0.76719,0.76788,0.76858,0.76927,0.76997,0.77066,0.77135,0.7724,0.77309,0.77378,0.77448,0.77517,0.77587,0.77691,0.7776,0.7783,0.77899,0.77969,0.78038,0.78142,0.78212,0.78281,0.78351,0.7842,0.78524,0.78594,0.78663,0.78733,0.78837,0.78906,0.78976,0.79045,0.79115,0.79219,0.79288,0.79358,0.79427,0.79531,0.79601,0.7967,0.79774,0.79844,0.79913,0.80017,0.80087,0.80156,0.8026,0.8033,0.80399,0.80503,0.80573,0.80642,0.80747,0.80816,0.80885,0.8099,0.81059,0.81163,0.81233,0.81337,0.81406,0.8151,0.8158,0.81684,0.81753,0.81858,0.81927,0.82031,0.82135,0.82205,0.82309,0.82413,0.82517,0.82622,0.82726,0.8283,0.82934,0.83038,0.83142,0.83281,0.83385,0.83524,0.83628,0.83767,0.83906,0.84045,0.84184,0.84358,0.84531,0.84705,0.84913,0.85087,0.8533,0.85538,0.85747,0.8599,0.86233,0.86476,0.86719,0.86962,0.8724,0.87552,0.87865,0.88142,0.88455,0.88733,0.8901,0.89288,0.89531,0.89809,0.90052,0.90295,0.90503,0.90712,0.90955,0.91163,0.91372,0.9158,0.91788,0.91997,0.92205,0.92378,0.92587,0.92795,0.93003,0.93212,0.9342,0.93663,0.93872,0.94115,0.94323,0.94566,0.94774,0.94983,0.95226,0.95434,0.95642,0.95885,0.96094,0.96302,0.96545,0.96788,0.96997,0.9724,0.97483,0.97726,0.97969,0.98247,0.98524,0.98872,0.99253,1] };
+/* Convert a cumulative AREA percent (0..100) to the HEIGHT percent (0..100)
+   clip value ECharts needs, via linear interpolation in the per-figure LUT. */
+function areaPctToHeightPct(gender, areaPct){
+  const lut = AREA_H_LUT[gender]; if(!lut) return areaPct;
+  const x = Math.max(0, Math.min(100, areaPct)) * 10; // 0..1000
+  const lo = Math.floor(x), hi = Math.min(1000, lo+1), f = x-lo;
+  return (lut[lo]*(1-f) + lut[hi]*f) * 100;
+}
+
+
+/* ---- Fallback snapshot (from the delivered workbook, before gender coded) --
+   NOTE: these are placeholders showing the grand totals split evenly so the
+   chart always renders. Real gender split comes from the uploaded workbook once
+   Ron enters Male/Female on the Scholars sheet. */
+const EMBEDDED_FALLBACK = {
+  Woman: { scholars: null, masters: null, phd: null, journal: null, book: null, bookSection: null },
+  Man:   { scholars: null, masters: null, phd: null, journal: null, book: null, bookSection: null }
+};
+/* Grand totals (from the workbook) used only for the demo/no-gender view. */
+const GRAND = { scholars: 339, masters: 235, phd: 122, journal: 856, book: 89, bookSection: 224 };
+
+/* ---- Chart instance ------------------------------------------------------- */
+const chartDom = document.getElementById("chart");
+const chart = echarts.init(chartDom, null, { renderer: "canvas" });
+// When embedded in the research-database iframe the container flips from the
+// standalone 1160px fixed width to width:100% via the is-embedded CSS. ECharts
+// caches its own dimensions at init, so we resize once the layout settles and
+// again on any iframe resize — otherwise the two figures paint into the
+// old 1160px canvas and clip.
+if (document.body.classList.contains('is-embedded')) {
+  // Re-render (not just resize) on container width changes so BODY_W picks
+  // up the new chart width — buildOption() reads chartDom.clientWidth to
+  // scale the silhouettes into fullscreen. A bare chart.resize() only re-
+  // lays out the axes; the pictorialBar symbolSize is baked in at setOption.
+  let lastRenderW = 0;
+  const RENDER_EPSILON = 24;  // px — avoid rebuilds on 1-2 px jitter
+  const rerenderIfNeeded = () => {
+    try {
+      const w = chartDom.clientWidth || 0;
+      // Always call resize so ECharts recomputes its canvas.
+      chart.resize();
+      // Only re-run buildOption if we crossed a meaningful width change AND
+      // we have data on screen (render() sets window.__lastBcData).
+      if (Math.abs(w - lastRenderW) >= RENDER_EPSILON && window.__lastBcData) {
+        lastRenderW = w;
+        chart.setOption(buildOption(window.__lastBcData), true);
+      }
+    } catch(e){}
+  };
+  requestAnimationFrame(rerenderIfNeeded);
+  window.addEventListener('load', rerenderIfNeeded);
+  if (window.ResizeObserver) {
+    new ResizeObserver(rerenderIfNeeded).observe(chartDom);
+  }
+}
+const statusEl = document.getElementById("status");
+const capEl = document.getElementById("cap");
+const msgEl = document.getElementById("upload-msg");
+
+function setMsg(text, kind){
+  msgEl.textContent = text || "";
+  msgEl.className = "upload-msg" + (kind ? " is-"+kind : "");
+}
+
+/* Build the ECharts option from a {Woman:{...}, Man:{...}} data object.
+   Each gender's five counts are converted to a % of that gender's total. */
+function buildOption(data){
+  // Master-file mode renders Turaga (Man) LEFT, Marama (Woman) RIGHT
+  // to match Ron's reference figure; V1 keeps Woman-left/Man-right.
+  const genders = IS_MASTER ? ["Man","Woman"] : ["Woman","Man"];
+  // x positions for the two bodies (category axis)
+  const xCats = genders;
+
+  // Compute per-gender totals & percentages
+  const pct = {};      // pct[gender][typeKey] = number (0..100)
+  const totals = {};   // totals[gender] = {scholars, pubs}
+  genders.forEach(g=>{
+    const d = data[g] || {};
+    const pubs = TYPES.reduce((s,t)=> s + (Number(d[t.key])||0), 0);
+    totals[g] = { scholars: (d.scholars==null?null:Number(d.scholars)), pubs };
+    pct[g] = {};
+    TYPES.forEach(t=>{
+      pct[g][t.key] = pubs>0 ? (Number(d[t.key])||0)/pubs*100 : 0;
+    });
+  });
+
+  // Body silhouette keeps a human aspect ratio: pixel width, not a % of the
+  // (wide) category slot, so the figure looks like a person, not a blob.
+  //
+  // Fullscreen fix (2026-08-26): when C1 is expanded to fill the viewport the
+  // chart width can exceed 1400px, but a fixed 150px BODY_W left both figures
+  // pinned to narrow columns with a huge empty middle. Scaling BODY_W with
+  // the current chart width lets each silhouette breathe into its slot while
+  // still preserving the human aspect ratio.
+  //
+  //   * embedded/standalone (≤ 900px):   BODY_W = 150
+  //   * fullscreen (≥ 1400px):            BODY_W = 260
+  //   * in between:                        linear interpolation
+  const chartW = (chartDom && chartDom.clientWidth) || 1160;
+  const BODY_W = (function(){
+    if (chartW <= 900)  return 150;
+    if (chartW >= 1400) return 260;
+    // Linear interpolation between the two anchors.
+    return Math.round(150 + (chartW - 900) * (260 - 150) / (1400 - 900));
+  })();
+  const BODY_H = "86%";
+
+  // -- CUMULATIVE-CLIP technique (no stacking) --------------------------------
+  // Each series draws the SAME body, clipped to a CUMULATIVE % from the bottom,
+  // and is layered back-to-front so the largest cumulative sits behind. The
+  // exposed sliver of each layer is exactly that type's band. This fills the
+  // whole body to 100% and never overlaps labels the way true stacking did.
+  //
+  // cumTop[g][i]  = cumulative % at the TOP of band i (bottom band first)
+  // cumMid[g][i]  = cumulative % at the MIDDLE of band i (for the % label y-pos)
+  const cumTop = {}, cumMid = {}, bandPct = {};
+  genders.forEach(g=>{
+    let acc=0; cumTop[g]=[]; cumMid[g]=[]; bandPct[g]=[];
+    TYPES.forEach(t=>{ const v=pct[g][t.key]; cumMid[g].push(acc+v/2); acc+=v; cumTop[g].push(acc); bandPct[g].push(v); });
+  });
+
+  // --- PROPORTIONAL VERTICAL COMPRESSION (mapped into each body's VISIBLE head->feet span) ---
+  // Bands' heights = their % of publications straight down the body, NO width/area correction.
+  // The clip axis top (100) sits ABOVE the visible scalp (transparent padding), so we remap the
+  // cumulative % into [FEET_CLIP .. HEAD_CLIP] measured empirically per silhouette.
+  // HEAD_CLIP / FEET_CLIP are BAR-DATA VALUES on the yAxis (0..100), where
+  // symbolBoundingData=100 and symbolSize=[BODY_W,"86%"] means the silhouette
+  // occupies yAxis 0..86 of the plot area. HEAD_CLIP is the yAxis position of
+  // the visible scalp; FEET_CLIP is the yAxis position of the visible sole.
+  //
+  // For master-mode traced silhouettes (150x360 viewBox; scalp at SVG y=1,
+  // sole at SVG y=359), scalp maps to yAxis = 86 * (360-1)/360 = 85.76 and
+  // sole maps to 86 * (360-359)/360 = 0.24. Previously we set these to 99.54
+  // and 0.43 which are the scalp/sole positions in the silhouette's OWN
+  // 0..100 internal clip space, NOT the yAxis. That mis-mapping caused
+  // label pills (drawn as a scatter overlay on the yAxis) to render outside
+  // the visible silhouette (PhD floating above the head, Masters at the scalp
+  // instead of the neck).
+  const HEAD_CLIP = IS_MASTER
+    ? { "Woman": 85.76, "Man": 85.76 }    // yAxis position of traced-silhouette scalp
+    : { "Woman": 88,    "Man": 85    };   // V1 original scalp-top
+  const FEET_CLIP = IS_MASTER
+    ? { "Woman": 0.24,  "Man": 0.24  }    // yAxis position of traced-silhouette sole
+    : { "Woman": 0,     "Man": 0     };   // V1 original sole
+  const clipH = {};
+  const IDX_PHD_TOP = TYPES.findIndex(t=>t.key==="phd");
+  genders.forEach(g=>{
+    const lo=FEET_CLIP[g], hi=HEAD_CLIP[g], span=hi-lo;
+    clipH[g] = cumTop[g].map(c=> lo + (c/100)*span);   // cumTop is cumulative % (0..100)
+    // Topmost band (PhD) fills all the way to the crown (clip 100) so no blank cap sits above it.
+    if(IDX_PHD_TOP>=0) clipH[g][IDX_PHD_TOP] = 100;
+    // Raise the man's PhD bottom edge (= Masters top edge) so the black band reads ~half the woman's.
+    const IDX_MAS_ADJ = TYPES.findIndex(t=>t.key==="masters");
+    // V1 nudged the Man's Masters-top up by 2.4 clip-units to make the black
+    // PhD cap read “half the woman's” visually. Master silhouettes are
+    // proportioned differently and don't need that tweak — skip it in
+    // master mode so PhD's visible height equals its true data share.
+    const PHD_BOTTOM_RAISE = IS_MASTER
+      ? { "Woman": 0, "Man": 0   }
+      : { "Woman": 0, "Man": 2.4 };
+    if(IDX_MAS_ADJ>=0 && PHD_BOTTOM_RAISE[g]) clipH[g][IDX_MAS_ADJ] += PHD_BOTTOM_RAISE[g];
+  });
+
+  // Draw order: LAST type (top of body) first so its full-height clip is behind,
+  // and the FIRST type (bottom) last/in front. z increases toward the bottom band.
+  const series = [];
+  for(let i=TYPES.length-1; i>=0; i--){
+    const t = TYPES[i];
+    series.push({
+      name: t.label,
+      type: "pictorialBar",
+      symbolClip: true,
+      symbolBoundingData: 100,        // full body = 100%
+      symbolSize: [BODY_W, BODY_H],
+      barGap: "-100%",                // all layers share the one body position
+      barCategoryGap: "40%",
+      z: 10 + (TYPES.length - i),     // bottom bands in front
+      itemStyle: { color: t.color },
+      emphasis: { disabled: true },
+      // value = cumulative % up to and INCLUDING this band (clip fills from bottom).
+      // Each gender carries its OWN silhouette (Woman = dress, Man = broad).
+      // Clip by AREA-equivalent height so each band's visible area == its data %.
+      data: genders.map(g=>({ value: clipH[g][i], symbol: BODY_SYMBOLS[g] })),
+      // label drawn separately (a dedicated scatter series) to sit at band midpoint
+      label: { show:false }
+    });
+  }
+
+  // Faint full-body outline behind everything so empty bodies still read as a
+  // silhouette before any data is coded.
+  const outline = {
+    name: "__outline__",
+    type: "pictorialBar",
+    symbolBoundingData: 100,
+    symbolSize: [BODY_W, BODY_H],
+    barGap: "-100%",
+    barCategoryGap: "40%",
+    itemStyle: { color: "rgba(120,130,140,0.10)" },
+    silent: true,
+    z: 1,
+    data: genders.map(g=>({ value: 100, symbol: BODY_SYMBOLS[g] })),
+    tooltip: { show:false },
+    legendHoverLink: false
+  };
+
+  // Dedicated label layer: a scatter point at each band's vertical midpoint on
+  // the y (%) axis, showing the band %. Kept off the body-fill series so labels
+  // never double up or collide with adjacent bands.
+  // Label EVERY non-zero band with a % pill placed INSIDE the band, same as all
+  // the others. (Previously bands under 6% were suppressed, which made small
+  // categories like Books look "missing" — now they always show.)
+  const labelSeries = {
+    name: "__labels__",
+    type: "scatter",
+    symbolSize: 0.1,
+    z: 40,
+    silent: true,
+    legendHoverLink: false,
+    tooltip: { show:false },
+    data: (()=>{
+      const pts=[];
+      // V1: PhD pill was pinned at a hardcoded 91.7 (just above the shoulder
+      // line of the V1 silhouettes, which top out at clip=85–88). Master
+      // silhouettes have almost no transparent space above the scalp, so
+      // 91.7 lands outside the head. In master mode we drop the pill inside
+      // the black head-band, computed from the band's actual centre.
+      const PHD_PILL_Y_V1 = 91.7;
+      genders.forEach((g,gi)=>{
+        TYPES.forEach((t,i)=>{
+          const v=bandPct[g][i];
+          if(v>0){
+            let yPos;
+            if(t.key==="phd"){
+              if(IS_MASTER){
+                // Centre of the PhD band inside the visible silhouette.
+                // Bottom of PhD = top of Masters band = clipH[g][masters_idx].
+                const idxMas = TYPES.findIndex(tt=>tt.key==="masters");
+                const phdBottom = (idxMas>=0) ? clipH[g][idxMas] : (FEET_CLIP[g]+(cumTop[g][TYPES.length-2]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]));
+                yPos = (phdBottom + HEAD_CLIP[g]) / 2;
+              } else {
+                yPos = PHD_PILL_Y_V1;
+              }
+            } else {
+              yPos = FEET_CLIP[g] + (cumMid[g][i]/100)*(HEAD_CLIP[g]-FEET_CLIP[g]);
+            }
+            pts.push({ value:[gi, yPos], _lbl:(v<1 ? v.toFixed(1) : Math.round(v))+" %" });
+          }
+        });
+      });
+      return pts;
+    })(),
+    label: {
+      show: true,
+      position: "inside",
+      formatter: p => p.data._lbl,
+      color: "#ffffff",
+      fontFamily: "DM Sans, system-ui, sans-serif",
+      fontSize: 12.5,
+      fontWeight: 700,
+      backgroundColor: "rgba(28,37,48,0.72)",
+      borderRadius: 9,
+      padding: [2,6]
+    }
+  };
+
+  // Combined totals across BOTH genders (for the centre block + legend %s).
+  let combScholars = 0, combScholarsKnown = false;
+  const combByType = {}; TYPES.forEach(t=> combByType[t.key]=0);
+  genders.forEach(g=>{
+    const d = data[g] || {};
+    TYPES.forEach(t=> combByType[t.key] += (Number(d[t.key])||0));
+    if(d.scholars!=null){ combScholars += Number(d.scholars); combScholarsKnown = true; }
+  });
+  const combPubs = TYPES.reduce((s,t)=> s + combByType[t.key], 0);
+  const combPct = {};
+  TYPES.forEach(t=> combPct[t.key] = combPubs>0 ? combByType[t.key]/combPubs*100 : 0);
+  const fmtInt = n => n.toLocaleString("en-US");
+  const pctStr = v => (v>0 && v<1 ? v.toFixed(1) : Math.round(v)) + "%";
+
+  // Display names for the two figures (data keys stay "Woman"/"Man").
+  // Display labels use Tonga's Fefine/Tangata (never Women/Men text) per
+  // user decision; the underlying data keys stay "Woman"/"Man" to match
+  // upstream data shape, and the Turaga/Marama silhouette imagery below is
+  // kept unchanged (also per user decision) even though the display text
+  // no longer says "Turaga"/"Marama".
+  const DISPLAY = { "Woman": "Fefine", "Man": "Tangata" };
+  // Three-line axis labels: name, then "N scholars", then "N publications"
+  // (counts enlarged and set in black per the reference).
+  const axisLabelFmt = g => {
+    const t = totals[g];
+    // Each gender's share of the combined totals (the two genders sum to 100%).
+    const scPct = (combScholarsKnown && combScholars>0 && t.scholars!=null)
+      ? "  ("+pctStr(t.scholars/combScholars*100)+")" : "";
+    const pubPct = (combPubs>0) ? "  ("+pctStr(t.pubs/combPubs*100)+")" : "";
+    const sc = (t.scholars==null) ? "—" : t.scholars;
+    return "{name|"+DISPLAY[g]+"}\n{sub|"+sc+" scholars"+scPct+"}\n{sub|"+t.pubs+" publications"+pubPct+"}";
+  };
+
+  return {
+    animationDuration: 700,
+    legend: {
+      show: true,
+      orient: "vertical",
+      left: "center",
+      top: "middle",
+      itemGap: 24,
+      itemWidth: 18,
+      itemHeight: 18,
+      icon: "circle",
+      data: LEGEND_ORDER.map(k=> TYPES.find(t=>t.key===k).label ),
+      // Append each type's COMBINED share of all publications.
+      formatter: name => {
+        const t = TYPES.find(t=>t.label===name);
+        if(!t) return name;
+        return name + "  {bold|(" + pctStr(combPct[t.key]) + ")}";
+      },
+      // Match the centre "337 scholars" block: DM Sans, 17px, bold, black.
+      textStyle: {
+        fontFamily:"DM Sans, system-ui, sans-serif", fontSize:17, fontWeight:700, color:"#1c2530",
+        rich: { bold: { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:17, fontWeight:700, color:"#1c2530" } }
+      },
+      selectedMode: false
+    },
+    // Centre grand-total block, shifted DOWN and enlarged (sits above the legend).
+    graphic: {
+      type: "text", left: "center", top: "22%", z: 50, silent: true,
+      style: {
+        text: fmtInt(combScholars) + " iTaukei scholars\n" +
+              fmtInt(combPubs) + " publications (100%)",
+        textAlign: "center", textVerticalAlign: "middle",
+        fontFamily: "DM Sans, system-ui, sans-serif",
+        fontSize: 21, fontWeight: 700, lineHeight: 29, fill: "#1c2530"
+      }
+    },
+    tooltip: {
+      trigger: "item",
+      confine: true,
+      formatter: p=>{
+        if(p.seriesName==="__outline__" || p.seriesName==="__labels__") return "";
+        const g = xCats[p.dataIndex];
+        const t = TYPES.find(t=>t.label===p.seriesName);
+        if(!t) return "";
+        const raw = Number((data[g]||{})[t.key])||0;
+        const tot = TYPES.reduce((s,x)=>s+(Number((data[g]||{})[x.key])||0),0);
+        const bpct = tot>0 ? Math.round(raw/tot*100) : 0;
+        return "<b>"+DISPLAY[g]+" &middot; "+p.seriesName+"</b><br/>"+
+               raw+" publication"+(raw===1?"":"s")+" ("+bpct+" % of this group)";
+      }
+    },
+    grid: { left: "2%", right: "2%", top: 62, bottom: 92, containLabel: true },
+    xAxis: {
+      data: xCats,
+      axisTick: { show:false },
+      axisLine: { show:false },
+      axisLabel: {
+        margin: 18,
+        rich: {
+          name: { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:18, fontWeight:700, color:"#000000", lineHeight:26 },
+          sub:  { fontFamily:"DM Sans, system-ui, sans-serif", fontSize:15, fontWeight:600, color:"#000000", lineHeight:21 }
+        },
+        formatter: axisLabelFmt
+      }
+    },
+    yAxis: { type:"value", min:0, max: 100, splitLine:{show:false}, axisTick:{show:false}, axisLine:{show:false}, axisLabel:{show:false} },
+    series: [outline, ...series, labelSeries]
+  };
+}
+
+/* Render helper + status text. */
+function render(data, label){
+  // Cache the last dataset so the embedded ResizeObserver can rebuild the
+  // option (and re-scale BODY_W) when the container width crosses the
+  // fullscreen threshold. See the is-embedded resize block above.
+  window.__lastBcData = data;
+  chart.setOption(buildOption(data), true);
+  const w = data.Woman||{}, m = data.Man||{};
+  const wp = TYPES.reduce((s,t)=>s+(Number(w[t.key])||0),0);
+  const mp = TYPES.reduce((s,t)=>s+(Number(m[t.key])||0),0);
+  const coded = (w.scholars!=null || m.scholars!=null || wp>0 || mp>0);
+  if(coded){
+    statusEl.textContent = (label||"Uploaded file")+": Woman "+wp+" publications, Man "+mp+" publications.";
+    capEl.textContent = "iTaukei scholars who completed a Master's and/or PhD. Source: iTaukei Research Database.";
+  }else{
+    statusEl.textContent = "No gender-coded data yet — showing an empty template. Enter Male/Female on the Scholars sheet, then upload the workbook.";
+    capEl.textContent = "Awaiting gender-coded data. Source: iTaukei Research Database.";
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   PARSING: accept either
+   (A) the delivered workbook's "By Gender" sheet (Counts table), or
+   (B) a simple table with a Type column + Female/Male count columns.
+   Both are reduced to {Woman:{...}, Man:{...}} with keys matching TYPES + scholars.
+   --------------------------------------------------------------------------- */
+const TYPE_ALIASES = {
+  masters:     ["masters theses","masters thesis","master's theses","master's thesis","masters","ma thesis"],
+  phd:         ["phd theses","phd thesis","phd","doctoral theses","doctoral thesis"],
+  journal:     ["journal articles","journal article","journal","articles","journalarticle"],
+  book:        ["books","book"],
+  bookSection: ["book chapters","book chapter","chapters","chapter","booksection","book sections"]
+};
+const SCHOLAR_ALIASES = ["scholars","scholar","# scholars","number of scholars"];
+
+function normLabel(s){ return String(s==null?"":s).trim().toLowerCase().replace(/\s+/g," ").replace(/[’]/g,"'"); }
+function matchType(label){
+  const n = normLabel(label);
+  for(const [k,arr] of Object.entries(TYPE_ALIASES)){ if(arr.includes(n)) return k; }
+  return null;
+}
+function isScholarRow(label){ return SCHOLAR_ALIASES.includes(normLabel(label)); }
+function num(v){ const x = parseFloat(String(v==null?"":v).replace(/[, ]/g,"")); return isFinite(x)?x:0; }
+
+/* Parse a matrix (array of arrays) into the data object. Robust to the delivered
+   workbook layout: it scans every row for a label cell that matches a known type
+   or "Scholars", then reads the Female/Male numbers from the two columns under
+   the "Female"/"Male" headers (or the two numeric columns right after the label). */
+function parseMatrix(rows){
+  // find the header row containing "female" and "male"
+  let femaleCol=-1, maleCol=-1, headerRow=-1;
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r]||[];
+    for(let c=0;c<row.length;c++){
+      const v=normLabel(row[c]);
+      if(v==="female"){ femaleCol=c; headerRow=r; }
+      if(v==="male"){ maleCol=c; }
+    }
+    if(femaleCol>=0 && maleCol>=0) break;
+  }
+  const data = { Woman:{scholars:null}, Man:{scholars:null} };
+  let found=false;
+  const seen = {};   // first table (Counts) wins; ignore later Share-table repeats
+  for(let r=0;r<rows.length;r++){
+    const row=rows[r]||[];
+    // find the label cell in this row (first non-empty, non-numeric text cell)
+    let labelCell=null, labelIdx=-1;
+    for(let c=0;c<row.length;c++){
+      const raw=row[c];
+      if(raw==null||raw==="") continue;
+      if(isFinite(parseFloat(String(raw).replace(/[, %]/g,"")))) continue; // numeric -> not the label
+      labelCell=raw; labelIdx=c; break;
+    }
+    if(labelCell==null) continue;
+
+    // Stop before the percentage/share section so we only read the Counts table.
+    const nlab = normLabel(labelCell);
+    if(/\bshare\b/.test(nlab) || /each\s*row\s*=\s*100/.test(nlab) || /for the body-composition/.test(nlab)) break;
+
+    const tk = matchType(labelCell);
+    const sc = isScholarRow(labelCell);
+    if(!tk && !sc) continue;
+    // First occurrence wins (Counts table); skip duplicates from any later table.
+    if(tk && seen[tk]) continue;
+    if(sc && seen.__scholars) continue;
+
+    // decide which columns hold Female/Male numbers
+    let fCol=femaleCol, mCol=maleCol;
+    if(fCol<0 || mCol<0){
+      // fall back: first two numeric cells after the label
+      const nums=[];
+      for(let c=labelIdx+1;c<row.length;c++){
+        const raw=row[c];
+        if(raw==null||raw==="") continue;
+        if(isFinite(parseFloat(String(raw).replace(/[, %]/g,"")))){ nums.push(c); if(nums.length===2) break; }
+      }
+      fCol=nums[0]; mCol=nums[1];
+    }
+    if(fCol==null||mCol==null||fCol<0||mCol<0) continue;
+
+    const fVal=num(row[fCol]), mVal=num(row[mCol]);
+    if(sc){ data.Woman.scholars=fVal; data.Man.scholars=mVal; found=true; seen.__scholars=true; }
+    else if(tk){ data.Woman[tk]=fVal; data.Man[tk]=mVal; found=true; seen[tk]=true; }
+  }
+  return found ? data : null;
+}
+
+/* CSV text -> matrix (simple, quote-aware split). */
+function csvToMatrix(text){
+  const clean=String(text).replace(/^\ufeff/,"");
+  const lines=clean.split(/\r\n|\n|\r/);
+  const out=[];
+  for(const line of lines){
+    if(line==="") { out.push([]); continue; }
+    const cells=[]; let cur="", q=false;
+    for(let i=0;i<line.length;i++){
+      const ch=line[i];
+      if(q){ if(ch==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=ch; }
+      else { if(ch===','){ cells.push(cur); cur=""; } else if(ch==='"'){ q=true; } else cur+=ch; }
+    }
+    cells.push(cur); out.push(cells);
+  }
+  return out;
+}
+
+/* Excel: choose the "By Gender" sheet if present, else the first sheet. */
+function workbookToMatrix(wb){
+  let name = wb.SheetNames.find(n=>/by\s*gender/i.test(n));
+  if(!name){
+    // else pick the sheet that actually contains Female & Male headers
+    name = wb.SheetNames.find(n=>{
+      const csv=XLSX.utils.sheet_to_csv(wb.Sheets[n]);
+      return /female/i.test(csv) && /male/i.test(csv);
+    }) || wb.SheetNames[0];
+  }
+  const ws = wb.Sheets[name];
+  const arr = XLSX.utils.sheet_to_json(ws, {header:1, blankrows:true, defval:""});
+  return { matrix: arr, sheet: name };
+}
+
+/* ---- File reading (mirror of the chord chart's readFile) ------------------ */
+function isExcel(file){
+  return /\.(xlsx|xlsm|xlsb|xls)$/i.test(file.name)
+      || file.type==="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      || file.type==="application/vnd.ms-excel";
+}
+function readTextFile(file){
+  return new Promise((resolve,reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>resolve(String(fr.result).replace(/^\ufeff/,""));
+    fr.onerror=()=>reject(fr.error);
+    fr.readAsText(file);
+  });
+}
+function readExcel(file){
+  return new Promise((resolve,reject)=>{
+    if(typeof XLSX==="undefined"){ reject(new Error("xlsx-lib-missing")); return; }
+    const fr=new FileReader();
+    fr.onload=()=>{ try{
+      const wb=XLSX.read(new Uint8Array(fr.result),{type:"array"});
+      if(!wb.SheetNames.length){ reject(new Error("no-sheets")); return; }
+      resolve(workbookToMatrix(wb));
+    }catch(err){ reject(err);} };
+    fr.onerror=()=>reject(fr.error);
+    fr.readAsArrayBuffer(file);
+  });
+}
+
+async function handleFile(file){
+  const csvOk=/\.csv$/i.test(file.name)||file.type==="text/csv";
+  const excelOk=isExcel(file);
+  if(!csvOk && !excelOk){ setMsg("Please choose a .csv or .xlsx file.","error"); return false; }
+  try{
+    let matrix, sheetNote="";
+    if(excelOk){ const r=await readExcel(file); matrix=r.matrix; sheetNote=" (sheet: "+r.sheet+")"; }
+    else { matrix=csvToMatrix(await readTextFile(file)); }
+    const data=parseMatrix(matrix);
+    if(!data){
+      setMsg("Couldn't find the Female/Male counts. Expected a 'By Gender' sheet, or a Type column with Female and Male columns.","error");
+      return false;
+    }
+    // require at least some publications coded
+    const wp=TYPES.reduce((s,t)=>s+(Number(data.Woman[t.key])||0),0);
+    const mp=TYPES.reduce((s,t)=>s+(Number(data.Man[t.key])||0),0);
+    if(wp+mp===0){
+      setMsg("The file was read"+sheetNote+", but every publication count is 0. Enter Male/Female on the Scholars sheet first, then re-upload.","error");
+      render(data, file.name);
+      return false;
+    }
+    render(data, file.name);
+    setMsg("Chart updated from "+file.name+sheetNote+".","ok");
+    return true;
+  }catch(err){
+    if(err&&err.message==="xlsx-lib-missing"){ setMsg("Excel support failed to load — check your connection, or upload a .csv instead.","error"); }
+    else if(err&&err.message==="no-sheets"){ setMsg("That Excel file has no worksheets.","error"); }
+    else { setMsg("Could not read that file.","error"); console.error(err); }
+    return false;
+  }
+}
+
+/* ---- Dropzone wiring (mirror of chord chart) ------------------------------ */
+(function wireDropzone(){
+  const zone=document.getElementById("dz-data");
+  const input=document.getElementById("input-data");
+  const fileLabel=document.getElementById("file-data");
+  const open=()=>input.click();
+  zone.addEventListener("click",open);
+  zone.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); open(); } });
+  zone.addEventListener("dragover",e=>{ e.preventDefault(); zone.classList.add("is-dragover"); });
+  zone.addEventListener("dragleave",()=>zone.classList.remove("is-dragover"));
+  zone.addEventListener("drop",e=>{ e.preventDefault(); zone.classList.remove("is-dragover"); const f=e.dataTransfer.files&&e.dataTransfer.files[0]; if(f) go(f); });
+  input.addEventListener("change",()=>{ const f=input.files&&input.files[0]; if(f) go(f); });
+  async function go(file){ const ok=await handleFile(file); if(ok){ fileLabel.textContent=file.name; zone.classList.add("is-loaded"); } }
+})();
+
+/* ---- Reset + CSV template ------------------------------------------------- */
+document.getElementById("btn-reset").addEventListener("click",()=>{
+  document.getElementById("file-data").textContent="";
+  document.getElementById("input-data").value="";
+  document.getElementById("dz-data").classList.remove("is-loaded");
+  init();
+  setMsg("Reset to the default view.","ok");
+});
+
+const TEMPLATE_CSV =
+  "Type,Female,Male\n"+
+  "Scholars,0,0\n"+
+  "Masters theses,0,0\n"+
+  "PhD theses,0,0\n"+
+  "Journal articles,0,0\n"+
+  "Books,0,0\n"+
+  "Book chapters,0,0\n";
+document.getElementById("btn-template").addEventListener("click",e=>{
+  e.preventDefault();
+  const blob=new Blob(["\ufeff"+TEMPLATE_CSV],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="tongan-gender-template.csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+  setMsg("Template downloaded — fill in the Female/Male counts and drop it back above.","ok");
+});
+
+/* ---- Initial render (auto-fetch committed dataset, else empty template) ----
+   The research database bundles a small aggregate JSON at
+   data/tongan-body-composition.json (encrypted on disk as .json.enc, decrypted at
+   fetch time by window.dbGate).
+
+   When this page is embedded inside the research database iframe (or the
+   visitor is already unlocked via localStorage in this origin), we load
+   db-gate.js on demand and decrypt the file. Standalone visits with no
+   session see the empty template and can still upload a workbook. Ron's
+   rule: „no upload required on the public dashboard” — the fetch below
+   satisfies it for verified visitors. */
+function hasCachedPasscode(){
+  // Mirror STORAGE_KEY in js/db-gate.js. Purely a heuristic — the real
+  // verification happens inside dbGate.tryUnlockFromStorage().
+  try {
+    const raw = localStorage.getItem('vavelab.db.session.v2');
+    if (!raw) return false;
+    const j = JSON.parse(raw);
+    return !!(j && j.p && j.exp && j.exp > Date.now());
+  } catch(e){ return false; }
+}
+function loadDbGate(){
+  return new Promise((resolve, reject)=>{
+    if (window.dbGate) return resolve(window.dbGate);  // tongan-demo-gate.js aliases window.dbGate = window.demoGate
+    const s = document.createElement('script');
+    s.src = 'js/tongan-demo-gate.js';
+    s.onload = ()=> resolve(window.dbGate || null);
+    s.onerror = ()=> reject(new Error('failed to load tongan-demo-gate.js'));
+    document.head.appendChild(s);
+  });
+}
+async function init(){
+  try {
+    let data = null;
+    // Path 1: plaintext (works when data/ is not encrypted, e.g. local dev).
+    try {
+      const dataUrl = IS_MASTER
+        ? 'data/tongan-body-composition-master.json'
+        : 'data/tongan-body-composition.json';
+      const r = await fetch(dataUrl, { cache:'no-store' });
+      if (r.ok) data = await r.json();
+    } catch (e) { /* fall through */ }
+    // Path 2: encrypted — only if there's a cached passcode we can reuse.
+    if (!data && hasCachedPasscode()){
+      try {
+        await loadDbGate();
+        if (window.dbGate && typeof window.dbGate.fetchJson === 'function'){
+          // dbGate.boot() would show a lock screen; skip it and just try to
+          // decrypt directly. If the cached passcode has been rotated the
+          // fetch throws and we drop back to the empty template.
+          if (typeof window.dbGate.tryUnlockFromStorage === 'function'){
+            await window.dbGate.tryUnlockFromStorage();
+          }
+          data = await window.dbGate.fetchJson(
+            IS_MASTER ? 'data/tongan-body-composition-master.json'
+                      : 'data/tongan-body-composition.json');
+        }
+      } catch (e) { /* stay silent, fall through */ }
+    }
+    if (data && (data.Woman || data.Man)){
+      render({ Woman: data.Woman||{}, Man: data.Man||{} }, 'Committed dataset');
+      return;
+    }
+  } catch (e) { /* fall through */ }
+  render({ Woman:{scholars:null}, Man:{scholars:null} }, null);
+}
+
+/* ---- PNG export (aspect-locked, DPI-scalable) — uses ECharts getDataURL --- */
+(function(){
+  const BASE_W=1160, BASE_H=742;         // canvas layout size
+  const ASPECT=BASE_H/BASE_W;
+  const wIn=document.getElementById("dl-width");
+  const hIn=document.getElementById("dl-height");
+  const dpiIn=document.getElementById("dl-dpi");
+  const hint=document.getElementById("dl-hint");
+  const btn=document.getElementById("dl-btn");
+  if(!wIn||!hIn||!dpiIn||!btn) return;
+
+  const clampNum=(v,min,max,dflt)=>{ v=parseFloat(v); if(!isFinite(v)) v=dflt; return Math.min(max,Math.max(min,v)); };
+  function outPixels(){
+    const cssW=clampNum(wIn.value,200,20000,BASE_W);
+    const cssH=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT));
+    const dpi=clampNum(dpiIn.value,72,1200,300);
+    const scale=dpi/96;
+    return {cssW,cssH,dpi,pxW:Math.round(cssW*scale),pxH:Math.round(cssH*scale)};
+  }
+  function refreshHint(){ const o=outPixels(); hint.innerHTML="Output: "+o.pxW+" &times; "+o.pxH+" px at "+o.dpi+" DPI"; }
+  let syncing=false;
+  wIn.addEventListener("input",()=>{ if(syncing)return; syncing=true; const w=clampNum(wIn.value,200,20000,BASE_W); hIn.value=Math.round(w*ASPECT); syncing=false; refreshHint(); });
+  hIn.addEventListener("input",()=>{ if(syncing)return; syncing=true; const h=clampNum(hIn.value,200,20000,Math.round(BASE_W*ASPECT)); wIn.value=Math.round(h/ASPECT); syncing=false; refreshHint(); });
+  dpiIn.addEventListener("input",refreshHint);
+  refreshHint();
+
+  btn.addEventListener("click",()=>{
+    const o=outPixels();
+    btn.disabled=true; const label=btn.textContent; btn.textContent="Rendering…";
+    try{
+      // Export straight from the LIVE chart. getDataURL(pixelRatio) rasterises the
+      // exact on-screen layout at higher resolution — no offscreen re-layout, so
+      // the pictorialBar bodies render identically (just crisper). We only need
+      // pixelRatio to hit the requested width; height follows the locked aspect.
+      const liveW = chart.getWidth();                 // current CSS width of #chart
+      const pr = Math.max(1, o.pxW / liveW);          // upscale factor for target px
+      const url=chart.getDataURL({type:"png",pixelRatio:pr,backgroundColor:"#ffffff"});
+      const a=document.createElement("a");
+      a.href=url; a.download="tongan-gender_"+o.pxW+"x"+o.pxH+"_"+o.dpi+"dpi.png";
+      document.body.appendChild(a); a.click(); a.remove();
+      btn.textContent=label; btn.disabled=false;
+    }catch(err){
+      console.error("PNG export failed",err);
+      btn.textContent=label; btn.disabled=false;
+      alert("Sorry, the image could not be generated in this browser.");
+    }
+  });
+})();
+
+/* Keep the chart responsive to container width. */
+window.addEventListener("resize",()=>chart.resize());
+init();
+</script>
+<script src="js/main.js?v=2cf4b3f9"></script>
+</body>
+</html>
