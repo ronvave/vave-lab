@@ -2301,11 +2301,16 @@
     opts = opts || {};
     var token = getGhToken();
     var el = $('#dispatch-status');
+    var btn = $('#refresh-master');
     if (!token) {
       if (!opts.silent) { toast('Save a GitHub PAT first.', 'error'); if (el) el.textContent = 'no token'; }
       log('Refresh dispatch skipped: no GitHub PAT saved.', 'warn');
       return false;
     }
+    // Disable the button and show immediate feedback so a slow network
+    // response doesn't read as "nothing happened" and invite repeated
+    // clicks (each of which fires its own dispatch call).
+    if (btn && !opts.silent) btn.disabled = true;
     if (el) el.textContent = 'dispatching…';
     try {
       // refresh-tongan-master-file.yml (deployed alongside iTaukei's
@@ -2328,6 +2333,7 @@
         state.lastDispatchAt = Date.now();
         if (el) el.textContent = 'dispatch queued — snapshot refresh takes ~2–5 min.';
         log('Dispatched refresh-tongan-master-file.yml', 'ok');
+        if (!opts.silent) toast('Refresh dispatched — snapshot will update in ~2–5 min.', 'ok', 6000);
         return true;
       }
       var txt = await res.text();
@@ -2340,6 +2346,8 @@
       log('Dispatch error: ' + e.message, 'error');
       if (!opts.silent) toast('Refresh dispatch error: ' + (e.message || e), 'warn', 9000);
       return false;
+    } finally {
+      if (btn && !opts.silent) btn.disabled = false;
     }
   }
 

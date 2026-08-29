@@ -253,6 +253,7 @@
     <div class="actions">
       <span class="status-pill" id="db-status">unlocking…</span>
       <button id="refresh-master" title="Re-read the Master Google Sheet and re-encrypt the repo files. Does NOT bump the cache-buster — viewers with cached JS won't see the change immediately.">Refresh from Sheet</button>
+      <span class="mono" id="dispatch-status" style="font-size: 12px; color: var(--muted); margin-right: 8px;"></span>
       <button id="top-force-refresh" title="Refreshes content-hash cache-busters (?v=sha256[:8]) on every JS/CSS reference across the V2 HTML entrypoints AND dispatches the Master refresh workflow. Use this after any admin change — viewers get fresh JS/JSON on their next reload.">Force refresh</button>
       <span class="mono" id="top-force-refresh-status" style="font-size: 12px; color: var(--muted); margin-right: 8px;"></span>
       <button id="logout">Log out</button>
