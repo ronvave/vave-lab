@@ -77,7 +77,7 @@ Use the pre-generated secret from step 0, or generate your own:
 ## 6. Wire the Tongan Admin Panel to it
 
 1. Open the Tongan admin panel: <https://ronvave.github.io/vave-lab/admin-tongan-master.html>
-2. Unlock the admin with the **new Tongan passcode** (`xIN2rULfs6kUd4jB` — this is different from the iTaukei admin passcode and must never be shared with or substituted for it).
+2. Unlock the admin: enter the admin-login passcode `xIN2rULfs6kUd4jB` on the login screen. If a second, separate lock-screen then appears asking to unlock the encrypted data files, enter `Ongoongo9!` there (this is the data-decryption passcode shared with the public dashboard's demo gate — both are brand-new Tongan-specific values, distinct from and never shared with the iTaukei admin's passcodes).
 3. Open the **Data source & GitHub** tab.
 4. In the "Master write-back endpoint" section:
 

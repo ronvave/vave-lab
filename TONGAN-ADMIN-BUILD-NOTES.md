@@ -27,12 +27,34 @@ which resolves Crosswalk Ambiguity A — see "Judgment calls" below).
 
 ## Passcode
 
-The `js/tongan-db-gate.js` preview passcode is **`xIN2rULfs6kUd4jB`** (brand
-new — never derived from or equal to the iTaukei passcode). Its
-`VERIFIER_HASH_HEX` is a freshly computed
-`PBKDF2-HMAC-SHA256("xIN2rULfs6kUd4jB", "vavelab-db-verifier-v1", 200000
-iters, 32 bytes)` = `7e775c19d0d0da31a4c3f3b4437b335808864f4e75ef185583f556406ffd4af0`,
-independently computed in this build — not copied from the iTaukei file.
+**Updated 2026-08-29 — bug fix.** There are two independent passcodes, exactly
+mirroring the iTaukei system's two-gate design:
+
+1. **Admin-login passcode** (`PASSWORD_HASH` in `admin-tongan-master.js`,
+   SHA-256) = **`xIN2rULfs6kUd4jB`**. Guards the initial admin login form only.
+2. **Data-decryption passcode** (`VERIFIER_HASH_HEX` in `js/tongan-db-gate.js`
+   AND `BAKED_PASSCODE` in `js/tongan-demo-gate.js`, PBKDF2) = **`Ongoongo9!`**.
+   Guards the actual `data/tongan-master-*.json.enc` files. This MUST be
+   identical between `tongan-db-gate.js` (admin) and `tongan-demo-gate.js`
+   (public dashboard) because both scripts decrypt the exact same on-disk
+   `.enc` blobs — exactly like the iTaukei system, where `db-gate.js`'s
+   verifier and `demo-gate.js`'s `BAKED_PASSCODE` are both `"Arachnid1!"`.
+
+**Root cause of the 2026-08-29 "Failed to load data: Operation..." admin bug:**
+the admin build (this file, this session) picked `xIN2rULfs6kUd4jB` as the
+db-gate data passcode, while the dashboard build (a different session) baked
+`Ongoongo9!` into `tongan-demo-gate.js` and the actual `.enc` master files
+were encrypted with `Ongoongo9!`. The admin's db-gate lock-screen accepted
+`xIN2rULfs6kUd4jB` (matching its own verifier) but then failed to decrypt the
+real files (`OperationError` / AES-GCM tag mismatch), which also skipped
+`wireControls()` and left every tab unclickable. Fix: `tongan-db-gate.js`'s
+`VERIFIER_HASH_HEX` was changed to `PBKDF2-HMAC-SHA256("Ongoongo9!",
+"vavelab-db-verifier-v1", 200000 iters, 32 bytes)` =
+`88efe3b11c2d116bccea8b724a346c6bdb59c251077197a4cbbea0623e6060ac`. No data
+files were re-encrypted; no admin-login change was needed.
+
+Any existing browser with a cached db-gate session under the old passcode
+will be prompted again on next load — this is expected; enter `Ongoongo9!`.
 
 ## Judgment calls made during this build
 

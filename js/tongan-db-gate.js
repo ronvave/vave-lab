@@ -50,14 +50,22 @@
 
   // Verifier constants — used to prove a passcode is correct BEFORE we try
   // to decrypt any file, so a wrong entry fails fast with a clear message.
-  // Brand-new Tongan passcode + brand-new hash \u2014 NOT the iTaukei
+  // Brand-new Tongan passcode + brand-new hash — NOT the iTaukei
   // verifier and NOT derived from the iTaukei passcode.
-  //   passcode = "xIN2rULfs6kUd4jB"
+  //
+  // IMPORTANT: this MUST be the same data-decryption passcode baked into
+  // js/tongan-demo-gate.js's BAKED_PASSCODE, because both gates decrypt
+  // the SAME on-disk data/tongan-master-*.json.enc files (mirrors the
+  // iTaukei system, where db-gate.js's verifier and demo-gate.js's
+  // BAKED_PASSCODE are both "Arachnid1!"). This is intentionally NOT the
+  // separate admin-login passcode (PASSWORD_HASH in
+  // admin-tongan-master.js), which is its own independent gate.
+  //   passcode = "Ongoongo9!"
   //   VERIFIER_HASH_HEX = PBKDF2-HMAC-SHA256(passcode, "vavelab-db-verifier-v1",
   //                                          200,000 iters, 32 bytes)
   var VERIFIER_SALT = new TextEncoder().encode('vavelab-db-verifier-v1');
   var VERIFIER_HASH_HEX =
-    '7e775c19d0d0da31a4c3f3b4437b335808864f4e75ef185583f556406ffd4af0';
+    '88efe3b11c2d116bccea8b724a346c6bdb59c251077197a4cbbea0623e6060ac';
 
   // Every file the Tongan database fetches. Maps the plaintext .json URL
   // that tongan-database-adapter.js / admin-tongan-master.js request onto
