@@ -27,11 +27,21 @@ which resolves Crosswalk Ambiguity A — see "Judgment calls" below).
 
 ## Passcode
 
+**Updated 2026-08-29 (later same day) — Ron changed the admin-login
+passcode to one of his own choosing.** `PASSWORD_HASH` in
+`admin-tongan-master.js` now holds `SHA-256(<Ron's own passcode>)` instead of
+the original build passcode below. The new plaintext passcode is
+intentionally NOT recorded here — update this note (or just re-derive the
+hash) if you need to change it again. This change touches ONLY the
+admin-login gate; the data-decryption passcode (`Ongoongo9!`, item 2 below)
+is completely unaffected and unchanged.
+
 **Updated 2026-08-29 — bug fix.** There are two independent passcodes, exactly
 mirroring the iTaukei system's two-gate design:
 
 1. **Admin-login passcode** (`PASSWORD_HASH` in `admin-tongan-master.js`,
-   SHA-256) = **`xIN2rULfs6kUd4jB`**. Guards the initial admin login form only.
+   SHA-256) = **`xIN2rULfs6kUd4jB`** *(original build value, superseded — see
+   update note above)*. Guarded the initial admin login form only.
 2. **Data-decryption passcode** (`VERIFIER_HASH_HEX` in `js/tongan-db-gate.js`
    AND `BAKED_PASSCODE` in `js/tongan-demo-gate.js`, PBKDF2) = **`Ongoongo9!`**.
    Guards the actual `data/tongan-master-*.json.enc` files. This MUST be

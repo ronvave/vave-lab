@@ -41,15 +41,12 @@
   'use strict';
 
   // ------------------------- constants -------------------------
-  // Admin login gate (SHA-256 of the passcode, checked client-side). Per
-  // the build task the ONLY new passcode specified was `xIN2rULfs6kUd4jB`
-  // (used for js/tongan-db-gate.js's PBKDF2 verifier). No separate admin
-  // login passcode was specified, so \u2014 as a documented judgment call
-  // (see TONGAN-ADMIN-BUILD-NOTES.md) \u2014 this admin login gate reuses
-  // that same brand-new passcode rather than inventing an undocumented
-  // second passcode. This hash is a fresh SHA-256("xIN2rULfs6kUd4jB") and is
-  // NOT the iTaukei PASSWORD_HASH constant (which guards "Arachnid1!").
-  var PASSWORD_HASH = '1046112d600820b2e1e0255d570b99018a71a52b559bc9510a2d75891ed4993a';
+  // Admin login gate (SHA-256 of the passcode, checked client-side). This
+  // is Ron's own chosen admin-login passcode, independent of the
+  // js/tongan-db-gate.js data-decryption passcode (which stays unchanged
+  // and is NOT affected by this value). Changed 2026-08-29 at Ron's
+  // request. This hash is NOT the iTaukei PASSWORD_HASH constant.
+  var PASSWORD_HASH = '262b560692084e4a8a838711a413a855803a46f8051b66c417b089d26f635023';
   var SESSION_KEY   = 'tonganlab_admin_master_session';
   var GH_TOKEN_KEY  = 'tonganlab_gh_token';
   var GH_OWNER      = 'ronvave';
