@@ -66,6 +66,28 @@ files were re-encrypted; no admin-login change was needed.
 Any existing browser with a cached db-gate session under the old passcode
 will be prompted again on next load — this is expected; enter `Ongoongo9!`.
 
+**Root cause of the 2026-08-29 (later same day) "Save failed: Fresh decrypt of
+data/tongan-scholar-enrichment.json.enc failed: OperationError" bug on
+Save & push:** `js/admin-tongan-master.js` was cloned from the iTaukei
+`js/admin-master.js` and its `fetchEncryptedAtSha_()` helper (used by the
+race-safe pre-write "fresh decrypt" step) still read the cached
+data-passcode from `localStorage['vavelab.db.session.v2']` — the iTaukei
+session key. `js/tongan-db-gate.js` actually stores the unlocked passcode
+under `localStorage['tonganlab.db.session.v1']` (deliberately different, per
+the isolation requirement). Because both the iTaukei and Tongan pages share
+the same GitHub Pages origin (`ronvave.github.io`), `localStorage` is shared
+across paths — so a browser that had ever unlocked the iTaukei admin/
+dashboard had a live, non-expired session under the iTaukei key holding the
+iTaukei passcode. The Tongan writeback path silently read that instead of
+the Tongan passcode, derived the wrong AES-256-GCM key, and
+`crypto.subtle.decrypt()` correctly threw `OperationError` on the auth-tag
+check. Fix: changed the single leftover constant in
+`js/admin-tongan-master.js` from `_dbSessionKey = 'vavelab.db.session.v2'` to
+`_dbSessionKey = 'tonganlab.db.session.v1'`. No encryption format, PBKDF2
+parameters, salt handling, or passcode values changed. Verified no other
+`vavelab`-branded leftovers exist in `tongan-admin-writeback-client.js`,
+`tongan-admin-insights-migration.js`, or `tongan-database-adapter.js`.
+
 ## Judgment calls made during this build
 
 1. **Admin-login SHA-256 passcode (separate from the db-gate PBKDF2
