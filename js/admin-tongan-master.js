@@ -2308,12 +2308,16 @@
     }
     if (el) el.textContent = 'dispatching…';
     try {
-      // NOTE: refresh-tongan-master-file.yml is the planned Tongan sister
-      // workflow to iTaukei's refresh-tongan-master-file.yml; it is not yet
-      // deployed as of this build (a separate data-pipeline task per the
-      // crosswalk). Until it exists this dispatch call returns a 404, which
-      // the catch/status branches below already surface gracefully as a
-      // warning toast without blocking any other admin function.
+      // refresh-tongan-master-file.yml (deployed alongside iTaukei's
+      // refresh-master-file.yml) runs scripts/tongan_master_file_transformer.py
+      // against the Tongan Master Sheet and re-encrypts data/tongan-master-*.json.
+      // The dispatch call itself only needs a saved PAT with repo+workflow
+      // scopes; the workflow RUN it triggers separately needs
+      // GOOGLE_SERVICE_ACCOUNT_JSON's service account to have Viewer access
+      // on the Tongan Sheet, or that run will fail even though this
+      // dispatch call succeeded. The catch/status branches below surface
+      // any dispatch-call failure as a warning toast without blocking any
+      // other admin function.
       var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/actions/workflows/refresh-tongan-master-file.yml/dispatches';
       var res = await fetch(url, {
         method: 'POST',
