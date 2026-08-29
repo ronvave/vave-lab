@@ -972,7 +972,7 @@ async function init(){
       if(!window.dbGate){
         await new Promise((resolve,reject)=>{
           const s=document.createElement('script');
-          s.src='js/tongan-demo-gate.js';
+          s.src='js/tongan-demo-gate.js?v=tng2';
           s.onload=resolve;
           s.onerror=()=>reject(new Error('Tongan data gate failed to load'));
           document.head.appendChild(s);

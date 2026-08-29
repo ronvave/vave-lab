@@ -1057,7 +1057,7 @@ function loadDbGate(){
   return new Promise((resolve, reject)=>{
     if (window.dbGate) return resolve(window.dbGate);  // tongan-demo-gate.js aliases window.dbGate = window.demoGate
     const s = document.createElement('script');
-    s.src = 'js/tongan-demo-gate.js';
+    s.src = 'js/tongan-demo-gate.js?v=tng2';
     s.onload = ()=> resolve(window.dbGate || null);
     s.onerror = ()=> reject(new Error('failed to load tongan-demo-gate.js'));
     document.head.appendChild(s);
