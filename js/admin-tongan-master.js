@@ -1775,7 +1775,7 @@
   // encryption format, salt handling, or passcode / verifier hash. It is a
   // separate consumer of the same passcode + the same well-known IVAV
   // frame that db-gate wrote when it encrypted the blob on upload.
-  var _dbSessionKey = 'vavelab.db.session.v2';
+  var _dbSessionKey = 'tonganlab.db.session.v1';
   var _MAGIC = new Uint8Array([0x49, 0x56, 0x41, 0x56]); // "IVAV"
   var _PBKDF2_ITERATIONS = 200000;
   function _readCachedPasscode () {
