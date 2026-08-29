@@ -4515,20 +4515,15 @@
       <div class="db-panel reveal db-panel--wide" data-panel="B3">
         <span class="db-panel__label">B3</span>
         <h2 class="db-panel__title">TONGAN SCHOLARLY MOBILITY</h2>
-        <p class="db-panel__hint">Where Tongan scholars have pursued their Master&rsquo;s and PhD studies. Data not yet available for the Tongan cohort &mdash; this panel will populate once mobility records are added. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
+        <p class="db-panel__hint">Where Tongan scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
         <div class="db-panel__embed" id="db-embed-b3-chord">
-          <!-- Tongan scholarly mobility chord chart: DATA NOT YET AVAILABLE.
-               The iTaukei chord chart's underlying itaukei-chord-data/
-               (mobility.csv) has no Tonga equivalent yet, so this panel
-               shows a clean empty state rather than an iframe pointed at
-               Fiji data or a fabricated Tonga dataset. -->
-          <div class="mf-empty-state" style="min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;">
-            <div>
-              <strong>Data not yet available.</strong><br />
-              Tongan scholarly mobility records have not been populated in the Master file yet.<br />
-              This panel will populate automatically once mobility records are added.
-            </div>
-          </div>
+          <button type="button" class="db-panel__embed-expand" aria-label="Open chord chart full screen" title="Full screen">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+          </button>
+          <iframe src="itaukei-chord-flanked.html?embedded=1&amp;cohort=tongan&amp;v=tng1"
+                  title="Tongan scholarly mobility (chord chart)"
+                  loading="lazy" referrerpolicy="no-referrer"></iframe>
+          <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
         </div>
         <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3-chord" aria-label="Close full-screen chord chart">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -4705,7 +4700,7 @@
         <h2 class="db-panel__title" data-b1-title>Published Research In and Across Tonga's 23 Districts</h2>
         <p class="db-panel__hint" data-b1-hint>Publications counted in each of Tonga's 23 districts based on where the study or fieldwork took place, plus a “Non-district/Tonga” category for research on Tonga-wide topics (e.g. national legislation, national mental health policy) not tied to one district. Default view shows Tongan authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
         <div class="db-panel__meta">
-          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study province</span></span>
+          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study district</span></span>
           <span><em>Authors:</em> <select class="db-meta-select" data-b1-authors aria-label="Filter authors">
             <option value="itaukei">Tongan authors</option>
             <option value="all">All authors</option>
@@ -4736,7 +4731,7 @@
         </div>
       </div>
 
-      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal province -->
+      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal district -->
       <div class="db-panel reveal" data-panel="C3">
         <span class="db-panel__label">C3</span>
         <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
@@ -4761,7 +4756,7 @@
                 <option value="split">1st author + co-author, split</option>
               </select>
             </label>
-            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per province. Detailed splits each province into 1st-author and co-author rows with publication-type colours.">
+            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per district. Detailed splits each district into 1st-author and co-author rows with publication-type colours.">
               <span class="db-b2-view-select__label">Layout</span>
               <select data-b2-layout>
                 <option value="compact">Compact (single bar)</option>
@@ -4778,9 +4773,9 @@
             <span aria-hidden="true">ⓘ</span> District refers to where the research was conducted.
           </p>
           <details class="db-b2-info">
-            <summary>How is “province” defined in this panel?</summary>
+            <summary>How is “district” defined in this panel?</summary>
             <p>In the <strong>Tonga-focused</strong> and <strong>All locations</strong> views, district means the <em>paternal district of the Tongan first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, district means the <em>location of the research</em>.</p>
-            <p>A publication covering more than one research province may be counted once in each tagged province.</p>
+            <p>A publication covering more than one research district may be counted once in each tagged district.</p>
           </details>
           <!-- Authorship-view only: legend + counts/percent toggle + sort control -->
           <div class="db-b2-authorship-controls" data-b2-authorship-controls style="display:none;">

@@ -1074,8 +1074,9 @@ async function init(){
       const r = await fetch(dataUrl, { cache:'no-store' });
       if (r.ok) data = await r.json();
     } catch (e) { /* fall through */ }
-    // Path 2: encrypted — only if there's a cached passcode we can reuse.
-    if (!data && hasCachedPasscode()){
+    // Path 2: encrypted. The Tongan public gate has its own read key, so the
+    // iframe must load it even without the older cached iTaukei session key.
+    if (!data){
       try {
         await loadDbGate();
         if (window.dbGate && typeof window.dbGate.fetchJson === 'function'){

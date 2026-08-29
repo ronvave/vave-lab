@@ -505,6 +505,18 @@
        python3 -m http.server   ->  open http://localhost:8000/itaukei_chord.html
    ============================================================================ */
 
+const IS_TONGAN_COHORT = new URLSearchParams(location.search).get('cohort') === 'tongan';
+
+function configureCohortLabels(){
+  if(!IS_TONGAN_COHORT) return;
+  document.title = 'Tongan Scholar Mobility — Chord Diagram — Prof. Ron Vave | UH Mānoa';
+  document.querySelectorAll('.chord-title').forEach(el => {
+    el.innerHTML = 'Tongan Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions';
+  });
+  const cap = document.getElementById('cap');
+  if(cap) cap.textContent = 'Source: Tongan Scholars Master File.';
+}
+
 /* ---- 1. CONFIG: display names, colours, label overrides -------------------- */
 // three institutions kept at FULL length on the wheel; others shortened:
 const SHORT = {
@@ -953,6 +965,39 @@ function readFile(file){
 // ---- default load: try the repo CSVs, else embedded snapshot -----------------
 let lastMobilityText = null;   // remember uploaded scholar CSV so a later UNSD upload can re-render
 async function init(){
+  configureCohortLabels();
+  if(IS_TONGAN_COHORT){
+    try{
+      if(!window.dbGate){
+        await new Promise((resolve,reject)=>{
+          const s=document.createElement('script');
+          s.src='js/tongan-demo-gate.js';
+          s.onload=resolve;
+          s.onerror=()=>reject(new Error('Tongan data gate failed to load'));
+          document.head.appendChild(s);
+        });
+      }
+      const [mobility, scholars] = await Promise.all([
+        window.dbGate.fetchJson('data/tongan-master-mobility.json'),
+        window.dbGate.fetchJson('data/tongan-master-scholars.json')
+      ]);
+      const scholarById = new Map((scholars||[]).map(s=>[
+        String(s['Scholar ID']||'').trim(), String(s['Scholar Name']||'').trim()
+      ]));
+      const rows=(mobility||[]).map(r=>Object.assign({},r,{
+        scholar: scholarById.get(String(r.scholar_id||r['Scholar ID']||'').trim()) ||
+                 r.scholar || r.scholar_id || ''
+      })).filter(r=>r.m_uni && r.p_uni);
+      const model=buildModel(rows,currentUnsd);
+      draw(model);
+      statusEl.textContent='Master-file data ('+model.flows.length+' scholars, '+model.uni_list.length+' universities).';
+      return;
+    }catch(e){
+      console.error('Tongan mobility load failed',e);
+      statusEl.textContent='Tongan mobility data could not be loaded.';
+      return;
+    }
+  }
   try{
     const [mob,unsd]=await Promise.all([
       fetch("itaukei-chord-data/mobility.csv").then(r=>{if(!r.ok)throw 0;return r.text();}),

@@ -135,6 +135,15 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Year of Birth",
     "Alive / Deceased",
     "Year of Death",
+    # Current Tonga hierarchy (Village/Town → District → Specific Island →
+    # Island Division). Legacy names remain below so older exports continue
+    # to pass the same public-field gate during a rolling deployment.
+    "Paternal Island Division",
+    "Specific Island Paternal",
+    "Village/Town Paternal (Kolo)",
+    "Maternal Island Division",
+    "Specific Island Maternal",
+    "Village/Town Maternal (Kolo)",
     "Paternal Confederacy",
     "Province Paternal",
     "District Paternal",
@@ -153,6 +162,7 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Current PG Status",
     "Degree Episodes",
     "International Degree Episodes",
+    "Tonga Degree Episodes",
     "Fiji Degree Episodes",
     "Funding Episodes",
     "Awards Count",
@@ -169,6 +179,7 @@ SCHOLAR_PUBLIC_FIELDS = [
 
 # Notes/Vanua-notes/Review-status/BibTeX-match are private
 SCHOLAR_PRIVATE_FIELDS = [
+    "Lineage / Provenance Notes",
     "Vanua / Provenance Notes",
     "Review Status",
     "Source Basis",

@@ -210,9 +210,9 @@ def extract_scholars(rows: list[list]) -> list[dict]:
     )
     clean = sanitize(dicts, SCHOLAR_PUBLIC_FIELDS)
     for s in clean:
-        prov = (s.get("Province Paternal") or "").strip()
+        prov = (s.get("District Paternal") or s.get("Province Paternal") or "").strip()
         if not prov or prov.lower() == "unclassified":
-            prov = (s.get("Province Maternal") or "").strip()
+            prov = (s.get("District Maternal") or s.get("Province Maternal") or "").strip()
         s["effective_paternal_province"] = prov or "Unclassified"
         s["effective_confederacy"] = PROVINCE_TO_CONFEDERACY.get(
             s["effective_paternal_province"], "Unclassified"
@@ -693,8 +693,20 @@ def run(
     log(f"  → {len(scholars_all)} scholars (pre Part-Tongan filter)")
 
     log("Fetching Part-Tongan exclusion set...")
-    part_tongan_ids = extract_part_tongan_ids(fetch_fn("Part-Tongan"))
-    log(f"  → {len(part_tongan_ids)} Part-Tongan Scholar IDs excluded")
+    part_tongan_all_ids = extract_part_tongan_ids(fetch_fn("Part-Tongan"))
+    core_scholar_ids = {
+        str(s.get("Scholar ID") or "").strip() for s in scholars_all
+        if str(s.get("Scholar ID") or "").strip()
+    }
+    # Part-Tongan intentionally also carries dual-listed scholars whose
+    # verified Tongan father makes them members of the core Scholars roster.
+    # Exclude only Part-Tongan-only IDs; never remove an ID that the main
+    # Scholars sheet explicitly confirms as core.
+    part_tongan_ids = part_tongan_all_ids - core_scholar_ids
+    log(
+        f"  → {len(part_tongan_ids)} Part-Tongan-only Scholar IDs excluded; "
+        f"{len(part_tongan_all_ids - part_tongan_ids)} dual-listed core IDs retained"
+    )
     # Tongan identity is patrilineal. Scholars whose father is not Tongan
     # are stored on the Part-Tongan sheet and must be excluded from every
     # V2 dashboard surface. Some of these IDs may never appear on the main

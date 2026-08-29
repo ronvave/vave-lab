@@ -5391,7 +5391,7 @@
     if (typeFilter) typeFilter.style.display = '';
     if (authorshipLegend) authorshipLegend.style.display = 'none';
     if (authorsSelect) authorsSelect.disabled = false;
-    if (groupedLabel) groupedLabel.textContent = 'Study province';
+    if (groupedLabel) groupedLabel.textContent = 'Study district';
 
     host.innerHTML = '';
     const provs = state.provinces.features.map(f => f.properties);
@@ -9416,14 +9416,14 @@
   const B2_META = {
     'fiji-focused': {
       meta: [
-        ['Grouped by',  'First-author paternal province'],
+        ['Grouped by',  'First-author paternal district'],
         ['Scope',       'Tonga-focused'],
         ['Authors',     'Tongan first authors']
       ]
     },
     'all-locations': {
       meta: [
-        ['Grouped by',  'First-author paternal province'],
+        ['Grouped by',  'First-author paternal district'],
         ['Scope',       'Tonga + International'],
         ['Authors',     'Tongan first authors']
       ]
@@ -9558,14 +9558,14 @@
 
   // -------- Row builders per view --------
   // Returns [{ name, total, types, conf, isConfirmed }] sorted desc, plus a
-  // final “Province not yet confirmed” row when appropriate.
+  // final “District not yet confirmed” row when appropriate.
   function buildB2Rows_paternalGrouped(includeAllLocations) {
     const { scholars, paternalByName } = iTaukeiScholarMaps();
     const rows = new Map();
     state.provinces.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
     });
-    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+    const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -9610,7 +9610,7 @@
     state.provinces.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
     });
-    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+    const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -9673,7 +9673,7 @@
       });
     });
     const unconfirmed = {
-      name: 'Province not yet confirmed', conf: null,
+      name: 'District not yet confirmed', conf: null,
       lead: 0, co: 0, total: 0,
       leadTypes: {}, coTypes: {},
       isConfirmed: false
@@ -10605,7 +10605,7 @@
                        : 'all publication types';
     let note = `Showing ${filterLabel}. “Tonga-focused” means the item is tagged to at least one Tonga district in Zotero; “International” means it isn’t. Island Division is attributed via the lead Tongan author’s paternal district.`;
     if (data.unattributed > 0) {
-      note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal province hasn’t been filled in the admin dashboard yet.`;
+      note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal district hasn’t been filled in the admin dashboard yet.`;
     }
     $('[data-impact-footnote]').textContent = note;
   }

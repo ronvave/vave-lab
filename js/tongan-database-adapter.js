@@ -730,7 +730,8 @@
         if (!sid) return;
         var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
         if (!scholar) return;
-        var prov = (scholar['Province Paternal'] || '').trim() || (scholar['Province Maternal'] || '').trim();
+        var prov = cleanSentinel_(scholar['District Paternal'] || scholar['Province Paternal']) ||
+                   cleanSentinel_(scholar['District Maternal'] || scholar['Province Maternal']);
         if (prov && provPaternalKeyByName[prov]) collections.push(provPaternalKeyByName[prov]);
       });
 
@@ -883,7 +884,12 @@
       // extractor picks up Master-file keys.
       if (geo && geo.features) {
         geo.features.forEach(function (f) {
-          var name = f.properties && f.properties.name;
+          f.properties = f.properties || {};
+          var name = f.properties.name || f.properties.district || '';
+          var division = f.properties.confederacy || f.properties.islandDivision ||
+                         PROVINCE_TO_CONFED[name] || '';
+          f.properties.name = name;
+          f.properties.confederacy = division;
           if (name && snap._provLocKeyByName[name]) {
             f.properties.zoteroCollectionKey_publicationLocation = snap._provLocKeyByName[name];
           }
@@ -917,8 +923,14 @@
       // District and Village, so there is no Tonga equivalent read here for
       // the old tikina-level "District Paternal/Maternal" cell (dropped
       // intentionally per crosswalk §4, not a bug).
-      var paternal = cleanSentinel_(s['District Paternal']);
-      var maternal = cleanSentinel_(s['District Maternal']);
+      var paternal = cleanSentinel_(s['District Paternal'] || s['Province Paternal']);
+      var maternal = cleanSentinel_(s['District Maternal'] || s['Province Maternal']);
+      var paternalDivision = cleanSentinel_(s['Paternal Island Division'] || s['Paternal Confederacy']);
+      var maternalDivision = cleanSentinel_(s['Maternal Island Division'] || s['Maternal Confederacy']);
+      var paternalIsland = cleanSentinel_(s['Specific Island Paternal'] || s['Island Paternal']);
+      var maternalIsland = cleanSentinel_(s['Specific Island Maternal'] || s['Island Maternal']);
+      var paternalVillage = cleanSentinel_(s["Village/Town Paternal (Kolo)"] || s['Village Paternal']);
+      var maternalVillage = cleanSentinel_(s["Village/Town Maternal (Kolo)"] || s['Village Maternal']);
 
       // Grad degrees for this scholar.
       var grads = master.gradDegrees.filter(function (g) { return g['Scholar ID'] === s['Scholar ID']; });
@@ -962,17 +974,17 @@
         maternalProvince: maternal,
         paternalDistrict:  '',
         maternalDistrict:  '',
-        paternalIsland:    cleanSentinel_(s['Specific Island Paternal']),
-        maternalIsland:    cleanSentinel_(s['Specific Island Maternal']),
-        paternalVillage:   cleanSentinel_(s["Village/Town Paternal (Kolo)"]),
-        maternalVillage:   cleanSentinel_(s["Village/Town Maternal (Kolo)"]),
+        paternalIsland:    paternalIsland,
+        maternalIsland:    maternalIsland,
+        paternalVillage:   paternalVillage,
+        maternalVillage:   maternalVillage,
         // Explicit Tonga-named aliases (same values, self-documenting keys)
         // for any Tonga-aware rendering code that prefers not to read the
         // Fiji-shaped property names directly.
-        paternalSpecificIsland: cleanSentinel_(s['Specific Island Paternal']),
-        maternalSpecificIsland: cleanSentinel_(s['Specific Island Maternal']),
-        paternalVillageTown:    cleanSentinel_(s["Village/Town Paternal (Kolo)"]),
-        maternalVillageTown:    cleanSentinel_(s["Village/Town Maternal (Kolo)"]),
+        paternalSpecificIsland: paternalIsland,
+        maternalSpecificIsland: maternalIsland,
+        paternalVillageTown:    paternalVillage,
+        maternalVillageTown:    maternalVillage,
         paternalDistrictName:   paternal,
         maternalDistrictName:   maternal,
         // Cultural/lineage fields with no Fiji V2 equivalent (crosswalk §4
@@ -1003,12 +1015,12 @@
         // Fijian confederacy name. Auto-derived from District via the
         // Lookups-equivalent table (read-only), matching the iTaukei
         // system's actual current (formula-derived) behavior.
-        confederacy: (s['Paternal Island Division'] || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
-        paternalConfederacy: (s['Paternal Island Division'] || PROVINCE_TO_CONFED[paternal] || ''),
-        maternalConfederacy: (s['Maternal Island Division'] || PROVINCE_TO_CONFED[maternal] || ''),
-        islandDivision: (s['Paternal Island Division'] || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
-        paternalIslandDivision: (s['Paternal Island Division'] || PROVINCE_TO_CONFED[paternal] || ''),
-        maternalIslandDivision: (s['Maternal Island Division'] || PROVINCE_TO_CONFED[maternal] || ''),
+        confederacy: (paternalDivision || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
+        paternalConfederacy: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
+        maternalConfederacy: (maternalDivision || PROVINCE_TO_CONFED[maternal] || ''),
+        islandDivision: (paternalDivision || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
+        paternalIslandDivision: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
+        maternalIslandDivision: (maternalDivision || PROVINCE_TO_CONFED[maternal] || ''),
         gender: s['Gender'] || '',
         title: s['Current Title / Role'] || '',
         institution: s['Current Institution'] || '',
@@ -1041,8 +1053,8 @@
         // `paternalVillage` / `maternalVillage` / `paternalIsland` /
         // `maternalIsland` directly. Panel F reads the paternal-only
         // fields. (2026-08-25 Panel F Paternal Geography Isolation fix.)
-        village: cleanSentinel_(s["Village/Town Paternal (Kolo)"]),
-        island:  cleanSentinel_(s['Specific Island Paternal']),
+        village: paternalVillage,
+        island:  paternalIsland,
         subject: s['Primary Discipline / Field'] || '',
         // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
         // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit
