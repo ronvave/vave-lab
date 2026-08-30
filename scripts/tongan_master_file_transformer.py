@@ -901,12 +901,24 @@ def run(
         if str(g.get("Scholar ID (optional)") or "").strip() not in part_tongan_ids
     ]
     log(f"  → {len(geography)} geography records (pre-filter {len(geography_all)})")
+    geography_countries = sorted({
+        str(g.get("Country") or "").strip()
+        for g in geography
+        if str(g.get("Country") or "").strip()
+    })
+    log(f"  → {len(geography_countries)} geography countries: {', '.join(geography_countries)}")
 
     log("Fetching Research Geography Coordinates...")
     geography_coordinates = extract_geography_coordinates(
         fetch_fn("Research Geography Coordinates")
     )
     log(f"  → {len(geography_coordinates)} canonical geography coordinates")
+    coordinate_countries = sorted({
+        str(row.get("Country") or "").strip()
+        for row in geography_coordinates
+        if str(row.get("Country") or "").strip()
+    })
+    log(f"  → {len(coordinate_countries)} coordinate countries: {', '.join(coordinate_countries)}")
 
     log("Computing aggregates...")
     aggregates = compute_aggregates(
