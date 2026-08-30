@@ -12007,8 +12007,13 @@
         linkedPayload.forEach(person => {
           const rawName = String((person && person.name) || '').trim();
           if (!rawName) return;
-          const profile = b3LookupProfile(rawName);
-          const keyName = String((profile && profile.name) || rawName).trim().toLowerCase();
+          // Scholar ID is the authoritative identity key. Name matching is
+          // retained only for researcher rows and older snapshots that do not
+          // yet carry an ID. This prevents a bibliographic spelling variant
+          // from dropping the Tongan scholar's canonical name and portrait.
+          const profile = b3LookupProfile(rawName, person && person.id);
+          const keyName = String((profile && (profile.scholarId || profile.name)) ||
+            (person && person.id) || rawName).trim().toLowerCase();
           if (seenTonganPeople.has(keyName)) return;
           seenTonganPeople.add(keyName);
           linkedTonganPeople.push({
@@ -12026,6 +12031,8 @@
               ? linkedTonganPeople.filter(person => person.isFirstAuthor)
               : linkedTonganPeople.slice(0, 1))
           : linkedTonganPeople;
+        const resolvedLeadProfile = leadProfile ||
+          (featuredTonganPeople[0] && featuredTonganPeople[0].profile) || null;
 
         // ---- Left photo strip ----
         // iTaukei-led:    use the lead's photo (unchanged behaviour).
@@ -12035,7 +12042,7 @@
         let photoUrl = '';
         let rotationUrls = [];
         if (rec.isLed) {
-          photoUrl = (leadProfile && leadProfile.photo) ||
+          photoUrl = (resolvedLeadProfile && resolvedLeadProfile.photo) ||
             (featuredTonganPeople[0] && featuredTonganPeople[0].profile && featuredTonganPeople[0].profile.photo) || '';
         } else if (featuredTonganPeople.length) {
           rotationUrls = featuredTonganPeople.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
@@ -12046,7 +12053,12 @@
         // scholars/researchers, semicolon-separated with alternating tones, each followed
         // by their (Village, Province) chip. Uses the lead's name in bold/dark
         // grey as the anchor so the reader still knows who first-authored.
-        const displayLead = rec.isLed && leadProfile ? leadProfile.name : firstAuthor;
+        // Preserve a non-Tongan bibliographic lead exactly as recorded. For a
+        // Tongan-led work, prefer the canonical scholar profile resolved from
+        // the Authorship bridge so the elevated name and portrait stay paired.
+        const displayLead = rec.isLed && resolvedLeadProfile
+          ? resolvedLeadProfile.name
+          : firstAuthor;
         let coauthInline = '';
         if (!rec.isLed && featuredTonganPeople.length) {
           const parts = featuredTonganPeople.map((c, i) => {
@@ -12087,8 +12099,8 @@
         // entries whose profile has village + province. Others-led rows carry the
         // village info inline next to each co-author instead.
         let villageLine = '';
-        if (rec.isLed && leadProfile) {
-          const label = mergeVillageProvince(leadProfile);
+        if (rec.isLed && resolvedLeadProfile) {
+          const label = mergeVillageProvince(resolvedLeadProfile);
           if (label) {
             villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
           }
@@ -12137,10 +12149,21 @@
 
   // Resolve a Zotero creator name to a scholar-profile record so we can pull
   // the photo. Tries direct lookup, then alias resolution.
-  function b3LookupProfile(creatorName) {
-    if (!creatorName) return null;
+  function b3LookupProfile(creatorName, scholarId) {
     const map = state.scholarProfilesByName;
     if (!map) return null;
+    // B4's Authorship bridge supplies a stable Scholar ID. Resolve it before
+    // consulting display-name spellings; profiles are held in a name-keyed
+    // map for legacy panels, so scan the small unique profile set here.
+    if (scholarId) {
+      const seenProfiles = new Set();
+      for (const profile of map.values()) {
+        if (!profile || seenProfiles.has(profile)) continue;
+        seenProfiles.add(profile);
+        if (String(profile.scholarId || '') === String(scholarId)) return profile;
+      }
+    }
+    if (!creatorName) return null;
     const aliases = state.nameAliases || new Map();
     // Direct hit
     if (map.has(creatorName)) return map.get(creatorName);
