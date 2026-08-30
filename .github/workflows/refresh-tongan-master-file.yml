@@ -28,6 +28,14 @@ name: Refresh Tongan Master File snapshot
 # confirmed.
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-tongan-master-file.yml"
+      - "scripts/tongan_master_file_config.py"
+      - "scripts/tongan_master_file_transformer.py"
+      - "scripts/tongan_encrypt_data.py"
+      - "scripts/tongan_decrypt_data.py"
   schedule:
     - cron: "5 */2 * * *"   # every 2 hours, 5 min after the hour (UTC)
   workflow_dispatch:
