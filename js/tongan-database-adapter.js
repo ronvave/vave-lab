@@ -107,9 +107,23 @@
     "Master's Thesis":    'masters',
     "Other Thesis":       'other'
   };
-  // Reverse for tag/itemType introspection.
-  function zoteroTypeFor(pubType) { return TYPE_MAP[pubType] || 'document'; }
-  function thesisLevelFor(pubType) { return THESIS_LEVEL_MAP[pubType] || null; }
+  // Publication Type is free text in the Master workbook. Normalize known
+  // historical variants here so valid outputs do not silently fall through
+  // to the generic (and visually muted) `document` type.
+  function normalizedPublicationType_(pubType) {
+    var raw = String(pubType || '').trim();
+    var key = raw.toLowerCase().replace(/\s+/g, ' ');
+    if (/^(phd|doctoral|doctorate) thesis$/.test(key)) return 'PhD Thesis';
+    if (/^master(?:'s|s)? thesis$/.test(key)) return "Master's Thesis";
+    if (key === 'other thesis' || key === 'thesis') return 'Other Thesis';
+    if (key === 'journal article / protocol') return 'Journal Article';
+    if (/^(book chapter|encyclopedia entry|encyclopedia entry \/ book chapter)$/.test(key)) return 'Book Chapter';
+    if (/^(book|edited book|book \/ monograph|monograph|book \/ translation|poetry collection|booklet)$/.test(key)) return 'Book';
+    if (/^(report|research report|professional \/ technical report|monograph \/ report|research brief)$/.test(key)) return 'Report';
+    return raw;
+  }
+  function zoteroTypeFor(pubType) { return TYPE_MAP[normalizedPublicationType_(pubType)] || 'document'; }
+  function thesisLevelFor(pubType) { return THESIS_LEVEL_MAP[normalizedPublicationType_(pubType)] || null; }
 
   // Parse a Master-sheet year cell into an integer 4-digit year, or return
   // null when the cell is blank, non-numeric, or outside the 1800..2100 sane
@@ -740,7 +754,7 @@
       // them up. We keep the descendant tree flat here — one collection per
       // (country|university) pair — because the production walker traverses via
       // parent chain.
-      if (itemType === 'thesisMasters' || itemType === 'thesisPhd') {
+      if (itemType === 'thesis') {
         // Find the linked scholar's grad episode(s) and pick the one matching
         // thesis level if possible.
         var thesisScholarId = lead ? lead['Scholar ID'] : (authRows[0] && authRows[0]['Scholar ID']);
@@ -748,8 +762,9 @@
         // Pick a matching-level episode.
         var episode = episodes.find(function (g) {
           var deg = (g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || '');
-          if (itemType === 'thesisPhd')     return /phd|doctor/i.test(deg);
-          if (itemType === 'thesisMasters') return /master/i.test(deg);
+          var level = thesisLevelFor(p['Publication Type']);
+          if (level === 'phd')     return /phd|doctor/i.test(deg);
+          if (level === 'masters') return /master/i.test(deg);
           return false;
         }) || episodes[0];
         if (episode) {
@@ -819,6 +834,47 @@
         _itaukeiLeadScholarId:      itaukeiLeadScholarId,
         _itaukeiCoauthorScholarIds: itaukeiCoauthorScholarIds
       };
+    });
+
+    // Some completed theses are catalogued only on Graduate Degrees, not in
+    // Publications/Authorship. Add a synthetic item when a completed, titled
+    // degree has no matching thesis publication for that scholar.
+    function normalizedTitle_(value) {
+      return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    }
+    master.gradDegrees.forEach(function (g) {
+      var sid = g['Scholar ID'];
+      var scholarKey = scholarKeyById[sid];
+      var title = String(g['Thesis / Research Title'] || '').trim();
+      var status = String(g['Completion Status'] || g['Current Status'] || '').trim();
+      if (!scholarKey || !title || !/^completed\b/i.test(status)) return;
+      var degreeText = String((g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || '')).trim();
+      var level = /phd|doctor/i.test(degreeText) ? 'phd' : (/master/i.test(degreeText) ? 'masters' : null);
+      if (!level) return;
+      var titleKey = normalizedTitle_(title);
+      var duplicate = items.some(function (item) {
+        return item.itemType === 'thesis' && item.collections.indexOf(scholarKey) !== -1 &&
+          normalizedTitle_(item.title) === titleKey;
+      });
+      if (duplicate) return;
+      var yearRaw = g['Finish / Completion Year'] || g['Year / Status'] || '';
+      var yearMatch = String(yearRaw).match(/\b(18|19|20|21)\d{2}\b/);
+      var year = yearMatch ? Number(yearMatch[0]) : null;
+      var collections = [scholarKey, COL_BY_WITH];
+      var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
+      var district = scholar && (cleanSentinel_(scholar['District Paternal']) || cleanSentinel_(scholar['District Maternal']));
+      if (district && provPaternalKeyByName[district]) collections.push(provPaternalKeyByName[district]);
+      items.push({
+        key: hashKey('grad-thesis:' + (g['Degree ID'] || sid + ':' + level + ':' + titleKey)),
+        itemType: 'thesis', title: title, date: year ? String(year) : '', year: year,
+        creators: [scholarNameById[sid]], tags: [], collections: collections,
+        publicationTitle: '', university: g['C_Uni name'] || g['O_Uni name'] || '',
+        thesisType: level === 'phd' ? 'PhD Thesis' : "Master's Thesis", thesisLevel: level,
+        DOI: '', url: g['Evidence URL'] || '', publisher: '', abstractNote: '',
+        _masterPublicationType: level === 'phd' ? 'PhD Thesis' : "Master's Thesis",
+        _masterPublicationId: '', _masterAuthorship: 'lead', _syntheticGradDegree: true,
+        _itaukeiLeadScholarId: sid, _itaukeiCoauthorScholarIds: []
+      });
     });
 
     // Dedupe synthesized country/uni collections (they can be pushed many times).

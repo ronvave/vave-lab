@@ -231,6 +231,23 @@ def extract_publications(rows: list[list]) -> list[dict]:
     # then keep numeric 0/1 in the output for compatibility with any
     # frontend that reads the raw column value.
     for p in clean:
+        # Canonicalize historical/free-text variants for all generated panels.
+        raw_type = str(p.get("Publication Type") or "").strip()
+        type_key = " ".join(raw_type.lower().split())
+        if type_key in {"phd thesis", "doctoral thesis", "doctorate thesis"}:
+            p["Publication Type"] = "PhD Thesis"
+        elif type_key in {"master's thesis", "masters thesis", "master thesis"}:
+            p["Publication Type"] = "Master's Thesis"
+        elif type_key in {"other thesis", "thesis"}:
+            p["Publication Type"] = "Other Thesis"
+        elif type_key == "journal article / protocol":
+            p["Publication Type"] = "Journal Article"
+        elif type_key in {"book chapter", "encyclopedia entry", "encyclopedia entry / book chapter"}:
+            p["Publication Type"] = "Book Chapter"
+        elif type_key in {"book", "edited book", "book / monograph", "monograph", "book / translation", "poetry collection", "booklet"}:
+            p["Publication Type"] = "Book"
+        elif type_key in {"report", "research report", "professional / technical report", "monograph / report", "research brief"}:
+            p["Publication Type"] = "Report"
         p["Year"] = as_int(p.get("Year"))
         for label in ALL_FIJI_GEOGRAPHY_LABELS:
             p[label] = 1 if is_truthy(p.get(label)) else 0
