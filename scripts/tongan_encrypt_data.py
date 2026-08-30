@@ -72,6 +72,7 @@ TARGETS = [
     "tongan-master-grad-degrees.json",
     "tongan-master-mobility.json",
     "tongan-master-geography.json",
+    "tongan-master-geography-coordinates.json",
     "tongan-master-aggregates.json",
     "tongan-master-worldpoints.json",
     "tongan-body-composition-master.json",

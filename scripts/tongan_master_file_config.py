@@ -56,6 +56,7 @@ SHEETS = {
     # Tongan-associated in Panel C2's Tongan view.
     "Researcher Authorship": {"header_row": 4, "first_data": 5},
     "Research Geography": {"header_row": 4, "first_data": 5},
+    "Research Geography Coordinates": {"header_row": 4, "first_data": 5},
     "Institutions": {"header_row": 4, "first_data": 5},
     "Dashboard": {"header_row": None, "first_data": 4},  # freeform QA sheet
 }

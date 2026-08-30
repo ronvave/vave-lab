@@ -255,6 +255,7 @@
       fetchJson('data/tongan-master-grad-degrees.json'),
       fetchJson('data/tongan-master-mobility.json').catch(function () { return []; }),
       fetchJson('data/tongan-master-geography.json').catch(function () { return []; }),
+      fetchJson('data/tongan-master-geography-coordinates.json').catch(function () { return []; }),
       fetchJson('data/tongan-master-aggregates.json'),
       fetchJson('data/tongan-last-master-sync.json').catch(function () { return null; }),
       // V1 graduate-studies snapshot — used only as a (country, university)
@@ -287,12 +288,13 @@
         gradDegrees:         arr[4],
         mobility:            arr[5],
         geography:           arr[6],
-        aggregates:          arr[7],
-        lastSync:            arr[8],
-        v1GradStudies:       arr[9],
-        masterWorldPoints:   arr[10],
-        adminEnrichment:     arr[11] && arr[11].scholars ? arr[11] : EMPTY_ADMIN_DOC,
-        adminInsights:       arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC
+        geographyCoordinates: arr[7],
+        aggregates:          arr[8],
+        lastSync:            arr[9],
+        v1GradStudies:       arr[10],
+        masterWorldPoints:   arr[11],
+        adminEnrichment:     arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC,
+        adminInsights:       arr[13] && arr[13].scholars ? arr[13] : EMPTY_ADMIN_DOC
       };
     });
   }
@@ -687,8 +689,12 @@
       var geoRowsForPub = geoByPub[pid] || [];
       var provincesInPub = [];
       var islandDivisionsInPub = [];
+      var specificIslandsInPub = [];
+      var researchSitesInPub = [];
       var seenProvForPub = new Set();
       var seenDivisionForPub = new Set();
+      var seenIslandForPub = new Set();
+      var seenSiteForPub = new Set();
       geoRowsForPub.forEach(function (g) {
         if (String(g['Country'] || '').trim() !== 'Tonga') return;
         var verif = String(g['Verification'] || '').trim();
@@ -696,10 +702,18 @@
         if (!verifOk) return;
         var division = String(g['Island Division (auto from District)'] || '').trim();
         var prov = String(g['District'] || '').trim();
+        var island = String(g['Specific Island'] || '').trim();
+        var site = String(g['Village / Town / Site'] || '').trim();
         if (!division && prov && PROVINCE_TO_CONFED[prov]) division = PROVINCE_TO_CONFED[prov];
         if (division && !seenDivisionForPub.has(division)) {
           seenDivisionForPub.add(division);
           islandDivisionsInPub.push(division);
+        }
+        if (island && !seenIslandForPub.has(island)) {
+          seenIslandForPub.add(island); specificIslandsInPub.push(island);
+        }
+        if (site && !seenSiteForPub.has(site)) {
+          seenSiteForPub.add(site); researchSitesInPub.push(site);
         }
         if (!prov) return;
         if (seenProvForPub.has(prov)) return;
@@ -819,6 +833,8 @@
         _masterPublicationType: p['Publication Type'],
         _masterProvinces:   provincesInPub,
         _masterIslandDivisions: islandDivisionsInPub,
+        _masterSpecificIslands: specificIslandsInPub,
+        _masterResearchSites: researchSitesInPub,
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
         _masterAuthorship:  masterAuthorship,
@@ -833,7 +849,10 @@
         // iTaukei scholars are co-authors. Authorship worksheet is the
         // authoritative Scholar-ID source.
         _itaukeiLeadScholarId:      itaukeiLeadScholarId,
-        _itaukeiCoauthorScholarIds: itaukeiCoauthorScholarIds
+        _itaukeiCoauthorScholarIds: itaukeiCoauthorScholarIds,
+        _linkedTonganScholarNames: Array.from(linkedScholarIds).map(function (sid) {
+          return scholarNameById[sid] || sid;
+        })
       };
     });
 

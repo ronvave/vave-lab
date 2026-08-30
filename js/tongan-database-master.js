@@ -10871,10 +10871,37 @@
     return (meta && meta.region) ? meta.region : 'Other';
   }
 
+  function applyMasterB4Coordinates() {
+    const rows = state.master && state.master.geographyCoordinates;
+    if (!Array.isArray(rows)) return;
+    rows.forEach(row => {
+      const status = String(row['Verification / Status'] || '').trim();
+      if (!(/^verified/i.test(status) || status.toLowerCase() === 'strong')) return;
+      const lat = Number(row.Latitude), lng = Number(row.Longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        console.warn('B4: invalid Master coordinate', row['Canonical Location Name'], row.Latitude, row.Longitude);
+        return;
+      }
+      if (String(row['Location Type'] || '').trim() !== 'Country') return;
+      const name = String(row['Canonical Location Name'] || row.Country || '').trim();
+      if (!name) return;
+      const prior = B3_COUNTRY_COORDS[name] || {};
+      B3_COUNTRY_COORDS[name] = Object.assign({}, prior, {
+        lat, lng,
+        region: prior.region || 'Other',
+        _masterCoordinate: true
+      });
+      String(row['Alias Notes'] || '').split(';').map(x => x.trim()).filter(Boolean).forEach(alias => {
+        B3_COUNTRY_COORDS[alias] = B3_COUNTRY_COORDS[name];
+      });
+    });
+  }
+
   function initB3Map() {
     const el = document.getElementById('db-map-b3');
     if (!el || typeof L === 'undefined') return;
     if (!state.snapshot) return; // fires again from data load path
+    applyMasterB4Coordinates();
 
     // ---- 1. Build sub-collection -> country name map ----
     // "Where study was done" root (V3HLPDPL). Every direct child is a country.
@@ -11814,6 +11841,9 @@
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
+        const linkedTongan = Array.isArray(it._linkedTonganScholarNames)
+          ? it._linkedTonganScholarNames.filter(Boolean)
+          : [];
 
         // Collect iTaukei co-authors (used only on Others-as-Lead entries per the
         // July 2026 spec: elevate iTaukei scholarship visually even when the paper
@@ -11920,6 +11950,9 @@
               villageLine +
               `<div class="b3-work-detail__title">${escapeHtml(title)}</div>` +
               (venue ? `<div class="b3-work-detail__venue">${escapeHtml(venue)}</div>` : '') +
+              (linkedTongan.length
+                ? `<div class="b3-work-detail__venue"><strong>Linked Tongan scholar${linkedTongan.length === 1 ? '' : 's'}:</strong> ${linkedTongan.map(escapeHtml).join('; ')}</div>`
+                : '') +
             `</div>` +
           `</div>`
         );

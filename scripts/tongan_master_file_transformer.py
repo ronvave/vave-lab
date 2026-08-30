@@ -405,6 +405,30 @@ def extract_geography(rows: list[list]) -> list[dict]:
     return sanitize(dicts, keep)
 
 
+def extract_geography_coordinates(rows: list[list]) -> list[dict]:
+    """Canonical B4 marker coordinates maintained in the Master workbook."""
+    _, dicts = rows_to_dicts(
+        rows,
+        SHEETS["Research Geography Coordinates"]["header_row"],
+        SHEETS["Research Geography Coordinates"]["first_data"],
+    )
+    keep = [
+        "Location Type", "Canonical Location Name", "Country",
+        "Island Division", "Specific Island", "Longitude", "Latitude",
+        "Coordinate Convention", "Coordinate Source URL",
+        "Verification / Status", "Last Checked", "Alias Notes",
+    ]
+    clean = sanitize(dicts, keep)
+    for row in clean:
+        for field in ("Longitude", "Latitude"):
+            try:
+                value = str(row.get(field) or "").strip()
+                row[field] = float(value) if value else None
+            except (TypeError, ValueError):
+                row[field] = None
+    return clean
+
+
 def extract_awards(rows: list[list]) -> list[dict]:
     _, dicts = rows_to_dicts(rows, 4, 5)
     return sanitize(dicts, AWARD_PUBLIC_FIELDS)
@@ -878,6 +902,12 @@ def run(
     ]
     log(f"  → {len(geography)} geography records (pre-filter {len(geography_all)})")
 
+    log("Fetching Research Geography Coordinates...")
+    geography_coordinates = extract_geography_coordinates(
+        fetch_fn("Research Geography Coordinates")
+    )
+    log(f"  → {len(geography_coordinates)} canonical geography coordinates")
+
     log("Computing aggregates...")
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
@@ -903,6 +933,10 @@ def run(
     _write_json(out_dir / "tongan-master-grad-degrees.json", grad_degrees)
     _write_json(out_dir / "tongan-master-mobility.json", mobility)
     _write_json(out_dir / "tongan-master-geography.json", geography)
+    _write_json(
+        out_dir / "tongan-master-geography-coordinates.json",
+        geography_coordinates,
+    )
     _write_json(out_dir / "tongan-master-aggregates.json", aggregates)
 
     # ----------------------------------------------------------------
