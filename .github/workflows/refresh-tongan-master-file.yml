@@ -13,7 +13,7 @@ name: Refresh Tongan Master File snapshot
 # Requires GitHub Secrets:
 #   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
 #                                   key (shared with the iTaukei workflow);
-#                                   must be granted Viewer on the Tongan
+#                                   must be granted Editor on the Tongan
 #                                   Master Sheet separately (see docs)
 #   VAVELAB_TONGAN_PASSCODE      — passcode used to derive AES-GCM key for
 #                                   Tongan data files (distinct from
@@ -102,6 +102,13 @@ jobs:
             data/tongan-body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
+
+      - name: Autofill missing university coordinates
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          python3 scripts/tongan_autofill_university_coords.py
 
       - name: Fetch, sanitize, and transform Tongan Master file
         env:

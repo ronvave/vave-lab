@@ -298,6 +298,23 @@ def extract_grad_degrees(rows: list[list]) -> list[dict]:
     return sanitize(dicts, GRAD_DEGREE_PUBLIC_FIELDS)
 
 
+def extract_university_coordinates(rows: list[list]) -> list[dict]:
+    """Read the public university coordinate lookup from Lookups!L:P."""
+    _, dicts = rows_to_dicts(rows, 4, 5)
+    out: list[dict] = []
+    for row in dicts:
+        name = str(row.get("University") or "").strip()
+        country = str(row.get("Country") or "").strip()
+        try:
+            lng = float(row.get("Longitude"))
+            lat = float(row.get("Latitude"))
+        except (TypeError, ValueError):
+            continue
+        if name and -180 <= lng <= 180 and -90 <= lat <= 90:
+            out.append({"name": name, "country": country, "location": [lat, lng]})
+    return out
+
+
 def extract_part_tongan_ids(rows: list[list]) -> set[str]:
     """Return the set of Scholar IDs listed on the Part-Tongan sheet.
 
@@ -773,6 +790,10 @@ def run(
     grad_degrees = [g for g in grad_degrees_all if g.get("Scholar ID") not in part_tongan_ids]
     log(f"  → {len(grad_degrees)} degree episodes (pre-filter {len(grad_degrees_all)})")
 
+    log("Fetching university coordinate lookup...")
+    university_coords = extract_university_coordinates(fetch_fn("Lookups"))
+    log(f"  → {len(university_coords)} universities with valid coordinates")
+
     # ------------------------------------------------------------------
     # De-duplicate near-identical Master's / PhD rows.
     #
@@ -910,37 +931,16 @@ def run(
     excluded_md = out_dir.parent / "docs" / "b2_tongan_excluded_rows.md"
     excluded_md.parent.mkdir(exist_ok=True)
 
-    # master_b2_worldpoints.load_uni_coords() hardcodes reading
-    # <repo>/data/world-universities.json (the shared, iTaukei-scoped,
-    # do-not-touch coordinate file — encrypted under VAVELAB_PASSCODE,
-    # which the Tongan workflow does not have). The Tongan-scoped
-    # counterpart lives at data/tongan-world-universities.json (encrypted
-    # under VAVELAB_TONGAN_PASSCODE, already decrypted to plaintext by
-    # the workflow's bootstrap step). To reuse write_worldpoints()
-    # unchanged, stage a throwaway repo dir whose data/world-universities
-    # .json is that Tongan file, and pass IT as `repo=` instead of the
-    # real repo root. This is additive-only: scripts/master_b2_worldpoints
-    # .py is never modified.
-    tongan_uni_coords_src = out_dir / "tongan-world-universities.json"
-    b2_repo = out_dir.parent
-    b2_tmp_dir = None
-    if tongan_uni_coords_src.exists():
-        b2_tmp_dir = Path(tempfile.mkdtemp(prefix="tongan-b2-repo-"))
-        (b2_tmp_dir / "data").mkdir(parents=True, exist_ok=True)
-        shutil.copy(
-            tongan_uni_coords_src,
-            b2_tmp_dir / "data" / "world-universities.json",
-        )
-        b2_repo = b2_tmp_dir
-        log(
-            f"  → using Tongan university-coordinates file "
-            f"({tongan_uni_coords_src.name}) for B2 lat/lng lookup"
-        )
-    else:
-        log(
-            "  → WARNING: data/tongan-world-universities.json not found; "
-            "B2 worldPoints will have no lat/lng (map will be empty)"
-        )
+    # Stage the live Lookups!L:P coordinate table in the shape expected by
+    # master_b2_worldpoints. This removes the stale encrypted-coordinate-file
+    # dependency: a newly geocoded university appears on the very next run.
+    b2_tmp_dir = Path(tempfile.mkdtemp(prefix="tongan-b2-repo-"))
+    (b2_tmp_dir / "data").mkdir(parents=True, exist_ok=True)
+    (b2_tmp_dir / "data" / "world-universities.json").write_text(
+        json.dumps({"universities": university_coords}, ensure_ascii=False),
+        encoding="utf-8",
+    )
+    b2_repo = b2_tmp_dir
 
     try:
         b2_payload = write_worldpoints(
@@ -950,8 +950,7 @@ def run(
             excluded_md_path=excluded_md,
         )
     finally:
-        if b2_tmp_dir is not None:
-            shutil.rmtree(b2_tmp_dir, ignore_errors=True)
+        shutil.rmtree(b2_tmp_dir, ignore_errors=True)
     b2_totals = b2_payload["totals"]
     log(
         f"  → B2 payload: countries={b2_totals['countries']}, "
