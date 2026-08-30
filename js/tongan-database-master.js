@@ -10928,7 +10928,23 @@
     const result = [];
     const seen = new Set();
     const addItems = (items, role) => items.forEach(item => {
-      const rows = (item._masterGeographyRows || []).filter(g => g.country === 'Tonga');
+      // Read the live Master bridge directly. The item-level copy is retained
+      // as a fallback for older snapshots, but the bridge is authoritative and
+      // prevents a stale browser item from collapsing all evidence to Tonga.
+      const publicationId = item._masterPublicationId || '';
+      const rawRows = ((state.master && state.master.geography) || []).filter(g =>
+        String(g['Publication ID / BibTeX Key'] || '').trim() === publicationId &&
+        String(g.Country || '').trim() === 'Tonga' &&
+        (/^verified/i.test(String(g.Verification || '').trim()) || String(g.Verification || '').trim().toLowerCase() === 'strong')
+      );
+      const rows = rawRows.length ? rawRows.map(g => ({
+        country: 'Tonga',
+        islandDivision: String(g['Island Division (auto from District)'] || '').trim(),
+        district: String(g.District || '').trim(),
+        specificIsland: String(g['Specific Island'] || '').trim(),
+        site: String(g['Village / Town / Site'] || '').trim(),
+        geographyType: String(g['Geography Type'] || '').trim()
+      })) : (item._masterGeographyRows || []).filter(g => g.country === 'Tonga');
       rows.forEach(g => {
         let coord = null, label = '', kind = '';
         if (g.site && lookup.site) { coord = lookup.site.get(norm(g.site)); label = g.site; kind = 'site'; }
@@ -10949,6 +10965,22 @@
     addItems(countryRecord.led || [], 'led');
     addItems(countryRecord.others || [], 'others');
     return result;
+  }
+
+  function b3ExpandedTongaRecords(records) {
+    return records.flatMap(rec => {
+      if (rec.country !== 'Tonga') return [rec];
+      const details = b3TongaDetailRecords(rec);
+      if (!details.length) return [rec];
+      // At island-detail zoom retain the country-level publication marker as
+      // well as every verified evidence row. Thus TNG-PUB0072 renders as five
+      // circles: one deduplicated publication marker + four geography rows.
+      return [Object.assign({}, rec, {
+        subLoc: `Tonga — ${rec.total} publication${rec.total === 1 ? '' : 's'}`,
+        _b3Detail: true,
+        _b3CountrySummary: true
+      })].concat(details);
+    });
   }
 
   function b3DetailedTongaBounds(countryRecord) {
@@ -11607,13 +11639,7 @@
     if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
     if (state.b3LabelLayer) { bmap.removeLayer(state.b3LabelLayer); state.b3LabelLayer = null; }
     let records = b3FilteredRecords();
-    if (bmap.getZoom() >= 5) {
-      records = records.flatMap(rec => {
-        if (rec.country !== 'Tonga') return [rec];
-        const details = b3TongaDetailRecords(rec);
-        return details.length ? details : [rec];
-      });
-    }
+    if (bmap.getZoom() >= 5) records = b3ExpandedTongaRecords(records);
     const mode = state.b3View || 'with';
     // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
     // we sqrt-scale to keep tail countries readable.
@@ -11634,14 +11660,22 @@
       .sort((a, b) => b.radius - a.radius); // largest first
 
     const markers = [];
+    // The country summary and nationwide evidence share Tonga's canonical
+    // centroid. Offset only the summary marker slightly at detailed zoom so
+    // both remain separately clickable without falsifying a fieldwork site.
     withMeta.forEach(({ rec, radius }) => {
       const icon = b3MakePieIcon(rec, radius, mode);
       if (!icon) return;
       // Larger radius → lower zIndexOffset so smaller markers rise to the top.
       // Range: -1000 for the largest, up to 0 for the smallest.
       const zOffset = Math.round(-1000 * (radius / 30));
-      const plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
-      const m = L.marker([rec.lat, plottedLng], { icon, zIndexOffset: zOffset });
+      let plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      let plottedLat = rec.lat;
+      if (rec._b3CountrySummary) {
+        plottedLng += 0.035;
+        plottedLat += 0.025;
+      }
+      const m = L.marker([plottedLat, plottedLng], { icon, zIndexOffset: zOffset });
       m._b3Record = rec;
       m._b3Radius = radius;
       // Tag the marker's DOM element with the country name so QA/automation can
@@ -11702,9 +11736,11 @@
     if (!bmap) return;
     // Convert lat/lng → container px so we can compute rough label bboxes.
     const items = withMeta.map(({ rec, radius }) => {
-      const plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
-      const pt = bmap.latLngToContainerPoint([rec.lat, plottedLng]);
-      return { rec, radius, x: pt.x, y: pt.y };
+      let plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      let plottedLat = rec.lat;
+      if (rec._b3CountrySummary) { plottedLng += 0.035; plottedLat += 0.025; }
+      const pt = bmap.latLngToContainerPoint([plottedLat, plottedLng]);
+      return { rec, radius, x: pt.x, y: pt.y, plottedLat, plottedLng };
     }).sort((a, b) => b.radius - a.radius);
 
     // Rough label bbox: assume ~7px per character, height ~16px, anchored at
@@ -11713,7 +11749,7 @@
     const overlaps = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
     const labelMarkers = [];
 
-    items.forEach(({ rec, radius, x, y }) => {
+    items.forEach(({ rec, radius, x, y, plottedLat, plottedLng }) => {
       const text = rec._b3Detail && rec.subLoc ? rec.subLoc : b3DisplayName(rec.country);
       const w = text.length * 7 + 6;
       const bbox = {
@@ -11731,7 +11767,7 @@
         iconSize: [w, 20],
         iconAnchor: [-radius - 4, 10]  // offset to right of the pie
       });
-      labelMarkers.push(L.marker([rec.lat, b3WrappedLng(rec.lng, bmap.getCenter().lng)], {
+      labelMarkers.push(L.marker([plottedLat, plottedLng], {
         icon,
         interactive: false,
         keyboard: false,
