@@ -117,7 +117,11 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
-          python3 scripts/tongan_autofill_university_coords.py
+          # Coordinate enrichment is helpful for Panel B2, but a temporary
+          # Sheets write-permission failure must not block the read-only B4
+          # Research Geography snapshot refresh.
+          python3 scripts/tongan_autofill_university_coords.py || \
+            echo "University-coordinate autofill unavailable; continuing with Master snapshot refresh"
 
       - name: Fetch, sanitize, and transform Tongan Master file
         env:
