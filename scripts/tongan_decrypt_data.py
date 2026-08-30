@@ -55,6 +55,7 @@ TARGETS = [
     "tongan-master-mobility.json",
     "tongan-master-geography.json",
     "tongan-master-aggregates.json",
+    "tongan-master-worldpoints.json",
     "tongan-last-master-sync.json",
 ]
 

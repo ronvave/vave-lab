@@ -389,14 +389,18 @@ def extract_geography(rows: list[list]) -> list[dict]:
         "Scholar ID (optional)",
         "Geography Type",
         "Country",
-        "Fiji Province",
         "District",
-        "Village / Site",
-        "Confederacy (auto from Province)",
-        # Required by the Panel-C2 geography repair: the adapter filters to
-        # verified Fiji rows using this predicate:
+        "Village / Town / Site",
+        "Specific Island",
+        "Island Division (auto from District)",
+        "Coding Basis / Evidence",
+        "Source URL / Note",
+        # Panel B4 and the within-Tonga geography summaries only consume
+        # evidence-screened rows.  Keep the same verification contract as
+        # iTaukei V2: startswith("Verified", case-insensitive) or "Strong".
         #   startswith("Verified", case-insensitive) OR == "Strong".
         "Verification",
+        "Last Checked",
     ]
     return sanitize(dicts, keep)
 

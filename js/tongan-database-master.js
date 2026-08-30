@@ -295,6 +295,7 @@
     disciplineByColKey: new Map(),   // collectionKey -> discipline name (root)
     disciplinesByItem:  new Map(),   // itemKey -> Set(discipline)
     provincesByItem:    new Map(),   // itemKey -> Set(province name)   (research-location view)
+    islandDivisionsByItem: new Map(), // itemKey -> Set(Tonga Island Division)
     paternalByItem:     new Map(),   // itemKey -> Set(province name)
     scholarByItem:      new Map(),   // itemKey -> Set(scholar leaderboard name)
     scholarKeyByName:   new Map(),   // scholar full name -> collectionKey
@@ -760,6 +761,7 @@
       });
       state.disciplinesByItem.set(it.key, disc);
       state.provincesByItem.set(it.key, provs);
+      state.islandDivisionsByItem.set(it.key, new Set(it._masterIslandDivisions || []));
       state.paternalByItem.set(it.key, paternal);
       state.scholarByItem.set(it.key, scholars);
     });
@@ -10746,20 +10748,21 @@
   }
 
   // ==========================================================================
-  // PANEL B3 — Where iTaukei research has been undertaken
+  // PANEL B4 — Where Tongan research has been undertaken
   //
   // Data model:
-  //   The Zotero "Where study was done" collection (key V3HLPDPL) contains
-  //   one sub-collection per country. Every item in a country sub-collection
-  //   is a publication whose research was carried out in that country.
-  //   For each item we compute the first-author's iTaukei status via
-  //   itaukeiAuthorship(item): 'lead' = iTaukei first-author (rust bucket),
+  //   The adapter synthesises the V3HLPDPL collection tree from verified
+  //   rows in the Master file Research Geography worksheet. Every item in a
+  //   country collection is a publication whose research was carried out
+  //   there. Multiple site rows in one country are deduplicated by publication.
+  //   For each item we compute the first-author's Tongan status via
+  //   itaukeiAuthorship(item): 'lead' = Tongan first-author (rust bucket),
   //   'coauth' | 'none' = someone else first-authored (teal bucket).
   //
   //   The pill above the map toggles which count drives the marker size:
-  //     - With iTaukei: total items with an iTaukei author on the byline
+  //     - With Tongan: total items with a Tongan author on the byline
   //                     (lead + coauth). Both slices of the pie visible.
-  //     - Led by iTaukei: only items where an iTaukei is first author.
+  //     - Led by Tongan: only items where a Tongan is first author.
   //                       Pie collapses to the rust slice.
   //
   // Popup:
@@ -10884,7 +10887,7 @@
                    || null;
     if (!whereRoot) {
       const err = document.querySelector('[data-db-b3-map-error]');
-      if (err) { err.style.display = 'block'; err.textContent = 'Zotero "Where study was done" collection not found in snapshot.'; }
+      if (err) { err.style.display = 'block'; err.textContent = 'Verified Research Geography data was not found in the Master-file snapshot.'; }
       return;
     }
     // countryOfKey[<any descendant key>] = <country name>
@@ -11155,34 +11158,35 @@
     }
 
     function paintConfProv() {
-      const isFiji = state.b3Filter.country === 'Fiji Provinces';
-      confCol.hidden = !isFiji;
-      provCol.hidden = !isFiji;
-      if (!isFiji) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
+      const isTonga = state.b3Filter.country === 'Tonga';
+      confCol.hidden = !isTonga;
+      provCol.hidden = !isTonga;
+      if (!isTonga) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
 
-      // Compute per-confederacy and per-province counts against the Fiji record.
-      const fijiRec = recs.find(r => r.country === 'Fiji Provinces');
-      if (!fijiRec) return;
+      // Compute per-Island-Division and per-District counts against Tonga.
+      const tongaRec = recs.find(r => r.country === 'Tonga');
+      if (!tongaRec) return;
       const provOfItem = state.provincesByItem || new Map();
+      const divisionOfItem = state.islandDivisionsByItem || new Map();
       const auth = state.b3Filter.authorship;
-      const items = (auth === 'led') ? fijiRec.led
-                 : (auth === 'others') ? fijiRec.others
-                 : fijiRec.led.concat(fijiRec.others);
+      const items = (auth === 'led') ? tongaRec.led
+                 : (auth === 'others') ? tongaRec.others
+                 : tongaRec.led.concat(tongaRec.others);
 
       const confCount = new Map();
       const provCount = new Map();
       items.forEach(it => {
         const ps = provOfItem.get(it.key);
-        if (!ps) return;
-        ps.forEach(p => {
-          provCount.set(p, (provCount.get(p) || 0) + 1);
-          const c = PROVINCE_TO_CONFEDERACY[p];
-          if (c) confCount.set(c, (confCount.get(c) || 0) + 1);
-        });
+        if (ps) ps.forEach(p => provCount.set(p, (provCount.get(p) || 0) + 1));
+        const divisions = divisionOfItem.get(it.key);
+        if (divisions) divisions.forEach(d => confCount.set(d, (confCount.get(d) || 0) + 1));
       });
 
-      const totalConf = Array.from(confCount.values()).reduce((a, b) => a + b, 0);
-      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.confederacy ? 'is-active' : ''}" data-conf-pick="">All confederacies <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
+      const totalConf = items.filter(it => {
+        const divisions = divisionOfItem.get(it.key);
+        return divisions && divisions.size;
+      }).length;
+      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.confederacy ? 'is-active' : ''}" data-conf-pick="">All Island Divisions <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
       ['Tongatapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'].forEach(c => {
         const n = confCount.get(c) || 0;
         const active = state.b3Filter.confederacy === c ? 'is-active' : '';
@@ -11190,13 +11194,13 @@
       });
       confList.innerHTML = cHtml;
 
-      // Province list: filter by active confederacy if set.
+      // District list: filter by active Island Division if set.
       const provOrder = Object.keys(PROVINCE_TO_CONFEDERACY);
       const filteredProvs = state.b3Filter.confederacy
         ? provOrder.filter(p => PROVINCE_TO_CONFEDERACY[p] === state.b3Filter.confederacy)
         : provOrder;
       const provTotal = filteredProvs.reduce((a, p) => a + (provCount.get(p) || 0), 0);
-      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All provinces <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
+      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All districts <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
       filteredProvs.forEach(p => {
         const n = provCount.get(p) || 0;
         const active = state.b3Filter.province === p ? 'is-active' : '';
@@ -11263,7 +11267,7 @@
       } else if (t.hasAttribute('data-country-pick')) {
         const v = t.getAttribute('data-country-pick') || null;
         state.b3Filter.country = v;
-        // Changing country invalidates Fiji-only sub-selections.
+        // Changing country invalidates Tonga-only sub-selections.
         state.b3Filter.confederacy = null;
         state.b3Filter.province = null;
         // Auto-set region to match the country if not already scoped.
@@ -11410,13 +11414,14 @@
 
   // Apply the current filter to a records array (country records) and produce
   // filtered per-country buckets. When authorship='led' or 'others', the other
-  // bucket is emptied. When a Fiji province is active, non-Fiji records drop
-  // and the Fiji record is narrowed to items whose provincesByItem set
-  // contains that province. Confederacy filter narrows the same way.
+  // bucket is emptied. When a Tonga District is active, other countries drop
+  // and the Tonga record is narrowed to items whose provincesByItem set
+  // contains that District. Island Division filters narrow the same way.
   function b3FilteredRecords() {
     const filter = state.b3Filter || {};
     const recs = state.b3Records || [];
     const provOfItem = state.provincesByItem || new Map();
+    const divisionOfItem = state.islandDivisionsByItem || new Map();
 
     return recs.map(rec => {
       // Region gate.
@@ -11427,28 +11432,23 @@
       let led = rec.led;
       let others = rec.others;
 
-      // Fiji-only: confederacy/province narrowing. Applies only when the
-      // active country is Fiji Provinces (or the Fiji-Provinces branch of
-      // the drilldown is selected).
-      const isFiji = rec.country === 'Fiji Provinces';
-      if (isFiji && (filter.confederacy || filter.province)) {
+      // Tonga-only: Island-Division/District narrowing.
+      const isTonga = rec.country === 'Tonga';
+      if (isTonga && (filter.confederacy || filter.province)) {
         const matchItem = (it) => {
           const set = provOfItem.get(it.key);
-          if (!set || !set.size) return false;
-          if (filter.province) return set.has(filter.province);
+          if (filter.province) return !!(set && set.has(filter.province));
           if (filter.confederacy) {
-            for (const p of set) {
-              if (PROVINCE_TO_CONFEDERACY[p] === filter.confederacy) return true;
-            }
-            return false;
+            const divisions = divisionOfItem.get(it.key);
+            return !!(divisions && divisions.has(filter.confederacy));
           }
           return true;
         };
         led = led.filter(matchItem);
         others = others.filter(matchItem);
-      } else if (!isFiji && (filter.confederacy || filter.province)) {
-        // Non-Fiji countries have no province tagging; drop them when the user
-        // is drilling into a Fiji sub-scope.
+      } else if (!isTonga && (filter.confederacy || filter.province)) {
+        // Other countries have no Tonga District tagging; drop them when the
+        // user drills into a Tonga sub-scope.
         return null;
       }
 

@@ -310,7 +310,7 @@
     var COL_ROOT_DISCIPLINE  = 'DISCROT0';    // "Discipline" root
     var COL_ROOT_THESIS_UNI  = '9XHGQJE6';    // Tongan Thesis by Country/Uni
     var COL_ROOT_B3_WHERE    = 'V3HLPDPL';    // "Where study was done" root (Panel B4)
-    var COL_B3_FIJI          = 'B3FIJI00';    // Tonga country under B3 root (stable key)
+    var COL_B3_TONGA         = 'B3TONGA0';    // Tonga country under B4 root (stable key)
 
     // Country normalization for Panel B4. Small explicit alias map (per
     // spec: no fuzzy matching). Values must line up with the map's
@@ -380,9 +380,8 @@
     });
 
     // Panel B4 country collections — one child of V3HLPDPL for every distinct
-    // Country value in Master `Research Geography`, plus Fiji (which is coded
-    // via province one-hots on Publications rather than as a country row in
-    // Research Geography). Fiji keeps its stable key `B3FIJI00`. Every other
+    // Country value in Master `Research Geography`. Tonga keeps a stable key;
+    // every other
     // country receives a deterministic hashKey. Countries with no valid
     // publication in this build will still be emitted so B4 can show a
     // zero-value marker distinct from countries that were never coded.
@@ -409,7 +408,7 @@
       'Kosrae':        'Federated States of Micronesia',
       'Yap':           'Federated States of Micronesia'
     };
-    var b4CountryKeyByName = { 'Tonga': COL_B3_FIJI };
+    var b4CountryKeyByName = { 'Tonga': COL_B3_TONGA };
     // First pass — allocate a key for every unique Country value (including
     // sub-location labels) and also make sure any implied parent country has
     // a key allocated even if it never appears as its own Country row.
@@ -439,7 +438,7 @@
     // Root collections. The B3-Where-study-was-done root uses the stable key
     // production expects (V3HLPDPL); every direct child is a country emitted
     // dynamically from Master `Research Geography` (see b4CountryCollections
-    // above). Fiji keeps the stable child key `B3FIJI00`.
+    // above). Tonga keeps the stable child key `B3TONGA0`.
     var rootCollections = [
       { key: COL_ROOT_ITAUKEI, name: 'Tongan authors (>N papers)', parent: null },
       { key: COL_BY_WITH,      name: 'By or with Tongan authors', parent: null },
@@ -466,7 +465,7 @@
       (authByPub[pid] = authByPub[pid] || []).push(a);
     });
 
-    // Geography index: publication ID → array of geography rows.
+    // Geography index: publication ID → verified/manual evidence rows.
     var geoByPub = {};
     (master.geography || []).forEach(function (g) {
       var pid = g['Publication ID / BibTeX Key'];
@@ -665,10 +664,10 @@
       }
       if (leadDiscKey) collections.push(leadDiscKey);
 
-      // Fiji research geography — DERIVED FROM `Research Geography` sheet,
-      // NOT from the legacy per-Publication province Yes/blank columns. Per
-      // the C2 geography-repair contract, the authoritative geography path
-      // is Publication → Research Geography → verified Fiji location →
+      // Tonga research geography — DERIVED FROM `Research Geography`, not
+      // from the legacy per-Publication district Yes/blank columns.  The
+      // authoritative path for the within-Tonga panels is
+      // Publication → Research Geography → verified Tonga location →
       // (publication type filter applied downstream) → COUNT DISTINCT
       // Publication ID. See `docs/panel-c2-geography.md` (added in this
       // repair) for the full rationale.
@@ -687,15 +686,21 @@
       // legacy Publications!AL Yes flag is no longer consulted.
       var geoRowsForPub = geoByPub[pid] || [];
       var provincesInPub = [];
+      var islandDivisionsInPub = [];
       var seenProvForPub = new Set();
-      var pubHasTongaCountryRow = false;
+      var seenDivisionForPub = new Set();
       geoRowsForPub.forEach(function (g) {
         if (String(g['Country'] || '').trim() !== 'Tonga') return;
         var verif = String(g['Verification'] || '').trim();
         var verifOk = /^verified/i.test(verif) || verif.toLowerCase() === 'strong';
         if (!verifOk) return;
-        pubHasTongaCountryRow = true;
+        var division = String(g['Island Division (auto from District)'] || '').trim();
         var prov = String(g['District'] || '').trim();
+        if (!division && prov && PROVINCE_TO_CONFED[prov]) division = PROVINCE_TO_CONFED[prov];
+        if (division && !seenDivisionForPub.has(division)) {
+          seenDivisionForPub.add(division);
+          islandDivisionsInPub.push(division);
+        }
         if (!prov) return;
         if (seenProvForPub.has(prov)) return;
         seenProvForPub.add(prov);
@@ -715,23 +720,18 @@
         // must match a known bucket to affect Panel C2.
       });
 
-      // Panel B4 "Where study was done" — tag this publication into every
-      // country collection its Master `Research Geography` rows reference,
-      // plus Fiji when `Tagged Fiji? = Yes` OR any verified Fiji RG row
-      // exists (Fiji is coded via Research Geography in this repair; the
-      // Tagged Fiji flag is retained as a safety net for records still in
-      // migration). Distinct countries only, to avoid inflating counts in
-      // a country whose Master geography has multiple rows for the same
-      // pub (e.g. multi-village).
+      // Panel B4 — tag a publication into each DISTINCT verified research
+      // country recorded in the Master evidence bridge.  Multiple island,
+      // district, village, or site rows in one country therefore count once
+      // for that country.  Do not infer study country from author affiliation,
+      // title text, or the legacy Tagged Tonga? field.
       var b4CountriesForPub = new Set();
       geoRowsForPub.forEach(function (g) {
+        var verif = String(g['Verification'] || '').trim();
+        if (!(/^verified/i.test(verif) || verif.toLowerCase() === 'strong')) return;
         var c = b4NormCountry(g['Country']);
         if (c && b4CountryKeyByName[c]) b4CountriesForPub.add(c);
       });
-      if (pubHasTongaCountryRow ||
-          String(p['Tagged Tonga?'] || '').toLowerCase() === 'yes') {
-        b4CountriesForPub.add('Tonga');
-      }
       b4CountriesForPub.forEach(function (c) {
         collections.push(b4CountryKeyByName[c]);
       });
@@ -818,6 +818,7 @@
         // Master-file specific extras (harmless to the production code):
         _masterPublicationType: p['Publication Type'],
         _masterProvinces:   provincesInPub,
+        _masterIslandDivisions: islandDivisionsInPub,
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
         _masterAuthorship:  masterAuthorship,
