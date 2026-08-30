@@ -467,6 +467,17 @@
       (authByPub[pid] = authByPub[pid] || []).push(a);
     });
 
+    // Researcher Authorship is the parallel authoritative bridge for Tongan
+    // researchers who do not yet have a Scholar ID.  Keep it separate from
+    // the scholar bridge, but carry both through to Panel B4 so an
+    // others-led publication can still feature its linked Tongan people.
+    var researcherAuthByPub = {};
+    (master.researcherAuthorship || []).forEach(function (a) {
+      var pid = a['Publication ID / BibTeX Key'];
+      if (!pid) return;
+      (researcherAuthByPub[pid] = researcherAuthByPub[pid] || []).push(a);
+    });
+
     // Geography index: publication ID → verified/manual evidence rows.
     var geoByPub = {};
     (master.geography || []).forEach(function (g) {
@@ -511,6 +522,9 @@
         var bp = Number(b['Author Position'] || 0);
         return ap - bp;
       });
+      var researcherAuthRows = (researcherAuthByPub[pid] || []).slice().sort(function (a, b) {
+        return Number(a['Author Position'] || 0) - Number(b['Author Position'] || 0);
+      });
 
       // creators[]: prefer bib lead when known (so downstream code that reads
       // creators[0] — including V1's citation helper — sees the true first
@@ -519,9 +533,12 @@
       var itaukeiScholarNames = authRows.map(function (a) {
         return scholarNameById[a['Scholar ID']] || (a['Author Name as Recorded'] || '');
       }).filter(Boolean);
+      var tonganResearcherNames = researcherAuthRows.map(function (a) {
+        return a['Researcher Name'] || a['Author Name as Recorded'] || a['Researcher ID'] || '';
+      }).filter(Boolean);
       var creators;
       if (bibLead) {
-        creators = [bibLead].concat(itaukeiScholarNames.filter(function (n) {
+        creators = [bibLead].concat(itaukeiScholarNames.concat(tonganResearcherNames).filter(function (n) {
           // Avoid duplicating the bib lead when the lead itself is an iTaukei
           // scholar (compare surnames case-insensitively).
           var leadSurn = bibLead.split(',', 1)[0].trim().toLowerCase();
@@ -530,7 +547,7 @@
           return leadSurn !== nSurn;
         }));
       } else {
-        creators = itaukeiScholarNames;
+        creators = itaukeiScholarNames.concat(tonganResearcherNames);
       }
 
       // Master-file authorship role: 'lead' iff the true bib lead surname
@@ -541,7 +558,11 @@
       var itaukeiLeadScholarId = '';
       var itaukeiCoauthorScholarIds = [];
       if (authRows.length === 0) {
-        masterAuthorship = 'none';
+        var researcherLead = researcherAuthRows.some(function (a) {
+          return a['Is First Author?'] === true || a['Is First Author?'] === 'true' ||
+                 a._is_lead === true || Number(a['Author Position'] || 0) === 1;
+        });
+        masterAuthorship = researcherAuthRows.length ? (researcherLead ? 'lead' : 'coauth') : 'none';
       } else if (bibLead) {
         // Normalize surnames for matching: lowercase, replace unicode hyphens
         // and dashes with ASCII '-', collapse whitespace, strip surrounding
@@ -639,6 +660,16 @@
         });
       }
 
+      // A first-author Researcher Authorship row is just as authoritative as
+      // a first-author Scholar Authorship row. This matters for Tongan
+      // researchers who have not yet been promoted into the Scholars table.
+      if (researcherAuthRows.some(function (a) {
+        return a['Is First Author?'] === true || a['Is First Author?'] === 'true' ||
+               a._is_lead === true || Number(a['Author Position'] || 0) === 1;
+      })) {
+        masterAuthorship = 'lead';
+      }
+
       // Collections: iTaukei author sub-collections for every linked scholar,
       // "By or with iTaukei authors" if any iTaukei scholar is linked, discipline
       // of the FIRST lead-author scholar, and province location keys derived
@@ -653,6 +684,12 @@
         if (sk) collections.push(sk);
       });
       if (linkedScholarIds.size > 0) collections.push(COL_BY_WITH);
+
+      // A Researcher Authorship link is equally authoritative evidence that
+      // the work is by/with a Tongan person, even when no Scholar row exists.
+      if (researcherAuthRows.length > 0 && collections.indexOf(COL_BY_WITH) === -1) {
+        collections.push(COL_BY_WITH);
+      }
 
       // Discipline: assign the discipline of the lead-author scholar, or
       // the first linked scholar as fallback. Lead here means the iTaukei-linked
@@ -867,7 +904,30 @@
         _itaukeiCoauthorScholarIds: itaukeiCoauthorScholarIds,
         _linkedTonganScholarNames: Array.from(linkedScholarIds).map(function (sid) {
           return scholarNameById[sid] || sid;
-        })
+        }),
+        // Canonical identity payload for B4.  Do not make the popup infer
+        // Indigenous participation from an incomplete bibliographic creator
+        // list: these two bridge sheets are the source of truth.
+        _linkedTonganPeople: authRows.map(function (a) {
+          var sid = a['Scholar ID'] || '';
+          return {
+            id: sid,
+            kind: 'scholar',
+            name: scholarNameById[sid] || a['Scholar Name'] || a['Author Name as Recorded'] || sid,
+            authorPosition: Number(a['Author Position'] || 0) || null,
+            isFirstAuthor: a['Is First Author?'] === true || a['Is First Author?'] === 'true' ||
+                           a._is_lead === true || Number(a['Author Position'] || 0) === 1
+          };
+        }).concat(researcherAuthRows.map(function (a) {
+          return {
+            id: a['Researcher ID'] || '',
+            kind: 'researcher',
+            name: a['Researcher Name'] || a['Author Name as Recorded'] || a['Researcher ID'] || '',
+            authorPosition: Number(a['Author Position'] || 0) || null,
+            isFirstAuthor: a['Is First Author?'] === true || a['Is First Author?'] === 'true' ||
+                           a._is_lead === true || Number(a['Author Position'] || 0) === 1
+          };
+        })).filter(function (person) { return !!person.name; })
       };
     });
 

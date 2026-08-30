@@ -11985,58 +11985,71 @@
         const rec = byKey.get(key);
         if (!rec) { detail.classList.remove('is-active'); detail.innerHTML = ''; return; }
         const it = rec.item;
-        const firstAuthor = (it.creators && it.creators[0]) || 'Unknown';
+        // Preserve the true bibliographic lead even when that person is not
+        // Tongan. Indigenous people featured beside the lead come from the
+        // authoritative Scholar/Researcher authorship bridges below.
+        const firstAuthor = (it._bibLead || (it.creators && it.creators[0]) || 'Unknown').trim();
         const leadProfile = b3LookupProfile(firstAuthor);
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
-        const linkedTongan = Array.isArray(it._linkedTonganScholarNames)
-          ? it._linkedTonganScholarNames.filter(Boolean)
-          : [];
-
-        // Collect iTaukei co-authors (used only on Others-as-Lead entries per the
-        // July 2026 spec: elevate iTaukei scholarship visually even when the paper
-        // isn't led by an iTaukei scholar). Each entry keeps its profile so we can
-        // pull photo + village + province.
-        const itaukeiCoauthors = [];
-        if (!rec.isLed) {
-          const seen = new Set();
-          (it.creators || []).forEach((nm, idx) => {
-            if (idx === 0) return; // skip lead (already known non-Tongan on Others rows)
-            if (!creatorIsItaukei(nm)) return;
-            const prof = b3LookupProfile(nm);
-            // Dedupe on the profile canonical name (or the raw creator string when
-            // no profile exists) so a paper doesn't list the same person twice if
-            // Zotero recorded a name variant on both a first and last creator slot.
-            const dedupeKey = (prof && prof.name) ? prof.name : String(nm).toLowerCase();
-            if (seen.has(dedupeKey)) return;
-            seen.add(dedupeKey);
-            itaukeiCoauthors.push({ name: nm, profile: prof });
+        // Never rediscover Tongan participation from creators[]. That array is
+        // deliberately bibliographic and may contain only the non-Tongan lead.
+        // The adapter publishes the union of the Scholar Authorship and
+        // Researcher Authorship bridges as the authoritative identity payload.
+        const linkedPayload = Array.isArray(it._linkedTonganPeople)
+          ? it._linkedTonganPeople
+          : (Array.isArray(it._linkedTonganScholarNames)
+              ? it._linkedTonganScholarNames.map(name => ({ name, kind: 'scholar' }))
+              : []);
+        const linkedTonganPeople = [];
+        const seenTonganPeople = new Set();
+        linkedPayload.forEach(person => {
+          const rawName = String((person && person.name) || '').trim();
+          if (!rawName) return;
+          const profile = b3LookupProfile(rawName);
+          const keyName = String((profile && profile.name) || rawName).trim().toLowerCase();
+          if (seenTonganPeople.has(keyName)) return;
+          seenTonganPeople.add(keyName);
+          linkedTonganPeople.push({
+            name: rawName,
+            profile,
+            kind: person.kind || 'scholar',
+            isFirstAuthor: person.isFirstAuthor === true
           });
-        }
+        });
+
+        // Others-led works feature every linked Tongan scholar/researcher.
+        // Tongan-led works prefer the bridge row explicitly marked first.
+        const featuredTonganPeople = rec.isLed
+          ? (linkedTonganPeople.filter(person => person.isFirstAuthor).length
+              ? linkedTonganPeople.filter(person => person.isFirstAuthor)
+              : linkedTonganPeople.slice(0, 1))
+          : linkedTonganPeople;
 
         // ---- Left photo strip ----
         // iTaukei-led:    use the lead's photo (unchanged behaviour).
-        // Others + 1 iT: permanent photo of the sole iTaukei co-author.
-        // Others + >=2:  rotate through iTaukei co-author photos every 2s.
+        // Others + 1 Tongan: permanent photo of the linked Tongan person.
+        // Others + >=2: rotate through available Tongan portraits every 2s.
         // Others + 0:    empty strip (same as before).
         let photoUrl = '';
         let rotationUrls = [];
         if (rec.isLed) {
-          photoUrl = (leadProfile && leadProfile.photo) ? leadProfile.photo : '';
-        } else if (itaukeiCoauthors.length) {
-          rotationUrls = itaukeiCoauthors.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
+          photoUrl = (leadProfile && leadProfile.photo) ||
+            (featuredTonganPeople[0] && featuredTonganPeople[0].profile && featuredTonganPeople[0].profile.photo) || '';
+        } else if (featuredTonganPeople.length) {
+          rotationUrls = featuredTonganPeople.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
           photoUrl = rotationUrls[0] || '';
         }
 
-        // ---- Header line: lead name + year + (for Others rows) inline iTaukei
-        // co-authors, semicolon-separated with alternating tones, each followed
+        // ---- Header line: lead name + year + (for Others rows) inline Tongan
+        // scholars/researchers, semicolon-separated with alternating tones, each followed
         // by their (Village, Province) chip. Uses the lead's name in bold/dark
         // grey as the anchor so the reader still knows who first-authored.
-        const displayLead = leadProfile ? leadProfile.name : firstAuthor;
+        const displayLead = rec.isLed && leadProfile ? leadProfile.name : firstAuthor;
         let coauthInline = '';
-        if (!rec.isLed && itaukeiCoauthors.length) {
-          const parts = itaukeiCoauthors.map((c, i) => {
+        if (!rec.isLed && featuredTonganPeople.length) {
+          const parts = featuredTonganPeople.map((c, i) => {
             const cls = (i % 2 === 0) ? 'is-alt-a' : 'is-alt-b';
             // Prefer the profile's canonical "Last, First" split; fall back to a
             // best-effort flip of the raw Zotero string.
@@ -12099,14 +12112,11 @@
               villageLine +
               `<div class="b3-work-detail__title">${escapeHtml(title)}</div>` +
               (venue ? `<div class="b3-work-detail__venue">${escapeHtml(venue)}</div>` : '') +
-              (linkedTongan.length
-                ? `<div class="b3-work-detail__venue"><strong>Linked Tongan scholar${linkedTongan.length === 1 ? '' : 's'}:</strong> ${linkedTongan.map(escapeHtml).join('; ')}</div>`
-                : '') +
             `</div>` +
           `</div>`
         );
 
-        // If multiple iTaukei co-authors, cycle photos every 2s. Skips missing
+        // If multiple Tongan people have portraits, cycle them every 2s. Skips missing
         // photos so the strip only shows real portraits and doesn't briefly
         // flash the empty tile between real images.
         if (rotationUrls.length > 1) {
