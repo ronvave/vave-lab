@@ -332,14 +332,27 @@
   function sanitizeSummaryHtml(input) {
     if (input == null) return '';
     const src = String(input);
-    // Fast path: if the string contains no '<' at all, just escape.
-    if (src.indexOf('<') === -1) return escapeHtml(src);
+    // Fast path for ordinary prose. Markdown links need the parser below so
+    // `[descriptive text](https://example.org)` becomes a compact anchor
+    // instead of displaying the full URL on the public scholar card.
+    if (src.indexOf('<') === -1 && !/\[[^\]\n]+\]\(https?:\/\//i.test(src)) {
+      return escapeHtml(src);
+    }
 
     let out = '';
     let i = 0;
     const N = src.length;
     while (i < N) {
       const ch = src[i];
+      if (ch === '[') {
+        const mdLink = /^\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/i.exec(src.slice(i));
+        if (mdLink) {
+          out += '<a href="' + escapeAttr(mdLink[2]) + '" target="_blank" rel="noopener">' +
+                 escapeHtml(mdLink[1]) + '</a>';
+          i += mdLink[0].length;
+          continue;
+        }
+      }
       if (ch !== '<') {
         // Escape naked entity-sensitive chars but preserve typography.
         if (ch === '&') out += '&amp;';
