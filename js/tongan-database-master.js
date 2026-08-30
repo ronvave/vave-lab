@@ -5398,8 +5398,9 @@
       if (authorsSelect) authorsSelect.disabled = true;
       if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Island Division' : 'Study district') + ' · Tongan authorship role';
       host.innerHTML = '';
-      let rows = buildB2Rows_compareAuthorship();
-      if (b1Division) rows = aggregateRowsByDivision_(rows);
+      let rows = b1Division
+        ? buildC2DivisionRows_(true, 'all')
+        : buildB2Rows_compareAuthorship();
       renderAuthorshipInto(host, rows, { disableClick: b1Division });
       host.classList.remove('db-bars--grouped');
       return;
@@ -5438,9 +5439,10 @@
         }
       });
     });
-    let rows = provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
-                       .sort((a,b) => b.total - a.total);
-    if (b1Division) rows = aggregateRowsByDivision_(rows);
+    let rows = b1Division
+      ? buildC2DivisionRows_(false, authorsMode)
+      : provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
+             .sort((a,b) => b.total - a.total);
     const maxTotal = Math.max(1, ...rows.map(r => r.total));
     rows.forEach(r => {
       const label = document.createElement('div');
@@ -5497,13 +5499,10 @@
       host.appendChild(num);
     });
 
-    // ============ Non-provincial/Fiji bottom bar ============
-    // Aggregates publications that live in the Zotero '_Non-Provincial/Fiji'
-    // sub-collection under C1 (RNKFUZ6M/AREH32KK). These are Fiji-wide topics
-    // (e.g. national legislation, national mental health policy, nationwide
-    // studies) that aren't tied to a specific province. Membership is now a
-    // curator decision, not a title heuristic — the collection is the source
-    // of truth.
+    // ============ Non-district/Tonga bottom bar ============
+    // Aggregates publications with an explicit verified Research Geography
+    // row for "Tonga - no district specified". These are Tonga-wide topics
+    // (e.g. national legislation or policy) not tied to one district.
     //
     // Rendering differs from the province bars in three key ways:
     //   1. Anchored at the bottom regardless of ranking.
@@ -5530,11 +5529,11 @@
       // Column 1 — label + info icon (no confederacy dot).
       const npLabel = document.createElement('div');
       npLabel.className = 'db-bars__prov db-bars__prov--nonprov';
-      const tipText = 'Publications about Fiji broadly or national-level topics '
+      const tipText = 'Publications about Tonga broadly or national-level topics '
                     + '\u2014 such as legislation, policy, or nationwide studies '
-                    + '\u2014 that are not tied to a specific province.';
-      npLabel.innerHTML = `<span>Non-provincial/Fiji</span>`
-        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-provincial/Fiji" title="${escapeAttr(tipText)}">i</span>`;
+                    + '\u2014 that are not tied to a specific district.';
+      npLabel.innerHTML = `<span>Non-district/Tonga</span>`
+        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-district/Tonga" title="${escapeAttr(tipText)}">i</span>`;
       host.appendChild(npLabel);
 
       // Column 2 — bar at 100% width, percentage-normalised segments.
@@ -5544,7 +5543,7 @@
       row.style.width = '100%';
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `Non-provincial/Fiji \u00b7 ${nonProv.total} items`;
+      row.title = `Non-district/Tonga \u00b7 ${nonProv.total} items`;
       const segsPendingSizing = [];
       TYPE_ORDER.forEach(t => {
         const n = nonProv.types[t] || 0;
@@ -9168,7 +9167,7 @@
     tags.className = 'db-item__tags';
     const provSet = state.provincesByItem.get(it.key);
     if (provSet && provSet.size) {
-      provSet.forEach(name => {
+      (provSet || new Set()).forEach(name => {
         const chip = el('span', {
           className: 'db-item__badge db-item__badge--tag is-clickable',
           title: `Filter by province researched: ${name}`,
@@ -9550,7 +9549,42 @@
       return `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}`;
     })();
     if (!cn) return null;
-    return scholars.has(cn) ? cn : null;
+    if (scholars.has(cn)) return cn;
+    const aliases = state.nameAliases || new Map();
+    const alias = aliases.get(cn);
+    if (alias && scholars.has(alias)) return alias;
+    const keyify = state._keyifyName || (s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const wanted = keyify(alias || cn);
+    for (const name of scholars.keys()) {
+      if (keyify(name) === wanted) return name;
+    }
+    return null;
+  }
+
+  // Resolve C3 authorship from the authoritative Master bridge carried by the
+  // adapter. Bibliographic creator strings remain a fallback for legacy data,
+  // but never override a Scholar-ID / Researcher-ID linkage.
+  function c3TonganPeople_(it, scholars, role) {
+    const linked = Array.isArray(it && it._linkedTonganPeople) ? it._linkedTonganPeople : [];
+    const bridged = linked.filter(p => role === 'lead' ? !!p.isFirstAuthor : !p.isFirstAuthor);
+    const names = bridged.map(p => itaukeiName(p.name, scholars)).filter(Boolean);
+    if (names.length) return Array.from(new Set(names));
+    const creators = (it && it.creators) || [];
+    if (role === 'lead') {
+      const lead = itaukeiName(creators[0], scholars);
+      return lead ? [lead] : [];
+    }
+    return Array.from(new Set(creators.slice(1).map(c => itaukeiName(c, scholars)).filter(Boolean)));
+  }
+
+  // Tonga-focused is a property of the publication's verified Research
+  // Geography evidence. The author's home district is deliberately excluded:
+  // it describes the person, not where or what the publication studied.
+  function c3IsTongaFocused_(it) {
+    const districts = state.provincesByItem.get(it.key);
+    if (districts && districts.size > 0) return true;
+    const nonDistrictKey = state.nonProvincialFijiKey;
+    return !!(nonDistrictKey && (it.collections || []).includes(nonDistrictKey));
   }
 
   // -------- shared: render horizontal bar rows into a host --------
@@ -9592,6 +9626,56 @@
     });
     const out = Array.from(groups.values()).sort((a, b) => (b.total || 0) - (a.total || 0));
     passthrough.forEach(p => out.push(p));
+    return out;
+  }
+
+  // C2 Island Division totals are COUNT DISTINCT Publication ID within each
+  // division, not the sum of district bars. A publication evidenced in two
+  // Tongatapu districts therefore contributes 1 to Tongatapu (while a study
+  // spanning Tongatapu and Vava'u correctly contributes 1 to each division).
+  function buildC2DivisionRows_(authorshipView, authorsMode) {
+    const divisions = ['Tongatapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'];
+    const rows = new Map(divisions.map(name => [name, {
+      name, conf: name, total: 0, types: {},
+      cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
+      isConfirmed: true
+    }]));
+    const nonDistrict = {
+      name: 'Non-district/Tonga', conf: null, total: 0, types: {},
+      cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
+      isConfirmed: false
+    };
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      // Both C2 tabs share C2's own publication-type state. Never read the
+      // independent C3 checkbox state here.
+      if (!state.typeSet.has(vt)) return;
+      if (!authorshipView && authorsMode === 'itaukei' && !isItaukei(it)) return;
+      const role = itaukeiAuthorship(it);
+      const cat = role === 'lead' ? 'itaukeiFirst'
+                : role === 'coauth' ? 'includesItaukei' : 'noItaukei';
+      if (authorshipView && state.nonProvincialFijiKey &&
+          (it.collections || []).includes(state.nonProvincialFijiKey)) {
+        nonDistrict.total += 1;
+        nonDistrict.types[vt] = (nonDistrict.types[vt] || 0) + 1;
+        nonDistrict.cats[cat] = (nonDistrict.cats[cat] || 0) + 1;
+      }
+      const districts = state.provincesByItem.get(it.key);
+      if (!districts || !districts.size) return;
+      const itemDivisions = new Set();
+      districts.forEach(d => {
+        const division = PROVINCE_TO_CONFEDERACY[d];
+        if (division) itemDivisions.add(division);
+      });
+      itemDivisions.forEach(division => {
+        const row = rows.get(division);
+        row.total += 1;
+        row.types[vt] = (row.types[vt] || 0) + 1;
+        row.cats[cat] = (row.cats[cat] || 0) + 1;
+      });
+    });
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (authorshipView && nonDistrict.total) out.push(nonDistrict);
     return out;
   }
 
@@ -9655,22 +9739,10 @@
       const vt = visualType(it);
       if (!state.b2TypeSet.has(vt)) return;
 
-      // First creator must map to an iTaukei scholar
-      const first = (it.creators || [])[0];
-      const scholar = itaukeiName(first, scholars);
+      if (itaukeiAuthorship(it) !== 'lead') return;
+      const scholar = c3TonganPeople_(it, scholars, 'lead')[0];
       if (!scholar) return;
-
-      // Tonga-focused rule (view 1) = has at least one Tonga-district tag OR the
-      // scholar's paternal province is confirmed (paternal province acts as the
-      // “national Fiji” fallback bucket for iTaukei-authored work). This is a
-      // pragmatic choice given the current data model.
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
-      if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(scholar)) {
-        // Tonga-focused view: skip items with no district tag AND no known
-        // paternal province (we cannot confidently classify these as Fiji).
-        return;
-      }
+      if (!includeAllLocations && !c3IsTongaFocused_(it)) return;
 
       const paternal = paternalByName.get(scholar) || '';
       const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
@@ -9702,26 +9774,10 @@
       // Theses are single-author — don't count them here even if a stale
       // check state slips through the UI.
       if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
-      const creators = it.creators || [];
-      if (!creators.length) return;
-      const firstScholar = itaukeiName(creators[0], scholars);
-      if (firstScholar) return; // 1st-author view territory, not us
-
-      // Collect all iTaukei co-authors on this paper
-      const coScholars = [];
-      for (let i = 1; i < creators.length; i++) {
-        const s = itaukeiName(creators[i], scholars);
-        if (s) coScholars.push(s);
-      }
+      if (itaukeiAuthorship(it) !== 'coauth') return;
+      const coScholars = c3TonganPeople_(it, scholars, 'co');
       if (!coScholars.length) return;
-
-      // Tonga-focused rule: paper must have a Tonga district tag OR at least one
-      // co-author with a confirmed paternal province (i.e., an iTaukei scholar
-      // contribution counts as Fiji-relevant even if the study site isn't tagged).
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
-      const anyPaternal = coScholars.some(s => paternalByName.get(s));
-      if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
+      if (!includeAllLocations && !c3IsTongaFocused_(it)) return;
 
       coScholars.forEach(s => {
         const paternal = paternalByName.get(s) || '';
@@ -9766,16 +9822,12 @@
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
       if (!state.b2TypeSet.has(vt)) return;
-      const creators = it.creators || [];
-      if (!creators.length) return;
-
-      const firstScholar = itaukeiName(creators[0], scholars);
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
+      const role = itaukeiAuthorship(it);
+      const firstScholar = role === 'lead' ? c3TonganPeople_(it, scholars, 'lead')[0] : null;
 
       if (firstScholar) {
         // 1st-author case — counts once against the first author's province.
-        if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(firstScholar)) return;
+        if (!includeAllLocations && !c3IsTongaFocused_(it)) return;
         const paternal = paternalByName.get(firstScholar) || '';
         const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
         bucket.lead += 1;
@@ -9784,14 +9836,10 @@
       } else {
         // Co-author case — theses are single-author; skip.
         if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
-        const coScholars = [];
-        for (let i = 1; i < creators.length; i++) {
-          const s = itaukeiName(creators[i], scholars);
-          if (s) coScholars.push(s);
-        }
+        if (role !== 'coauth') return;
+        const coScholars = c3TonganPeople_(it, scholars, 'co');
         if (!coScholars.length) return;
-        const anyPaternal = coScholars.some(s => paternalByName.get(s));
-        if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
+        if (!includeAllLocations && !c3IsTongaFocused_(it)) return;
         // Distinct paternal provinces — avoid double-counting a paper for
         // one province just because two of its co-authors happen to be
         // from that province.
@@ -9811,6 +9859,62 @@
 
     const out = Array.from(rows.values()).filter(r => r.total > 0).sort((a, b) => b.total - a.total);
     if (unconfirmed.total > 0) out.push(unconfirmed);
+    return out;
+  }
+
+  // Direct C3 Island Division builder. This avoids summing district rows,
+  // which double-counts one publication when multiple linked Tongan
+  // co-authors come from different districts in the same division.
+  function buildC3DivisionRows_(includeAllLocations, authMode) {
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const divisions = ['Tongatapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'];
+    const rows = new Map(divisions.map(name => [name, {
+      name, conf: name, total: 0, types: {}, lead: 0, co: 0,
+      leadTypes: {}, coTypes: {}, isConfirmed: true
+    }]));
+    const unconfirmed = {
+      name: 'District not yet confirmed', conf: null, total: 0, types: {},
+      lead: 0, co: 0, leadTypes: {}, coTypes: {}, isConfirmed: false
+    };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      if (!includeAllLocations && !c3IsTongaFocused_(it)) return;
+      const role = itaukeiAuthorship(it);
+      if (authMode === 'first' && role !== 'lead') return;
+      if (authMode === 'co' && role !== 'coauth') return;
+      if (role !== 'lead' && role !== 'coauth') return;
+      if (role === 'coauth' && (vt === 'thesisPhd' || vt === 'thesisMasters')) return;
+
+      const peopleRole = role === 'lead' ? 'lead' : 'co';
+      const people = c3TonganPeople_(it, scholars, peopleRole);
+      if (!people.length) return;
+      const itemDivisions = new Set();
+      let hasUnconfirmed = false;
+      people.forEach(name => {
+        const district = paternalByName.get(name) || '';
+        const division = PROVINCE_TO_CONFEDERACY[district];
+        if (division) itemDivisions.add(division);
+        else hasUnconfirmed = true;
+      });
+      const targets = Array.from(itemDivisions).map(d => rows.get(d));
+      if (hasUnconfirmed || !targets.length) targets.push(unconfirmed);
+      targets.forEach(bucket => {
+        if (role === 'lead') {
+          bucket.lead += 1;
+          bucket.leadTypes[vt] = (bucket.leadTypes[vt] || 0) + 1;
+        } else {
+          bucket.co += 1;
+          bucket.coTypes[vt] = (bucket.coTypes[vt] || 0) + 1;
+        }
+        bucket.total = bucket.lead + bucket.co;
+        bucket.types[vt] = (bucket.types[vt] || 0) + 1;
+      });
+    });
+
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (unconfirmed.total) out.push(unconfirmed);
     return out;
   }
 
@@ -9846,7 +9950,6 @@
 
   function buildB2Rows_compareAuthorship() {
     // For each Fiji province, count 3 authorship categories.
-    const { scholars } = iTaukeiScholarMaps();
     const rows = new Map();
     state.provinces.features.forEach(f => {
       rows.set(f.properties.name, {
@@ -9855,30 +9958,36 @@
         total: 0
       });
     });
-    const fijiWide = { name: 'Fiji-wide / national', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
+    const fijiWide = { name: 'Non-district/Tonga', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
-      if (!state.b2TypeSet.has(vt)) return;
+      if (!state.typeSet.has(vt)) return;
       const provSet = state.provincesByItem.get(it.key);
-      if (!provSet || provSet.size === 0) return; // Only Tonga-focused rows for this view
+      const isNonDistrict = !!(state.nonProvincialFijiKey &&
+        (it.collections || []).includes(state.nonProvincialFijiKey));
+      if ((!provSet || provSet.size === 0) && !isNonDistrict) return;
 
-      const creators = it.creators || [];
-      const firstIsItaukei = !!itaukeiName(creators[0], scholars);
-      const anyItaukei = firstIsItaukei || creators.slice(1).some(c => itaukeiName(c, scholars));
+      const role = itaukeiAuthorship(it);
 
-      provSet.forEach(name => {
+      (provSet || new Set()).forEach(name => {
         const b = rows.get(name);
         if (!b) return;
-        if (firstIsItaukei) b.cats.itaukeiFirst += 1;
-        else if (anyItaukei) b.cats.includesItaukei += 1;
+        if (role === 'lead') b.cats.itaukeiFirst += 1;
+        else if (role === 'coauth') b.cats.includesItaukei += 1;
         else b.cats.noItaukei += 1;
         b.total = b.cats.itaukeiFirst + b.cats.includesItaukei + b.cats.noItaukei;
       });
+      if (isNonDistrict) {
+        if (role === 'lead') fijiWide.cats.itaukeiFirst += 1;
+        else if (role === 'coauth') fijiWide.cats.includesItaukei += 1;
+        else fijiWide.cats.noItaukei += 1;
+        fijiWide.total = fijiWide.cats.itaukeiFirst + fijiWide.cats.includesItaukei + fijiWide.cats.noItaukei;
+      }
     });
 
     const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
-    out.push(fijiWide);
+    if (fijiWide.total) out.push(fijiWide);
     return out;
   }
 
@@ -9981,8 +10090,9 @@
 
     if (view === 'tonga-focused' || view === 'all-locations') {
       if (auth === 'first') {
-        let rows = buildB2Rows_paternalGrouped(includeAll);
-        if (b2Division) rows = aggregateRowsByDivision_(rows);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'first')
+          : buildB2Rows_paternalGrouped(includeAll);
         renderPanelBBarsInto(barsEl, rows, {
           activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
@@ -9999,8 +10109,9 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'first', includeAll, rows });
       } else if (auth === 'co') {
-        let rows = buildB2Rows_coauthor(includeAll);
-        if (b2Division) rows = aggregateRowsByDivision_(rows);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'co')
+          : buildB2Rows_coauthor(includeAll);
         renderPanelBBarsInto(barsEl, rows, {
           activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
@@ -10017,8 +10128,9 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'co', includeAll, rows });
       } else if (auth === 'split') {
-        let rows = buildB2Rows_split(includeAll);
-        if (b2Division) rows = aggregateRowsByDivision_(rows);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'split')
+          : buildB2Rows_split(includeAll);
         if (layout === 'detailed') {
           renderPanelB2SplitDetailed(barsEl, rows);
         } else {
@@ -10341,8 +10453,9 @@
 
     // Sort rows. Fiji-wide / national always pinned to the end. Zero-total
     // rows keep their alphabetical fallback so the layout stays readable.
-    const sortable = rows.filter(r => r.name !== 'Fiji-wide / national');
-    const trailing = rows.filter(r => r.name === 'Fiji-wide / national');
+    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'Non-district/Tonga';
+    const sortable = rows.filter(r => !isNonDistrict(r));
+    const trailing = rows.filter(isNonDistrict);
     const shareOf = (r, key) => (r.total > 0 ? (r.cats[key] || 0) / r.total : 0);
     sortable.sort((a, b) => {
       if (sort === 'first-share') {
@@ -10368,7 +10481,7 @@
       if (activeProv === r.name) label.classList.add('is-active');
       const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
       label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
-      const canFilterProv = !disableClick && r.name !== 'Fiji-wide / national' && r.total > 0;
+      const canFilterProv = !disableClick && !isNonDistrict(r) && r.total > 0;
       if (canFilterProv) {
         label.style.cursor = 'pointer';
         label.addEventListener('click', () => {
@@ -10424,7 +10537,7 @@
           seg.addEventListener('mouseleave', closeTip);
           seg.addEventListener('focus', openTip);
           seg.addEventListener('blur', closeTip);
-          const canFilterSeg = !disableClick && r.name !== 'Fiji-wide / national';
+          const canFilterSeg = !disableClick && !isNonDistrict(r);
           if (canFilterSeg) {
             seg.style.cursor = 'pointer';
             const onActivate = () => {
