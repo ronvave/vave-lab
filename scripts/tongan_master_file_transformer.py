@@ -38,6 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -209,6 +210,13 @@ def extract_scholars(rows: list[list]) -> list[dict]:
         rows, SHEETS["Scholars"]["header_row"], SHEETS["Scholars"]["first_data"]
     )
     clean = sanitize(dicts, SCHOLAR_PUBLIC_FIELDS)
+    # The Google Sheet is pre-provisioned to row 1000 and formula-bearing
+    # template rows are not technically empty. Only an assigned canonical
+    # Scholar ID constitutes a roster record.
+    clean = [
+        s for s in clean
+        if re.fullmatch(r"TNG-S\d{4}", str(s.get("Scholar ID") or "").strip())
+    ]
     for s in clean:
         prov = (s.get("District Paternal") or s.get("Province Paternal") or "").strip()
         if not prov or prov.lower() == "unclassified":

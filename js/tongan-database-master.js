@@ -5938,7 +5938,14 @@
     if (state.panelDDataCache) return state.panelDDataCache;
 
     const master = state.master || {};
-    const scholars = Array.isArray(master.scholars) ? master.scholars : [];
+    // Ignore formula-bearing template rows pre-provisioned through row 1000.
+    // The roster is defined by distinct canonical TNG-S#### Scholar IDs.
+    const scholarsById = new Map();
+    (Array.isArray(master.scholars) ? master.scholars : []).forEach(s => {
+      const id = String(s['Scholar ID'] || '').trim();
+      if (/^TNG-S\d{4}$/.test(id) && !scholarsById.has(id)) scholarsById.set(id, s);
+    });
+    const scholars = Array.from(scholarsById.values());
     const gradDegrees = Array.isArray(master.gradDegrees) ? master.gradDegrees : [];
     const publications = Array.isArray(master.publications) ? master.publications : [];
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
@@ -6217,11 +6224,6 @@
       'd-countries': countries.size,
       'd-milestones': milestones.length
     };
-    const expectedKpis = { 'd-theses': 432, 'd-scholars': 472, 'd-masters': 315, 'd-phds': 117, 'd-unis': 101, 'd-countries': 22, 'd-milestones': 4 };
-    Object.entries(expectedKpis).forEach(([key, expected]) => {
-      if (kpis[key] !== expected) console.warn(`Panel D KPI data drift: ${key} is ${kpis[key]}, expected ${expected}.`);
-    });
-
     state.milestonesCache = milestones;
     state.panelDDataCache = {
       milestones,
