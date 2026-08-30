@@ -10874,6 +10874,9 @@
   function applyMasterB4Coordinates() {
     const rows = state.master && state.master.geographyCoordinates;
     if (!Array.isArray(rows)) return;
+    const lookup = { country: new Map(), division: new Map(), island: new Map(), site: new Map() };
+    const norm = (value) => String(value || '').trim().toLowerCase()
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[ʻ’‘`]/g, "'");
     rows.forEach(row => {
       const status = String(row['Verification / Status'] || '').trim();
       if (!(/^verified/i.test(status) || status.toLowerCase() === 'strong')) return;
@@ -10882,19 +10885,76 @@
         console.warn('B4: invalid Master coordinate', row['Canonical Location Name'], row.Latitude, row.Longitude);
         return;
       }
-      if (String(row['Location Type'] || '').trim() !== 'Country') return;
+      const typeRaw = String(row['Location Type'] || '').trim();
       const name = String(row['Canonical Location Name'] || row.Country || '').trim();
       if (!name) return;
-      const prior = B3_COUNTRY_COORDS[name] || {};
-      B3_COUNTRY_COORDS[name] = Object.assign({}, prior, {
-        lat, lng,
-        region: prior.region || 'Other',
-        _masterCoordinate: true
-      });
-      String(row['Alias Notes'] || '').split(';').map(x => x.trim()).filter(Boolean).forEach(alias => {
-        B3_COUNTRY_COORDS[alias] = B3_COUNTRY_COORDS[name];
+      const aliases = String(row['Alias Notes'] || '').split(';').map(x => x.trim()).filter(Boolean);
+      const coord = { lat, lng, name, type: typeRaw, country: String(row.Country || '').trim() };
+      let bucket = null;
+      if (typeRaw === 'Country') bucket = lookup.country;
+      else if (/island division/i.test(typeRaw)) bucket = lookup.division;
+      else if (/specific island|island$/i.test(typeRaw)) bucket = lookup.island;
+      else if (/village|town|site/i.test(typeRaw)) bucket = lookup.site;
+      if (bucket) [name].concat(aliases).forEach(alias => bucket.set(norm(alias), coord));
+      if (typeRaw === 'Country') {
+        const prior = B3_COUNTRY_COORDS[name] || {};
+        B3_COUNTRY_COORDS[name] = Object.assign({}, prior, {
+          lat, lng,
+          region: prior.region || 'Other',
+          _masterCoordinate: true
+        });
+        aliases.forEach(alias => { B3_COUNTRY_COORDS[alias] = B3_COUNTRY_COORDS[name]; });
+      }
+    });
+    state.b3MasterCoordinates = lookup;
+    state.b3CoordinateKey = norm;
+  }
+
+  // Leaflet does not automatically choose the nearest antimeridian copy when
+  // worldCopyJump is disabled. Keep Pacific markers close to the map's 165°E
+  // overview instead of plotting Tonga at the invisible -175° copy.
+  function b3WrappedLng(lng, reference) {
+    let out = Number(lng);
+    const ref = Number.isFinite(reference) ? reference : 165;
+    while (out - ref > 180) out -= 360;
+    while (out - ref < -180) out += 360;
+    return out;
+  }
+
+  function b3TongaDetailRecords(countryRecord) {
+    if (!countryRecord || countryRecord.country !== 'Tonga') return [];
+    const lookup = state.b3MasterCoordinates || {};
+    const norm = state.b3CoordinateKey || (v => String(v || '').trim().toLowerCase());
+    const result = [];
+    const seen = new Set();
+    const addItems = (items, role) => items.forEach(item => {
+      const rows = (item._masterGeographyRows || []).filter(g => g.country === 'Tonga');
+      rows.forEach(g => {
+        let coord = null, label = '', kind = '';
+        if (g.site && lookup.site) { coord = lookup.site.get(norm(g.site)); label = g.site; kind = 'site'; }
+        if (!coord && g.specificIsland && lookup.island) { coord = lookup.island.get(norm(g.specificIsland)); label = g.specificIsland; kind = 'island'; }
+        if (!coord && g.islandDivision && lookup.division) { coord = lookup.division.get(norm(g.islandDivision)); label = g.islandDivision; kind = 'division'; }
+        if (!coord && lookup.country) { coord = lookup.country.get(norm('Tonga')); label = 'Tonga-wide'; kind = 'country'; }
+        if (!coord) return;
+        const key = `${item.key}\u0001${kind}\u0001${norm(label)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.push({
+          country: 'Tonga', subLoc: label, lat: coord.lat, lng: coord.lng,
+          led: role === 'led' ? [item] : [], others: role === 'others' ? [item] : [],
+          total: 1, _b3Detail: true, _b3LocationType: kind
+        });
       });
     });
+    addItems(countryRecord.led || [], 'led');
+    addItems(countryRecord.others || [], 'others');
+    return result;
+  }
+
+  function b3DetailedTongaBounds(countryRecord) {
+    const details = b3TongaDetailRecords(countryRecord);
+    if (!details.length) return null;
+    return L.latLngBounds(details.map(r => [r.lat, b3WrappedLng(r.lng, 165)]));
   }
 
   function initB3Map() {
@@ -11065,11 +11125,18 @@
         // Fit fullscreen view to all currently-plotted markers so the label
         // layer has room to breathe.
         setTimeout(() => {
-          if (!state.b3Map || !state.b3Layer) return;
-          const layers = state.b3Layer.getLayers();
-          if (layers.length) {
-            const group = L.featureGroup(layers);
-            try { state.b3Map.fitBounds(group.getBounds().pad(0.2), { animate: false }); } catch (_) {}
+          if (!state.b3Map) return;
+          const summaries = b3CountrySummaries();
+          const tonga = summaries.length === 1 && summaries[0].country === 'Tonga' ? summaries[0] : null;
+          const detailBounds = tonga ? b3DetailedTongaBounds(tonga) : null;
+          if (detailBounds && detailBounds.isValid()) {
+            state.b3Map.fitBounds(detailBounds.pad(0.18), { animate: false, padding: [70, 70], maxZoom: 6 });
+          } else if (state.b3Layer) {
+            const layers = state.b3Layer.getLayers();
+            if (layers.length) {
+              const group = L.featureGroup(layers);
+              try { state.b3Map.fitBounds(group.getBounds().pad(0.2), { animate: false, maxZoom: 4 }); } catch (_) {}
+            }
           }
           renderB3Layer(); // recompute label placements at new zoom
         }, 180);
@@ -11094,6 +11161,10 @@
       const fsBtn = document.querySelector('[data-db-b3-fs-btn]');
       if (fsBtn) fsBtn.click();
     });
+
+    // Swap between the deduplicated country bubble and individual Tonga
+    // evidence locations as the user crosses the island-detail zoom level.
+    bmap.on('zoomend', () => renderB3Layer());
 
     // ---- 5. Wire the fullscreen dropdown toolbar ----
     initB3ToolbarDropdowns();
@@ -11535,7 +11606,14 @@
     if (!bmap) return;
     if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
     if (state.b3LabelLayer) { bmap.removeLayer(state.b3LabelLayer); state.b3LabelLayer = null; }
-    const records = b3FilteredRecords();
+    let records = b3FilteredRecords();
+    if (bmap.getZoom() >= 5) {
+      records = records.flatMap(rec => {
+        if (rec.country !== 'Tonga') return [rec];
+        const details = b3TongaDetailRecords(rec);
+        return details.length ? details : [rec];
+      });
+    }
     const mode = state.b3View || 'with';
     // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
     // we sqrt-scale to keep tail countries readable.
@@ -11551,7 +11629,7 @@
       .filter(x => x.n > 0)
       .map(x => ({
         ...x,
-        radius: Math.max(6, Math.min(28, 6 + Math.sqrt(x.n / maxN) * 22))
+        radius: x.rec._b3Detail ? 7 : Math.max(6, Math.min(28, 6 + Math.sqrt(x.n / maxN) * 22))
       }))
       .sort((a, b) => b.radius - a.radius); // largest first
 
@@ -11562,14 +11640,18 @@
       // Larger radius → lower zIndexOffset so smaller markers rise to the top.
       // Range: -1000 for the largest, up to 0 for the smallest.
       const zOffset = Math.round(-1000 * (radius / 30));
-      const m = L.marker([rec.lat, rec.lng], { icon, zIndexOffset: zOffset });
+      const plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      const m = L.marker([rec.lat, plottedLng], { icon, zIndexOffset: zOffset });
       m._b3Record = rec;
       m._b3Radius = radius;
       // Tag the marker's DOM element with the country name so QA/automation can
       // locate a specific pie without hunting through Leaflet internals.
       m.on('add', () => {
         const el = m.getElement && m.getElement();
-        if (el) el.setAttribute('data-b3-country', rec.country);
+        if (el) {
+          el.setAttribute('data-b3-country', rec.country);
+          if (rec.subLoc) el.setAttribute('data-b3-location', rec.subLoc);
+        }
       });
       const html = b3BuildCountryPopupHtml(rec);
       // maxWidth/minWidth are 1.5× the default world-popup dimensions so long
@@ -11620,7 +11702,8 @@
     if (!bmap) return;
     // Convert lat/lng → container px so we can compute rough label bboxes.
     const items = withMeta.map(({ rec, radius }) => {
-      const pt = bmap.latLngToContainerPoint([rec.lat, rec.lng]);
+      const plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      const pt = bmap.latLngToContainerPoint([rec.lat, plottedLng]);
       return { rec, radius, x: pt.x, y: pt.y };
     }).sort((a, b) => b.radius - a.radius);
 
@@ -11631,7 +11714,7 @@
     const labelMarkers = [];
 
     items.forEach(({ rec, radius, x, y }) => {
-      const text = b3DisplayName(rec.country);
+      const text = rec._b3Detail && rec.subLoc ? rec.subLoc : b3DisplayName(rec.country);
       const w = text.length * 7 + 6;
       const bbox = {
         x0: x + radius + 4,
@@ -11648,7 +11731,7 @@
         iconSize: [w, 20],
         iconAnchor: [-radius - 4, 10]  // offset to right of the pie
       });
-      labelMarkers.push(L.marker([rec.lat, rec.lng], {
+      labelMarkers.push(L.marker([rec.lat, b3WrappedLng(rec.lng, bmap.getCenter().lng)], {
         icon,
         interactive: false,
         keyboard: false,
@@ -12044,11 +12127,20 @@
         // Prefer the parent country's center for the zoom; if the parent has
         // no items of its own and all items live in sub-locations, this still
         // frames the sub-location pies since the parent center is nearby.
-        state.b3Map.setView([summary.lat, summary.lng], 4.5, { animate: true });
+        if (name === 'Tonga') {
+          const detailBounds = b3DetailedTongaBounds(summary);
+          if (detailBounds && detailBounds.isValid()) {
+            state.b3Map.fitBounds(detailBounds.pad(0.18), { animate: true, padding: [50, 50], maxZoom: 6 });
+          } else {
+            state.b3Map.setView([summary.lat, b3WrappedLng(summary.lng, 165)], 5, { animate: true });
+          }
+        } else {
+          state.b3Map.setView([summary.lat, b3WrappedLng(summary.lng, state.b3Map.getCenter().lng)], 4.5, { animate: true });
+        }
         // Open the popup for the first matching pie (parent, then sub-locs).
         const layers = state.b3Layer ? state.b3Layer.getLayers() : [];
         const m = layers.find(l => l._b3Record && l._b3Record.country === name);
-        if (m) setTimeout(() => m.openPopup(), 350);
+        if (m && name !== 'Tonga') setTimeout(() => m.openPopup(), 350);
       });
     });
   }

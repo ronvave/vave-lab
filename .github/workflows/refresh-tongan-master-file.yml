@@ -36,6 +36,8 @@ on:
       - "scripts/tongan_master_file_transformer.py"
       - "scripts/tongan_encrypt_data.py"
       - "scripts/tongan_decrypt_data.py"
+      - "js/tongan-database-adapter.js"
+      - "js/tongan-database-master.js"
   schedule:
     - cron: "5 */2 * * *"   # every 2 hours, 5 min after the hour (UTC)
   workflow_dispatch:

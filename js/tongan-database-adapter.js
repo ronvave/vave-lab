@@ -691,15 +691,26 @@
       var islandDivisionsInPub = [];
       var specificIslandsInPub = [];
       var researchSitesInPub = [];
+      var verifiedGeographyRows = [];
       var seenProvForPub = new Set();
       var seenDivisionForPub = new Set();
       var seenIslandForPub = new Set();
       var seenSiteForPub = new Set();
       geoRowsForPub.forEach(function (g) {
-        if (String(g['Country'] || '').trim() !== 'Tonga') return;
         var verif = String(g['Verification'] || '').trim();
         var verifOk = /^verified/i.test(verif) || verif.toLowerCase() === 'strong';
         if (!verifOk) return;
+        var rowCountry = b4NormCountry(g['Country']);
+        verifiedGeographyRows.push({
+          country: rowCountry,
+          islandDivision: String(g['Island Division (auto from District)'] || '').trim(),
+          district: String(g['District'] || '').trim(),
+          specificIsland: String(g['Specific Island'] || '').trim(),
+          site: String(g['Village / Town / Site'] || '').trim(),
+          geographyType: String(g['Geography Type'] || '').trim(),
+          verification: verif
+        });
+        if (rowCountry !== 'Tonga') return;
         var division = String(g['Island Division (auto from District)'] || '').trim();
         var prov = String(g['District'] || '').trim();
         var island = String(g['Specific Island'] || '').trim();
@@ -835,6 +846,10 @@
         _masterIslandDivisions: islandDivisionsInPub,
         _masterSpecificIslands: specificIslandsInPub,
         _masterResearchSites: researchSitesInPub,
+        // Verified evidence rows are retained so B4 can switch from one
+        // deduplicated country marker at world scale to the publication's
+        // individual Tonga study sites at close zoom.
+        _masterGeographyRows: verifiedGeographyRows,
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
         _masterAuthorship:  masterAuthorship,
