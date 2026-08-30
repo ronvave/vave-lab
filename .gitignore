@@ -58,6 +58,45 @@ data/tongan-workplace-coords.json
 data/tongan-uni-country-overrides.json
 data/tongan-auto-resolved.json
 
+# Solomon Islands Scholarly Database plaintext data (sister of the Tongan
+# and iTaukei sections above). Only the .enc ciphertext is committed; the
+# plaintext .json is produced locally/in CI by
+# scripts/solomon_master_file_transformer.py and re-encrypted with
+# VAVELAB_SOLOMON_PASSCODE via scripts/solomon_encrypt_data.py. NEVER
+# touches data/itaukei-* or data/tongan-* files.
+data/solomon-master-scholars.json
+data/solomon-master-publications.json
+data/solomon-master-authorship.json
+data/solomon-master-researcher-authorship.json
+data/solomon-master-grad-degrees.json
+data/solomon-master-mobility.json
+data/solomon-master-geography.json
+data/solomon-master-geography-coordinates.json
+data/solomon-master-aggregates.json
+data/solomon-master-worldpoints.json
+data/solomon-master-institutions.json
+data/solomon-master-researchers.json
+data/solomon-master-awards.json
+data/solomon-master-funding.json
+data/solomon-master-positions.json
+data/solomon-last-master-sync.json
+data/solomon-body-composition.json
+data/solomon-body-composition-master.json
+data/solomon-zotero-snapshot.json
+data/solomon-scholar-profiles.json
+data/solomon-last-sync.json
+data/solomon-graduate-studies.json
+data/solomon-scholar-insights.json
+data/solomon-scholar-insights-master.json
+data/solomon-scholar-enrichment.json
+data/solomon-workplace-coords.json
+data/solomon-uni-country-overrides.json
+data/solomon-auto-resolved.json
+data/solomon-islands-provinces.json
+data/solomon-islands-provinces.geojson
+data/solomon-world-universities.json
+data/solomon-revoked-demos.json
+
 # Local artefacts
 .DS_Store
 __pycache__/
