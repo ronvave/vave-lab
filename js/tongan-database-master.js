@@ -10924,6 +10924,8 @@
     return out;
   }
 
+  const B3_TONGA_DETAIL_ZOOM = 4;
+
   function b3TongaDetailRecords(countryRecord) {
     if (!countryRecord || countryRecord.country !== 'Tonga') return [];
     const lookup = state.b3MasterCoordinates || {};
@@ -10934,11 +10936,12 @@
       // Read the live Master bridge directly. The item-level copy is retained
       // as a fallback for older snapshots, but the bridge is authoritative and
       // prevents a stale browser item from collapsing all evidence to Tonga.
-      const publicationId = item._masterPublicationId || '';
+      const publicationId = String(item._masterPublicationId || item.key || '').trim();
       const rawRows = ((state.master && state.master.geography) || []).filter(g =>
-        String(g['Publication ID / BibTeX Key'] || '').trim() === publicationId &&
-        String(g.Country || '').trim() === 'Tonga' &&
-        (/^verified/i.test(String(g.Verification || '').trim()) || String(g.Verification || '').trim().toLowerCase() === 'strong')
+        String(g['Publication ID / BibTeX Key'] || g['Publication ID'] || g['BibTeX Key'] || '').trim() === publicationId &&
+        String(g.Country || '').trim().toLowerCase() === 'tonga' &&
+        (/^verified/i.test(String(g.Verification || g['Verification / Status'] || '').trim()) ||
+          String(g.Verification || g['Verification / Status'] || '').trim().toLowerCase() === 'strong')
       );
       const rows = rawRows.length ? rawRows.map(g => ({
         country: 'Tonga',
@@ -10990,6 +10993,33 @@
     const details = b3TongaDetailRecords(countryRecord);
     if (!details.length) return null;
     return L.latLngBounds(details.map(r => [r.lat, b3WrappedLng(r.lng, 165)]));
+  }
+
+  // Fit every populated country into the visible map with enough pixel room
+  // for the full marker circles. Longitudes are first moved onto the same
+  // Pacific-centred world copy; otherwise Leaflet treats the United States
+  // and Tonga as being almost a full world apart and clips one map edge.
+  function b3FitOverview(options) {
+    const bmap = state.b3Map;
+    if (!bmap) return;
+    const opts = options || {};
+    const summaries = b3CountrySummaries();
+    if (!summaries.length) return;
+    const referenceLng = 180;
+    const points = summaries.map(rec => [rec.lat, b3WrappedLng(rec.lng, referenceLng)]);
+    bmap.invalidateSize(false);
+    if (points.length === 1) {
+      bmap.setView(points[0], Math.min(opts.maxZoom || 4, 4), { animate: !!opts.animate });
+    } else {
+      const pad = Number(opts.padding) || 72;
+      bmap.fitBounds(L.latLngBounds(points), {
+        animate: !!opts.animate,
+        paddingTopLeft: [pad, pad],
+        paddingBottomRight: [pad, pad],
+        maxZoom: opts.maxZoom || 3.25
+      });
+    }
+    renderB3Layer();
   }
 
   function initB3Map() {
@@ -11116,7 +11146,9 @@
       worldCopyJump: false,
       minZoom: 1,
       maxZoom: 10,
-      maxBounds: [[-85, -210], [85, 210]],
+      // The Pacific-centred copy places the continental US near 261°E.
+      // Keep that copy pannable so its marker is not clamped against the edge.
+      maxBounds: [[-85, -300], [85, 300]],
       maxBoundsViscosity: 0.85
     });
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
@@ -11131,7 +11163,7 @@
     renderB3CountryList();
     updateB3Stats();
 
-    setTimeout(() => { if (state.b3Map) state.b3Map.invalidateSize(); }, 100);
+    setTimeout(() => { if (state.b3Map) b3FitOverview({ padding: 72, maxZoom: 3.25 }); }, 100);
 
     // Pill toggle
     document.querySelectorAll('[data-mapscope-panel="b3"] button').forEach(btn => {
@@ -11166,12 +11198,8 @@
           const detailBounds = tonga ? b3DetailedTongaBounds(tonga) : null;
           if (detailBounds && detailBounds.isValid()) {
             state.b3Map.fitBounds(detailBounds.pad(0.18), { animate: false, padding: [70, 70], maxZoom: 6 });
-          } else if (state.b3Layer) {
-            const layers = state.b3Layer.getLayers();
-            if (layers.length) {
-              const group = L.featureGroup(layers);
-              try { state.b3Map.fitBounds(group.getBounds().pad(0.2), { animate: false, maxZoom: 4 }); } catch (_) {}
-            }
+          } else {
+            b3FitOverview({ padding: 96, maxZoom: 4 });
           }
           renderB3Layer(); // recompute label placements at new zoom
         }, 180);
@@ -11179,8 +11207,7 @@
       onClose: () => {
         setTimeout(() => {
           if (!state.b3Map) return;
-          state.b3Map.setView([-5, 165], 2.25, { animate: false });
-          renderB3Layer();
+          b3FitOverview({ padding: 72, maxZoom: 3.25 });
         }, 180);
       }
     });
@@ -11642,7 +11669,7 @@
     if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
     if (state.b3LabelLayer) { bmap.removeLayer(state.b3LabelLayer); state.b3LabelLayer = null; }
     let records = b3FilteredRecords();
-    if (bmap.getZoom() >= 5) records = b3ExpandedTongaRecords(records);
+    if (bmap.getZoom() >= B3_TONGA_DETAIL_ZOOM) records = b3ExpandedTongaRecords(records);
     const mode = state.b3View || 'with';
     // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
     // we sqrt-scale to keep tail countries readable.
