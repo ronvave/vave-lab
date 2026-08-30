@@ -1357,8 +1357,8 @@
     /* Header row above the country list. Same 4-column template as each row. */
     .b3-country-table-head {
       display: grid;
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px;
-      column-gap: 10px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px;
+      column-gap: 8px;
       align-items: baseline;
       padding: 6px 0 6px;
       border-bottom: 1px solid rgba(15,23,42,0.18);
@@ -1374,11 +1374,11 @@
        middle rule/gap between the two halves mirrors the column-rule on
        .db-world-grid so the header visually aligns with each list column. */
     .b3-country-table-head--two-up {
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px 16px minmax(0,1fr) 44px 44px 44px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px 16px minmax(0,1fr) 72px 52px 44px;
     }
     @media (max-width: 720px) {
       .b3-country-table-head--two-up {
-        grid-template-columns: minmax(0,1fr) 44px 44px 44px;
+        grid-template-columns: minmax(0,1fr) 72px 52px 44px;
       }
       .b3-country-table-head--two-up > span:nth-child(n+5) { display: none; }
     }
@@ -1393,8 +1393,8 @@
        → others count (R, gold) → total (R, bold). The parent .db-world-grid keeps
        CSS column-count:2 so the list flows into two side-by-side blocks. */
     .b3-country-list .db-world-country-row {
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px;
-      column-gap: 10px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px;
+      column-gap: 8px;
     }
     .b3-country-list .db-world-country-row__num {
       font-variant-numeric: tabular-nums lining-nums;
@@ -4644,12 +4644,12 @@
               <p class="db-conf-explain">Click a country to zoom the map. Hover a country marker to see the citation list; hover a citation for the work detail.</p>
               <div class="b3-country-table-head b3-country-table-head--two-up" data-b3-country-thead>
                 <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Tongan is the first author">Tongan</span>
+                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Tongan is the first author">Tongan led</span>
                 <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Tongan may still be on the byline)">Others</span>
                 <span class="b3-country-table-head__num b3-cell--total">Total</span>
                 <span class="b3-country-table-head__spacer" aria-hidden="true"></span>
                 <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Tongan is the first author">Tongan</span>
+                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Tongan is the first author">Tongan led</span>
                 <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Tongan may still be on the byline)">Others</span>
                 <span class="b3-country-table-head__num b3-cell--total">Total</span>
               </div>
@@ -5392,7 +5392,7 @@
 ===================================================================== -->
 <script src="js/tongan-demo-gate.js?v=a0fc206a" defer></script>
 <script src="js/tongan-database-adapter.js?v=f9048fbf" defer></script>
-<script src="js/tongan-database-master.js?v=586bd37f" defer></script>
+<script src="js/tongan-database-master.js?v=0577b28b" defer></script>
 <script src="js/tongan-panel-overrides.js?v=408417f6" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
