@@ -147,14 +147,16 @@
   // ------------------------------------------------------------------
   // Shared scholar-geography formatter (V2 public display).
   //
-  // Renders one canonical locality string from village / island /
-  // province Master values. Display-only — never mutates the Master.
+  // Renders one canonical Tongan locality string from village / island /
+  // district Master values. Display-only — never mutates the Master. The
+  // legacy parameter/property name `province` is retained internally for
+  // compatibility, but public Tongan scholar cards append the correct
+  // Tonga-specific "District" suffix and never append "Province".
   //
-  //   village + island + province             → 'Malawai vlg (Gau Is), Lomaiviti Province.'
-  //   village + province, island suppressed   → 'Naduri vlg, Macuata Province.'      (Viti Levu / Vanua Levu)
-  //   village + province, no island           → 'Naduri vlg, Macuata Province.'
-  //   village + island, no province           → 'Malawai vlg (Gau Is)'                (no trailing province)
-  //   province only                           → 'Lau Province.'
+  //   village + island + district             → 'Te\'ekiu vlg (Tongatapu Is), Kolovai District.'
+  //   village + district, no island            → 'Te\'ekiu vlg, Kolovai District.'
+  //   village + island, no district            → 'Te\'ekiu vlg (Tongatapu Is)'
+  //   district only                            → 'Kolovai District.'
   //   outer island only                       → 'Gau Is'
   //   nothing meaningful                      → ''
   //
@@ -166,8 +168,8 @@
   // the stored value (case-insensitive, whole word) so re-suffixing with
   // ' Is' can never produce 'Moala Is Is' or 'Gau Island Is'.
   //
-  // The trailing period appears only when the string ends in 'Province';
-  // 'Gau Is'-only or village-only forms stay unpunctuated so they read
+  // The trailing period appears when a district is shown; island-only or
+  // village-only forms stay unpunctuated so they read
   // cleanly in chips.
   // ------------------------------------------------------------------
   const _MAINLAND_ISLANDS_SUPPRESS = /^(viti\s*levu|vanua\s*levu)$/i;
@@ -181,9 +183,16 @@
   }
 
   function _normalizeIslandStem(v) {
-    // Trim any pre-existing ' Is', ' Is.', ' Island' suffix so we can
-    // append a single canonical ' Is' without stacking. Whole-word only.
-    return v.replace(/\s+(is\.?|island)$/i, '').trim();
+    // Scholar cards show the concise physical-island name. Master values may
+    // contain the explanatory qualifier "(main island)" or hierarchy suffix
+    // "Island Division"; neither belongs in the public locality line. Then
+    // trim any pre-existing Is/Island suffix so one canonical " Is" can be
+    // appended without stacking.
+    return v
+      .replace(/\s*\(\s*main\s+island\s*\)\s*/ig, ' ')
+      .replace(/\s+island\s+division$/i, '')
+      .replace(/\s+(is\.?|island)$/i, '')
+      .trim();
   }
 
   function formatScholarGeography(village, island, province) {
@@ -197,7 +206,10 @@
     var islandStem = i ? _normalizeIslandStem(i) : '';
     var vlgPart = v ? (v + ' vlg') : '';
     var islPart = islandStem ? (islandStem + ' Is') : '';
-    var provPart = p ? (p + ' Province') : '';
+    // Tonga has districts, not provinces. The stored value is the district
+    // name; append the correct public suffix exactly once.
+    var districtStem = p.replace(/\s+(province|district)\.?$/i, '').trim();
+    var provPart = districtStem ? (districtStem + ' District') : '';
 
     // 1. Village + Province (with or without a shown island).
     if (vlgPart && provPart) {
@@ -210,13 +222,13 @@
     }
     // 3. Village only.
     if (vlgPart) return vlgPart;
-    // 4. Island + Province, no village — keep both instead of dropping
+    // 4. Island + District, no village — keep both instead of dropping
     //    the island (happens when the village cell is blank OR a scrubbed
     //    sentinel like 'Unclassified').
     if (islPart && provPart) return islPart + ', ' + provPart + '.';
-    // 5. Province only.
+    // 5. District only.
     if (provPart) return provPart + '.';
-    // 6. Outer island only (Viti Levu / Vanua Levu already suppressed above).
+    // 6. Island only.
     if (islPart) return islPart;
     return '';
   }
@@ -4626,8 +4638,9 @@
       if (!confList) return;
       const { confCounts } = computeConfederacyScholarCounts();
       const rows = [];
-      // "All confederacies" reset row at top.
-      rows.push({ key: '', label: 'All confederacies', count: null, hasChildren: false });
+      // "All Island Divisions" reset row at top. This Tonga-specific public
+      // wording must never regress to the cloned Fiji label "confederacies".
+      rows.push({ key: '', label: 'All Island Divisions', count: null, hasChildren: false });
       ['Tongatapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'].forEach(cf => {
         rows.push({ key: cf, label: cf, count: confCounts[cf] || 0, hasChildren: true });
       });
@@ -7171,7 +7184,7 @@
     if (!confSel || !provSel) return;
 
     // Rebuild the province dropdown options based on the currently-selected
-    // confederacy (or show all provinces if 'All confederacies' is chosen).
+    // Island Division (or show every district when "All Island Divisions" is chosen).
     function rebuildProvinceOptions() {
       const conf = state.scholarConfFilter;
       // Preserve the selected value if it's still valid
@@ -7889,7 +7902,7 @@
         root: confRoot, input: null, panel: confPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
         tree, parentLabelSingular: 'Provinces',
-        buildLabel: () => 'All confederacies',
+        buildLabel: () => 'All Island Divisions',
         isActive: () => {
           const c = state.scholarConfFilter, p = state.scholarProvFilter;
           // Map the internal '__untagged__' sentinel back to the friendly label.
@@ -8345,7 +8358,7 @@
   const TYPE_STYLES = {
     journalArticle: { color: '#B8860B', bg: '#f8efd6', border: '#e6c98a', s: 'Journal article',  p: 'Journal articles' },
     thesisPhd:      { color: '#228B22', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis',       p: 'PhD theses' },
-    thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: 'Masters thesis',   p: 'Masters theses' },
+    thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: "Master's thesis", p: "Master's theses" },
     thesisUnknown:  { color: '#4CAF50', bg: '#eaf5ea', border: '#b8dab8', s: 'Thesis',           p: 'Theses' },
     // Book Chapter uses the lighter tint (#C08388) to distinguish it from Book;
     // Book keeps the darker burgundy (#7a1419). Chip bg/border tints stay in
@@ -8477,10 +8490,13 @@
     // maternal fallback, no `effectivePaternalProvince`, no merged village.
     // See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md and the corresponding
     // regression test for ITK-S0212 (Malelili Rokomatu — must render as
-    // "Naseyani vlg, Ra Province." NOT "Naseyani vlg (Beqa Is), Ra Province.").
+    // "Naseyani vlg, Ra." NOT "Naseyani vlg (Beqa Is), Ra.").
     const paternalGeography = {
       village:  (r.paternalVillage  || '').trim(),
-      island:   (r.paternalIsland   || '').trim(),
+      // Prefer the specific island; when it is absent, retain the paternal
+      // Island Division as the public island label. formatScholarGeography()
+      // removes "(main island)" / "Island Division" and renders one " Is".
+      island:   (r.paternalIsland || r.paternalIslandDivision || '').trim(),
       province: (r.paternalProvince || '').trim()
     };
     const village = paternalGeography.village;
@@ -8497,11 +8513,11 @@
     const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
 
     // Meta line format (V2 canonical, per Ron's 2026-08-24 spec):
-    //   village + outer island + province  →  'Malawai vlg (Gau Is), Lomaiviti Province.'
-    //   village + Viti/Vanua Levu          →  'Naduri vlg, Macuata Province.'      (island suppressed)
+    //   village + island + district        →  'Te\'ekiu vlg (Tongatapu Is), Kolovai District.'
+    //   village + district                 →  'Te\'ekiu vlg, Kolovai District.'
     //   village only                       →  'Malawai vlg'
     //   island only (outer)                →  'Gau Is'
-    //   province only                      →  'Lomaiviti Province.'
+    //   district only                      →  'Kolovai District.'
     //   nothing                            →  '<em>Village not yet added</em>' (empty-state chip)
     //
     // The 'vlg' + 'Is' abbreviations, the mainland-island suppression, the
