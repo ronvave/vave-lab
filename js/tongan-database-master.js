@@ -1208,12 +1208,12 @@
       parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with Tongan authors.`);
       if (x.itWorks > 0) {
         parts.push(`Within this Tongan-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by a Tongan first author \u2014 a substantial signal of research leadership.`);
-        parts.push(`A further ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are co-authored with scholars of other ethnicities, from within Fiji and abroad, who are leading the authorship.`);
+        parts.push(`A further ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are co-authored with scholars of other ethnicities, from within Tonga and abroad, who are leading the authorship.`);
       }
       if (itTheses > 0) {
         parts.push(`These ${fmt(x.itWorks)} publications include ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}%) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 completed at ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
       }
-      parts.push('Together, this scholarship spans diverse fields and connects with communities across all 14 provinces of Fiji.');
+      parts.push('Together, this scholarship spans diverse fields and connects with communities across Tonga and internationally.');
       bodyEl.textContent = parts.join(' ');
     }
     const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };
@@ -9440,7 +9440,7 @@
   //  PANEL B2 — interactive multi-view chart
   // ============================================================
   // Four views:
-  //   fiji-focused        → Tongan first-author, Tonga-focused, group by paternal district
+  //   tonga-focused       → Tongan first-author, Tonga-focused, group by paternal district
   //   all-locations       → iTaukei first-author, ANY location, group by paternal province
   //   all-authors         → any author, Tonga-focused, group by study district + Tonga-wide row
   //   authorship          → any author, Tonga-focused, group by study district, single stacked bar per district by authorship role
@@ -9454,9 +9454,9 @@
   // Every remaining B2 tab groups by iTaukei first-author paternal province.
   // 'all-authors' was removed — that view aggregated by study province and
   // clashed with B1's scope now that B1 owns the study-province chart.
-  const B2_VIEWS = ['fiji-focused', 'all-locations'];
+  const B2_VIEWS = ['tonga-focused', 'all-locations'];
   const B2_META = {
-    'fiji-focused': {
+    'tonga-focused': {
       meta: [
         ['Grouped by',  'First-author paternal district'],
         ['Scope',       'Tonga-focused'],
@@ -9493,7 +9493,7 @@
   state.worldSelectedCountry = null;
   state.worldSelectedUniversity = null;
   state.worldSearchTerm = '';
-  state.b2View = 'fiji-focused';
+  state.b2View = 'tonga-focused';
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';
   state.b2AuthorshipSort = 'total';
@@ -9514,7 +9514,10 @@
     if (!m) return;
     // Migrate old slug from a prior release so pre-existing bookmarks still land
     // on the redesigned single-stacked-bar authorship view.
-    const slug = m[1] === 'compare-authorship' ? 'authorship' : m[1];
+    // Backward compatibility: old Tongan links inherited the iTaukei/Fiji
+    // slug. Accept it once, then renderPanelB2 rewrites the hash correctly.
+    const legacySlug = m[1] === 'fiji-focused' ? 'tonga-focused' : m[1];
+    const slug = legacySlug === 'compare-authorship' ? 'authorship' : legacySlug;
     if (B2_VIEWS.includes(slug)) state.b2View = slug;
   })();
 
@@ -9882,7 +9885,7 @@
   // Build the inline Panel B2 title dropdown pill. Style comes from the shared
   // .db-title-select CSS (brown pill + cream text). Changing the selection
   // moves the user to the corresponding B2 view:
-  //   Tongan authors → fiji-focused (Tonga-focused + Tongan first author)
+  //   Tongan authors → tonga-focused (Tonga-focused + Tongan first author)
   //   All authors     → all-authors  (Tonga-focused + any author)
   // We deliberately don't try to preserve 'all-locations' when switching to
   // 'all authors': there is no All locations + all authors view today, and
@@ -9905,7 +9908,7 @@
     });
     sel.value = currentType;
     sel.addEventListener('change', () => {
-      state.b2View = sel.value === 'all' ? 'all-authors' : 'fiji-focused';
+      state.b2View = sel.value === 'all' ? 'all-authors' : 'tonga-focused';
       renderPanelB2();
     });
     wrap.appendChild(sel);
@@ -9920,7 +9923,7 @@
   // -------- Render dispatcher --------
   function renderPanelB2() {
     const view = state.b2View;
-    const meta = B2_META[view] || B2_META['fiji-focused'];
+    const meta = B2_META[view] || B2_META['tonga-focused'];
     const metaEl = $('[data-b2-meta]');
     const barsEl = $('[data-b2-bars]');
     if (!metaEl || !barsEl) return;
@@ -9976,7 +9979,7 @@
     // Persist authorship + layout to URL hash for shareability.
     setB2ExtraHash({ b2a: auth, b2l: auth === 'split' ? layout : null });
 
-    if (view === 'fiji-focused' || view === 'all-locations') {
+    if (view === 'tonga-focused' || view === 'all-locations') {
       if (auth === 'first') {
         let rows = buildB2Rows_paternalGrouped(includeAll);
         if (b2Division) rows = aggregateRowsByDivision_(rows);
