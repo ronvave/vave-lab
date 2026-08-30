@@ -11189,18 +11189,16 @@
     // frames all populated countries by default.
     wireMapFullscreen('[data-db-b3-map-wrap]', '[data-db-b3-fs-btn]', () => state.b3Map, {
       onOpen: () => {
-        // Fit fullscreen view to all currently-plotted markers so the label
-        // layer has room to breathe.
+        // Always open B4 on a Pacific-centred whole-world view. A tight
+        // fitBounds calculation over the very wide fullscreen canvas can
+        // crop the Americas or the eastern Pacific even though their markers
+        // are part of the current dataset. Starting at zoom 2 keeps every
+        // populated-country circle visible; toolbar filters and country-row
+        // clicks can still zoom into a smaller area afterwards.
         setTimeout(() => {
           if (!state.b3Map) return;
-          const summaries = b3CountrySummaries();
-          const tonga = summaries.length === 1 && summaries[0].country === 'Tonga' ? summaries[0] : null;
-          const detailBounds = tonga ? b3DetailedTongaBounds(tonga) : null;
-          if (detailBounds && detailBounds.isValid()) {
-            state.b3Map.fitBounds(detailBounds.pad(0.18), { animate: false, padding: [70, 70], maxZoom: 6 });
-          } else {
-            b3FitOverview({ padding: 96, maxZoom: 4 });
-          }
+          state.b3Map.invalidateSize({ animate: false });
+          state.b3Map.setView([0, 180], 2, { animate: false });
           renderB3Layer(); // recompute label placements at new zoom
         }, 180);
       },
