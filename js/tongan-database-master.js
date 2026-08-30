@@ -8487,7 +8487,9 @@
     const paternal = paternalGeography.province;
     const confederacy = provinceToConfederacy(paternal);
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
-    const bannerLabel = confederacy ? `${confederacy} Island Division` : 'Tongan Scholar';
+    // Card banners use the concise Island name only. The underlying field is
+    // still the scholar's paternal Island Division; this is display-only.
+    const bannerLabel = confederacy || 'Tongan Scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);
