@@ -4713,6 +4713,10 @@
             <option value="itaukei">Tongan authors</option>
             <option value="all">All authors</option>
           </select></span>
+          <span><em>View:</em> <select class="db-meta-select" data-b1-groupby aria-label="Group bars by district or Island Division">
+            <option value="district">District</option>
+            <option value="division" selected>Island Division</option>
+          </select></span>
         </div>
         <!-- Authorship-view only: legend for the three coloured segments, shown
              beneath the description (identical to what B2 previously used). -->
@@ -4769,6 +4773,13 @@
               <select data-b2-layout>
                 <option value="compact">Compact (single bar)</option>
                 <option value="detailed">Detailed (with publication types)</option>
+              </select>
+            </label>
+            <label class="db-b2-view-select" title="District shows one bar per Tongan district. Island Division combines the 23 districts into Tonga's 5 Island Divisions (Tongatapu, Vavaʻu, Haʻapai, ʻEua, Ongo Niua) and disables click-to-filter on the bars.">
+              <span class="db-b2-view-select__label">View</span>
+              <select data-b2-groupby>
+                <option value="district">District</option>
+                <option value="division" selected>Island Division</option>
               </select>
             </label>
           </div>

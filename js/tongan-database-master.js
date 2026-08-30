@@ -5388,14 +5388,17 @@
     const authorshipLegend = document.querySelector('[data-b1-authorship-legend]');
     const groupedLabel  = document.querySelector('[data-b1-grouped-label]');
 
+    const b1Division = (state.b1GroupBy || 'division') !== 'district';
+
     if ((state.b1View || 'type') === 'authorship') {
       if (typeFilter) typeFilter.style.display = 'none';
       if (authorshipLegend) authorshipLegend.style.display = '';
       if (authorsSelect) authorsSelect.disabled = true;
-      if (groupedLabel) groupedLabel.textContent = 'Study district · Tongan authorship role';
+      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Island Division' : 'Study district') + ' · Tongan authorship role';
       host.innerHTML = '';
-      const rows = buildB2Rows_compareAuthorship();
-      renderAuthorshipInto(host, rows);
+      let rows = buildB2Rows_compareAuthorship();
+      if (b1Division) rows = aggregateRowsByDivision_(rows);
+      renderAuthorshipInto(host, rows, { disableClick: b1Division });
       host.classList.remove('db-bars--grouped');
       return;
     }
@@ -5404,7 +5407,7 @@
     if (typeFilter) typeFilter.style.display = '';
     if (authorshipLegend) authorshipLegend.style.display = 'none';
     if (authorsSelect) authorsSelect.disabled = false;
-    if (groupedLabel) groupedLabel.textContent = 'Study district';
+    if (groupedLabel) groupedLabel.textContent = b1Division ? 'Island Division' : 'Study district';
 
     host.innerHTML = '';
     const provs = state.provinces.features.map(f => f.properties);
@@ -5433,21 +5436,26 @@
         }
       });
     });
-    const rows = provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
+    let rows = provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
                        .sort((a,b) => b.total - a.total);
+    if (b1Division) rows = aggregateRowsByDivision_(rows);
     const maxTotal = Math.max(1, ...rows.map(r => r.total));
     rows.forEach(r => {
       const label = document.createElement('div');
       label.className = 'db-bars__prov';
-      if (state.filter.province === r.name) label.classList.add('is-active');
-      label.title = `${r.conf} Island Division`;
+      if (!b1Division && state.filter.province === r.name) label.classList.add('is-active');
+      label.title = b1Division ? `${r.name} Island Division` : `${r.conf} Island Division`;
       label.innerHTML = `<span>${r.name}</span><span class="db-bars__prov-dot" style="background:${CONF_COLORS[r.conf]};"></span>`;
-      label.addEventListener('click', () => {
-        state.filter.province = state.filter.province === r.name ? '' : r.name;
-        state.filter.paternal = '';
-        state.shown = state.pageSize;
-        afterFilterChange();
-      });
+      if (!b1Division) {
+        label.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      } else {
+        label.style.cursor = 'default';
+      }
       host.appendChild(label);
 
       const rowWrap = document.createElement('div');
@@ -5456,7 +5464,7 @@
       row.style.width = `${(r.total / maxTotal) * 100}%`;
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `${r.name} · ${r.total} items · ${r.conf}`;
+      row.title = b1Division ? `${r.name} · ${r.total} items` : `${r.name} · ${r.total} items · ${r.conf}`;
       TYPE_ORDER.forEach(t => {
         const n = r.types[t] || 0;
         if (n > 0) {
@@ -5468,12 +5476,16 @@
           row.appendChild(seg);
         }
       });
-      row.addEventListener('click', () => {
-        state.filter.province = state.filter.province === r.name ? '' : r.name;
-        state.filter.paternal = '';
-        state.shown = state.pageSize;
-        afterFilterChange();
-      });
+      if (!b1Division) {
+        row.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      } else {
+        row.style.cursor = 'default';
+      }
       rowWrap.appendChild(row);
       host.appendChild(rowWrap);
 
@@ -5638,6 +5650,19 @@
       sel.value = state.b1Authors || 'itaukei';
       sel.addEventListener('change', () => {
         state.b1Authors = sel.value === 'all' ? 'all' : 'itaukei';
+        renderPanelB();
+      });
+    }
+    // "View" dropdown: switches the bars between one-per-district (default)
+    // and Island Division roll-up. Division mode aggregates the 23 districts
+    // into Tonga's 5 Island Divisions and disables click-to-filter on the
+    // bars, since the click-to-filter state (state.filter.province) only
+    // understands district names.
+    const groupSel = document.querySelector('[data-b1-groupby]');
+    if (groupSel) {
+      groupSel.value = state.b1GroupBy || 'division';
+      groupSel.addEventListener('change', () => {
+        state.b1GroupBy = groupSel.value === 'division' ? 'division' : 'district';
         renderPanelB();
       });
     }
@@ -9524,6 +9549,45 @@
   // -------- shared: render horizontal bar rows into a host --------
   // rows: [{ name, total, types: {vt: n}, conf, isConfirmed }]
   // opts: { activeName, onClick(row), confDotColor(row), maxTotal }
+  // Generic row aggregator — collapses district-level rows (each carrying a
+  // `.conf` field with its Island Division) into 5 Island Division rows,
+  // summing every numeric field and every numeric sub-object (types/cats/
+  // leadTypes/coTypes) regardless of which buildB2Rows_* / district builder
+  // produced them. Rows with no `.conf` (e.g. "District not yet confirmed",
+  // "Fiji-wide / national") are treated as their own singleton bucket and
+  // passed through unchanged, preserved in their original relative order
+  // (they are already appended last by every caller). Used by both Panel C2
+  // (renderPanelB / renderAuthorshipInto) and Panel C3 (renderPanelB2 family)
+  // when their "Group by" control is set to Island Division.
+  function aggregateRowsByDivision_(rows) {
+    const groups = new Map();
+    const passthrough = [];
+    rows.forEach(r => {
+      const key = r.conf || null;
+      if (!key) { passthrough.push(r); return; }
+      let g = groups.get(key);
+      if (!g) {
+        g = { name: key, conf: key, isConfirmed: true };
+        groups.set(key, g);
+      }
+      Object.keys(r).forEach(k => {
+        if (k === 'name' || k === 'conf' || k === 'isConfirmed') return;
+        const v = r[k];
+        if (typeof v === 'number') {
+          g[k] = (g[k] || 0) + v;
+        } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+          g[k] = g[k] || {};
+          Object.keys(v).forEach(kk => {
+            g[k][kk] = (g[k][kk] || 0) + (v[kk] || 0);
+          });
+        }
+      });
+    });
+    const out = Array.from(groups.values()).sort((a, b) => (b.total || 0) - (a.total || 0));
+    passthrough.forEach(p => out.push(p));
+    return out;
+  }
+
   function renderPanelBBarsInto(host, rows, opts) {
     host.innerHTML = '';
     if (!rows.length) {
@@ -9887,12 +9951,15 @@
     const includeAll = (view === 'all-locations');
     const auth = state.b2Authorship || 'first';
     const layout = state.b2Layout || 'compact';
+    const b2Division = (state.b2GroupBy || 'division') !== 'district';
     const blurbEl = $('[data-b2-blurb]');
     const layoutWrap = $('[data-b2-layout-wrap]');
     const authSel = $('[data-b2-authorship]');
     const layoutSel = $('[data-b2-layout]');
+    const groupSel = $('[data-b2-groupby]');
     if (authSel && authSel.value !== auth) authSel.value = auth;
     if (layoutSel && layoutSel.value !== layout) layoutSel.value = layout;
+    if (groupSel && groupSel.value !== (state.b2GroupBy || 'division')) groupSel.value = state.b2GroupBy || 'division';
     if (layoutWrap) layoutWrap.style.display = (auth === 'split') ? '' : 'none';
 
     // Toggle panel-level modifier for detailed layout so CSS can expand height / spacing.
@@ -9907,11 +9974,12 @@
 
     if (view === 'fiji-focused' || view === 'all-locations') {
       if (auth === 'first') {
-        const rows = buildB2Rows_paternalGrouped(includeAll);
+        let rows = buildB2Rows_paternalGrouped(includeAll);
+        if (b2Division) rows = aggregateRowsByDivision_(rows);
         renderPanelBBarsInto(barsEl, rows, {
-          activeName: state.filter.paternal || null,
+          activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-          onClick: r => {
+          onClick: b2Division ? null : r => {
             if (!r.isConfirmed) return;
             state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
             state.filter.province = '';
@@ -9924,11 +9992,12 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'first', includeAll, rows });
       } else if (auth === 'co') {
-        const rows = buildB2Rows_coauthor(includeAll);
+        let rows = buildB2Rows_coauthor(includeAll);
+        if (b2Division) rows = aggregateRowsByDivision_(rows);
         renderPanelBBarsInto(barsEl, rows, {
-          activeName: state.filter.paternal || null,
+          activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-          onClick: r => {
+          onClick: b2Division ? null : r => {
             if (!r.isConfirmed) return;
             state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
             state.filter.province = '';
@@ -9941,7 +10010,8 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'co', includeAll, rows });
       } else if (auth === 'split') {
-        const rows = buildB2Rows_split(includeAll);
+        let rows = buildB2Rows_split(includeAll);
+        if (b2Division) rows = aggregateRowsByDivision_(rows);
         if (layout === 'detailed') {
           renderPanelB2SplitDetailed(barsEl, rows);
         } else {
@@ -9950,11 +10020,12 @@
         renderPanelB2Blurb(blurbEl, { auth: 'split', layout, includeAll, rows });
       }
     } else if (view === 'all-authors') {
-      const rows = buildB2Rows_studyProvince_allAuthors();
+      let rows = buildB2Rows_studyProvince_allAuthors();
+      if (b2Division) rows = aggregateRowsByDivision_(rows);
       renderPanelBBarsInto(barsEl, rows, {
-        activeName: state.filter.province || null,
+        activeName: !b2Division ? (state.filter.province || null) : null,
         confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-        onClick: r => {
+        onClick: b2Division ? null : r => {
           if (r.name === 'Fiji-wide / national') return; // no items tagged yet
           state.filter.province = state.filter.province === r.name ? '' : r.name;
           state.filter.paternal = '';
@@ -10250,7 +10321,8 @@
     tip.style.top  = `${Math.round(top)}px`;
   }
 
-  function renderAuthorshipInto(host, rows) {
+  function renderAuthorshipInto(host, rows, opts) {
+    const disableClick = !!(opts && opts.disableClick);
     host.innerHTML = '';
     hideAuthorshipTip();
     if (!rows.length) {
@@ -10289,7 +10361,7 @@
       if (activeProv === r.name) label.classList.add('is-active');
       const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
       label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
-      const canFilterProv = r.name !== 'Fiji-wide / national' && r.total > 0;
+      const canFilterProv = !disableClick && r.name !== 'Fiji-wide / national' && r.total > 0;
       if (canFilterProv) {
         label.style.cursor = 'pointer';
         label.addEventListener('click', () => {
@@ -10345,7 +10417,7 @@
           seg.addEventListener('mouseleave', closeTip);
           seg.addEventListener('focus', openTip);
           seg.addEventListener('blur', closeTip);
-          const canFilterSeg = r.name !== 'Fiji-wide / national';
+          const canFilterSeg = !disableClick && r.name !== 'Fiji-wide / national';
           if (canFilterSeg) {
             seg.style.cursor = 'pointer';
             const onActivate = () => {
@@ -10461,6 +10533,19 @@
         renderPanelB2();
       }
     });
+
+    // "View" dropdown: District (default, one bar per Tonga district) vs.
+    // Island Division (rolls the 23 districts up into Tonga's 5 Island
+    // Divisions and disables click-to-filter, since state.filter.province /
+    // .paternal only understand district names).
+    const groupSel = $('[data-b2-groupby]');
+    if (groupSel) {
+      groupSel.value = state.b2GroupBy || 'division';
+      groupSel.addEventListener('change', () => {
+        state.b2GroupBy = groupSel.value === 'division' ? 'division' : 'district';
+        renderPanelB2();
+      });
+    }
 
     // Authorship-view: Counts / Percentage toggle
     $$('[data-b2-mode]').forEach(btn => {
