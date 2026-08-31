@@ -1,100 +1,200 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Samoa Scholar Database — Admin (placeholder)</title>
-  <!--
-    admin-samoa-master.html — SCAFFOLDING PLACEHOLDER
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Samoa Scholar Database — Admin</title>
 
-    Purpose (once completed): password-gated admin panel for editing the
-    Samoa Master Sheet through the bound Apps Script writeback endpoint,
-    for the Samoa Scholar Database. It is now under active build; when the
-    companion JS files land, this page becomes the live admin surface for
-    Samoa's six-dimension geography model.
-
-    When implemented, add:
-      - js/samoa-db-gate.js                 (clone of js/db-gate.js;
-                                             fresh VERIFIER_HASH_HEX and
-                                             samoalab.db.session store)
-      - js/samoa-database-adapter.js        (clone of js/master-file-adapter.js;
-                                             six-dimension geography, not
-                                             — six independent lookups)
-      - js/samoa-admin-writeback-client.js  (clone of admin-writeback-client.js;
-                                             VAVELAB_SAMOA writeback endpoint)
-      - js/samoa-admin-insights-migration.js (V1->V2 insights migration)
-      - js/admin-samoa-master.js            (clone of admin-master.js; distinct
-                                             SHA-256 admin-login PASSWORD_HASH)
-
-    Cross-system isolation guardrails (must all be true in the clone):
-      1. Every localStorage key is prefixed samoalab.* (never vavelab.* or
-         non-Samoa lab-scoped prefixes).
-      2. The db-gate PBKDF2 VERIFIER_HASH_HEX must be derived from
-         VAVELAB_SAMOA_PASSCODE, NOT any other jurisdiction's passcode.
-      3. The admin-login SHA-256 PASSWORD_HASH must be fresh (not a copy of
-         any sister system's hash).
-      4. The writeback client points at the SAMOA-specific /exec URL from
-         Apps Script; test with samoa-master-writeback.gs's `ping` action
-         before enabling saves.
-
-    Until this file is fleshed out, opening it produces a stub notice so a
-    stray share does not leak an unfinished admin surface.
-  -->
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/vavelab.css" />
   <style>
-    :root { --nav: #1f3a5f; --accent: #2e5c8a; --bg: #f6f8fb; --muted: #8b95a1; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-           background: var(--bg); color: #16324f; }
-    header { background: var(--nav); color: white; padding: 20px 28px; }
-    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
-    header p { margin: 6px 0 0; opacity: 0.85; font-size: 13px; }
-    main { max-width: 780px; margin: 40px auto; padding: 0 24px; }
-    .card { background: white; border: 1px solid #e0e6ed; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(20,40,80,0.04); }
-    .card h2 { margin-top: 0; color: var(--accent); font-size: 18px; }
-    ul { line-height: 1.7; }
-    code { background: #f0f3f7; padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 13px; }
-    .status { display: inline-block; background: #fff4d6; color: #8a6d1e; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    footer { max-width: 780px; margin: 24px auto 60px; padding: 0 24px; color: var(--muted); font-size: 13px; }
+    /* ─── Samoa Admin — self-contained styling ────────────────────────── */
+    body { max-width: 1180px; margin: 0 auto; padding: 24px 16px 96px; }
+    h1 { margin: 0 0 4px; font-size: 26px; letter-spacing: -0.01em; }
+    .subtitle { margin: 0 0 24px; color: var(--muted, #666); }
+
+    #samoa-admin-login {
+      max-width: 460px; margin: 40px auto 0; padding: 24px;
+      border: 1px solid var(--border, #e5e5e5); border-radius: 12px;
+      background: var(--card, #fff);
+    }
+    #samoa-admin-login label { display: block; margin: 12px 0 6px; font-weight: 600; }
+    #samoa-admin-login input {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border, #ccc);
+      border-radius: 8px; font-size: 15px;
+    }
+    #samoa-admin-login-btn {
+      display: block; margin: 20px 0 0; padding: 12px 18px; width: 100%;
+      background: var(--accent, #1a4d8f); color: #fff; border: none;
+      border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+    }
+    #samoa-admin-login-btn:hover { filter: brightness(1.08); }
+
+    #samoa-admin-surface { display: none; }
+
+    .samoa-admin-toolbar {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid var(--border, #eee);
+      margin-bottom: 16px;
+    }
+    .samoa-admin-toolbar button {
+      padding: 8px 12px; background: transparent;
+      border: 1px solid var(--border, #ccc); border-radius: 8px;
+      cursor: pointer; font-size: 13px;
+    }
+    .samoa-admin-toolbar button:hover { background: var(--card, #f6f6f6); }
+    .samoa-admin-toolbar__spacer { flex: 1; }
+
+    #samoa-admin-status {
+      padding: 10px 12px; margin: 12px 0; border-radius: 8px;
+      background: var(--card, #f6f8fb); color: var(--fg, #222);
+      font-size: 14px; line-height: 1.4;
+    }
+    .samoa-admin-status--error { background: #fdecec; color: #8a1a1a; }
+
+    #samoa-admin-tabs {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      padding: 8px 0 16px; border-bottom: 1px solid var(--border, #eee);
+      margin-bottom: 16px;
+    }
+    .samoa-admin-tab {
+      padding: 6px 10px; background: transparent;
+      border: 1px solid var(--border, #ccc); border-radius: 999px;
+      cursor: pointer; font-size: 12px; color: var(--fg, #222);
+    }
+    .samoa-admin-tab:hover { background: var(--card, #f0f4fa); }
+    .samoa-admin-tab--active {
+      background: var(--accent, #1a4d8f); color: #fff; border-color: transparent;
+    }
+
+    #samoa-admin-keypicker {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px; background: var(--card, #fafcff);
+      border: 1px solid var(--border, #e5e5e5); border-radius: 10px;
+      margin-bottom: 20px;
+    }
+    #samoa-admin-key-input {
+      flex: 1; padding: 8px 10px;
+      border: 1px solid var(--border, #ccc); border-radius: 6px;
+    }
+    .samoa-admin-load-btn {
+      padding: 8px 14px; background: var(--accent, #1a4d8f); color: #fff;
+      border: none; border-radius: 6px; cursor: pointer; font-weight: 600;
+    }
+
+    .samoa-admin-fieldset {
+      border: 1px solid var(--border, #e5e5e5); border-radius: 10px;
+      padding: 14px 18px 18px; margin: 0 0 20px;
+    }
+    .samoa-admin-fieldset legend {
+      padding: 0 8px; font-weight: 600; color: var(--fg, #222);
+    }
+    .samoa-admin-row {
+      display: grid; grid-template-columns: 260px 1fr; gap: 12px;
+      align-items: start; padding: 6px 0;
+    }
+    .samoa-admin-row label {
+      font-size: 13px; font-weight: 500;
+      padding-top: 8px; word-break: break-word;
+    }
+    .samoa-admin-row__badge {
+      display: inline-block; margin-left: 6px; padding: 1px 6px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.04em;
+      color: #fff; background: #b25c0f; border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .samoa-admin-row__badge--public { background: #1a7050; }
+    .samoa-admin-row__hint {
+      grid-column: 2 / 3; font-size: 11px; color: var(--muted, #888);
+    }
+    .samoa-admin-field {
+      width: 100%; padding: 6px 8px; font-size: 13px;
+      border: 1px solid var(--border, #ccc); border-radius: 6px;
+      background: var(--card, #fff); color: var(--fg, #222);
+    }
+    .samoa-admin-field--long { min-height: 92px; font-family: inherit; }
+
+    .samoa-admin-actions {
+      display: flex; gap: 10px; margin: 24px 0 0;
+      padding: 12px 0; border-top: 1px solid var(--border, #eee);
+    }
+    .samoa-admin-submit {
+      padding: 10px 20px; background: var(--accent, #1a4d8f); color: #fff;
+      border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+    }
+    .samoa-admin-reset {
+      padding: 10px 20px; background: transparent; color: var(--fg, #222);
+      border: 1px solid var(--border, #ccc); border-radius: 8px; cursor: pointer;
+    }
+    #samoa-admin-change-count { font-size: 12px; color: var(--muted, #888); align-self: center; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Samoa Scholar Database — Admin</h1>
-    <p>Placeholder scaffolding. The interactive admin panel has not been built yet in this repo.</p>
-  </header>
-  <main>
-    <div class="card">
-      <p><span class="status">Scaffold only</span></p>
-      <h2>Why this file exists</h2>
-      <p>
-        This page is a committed scaffold so the Samoa admin URL is reserved and its
-        role is documented. The full admin panel — a sister of
-        the Samoa admin surface. It is being built against the Samoa Master Sheet's
-        actual column headers and the six-dimension geography model
-        (Statistical Region · Political/Census District · Village ·
-        Specific Island · Traditional Itūmālō · Electoral Constituency).
-      </p>
-      <h2>Companion files (not yet added)</h2>
-      <ul>
-        <li><code>js/samoa-db-gate.js</code> — passcode gate</li>
-        <li><code>js/samoa-database-adapter.js</code> — Sheet → dashboard adapter</li>
-        <li><code>js/samoa-admin-writeback-client.js</code> — Apps Script client</li>
-        <li><code>js/samoa-admin-insights-migration.js</code> — V1→V2 migration</li>
-        <li><code>js/admin-samoa-master.js</code> — admin CRUD + GitHub push</li>
-      </ul>
-      <h2>Backend (already scaffolded)</h2>
-      <p>
-        The Apps Script writeback (<code>apps-script/samoa-master-writeback.gs</code>)
-        is already in this commit, with a fresh <code>SHARED_SECRET</code>,
-        a placeholder <code>SPREADSHEET_ID_HINT</code>, and a Samoa-schema
-        allowlist banner. It refuses to run until <code>SPREADSHEET_ID_HINT</code>
-        is set to the real Samoa Master Sheet ID. See
-        <code>docs/SAMOA-APPS-SCRIPT-DEPLOY.md</code>.
-      </p>
+  <h1>Samoa Scholar Database — Admin</h1>
+  <p class="subtitle">
+    Master Sheet <code>1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ</code>.
+    Six geography dimensions are preserved as independent fields
+    (Statistical Region, Political/Census District, Village, Specific Island,
+    Traditional Itūmālō, Electoral Constituency).
+  </p>
+
+  <!-- ───────────────── Login gate ───────────────────────────────────── -->
+  <div id="samoa-admin-login">
+    <p style="margin:0 0 4px;font-weight:600;">Restricted — Samoa admin</p>
+    <p style="margin:0 0 16px;font-size:13px;color:#666;">
+      This page ships encrypted data files. Enter the admin password AND
+      the data passcode to unlock. Both are Samoa-only values.
+    </p>
+    <label for="samoa-admin-password">Admin password</label>
+    <input id="samoa-admin-password" type="password" autocomplete="current-password" />
+    <label for="samoa-admin-data-passcode">Data passcode</label>
+    <input id="samoa-admin-data-passcode" type="password" autocomplete="current-password" />
+    <button id="samoa-admin-login-btn" type="button">Unlock</button>
+  </div>
+
+  <!-- ───────────────── Admin surface (populated after unlock) ───────── -->
+  <div id="samoa-admin-surface">
+    <div class="samoa-admin-toolbar">
+      <span id="samoa-admin-change-count">no pending changes</span>
+      <div class="samoa-admin-toolbar__spacer"></div>
+      <button type="button" onclick="window.samoaAdmin.triggerPublicRefresh()">Refresh public data</button>
+      <button id="samoa-admin-logout-btn" type="button">Log out</button>
     </div>
-  </main>
-  <footer>
-    Prof. Ron Vave · Department of Pacific Islands Studies · Vave Lab
-  </footer>
+
+    <div id="samoa-admin-status">Booting…</div>
+
+    <h3 style="margin:20px 0 8px;">Master Sheet worksheets</h3>
+    <div id="samoa-admin-tabs"></div>
+
+    <div id="samoa-admin-keypicker"></div>
+
+    <div id="samoa-admin-form"></div>
+  </div>
+
+  <!--
+    Baked authentication material — Samoa-only values, derived off-line
+    from the plaintexts Ron provided in this session. The plaintexts
+    are stored ONLY in the workspace-only samoa_build/SECRETS-NOT-COMMITTED.md
+    and are never committed to this repo.
+
+    • SAMOA_ADMIN_PASSWORD_HASH_HEX
+        SHA-256 hex of the admin password.
+    • SAMOA_WRITEBACK_URL
+        Apps Script deploy URL. Replace with the real URL after deploying
+        apps-script/samoa-master-writeback.gs — see docs/SAMOA-APPS-SCRIPT-DEPLOY.md.
+    • SAMOA_WRITEBACK_SECRET_HEX
+        The same SHARED_SECRET value that lives in apps-script/samoa-master-writeback.gs.
+  -->
+  <script>
+    window.SAMOA_ADMIN_PASSWORD_HASH_HEX = '526b18a8126ddb9e87281dda864e6a9d6b43b19f55cd6424d395546fb949ae2d';
+    window.SAMOA_WRITEBACK_URL           = 'REPLACE_ME_AFTER_APPS_SCRIPT_DEPLOY';
+    window.SAMOA_WRITEBACK_SECRET_HEX    = '3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645';
+  </script>
+
+  <script src="js/samoa-db-gate.js"></script>
+  <script src="js/samoa-admin-writeback-client.js"></script>
+  <script src="js/samoa-admin-insights-migration.js"></script>
+  <script src="js/admin-samoa-master.js"></script>
 </body>
 </html>
