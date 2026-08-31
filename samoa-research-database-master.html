@@ -1,94 +1,322 @@
-<!doctype html>
+<!-- Vave Lab Samoa Scholar Database — Master-file dashboard.
+     Authored by Ron Vave, 2026. Samoa-native six-dimension geography;
+     no aliases from sister jurisdictions. -->
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Samoa Scholar Database (placeholder)</title>
-  <!--
-    samoa-research-database-master.html — SCAFFOLDING PLACEHOLDER
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Samoa Scholar Database — Prof. Ron Vave | UH Mānoa</title>
+  <meta name="description" content="A curated database of scholarly research by and about Samoan and part-Samoan postgraduates and researchers. Preserves six independent geography dimensions (Statistical Region, Political/Census District, Village, Specific Island, Traditional Itūmālō, Electoral Constituency). Maintained by Professor Ron Vave, UH Mānoa." />
+  <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
+  <meta name="robots" content="noindex, nofollow" />
 
-    Purpose (once completed): public dashboard for the Samoa Scholar
-    Database, a public dashboard for the Samoa Scholar Database, matching the six-
-    dimension geography model.
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
 
-    The dashboard build requires:
-      • js/samoa-database-master.js — main dashboard JS built directly
-        against Samoa's six-dimension geography model —
-        four SBS Statistical Regions, the SBS Political/Census District list,
-        the ~340 SBS Village Directory villages, the eight Specific Islands,
-        the 11 constitutional Traditional Itūmālō, and the time-versioned
-        Electoral Constituencies.
-      • js/samoa-database-adapter.js — Master Sheet → dashboard adapter.
-      • js/samoa-panel-overrides.js — panel-specific overrides.
-      • Samoa map center/bounds/pins (approx center: [-13.75, -172.30];
-        bounds cover Upolu + Savai'i + Manono + Apolima).
-      • js/samoa-demo-gate.js — demo passcode gate with a fresh HMAC
-        signing key and a Samoa-only BAKED_PASSCODE.
-      • User-visible labels are Samoa-only: "Statistical Region",
-        "Political/Census District", "Village", "Specific Island",
-        "Traditional Itūmālō", "Electoral Constituency", and "Samoan";
-        gender labels are "Tāne" and "Fafine".
-      • samoa-body-composition.html iframe target (Panel C1).
+  <link rel="stylesheet" href="css/tokens.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+  <link rel="stylesheet" href="css/vavelab.css" />
 
-    See:
-      • SAMOA-DASHBOARD-BUILD-NOTES.md
-      • Samoa-Scholarly-Database-Master-Schema-Build-Blueprint.docx (owner-approved)
+  <!-- Leaflet for the district map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    Until this file is fleshed out, opening it produces a stub notice so
-    it's obvious the dashboard is not yet live.
-  -->
+  <!-- D3 for alluvial / chord / coauthor network -->
+  <script defer src="https://cdn.jsdelivr.net/npm/d3@7.8.5/dist/d3.min.js"></script>
+
   <style>
-    :root { --nav: #1f3a5f; --accent: #2e5c8a; --bg: #f6f8fb; --muted: #8b95a1; }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-           background: var(--bg); color: #16324f; }
-    header { background: var(--nav); color: white; padding: 20px 28px; }
-    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
-    header p { margin: 6px 0 0; opacity: 0.85; font-size: 13px; }
-    main { max-width: 780px; margin: 40px auto; padding: 0 24px; }
-    .card { background: white; border: 1px solid #e0e6ed; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(20,40,80,0.04); }
-    .card h2 { margin-top: 0; color: var(--accent); font-size: 18px; }
-    ul { line-height: 1.7; }
-    code { background: #f0f3f7; padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 13px; }
-    .status { display: inline-block; background: #fff4d6; color: #8a6d1e; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-    footer { max-width: 780px; margin: 24px auto 60px; padding: 0 24px; color: var(--muted); font-size: 13px; }
+    /* Page-specific layout — most styling comes from css/vavelab.css.
+       These rules are Session-2 scaffolding placeholders; panel-specific
+       styling lands in Session 3+. */
+    .db-hero { padding: var(--space-3, 24px) 0 var(--space-6, 48px); }
+    main > .section:first-of-type { padding-block-start: var(--space-4, 32px); }
+    .db-lede { max-width: 780px; color: var(--color-text-muted, #555);
+               font-size: 1.05rem; line-height: 1.6; }
+
+    .samoa-panel-placeholder {
+      border: 1px dashed rgba(15,57,33,0.20);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 16px 0;
+      background: linear-gradient(180deg, #fdfbf7 0%, #f8f5f0 100%);
+      color: #555;
+    }
+    .samoa-panel-placeholder h3 {
+      margin: 0 0 6px; font-size: 1.15rem; color: #0F3921;
+    }
+    .samoa-panel-placeholder p {
+      margin: 6px 0 0; font-size: 0.92rem; line-height: 1.55;
+    }
+    .samoa-panel-placeholder__tag {
+      display: inline-block; margin-right: 8px; padding: 2px 8px;
+      background: rgba(14,116,144,0.14); color: #0e7490; font-weight: 600;
+      font-size: 0.72rem; letter-spacing: 0.06em; border-radius: 999px;
+      text-transform: uppercase;
+    }
+    .samoa-geo-summary {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px; margin: 20px 0 8px;
+    }
+    .samoa-geo-summary__card {
+      padding: 12px 14px; border: 1px solid rgba(15,57,33,0.10);
+      border-radius: 10px; background: #fff;
+    }
+    .samoa-geo-summary__value {
+      font-size: 1.5rem; font-weight: 700; color: #0F3921;
+      font-family: "Cormorant Garamond", Georgia, serif;
+    }
+    .samoa-geo-summary__label {
+      font-size: 0.78rem; letter-spacing: 0.05em; color: #7a8880;
+      text-transform: uppercase; margin-top: 4px;
+    }
+
+    .samoa-boot-status {
+      padding: 10px 14px; margin: 12px 0;
+      border-radius: 8px; background: #fdf1e6; color: #8B3A0F;
+      font-size: 0.92rem;
+    }
+    .samoa-boot-status--ok    { background: #e6f3ea; color: #0F3921; }
+    .samoa-boot-status--error { background: #fdecec; color: #8a1a1a; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Samoa Scholar Database</h1>
-    <p>Placeholder scaffolding. The public dashboard has not been built yet in this repo.</p>
-  </header>
-  <main>
-    <div class="card">
-      <p><span class="status">Scaffold only</span></p>
-      <h2>Six-dimension geography</h2>
-      <p>
-        The dashboard is built against Samoa's <strong>six independent</strong>
-        geography dimensions — never assumed interchangeable:
-      </p>
-      <ol>
-        <li><strong>Statistical Region</strong> (4 SBS census regions)</li>
-        <li><strong>Political/Census District</strong> (~43 SBS districts)</li>
-        <li><strong>Village</strong> (~340 SBS Village Directory entries)</li>
-        <li><strong>Specific Island</strong> (independent field)</li>
-        <li><strong>Traditional Itūmālō</strong> (11 constitutional districts)</li>
-        <li><strong>Electoral Constituency</strong> (time-versioned; 2019 Act = 51 territorial + 2 individual-voter)</li>
-      </ol>
-      <h2>Companion files (not yet added)</h2>
-      <ul>
-        <li><code>js/samoa-database-master.js</code> — main dashboard JS (~11k lines when cloned)</li>
-        <li><code>js/samoa-database-adapter.js</code> — Sheet → dashboard adapter</li>
-        <li><code>js/samoa-panel-overrides.js</code> — panel-specific overrides</li>
-        <li><code>js/samoa-demo-gate.js</code> — demo passcode gate</li>
-        <li><code>js/samoa-main.js</code> — page shell</li>
-        <li><code>samoa-body-composition.html</code> — Panel C1 iframe target</li>
-        <li><code>data/samoa-districts.geojson</code> — SBS district boundaries</li>
-      </ul>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a class="site-header__brand" href="index.html">
+        <span class="site-header__title">Vave Lab</span>
+      </a>
+      <nav class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="research.html">Research</a>
+        <a href="samoa-research-database-master.html" class="active">Samoa Database</a>
+        <a href="teaching.html">Teaching</a>
+      </nav>
+      <button data-theme-toggle aria-label="Toggle theme"></button>
+      <button class="nav-hamburger" aria-label="Open menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
     </div>
+  </header>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="db-hero">
+          <span class="samoa-panel-placeholder__tag">Preview · Session 2 scaffold</span>
+          <h1>Samoa Scholar Database</h1>
+          <p class="db-lede">
+            A curated, evidence-based record of scholarly research by and
+            about Samoan and part-Samoan postgraduates and researchers.
+            Every scholar carries six independent geography dimensions on
+            both paternal and maternal sides — Statistical Region,
+            Political/Census District, Village, Specific Island,
+            Traditional Itūmālō, and Electoral Constituency — matching the
+            structure of the SBS statistical spine, the Constitution's
+            Second Schedule, and the Electoral Constituencies Act 2019.
+          </p>
+
+          <div id="samoa-boot-status" class="samoa-boot-status">Booting the dashboard…</div>
+
+          <div id="samoa-geo-summary" class="samoa-geo-summary" hidden>
+            <!-- populated by samoa-database-master.js after adapter load -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel A · Scholar directory & six-dimension filters ─────────── -->
+    <section class="section" id="samoa-panel-A">
+      <div class="container">
+        <h2>Scholars</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-A-body">
+          <span class="samoa-panel-placeholder__tag">Session 3</span>
+          <h3>Scholar directory + six-dimension filters</h3>
+          <p>
+            Will render the roster with independent filter chips for each of
+            the six geography dimensions (paternal by default; maternal
+            toggle available). No auto-narrowing across dimensions — a
+            village choice does not silently force a district or region.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel B · Map & world points ─────────── -->
+    <section class="section" id="samoa-panel-B">
+      <div class="container">
+        <h2>Origin map &amp; global reach</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-B-body">
+          <span class="samoa-panel-placeholder__tag">Session 3</span>
+          <h3>SBS census district Leaflet map + world graduate-studies points</h3>
+          <p>
+            District choropleth uses <code>data/samoa-districts.geojson</code>
+            and colours by resolved scholar count. Specific Island is drawn
+            as a separate overlay, never as a district fill.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel C · Publications ─────────── -->
+    <section class="section" id="samoa-panel-C">
+      <div class="container">
+        <h2>Publications</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-C-body">
+          <span class="samoa-panel-placeholder__tag">Session 3</span>
+          <h3>Publication browser + type histogram</h3>
+          <p>Publications joined via the authorship bridge; first-author
+             counts computed from Position or Is-First-Author flag.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel D · Alluvial (mobility) ─────────── -->
+    <section class="section" id="samoa-panel-D">
+      <div class="container">
+        <h2>Postgraduate mobility</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-D-body">
+          <span class="samoa-panel-placeholder__tag">Session 4</span>
+          <h3>Alluvial: Statistical Region → PhD country/institution</h3>
+          <p>D3-Sankey alluvial. The origin side is Samoa-native (Statistical
+             Region and Village); destination side is world-university.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel E · Chord (Discipline × Constituency) ─────────── -->
+    <section class="section" id="samoa-panel-E">
+      <div class="container">
+        <h2>Discipline × Electoral Constituency</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-E-body">
+          <span class="samoa-panel-placeholder__tag">Session 4</span>
+          <h3>Chord diagram — versioned by electoral era</h3>
+          <p>Electoral Constituency is time-versioned (2019-Act is current).
+             Chord shows how disciplines distribute across constituencies for
+             the selected version.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel F · Coauthor network ─────────── -->
+    <section class="section" id="samoa-panel-F">
+      <div class="container">
+        <h2>Coauthor network</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-F-body">
+          <span class="samoa-panel-placeholder__tag">Session 4</span>
+          <h3>Force-directed coauthor network</h3>
+          <p>Edges from the Coauthor Network worksheet; nodes coloured by
+             Statistical Region (paternal, by default).</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Panel G · Body composition (iframe) ─────────── -->
+    <section class="section" id="samoa-panel-G">
+      <div class="container">
+        <h2>Roster body composition</h2>
+        <div class="samoa-panel-placeholder" id="samoa-panel-G-body">
+          <span class="samoa-panel-placeholder__tag">Session 5</span>
+          <h3>Body-composition chart (iframe)</h3>
+          <p>Renders <code>samoa-body-composition.html</code> in an iframe
+             once that page is built.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─────────── Footer / provenance ─────────── -->
+    <section class="section">
+      <div class="container">
+        <hr />
+        <p style="font-size:0.85rem;color:#7a8880;line-height:1.55;">
+          Master Sheet <code>1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ</code>.
+          Six-dimension geography model documented in
+          <code>SAMOA-DASHBOARD-BUILD-NOTES.md</code>. This dashboard treats
+          Statistical Region, Political/Census District, Village, Specific
+          Island, Traditional Itūmālō, and Electoral Constituency as
+          INDEPENDENT dimensions; none is derived from another. Country
+          label is always "Samoa" (never "Western Samoa").
+        </p>
+      </div>
+    </section>
   </main>
-  <footer>
-    Prof. Ron Vave · Department of Pacific Islands Studies · Vave Lab
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <span>© 2026 Ron Vave · Vave Lab · UH Mānoa</span>
+    </div>
   </footer>
+
+  <!-- Dashboard JS load order:
+       1. samoa-main.js         — theme / nav / scroll (jurisdiction-neutral)
+       2. samoa-demo-gate.js    — dev/demo gate + IVAV decryption
+       3. samoa-database-adapter.js — Samoa Master snapshot loader
+       4. samoa-database-master.js — panel renderers (built in Sessions 3+)
+       5. samoa-panel-overrides.js — panel-specific overrides (Sessions 3+)
+  -->
+  <script src="js/samoa-main.js"></script>
+  <script src="js/samoa-demo-gate.js"></script>
+  <script src="js/samoa-database-adapter.js"></script>
+  <!--
+    samoa-database-master.js and samoa-panel-overrides.js are Session 3+ work.
+    Until they exist, the placeholder below reads the adapter bundle and
+    populates the geo summary so the scaffold is a working preview end-to-end.
+  -->
+  <script>
+    (async function () {
+      var statusEl = document.getElementById('samoa-boot-status');
+      var geoEl    = document.getElementById('samoa-geo-summary');
+      function status(msg, kind) {
+        statusEl.textContent = msg;
+        statusEl.className = 'samoa-boot-status' +
+          (kind ? ' samoa-boot-status--' + kind : '');
+      }
+      try {
+        var gate = await window.samoaDemoGate.boot();
+        if (gate.mode === 'public') {
+          // The public shell is already rendered; nothing more to do.
+          return;
+        }
+        // Alias the demo-gate as the adapter's expected dbGate handle.
+        window.samoaDbGate = window.samoaDemoGate._asDbGate();
+        // decryptFileJSON is what the adapter calls — bind it to fetchJson.
+        window.samoaDbGate.decryptFileJSON = window.samoaDemoGate.fetchJson;
+        window.samoaDbGate.isUnlocked = function () { return window.samoaDemoGate.isUnlocked(); };
+
+        status('Loading Samoa Master snapshots…');
+        var bundle = await window.SamoaScholarDatabaseAdapter.load();
+        status('Loaded ' + Object.keys(bundle.scholars).length + ' scholars · '
+             + Object.keys(bundle.publications).length + ' publications · mode: '
+             + gate.mode, 'ok');
+
+        // Populate the six-dimension geography summary strip.
+        var cards = [
+          { label: 'Statistical Regions',   value: bundle.geoStats.regions },
+          { label: 'Political/Census Districts', value: bundle.geoStats.districts },
+          { label: 'Villages',              value: bundle.geoStats.villages },
+          { label: 'Specific Islands',      value: bundle.geoStats.specificIslands },
+          { label: 'Traditional Itūmālō',   value: bundle.geoStats.traditionalItumalo },
+          { label: 'Electoral Versions',    value: bundle.geoStats.electoralVersions }
+        ];
+        geoEl.hidden = false;
+        geoEl.innerHTML = cards.map(function (c) {
+          return '<div class="samoa-geo-summary__card">'
+            + '<div class="samoa-geo-summary__value">' + (c.value || 0) + '</div>'
+            + '<div class="samoa-geo-summary__label">' + c.label + '</div>'
+            + '</div>';
+        }).join('');
+
+        // Expose for hand-testing in devtools without exposing internals.
+        window.__samoaBundle = bundle;
+      } catch (err) {
+        console.error(err);
+        status('Load failed: ' + (err && err.message || err), 'error');
+      }
+    })();
+  </script>
 </body>
 </html>
