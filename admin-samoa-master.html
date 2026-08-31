@@ -9,19 +9,17 @@
 
     Purpose (once completed): password-gated admin panel for editing the
     Samoa Master Sheet through the bound Apps Script writeback endpoint,
-    exactly mirroring admin-master.html (iTaukei) and admin-tongan-master.html
-    (Tongan). Cloning has been deferred to a follow-up session so that the
-    ~2,890-line js/admin-master.js and its dependencies can be adapted
-    carefully to Samoa's six-dimension geography model without repeating the
-    Fiji-leftover bugs that shipped in the initial Tongan clone.
+    for the Samoa Scholar Database. It is now under active build; when the
+    companion JS files land, this page becomes the live admin surface for
+    Samoa's six-dimension geography model.
 
     When implemented, add:
       - js/samoa-db-gate.js                 (clone of js/db-gate.js;
                                              fresh VERIFIER_HASH_HEX and
-                                             tonganlab.db.session -> samoalab.db.session)
+                                             samoalab.db.session store)
       - js/samoa-database-adapter.js        (clone of js/master-file-adapter.js;
                                              six-dimension geography, not
-                                             confederacy/province)
+                                             — six independent lookups)
       - js/samoa-admin-writeback-client.js  (clone of admin-writeback-client.js;
                                              VAVELAB_SAMOA writeback endpoint)
       - js/samoa-admin-insights-migration.js (V1->V2 insights migration)
@@ -30,7 +28,7 @@
 
     Cross-system isolation guardrails (must all be true in the clone):
       1. Every localStorage key is prefixed samoalab.* (never vavelab.* or
-         tonganlab.* or solomonlab.*).
+         non-Samoa lab-scoped prefixes).
       2. The db-gate PBKDF2 VERIFIER_HASH_HEX must be derived from
          VAVELAB_SAMOA_PASSCODE, NOT any other jurisdiction's passcode.
       3. The admin-login SHA-256 PASSWORD_HASH must be fresh (not a copy of
@@ -71,8 +69,7 @@
       <p>
         This page is a committed scaffold so the Samoa admin URL is reserved and its
         role is documented. The full admin panel — a sister of
-        <code>admin-master.html</code> and <code>admin-tongan-master.html</code> —
-        will be built in a follow-up session against the Samoa Master Sheet's
+        the Samoa admin surface. It is being built against the Samoa Master Sheet's
         actual column headers and the six-dimension geography model
         (Statistical Region · Political/Census District · Village ·
         Specific Island · Traditional Itūmālō · Electoral Constituency).

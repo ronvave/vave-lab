@@ -8,32 +8,30 @@
     samoa-research-database-master.html — SCAFFOLDING PLACEHOLDER
 
     Purpose (once completed): public dashboard for the Samoa Scholar
-    Database, a sister of itaukei-research-database-master.html (11,844-line
-    js/itaukei-database-master.js) and tongan-research-database-master.html.
+    Database, a public dashboard for the Samoa Scholar Database, matching the six-
+    dimension geography model.
 
-    Deferred to a follow-up session because the dashboard clone requires:
-      • A full clone of js/itaukei-database-master.js (11,844 lines) into
-        js/samoa-database-master.js with every hardcoded Fiji confederacy /
-        province table replaced by Samoa's six-dimension geography model —
+    The dashboard build requires:
+      • js/samoa-database-master.js — main dashboard JS built directly
+        against Samoa's six-dimension geography model —
         four SBS Statistical Regions, the SBS Political/Census District list,
         the ~340 SBS Village Directory villages, the eight Specific Islands,
         the 11 constitutional Traditional Itūmālō, and the time-versioned
         Electoral Constituencies.
-      • A clone of js/master-file-adapter.js (1,534 lines) into
-        js/samoa-database-adapter.js.
-      • A clone of js/master-file-panel-overrides.js (308 lines).
+      • js/samoa-database-adapter.js — Master Sheet → dashboard adapter.
+      • js/samoa-panel-overrides.js — panel-specific overrides.
       • Samoa map center/bounds/pins (approx center: [-13.75, -172.30];
         bounds cover Upolu + Savai'i + Manono + Apolima).
-      • Cloning js/demo-gate.js -> js/samoa-demo-gate.js with a fresh signing
-        key and BAKED_PASSCODE distinct from Arachnid1! / Ongoongo9!.
-      • Panel-level relabelling ("Confederacy" -> "Statistical Region",
-        "Province" -> "Political/Census District", "Tikina" -> [dropped: no
-        Samoa equivalent], gender labels "Turaga/Marama" -> "Tāne/Fafine",
-        and every user-visible "iTaukei" -> "Samoan").
+      • js/samoa-demo-gate.js — demo passcode gate with a fresh HMAC
+        signing key and a Samoa-only BAKED_PASSCODE.
+      • User-visible labels are Samoa-only: "Statistical Region",
+        "Political/Census District", "Village", "Specific Island",
+        "Traditional Itūmālō", "Electoral Constituency", and "Samoan";
+        gender labels are "Tāne" and "Fafine".
       • samoa-body-composition.html iframe target (Panel C1).
 
     See:
-      • docs/SAMOA-DASHBOARD-BUILD-NOTES.md (planned)
+      • SAMOA-DASHBOARD-BUILD-NOTES.md
       • Samoa-Scholarly-Database-Master-Schema-Build-Blueprint.docx (owner-approved)
 
     Until this file is fleshed out, opening it produces a stub notice so

@@ -2,13 +2,11 @@
 Central configuration for the Samoa Scholar Database Master file → dashboard-
 snapshot pipeline.
 
-Sister clone of scripts/master_file_config.py (iTaukei) and
-scripts/tongan_master_file_config.py (Tongan). Points at the Samoa
+Configuration for the Samoa Scholar Database pipeline. Points at the Samoa
 spreadsheet ID and never any other jurisdiction's sheet:
 
-  iTaukei sheet:  1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg  (never touch)
-  Tongan sheet:   1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI  (never touch)
-  Solomon sheet:  set in scripts/solomon_master_file_config.py  (never touch)
+Isolation guard: this module refuses to run if SPREADSHEET_ID is any of the
+sister-system spreadsheet IDs enumerated in _FORBIDDEN_SPREADSHEET_IDS below.
   Samoa sheet:    set below                                     (this file's target)
 
 This module is the single source of truth for:
@@ -27,7 +25,7 @@ CRITICAL — six independent geography dimensions
 Samoa's blueprint (Samoa-Scholarly-Database-Master-Schema-Build-Blueprint.docx,
 Prof. Ron Vave, 2026-08-30) requires that these six systems be preserved as
 separate lookup dimensions. This module exposes them as six independent Python
-constants and NEVER as a single "province" or "confederacy" hierarchy:
+constants — never collapsed into a single hierarchy:
 
   1. STATISTICAL_REGIONS          - 4 SBS census regions
   2. REGION_TO_DISTRICTS          - SBS Political/Census districts by region
@@ -47,9 +45,10 @@ from __future__ import annotations
 
 # NOTE: this constant is populated when Ron creates the Samoa Master Sheet and
 # copies its spreadsheet ID here. Until then, the pipeline is inert — the
-# transformer refuses to run against a placeholder. NEVER paste the iTaukei,
-# Tongan, or Solomon Islands sheet ID here.
-SPREADSHEET_ID = "SET_ME_TO_SAMOA_MASTER_SHEET_ID"
+# transformer refuses to run against a placeholder. The guard at the bottom
+# of this file also refuses any spreadsheet ID enumerated in
+# _FORBIDDEN_SPREADSHEET_IDS to prevent accidental cross-system writes.
+SPREADSHEET_ID = "1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ"
 
 SPREADSHEET_HUMAN_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
@@ -107,7 +106,8 @@ HEADLINE_PUBLICATION_TYPES = [
     "Book",
 ]
 
-# Present but excluded from V2 headline counts (matches iTaukei V2 policy).
+# Present in the Master Sheet but excluded from V2 headline counts, chips,
+# and lists (Samoa V2 policy: preprints and unresolved 'Document' items).
 OTHER_PUBLICATION_TYPES_SEEN = [
     "Report",
     "Conference Paper",
@@ -197,7 +197,7 @@ ELECTORAL_VERSIONS = [
 ]
 
 # =============================================================================
-# Cross-country label for the discipline breakdown panel (matches Fiji/Tonga)
+# Cross-country label for the discipline breakdown panel
 # =============================================================================
 
 BROAD_DISCIPLINES = [
@@ -244,7 +244,8 @@ PUBLIC_ALLOWLIST_SCHOLARS = [
 ]
 
 PUBLIC_DENY_FIELDS_SCHOLARS = [
-    # Never public — matches Fiji V2 / Tongan public-boundary policy
+    # Never public — maternal geography and cultural affiliation are
+    # confidential per the Samoa public-boundary policy (paternal default only).
     "Statistical Region (Maternal)", "Political/Census District (Maternal)",
     "Traditional Itūmālō (Maternal)", "Specific Island (Maternal)",
     "Village (Maternal)", "Electoral Constituency (Maternal)",
@@ -276,7 +277,7 @@ def assert_samoa_spreadsheet() -> None:
             f"non-Samoa sister system. Update scripts/samoa_master_file_config.py "
             f"to point at the Samoa Master Sheet ID."
         )
-    if SPREADSHEET_ID == "SET_ME_TO_SAMOA_MASTER_SHEET_ID":
+    if SPREADSHEET_ID.startswith("SET_ME_") or SPREADSHEET_ID.strip() == "":
         raise SystemExit(
             "REFUSING TO RUN: Samoa Master Sheet ID has not been set yet. "
             "Edit scripts/samoa_master_file_config.py after creating the sheet."

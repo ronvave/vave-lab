@@ -1,27 +1,30 @@
 name: Refresh Samoa Master File snapshot
 
-# Sister workflow to refresh-master-file.yml (iTaukei) and refresh-tongan-master-file.yml (Tongan) and refresh-solomon-master-file.yml (Solomon Islands). Runs every 2 hours
-# (offset 5 minutes after the iTaukei run to reduce commit-race odds on
-# main; Tongan runs at +5, iTaukei runs on the hour) and on manual dispatch — including the Samoa Admin Panel's
+# Refresh workflow for the Samoa Master Sheet snapshot. Runs every 2 hours
+# (at :10 past every second hour, chosen to be offset from other repo
+# cron runs to keep commit-race odds on main low) and on manual dispatch,
+# including the Samoa Admin Panel's
 # "Refresh from Sheet" / "Force refresh" buttons, which call the GitHub
 # Actions dispatch API for this workflow.
 #
 # Reads the Samoa Master Sheet via a service account,
-# transforms + sanitizes, encrypts, and commits. NEVER touches data/itaukei-*, data/tongan-*, data/tonga-*, or
-# data/solomon-* files; never touches iTaukei/Tongan/Solomon scripts or workflows.
+# transforms + sanitizes, encrypts, and commits. Guardrails: only touches
+# data/samoa-* files; refuses to run against any spreadsheet ID enumerated
+# in scripts/samoa_master_file_config.py::_FORBIDDEN_SPREADSHEET_IDS.
 #
 # Requires GitHub Secrets:
 #   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
-#                                   key (shared with the iTaukei workflow);
+#                                   key for the Samoa Master Sheet;
 #                                   must be granted Editor on the Samoa
 #                                   Master Sheet separately (see docs)
 #   VAVELAB_SAMOA_PASSCODE      — passcode used to derive AES-GCM key for
 #                                   Samoa data files (distinct from
-#                                   VAVELAB_PASSCODE (iTaukei))
+#                                   Samoa-only value)
 #
 # Deferred parity item: this workflow intentionally omits a
-# master_file_reconcile.py-equivalent QA step. The iTaukei reconcile
-# script is hard-coded to specific row/column positions on the iTaukei
+# reconcile QA step (deliberately deferred until the Dashboard tab QA
+# layout is confirmed). Any future reconcile script must be built directly
+# against Samoa Master Sheet row/column positions
 # Master-file Dashboard tab; the Samoa Dashboard tab's layout has not
 # been confirmed to match, so a strict reconcile step would be guessing.
 # This can be added later once the Samoa Dashboard sheet's QA layout is
@@ -230,7 +233,7 @@ jobs:
             MSG="${MSG} [manual]"
           fi
           git commit -m "$MSG"
-          # Rebase-retry push (pattern from the iTaukei / Zotero workflows)
+          # Rebase-retry push to survive concurrent commits
           for attempt in 1 2 3; do
             git pull --rebase origin main && git push origin main && exit 0
             echo "Push attempt $attempt failed; retrying..."

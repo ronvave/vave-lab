@@ -2,10 +2,10 @@
 """Sister clone of scripts/encrypt_data.py for the Samoa Scholar Database.
 
 Encrypt the plaintext JSON data files with the Samoa-specific passcode
-(distinct from iTaukei, Tongan, and Solomon Islands systems). Never touches
-data/itaukei-*, data/tongan-*, or data/solomon-* targets.
+with a Samoa-only passcode. The guard at _FORBIDDEN_PREFIXES refuses to
+encrypt any file whose name begins with a sister-system data-file prefix.
 
-Wire format identical to the iTaukei/Tongan encryptors:
+Wire format:
 
   file bytes = magic (4)  ||  salt (16)  ||  iv (12)  ||  ciphertext+tag
   magic         = b"IVAV"
@@ -80,8 +80,8 @@ def _get_passcode() -> bytes:
     if not pw:
         raise SystemExit(
             "VAVELAB_SAMOA_PASSCODE not set. Refusing to encrypt without a "
-            "passcode. NEVER reuse VAVELAB_PASSCODE / VAVELAB_TONGAN_PASSCODE / "
-            "VAVELAB_SOLOMON_PASSCODE."
+            "passcode. This env var is Samoa-only; do not paste any other "
+            "jurisdiction's passcode here."
         )
     return pw.encode("utf-8")
 

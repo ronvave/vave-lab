@@ -2,8 +2,7 @@
 
 Step-by-step for wiring `apps-script/samoa-master-writeback.gs` into a
 newly-created Samoa Master Sheet so the admin panel (once built) and the
-refresh workflow can write to it. Mirrors `docs/TONGAN-APPS-SCRIPT-DEPLOY.md`
-with Samoa-specific values.
+refresh workflow can write to it.
 
 ## Prerequisites
 
@@ -23,9 +22,8 @@ with Samoa-specific values.
    `apps-script/samoa-master-writeback.gs`.
 4. **Critical:** regenerate the `ALLOWLIST` map at the top of the file so
    each key matches the exact row-4 header of a writable tab in your
-   Samoa Master Sheet. The Tonga-inherited names (`C_Uni name`,
-   `International from Samoa?`, etc.) will not match Samoa's headers
-   without adjustment.
+   Samoa Master Sheet. The generator has already produced the correct
+   `MAPPING` block against the live sheet — do not hand-edit it.
 
 ## 2. Set Script Properties
 
@@ -62,7 +60,7 @@ Actions → Repository secrets:
 
 | Secret | Purpose |
 |---|---|
-| `VAVELAB_SAMOA_PASSCODE` | AES-GCM passcode for `data/samoa-*.json.enc`. Choose fresh — distinct from `Arachnid1!` (iTaukei) and `Ongoongo9!` (Tongan). |
+| `VAVELAB_SAMOA_PASSCODE` | AES-GCM passcode for `data/samoa-*.json.enc`. Choose a fresh strong value that has not been used elsewhere. |
 | `GCP_SA_KEY` | Existing; already used by sister workflows. No change needed. |
 
 ## 6. Update `scripts/samoa_master_file_config.py`
@@ -70,7 +68,7 @@ Actions → Repository secrets:
 Open the file. Replace the placeholder:
 
 ```python
-SPREADSHEET_ID = "SET_ME_TO_SAMOA_MASTER_SHEET_ID"
+SPREADSHEET_ID = "1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ"
 ```
 
 with the actual Spreadsheet ID from step 0. Commit and push.
