@@ -1,0 +1,229 @@
+<!doctype html>
+<!--
+  tongan-admin-app.html
+  ────────────────────
+  The Apps Script HtmlService TEMPLATE. This is the only file in the
+  project that contains Apps Script templating scriptlets and the only
+  file that is rendered by HtmlService.createTemplateFromFile('tongan-admin-app').
+
+  Include chain is deliberately flat: this file inlines the bridge and
+  the controller directly. None of the included files contain further
+  scriptlets, so scriptlet evaluation happens once at this layer and
+  the include chain never nests.
+
+  Template variables set by doGet:
+    • activeEmail       — authenticated Google email (lower-case)
+    • writeEnabled      — boolean, true when Script Property WRITE_ENABLED === 'true'
+    • writeEnabledLabel — human string version of writeEnabled
+    • spreadsheetId     — Tongan Master Sheet ID (for the diagnostics panel)
+-->
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Tongan Scholar Database — Admin</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0;
+      color: #111;
+      background: #f7f8fa;
+    }
+    header {
+      background: #0891b2;
+      color: #fff;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    header h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+    header .meta { font-size: 0.85rem; opacity: 0.9; }
+    header .meta code { background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; }
+    .write-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .write-badge.on  { background: #16a34a; color: #fff; }
+    .write-badge.off { background: #dc2626; color: #fff; }
+    main { padding: 20px; max-width: 1100px; margin: 0 auto; }
+    .card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .card h2 { font-size: 1rem; margin: 0 0 12px; font-weight: 600; color: #374151; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    label { font-size: 0.85rem; color: #374151; font-weight: 500; }
+    select, input[type="text"], textarea {
+      font: inherit;
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #fff;
+      color: #111;
+    }
+    select:focus, input:focus, textarea:focus {
+      outline: 2px solid #0891b2;
+      outline-offset: -1px;
+      border-color: #0891b2;
+    }
+    button {
+      font: inherit;
+      padding: 6px 14px;
+      border: 1px solid #0891b2;
+      background: #0891b2;
+      color: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: #fff;
+      color: #0891b2;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:hover:not(:disabled) { filter: brightness(1.05); }
+    #status {
+      font-size: 0.9rem;
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #eef2f7;
+      color: #111;
+      margin-bottom: 16px;
+      min-height: 2rem;
+      display: flex;
+      align-items: center;
+    }
+    #status.ok  { background: #dcfce7; color: #14532d; }
+    #status.err { background: #fee2e2; color: #7f1d1d; }
+    #status.busy { background: #fef3c7; color: #713f12; }
+    #tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+    #tabs button {
+      background: #fff;
+      color: #0891b2;
+      border: 1px solid #0891b2;
+      padding: 4px 10px;
+      font-size: 0.85rem;
+      border-radius: 999px;
+    }
+    #tabs button.active { background: #0891b2; color: #fff; }
+    table.fields { width: 100%; border-collapse: collapse; }
+    table.fields th, table.fields td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+      font-size: 0.9rem;
+    }
+    table.fields th { color: #374151; font-weight: 600; width: 30%; }
+    table.fields td.controls { width: 55%; }
+    table.fields td.meta { width: 15%; color: #6b7280; font-size: 0.8rem; }
+    table.fields input[type="text"], table.fields select, table.fields textarea {
+      width: 100%;
+      font-size: 0.9rem;
+    }
+    table.fields tr.dirty td { background: #fef9c3; }
+    table.fields tr.confirm td { background: #fee2e2; }
+    .changelog { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; }
+    .changelog th, .changelog td { border-bottom: 1px solid #f1f5f9; padding: 4px 8px; text-align: left; }
+    .changelog th { color: #374151; font-weight: 600; }
+    .muted { color: #6b7280; }
+    details { margin-top: 8px; }
+    details summary { cursor: pointer; color: #0891b2; font-size: 0.85rem; }
+    pre.diag {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      overflow-x: auto;
+      margin: 8px 0 0;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Tongan Scholar Database — Admin</h1>
+    <div class="meta">
+      <span>Signed in: <code><?!= activeEmail ?></code></span>
+      &nbsp;·&nbsp;
+      <span class="write-badge <?!= writeEnabled ? 'on' : 'off' ?>"><?!= writeEnabledLabel ?></span>
+    </div>
+  </header>
+
+  <main>
+    <div id="status">Booting…</div>
+
+    <div class="card" id="picker-card">
+      <h2>1. Pick a worksheet and row</h2>
+      <div class="row">
+        <label for="ws-select">Worksheet:</label>
+        <select id="ws-select" disabled></select>
+        <label for="key-input">Key:</label>
+        <input type="text" id="key-input" placeholder="(pick a worksheet first)" list="key-suggestions" size="32" disabled>
+        <datalist id="key-suggestions"></datalist>
+        <button id="load-btn" disabled>Load row</button>
+        <button id="ping-btn" class="secondary">Test connection</button>
+      </div>
+      <div id="picker-hint" class="muted" style="margin-top: 8px; font-size: 0.85rem;"></div>
+    </div>
+
+    <div class="card" id="edit-card" style="display: none;">
+      <h2>2. Edit fields</h2>
+      <div class="row" style="margin-bottom: 10px;">
+        <span id="edit-summary" class="muted"></span>
+      </div>
+      <table class="fields" id="fields-table">
+        <thead><tr><th>Field</th><th>Value</th><th>Type</th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="row" style="margin-top: 14px;">
+        <button id="save-btn" disabled>Save changes</button>
+        <button id="cancel-btn" class="secondary">Discard edits</button>
+        <span id="save-hint" class="muted"></span>
+      </div>
+    </div>
+
+    <div class="card" id="log-card">
+      <h2>3. Recent Change Log</h2>
+      <div class="row">
+        <button id="log-refresh-btn" class="secondary">Refresh</button>
+        <span id="log-hint" class="muted"></span>
+      </div>
+      <table class="changelog" id="log-table" style="margin-top: 10px; width: 100%;">
+        <thead><tr>
+          <th>Row</th><th>Version</th><th>Date</th><th>Change</th><th>Scope</th><th>Source</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <details>
+      <summary>Diagnostics</summary>
+      <pre class="diag" id="diag">(no diagnostics loaded yet)</pre>
+    </details>
+  </main>
+
+  <!-- ────────────────────────────────────────────────────────────
+       Flat include chain. Both files are pure <script> blocks with
+       NO further scriptlets, so scriptlet evaluation completes here.
+       ──────────────────────────────────────────────────────────── -->
+  <?!= include('tongan-admin-writeback-bridge') ?>
+  <?!= include('tongan-admin-controller') ?>
+</body>
+</html>

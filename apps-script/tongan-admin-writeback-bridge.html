@@ -1,0 +1,128 @@
+<script>
+/**
+ * tongan-admin-writeback-bridge.html
+ * ──────────────────────────────────
+ * Google-authenticated bridge to the tongan-master-writeback.gs server.
+ *
+ * Every method routes to the matching api* function via google.script.run
+ * and returns a Promise that resolves with the server's return value or
+ * rejects with an Error whose .serverBody carries anything the server
+ * managed to send back.
+ *
+ * Design rules (2026-08-31 systematic-repair rewrite):
+ *   • NO SHARED_SECRET, HMAC signature, admin-password hash, or snapshot
+ *     passcode anywhere on this side of the wire. Google identity is the
+ *     one authentication factor.
+ *   • Each server call is made with an explicit method invocation on a
+ *     fresh runner (google.script.run.withSuccessHandler(...)....
+ *     apiXxx(args)) — never via `.apply()`. Apps Script's `google.script`
+ *     runners have historically been reliable only with direct method
+ *     invocation.
+ *   • No polling, no localStorage, no cross-origin fetches.
+ */
+(function (global) {
+  'use strict';
+
+  function _reject(reason) {
+    var err = new Error('tongan-writeback: ' + reason);
+    return Promise.reject(err);
+  }
+
+  function _wrap(runOnce) {
+    return new Promise(function (resolve, reject) {
+      try {
+        runOnce(
+          function (result) { resolve(result); },
+          function (err) {
+            var msg = (err && err.message) || String(err) || 'unknown-server-error';
+            var e = new Error('tongan-writeback: server rejected — ' + msg);
+            e.serverBody = { status: 'error', error: msg };
+            reject(e);
+          }
+        );
+      } catch (setupErr) {
+        // Setup-time exceptions (google.script not present, etc.) never
+        // reach withFailureHandler; surface them explicitly.
+        var e = new Error('tongan-writeback: setup failed — ' + (setupErr && setupErr.message ? setupErr.message : String(setupErr)));
+        e.setupError = true;
+        reject(e);
+      }
+    });
+  }
+
+  function describe() {
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiDescribe('admin');
+    });
+  }
+
+  function ping() {
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiPing('admin');
+    });
+  }
+
+  function listKeys(worksheet) {
+    if (typeof worksheet !== 'string' || !worksheet) return _reject('worksheet is required');
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiListKeys(worksheet);
+    });
+  }
+
+  function readRow(worksheet, keyValue) {
+    if (typeof worksheet !== 'string' || !worksheet) return _reject('worksheet is required');
+    if (typeof keyValue  !== 'string' || !keyValue)  return _reject('keyValue is required');
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiReadRow(worksheet, keyValue);
+    });
+  }
+
+  function updateRow(worksheet, keyValue, fields) {
+    if (typeof worksheet !== 'string' || !worksheet)   return _reject('worksheet is required');
+    if (typeof keyValue  !== 'string' || !keyValue)    return _reject('keyValue is required');
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+      return _reject('fields must be an object');
+    }
+    if (!Object.keys(fields).length) return _reject('fields is empty');
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiUpdateRow(worksheet, keyValue, fields, 'admin');
+    });
+  }
+
+  function readChangeLog(limit) {
+    var n = parseInt(limit, 10);
+    if (!isFinite(n) || n < 1) n = 25;
+    if (n > 500) n = 500;
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiReadChangeLog(n);
+    });
+  }
+
+  global.tonganAdminBridge = {
+    describe:       describe,
+    ping:           ping,
+    listKeys:       listKeys,
+    readRow:        readRow,
+    updateRow:      updateRow,
+    readChangeLog:  readChangeLog
+  };
+})(window);
+</script>

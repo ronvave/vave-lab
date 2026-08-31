@@ -1,131 +1,56 @@
 /**
- * tongan-master-writeback.gs — Bound Apps Script for the Tongan Scholar
- * Database Master file. This is a completely separate, isolated sister
- * system to the iTaukei master-writeback.gs — own spreadsheet ID, own
- * SHARED_SECRET, own deployment. It must never read from or write to the
- * iTaukei spreadsheet.
+ * tongan-master-writeback.gs — Tongan Scholar Database admin server.
  *
- * Deployed as a Web App (Execute as: Ron Vave — Owner; Access: Anyone with link)
- * and called only by admin-tongan-master.html. Every write is authenticated with a
- * shared secret held in ScriptProperties, enforced field-by-field against an
- * allowlist, wrapped in LockService, and appended to the Change Log.
+ * Session 2026-08-31 systematic-repair port from Samoa:
+ *   • Same Google-auth-native architecture as samoa-master-writeback.gs.
+ *   • The browser-HMAC contract is retired. This project holds no
+ *     SHARED_SECRET, admin-password hash, snapshot passcode, or any
+ *     other client-held credential. doPost returns HTTP 410 Gone.
+ *   • Every entry point (doGet + every api* function reachable via
+ *     google.script.run) first calls _assertAuthorized_(), which throws
+ *     if Session.getActiveUser().getEmail() is not APPROVED_ADMIN_EMAIL
+ *     (a Script Property, compared case-insensitively).
+ *   • Change writes take a script-scoped LockService lock, validate each
+ *     field against MAPPING, and append one Change Log row per change
+ *     using the authenticated Google email as actor.
  *
- * ── Setup (one-time; see docs/APPS-SCRIPT-DEPLOY.md for a step-by-step) ──
- *   1. In the Master spreadsheet: Extensions → Apps Script.
- *   2. Paste this file into the project as `tongan-master-writeback.gs`.
- *   3. In Project Settings → Script Properties, add:
- *        SHARED_SECRET      = 0b732540ae27999f0f9cbb72c516f9b32fd4ceb7d3096663ac6cbae1fb2755bb  (pre-generated for Tongan system; do not reuse the iTaukei secret)
- *        WRITE_ENABLED      = true
- *        ADMIN_ORIGIN       = https://ronvave.github.io
- *   4. In this editor's console, run `generateSecret()` once to get a fresh
- *      32-byte hex secret; copy it into SHARED_SECRET and paste the same
- *      value into the admin Data-source tab.
- *   5. Deploy → New deployment → type = Web App:
- *        Description   = "Master write-back v1"
- *        Execute as    = Me (Ron Vave)
- *        Who has access = Anyone with the link
- *      Copy the /exec URL and paste it into the admin Data-source tab.
- *   6. Test with the admin's "Test connection" button.
+ * Deploy contract: Execute as USER_ACCESSING; access LIMITED to Ron.
+ * Script properties required: APPROVED_ADMIN_EMAIL, WRITE_ENABLED.
+ * WRITE_ENABLED must be set to the literal string 'true' before any
+ * apiUpdateRow call will actually mutate the sheet.
  *
- * ── Emergency read-only switch ──
- *   Setting Script Property `WRITE_ENABLED = false` (or removing the property)
- *   causes every POST write to be rejected with `{status:'disabled'}`. `describe`
- *   and `ping` still succeed so the admin can display an explicit banner. Do
- *   NOT rely solely on disabling the Save button client-side; this server-side
- *   flag is authoritative.
- *
- * ── Auth model ──
- *   • Shared secret is in ScriptProperties (never in code, never on GitHub).
- *   • Requests carry `secret` + `clientTs` (unix ms) as JSON body or query.
- *   • Server rejects if `Math.abs(now - clientTs) > 5min` (replay guard).
- *   • Server rejects if the caller's secret doesn't match (constant-time compare).
- *   • Actor label is fixed to "Ron Vave (admin)" (approval-doc #4).
- *
- * ── Allowlist ──
- *   The mapping table below is the ONLY source of truth for what fields the
- *   webapp can write. Fields not listed are hard-rejected. Field types
- *   ('string' | 'enum' | 'int' | 'float' | 'date' | 'url') are validated per
- *   write. Enum values are checked against the `enum` array.
- *
- * ── Concurrency + conflict handling (Phase 3.4, revised) ──
- *   Every write takes a script-scoped LockService lock (30s timeout). Inside
- *   the lock, the server compares three values per field:
- *     loaded value   — what Admin V2 had when the modal opened (`oldValue`)
- *     current value  — a fresh read of the Master cell right before write
- *     intended value — what the user submitted (`newValue`)
- *   Classification (per field, independently):
- *     already_satisfied  — currentMaster == intended: silent skip, no write,
- *                           no Change Log row. Fixes the stale-loaded but
- *                           already-current case (e.g. Joeli's
- *                           "Alive / current record" → "Alive").
- *     needs_confirmation — user is changing a field to a value that
- *                           contradicts the current Master value. Server
- *                           refuses to write unless the client re-submits
- *                           the change with `overrideAuthorized: true` and
- *                           `expectedCurrent` equal to the currently
- *                           returned Master value.
- *                           Also fires for the ALWAYS_CONFIRM list
- *                           (Alive / Deceased) whenever the user changes
- *                           the value.
- *     ok                 — clean write: currentMaster == loaded, currentMaster
- *                           != intended, and either not in ALWAYS_CONFIRM or
- *                           override authorized. Writes the cell and logs.
- *     rejected           — validation failure or invalid target.
- *   `dryRun: true` runs classification only — nothing is written and no
- *   Change Log rows are appended, so the client can render a full preview
- *   before user confirmation.
- *   Batch-level `status` mirrors the field mix:
- *     ok                 — every field was ok or already_satisfied
- *     needs_confirmation — at least one needs_confirmation, no fatal reject
- *     partial            — mix of ok and rejected
- *     rejected           — every field rejected
- *
- * ── Change Log ──
- *   Every successful write appends ONE row using the real five-column schema
- *   (Ron's directive 2026-08-23):
- *     A Version       — "admin-YYYYMMDD-HHMMSS"   (per-write timestamp version)
- *     B Date          — ISO date                  (Pacific/Honolulu)
- *     C Change        — short label               (e.g. "edit: Scholars.Given Names")
- *     D Scope/Impact  — one-line summary          (actor · SID · worksheet.field: old → new)
- *     E Source        — "admin-master-webapp v1"
- *   Do not write into columns F onward. Actor / worksheet / field / verbatim
- *   old / verbatim new all live inside column D so the sheet's actual header
- *   row (Version | Date | Change | Scope/Impact | Source) stays consistent.
+ * MAPPING covers the three worksheets that were writable under the
+ * legacy Tongan HMAC admin: Scholars (34 editable fields), Positions
+ * (13 editable fields), Graduate Degrees (22 editable fields). All
+ * other tabs in the Tongan Master Sheet stay read-only until explicitly
+ * added here.
  */
 
-// ------------------------- CONFIG -----------------------------------------
-var SPREADSHEET_ID_HINT = '1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI'; // Tongan Scholars Master File — NEVER the iTaukei ID (1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg)
-var ACTOR_LABEL         = 'Ron Vave (admin)';
-var SOURCE_TAG          = 'admin-master-webapp v1';
-var REPLAY_WINDOW_MS    = 5 * 60 * 1000;
+// ─────────────────────────────────────────────────────────────────────────
+// CONFIG
+// ─────────────────────────────────────────────────────────────────────────
+
+var SPREADSHEET_ID_HINT = '1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI';  // Tongan Master
+var SOURCE_TAG          = 'admin-tongan-master-webapp v2 (google-auth)';
 var LOCK_WAIT_MS        = 30 * 1000;
 var TIMEZONE            = 'Pacific/Honolulu';
 
-// Fields that ALWAYS require the user to explicitly confirm any change,
-// even when the loaded and current Master values match. These are
-// high-consequence status fields (drive memorial band, dashboard flags,
-// etc.) so any change gets a plain-language warning per Ron 2026-08-23.
-// Keyed by `<worksheet>.<field>`.
+// High-consequence fields that ALWAYS get a confirmation prompt on write,
+// even when the intended value matches the current value. Keyed by
+// "<worksheet>.<field>" using the EXACT Tongan Master Sheet row-4 headers.
 var ALWAYS_CONFIRM = {
   'Scholars.Alive / Deceased': true
 };
 
-// Full editable-field allowlist. Every writable field must appear here.
-// Sheets not listed are read-only. Fields on listed sheets not listed are
-// read-only. Enum values are validated against the `enum` array.
-// MAPPING reflects the ACTUAL Master Google Sheet headers (verified
-// 2026-08-22 against the live sheet). Field keys are the literal header
-// strings including spacing and slashes. Column names come from row 4 of
-// each sheet.
 var MAPPING = {
-  version: '1.4',
+  version: '2.0-tongan',
   worksheets: {
     'Scholars': {
       keyColumn: 'Scholar ID',
       headerRow: 4,
       fields: {
-        // Title / Salutation is an authoritative scholar-level attribute
-        // (Aug 22 approval). Blank means no title.
+        // Title / Salutation is an authoritative scholar-level attribute.
+        // Blank means no title.
         'Title / Salutation':      { type: 'enum',   enum: ['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms',''] },
         'Family Name':             { type: 'string', maxLen: 120 },
         'Given Names':             { type: 'string', maxLen: 120 },
@@ -170,15 +95,6 @@ var MAPPING = {
         'Google Scholar URL':      { type: 'url',    maxLen: 500 },
         'Name Variants / Aliases': { type: 'string', maxLen: 500 },
         'Record Notes':            { type: 'string', maxLen: 4000 }
-        // Non-editable Master computed columns intentionally OMITTED:
-        //   Scholar Name, Paternal Island Division is derived by Lookups so read-only in UI,
-        //   Highest Completed Degree, Degree Episodes, International Degree Episodes,
-        //   Tonga Degree Episodes, Funding Episodes, Awards Count, Gold Medals / Prizes Count,
-        //   Linked Publication Count, First-Author Publication Count,
-        //   Current Leadership Category, Current Leadership Level,
-        //   Review Status, Roster Tier, Source Basis, BibTeX Author Match (roster),
-        //   BibTeX Author Occurrences (roster).
-        // These are computed/audit fields \u2014 do not expose as editable.
       }
     },
     'Positions': {
@@ -237,136 +153,6 @@ var MAPPING = {
   }
 };
 
-// ------------------------- ENTRY POINTS -----------------------------------
-
-function doGet(e) {
-  try {
-    var params = (e && e.parameter) || {};
-    var action = params.action || 'ping';
-    if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
-    if (action === 'describe') {
-      return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
-    }
-    if (action === 'ping') {
-      return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
-    }
-    if (action === 'readScholar') {
-      return handleReadScholar_(params);
-    }
-    if (action === 'readRows') {
-      return handleReadRows_(params);
-    }
-    if (action === 'readChangeLog') {
-      return handleReadChangeLog_(params);
-    }
-    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-  } catch (err) {
-    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
-  }
-}
-
-// ------------------------- READ HANDLERS ----------------------------------
-
-function handleReadScholar_(params) {
-  var sid = String(params.scholarId || '').trim();
-  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
-  var wsCfg = MAPPING.worksheets['Scholars'];
-  var sheet = ss.getSheetByName('Scholars');
-  if (!sheet) return jsonOut_({ status: 'error', error: 'Scholars sheet not found' }, 500);
-  var info = locateRow_(sheet, wsCfg, { scholarId: sid });
-  if (!info.ok) return jsonOut_({ status: 'not_found', reason: info.reason });
-  var lastCol = sheet.getLastColumn();
-  var rowValues = sheet.getRange(info.row, 1, 1, lastCol).getValues()[0] || [];
-  var headerVals = sheet.getRange(wsCfg.headerRow || 4, 1, 1, lastCol).getValues()[0] || [];
-  var row = {};
-  for (var i = 0; i < headerVals.length; i++) {
-    var h = String(headerVals[i] || '').trim();
-    if (h) row[h] = normalizeForRead_(rowValues[i]);
-  }
-  return jsonOut_({ status: 'ok', worksheet: 'Scholars', scholarId: sid, rowNumber: info.row, fields: row, serverTs: Date.now() });
-}
-
-function handleReadRows_(params) {
-  var ws = String(params.worksheet || '').trim();
-  var sid = String(params.scholarId || '').trim();
-  if (!ws || !MAPPING.worksheets[ws]) return jsonOut_({ status: 'bad_request', reason: 'worksheet-not-allowed' }, 400);
-  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
-  var wsCfg = MAPPING.worksheets[ws];
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
-  var sheet = ss.getSheetByName(ws);
-  if (!sheet) return jsonOut_({ status: 'error', error: ws + ' sheet not found' }, 500);
-  var headerRow = wsCfg.headerRow || 1;
-  var lastCol = sheet.getLastColumn();
-  var lastRow = sheet.getLastRow();
-  var headerVals = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
-  var keyIdx = -1;
-  for (var j = 0; j < headerVals.length; j++) {
-    if (String(headerVals[j] || '').trim() === wsCfg.keyColumn) { keyIdx = j; break; }
-  }
-  if (keyIdx < 0) return jsonOut_({ status: 'error', error: 'key-column-missing' }, 500);
-  var rows = [];
-  if (lastRow > headerRow) {
-    var all = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
-    for (var r = 0; r < all.length; r++) {
-      if (String(all[r][keyIdx] || '').trim() !== sid) continue;
-      var obj = {};
-      for (var k = 0; k < headerVals.length; k++) {
-        var h = String(headerVals[k] || '').trim();
-        if (h) obj[h] = normalizeForRead_(all[r][k]);
-      }
-      rows.push({ rowNumber: headerRow + 1 + r, fields: obj });
-    }
-  }
-  return jsonOut_({ status: 'ok', worksheet: ws, scholarId: sid, rows: rows, serverTs: Date.now() });
-}
-
-function handleReadChangeLog_(params) {
-  var limit = Math.min(parseInt(params.limit, 10) || 50, 500);
-  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
-  var sheet = ss.getSheetByName('Change Log');
-  if (!sheet) return jsonOut_({ status: 'ok', rows: [] });
-  var lastRow = sheet.getLastRow();
-  var headerRow = 4;
-  if (lastRow <= headerRow) return jsonOut_({ status: 'ok', rows: [] });
-  var take = Math.min(limit, lastRow - headerRow);
-  var startRow = lastRow - take + 1;
-  // Read A–J so legacy rows with polluted F–J are still surfaced verbatim.
-  // New rows written by the strict 5-column writer only fill A–E, and F–J
-  // will be blank; we then parse actor / worksheet / field / old → new from
-  // the folded Scope/Impact string.
-  var vals = sheet.getRange(startRow, 1, take, 10).getValues();
-  var rows = [];
-  for (var i = vals.length - 1; i >= 0; i--) {
-    var v = vals[i];
-    var scope = normalizeForRead_(v[3]);
-    // Prefer legacy per-column fields when present (pre-2026-08-23 rows);
-    // fall back to parsing the folded Scope/Impact for new rows.
-    var legacyActor = normalizeForRead_(v[5]);
-    var parsed = parseFoldedScope_(scope);
-    rows.push({
-      rowNumber: startRow + i,
-      version:  normalizeForRead_(v[0]),
-      date:     normalizeForRead_(v[1]),
-      change:   normalizeForRead_(v[2]),
-      scope:    scope,
-      source:   normalizeForRead_(v[4]),
-      actor:    legacyActor || parsed.actor || '',
-      worksheet: normalizeForRead_(v[6]) || parsed.worksheet || '',
-      field:    normalizeForRead_(v[7]) || parsed.field || '',
-      oldValue: normalizeForRead_(v[8]) || parsed.oldValue || '',
-      newValue: normalizeForRead_(v[9]) || parsed.newValue || ''
-    });
-  }
-  return jsonOut_({ status: 'ok', rows: rows, serverTs: Date.now() });
-}
-
-// Best-effort parser for the folded Scope/Impact column written by the new
-// strict five-column Change Log writer. Format is:
-//   "<actor> · <SID> · <worksheet>.<field>: <old> → <new>"
-// If the scope doesn't match this pattern (e.g. structural rows like
-// "Structural insert of Year of Birth") returns empty strings so the reader
-// can still render the row without pretending to know internal fields.
 function parseFoldedScope_(scope) {
   var out = { actor: '', worksheet: '', field: '', oldValue: '', newValue: '' };
   if (!scope) return out;
@@ -402,119 +188,104 @@ function normalizeForRead_(v) {
   return v;
 }
 
-function doPost(e) {
-  var body;
-  try {
-    body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-  } catch (parseErr) {
-    return jsonOut_({ status: 'bad_request', reason: 'invalid-json' }, 400);
-  }
-  try {
-    if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
-    if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
-    var action = body.action || 'write';
-    if (action === 'write') return handleWrite_(body);
-    if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
-    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-  } catch (err) {
-    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
-  }
-}
+// ─────────────────────────────────────────────────────────────────────────
+// WRITE PIPELINE
+// ─────────────────────────────────────────────────────────────────────────
+//
+// handleUpdateRow_ is called only from apiUpdateRow (google.script.run).
+// It validates each requested field against MAPPING, takes a
+// script-scoped LockService lock, applies changes via applyOneChange_,
+// and appends one Change Log row per accepted write. WRITE_ENABLED must
+// be 'true' or the whole pipeline degrades to dry-run.
+function handleUpdateRow_(body) {
+  var ws = String(body.worksheet || '');
+  // Support both the current call shape (`body.key`) and the older HMAC
+  // shape (`body.scholarId`); the API surface passes `key`.
+  var key = String(body.key || body.scholarId || '');
+  var fields = body.fields || {};
+  var actor = String(body.actor || '') || 'tongan-admin';
+  // WRITE_ENABLED gate: when false, force dry-run so nothing is written.
+  var effectiveDryRun = body.dryRun === true || !writeEnabled_();
 
-// ------------------------- WRITE HANDLER ----------------------------------
+  if (!ws || !MAPPING.worksheets[ws]) return jsonOut_({ status: 'rejected', error: 'worksheet-not-allowed', serverTs: Date.now() });
+  if (!key) return jsonOut_({ status: 'rejected', error: 'missing-key', serverTs: Date.now() });
+  if (!fields || typeof fields !== 'object' || !Object.keys(fields).length) {
+    return jsonOut_({ status: 'rejected', error: 'no-fields', serverTs: Date.now() });
+  }
 
-/**
- * Body shape:
- *   {
- *     secret:  "…64 hex chars…",
- *     clientTs: 1724369100000,
- *     dryRun:  true | false,          // default false; true = classify only
- *     changes: [
- *       { worksheet: "Scholars", scholarId: "TON-S0001", field: "Given Names",
- *         oldValue: "Joeli", newValue: "Joeli ",
- *         overrideAuthorized: false,  // optional; user confirmed override
- *         expectedCurrent: "Alive"    // required with overrideAuthorized
- *       },
- *       { worksheet: "Positions", scholarId: "TON-S0001", rowNumber: 27,
- *         field: "Standardized Academic Rank", oldValue: "Prof", newValue: "Professor" }
- *     ]
- *   }
- *
- * Response shape:
- *   {
- *     status: "ok" | "partial" | "needs_confirmation" | "rejected",
- *     dryRun: true | false,
- *     results: [
- *       { index: 0, status: "ok",                 change: {...}, writtenAt: "..." },
- *       { index: 1, status: "already_satisfied",  change: {...}, currentValue: "..." },
- *       { index: 2, status: "needs_confirmation", change: {...}, currentValue: "...",
- *                   loadedValue: "...", intendedValue: "...", reason: "override-required" },
- *       { index: 3, status: "rejected",           change: {...}, reason: "..." }
- *     ],
- *     writeEnabled: true,
- *     serverTs: 1724369101234
- *   }
- */
-function handleWrite_(body) {
-  var changes = Array.isArray(body.changes) ? body.changes : [];
-  if (!changes.length) return jsonOut_({ status: 'bad_request', reason: 'no-changes' }, 400);
-  var dryRun = body.dryRun === true;
+  var wsCfg = MAPPING.worksheets[ws];
+  // Reject unknown fields up-front so a partial write never happens.
+  var unknown = Object.keys(fields).filter(function(f){ return !wsCfg.fields[f]; });
+  if (unknown.length) {
+    return jsonOut_({ status: 'rejected', error: 'field-not-allowed', fields: unknown, serverTs: Date.now() });
+  }
+
+  // Multi-row worksheets need a rowNumber to disambiguate. The HMAC client
+  // is designed for the Scholars single-row surface. If this ever gets used
+  // for a multi-row sheet, the client must supply `rowNumber` in `body`.
+  if (wsCfg.allowMultiRow && !parseInt(body.rowNumber, 10)) {
+    return jsonOut_({ status: 'rejected', error: 'multi-row-needs-rowNumber', serverTs: Date.now() });
+  }
 
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
   var lock = LockService.getScriptLock();
   var haveLock = lock.tryLock(LOCK_WAIT_MS);
-  if (!haveLock) return jsonOut_({ status: 'busy', reason: 'lock-timeout' }, 503);
+  if (!haveLock) return jsonOut_({ status: 'busy', error: 'lock-timeout', serverTs: Date.now() });
 
   var results = [];
   var counts = { ok: 0, already_satisfied: 0, needs_confirmation: 0, rejected: 0 };
   try {
-    for (var i = 0; i < changes.length; i++) {
-      var c = changes[i] || {};
-      var r = applyOneChange_(ss, c, dryRun);
-      r.index = i;
-      r.change = c;
+    // Translate the HMAC-shape single-row update into the internal
+    // applyOneChange_ shape used by the legacy handler. This keeps the
+    // MAPPING allowlist, validation, and Change Log paths untouched.
+    Object.keys(fields).forEach(function(f){
+      var change = {
+        worksheet: ws,
+        scholarId: key,
+        field: f,
+        oldValue: null,        // HMAC client does not send loadedValue;
+                               // we treat this as a blind overwrite AFTER
+                               // an override-authorised handshake by the
+                               // ALWAYS_CONFIRM policy. See below.
+        newValue: fields[f],
+        rowNumber: parseInt(body.rowNumber, 10) || null,
+        overrideAuthorized: body.overrideAuthorized === true,
+        expectedCurrent: body.expectedCurrent && body.expectedCurrent[f]
+      };
+      var r = applyOneChange_(ss, change, effectiveDryRun, actor);
+      r.field = f;
+      r.newValue = fields[f];
       results.push(r);
       if (counts[r.status] != null) counts[r.status]++;
-    }
+    });
   } finally {
-    try { lock.releaseLock(); } catch (_) {}
+    lock.releaseLock();
   }
 
   var overall;
-  if (counts.rejected === results.length)               overall = 'rejected';
-  else if (counts.needs_confirmation > 0)               overall = 'needs_confirmation';
-  else if (counts.rejected > 0 && counts.ok > 0)        overall = 'partial';
-  else if (counts.rejected > 0)                         overall = 'rejected';
-  else                                                  overall = 'ok';
+  if (counts.ok === results.length)                                       overall = 'ok';
+  else if (counts.already_satisfied === results.length)                   overall = 'ok';
+  else if (counts.rejected === results.length)                            overall = 'rejected';
+  else if (counts.needs_confirmation > 0 && counts.rejected === 0)        overall = 'needs_confirmation';
+  else                                                                    overall = 'partial';
+
   return jsonOut_({
     status: overall,
-    dryRun: dryRun,
+    dryRun: effectiveDryRun,
+    forcedDryRun: !writeEnabled_() && body.dryRun !== true,
     results: results,
     counts: counts,
-    writeEnabled: true,
-    serverTs: Date.now()
+    writeEnabled: writeEnabled_(),
+    actor: actor,
+    serverTs: Date.now(),
+    // For a pure no-op, surface it explicitly so the admin UI can render
+    // a subdued "nothing to save" state without confusing it with an
+    // error.
+    noop: (counts.already_satisfied === results.length)
   });
 }
 
-/**
- * Classify + (if not dry-run) apply one field change.
- *
- * Decision table (three-way comparison per field, per approval doc 2026-08-23):
- *
- *   currentMaster == intended                       → already_satisfied (skip; no log)
- *   Scholars.Alive / Deceased AND intended != currentMaster:
- *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
- *       otherwise                                   → needs_confirmation
- *   currentMaster == loaded AND intended != currentMaster   → ok (write)
- *   currentMaster != loaded AND intended != currentMaster (stale-load contradiction):
- *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
- *       otherwise                                   → needs_confirmation
- *
- * The old blanket `conflict` status is retired: every case that used to be
- * `conflict` is now either `already_satisfied` (silent skip) or
- * `needs_confirmation` (client must re-submit with overrideAuthorized).
- */
-function applyOneChange_(ss, c, dryRun) {
+function applyOneChange_(ss, c, dryRun, actor) {
   var ws = c.worksheet, sid = c.scholarId, field = c.field;
   if (!ws || !MAPPING.worksheets[ws])   return { status: 'rejected', reason: 'worksheet-not-allowed' };
   var wsCfg = MAPPING.worksheets[ws];
@@ -585,7 +356,7 @@ function applyOneChange_(ss, c, dryRun) {
   //    records the true current old value (which may differ from what the
   //    client had loaded, e.g. after a confirmed override).
   sheet.getRange(rowInfo.row, col).setValue(newValue);
-  appendChangeLog_(ss, ws, sid, field, currentStr, newValue);
+  appendChangeLog_(ss, ws, sid, field, currentStr, newValue, actor);
   return {
     status: 'ok',
     willWrite: true,
@@ -677,7 +448,7 @@ function normalizeForCompare_(v) {
   return s.replace(/\s+$/, '').replace(/^\s+/, '');
 }
 
-function appendChangeLog_(ss, worksheet, sid, field, oldValue, newValue) {
+function appendChangeLog_(ss, worksheet, sid, field, oldValue, newValue, actor) {
   var sheet = ss.getSheetByName('Change Log');
   if (!sheet) return; // If someone removed the tab, silently skip logging (do not fail the write).
   var today = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd');
@@ -687,7 +458,8 @@ function appendChangeLog_(ss, worksheet, sid, field, oldValue, newValue) {
   // old → new values into one string. Old/new are truncated to keep the
   // cell readable; the raw values are visible in the diff preview at
   // write-time and can be reconstructed from Master history if needed.
-  var scope = ACTOR_LABEL + ' · ' + sid + ' · ' + worksheet + '.' + field +
+  var actorLabel = String(actor || 'tongan-admin');
+  var scope = actorLabel + ' · ' + sid + ' · ' + worksheet + '.' + field +
               ': ' + truncate_(oldValue, 120) + ' → ' + truncate_(newValue, 120);
   // Strict five-column write. Do not write into columns F onward.
   sheet.appendRow([version, today, change, scope, SOURCE_TAG]);
@@ -700,21 +472,6 @@ function truncate_(s, n) {
 }
 
 // ------------------------- AUTH -------------------------------------------
-
-function checkAuth_(payload) {
-  var props = PropertiesService.getScriptProperties();
-  var expected = props.getProperty('SHARED_SECRET') || '';
-  if (!expected) return false;
-  var received = String((payload && payload.secret) || '');
-  if (received.length !== expected.length) return false;
-  var eq = 0;
-  for (var i = 0; i < expected.length; i++) eq |= (expected.charCodeAt(i) ^ received.charCodeAt(i));
-  if (eq !== 0) return false;
-  var clientTs = parseInt((payload && payload.clientTs), 10);
-  if (!clientTs) return false;
-  if (Math.abs(Date.now() - clientTs) > REPLAY_WINDOW_MS) return false;
-  return true;
-}
 
 function writeEnabled_() {
   var v = PropertiesService.getScriptProperties().getProperty('WRITE_ENABLED');
@@ -734,19 +491,294 @@ function jsonOut_(obj, code) {
 
 // ------------------------- ADMIN CONSOLE HELPERS --------------------------
 
-/** Run once from the Apps Script editor to generate a fresh 32-byte secret. */
-function generateSecret() {
-  var bytes = Utilities.getUuid() + Utilities.getUuid();
-  bytes = bytes.replace(/-/g, '');
-  Logger.log('SHARED_SECRET = ' + bytes);
-  return bytes;
-}
-
-/** Read-only diagnostic. Safe to run from the editor. */
+/**
+ * inspectConfig — read-only diagnostic. Run from the Apps Script editor
+ * to confirm the two required Script Properties are set. Prints nothing
+ * secret; safe to keep in production.
+ */
 function inspectConfig() {
   var props = PropertiesService.getScriptProperties();
-  Logger.log('WRITE_ENABLED = ' + props.getProperty('WRITE_ENABLED'));
-  Logger.log('SHARED_SECRET present = ' + (!!props.getProperty('SHARED_SECRET')));
-  Logger.log('ADMIN_ORIGIN = ' + props.getProperty('ADMIN_ORIGIN'));
-  Logger.log('Timezone = ' + TIMEZONE);
+  Logger.log('APPROVED_ADMIN_EMAIL = ' + (props.getProperty('APPROVED_ADMIN_EMAIL') || '(unset)'));
+  Logger.log('WRITE_ENABLED        = ' + (props.getProperty('WRITE_ENABLED') || '(unset)'));
+  Logger.log('Spreadsheet ID       = ' + SPREADSHEET_ID_HINT);
+  Logger.log('Timezone             = ' + TIMEZONE);
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HTML TEMPLATE INCLUDE HELPER
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * include(name)
+ *
+ * Called from tongan-admin-app.html scriptlets as `<?!= include('...') ?>`.
+ * Returns the raw content of another HTML file in this Apps Script project
+ * so it can be stitched into the outer template. The included files
+ * contain ONLY <script>...</script> blocks — no further scriptlets — so
+ * scriptlet evaluation only ever happens once, in tongan-admin-app.html.
+ */
+function include(name) {
+  return HtmlService.createHtmlOutputFromFile(name).getContent();
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// AUTH
+// ─────────────────────────────────────────────────────────────────────────
+
+function _activeEmail_() {
+  var session = Session.getActiveUser();
+  return session ? (session.getEmail() || '').toLowerCase() : '';
+}
+
+function _approvedEmail_() {
+  var props = PropertiesService.getScriptProperties();
+  return (props.getProperty('APPROVED_ADMIN_EMAIL') || '').toLowerCase();
+}
+
+/**
+ * _assertAuthorized_() — throws if the active user is not the approved
+ * admin. Every api* function called via google.script.run starts with
+ * this. Errors thrown here propagate to the browser's
+ * withFailureHandler.
+ */
+function _assertAuthorized_() {
+  var actual = _activeEmail_();
+  var approved = _approvedEmail_();
+  if (!approved) {
+    throw new Error('tongan-writeback: APPROVED_ADMIN_EMAIL is not configured.');
+  }
+  if (!actual) {
+    throw new Error('tongan-writeback: no active Google session.');
+  }
+  if (actual !== approved) {
+    throw new Error('tongan-writeback: not-authorized (' + actual + ' is not the approved admin).');
+  }
+  return actual;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HTTP entry points
+// ─────────────────────────────────────────────────────────────────────────
+
+function doGet(e) {
+  var actual = _activeEmail_();
+  var approved = _approvedEmail_();
+  if (!actual || !approved || actual !== approved) {
+    return _renderNotAuthorized_(actual, approved);
+  }
+  var tmpl = HtmlService.createTemplateFromFile('tongan-admin-app');
+  tmpl.activeEmail       = actual;
+  tmpl.writeEnabled      = writeEnabled_();
+  tmpl.writeEnabledLabel = writeEnabled_() ? 'WRITE ENABLED' : 'READ-ONLY (WRITE_ENABLED=false)';
+  tmpl.spreadsheetId     = SPREADSHEET_ID_HINT;
+  return tmpl.evaluate()
+    .setTitle('Tongan Scholar Database — Admin')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/**
+ * doPost — retired. The browser-HMAC contract is gone. All writes go
+ * through google.script.run.apiUpdateRow, which is authorized via
+ * Session.getActiveUser().
+ */
+function doPost(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: 'gone',
+      error: 'The HMAC-signed doPost endpoint has been retired. Use the Apps Script admin web app.',
+      retiredAt: '2026-08-30'
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function _renderNotAuthorized_(actual, approved) {
+  var body =
+    '<!doctype html><html><head><meta charset="utf-8"/>' +
+    '<title>Not authorised — Tongan Admin</title>' +
+    '<style>body{font-family:system-ui,sans-serif;padding:2rem;max-width:640px;margin:auto;color:#111;}' +
+    'code{background:#f4f4f4;padding:2px 6px;border-radius:4px;}</style>' +
+    '</head><body>' +
+    '<h1>Not authorised</h1>' +
+    '<p>This admin is restricted to a single Google account. You are signed in as ' +
+    '<code>' + _escapeHtml_(actual || '(not signed in)') + '</code>.</p>' +
+    (approved ? '' :
+      '<p><strong>Server-side note:</strong> the script property <code>APPROVED_ADMIN_EMAIL</code> ' +
+      'is not set. Open the Apps Script project → Project Settings → Script properties.</p>') +
+    '<p>Sign out of Google and sign back in with the approved admin account, then reload this page.</p>' +
+    '</body></html>';
+  return HtmlService.createHtmlOutput(body).setTitle('Not authorised');
+}
+
+function _escapeHtml_(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// google.script.run API — every function here starts with _assertAuthorized_
+// ─────────────────────────────────────────────────────────────────────────
+
+/**
+ * apiDescribe — returns MAPPING plus session/environment metadata so the
+ * browser can render tabs, form fields, and validation hints without
+ * shipping the allowlist to the client from GitHub Pages.
+ */
+function apiDescribe(actor) {
+  _assertAuthorized_();
+  return {
+    status: 'ok',
+    activeEmail: _activeEmail_(),
+    writeEnabled: writeEnabled_(),
+    spreadsheetId: SPREADSHEET_ID_HINT,
+    sourceTag: SOURCE_TAG,
+    timezone: TIMEZONE,
+    mapping: MAPPING,
+    alwaysConfirm: ALWAYS_CONFIRM,
+    serverTs: Date.now()
+  };
+}
+
+/** apiPing — quick liveness probe. */
+function apiPing(actor) {
+  _assertAuthorized_();
+  return {
+    status: 'ok',
+    activeEmail: _activeEmail_(),
+    writeEnabled: writeEnabled_(),
+    serverTs: Date.now()
+  };
+}
+
+/**
+ * apiListKeys(worksheet) — returns the unique key-column values for a
+ * worksheet, so the browser can build an autocomplete/dropdown for the
+ * row picker. Skips blanks. Capped at 5000 values.
+ */
+function apiListKeys(worksheet) {
+  _assertAuthorized_();
+  var ws = String(worksheet || '').trim();
+  var wsCfg = MAPPING.worksheets[ws];
+  if (!wsCfg) throw new Error('apiListKeys: worksheet not in allowlist: ' + ws);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) throw new Error('apiListKeys: sheet not found: ' + ws);
+  var headerRow = wsCfg.headerRow || 1;
+  var lastCol   = sheet.getLastColumn();
+  var lastRow   = sheet.getLastRow();
+  if (lastRow <= headerRow) return { status: 'ok', worksheet: ws, keys: [] };
+  var headers   = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  var keyIdx    = -1;
+  for (var i = 0; i < headers.length; i++) {
+    if (String(headers[i] || '').trim() === wsCfg.keyColumn) { keyIdx = i; break; }
+  }
+  if (keyIdx < 0) throw new Error('apiListKeys: keyColumn "' + wsCfg.keyColumn + '" not found on ' + ws);
+  var body = sheet.getRange(headerRow + 1, keyIdx + 1, lastRow - headerRow, 1).getValues();
+  var seen = {};
+  var keys = [];
+  var cap  = 5000;
+  for (var r = 0; r < body.length && keys.length < cap; r++) {
+    var v = String(body[r][0] == null ? '' : body[r][0]).trim();
+    if (!v) continue;
+    if (seen[v]) continue;
+    seen[v] = 1;
+    keys.push(v);
+  }
+  keys.sort();
+  return { status: 'ok', worksheet: ws, keyColumn: wsCfg.keyColumn, keys: keys, serverTs: Date.now() };
+}
+
+/**
+ * apiReadRow(worksheet, keyValue) — returns the live row fields for a
+ * given key. The browser uses this to populate the edit form.
+ */
+function apiReadRow(worksheet, keyValue) {
+  _assertAuthorized_();
+  var ws = String(worksheet || '').trim();
+  var key = String(keyValue || '').trim();
+  var wsCfg = MAPPING.worksheets[ws];
+  if (!wsCfg) throw new Error('apiReadRow: worksheet not in allowlist: ' + ws);
+  if (!key)   throw new Error('apiReadRow: keyValue is required.');
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) throw new Error('apiReadRow: sheet not found: ' + ws);
+  var headerRow = wsCfg.headerRow || 1;
+  var lastCol   = sheet.getLastColumn();
+  var lastRow   = sheet.getLastRow();
+  var headers   = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  var keyIdx    = -1;
+  for (var i = 0; i < headers.length; i++) {
+    if (String(headers[i] || '').trim() === wsCfg.keyColumn) { keyIdx = i; break; }
+  }
+  if (keyIdx < 0) throw new Error('apiReadRow: keyColumn "' + wsCfg.keyColumn + '" not found on ' + ws);
+  if (lastRow <= headerRow) return { status: 'ok', worksheet: ws, keyValue: key, found: false, rowNumber: 0, fields: {} };
+  var all = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+  for (var r = 0; r < all.length; r++) {
+    if (String(all[r][keyIdx] || '').trim() !== key) continue;
+    var fields = {};
+    for (var c = 0; c < headers.length; c++) {
+      var h = String(headers[c] || '').trim();
+      if (!h) continue;
+      fields[h] = normalizeForRead_(all[r][c]);
+    }
+    return { status: 'ok', worksheet: ws, keyValue: key, found: true, rowNumber: headerRow + 1 + r, fields: fields, serverTs: Date.now() };
+  }
+  return { status: 'ok', worksheet: ws, keyValue: key, found: false, rowNumber: 0, fields: {} };
+}
+
+/**
+ * apiUpdateRow(worksheet, keyValue, fields, actor) — validated write.
+ * Delegates to the existing handleUpdateRow_ pipeline (which takes a
+ * script-scoped LockService lock, validates each field, appends the
+ * Change Log). If WRITE_ENABLED is not 'true', the pipeline runs in
+ * dry-run mode and returns { status: 'ok', dryRun: true, ... }.
+ */
+function apiUpdateRow(worksheet, keyValue, fields, actor) {
+  _assertAuthorized_();
+  var body = {
+    worksheet: String(worksheet || '').trim(),
+    key: String(keyValue || '').trim(),
+    fields: fields || {},
+    actor: _activeEmail_()  // always the authenticated email — ignore browser value
+  };
+  var out = handleUpdateRow_(body);
+  // handleUpdateRow_ returns ContentService TextOutput (JSON). Parse it so
+  // the browser gets a real object via google.script.run.
+  var text = out.getContent();
+  try {
+    return JSON.parse(text);
+  } catch (e) {
+    return { status: 'error', error: 'server-response-not-json', body: text };
+  }
+}
+
+/**
+ * apiReadChangeLog(limit) — return the last `limit` Change Log rows
+ * (columns A–E) so the admin UI can show what has recently been written.
+ * Reads only the true schema range (A–E); does not touch legacy F–J.
+ */
+function apiReadChangeLog(limit) {
+  _assertAuthorized_();
+  var take = Math.min(Math.max(parseInt(limit, 10) || 25, 1), 500);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName('Change Log');
+  if (!sheet) return { status: 'ok', rows: [], note: 'Change Log sheet not found' };
+  var lastRow  = sheet.getLastRow();
+  var headerRow = 4;
+  if (lastRow <= headerRow) return { status: 'ok', rows: [] };
+  var actualTake = Math.min(take, lastRow - headerRow);
+  var startRow  = lastRow - actualTake + 1;
+  var vals = sheet.getRange(startRow, 1, actualTake, 5).getValues();
+  var rows = [];
+  for (var i = vals.length - 1; i >= 0; i--) {  // newest first
+    rows.push({
+      rowNumber: startRow + i,
+      version:   String(vals[i][0] == null ? '' : vals[i][0]),
+      date:      String(vals[i][1] == null ? '' : vals[i][1]),
+      change:    String(vals[i][2] == null ? '' : vals[i][2]),
+      scope:     String(vals[i][3] == null ? '' : vals[i][3]),
+      source:    String(vals[i][4] == null ? '' : vals[i][4])
+    });
+  }
+  return { status: 'ok', rows: rows, serverTs: Date.now() };
 }

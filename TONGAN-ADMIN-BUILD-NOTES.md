@@ -1,5 +1,29 @@
 # Tongan Scholar Database — Admin Panel Build Notes
 
+## 2026-08-31 — Ported to Google-auth-native admin (Samoa four-file pattern)
+
+The Tongan admin has been ported to the same Google-authenticated architecture as the Samoa admin (built in session 2026-08-31 systematic-repair). All browser-HMAC, `SHARED_SECRET`, and admin-password code has been retired.
+
+**New files** (in `apps-script/`):
+- `tongan-master-writeback.gs` — the new server (Samoa template with Tongan MAPPING).
+- `tongan-admin-app.html` — the outer web page (only file with `<?!= ... ?>` scriptlets).
+- `tongan-admin-writeback-bridge.html` — Google-authenticated bridge; exposes `window.tonganAdminBridge`.
+- `tongan-admin-controller.html` — UI controller; boots via `google.script.run`.
+
+**Preserved** (for fallback until the new admin is proven):
+- `apps-script/tongan-master-writeback.LEGACY-HMAC.gs` — the old HMAC server, kept as-is.
+- `admin-tongan-master.html` — the old browser-HMAC admin page in the site root, untouched.
+
+**MAPPING coverage:** three worksheets writable (`Scholars`, `Positions`, `Graduate Degrees`), same as the legacy HMAC admin. Lifted verbatim from `tongan-master-writeback.LEGACY-HMAC.gs`. All 37 non-listed tabs remain read-only. `ALWAYS_CONFIRM = { 'Scholars.Alive / Deceased': true }`.
+
+**Deploy procedure:** `docs/TONGAN-APPS-SCRIPT-DEPLOY.md` (8 steps; same shape as `SAMOA-APPS-SCRIPT-DEPLOY.md`). New standalone Apps Script project bound only by ID; no touching the legacy HMAC project. Script Properties: `APPROVED_ADMIN_EMAIL=ronvave@hawaii.edu`, `WRITE_ENABLED=false`. Deploy as web app: Execute as User accessing / Only myself.
+
+**Cutover:** once the new admin passes all step-6 tests + step-7 real-edit round-trip, retire the legacy HMAC Apps Script project (delete or disable) and rotate/delete the old `SHARED_SECRET`. Optionally update the `admin-tongan-master.html` bookmark to redirect to the new `/exec`.
+
+---
+
+## Original build notes (2026-08-22 to 2026-08-28)
+
 Sister clone of the iTaukei Master-file Admin (V2), built inside the existing
 `ronvave/vave-lab` repo. **Only new, Tongan-prefixed files were added.** No
 existing iTaukei file (`admin-master.html`, `js/admin-master.js`,
