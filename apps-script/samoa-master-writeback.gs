@@ -10,22 +10,31 @@
  * shared secret held in ScriptProperties, enforced field-by-field against an
  * allowlist, wrapped in LockService, and appended to the Change Log.
  *
- * ── Setup (one-time; see docs/SAMOA-APPS-SCRIPT-DEPLOY.md for a step-by-step) ──
+ * ── Setup (one-time; see docs/SAMOA-APPS-SCRIPT-DEPLOY.md for the current
+ *    Google-auth deployment steps that replaced the browser-HMAC contract
+ *    on 2026-08-30) ──
  *   1. In the Master spreadsheet: Extensions → Apps Script.
- *   2. Paste this file into the project as `samoa-master-writeback.gs`.
+ *   2. Add ALL FOUR files to the project:
+ *        samoa-master-writeback.gs             (this file)
+ *        samoa-admin-app.html                  (HtmlService template)
+ *        samoa-admin-writeback-bridge.html     (google.script.run bridge)
+ *        samoa-admin-controller.html           (controller shim)
+ *        samoa-admin-master-inline.html        (embedded admin JS)
  *   3. In Project Settings → Script Properties, add:
- *        SHARED_SECRET      = <64-char hex, generated out-of-band>  (never commit the literal value; store it only in Script Properties and in the admin panel's SAMOA_WRITEBACK_SECRET_HEX)
- *        WRITE_ENABLED      = true
- *        ADMIN_ORIGIN       = https://ronvave.github.io
- *   4. In this editor's console, run `generateSecret()` once to get a fresh
- *      32-byte hex secret; copy it into SHARED_SECRET and paste the same
- *      value into the admin Data-source tab.
- *   5. Deploy → New deployment → type = Web App:
- *        Description   = "Master write-back v1"
- *        Execute as    = Me (Ron Vave)
- *        Who has access = Anyone with the link
- *      Copy the /exec URL and paste it into the admin Data-source tab.
- *   6. Test with the admin's "Test connection" button.
+ *        APPROVED_ADMIN_EMAIL = <Ron's Google account email, lowercase>
+ *        WRITE_ENABLED        = true
+ *      (SHARED_SECRET is no longer required and SHOULD be DELETED. The
+ *      legacy sister-database polling paths in doGet still honor it if
+ *      present, but the Samoa admin path does not.)
+ *   4. Deploy → New deployment → type = Web App:
+ *        Description   = "Samoa Admin (Google auth) v2"
+ *        Execute as    = User accessing the web app          ← CRITICAL
+ *        Who has access = Anyone with Google account
+ *      Copy the /exec URL and paste it into admin-samoa-master.html's
+ *      ADMIN_URL placeholder.
+ *   5. Open the /exec URL as the approved account to smoke-test the app;
+ *      open it in an incognito window under a different Google account
+ *      to verify the "Not authorized" page.
  *
  * ── Emergency read-only switch ──
  *   Setting Script Property `WRITE_ENABLED = false` (or removing the property)
@@ -757,31 +766,16 @@ var MAPPING = {
 
 // ------------------------- ENTRY POINTS -----------------------------------
 
-function doGet(e) {
-  try {
-    var params = (e && e.parameter) || {};
-    var action = params.action || 'ping';
-    if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
-    if (action === 'describe') {
-      return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
-    }
-    if (action === 'ping') {
-      return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
-    }
-    if (action === 'readScholar') {
-      return handleReadScholar_(params);
-    }
-    if (action === 'readRows') {
-      return handleReadRows_(params);
-    }
-    if (action === 'readChangeLog') {
-      return handleReadChangeLog_(params);
-    }
-    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-  } catch (err) {
-    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
-  }
-}
+// doGet is DEFINED below in the AUTHENTICATED ADMIN APP block. See
+// samoa-master-writeback-server.gs.append (appended to the end of this
+// file). The old JSON-only doGet was retired on 2026-08-30 per Ron's
+// architectural fix; the new doGet serves the admin app to authenticated
+// Google users and only exposes JSON read paths to callers that supply
+// the legacy SHARED_SECRET (sister-database polling).
+
+// Legacy JSON read paths are still defined below (handleReadScholar_,
+// handleReadRows_, handleReadChangeLog_) so the new doGet in the
+// appended block can delegate to them.
 
 // ------------------------- READ HANDLERS ----------------------------------
 
@@ -920,56 +914,26 @@ function normalizeForRead_(v) {
   return v;
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// doPost — RETIRED for the admin surface.
+// ─────────────────────────────────────────────────────────────────────────
+//
+// The Samoa admin no longer POSTs HMAC-signed requests to this endpoint.
+// All writes are executed server-side via google.script.run into
+// apiUpdateRow() (see the appended AUTHENTICATED ADMIN APP block).
+// Any surviving POST caller is either:
+//   • an obsolete client using the retired browser-HMAC contract, or
+//   • an unauthenticated attacker replaying a leaked SHARED_SECRET.
+// Both are rejected with HTTP 410 Gone and a clear error body. The
+// legacy sister-database `write` / `ping` paths (checkAuth_ + SHARED_SECRET)
+// are also retired here — sister databases never used this Samoa endpoint.
 function doPost(e) {
-  var body;
-  try {
-    body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-  } catch (parseErr) {
-    return jsonOut_({ status: 'bad_request', reason: 'invalid-json' }, 400);
-  }
-  try {
-    var action = body.action || 'write';
-
-    // ── Session-1 HMAC contract (samoa-admin-writeback-client.js) ─────────
-    // These actions carry `sig`, `nonce`, `ts` and are verified with
-    // HMAC-SHA-256 over a canonical string. If the request looks HMAC-signed
-    // (has both `sig` and `nonce`) we route it through the HMAC verifier.
-    // Otherwise, fall through to the legacy `secret`+`clientTs` contract
-    // for backwards compatibility with the sister-database admin surfaces.
-    var isHmac = !!(body && body.sig && body.nonce);
-    if (isHmac || action === 'update' || action === 'describe') {
-      var authRes = checkAuthHmac_(body);
-      if (!authRes.ok) return jsonOut_({ status: 'unauthorized', error: authRes.reason }, 401);
-      if (action === 'describe') {
-        return jsonOut_({
-          status: 'ok',
-          mapping: MAPPING,
-          writeEnabled: writeEnabled_(),
-          actor: ACTOR_LABEL,
-          tz: TIMEZONE,
-          spreadsheetId: SPREADSHEET_ID_HINT,
-          serverTs: Date.now()
-        });
-      }
-      if (action === 'ping') {
-        return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, serverTs: Date.now() });
-      }
-      if (action === 'update') {
-        if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
-        return handleUpdateRow_(body);
-      }
-      return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-    }
-
-    // ── Legacy contract (sister-database compatibility) ───────────────────
-    if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
-    if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
-    if (action === 'write') return handleWrite_(body);
-    if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
-    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-  } catch (err) {
-    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
-  }
+  return jsonOut_({
+    status: 'gone',
+    error: 'browser-hmac-contract-retired',
+    message: 'The Samoa Master Sheet writeback no longer accepts HMAC-signed POST requests. Use the authenticated admin app served from doGet().',
+    serverTs: Date.now()
+  }, 410);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -1511,4 +1475,268 @@ function inspectConfig() {
   Logger.log('SHARED_SECRET present = ' + (!!props.getProperty('SHARED_SECRET')));
   Logger.log('ADMIN_ORIGIN = ' + props.getProperty('ADMIN_ORIGIN'));
   Logger.log('Timezone = ' + TIMEZONE);
+}
+
+// ═════════════════════════════════════════════════════════════════════════
+// AUTHENTICATED ADMIN APP (Ron's 2026-08-30 architectural fix)
+// ═════════════════════════════════════════════════════════════════════════
+//
+// This block retires the browser-HMAC contract. The Samoa admin surface is
+// no longer served from GitHub Pages; it is served from this Apps Script
+// web app via doGet(), authenticated by Google identity, authorized by
+// checking Session.getActiveUser().getEmail() against APPROVED_ADMIN_EMAIL
+// (Script Property). Master Sheet reads and writes execute here on the
+// server, invoked by the client via google.script.run — no SHARED_SECRET
+// or HMAC signature ever crosses the wire.
+//
+// Required deployment settings (see docs/SAMOA-APPS-SCRIPT-DEPLOY.md):
+//   • Deploy → Web app
+//       Execute as    : User accessing the web app  ← CRITICAL
+//       Who has access: Anyone with Google account
+//     (This makes Session.getActiveUser().getEmail() return the caller's
+//     real email so APPROVED_ADMIN_EMAIL can gate them.)
+//   • Script Properties
+//       APPROVED_ADMIN_EMAIL = <Ron's Google account email, lowercase>
+//   • The legacy SHARED_SECRET Script Property is no longer used by the
+//     admin surface and should be deleted; see legacyDoPost410_() below.
+//
+// Files bundled into this Apps Script project alongside the .gs file:
+//   • samoa-admin-app.html                  (main UI template)
+//   • samoa-admin-writeback-bridge.html     (google.script.run bridge)
+//   • samoa-admin-controller.html           (admin controller JS)
+// ═════════════════════════════════════════════════════════════════════════
+
+/**
+ * Return the caller's authenticated Google email, or '' if none.
+ * Session.getActiveUser().getEmail() returns '' when the web app is
+ * deployed as "Execute as: Me" — this function's callers rely on the
+ * "User accessing" mode to work.
+ */
+function _activeEmail_() {
+  try {
+    var email = Session.getActiveUser().getEmail() || '';
+    return String(email).trim().toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Read the approved admin email from Script Properties. Returns '' if
+ * unset; callers treat '' as "no one is authorized".
+ */
+function _approvedEmail_() {
+  try {
+    var v = PropertiesService.getScriptProperties().getProperty('APPROVED_ADMIN_EMAIL');
+    return String(v || '').trim().toLowerCase();
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
+ * Assert the current caller is the approved admin. Throws if not.
+ * Every API function (apiDescribe, apiPing, apiUpdateRow, apiReadRow)
+ * calls this before doing anything.
+ */
+function _assertAuthorized_() {
+  var actual = _activeEmail_();
+  var approved = _approvedEmail_();
+  if (!approved) {
+    throw new Error('unauthorized: APPROVED_ADMIN_EMAIL is not set in Script Properties');
+  }
+  if (!actual) {
+    throw new Error('unauthorized: no Google identity on this session (deploy the web app as "Execute as: User accessing")');
+  }
+  if (actual !== approved) {
+    throw new Error('unauthorized: ' + actual + ' is not the approved admin');
+  }
+  return actual;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// doGet — serve the authenticated admin app, or a "not authorized" page.
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Replaces the previous JSON-only doGet(). The old JSON read paths
+// (`action=describe|ping|readScholar|readRows|readChangeLog`) are still
+// callable for backwards compatibility with sister-database tooling that
+// polls this endpoint, BUT they now also require _assertAuthorized_()
+// unless the SHARED_SECRET legacy path (checkAuth_) succeeds — which is
+// how sister databases still call in for read-only status.
+function doGet(e) {
+  try {
+    var params = (e && e.parameter) || {};
+    var action = params.action || '';
+
+    // Legacy JSON read paths (sister-database polling): only served when
+    // the caller supplies the SHARED_SECRET Script Property, so ordinary
+    // browsers hitting the URL fall through to the HTML admin app.
+    if (action && checkAuth_(params)) {
+      if (action === 'describe') {
+        return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
+      }
+      if (action === 'ping') {
+        return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
+      }
+      if (action === 'readScholar')   return handleReadScholar_(params);
+      if (action === 'readRows')      return handleReadRows_(params);
+      if (action === 'readChangeLog') return handleReadChangeLog_(params);
+      return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
+    }
+
+    // Authenticated admin app path.
+    var actual = _activeEmail_();
+    var approved = _approvedEmail_();
+    if (!approved || !actual || actual !== approved) {
+      return _renderNotAuthorized_(actual, approved);
+    }
+    return _renderAdminApp_(actual);
+  } catch (err) {
+    return HtmlService.createHtmlOutput(
+      '<h1>Samoa Admin — error</h1><pre>' +
+      _escapeHtml_(String(err && err.message || err)) +
+      '</pre>'
+    ).setTitle('Samoa Admin');
+  }
+}
+
+function _renderAdminApp_(activeEmail) {
+  var tpl = HtmlService.createTemplateFromFile('samoa-admin-app');
+  tpl.activeEmail = activeEmail;
+  return tpl.evaluate()
+    .setTitle('Samoa Scholar Database — Admin')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.DEFAULT);
+}
+
+function _renderNotAuthorized_(actual, approved) {
+  var msg;
+  if (!approved) {
+    msg = 'Access is not configured. Set the APPROVED_ADMIN_EMAIL Script Property.';
+  } else if (!actual) {
+    msg = 'No Google identity was found on this request. The web app must be deployed with "Execute as: User accessing the web app".';
+  } else {
+    msg = 'The account <b>' + _escapeHtml_(actual) + '</b> is not authorized to open the Samoa admin.';
+  }
+  var html =
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Samoa Admin — Not authorized</title>' +
+    '<style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:#1f2937;padding:32px;max-width:640px;margin:0 auto}h1{color:#dc2626;margin-top:0}</style>' +
+    '</head><body>' +
+    '<h1>Not authorized</h1>' +
+    '<p>' + msg + '</p>' +
+    '<p style="color:#6b7280;font-size:13px;margin-top:24px">Samoa Scholar Database · Department of Pacific Islands Studies</p>' +
+    '</body></html>';
+  return HtmlService.createHtmlOutput(html).setTitle('Samoa Admin — Not authorized');
+}
+
+function _escapeHtml_(s) {
+  return String(s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// API functions callable from the admin app via google.script.run.
+// Every function requires _assertAuthorized_() to pass.
+// ─────────────────────────────────────────────────────────────────────────
+
+/** Return the current MAPPING and status. */
+function apiDescribe(actor) {
+  _assertAuthorized_();
+  return {
+    status: 'ok',
+    mapping: MAPPING,
+    writeEnabled: writeEnabled_(),
+    actor: ACTOR_LABEL,
+    tz: TIMEZONE,
+    spreadsheetId: SPREADSHEET_ID_HINT,
+    serverTs: Date.now()
+  };
+}
+
+/** Cheap connectivity check. */
+function apiPing(actor) {
+  _assertAuthorized_();
+  return {
+    status: 'ok',
+    pong: true,
+    writeEnabled: writeEnabled_(),
+    actor: ACTOR_LABEL,
+    tz: TIMEZONE,
+    serverTs: Date.now()
+  };
+}
+
+/**
+ * Read one row from the Master Sheet. Replaces the retired .enc snapshot
+ * load in the browser: the admin controller now reads current values
+ * live from the sheet under the caller's Google identity.
+ */
+function apiReadRow(worksheet, keyValue) {
+  _assertAuthorized_();
+  var ws = String(worksheet || '');
+  var key = String(keyValue || '');
+  if (!ws || !MAPPING.worksheets[ws]) {
+    return { status: 'rejected', error: 'worksheet-not-allowed', serverTs: Date.now() };
+  }
+  if (!key) {
+    return { status: 'rejected', error: 'missing-key', serverTs: Date.now() };
+  }
+  var wsCfg = MAPPING.worksheets[ws];
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) {
+    return { status: 'rejected', error: 'worksheet-missing-in-sheet', serverTs: Date.now() };
+  }
+  var row = locateRow_(sheet, wsCfg, { key: key });
+  if (!row) {
+    return { status: 'not_found', error: 'row-not-found', key: key, serverTs: Date.now() };
+  }
+  // Read every allowlisted field for this worksheet
+  var headerRow = sheet.getRange(4, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var values = sheet.getRange(row, 1, 1, sheet.getLastColumn()).getValues()[0];
+  var out = {};
+  var fieldNames = Object.keys(wsCfg.fields);
+  for (var i = 0; i < fieldNames.length; i++) {
+    var f = fieldNames[i];
+    var colIdx = headerRow.indexOf(f);
+    if (colIdx >= 0) {
+      var v = values[colIdx];
+      if (v instanceof Date) v = normalizeForRead_(v);
+      out[f] = (v === null || v === undefined) ? '' : String(v);
+    }
+  }
+  return { status: 'ok', worksheet: ws, key: key, row: row, fields: out, serverTs: Date.now() };
+}
+
+/**
+ * Write one or more fields to one row. Server-side classification +
+ * MAPPING allowlist + LockService + Change Log all preserved.
+ */
+function apiUpdateRow(worksheet, keyValue, fields, actor) {
+  _assertAuthorized_();
+  if (!writeEnabled_()) {
+    return { status: 'disabled', error: 'WRITE_ENABLED=false', serverTs: Date.now() };
+  }
+  // Reuse the existing handleUpdateRow_ path — it already does the
+  // MAPPING allowlist, per-field validation, LockService, ALWAYS_CONFIRM
+  // gating, and Change Log append. Anchor actor to the Google identity
+  // so the log shows the real Google account instead of "admin".
+  var body = {
+    worksheet: String(worksheet || ''),
+    key: String(keyValue || ''),
+    fields: fields || {},
+    actor: _activeEmail_() || String(actor || ACTOR_LABEL)
+  };
+  var textOut = handleUpdateRow_(body);
+  // handleUpdateRow_ returns a TextOutput (jsonOut_). Convert back to
+  // a plain object so google.script.run's success handler sees JSON.
+  try {
+    return JSON.parse(textOut.getContent());
+  } catch (e) {
+    return { status: 'error', error: 'server-response-not-json', serverTs: Date.now() };
+  }
 }

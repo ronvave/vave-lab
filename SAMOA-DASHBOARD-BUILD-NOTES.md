@@ -772,11 +772,13 @@ Files touched:
 New file:
 - `apps-script/hmac-smoke-test.md` (131 lines) — six documented cases
   (successful update, rejected unknown field, unauthorized bad sig,
-  replay attempt, no-op unchanged value, describe endpoint) with a
-  Python-verified reference signature
-  `08e962d38b10ce7051988a959e65ded91b2a1c58fbe056b6e5d5566d63b26744`
-  for Case A that the deployer can use to prove wire-compatibility
-  before flipping the client over.
+  replay attempt, no-op unchanged value, describe endpoint).
+
+> **Session-6 update (2026-08-30):** `apps-script/hmac-smoke-test.md`
+> and its Python runner were **deleted** when the browser-HMAC contract
+> was retired. The Case-A reference signature that lived here was tied
+> to a secret that is no longer honored by any live surface. See
+> `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` for the current security tests.
 
 ### S5-5 — Confirmation: Panel C1 body composition uses Samoa page
 

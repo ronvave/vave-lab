@@ -3,6 +3,53 @@
 Companion to `SAMOA-DASHBOARD-BUILD-NOTES.md`. Documents the admin panel
 for the Samoa Scholar Database.
 
+## ⚠ Architecture change — 2026-08-30 (session 6, this commit)
+
+**The browser-HMAC contract is retired.** The admin panel is no longer
+served from GitHub Pages. See `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` for the
+current architecture.
+
+Summary of the change:
+
+- The admin UI is served from the Samoa Apps Script web app (`doGet`
+  → `HtmlService.createTemplateFromFile`). The `/exec` URL is
+  authenticated by Google identity and authorized by an
+  `APPROVED_ADMIN_EMAIL` Script Property.
+- All Master Sheet writes now execute server-side via
+  `google.script.run` → `apiUpdateRow`. Reads for the form (previously
+  from encrypted `.enc` snapshots) now come from `apiReadRow` live off
+  the sheet.
+- The public `admin-samoa-master.html` is a stub whose only content is
+  a link to the Apps Script `/exec` URL. Nothing else. No JS controller,
+  no password hash, no signing key.
+- `doPost` on the writeback returns HTTP 410 Gone. Any HMAC-signed
+  browser request is rejected outright.
+- The previously exposed browser HMAC secret is now permanently
+  irrelevant. No live surface honors it.
+
+Deleted from the repo in this session:
+
+- `js/samoa-admin-writeback-client.js`
+- `js/samoa-admin-insights-migration.js`
+- `js/admin-samoa-master.js` (moved verbatim into `apps-script/samoa-admin-master-inline.html`)
+- `apps-script/hmac-smoke-test.md`
+- `apps-script/run-hmac-smoke-tests.py`
+
+Added to the repo in this session (all under `apps-script/`):
+
+- `samoa-admin-app.html`
+- `samoa-admin-writeback-bridge.html`
+- `samoa-admin-controller.html`
+- `samoa-admin-master-inline.html`
+- `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` (new)
+
+Modified:
+
+- `admin-samoa-master.html` — replaced with public stub.
+- `apps-script/samoa-master-writeback.gs` — `doGet` now serves the
+  admin app; `doPost` returns 410; new `apiDescribe`, `apiPing`,
+  `apiReadRow`, `apiUpdateRow` functions with `_assertAuthorized_`.
+
 ## Session log
 
 - **2026-08-30 (session 1)** — Sheet-ID wiring + `MAPPING` regeneration

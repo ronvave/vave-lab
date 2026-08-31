@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<!--
+  samoa-admin-app.html — Apps Script HtmlService template for the Samoa
+  Scholar Database admin surface. Served from doGet() in
+  samoa-master-writeback.gs and reachable ONLY through the Apps Script web
+  app URL. Google authentication + APPROVED_ADMIN_EMAIL check happens in
+  doGet BEFORE this template is rendered — an unauthenticated or
+  unauthorized caller never receives this HTML.
+
+  Migration commitments (per Ron's 2026-08-30 architectural fix):
+    • No SHARED_SECRET, no window.SAMOA_WRITEBACK_SECRET_HEX, no HMAC
+      signing in the browser. Every Master Sheet write is executed
+      server-side by apiUpdateRow() / apiDescribe() in the .gs file and
+      invoked via google.script.run.
+    • No client-side admin password. Google identity is the sole
+      authentication surface; the server-side APPROVED_ADMIN_EMAIL check
+      is the sole authorization surface.
+    • No admin panel served from GitHub Pages. This template is the
+      only place the admin UI exists.
+-->
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <title>Samoa Scholar Database — Admin</title>
+    <style>
+      :root {
+        --samoa-fg: #1f2937;
+        --samoa-bg: #f8fafc;
+        --samoa-accent: #0891b2;
+        --samoa-warn: #dc2626;
+        --samoa-muted: #6b7280;
+        --samoa-border: #e5e7eb;
+      }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--samoa-bg);
+        color: var(--samoa-fg);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+      .samoa-admin-shell {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 24px 20px 80px;
+      }
+      .samoa-admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        margin-bottom: 8px;
+        border-bottom: 1px solid var(--samoa-border);
+        padding-bottom: 12px;
+      }
+      .samoa-admin-header h1 {
+        font-size: 20px;
+        margin: 0;
+        color: var(--samoa-accent);
+      }
+      .samoa-admin-identity {
+        font-size: 13px;
+        color: var(--samoa-muted);
+      }
+      .samoa-admin-toolbar {
+        display: flex;
+        gap: 12px;
+        margin: 16px 0;
+        flex-wrap: wrap;
+      }
+      .samoa-admin-toolbar__spacer { flex: 1; }
+      #samoa-admin-status {
+        font-size: 13px;
+        color: var(--samoa-muted);
+        margin: 8px 0;
+      }
+      #samoa-admin-status.error { color: var(--samoa-warn); font-weight: 600; }
+      #samoa-admin-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 8px 0;
+      }
+      #samoa-admin-tabs button {
+        padding: 6px 12px;
+        border: 1px solid var(--samoa-border);
+        background: white;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      #samoa-admin-tabs button.active {
+        background: var(--samoa-accent);
+        color: white;
+        border-color: var(--samoa-accent);
+      }
+      #samoa-admin-keypicker {
+        margin: 12px 0;
+      }
+      #samoa-admin-form {
+        display: grid;
+        gap: 10px;
+      }
+      #samoa-admin-form label {
+        display: block;
+        font-weight: 600;
+        margin-top: 12px;
+      }
+      #samoa-admin-form input,
+      #samoa-admin-form select,
+      #samoa-admin-form textarea {
+        width: 100%;
+        padding: 6px 8px;
+        font-size: 14px;
+        border: 1px solid var(--samoa-border);
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      .samoa-admin-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+      }
+      .samoa-admin-actions button {
+        padding: 8px 16px;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        border: 1px solid var(--samoa-accent);
+        background: var(--samoa-accent);
+        color: white;
+      }
+      .samoa-admin-actions button.secondary {
+        background: white;
+        color: var(--samoa-accent);
+      }
+      .samoa-admin-authorized-banner {
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        color: #065f46;
+        padding: 8px 12px;
+        border-radius: 4px;
+        font-size: 13px;
+        margin-bottom: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="samoa-admin-shell">
+      <div class="samoa-admin-header">
+        <h1>Samoa Scholar Database — Admin</h1>
+        <div class="samoa-admin-identity">Signed in as <b><?!= activeEmail ?></b></div>
+      </div>
+
+      <div class="samoa-admin-authorized-banner">
+        Authorized session. All writes are executed server-side under your
+        Google identity; no browser secrets are used.
+      </div>
+
+      <div class="samoa-admin-toolbar">
+        <button id="samoa-admin-refresh" type="button">Refresh schema</button>
+        <div class="samoa-admin-toolbar__spacer"></div>
+      </div>
+
+      <div id="samoa-admin-status">Booting…</div>
+
+      <!--
+        The admin controller looks for #samoa-admin-login and
+        #samoa-admin-surface by ID. The login container is present but
+        hidden by default (Google authentication has already gated the
+        page). The surface is visible from the start.
+      -->
+      <div id="samoa-admin-login" style="display:none"></div>
+      <div id="samoa-admin-surface">
+        <div id="samoa-admin-tabs"></div>
+        <div id="samoa-admin-keypicker"></div>
+        <div id="samoa-admin-form"></div>
+      </div>
+    </div>
+
+    <script>
+      // Serve the admin identity to the JS layer so the module can label
+      // Change Log entries with a real Google account (not the string
+      // "admin"). This value is server-rendered by HtmlService and cannot
+      // be forged by a page reload.
+      window.SAMOA_ADMIN_ACTIVE_EMAIL = <?!= JSON.stringify(activeEmail) ?>;
+    </script>
+
+    <!-- samoaWriteback bridge (google.script.run). No HMAC, no secrets. -->
+    <?!= HtmlService.createHtmlOutputFromFile('samoa-admin-writeback-bridge').getContent() ?>
+
+    <!-- Admin controller. Same interface as before: consumes
+         window.samoaWriteback.{describe, ping, updateRow}. Now those
+         calls route through google.script.run instead of fetch+HMAC. -->
+    <?!= HtmlService.createHtmlOutputFromFile('samoa-admin-controller').getContent() ?>
+  </body>
+</html>

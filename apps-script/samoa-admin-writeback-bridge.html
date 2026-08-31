@@ -1,0 +1,94 @@
+<script>
+/**
+ * samoa-admin-writeback-bridge (Apps Script HtmlService include)
+ *
+ * Replaces the retired browser-HMAC client. Exposes the same public
+ * surface (window.samoaWriteback.describe / ping / updateRow) so the
+ * existing admin controller (admin-samoa-master.js) works unchanged,
+ * but every method routes through google.script.run into the
+ * server-side apiDescribe / apiPing / apiUpdateRow functions defined
+ * in samoa-master-writeback.gs.
+ *
+ * Security model:
+ *   • No SHARED_SECRET on the browser side. None. Nowhere.
+ *   • No HMAC signing, no nonce, no ts, no canonical string.
+ *   • Google authentication gates the Apps Script web app URL.
+ *     Session.getActiveUser().getEmail() inside every server function
+ *     is checked against APPROVED_ADMIN_EMAIL before any read or write.
+ *   • This file is served from within the authenticated Apps Script
+ *     web app; it is never served from GitHub Pages.
+ */
+(function (global) {
+  'use strict';
+
+  function runServer(fnName, args) {
+    return new Promise(function (resolve, reject) {
+      var runner = google.script.run
+        .withSuccessHandler(function (result) { resolve(result); })
+        .withFailureHandler(function (err) {
+          // Server threw. Surface a shape the controller can display.
+          var msg = (err && err.message) || String(err) || 'unknown-error';
+          var e = new Error('samoa-writeback: server rejected — ' + msg);
+          e.serverBody = { status: 'error', error: msg };
+          reject(e);
+        });
+      runner[fnName].apply(runner, args || []);
+    });
+  }
+
+  function describe(actor) {
+    return runServer('apiDescribe', [actor || 'admin']).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        var msg = (body && body.error) || 'unknown';
+        var err = new Error('samoa-writeback: describe rejected — ' + msg);
+        err.serverBody = body;
+        throw err;
+      }
+      return body;
+    });
+  }
+
+  function ping(actor) {
+    return runServer('apiPing', [actor || 'admin']).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        var msg = (body && body.error) || 'unknown';
+        var err = new Error('samoa-writeback: ping rejected — ' + msg);
+        err.serverBody = body;
+        throw err;
+      }
+      return body;
+    });
+  }
+
+  function updateRow(worksheet, keyValue, fields, actor) {
+    if (typeof worksheet !== 'string' || !worksheet.length) {
+      return Promise.reject(new Error('samoa-writeback: worksheet is required'));
+    }
+    if (typeof keyValue !== 'string' || !keyValue.length) {
+      return Promise.reject(new Error('samoa-writeback: keyValue is required'));
+    }
+    if (!fields || typeof fields !== 'object' || Array.isArray(fields)) {
+      return Promise.reject(new Error('samoa-writeback: fields must be an object'));
+    }
+    if (!Object.keys(fields).length) {
+      return Promise.reject(new Error('samoa-writeback: fields is empty'));
+    }
+    return runServer('apiUpdateRow', [worksheet, keyValue, fields, actor || 'admin'])
+      .then(function (body) {
+        if (!body || body.status !== 'ok') {
+          var msg = (body && body.error) || 'unknown';
+          var err = new Error('samoa-writeback: update rejected — ' + msg);
+          err.serverBody = body;
+          throw err;
+        }
+        return body;
+      });
+  }
+
+  global.samoaWriteback = {
+    describe: describe,
+    ping: ping,
+    updateRow: updateRow
+  };
+})(window);
+</script>

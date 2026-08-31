@@ -1,3 +1,4 @@
+<script>
 /**
  * admin-samoa-master.js  —  Samoa Scholar Database Admin Controller.
  *
@@ -251,7 +252,7 @@
              ' · actor = ' + (body.actor || 'admin'));
     }).catch(function (e) {
       status('MAPPING fetch failed: ' + e.message +
-             ' — check SAMOA_WRITEBACK_URL / SAMOA_WRITEBACK_SECRET_HEX in the page.', true);
+             ' — server rejected the describe call (google.script.run).', true);
     });
   }
 
@@ -642,3 +643,4 @@
     boot();
   }
 })(typeof window !== 'undefined' ? window : this);
+</script>

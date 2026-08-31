@@ -1,0 +1,146 @@
+<script>
+/**
+ * samoa-admin-controller (Apps Script HtmlService include)
+ *
+ * This file shims two dependencies that the browser admin controller
+ * (js/admin-samoa-master.js) expects, so that controller can be embedded
+ * verbatim below without editing:
+ *
+ *   window.samoaDbGate — used ONLY by loadRow() to fetch current field
+ *     values for a row. Because we no longer serve the admin from
+ *     GitHub Pages, there is no cross-origin fetch to samoa-master-*.enc;
+ *     instead we ask the server (google.script.run → apiReadRow) for
+ *     the live values. This shim keeps loadRow's promise contract.
+ *
+ *   window.SAMOA_ADMIN_PASSWORD_HASH_HEX — used ONLY by attemptLogin().
+ *     Google authentication has already gated this page, so we replace
+ *     the login form outright: showAdminSurface() is called on DOM ready.
+ *     The stub hash is a placeholder that never verifies real passwords.
+ */
+(function (global) {
+  'use strict';
+
+  // ── samoaDbGate shim ────────────────────────────────────────────────────
+  //
+  // The real gate decrypts .enc snapshots. Here we route the one method
+  // loadRow() actually uses — decryptFileJSON(snapshotPath) — through
+  // apiReadRow so the admin form is populated from LIVE Master Sheet
+  // values, not from a possibly-stale snapshot. tryResume/unlock/
+  // clearSession are no-ops; the boot path below unlocks unconditionally.
+  //
+  // Because loadRow() then calls extractRows(blob, ws) expecting shape
+  // { worksheets: { <ws>: { rows: [ <row>, ... ] } } }, we return that
+  // exact shape wrapping the single-row read.
+  var snapshotToWorksheet = {
+    'data/samoa-master-scholars.json':               'Scholars',
+    'data/samoa-master-publications.json':           'Publications',
+    'data/samoa-master-authorship.json':             'Authorship',
+    'data/samoa-master-researcher-authorship.json':  'Researcher Authorship',
+    'data/samoa-master-grad-degrees.json':           'Graduate Degrees',
+    'data/samoa-master-mobility.json':               'M>PhD Mobility',
+    'data/samoa-master-geography.json':              'Research Geography'
+  };
+
+  // The row key comes in via loadRow(keyValue) BEFORE decryptFileJSON is
+  // called, so we capture it via a module-scoped variable set by a
+  // wrapper on loadRow (installed after the controller loads, see below).
+  var pendingKey = { ws: null, key: null };
+
+  global.samoaDbGate = {
+    tryResume: function () { return true; },
+    unlock: function () { return Promise.resolve(true); },
+    clearSession: function () { /* Google session; nothing to clear */ },
+    decryptFileJSON: function (snapshotPath) {
+      var ws = snapshotToWorksheet[snapshotPath];
+      if (!ws) {
+        return Promise.reject(new Error(
+          'samoa-admin-controller: unknown snapshot path ' + snapshotPath
+        ));
+      }
+      var key = pendingKey.key;
+      if (!key) {
+        // The controller sometimes calls decryptFileJSON without a key
+        // (batch snapshots). We do not support that path here — return
+        // an empty rows array so extractRows() yields no match.
+        var empty = { worksheets: {} };
+        empty.worksheets[ws] = { rows: [] };
+        return Promise.resolve(empty);
+      }
+      return global.samoaWriteback._readRow(ws, key).then(function (body) {
+        var blob = { worksheets: {} };
+        if (body && body.status === 'ok' && body.fields) {
+          blob.worksheets[ws] = { rows: [body.fields] };
+        } else {
+          blob.worksheets[ws] = { rows: [] };
+        }
+        return blob;
+      });
+    }
+  };
+
+  // Extend samoaWriteback with a private _readRow the shim uses, and
+  // wire pendingKey by wrapping loadRow after the controller loads.
+  var origWriteback = global.samoaWriteback || {};
+  origWriteback._readRow = function (ws, key) {
+    return new Promise(function (resolve, reject) {
+      google.script.run
+        .withSuccessHandler(function (body) { resolve(body); })
+        .withFailureHandler(function (err) {
+          reject(new Error((err && err.message) || String(err)));
+        })
+        .apiReadRow(ws, key);
+    });
+  };
+  global.samoaWriteback = origWriteback;
+
+  // ── Password hash placeholder ────────────────────────────────────────
+  //
+  // The controller checks `global.SAMOA_ADMIN_PASSWORD_HASH_HEX` inside
+  // attemptLogin(). We bypass attemptLogin() entirely by skipping the
+  // login DOM (removed from samoa-admin-app.html) and auto-showing the
+  // surface. This hash is a harmless placeholder to satisfy the guard.
+  global.SAMOA_ADMIN_PASSWORD_HASH_HEX =
+    '0000000000000000000000000000000000000000000000000000000000000000';
+
+  // ── After the controller loads, patch loadRow to capture the key ─────
+  document.addEventListener('DOMContentLoaded', function () {
+    // Show the admin surface immediately — Google identity is already
+    // verified server-side. The login form is not rendered.
+    var login = document.getElementById('samoa-admin-login');
+    if (login) login.style.display = 'none';
+    var surface = document.getElementById('samoa-admin-surface');
+    if (surface) surface.style.display = 'block';
+
+    // Boot the controller (calls describe, renders tabs, etc.). The
+    // controller exposes its boot via window.samoaAdmin.boot or similar
+    // in some builds; when it doesn't, it auto-boots on DOMContentLoaded
+    // and there is nothing to do here.
+    if (global.samoaAdmin && typeof global.samoaAdmin.boot === 'function') {
+      try { global.samoaAdmin.boot(); } catch (e) { /* ignore */ }
+    }
+
+    // Wrap loadRow (via renderKeyPicker's onclick) to capture the key
+    // just before decryptFileJSON fires. We do this by intercepting the
+    // Load button clicks at the document level.
+    document.addEventListener('click', function (ev) {
+      var btn = ev.target;
+      if (!btn || btn.tagName !== 'BUTTON') return;
+      var label = (btn.textContent || '').trim().toLowerCase();
+      if (label !== 'load') return;
+      var input = document.querySelector('#samoa-admin-keypicker input');
+      if (input) {
+        // pendingKey is used by decryptFileJSON above.
+        pendingKey.key = (input.value || '').trim();
+      }
+    }, true);
+  });
+})(window);
+</script>
+
+<!--
+  Embed the browser admin controller verbatim. It expects the same
+  window.samoaWriteback shape as before — the bridge above provides it —
+  and it uses window.samoaDbGate + window.SAMOA_ADMIN_PASSWORD_HASH_HEX
+  which the shim above provides.
+-->
+<?!= HtmlService.createHtmlOutputFromFile('samoa-admin-master-inline').getContent() ?>
