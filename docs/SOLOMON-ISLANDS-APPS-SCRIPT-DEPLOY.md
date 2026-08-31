@@ -61,7 +61,7 @@ The spreadsheet ID is intentionally NOT hardcoded as a secret in the script — 
 3. Fill in:
 
    - **Description:** `Solomon Islands Master write-back v1`
-   - **Execute as:** `Me (ronvave2011@gmail.com)`
+   - **Execute as:** `Me (ronvave@hawaii.edu)`
    - **Who has access:** `Anyone with the link`
 
 4. Click **Deploy**. Approve any OAuth prompts.

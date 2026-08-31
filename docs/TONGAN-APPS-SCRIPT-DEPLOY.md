@@ -87,11 +87,11 @@ Do not edit any of the pasted content. Do not add or remove blank lines. The fil
 1. In the file list click `tongan-master-writeback.gs`.
 2. At the top of the code area there is a **function picker** (a dropdown). Choose **`inspectConfig`**.
 3. Click **Run**.
-4. The first time you do this, Google will pop up an authorization dialog. Click **Review permissions**, pick your Google account (`ronvave2011@gmail.com`), click **Advanced → Go to (unsafe)** if warned, then **Allow**. This is the standard Apps Script first‑run prompt.
+4. The first time you do this, Google will pop up an authorization dialog. Click **Review permissions**, pick your Google account (`ronvave@hawaii.edu`), click **Advanced → Go to (unsafe)** if warned, then **Allow**. This is the standard Apps Script first‑run prompt.
 5. Click the **Execution log** tab at the bottom of the editor. You should see four lines that look like:
 
    ```
-   APPROVED_ADMIN_EMAIL = ronvave2011@gmail.com
+   APPROVED_ADMIN_EMAIL = ronvave@hawaii.edu
    WRITE_ENABLED        = false
    Spreadsheet ID       = 1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI
    Timezone             = Pacific/Honolulu
@@ -118,7 +118,7 @@ If you already had a deployment and just clicked the pencil, the URL will be the
 
 ## Step 6. Test in this exact order, before turning writes on
 
-Open the `/exec` URL in a new browser tab. If a Google sign‑in appears, sign in with `ronvave2011@gmail.com`.
+Open the `/exec` URL in a new browser tab. If a Google sign‑in appears, sign in with `ronvave@hawaii.edu`.
 
 Do these tests one by one. Each must pass before moving to the next.
 

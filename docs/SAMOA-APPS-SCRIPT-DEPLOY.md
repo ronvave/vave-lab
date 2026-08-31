@@ -33,7 +33,7 @@ The server refuses to run if these are missing.
 
    | Property key            | Value                                          |
    |-------------------------|------------------------------------------------|
-   | `APPROVED_ADMIN_EMAIL`  | `ronvave2011@gmail.com`                        |
+   | `APPROVED_ADMIN_EMAIL`  | `ronvave@hawaii.edu`                        |
    | `WRITE_ENABLED`         | `false`                                        |
 
    Leave `WRITE_ENABLED` at `false` for now. You will flip it to `true` only after all tests in step 6 pass.
@@ -82,11 +82,11 @@ Do not edit any of the pasted content. Do not add or remove blank lines. The fil
 1. In the file list click `samoa-master-writeback.gs`.
 2. At the top of the code area there is a **function picker** (a dropdown). Choose **`inspectConfig`**.
 3. Click **Run**.
-4. The first time you do this, Google will pop up an authorization dialog. Click **Review permissions**, pick your Google account (`ronvave2011@gmail.com`), click **Advanced → Go to (unsafe)** if warned, then **Allow**. This is the standard Apps Script first‑run prompt.
+4. The first time you do this, Google will pop up an authorization dialog. Click **Review permissions**, pick your Google account (`ronvave@hawaii.edu`), click **Advanced → Go to (unsafe)** if warned, then **Allow**. This is the standard Apps Script first‑run prompt.
 5. Click the **Execution log** tab at the bottom of the editor. You should see four lines that look like:
 
    ```
-   APPROVED_ADMIN_EMAIL = ronvave2011@gmail.com
+   APPROVED_ADMIN_EMAIL = ronvave@hawaii.edu
    WRITE_ENABLED        = false
    Spreadsheet ID       = 1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ
    Timezone             = Pacific/Honolulu
@@ -113,7 +113,7 @@ If you already had a deployment and just clicked the pencil, the URL will be the
 
 ## Step 6. Test in this exact order, before turning writes on
 
-Open the `/exec` URL in a new browser tab. If a Google sign‑in appears, sign in with `ronvave2011@gmail.com`.
+Open the `/exec` URL in a new browser tab. If a Google sign‑in appears, sign in with `ronvave@hawaii.edu`.
 
 Do these tests one by one. Each must pass before moving to the next.
 
@@ -129,7 +129,7 @@ If the status bar says anything else — screenshot it and stop.
 ### 6b. Ping
 
 * Click **Test connection**.
-* Status bar turns green: `Ping OK. Active email: ronvave2011@gmail.com. WRITE_ENABLED: false.`
+* Status bar turns green: `Ping OK. Active email: ronvave@hawaii.edu. WRITE_ENABLED: false.`
 
 ### 6c. Unauthorized user is blocked
 
