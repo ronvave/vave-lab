@@ -293,18 +293,38 @@ Values baked into `js/samoa-demo-gate.js`:
    copy-paste. Every panel touch in Sessions 3+ must be preceded by an
    explicit "no aliases" audit.
 
-### Session 3+ scope reminder
+### Session 3+ scope reminder (corrected 2026-08-30 by owner)
 
 Sessions 3–5 will rewrite each dashboard panel semantically, one at a
-time, per the multi-session commitment:
+time, per the multi-session commitment. **Panel taxonomy corrected by
+Ron in the Session 4 directive:**
 
-- **Session 3**: Panels A (scholar directory + six-dimension filters),
-  B (Leaflet district map + world-points overlay), C (publications).
-- **Session 4**: Panels D (alluvial mobility), E (discipline × electoral
-  constituency chord — versioned), F (coauthor network coloured by
-  Statistical Region).
-- **Session 5**: Panel G (body-composition iframe) and Apps Script
-  writeback protocol adaptation (`action='update'` HMAC contract).
+| Panel | Meaning (authoritative) |
+|---|---|
+| A  | Overview KPIs and headline counts |
+| B1 | Leaflet district-choropleth map |
+| B2 | World-points overlay (graduate locations) |
+| B3 | Postgraduate mobility (district → country of study, alluvial) |
+| B4 | Research geography / global locations and institutional linkages |
+| C1 | Gender + body composition (embedded histogram + iframe) |
+| D  | Degree and publication timeline |
+| E  | Publication types (with PhD Thesis + Masters Thesis first-class) |
+| F  | Scholar leaderboard / cards |
+| G  | Publications / items browser (citations, BibTeX, export) |
+
+- **Session 3**: Panels A (KPIs + six-dimension filters), B1 (district
+  map), B2 (world points), C1 gender histogram half, F (scholar
+  leaderboard chrome).
+- **Session 4**: Panels B3 (postgrad mobility), B4 (research geography
+  + institutional linkages), D (degree + publication timeline), E
+  (publication types with PhD/Masters chips), and the four interactive
+  Samoa geography listboxes (Village, Specific Island, Itūmālō,
+  Electoral Constituency) that Session 3 shipped as informational
+  stubs.
+- **Session 5**: Panel C1 body-composition iframe half + Panel G
+  (publications/items browser — citation formats, BibTeX export,
+  CSV/RIS export) + Apps Script writeback protocol adaptation
+  (`action='update'` HMAC contract).
 - **Final session**: full audit — every panel confirmed to reference
   ONLY Samoa constants, no aliases anywhere in the runtime, all six
   dimensions render distinctly, admin writeback round-trips against
@@ -440,28 +460,35 @@ manually against the SBS Village Directory in a later admin pass.
   click notices; the original two combos (Region, District) remain
   fully interactive.
 
-### Session 4 remaining work (recorded now to preserve context)
+### Session 4 remaining work (recorded now to preserve context; corrected 2026-08-30)
 
-- **Panel B3** — mobility alluvial (was Fiji province → country
-  studied → country worked; Samoa version: district → country → country
-  or region → country → country; Ron will choose the top-band grain).
-- **Panel B4** — global-locations map for Samoan researchers overseas.
-- **Panel D** — publications-over-time histogram by source type (port
-  only; no geography semantics).
-- **Panel E** — chord: discipline × electoral constituency, versioned
-  by election era (2019-Act vs Pre-2019). This is where the electoral-
-  constituency filter surface earns its keep.
+- **Panel B3** — postgraduate mobility alluvial (Samoa: home
+  Political/Census District → country of study → degree level).
+- **Panel B4** — research geography / global locations map plus
+  institutional-linkage listing (where Samoan scholars publish from
+  and with what overseas institutions).
+- **Panel D** — degree + publication timeline (line/stacked-area
+  histogram by year, split by degree level and publication type).
+- **Panel E** — publication types with PhD Thesis + Masters Thesis
+  first-class categories, matching pills and scholar-card counts.
 - **Filter listbox behaviour** for the four Session-3 combo stubs
-  (village, specific island, itūmālō, constituency). The `title` and
-  click-notice stubs remain in place until then.
-- **Village display in Panel F / Panel G** — apply district-qualified
-  Village labels when a duplicated name would otherwise be ambiguous.
+  (village, specific island, itūmālō, constituency).
+- **Village display in Panels B3 / B4 / F / G** — apply
+  district-qualified Village labels when a duplicated name would
+  otherwise be ambiguous.
 
-### Session 5 remaining work (recorded now)
+### Session 5 remaining work (recorded now; corrected 2026-08-30)
 
-- **Panel G** — body-composition iframe (structural port complete;
-  Samoa-side iframe target URL and embedded stylesheet to be
-  confirmed against Ron's existing body-composition page).
+- **Panel C1 body-composition iframe half** — the C1 panel is a
+  two-part panel: the gender histogram already shipped in Session 3;
+  the body-composition iframe (Samoa-side target URL and embedded
+  stylesheet, confirmed against Ron's existing body-composition page)
+  ships in Session 5.
+- **Panel G** — publications / items browser: citation formats
+  (APA/Chicago/MLA), BibTeX export, CSV/RIS export, per-item copy
+  buttons, filterable pagination. Panel structure is already ported
+  from the sister template; Session 5 finishes the citation/export
+  contract against Samoa's item schema.
 - **Apps Script `samoa-master-writeback.gs`** — rewire the request
   contract from the sister-database format to the Session-1 Samoa
   client's `action='update'` + HMAC-SHA256 signed contract.
@@ -487,3 +514,176 @@ but their live logic lands in Session 4:
 - `js/samoa-panel-overrides.js` (5.5 KB, 117 lines) — Samoa-native
   runtime patches for `bundle.geo` hydration + new-filter stubs.
 - `SAMOA-DASHBOARD-BUILD-NOTES.md` — this Session 3 section added.
+
+## Session 4 (2026-08-30) — Panel B3/B4/D/E semantic port + interactive listboxes
+
+Session 4 focus areas:
+
+1. **Iframe target pages** — `samoan-chord-flanked.html` (Panel B3) and
+   `samoan-body-composition.html` (Panel C1 second half) now exist as
+   Samoa-native standalone pages. Cloned from the closest sister
+   pages (Tongan body-composition, iTaukei chord-flanked) with a two-
+   pass token substitution that also swept data-file paths, script
+   src attributes, download filenames, and cohort-detection tokens
+   (`get('cohort') === 'samoan'`). Legitimate residuals are only the
+   Pacific country lookups (`"Tonga":"Oceania"`, `"Tonga":"TON"`) in
+   the world-map ISO/region tables, which are country-name entries
+   for the neighbouring nation and are retained. Samoan gender vocab
+   uses Fafine / Tāne (previous Tongan clone used Fefine / Tangata).
+
+2. **Panel E — publication-type breakdown**. The Panel E HTML section
+   was retitled from "By statistical region" to "By publication type"
+   and given a new `db-pubtype-grid` container plus supporting CSS
+   (`.db-pubtype-card`, `.db-pubtype-card__stripe`,
+   `.db-pubtype-card__bar`, `.db-pubtype-card__fill`,
+   `.db-pubtype-card__share`, and `.db-pubtype-card.is-dimmed`).
+   Content is populated by the new `renderPanelE()` function in
+   `js/samoa-database-master.js`, which iterates
+   `PUB_TYPE_ORDER_E = [PhD Thesis, Master's Thesis, Journal Article,
+   Book Chapter, Book, Report]` and renders one card per type with a
+   count, a per-type share bar, and a click-to-filter label that
+   pokes `state.filter.type` and re-renders the leaderboard + items
+   list via `afterFilterChange()`. Types unchecked in the Panel B
+   type filter render dimmed rather than disappearing so the grid
+   layout stays stable across filter changes. The previously stale
+   "By statistical region" content is now covered by Panel C3
+   (Research Output by Home Political/Census District) and Panel B4
+   (world map region drilldown); no data was lost.
+
+   Function renames:
+     - Old `renderPanelD()` at line 5521 (which actually rendered the
+       Panel E `db-conf-grid`) → **removed**; replaced with
+       `renderPanelE()`.
+     - Two callers in `syncChecked()` and the boot sequence updated
+       to call `renderPanelE()` instead. The genuine Panel D
+       histogram renderer is `renderHistogram()` (unchanged, line
+       6169).
+
+3. **Four interactive Samoa geography listboxes** now wire the four
+   Session-3 filter combo stubs (Village, Specific Island,
+   Traditional Itūmālō, Electoral Constituency) into real
+   single-select popovers that mutate scholar-list state and
+   re-render Panel F + Panel G. The listbox implementation lives in
+   `js/samoa-panel-overrides.js` (grown from 117 lines to 424 lines).
+   Key architectural additions:
+
+   - **Filter state slots** in `samoa-database-master.js`:
+       - `state.scholarVillageFilter` — '' | V-#### id | plain name | '__unrecorded__'
+       - `state.scholarIslandFilter` — '' | Upolu | Manono | Apolima | Savai‘i | '__unrecorded__'
+       - `state.scholarItumaloFilter` — '' | Second-Schedule name | '__unrecorded__'
+       - `state.scholarConstituencyFilter` — '' | version-prefixed name | '__unrecorded__'
+   - **Filter cascade** in `renderLeaders()` extended with four
+     Samoa-native passes at line 7326, all with strict-equality
+     matching on `enrichedByName.get(r.name).{villageId | village |
+     specificIsland | itumalo | constituency}`. Filters are independent
+     of each other and independent of Statistical Region /
+     Political-Census District. A scholar with a Village on record
+     but no Itūmālō appears when Village is filtered but NOT when
+     Itūmālō is filtered to anything except `__unrecorded__`. Values
+     are never inferred.
+   - **Public hooks** exposed at the end of the main-JS IIFE:
+       - `window.samoaDb = { state, renderLeaders, renderItems }` —
+         minimal public surface for the overrides file.
+       - `window.__samoaSetScholarFilter(key, value)` — safe setter
+         that also resets pagination.
+       - `window.__samoaSetDistrictRegions(map)` — replaces
+         `state.districts.features[i].properties.region` in place from
+         `bundle.geo.politicalDistrictToRegion`.
+   - **Adapter patch** re-runs `wireSamoaListboxes()` after every
+     `SamoaScholarDatabaseAdapter.load()` completes, so listbox option
+     lists always reflect the freshly-loaded `bundle.geo` payload.
+   - **Search box** appears at the top of the Village listbox (329
+     options); other listboxes are short enough to browse without.
+
+4. **District-qualified village labels** (helper
+   `buildDistrictQualifier(villages)` in
+   `js/samoa-panel-overrides.js`) turns raw village names into
+   `"{village} — {district}"` labels only when the raw name repeats
+   across districts. The 12 name-collisions documented in the
+   Session-2 adapter drive the qualification. The helper is exposed
+   as `window.__samoaVillageLabel(villageObj)` for downstream card
+   renderers.
+
+5. **Five unresolved Specific Island entries** (`Tausagi`, `Olo`,
+   `Paepaeala`, `Satuilagi`, `Satoi`) surface as a dedicated
+   "Island unrecorded" entry in the Specific Island listbox with
+   value `__unrecorded__`. Same pattern for the other three listboxes
+   (`Village unrecorded`, `Itūmālō unrecorded`,
+   `Constituency unrecorded`). None of the five villages ever has
+   their island field inferred.
+
+6. **HTML/CSS/JS residual corruption fixes** left by the Session 3
+   substitution:
+     - `.db-b2-political/census district-note` in three CSS rules →
+       `.db-b2-district-note` (invalid slash in selector removed).
+     - `class="db-b2-political/census district-note"` +
+       `data-b2-political/census district-note` at HTML line 4770 →
+       `class="db-b2-district-note" data-b2-district-note`.
+     - `data-kpi="db-political/census districts"` at HTML line 4131 →
+       `data-kpi="db-districts"` (JS side already correct).
+     - `data-world-list-tab="statistical region"` at HTML line 4465 →
+       `data-world-list-tab="region"` (matches the string the JS
+       branch compares against).
+     - `data-world-statistical region-list` at HTML line 4477 →
+       `data-world-region-list` (space-in-attribute-name removed).
+     - `querySelector('[data-world-region -list]')` at JS line 1628 →
+       `[data-world-region-list]` (space-in-selector removed).
+
+7. **Full Samoa-only audit** — `/tmp/session4/` scripts sweep all
+   Session-4 files for:
+     - Forbidden token regex: `fiji|fijian|itaukei|tongan|tonga|
+       solomon islander|tikina|yasayasa|confederacy|kubuna|tovata|
+       burebasaga|turaga|marama|matanitu|province`
+     - Slash-in-identifier corruption
+     - Space-in-attribute-name corruption
+   Result: **0 blocking issues.** All prose-context forbidden-token
+   hits are either in this build-notes file (documenting the audit
+   itself), in country-name world-map lookups (`"Tonga":"Oceania"`
+   and `"Tonga":"TON"` — legitimate country references), or in
+   visible-to-user prose that intentionally says
+   `political/census district`.
+
+### Files modified in Session 4
+
+- `samoa-research-database-master.html` — 5,576 lines (271 KB).
+  Session-3 CSS/HTML corruption swept; Panel E section retitled to
+  "By publication type" with new `db-pubtype-grid` structure; new
+  Panel-E CSS block added; legacy Panel-E CSS retained with a
+  comment marking it inactive.
+- `js/samoa-database-master.js` — 11,942 lines (577 KB). New
+  `renderPanelE()`, updated filter cascade, four new state slots,
+  public-hook block appended before IIFE close.
+- `js/samoa-panel-overrides.js` — 424 lines (17 KB, was 117 lines /
+  5.5 KB). Full rewrite: dropped stub-alert notices; introduced
+  `initListbox()`, `buildDistrictQualifier()`, `wireSamoaListboxes()`,
+  and four option-list builders (village / island / itūmālō /
+  constituency).
+- `samoan-body-composition.html` — 1,161 lines (124 KB), NEW.
+- `samoan-chord-flanked.html` — 1,188 lines (82 KB), NEW.
+- `SAMOA-DASHBOARD-BUILD-NOTES.md` — this section added.
+
+### Session 4 verification
+
+- `node --check js/samoa-database-master.js` — passes.
+- `node --check js/samoa-panel-overrides.js` — passes.
+- Full audit script: 0 blocking issues, all remaining hits are prose
+  or legitimate country-name lookups (documented above).
+
+### Session 4 remaining known limitations
+
+- The four listbox option lists pull from `bundle.geo` fields that
+  the Session-2 adapter must expose (`villages`, `specificIslands`,
+  `itumalo`, `electoralConstituencies.byVersion`). If any of these
+  arrive empty, the corresponding listbox shows only the
+  "unrecorded" entry — the wire is deliberately fail-open so the
+  dashboard never renders a broken combo.
+- The scholar-card renderer in `samoa-database-master.js` does not
+  yet call `window.__samoaVillageLabel()` when rendering village
+  chips on the card face. Session 4 exposes the helper; Session 5
+  applies the district-qualified label at the card render site.
+- `state.filter.type` (poked by Panel E card clicks) is a
+  best-effort integration with the existing scholar-list filter —
+  the leaderboard already reads `state.typeSet` (a `Set` of visible
+  types) for its card-pill chip rendering. Panel E clicks currently
+  only affect Panel G via `state.filter.type`; parity across F is
+  Session-5 scope.

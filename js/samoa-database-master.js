@@ -1625,7 +1625,7 @@
     const countryList = listView.querySelector('[data-world-country-list]');
     const emptyEl = listView.querySelector('[data-world-empty]');
     const narrEl = listView.querySelector('[data-world-narrative]');
-    const confHost = listView.querySelector('[data-world-region -list]');
+    const confHost = listView.querySelector('[data-world-region-list]');
     const titleEl = listView.querySelector('[data-world-list-title]');
     const explainEl = listView.querySelector('[data-world-list-explain]');
     const showCountry = view === 'country';
@@ -5517,56 +5517,68 @@
     }
   }
 
-  // ============ PANEL D — statistical region small multiples ============
-  function renderPanelD() {
-    const host = $('[data-db-conf-grid]');
+  // ============ PANEL E — publication-type breakdown ============
+  // Renders the six-category publication-type grid. PhD Thesis and
+  // Master's Thesis lead the list as first-class categories, followed by
+  // Journal Article, Book Chapter, Book, and Report. Each type card shows
+  // a count, a per-type share bar, and a clickable label that filters the
+  // scholar list (Panel F) and publications browser (Panel G) to items
+  // of that type. Reflects the current type-filter selection at the top
+  // of Panel B, so an unchecked type is greyed out (0 count) rather than
+  // hidden — keeping the panel structurally stable across filter changes.
+  //
+  // Region-ranked bars previously here have been retired; the same
+  // information is now surfaced via Panel C3 (Research Output by Home
+  // Political/Census District) and Panel B4 (world map).
+  const PUB_TYPE_ORDER_E = [
+    { key: 'thesisPhd',      label: 'PhD Thesis',      color: '#228B22' },
+    { key: 'thesisMasters',  label: "Master's Thesis", color: '#8FBC8F' },
+    { key: 'journalArticle', label: 'Journal Article', color: '#B8860B' },
+    { key: 'bookSection',    label: 'Book Chapter',    color: '#C08388' },
+    { key: 'book',           label: 'Book',            color: '#7a1419' },
+    { key: 'report',         label: 'Report',          color: '#1e40af' },
+  ];
+  function renderPanelE() {
+    const host = $('[data-db-pubtype-grid]');
     if (!host) return;
     host.innerHTML = '';
-    const confs = ['Rest of Upolu','Apia Urban Area','North West Upolu'];
-    const provs = state.districts.features.map(f => f.properties);
-    const perProvTotal = new Map();
-    provs.forEach(p => perProvTotal.set(p.name, 0));
+    const counts = new Map();
+    PUB_TYPE_ORDER_E.forEach(t => counts.set(t.key, 0));
     state.snapshot.items.forEach(it => {
-      if (!state.typeSet.has(visualType(it))) return;
-      const ps = state.provincesByItem.get(it.key);
-      if (!ps) return;
-      ps.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
+      const t = visualType(it);
+      if (!counts.has(t)) return;
+      counts.set(t, counts.get(t) + 1);
     });
-    confs.forEach(cf => {
-      const provInCf = provs.filter(p => p.region === cf)
-        .map(p => ({ name: p.name, total: perProvTotal.get(p.name) || 0 }))
-        .sort((a,b) => b.total - a.total);
-      const sub = provInCf.reduce((a,p) => a + p.total, 0);
-      const max = Math.max(1, ...provInCf.map(p => p.total));
-      const panel = document.createElement('div');
-      panel.className = 'db-conf-panel';
-      panel.innerHTML = `
-        <div class="db-conf-panel__head">
-          <p class="db-conf-panel__name">${cf}</p>
-          <p class="db-conf-panel__total">${sub}</p>
+    const totalAll = Array.from(counts.values()).reduce((a,b) => a + b, 0) || 1;
+    const maxOne  = Math.max(1, ...counts.values());
+    PUB_TYPE_ORDER_E.forEach(t => {
+      const n = counts.get(t.key) || 0;
+      const share = (n / totalAll) * 100;
+      const barPct = (n / maxOne) * 100;
+      const dimmed = !state.typeSet.has(t.key) ? ' is-dimmed' : '';
+      const card = document.createElement('div');
+      card.className = `db-pubtype-card${dimmed}`;
+      card.innerHTML = `
+        <div class="db-pubtype-card__head">
+          <span class="db-pubtype-card__stripe" style="background:${t.color};"></span>
+          <span class="db-pubtype-card__name" data-pubtype="${t.key}">${t.label}</span>
+          <span class="db-pubtype-card__n">${n}</span>
         </div>
-        <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
-        <div class="db-conf-panel__provs"></div>
-        <p class="db-conf-panel__foot">${provInCf.length} districts · ${sub} publications</p>
+        <div class="db-pubtype-card__bar"><span class="db-pubtype-card__fill" style="width:${barPct}%;background:${t.color};"></span></div>
+        <div class="db-pubtype-card__share">${share.toFixed(1)}% of catalogued output</div>
       `;
-      const inner = panel.querySelector('.db-conf-panel__provs');
-      provInCf.forEach(p => {
-        const row = document.createElement('div');
-        row.className = 'db-conf-mini';
-        row.innerHTML = `
-          <span class="db-conf-mini__name" data-prov="${escapeAttr(p.name)}">${p.name}</span>
-          <span class="db-conf-mini__bar"><span class="db-conf-mini__fill" style="width:${(p.total/max)*100}%;background:${CONF_COLORS[cf]};"></span></span>
-          <span class="db-conf-mini__n">${p.total}</span>
-        `;
-        row.querySelector('.db-conf-mini__name').addEventListener('click', () => {
-          state.filter.district = state.filter.district === p.name ? '' : p.name;
-          state.filter.paternal = '';
+      // Clicking the type name toggles a type-only filter on the leaderboard
+      // and publications list. Reuses the existing state.filter.type slot.
+      const nameEl = card.querySelector('.db-pubtype-card__name');
+      if (nameEl) {
+        nameEl.addEventListener('click', () => {
+          state.filter = state.filter || {};
+          state.filter.type = state.filter.type === t.key ? '' : t.key;
           state.shown = state.pageSize;
           afterFilterChange();
         });
-        inner.appendChild(row);
-      });
-      host.appendChild(panel);
+      }
+      host.appendChild(card);
     });
   }
 
@@ -5634,7 +5646,7 @@
       state.typeSet = new Set(visibleBoxes.filter(b => b.checked).map(b => b.value));
       visibleBoxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
       renderPanelB();
-      renderPanelD();
+      renderPanelE();
       // Panel D histogram has its own type filter (state.histTypeSet) wired
       // by wireHistTypeFilter — do NOT rerender it here so Panel B toggles
       // no longer cascade into the timeline.
@@ -6864,6 +6876,15 @@
   state.scholarStudyUni = '';      // optional narrower selection within that country
   state.scholarWorkCountry = '';   // country selected in the Work combo
   state.scholarWorkUni = '';       // optional narrower selection within that country
+  // Samoa-native six-dimension geography filter slots (Session 4). Each is
+  // '', a domain-specific value, or '__unrecorded__' meaning "blank in the
+  // source". Values are never inferred: a scholar with a Village on record
+  // but no Itūmālō appears when Village is filtered but does NOT appear
+  // when Itūmālō is filtered to anything except '__unrecorded__'.
+  state.scholarVillageFilter = '';       // '' | V-#### composite id | plain village name | '__unrecorded__'
+  state.scholarIslandFilter = '';        // '' | Upolu | Manono | Apolima | Savai‘i | '__unrecorded__'
+  state.scholarItumaloFilter = '';       // '' | one of 11 constitutional Itūmālō | '__unrecorded__'
+  state.scholarConstituencyFilter = '';  // '' | version-namespaced constituency | '__unrecorded__'
   // Cache: scholar name → Set<discipline>. Populated lazily on first renderLeaders.
   state.scholarDisciplines = null;
 
@@ -7311,6 +7332,53 @@
       });
     }
 
+    // Samoa-native six-dimension geography filters. Independent of each
+    // other and independent of Statistical Region / Political-Census
+    // District (which live in state.scholarConfFilter / scholarProvFilter
+    // above). A scholar with a Village on record but no Itūmālō, or an
+    // Electoral Constituency but no Specific Island, is NOT inferred to
+    // sit inside another dimension. Filter values are:
+    //   - Village: composite V-#### id from SBS Village Directory,
+    //     OR the sentinel '__unrecorded__' meaning "village blank".
+    //   - Specific Island: 'Upolu' | 'Manono' | 'Apolima' | 'Savai‘i',
+    //     OR '__unrecorded__' meaning "blank in SBS row".
+    //   - Itūmālō: one of the 11 constitutional Second-Schedule names.
+    //   - Constituency: version-namespaced string, e.g. '2019-Act:Aana Alofi 1'
+    //     or 'Pre-2019:Aʻana Alofi 1'.
+    if (state.scholarVillageFilter) {
+      const want = state.scholarVillageFilter;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        if (want === '__unrecorded__') return !p.villageId && !p.village;
+        return p.villageId === want || p.village === want;
+      });
+    }
+    if (state.scholarIslandFilter) {
+      const want = state.scholarIslandFilter;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        const isl = p.specificIsland || '';
+        if (want === '__unrecorded__') return !isl || isl === 'SPECIFIC_ISLAND_UNSURE';
+        return isl === want;
+      });
+    }
+    if (state.scholarItumaloFilter) {
+      const want = state.scholarItumaloFilter;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        if (want === '__unrecorded__') return !p.itumalo;
+        return p.itumalo === want;
+      });
+    }
+    if (state.scholarConstituencyFilter) {
+      const want = state.scholarConstituencyFilter;
+      rows = rows.filter(r => {
+        const p = enrichedByName.get(r.name) || {};
+        if (want === '__unrecorded__') return !p.constituency;
+        return p.constituency === want;
+      });
+    }
+
     // Recompute the statistical region breakdown counts for the summary bar based on
     // the CURRENTLY-visible scholar set. Called after filtering so counts
     // always reflect what the user is actually looking at.
@@ -7358,7 +7426,11 @@
         || !!state.scholarSectorFilter
         || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
         || !!state.scholarStudyCountry || !!state.scholarStudyUni
-        || !!state.scholarWorkCountry  || !!state.scholarWorkUni;
+        || !!state.scholarWorkCountry  || !!state.scholarWorkUni
+        || !!state.scholarVillageFilter
+        || !!state.scholarIslandFilter
+        || !!state.scholarItumaloFilter
+        || !!state.scholarConstituencyFilter;
   }
 
   function renderScholarSummary(rows, unfilteredTotal) {
@@ -9258,7 +9330,7 @@
     renderPanelB();
     renderPanelB2();
     wirePanelB2();
-    renderPanelD();
+    renderPanelE();
     renderHistogram();
     renderLeaders();
     wireScholarFilterRow();
@@ -11839,4 +11911,32 @@
       });
     });
   }
+
+  // ================================================================
+  // Samoa-native public hooks (for samoa-panel-overrides.js).
+  // Exposed as `window.samoaDb` so the overrides file can reach in
+  // and (a) mutate the filter-state slots that samoa-panel-overrides
+  // introduced this session, and (b) trigger renderLeaders() /
+  // renderItems() after a listbox selection. Keep the surface minimal.
+  // ================================================================
+  window.samoaDb = {
+    state: state,
+    renderLeaders: renderLeaders,
+    renderItems: (typeof renderItems === 'function') ? renderItems : null
+  };
+  window.__samoaSetScholarFilter = function(key, value){
+    if (!key) return;
+    state[key] = (value == null) ? '' : value;
+    state.scholarPage = 1;
+  };
+  window.__samoaSetDistrictRegions = function(map){
+    // The main JS builds its district→region map from state.districts.
+    // If bundle.geo provides a fresh authoritative map, replace the
+    // per-feature `region` property so downstream lookups pick it up.
+    if (!map || !state || !state.districts || !state.districts.features) return;
+    state.districts.features.forEach(f => {
+      const nm = f && f.properties && f.properties.name;
+      if (nm && map[nm]) f.properties.region = map[nm];
+    });
+  };
 })();

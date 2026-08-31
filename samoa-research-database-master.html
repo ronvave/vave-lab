@@ -1663,7 +1663,9 @@
     .db-hist-legend span { display: inline-flex; align-items: center; gap: 4px; }
     .db-hist-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 
-    /* Panel D — statistical region multiples */
+    /* Legacy Panel E — statistical region multiples (retained for reference;
+       replaced by publication-type breakdown below). Kept because a couple of
+       B2 authorship-view sub-elements share the same .db-conf-* prefix. */
     .db-conf-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     }
@@ -1706,6 +1708,46 @@
     }
     .db-conf-panel__foot {
       margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--color-border);
+      font-size: 0.7rem; color: var(--color-text-muted);
+    }
+
+    /* Panel E — publication-type breakdown (PhD Thesis + Master's Thesis lead) */
+    .db-pubtype-grid {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    @media (max-width: 720px) { .db-pubtype-grid { grid-template-columns: 1fr; } }
+    .db-pubtype-card {
+      border: 1px solid var(--color-border); border-radius: var(--radius-md);
+      padding: 12px 12px 10px; background: var(--color-surface);
+      transition: opacity .15s ease, background .15s ease;
+    }
+    .db-pubtype-card.is-dimmed { opacity: .38; }
+    .db-pubtype-card__head {
+      display: grid; grid-template-columns: 6px 1fr auto;
+      align-items: center; gap: 8px; margin-bottom: 6px;
+    }
+    .db-pubtype-card__stripe {
+      display: block; width: 6px; height: 22px; border-radius: 2px;
+    }
+    .db-pubtype-card__name {
+      font-family: var(--font-display); font-size: 1rem; font-weight: 600;
+      color: var(--color-text); cursor: pointer;
+    }
+    .db-pubtype-card__name:hover {
+      color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px;
+    }
+    .db-pubtype-card__n {
+      font-family: var(--font-display); font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      font-size: 1.1rem; color: var(--color-text);
+    }
+    .db-pubtype-card__bar {
+      height: 8px; border-radius: 2px;
+      background: rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 6px;
+    }
+    .db-pubtype-card__fill { display: block; height: 100%; }
+    .db-pubtype-card__share {
       font-size: 0.7rem; color: var(--color-text-muted);
     }
 
@@ -2610,13 +2652,13 @@
     .db-panel[data-panel="C3"].is-detailed .db-b2-blurb { margin-bottom: 10px; }
 
     /* ---- Authorship view (compact, one-bar-per-political/census district) ---- */
-    .db-b2-political/census district-note {
+    .db-b2-district-note {
       font-size: 0.85rem; color: #334155;
       margin: -6px 0 12px; padding: 6px 10px;
       background: rgba(14,116,144,0.06); border-radius: 6px;
       display: inline-block;
     }
-    .db-b2-political/census district-note span[aria-hidden] {
+    .db-b2-district-note span[aria-hidden] {
       color: #0e7490; margin-right: 4px; font-weight: 700;
     }
 
@@ -3592,7 +3634,7 @@
     .db-conf-mini              { font-size: 0.88rem; }
     .db-conf-mini__n           { font-size: 0.92rem; }
     .db-map-scope-note         { font-size: 0.95rem !important; }
-    .db-b2-political/census district-note       { font-size: 0.92rem; }
+    .db-b2-district-note       { font-size: 0.92rem; }
     .db-b2-caveat              { font-size: 0.9rem;  }
     .db-b2-legend              { font-size: 0.92rem; }
     .db-b2-sort                { font-size: 0.9rem;  }
@@ -4128,7 +4170,7 @@
           </div>
           <div class="db-kpi db-kpi--solid db-kpi--pink">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-political/census districts">—</div><div class="db-kpi__label">Samoa political/census districts studied</div></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-districts">—</div><div class="db-kpi__label">Samoa political/census districts studied</div></div>
           </div>
         </div>
       </section>
@@ -4462,7 +4504,7 @@
               <p class="db-conf-explain" data-world-list-explain>Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
               <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
                 <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
-                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="statistical region" aria-selected="false" tabindex="-1">By Statistical Region &amp; Political/Census District</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="region" aria-selected="false" tabindex="-1">By Statistical Region &amp; Political/Census District</button>
               </div>
               <label class="db-world-search" data-world-search-wrap>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -4472,7 +4514,7 @@
               <div class="db-world-country-list db-world-grid" data-world-country-list></div>
               <p class="db-world-empty" data-world-empty style="display:none;">No countries, universities, or scholars match that search.</p>
               <p class="db-conf-narrative" data-world-narrative>—</p>
-              <div class="db-world-conf-list" data-world-statistical region-list style="display:none;"></div>
+              <div class="db-world-conf-list" data-world-region-list style="display:none;"></div>
             </div>
             <div data-world-detail-view style="display:none;">
               <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
@@ -4767,7 +4809,7 @@
                preference. Updates live on every control change. -->
           <div class="db-b2-blurb" data-b2-blurb></div>
           <!-- Authorship-view only: sentence that clarifies the political/census district semantics -->
-          <p class="db-b2-political/census district-note" data-b2-political/census district-note style="display:none;">
+          <p class="db-b2-district-note" data-b2-district-note style="display:none;">
             <span aria-hidden="true">ⓘ</span> Political/Census District refers to where the research was conducted.
           </p>
           <details class="db-b2-info">
@@ -4894,12 +4936,12 @@
         </div>
       </div>
 
-      <!-- Panel E — statistical region multiples -->
+      <!-- Panel E — publication-type breakdown (PhD Thesis + Master's Thesis first-class) -->
       <div class="db-panel reveal" data-panel="E">
         <span class="db-panel__label">E</span>
-        <h2 class="db-panel__title">By statistical region</h2>
-        <p class="db-panel__hint">Ranked within each statistical region. Reflects your item-type selection in panel B.</p>
-        <div class="db-conf-grid" data-db-conf-grid></div>
+        <h2 class="db-panel__title">By publication type</h2>
+        <p class="db-panel__hint">Breakdown of research output by publication type across all Samoan scholars in the database. PhD and Master's theses appear first as first-class categories — they represent the postgraduate scholarship pathway central to this dataset. Regional ranking previously here now lives in Panel C3 (Research Output by Home Political/Census District) and Panel B4 (world map).</p>
+        <div class="db-pubtype-grid" data-db-pubtype-grid></div>
       </div>
 
     </div>
