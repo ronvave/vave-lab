@@ -2216,9 +2216,21 @@
       transition: background .12s ease, color .12s ease;
     }
     .db-item__link:hover { background: var(--color-primary); color: #fff; }
+    .db-item__copy {
+      display: inline-flex; align-items: center;
+      padding: 4px 10px; border-radius: 999px;
+      background: transparent; color: var(--color-primary);
+      border: 1px solid var(--color-primary-highlight);
+      font-size: 0.75rem; font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background .12s ease, color .12s ease, border-color .12s ease;
+    }
+    .db-item__copy:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+    .db-item__copy:disabled { opacity: 0.75; cursor: default; }
     @media (max-width: 640px) {
       .db-item { padding-right: var(--space-4); }
-      .db-item__actions { position: static; margin-top: 8px; }
+      .db-item__actions { position: static; margin-top: 8px; flex-wrap: wrap; }
     }
     .db-item__empty {
       padding: var(--space-6); text-align: center;
@@ -4233,7 +4245,7 @@
         <div class="db-about-grid">
           <div>
             <h4>What's included</h4>
-            <p>Scholarly publications where Samoa or Fijians are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
+            <p>Scholarly publications where Samoa or Samoans are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
             <ul>
               <li>Peer-reviewed journal articles, book chapters, and books</li>
               <li>Master's, PhD, and equivalent higher-degree theses</li>
@@ -5130,8 +5142,15 @@
           <select class="db-filter" data-db-filter="decade" aria-label="Filter by decade">
             <option value="">All decades</option>
           </select>
+          <select class="db-filter" data-db-cite-format aria-label="Citation format" title="Choose the citation style used for copy-to-clipboard and .csv export">
+            <option value="apa">APA 7</option>
+            <option value="chicago">Chicago 17 (author-date)</option>
+            <option value="mla">MLA 9</option>
+          </select>
           <button type="button" class="db-clear-btn is-hidden" data-db-clear>Clear all</button>
           <button type="button" class="db-filter" data-db-export="bib" title="Export the currently filtered items as BibTeX">Export .bib</button>
+          <button type="button" class="db-filter" data-db-export="ris" title="Export the currently filtered items as RIS (EndNote/Zotero/Mendeley)">Export .ris</button>
+          <button type="button" class="db-filter" data-db-export="csv" title="Export the currently filtered items as CSV">Export .csv</button>
         </div>
       </div>
       <div class="db-chips-row" id="db-filter-chips" data-db-chips></div>
@@ -5144,12 +5163,12 @@
       <div class="db-cite reveal">
         <h3>Cite this database</h3>
         <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). Samoan Scholarly Research: A curated database of scholarly publications on Samoa and Fijians. Zotero Group Library. Retrieved from https://www.zotero.org/groups/5983386/samoan_scholarly_research</code>
+        <code>Vave, R. (2026). Samoan Scholarly Research: A curated database of scholarly publications on Samoa and Samoans. Zotero Group Library. Retrieved from https://www.zotero.org/groups/5983386/samoan_scholarly_research</code>
       </div>
       <div class="db-contribute reveal">
         <h3>Contribute · Suggest an item</h3>
         <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by an Samoan scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
-        <a href="mailto:ronvave@hawaii.edu?subject=Samoan%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20iTaukei)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
+        <a href="mailto:ronvave@hawaii.edu?subject=Samoan%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20district%20of%201st%20author%20(if%20Samoan)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
         <a href="https://www.zotero.org/groups/5983386/samoan_scholarly_research/library" target="_blank" rel="noopener" class="btn btn--ghost" style="display:inline-block;margin-left:var(--space-2);">Open Zotero library</a>
       </div>
     </div>
@@ -5425,7 +5444,7 @@
 
      This preview file is IDENTICAL in look/feel to the production dashboard
      (`samoan-research-database.html`) but its data layer is driven by the
-     iTaukei_Master_file Google Sheet instead of Zotero.
+     Samoa_Master_file Google Sheet instead of Zotero.
 
      The `js/samoan-database-master.js` bundle fetches Master-file
      sanitized JSON snapshots (produced by refresh-master-file.yml every 2h)

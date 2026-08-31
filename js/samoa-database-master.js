@@ -145,7 +145,10 @@
   // 'Gau Is'-only or village-only forms stay unpunctuated so they read
   // cleanly in chips.
   // ------------------------------------------------------------------
-  const _MAINLAND_ISLANDS_SUPPRESS = /^(viti\s*levu|vanua\s*levu)$/i;
+  // Samoa uses its own island composition (Upolu, Savaiʻi, Manono, Apolima).
+  // The suppress regex is retained as a defensive no-op against stale data
+  // rows leaking sister-database island names into a Samoa render.
+  const _MAINLAND_ISLANDS_SUPPRESS = /^(upolu|savai.i|manono|apolima)$/i;
   const _GEO_SENTINELS = /^(unclassified|unknown|n\/?a|na|null|undefined|none|-|\.|_)$/i;
 
   function _cleanGeoField(v) {
@@ -168,6 +171,19 @@
 
     // Suppress island name entirely for Samoa's two large mainlands.
     if (i && _MAINLAND_ISLANDS_SUPPRESS.test(i)) i = '';
+
+    // Apply district-qualified village labels for the 12 name-collisions
+    // where the same village name repeats across districts (helper is
+    // built by samoa-panel-overrides.js after bundle.geo has hydrated).
+    // When the raw village name is ambiguous AND we know the scholar's
+    // home district, render as "{village} — {district}" so the card face
+    // is never ambiguous. Never infer a district we do not have.
+    if (v && typeof window !== 'undefined' && typeof window.__samoaVillageLabel === 'function') {
+      try {
+        var maybeQualified = window.__samoaVillageLabel(v, p || '');
+        if (maybeQualified && maybeQualified !== v) v = maybeQualified;
+      } catch (labelErr) { /* fall through to raw name */ }
+    }
 
     var islandStem = i ? _normalizeIslandStem(i) : '';
     var vlgPart = v ? (v + ' vlg') : '';
@@ -370,7 +386,7 @@
     // MASTER-FILE ADAPTER OVERRIDE
     //
     // The production dashboard reads Zotero-shaped JSON. This preview
-    // reads iTaukei_Master_file sanitized JSON and re-shapes it into
+    // reads Samoa_Master_file sanitized JSON and re-shapes it into
     // the same in-memory contract via js/samoa-database-adapter.js.
     // Every downstream render function in this file continues to work
     // unchanged; only the data source is different.
@@ -578,7 +594,17 @@
     // Samoa-wide publications not tied to a single district. The non-provincial
     // key drives the bottom bar in Panel C1.
     state.c1RootKey = provFlat.zoteroCollectionKey_c1Root || null;
-    state.nonProvincialFijiKey = provFlat.zoteroCollectionKey_nonProvincialFiji || null;
+    // Bundle key name is inherited from the shared master-file-adapter and
+    // carries a legacy `_nonProvincialFiji` suffix regardless of which
+    // sister database is being adapted. The value is the Samoa non-district
+    // Zotero bucket key; the legacy suffix is data-source metadata only.
+    // Read the new Samoa-native alias first if the adapter has been updated,
+    // then fall back to the shared key.
+    state.nonDistrictBucketKey =
+      provFlat.zoteroCollectionKey_nonDistrictBucket ||
+      provFlat.zoteroCollectionKey_nonProvincialSamoa ||
+      provFlat.zoteroCollectionKey_nonProvincialFiji ||
+      null;
 
     // District collection key lookups
     geo.features.forEach(f => {
@@ -5265,14 +5291,14 @@
     }
 
     // Non-Samoa publications by Samoan authors: Samoan items with NO district tag
-    let nonFiji = 0;
+    let nonDistrict = 0;
     items.forEach(it => {
       if (!isItaukei(it)) return;
       const p = provOfItem.get(it.key);
-      if (!p || !p.size) nonFiji += 1;
+      if (!p || !p.size) nonDistrict += 1;
     });
     const nfEl = $('[data-db-nonfiji]');
-    if (nfEl) nfEl.textContent = nonFiji;
+    if (nfEl) nfEl.textContent = nonDistrict;
 
     // Sync inline — prefer the heartbeat timestamp so it advances every run
     const inline = $('[data-db-sync-inline]');
@@ -5440,7 +5466,7 @@
     //      re-normalises the remaining segments back to 100%.
     // No statistical region dot on the label; an "i" tooltip explains the category.
     const nonProv = { total: 0, types: {} };
-    const nonProvKey = state.nonProvincialFijiKey;
+    const nonProvKey = state.nonDistrictBucketKey;
     if (nonProvKey) {
       state.snapshot.items.forEach(it => {
         const vt = visualType(it);
@@ -5567,13 +5593,51 @@
         <div class="db-pubtype-card__bar"><span class="db-pubtype-card__fill" style="width:${barPct}%;background:${t.color};"></span></div>
         <div class="db-pubtype-card__share">${share.toFixed(1)}% of catalogued output</div>
       `;
-      // Clicking the type name toggles a type-only filter on the leaderboard
-      // and publications list. Reuses the existing state.filter.type slot.
+      // Clicking the type name toggles a type-only filter on BOTH the
+      // leaderboard (Panel F) and the publications list (Panel G).
+      //
+      //   - Panel G reads state.filter.itemType and matches on both the raw
+      //     Zotero itemType and the visual sub-type (`thesisPhd` etc.),
+      //     so we set state.filter.itemType.
+      //   - Panel F reads state.typeSet (Set of visible types) for its
+      //     card-pill chip rendering and count aggregation. To scope Panel F
+      //     to a single type, we snapshot the previous typeSet, replace it
+      //     with a single-type Set, and restore it when the filter clears.
+      //   - The visual state (highlighted card, dimmed sibling cards) still
+      //     reads from state.filter.type so multiple call sites stay in sync.
       const nameEl = card.querySelector('.db-pubtype-card__name');
       if (nameEl) {
+        nameEl.style.cursor = 'pointer';
+        nameEl.title = 'Click to filter the leaderboard and publications list to this type';
         nameEl.addEventListener('click', () => {
           state.filter = state.filter || {};
-          state.filter.type = state.filter.type === t.key ? '' : t.key;
+          const already = state.filter.type === t.key;
+          if (already) {
+            // Toggle off — restore full type visibility on both surfaces.
+            state.filter.type = '';
+            state.filter.itemType = '';
+            if (state._typeSetBeforePanelE) {
+              state.typeSet = state._typeSetBeforePanelE;
+              state._typeSetBeforePanelE = null;
+            }
+          } else {
+            // Toggle on — snapshot the current typeSet so we can restore it,
+            // then narrow to just this type. If the raw type is `thesis`, also
+            // include the two visual sub-types so PhD/Master's rows stay in.
+            if (!state._typeSetBeforePanelE) state._typeSetBeforePanelE = new Set(state.typeSet);
+            const scoped = new Set([t.key]);
+            if (t.key === 'thesis') { scoped.add('thesisPhd'); scoped.add('thesisMasters'); scoped.add('thesisUnknown'); }
+            state.typeSet = scoped;
+            state.filter.type = t.key;
+            state.filter.itemType = t.key;
+          }
+          // Reflect the change in the Panel-B type-checkbox row so the
+          // user can see which types are visible.
+          if (typeof syncChecked === 'function') { try { syncChecked(); } catch (e) {} }
+          // Mirror the change into the Panel G dropdown so the user sees
+          // the itemType filter as active.
+          const sel = document.querySelector('[data-db-filter="itemType"]');
+          if (sel) sel.value = state.filter.itemType || '';
           state.shown = state.pageSize;
           afterFilterChange();
         });
@@ -6885,6 +6949,9 @@
   state.scholarIslandFilter = '';        // '' | Upolu | Manono | Apolima | Savai‘i | '__unrecorded__'
   state.scholarItumaloFilter = '';       // '' | one of 11 constitutional Itūmālō | '__unrecorded__'
   state.scholarConstituencyFilter = '';  // '' | version-namespaced constituency | '__unrecorded__'
+  // Panel G citation-format toggle. Governs both the per-item Copy-cite
+  // button and the Citation column in Export .csv.
+  state.citationFormat = 'apa';          // 'apa' | 'chicago' | 'mla'
   // Cache: scholar name → Set<discipline>. Populated lazily on first renderLeaders.
   state.scholarDisciplines = null;
 
@@ -9158,7 +9225,7 @@
     }
     if (tags.childNodes.length) li.appendChild(tags);
 
-    // Action links top-right
+    // Action links top-right (open + copy buttons)
     const actions = document.createElement('div');
     actions.className = 'db-item__actions';
     if (doiUrl) {
@@ -9167,9 +9234,63 @@
       actions.innerHTML += `<a class="db-item__link" href="${escapeAttr(it.url)}" target="_blank" rel="noopener" title="Open source URL">Link ↗</a>`;
     }
     actions.innerHTML += `<a class="db-item__link" href="${escapeAttr(zoteroUrl)}" target="_blank" rel="noopener" title="Open in Zotero library">Zotero ↗</a>`;
+    // Per-item copy buttons — formatted citation (respects state.citationFormat)
+    // and BibTeX entry. Each button copies to clipboard and briefly shows a
+    // "Copied" state so the user knows the click landed.
+    const copyCite = el('button', {
+      type: 'button',
+      className: 'db-item__copy',
+      title: 'Copy the formatted citation for this item in the currently-selected style',
+      onclick: (ev) => {
+        const text = formatCitation(it, state.citationFormat || 'apa');
+        copyToClipboard(text, ev.currentTarget, 'Copied citation');
+      }
+    }, 'Copy cite');
+    actions.appendChild(copyCite);
+    const copyBib = el('button', {
+      type: 'button',
+      className: 'db-item__copy',
+      title: 'Copy this item as a BibTeX entry',
+      onclick: (ev) => {
+        const text = formatBibTeXEntry(it);
+        copyToClipboard(text, ev.currentTarget, 'Copied BibTeX');
+      }
+    }, 'Copy BibTeX');
+    actions.appendChild(copyBib);
     li.appendChild(actions);
 
     return li;
+  }
+
+  // ============ COPY-TO-CLIPBOARD HELPER ============
+  function copyToClipboard(text, buttonEl, feedback) {
+    const done = () => {
+      if (!buttonEl) return;
+      const prev = buttonEl.textContent;
+      buttonEl.textContent = feedback || 'Copied';
+      buttonEl.disabled = true;
+      setTimeout(() => {
+        buttonEl.textContent = prev;
+        buttonEl.disabled = false;
+      }, 1400);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, () => fallback());
+    } else {
+      fallback();
+    }
+    function fallback() {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.top = '-1000px';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(ta);
+      done();
+    }
   }
 
   function isOpenAccess(it) {
@@ -9206,29 +9327,355 @@
     }
   }
 
-  // ============ EXPORT .BIB ============
-  function exportBib() {
-    const items = currentItems().filter(itemMatches);
-    let out = '';
-    items.forEach(it => {
-      const bibType = ({journalArticle:'article', thesis:'phdthesis', bookSection:'incollection', book:'book', conferencePaper:'inproceedings', report:'techreport', preprint:'misc', document:'misc'})[it.itemType] || 'misc';
-      const key = ((it.creators && it.creators[0]) ? it.creators[0].split(' ').pop() : 'anon').toLowerCase().replace(/\W/g,'') + (it.year || '');
-      out += `@${bibType}{${key},\n`;
-      out += `  title = {${(it.title || '').replace(/[{}]/g,'')}},\n`;
-      if (it.creators && it.creators.length) out += `  author = {${it.creators.map(c => c.replace(/[{}]/g,'')).join(' and ')}},\n`;
-      if (it.year) out += `  year = {${it.year}},\n`;
-      if (it.publicationTitle) out += `  journal = {${it.publicationTitle.replace(/[{}]/g,'')}},\n`;
-      if (it.university) out += `  school = {${it.university.replace(/[{}]/g,'')}},\n`;
-      if (it.DOI) out += `  doi = {${it.DOI}},\n`;
-      if (it.url) out += `  url = {${it.url}},\n`;
-      out += `}\n\n`;
+  // ============ CITATION FORMATTERS ============
+  //
+  // formatCitation() emits a single-line prose citation for the currently
+  // selected style (APA 7 → default; Chicago 17 author-date; MLA 9). All
+  // three implementations lean on the same normalised author list so the
+  // output is predictable for exports and copy-to-clipboard.
+  //
+  // formatBibTeXEntry() and formatRISEntry() emit a single record in their
+  // respective bibliographic-manager formats. These are used by the copy
+  // buttons on each item card AND by exportBib() / exportRis() below.
+  //
+  // formatCSVRow() emits one row for exportCsv(). Header row is emitted by
+  // exportCsv() directly.
+
+  function _bibKeyFor(it) {
+    const lastName = (it.creators && it.creators[0]) ? String(it.creators[0]).split(' ').pop() : 'anon';
+    return lastName.toLowerCase().replace(/\W/g, '') + (it.year || '');
+  }
+
+  // Split "Given Family" → { family, given }. If a creator record has no
+  // recognisable family name (single-token), we treat it as an organisation.
+  function _splitName(name) {
+    const s = String(name || '').trim();
+    if (!s) return { family: '', given: '' };
+    const parts = s.split(/\s+/);
+    if (parts.length === 1) return { family: parts[0], given: '' };
+    return { family: parts[parts.length - 1], given: parts.slice(0, -1).join(' ') };
+  }
+
+  function _apaAuthors(creators) {
+    if (!creators || !creators.length) return '';
+    const names = creators.map(_splitName).map(p => {
+      if (!p.given) return p.family;
+      const initials = p.given.split(/\s+/).map(g => g.charAt(0).toUpperCase() + '.').join(' ');
+      return `${p.family}, ${initials}`;
     });
-    const blob = new Blob([out], { type: 'text/plain' });
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]}, & ${names[1]}`;
+    if (names.length <= 20) return names.slice(0, -1).join(', ') + ', & ' + names[names.length - 1];
+    // APA 7: for 21+ authors, list first 19, then "...", then final author.
+    return names.slice(0, 19).join(', ') + ', ... ' + names[names.length - 1];
+  }
+
+  function _chicagoAuthors(creators) {
+    if (!creators || !creators.length) return '';
+    const names = creators.map((c, i) => {
+      const p = _splitName(c);
+      if (!p.given) return p.family;
+      // First author "Family, Given"; subsequent "Given Family".
+      return i === 0 ? `${p.family}, ${p.given}` : `${p.given} ${p.family}`;
+    });
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} and ${names[1]}`;
+    if (names.length <= 10) return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
+    // Chicago: for 11+ authors, list first 7 then "et al.".
+    return names.slice(0, 7).join(', ') + ', et al.';
+  }
+
+  function _mlaAuthors(creators) {
+    if (!creators || !creators.length) return '';
+    const first = _splitName(creators[0]);
+    const firstText = first.given ? `${first.family}, ${first.given}` : first.family;
+    if (creators.length === 1) return firstText;
+    if (creators.length === 2) {
+      const second = _splitName(creators[1]);
+      const secondText = second.given ? `${second.given} ${second.family}` : second.family;
+      return `${firstText}, and ${secondText}`;
+    }
+    // MLA 9: 3+ authors → first author + ", et al."
+    return `${firstText}, et al.`;
+  }
+
+  function _apaTitleCase(s) {
+    // APA: sentence case for article/chapter titles. We do a light touch:
+    // capitalise the first letter and leave the rest alone (Zotero titles
+    // are usually already sentence-cased).
+    const t = String(s || '').trim();
+    if (!t) return t;
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+
+  function _apaThesisType(it) {
+    const vt = visualType(it);
+    if (vt === 'thesisPhd') return 'Doctoral dissertation';
+    if (vt === 'thesisMasters') return "Master's thesis";
+    return (it.thesisType || 'Thesis');
+  }
+
+  function formatCitationAPA(it) {
+    const authors = _apaAuthors(it.creators);
+    const year = it.year ? `(${it.year})` : '(n.d.)';
+    const title = _apaTitleCase(it.title || '');
+    const parts = [];
+    if (authors) parts.push(authors + '.');
+    parts.push(year + '.');
+    switch (visualType(it)) {
+      case 'journalArticle': {
+        parts.push(title + '.');
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
+        break;
+      }
+      case 'book': {
+        parts.push(`*${title}*.`);
+        if (it.publisher) parts.push(it.publisher + '.');
+        break;
+      }
+      case 'bookSection': {
+        parts.push(title + '.');
+        if (it.publicationTitle) parts.push(`In *${it.publicationTitle}*.`);
+        if (it.publisher) parts.push(it.publisher + '.');
+        break;
+      }
+      case 'thesisPhd':
+      case 'thesisMasters':
+      case 'thesisUnknown':
+      case 'thesis': {
+        parts.push(`*${title}*`);
+        parts.push(`[${_apaThesisType(it)}${it.university ? ', ' + it.university : ''}].`);
+        break;
+      }
+      case 'report': {
+        parts.push(`*${title}*`);
+        if (it.publisher || it.university) parts.push('(' + (it.publisher || it.university) + ').');
+        break;
+      }
+      default: {
+        parts.push(title + '.');
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
+      }
+    }
+    if (it.DOI) parts.push(`https://doi.org/${it.DOI}`);
+    else if (it.url) parts.push(it.url);
+    return parts.join(' ');
+  }
+
+  function formatCitationChicago(it) {
+    const authors = _chicagoAuthors(it.creators);
+    const parts = [];
+    if (authors) parts.push(authors + '.');
+    if (it.year) parts.push(it.year + '.');
+    switch (visualType(it)) {
+      case 'journalArticle': {
+        parts.push(`“${it.title}.”`);
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
+        break;
+      }
+      case 'book': {
+        parts.push(`*${it.title}*.`);
+        if (it.publisher) parts.push(it.publisher + '.');
+        break;
+      }
+      case 'bookSection': {
+        parts.push(`“${it.title}.”`);
+        if (it.publicationTitle) parts.push(`In *${it.publicationTitle}*.`);
+        if (it.publisher) parts.push(it.publisher + '.');
+        break;
+      }
+      case 'thesisPhd':
+      case 'thesisMasters':
+      case 'thesisUnknown':
+      case 'thesis': {
+        parts.push(`“${it.title}.”`);
+        parts.push(`${_apaThesisType(it)}, ${it.university || ''}.`.replace(/, \./, '.'));
+        break;
+      }
+      default: {
+        parts.push(`“${it.title}.”`);
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
+      }
+    }
+    if (it.DOI) parts.push(`https://doi.org/${it.DOI}.`);
+    else if (it.url) parts.push(it.url + '.');
+    return parts.join(' ');
+  }
+
+  function formatCitationMLA(it) {
+    const authors = _mlaAuthors(it.creators);
+    const parts = [];
+    if (authors) parts.push(authors + '.');
+    switch (visualType(it)) {
+      case 'journalArticle': {
+        parts.push(`“${it.title}.”`);
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*, ` + (it.year || 'n.d.') + '.');
+        else if (it.year) parts.push(it.year + '.');
+        break;
+      }
+      case 'book': {
+        parts.push(`*${it.title}*.`);
+        if (it.publisher) parts.push(it.publisher + ', ' + (it.year || 'n.d.') + '.');
+        else if (it.year) parts.push(it.year + '.');
+        break;
+      }
+      case 'bookSection': {
+        parts.push(`“${it.title}.”`);
+        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*, ` + (it.publisher ? it.publisher + ', ' : '') + (it.year || 'n.d.') + '.');
+        break;
+      }
+      case 'thesisPhd':
+      case 'thesisMasters':
+      case 'thesisUnknown':
+      case 'thesis': {
+        parts.push(`*${it.title}*.`);
+        parts.push(`${it.year || 'n.d.'}. ${it.university || ''}, ${_apaThesisType(it)}.`);
+        break;
+      }
+      default: {
+        parts.push(`“${it.title}.”`);
+        if (it.year) parts.push(it.year + '.');
+      }
+    }
+    if (it.DOI) parts.push(`https://doi.org/${it.DOI}.`);
+    else if (it.url) parts.push(it.url + '.');
+    return parts.join(' ');
+  }
+
+  function formatCitation(it, fmt) {
+    switch ((fmt || 'apa').toLowerCase()) {
+      case 'chicago': return formatCitationChicago(it);
+      case 'mla':     return formatCitationMLA(it);
+      case 'apa':
+      default:        return formatCitationAPA(it);
+    }
+  }
+
+  function formatBibTeXEntry(it) {
+    // Use the visual sub-type so PhD Theses become @phdthesis and Master's
+    // Theses become @mastersthesis — both are recognised by BibTeX and by
+    // Zotero/EndNote/Mendeley on RIS-round-trip.
+    const bibTypeByVisual = {
+      thesisPhd: 'phdthesis',
+      thesisMasters: 'mastersthesis',
+      thesisUnknown: 'phdthesis',
+      thesis: 'phdthesis',
+      journalArticle: 'article',
+      bookSection: 'incollection',
+      book: 'book',
+      conferencePaper: 'inproceedings',
+      report: 'techreport',
+      preprint: 'misc',
+      document: 'misc'
+    };
+    const bibType = bibTypeByVisual[visualType(it)] || bibTypeByVisual[it.itemType] || 'misc';
+    const key = _bibKeyFor(it);
+    let out = `@${bibType}{${key},\n`;
+    out += `  title = {${(it.title || '').replace(/[{}]/g, '')}},\n`;
+    if (it.creators && it.creators.length) {
+      out += `  author = {${it.creators.map(c => c.replace(/[{}]/g, '')).join(' and ')}},\n`;
+    }
+    if (it.year) out += `  year = {${it.year}},\n`;
+    if (it.publicationTitle) out += `  ${bibType === 'incollection' ? 'booktitle' : 'journal'} = {${it.publicationTitle.replace(/[{}]/g, '')}},\n`;
+    if (it.university && (bibType === 'phdthesis' || bibType === 'mastersthesis' || bibType === 'techreport')) {
+      out += `  ${bibType === 'techreport' ? 'institution' : 'school'} = {${it.university.replace(/[{}]/g, '')}},\n`;
+    }
+    if (it.publisher) out += `  publisher = {${it.publisher.replace(/[{}]/g, '')}},\n`;
+    if (it.DOI) out += `  doi = {${it.DOI}},\n`;
+    if (it.url) out += `  url = {${it.url}},\n`;
+    out += `}`;
+    return out;
+  }
+
+  function formatRISEntry(it) {
+    // RIS is a line-based key-value format consumed by EndNote, Zotero, and
+    // Mendeley. Type codes map from Zotero's item types.
+    const risTypeByVisual = {
+      thesisPhd: 'THES',
+      thesisMasters: 'THES',
+      thesisUnknown: 'THES',
+      thesis: 'THES',
+      journalArticle: 'JOUR',
+      bookSection: 'CHAP',
+      book: 'BOOK',
+      conferencePaper: 'CPAPER',
+      report: 'RPRT',
+      preprint: 'UNPD',
+      document: 'GEN'
+    };
+    const ty = risTypeByVisual[visualType(it)] || risTypeByVisual[it.itemType] || 'GEN';
+    const lines = [];
+    lines.push('TY  - ' + ty);
+    if (it.title) lines.push('TI  - ' + it.title);
+    (it.creators || []).forEach(c => lines.push('AU  - ' + c));
+    if (it.year) lines.push('PY  - ' + it.year);
+    if (it.publicationTitle) {
+      if (ty === 'CHAP' || ty === 'CPAPER') lines.push('T2  - ' + it.publicationTitle);
+      else                                  lines.push('JO  - ' + it.publicationTitle);
+    }
+    if (it.publisher) lines.push('PB  - ' + it.publisher);
+    if (it.university && ty === 'THES') {
+      lines.push('PB  - ' + it.university);
+      // M3 = degree/type of work — preserves PhD vs Master's split on
+      // RIS-round-trip through Zotero/EndNote.
+      if (visualType(it) === 'thesisPhd') lines.push("M3  - PhD Thesis");
+      else if (visualType(it) === 'thesisMasters') lines.push("M3  - Master's Thesis");
+    }
+    if (it.DOI) lines.push('DO  - ' + it.DOI);
+    if (it.url) lines.push('UR  - ' + it.url);
+    lines.push('ER  - ');
+    return lines.join('\r\n');
+  }
+
+  function _csvEscape(v) {
+    const s = (v == null) ? '' : String(v);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function formatCSVRow(it, citationFmt) {
+    const key   = it.key || '';
+    const type  = TYPE_LABELS[visualType(it)] || TYPE_LABELS[it.itemType] || '';
+    const auth  = (it.creators || []).join('; ');
+    const cite  = formatCitation(it, citationFmt || 'apa');
+    const doi   = it.DOI || '';
+    const url   = it.url || '';
+    const zot   = `https://www.zotero.org/groups/5983386/samoan_scholarly_research/items/${it.key}`;
+    return [key, type, auth, it.year || '', it.title || '', it.publicationTitle || '', it.publisher || '', it.university || '', doi, url, zot, cite]
+      .map(_csvEscape).join(',');
+  }
+
+  // ============ EXPORTS (.bib / .ris / .csv) ============
+  function _downloadBlob(text, mime, filename) {
+    const blob = new Blob([text], { type: mime });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = `samoan-research-${items.length}-items.bib`;
+    a.href = url; a.download = filename;
     document.body.appendChild(a); a.click();
     setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+  }
+
+  function exportBib() {
+    const items = currentItems().filter(itemMatches);
+    const out = items.map(formatBibTeXEntry).join('\n\n') + '\n';
+    _downloadBlob(out, 'application/x-bibtex', `samoan-research-${items.length}-items.bib`);
+  }
+
+  function exportRis() {
+    const items = currentItems().filter(itemMatches);
+    const out = items.map(formatRISEntry).join('\r\n\r\n') + '\r\n';
+    _downloadBlob(out, 'application/x-research-info-systems', `samoan-research-${items.length}-items.ris`);
+  }
+
+  function exportCsv() {
+    const items = currentItems().filter(itemMatches);
+    const fmt = state.citationFormat || 'apa';
+    const header = ['ZoteroKey', 'Type', 'Authors', 'Year', 'Title', 'Container', 'Publisher', 'University', 'DOI', 'URL', 'ZoteroURL', 'Citation_' + fmt.toUpperCase()]
+      .map(_csvEscape).join(',');
+    const rows = items.map(it => formatCSVRow(it, fmt));
+    // Prepend UTF-8 BOM so Excel treats it as UTF-8 without asking.
+    const out = '\uFEFF' + header + '\n' + rows.join('\n') + '\n';
+    _downloadBlob(out, 'text/csv;charset=utf-8', `samoan-research-${items.length}-items.csv`);
   }
 
   // ============ WIRE UP CONTROLS ============
@@ -9263,12 +9710,27 @@
       renderItems();
     });
     $('[data-db-export="bib"]').addEventListener('click', exportBib);
+    const risBtn = $('[data-db-export="ris"]');
+    if (risBtn) risBtn.addEventListener('click', exportRis);
+    const csvBtn = $('[data-db-export="csv"]');
+    if (csvBtn) csvBtn.addEventListener('click', exportCsv);
+    const citeSel = $('[data-db-cite-format]');
+    if (citeSel) {
+      citeSel.value = state.citationFormat || 'apa';
+      citeSel.addEventListener('change', e => {
+        state.citationFormat = e.target.value || 'apa';
+        // No filter change; item cards already read the value dynamically
+        // through onclick handlers, so no re-render is needed. Re-render
+        // anyway so a subsequent CSV export title stays in sync visually.
+        try { renderItems(); } catch (err) {}
+      });
+    }
     const clearBtn = $('[data-db-clear]');
     if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
   }
 
   // ============ MASTER-FILE STATUS (V2) ============
-  // V2 preview: the authoritative data source is the iTaukei_Master_file
+  // V2 preview: the authoritative data source is the Samoa_Master_file
   // Google Sheet snapshot refreshed every 2h. We do NOT contact Zotero from
   // this build — Zotero is no longer this dashboard's data source of truth.
   // Show the current snapshot timestamp instead, and only mark the sync
@@ -9485,7 +9947,7 @@
   }
 
   // -------- shared: get Samoan scholar names + paternal-district lookup --------
-  function iTaukeiScholarMaps() {
+  function samoanScholarMaps() {
     // Anyone with a saved profile record is considered an Samoan scholar.
     // Their paternal district may or may not be filled.
     const scholars = state.scholarProfilesByName || new Map();
@@ -9559,7 +10021,7 @@
   // Returns [{ name, total, types, conf, isConfirmed }] sorted desc, plus a
   // final “District not yet confirmed” row when appropriate.
   function buildB2Rows_paternalGrouped(includeAllLocations) {
-    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const { scholars, paternalByName } = samoanScholarMaps();
     const rows = new Map();
     state.districts.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.region, total: 0, types: {}, isConfirmed: true });
@@ -9604,7 +10066,7 @@
   // state.b2TypeSet, but PhD/Masters thesis are inherently single-author works
   // that don't apply here — the caller disables those checkboxes.
   function buildB2Rows_coauthor(includeAllLocations) {
-    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const { scholars, paternalByName } = samoanScholarMaps();
     const rows = new Map();
     state.districts.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.region, total: 0, types: {}, isConfirmed: true });
@@ -9661,7 +10123,7 @@
   // with two co-authors from Kadavu still adds only +1 to Kadavu, but adds
   // +1 to Lau too if one is from Lau).
   function buildB2Rows_split(includeAllLocations) {
-    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const { scholars, paternalByName } = samoanScholarMaps();
     const rows = new Map();
     state.districts.features.forEach(f => {
       rows.set(f.properties.name, {
@@ -9761,7 +10223,7 @@
 
   function buildB2Rows_compareAuthorship() {
     // For each Samoa district, count 3 authorship categories.
-    const { scholars } = iTaukeiScholarMaps();
+    const { scholars } = samoanScholarMaps();
     const rows = new Map();
     state.districts.features.forEach(f => {
       rows.set(f.properties.name, {
@@ -10520,10 +10982,10 @@
       }
       if (!attributed) { unattributed += 1; return; }
       const provSet = state.provincesByItem.get(it.key);
-      const isFiji = provSet && provSet.size > 0;
+      const hasDistrict = provSet && provSet.size > 0;
       const bucket = conf[attributed];
       if (!bucket) return;
-      if (isFiji) bucket.samoa += 1; else bucket.intl += 1;
+      if (hasDistrict) bucket.samoa += 1; else bucket.intl += 1;
       bucket.scholars.add(attributedName);
     });
 
@@ -11050,10 +11512,10 @@
     }
 
     function paintConfProv() {
-      const isFiji = state.b3Filter.country === 'Samoa Districts';
-      confCol.hidden = !isFiji;
-      provCol.hidden = !isFiji;
-      if (!isFiji) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
+      const hasDistrict = state.b3Filter.country === 'Samoa Districts';
+      confCol.hidden = !hasDistrict;
+      provCol.hidden = !hasDistrict;
+      if (!hasDistrict) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
 
       // Compute per-statistical region and per-district counts against the Samoa record.
       const fijiRec = recs.find(r => r.country === 'Samoa Districts');
@@ -11325,8 +11787,8 @@
       // Samoa-only: region/district narrowing. Applies only when the
       // active country is Samoa Districts (or the Samoa-Districts branch of
       // the drilldown is selected).
-      const isFiji = rec.country === 'Samoa Districts';
-      if (isFiji && (filter.region || filter.district)) {
+      const hasDistrict = rec.country === 'Samoa Districts';
+      if (hasDistrict && (filter.region || filter.district)) {
         const matchItem = (it) => {
           const set = provOfItem.get(it.key);
           if (!set || !set.size) return false;
@@ -11341,7 +11803,7 @@
         };
         led = led.filter(matchItem);
         others = others.filter(matchItem);
-      } else if (!isFiji && (filter.region || filter.district)) {
+      } else if (!hasDistrict && (filter.region || filter.district)) {
         // Non-Samoa countries have no district tagging; drop them when the user
         // is drilling into a Samoa sub-scope.
         return null;

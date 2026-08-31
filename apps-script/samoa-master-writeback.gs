@@ -106,7 +106,14 @@
 var SPREADSHEET_ID_HINT = '1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ'; // Samoa Scholar Database Master File
 var ACTOR_LABEL         = 'Ron Vave (Samoa admin)';
 var SOURCE_TAG          = 'admin-master-webapp v1';
-var REPLAY_WINDOW_MS    = 5 * 60 * 1000;
+// Replay window: HMAC-signed requests are rejected if `ts` is more than this
+// far from server time. The samoa-admin-writeback-client.js contract
+// documents a 10-minute nonce/timestamp window; keep the two in sync.
+var REPLAY_WINDOW_MS    = 10 * 60 * 1000;
+// Nonce cache lifetime: nonces are rejected as replays if seen again within
+// this window. Must be ≥ REPLAY_WINDOW_MS so a signed request can't be replayed
+// before the timestamp check rejects it.
+var NONCE_CACHE_TTL_S   = 15 * 60;
 var LOCK_WAIT_MS        = 30 * 1000;
 var TIMEZONE            = 'Pacific/Honolulu';
 
@@ -921,15 +928,259 @@ function doPost(e) {
     return jsonOut_({ status: 'bad_request', reason: 'invalid-json' }, 400);
   }
   try {
+    var action = body.action || 'write';
+
+    // ── Session-1 HMAC contract (samoa-admin-writeback-client.js) ─────────
+    // These actions carry `sig`, `nonce`, `ts` and are verified with
+    // HMAC-SHA-256 over a canonical string. If the request looks HMAC-signed
+    // (has both `sig` and `nonce`) we route it through the HMAC verifier.
+    // Otherwise, fall through to the legacy `secret`+`clientTs` contract
+    // for backwards compatibility with the sister-database admin surfaces.
+    var isHmac = !!(body && body.sig && body.nonce);
+    if (isHmac || action === 'update' || action === 'describe') {
+      var authRes = checkAuthHmac_(body);
+      if (!authRes.ok) return jsonOut_({ status: 'unauthorized', error: authRes.reason }, 401);
+      if (action === 'describe') {
+        return jsonOut_({
+          status: 'ok',
+          mapping: MAPPING,
+          writeEnabled: writeEnabled_(),
+          actor: ACTOR_LABEL,
+          tz: TIMEZONE,
+          spreadsheetId: SPREADSHEET_ID_HINT,
+          serverTs: Date.now()
+        });
+      }
+      if (action === 'ping') {
+        return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, serverTs: Date.now() });
+      }
+      if (action === 'update') {
+        if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
+        return handleUpdateRow_(body);
+      }
+      return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
+    }
+
+    // ── Legacy contract (sister-database compatibility) ───────────────────
     if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
-    var action = body.action || 'write';
     if (action === 'write') return handleWrite_(body);
     if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
     return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
   }
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HMAC-signed request handler (Session-1 contract)
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Request body shape (from samoa-admin-writeback-client.js):
+//   {
+//     action:    "update",
+//     worksheet: "Scholars",
+//     key:       "SAM-S0001",
+//     fields:    { "Given Names": "Joeli", ... },
+//     actor:     "admin" | ...
+//     nonce:     "<random hex>",
+//     ts:        <epoch ms>,
+//     sig:       "<hex HMAC-SHA-256 over canonical string>"
+//   }
+//
+// Canonical string signed:
+//   action + "\n" + worksheet + "\n" + key + "\n" +
+//   canonicalJSON(fields) + "\n" + nonce + "\n" + ts
+//
+// For `ping` / `describe`, `worksheet` and `key` are empty strings and
+// `fields` canonicalises to `"{}"`.
+//
+// Response shape (single-row update):
+//   Success:  { status: "ok",       writtenAt, results: [ { field, oldValue, newValue } ], serverTs }
+//   Partial:  { status: "partial",  results: [ ... ],  serverTs }
+//   Rejected: { status: "rejected", error, serverTs }
+//   Unauth:   { status: "unauthorized", error, serverTs }
+//   Noop:     { status: "ok", noop: true, results: [ { field, currentValue } ], serverTs }
+
+function handleUpdateRow_(body) {
+  var ws = String(body.worksheet || '');
+  var key = String(body.key || '');
+  var fields = body.fields || {};
+  var actor = String(body.actor || '') || ACTOR_LABEL;
+
+  if (!ws || !MAPPING.worksheets[ws]) return jsonOut_({ status: 'rejected', error: 'worksheet-not-allowed', serverTs: Date.now() });
+  if (!key) return jsonOut_({ status: 'rejected', error: 'missing-key', serverTs: Date.now() });
+  if (!fields || typeof fields !== 'object' || !Object.keys(fields).length) {
+    return jsonOut_({ status: 'rejected', error: 'no-fields', serverTs: Date.now() });
+  }
+
+  var wsCfg = MAPPING.worksheets[ws];
+  // Reject unknown fields up-front so a partial write never happens.
+  var unknown = Object.keys(fields).filter(function(f){ return !wsCfg.fields[f]; });
+  if (unknown.length) {
+    return jsonOut_({ status: 'rejected', error: 'field-not-allowed', fields: unknown, serverTs: Date.now() });
+  }
+
+  // Multi-row worksheets need a rowNumber to disambiguate. The HMAC client
+  // is designed for the Scholars single-row surface. If this ever gets used
+  // for a multi-row sheet, the client must supply `rowNumber` in `body`.
+  if (wsCfg.allowMultiRow && !parseInt(body.rowNumber, 10)) {
+    return jsonOut_({ status: 'rejected', error: 'multi-row-needs-rowNumber', serverTs: Date.now() });
+  }
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var lock = LockService.getScriptLock();
+  var haveLock = lock.tryLock(LOCK_WAIT_MS);
+  if (!haveLock) return jsonOut_({ status: 'busy', error: 'lock-timeout', serverTs: Date.now() });
+
+  var results = [];
+  var counts = { ok: 0, already_satisfied: 0, needs_confirmation: 0, rejected: 0 };
+  try {
+    // Translate the HMAC-shape single-row update into the internal
+    // applyOneChange_ shape used by the legacy handler. This keeps the
+    // MAPPING allowlist, validation, and Change Log paths untouched.
+    Object.keys(fields).forEach(function(f){
+      var change = {
+        worksheet: ws,
+        scholarId: key,
+        field: f,
+        oldValue: null,        // HMAC client does not send loadedValue;
+                               // we treat this as a blind overwrite AFTER
+                               // an override-authorised handshake by the
+                               // ALWAYS_CONFIRM policy. See below.
+        newValue: fields[f],
+        rowNumber: parseInt(body.rowNumber, 10) || null,
+        overrideAuthorized: body.overrideAuthorized === true,
+        expectedCurrent: body.expectedCurrent && body.expectedCurrent[f]
+      };
+      var r = applyOneChange_(ss, change, body.dryRun === true);
+      r.field = f;
+      r.newValue = fields[f];
+      results.push(r);
+      if (counts[r.status] != null) counts[r.status]++;
+    });
+  } finally {
+    lock.releaseLock();
+  }
+
+  var overall;
+  if (counts.ok === results.length)                                       overall = 'ok';
+  else if (counts.already_satisfied === results.length)                   overall = 'ok';
+  else if (counts.rejected === results.length)                            overall = 'rejected';
+  else if (counts.needs_confirmation > 0 && counts.rejected === 0)        overall = 'needs_confirmation';
+  else                                                                    overall = 'partial';
+
+  return jsonOut_({
+    status: overall,
+    dryRun: body.dryRun === true,
+    results: results,
+    counts: counts,
+    writeEnabled: writeEnabled_(),
+    actor: actor,
+    serverTs: Date.now(),
+    // For a pure no-op, surface it explicitly so the admin UI can render
+    // a subdued "nothing to save" state without confusing it with an
+    // error.
+    noop: (counts.already_satisfied === results.length)
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// HMAC verification (Session-1 contract)
+// ─────────────────────────────────────────────────────────────────────────
+
+function checkAuthHmac_(body) {
+  if (!body || !body.sig || !body.nonce || !body.ts) {
+    return { ok: false, reason: 'missing-signature-fields' };
+  }
+  var props = PropertiesService.getScriptProperties();
+  var secretHex = props.getProperty('SHARED_SECRET') || '';
+  if (!secretHex) return { ok: false, reason: 'server-missing-secret' };
+
+  // 1. Replay window: reject stale/future timestamps.
+  var ts = parseInt(body.ts, 10);
+  if (!ts) return { ok: false, reason: 'bad-ts' };
+  if (Math.abs(Date.now() - ts) > REPLAY_WINDOW_MS) return { ok: false, reason: 'ts-outside-window' };
+
+  // 2. Nonce replay guard: reject any nonce we've already seen within TTL.
+  //    CacheService is per-script and persists across executions of this
+  //    web app, which is exactly what we want.
+  var cache = CacheService.getScriptCache();
+  var nonceKey = 'nonce:' + String(body.nonce);
+  if (cache.get(nonceKey)) return { ok: false, reason: 'nonce-replay' };
+
+  // 3. Compute expected HMAC-SHA-256 over the canonical string.
+  var canonical =
+    String(body.action || '') + '\n' +
+    String(body.worksheet || '') + '\n' +
+    String(body.key || '') + '\n' +
+    canonicalJSONFields_(body.fields || {}) + '\n' +
+    String(body.nonce) + '\n' +
+    String(ts);
+  var keyBytes = hexToBytes_(secretHex);
+  var sigBytes = Utilities.computeHmacSha256Signature(
+    Utilities.newBlob(canonical).getBytes(),
+    keyBytes
+  );
+  var expected = bytesToHex_(sigBytes);
+  var received = String(body.sig || '').toLowerCase();
+
+  if (expected.length !== received.length) return { ok: false, reason: 'sig-mismatch' };
+  // Constant-time compare.
+  var diff = 0;
+  for (var i = 0; i < expected.length; i++) {
+    diff |= (expected.charCodeAt(i) ^ received.charCodeAt(i));
+  }
+  if (diff !== 0) return { ok: false, reason: 'sig-mismatch' };
+
+  // 4. Reserve the nonce so a replay within TTL is rejected.
+  cache.put(nonceKey, '1', NONCE_CACHE_TTL_S);
+  return { ok: true };
+}
+
+// Canonical JSON serialisation — recursive, keys sorted lexicographically,
+// no whitespace. Must match the client's canonicalJSON() in
+// js/samoa-admin-writeback-client.js so both sides feed byte-identical
+// input to HMAC-SHA-256. Arrays and primitives use JSON.stringify(); only
+// plain objects have their keys sorted before serialising.
+function canonicalJSON_(obj) {
+  if (obj === null || typeof obj !== 'object' || Object.prototype.toString.call(obj) === '[object Array]') {
+    return JSON.stringify(obj);
+  }
+  var keys = Object.keys(obj).sort();
+  var parts = [];
+  for (var i = 0; i < keys.length; i++) {
+    parts.push(JSON.stringify(keys[i]) + ':' + canonicalJSON_(obj[keys[i]]));
+  }
+  return '{' + parts.join(',') + '}';
+}
+
+// Back-compat alias used elsewhere in this file.
+function canonicalJSONFields_(fields) {
+  return canonicalJSON_(fields || {});
+}
+
+function hexToBytes_(hex) {
+  var out = [];
+  for (var i = 0; i < hex.length; i += 2) {
+    var byte = parseInt(hex.substr(i, 2), 16);
+    // Apps Script signed byte range is −128..127.
+    if (byte >= 128) byte -= 256;
+    out.push(byte);
+  }
+  return out;
+}
+
+function bytesToHex_(bytes) {
+  var out = '';
+  for (var i = 0; i < bytes.length; i++) {
+    var b = bytes[i];
+    if (b < 0) b += 256;
+    var s = b.toString(16);
+    if (s.length === 1) s = '0' + s;
+    out += s;
+  }
+  return out;
 }
 
 // ------------------------- WRITE HANDLER ----------------------------------

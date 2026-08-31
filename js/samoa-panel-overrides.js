@@ -66,22 +66,53 @@
   // documented in Session 2's adapter live here.
   function buildDistrictQualifier(villages){
     const counts = new Map();
+    const nameToVillages = new Map();  // name -> [{name, district, id}, ...]
     (villages || []).forEach(v => {
       const nm = (v && v.name) || '';
       if (!nm) return;
       counts.set(nm, (counts.get(nm) || 0) + 1);
+      if (!nameToVillages.has(nm)) nameToVillages.set(nm, []);
+      nameToVillages.get(nm).push(v);
     });
-    return function labelFor(v){
-      if (!v || !v.name) return '';
-      const nm = v.name;
-      const district = (v.district || '').trim();
+    function labelFor(v){
+      if (!v) return '';
+      // Support two call shapes:
+      //   labelFor({name, district}) → object shape from bundle.geo.villages
+      //   labelFor("Falefa", "Anoama'a East")
+      //     → string+context shape used by the scholar-card renderer, which
+      //     only ever knows the raw village name and the current scholar's
+      //     home district. If the second argument is provided we honour it;
+      //     otherwise we look up the districts we know about for that name.
+      if (typeof v === 'string') {
+        var name = v.trim();
+        if (!name) return '';
+        var contextDistrict = (arguments.length > 1 && arguments[1]) ? String(arguments[1]).trim() : '';
+        if (counts.get(name) > 1 && contextDistrict) {
+          return name + ' \u2014 ' + contextDistrict;
+        }
+        return name;
+      }
+      if (!v.name) return '';
+      var nm = v.name;
+      var district = (v.district || '').trim();
       if (counts.get(nm) > 1 && district) {
-        // U+2014 em-dash separator with thin spaces so district reads
-        // as a soft suffix, matching Ron's card-label convention.
+        // U+2014 em-dash separator so district reads as a soft suffix,
+        // matching Ron's card-label convention.
         return nm + ' \u2014 ' + district;
       }
       return nm;
+    }
+    // Expose the collision counts so the scholar-card renderer can tell,
+    // without owning the villages list, whether a raw name is ambiguous
+    // and therefore whether it must append a district qualifier.
+    labelFor.isAmbiguous = function(name){
+      if (!name) return false;
+      return (counts.get(String(name).trim()) || 0) > 1;
     };
+    labelFor.villagesFor = function(name){
+      return (nameToVillages.get(String(name || '').trim()) || []).slice();
+    };
+    return labelFor;
   }
 
   // Expose the label helper on window so the leaderboard card renderer

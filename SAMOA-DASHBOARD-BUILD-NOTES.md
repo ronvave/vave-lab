@@ -687,3 +687,238 @@ Session 4 focus areas:
   types) for its card-pill chip rendering. Panel E clicks currently
   only affect Panel G via `state.filter.type`; parity across F is
   Session-5 scope.
+
+
+---
+
+## Session 5 (completed 2026-08-30) — Panel-G exports, HMAC writeback, forbidden-token cleanup
+
+Session 5 closes the seven task-list items from the S5 directive, commits the working tree, and pushes to GitHub Pages.
+
+### S5-1 — Panel G items browser (BibTeX / CSV / RIS export, per-item copy, citation-format toggle)
+
+Files touched:
+- `samoa-research-database-master.html` (~5,588 lines)
+  - Toolbar (line ~5133): added `<select data-db-cite-format>` (APA 7 / Chicago 17 / MLA 9)
+  - Added `<button data-db-export="ris">Export .ris</button>` and `<button data-db-export="csv">Export .csv</button>` beside the existing `.bib` button.
+  - `.db-item__copy` button pair CSS added at line ~2219 (`Copy cite`, `Copy BibTeX` per item).
+- `js/samoa-database-master.js` (~12,400 lines)
+  - `state.citationFormat = 'apa'` at line ~6890.
+  - `renderItemCard()` at line ~9173: appends `Copy cite` + `Copy BibTeX` buttons on every item card.
+  - New helpers: `copyToClipboard`, `formatCitation(item, style)` (APA/Chicago/MLA), `formatBibTeXEntry` (`@phdthesis` for `thesisPhd`, `@mastersthesis` for `thesisMasters`), `formatRISEntry` (M3 field preserves the PhD vs Master's split), `formatCSVRow`, `_downloadBlob`, `exportBib()`, `exportRis()`, `exportCsv()`.
+  - `wire()` at line ~9648: bound the new toolbar controls and per-card copy delegates.
+
+### S5-2 — District-qualified village labels on every scholar-card render path
+
+Files touched:
+- `js/samoa-panel-overrides.js` (~450 lines)
+  - `buildDistrictQualifier()` at line 67–116: accepts BOTH call shapes
+    (`labelFor({name, district})` and `labelFor("Falefa","Anoama'a East")`).
+  - Exposes `window.__samoaVillageLabel.isAmbiguous(name)` and
+    `window.__samoaVillageLabel.villagesFor(district)` for consumer code.
+- `js/samoa-database-master.js`
+  - `formatScholarGeography()` at line 164–190 routes every village token
+    through `window.__samoaVillageLabel(v, p)` — a single choke-point that
+    covers map popups, Panel-F leaderboard cards, and chord tooltips.
+
+Convention: name-collision villages render as `"Falefa — Anoama'a East"`
+with an em-dash; unique villages render as `"Poutasi"` unchanged. The
+helper falls back to the raw village string when no district is passed.
+
+### S5-3 — Panel F/E parity with Panel-E publication-type click filtering
+
+Files touched:
+- `js/samoa-database-master.js`, line ~5583–5631:
+  - Panel-E name-click now sets both `state.filter.type` AND
+    `state.filter.itemType`.
+  - Snapshots the current `state.typeSet` into
+    `_typeSetBeforePanelE` and narrows it to the clicked type.
+  - When the clicked type is `thesis`, adds all three thesis sub-buckets
+    (`thesisPhd`, `thesisMasters`, `thesisUnknown`) to the visible set.
+  - Toggle-off restores `_typeSetBeforePanelE` verbatim.
+  - Syncs Panel B checkboxes via existing `syncChecked()` and the
+    Panel G dropdown via `[data-db-filter="itemType"]`.
+
+Result: clicking a Panel-E card now filters Panel F's leaderboard AND
+Panel G's item browser AND keeps Panel B's checkbox row in sync — one
+click, three panels reflect the choice.
+
+### S5-4 — HMAC writeback contract (Apps Script)
+
+Files touched:
+- `apps-script/samoa-master-writeback.gs` (1,514 lines, was 1,263)
+  - Constants: `REPLAY_WINDOW_MS = 10 * 60 * 1000`, `NONCE_CACHE_TTL_S = 15 * 60`.
+  - `doPost` at line ~927: any request that carries `sig`+`nonce` OR
+    `action === 'update'` OR `action === 'describe'` is routed
+    through `checkAuthHmac_()` before any sheet read/write happens.
+    The legacy `write` action (from sister databases) is retained.
+  - `handleUpdateRow_` at line ~1005: validates worksheet + field
+    combinations against the MAPPING allowlist, rejects unknown
+    fields up-front (no partial writes), invokes the existing
+    `applyOneChange_` per field, and aggregates the per-cell status
+    into one of `ok`, `partial`, `rejected`, `needs_confirmation`,
+    or `noop`.
+  - `checkAuthHmac_` at line ~1092: reads `SHARED_SECRET` from
+    `PropertiesService.getScriptProperties()`, verifies the
+    timestamp window, checks the nonce against CacheService for
+    replay protection, computes HMAC-SHA-256 via
+    `Utilities.computeHmacSha256Signature`, and does a
+    constant-time compare.
+  - `canonicalJSON_` at line ~1146: recursive JSON canonicaliser
+    that matches the client-side serialiser in
+    `js/samoa-admin-writeback-client.js`.
+  - `hexToBytes_` / `bytesToHex_` helpers added.
+
+New file:
+- `apps-script/hmac-smoke-test.md` (131 lines) — six documented cases
+  (successful update, rejected unknown field, unauthorized bad sig,
+  replay attempt, no-op unchanged value, describe endpoint) with a
+  Python-verified reference signature
+  `08e962d38b10ce7051988a959e65ded91b2a1c58fbe056b6e5d5566d63b26744`
+  for Case A that the deployer can use to prove wire-compatibility
+  before flipping the client over.
+
+### S5-5 — Confirmation: Panel C1 body composition uses Samoa page
+
+- `samoa-research-database-master.html` line 4728: iframe src is
+  `samoan-body-composition.html?embedded=1&src=master&v=mf22`.
+- `samoan-body-composition.html` line 710:
+  `DISPLAY = {"Woman":"Fafine","Man":"Tāne"}` — the entire page
+  uses the Samoa-native gender terminology.
+
+### S5-6 — Confirmation: Master's + PhD theses are first-class
+
+- `PUB_TYPE_ORDER_E` at line 5546–5548 lists `thesisPhd` (label
+  `"PhD Thesis"`) and `thesisMasters` (label `"Master's Thesis"`)
+  as top-level rows in Panel E.
+- Scholar-card renderer at lines 5158–5159 emits pills via
+  `push(b.thesisPhd, ...)` and `push(b.thesisMasters, ...)`.
+- `visualType()` at line 232 splits the raw `thesis` bucket by
+  `thesisLevel === 'phd'` vs `'masters'` vs unknown.
+
+### S5-7 — Forbidden-token audit, geography-integrity cleanup
+
+Live-code renames in `samoa-research-database-master.html`:
+
+| Was                     | Now                    | Site                             |
+| ----------------------- | ---------------------- | -------------------------------- |
+| `iTaukei`               | `Samoan`               | Admin email suggestion body      |
+| `iTaukei_Master_file`   | `Samoa_Master_file`    | Zotero-collection HTML comment   |
+| "Samoa or Fijians"      | "Samoa or Samoans"     | Admin help copy (×2)             |
+| "on Samoa and Fijians"  | "on Samoa and Samoans" | Admin help copy                  |
+
+Live-code renames in `js/samoa-database-master.js`:
+
+| Was                              | Now                          |
+| -------------------------------- | ---------------------------- |
+| `iTaukeiScholarMaps`             | `samoanScholarMaps`          |
+| `iTaukei_Master_file` (comments) | `Samoa_Master_file`          |
+| `isFiji`                         | `hasDistrict`                |
+| `nonFiji`                        | `nonDistrict`                |
+| `nonProvincialFijiKey`           | `nonDistrictBucketKey`       |
+
+Note: `zoteroCollectionKey_nonProvincialFiji` remains ONE reference
+in `js/samoa-database-master.js` at line 603 — this is the legacy
+bundle-adapter key that sister databases still emit. A backwards-
+compatible fall-through at line ~600
+(`bundle.zoteroCollectionKey_nonDistrictBucket ||
+bundle.zoteroCollectionKey_nonProvincialSamoa ||
+bundle.zoteroCollectionKey_nonProvincialFiji`) accepts all three.
+
+Fixes in `samoan-chord-flanked.html`:
+
+- Line 573 `EMBEDDED_ISO3`: removed the fossil `"Samoa":"FJI",`
+  entry that shadowed the correct `"Samoa":"WSM"` mapping at the
+  top of the object. The chord chart now emits the correct ISO
+  code for Samoa in all offline paths.
+- Line 576 `EMBEDDED_FALLBACK`: the ~44-row iTaukei-scholar
+  mobility snapshot (Alifereti through Yabaki-Goundar) that
+  shipped as the fetch-failure fallback has been replaced with a
+  Samoa-native placeholder `{flows:[], unis:{}, num:{},
+  uni_list:[]}`. The runtime fetches
+  `data/samoa-master-mobility.json` and
+  `data/samoa-master-scholars.json` (lines 985–986); if those
+  fail, the chord chart now shows an empty state with a helpful
+  status message instead of rendering iTaukei scholar names on
+  the Samoa dashboard.
+- Line 1020: fallback status message rewritten to
+  `"Master's/PhD mobility data isn't available offline.
+  Upload a CSV above, or check that
+  data/samoa-master-mobility.json +
+  data/samoa-master-scholars.json are published."`
+
+Adjustment in `js/samoa-database-master.js`:
+
+- Line 148 `_MAINLAND_ISLANDS_SUPPRESS` regex, formerly
+  `/^(viti\s*levu|vanua\s*levu)$/i`, is now
+  `/^(upolu|savai.i|manono|apolima)$/i` — Samoa's own four
+  mainland islands. The regex retains its original purpose
+  (suppress the island name when a district+village qualification
+  is already visible) but no longer references Fiji islands.
+
+### Remaining legacy-token occurrences (all justified, non-functional)
+
+| File                              | Line          | Token                        | Justification                                                                 |
+| --------------------------------- | ------------- | ---------------------------- | ----------------------------------------------------------------------------- |
+| `samoan-chord-flanked.html`       | 580           | `iTaukei`                    | Code comment inside the fallback-block header explaining the guard rationale. |
+| `js/samoa-database-master.js`     | 595, 603      | `Fiji`                       | Code comment + legacy fallback key in the adapter chain (documented above).   |
+| `js/samoa-database-master.js`     | 6024, 8409    | `Solomon Islands`            | Country-code + ISO2 reference tables for the international collaboration map. |
+| `js/samoa-database-master.js`     | 6027, 8409    | `Tonga`                      | Country-code + ISO2 reference tables (same map).                              |
+| `js/samoa-database-master.js`     | 7660, 7663    | `Solomon Islands`, `Tonga`   | Country-name normalisation regex for author-affiliation parsing.              |
+| `js/samoa-database-master.js`     | 11136, 11138  | `Tonga`, `Solomon Islands`   | World-map lat/lng coordinate table used by the international map.             |
+| `samoan-chord-flanked.html`       | 571, 573      | `Tonga`, `Solomon Islands`   | UNSD region and ISO3 code lookup tables (mobility chord).                     |
+
+**None of these hits are aliases or geography logic.** The world-map
+and chord-chart lookup tables need every Pacific country ISO code so
+that scholar-affiliation edges terminate on the right nodes; deleting
+`Tonga` or `Solomon Islands` from those tables would break the maps.
+
+### Verification
+
+- `node --check js/samoa-database-master.js` → OK
+- `node --check js/samoa-panel-overrides.js` → OK
+- `node --check apps-script/samoa-master-writeback.gs` (copied to
+  `/tmp/wb.js` for a strict-mode syntax pass) → OK
+- Forbidden-token sweep across
+  `samoa-research-database-master.html`,
+  `js/samoa-database-master.js`,
+  `js/samoa-panel-overrides.js`,
+  `samoan-body-composition.html`,
+  `samoan-chord-flanked.html`,
+  `apps-script/samoa-master-writeback.gs`, and
+  `admin-samoa-master.html` → all remaining hits are documented
+  above as reference tables or comments (no live data path).
+
+### Manual deployment steps (post-push)
+
+1. Redeploy the Apps Script Web App from
+   `apps-script/samoa-master-writeback.gs`. The HMAC rewrite
+   requires a NEW deployment version, not just a save.
+2. In the Apps Script project's Script Properties, ensure:
+   - `SHARED_SECRET` = `3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645`
+   - `WRITE_ENABLED` = `true`
+   - `ADMIN_ORIGIN` = `https://ronvave.github.io`
+3. In `admin-samoa-master.html`, confirm the deployed exec URL is
+   assigned to `window.SAMOA_WRITEBACK_URL` and the hex secret to
+   `window.SAMOA_WRITEBACK_SECRET_HEX`.
+4. From the admin panel's Data-source tab, click
+   `Test connection`. Then run through the six cases in
+   `apps-script/hmac-smoke-test.md` (ok / partial / rejected /
+   unauthorized / no-op / describe) and confirm each response
+   matches the expected shape.
+
+### Unresolved data gaps
+
+- Five villages still fail Specific-Island resolution when the
+  Session-2 adapter builds the geography index: **Tausagi**, **Olo**,
+  **Paepaeala**, **Satuilagi**, **Satoi**. These currently render
+  under `__unrecorded__` on the specific-island listbox. Ron to
+  confirm the correct island assignment; then the mapping in
+  `data/samoa-village-island.csv` (or the equivalent adapter
+  source) needs an entry per village.
+- `data/samoa-master-mobility.json` and
+  `data/samoa-master-scholars.json` are referenced by the chord
+  chart but are not yet in the published repo. Until they are
+  present, the chord panel will show the empty-state message
+  installed in S5-7 (this is intentional — no iTaukei fallback).
+
