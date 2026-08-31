@@ -309,3 +309,181 @@ time, per the multi-session commitment:
   ONLY Samoa constants, no aliases anywhere in the runtime, all six
   dimensions render distinctly, admin writeback round-trips against
   the live Master Sheet.
+
+## Session 3 (2026-08-30) — Panels A / B / C semantic port
+
+**Directive (owner, verbatim excerpt):**
+
+> "Proceed with Session 3 Panels A, B and C. Preserve the complete Fiji V2
+> panel structure, styling, filters, responsive/full-screen behavior and
+> empty/error states while using only Samoa-native geography. Keep all
+> six geography dimensions separate. Do not infer the five missing
+> Specific Island values. Preserve Master's Thesis and PhD Thesis as
+> visible publication types, pills and scholar-card counts. ... The 329
+> unique villages from 341 rows should also remain documented; duplicates
+> or repeated village names must be resolved through district-qualified
+> IDs, not deleted merely because the names repeat."
+
+**Approach: full mechanical semantic port, then targeted repair**
+
+The sister-database panel code is 5,460 HTML lines + 11,844 JS lines
+covering 14 panels. Ron's blueprint requires structural equivalence
+(every panel, filter, chip, tooltip, empty-state, and fullscreen
+behaviour preserved) but with Samoa's six-dimension geography as the
+only geography model in the runtime. Rewriting 17,000+ lines by hand
+in one session risked losing dozens of DOM classes and event bindings;
+instead, Session 3 produced two Python passes:
+
+1. **`substitute.py`** — a first, over-broad text substitution. Broke
+   JS syntax by replacing `province` inside identifiers.
+2. **`substitute_v2.py`** — context-aware: identifiers get short
+   Samoa tokens (`district`, `region`), prose gets long Samoa labels
+   (`Political/Census District`, `Statistical Region`). Regenerated
+   cleanly from the sources.
+
+The v2 output produced a clean HTML (0 forbidden-token hits) and a JS
+file with only 6 legitimate residual hits (Solomon Islands as a Pacific
+country in the world-country lookup — kept — and one classifier regex
+that was rewritten to Samoan markers: `fa'a samoa`, `matai`, `aiga`,
+`nu'u`, `tofi`, `feagaiga`, `talanoa`).
+
+**Files added to `js/`**
+
+| Path | Bytes | Role |
+|---|---|---|
+| `js/samoa-database-master.js` | 571 KB | Panel renderers (A1/A2/A3/B1/B2/C1/C2/C3/F/G) with district→region hydration; expects `SamoaScholarDatabaseAdapter.load()` bundle from Session 2. |
+| `js/samoa-panel-overrides.js` | 5.5 KB | Runtime bridge: (1) patches `SamoaScholarDatabaseAdapter.load()` to hydrate `SAMOA_DISTRICT_TO_REGION` from `bundle.geo.politicalDistrictToRegion`, (2) wires the four new filter combos (village, specific island, itūmālō, constituency) with informational click notices — full listbox behaviour lands in Session 4. |
+
+**HTML changes (`samoa-research-database-master.html`)**
+
+- Replaced the Session-2 scaffold shell with the full 5,473-line
+  Samoa-native dashboard.
+- **Added four filter combo widgets** to the leaderboard toolbar so
+  the six-dimension geography model surfaces in the UI:
+  1. `data-scholar-village-combo` (Village)
+  2. `data-scholar-island-combo` (Specific Island)
+  3. `data-scholar-itumalo-combo` (Traditional Itūmālō)
+  4. `data-scholar-constituency-combo` (Electoral Constituency)
+  Each carries a `title` attribute documenting its scope and the known
+  data caveats (village dedup rule, 5 unresolved specific-island cells,
+  time-versioned constituencies).
+- **Wired `samoaDemoGate → dbGate` bridge** at the bottom of the
+  document so the panel code's existing `window.dbGate.fetchJson` /
+  `window.dbGate.boot` calls resolve against Samoa's demo-gate module
+  without renaming every call site.
+- **Preserved PhD Thesis and Masters Thesis** as first-class
+  publication types (chips: `data-pub-chip="thesisPhd"` /
+  `thesisMasters`; item list: `data-type="thesisPhd"` /
+  `thesisMasters`; type-filter dropdown: both options checked by
+  default) — matches Ron's directive.
+
+**Panels covered in Session 3 (structural port complete, awaiting live data)**
+
+| Panel | Title | Notes |
+|---|---|---|
+| A1 | Database overview KPIs | 51 political/census districts (was 14 provinces). Publications / Authors / Theses / Unis / Countries. |
+| A2 | Samoan-scholarship KPIs | participation, leadership, grad research — no geography assumptions. |
+| A3 | About / methodology | prose scrubbed of non-Samoa geography terms. |
+| B1 | Leaflet district-choropleth map | region legend (4 regions instead of 3 confederacies); popup shows district's home statistical region + main-area. `DISTRICT_TO_REGION` hydrated at boot. |
+| B2 | World-graduates map scaffold | full port; hover/tooltip logic intact; empty-state handled. |
+| C1 | Publications by gender histogram | ECharts config preserved; Tāne/Fafine labels applied. |
+| C2 | Research across the 51 political/census districts | full port; empty district handling intact. |
+| C3 | Research output by author's Statistical Region | rows updated to Samoa's four regions with `#0891b2` / `#eab308` / `#dc2626` / `#16a34a` palette. |
+| F  | Scholar leaderboard | keyword search + 4 original filter combos preserved; 4 new Samoa-dimension combo stubs added (Session 4 wires their listboxes). |
+| G  | All-items list | pagination preserved; PhD/Masters thesis rows preserved. |
+
+**Legitimate residual token audit (final)**
+
+`rg` sweep for the forbidden set
+`fiji|itaukei|tongan|tikina|yasayasa|confederacy|kubuna|tovata|burebasaga|turaga|marama|matanitu|province`
+across the three Session-3 files returns **0 hits**. The only
+non-Samoa geography term surviving anywhere in the runtime is
+"Solomon Islands" (4 hits in `samoa-database-master.js`), used only
+in the world-country lookup table as one Pacific country among many —
+this is legitimate and required for the world-graduates map.
+
+**Village dedup rule (documented, not applied to data yet)**
+
+The Master Sheet has 341 raw village rows but 329 unique village
+NAMES — 12 name-collisions across different districts. Ron's
+directive: resolve via district-qualified composite Village IDs
+(`{districtId}::{villageName}` or the SBS `V-####` code), never by
+deletion. The Session-2 adapter already keys `VILLAGE_ID_BY_NAME` on
+the `V-####` id, so the data model supports this correctly; the
+panel-side surfaces (Panel D alluvial in Session 4, Panel F village
+filter listbox) still need to be updated to display the
+district-qualified label whenever it shows a duplicated village name.
+
+**Unresolved Specific Island entries (5, preserved)**
+
+- Tausagi
+- Olo
+- Paepaeala
+- Satuilagi
+- Satoi
+
+These are surfaced as `SPECIFIC_ISLAND_UNSURE` and rendered in the UI
+as "Island unrecorded" — **never inferred**. Ron will resolve them
+manually against the SBS Village Directory in a later admin pass.
+
+### Session 3 verification
+
+- `node --check js/samoa-database-master.js` → OK
+- `node --check js/samoa-panel-overrides.js` → OK
+- HTML parses cleanly (Python `html.parser`).
+- Zero forbidden-token hits across the three files.
+- `data-pub-chip="thesisPhd"` and `thesisMasters` present in HTML.
+- `SamoaScholarDatabaseAdapter.load()` invoked in JS boot flow (line ~383).
+- `samoaDemoGate._asDbGate()` shim installs `window.dbGate` before
+  panel boot.
+- Four new Samoa-dimension filter combos wired with informational
+  click notices; the original two combos (Region, District) remain
+  fully interactive.
+
+### Session 4 remaining work (recorded now to preserve context)
+
+- **Panel B3** — mobility alluvial (was Fiji province → country
+  studied → country worked; Samoa version: district → country → country
+  or region → country → country; Ron will choose the top-band grain).
+- **Panel B4** — global-locations map for Samoan researchers overseas.
+- **Panel D** — publications-over-time histogram by source type (port
+  only; no geography semantics).
+- **Panel E** — chord: discipline × electoral constituency, versioned
+  by election era (2019-Act vs Pre-2019). This is where the electoral-
+  constituency filter surface earns its keep.
+- **Filter listbox behaviour** for the four Session-3 combo stubs
+  (village, specific island, itūmālō, constituency). The `title` and
+  click-notice stubs remain in place until then.
+- **Village display in Panel F / Panel G** — apply district-qualified
+  Village labels when a duplicated name would otherwise be ambiguous.
+
+### Session 5 remaining work (recorded now)
+
+- **Panel G** — body-composition iframe (structural port complete;
+  Samoa-side iframe target URL and embedded stylesheet to be
+  confirmed against Ron's existing body-composition page).
+- **Apps Script `samoa-master-writeback.gs`** — rewire the request
+  contract from the sister-database format to the Session-1 Samoa
+  client's `action='update'` + HMAC-SHA256 signed contract.
+
+### Placeholder panels still shipping in Session-3 build
+
+The following panels' DOM structure is present and empty-state-safe,
+but their live logic lands in Session 4:
+
+- B3 (mobility alluvial) — empty-state ("Mobility data landing in
+  Session 4") intact.
+- B4 (global locations) — empty-state intact.
+- D (publications over time histogram) — empty-state intact.
+- E (chord) — empty-state intact.
+
+### Files modified in Session 3
+
+- `samoa-research-database-master.html` (269 KB, 5,473 lines) —
+  full dashboard shell replacing the Session-2 scaffold.
+- `js/samoa-database-master.js` (571 KB, 11,842 lines) — panel
+  renderers, ported from sister-database with context-aware
+  substitution.
+- `js/samoa-panel-overrides.js` (5.5 KB, 117 lines) — Samoa-native
+  runtime patches for `bundle.geo` hydration + new-filter stubs.
+- `SAMOA-DASHBOARD-BUILD-NOTES.md` — this Session 3 section added.
