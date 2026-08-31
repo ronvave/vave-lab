@@ -1,173 +1,205 @@
-# Samoa Admin — Apps Script Deployment (Google-auth, no browser secrets)
+# Samoa Admin — Apps Script Deployment (Session 2026-08-31 rebuild)
 
-**Effective 2026-08-30.** Replaces the retired browser-HMAC contract.
+This is the **single, canonical deploy procedure** for the Samoa admin web app. It replaces every earlier deployment doc and every one‑off patch note. Follow these steps in order. Do not skip.
 
-## Architecture
+The admin is **four files**, all inside one Apps Script project bound to the Samoa Master Sheet:
 
-```
-                    ┌──────────────────────────────┐
-                    │ ronvave.github.io/vave-lab/  │
-                    │  samoa-research-database-…   │  (public dashboard)
-                    │  admin-samoa-master.html     │  (public stub → link)
-                    └──────────────┬───────────────┘
-                                   │  (link only, no secrets)
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │ script.google.com/…/exec     │
-                    │  ↓  doGet(e)                 │
-                    │  ↓  _assertAuthorized_()     │
-                    │  ↓  HtmlService.createTemplate│
-                    │       samoa-admin-app.html   │
-                    │        · writeback-bridge    │
-                    │        · admin-controller    │
-                    │        · admin-master-inline │
-                    └──────────────┬───────────────┘
-                                   │  google.script.run
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │  apiDescribe / apiPing /     │
-                    │  apiReadRow / apiUpdateRow   │
-                    │  (server-side, gated by      │
-                    │   APPROVED_ADMIN_EMAIL)      │
-                    └──────────────┬───────────────┘
-                                   ▼
-                    ┌──────────────────────────────┐
-                    │  Samoa Master Sheet          │
-                    └──────────────────────────────┘
-```
+1. `samoa-master-writeback.gs` — the server (all the logic, MAPPING, validation, Change Log).
+2. `samoa-admin-app.html` — the outer web page (the only file that contains `<?!= ... ?>` template snippets).
+3. `samoa-admin-writeback-bridge.html` — a small JavaScript library that calls the server via `google.script.run`.
+4. `samoa-admin-controller.html` — the JavaScript that draws the admin form and handles clicks.
 
-## What lives where
+**The old fifth file — `samoa-admin-master-inline.html` — has been retired. You will delete it in step 3 below.**
 
-| Location | Contents | Access model |
-|---|---|---|
-| GitHub Pages `admin-samoa-master.html` | Public stub that links to the Apps Script `/exec` URL. Contains no secrets, no admin JS, no HMAC. | Anyone with the URL can view the stub. Nothing sensitive here. |
-| Apps Script project (bound to Samoa Master Sheet) | `.gs` writeback + four HTML includes for the admin UI. `APPROVED_ADMIN_EMAIL` Script Property gates who can open it. | Only the Google account listed in `APPROVED_ADMIN_EMAIL` sees the admin surface. Everyone else sees a "Not authorized" page. |
-| Master Sheet | Data. Writes only via `apiUpdateRow` in the `.gs` file. | Regular Google Sheets sharing. The Apps Script runs under the caller's identity, so writes obey Sheet ACLs too. |
+The admin has **no passwords, no shared secrets, no HMAC, no snapshot passcodes**. Google identity is the only authentication.
 
-## Files added to the Apps Script project
+---
 
-| File | Kind | Purpose |
-|---|---|---|
-| `samoa-master-writeback.gs` | .gs | Server. `doGet` serves the admin app + read paths; `doPost` returns 410 Gone; `api*` functions do the real work. |
-| `samoa-admin-app.html` | HTML | Main HtmlService template rendered by `doGet`. |
-| `samoa-admin-writeback-bridge.html` | HTML | JS that exposes `window.samoaWriteback` on top of `google.script.run`. |
-| `samoa-admin-controller.html` | HTML | Shim that provides `samoaDbGate` (routes through `apiReadRow`) and bypasses the legacy password form. |
-| `samoa-admin-master-inline.html` | HTML | The admin JS controller (unchanged from the retired browser build, embedded verbatim). |
+## Step 1. Open the Apps Script project
 
-## Script Properties
+1. Go to the Samoa Master Sheet: <https://docs.google.com/spreadsheets/d/1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ/edit>
+2. On the Sheet menu bar click **Extensions → Apps Script**. A new tab opens showing the Apps Script editor.
+3. In the left sidebar you will see a list of files under a section labelled **Files**. That is the file list you will be editing in the next step.
 
-| Key | Value | Required |
-|---|---|---|
-| `APPROVED_ADMIN_EMAIL` | Ron's Google account, lowercase, e.g. `ronvave2011@gmail.com` | **Yes** |
-| `WRITE_ENABLED` | `true` (or omit / `false` to enable read-only mode) | Optional |
-| `SHARED_SECRET` | **Delete this.** The Samoa admin no longer uses it. Sister-database polling paths in `doGet` still honor it if present, but Samoa's admin path does not. | No |
+---
 
-## Deployment steps
+## Step 2. Confirm the two required Script Properties
 
-1. Open the Samoa Master Sheet → Extensions → Apps Script.
-2. Add the five files above. Paste `samoa-master-writeback.gs` first; then create each `.html` via File → New → HTML file and paste each include's contents.
-3. Project Settings → Script Properties:
-   - Add `APPROVED_ADMIN_EMAIL = <your Google account, lowercase>`.
-   - Add `WRITE_ENABLED = true` if you want writes on immediately.
-   - Delete any existing `SHARED_SECRET` property (no longer used by the admin; leaks are moot after this deploy).
-4. Deploy → New deployment → type = **Web app**:
-   - Description: `Samoa Admin (Google auth) v2`
-   - Execute as: **User accessing the web app** ← **CRITICAL** (without this, `Session.getActiveUser().getEmail()` returns empty).
-   - Who has access: **Anyone with a Google account**
-5. Copy the `/exec` URL from the deploy dialog.
-6. Paste the URL into `admin-samoa-master.html` where the placeholder `REPLACE_WITH_APPS_SCRIPT_EXEC_URL` sits. Commit + push (no secrets in this URL — auth is fully server-side).
+The server refuses to run if these are missing.
 
-## Verification checklist
+1. In the Apps Script editor, click the **gear icon (Project Settings)** on the far left sidebar.
+2. Scroll down to **Script Properties**. You should see a small table.
+3. Make sure these two rows exist (add them with **Add script property** if they do not):
 
-Run these before declaring the deploy healthy. Each takes < 30 seconds.
+   | Property key            | Value                                          |
+   |-------------------------|------------------------------------------------|
+   | `APPROVED_ADMIN_EMAIL`  | `ronvave2011@gmail.com`                        |
+   | `WRITE_ENABLED`         | `false`                                        |
 
-### 1. Approved account sees the admin app
+   Leave `WRITE_ENABLED` at `false` for now. You will flip it to `true` only after all tests in step 6 pass.
 
-Open the `/exec` URL while signed into the account listed in `APPROVED_ADMIN_EMAIL`.
+4. If a **`SHARED_SECRET`** property still exists, delete it (it is a leftover from the retired HMAC contract; nothing reads it anymore).
 
-Expected: page renders "Samoa Scholar Database — Admin", shows "Signed in as <your-email>", status advances from "Booting…" to "Ready. Server writeEnabled = yes".
+5. Click **Save script properties** if the button appears.
 
-### 2. Unauthorized account sees "Not authorized"
+6. Click the **`< >` code icon** on the left sidebar to return to the file list.
 
-Open the `/exec` URL in an incognito window while signed into a different Google account (or sign out first).
+---
 
-Expected: "Not authorized" page. No worksheet list, no form.
+## Step 3. Replace the four files (and delete the fifth)
 
-### 3. Anonymous fetch cannot read
+You are going to end up with **exactly these four files** in the Apps Script project:
 
-From a terminal, `curl -i <exec-url>`.
+* `samoa-master-writeback.gs`
+* `samoa-admin-app` (`.html` — Apps Script hides the extension in the file list)
+* `samoa-admin-writeback-bridge` (`.html`)
+* `samoa-admin-controller` (`.html`)
 
-Expected: 302 redirect to a Google sign-in page (or a Google login HTML). No JSON MAPPING, no worksheet list.
+**Delete the old `samoa-admin-master-inline` file first.**
 
-### 4. `doPost` is gone
+1. In the file list, click the three‑dot menu next to `samoa-admin-master-inline` and choose **Delete**. Confirm.
 
-From a terminal:
+Now replace the other four files, one at a time. For each file:
 
-```
-curl -i -X POST -H 'Content-Type: application/json' \
-     -d '{"action":"ping"}' <exec-url>
-```
+* Click the file name in the sidebar to open it.
+* Press **Ctrl+A** (Cmd+A on Mac) inside the code area, then **Delete**, so the file is empty.
+* Open the matching file from this repo on GitHub (links below), click the **Raw** button, press **Ctrl+A / Cmd+A**, **Ctrl+C / Cmd+C**, come back to the Apps Script tab and press **Ctrl+V / Cmd+V**.
+* Press **Ctrl+S / Cmd+S** to save.
 
-Expected: HTTP 410 with body `{"status":"gone","error":"browser-hmac-contract-retired",…}`. Any HMAC-signed POST from a compromised browser returns the same 410.
+Files to copy, in order:
 
-### 5. Server-side write works
+1. `samoa-master-writeback.gs` — <https://github.com/ronvave/vave-lab/blob/main/apps-script/samoa-master-writeback.gs>
+2. `samoa-admin-app.html` — <https://github.com/ronvave/vave-lab/blob/main/apps-script/samoa-admin-app.html>
+3. `samoa-admin-writeback-bridge.html` — <https://github.com/ronvave/vave-lab/blob/main/apps-script/samoa-admin-writeback-bridge.html>
+4. `samoa-admin-controller.html` — <https://github.com/ronvave/vave-lab/blob/main/apps-script/samoa-admin-controller.html>
 
-In the admin app: pick a worksheet, load an existing row, change one editable field (e.g. `Notes`), save.
+Do not edit any of the pasted content. Do not add or remove blank lines. The files are designed as one interlocking set.
 
-Expected: green success banner. Open the Master Sheet directly and confirm the cell + Change Log both updated. Change Log's actor column is your Google email, not the string `admin`.
+---
 
-### 6. Write path rejects unauthorized
+## Step 4. Sanity check the server file
 
-Sign out; sign into a non-approved Google account; open `/exec`; expected "Not authorized". No `google.script.run` call can reach `apiUpdateRow` because `_assertAuthorized_` throws before any work runs.
+1. In the file list click `samoa-master-writeback.gs`.
+2. At the top of the code area there is a **function picker** (a dropdown). Choose **`inspectConfig`**.
+3. Click **Run**.
+4. The first time you do this, Google will pop up an authorization dialog. Click **Review permissions**, pick your Google account (`ronvave2011@gmail.com`), click **Advanced → Go to (unsafe)** if warned, then **Allow**. This is the standard Apps Script first‑run prompt.
+5. Click the **Execution log** tab at the bottom of the editor. You should see four lines that look like:
 
-## Rotation and revocation
+   ```
+   APPROVED_ADMIN_EMAIL = ronvave2011@gmail.com
+   WRITE_ENABLED        = false
+   Spreadsheet ID       = 1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ
+   Timezone             = Pacific/Honolulu
+   ```
 
-**To revoke admin access instantly**, change `APPROVED_ADMIN_EMAIL` to any value the current admin cannot control (e.g. `revoked@invalid`). No redeploy required — the Script Property is read on every request.
+If any line shows `(unset)`, go back to step 2 and add the missing Script Property.
 
-**To rotate the admin identity**, edit `APPROVED_ADMIN_EMAIL` to the new Google account's email. No secret rotation needed. No client-side changes needed.
+---
 
-**The previously exposed browser HMAC secret** (fingerprint prefix `3165379b…`, reference elsewhere in the session record) is now permanently irrelevant. `doPost` no longer verifies it. No live surface accepts it. History-rewriting the old commits that contain it is unnecessary because it grants no access.
+## Step 5. Deploy the web app
 
-## What was killed on 2026-08-30
+1. At the top‑right of the Apps Script editor, click **Deploy → Manage deployments**.
+2. If there is an existing deployment, click the pencil icon next to it. If there is none, close this window and click **Deploy → New deployment** instead, then pick **Web app** in the settings icon on the top left.
+3. Set the deployment settings:
+   * **Description:** anything short, e.g. `Samoa admin — 2026-08-31 systematic-repair`.
+   * **Execute as:** **User accessing the web app** ← this is the critical setting; the server refuses to run in any other mode.
+   * **Who has access:** **Only myself** (or "Anyone with a Google account" — either works because the server double‑checks the email).
+4. Click **Deploy**.
+5. Copy the **Web app URL** shown (it ends in `/exec`). Keep it — this is the admin URL.
 
-- `js/samoa-admin-writeback-client.js` (browser HMAC signer). Deleted.
-- `js/samoa-admin-insights-migration.js` (client-side migrations). Deleted.
-- `js/admin-samoa-master.js` (browser admin controller). Deleted — its code now lives in `apps-script/samoa-admin-master-inline.html`.
-- `apps-script/hmac-smoke-test.md` and `apps-script/run-hmac-smoke-tests.py`. Deleted — the contract they tested no longer exists.
-- `admin-samoa-master.html` browser JS: `SAMOA_ADMIN_PASSWORD_HASH_HEX`, `SAMOA_WRITEBACK_URL`, `SAMOA_WRITEBACK_SECRET_HEX` inline assignments. Replaced by a static stub with a single `ADMIN_URL` (not a secret).
-- `doPost` in `samoa-master-writeback.gs`: entire HMAC branch and the legacy `checkAuth_`-based sister-database `write`/`ping` branch. Returns 410 Gone.
+If you already had a deployment and just clicked the pencil, the URL will be the same as before, and you have to click **Deploy → New version** so the code changes actually go live. Do that.
 
-## What was preserved
+---
 
-- `MAPPING` allowlist (25 worksheets, ~454 fields).
-- `ALWAYS_CONFIRM` policy for high-risk fields.
-- `LockService` on every write.
-- Change Log append on every write, now stamped with the caller's Google email as actor.
-- Field-level validation (`validateValue_`).
-- Legacy JSON read paths (`readScholar`, `readRows`, `readChangeLog`) via `doGet` — still gated by the SHARED_SECRET Script Property, still usable by sister-database polling, but not by Samoa admin.
-- Emergency read-only switch: `WRITE_ENABLED = false`.
+## Step 6. Test in this exact order, before turning writes on
 
-## Security tests (post-deploy, one-time)
+Open the `/exec` URL in a new browser tab. If a Google sign‑in appears, sign in with `ronvave2011@gmail.com`.
 
-```bash
-# 1. Anonymous doGet is denied
-curl -i -L "$EXEC_URL" | head -20   # expect Google login redirect
+Do these tests one by one. Each must pass before moving to the next.
 
-# 2. Anonymous doPost is 410
-curl -i -X POST -H 'Content-Type: application/json' \
-     -d '{"action":"ping"}' "$EXEC_URL"    # expect HTTP 410
+### 6a. Loads and reads the MAPPING
 
-# 3. Anonymous doPost with fake HMAC is 410
-curl -i -X POST -H 'Content-Type: application/json' \
-     -d '{"action":"update","worksheet":"Scholars","key":"SAM-S0001",
-          "fields":{"Notes":"hax"},"sig":"deadbeef","nonce":"aa",
-          "ts":'"$(date +%s%3N)"'}' "$EXEC_URL"    # expect HTTP 410
+* The page title bar should say `Samoa Scholar Database — Admin`, show your email, and a red pill labelled `READ-ONLY (WRITE_ENABLED=false)`.
+* The status bar under the header should end with **"Ready. Pick a worksheet and a row to edit."**
+* The worksheet dropdown should be populated.
+* Open the **Diagnostics** section at the bottom of the page. `writeEnabled` must be `false`. `activeEmail` must be your email. `worksheets` should be `25`.
 
-# 4. Legacy read path with wrong SHARED_SECRET is 401 or unauthorized
-curl -i "$EXEC_URL?action=ping&secret=wrong&clientTs=$(date +%s%3N)"
+If the status bar says anything else — screenshot it and stop.
 
-# 5. Legacy read path with no SHARED_SECRET falls into HTML admin (Google redirect)
-curl -i "$EXEC_URL?action=ping" | head -20
-```
+### 6b. Ping
 
-All five must pass before Ron considers the migration verified.
+* Click **Test connection**.
+* Status bar turns green: `Ping OK. Active email: ronvave2011@gmail.com. WRITE_ENABLED: false.`
+
+### 6c. Unauthorized user is blocked
+
+* In a **second Chrome profile** (or an Incognito window signed into a different Google account), open the same `/exec` URL.
+* You should see a plain page titled **Not authorised**, showing the wrong email in a code box.
+* No admin surface, no worksheet dropdown, no data.
+
+Close that tab.
+
+### 6d. Executions log confirms server calls
+
+* Back in the Apps Script editor, click the **clock icon (Executions)** on the left sidebar.
+* You should see log rows for `doGet`, `apiDescribe`, `apiListKeys` (if you picked a worksheet), `apiPing`. All rows should be green (Completed).
+
+### 6e. Read a real row
+
+* Back in the admin tab, pick **Scholars** in the worksheet dropdown.
+* In the key box, start typing a real Scholar ID. Autocomplete should suggest existing values.
+* Click **Load row**. The edit form appears with every Scholars field populated from the live sheet.
+
+### 6f. Dry‑run write (WRITE_ENABLED is still false)
+
+* Change any low‑stakes field (e.g. `Display Name`) by adding then removing a space, so the row is marked dirty.
+* Click **Save changes**.
+* Status bar should turn yellow: **"WRITE_ENABLED=false: dry-run only. 1 written · … Nothing was written."**
+* Reload the Master Sheet in another tab and confirm the field is unchanged.
+
+### 6g. High‑consequence confirm gate
+
+* Change `Review Status`. The row should turn red and a **"tick to confirm"** checkbox appears.
+* Try to click **Save changes** without ticking — it should stay disabled.
+* Tick the confirm box, click Save. It runs a dry-run as above.
+
+### 6h. Change Log panel
+
+* Click **Refresh** in the "Recent Change Log" card. The most recent Change Log rows appear in the table.
+
+---
+
+## Step 7. Turn writes on and run one real edit
+
+Only do this once every test above has passed.
+
+1. Go back to **Project Settings → Script Properties**.
+2. Change `WRITE_ENABLED` from `false` to **`true`**. Save.
+3. Reload the admin tab. The badge in the header should now say **`WRITE ENABLED`** in green.
+4. Load a Scholars row for a scholar you actively want to edit, make one small allowlisted change, and click Save.
+5. The status bar should turn green: **"Wrote 1 field(s). Row reloaded from Master."**
+6. Open the Master Sheet — the cell should show the new value.
+7. Open the **Change Log** sheet — the newest row should show your Google email, the scholar ID, and the exact old → new values.
+
+If any of those does not happen, immediately set `WRITE_ENABLED` back to `false`.
+
+---
+
+## Step 8. (Optional) Point the public bookmark
+
+If you want the GitHub Pages bookmark `admin-samoa-master.html` to redirect to the new URL:
+
+1. Open `admin-samoa-master.html` in this repo.
+2. Find `REPLACE_WITH_APPS_SCRIPT_EXEC_URL` and paste the `/exec` URL over it.
+3. Commit and push. GitHub Pages will pick it up on its next refresh.
+
+---
+
+## What to do if something fails
+
+* **"Fetching MAPPING…" hangs forever.** The bridge is not reaching the server. Open the Apps Script **Executions** log. If there is no `apiDescribe` row for the past minute, the browser JS is broken — reload with DevTools open (`F12`) and copy the console error to the report. If there is an `apiDescribe` row and it shows **Failed** with `not-authorized`, then `APPROVED_ADMIN_EMAIL` doesn't match the account you're signed in as.
+* **"Not authorised" page even for your own account.** The deployment is running as the wrong identity. Go back to step 5 and confirm **Execute as: User accessing the web app**.
+* **`inspectConfig` prints `WRITE_ENABLED = (unset)`.** Add the property in step 2.
+* **Save says "worksheet-not-allowed" or "field-not-allowed".** MAPPING has drifted from the live sheet. Re-run `samoa_build/generate_allowlist.py` and paste the new `var MAPPING = {…}` block into `samoa-master-writeback.gs`.
+
+Nothing in this project should ever be updated by pasting a partial fix. If a real bug turns up, replace all four files as one set, following this doc from Step 3.

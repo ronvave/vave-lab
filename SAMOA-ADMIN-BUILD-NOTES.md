@@ -3,7 +3,35 @@
 Companion to `SAMOA-DASHBOARD-BUILD-NOTES.md`. Documents the admin panel
 for the Samoa Scholar Database.
 
-## ⚠ Architecture change — 2026-08-30 (session 6, this commit)
+## 🧱 Systematic repair — 2026-08-31 (this commit)
+
+The five-file admin from 2026-08-30 was rebuilt as one internally
+consistent four-file set after the hand-patched version hung at
+"Fetching the current MAPPING from the writeback…":
+
+- **`samoa-master-writeback.gs`** — clean server with all HMAC / SHARED_SECRET /
+  legacy sister-DB code physically removed. New `include(name)` helper.
+  Added `apiListKeys`, `apiReadChangeLog`. `apiUpdateRow` now forces a
+  dry-run whenever `WRITE_ENABLED≠'true'` (previously the property was
+  advisory). Change Log actor is the authenticated Google email.
+- **`samoa-admin-app.html`** — the ONLY file with `<?!= … ?>` scriptlets.
+  Includes the bridge and controller directly. Zero nested `getContent()`
+  calls, so scriptlet evaluation happens once.
+- **`samoa-admin-writeback-bridge.html`** — pure `<script>` block.
+  Exposes `window.samoaAdminBridge` with `describe / ping / listKeys /
+  readRow / updateRow / readChangeLog`. Every call uses direct method
+  invocation on `google.script.run` (no `.apply()`).
+- **`samoa-admin-controller.html`** — pure `<script>` block. New
+  Google-auth-native admin UI. No `samoaDbGate`, no password hash, no
+  snapshot passcode, no legacy controller inline. Renders worksheet
+  picker → key autocomplete → edit form → save → Change Log panel.
+- **`samoa-admin-master-inline.html` was deleted** as part of this commit.
+
+Deploy: `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` (rewritten step-by-step, no
+assumed knowledge). WRITE_ENABLED shipped at `false`; only Ron flips it
+after every mandatory test passes.
+
+## ⚠ Architecture change — 2026-08-30 (session 6)
 
 **The browser-HMAC contract is retired.** The admin panel is no longer
 served from GitHub Pages. See `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` for the

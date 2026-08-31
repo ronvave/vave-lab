@@ -1,146 +1,485 @@
 <script>
 /**
- * samoa-admin-controller (Apps Script HtmlService include)
+ * samoa-admin-controller.html
+ * ────────────────────────────
+ * Boots the admin surface. Talks only to window.samoaAdminBridge (from
+ * samoa-admin-writeback-bridge.html); knows nothing about
+ * google.script.run directly, HMAC, SHARED_SECRET, admin passwords, or
+ * snapshot passcodes. Every value it displays is fetched live from the
+ * Samoa Master Sheet through the bridge.
  *
- * This file shims two dependencies that the browser admin controller
- * (js/admin-samoa-master.js) expects, so that controller can be embedded
- * verbatim below without editing:
- *
- *   window.samoaDbGate — used ONLY by loadRow() to fetch current field
- *     values for a row. Because we no longer serve the admin from
- *     GitHub Pages, there is no cross-origin fetch to samoa-master-*.enc;
- *     instead we ask the server (google.script.run → apiReadRow) for
- *     the live values. This shim keeps loadRow's promise contract.
- *
- *   window.SAMOA_ADMIN_PASSWORD_HASH_HEX — used ONLY by attemptLogin().
- *     Google authentication has already gated this page, so we replace
- *     the login form outright: showAdminSurface() is called on DOM ready.
- *     The stub hash is a placeholder that never verifies real passwords.
+ * User flow:
+ *   1. Page opens → describe() → populate worksheet dropdown, diagnostics.
+ *   2. User picks a worksheet → listKeys() → populate <datalist> for the
+ *      key input.
+ *   3. User types/picks a key + clicks "Load row" → readRow() → render
+ *      one edit row per allowlisted field.
+ *   4. User edits inputs. Rows visually flag as dirty; ALWAYS_CONFIRM
+ *      fields show a red confirm prompt when dirty.
+ *   5. User clicks "Save changes":
+ *      • Collects only dirty fields.
+ *      • If WRITE_ENABLED=false the server forces dry-run and reports
+ *        "would-write" per field; the UI displays that and does not
+ *        change dirty flags.
+ *      • If WRITE_ENABLED=true the server writes and appends Change Log
+ *        rows; the UI reloads the row from live values and refreshes
+ *        the Change Log panel.
+ *   6. "Recent Change Log" panel calls readChangeLog() on demand.
  */
 (function (global) {
   'use strict';
 
-  // ── samoaDbGate shim ────────────────────────────────────────────────────
-  //
-  // The real gate decrypts .enc snapshots. Here we route the one method
-  // loadRow() actually uses — decryptFileJSON(snapshotPath) — through
-  // apiReadRow so the admin form is populated from LIVE Master Sheet
-  // values, not from a possibly-stale snapshot. tryResume/unlock/
-  // clearSession are no-ops; the boot path below unlocks unconditionally.
-  //
-  // Because loadRow() then calls extractRows(blob, ws) expecting shape
-  // { worksheets: { <ws>: { rows: [ <row>, ... ] } } }, we return that
-  // exact shape wrapping the single-row read.
-  var snapshotToWorksheet = {
-    'data/samoa-master-scholars.json':               'Scholars',
-    'data/samoa-master-publications.json':           'Publications',
-    'data/samoa-master-authorship.json':             'Authorship',
-    'data/samoa-master-researcher-authorship.json':  'Researcher Authorship',
-    'data/samoa-master-grad-degrees.json':           'Graduate Degrees',
-    'data/samoa-master-mobility.json':               'M>PhD Mobility',
-    'data/samoa-master-geography.json':              'Research Geography'
+  // ────────────────────────────────────────────────────────────
+  // DOM refs — resolved once on DOMContentLoaded.
+  // ────────────────────────────────────────────────────────────
+  var el = {};
+
+  function $(id) { return document.getElementById(id); }
+  function setText(node, text) { if (node) node.textContent = text; }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function status(msg, cls) {
+    if (!el.status) return;
+    el.status.textContent = msg;
+    el.status.className = cls || '';
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // State
+  // ────────────────────────────────────────────────────────────
+  var state = {
+    describe:      null,   // full apiDescribe response
+    currentWs:     null,   // selected worksheet name
+    currentKey:    null,   // key of the row currently in the edit form
+    currentRow:    null,   // {rowNumber, fields} as returned by apiReadRow
+    dirtyFields:   {},     // { fieldName: newValue }
+    confirmFields: {},     // { fieldName: true } — user must tick to save an ALWAYS_CONFIRM change
+    saving:        false
   };
 
-  // The row key comes in via loadRow(keyValue) BEFORE decryptFileJSON is
-  // called, so we capture it via a module-scoped variable set by a
-  // wrapper on loadRow (installed after the controller loads, see below).
-  var pendingKey = { ws: null, key: null };
+  // ────────────────────────────────────────────────────────────
+  // Boot
+  // ────────────────────────────────────────────────────────────
+  function boot() {
+    el.status         = $('status');
+    el.wsSelect       = $('ws-select');
+    el.keyInput       = $('key-input');
+    el.keySuggestions = $('key-suggestions');
+    el.loadBtn        = $('load-btn');
+    el.pingBtn        = $('ping-btn');
+    el.pickerHint     = $('picker-hint');
+    el.editCard       = $('edit-card');
+    el.editSummary    = $('edit-summary');
+    el.fieldsTable    = $('fields-table').querySelector('tbody');
+    el.saveBtn        = $('save-btn');
+    el.cancelBtn      = $('cancel-btn');
+    el.saveHint       = $('save-hint');
+    el.logCard        = $('log-card');
+    el.logRefreshBtn  = $('log-refresh-btn');
+    el.logHint        = $('log-hint');
+    el.logTable       = $('log-table').querySelector('tbody');
+    el.diag           = $('diag');
 
-  global.samoaDbGate = {
-    tryResume: function () { return true; },
-    unlock: function () { return Promise.resolve(true); },
-    clearSession: function () { /* Google session; nothing to clear */ },
-    decryptFileJSON: function (snapshotPath) {
-      var ws = snapshotToWorksheet[snapshotPath];
-      if (!ws) {
-        return Promise.reject(new Error(
-          'samoa-admin-controller: unknown snapshot path ' + snapshotPath
-        ));
-      }
-      var key = pendingKey.key;
-      if (!key) {
-        // The controller sometimes calls decryptFileJSON without a key
-        // (batch snapshots). We do not support that path here — return
-        // an empty rows array so extractRows() yields no match.
-        var empty = { worksheets: {} };
-        empty.worksheets[ws] = { rows: [] };
-        return Promise.resolve(empty);
-      }
-      return global.samoaWriteback._readRow(ws, key).then(function (body) {
-        var blob = { worksheets: {} };
-        if (body && body.status === 'ok' && body.fields) {
-          blob.worksheets[ws] = { rows: [body.fields] };
-        } else {
-          blob.worksheets[ws] = { rows: [] };
-        }
-        return blob;
-      });
+    el.wsSelect.addEventListener('change', onWorksheetChange);
+    el.loadBtn.addEventListener('click', onLoadRow);
+    el.pingBtn.addEventListener('click', onPing);
+    el.saveBtn.addEventListener('click', onSave);
+    el.cancelBtn.addEventListener('click', onCancel);
+    el.logRefreshBtn.addEventListener('click', refreshChangeLog);
+
+    status('Contacting the server (apiDescribe)…', 'busy');
+    if (!global.samoaAdminBridge) {
+      status('Fatal: samoaAdminBridge is not defined. The bridge include is missing.', 'err');
+      return;
     }
-  };
-
-  // Extend samoaWriteback with a private _readRow the shim uses, and
-  // wire pendingKey by wrapping loadRow after the controller loads.
-  var origWriteback = global.samoaWriteback || {};
-  origWriteback._readRow = function (ws, key) {
-    return new Promise(function (resolve, reject) {
-      google.script.run
-        .withSuccessHandler(function (body) { resolve(body); })
-        .withFailureHandler(function (err) {
-          reject(new Error((err && err.message) || String(err)));
-        })
-        .apiReadRow(ws, key);
+    global.samoaAdminBridge.describe().then(function (body) {
+      if (!body || body.status !== 'ok') {
+        status('Server responded but did not return ok: ' + JSON.stringify(body), 'err');
+        return;
+      }
+      state.describe = body;
+      populateWorksheetDropdown(body);
+      renderDiagnostics(body);
+      status('Ready. Pick a worksheet and a row to edit.', 'ok');
+    }).catch(function (err) {
+      status('describe() failed: ' + err.message, 'err');
+      if (el.diag) el.diag.textContent = String(err && err.stack ? err.stack : err);
     });
-  };
-  global.samoaWriteback = origWriteback;
+  }
 
-  // ── Password hash placeholder ────────────────────────────────────────
-  //
-  // The controller checks `global.SAMOA_ADMIN_PASSWORD_HASH_HEX` inside
-  // attemptLogin(). We bypass attemptLogin() entirely by skipping the
-  // login DOM (removed from samoa-admin-app.html) and auto-showing the
-  // surface. This hash is a harmless placeholder to satisfy the guard.
-  global.SAMOA_ADMIN_PASSWORD_HASH_HEX =
-    '0000000000000000000000000000000000000000000000000000000000000000';
+  function populateWorksheetDropdown(body) {
+    var mapping = (body && body.mapping) || {};
+    var worksheets = mapping.worksheets || {};
+    var names = Object.keys(worksheets).sort();
+    el.wsSelect.innerHTML = '';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '(pick a worksheet — ' + names.length + ' available)';
+    el.wsSelect.appendChild(placeholder);
+    names.forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      var cfg = worksheets[name];
+      var nFields = cfg && cfg.fields ? Object.keys(cfg.fields).length : 0;
+      opt.textContent = name + '  (' + nFields + ' editable fields)';
+      el.wsSelect.appendChild(opt);
+    });
+    el.wsSelect.disabled = false;
+  }
 
-  // ── After the controller loads, patch loadRow to capture the key ─────
-  document.addEventListener('DOMContentLoaded', function () {
-    // Show the admin surface immediately — Google identity is already
-    // verified server-side. The login form is not rendered.
-    var login = document.getElementById('samoa-admin-login');
-    if (login) login.style.display = 'none';
-    var surface = document.getElementById('samoa-admin-surface');
-    if (surface) surface.style.display = 'block';
+  function renderDiagnostics(body) {
+    if (!el.diag) return;
+    var lines = [
+      'status         : ' + body.status,
+      'activeEmail    : ' + body.activeEmail,
+      'writeEnabled   : ' + body.writeEnabled,
+      'spreadsheetId  : ' + body.spreadsheetId,
+      'sourceTag      : ' + body.sourceTag,
+      'timezone       : ' + body.timezone,
+      'mapping.version: ' + (body.mapping && body.mapping.version),
+      'worksheets     : ' + (body.mapping && body.mapping.worksheets ? Object.keys(body.mapping.worksheets).length : 0),
+      'serverTs       : ' + new Date(body.serverTs).toISOString()
+    ];
+    el.diag.textContent = lines.join('\n');
+  }
 
-    // Boot the controller (calls describe, renders tabs, etc.). The
-    // controller exposes its boot via window.samoaAdmin.boot or similar
-    // in some builds; when it doesn't, it auto-boots on DOMContentLoaded
-    // and there is nothing to do here.
-    if (global.samoaAdmin && typeof global.samoaAdmin.boot === 'function') {
-      try { global.samoaAdmin.boot(); } catch (e) { /* ignore */ }
-    }
+  // ────────────────────────────────────────────────────────────
+  // Worksheet + key picker
+  // ────────────────────────────────────────────────────────────
+  function onWorksheetChange() {
+    var ws = el.wsSelect.value || '';
+    state.currentWs  = ws || null;
+    state.currentKey = null;
+    state.currentRow = null;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    el.editCard.style.display = 'none';
+    el.fieldsTable.innerHTML = '';
+    el.keyInput.value = '';
+    el.keyInput.disabled = !ws;
+    el.loadBtn.disabled = true;
+    el.keySuggestions.innerHTML = '';
+    if (!ws) { setText(el.pickerHint, ''); return; }
 
-    // Wrap loadRow (via renderKeyPicker's onclick) to capture the key
-    // just before decryptFileJSON fires. We do this by intercepting the
-    // Load button clicks at the document level.
-    document.addEventListener('click', function (ev) {
-      var btn = ev.target;
-      if (!btn || btn.tagName !== 'BUTTON') return;
-      var label = (btn.textContent || '').trim().toLowerCase();
-      if (label !== 'load') return;
-      var input = document.querySelector('#samoa-admin-keypicker input');
-      if (input) {
-        // pendingKey is used by decryptFileJSON above.
-        pendingKey.key = (input.value || '').trim();
+    var wsCfg = state.describe.mapping.worksheets[ws];
+    setText(el.pickerHint,
+      'Key column for “' + ws + '” is “' + wsCfg.keyColumn + '”. Loading suggestions…');
+    global.samoaAdminBridge.listKeys(ws).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        setText(el.pickerHint, 'listKeys() did not return ok: ' + JSON.stringify(body));
+        return;
       }
-    }, true);
-  });
+      var keys = body.keys || [];
+      keys.forEach(function (k) {
+        var opt = document.createElement('option');
+        opt.value = k;
+        el.keySuggestions.appendChild(opt);
+      });
+      setText(el.pickerHint,
+        keys.length + ' existing “' + wsCfg.keyColumn + '” values suggested. Type or pick one and click “Load row”.');
+      el.loadBtn.disabled = false;
+    }).catch(function (err) {
+      setText(el.pickerHint, 'listKeys() failed: ' + err.message);
+    });
+  }
+
+  function onLoadRow() {
+    var ws  = state.currentWs;
+    var key = (el.keyInput.value || '').trim();
+    if (!ws || !key) return;
+    state.currentKey = key;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    status('Loading row “' + key + '” from ' + ws + '…', 'busy');
+    global.samoaAdminBridge.readRow(ws, key).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        status('readRow() did not return ok: ' + JSON.stringify(body), 'err');
+        return;
+      }
+      if (!body.found) {
+        status('No row on “' + ws + '” has ' + state.describe.mapping.worksheets[ws].keyColumn +
+               ' = “' + key + '”.', 'err');
+        el.editCard.style.display = 'none';
+        return;
+      }
+      state.currentRow = { rowNumber: body.rowNumber, fields: body.fields };
+      renderEditForm();
+      status('Loaded row ' + body.rowNumber + '. Edit fields below, then click “Save changes”.', 'ok');
+    }).catch(function (err) {
+      status('readRow() failed: ' + err.message, 'err');
+    });
+  }
+
+  function renderEditForm() {
+    var ws = state.currentWs;
+    var wsCfg = state.describe.mapping.worksheets[ws];
+    var fields = state.currentRow.fields;
+    var alwaysConfirm = state.describe.alwaysConfirm || {};
+    el.editCard.style.display = 'block';
+    setText(el.editSummary,
+      'Worksheet: ' + ws + ' · Row: ' + state.currentRow.rowNumber +
+      ' · Key (' + wsCfg.keyColumn + '): ' + state.currentKey);
+    el.fieldsTable.innerHTML = '';
+
+    var allowed = wsCfg.fields || {};
+    // Preserve MAPPING declaration order.
+    Object.keys(allowed).forEach(function (fname) {
+      var cfg = allowed[fname];
+      var current = fields[fname] != null ? String(fields[fname]) : '';
+      var tr = document.createElement('tr');
+      tr.dataset.field = fname;
+      tr.appendChild(_cellHeader(fname, cfg, ws));
+      tr.appendChild(_cellControl(fname, cfg, current));
+      tr.appendChild(_cellMeta(fname, cfg, ws, alwaysConfirm));
+      el.fieldsTable.appendChild(tr);
+    });
+    updateSaveButtonState();
+  }
+
+  function _cellHeader(fname, cfg, ws) {
+    var td = document.createElement('th');
+    td.textContent = fname;
+    return td;
+  }
+
+  function _cellControl(fname, cfg, current) {
+    var td = document.createElement('td');
+    td.className = 'controls';
+    var control;
+    if (cfg.type === 'enum' && Array.isArray(cfg.enum)) {
+      control = document.createElement('select');
+      cfg.enum.forEach(function (v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v === '' ? '(blank)' : v;
+        if (v === current) opt.selected = true;
+        control.appendChild(opt);
+      });
+    } else if (cfg.maxLen && cfg.maxLen > 240) {
+      control = document.createElement('textarea');
+      control.rows = 2;
+      control.value = current;
+    } else {
+      control = document.createElement('input');
+      control.type = 'text';
+      control.value = current;
+      if (cfg.maxLen) control.maxLength = cfg.maxLen;
+    }
+    control.dataset.field = fname;
+    control.dataset.original = current;
+    control.addEventListener('input', onFieldInput);
+    control.addEventListener('change', onFieldInput);
+    td.appendChild(control);
+    return td;
+  }
+
+  function _cellMeta(fname, cfg, ws, alwaysConfirm) {
+    var td = document.createElement('td');
+    td.className = 'meta';
+    var bits = [cfg.type];
+    if (cfg.maxLen)                       bits.push('max ' + cfg.maxLen);
+    if (cfg.min != null || cfg.max != null) bits.push('range ' + (cfg.min == null ? '−∞' : cfg.min) + '..' + (cfg.max == null ? '+∞' : cfg.max));
+    if (cfg.enum)                         bits.push('enum');
+    if (alwaysConfirm[ws + '.' + fname])  bits.push('⚠ always-confirm');
+    td.innerHTML = bits.map(esc).join('<br>');
+    return td;
+  }
+
+  function onFieldInput(ev) {
+    var control = ev.target;
+    var fname = control.dataset.field;
+    if (!fname) return;
+    var newValue  = control.value;
+    var original  = control.dataset.original;
+    var tr = control.closest('tr');
+    if (newValue === original) {
+      delete state.dirtyFields[fname];
+      delete state.confirmFields[fname];
+      if (tr) tr.classList.remove('dirty', 'confirm');
+    } else {
+      state.dirtyFields[fname] = newValue;
+      if (tr) {
+        tr.classList.add('dirty');
+        var alwaysConfirm = (state.describe.alwaysConfirm || {})[state.currentWs + '.' + fname];
+        if (alwaysConfirm) {
+          tr.classList.add('confirm');
+          // Attach a confirm checkbox once.
+          if (!tr.querySelector('.confirm-check')) {
+            var wrap = document.createElement('div');
+            wrap.style.marginTop = '4px';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'confirm-check';
+            cb.id = 'confirm-' + fname.replace(/[^a-z0-9]/gi, '-');
+            cb.addEventListener('change', function () {
+              if (cb.checked) state.confirmFields[fname] = true;
+              else delete state.confirmFields[fname];
+              updateSaveButtonState();
+            });
+            var lbl = document.createElement('label');
+            lbl.setAttribute('for', cb.id);
+            lbl.style.fontSize = '0.85rem';
+            lbl.style.color = '#7f1d1d';
+            lbl.style.marginLeft = '6px';
+            lbl.textContent = 'This is a high-consequence field — tick to confirm.';
+            wrap.appendChild(cb);
+            wrap.appendChild(lbl);
+            tr.querySelector('td.controls').appendChild(wrap);
+          }
+        }
+      }
+    }
+    updateSaveButtonState();
+  }
+
+  function updateSaveButtonState() {
+    var dirty = Object.keys(state.dirtyFields);
+    if (!dirty.length) {
+      el.saveBtn.disabled = true;
+      setText(el.saveHint, '');
+      return;
+    }
+    var alwaysConfirm = state.describe.alwaysConfirm || {};
+    var unmet = dirty.filter(function (f) {
+      return alwaysConfirm[state.currentWs + '.' + f] && !state.confirmFields[f];
+    });
+    if (unmet.length) {
+      el.saveBtn.disabled = true;
+      setText(el.saveHint, dirty.length + ' change(s), but confirm the highlighted field(s) first.');
+      return;
+    }
+    el.saveBtn.disabled = state.saving;
+    var writeEnabled = state.describe.writeEnabled;
+    setText(el.saveHint,
+      dirty.length + ' change(s) ready. ' +
+      (writeEnabled
+        ? 'WRITE_ENABLED is true — clicking Save will write to the Master Sheet.'
+        : 'WRITE_ENABLED is false — clicking Save runs a dry-run only.'));
+  }
+
+  function onCancel() {
+    if (!state.currentRow) return;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    renderEditForm();
+    status('Edits discarded. Row reloaded from the last read.', 'ok');
+  }
+
+  function onSave() {
+    var dirty = state.dirtyFields;
+    var fieldNames = Object.keys(dirty);
+    if (!fieldNames.length) return;
+    state.saving = true;
+    el.saveBtn.disabled = true;
+    status('Saving ' + fieldNames.length + ' change(s)…', 'busy');
+    global.samoaAdminBridge.updateRow(state.currentWs, state.currentKey, dirty)
+      .then(function (body) {
+        state.saving = false;
+        renderSaveResult(body);
+      })
+      .catch(function (err) {
+        state.saving = false;
+        el.saveBtn.disabled = false;
+        status('updateRow() failed: ' + err.message, 'err');
+        if (err.serverBody) el.diag.textContent = JSON.stringify(err.serverBody, null, 2);
+      });
+  }
+
+  function renderSaveResult(body) {
+    if (!body) {
+      status('Server returned no body.', 'err');
+      el.saveBtn.disabled = false;
+      return;
+    }
+    el.diag.textContent = JSON.stringify(body, null, 2);
+    var dryRun = body.dryRun === true;
+    var forced = body.forcedDryRun === true;
+    var results = body.results || [];
+    var okCount   = results.filter(function (r) { return r.status === 'ok'; }).length;
+    var alreadyOk = results.filter(function (r) { return r.status === 'already_satisfied'; }).length;
+    var confirms  = results.filter(function (r) { return r.status === 'needs_confirmation'; }).length;
+    var rejects   = results.filter(function (r) { return r.status === 'rejected'; }).length;
+    var summary =
+      okCount   + ' written · ' +
+      alreadyOk + ' already-satisfied · ' +
+      confirms  + ' needs-confirmation · ' +
+      rejects   + ' rejected';
+
+    if (rejects && !okCount && !alreadyOk && !confirms) {
+      status('Save rejected. ' + summary +
+             '. See diagnostics for per-field reasons.', 'err');
+      el.saveBtn.disabled = false;
+      return;
+    }
+    if (dryRun) {
+      status(
+        (forced ? 'WRITE_ENABLED=false: dry-run only. ' : 'Dry-run: ') +
+        summary + '. Nothing was written.',
+        forced ? 'busy' : 'ok'
+      );
+      el.saveBtn.disabled = false;
+      return;
+    }
+    // Real write happened — reload the row and refresh the change log.
+    status('Wrote ' + okCount + ' field(s). Reloading row…', 'ok');
+    global.samoaAdminBridge.readRow(state.currentWs, state.currentKey).then(function (r) {
+      if (r && r.status === 'ok' && r.found) {
+        state.currentRow = { rowNumber: r.rowNumber, fields: r.fields };
+        state.dirtyFields = {};
+        state.confirmFields = {};
+        renderEditForm();
+        status('Wrote ' + okCount + ' field(s). Row reloaded from Master.', 'ok');
+      }
+      refreshChangeLog();
+    }).catch(function (err) {
+      status('Wrote ' + okCount + ' field(s) but reload failed: ' + err.message, 'err');
+    });
+  }
+
+  function onPing() {
+    status('Pinging server…', 'busy');
+    global.samoaAdminBridge.ping().then(function (body) {
+      status('Ping OK. Active email: ' + body.activeEmail +
+             '. WRITE_ENABLED: ' + body.writeEnabled + '.', 'ok');
+      if (el.diag) el.diag.textContent = JSON.stringify(body, null, 2);
+    }).catch(function (err) {
+      status('Ping failed: ' + err.message, 'err');
+    });
+  }
+
+  function refreshChangeLog() {
+    setText(el.logHint, 'Loading recent Change Log rows…');
+    global.samoaAdminBridge.readChangeLog(25).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        setText(el.logHint, 'readChangeLog() did not return ok: ' + JSON.stringify(body));
+        return;
+      }
+      var rows = body.rows || [];
+      el.logTable.innerHTML = '';
+      rows.forEach(function (row) {
+        var tr = document.createElement('tr');
+        ['rowNumber', 'version', 'date', 'change', 'scope', 'source'].forEach(function (k) {
+          var td = document.createElement('td');
+          td.textContent = String(row[k] == null ? '' : row[k]);
+          tr.appendChild(td);
+        });
+        el.logTable.appendChild(tr);
+      });
+      setText(el.logHint, 'Showing latest ' + rows.length + ' Change Log row(s), newest first.');
+    }).catch(function (err) {
+      setText(el.logHint, 'readChangeLog() failed: ' + err.message);
+    });
+  }
+
+  // Kick off after the DOM is fully parsed.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
 })(window);
 </script>
-
-<!--
-  Embed the browser admin controller verbatim. It expects the same
-  window.samoaWriteback shape as before — the bridge above provides it —
-  and it uses window.samoaDbGate + window.SAMOA_ADMIN_PASSWORD_HASH_HEX
-  which the shim above provides.
--->
-<?!= HtmlService.createHtmlOutputFromFile('samoa-admin-master-inline').getContent() ?>
