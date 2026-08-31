@@ -3,13 +3,13 @@
   samoa-admin-app.html
   ────────────────────
   The Apps Script HtmlService TEMPLATE. This is the only file in the
-  project that contains <?!= ... ?> scriptlets and the only file that is
-  rendered by HtmlService.createTemplateFromFile('samoa-admin-app').
+  project that contains Apps Script templating scriptlets and the only
+  file that is rendered by HtmlService.createTemplateFromFile('samoa-admin-app').
 
   Include chain is deliberately flat: this file inlines the bridge and
   the controller directly. None of the included files contain further
-  <?!= ... ?> scriptlets, so scriptlet evaluation happens once at this
-  layer and the include chain never nests.
+  scriptlets, so scriptlet evaluation happens once at this layer and
+  the include chain never nests.
 
   Template variables set by doGet:
     • activeEmail       — authenticated Google email (lower-case)
