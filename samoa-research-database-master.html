@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Samoa Scholar Database (placeholder)</title>
+  <!--
+    samoa-research-database-master.html — SCAFFOLDING PLACEHOLDER
+
+    Purpose (once completed): public dashboard for the Samoa Scholar
+    Database, a sister of itaukei-research-database-master.html (11,844-line
+    js/itaukei-database-master.js) and tongan-research-database-master.html.
+
+    Deferred to a follow-up session because the dashboard clone requires:
+      • A full clone of js/itaukei-database-master.js (11,844 lines) into
+        js/samoa-database-master.js with every hardcoded Fiji confederacy /
+        province table replaced by Samoa's six-dimension geography model —
+        four SBS Statistical Regions, the SBS Political/Census District list,
+        the ~340 SBS Village Directory villages, the eight Specific Islands,
+        the 11 constitutional Traditional Itūmālō, and the time-versioned
+        Electoral Constituencies.
+      • A clone of js/master-file-adapter.js (1,534 lines) into
+        js/samoa-database-adapter.js.
+      • A clone of js/master-file-panel-overrides.js (308 lines).
+      • Samoa map center/bounds/pins (approx center: [-13.75, -172.30];
+        bounds cover Upolu + Savai'i + Manono + Apolima).
+      • Cloning js/demo-gate.js -> js/samoa-demo-gate.js with a fresh signing
+        key and BAKED_PASSCODE distinct from Arachnid1! / Ongoongo9!.
+      • Panel-level relabelling ("Confederacy" -> "Statistical Region",
+        "Province" -> "Political/Census District", "Tikina" -> [dropped: no
+        Samoa equivalent], gender labels "Turaga/Marama" -> "Tāne/Fafine",
+        and every user-visible "iTaukei" -> "Samoan").
+      • samoa-body-composition.html iframe target (Panel C1).
+
+    See:
+      • docs/SAMOA-DASHBOARD-BUILD-NOTES.md (planned)
+      • Samoa-Scholarly-Database-Master-Schema-Build-Blueprint.docx (owner-approved)
+
+    Until this file is fleshed out, opening it produces a stub notice so
+    it's obvious the dashboard is not yet live.
+  -->
+  <style>
+    :root { --nav: #1f3a5f; --accent: #2e5c8a; --bg: #f6f8fb; --muted: #8b95a1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: #16324f; }
+    header { background: var(--nav); color: white; padding: 20px 28px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p { margin: 6px 0 0; opacity: 0.85; font-size: 13px; }
+    main { max-width: 780px; margin: 40px auto; padding: 0 24px; }
+    .card { background: white; border: 1px solid #e0e6ed; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(20,40,80,0.04); }
+    .card h2 { margin-top: 0; color: var(--accent); font-size: 18px; }
+    ul { line-height: 1.7; }
+    code { background: #f0f3f7; padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 13px; }
+    .status { display: inline-block; background: #fff4d6; color: #8a6d1e; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    footer { max-width: 780px; margin: 24px auto 60px; padding: 0 24px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Samoa Scholar Database</h1>
+    <p>Placeholder scaffolding. The public dashboard has not been built yet in this repo.</p>
+  </header>
+  <main>
+    <div class="card">
+      <p><span class="status">Scaffold only</span></p>
+      <h2>Six-dimension geography</h2>
+      <p>
+        The dashboard is built against Samoa's <strong>six independent</strong>
+        geography dimensions — never assumed interchangeable:
+      </p>
+      <ol>
+        <li><strong>Statistical Region</strong> (4 SBS census regions)</li>
+        <li><strong>Political/Census District</strong> (~43 SBS districts)</li>
+        <li><strong>Village</strong> (~340 SBS Village Directory entries)</li>
+        <li><strong>Specific Island</strong> (independent field)</li>
+        <li><strong>Traditional Itūmālō</strong> (11 constitutional districts)</li>
+        <li><strong>Electoral Constituency</strong> (time-versioned; 2019 Act = 51 territorial + 2 individual-voter)</li>
+      </ol>
+      <h2>Companion files (not yet added)</h2>
+      <ul>
+        <li><code>js/samoa-database-master.js</code> — main dashboard JS (~11k lines when cloned)</li>
+        <li><code>js/samoa-database-adapter.js</code> — Sheet → dashboard adapter</li>
+        <li><code>js/samoa-panel-overrides.js</code> — panel-specific overrides</li>
+        <li><code>js/samoa-demo-gate.js</code> — demo passcode gate</li>
+        <li><code>js/samoa-main.js</code> — page shell</li>
+        <li><code>samoa-body-composition.html</code> — Panel C1 iframe target</li>
+        <li><code>data/samoa-districts.geojson</code> — SBS district boundaries</li>
+      </ul>
+    </div>
+  </main>
+  <footer>
+    Prof. Ron Vave · Department of Pacific Islands Studies · Vave Lab
+  </footer>
+</body>
+</html>

@@ -1,0 +1,240 @@
+name: Refresh Samoa Master File snapshot
+
+# Sister workflow to refresh-master-file.yml (iTaukei) and refresh-tongan-master-file.yml (Tongan) and refresh-solomon-master-file.yml (Solomon Islands). Runs every 2 hours
+# (offset 5 minutes after the iTaukei run to reduce commit-race odds on
+# main; Tongan runs at +5, iTaukei runs on the hour) and on manual dispatch — including the Samoa Admin Panel's
+# "Refresh from Sheet" / "Force refresh" buttons, which call the GitHub
+# Actions dispatch API for this workflow.
+#
+# Reads the Samoa Master Sheet via a service account,
+# transforms + sanitizes, encrypts, and commits. NEVER touches data/itaukei-*, data/tongan-*, data/tonga-*, or
+# data/solomon-* files; never touches iTaukei/Tongan/Solomon scripts or workflows.
+#
+# Requires GitHub Secrets:
+#   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
+#                                   key (shared with the iTaukei workflow);
+#                                   must be granted Editor on the Samoa
+#                                   Master Sheet separately (see docs)
+#   VAVELAB_SAMOA_PASSCODE      — passcode used to derive AES-GCM key for
+#                                   Samoa data files (distinct from
+#                                   VAVELAB_PASSCODE (iTaukei))
+#
+# Deferred parity item: this workflow intentionally omits a
+# master_file_reconcile.py-equivalent QA step. The iTaukei reconcile
+# script is hard-coded to specific row/column positions on the iTaukei
+# Master-file Dashboard tab; the Samoa Dashboard tab's layout has not
+# been confirmed to match, so a strict reconcile step would be guessing.
+# This can be added later once the Samoa Dashboard sheet's QA layout is
+# confirmed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-samoa-master-file.yml"
+      - "scripts/samoa_master_file_config.py"
+      - "scripts/samoa_master_file_transformer.py"
+      - "scripts/samoa_encrypt_data.py"
+      - "scripts/samoa_decrypt_data.py"
+      - "js/samoa-database-adapter.js"
+      - "js/samoa-database-master.js"
+  schedule:
+    - cron: "10 */2 * * *"   # every 2 hours, 10 min after the hour (UTC)
+  workflow_dispatch:
+    inputs:
+      force_commit:
+        description: "Commit even when totals drift <2% (heartbeat)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Run transformer but don't commit"
+        required: false
+        default: "false"
+
+concurrency:
+  group: refresh-samoa-master-file
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            google-api-python-client \
+            google-auth \
+            cryptography
+
+      - name: Decrypt current snapshot (bootstrap for diff)
+        env:
+          VAVELAB_SAMOA_PASSCODE: ${{ secrets.VAVELAB_SAMOA_PASSCODE }}
+        run: |
+          set -euo pipefail
+          if [ -f data/samoa-last-master-sync.json.enc ]; then
+            python3 scripts/samoa_decrypt_data.py --all || \
+              echo "Bootstrap decrypt failed (first run?); continuing"
+          else
+            echo "No prior Samoa Master-file snapshot; first run"
+          fi
+
+      - name: Stash previous plaintext for diff
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/prev
+          for f in \
+            data/samoa-last-master-sync.json \
+            data/samoa-master-aggregates.json \
+            data/samoa-master-scholars.json \
+            data/samoa-master-publications.json \
+            data/samoa-master-authorship.json \
+            data/samoa-master-researcher-authorship.json \
+            data/samoa-master-grad-degrees.json \
+            data/samoa-master-mobility.json \
+            data/samoa-master-geography.json \
+            data/samoa-master-geography-coordinates.json \
+            data/samoa-master-worldpoints.json \
+            data/samoa-body-composition-master.json; do
+            [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
+          done
+
+      - name: Autofill missing university coordinates
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          # Coordinate enrichment is helpful for Panel B2, but a temporary
+          # Sheets write-permission failure must not block the read-only B4
+          # Research Geography snapshot refresh.
+          # python3 scripts/samoa_autofill_university_coords.py  # not yet implemented for Samoa || \
+            echo "University-coordinate autofill unavailable; continuing with Master snapshot refresh"
+
+      - name: Fetch, sanitize, and transform Samoa Master file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          python3 scripts/samoa_master_file_transformer.py \
+            --mode=production \
+            --out-dir=data
+
+      - name: Diff vs previous snapshot
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/prev/samoa-master-aggregates.json ]; then
+            python3 scripts/master_file_diff.py \
+              --prev=/tmp/prev/samoa-master-aggregates.json \
+              --curr=data/samoa-master-aggregates.json \
+              --output=/tmp/samoa_diff.txt || true
+            echo "delta_pct=$(cat /tmp/diff_pct.txt 2>/dev/null || echo '0')" >> "$GITHUB_OUTPUT"
+          else
+            echo "delta_pct=100" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect plaintext content changes
+        id: changed
+        run: |
+          set -euo pipefail
+          # Only re-encrypt files whose *plaintext* actually changed.
+          # scripts/samoa_encrypt_data.py generates a fresh AES salt per
+          # run, so a naive re-encrypt would rewrite every .enc even when
+          # the underlying Master-file data is byte-identical. See
+          # scripts/plaintext_changed.py (shared, generic script).
+          #
+          # samoa-last-master-sync.json embeds startedAt/finishedAt
+          # timestamps, so we exclude it from the plaintext-diff and
+          # rewrite it ONLY when at least one content file changed.
+          CONTENT_FILES=(
+            samoa-master-scholars.json
+            samoa-master-publications.json
+            samoa-master-authorship.json
+            samoa-master-researcher-authorship.json
+            samoa-master-grad-degrees.json
+            samoa-master-mobility.json
+            samoa-master-geography.json
+            samoa-master-geography-coordinates.json
+            samoa-master-aggregates.json
+            samoa-master-worldpoints.json
+            samoa-body-composition-master.json
+          )
+          python3 scripts/plaintext_changed.py \
+            --prev-dir=/tmp/prev \
+            --curr-dir=data \
+            "${CONTENT_FILES[@]}" \
+            > /tmp/samoa_changed.txt
+          CHANGED_COUNT=$(wc -l < /tmp/samoa_changed.txt | tr -d ' ')
+          echo "content_changed_count=${CHANGED_COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${CHANGED_COUNT}" = "0" ]; then
+            echo "No plaintext content changes. Skipping encrypt + commit."
+          else
+            echo "Plaintext-changed files:"
+            cat /tmp/samoa_changed.txt
+          fi
+
+      - name: Encrypt data files
+        if: steps.changed.outputs.content_changed_count != '0'
+        env:
+          VAVELAB_SAMOA_PASSCODE: ${{ secrets.VAVELAB_SAMOA_PASSCODE }}
+        run: |
+          set -euo pipefail
+          # Encrypt ONLY the plaintext-changed content files, plus
+          # samoa-last-master-sync.json (safe to refresh timestamps when
+          # at least one content file changed).
+          TARGETS=()
+          while IFS= read -r name; do
+            [ -n "$name" ] && TARGETS+=("$name")
+          done < /tmp/samoa_changed.txt
+          TARGETS+=(samoa-last-master-sync.json)
+          echo "Encrypting: ${TARGETS[*]}"
+          python3 scripts/samoa_encrypt_data.py "${TARGETS[@]}"
+
+      - name: Commit
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
+        env:
+          FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
+          DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
+        run: |
+          set -euo pipefail
+          git config user.name "vavelab-bot"
+          git config user.email "bot@vavelab.example"
+          git add \
+            data/samoa-master-*.json.enc \
+            data/samoa-body-composition-master.json.enc \
+            data/samoa-last-master-sync.json.enc
+          if git diff --cached --quiet; then
+            echo "No changes to commit (unexpected — plaintext_changed said yes)"
+            exit 0
+          fi
+          MSG="chore: Samoa Master-file heartbeat"
+          if [ "${DELTA_PCT}" != "0" ] && [ "$(python3 -c "print(float('$DELTA_PCT') >= 2.0)")" = "True" ]; then
+            MSG="Auto-refresh: Samoa Master-file snapshot (delta ${DELTA_PCT}%)"
+          fi
+          if [ "${FORCE_COMMIT}" = "true" ]; then
+            MSG="${MSG} [manual]"
+          fi
+          git commit -m "$MSG"
+          # Rebase-retry push (pattern from the iTaukei / Zotero workflows)
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            echo "Push attempt $attempt failed; retrying..."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1

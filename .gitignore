@@ -105,3 +105,30 @@ __pycache__/
 .venv/
 node_modules/
 scripts/add_grad_only_scholars_audit.txt
+
+# ─── Samoa Scholar Database (plaintext data files) ───────────────────────
+# All .json plaintext lives locally only; only the .enc form is committed.
+data/samoa-districts.geojson
+data/samoa-world-universities.json
+data/samoa-workplace-coords.json
+data/samoa-uni-country-overrides.json
+data/samoa-auto-resolved.json
+data/samoa-last-master-sync.json
+data/samoa-scholar-insights.json
+data/samoa-master-scholars.json
+data/samoa-master-part-indigenous.json
+data/samoa-master-publications.json
+data/samoa-master-authorship.json
+data/samoa-master-researcher-authorship.json
+data/samoa-master-grad-degrees.json
+data/samoa-master-mobility.json
+data/samoa-master-geography.json
+data/samoa-master-geography-coordinates.json
+data/samoa-master-aggregates.json
+data/samoa-master-worldpoints.json
+data/samoa-body-composition.json
+data/samoa-body-composition-master.json
+data/samoa-revoked-demos.json
+
+# Samoa deploy-time secret notes must NEVER be committed
+SECRETS-NOT-COMMITTED.md

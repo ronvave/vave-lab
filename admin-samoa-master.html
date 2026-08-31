@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Samoa Scholar Database — Admin (placeholder)</title>
+  <!--
+    admin-samoa-master.html — SCAFFOLDING PLACEHOLDER
+
+    Purpose (once completed): password-gated admin panel for editing the
+    Samoa Master Sheet through the bound Apps Script writeback endpoint,
+    exactly mirroring admin-master.html (iTaukei) and admin-tongan-master.html
+    (Tongan). Cloning has been deferred to a follow-up session so that the
+    ~2,890-line js/admin-master.js and its dependencies can be adapted
+    carefully to Samoa's six-dimension geography model without repeating the
+    Fiji-leftover bugs that shipped in the initial Tongan clone.
+
+    When implemented, add:
+      - js/samoa-db-gate.js                 (clone of js/db-gate.js;
+                                             fresh VERIFIER_HASH_HEX and
+                                             tonganlab.db.session -> samoalab.db.session)
+      - js/samoa-database-adapter.js        (clone of js/master-file-adapter.js;
+                                             six-dimension geography, not
+                                             confederacy/province)
+      - js/samoa-admin-writeback-client.js  (clone of admin-writeback-client.js;
+                                             VAVELAB_SAMOA writeback endpoint)
+      - js/samoa-admin-insights-migration.js (V1->V2 insights migration)
+      - js/admin-samoa-master.js            (clone of admin-master.js; distinct
+                                             SHA-256 admin-login PASSWORD_HASH)
+
+    Cross-system isolation guardrails (must all be true in the clone):
+      1. Every localStorage key is prefixed samoalab.* (never vavelab.* or
+         tonganlab.* or solomonlab.*).
+      2. The db-gate PBKDF2 VERIFIER_HASH_HEX must be derived from
+         VAVELAB_SAMOA_PASSCODE, NOT any other jurisdiction's passcode.
+      3. The admin-login SHA-256 PASSWORD_HASH must be fresh (not a copy of
+         any sister system's hash).
+      4. The writeback client points at the SAMOA-specific /exec URL from
+         Apps Script; test with samoa-master-writeback.gs's `ping` action
+         before enabling saves.
+
+    Until this file is fleshed out, opening it produces a stub notice so a
+    stray share does not leak an unfinished admin surface.
+  -->
+  <style>
+    :root { --nav: #1f3a5f; --accent: #2e5c8a; --bg: #f6f8fb; --muted: #8b95a1; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+           background: var(--bg); color: #16324f; }
+    header { background: var(--nav); color: white; padding: 20px 28px; }
+    header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+    header p { margin: 6px 0 0; opacity: 0.85; font-size: 13px; }
+    main { max-width: 780px; margin: 40px auto; padding: 0 24px; }
+    .card { background: white; border: 1px solid #e0e6ed; border-radius: 10px; padding: 28px; box-shadow: 0 1px 3px rgba(20,40,80,0.04); }
+    .card h2 { margin-top: 0; color: var(--accent); font-size: 18px; }
+    ul { line-height: 1.7; }
+    code { background: #f0f3f7; padding: 1px 6px; border-radius: 4px; font-family: "SF Mono", Menlo, monospace; font-size: 13px; }
+    .status { display: inline-block; background: #fff4d6; color: #8a6d1e; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+    footer { max-width: 780px; margin: 24px auto 60px; padding: 0 24px; color: var(--muted); font-size: 13px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Samoa Scholar Database — Admin</h1>
+    <p>Placeholder scaffolding. The interactive admin panel has not been built yet in this repo.</p>
+  </header>
+  <main>
+    <div class="card">
+      <p><span class="status">Scaffold only</span></p>
+      <h2>Why this file exists</h2>
+      <p>
+        This page is a committed scaffold so the Samoa admin URL is reserved and its
+        role is documented. The full admin panel — a sister of
+        <code>admin-master.html</code> and <code>admin-tongan-master.html</code> —
+        will be built in a follow-up session against the Samoa Master Sheet's
+        actual column headers and the six-dimension geography model
+        (Statistical Region · Political/Census District · Village ·
+        Specific Island · Traditional Itūmālō · Electoral Constituency).
+      </p>
+      <h2>Companion files (not yet added)</h2>
+      <ul>
+        <li><code>js/samoa-db-gate.js</code> — passcode gate</li>
+        <li><code>js/samoa-database-adapter.js</code> — Sheet → dashboard adapter</li>
+        <li><code>js/samoa-admin-writeback-client.js</code> — Apps Script client</li>
+        <li><code>js/samoa-admin-insights-migration.js</code> — V1→V2 migration</li>
+        <li><code>js/admin-samoa-master.js</code> — admin CRUD + GitHub push</li>
+      </ul>
+      <h2>Backend (already scaffolded)</h2>
+      <p>
+        The Apps Script writeback (<code>apps-script/samoa-master-writeback.gs</code>)
+        is already in this commit, with a fresh <code>SHARED_SECRET</code>,
+        a placeholder <code>SPREADSHEET_ID_HINT</code>, and a Samoa-schema
+        allowlist banner. It refuses to run until <code>SPREADSHEET_ID_HINT</code>
+        is set to the real Samoa Master Sheet ID. See
+        <code>docs/SAMOA-APPS-SCRIPT-DEPLOY.md</code>.
+      </p>
+    </div>
+  </main>
+  <footer>
+    Prof. Ron Vave · Department of Pacific Islands Studies · Vave Lab
+  </footer>
+</body>
+</html>
