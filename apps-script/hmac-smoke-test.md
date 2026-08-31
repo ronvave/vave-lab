@@ -103,7 +103,7 @@ To reproduce the sig locally with Python 3:
 
 ```python
 import hmac, hashlib, json
-secret_hex = "3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645"
+secret_hex = os.environ["SAMOA_WRITEBACK_SECRET_HEX"]  # never commit the literal; pass via env or a chmod-600 file
 fields = {"Living Status": "Alive", "Review Status": "Verified"}
 # Recursive canonical JSON, keys sorted, no whitespace
 def canonical(o):
@@ -116,8 +116,11 @@ msg = '\n'.join(['update','Scholars','SAM-S0001', canonical(fields), 'abc123','1
 print(hmac.new(bytes.fromhex(secret_hex), msg.encode('utf-8'), hashlib.sha256).hexdigest())
 ```
 
-Reproduced sig for Case A:
-`08e962d38b10ce7051988a959e65ded91b2a1c58fbe056b6e5d5566d63b26744`
+The Case A sig depends on the current `SHARED_SECRET`. Run the snippet
+above (with `SAMOA_WRITEBACK_SECRET_HEX` set) to compute the expected
+digest at test time. Do **not** commit a fixed reference sig into this
+file; it would need to be re-issued on every secret rotation and would
+leak the exact HMAC output for a well-known input.
 
 Canonical string bytes (Case A):
 

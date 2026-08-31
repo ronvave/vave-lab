@@ -184,12 +184,20 @@
         Apps Script deploy URL. Replace with the real URL after deploying
         apps-script/samoa-master-writeback.gs — see docs/SAMOA-APPS-SCRIPT-DEPLOY.md.
     • SAMOA_WRITEBACK_SECRET_HEX
-        The same SHARED_SECRET value that lives in apps-script/samoa-master-writeback.gs.
+        The same SHARED_SECRET value that lives in the Apps Script Script
+        Properties. WARNING: anything committed to this file is served
+        publicly by GitHub Pages, so an inline literal here would
+        effectively publish the shared secret. Only ever set this in a
+        LOCAL / UNPUBLISHED copy of the admin page (e.g. a copy on a
+        password-protected host, or a build-time injected value in a
+        private mirror). Never commit the literal hex to this repository.
   -->
   <script>
     window.SAMOA_ADMIN_PASSWORD_HASH_HEX = '526b18a8126ddb9e87281dda864e6a9d6b43b19f55cd6424d395546fb949ae2d';
     window.SAMOA_WRITEBACK_URL           = 'REPLACE_ME_AFTER_APPS_SCRIPT_DEPLOY';
-    window.SAMOA_WRITEBACK_SECRET_HEX    = '3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645';
+    // Do NOT commit the real hex here. Fill this constant in only in a
+    // local / private mirror of this page immediately before opening it.
+    window.SAMOA_WRITEBACK_SECRET_HEX    = 'REPLACE_ME_LOCALLY_NEVER_COMMIT';
   </script>
 
   <script src="js/samoa-db-gate.js"></script>

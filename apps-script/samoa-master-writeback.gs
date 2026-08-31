@@ -14,7 +14,7 @@
  *   1. In the Master spreadsheet: Extensions → Apps Script.
  *   2. Paste this file into the project as `samoa-master-writeback.gs`.
  *   3. In Project Settings → Script Properties, add:
- *        SHARED_SECRET      = 3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645  (pre-generated for Samoa; keep this value distinct from every other secret in the org)
+ *        SHARED_SECRET      = <64-char hex, generated out-of-band>  (never commit the literal value; store it only in Script Properties and in the admin panel's SAMOA_WRITEBACK_SECRET_HEX)
  *        WRITE_ENABLED      = true
  *        ADMIN_ORIGIN       = https://ronvave.github.io
  *   4. In this editor's console, run `generateSecret()` once to get a fresh

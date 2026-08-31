@@ -103,7 +103,7 @@ Values baked into `admin-samoa-master.html`:
 |---|---|---|
 | `SAMOA_ADMIN_PASSWORD_HASH_HEX` | `526b18a8126ddb9e87281dda864e6a9d6b43b19f55cd6424d395546fb949ae2d` | `SHA-256('Arachnid1!')` — Ron's admin password |
 | `SAMOA_WRITEBACK_URL` | `REPLACE_ME_AFTER_APPS_SCRIPT_DEPLOY` | Apps Script deploy URL — replace after deploying |
-| `SAMOA_WRITEBACK_SECRET_HEX` | `3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645` | Fresh 32-byte hex — the same value lives in `apps-script/samoa-master-writeback.gs` |
+| `SAMOA_WRITEBACK_SECRET_HEX` | `<64-char hex, generated out-of-band>` | Fresh 32-byte hex; the identical value must also live in the Apps Script Script Property `SHARED_SECRET`. Never commit the literal to this repo — rotate via `generateSecret()` in the Apps Script editor and paste into both places. |
 
 Values baked into `js/samoa-db-gate.js`:
 

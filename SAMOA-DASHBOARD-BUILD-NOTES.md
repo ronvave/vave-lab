@@ -895,7 +895,10 @@ that scholar-affiliation edges terminate on the right nodes; deleting
    `apps-script/samoa-master-writeback.gs`. The HMAC rewrite
    requires a NEW deployment version, not just a save.
 2. In the Apps Script project's Script Properties, ensure:
-   - `SHARED_SECRET` = `3165379b362f4447bc228abdd75d6668f7b4a3475d57a6298a3593ac3d431645`
+   - `SHARED_SECRET` = a NEW 64-char hex value generated out-of-band.
+     The value that appeared in earlier drafts of these notes was
+     compromised on 2026-08-30 and must never be used or preserved.
+     Generate a fresh secret out-of-band (e.g. via `generateSecret()` in the Apps Script editor, or `python3 -c 'import secrets; print(secrets.token_hex(32))'`). The literal value must never appear in this repo, in git history, or in build notes; it lives only in Script Properties and in the admin panel's `window.SAMOA_WRITEBACK_SECRET_HEX`.
    - `WRITE_ENABLED` = `true`
    - `ADMIN_ORIGIN` = `https://ronvave.github.io`
 3. In `admin-samoa-master.html`, confirm the deployed exec URL is
@@ -909,16 +912,24 @@ that scholar-affiliation edges terminate on the right nodes; deleting
 
 ### Unresolved data gaps
 
-- Five villages still fail Specific-Island resolution when the
-  Session-2 adapter builds the geography index: **Tausagi**, **Olo**,
-  **Paepaeala**, **Satuilagi**, **Satoi**. These currently render
-  under `__unrecorded__` on the specific-island listbox. Ron to
-  confirm the correct island assignment; then the mapping in
-  `data/samoa-village-island.csv` (or the equivalent adapter
-  source) needs an entry per village.
-- `data/samoa-master-mobility.json` and
-  `data/samoa-master-scholars.json` are referenced by the chord
-  chart but are not yet in the published repo. Until they are
-  present, the chord panel will show the empty-state message
-  installed in S5-7 (this is intentional — no iTaukei fallback).
+- Five villages sit in District `D-017 Aiga i le Tai` with **Specific
+  Island explicitly blank** in the live *Village Geography Lookup*:
+  **Tausagi**, **Olo**, **Paepaeala**, **Satuilagi**, **Satoi**.
+  The Village Directory Notes column on the Master Sheet already
+  flags each as `ISLAND UNRESOLVED: village not named in the
+  Constituencies Act 1963 island clauses for Aiga-i-le-Tai and no
+  SBS island column exists. Left blank rather than inferred.`
+  These render under the `Island unrecorded` bucket on the
+  specific-island listbox and MUST remain unrecorded until an
+  authoritative source (updated SBS gazetteer, matai statement,
+  archival island survey, etc.) verifies each village's island.
+  Never infer or resolve them merely to eliminate blanks.
+- The live *Scholars* and *M>PhD Mobility* worksheets on the Master
+  Sheet currently contain 0 verified data rows (schema header only).
+  `data/samoa-master-scholars.json.enc` and
+  `data/samoa-master-mobility.json.enc` are published as encrypted
+  empty arrays so the chord panel and adapter can decrypt and
+  render an empty state cleanly; they will be re-encrypted with
+  real rows via the sync pipeline as scholars are added to the
+  Master Sheet.
 
