@@ -58,8 +58,59 @@
     currentRow:    null,   // {rowNumber, fields} as returned by apiReadRow
     dirtyFields:   {},     // { fieldName: newValue }
     confirmFields: {},     // { fieldName: true } — user must tick to save an ALWAYS_CONFIRM change
-    saving:        false
+    saving:        false,
+    scholars:      [],     // apiListScholars payload (array of picker rows)
+    scholarById:   {},     // { 'TNG-S0001': {name, ...} } for banner lookup
+    pickerSort:    { field: 'pubs', dir: 'desc' },
+    pickerQuery:   ''
   };
+
+  // Field grouping for the Scholars worksheet edit form. Order matches the
+  // old Admin dashboard (screenshot 5–6). Fields not listed here fall
+  // through into a trailing "OTHER" group so nothing silently disappears if
+  // the MAPPING gains a field later.
+  var SCHOLAR_FIELD_GROUPS = [
+    { legend: 'Identity', fields: [
+      'Title / Salutation', 'Family Name', 'Given Names', 'Gender',
+      'Year of Birth', 'Alive / Deceased', 'Year of Death',
+      'Primary Discipline / Field'
+    ]},
+    { legend: 'Paternal geography', fields: [
+      'Paternal Island Division', 'District Paternal',
+      'Specific Island Paternal', 'Village/Town Paternal (Kolo)'
+    ]},
+    { legend: 'Maternal geography', fields: [
+      'Maternal Island Division', 'District Maternal',
+      'Specific Island Maternal', 'Village/Town Maternal (Kolo)'
+    ]},
+    { legend: 'Cultural & lineage affiliation', fields: [
+      'Estate / Chiefly Affiliation Paternal (Tofi\u02bba)',
+      'Estate / Chiefly Affiliation Maternal (Tofi\u02bba)',
+      'K\u0101inga Paternal', 'K\u0101inga Maternal',
+      'Self-identified Home / Community Affiliation Paternal',
+      'Self-identified Home / Community Affiliation Maternal'
+    ]},
+    { legend: 'Current position', fields: [
+      'Current Title / Role', 'Current Institution',
+      'Institution Country', 'Current Department / Unit',
+      'Current PG Status'
+    ]},
+    { legend: 'Public profile URLs', fields: [
+      'ORCID / Researcher ID', 'Google Scholar URL',
+      'Current Profile URL', 'Name Variants / Aliases'
+    ]},
+    { legend: 'Provenance & notes', fields: [
+      'Lineage / Provenance Notes', 'Record Notes'
+    ]}
+  ];
+
+  // Fields whose value tends to be long — render across both columns.
+  function _isWideField(fname, cfg) {
+    if (cfg && cfg.maxLen && cfg.maxLen > 240) return true;
+    if (fname === 'Primary Discipline / Field') return true;
+    if (fname === 'Current Profile URL' || fname === 'Google Scholar URL') return true;
+    return false;
+  }
 
   // ────────────────────────────────────────────────────────────
   // Boot
@@ -74,7 +125,7 @@
     el.pickerHint     = $('picker-hint');
     el.editCard       = $('edit-card');
     el.editSummary    = $('edit-summary');
-    el.fieldsTable    = $('fields-table').querySelector('tbody');
+    el.fieldsGroups   = $('fields-groups');
     el.saveBtn        = $('save-btn');
     el.cancelBtn      = $('cancel-btn');
     el.saveHint       = $('save-hint');
@@ -83,6 +134,14 @@
     el.logHint        = $('log-hint');
     el.logTable       = $('log-table').querySelector('tbody');
     el.diag           = $('diag');
+    el.banner         = $('scholar-banner');
+    el.bannerName     = $('scholar-banner-name');
+    el.bannerSid      = $('scholar-banner-sid');
+    el.pickerCard     = $('scholar-picker-card');
+    el.pickerSearch   = $('scholar-search');
+    el.pickerCount    = $('scholar-count');
+    el.pickerTable    = $('scholar-table');
+    el.pickerBody     = el.pickerTable ? el.pickerTable.querySelector('tbody') : null;
 
     el.wsSelect.addEventListener('change', onWorksheetChange);
     el.loadBtn.addEventListener('click', onLoadRow);
@@ -90,6 +149,13 @@
     el.saveBtn.addEventListener('click', onSave);
     el.cancelBtn.addEventListener('click', onCancel);
     el.logRefreshBtn.addEventListener('click', refreshChangeLog);
+    if (el.pickerSearch) el.pickerSearch.addEventListener('input', onPickerSearch);
+    if (el.pickerTable) {
+      var ths = el.pickerTable.querySelectorAll('thead th[data-sort]');
+      for (var i = 0; i < ths.length; i++) {
+        ths[i].addEventListener('click', onPickerSortClick);
+      }
+    }
 
     status('Contacting the server (apiDescribe)…', 'busy');
     if (!global.tonganAdminBridge) {
@@ -104,11 +170,149 @@
       state.describe = body;
       populateWorksheetDropdown(body);
       renderDiagnostics(body);
-      status('Ready. Pick a worksheet and a row to edit.', 'ok');
+      status('Ready. Loading scholar list\u2026', 'busy');
+      // Fetch scholars for the picker card. Failure is non-fatal — the
+      // worksheet-and-key picker still works even if the picker table is
+      // empty (e.g. empty database, missing Scholars sheet).
+      global.tonganAdminBridge.listScholars().then(function (r) {
+        if (r && r.status === 'ok') {
+          state.scholars = r.scholars || [];
+          state.scholarById = {};
+          for (var i = 0; i < state.scholars.length; i++) {
+            state.scholarById[state.scholars[i].scholarId] = state.scholars[i];
+          }
+          if (state.scholars.length && el.pickerCard) {
+            el.pickerCard.style.display = 'block';
+            renderScholarPicker();
+            status('Ready. Click any scholar row, or use the worksheet picker below.', 'ok');
+          } else {
+            status('Ready. Database has no scholars yet \u2014 use the worksheet picker below.', 'ok');
+          }
+        } else {
+          status('Ready. Pick a worksheet and a row to edit.', 'ok');
+        }
+      }).catch(function (err) {
+        status('Ready. Scholar list unavailable (' + err.message + '); use the worksheet picker below.', 'ok');
+      });
     }).catch(function (err) {
       status('describe() failed: ' + err.message, 'err');
       if (el.diag) el.diag.textContent = String(err && err.stack ? err.stack : err);
     });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Scholar Picker (card 1) — search + sort + click-to-load.
+  // Reads state.scholars, state.pickerSort, state.pickerQuery.
+  // On row click: sets ws-select to 'Scholars', fills key-input,
+  // clicks Load row.
+  // ────────────────────────────────────────────────────────────
+  function onPickerSearch() {
+    state.pickerQuery = (el.pickerSearch.value || '').trim().toLowerCase();
+    renderScholarPicker();
+  }
+
+  function onPickerSortClick(ev) {
+    var th = ev.currentTarget;
+    var field = th.getAttribute('data-sort');
+    if (!field) return;
+    if (state.pickerSort.field === field) {
+      state.pickerSort.dir = (state.pickerSort.dir === 'asc' ? 'desc' : 'asc');
+    } else {
+      state.pickerSort.field = field;
+      // Numeric fields default to descending; strings default to ascending.
+      state.pickerSort.dir = (field === 'pubs' || field === 'firstAuth') ? 'desc' : 'asc';
+    }
+    renderScholarPicker();
+  }
+
+  function renderScholarPicker() {
+    if (!el.pickerBody) return;
+    // 1. Update sort arrows in headers
+    var ths = el.pickerTable.querySelectorAll('thead th[data-sort]');
+    for (var i = 0; i < ths.length; i++) {
+      var f = ths[i].getAttribute('data-sort');
+      var arrow = ths[i].querySelector('.arrow');
+      if (arrow) arrow.textContent = (f === state.pickerSort.field) ? (state.pickerSort.dir === 'asc' ? '\u2191' : '\u2193') : '';
+    }
+    // 2. Filter
+    var q = state.pickerQuery;
+    var rows = state.scholars;
+    if (q) {
+      rows = rows.filter(function (r) {
+        return (r.scholarId  && r.scholarId.toLowerCase().indexOf(q) !== -1)
+            || (r.name       && r.name.toLowerCase().indexOf(q) !== -1)
+            || (r.discipline && r.discipline.toLowerCase().indexOf(q) !== -1)
+            || (r.currentInstitution && r.currentInstitution.toLowerCase().indexOf(q) !== -1)
+            || (r.islandDivision     && r.islandDivision.toLowerCase().indexOf(q) !== -1);
+      });
+    }
+    // 3. Sort (copy so we don't mutate state.scholars)
+    var f = state.pickerSort.field;
+    var dir = state.pickerSort.dir === 'asc' ? 1 : -1;
+    var sorted = rows.slice();
+    sorted.sort(function (a, b) {
+      var av = a[f], bv = b[f];
+      if (typeof av === 'number' || typeof bv === 'number') {
+        return ((av || 0) - (bv || 0)) * dir;
+      }
+      av = String(av == null ? '' : av);
+      bv = String(bv == null ? '' : bv);
+      return av.localeCompare(bv) * dir;
+    });
+    // 4. Cap render to 500 rows for browser perf; count message stays accurate.
+    var cap = 500;
+    var render = sorted.length > cap ? sorted.slice(0, cap) : sorted;
+    // 5. Update count line
+    if (el.pickerCount) {
+      var total = state.scholars.length;
+      if (q) {
+        el.pickerCount.textContent = sorted.length + ' of ' + total + ' scholars match';
+      } else {
+        el.pickerCount.textContent = total + ' scholars';
+      }
+      if (sorted.length > cap) el.pickerCount.textContent += ' (showing top ' + cap + ')';
+    }
+    // 6. Render tbody
+    el.pickerBody.innerHTML = '';
+    for (var r = 0; r < render.length; r++) {
+      var row = render[r];
+      var tr = document.createElement('tr');
+      tr.dataset.scholarId = row.scholarId;
+      if (state.currentKey === row.scholarId && state.currentWs === 'Scholars') {
+        tr.className = 'selected';
+      }
+      tr.appendChild(_pickerCell(row.scholarId, 'sid'));
+      tr.appendChild(_pickerCell(row.name, 'name'));
+      tr.appendChild(_pickerCell(row.islandDivision, ''));
+      tr.appendChild(_pickerCell(row.discipline, ''));
+      tr.appendChild(_pickerCell(String(row.pubs || 0), 'num'));
+      tr.appendChild(_pickerCell(String(row.firstAuth || 0), 'num'));
+      tr.addEventListener('click', onPickerRowClick);
+      el.pickerBody.appendChild(tr);
+    }
+  }
+
+  function _pickerCell(text, cls) {
+    var td = document.createElement('td');
+    if (cls) td.className = cls;
+    td.textContent = String(text == null ? '' : text);
+    return td;
+  }
+
+  function onPickerRowClick(ev) {
+    var tr = ev.currentTarget;
+    var sid = tr.dataset.scholarId;
+    if (!sid) return;
+    // Programmatically drive the worksheet/key picker so the existing
+    // Load-row path (with all its state resets) is the single code path
+    // that populates the edit form.
+    if (el.wsSelect.value !== 'Scholars') {
+      el.wsSelect.value = 'Scholars';
+      onWorksheetChange();  // async — will populate suggestions
+    }
+    el.keyInput.value = sid;
+    el.loadBtn.disabled = false;
+    onLoadRow();
   }
 
   function populateWorksheetDropdown(body) {
@@ -158,7 +362,8 @@
     state.dirtyFields = {};
     state.confirmFields = {};
     el.editCard.style.display = 'none';
-    el.fieldsTable.innerHTML = '';
+    if (el.banner) el.banner.style.display = 'none';
+    if (el.fieldsGroups) el.fieldsGroups.innerHTML = '';
     el.keyInput.value = '';
     el.keyInput.disabled = !ws;
     el.loadBtn.disabled = true;
@@ -223,32 +428,91 @@
     setText(el.editSummary,
       'Worksheet: ' + ws + ' · Row: ' + state.currentRow.rowNumber +
       ' · Key (' + wsCfg.keyColumn + '): ' + state.currentKey);
-    el.fieldsTable.innerHTML = '';
+    _renderScholarBanner(ws);
+    el.fieldsGroups.innerHTML = '';
 
     var allowed = wsCfg.fields || {};
-    // Preserve MAPPING declaration order.
-    Object.keys(allowed).forEach(function (fname) {
-      var cfg = allowed[fname];
-      var current = fields[fname] != null ? String(fields[fname]) : '';
-      var tr = document.createElement('tr');
-      tr.dataset.field = fname;
-      tr.appendChild(_cellHeader(fname, cfg, ws));
-      tr.appendChild(_cellControl(fname, cfg, current));
-      tr.appendChild(_cellMeta(fname, cfg, ws, alwaysConfirm));
-      el.fieldsTable.appendChild(tr);
+    var groups = _buildFieldGroups(ws, allowed);
+
+    groups.forEach(function (g) {
+      if (!g.fields.length) return;
+      var fs = document.createElement('fieldset');
+      fs.className = 'field-group';
+      var lg = document.createElement('legend');
+      lg.textContent = g.legend;
+      fs.appendChild(lg);
+      var grid = document.createElement('div');
+      grid.className = 'field-grid';
+      g.fields.forEach(function (fname) {
+        var cfg = allowed[fname];
+        if (!cfg) return;  // MAPPING doesn't include this field
+        var current = fields[fname] != null ? String(fields[fname]) : '';
+        grid.appendChild(_fieldCell(fname, cfg, current, ws, alwaysConfirm));
+      });
+      fs.appendChild(grid);
+      el.fieldsGroups.appendChild(fs);
     });
     updateSaveButtonState();
   }
 
-  function _cellHeader(fname, cfg, ws) {
-    var td = document.createElement('th');
-    td.textContent = fname;
-    return td;
+  function _renderScholarBanner(ws) {
+    if (!el.banner) return;
+    if (ws !== 'Scholars') {
+      el.banner.style.display = 'none';
+      return;
+    }
+    var sid = state.currentKey;
+    var fields = state.currentRow.fields || {};
+    // Prefer the sheet's own "Scholar Name" if present in the loaded row;
+    // otherwise fall back to the picker cache; otherwise reconstruct from
+    // Given + Family; otherwise show the ID alone.
+    var name = String(fields['Scholar Name'] || '').trim();
+    if (!name) {
+      var cached = state.scholarById[sid];
+      if (cached && cached.name) name = cached.name;
+    }
+    if (!name) {
+      var given  = String(fields['Given Names'] || '').trim();
+      var family = String(fields['Family Name'] || '').trim();
+      name = (given + ' ' + family).trim();
+    }
+    setText(el.bannerName, name || '(name not set)');
+    setText(el.bannerSid, sid);
+    el.banner.style.display = 'flex';
   }
 
-  function _cellControl(fname, cfg, current) {
-    var td = document.createElement('td');
-    td.className = 'controls';
+  function _buildFieldGroups(ws, allowed) {
+    // Scholars gets the curated grouping. Every other worksheet renders as
+    // one "Fields" group in MAPPING order, so Positions / Graduate Degrees
+    // still work without a per-sheet definition.
+    var used = {};
+    var groups = [];
+    if (ws === 'Scholars') {
+      SCHOLAR_FIELD_GROUPS.forEach(function (g) {
+        var present = g.fields.filter(function (f) { return allowed[f]; });
+        present.forEach(function (f) { used[f] = 1; });
+        groups.push({ legend: g.legend, fields: present });
+      });
+      // Any field not in the curated list: put it under "Other" so nothing
+      // is silently hidden if MAPPING grows.
+      var leftover = Object.keys(allowed).filter(function (f) { return !used[f]; });
+      if (leftover.length) groups.push({ legend: 'Other', fields: leftover });
+    } else {
+      groups.push({ legend: ws + ' fields', fields: Object.keys(allowed) });
+    }
+    return groups;
+  }
+
+  function _fieldCell(fname, cfg, current, ws, alwaysConfirm) {
+    var cell = document.createElement('div');
+    cell.className = 'field-cell' + (_isWideField(fname, cfg) ? ' wide' : '');
+    cell.dataset.field = fname;
+
+    var lbl = document.createElement('label');
+    lbl.className = 'flabel';
+    lbl.textContent = fname;
+    cell.appendChild(lbl);
+
     var control;
     if (cfg.type === 'enum' && Array.isArray(cfg.enum)) {
       control = document.createElement('select');
@@ -261,7 +525,7 @@
       });
     } else if (cfg.maxLen && cfg.maxLen > 240) {
       control = document.createElement('textarea');
-      control.rows = 2;
+      control.rows = _isWideField(fname, cfg) ? 3 : 2;
       control.value = current;
     } else {
       control = document.createElement('input');
@@ -269,24 +533,27 @@
       control.value = current;
       if (cfg.maxLen) control.maxLength = cfg.maxLen;
     }
+    var id = 'f-' + fname.replace(/[^a-z0-9]/gi, '-');
+    control.id = id;
+    lbl.setAttribute('for', id);
     control.dataset.field = fname;
     control.dataset.original = current;
     control.addEventListener('input', onFieldInput);
     control.addEventListener('change', onFieldInput);
-    td.appendChild(control);
-    return td;
-  }
+    cell.appendChild(control);
 
-  function _cellMeta(fname, cfg, ws, alwaysConfirm) {
-    var td = document.createElement('td');
-    td.className = 'meta';
+    // meta line
+    var meta = document.createElement('div');
+    meta.className = 'fmeta';
     var bits = [cfg.type];
-    if (cfg.maxLen)                       bits.push('max ' + cfg.maxLen);
+    if (cfg.maxLen)                        bits.push('max ' + cfg.maxLen);
     if (cfg.min != null || cfg.max != null) bits.push('range ' + (cfg.min == null ? '−∞' : cfg.min) + '..' + (cfg.max == null ? '+∞' : cfg.max));
-    if (cfg.enum)                         bits.push('enum');
-    if (alwaysConfirm[ws + '.' + fname])  bits.push('⚠ always-confirm');
-    td.innerHTML = bits.map(esc).join('<br>');
-    return td;
+    if (cfg.enum)                          bits.push('enum');
+    if (alwaysConfirm[ws + '.' + fname])   bits.push('⚠ always-confirm');
+    meta.textContent = bits.join(' · ');
+    cell.appendChild(meta);
+
+    return cell;
   }
 
   function onFieldInput(ev) {
@@ -295,22 +562,25 @@
     if (!fname) return;
     var newValue  = control.value;
     var original  = control.dataset.original;
-    var tr = control.closest('tr');
+    var cell = control.closest('.field-cell');
     if (newValue === original) {
       delete state.dirtyFields[fname];
       delete state.confirmFields[fname];
-      if (tr) tr.classList.remove('dirty', 'confirm');
+      if (cell) cell.classList.remove('dirty', 'confirm');
+      if (cell) {
+        var oldCb = cell.querySelector('.confirm-line');
+        if (oldCb) oldCb.remove();
+      }
     } else {
       state.dirtyFields[fname] = newValue;
-      if (tr) {
-        tr.classList.add('dirty');
+      if (cell) {
+        cell.classList.add('dirty');
         var alwaysConfirm = (state.describe.alwaysConfirm || {})[state.currentWs + '.' + fname];
         if (alwaysConfirm) {
-          tr.classList.add('confirm');
-          // Attach a confirm checkbox once.
-          if (!tr.querySelector('.confirm-check')) {
+          cell.classList.add('confirm');
+          if (!cell.querySelector('.confirm-check')) {
             var wrap = document.createElement('div');
-            wrap.style.marginTop = '4px';
+            wrap.className = 'confirm-line';
             var cb = document.createElement('input');
             cb.type = 'checkbox';
             cb.className = 'confirm-check';
@@ -322,13 +592,11 @@
             });
             var lbl = document.createElement('label');
             lbl.setAttribute('for', cb.id);
-            lbl.style.fontSize = '0.85rem';
-            lbl.style.color = '#7f1d1d';
             lbl.style.marginLeft = '6px';
             lbl.textContent = 'This is a high-consequence field — tick to confirm.';
             wrap.appendChild(cb);
             wrap.appendChild(lbl);
-            tr.querySelector('td.controls').appendChild(wrap);
+            cell.appendChild(wrap);
           }
         }
       }

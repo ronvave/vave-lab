@@ -116,13 +116,23 @@
     });
   }
 
+  function listScholars() {
+    return _wrap(function (onOk, onErr) {
+      google.script.run
+        .withSuccessHandler(onOk)
+        .withFailureHandler(onErr)
+        .apiListScholars();
+    });
+  }
+
   global.tonganAdminBridge = {
     describe:       describe,
     ping:           ping,
     listKeys:       listKeys,
     readRow:        readRow,
     updateRow:      updateRow,
-    readChangeLog:  readChangeLog
+    readChangeLog:  readChangeLog,
+    listScholars:   listScholars
   };
 })(window);
 </script>

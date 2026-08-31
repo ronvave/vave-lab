@@ -139,6 +139,88 @@
     }
     table.fields tr.dirty td { background: #fef9c3; }
     table.fields tr.confirm td { background: #fee2e2; }
+
+    /* Scholar-name banner at the top of the edit card */
+    .scholar-banner {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      padding: 8px 12px;
+      margin-bottom: 12px;
+      background: #ecfeff;
+      border: 1px solid #a5f3fc;
+      border-radius: 6px;
+    }
+    .scholar-banner .name { font-size: 1.15rem; font-weight: 700; color: #0e7490; }
+    .scholar-banner .sid  { font-family: "SF Mono", Menlo, Consolas, monospace; color: #6b7280; font-size: 0.9rem; }
+
+    /* Grouped fieldsets inside the edit card */
+    fieldset.field-group {
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 10px 14px 14px;
+      margin: 0 0 14px;
+    }
+    fieldset.field-group legend {
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #0e7490;
+      padding: 0 6px;
+    }
+    .field-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+    }
+    .field-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .field-cell.wide { grid-column: 1 / -1; }
+    .field-cell .flabel {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #374151;
+      letter-spacing: 0.02em;
+    }
+    .field-cell .fmeta { font-size: 0.7rem; color: #9ca3af; }
+    .field-cell input[type="text"], .field-cell select, .field-cell textarea { width: 100%; font-size: 0.9rem; }
+    .field-cell.dirty .flabel { color: #92400e; }
+    .field-cell.dirty input, .field-cell.dirty select, .field-cell.dirty textarea { background: #fef9c3; }
+    .field-cell.confirm .flabel { color: #7f1d1d; }
+    .field-cell.confirm input, .field-cell.confirm select, .field-cell.confirm textarea { background: #fee2e2; }
+    .confirm-line { font-size: 0.8rem; color: #7f1d1d; margin-top: 2px; }
+
+    /* Scholar picker table */
+    .picker-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .picker-controls input[type="text"] { flex: 1; min-width: 240px; }
+    .picker-count { font-size: 0.85rem; color: #6b7280; }
+    .picker-scroll { max-height: 320px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px; }
+    table.picker { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    table.picker thead th {
+      position: sticky; top: 0;
+      background: #f9fafb;
+      color: #374151;
+      font-weight: 600;
+      text-align: left;
+      padding: 6px 8px;
+      border-bottom: 1px solid #e5e7eb;
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    table.picker thead th .arrow { color: #0e7490; margin-left: 4px; }
+    table.picker tbody td {
+      padding: 6px 8px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: top;
+    }
+    table.picker tbody tr { cursor: pointer; }
+    table.picker tbody tr:hover td { background: #f0fdff; }
+    table.picker tbody tr.selected td { background: #cffafe; }
+    table.picker td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.picker td.sid { font-family: "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; color: #6b7280; }
+    table.picker td.name { font-weight: 600; }
+
     .changelog { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; }
     .changelog th, .changelog td { border-bottom: 1px solid #f1f5f9; padding: 4px 8px; text-align: left; }
     .changelog th { color: #374151; font-weight: 600; }
@@ -169,8 +251,34 @@
   <main>
     <div id="status">Booting…</div>
 
+    <div class="card" id="scholar-picker-card" style="display: none;">
+      <h2>1. Pick a scholar</h2>
+      <div class="picker-controls">
+        <input type="text" id="scholar-search" placeholder="Search by Scholar ID, name, institution, or discipline…" autocomplete="off">
+        <span class="picker-count" id="scholar-count"></span>
+      </div>
+      <div class="picker-scroll">
+        <table class="picker" id="scholar-table">
+          <thead>
+            <tr>
+              <th data-sort="scholarId">Scholar ID<span class="arrow"></span></th>
+              <th data-sort="name">Name<span class="arrow"></span></th>
+              <th data-sort="islandDivision">Island Division<span class="arrow"></span></th>
+              <th data-sort="discipline">Discipline<span class="arrow"></span></th>
+              <th data-sort="pubs" class="num">Pubs<span class="arrow">↓</span></th>
+              <th data-sort="firstAuth" class="num">1st-Auth<span class="arrow"></span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="muted" style="margin-top: 8px; font-size: 0.8rem;">
+        Click any row to load that scholar. Sorted by publication count (descending) by default; click any column heading to re-sort.
+      </div>
+    </div>
+
     <div class="card" id="picker-card">
-      <h2>1. Pick a worksheet and row</h2>
+      <h2>2. Pick a worksheet and row</h2>
       <div class="row">
         <label for="ws-select">Worksheet:</label>
         <select id="ws-select" disabled></select>
@@ -184,14 +292,15 @@
     </div>
 
     <div class="card" id="edit-card" style="display: none;">
-      <h2>2. Edit fields</h2>
+      <h2>3. Edit fields</h2>
+      <div class="scholar-banner" id="scholar-banner" style="display: none;">
+        <span class="name" id="scholar-banner-name"></span>
+        <span class="sid" id="scholar-banner-sid"></span>
+      </div>
       <div class="row" style="margin-bottom: 10px;">
         <span id="edit-summary" class="muted"></span>
       </div>
-      <table class="fields" id="fields-table">
-        <thead><tr><th>Field</th><th>Value</th><th>Type</th></tr></thead>
-        <tbody></tbody>
-      </table>
+      <div id="fields-groups"></div>
       <div class="row" style="margin-top: 14px;">
         <button id="save-btn" disabled>Save changes</button>
         <button id="cancel-btn" class="secondary">Discard edits</button>
@@ -200,7 +309,7 @@
     </div>
 
     <div class="card" id="log-card">
-      <h2>3. Recent Change Log</h2>
+      <h2>4. Recent Change Log</h2>
       <div class="row">
         <button id="log-refresh-btn" class="secondary">Refresh</button>
         <span id="log-hint" class="muted"></span>

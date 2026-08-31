@@ -782,3 +782,83 @@ function apiReadChangeLog(limit) {
   }
   return { status: 'ok', rows: rows, serverTs: Date.now() };
 }
+
+/**
+ * apiListScholars() — returns one row per scholar for the picker card:
+ *   { scholarId, name, islandDivision, discipline, currentInstitution, pubs, firstAuth }
+ *
+ * All values come from the live Scholars sheet (no cross-tab joins):
+ *   - Scholar ID, Scholar Name, Paternal Island Division / Maternal Island Division,
+ *     Primary Discipline / Field, Current Institution
+ *   - Linked Publication Count and First-Author Publication Count are read straight
+ *     from the precomputed columns the Master Sheet already maintains.
+ *
+ * Cached for 300s in CacheService so repeated picker loads do not rescan the sheet.
+ */
+function apiListScholars() {
+  _assertAuthorized_();
+  var CACHE_KEY = 'tongan-picker-v1';
+  var cache = CacheService.getUserCache();
+  var cached = cache.get(CACHE_KEY);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) { /* fall through and recompute */ }
+  }
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName('Scholars');
+  if (!sheet) throw new Error('apiListScholars: Scholars sheet not found');
+  var headerRow = 4;
+  var lastCol   = sheet.getLastColumn();
+  var lastRow   = sheet.getLastRow();
+  if (lastRow <= headerRow) {
+    var empty = { status: 'ok', scholars: [], serverTs: Date.now() };
+    return empty;
+  }
+  var headers = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  function _idx(name) {
+    for (var i = 0; i < headers.length; i++) {
+      if (String(headers[i] || '').trim() === name) return i;
+    }
+    return -1;
+  }
+  var iId   = _idx('Scholar ID');
+  var iName = _idx('Scholar Name');
+  var iPat  = _idx('Paternal Island Division');
+  var iMat  = _idx('Maternal Island Division');
+  var iDisc = _idx('Primary Discipline / Field');
+  var iInst = _idx('Current Institution');
+  var iPubs = _idx('Linked Publication Count');
+  var iFst  = _idx('First-Author Publication Count');
+  if (iId < 0 || iName < 0) {
+    throw new Error('apiListScholars: required columns "Scholar ID" and "Scholar Name" not found on Scholars sheet');
+  }
+  var body = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+  var out = [];
+  for (var r = 0; r < body.length; r++) {
+    var sid = String(body[r][iId] == null ? '' : body[r][iId]).trim();
+    if (!sid) continue;
+    var pat = iPat >= 0 ? String(body[r][iPat] == null ? '' : body[r][iPat]).trim() : '';
+    var mat = iMat >= 0 ? String(body[r][iMat] == null ? '' : body[r][iMat]).trim() : '';
+    // Prefer paternal (Tongan convention); fall back to maternal so blank paternal is not misleading.
+    var island = pat || mat;
+    function _num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+    out.push({
+      scholarId:          sid,
+      name:               iName >= 0 ? String(body[r][iName] || '').trim() : '',
+      islandDivision:     island,
+      discipline:         iDisc >= 0 ? String(body[r][iDisc] || '').trim() : '',
+      currentInstitution: iInst >= 0 ? String(body[r][iInst] || '').trim() : '',
+      pubs:               iPubs >= 0 ? _num(body[r][iPubs]) : 0,
+      firstAuth:          iFst  >= 0 ? _num(body[r][iFst])  : 0
+    });
+  }
+  // Sort by pubs desc, then name asc, so first paint matches the default picker sort.
+  out.sort(function (a, b) {
+    if (b.pubs !== a.pubs) return b.pubs - a.pubs;
+    return a.name.localeCompare(b.name);
+  });
+  var payload = { status: 'ok', scholars: out, serverTs: Date.now() };
+  try {
+    cache.put(CACHE_KEY, JSON.stringify(payload), 300);
+  } catch (e) { /* payload too large for cache; still return it */ }
+  return payload;
+}
