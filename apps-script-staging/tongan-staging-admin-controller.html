@@ -530,16 +530,29 @@
   function loadChangeLog() {
     bridge.readChangeAuditLog(50).then(function (r) {
       var tbody = document.querySelector('#log-table tbody'); tbody.innerHTML = '';
-      (r.rows || []).forEach(function (row) {
+      var rows = r.rows || [];
+      // An audit row that has ALREADY been reversed once must not offer
+      // Rollback again -- apiRollbackChange always re-writes the ORIGINAL
+      // row's Old Value with no check of what's live now, so a repeat click
+      // would silently stomp any legitimate change made since the first
+      // rollback. Build the set of already-reversed audit IDs from this same
+      // page of rows before rendering.
+      var alreadyReversed = {};
+      rows.forEach(function (row) { if (row['Reversal Of Audit ID']) alreadyReversed[row['Reversal Of Audit ID']] = true; });
+      rows.forEach(function (row) {
         var tr = document.createElement('tr');
         var rollbackTd = document.createElement('td');
         if (STATE.role === 'Owner' && row['Scholar ID'] && row['Field Name'] && row['Change Type'] !== 'rollback') {
-          var btn = document.createElement('button'); btn.className = 'secondary danger'; btn.textContent = 'Rollback';
-          btn.addEventListener('click', function () {
-            bridge.rollbackChange(row['Audit ID']).then(function () { $('log-hint').textContent = 'Rolled back ' + row['Audit ID']; loadChangeLog(); })
-              .catch(function (err) { $('log-hint').textContent = 'Error: ' + err.message; });
-          });
-          rollbackTd.appendChild(btn);
+          if (alreadyReversed[row['Audit ID']]) {
+            rollbackTd.innerHTML = '<span class="muted">Already rolled back</span>';
+          } else {
+            var btn = document.createElement('button'); btn.className = 'secondary danger'; btn.textContent = 'Rollback';
+            btn.addEventListener('click', function () {
+              bridge.rollbackChange(row['Audit ID']).then(function () { $('log-hint').textContent = 'Rolled back ' + row['Audit ID']; loadChangeLog(); })
+                .catch(function (err) { $('log-hint').textContent = 'Error: ' + err.message; });
+            });
+            rollbackTd.appendChild(btn);
+          }
         }
         tr.innerHTML = '<td>' + esc(row['Audit ID']) + '</td><td>' + esc(row['Scholar ID']) + '</td><td>' + esc(row['Field Name']) + '</td>' +
           '<td>' + esc(row['Old Value']) + '</td><td>' + esc(row['New Value']) + '</td><td>' + esc(row['Change Type']) + '</td>' +
