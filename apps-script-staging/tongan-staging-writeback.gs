@@ -890,6 +890,13 @@ function apiApplySubmissionDecisions(submissionId, confirm) {
     var totalFields = changes.length;
     if (counts.appliedOk === totalFields && totalFields > 0) overall = 'Fully approved';
     else if (counts.appliedOk > 0) overall = 'Partially approved';
+    // A field can only be conflict-blocked if it was Approved, so this can
+    // coexist with Rejected/Returned fields on other rows in the same
+    // submission -- surface it ahead of those, since an un-applied conflict
+    // needs the reviewer's attention and must never be reported under the
+    // same label as a real partial-approval (which implies some field WAS
+    // written to live data; here appliedOk is 0).
+    else if (counts.conflictBlocked > 0) overall = 'Conflict — needs re-review';
     else if (counts.rejected === totalFields && totalFields > 0) overall = 'Rejected';
     else if (counts.returned > 0 && counts.appliedOk === 0) overall = 'Returned for clarification';
     else overall = 'Partially approved';
