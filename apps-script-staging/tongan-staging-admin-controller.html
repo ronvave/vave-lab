@@ -61,8 +61,28 @@
   }
 
   // ── BOOT ──────────────────────────────────────────────────────────
+  function wireSignOut() {
+    var link = $('sign-out-link');
+    if (!link) return;
+    link.addEventListener('click', function (e) {
+      e.preventDefault();
+      var ok = window.confirm(
+        'This signs this browser tab out of Google entirely (not just this app) — ' +
+        'useful on a shared computer, or to switch to a different Google account. ' +
+        'You will be sent to Google sign-in. Continue?'
+      );
+      if (!ok) return;
+      var execUrl = link.getAttribute('data-exec-url');
+      if (execUrl) window.top.location.href =
+        'https://accounts.google.com/Logout?continue=' + encodeURIComponent(
+          'https://accounts.google.com/ServiceLogin?continue=' + encodeURIComponent(execUrl)
+        );
+    });
+  }
+
   function boot() {
     initAppTabs();
+    wireSignOut();
     setStatus('Connecting…', 'busy');
     bridge.describe().then(function (r) {
       STATE.role = r.activeRole; STATE.email = r.activeEmail; STATE.mapping = r.mapping;

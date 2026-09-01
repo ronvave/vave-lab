@@ -550,14 +550,16 @@ function apiRetryDocSync() {
  * or a session not in Admin Users) get a clear not-authorized page and
  * NEVER reach any scholar data. */
 function doGet(e) {
+  var execUrl = ScriptApp.getService().getUrl();
   var rec = _callerRecord_();
-  if (!rec) return _renderNotAuthorized_(_activeEmail_());
+  if (!rec) return _renderNotAuthorized_(_activeEmail_(), execUrl);
   var tmpl = HtmlService.createTemplateFromFile('tongan-staging-admin-app');
   tmpl.activeEmail = rec.email;
   tmpl.activeName  = rec.name;
   tmpl.activeRole  = rec.role;
   tmpl.spreadsheetId = STAGING_SPREADSHEET_ID;
   tmpl.appVersion = APP_VERSION;
+  tmpl.execUrl = execUrl;
   return tmpl.evaluate()
     .setTitle('Tongan Scholar Database — Admin (STAGING)')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -584,16 +586,32 @@ function doPost(e) {
   }
 }
 
-function _renderNotAuthorized_(actual) {
+function _renderNotAuthorized_(actual, execUrl) {
+  var signOutHref = _googleSignOutUrl_(execUrl);
   var b = '<!doctype html><html><head><meta charset="utf-8"/><title>Not authorised — Tongan Admin (Staging)</title>' +
     '<style>body{font-family:system-ui,sans-serif;padding:2rem;max-width:640px;margin:auto;color:#111;}' +
-    'code{background:#f4f4f4;padding:2px 6px;border-radius:4px;}</style></head><body>' +
+    'code{background:#f4f4f4;padding:2px 6px;border-radius:4px;} a.switch{color:#0a5;text-decoration:underline;}</style></head><body>' +
     '<h1>Not authorised</h1>' +
     '<p>This staging admin is restricted to approved Google accounts listed in Admin Users. You are signed in as ' +
     '<code>' + _escapeHtml_(actual || '(not signed in)') + '</code>.</p>' +
     '<p>If you believe you should have access, ask the Owner to add your exact Google account email in Admin Users.</p>' +
+    (signOutHref ? '<p><a class="switch" href="' + _escapeHtml_(signOutHref) + '">Sign out and try a different Google account</a></p>' : '') +
     '</body></html>';
   return HtmlService.createHtmlOutput(b).setTitle('Not authorised');
+}
+
+/** _googleSignOutUrl_(execUrl) — fully signs the browser out of Google,
+ * then redirects back into a sign-in flow for this deployment's exec URL.
+ * Needed because Apps Script web apps have no app-level session of their
+ * own to log out of; the only way to test/act as a different Google
+ * account is to actually sign out of the Google account currently active
+ * in that browser. Signing out here affects ALL Google services in that
+ * browser tab's session, not just this app — the UI must warn about that
+ * before sending the user here (see the confirm() in the client JS). */
+function _googleSignOutUrl_(execUrl) {
+  if (!execUrl) return '';
+  var serviceLogin = 'https://accounts.google.com/ServiceLogin?continue=' + encodeURIComponent(execUrl);
+  return 'https://accounts.google.com/Logout?continue=' + encodeURIComponent(serviceLogin);
 }
 
 // ─────────────────────────────────────────────────────────────────────────
