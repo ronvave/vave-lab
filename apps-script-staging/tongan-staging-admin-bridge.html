@@ -1,0 +1,104 @@
+<script>
+/**
+ * tongan-staging-admin-bridge.html
+ * ─────────────────────────────────
+ * Google-authenticated bridge to tongan-staging-writeback.gs.
+ * Promise wrapper over google.script.run for every api* server function.
+ * No shared secrets, HMAC, or passcodes — Google identity + the server-side
+ * Admin Users role lookup is the only authorization boundary. This file
+ * never touches scholar data itself; it only relays calls.
+ */
+(function (global) {
+  'use strict';
+
+  function _reject(reason) {
+    return Promise.reject(new Error('tongan-staging: ' + reason));
+  }
+
+  function _wrap(runOnce) {
+    return new Promise(function (resolve, reject) {
+      try {
+        runOnce(
+          function (result) { resolve(result); },
+          function (err) {
+            var msg = (err && err.message) || String(err) || 'unknown-server-error';
+            var e = new Error('tongan-staging: server rejected — ' + msg);
+            e.serverBody = { status: 'error', error: msg };
+            reject(e);
+          }
+        );
+      } catch (setupErr) {
+        var e = new Error('tongan-staging: setup failed — ' + (setupErr && setupErr.message ? setupErr.message : String(setupErr)));
+        e.setupError = true;
+        reject(e);
+      }
+    });
+  }
+
+  function call0(fn) {
+    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](); });
+  }
+  function call1(fn, a) {
+    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a); });
+  }
+  function call2(fn, a, b) {
+    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b); });
+  }
+  function call3(fn, a, b, c) {
+    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b, c); });
+  }
+  function call4(fn, a, b, c, d) {
+    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b, c, d); });
+  }
+
+  global.tonganStagingBridge = {
+    // Canonical scholar edit surface
+    describe: function () { return call0('apiDescribe'); },
+    ping: function () { return call0('apiPing'); },
+    listScholars: function () { return call0('apiListScholars'); },
+    readRow: function (ws, key) {
+      if (!ws) return _reject('worksheet is required');
+      if (!key) return _reject('keyValue is required');
+      return call2('apiReadRow', ws, key);
+    },
+    updateRow: function (ws, key, fields, rowNumber) {
+      if (!ws) return _reject('worksheet is required');
+      if (!key) return _reject('keyValue is required');
+      if (!fields || typeof fields !== 'object') return _reject('fields must be an object');
+      return call4('apiUpdateRow', ws, key, fields, rowNumber || null);
+    },
+    readChangeAuditLog: function (limit) { return call1('apiReadChangeAuditLog', limit || 50); },
+    retryDocSync: function () { return call0('apiRetryDocSync'); },
+
+    // For Review queue
+    listSubmissionQueue: function (filters) { return call1('apiListSubmissionQueue', filters || {}); },
+    getSubmissionDetail: function (submissionId) { return call1('apiGetSubmissionDetail', submissionId); },
+    saveFieldDecisions: function (submissionId, decisions) { return call2('apiSaveFieldDecisions', submissionId, decisions); },
+    applySubmissionDecisions: function (submissionId, confirm) { return call2('apiApplySubmissionDecisions', submissionId, confirm === true); },
+
+    // Second-authenticator (ordinary) reviews
+    requestSecondReview: function (caseOrSubmissionId, targetEmailOrOpen) { return call2('apiRequestSecondReview', caseOrSubmissionId, targetEmailOrOpen || 'OPEN'); },
+    submitSecondReview: function (requestId, decision, rationale) { return call3('apiSubmitSecondReview', requestId, decision, rationale || ''); },
+
+    // Identity Authentication (dual-authenticator) workflow
+    openIdentityCase: function (scholarId) { return call1('apiOpenIdentityCase', scholarId); },
+    addIdentityEvidence: function (caseId, scholarId, evidence) { return call3('apiAddIdentityEvidence', caseId, scholarId, evidence); },
+    changeIdentityCaseStatus: function (caseId, newStatus, rationale) { return call3('apiChangeIdentityCaseStatus', caseId, newStatus, rationale || ''); },
+    submitIdentityDecision: function (caseId, outcome, rationale) { return call3('apiSubmitIdentityDecision', caseId, outcome, rationale || ''); },
+    resolveIdentityConflict: function (decisionId, ownerOutcome, resolutionNote) { return call3('apiResolveIdentityConflict', decisionId, ownerOutcome, resolutionNote || ''); },
+    listIdentityQueue: function (filters) { return call1('apiListIdentityQueue', filters || {}); },
+    getIdentityCase: function (caseId) { return call1('apiGetIdentityCase', caseId); },
+
+    // Owner rollback + publish
+    rollbackChange: function (auditId) { return call1('apiRollbackChange', auditId); },
+    previewPendingPublish: function () { return call0('apiPreviewPendingPublish'); },
+    publishApprovedChanges: function (confirm) { return call1('apiPublishApprovedChanges', confirm === true); },
+
+    // Admin Users (Owner-only)
+    listAdminUsers: function () { return call0('apiListAdminUsers'); },
+    addAdminUser: function (name, email, role) { return call3('apiAddAdminUser', name, email, role); },
+    deactivateAdminUser: function (adminUserId) { return call1('apiDeactivateAdminUser', adminUserId); },
+    changeAdminUserRole: function (adminUserId, newRole) { return call2('apiChangeAdminUserRole', adminUserId, newRole); }
+  };
+})(this);
+</script>

@@ -1,0 +1,408 @@
+<!doctype html>
+<!--
+  tongan-staging-admin-app.html
+  ─────────────────────────────
+  STAGING ONLY. HtmlService TEMPLATE rendered by
+  tongan-staging-writeback.gs doGet(). Reproduces the visual language of
+  the legacy public admin (admin-tongan-master.html: teal/cream/coral/gold)
+  inside the new Google-authenticated, role-gated application.
+
+  Template variables set by doGet():
+    activeEmail, activeName, activeRole, spreadsheetId, appVersion
+-->
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <title>Tongan Scholar Database — Admin (STAGING)</title>
+  <style>
+    :root {
+      --teal: #0e7490;
+      --teal-dark: #062f35;
+      --coral: #b23a48;
+      --gold: #c8a84b;
+      --cream: #f9f6ee;
+      --text: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      margin: 0; color: var(--text); background: var(--cream); line-height: 1.5;
+    }
+    header.topbar {
+      background: var(--teal-dark); color: #fff; padding: 12px 24px;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+    }
+    header.topbar h1 { font-size: 1.1rem; margin: 0; font-weight: 600; }
+    header.topbar .meta { font-size: 0.85rem; opacity: 0.92; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    header.topbar .meta code { background: rgba(255,255,255,0.15); padding: 2px 6px; border-radius: 4px; }
+    .staging-banner {
+      background: var(--gold); color: #3a2e0d; text-align: center; font-weight: 700;
+      font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 4px 8px;
+    }
+    .role-badge {
+      display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem;
+      font-weight: 700; letter-spacing: 0.02em; background: var(--teal); color: #fff;
+    }
+    .role-badge.Owner { background: var(--coral); }
+    .role-badge.Authenticator { background: var(--teal); }
+    .role-badge.Researcher { background: #6b7280; }
+    main { padding: 20px; max-width: 1200px; margin: 0 auto; }
+    .card {
+      background: #fff; border: 1px solid #e6e1d3; border-radius: 10px; padding: 16px 20px;
+      margin-bottom: 16px; box-shadow: 0 1px 3px rgba(6,47,53,0.06);
+    }
+    .card h2 { font-size: 1.05rem; margin: 0 0 12px; font-weight: 700; color: var(--teal-dark); }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    label { font-size: 0.85rem; color: var(--teal-dark); font-weight: 600; }
+    select, input[type="text"], input[type="email"], input[type="password"], input[type="search"], textarea {
+      font: inherit; padding: 6px 10px; border: 1px solid #d9d2bd; border-radius: 6px; background: #fff; color: var(--text);
+    }
+    select:focus, input:focus, textarea:focus { outline: 2px solid var(--teal); outline-offset: -1px; border-color: var(--teal); }
+    button {
+      font: inherit; padding: 6px 14px; border: 1px solid var(--teal); background: var(--teal); color: #fff;
+      border-radius: 6px; cursor: pointer; font-weight: 600;
+    }
+    button.secondary { background: #fff; color: var(--teal); }
+    button.danger { background: var(--coral); border-color: var(--coral); }
+    button.danger.secondary { background: #fff; color: var(--coral); }
+    button.gold { background: var(--gold); border-color: var(--gold); color: #3a2e0d; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button:hover:not(:disabled) { filter: brightness(1.06); }
+    #status {
+      font-size: 0.9rem; padding: 10px 14px; border-radius: 8px; background: #eef2f0; color: var(--text);
+      margin-bottom: 16px; min-height: 2rem; display: flex; align-items: center;
+    }
+    #status.ok  { background: #dcfce7; color: #14532d; }
+    #status.err { background: #fde2e2; color: #7f1d1d; }
+    #status.busy{ background: #fdf2d9; color: #713f12; }
+
+    /* Top-level app tabs */
+    #app-tabs { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 2px solid #e6e1d3; margin-bottom: 16px; }
+    #app-tabs button {
+      background: transparent; color: var(--teal-dark); border: none; border-bottom: 3px solid transparent;
+      padding: 10px 16px; font-size: 0.92rem; border-radius: 0; font-weight: 600;
+    }
+    #app-tabs button.active { color: var(--coral); border-bottom-color: var(--coral); }
+    .app-panel { display: none; }
+    .app-panel.active { display: block; }
+
+    /* Sub-tabs (within a panel, e.g. scholar picker) */
+    #tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    #tabs button { background: #fff; color: var(--teal); border: 1px solid var(--teal); padding: 4px 10px; font-size: 0.85rem; border-radius: 999px; }
+    #tabs button.active { background: var(--teal); color: #fff; }
+
+    table.fields { width: 100%; border-collapse: collapse; }
+    table.fields th, table.fields td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #f1ede1; vertical-align: top; font-size: 0.9rem; }
+    table.fields th { color: var(--teal-dark); font-weight: 600; width: 30%; }
+    table.fields td.controls { width: 55%; }
+    table.fields td.meta { width: 15%; color: #8a8370; font-size: 0.8rem; }
+
+    .scholar-banner {
+      display: flex; align-items: baseline; gap: 12px; padding: 8px 12px; margin-bottom: 12px;
+      background: #ecfeff; border: 1px solid #a5f3fc; border-radius: 6px;
+    }
+    .scholar-banner .name { font-size: 1.15rem; font-weight: 700; color: var(--teal-dark); }
+    .scholar-banner .sid  { font-family: "SF Mono", Menlo, Consolas, monospace; color: #6b7280; font-size: 0.9rem; }
+
+    fieldset.field-group { border: 1px solid #e6e1d3; border-radius: 6px; padding: 10px 14px 14px; margin: 0 0 14px; }
+    fieldset.field-group legend { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); padding: 0 6px; }
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+    .field-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .field-cell.wide { grid-column: 1 / -1; }
+    .field-cell .flabel { font-size: 0.75rem; font-weight: 600; color: var(--teal-dark); letter-spacing: 0.02em; }
+    .field-cell .fmeta { font-size: 0.7rem; color: #9ca3af; }
+    .field-cell input, .field-cell select, .field-cell textarea { width: 100%; font-size: 0.9rem; }
+    .field-cell.dirty .flabel { color: var(--gold); }
+    .field-cell.dirty input, .field-cell.dirty select, .field-cell.dirty textarea { background: #fdf6e3; }
+    .field-cell.conflict .flabel { color: var(--coral); }
+    .field-cell.conflict input, .field-cell.conflict select, .field-cell.conflict textarea { background: #fde2e2; }
+
+    .picker-controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .picker-controls input[type="text"] { flex: 1; min-width: 240px; }
+    .picker-count { font-size: 0.85rem; color: #6b7280; }
+    .picker-scroll { max-height: 320px; overflow-y: auto; border: 1px solid #e6e1d3; border-radius: 6px; }
+    table.picker, table.grid { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    table.picker thead th, table.grid thead th {
+      position: sticky; top: 0; background: #f6f2e6; color: var(--teal-dark); font-weight: 700;
+      text-align: left; padding: 6px 8px; border-bottom: 1px solid #e6e1d3; cursor: pointer; user-select: none; white-space: nowrap;
+    }
+    table.picker tbody td, table.grid tbody td { padding: 6px 8px; border-bottom: 1px solid #f1ede1; vertical-align: top; }
+    table.picker tbody tr, table.grid tbody tr.clickable { cursor: pointer; }
+    table.picker tbody tr:hover td, table.grid tbody tr.clickable:hover td { background: #f0fdff; }
+    table.picker tbody tr.selected td, table.grid tbody tr.selected td { background: #cffafe; }
+    table.picker td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.picker td.sid, table.grid td.mono { font-family: "SF Mono", Menlo, Consolas, monospace; white-space: nowrap; color: #6b7280; }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; }
+    .badge.pending { background: #fdf2d9; color: #713f12; }
+    .badge.approved, .badge.verified, .badge.fully { background: #dcfce7; color: #14532d; }
+    .badge.rejected, .badge.conflict { background: #fde2e2; color: #7f1d1d; }
+    .badge.returned, .badge.partial { background: #e0f2fe; color: #0c4a6e; }
+    .badge.flagged { background: var(--coral); color: #fff; }
+
+    .changelog { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 0.8rem; }
+    .changelog th, .changelog td { border-bottom: 1px solid #f1ede1; padding: 4px 8px; text-align: left; }
+    .changelog th { color: var(--teal-dark); font-weight: 700; }
+    .muted { color: #6b7280; }
+    details { margin-top: 8px; }
+    details summary { cursor: pointer; color: var(--teal); font-size: 0.85rem; }
+    pre.diag { background: #0f172a; color: #e2e8f0; padding: 12px; border-radius: 6px; font-size: 0.75rem; overflow-x: auto; margin: 8px 0 0; white-space: pre-wrap; }
+    .empty-state { color: #8a8370; font-size: 0.9rem; padding: 12px 0; }
+    .owner-only-note { font-size: 0.78rem; color: var(--coral); margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="staging-banner">STAGING — isolated test system. Not the production Admin.</div>
+  <header class="topbar">
+    <h1>Tongan Scholar Database — Admin (Staging)</h1>
+    <div class="meta">
+      <span><?!= activeName ?> &lt;<code><?!= activeEmail ?></code>&gt;</span>
+      <span class="role-badge <?!= activeRole ?>"><?!= activeRole ?></span>
+      <span>Build <?!= appVersion ?></span>
+    </div>
+  </header>
+
+  <main>
+    <div id="status">Booting…</div>
+
+    <nav id="app-tabs">
+      <button data-panel="panel-scholars" class="active">Scholars</button>
+      <button data-panel="panel-review">For Review</button>
+      <button data-panel="panel-identity">Identity Authentication</button>
+      <button data-panel="panel-admins">Admin Users</button>
+      <button data-panel="panel-changelog">Change Log</button>
+    </nav>
+
+    <!-- ═══════════════════ SCHOLARS ═══════════════════ -->
+    <section id="panel-scholars" class="app-panel active">
+      <div class="card" id="scholar-picker-card">
+        <h2>1. Pick a scholar</h2>
+        <div class="picker-controls">
+          <input type="text" id="scholar-search" placeholder="Search by Scholar ID, name, institution, or discipline…" autocomplete="off">
+          <span class="picker-count" id="scholar-count"></span>
+        </div>
+        <div class="picker-scroll">
+          <table class="picker" id="scholar-table">
+            <thead>
+              <tr>
+                <th data-sort="scholarId">Scholar ID</th>
+                <th data-sort="name">Name</th>
+                <th data-sort="islandDivision">Island Division</th>
+                <th data-sort="discipline">Discipline</th>
+                <th data-sort="pubs" class="num">Pubs</th>
+                <th data-sort="firstAuth" class="num">1st-Auth</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="edit-card" style="display:none;">
+        <h2>2. Edit fields</h2>
+        <div class="scholar-banner" id="scholar-banner" style="display:none;">
+          <span class="name" id="scholar-banner-name"></span>
+          <span class="sid" id="scholar-banner-sid"></span>
+          <button class="secondary" id="open-identity-case-btn" style="margin-left:auto;">Open/View Identity Case</button>
+        </div>
+        <div class="row" style="margin-bottom:10px;"><span id="edit-summary" class="muted"></span></div>
+        <div id="fields-groups"></div>
+        <div class="row" style="margin-top:14px;">
+          <button id="save-btn" disabled>Save changes</button>
+          <button id="cancel-btn" class="secondary">Discard edits</button>
+          <span id="save-hint" class="muted"></span>
+        </div>
+        <p class="owner-only-note" id="researcher-view-only-note" style="display:none;">Researchers have view-only access to Scholars core fields — editing requires Authenticator or Owner.</p>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ FOR REVIEW ═══════════════════ -->
+    <section id="panel-review" class="app-panel">
+      <div class="card">
+        <h2>Public "Update info" submissions awaiting review</h2>
+        <div class="row" style="margin-bottom:10px;">
+          <label for="review-status-filter">Status:</label>
+          <select id="review-status-filter">
+            <option value="">All open</option>
+            <option value="Fully approved">Fully approved</option>
+            <option value="Partially approved">Partially approved</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Returned for clarification">Returned for clarification</option>
+          </select>
+          <button class="secondary" id="review-refresh-btn">Refresh</button>
+        </div>
+        <div class="picker-scroll">
+          <table class="grid" id="review-queue-table">
+            <thead><tr><th>Submission ID</th><th>Scholar</th><th>Submitted (UTC)</th><th>Submitter</th><th>Fields</th><th>Status</th><th>2nd Review?</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="review-detail-card" style="display:none;">
+        <h2>Submission detail — <span id="review-detail-id"></span></h2>
+        <div id="review-detail-meta" class="muted" style="margin-bottom:10px;"></div>
+        <div class="picker-scroll" style="max-height:none;">
+          <table class="grid" id="review-fields-table">
+            <thead><tr><th>Field</th><th>Snapshot (at submission)</th><th>Proposed</th><th>Live now</th><th>Decision</th><th>Note</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div id="review-files-block" style="margin-top:10px;"></div>
+        <div class="row" style="margin-top:14px;">
+          <button id="review-save-decisions-btn" class="secondary">Save field decisions</button>
+          <button id="review-apply-btn">Apply approved changes</button>
+          <button id="review-request-second-btn" class="secondary">Request second review</button>
+          <span id="review-hint" class="muted"></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ IDENTITY AUTHENTICATION ═══════════════════ -->
+    <section id="panel-identity" class="app-panel">
+      <div class="card">
+        <h2>Indigenous Tongan Identity Authentication cases</h2>
+        <p class="muted" style="margin-top:-6px;">Evidence-based only. Identity is never inferred from name, appearance, birthplace, research topic, or institutional affiliation. Verified / Rejected outcomes require two distinct Authenticator/Owner approvals.</p>
+        <div class="row" style="margin-bottom:10px;">
+          <label for="identity-status-filter">Status:</label>
+          <select id="identity-status-filter">
+            <option value="">All</option>
+            <option value="Candidate">Candidate</option>
+            <option value="Research in progress">Research in progress</option>
+            <option value="Pending authentication">Pending authentication</option>
+            <option value="Needs further evidence">Needs further evidence</option>
+            <option value="Verified Indigenous Tongan">Verified Indigenous Tongan</option>
+            <option value="Rejected/Not eligible">Rejected/Not eligible</option>
+            <option value="Reopened">Reopened</option>
+          </select>
+          <button class="secondary" id="identity-refresh-btn">Refresh</button>
+        </div>
+        <div class="picker-scroll">
+          <table class="grid" id="identity-queue-table">
+            <thead><tr><th>Case ID</th><th>Scholar</th><th>Status</th><th>Status Since (UTC)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" id="identity-detail-card" style="display:none;">
+        <h2>Case detail — <span id="identity-detail-id"></span></h2>
+        <div id="identity-detail-meta" class="muted" style="margin-bottom:10px;"></div>
+
+        <h3 style="font-size:0.9rem;color:var(--teal-dark);">Evidence</h3>
+        <div class="picker-scroll" style="max-height:220px;">
+          <table class="grid" id="identity-evidence-table">
+            <thead><tr><th>Type</th><th>Description</th><th>Source</th><th>Submitted by</th><th>Flag</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="row" style="margin-top:8px;">
+          <input type="text" id="evidence-type" placeholder="Evidence type (e.g. genealogical record)" size="24">
+          <input type="text" id="evidence-desc" placeholder="Description" size="30">
+          <input type="text" id="evidence-source" placeholder="Source URL (optional)" size="22">
+          <button class="secondary" id="add-evidence-btn">Add evidence</button>
+        </div>
+
+        <h3 style="font-size:0.9rem;color:var(--teal-dark);margin-top:16px;">Status history</h3>
+        <div class="picker-scroll" style="max-height:160px;">
+          <table class="grid" id="identity-history-table">
+            <thead><tr><th>Previous</th><th>New</th><th>By</th><th>UTC</th><th>Rationale</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3 style="font-size:0.9rem;color:var(--teal-dark);margin-top:16px;">Decisions (dual-authenticator)</h3>
+        <div class="picker-scroll" style="max-height:160px;">
+          <table class="grid" id="identity-decisions-table">
+            <thead><tr><th>Outcome</th><th>Auth 1</th><th>Auth 2</th><th>Conflict?</th><th>Finalized (UTC)</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <div class="row" style="margin-top:14px;flex-wrap:wrap;">
+          <select id="identity-status-select">
+            <option value="Research in progress">Research in progress</option>
+            <option value="Needs further evidence">Needs further evidence</option>
+            <option value="Reopened">Reopened</option>
+          </select>
+          <input type="text" id="identity-status-rationale" placeholder="Rationale" size="26">
+          <button class="secondary" id="identity-set-status-btn">Set status (single-approver)</button>
+        </div>
+        <div class="row" style="margin-top:10px;flex-wrap:wrap;">
+          <select id="identity-outcome-select">
+            <option value="Verified Indigenous Tongan">Verified Indigenous Tongan</option>
+            <option value="Rejected/Not eligible">Rejected/Not eligible</option>
+          </select>
+          <input type="text" id="identity-outcome-rationale" placeholder="Rationale (required)" size="30">
+          <button id="identity-submit-decision-btn">Submit dual-auth decision</button>
+        </div>
+        <div class="row" id="identity-conflict-row" style="margin-top:10px;flex-wrap:wrap;display:none;">
+          <input type="text" id="identity-resolution-note" placeholder="Owner resolution note" size="30">
+          <button class="danger" id="identity-resolve-conflict-btn">Owner: resolve conflict</button>
+        </div>
+        <span id="identity-hint" class="muted"></span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ ADMIN USERS ═══════════════════ -->
+    <section id="panel-admins" class="app-panel">
+      <div class="card">
+        <h2>Admin Users (Owner-only)</h2>
+        <div class="picker-scroll">
+          <table class="grid" id="admin-users-table">
+            <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Active?</th><th>Actions</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="row" style="margin-top:14px;flex-wrap:wrap;">
+          <input type="text" id="new-admin-name" placeholder="Name" size="18">
+          <input type="email" id="new-admin-email" placeholder="Google account email" size="24">
+          <select id="new-admin-role">
+            <option value="Researcher">Researcher</option>
+            <option value="Authenticator">Authenticator</option>
+            <option value="Owner">Owner</option>
+          </select>
+          <button id="add-admin-btn">Add Admin User</button>
+        </div>
+        <span id="admin-users-hint" class="muted"></span>
+      </div>
+
+      <div class="card">
+        <h2>Publishing (Owner-only, on-demand)</h2>
+        <p class="muted">Staging publish writes a timestamped JSON snapshot to Drive only — it never touches the live GitHub Pages dashboard.</p>
+        <div class="row">
+          <button class="secondary" id="publish-preview-btn">Preview pending changes</button>
+          <button class="gold" id="publish-btn">Publish (staging snapshot)</button>
+        </div>
+        <div id="publish-preview-output" class="picker-scroll" style="margin-top:10px;max-height:200px;display:none;"></div>
+        <span id="publish-hint" class="muted"></span>
+      </div>
+    </section>
+
+    <!-- ═══════════════════ CHANGE LOG ═══════════════════ -->
+    <section id="panel-changelog" class="app-panel">
+      <div class="card">
+        <h2>Change Audit Log</h2>
+        <div class="row">
+          <button class="secondary" id="log-refresh-btn">Refresh</button>
+          <button class="secondary" id="doc-sync-retry-btn">Retry Doc sync</button>
+          <span id="log-hint" class="muted"></span>
+        </div>
+        <table class="changelog" id="log-table" style="margin-top:10px;width:100%;">
+          <thead><tr><th>Audit ID</th><th>Scholar</th><th>Field</th><th>Old</th><th>New</th><th>Type</th><th>By</th><th>UTC</th><th>Rollback</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <details>
+      <summary>Diagnostics</summary>
+      <pre class="diag" id="diag">(no diagnostics loaded yet)</pre>
+    </details>
+  </main>
+
+  <?!= include('tongan-staging-admin-bridge') ?>
+  <?!= include('tongan-staging-admin-controller') ?>
+</body>
+</html>

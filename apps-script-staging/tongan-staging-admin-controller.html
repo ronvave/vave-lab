@@ -1,0 +1,555 @@
+<script>
+/**
+ * tongan-staging-admin-controller.html
+ * ─────────────────────────────────────
+ * Client-side logic for the STAGING Tongan Admin app. Talks only to
+ * tonganStagingBridge (google.script.run wrappers). No scholar dataset is
+ * ever bulk-fetched — apiListScholars returns only picker-summary fields
+ * (no genealogical / cultural-affiliation data), and worksheet rows are
+ * fetched one at a time on demand via apiReadRow.
+ */
+(function () {
+  'use strict';
+  var bridge = window.tonganStagingBridge;
+
+  var STATE = {
+    role: null, email: null, mapping: null,
+    scholars: [], scholarSort: { key: 'pubs', dir: 'desc' },
+    currentScholarId: null, currentFields: {}, dirty: {},
+    reviewQueue: [], currentSubmissionId: null, currentSubmissionFields: [],
+    identityQueue: [], currentCaseId: null,
+    adminUsers: []
+  };
+
+  var SCHOLAR_FIELD_GROUPS = [
+    { legend: 'Identity', fields: ['Title / Salutation','Family Name','Given Names','Gender','Year of Birth','Alive / Deceased','Year of Death','Primary Discipline / Field'] },
+    { legend: 'Paternal geography', fields: ['Paternal Island Division','District Paternal','Specific Island Paternal','Village/Town Paternal (Kolo)'] },
+    { legend: 'Maternal geography', fields: ['Maternal Island Division','District Maternal','Specific Island Maternal','Village/Town Maternal (Kolo)'] },
+    { legend: 'Cultural & lineage affiliation', fields: [
+      "Estate / Chiefly Affiliation Paternal (Tofi'a)", "Estate / Chiefly Affiliation Maternal (Tofi'a)",
+      "Ha'a / Lineage Paternal", "Ha'a / Lineage Maternal", 'Kāinga Paternal', 'Kāinga Maternal',
+      'Self-identified Home / Community Affiliation Paternal', 'Self-identified Home / Community Affiliation Maternal'
+    ]},
+    { legend: 'Current position', fields: ['Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current PG Status'] },
+    { legend: 'Public profile URLs', fields: ['ORCID / Researcher ID','Google Scholar URL','Current Profile URL','Name Variants / Aliases'] },
+    { legend: 'Provenance & notes', fields: ['Lineage / Provenance Notes','Record Notes'] }
+  ];
+
+  // ── generic helpers ──────────────────────────────────────────────
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+  function setStatus(msg, cls) {
+    var el = $('status'); el.textContent = msg; el.className = cls || '';
+  }
+  function diag(obj) { $('diag').textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2); }
+  function roleAtLeast(role, min) {
+    var rank = { Researcher: 1, Authenticator: 2, Owner: 3 };
+    return (rank[role] || 0) >= (rank[min] || 99);
+  }
+
+  // ── app-level tabs ───────────────────────────────────────────────
+  function initAppTabs() {
+    var btns = document.querySelectorAll('#app-tabs button');
+    btns.forEach(function (b) {
+      b.addEventListener('click', function () {
+        btns.forEach(function (x) { x.classList.remove('active'); });
+        document.querySelectorAll('.app-panel').forEach(function (p) { p.classList.remove('active'); });
+        b.classList.add('active');
+        $(b.dataset.panel).classList.add('active');
+      });
+    });
+  }
+
+  // ── BOOT ──────────────────────────────────────────────────────────
+  function boot() {
+    initAppTabs();
+    setStatus('Connecting…', 'busy');
+    bridge.describe().then(function (r) {
+      STATE.role = r.activeRole; STATE.email = r.activeEmail; STATE.mapping = r.mapping;
+      setStatus('Connected as ' + r.activeEmail + ' (' + r.activeRole + ').', 'ok');
+      applyRoleVisibility();
+      wireScholarsTab();
+      wireReviewTab();
+      wireIdentityTab();
+      wireAdminsTab();
+      wireChangelogTab();
+      loadScholars();
+      if (roleAtLeast(STATE.role, 'Authenticator')) { loadReviewQueue(); loadIdentityQueue(); }
+      if (STATE.role === 'Owner') loadAdminUsers();
+      loadChangeLog();
+    }).catch(function (err) {
+      setStatus('Failed to connect: ' + err.message, 'err');
+      diag(err.serverBody || String(err));
+    });
+  }
+
+  function applyRoleVisibility() {
+    if (!roleAtLeast(STATE.role, 'Authenticator')) {
+      $('researcher-view-only-note').style.display = 'block';
+    }
+    if (STATE.role !== 'Owner') {
+      var adminsTabBtn = document.querySelector('#app-tabs button[data-panel="panel-admins"]');
+      if (adminsTabBtn) adminsTabBtn.style.display = 'none';
+    }
+  }
+
+  // ═══════════════════════ SCHOLARS TAB ═══════════════════════════
+  function wireScholarsTab() {
+    $('scholar-search').addEventListener('input', renderScholarTable);
+    document.querySelectorAll('#scholar-table thead th').forEach(function (th) {
+      th.addEventListener('click', function () {
+        var key = th.dataset.sort;
+        if (STATE.scholarSort.key === key) STATE.scholarSort.dir = STATE.scholarSort.dir === 'asc' ? 'desc' : 'asc';
+        else STATE.scholarSort = { key: key, dir: 'asc' };
+        renderScholarTable();
+      });
+    });
+    $('save-btn').addEventListener('click', saveScholarEdits);
+    $('cancel-btn').addEventListener('click', function () { loadScholarRow(STATE.currentScholarId); });
+    $('open-identity-case-btn').addEventListener('click', function () {
+      if (!STATE.currentScholarId) return;
+      bridge.openIdentityCase(STATE.currentScholarId).then(function (r) {
+        document.querySelector('#app-tabs button[data-panel="panel-identity"]').click();
+        loadIdentityQueue().then(function () { openIdentityCase(r.caseId); });
+      }).catch(function (err) { setStatus(err.message, 'err'); });
+    });
+  }
+
+  function loadScholars() {
+    bridge.listScholars().then(function (r) {
+      STATE.scholars = r.scholars || [];
+      renderScholarTable();
+    }).catch(function (err) { setStatus('Could not load scholar list: ' + err.message, 'err'); });
+  }
+
+  function renderScholarTable() {
+    var q = ($('scholar-search').value || '').toLowerCase();
+    var rows = STATE.scholars.filter(function (s) {
+      if (!q) return true;
+      return (s.scholarId + ' ' + s.name + ' ' + s.currentInstitution + ' ' + s.discipline).toLowerCase().indexOf(q) >= 0;
+    });
+    var k = STATE.scholarSort.key, dir = STATE.scholarSort.dir === 'asc' ? 1 : -1;
+    rows.sort(function (a, b) {
+      var av = a[k], bv = b[k];
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av || '').localeCompare(String(bv || '')) * dir;
+    });
+    $('scholar-count').textContent = rows.length + ' of ' + STATE.scholars.length;
+    var tbody = document.querySelector('#scholar-table tbody');
+    tbody.innerHTML = '';
+    rows.forEach(function (s) {
+      var tr = document.createElement('tr');
+      if (s.scholarId === STATE.currentScholarId) tr.className = 'selected';
+      tr.innerHTML = '<td class="sid">' + esc(s.scholarId) + '</td><td class="name">' + esc(s.name) + '</td>' +
+        '<td>' + esc(s.islandDivision) + '</td><td>' + esc(s.discipline) + '</td>' +
+        '<td class="num">' + s.pubs + '</td><td class="num">' + s.firstAuth + '</td>';
+      tr.addEventListener('click', function () { loadScholarRow(s.scholarId); });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function loadScholarRow(scholarId) {
+    setStatus('Loading ' + scholarId + '…', 'busy');
+    bridge.readRow('Scholars', scholarId).then(function (r) {
+      if (!r.found) { setStatus('Scholar not found: ' + scholarId, 'err'); return; }
+      STATE.currentScholarId = scholarId; STATE.currentFields = r.fields; STATE.dirty = {};
+      $('edit-card').style.display = 'block';
+      $('scholar-banner').style.display = 'flex';
+      $('scholar-banner-name').textContent = r.fields['Scholar Name'] || (r.fields['Given Names'] + ' ' + r.fields['Family Name']);
+      $('scholar-banner-sid').textContent = scholarId;
+      renderScholarFieldGroups(r.fields);
+      $('save-btn').disabled = true;
+      $('save-hint').textContent = '';
+      setStatus('Loaded ' + scholarId + '.', 'ok');
+      renderScholarTable();
+    }).catch(function (err) { setStatus('Load failed: ' + err.message, 'err'); });
+  }
+
+  function renderScholarFieldGroups(fields) {
+    var canEdit = roleAtLeast(STATE.role, 'Authenticator');
+    var wsCfg = (STATE.mapping.worksheets.Scholars.fields) || {};
+    var used = {}, container = $('fields-groups');
+    container.innerHTML = '';
+    SCHOLAR_FIELD_GROUPS.forEach(function (g) {
+      var present = g.fields.filter(function (f) { return wsCfg[f]; });
+      if (!present.length) return;
+      present.forEach(function (f) { used[f] = 1; });
+      container.appendChild(buildFieldset(g.legend, present, wsCfg, fields, canEdit));
+    });
+    var leftover = Object.keys(wsCfg).filter(function (f) { return !used[f]; });
+    if (leftover.length) container.appendChild(buildFieldset('Other', leftover, wsCfg, fields, canEdit));
+    $('edit-summary').textContent = canEdit ? 'Edit any field below, then Save changes.' : 'View-only (Researcher role).';
+  }
+
+  function buildFieldset(legend, fieldNames, wsCfg, fields, canEdit) {
+    var fs = document.createElement('fieldset'); fs.className = 'field-group';
+    var lg = document.createElement('legend'); lg.textContent = legend; fs.appendChild(lg);
+    var grid = document.createElement('div'); grid.className = 'field-grid';
+    fieldNames.forEach(function (fname) {
+      var cfg = wsCfg[fname] || {};
+      var cell = document.createElement('div');
+      cell.className = 'field-cell' + ((cfg.maxLen && cfg.maxLen > 240) ? ' wide' : '');
+      cell.dataset.field = fname;
+      var lbl = document.createElement('label'); lbl.className = 'flabel'; lbl.textContent = fname; cell.appendChild(lbl);
+      var control;
+      var current = fields[fname] == null ? '' : fields[fname];
+      if (cfg.type === 'enum' && Array.isArray(cfg.enum)) {
+        control = document.createElement('select');
+        cfg.enum.forEach(function (v) {
+          var opt = document.createElement('option'); opt.value = v; opt.textContent = v === '' ? '(blank)' : v;
+          if (String(v) === String(current)) opt.selected = true;
+          control.appendChild(opt);
+        });
+      } else if (cfg.maxLen && cfg.maxLen > 240) {
+        control = document.createElement('textarea'); control.rows = 3; control.value = current;
+      } else {
+        control = document.createElement('input'); control.type = 'text'; control.value = current;
+        if (cfg.maxLen) control.maxLength = cfg.maxLen;
+      }
+      control.disabled = !canEdit;
+      control.addEventListener('input', function () {
+        var val = control.value;
+        if (String(val) !== String(STATE.currentFields[fname] == null ? '' : STATE.currentFields[fname])) {
+          STATE.dirty[fname] = val; cell.classList.add('dirty');
+        } else { delete STATE.dirty[fname]; cell.classList.remove('dirty'); }
+        $('save-btn').disabled = Object.keys(STATE.dirty).length === 0;
+      });
+      cell.appendChild(control);
+      grid.appendChild(cell);
+    });
+    fs.appendChild(grid);
+    return fs;
+  }
+
+  function saveScholarEdits() {
+    if (!Object.keys(STATE.dirty).length) return;
+    setStatus('Saving…', 'busy');
+    bridge.updateRow('Scholars', STATE.currentScholarId, STATE.dirty).then(function (r) {
+      var rejected = (r.results || []).filter(function (x) { return x.status !== 'ok'; });
+      if (rejected.length) {
+        setStatus(rejected.length + ' field(s) rejected — see hint.', 'err');
+        $('save-hint').textContent = rejected.map(function (x) { return x.field + ': ' + x.reason; }).join('; ');
+      } else {
+        setStatus('Saved ' + Object.keys(STATE.dirty).length + ' field(s).', 'ok');
+        $('save-hint').textContent = '';
+      }
+      loadScholarRow(STATE.currentScholarId);
+      loadChangeLog();
+    }).catch(function (err) { setStatus('Save failed: ' + err.message, 'err'); });
+  }
+
+  // ═══════════════════════ FOR REVIEW TAB ═════════════════════════
+  function wireReviewTab() {
+    $('review-refresh-btn').addEventListener('click', loadReviewQueue);
+    $('review-status-filter').addEventListener('change', loadReviewQueue);
+    $('review-apply-btn').addEventListener('click', applySubmissionDecisions);
+    $('review-save-decisions-btn').addEventListener('click', saveSubmissionDecisions);
+    $('review-request-second-btn').addEventListener('click', function () {
+      if (!STATE.currentSubmissionId) return;
+      bridge.requestSecondReview(STATE.currentSubmissionId, 'OPEN').then(function (r) {
+        $('review-hint').textContent = 'Second review requested: ' + r.requestId;
+        loadReviewQueue();
+      }).catch(function (err) { $('review-hint').textContent = 'Error: ' + err.message; });
+    });
+  }
+
+  function loadReviewQueue() {
+    if (!roleAtLeast(STATE.role, 'Authenticator')) return Promise.resolve();
+    var status = $('review-status-filter').value;
+    return bridge.listSubmissionQueue(status ? { status: status } : {}).then(function (r) {
+      STATE.reviewQueue = r.submissions || [];
+      var tbody = document.querySelector('#review-queue-table tbody');
+      tbody.innerHTML = '';
+      if (!STATE.reviewQueue.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No submissions in this status.</td></tr>';
+        return;
+      }
+      STATE.reviewQueue.forEach(function (s) {
+        var tr = document.createElement('tr'); tr.className = 'clickable';
+        tr.innerHTML = '<td class="mono">' + esc(s.submissionId) + '</td>' +
+          '<td>' + esc(s.scholarName) + ' <span class="mono">(' + esc(s.scholarId) + ')</span></td>' +
+          '<td>' + esc(s.submittedUtc) + '</td><td>' + esc(s.submitterName) + '</td>' +
+          '<td>' + esc(s.fieldsChangedCount) + '</td>' +
+          '<td><span class="badge ' + statusBadgeClass(s.status) + '">' + esc(s.status) + '</span></td>' +
+          '<td>' + (s.secondReviewRequested ? 'Yes' : '') + '</td>';
+        tr.addEventListener('click', function () { openSubmissionDetail(s.submissionId); });
+        tbody.appendChild(tr);
+      });
+    }).catch(function (err) { setStatus('Review queue load failed: ' + err.message, 'err'); });
+  }
+
+  function statusBadgeClass(s) {
+    s = String(s || '').toLowerCase();
+    if (s.indexOf('fully') >= 0) return 'fully';
+    if (s.indexOf('partial') >= 0) return 'partial';
+    if (s.indexOf('reject') >= 0) return 'rejected';
+    if (s.indexOf('return') >= 0) return 'returned';
+    if (s.indexOf('conflict') >= 0) return 'conflict';
+    if (s.indexOf('verified') >= 0) return 'verified';
+    return 'pending';
+  }
+
+  function openSubmissionDetail(submissionId) {
+    setStatus('Loading submission…', 'busy');
+    bridge.getSubmissionDetail(submissionId).then(function (r) {
+      STATE.currentSubmissionId = submissionId; STATE.currentSubmissionFields = r.fields;
+      $('review-detail-card').style.display = 'block';
+      $('review-detail-id').textContent = submissionId;
+      $('review-detail-meta').textContent = r.submission.scholarName + ' (' + r.submission.scholarId + ') — submitted by ' +
+        r.submission.submitterName + ' <' + r.submission.submitterEmail + '>, relationship: ' + r.submission.relationship +
+        ' — overall status: ' + r.submission.overallStatus;
+      var tbody = document.querySelector('#review-fields-table tbody'); tbody.innerHTML = '';
+      r.fields.forEach(function (f) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + esc(f.field) + '</td><td>' + esc(f.snapshotValue) + '</td><td>' + esc(f.proposedValue) + '</td>' +
+          '<td>' + esc(f.liveValue) + (f.conflict ? ' <span class="badge conflict">CONFLICT</span>' : '') + '</td>' +
+          '<td></td><td><input type="text" class="review-note-input" size="18" placeholder="note"></td>';
+        var decisionTd = tr.children[4];
+        var sel = document.createElement('select');
+        ['Pending','Approve','Reject','Return for clarification'].forEach(function (v) {
+          var opt = document.createElement('option'); opt.value = v; opt.textContent = v;
+          if (v === (f.decision || 'Pending')) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.dataset.changeRowId = f.changeRowId;
+        decisionTd.appendChild(sel);
+        tr.querySelector('.review-note-input').value = f.reviewNote || '';
+        tbody.appendChild(tr);
+      });
+      var filesBlock = $('review-files-block');
+      filesBlock.innerHTML = r.files.length ? '<strong>Uploaded files:</strong> ' + r.files.map(function (f) {
+        return esc(f.filename) + ' (' + esc(f.fileType) + (f.approved ? ', approved' : ', pending approval') + ')';
+      }).join('; ') : '';
+      $('review-hint').textContent = '';
+      setStatus('Loaded submission ' + submissionId + '.', 'ok');
+    }).catch(function (err) { setStatus('Load failed: ' + err.message, 'err'); });
+  }
+
+  function collectDecisions() {
+    var rows = document.querySelectorAll('#review-fields-table tbody tr');
+    var decisions = [];
+    rows.forEach(function (tr) {
+      var sel = tr.querySelector('select');
+      var note = tr.querySelector('.review-note-input').value;
+      decisions.push({ changeRowId: sel.dataset.changeRowId, decision: sel.value, note: note });
+    });
+    return decisions;
+  }
+
+  function saveSubmissionDecisions() {
+    if (!STATE.currentSubmissionId) return;
+    bridge.saveFieldDecisions(STATE.currentSubmissionId, collectDecisions()).then(function () {
+      $('review-hint').textContent = 'Decisions saved (not yet applied to live data).';
+    }).catch(function (err) { $('review-hint').textContent = 'Error: ' + err.message; });
+  }
+
+  function applySubmissionDecisions() {
+    if (!STATE.currentSubmissionId) return;
+    bridge.saveFieldDecisions(STATE.currentSubmissionId, collectDecisions()).then(function () {
+      return bridge.applySubmissionDecisions(STATE.currentSubmissionId, true);
+    }).then(function (r) {
+      $('review-hint').textContent = 'Applied: ' + r.counts.appliedOk + ' ok, ' + r.counts.rejected + ' rejected, ' +
+        r.counts.returned + ' returned, ' + r.counts.conflictBlocked + ' conflict-blocked.';
+      loadReviewQueue();
+      loadChangeLog();
+      openSubmissionDetail(STATE.currentSubmissionId);
+    }).catch(function (err) { $('review-hint').textContent = 'Error: ' + err.message; });
+  }
+
+  // ═══════════════════════ IDENTITY TAB ═══════════════════════════
+  function wireIdentityTab() {
+    $('identity-refresh-btn').addEventListener('click', loadIdentityQueue);
+    $('identity-status-filter').addEventListener('change', loadIdentityQueue);
+    $('add-evidence-btn').addEventListener('click', function () {
+      if (!STATE.currentCaseId) return;
+      var evidence = { type: $('evidence-type').value, description: $('evidence-desc').value, sourceUrl: $('evidence-source').value, context: '' };
+      bridge.addIdentityEvidence(STATE.currentCaseId, currentCaseScholarId(), evidence).then(function (r) {
+        $('identity-hint').textContent = r.weakProxyFlagged ? 'Evidence added — FLAGGED as a possible weak proxy; review before relying on it.' : 'Evidence added.';
+        $('evidence-type').value = ''; $('evidence-desc').value = ''; $('evidence-source').value = '';
+        openIdentityCase(STATE.currentCaseId);
+      }).catch(function (err) { $('identity-hint').textContent = 'Error: ' + err.message; });
+    });
+    $('identity-set-status-btn').addEventListener('click', function () {
+      if (!STATE.currentCaseId) return;
+      bridge.changeIdentityCaseStatus(STATE.currentCaseId, $('identity-status-select').value, $('identity-status-rationale').value).then(function () {
+        $('identity-hint').textContent = 'Status updated.'; loadIdentityQueue(); openIdentityCase(STATE.currentCaseId);
+      }).catch(function (err) { $('identity-hint').textContent = 'Error: ' + err.message; });
+    });
+    $('identity-submit-decision-btn').addEventListener('click', function () {
+      if (!STATE.currentCaseId) return;
+      var rationale = $('identity-outcome-rationale').value;
+      if (!rationale) { $('identity-hint').textContent = 'Rationale is required for a dual-authenticator decision.'; return; }
+      bridge.submitIdentityDecision(STATE.currentCaseId, $('identity-outcome-select').value, rationale).then(function (r) {
+        if (r.status === 'conflict') {
+          $('identity-hint').textContent = 'Conflict: the two authenticators disagreed. Escalated to Owner.';
+          $('identity-conflict-row').style.display = 'flex';
+          $('identity-conflict-row').dataset.decisionId = r.decisionId;
+        } else if (r.stage === 'first-approval-recorded') {
+          $('identity-hint').textContent = 'First approval recorded. Awaiting a second, different Authenticator/Owner.';
+        } else {
+          $('identity-hint').textContent = 'Finalized: ' + r.outcome;
+        }
+        loadIdentityQueue(); openIdentityCase(STATE.currentCaseId);
+      }).catch(function (err) { $('identity-hint').textContent = 'Error: ' + err.message; });
+    });
+    $('identity-resolve-conflict-btn').addEventListener('click', function () {
+      var decisionId = $('identity-conflict-row').dataset.decisionId;
+      if (!decisionId) return;
+      bridge.resolveIdentityConflict(decisionId, $('identity-outcome-select').value, $('identity-resolution-note').value).then(function () {
+        $('identity-hint').textContent = 'Owner resolution recorded.';
+        $('identity-conflict-row').style.display = 'none';
+        loadIdentityQueue(); openIdentityCase(STATE.currentCaseId);
+      }).catch(function (err) { $('identity-hint').textContent = 'Error: ' + err.message; });
+    });
+  }
+
+  function currentCaseScholarId() {
+    var row = STATE.identityQueue.filter(function (c) { return c.caseId === STATE.currentCaseId; })[0];
+    return row ? row.scholarId : '';
+  }
+
+  function loadIdentityQueue() {
+    if (!roleAtLeast(STATE.role, 'Authenticator')) return Promise.resolve();
+    var status = $('identity-status-filter').value;
+    return bridge.listIdentityQueue(status ? { status: status } : {}).then(function (r) {
+      STATE.identityQueue = r.cases || [];
+      var tbody = document.querySelector('#identity-queue-table tbody'); tbody.innerHTML = '';
+      if (!STATE.identityQueue.length) { tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No cases.</td></tr>'; return; }
+      STATE.identityQueue.forEach(function (c) {
+        var tr = document.createElement('tr'); tr.className = 'clickable';
+        tr.innerHTML = '<td class="mono">' + esc(c.caseId) + '</td><td>' + esc(c.scholarName) + ' <span class="mono">(' + esc(c.scholarId) + ')</span></td>' +
+          '<td><span class="badge ' + statusBadgeClass(c.status) + '">' + esc(c.status) + '</span></td><td>' + esc(c.statusSince) + '</td>';
+        tr.addEventListener('click', function () { openIdentityCase(c.caseId); });
+        tbody.appendChild(tr);
+      });
+    }).catch(function (err) { setStatus('Identity queue load failed: ' + err.message, 'err'); });
+  }
+
+  function openIdentityCase(caseId) {
+    bridge.getIdentityCase(caseId).then(function (r) {
+      STATE.currentCaseId = caseId;
+      $('identity-detail-card').style.display = 'block';
+      $('identity-detail-id').textContent = caseId;
+      $('identity-detail-meta').textContent = r.case['Scholar Name'] + ' (' + r.case['Scholar ID'] + ') — current status: ' + r.case['Current Status'];
+      var evTbody = document.querySelector('#identity-evidence-table tbody'); evTbody.innerHTML = '';
+      r.evidence.forEach(function (e) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + esc(e['Evidence Type']) + '</td><td>' + esc(e['Evidence Description']) + '</td>' +
+          '<td>' + (e['Source URL'] ? '<a href="' + esc(e['Source URL']) + '" target="_blank" rel="noopener">link</a>' : '') + '</td>' +
+          '<td>' + esc(e['Submitted By Email/Role']) + '</td>' +
+          '<td>' + (String(e['Weak-Proxy Flag Check'] || '').indexOf('FLAGGED') === 0 ? '<span class="badge flagged">FLAGGED</span>' : '') + '</td>';
+        evTbody.appendChild(tr);
+      });
+      var hTbody = document.querySelector('#identity-history-table tbody'); hTbody.innerHTML = '';
+      r.history.forEach(function (h) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + esc(h['Previous Status']) + '</td><td>' + esc(h['New Status']) + '</td>' +
+          '<td>' + esc(h['Changed By Email']) + '</td><td>' + esc(h['UTC Timestamp']) + '</td><td>' + esc(h['Rationale']) + '</td>';
+        hTbody.appendChild(tr);
+      });
+      var dTbody = document.querySelector('#identity-decisions-table tbody'); dTbody.innerHTML = '';
+      r.decisions.forEach(function (d) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + esc(d['Decision Outcome']) + '</td><td>' + esc(d['Authenticator 1 Name/Email']) + '</td>' +
+          '<td>' + esc(d['Authenticator 2 Name/Email']) + '</td>' +
+          '<td>' + (d['Conflict Escalated To Owner?'] === 'Yes' ? '<span class="badge conflict">Yes</span>' : 'No') + '</td>' +
+          '<td>' + esc(d['Final Decision Date (UTC)']) + '</td>';
+        dTbody.appendChild(tr);
+      });
+      $('identity-resolve-conflict-btn').style.display = STATE.role === 'Owner' ? 'inline-block' : 'none';
+      $('identity-submit-decision-btn').disabled = !roleAtLeast(STATE.role, 'Authenticator');
+    }).catch(function (err) { setStatus('Load case failed: ' + err.message, 'err'); });
+  }
+
+  // ═══════════════════════ ADMIN USERS TAB ════════════════════════
+  function wireAdminsTab() {
+    $('add-admin-btn').addEventListener('click', function () {
+      var name = $('new-admin-name').value, email = $('new-admin-email').value, role = $('new-admin-role').value;
+      if (!name || !email) { $('admin-users-hint').textContent = 'Name and email are required.'; return; }
+      bridge.addAdminUser(name, email, role).then(function () {
+        $('new-admin-name').value = ''; $('new-admin-email').value = '';
+        $('admin-users-hint').textContent = 'Added.'; loadAdminUsers();
+      }).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+    });
+    $('publish-preview-btn').addEventListener('click', function () {
+      bridge.previewPendingPublish().then(function (r) {
+        var box = $('publish-preview-output'); box.style.display = 'block';
+        box.innerHTML = r.pendingChanges.length ? '<table class="grid"><thead><tr><th>Scholar</th><th>Field</th><th>New value</th><th>UTC</th></tr></thead><tbody>' +
+          r.pendingChanges.map(function (c) { return '<tr><td class="mono">' + esc(c.scholarId) + '</td><td>' + esc(c.field) + '</td><td>' + esc(c.newValue) + '</td><td>' + esc(c.utc) + '</td></tr>'; }).join('') +
+          '</tbody></table>' : '<div class="empty-state">No pending public-facing changes since last publish.</div>';
+        $('publish-hint').textContent = 'Last publish: ' + r.lastPublishTs;
+      }).catch(function (err) { $('publish-hint').textContent = 'Error: ' + err.message; });
+    });
+    $('publish-btn').addEventListener('click', function () {
+      bridge.publishApprovedChanges(true).then(function (r) {
+        $('publish-hint').textContent = 'Published ' + r.changeCount + ' change(s) to staging Drive snapshot (file ' + r.driveFileId + ').';
+      }).catch(function (err) { $('publish-hint').textContent = 'Error: ' + err.message; });
+    });
+  }
+
+  function loadAdminUsers() {
+    if (STATE.role !== 'Owner') return Promise.resolve();
+    return bridge.listAdminUsers().then(function (r) {
+      STATE.adminUsers = r.users || [];
+      var tbody = document.querySelector('#admin-users-table tbody'); tbody.innerHTML = '';
+      STATE.adminUsers.forEach(function (u) {
+        var tr = document.createElement('tr');
+        var actionsTd = document.createElement('td');
+        if (u['Active?'] === 'Yes') {
+          var deactBtn = document.createElement('button'); deactBtn.className = 'secondary danger'; deactBtn.textContent = 'Deactivate';
+          deactBtn.addEventListener('click', function () {
+            bridge.deactivateAdminUser(u['Admin User ID']).then(loadAdminUsers).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+          });
+          actionsTd.appendChild(deactBtn);
+        }
+        var roleSel = document.createElement('select');
+        ['Researcher','Authenticator','Owner'].forEach(function (r2) {
+          var opt = document.createElement('option'); opt.value = r2; opt.textContent = r2;
+          if (r2 === u['Role']) opt.selected = true; roleSel.appendChild(opt);
+        });
+        roleSel.addEventListener('change', function () {
+          bridge.changeAdminUserRole(u['Admin User ID'], roleSel.value).then(loadAdminUsers).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+        });
+        actionsTd.appendChild(roleSel);
+        tr.innerHTML = '<td class="mono">' + esc(u['Admin User ID']) + '</td><td>' + esc(u['Name']) + '</td><td>' + esc(u['Google Account Email']) + '</td>' +
+          '<td>' + esc(u['Role']) + '</td><td>' + esc(u['Active?']) + '</td>';
+        tr.appendChild(actionsTd);
+        tbody.appendChild(tr);
+      });
+    }).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+  }
+
+  // ═══════════════════════ CHANGE LOG TAB ═════════════════════════
+  function wireChangelogTab() {
+    $('log-refresh-btn').addEventListener('click', loadChangeLog);
+    $('doc-sync-retry-btn').addEventListener('click', function () {
+      bridge.retryDocSync().then(function () { $('log-hint').textContent = 'Doc sync retried.'; }).catch(function (err) { $('log-hint').textContent = 'Error: ' + err.message; });
+    });
+  }
+
+  function loadChangeLog() {
+    bridge.readChangeAuditLog(50).then(function (r) {
+      var tbody = document.querySelector('#log-table tbody'); tbody.innerHTML = '';
+      (r.rows || []).forEach(function (row) {
+        var tr = document.createElement('tr');
+        var rollbackTd = document.createElement('td');
+        if (STATE.role === 'Owner' && row['Scholar ID'] && row['Field Name'] && row['Change Type'] !== 'rollback') {
+          var btn = document.createElement('button'); btn.className = 'secondary danger'; btn.textContent = 'Rollback';
+          btn.addEventListener('click', function () {
+            bridge.rollbackChange(row['Audit ID']).then(function () { $('log-hint').textContent = 'Rolled back ' + row['Audit ID']; loadChangeLog(); })
+              .catch(function (err) { $('log-hint').textContent = 'Error: ' + err.message; });
+          });
+          rollbackTd.appendChild(btn);
+        }
+        tr.innerHTML = '<td>' + esc(row['Audit ID']) + '</td><td>' + esc(row['Scholar ID']) + '</td><td>' + esc(row['Field Name']) + '</td>' +
+          '<td>' + esc(row['Old Value']) + '</td><td>' + esc(row['New Value']) + '</td><td>' + esc(row['Change Type']) + '</td>' +
+          '<td>' + esc(row['Changed By Email']) + '</td><td>' + esc(row['UTC Timestamp']) + '</td>';
+        tr.appendChild(rollbackTd);
+        tbody.appendChild(tr);
+      });
+    }).catch(function (err) { $('log-hint').textContent = 'Error: ' + err.message; });
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
