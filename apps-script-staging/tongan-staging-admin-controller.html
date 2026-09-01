@@ -463,6 +463,10 @@
 
   // ═══════════════════════ ADMIN USERS TAB ════════════════════════
   function wireAdminsTab() {
+    $('admin-users-refresh-btn').addEventListener('click', function () {
+      $('admin-users-hint').textContent = '';
+      loadAdminUsers().catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+    });
     $('add-admin-btn').addEventListener('click', function () {
       var name = $('new-admin-name').value, email = $('new-admin-email').value, role = $('new-admin-role').value;
       if (!name || !email) { $('admin-users-hint').textContent = 'Name and email are required.'; return; }
@@ -487,10 +491,22 @@
     });
   }
 
-  function loadAdminUsers() {
+  function loadAdminUsers(retryOnEmpty) {
     if (STATE.role !== 'Owner') return Promise.resolve();
     return bridge.listAdminUsers().then(function (r) {
-      STATE.adminUsers = r.users || [];
+      // google.script.run has a known intermittent quirk where firing a
+      // second call immediately inside a prior call's success handler (as
+      // the Add-admin flow does) can occasionally deliver a null/malformed
+      // response to THIS call. Rather than crash on r.users and strand the
+      // table showing stale data, retry once after a short delay before
+      // giving up.
+      if (!r || !Array.isArray(r.users)) {
+        if (retryOnEmpty !== false) {
+          return new Promise(function (resolve) { setTimeout(resolve, 400); }).then(function () { return loadAdminUsers(false); });
+        }
+        throw new Error('No response from server — click Refresh to try again.');
+      }
+      STATE.adminUsers = r.users;
       var tbody = document.querySelector('#admin-users-table tbody'); tbody.innerHTML = '';
       STATE.adminUsers.forEach(function (u) {
         var tr = document.createElement('tr');
