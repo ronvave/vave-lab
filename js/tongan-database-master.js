@@ -6635,6 +6635,44 @@
       entry.labelBaseY = baseY;
     });
 
+    // Final overlap fix-up pass. The tier system above spaces labels apart
+    // in most cases, but the per-milestone bar-top clearance nudge just
+    // before this ("walk the label upward until it clears the bar") can
+    // occasionally pull an adjacent-tier label back down close to its
+    // neighbour — this is exactly what caused the 1985 fefine Masters / 1988
+    // fefine PhD callouts to touch/overlap when both sit on short bars close
+    // together in the 1980s. Do one more sweep over every horizontally-close
+    // pair (x delta < LABEL_W_EST) and, if their label blocks would still
+    // touch vertically, push them apart by at least one full block height
+    // plus a comfortable padding gap.
+    // IMPORTANT: compare every pair whose x is close, not just neighbours in
+    // x-sorted order. A milestone that is horizontally *between* two other
+    // close-together milestones (e.g. 1986 sits between 1985 and 1988) can
+    // otherwise hide a real overlap between the two it's sandwiched between,
+    // since they'd never be checked against each other directly.
+    const OVERLAP_PAD = 10; // extra breathing room beyond the label's own height
+    const MIN_VERTICAL_GAP = LABEL_BLOCK_H + OVERLAP_PAD;
+    const xOf = entry => PAD_LEFT + (entry.milestone.year - yMin) * bandW + bandW / 2;
+    // Process labels from topmost (smallest baseY) to lowest, so each label
+    // is pushed down (never up) just enough to clear every already-placed,
+    // horizontally-close label above it. Processing in this order means a
+    // single pass is enough even when 3+ milestones chain together.
+    const byY = visibleMilestones.slice().sort((a, b) => a.labelBaseY - b.labelBaseY);
+    for (let i = 1; i < byY.length; i++) {
+      const cur = byY[i];
+      const xCur = xOf(cur);
+      let requiredBaseY = cur.labelBaseY;
+      for (let j = 0; j < i; j++) {
+        const other = byY[j];
+        if (Math.abs(xCur - xOf(other)) >= LABEL_W_EST) continue; // horizontally far apart, no risk
+        requiredBaseY = Math.max(requiredBaseY, other.labelBaseY + MIN_VERTICAL_GAP);
+      }
+      // Keep the label above the x-axis baseline; if the required position
+      // would run past it, clamp there instead (better a tight fit at the
+      // bottom than overlapping the axis).
+      cur.labelBaseY = Math.min(requiredBaseY, yZero - 8);
+    }
+
     visibleMilestones.forEach(({ milestone, labelBaseY, anchor }) => {
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
       const isEnd = anchor === 'end';
