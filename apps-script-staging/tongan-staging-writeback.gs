@@ -771,7 +771,18 @@ function apiGetSubmissionDetail(submissionId) {
   var fields = changes.map(function (c) {
     var live = _readCanonicalLiveValue_('Scholars', sub['Scholar ID'], c['Field Name'], null);
     var liveValue = live.ok ? live.value : c['Original Snapshot Value'];
-    var conflict = live.ok && normalizeForCompare_(liveValue) !== normalizeForCompare_(c['Original Snapshot Value']);
+    var alreadyApplied = c['Applied To Live?'] === 'Yes';
+    // Staleness/concurrency warning is only meaningful BEFORE this field has
+    // been applied. After a successful apply, the live value is EXPECTED to
+    // differ from the original submission-time snapshot (that's the point of
+    // applying it) -- comparing against the snapshot post-apply would flag
+    // every successfully-applied field as a false conflict forever. Once
+    // applied, only flag a conflict if the live value has since drifted away
+    // from what we actually wrote (i.e. something changed it again after us).
+    var conflict = !live.ok ? false :
+      (alreadyApplied
+        ? normalizeForCompare_(liveValue) !== normalizeForCompare_(c['Proposed Value'])
+        : normalizeForCompare_(liveValue) !== normalizeForCompare_(c['Original Snapshot Value']));
     return {
       changeRowId: c['Change Row ID'],
       field: c['Field Name'],
@@ -779,6 +790,7 @@ function apiGetSubmissionDetail(submissionId) {
       proposedValue: c['Proposed Value'],
       liveValue: liveValue,
       differsFromSnapshot: c['Differs From Snapshot?'] === 'Yes',
+      appliedToLive: alreadyApplied,
       conflict: conflict,
       decision: c['Field Decision'] || 'Pending',
       reviewNote: c['Field Review Note'] || ''
