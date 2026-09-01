@@ -1230,6 +1230,22 @@ function apiPublishApprovedChanges(confirm) {
 function apiListAdminUsers() {
   _requireOwner_();
   var rows = _readRowsAsObjects_(_ss_().getSheetByName('Admin Users'), 1);
+  // 'Date Added' / 'Date Deactivated' are written as plain 'yyyy-MM-dd'
+  // strings, but Sheets auto-detects that pattern and silently stores the
+  // cell as a real Date, so getValues() hands back live Date objects here.
+  // A Date instance nested in the returned row objects can corrupt the
+  // google.script.run response (server logs the call as Completed, but
+  // the browser-side success handler never receives usable data), so
+  // convert every Date back to a plain display string before it crosses
+  // that boundary.
+  rows = rows.map(function (r) {
+    var out = {};
+    Object.keys(r).forEach(function (k) {
+      var v = r[k];
+      out[k] = (v instanceof Date) ? Utilities.formatDate(v, TIMEZONE, 'yyyy-MM-dd') : v;
+    });
+    return out;
+  });
   return { status: 'ok', users: rows, serverTs: Date.now() };
 }
 
