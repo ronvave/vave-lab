@@ -130,11 +130,16 @@ After reviewing the finalized Test 10/11 case, Ron asked that every timestamp sh
 
 ## 5. Cutover procedure (once you approve — do not run until you say so)
 
+**Decisions confirmed by Ron on 2026-09-02 (not yet executed — proceeding is deferred until he is present to watch each step live):**
+- **Access model: Admin + Public.** The live deployment's "Who has access" will be set to "Anyone," turning on the anonymous public "Update info" correction form in production alongside the authenticated admin. Anonymous submissions still only ever land in the `Public Update Submissions` quarantine table for review/approve — they can never write directly to live Scholars data. Rationale: the database and dashboard won't be publicly launched for a while yet; in the meantime, Ron will speak with key collaborators, and any who agree will be added as `Authenticator`s so the team can test the system and process with select people, while the database/dashboard stay effectively private in practice because the small team will be instructed not to share the link.
+- **GitHub Pages links: update now.** Repoint the public GitHub Pages Admin panel and dashboard links to the new deployment URL as part of this same cutover, rather than holding that back as a separate step.
+- **Timing: deferred.** Ron chose to wait until he can watch each step live rather than running the cutover at 1 AM HST. Nothing below has been executed — no live Sheet, live Apps Script deployment, or GitHub Pages file has been touched.
+
 1. Freeze writes on the live Google-auth Admin (it is currently `WRITE_ENABLED=false`, i.e. already read-only for safety).
 2. Copy the 12 new tables' final schemas/state from the backup Sheet into the **live** Master Sheet (additive only — no existing tab touched), or point the reviewed staging script at the live spreadsheet ID once you're satisfied.
-3. Redeploy the staging `.gs`/`.html` bundle as a **new version** of the live Apps Script project (not a new project), preserving "Execute as: Me" and switching Access back to "Only myself" plus the Admin Users allow-list, matching your existing live deployment's access model — or keep "Anyone" only if you want the anonymous `doPost` public form live too.
+3. Redeploy the staging `.gs`/`.html` bundle as a **new version** of the live Apps Script project (not a new project), preserving "Execute as: Me" and setting Access to **"Anyone"** (per the confirmed Admin + Public decision above), so the anonymous `doPost` public correction form is reachable in production alongside the authenticated admin. Role/permission enforcement for the admin panel itself still happens inside the code via the `Admin Users` tab, independent of this deployment-level setting.
 4. Flip `WRITE_ENABLED=true` (or the staging equivalent) only after the above.
-5. Point the GitHub Admin panel / public dashboard links at the new deployment URL, replacing the legacy visual reference only after your explicit sign-off (per your standing instruction, never before).
+5. Point the GitHub Admin panel / public dashboard links at the new deployment URL as part of this same cutover (per the confirmed decision above). The legacy visual-reference page (`admin-tongan-master.html`) is not overwritten — only the links pointing to it are updated to the new live admin.
 6. Keep the pre-cutover backup Sheet (`1XTbiKazab-2WWJmkqjJ6AIWvymBL5-6Jj8EsHXYcXWs`) untouched and dated as the rollback snapshot.
 
 ## 6. Rollback procedure
