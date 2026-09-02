@@ -71,12 +71,20 @@ var ROLE_RANK = { 'Researcher': 1, 'Authenticator': 2, 'Owner': 3 };
 // web app", which correctly resolves ANY Google account's identity (that
 // mode trades away Sheet access, which is exactly why the broker's doGet
 // path below never touches SpreadsheetApp/DriveApp — it only ever returns
-// an HMAC-signed {email, token} pair). The main admin app opens that
-// broker URL in a popup, receives the signed token via postMessage, and
-// passes it with every apiCall(...) — _verifyIdentityToken_ independently
-// re-checks the signature server-side before trusting the embedded email.
-// Never trust a client-supplied email without this signature check.
+// an HMAC-signed {email, token} pair). The main admin app redirects THIS
+// SAME TAB to that broker URL (a top-level navigation, not a popup — a
+// popup can't survive accounts.google.com's own OAuth consent screen; see
+// _renderIdentityBrokerPage_ below for why), which redirects back with the
+// signed token in a URL fragment, and it's passed with every apiCall(...)
+// — _verifyIdentityToken_ independently re-checks the signature
+// server-side before trusting the embedded email. Never trust a
+// client-supplied email without this signature check.
 var BROKER_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwsqx-iAQp0RUoExT9cyredtg7PynPLyrdb_t114vrAKaCYCHvavB_a9i-SHBTkSl8jbw/exec';
+// The main deployment's own exec URL. The broker redirects back here
+// (hardcoded, never taken from a request parameter) so there is no
+// open-redirect surface — the broker can only ever send a visitor to
+// this one fixed destination.
+var MAIN_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbxuqTgtBXdKsn4PFPAYKa82xhvT7KkthCNGuiOjwmmTzfNdYc72T6y8uy5ZHnkDUd42zQ/exec';
 var IDENTITY_TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Fields visible on the public dashboard card — the ONLY fields the public
@@ -654,11 +662,13 @@ function apiRetryDocSync() {
  * only ever reached via the SECOND deployment, never touches Sheet/Drive)
  * or the admin app shell. The app shell is ALWAYS rendered now, even when
  * Session.getActiveUser() can't yet resolve the visitor — the client-side
- * popup+apiCall flow (see tongan-staging-admin-controller.html) is what
- * actually determines and enforces the real role, independently of this
- * initial render. No scholar data is ever included in this render either
- * way; the app shell is empty markup until the client calls apiDescribe
- * with a verified identity token. */
+ * redirect+apiCall flow (see tongan-staging-admin-controller.html; a
+ * top-level redirect to the broker and back, not a popup — popups can't
+ * survive Google's own OAuth consent screen's Cross-Origin-Opener-Policy)
+ * is what actually determines and enforces the real role, independently
+ * of this initial render. No scholar data is ever included in this
+ * render either way; the app shell is empty markup until the client
+ * calls apiDescribe with a verified identity token. */
 function doGet(e) {
   var execUrl = ScriptApp.getService().getUrl();
   if (execUrl === BROKER_DEPLOYMENT_URL) return _renderIdentityBrokerPage_();
@@ -680,24 +690,39 @@ function doGet(e) {
 /** _renderIdentityBrokerPage_() — reached ONLY via the second deployment
  * ("Execute as: User accessing the web app"), so Session.getActiveUser()
  * here reflects the real visitor for ANY Google account. Touches no
- * Sheet/Drive data at all — returns a tiny self-closing page that posts
- * an HMAC-signed {status, email, token} back to whichever window opened
- * it (checked by window reference on the receiving end, not by origin
- * string) and closes itself. */
+ * Sheet/Drive data at all.
+ *
+ * IMPORTANT DESIGN NOTE (post popup-hang bug): this used to open as a
+ * popup and postMessage back to window.opener. That broke in practice —
+ * once the visitor passes through Google's own accounts.google.com
+ * OAuth/consent pages, Google applies Cross-Origin-Opener-Policy, which
+ * severs window.opener from the popup. The popup then can neither
+ * postMessage back nor close itself, and the user is stuck on "Verifying
+ * your Google identity... this window will close automatically."
+ * forever. There is no COOP workaround for a popup here.
+ *
+ * Fix: no popup at all. This is now a single TOP-LEVEL redirect round
+ * trip. The main app sends the visitor's own tab here; this page signs
+ * the identity and immediately redirects the SAME tab back to
+ * MAIN_DEPLOYMENT_URL with the token in the URL fragment (after "#").
+ * A URL fragment is never sent to any server in the HTTP request line —
+ * only client-side JS on the receiving page can read it — so the token
+ * never touches Apps Script server logs on the way back. The main page
+ * reads location.hash on load, stores the token, then strips the hash
+ * from the visible URL via history.replaceState. */
 function _renderIdentityBrokerPage_() {
   var email = _rawSessionEmail_();
   var payload = email
     ? { status: 'ok', email: email, token: _signIdentity_(email) }
     : { status: 'error', error: 'no-session' };
+  var dest = MAIN_DEPLOYMENT_URL + '#identity=' + encodeURIComponent(JSON.stringify(payload));
   var html = '<!doctype html><html><head><meta charset="utf-8"/><title>Verifying\u2026</title></head><body>' +
-    '<p style="font-family:system-ui,sans-serif;color:#555;">Verifying your Google identity\u2026 this window will close automatically.</p>' +
+    '<p style="font-family:system-ui,sans-serif;color:#555;">Verifying your Google identity\u2026 redirecting you back.</p>' +
     '<script>\n' +
-    'try {\n' +
-    '  if (window.opener) { window.opener.postMessage(' + JSON.stringify(JSON.stringify(payload)) + ', "*"); }\n' +
-    '} finally {\n' +
-    '  window.setTimeout(function () { window.close(); }, 150);\n' +
-    '}\n' +
-    '</script></body></html>';
+    'window.location.replace(' + JSON.stringify(dest) + ');\n' +
+    '</script>' +
+    '<noscript><a href=' + JSON.stringify(dest) + '>Continue</a></noscript>' +
+    '</body></html>';
   return HtmlService.createHtmlOutput(html).setTitle('Verifying\u2026');
 }
 

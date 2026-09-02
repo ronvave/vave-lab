@@ -11,10 +11,12 @@
     activeEmail, activeName, activeRole, spreadsheetId, appVersion, execUrl, brokerUrl
   activeEmail/activeName/activeRole are only a same-domain FAST PATH — they
   may be blank on first render for any account (including cross-domain
-  Gmail accounts). The identity-gate popup + apiCall flow in
+  Gmail accounts). The identity-gate redirect + apiCall flow in
   tongan-staging-admin-controller.html is what actually establishes and
   enforces the real identity/role; never treat a non-blank fast-path value
-  here as authorization by itself.
+  here as authorization by itself. The gate redirects this same tab to
+  the broker deployment and back (no popup — see the controller's notes
+  on why a popup can't survive Google's own OAuth consent screen).
 -->
 <html lang="en">
 <head>
@@ -162,7 +164,7 @@
   <div id="identity-gate" data-broker-url="<?!= brokerUrl ?>" style="position:fixed;inset:0;background:rgba(6,47,53,0.97);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
     <div style="max-width:440px;text-align:center;padding:24px;">
       <h2 style="margin-top:0;">Verify your Google identity</h2>
-      <p style="opacity:0.85;font-size:0.92rem;">This staging admin needs to confirm exactly which Google account you're signed in as before showing anything — required because it must work for any Admin User's account, not only accounts on this project's own domain. A small window will open to Google and close on its own.</p>
+      <p style="opacity:0.85;font-size:0.92rem;">This staging admin needs to confirm exactly which Google account you're signed in as before showing anything — required because it must work for any Admin User's account, not only accounts on this project's own domain. You'll be sent to Google for a moment and brought straight back here.</p>
       <button id="verify-identity-btn" style="background:#b23a48;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:0.95rem;cursor:pointer;">Verify with Google</button>
       <p id="identity-gate-status" style="margin-top:14px;font-size:0.85rem;min-height:1.2em;opacity:0.85;"></p>
     </div>

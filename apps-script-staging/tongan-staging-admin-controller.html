@@ -83,13 +83,25 @@
   // ── identity broker (see BROKER_DEPLOYMENT_URL / apiCall in the .gs
   // file, and setIdentityToken in tongan-staging-admin-bridge.html) ─────
   // Session.getActiveUser() under "Execute as: Me" only resolves same-
-  // domain accounts, so real identity/role resolution is deferred to this
-  // popup+postMessage exchange with the second (broker) deployment, which
-  // runs "Execute as: User accessing the web app" and can see ANY Google
-  // account. That popup never touches the Sheet; it only ever returns an
+  // domain accounts, so real identity/role resolution is deferred to a
+  // round trip through the second (broker) deployment, which runs
+  // "Execute as: User accessing the web app" and can see ANY Google
+  // account. The broker never touches the Sheet; it only ever returns an
   // HMAC-signed {email, token} pair, verified again server-side by every
   // apiCall(...) before any data is served.
-  var _identityPopup = null;
+  //
+  // NOTE (post popup-hang bug): this used to open the broker in a popup
+  // and listen for postMessage. That hung forever in practice — once the
+  // visitor passes through accounts.google.com's own OAuth/consent pages,
+  // Google's Cross-Origin-Opener-Policy severs window.opener from the
+  // popup, so it can neither message back nor close itself. There is no
+  // reliable COOP workaround for a popup here, so this is now a plain
+  // top-level redirect: clicking the button navigates THIS tab to the
+  // broker; the broker (see _renderIdentityBrokerPage_ in the .gs file)
+  // redirects this same tab back to the main app's own URL with the
+  // signed identity in the URL fragment ("#identity=..."), which never
+  // gets sent to any server. On load we check location.hash for that
+  // fragment before showing the gate at all.
 
   function wireIdentityGate() {
     var gate = $('identity-gate');
@@ -97,37 +109,43 @@
     var gateStatus = $('identity-gate-status');
     $('verify-identity-btn').addEventListener('click', function () {
       if (!brokerUrl) { gateStatus.textContent = 'Configuration error: no broker URL set.'; return; }
-      gateStatus.textContent = 'Opening Google verification window…';
-      // window.open must be triggered directly from this click handler
-      // (a user gesture) — browsers silently block popups opened async
-      // or on page load.
-      _identityPopup = window.open(brokerUrl, 'tonganIdentityBroker', 'width=480,height=640');
-      if (!_identityPopup) {
-        gateStatus.textContent = 'Your browser blocked the verification popup — please allow popups for this site and try again.';
-      }
+      gateStatus.textContent = 'Redirecting to Google verification…';
+      window.top.location.href = brokerUrl;
     });
-    window.addEventListener('message', function (event) {
-      // Validate by window reference, not origin string — more robust
-      // regardless of exactly which script.google.com/googleusercontent.com
-      // origin Apps Script happens to serve the popup from.
-      if (!_identityPopup || event.source !== _identityPopup) return;
-      var payload;
-      try { payload = JSON.parse(event.data); } catch (e) { return; }
-      if (payload.status === 'ok' && payload.token) {
-        bridge.setIdentityToken(payload.token);
-        gate.style.display = 'none';
-        afterVerified();
-      } else {
-        gateStatus.textContent = "Couldn't verify — your browser isn't signed into Google (or the window was closed). Please sign in and try again.";
-      }
-    });
+  }
+
+  // Reads a pending "#identity=..." fragment left by the broker redirect
+  // (see _renderIdentityBrokerPage_), consumes it, and strips it from the
+  // visible URL so it's never left sitting in the address bar/history.
+  // Returns true if verification succeeded and afterVerified() was
+  // already triggered; false if there was nothing to consume (normal
+  // first load) or it was invalid/an error (gate stays up either way).
+  function consumeIdentityFragment() {
+    var hash = window.location.hash || '';
+    var m = /^#identity=(.+)$/.exec(hash);
+    if (!m) return false;
+    history.replaceState(null, '', window.location.pathname + window.location.search);
+    var payload;
+    try { payload = JSON.parse(decodeURIComponent(m[1])); } catch (e) { return false; }
+    if (payload && payload.status === 'ok' && payload.token) {
+      bridge.setIdentityToken(payload.token);
+      var gate = $('identity-gate');
+      if (gate) gate.style.display = 'none';
+      afterVerified();
+      return true;
+    }
+    var gateStatus = $('identity-gate-status');
+    if (gateStatus) gateStatus.textContent = "Couldn't verify — your browser isn't signed into Google. Please sign in and try again.";
+    return false;
   }
 
   function boot() {
     initAppTabs();
     wireSignOut();
     wireIdentityGate();
-    setStatus('Waiting for identity verification…', 'busy');
+    if (!consumeIdentityFragment()) {
+      setStatus('Waiting for identity verification…', 'busy');
+    }
   }
 
   function afterVerified() {

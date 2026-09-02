@@ -13,7 +13,8 @@
  * [fnName](...) directly. Session.getActiveUser() under "Execute as: Me"
  * cannot resolve cross-domain Google accounts (e.g. personal Gmail) — see
  * BROKER_DEPLOYMENT_URL in the .gs file. The identity token comes from the
- * popup+postMessage flow in tongan-staging-admin-controller.html and is
+ * top-level redirect round trip in tongan-staging-admin-controller.html
+ * (no popup — see that file's notes) and is
  * handed to this bridge with setIdentityToken(); every api* function's own
  * body/authorization logic is unchanged — apiCall just verifies the token
  * server-side first.
