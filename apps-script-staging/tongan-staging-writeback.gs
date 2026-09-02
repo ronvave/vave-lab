@@ -85,6 +85,25 @@ var BROKER_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwsqx-iAQp0
 // open-redirect surface — the broker can only ever send a visitor to
 // this one fixed destination.
 var MAIN_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbxuqTgtBXdKsn4PFPAYKa82xhvT7KkthCNGuiOjwmmTzfNdYc72T6y8uy5ZHnkDUd42zQ/exec';
+// _deploymentIdFromUrl_ / the two *_DEPLOYMENT_ID constants below exist
+// because ScriptApp.getService().getUrl() does NOT reliably return the
+// same literal string a visitor typed or was redirected to. For a script
+// owned by a Google Workspace account (ronvave@hawaii.edu), Apps Script
+// can canonicalize the in-request URL to the domain-scoped form
+// (https://script.google.com/a/macros/hawaii.edu/s/<id>/exec) even when
+// the visitor is on the plain public form (https://script.google.com/
+// macros/s/<id>/exec) — confirmed live: comparing execUrl to the exact
+// literal BROKER_DEPLOYMENT_URL string above never matched, so doGet()
+// always fell through to the app-shell branch even when the visitor was
+// actually on the broker's own URL, producing an infinite "Verify with
+// Google" loop that never reached _renderIdentityBrokerPage_. Comparing
+// only the stable <id> segment side-steps the prefix entirely.
+function _deploymentIdFromUrl_(url) {
+  var m = /\/s\/([^\/]+)\/exec/.exec(String(url || ''));
+  return m ? m[1] : '';
+}
+var BROKER_DEPLOYMENT_ID = _deploymentIdFromUrl_(BROKER_DEPLOYMENT_URL);
+var MAIN_DEPLOYMENT_ID = _deploymentIdFromUrl_(MAIN_DEPLOYMENT_URL);
 var IDENTITY_TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Fields visible on the public dashboard card — the ONLY fields the public
@@ -671,7 +690,10 @@ function apiRetryDocSync() {
  * calls apiDescribe with a verified identity token. */
 function doGet(e) {
   var execUrl = ScriptApp.getService().getUrl();
-  if (execUrl === BROKER_DEPLOYMENT_URL) return _renderIdentityBrokerPage_();
+  // Compare by deployment ID, not exact URL string — see the note above
+  // BROKER_DEPLOYMENT_ID for why an exact-string compare here silently
+  // never matches on a Workspace-owned script.
+  if (_deploymentIdFromUrl_(execUrl) === BROKER_DEPLOYMENT_ID) return _renderIdentityBrokerPage_();
 
   var rec = _callerRecord_(); // fast path only — works when Session.getActiveUser() already resolves (e.g. the Owner's own account)
   var tmpl = HtmlService.createTemplateFromFile('tongan-staging-admin-app');
