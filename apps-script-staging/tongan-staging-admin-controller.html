@@ -627,6 +627,12 @@
             bridge.deactivateAdminUser(u['Admin User ID']).then(loadAdminUsers).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
           });
           actionsTd.appendChild(deactBtn);
+        } else {
+          var actBtn = document.createElement('button'); actBtn.className = 'secondary'; actBtn.textContent = 'Activate';
+          actBtn.addEventListener('click', function () {
+            bridge.activateAdminUser(u['Admin User ID']).then(loadAdminUsers).catch(function (err) { $('admin-users-hint').textContent = 'Error: ' + err.message; });
+          });
+          actionsTd.appendChild(actBtn);
         }
         var roleSel = document.createElement('select');
         ['Researcher','Authenticator','Owner'].forEach(function (r2) {

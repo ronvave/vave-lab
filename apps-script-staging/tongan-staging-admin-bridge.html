@@ -114,6 +114,7 @@
     listAdminUsers: function () { return call0('apiListAdminUsers'); },
     addAdminUser: function (name, email, role) { return call3('apiAddAdminUser', name, email, role); },
     deactivateAdminUser: function (adminUserId) { return call1('apiDeactivateAdminUser', adminUserId); },
+    activateAdminUser: function (adminUserId) { return call1('apiActivateAdminUser', adminUserId); },
     changeAdminUserRole: function (adminUserId, newRole) { return call2('apiChangeAdminUserRole', adminUserId, newRole); }
   };
 })(this);

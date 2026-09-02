@@ -1560,6 +1560,21 @@ function apiDeactivateAdminUser(adminUserId) {
   return { status: 'ok', serverTs: Date.now() };
 }
 
+function apiActivateAdminUser(adminUserId) {
+  var caller = _requireOwner_();
+  var sheet = _ss_().getSheetByName('Admin Users');
+  var row = _findRowObject_(sheet, 1, 'Admin User ID', adminUserId);
+  if (!row) throw new Error('apiActivateAdminUser: not found.');
+  var headers = _headerMap_(sheet, 1);
+  sheet.getRange(row._rowNumber, headers['Active?']).setValue('Yes');
+  // Clear the deactivation trail so a re-activated row doesn't keep showing
+  // a stale "deactivated by/on" date; the activity is still fully visible in
+  // this script's own Apps Script execution log if ever needed.
+  sheet.getRange(row._rowNumber, headers['Date Deactivated']).setValue('');
+  sheet.getRange(row._rowNumber, headers['Deactivated By']).setValue('');
+  return { status: 'ok', serverTs: Date.now() };
+}
+
 function apiChangeAdminUserRole(adminUserId, newRole) {
   _requireOwner_();
   if (ROLE_RANK[newRole] == null) throw new Error('apiChangeAdminUserRole: invalid role.');
@@ -1699,6 +1714,7 @@ var API_FUNCTIONS_ = {
   apiListAdminUsers: apiListAdminUsers,
   apiAddAdminUser: apiAddAdminUser,
   apiDeactivateAdminUser: apiDeactivateAdminUser,
+  apiActivateAdminUser: apiActivateAdminUser,
   apiChangeAdminUserRole: apiChangeAdminUserRole
 };
 
