@@ -201,6 +201,7 @@
 
   <main>
     <div id="status">Booting…</div>
+    <div class="muted" id="timezone-note" style="margin:2px 0 10px;font-size:0.85em;">All timestamps shown below are in your device's local time zone (stored internally as UTC).</div>
 
     <nav id="app-tabs">
       <button data-panel="panel-scholars" class="active">Scholars</button>
@@ -271,7 +272,7 @@
         </div>
         <div class="picker-scroll">
           <table class="grid" id="review-queue-table">
-            <thead><tr><th>Submission ID</th><th>Scholar</th><th>Submitted (UTC)</th><th>Submitter</th><th>Fields</th><th>Status</th><th>2nd Review?</th></tr></thead>
+            <thead><tr><th>Submission ID</th><th>Scholar</th><th>Submitted</th><th>Submitter</th><th>Fields</th><th>Status</th><th>2nd Review?</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -317,7 +318,7 @@
         </div>
         <div class="picker-scroll">
           <table class="grid" id="identity-queue-table">
-            <thead><tr><th>Case ID</th><th>Scholar</th><th>Status</th><th>Status Since (UTC)</th></tr></thead>
+            <thead><tr><th>Case ID</th><th>Scholar</th><th>Status</th><th>Status Since</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -347,7 +348,7 @@
           <h3 class="category-title">Status history</h3>
           <div class="picker-scroll" style="max-height:160px;">
             <table class="grid" id="identity-history-table">
-              <thead><tr><th>Previous</th><th>New</th><th>By</th><th>UTC</th><th>Rationale</th></tr></thead>
+              <thead><tr><th>Previous</th><th>New</th><th>By</th><th>When</th><th>Rationale</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -357,7 +358,7 @@
           <h3 class="category-title">Decisions (dual-authenticator)</h3>
           <div class="picker-scroll" style="max-height:160px;">
             <table class="grid" id="identity-decisions-table">
-              <thead><tr><th>Outcome</th><th>Auth 1</th><th>Auth 2</th><th>Conflict?</th><th>Finalized (UTC)</th></tr></thead>
+              <thead><tr><th>Outcome</th><th>Auth 1</th><th>Auth 2</th><th>Conflict?</th><th>Finalized</th></tr></thead>
               <tbody></tbody>
             </table>
           </div>
@@ -434,7 +435,7 @@
           <span id="log-hint" class="muted"></span>
         </div>
         <table class="changelog" id="log-table" style="margin-top:10px;width:100%;">
-          <thead><tr><th>Audit ID</th><th>Scholar</th><th>Field</th><th>Old</th><th>New</th><th>Type</th><th>By</th><th>UTC</th><th>Rollback</th></tr></thead>
+          <thead><tr><th>Audit ID</th><th>Scholar</th><th>Field</th><th>Old</th><th>New</th><th>Type</th><th>By</th><th>When</th><th>Rollback</th></tr></thead>
           <tbody></tbody>
         </table>
       </div>

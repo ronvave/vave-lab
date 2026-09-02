@@ -38,6 +38,20 @@
   // ── generic helpers ──────────────────────────────────────────────
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]; }); }
+  /** fmtLocal - every timestamp stored server-side is UTC (ISO 8601, e.g.
+   * "2026-09-01T23:25:58.146Z"). We never change what is stored; we only
+   * convert at display time, using each viewer's own browser/OS time zone
+   * (Intl/Date do this automatically - no hardcoded zone). Falls back to
+   * the raw UTC string if the value is missing or unparseable. */
+  function fmtLocal(utcStr) {
+    if (!utcStr) return '';
+    var d = new Date(utcStr);
+    if (isNaN(d.getTime())) return utcStr;
+    return d.toLocaleString(undefined, {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+  }
   function setStatus(msg, cls) {
     var el = $('status'); el.textContent = msg; el.className = cls || '';
   }
@@ -378,7 +392,7 @@
         var tr = document.createElement('tr'); tr.className = 'clickable';
         tr.innerHTML = '<td class="mono">' + esc(s.submissionId) + '</td>' +
           '<td>' + esc(s.scholarName) + ' <span class="mono">(' + esc(s.scholarId) + ')</span></td>' +
-          '<td>' + esc(s.submittedUtc) + '</td><td>' + esc(s.submitterName) + '</td>' +
+          '<td>' + esc(fmtLocal(s.submittedUtc)) + '</td><td>' + esc(s.submitterName) + '</td>' +
           '<td>' + esc(s.fieldsChangedCount) + '</td>' +
           '<td><span class="badge ' + statusBadgeClass(s.status) + '">' + esc(s.status) + '</span></td>' +
           '<td>' + (s.secondReviewRequested ? 'Yes' : '') + '</td>';
@@ -528,7 +542,7 @@
       STATE.identityQueue.forEach(function (c) {
         var tr = document.createElement('tr'); tr.className = 'clickable';
         tr.innerHTML = '<td class="mono">' + esc(c.caseId) + '</td><td>' + esc(c.scholarName) + ' <span class="mono">(' + esc(c.scholarId) + ')</span></td>' +
-          '<td><span class="badge ' + statusBadgeClass(c.status) + '">' + esc(c.status) + '</span></td><td>' + esc(c.statusSince) + '</td>';
+          '<td><span class="badge ' + statusBadgeClass(c.status) + '">' + esc(c.status) + '</span></td><td>' + esc(fmtLocal(c.statusSince)) + '</td>';
         tr.addEventListener('click', function () { openIdentityCase(c.caseId); });
         tbody.appendChild(tr);
       });
@@ -554,7 +568,7 @@
       r.history.forEach(function (h) {
         var tr = document.createElement('tr');
         tr.innerHTML = '<td>' + esc(h['Previous Status']) + '</td><td>' + esc(h['New Status']) + '</td>' +
-          '<td>' + esc(h['Changed By Email']) + '</td><td>' + esc(h['UTC Timestamp']) + '</td><td>' + esc(h['Rationale']) + '</td>';
+          '<td>' + esc(h['Changed By Email']) + '</td><td>' + esc(fmtLocal(h['UTC Timestamp'])) + '</td><td>' + esc(h['Rationale']) + '</td>';
         hTbody.appendChild(tr);
       });
       var dTbody = document.querySelector('#identity-decisions-table tbody'); dTbody.innerHTML = '';
@@ -563,7 +577,7 @@
         tr.innerHTML = '<td>' + esc(d['Decision Outcome']) + '</td><td>' + esc(d['Authenticator 1 Name/Email']) + '</td>' +
           '<td>' + esc(d['Authenticator 2 Name/Email']) + '</td>' +
           '<td>' + (d['Conflict Escalated To Owner?'] === 'Yes' ? '<span class="badge conflict">Yes</span>' : 'No') + '</td>' +
-          '<td>' + esc(d['Final Decision Date (UTC)']) + '</td>';
+          '<td>' + esc(fmtLocal(d['Final Decision Date (UTC)'])) + '</td>';
         dTbody.appendChild(tr);
       });
       $('identity-resolve-conflict-btn').style.display = STATE.role === 'Owner' ? 'inline-block' : 'none';
@@ -588,10 +602,10 @@
     $('publish-preview-btn').addEventListener('click', function () {
       bridge.previewPendingPublish().then(function (r) {
         var box = $('publish-preview-output'); box.style.display = 'block';
-        box.innerHTML = r.pendingChanges.length ? '<table class="grid"><thead><tr><th>Scholar</th><th>Field</th><th>New value</th><th>UTC</th></tr></thead><tbody>' +
-          r.pendingChanges.map(function (c) { return '<tr><td class="mono">' + esc(c.scholarId) + '</td><td>' + esc(c.field) + '</td><td>' + esc(c.newValue) + '</td><td>' + esc(c.utc) + '</td></tr>'; }).join('') +
+        box.innerHTML = r.pendingChanges.length ? '<table class="grid"><thead><tr><th>Scholar</th><th>Field</th><th>New value</th><th>When</th></tr></thead><tbody>' +
+          r.pendingChanges.map(function (c) { return '<tr><td class="mono">' + esc(c.scholarId) + '</td><td>' + esc(c.field) + '</td><td>' + esc(c.newValue) + '</td><td>' + esc(fmtLocal(c.utc)) + '</td></tr>'; }).join('') +
           '</tbody></table>' : '<div class="empty-state">No pending public-facing changes since last publish.</div>';
-        $('publish-hint').textContent = 'Last publish: ' + r.lastPublishTs;
+        $('publish-hint').textContent = 'Last publish: ' + fmtLocal(r.lastPublishTs);
       }).catch(function (err) { $('publish-hint').textContent = 'Error: ' + err.message; });
     });
     $('publish-btn').addEventListener('click', function () {
@@ -688,7 +702,7 @@
         }
         tr.innerHTML = '<td>' + esc(row['Audit ID']) + '</td><td>' + esc(row['Scholar ID']) + '</td><td>' + esc(row['Field Name']) + '</td>' +
           '<td>' + esc(row['Old Value']) + '</td><td>' + esc(row['New Value']) + '</td><td>' + esc(row['Change Type']) + '</td>' +
-          '<td>' + esc(row['Changed By Email']) + '</td><td>' + esc(row['UTC Timestamp']) + '</td>';
+          '<td>' + esc(row['Changed By Email']) + '</td><td>' + esc(fmtLocal(row['UTC Timestamp'])) + '</td>';
         tr.appendChild(rollbackTd);
         tbody.appendChild(tr);
       });
