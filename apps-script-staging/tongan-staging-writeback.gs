@@ -698,6 +698,29 @@ function doGet(e) {
   var execUrl = ScriptApp.getService().getUrl(); // display/debug only now — never used for branching, see IDENTITY_BROKER_PARAM note
   if (e && e.parameter && e.parameter[IDENTITY_BROKER_PARAM] === '1') return _renderIdentityBrokerPage_();
 
+  // Redeem a one-time identity code left by the broker (see
+  // _renderIdentityBrokerPage_ below for why this replaced the URL-
+  // fragment approach). CONFIRMED live via DevTools: the fragment landed
+  // correctly in the TOP-LEVEL address bar after the broker's redirect,
+  // but tongan-staging-admin-controller.html's own script never saw it —
+  // Apps Script runs our page's JS inside its own sandboxed, cross-origin
+  // (script.googleusercontent.com) iframe, and a cross-origin frame can
+  // never read window.top.location (browsers block that read outright;
+  // only a same-origin frame could see the fragment, and this one isn't).
+  // A query parameter has no such problem: unlike a fragment, it's part
+  // of the actual HTTP request, so THIS server-side doGet() call sees it
+  // directly — no client-side cross-frame read required at all.
+  var identityFromCode = null;
+  if (e && e.parameter && e.parameter.identitycode) {
+    var identityCache = CacheService.getScriptCache();
+    var identityCacheKey = 'identitycode:' + e.parameter.identitycode;
+    var identityRaw = identityCache.get(identityCacheKey);
+    if (identityRaw) {
+      identityCache.remove(identityCacheKey); // one-time use — a revisited/bookmarked URL must not redeem it again
+      try { identityFromCode = JSON.parse(identityRaw); } catch (identityParseErr) { identityFromCode = null; }
+    }
+  }
+
   // Defensive: if this exec URL is ever visited directly without the
   // broker query param (stale bookmark/browser history, etc.), this runs
   // under whichever deployment served it — which, for the broker
@@ -720,6 +743,7 @@ function doGet(e) {
   tmpl.appVersion = APP_VERSION;
   tmpl.execUrl = execUrl;
   tmpl.brokerUrl = BROKER_DEPLOYMENT_URL + '?' + IDENTITY_BROKER_PARAM + '=1';
+  tmpl.serverIdentityJson = identityFromCode ? JSON.stringify(identityFromCode) : 'null';
   return tmpl.evaluate()
     .setTitle('Tongan Scholar Database — Admin (STAGING)')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -741,19 +765,33 @@ function doGet(e) {
  *
  * Fix: no popup at all. This is now a single TOP-LEVEL redirect round
  * trip. The main app sends the visitor's own tab here; this page signs
- * the identity and immediately redirects the SAME tab back to
- * MAIN_DEPLOYMENT_URL with the token in the URL fragment (after "#").
- * A URL fragment is never sent to any server in the HTTP request line —
- * only client-side JS on the receiving page can read it — so the token
- * never touches Apps Script server logs on the way back. The main page
- * reads location.hash on load, stores the token, then strips the hash
- * from the visible URL via history.replaceState. */
+ * the identity, stores it server-side under a short-lived one-time code
+ * (CacheService, keyed by a random UUID, 2-minute TTL), and redirects the
+ * SAME tab back to MAIN_DEPLOYMENT_URL with only that code in a query
+ * parameter (?identitycode=...).
+ *
+ * SUPERSEDES an earlier version of this function that put the signed
+ * payload directly in a URL fragment ("#identity=...") instead. CONFIRMED
+ * live via DevTools: the fragment did land correctly in the top-level
+ * address bar, but the main app's own script could never read it, because
+ * Apps Script runs each page's JS inside its own sandboxed, cross-origin
+ * (script.googleusercontent.com) iframe — and a cross-origin frame can
+ * never read window.top.location; browsers block that outright regardless
+ * of any redirect timing/gesture fix. A query parameter has no such
+ * problem: it travels to the server as part of the real HTTP request, so
+ * doGet() on the main deployment can read it directly and embed the
+ * result into the page it renders — no client-side cross-frame read of
+ * any kind is required. The code is single-use (removed from the cache
+ * the moment doGet() redeems it), so a bookmarked or revisited URL
+ * containing a stale ?identitycode=... cannot be replayed. */
 function _renderIdentityBrokerPage_() {
   var email = _rawSessionEmail_();
   var payload = email
     ? { status: 'ok', email: email, token: _signIdentity_(email) }
     : { status: 'error', error: 'no-session' };
-  var dest = MAIN_DEPLOYMENT_URL + '#identity=' + encodeURIComponent(JSON.stringify(payload));
+  var identityCode = Utilities.getUuid();
+  CacheService.getScriptCache().put('identitycode:' + identityCode, JSON.stringify(payload), 120); // 2-minute TTL — this round trip should take a few seconds
+  var dest = MAIN_DEPLOYMENT_URL + '?identitycode=' + encodeURIComponent(identityCode);
   // CONFIRMED live via browser DevTools console: Apps Script serves this
   // page inside a sandboxed frame (sandbox="...allow-top-navigation-by-
   // user-activation...") whose content lives on a

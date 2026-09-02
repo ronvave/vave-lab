@@ -169,6 +169,14 @@
       <p id="identity-gate-status" style="margin-top:14px;font-size:0.85rem;min-height:1.2em;opacity:0.85;"></p>
     </div>
   </div>
+  <!-- Identity handed back by the broker, resolved entirely server-side
+       via a one-time ?identitycode=... (see doGet() in the .gs file). Not
+       a URL fragment: this page's own script runs in Apps Script's
+       sandboxed cross-origin iframe and cannot read the outer address
+       bar, so the fragment approach never worked. This variable carries
+       the same {status, email, token} shape as before; consumed once by
+       tongan-staging-admin-controller.html on boot. -->
+  <script>window.__TONGAN_SERVER_IDENTITY__ = <?!= serverIdentityJson ?>;</script>
   <div class="staging-banner">STAGING — isolated test system. Not the production Admin.</div>
   <header class="topbar">
     <h1>Tongan Scholar Database — Admin (Staging)</h1>
