@@ -698,7 +698,20 @@ function doGet(e) {
   var execUrl = ScriptApp.getService().getUrl(); // display/debug only now — never used for branching, see IDENTITY_BROKER_PARAM note
   if (e && e.parameter && e.parameter[IDENTITY_BROKER_PARAM] === '1') return _renderIdentityBrokerPage_();
 
-  var rec = _callerRecord_(); // fast path only — works when Session.getActiveUser() already resolves (e.g. the Owner's own account)
+  // Defensive: if this exec URL is ever visited directly without the
+  // broker query param (stale bookmark/browser history, etc.), this runs
+  // under whichever deployment served it — which, for the broker
+  // deployment's "Execute as: User accessing the web app" mode, means
+  // _adminUsersMap_() below tries to open the private Master Sheet AS
+  // THE VISITOR, who has no direct access, and throws an uncaught
+  // permission exception (confirmed live: "You do not have permission to
+  // access the requested document"). That's a safe failure (no data
+  // exposed either way) but an ugly native Apps Script error page.
+  // Swallow it here and fall back to the normal unauthenticated-shell
+  // render — the identity gate will still correctly require the visitor
+  // to go through Verify with Google before anything loads.
+  var rec;
+  try { rec = _callerRecord_(); } catch (permErr) { rec = null; } // fast path only — works when Session.getActiveUser() already resolves (e.g. the Owner's own account)
   var tmpl = HtmlService.createTemplateFromFile('tongan-staging-admin-app');
   tmpl.activeEmail = rec ? rec.email : '';
   tmpl.activeName  = rec ? rec.name  : '';
