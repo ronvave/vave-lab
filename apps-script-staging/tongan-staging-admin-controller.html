@@ -572,6 +572,7 @@
         hTbody.appendChild(tr);
       });
       var dTbody = document.querySelector('#identity-decisions-table tbody'); dTbody.innerHTML = '';
+      var unresolvedConflict = null;
       r.decisions.forEach(function (d) {
         var tr = document.createElement('tr');
         tr.innerHTML = '<td>' + esc(d['Decision Outcome']) + '</td><td>' + esc(d['Authenticator 1 Name/Email']) + '</td>' +
@@ -579,7 +580,18 @@
           '<td>' + (d['Conflict Escalated To Owner?'] === 'Yes' ? '<span class="badge conflict">Yes</span>' : 'No') + '</td>' +
           '<td>' + esc(fmtLocal(d['Final Decision Date (UTC)'])) + '</td>';
         dTbody.appendChild(tr);
+        if (d['Conflict Escalated To Owner?'] === 'Yes' && !d['Final Decision Date (UTC)']) unresolvedConflict = d;
       });
+      // Re-derive (not just remember from a local submit event) whether this case currently has an
+      // unresolved Owner-escalated conflict, so the resolution control shows correctly on any load —
+      // including a fresh page, a different tab, or after refresh — not only in the browser that
+      // happened to trigger the conflict.
+      if (unresolvedConflict && STATE.role === 'Owner') {
+        $('identity-conflict-row').style.display = 'flex';
+        $('identity-conflict-row').dataset.decisionId = unresolvedConflict['Decision ID'];
+      } else {
+        $('identity-conflict-row').style.display = 'none';
+      }
       $('identity-resolve-conflict-btn').style.display = STATE.role === 'Owner' ? 'inline-block' : 'none';
       $('identity-submit-decision-btn').disabled = !roleAtLeast(STATE.role, 'Authenticator');
     }).catch(function (err) { setStatus('Load case failed: ' + err.message, 'err'); });
