@@ -754,32 +754,43 @@ function _renderIdentityBrokerPage_() {
     ? { status: 'ok', email: email, token: _signIdentity_(email) }
     : { status: 'error', error: 'no-session' };
   var dest = MAIN_DEPLOYMENT_URL + '#identity=' + encodeURIComponent(JSON.stringify(payload));
-  // IMPORTANT: target window.top, not window. The "Verify with Google"
-  // button (tongan-staging-admin-controller.html) deliberately navigates
-  // window.top so the click always moves the whole visible tab even if
-  // it happens to be running inside any framing context. This redirect
-  // must do the exact same thing for the SAME reason on the way back —
-  // if this page is itself rendered inside any frame, a plain
-  // window.location.replace() here only moves that inner frame and
-  // leaves the visible top-level document completely unchanged, which
-  // looks EXACTLY like "the screen goes white briefly, then reverts to
-  // the Verify with Google button": the round trip technically happened,
-  // but never in the frame the user is actually looking at, so the
-  // fragment token never reaches the page consumeIdentityFragment() runs
-  // on. window.top always exists per spec (it equals window itself when
-  // there is no framing), so this is safe in every case.
-  var html = '<!doctype html><html><head><meta charset="utf-8"/><title>Verifying\u2026</title></head><body>' +
-    '<p style="font-family:system-ui,sans-serif;color:#555;">Verifying your Google identity\u2026 redirecting you back.</p>' +
+  // CONFIRMED live via browser DevTools console: Apps Script serves this
+  // page inside a sandboxed frame (sandbox="...allow-top-navigation-by-
+  // user-activation...") whose content lives on a
+  // script.googleusercontent.com content domain, distinct from the
+  // script.google.com top-level wrapper the address bar shows. That
+  // sandbox flag permits navigating window.top ONLY while handling a
+  // genuine user gesture (a real click) — never from a script that fires
+  // automatically on page load. An automatic redirect here throws exactly:
+  //   SecurityError: Failed to execute 'replace' on 'Location': The
+  //   current window does not have permission to navigate the target
+  //   frame...
+  // silently, with the page just sitting on "Verifying\u2026" forever and
+  // no visible error — which is exactly what was observed live. This is
+  // also exactly why the outbound "Verify with Google" button already
+  // works: it navigates window.top from inside a real click handler,
+  // which the sandbox permits. Fix: do the same thing on the way back —
+  // require one click here too, instead of trying to auto-redirect.
+  var html = '<!doctype html><html><head><meta charset="utf-8"/><title>Verified</title></head><body>' +
+    '<div style="font-family:system-ui,sans-serif;max-width:420px;margin:64px auto;text-align:center;">' +
+    '<p style="color:#333;">Your Google identity has been verified.</p>' +
+    '<button id="continueBtn" style="background:#0a6b5c;color:#fff;border:none;padding:12px 28px;border-radius:6px;font-size:1rem;cursor:pointer;">Continue to Tongan Admin</button>' +
+    '<p id="autoNote" style="color:#888;font-size:0.85rem;margin-top:14px;">Taking you back automatically\u2026</p>' +
+    '</div>' +
     '<script>\n' +
     '(function(){\n' +
     '  var dest = ' + JSON.stringify(dest) + ';\n' +
-    '  var target = window.top || window;\n' +
-    '  target.location.replace(dest);\n' +
+    '  function go(){ try { (window.top || window).location.href = dest; } catch (e) {} }\n' +
+    '  document.getElementById("continueBtn").addEventListener("click", go);\n' +
+    '  try { (window.top || window).location.replace(dest); } catch (e) {\n' +
+    '    var note = document.getElementById("autoNote");\n' +
+    '    if (note) note.textContent = "Click Continue above to finish.";\n' +
+    '  }\n' +
     '})();\n' +
     '</script>' +
     '<noscript><a href=' + JSON.stringify(dest) + '>Continue</a></noscript>' +
     '</body></html>';
-  return HtmlService.createHtmlOutput(html).setTitle('Verifying\u2026');
+  return HtmlService.createHtmlOutput(html).setTitle('Verified');
 }
 
 /**
