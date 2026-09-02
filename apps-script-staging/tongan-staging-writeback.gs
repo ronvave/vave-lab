@@ -85,25 +85,29 @@ var BROKER_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwsqx-iAQp0
 // open-redirect surface — the broker can only ever send a visitor to
 // this one fixed destination.
 var MAIN_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbxuqTgtBXdKsn4PFPAYKa82xhvT7KkthCNGuiOjwmmTzfNdYc72T6y8uy5ZHnkDUd42zQ/exec';
-// _deploymentIdFromUrl_ / the two *_DEPLOYMENT_ID constants below exist
-// because ScriptApp.getService().getUrl() does NOT reliably return the
-// same literal string a visitor typed or was redirected to. For a script
-// owned by a Google Workspace account (ronvave@hawaii.edu), Apps Script
-// can canonicalize the in-request URL to the domain-scoped form
-// (https://script.google.com/a/macros/hawaii.edu/s/<id>/exec) even when
-// the visitor is on the plain public form (https://script.google.com/
-// macros/s/<id>/exec) — confirmed live: comparing execUrl to the exact
-// literal BROKER_DEPLOYMENT_URL string above never matched, so doGet()
-// always fell through to the app-shell branch even when the visitor was
-// actually on the broker's own URL, producing an infinite "Verify with
-// Google" loop that never reached _renderIdentityBrokerPage_. Comparing
-// only the stable <id> segment side-steps the prefix entirely.
-function _deploymentIdFromUrl_(url) {
-  var m = /\/s\/([^\/]+)\/exec/.exec(String(url || ''));
-  return m ? m[1] : '';
-}
-var BROKER_DEPLOYMENT_ID = _deploymentIdFromUrl_(BROKER_DEPLOYMENT_URL);
-var MAIN_DEPLOYMENT_ID = _deploymentIdFromUrl_(MAIN_DEPLOYMENT_URL);
+// IDENTITY_BROKER_PARAM — how doGet() decides "is this the broker
+// request", REPLACING an earlier design that compared
+// ScriptApp.getService().getUrl() (or a deployment-ID substring of it)
+// against BROKER_DEPLOYMENT_URL. That entire approach turned out to be
+// unreliable: confirmed live, ScriptApp.getService().getUrl() does not
+// dependably reflect which of this script's multiple web-app deployments
+// actually served the current request — visiting the broker's own exec
+// URL directly still rendered the main app-shell/gate branch instead of
+// _renderIdentityBrokerPage_, producing an infinite "Verify with Google"
+// loop with no way out. This is a known Apps Script limitation with
+// multiple active deployments of one script project, not something
+// fixable by parsing getUrl() more cleverly.
+// Fix: stop asking Apps Script which deployment we're on. Decide instead
+// from a query parameter that ONLY our own broker link ever sets (see
+// tmpl.brokerUrl below, and the redirect destination is always our own
+// hardcoded MAIN_DEPLOYMENT_URL, never a request-supplied value — so
+// there's no open-redirect surface here either). Worst case if someone
+// manually appends this param to the MAIN deployment's URL: they just
+// get a tiny page that signs THEIR OWN session identity under "Execute
+// as: Me" (blank for cross-domain accounts, their own hawaii.edu email
+// otherwise) — never anyone else's identity, and it still never touches
+// Sheet/Drive. That's a no-op, not a privilege escalation.
+var IDENTITY_BROKER_PARAM = 'identitybroker';
 var IDENTITY_TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 // Fields visible on the public dashboard card — the ONLY fields the public
@@ -677,23 +681,22 @@ function apiRetryDocSync() {
 // HTTP ENTRY POINTS
 // ─────────────────────────────────────────────────────────────────────────
 
-/** doGet — serves either the identity broker (see BROKER_DEPLOYMENT_URL,
- * only ever reached via the SECOND deployment, never touches Sheet/Drive)
- * or the admin app shell. The app shell is ALWAYS rendered now, even when
- * Session.getActiveUser() can't yet resolve the visitor — the client-side
- * redirect+apiCall flow (see tongan-staging-admin-controller.html; a
- * top-level redirect to the broker and back, not a popup — popups can't
- * survive Google's own OAuth consent screen's Cross-Origin-Opener-Policy)
- * is what actually determines and enforces the real role, independently
- * of this initial render. No scholar data is ever included in this
- * render either way; the app shell is empty markup until the client
- * calls apiDescribe with a verified identity token. */
+/** doGet — serves either the identity broker (see IDENTITY_BROKER_PARAM
+ * above for why this is now decided by a query parameter rather than by
+ * inspecting which deployment URL was hit — the broker branch never
+ * touches Sheet/Drive) or the admin app shell. The app shell is ALWAYS
+ * rendered otherwise, even when Session.getActiveUser() can't yet
+ * resolve the visitor — the client-side redirect+apiCall flow (see
+ * tongan-staging-admin-controller.html; a top-level redirect to the
+ * broker and back, not a popup — popups can't survive Google's own
+ * OAuth consent screen's Cross-Origin-Opener-Policy) is what actually
+ * determines and enforces the real role, independently of this initial
+ * render. No scholar data is ever included in this render either way;
+ * the app shell is empty markup until the client calls apiDescribe with
+ * a verified identity token. */
 function doGet(e) {
-  var execUrl = ScriptApp.getService().getUrl();
-  // Compare by deployment ID, not exact URL string — see the note above
-  // BROKER_DEPLOYMENT_ID for why an exact-string compare here silently
-  // never matches on a Workspace-owned script.
-  if (_deploymentIdFromUrl_(execUrl) === BROKER_DEPLOYMENT_ID) return _renderIdentityBrokerPage_();
+  var execUrl = ScriptApp.getService().getUrl(); // display/debug only now — never used for branching, see IDENTITY_BROKER_PARAM note
+  if (e && e.parameter && e.parameter[IDENTITY_BROKER_PARAM] === '1') return _renderIdentityBrokerPage_();
 
   var rec = _callerRecord_(); // fast path only — works when Session.getActiveUser() already resolves (e.g. the Owner's own account)
   var tmpl = HtmlService.createTemplateFromFile('tongan-staging-admin-app');
@@ -703,7 +706,7 @@ function doGet(e) {
   tmpl.spreadsheetId = STAGING_SPREADSHEET_ID;
   tmpl.appVersion = APP_VERSION;
   tmpl.execUrl = execUrl;
-  tmpl.brokerUrl = BROKER_DEPLOYMENT_URL;
+  tmpl.brokerUrl = BROKER_DEPLOYMENT_URL + '?' + IDENTITY_BROKER_PARAM + '=1';
   return tmpl.evaluate()
     .setTitle('Tongan Scholar Database — Admin (STAGING)')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
