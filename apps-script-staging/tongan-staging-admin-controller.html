@@ -80,13 +80,64 @@
     });
   }
 
+  // ── identity broker (see BROKER_DEPLOYMENT_URL / apiCall in the .gs
+  // file, and setIdentityToken in tongan-staging-admin-bridge.html) ─────
+  // Session.getActiveUser() under "Execute as: Me" only resolves same-
+  // domain accounts, so real identity/role resolution is deferred to this
+  // popup+postMessage exchange with the second (broker) deployment, which
+  // runs "Execute as: User accessing the web app" and can see ANY Google
+  // account. That popup never touches the Sheet; it only ever returns an
+  // HMAC-signed {email, token} pair, verified again server-side by every
+  // apiCall(...) before any data is served.
+  var _identityPopup = null;
+
+  function wireIdentityGate() {
+    var gate = $('identity-gate');
+    var brokerUrl = gate ? gate.getAttribute('data-broker-url') : '';
+    var gateStatus = $('identity-gate-status');
+    $('verify-identity-btn').addEventListener('click', function () {
+      if (!brokerUrl) { gateStatus.textContent = 'Configuration error: no broker URL set.'; return; }
+      gateStatus.textContent = 'Opening Google verification window…';
+      // window.open must be triggered directly from this click handler
+      // (a user gesture) — browsers silently block popups opened async
+      // or on page load.
+      _identityPopup = window.open(brokerUrl, 'tonganIdentityBroker', 'width=480,height=640');
+      if (!_identityPopup) {
+        gateStatus.textContent = 'Your browser blocked the verification popup — please allow popups for this site and try again.';
+      }
+    });
+    window.addEventListener('message', function (event) {
+      // Validate by window reference, not origin string — more robust
+      // regardless of exactly which script.google.com/googleusercontent.com
+      // origin Apps Script happens to serve the popup from.
+      if (!_identityPopup || event.source !== _identityPopup) return;
+      var payload;
+      try { payload = JSON.parse(event.data); } catch (e) { return; }
+      if (payload.status === 'ok' && payload.token) {
+        bridge.setIdentityToken(payload.token);
+        gate.style.display = 'none';
+        afterVerified();
+      } else {
+        gateStatus.textContent = "Couldn't verify — your browser isn't signed into Google (or the window was closed). Please sign in and try again.";
+      }
+    });
+  }
+
   function boot() {
     initAppTabs();
     wireSignOut();
+    wireIdentityGate();
+    setStatus('Waiting for identity verification…', 'busy');
+  }
+
+  function afterVerified() {
     setStatus('Connecting…', 'busy');
     bridge.describe().then(function (r) {
       STATE.role = r.activeRole; STATE.email = r.activeEmail; STATE.mapping = r.mapping;
       setStatus('Connected as ' + r.activeEmail + ' (' + r.activeRole + ').', 'ok');
+      $('header-name-email').innerHTML = esc(r.activeName || '') + ' &lt;<code>' + esc(r.activeEmail || '') + '</code>&gt;';
+      $('header-role-badge').textContent = r.activeRole;
+      $('header-role-badge').className = 'role-badge ' + r.activeRole;
       applyRoleVisibility();
       wireScholarsTab();
       wireReviewTab();

@@ -8,7 +8,13 @@
   inside the new Google-authenticated, role-gated application.
 
   Template variables set by doGet():
-    activeEmail, activeName, activeRole, spreadsheetId, appVersion
+    activeEmail, activeName, activeRole, spreadsheetId, appVersion, execUrl, brokerUrl
+  activeEmail/activeName/activeRole are only a same-domain FAST PATH — they
+  may be blank on first render for any account (including cross-domain
+  Gmail accounts). The identity-gate popup + apiCall flow in
+  tongan-staging-admin-controller.html is what actually establishes and
+  enforces the real identity/role; never treat a non-blank fast-path value
+  here as authorization by itself.
 -->
 <html lang="en">
 <head>
@@ -153,12 +159,20 @@
   </style>
 </head>
 <body>
+  <div id="identity-gate" data-broker-url="<?!= brokerUrl ?>" style="position:fixed;inset:0;background:rgba(6,47,53,0.97);color:#fff;display:flex;align-items:center;justify-content:center;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+    <div style="max-width:440px;text-align:center;padding:24px;">
+      <h2 style="margin-top:0;">Verify your Google identity</h2>
+      <p style="opacity:0.85;font-size:0.92rem;">This staging admin needs to confirm exactly which Google account you're signed in as before showing anything — required because it must work for any Admin User's account, not only accounts on this project's own domain. A small window will open to Google and close on its own.</p>
+      <button id="verify-identity-btn" style="background:#b23a48;color:#fff;border:none;padding:10px 22px;border-radius:6px;font-size:0.95rem;cursor:pointer;">Verify with Google</button>
+      <p id="identity-gate-status" style="margin-top:14px;font-size:0.85rem;min-height:1.2em;opacity:0.85;"></p>
+    </div>
+  </div>
   <div class="staging-banner">STAGING — isolated test system. Not the production Admin.</div>
   <header class="topbar">
     <h1>Tongan Scholar Database — Admin (Staging)</h1>
     <div class="meta">
-      <span><?!= activeName ?> &lt;<code><?!= activeEmail ?></code>&gt;</span>
-      <span class="role-badge <?!= activeRole ?>"><?!= activeRole ?></span>
+      <span id="header-name-email"><?!= activeName || 'Verifying…' ?> <?!= activeEmail ? '&lt;<code>' + activeEmail + '</code>&gt;' : '' ?></span>
+      <span id="header-role-badge" class="role-badge <?!= activeRole ?>"><?!= activeRole || 'Pending' ?></span>
       <span>Build <?!= appVersion ?></span>
       <a href="#" id="sign-out-link" data-exec-url="<?!= execUrl ?>" style="color:#fff;text-decoration:underline;">Sign out</a>
     </div>

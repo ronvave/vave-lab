@@ -7,9 +7,21 @@
  * No shared secrets, HMAC, or passcodes — Google identity + the server-side
  * Admin Users role lookup is the only authorization boundary. This file
  * never touches scholar data itself; it only relays calls.
+ *
+ * IDENTITY BROKER NOTE: every call now routes through the single server
+ * dispatcher apiCall(fnName, identityToken, args) instead of calling
+ * [fnName](...) directly. Session.getActiveUser() under "Execute as: Me"
+ * cannot resolve cross-domain Google accounts (e.g. personal Gmail) — see
+ * BROKER_DEPLOYMENT_URL in the .gs file. The identity token comes from the
+ * popup+postMessage flow in tongan-staging-admin-controller.html and is
+ * handed to this bridge with setIdentityToken(); every api* function's own
+ * body/authorization logic is unchanged — apiCall just verifies the token
+ * server-side first.
  */
 (function (global) {
   'use strict';
+
+  var _identityToken = null;
 
   function _reject(reason) {
     return Promise.reject(new Error('tongan-staging: ' + reason));
@@ -35,23 +47,26 @@
     });
   }
 
-  function call0(fn) {
-    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](); });
-  }
-  function call1(fn, a) {
-    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a); });
-  }
-  function call2(fn, a, b) {
-    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b); });
-  }
-  function call3(fn, a, b, c) {
-    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b, c); });
-  }
-  function call4(fn, a, b, c, d) {
-    return _wrap(function (ok, err) { google.script.run.withSuccessHandler(ok).withFailureHandler(err)[fn](a, b, c, d); });
+  function _callN(fn, args) {
+    if (!_identityToken) return _reject('not-authorized: identity not verified yet — click "Verify with Google" first.');
+    return _wrap(function (ok, err) {
+      google.script.run.withSuccessHandler(ok).withFailureHandler(err).apiCall(fn, _identityToken, args);
+    });
   }
 
+  function call0(fn) { return _callN(fn, []); }
+  function call1(fn, a) { return _callN(fn, [a]); }
+  function call2(fn, a, b) { return _callN(fn, [a, b]); }
+  function call3(fn, a, b, c) { return _callN(fn, [a, b, c]); }
+  function call4(fn, a, b, c, d) { return _callN(fn, [a, b, c, d]); }
+
   global.tonganStagingBridge = {
+    // Set by the controller once the identity-broker popup returns a
+    // verified, HMAC-signed token. Every call above rejects until this has
+    // been called at least once.
+    setIdentityToken: function (token) { _identityToken = token || null; },
+    hasIdentityToken: function () { return !!_identityToken; },
+
     // Canonical scholar edit surface
     describe: function () { return call0('apiDescribe'); },
     ping: function () { return call0('apiPing'); },

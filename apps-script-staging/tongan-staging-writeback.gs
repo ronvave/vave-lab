@@ -58,6 +58,27 @@ var HISTORY_DOC_ID = '1p5icHjnRNgzQ5sg4pHH4rZXiqVl3fQMNaDvD2ZqzPd0';
 // (e.g. Authenticator can apply, but only Owner manages Admin Users).
 var ROLE_RANK = { 'Researcher': 1, 'Authenticator': 2, 'Owner': 3 };
 
+// ─── IDENTITY BROKER (see docs/TONGAN-IDENTITY-BROKER.md) ─────────────────
+// This staging deployment runs "Execute as: Me" so the script (never the
+// visitor) is the only thing that ever touches the Sheet/Drive — required
+// to keep the Master Sheet private and role-based filtering intact. But
+// under "Execute as: Me", Session.getActiveUser() can ONLY resolve a
+// visitor's identity when they share a Google Workspace domain with the
+// script owner (confirmed by direct test: it returns blank for a personal
+// Gmail account). Real Authenticators may not have @hawaii.edu accounts,
+// so a second, separate deployment of this SAME script —
+// BROKER_DEPLOYMENT_URL — is configured "Execute as: User accessing the
+// web app", which correctly resolves ANY Google account's identity (that
+// mode trades away Sheet access, which is exactly why the broker's doGet
+// path below never touches SpreadsheetApp/DriveApp — it only ever returns
+// an HMAC-signed {email, token} pair). The main admin app opens that
+// broker URL in a popup, receives the signed token via postMessage, and
+// passes it with every apiCall(...) — _verifyIdentityToken_ independently
+// re-checks the signature server-side before trusting the embedded email.
+// Never trust a client-supplied email without this signature check.
+var BROKER_DEPLOYMENT_URL = 'https://script.google.com/macros/s/AKfycbwsqx-iAQp0RUoExT9cyredtg7PynPLyrdb_t114vrAKaCYCHvavB_a9i-SHBTkSl8jbw/exec';
+var IDENTITY_TOKEN_MAX_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
+
 // Fields visible on the public dashboard card — the ONLY fields the public
 // submission form may prefill from or propose changes to. Keep in sync
 // with Panel F on the live dashboard. Everything else on Scholars/
@@ -184,9 +205,92 @@ var MAPPING = {
 // ROLE + AUTHORIZATION FRAMEWORK (component 1)
 // ─────────────────────────────────────────────────────────────────────────
 
-function _activeEmail_() {
+// Per-execution override set by apiCall() after independently verifying an
+// HMAC-signed identity token. Never set from any client-supplied value
+// without going through _verifyIdentityToken_ first.
+var __ACTIVE_EMAIL_OVERRIDE__ = null;
+
+function _rawSessionEmail_() {
   var session = Session.getActiveUser();
   return session ? (session.getEmail() || '').toLowerCase() : '';
+}
+
+function _activeEmail_() {
+  return __ACTIVE_EMAIL_OVERRIDE__ || _rawSessionEmail_();
+}
+
+/** _identitySecret_() — lazily creates and persists a random per-project
+ * HMAC secret in Script Properties (never in code, never sent to a
+ * client). Used only to sign/verify identity tokens issued by the
+ * broker deployment. */
+function _identitySecret_() {
+  var props = PropertiesService.getScriptProperties();
+  var s = props.getProperty('IDENTITY_HMAC_SECRET');
+  if (!s) {
+    s = Utilities.getUuid() + Utilities.getUuid();
+    props.setProperty('IDENTITY_HMAC_SECRET', s);
+  }
+  return s;
+}
+
+/** _signIdentity_(email) — called ONLY from the broker deployment's doGet
+ * path, where Session.getActiveUser() reliably reflects the real visitor
+ * (any Google account) because that deployment runs "Execute as: User
+ * accessing the web app" and never touches Sheet/Drive data. */
+function _signIdentity_(email) {
+  var payload = String(email).toLowerCase() + '|' + Date.now();
+  var payloadB64 = Utilities.base64EncodeWebSafe(Utilities.newBlob(payload).getBytes());
+  var sig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, _identitySecret_()));
+  return payloadB64 + '.' + sig;
+}
+
+/** _verifyIdentityToken_(token) — independently re-checks the HMAC
+ * signature and freshness of a token before trusting the embedded email.
+ * This is the ONLY path by which a client-influenced value can ever
+ * become the active identity for role checks — never trust the email
+ * string alone. Throws (never silently falls back) on any failure. */
+function _verifyIdentityToken_(token) {
+  if (!token || token.indexOf('.') === -1) {
+    throw new Error('not-authorized: missing identity token — please verify your Google identity and try again.');
+  }
+  var parts = token.split('.');
+  var payload;
+  try {
+    payload = Utilities.newBlob(Utilities.base64DecodeWebSafe(parts[0])).getDataAsString();
+  } catch (e) {
+    throw new Error('not-authorized: malformed identity token.');
+  }
+  var expectedSig = Utilities.base64EncodeWebSafe(Utilities.computeHmacSha256Signature(payload, _identitySecret_()));
+  if (expectedSig !== parts[1]) throw new Error('not-authorized: invalid identity token signature.');
+  var bits = payload.split('|');
+  var email = (bits[0] || '').toLowerCase();
+  var ts = Number(bits[1]);
+  if (!email || !ts) throw new Error('not-authorized: malformed identity token.');
+  if ((Date.now() - ts) > IDENTITY_TOKEN_MAX_AGE_MS) {
+    throw new Error('not-authorized: identity token expired — please verify your Google identity again.');
+  }
+  return email;
+}
+
+/**
+ * apiCall(fnName, identityToken, args) — the SINGLE entry point the
+ * client uses for every server call (see tongan-staging-admin-bridge.html).
+ * Verifies the signed identity token BEFORE dispatching, sets it as the
+ * active-email override for the duration of this execution only, then
+ * calls the requested api* function by explicit whitelist (never a raw
+ * this[fnName] lookup). Every api* function is unchanged — they still
+ * just call _requireRole_()/_callerRecord_(), which now resolve through
+ * the verified override instead of (or in addition to) Session.getActiveUser().
+ */
+function apiCall(fnName, identityToken, args) {
+  var fn = API_FUNCTIONS_[fnName];
+  if (!fn) throw new Error('not-authorized: unknown function "' + fnName + '".');
+  __ACTIVE_EMAIL_OVERRIDE__ = _verifyIdentityToken_(identityToken);
+  try {
+    return fn.apply(null, args || []);
+  } finally {
+    __ACTIVE_EMAIL_OVERRIDE__ = null;
+  }
 }
 
 /**
@@ -546,23 +650,55 @@ function apiRetryDocSync() {
 // HTTP ENTRY POINTS
 // ─────────────────────────────────────────────────────────────────────────
 
-/** doGet — serves the Google-auth admin app. Public visitors (no session,
- * or a session not in Admin Users) get a clear not-authorized page and
- * NEVER reach any scholar data. */
+/** doGet — serves either the identity broker (see BROKER_DEPLOYMENT_URL,
+ * only ever reached via the SECOND deployment, never touches Sheet/Drive)
+ * or the admin app shell. The app shell is ALWAYS rendered now, even when
+ * Session.getActiveUser() can't yet resolve the visitor — the client-side
+ * popup+apiCall flow (see tongan-staging-admin-controller.html) is what
+ * actually determines and enforces the real role, independently of this
+ * initial render. No scholar data is ever included in this render either
+ * way; the app shell is empty markup until the client calls apiDescribe
+ * with a verified identity token. */
 function doGet(e) {
   var execUrl = ScriptApp.getService().getUrl();
-  var rec = _callerRecord_();
-  if (!rec) return _renderNotAuthorized_(_activeEmail_(), execUrl);
+  if (execUrl === BROKER_DEPLOYMENT_URL) return _renderIdentityBrokerPage_();
+
+  var rec = _callerRecord_(); // fast path only — works when Session.getActiveUser() already resolves (e.g. the Owner's own account)
   var tmpl = HtmlService.createTemplateFromFile('tongan-staging-admin-app');
-  tmpl.activeEmail = rec.email;
-  tmpl.activeName  = rec.name;
-  tmpl.activeRole  = rec.role;
+  tmpl.activeEmail = rec ? rec.email : '';
+  tmpl.activeName  = rec ? rec.name  : '';
+  tmpl.activeRole  = rec ? rec.role  : '';
   tmpl.spreadsheetId = STAGING_SPREADSHEET_ID;
   tmpl.appVersion = APP_VERSION;
   tmpl.execUrl = execUrl;
+  tmpl.brokerUrl = BROKER_DEPLOYMENT_URL;
   return tmpl.evaluate()
     .setTitle('Tongan Scholar Database — Admin (STAGING)')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+/** _renderIdentityBrokerPage_() — reached ONLY via the second deployment
+ * ("Execute as: User accessing the web app"), so Session.getActiveUser()
+ * here reflects the real visitor for ANY Google account. Touches no
+ * Sheet/Drive data at all — returns a tiny self-closing page that posts
+ * an HMAC-signed {status, email, token} back to whichever window opened
+ * it (checked by window reference on the receiving end, not by origin
+ * string) and closes itself. */
+function _renderIdentityBrokerPage_() {
+  var email = _rawSessionEmail_();
+  var payload = email
+    ? { status: 'ok', email: email, token: _signIdentity_(email) }
+    : { status: 'error', error: 'no-session' };
+  var html = '<!doctype html><html><head><meta charset="utf-8"/><title>Verifying\u2026</title></head><body>' +
+    '<p style="font-family:system-ui,sans-serif;color:#555;">Verifying your Google identity\u2026 this window will close automatically.</p>' +
+    '<script>\n' +
+    'try {\n' +
+    '  if (window.opener) { window.opener.postMessage(' + JSON.stringify(JSON.stringify(payload)) + ', "*"); }\n' +
+    '} finally {\n' +
+    '  window.setTimeout(function () { window.close(); }, 150);\n' +
+    '}\n' +
+    '</script></body></html>';
+  return HtmlService.createHtmlOutput(html).setTitle('Verifying\u2026');
 }
 
 /**
@@ -1400,6 +1536,41 @@ function apiReadChangeAuditLog(limit) {
   var rows = _readRowsAsObjects_(_ss_().getSheetByName('Change Audit Log'), 1);
   return { status: 'ok', rows: rows.slice(-take).reverse(), serverTs: Date.now() };
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// API FUNCTION WHITELIST (used only by apiCall’s explicit dispatch — never
+// a raw this[fnName]/global lookup, so a malformed fnName can only ever
+// resolve to "not found", never to an arbitrary function in scope).
+// ─────────────────────────────────────────────────────────────────────────
+var API_FUNCTIONS_ = {
+  apiDescribe: apiDescribe,
+  apiPing: apiPing,
+  apiListScholars: apiListScholars,
+  apiReadRow: apiReadRow,
+  apiUpdateRow: apiUpdateRow,
+  apiReadChangeAuditLog: apiReadChangeAuditLog,
+  apiRetryDocSync: apiRetryDocSync,
+  apiListSubmissionQueue: apiListSubmissionQueue,
+  apiGetSubmissionDetail: apiGetSubmissionDetail,
+  apiSaveFieldDecisions: apiSaveFieldDecisions,
+  apiApplySubmissionDecisions: apiApplySubmissionDecisions,
+  apiRequestSecondReview: apiRequestSecondReview,
+  apiSubmitSecondReview: apiSubmitSecondReview,
+  apiOpenIdentityCase: apiOpenIdentityCase,
+  apiAddIdentityEvidence: apiAddIdentityEvidence,
+  apiChangeIdentityCaseStatus: apiChangeIdentityCaseStatus,
+  apiSubmitIdentityDecision: apiSubmitIdentityDecision,
+  apiResolveIdentityConflict: apiResolveIdentityConflict,
+  apiListIdentityQueue: apiListIdentityQueue,
+  apiGetIdentityCase: apiGetIdentityCase,
+  apiRollbackChange: apiRollbackChange,
+  apiPreviewPendingPublish: apiPreviewPendingPublish,
+  apiPublishApprovedChanges: apiPublishApprovedChanges,
+  apiListAdminUsers: apiListAdminUsers,
+  apiAddAdminUser: apiAddAdminUser,
+  apiDeactivateAdminUser: apiDeactivateAdminUser,
+  apiChangeAdminUserRole: apiChangeAdminUserRole
+};
 
 // ─────────────────────────────────────────────────────────────────────────
 // HTML TEMPLATE INCLUDE
