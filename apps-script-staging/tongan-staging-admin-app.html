@@ -31,6 +31,8 @@
       --gold: #c8a84b;
       --cream: #f9f6ee;
       --text: #1f2937;
+      --category-border: #3b616a;
+      --category-title: #6a3921;
     }
     * { box-sizing: border-box; }
     body {
@@ -113,8 +115,17 @@
     .scholar-banner .name { font-size: 1.15rem; font-weight: 700; color: var(--teal-dark); }
     .scholar-banner .sid  { font-family: "SF Mono", Menlo, Consolas, monospace; color: #6b7280; font-size: 0.9rem; }
 
-    fieldset.field-group { border: 1px solid #e6e1d3; border-radius: 6px; padding: 10px 14px 14px; margin: 0 0 14px; }
-    fieldset.field-group legend { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--teal); padding: 0 6px; }
+    fieldset.field-group { border: 2px solid var(--category-border); border-radius: 10px; padding: 14px 16px 18px; margin: 0 0 22px; }
+    fieldset.field-group legend { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--category-title); padding: 0 8px; margin-left: 6px; }
+
+    /* Non-fieldset equivalent used where categories are marked up as a
+       div+heading rather than a native fieldset+legend (e.g. Identity
+       Authentication case detail) — same border/title look for visual
+       consistency across tabs, for every role (Owner/Authenticator/
+       Researcher all get identical read-only CSS; only field-level
+       disabled state differs by role). */
+    .category-box { border: 2px solid var(--category-border); border-radius: 10px; padding: 4px 16px 18px; margin: 0 0 22px; }
+    .category-box .category-title { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--category-title); margin: 0 0 12px; padding-top: 10px; }
     .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
     .field-cell { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
     .field-cell.wide { grid-column: 1 / -1; }
@@ -316,34 +327,40 @@
         <h2>Case detail — <span id="identity-detail-id"></span></h2>
         <div id="identity-detail-meta" class="muted" style="margin-bottom:10px;"></div>
 
-        <h3 style="font-size:0.9rem;color:var(--teal-dark);">Evidence</h3>
-        <div class="picker-scroll" style="max-height:220px;">
-          <table class="grid" id="identity-evidence-table">
-            <thead><tr><th>Type</th><th>Description</th><th>Source</th><th>Submitted by</th><th>Flag</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="row" style="margin-top:8px;">
-          <input type="text" id="evidence-type" placeholder="Evidence type (e.g. genealogical record)" size="24">
-          <input type="text" id="evidence-desc" placeholder="Description" size="30">
-          <input type="text" id="evidence-source" placeholder="Source URL (optional)" size="22">
-          <button class="secondary" id="add-evidence-btn">Add evidence</button>
-        </div>
-
-        <h3 style="font-size:0.9rem;color:var(--teal-dark);margin-top:16px;">Status history</h3>
-        <div class="picker-scroll" style="max-height:160px;">
-          <table class="grid" id="identity-history-table">
-            <thead><tr><th>Previous</th><th>New</th><th>By</th><th>UTC</th><th>Rationale</th></tr></thead>
-            <tbody></tbody>
-          </table>
+        <div class="category-box">
+          <h3 class="category-title">Evidence</h3>
+          <div class="picker-scroll" style="max-height:220px;">
+            <table class="grid" id="identity-evidence-table">
+              <thead><tr><th>Type</th><th>Description</th><th>Source</th><th>Submitted by</th><th>Flag</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top:8px;">
+            <input type="text" id="evidence-type" placeholder="Evidence type (e.g. genealogical record)" size="24">
+            <input type="text" id="evidence-desc" placeholder="Description" size="30">
+            <input type="text" id="evidence-source" placeholder="Source URL (optional)" size="22">
+            <button class="secondary" id="add-evidence-btn">Add evidence</button>
+          </div>
         </div>
 
-        <h3 style="font-size:0.9rem;color:var(--teal-dark);margin-top:16px;">Decisions (dual-authenticator)</h3>
-        <div class="picker-scroll" style="max-height:160px;">
-          <table class="grid" id="identity-decisions-table">
-            <thead><tr><th>Outcome</th><th>Auth 1</th><th>Auth 2</th><th>Conflict?</th><th>Finalized (UTC)</th></tr></thead>
-            <tbody></tbody>
-          </table>
+        <div class="category-box">
+          <h3 class="category-title">Status history</h3>
+          <div class="picker-scroll" style="max-height:160px;">
+            <table class="grid" id="identity-history-table">
+              <thead><tr><th>Previous</th><th>New</th><th>By</th><th>UTC</th><th>Rationale</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="category-box">
+          <h3 class="category-title">Decisions (dual-authenticator)</h3>
+          <div class="picker-scroll" style="max-height:160px;">
+            <table class="grid" id="identity-decisions-table">
+              <thead><tr><th>Outcome</th><th>Auth 1</th><th>Auth 2</th><th>Conflict?</th><th>Finalized (UTC)</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
 
         <div class="row" style="margin-top:14px;flex-wrap:wrap;">
