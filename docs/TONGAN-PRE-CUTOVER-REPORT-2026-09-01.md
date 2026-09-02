@@ -94,6 +94,14 @@ The remaining 4 matrix items are functionally designed to need two distinct huma
 
 ---
 
+### UI/design change (not a bug — visual polish requested during Test 2)
+
+While confirming Test 2's view-only rendering, Ron asked to match the category-box styling he'd already hand-tuned on the legacy reference (`admin-tongan-master.html`). Applied to `tongan-staging-admin-app.html`, identical for all three roles (Owner/Authenticator/Researcher — only per-field disabled state differs by role, never the look):
+
+- `fieldset.field-group` (the Scholars edit-form category boxes — IDENTITY, PATERNAL GEOGRAPHY, MATERNAL GEOGRAPHY, CULTURAL & LINEAL AFFILIATION, CURRENT POSITION, PUBLIC PROFILE URLS, PROVENANCE & NOTES): border changed from a faint 1px tan line (`#e6e1d3`) to a 2px dark teal border (`#3b616a`), radius 6px → 10px, and the legend text changed from bright teal (`var(--teal)`) to a bold uppercase brown (`#6a3921`) — colors sampled directly from Ron's own reference screenshot.
+- Added a new `.category-box` / `.category-title` pair with the same look for markup that isn't a native `<fieldset>`, and applied it to the Identity Authentication case detail's three subsections (Evidence, Status history, Decisions) — the only other tab with multiple information categories in one view.
+- Pure CSS/markup change; no authorization, write-path, or role-check logic touched. Committed `bdf80526`, redeployed (both deployments), verified live via screenshot.
+
 ## 4. Risks / open items
 
 - **Untested `Session.getActiveUser()` behavior for a second real account** under "Execute as: Me" + "Access: Anyone" — flagged in `TONGAN-STAGING-DEPLOY.md` and central to items 1–2. Item 1 (anonymous) already passed; item 2 (a second real, non-Owner account) still needs your test.
