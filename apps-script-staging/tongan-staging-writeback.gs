@@ -754,10 +754,28 @@ function _renderIdentityBrokerPage_() {
     ? { status: 'ok', email: email, token: _signIdentity_(email) }
     : { status: 'error', error: 'no-session' };
   var dest = MAIN_DEPLOYMENT_URL + '#identity=' + encodeURIComponent(JSON.stringify(payload));
+  // IMPORTANT: target window.top, not window. The "Verify with Google"
+  // button (tongan-staging-admin-controller.html) deliberately navigates
+  // window.top so the click always moves the whole visible tab even if
+  // it happens to be running inside any framing context. This redirect
+  // must do the exact same thing for the SAME reason on the way back —
+  // if this page is itself rendered inside any frame, a plain
+  // window.location.replace() here only moves that inner frame and
+  // leaves the visible top-level document completely unchanged, which
+  // looks EXACTLY like "the screen goes white briefly, then reverts to
+  // the Verify with Google button": the round trip technically happened,
+  // but never in the frame the user is actually looking at, so the
+  // fragment token never reaches the page consumeIdentityFragment() runs
+  // on. window.top always exists per spec (it equals window itself when
+  // there is no framing), so this is safe in every case.
   var html = '<!doctype html><html><head><meta charset="utf-8"/><title>Verifying\u2026</title></head><body>' +
     '<p style="font-family:system-ui,sans-serif;color:#555;">Verifying your Google identity\u2026 redirecting you back.</p>' +
     '<script>\n' +
-    'window.location.replace(' + JSON.stringify(dest) + ');\n' +
+    '(function(){\n' +
+    '  var dest = ' + JSON.stringify(dest) + ';\n' +
+    '  var target = window.top || window;\n' +
+    '  target.location.replace(dest);\n' +
+    '})();\n' +
     '</script>' +
     '<noscript><a href=' + JSON.stringify(dest) + '>Continue</a></noscript>' +
     '</body></html>';

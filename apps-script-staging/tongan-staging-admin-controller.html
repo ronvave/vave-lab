@@ -110,6 +110,7 @@
     $('verify-identity-btn').addEventListener('click', function () {
       if (!brokerUrl) { gateStatus.textContent = 'Configuration error: no broker URL set.'; return; }
       gateStatus.textContent = 'Redirecting to Google verification…';
+      sessionStorage.setItem('tongan_awaiting_identity', '1'); // read back by consumeIdentityFragment() on return, for on-screen diagnostics if the round trip fails
       window.top.location.href = brokerUrl;
     });
   }
@@ -121,12 +122,28 @@
   // already triggered; false if there was nothing to consume (normal
   // first load) or it was invalid/an error (gate stays up either way).
   function consumeIdentityFragment() {
+    var gateStatus = $('identity-gate-status');
     var hash = window.location.hash || '';
     var m = /^#identity=(.+)$/.exec(hash);
-    if (!m) return false;
+    if (!m) {
+      // Nothing to consume on a normal first load — but if we just came
+      // back from a "Verify with Google" click and land here with no
+      // fragment at all, that means the broker's redirect never actually
+      // reached THIS document (e.g. it navigated a different frame) —
+      // show that distinctly from "fragment present but invalid" so we
+      // can tell the two failure modes apart from a screenshot alone.
+      if (sessionStorage.getItem('tongan_awaiting_identity') === '1' && gateStatus) {
+        gateStatus.textContent = 'Diagnostic: returned from Google with no identity data attached to this page (redirect-target mismatch). Please screenshot this message.';
+      }
+      return false;
+    }
+    sessionStorage.removeItem('tongan_awaiting_identity');
     history.replaceState(null, '', window.location.pathname + window.location.search);
     var payload;
-    try { payload = JSON.parse(decodeURIComponent(m[1])); } catch (e) { return false; }
+    try { payload = JSON.parse(decodeURIComponent(m[1])); } catch (e) {
+      if (gateStatus) gateStatus.textContent = 'Diagnostic: identity data was present but unreadable (parse error). Please screenshot this message.';
+      return false;
+    }
     if (payload && payload.status === 'ok' && payload.token) {
       bridge.setIdentityToken(payload.token);
       var gate = $('identity-gate');
@@ -134,7 +151,6 @@
       afterVerified();
       return true;
     }
-    var gateStatus = $('identity-gate-status');
     if (gateStatus) gateStatus.textContent = "Couldn't verify — your browser isn't signed into Google. Please sign in and try again.";
     return false;
   }
