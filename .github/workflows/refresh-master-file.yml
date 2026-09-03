@@ -99,12 +99,9 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
-          # Tolerance was bumped to 50 (from 10) after the 2026-08-25
-          # Researcher Authorship rollout: the Dashboard's hard-coded
-          # headline counts pre-date that bridge and drift by ~35-40 on
-          # iTaukei-headline totals until Ron refreshes those cells.
-          # Any drift larger than 50 in any single metric is still a
-          # regression that fails the build.
+          # Reconciler locates Dashboard labels dynamically so inserted rows do
+          # not shift one metric into another.  Drift above the tolerance still
+          # blocks publication, preserving the last valid snapshot.
           python3 scripts/master_file_reconcile.py \
             --snapshot-dir=data \
             --tolerance=50 \
