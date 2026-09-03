@@ -145,6 +145,14 @@ def parse_dashboard(rows: list[list]) -> dict:
                 return i
         return -1
 
+    def find_label_row(needle: str, col: int = 0, start: int = 0) -> int:
+        """Locate an exact label instead of relying on fragile row numbers."""
+        wanted = needle.strip().casefold()
+        for r in range(max(start, 0), len(rows)):
+            if cell(r, col).casefold() == wanted:
+                return r
+        return -1
+
     def find_value_near(value_row: int, start_col: int, end_col: int) -> int:
         """Scan `value_row` from `start_col` to `end_col` inclusive and
         return the first numeric value found (commas/whitespace stripped).
@@ -224,34 +232,51 @@ def parse_dashboard(rows: list[list]) -> dict:
         right = (min(next_cols) - 1) if next_cols else col + 2
         out[key] = find_value_near(10, col, right)
 
-    # Grad stats rows 38/39/42/44 (indices 37/38/41/43). Layout unchanged.
-    out["completed_masters_male"] = num(37, 1)
-    out["completed_masters_female"] = num(37, 2)
-    out["completed_masters_total"] = num(37, 3)
-    out["completed_phd_male"] = num(38, 1)
-    out["completed_phd_female"] = num(38, 2)
-    out["completed_phd_total"] = num(38, 3)
-    out["phd_current_male"] = num(41, 1)
-    out["phd_current_female"] = num(41, 2)
-    out["phd_current_total"] = num(41, 3)
-    out["both_masters_and_phd_male"] = num(43, 1)
-    out["both_masters_and_phd_female"] = num(43, 2)
-    out["both_masters_and_phd_total"] = num(43, 3)
+    # Graduate statistics. Locate the labels dynamically: explanatory rows may
+    # be inserted above this block without changing the data contract.
+    grad_labels = {
+        "completed_masters": "Completed Master's",
+        "completed_phd": "Completed PhD",
+        "phd_current": "PhD currently in progress",
+        "both_masters_and_phd": "Both completed Master's + completed PhD",
+    }
+    for key, label in grad_labels.items():
+        r = find_label_row(label)
+        if r < 0:
+            print(
+                f"[reconcile] WARN: Dashboard graduate label '{label}' not found; "
+                f"'{key}' values will parse as 0.",
+                file=sys.stderr,
+            )
+        out[f"{key}_male"] = num(r, 1) if r >= 0 else 0
+        out[f"{key}_female"] = num(r, 2) if r >= 0 else 0
+        out[f"{key}_total"] = num(r, 3) if r >= 0 else 0
 
-    # Publication-type breakdown — rows 51-55 (indices 50-54).
+    # Publication-type breakdown. Find the unique header containing both
+    # 'Publication type' and 'All publications', then locate labels beneath it.
     # Col 1 = All publications, col 2 = iTaukei publications (total).
     # non_itaukei is derived as (all - itaukei); the Dashboard has no explicit column.
     by_type = {}
-    row_map = {
-        "Journal Article": 50,
-        "Master's Thesis": 51,
-        "PhD Thesis": 52,
-        "Book Chapter": 53,
-        "Book": 54,
-    }
-    for t, r in row_map.items():
-        all_pubs = num(r, 1)
-        itaukei = num(r, 2)
+    publication_header_row = next(
+        (
+            r for r in range(len(rows))
+            if cell(r, 0).casefold() == "publication type"
+            and cell(r, 1).casefold() == "all publications"
+        ),
+        -1,
+    )
+    publication_rows = {}
+    for t in HEADLINE_PUBLICATION_TYPES:
+        r = find_label_row(t, start=publication_header_row + 1)
+        publication_rows[t] = r
+        if r < 0:
+            print(
+                f"[reconcile] WARN: Dashboard publication label '{t}' not found; "
+                "values will parse as 0.",
+                file=sys.stderr,
+            )
+        all_pubs = num(r, 1) if r >= 0 else 0
+        itaukei = num(r, 2) if r >= 0 else 0
         by_type[t] = {
             "all": all_pubs,
             "non_itaukei": max(all_pubs - itaukei, 0),
@@ -259,10 +284,12 @@ def parse_dashboard(rows: list[list]) -> dict:
         }
     out["by_publication_type_headline"] = by_type
 
-    # Totals row 56 (index 55). Col 1 = All, col 2 = iTaukei total.
+    # The totals row immediately follows the last headline publication row.
     # publications_non_itaukei_only_headline is derived (Dashboard has no such column).
-    total_all = num(55, 1)
-    total_itaukei = num(55, 2)
+    last_type_row = max(publication_rows.values(), default=-1)
+    total_row = find_label_row("Total", start=last_type_row + 1)
+    total_all = num(total_row, 1) if total_row >= 0 else 0
+    total_itaukei = num(total_row, 2) if total_row >= 0 else 0
     out["publications_headline_five"] = total_all
     out["publications_itaukei_associated_headline"] = total_itaukei
     out["publications_non_itaukei_only_headline"] = max(total_all - total_itaukei, 0)
