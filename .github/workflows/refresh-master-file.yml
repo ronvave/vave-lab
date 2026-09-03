@@ -11,8 +11,7 @@ name: Refresh iTaukei Master File snapshot
 #                                   (already exists — same one used by
 #                                    refresh-zotero-snapshot.yml)
 
-on:
-  schedule:
+on:\n  push:\n    branches: [main]\n    paths:\n      - ".github/workflows/refresh-master-file.yml"\n      - "scripts/master_file_reconcile.py"\n  schedule:
     - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
   workflow_dispatch:
     inputs:
