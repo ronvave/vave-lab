@@ -287,6 +287,41 @@ UNI_ALIAS_TO_WU: dict[str, str] = {
         "University of Occupational and Environmental Health",
 }
 
+# Master spelling / former-name variants -> one dashboard canonical name.
+# Keep this explicit for genuine rebrands; formatting differences are handled
+# by university_match_key(). Never use unconstrained fuzzy matching here.
+_UNIVERSITY_CANONICAL_ALIASES: dict[str, str] = {
+    "Victoria University of Wellington": "Victoria University of Wellington",
+    "Te Herenga Waka—Victoria University of Wellington": "Victoria University of Wellington",
+    "Te Herenga Waka – Victoria University of Wellington": "Victoria University of Wellington",
+    "Te Herenga Waka - Victoria University of Wellington": "Victoria University of Wellington",
+    "Te Herenga Waka Victoria University of Wellington": "Victoria University of Wellington",
+    "Victoria University Wellington": "Victoria University of Wellington",
+    "Pacific Theological College": "Pasifika Communities University",
+    "Fiji School of Medicine": "Fiji National University",
+}
+
+def university_match_key(name: str) -> str:
+    """Conservative key for harmless spelling/formatting differences."""
+    import unicodedata
+    s = unicodedata.normalize("NFKD", (name or "").strip())
+    s = "".join(ch for ch in s if not unicodedata.combining(ch))
+    s = re.sub(r"^the\s+", "", s, flags=re.I)
+    s = re.sub(r"\s*\([^)]{1,12}\)\s*$", "", s)
+    s = s.replace("&", " and ")
+    return re.sub(r"[^a-z0-9]+", "", s.lower())
+
+_UNIVERSITY_ALIAS_BY_KEY: dict[str, str] = {
+    university_match_key(alias): canonical
+    for alias, canonical in _UNIVERSITY_CANONICAL_ALIASES.items()
+}
+
+def canonicalize_university_name(name: str) -> str:
+    """Return the approved display name while preserving unknown institutions."""
+    clean = re.sub(r"\s+", " ", (name or "").strip())
+    return _UNIVERSITY_ALIAS_BY_KEY.get(university_match_key(clean), clean)
+
+
 
 # Country -> ISO2 + region hint. Kept short; only used for the map marker
 # tooltip. We fall back to whatever the graduate-studies pipeline already
@@ -431,7 +466,8 @@ def build_worldpoints(
         sname = (r.get("Scholar Name") or "").strip()
         stage_raw = (r.get("Degree Stage") or "").strip()
         stage = normalize_stage(stage_raw)
-        cuni = (r.get("C_Uni name") or "").strip()
+        cuni_raw = (r.get("C_Uni name") or "").strip()
+        cuni = canonicalize_university_name(cuni_raw)
         country = (r.get("Country") or "").strip()
         qual = (r.get("Degree / Qualification") or "").strip()
         field = (r.get("Field / Discipline") or "").strip()
@@ -467,7 +503,8 @@ def build_worldpoints(
                 "stage": stage,
                 "qualification": qual,
                 "field": field,
-                "cUni": cuni,
+                "cUni": cuni_raw,
+                "canonicalCUni": cuni,
                 "country": country,
                 "reasons": reasons,
             })

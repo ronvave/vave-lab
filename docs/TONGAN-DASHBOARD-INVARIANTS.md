@@ -51,3 +51,12 @@ to scholar geography rendering.
 
 Run `node scripts/test_tongan_ui_labels.js` before publishing Tongan interface
 copy changes.
+
+
+## Panel B2 university identity
+
+- Group completed degree episodes by canonical current university name before calculating university totals, degree totals, scholar lists, or marker sizes.
+- Display **Victoria University of Wellington** for both that name and the rebrand **Te Herenga Waka—Victoria University of Wellington**.
+- Accept only conservative automatic equivalence (case, whitespace, punctuation, diacritics, a leading “The”, and short trailing acronym parentheses).
+- Genuine renames must be added to the explicit alias registry; never use unrestricted fuzzy matching because similarly named universities may be different institutions.
+- Preserve every underlying degree episode when aliases are pooled.

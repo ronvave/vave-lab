@@ -1382,6 +1382,31 @@
     // The legacy JS aggregation above is retained only as a fallback for
     // older deploys that lack the Master B2 payload.
     // ------------------------------------------------------------------
+    // Canonical university identity for Panel B2. Explicit aliases cover
+    // genuine rebrands; the match key only absorbs harmless formatting
+    // differences. Deliberately avoid unconstrained fuzzy matching.
+    var B2_UNIVERSITY_ALIASES = {
+      'victoriauniversityofwellington': 'Victoria University of Wellington',
+      'teherengawakavictoriauniversityofwellington': 'Victoria University of Wellington',
+      'victoriauniversitywellington': 'Victoria University of Wellington',
+      'pacifictheologicalcollege': 'Pasifika Communities University',
+      'pasifikacommunitiesuniversity': 'Pasifika Communities University',
+      'fijischoolofmedicine': 'Fiji National University',
+      'fijinationaluniversity': 'Fiji National University'
+    };
+    function b2UniversityMatchKey(name) {
+      var s = String(name || '').trim();
+      if (s.normalize) s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      s = s.replace(/^the\s+/i, '')
+           .replace(/\s*\([^)]{1,12}\)\s*$/, '')
+           .replace(/&/g, ' and ');
+      return s.toLowerCase().replace(/[^a-z0-9]+/g, '');
+    }
+    function canonicalB2UniversityName(name) {
+      var clean = String(name || '').trim().replace(/\s+/g, ' ');
+      return B2_UNIVERSITY_ALIASES[b2UniversityMatchKey(clean)] || clean;
+    }
+
     var mwp = master.masterWorldPoints;
     if (mwp && Array.isArray(mwp.worldPoints) && mwp.worldPoints.length > 0) {
       worldPoints = mwp.worldPoints.map(function (p) {
@@ -1420,6 +1445,33 @@
         };
       });
     }
+
+    // Pool aliases into one institution before any B2 totals, lists, or
+    // marker sizes are calculated. Degree episodes remain intact.
+    var b2MergedUniversities = new Map();
+    worldPoints.forEach(function (pt) {
+      pt.university = canonicalB2UniversityName(pt.university);
+      var mergeKey = (pt.country || '') + '|' + b2UniversityMatchKey(pt.university);
+      var existing = b2MergedUniversities.get(mergeKey);
+      if (!existing) {
+        b2MergedUniversities.set(mergeKey, pt);
+        return;
+      }
+      ['phdScholars', 'mastersScholars', 'unknownScholars', 'scholars', 'degrees']
+        .forEach(function (field) {
+          existing[field] = (existing[field] || []).concat(pt[field] || []);
+        });
+      if ((typeof existing.lat !== 'number' || typeof existing.lng !== 'number') &&
+          typeof pt.lat === 'number' && typeof pt.lng === 'number') {
+        existing.lat = pt.lat;
+        existing.lng = pt.lng;
+      }
+      if (!existing.city && pt.city) existing.city = pt.city;
+      if (!existing.iso && pt.iso) existing.iso = pt.iso;
+      if (!existing.region && pt.region) existing.region = pt.region;
+      existing.scholarsCount = existing.degrees.length || existing.scholars.length;
+    });
+    worldPoints = Array.from(b2MergedUniversities.values());
 
     // Attach lat/lng from the V1 graduate-studies coordinate lookup, keyed
     // primarily by university name (unique across the dataset) with a
