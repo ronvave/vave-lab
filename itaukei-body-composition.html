@@ -1058,6 +1058,30 @@ function loadDbGate(){
     document.head.appendChild(s);
   });
 }
+function parentDbGate(){
+  // The V2 dashboard uses demo-gate.js, which exposes its already-authorised
+  // decryptor as parent.dbGate. This iframe must reuse that in-memory gate:
+  // loading the legacy db-gate.js here cannot see a V2 dev/demo unlock.
+  try {
+    if (window.parent && window.parent !== window &&
+        window.parent.dbGate &&
+        typeof window.parent.dbGate.fetchJson === 'function' &&
+        typeof window.parent.dbGate.isUnlocked === 'function' &&
+        window.parent.dbGate.isUnlocked()) {
+      return window.parent.dbGate;
+    }
+  } catch (e) { /* cross-origin embedding: use the local fallbacks below */ }
+  return null;
+}
+async function waitForParentDbGate(timeoutMs){
+  const started = Date.now();
+  let gate = parentDbGate();
+  while (!gate && Date.now() - started < timeoutMs) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    gate = parentDbGate();
+  }
+  return gate;
+}
 async function init(){
   try {
     let data = null;
@@ -1069,7 +1093,20 @@ async function init(){
       const r = await fetch(dataUrl, { cache:'no-store' });
       if (r.ok) data = await r.json();
     } catch (e) { /* fall through */ }
-    // Path 2: encrypted — only if there's a cached passcode we can reuse.
+    // Path 2: encrypted inside V2 — reuse the parent dashboard's authorised
+    // in-memory demo/dev gate. The parent may still be booting when this
+    // lazy iframe starts, so allow a short bounded wait.
+    if (!data && window.parent && window.parent !== window) {
+      try {
+        const gate = await waitForParentDbGate(5000);
+        if (gate) {
+          data = await gate.fetchJson(
+            IS_MASTER ? 'data/body-composition-master.json'
+                      : 'data/body-composition.json');
+        }
+      } catch (e) { /* fall through to the legacy standalone session */ }
+    }
+    // Path 3: encrypted standalone/legacy page — reuse its cached passcode.
     if (!data && hasCachedPasscode()){
       try {
         await loadDbGate();
