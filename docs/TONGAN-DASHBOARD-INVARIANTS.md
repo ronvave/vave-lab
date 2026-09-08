@@ -60,3 +60,11 @@ copy changes.
 - Accept only conservative automatic equivalence (case, whitespace, punctuation, diacritics, a leading “The”, and short trailing acronym parentheses).
 - Genuine renames must be added to the explicit alias registry; never use unrestricted fuzzy matching because similarly named universities may be different institutions.
 - Preserve every underlying degree episode when aliases are pooled.
+
+
+## Collaborator dashboard access
+
+- The public Tongan dashboard URL presents a visible collaborator-password form.
+- The collaborator password is separate from the encrypted snapshot key; changing access credentials must never silently invalidate existing encrypted data.
+- Successful collaborator access is session-scoped to the current browser tab. Closing the tab/browser requires the password again.
+- The owner-only developer and expiring demo-token paths remain available.

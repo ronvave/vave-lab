@@ -51,6 +51,7 @@
   // ── Constants ────────────────────────────────────────────────────────
   var DEMO_TTL_MS = 2 * 60 * 60 * 1000;      // 2 hours
   var DEV_FLAG_KEY = 'vavelab_dev';           // localStorage marker for Ron's device
+  var COLLAB_FLAG_KEY = 'vavelab_tongan_collaborator'; // session-only collaborator access
   var GH_TOKEN_KEY = 'vavelab_gh_token';      // GitHub PAT (shared with admin.js)
   var GH_OWNER = 'ronvave';
   var GH_REPO = 'vave-lab';
@@ -64,6 +65,9 @@
   // devtools can still recover it. This is by design.
   var BAKED_PASSCODE = atob('T25nb29uZ285IQ==');
 
+  // Human-facing collaborator password, separate from the data-encryption key.
+  var COLLABORATOR_PASSCODE = atob('VDBuZ2FuMjAyNg==');
+
   // HMAC signing key for demo tokens. Base64 of a fixed random 32-byte
   // string, embedded here for the same trade-off reason. If someone
   // extracts this and the passcode, they can mint their own tokens.
@@ -76,7 +80,7 @@
   var DEMO_SIGN_KEY_B64 = 'epASqFw3UP4CMHUrm4BMwXSX48PS8vvoIIHD6pByLyM=';
 
   // ── State ────────────────────────────────────────────────────────────
-  var mode = 'public';       // 'public' | 'dev' | 'demo'
+  var mode = 'public';       // 'public' | 'dev' | 'demo' | 'collaborator'
   var activeToken = null;    // { payload, sig, raw } when mode === 'demo'
   var revokedJtis = null;    // Set<string> once fetched
   var cachedPasscode = null;
@@ -415,6 +419,12 @@
       + '.demo-gate-shell__foot{margin:22px 0 0;color:#7a8880;font-size:0.85rem;}'
       + '.demo-gate-shell__foot a{color:#0E7490;text-decoration:underline;text-underline-offset:3px;}'
       + '.demo-gate-shell__reason{margin:14px 0 0;padding:10px 14px;background:#fdf1e6;color:#8B3A0F;border-radius:8px;font-size:0.9rem;text-align:left;}'
+      + '.demo-gate-shell__form{display:flex;gap:10px;margin:20px auto 4px;max-width:390px;}'
+      + '.demo-gate-shell__input{min-width:0;flex:1;padding:12px 14px;border:1px solid rgba(15,57,33,.28);border-radius:9px;background:#fff;color:#172019;font:inherit;}'
+      + '.demo-gate-shell__input:focus{outline:3px solid rgba(14,116,144,.18);border-color:#0E7490;}'
+      + '.demo-gate-shell__submit{padding:12px 18px;border:0;border-radius:9px;background:#0F3921;color:#fff;font:inherit;font-weight:700;cursor:pointer;}'
+      + '.demo-gate-shell__submit:hover{background:#12442a;}'
+      + '.demo-gate-shell__error{min-height:1.4em;margin:8px 0 0;color:#8B3A0F;font-size:.9rem;}'
       + 'body.demo-gate-locked main > *:not(.demo-gate-shell){display:none !important;}'
       // Demo controls (Share demo view / End demo / countdown).
       + '.demo-gate-controls{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:row;align-items:stretch;gap:8px;z-index:9999;font-family:"DM Sans",system-ui,sans-serif;}'
@@ -443,8 +453,13 @@
       +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
       +     '</div>'
       +     '<h1 class="demo-gate-shell__title">Tongan Scholar Database</h1>'
-      +     '<p class="demo-gate-shell__body">Demo mode.</p>'
+      +     '<p class="demo-gate-shell__body">Enter the collaborator password to view the dashboard.</p>'
       +     reasonBlock
+      +     '<form class="demo-gate-shell__form" data-collaborator-form>'
+      +       '<input class="demo-gate-shell__input" data-collaborator-password type="password" autocomplete="current-password" placeholder="Password" aria-label="Collaborator password" required>'
+      +       '<button class="demo-gate-shell__submit" type="submit">View dashboard</button>'
+      +     '</form>'
+      +     '<p class="demo-gate-shell__error" data-collaborator-error role="alert" aria-live="polite"></p>'
       +     '<p class="demo-gate-shell__foot">Curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Prof. Ron Vave</a> \u00b7 University of Hawai\u02bbi at M\u0101noa</p>'
       +   '</div>'
       + '</section>';
@@ -461,7 +476,32 @@
     var wrap = document.createElement('div');
     wrap.innerHTML = buildShellHtml(reason);
     main.insertBefore(wrap.firstElementChild, main.firstChild);
+    wireCollaboratorUnlock();
     wireBadgeTripleClick();
+  }
+
+  function collaboratorSessionUnlocked() {
+    try { return sessionStorage.getItem(COLLAB_FLAG_KEY) === '1'; }
+    catch (e) { return false; }
+  }
+
+  function wireCollaboratorUnlock() {
+    var form = document.querySelector('[data-collaborator-form]');
+    var input = document.querySelector('[data-collaborator-password]');
+    var error = document.querySelector('[data-collaborator-error]');
+    if (!form || !input || form.dataset.wired === '1') return;
+    form.dataset.wired = '1';
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (input.value !== COLLABORATOR_PASSCODE) {
+        if (error) error.textContent = 'Incorrect password. Please try again.';
+        input.select();
+        return;
+      }
+      try { sessionStorage.setItem(COLLAB_FLAG_KEY, '1'); } catch (e) {}
+      location.reload();
+    });
+    setTimeout(function () { input.focus(); }, 0);
   }
 
   // Admin-unlock affordances (undocumented on purpose):
@@ -793,6 +833,15 @@
       var wireDev = function () { injectDevControls(); };
       if (document.body) wireDev();
       else document.addEventListener('DOMContentLoaded', wireDev);
+      onReady();
+      return;
+    }
+
+    // Collaborator password access lasts for the current browser tab.
+    if (collaboratorSessionUnlocked()) {
+      mode = 'collaborator';
+      cachedPasscode = BAKED_PASSCODE;
+      removePublicShell();
       onReady();
       return;
     }
