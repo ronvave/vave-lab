@@ -68,3 +68,10 @@ copy changes.
 - The collaborator password is separate from the encrypted snapshot key; changing access credentials must never silently invalidate existing encrypted data.
 - Successful collaborator access is session-scoped to the current browser tab. Closing the tab/browser requires the password again.
 - The owner-only developer and expiring demo-token paths remain available.
+
+
+## Dashboard attribution and collaborators
+
+- Display Ron Vave’s title as **Assistant Professor** across the Tongan dashboard page, including page metadata, navigation, hero attribution, introduction, and footer.
+- Credit **Professor Tevita Kaili** and **Associate Professor Inoke Hafoka** of Brigham Young University–Hawaii as collaborators in the introductory text.
+- Link each collaborator’s displayed name to their official BYU–Hawaii directory profile.
