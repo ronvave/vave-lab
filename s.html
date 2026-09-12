@@ -3,32 +3,75 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iTaukei Scholar Profile</title>
   <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <title>iTaukei Scholar Profile</title>
   <style>
     html, body { margin:0; width:100%; height:100%; background:#f8f7f2; overflow:hidden; }
     iframe { display:block; width:100%; height:100%; border:0; background:#f8f7f2; }
-    .msg { font-family:Arial,Helvetica,sans-serif; padding:32px; color:#243238; }
+    .msg { max-width:680px; margin:80px auto; font-family:Arial,Helvetica,sans-serif; padding:32px; color:#243238; text-align:center; }
   </style>
 </head>
 <body>
   <script>
-    (function () {
-      var id = new URLSearchParams(location.search).get('i') || '';
-      if (!/^ITK-S\d+$/i.test(id)) {
+    (async function () {
+      'use strict';
+      var params = new URLSearchParams(location.search);
+      var token = String(params.get('k') || '').trim();
+
+      function fail() {
+        document.body.innerHTML = '';
         var msg = document.createElement('div');
         msg.className = 'msg';
-        msg.textContent = 'This scholar link is incomplete or invalid.';
+        msg.textContent = 'This scholar link is invalid or has expired.';
         document.body.appendChild(msg);
+      }
+
+      // Legacy enumerable ?i=ITK-Sxxxx links are deliberately retired.
+      // Share tokens are opaque 40-character random hex values held privately
+      // in the Master Sheet. Only a truncated SHA-256 digest is published.
+      if (!/^[a-f0-9]{40}$/i.test(token) || params.has('i')) {
+        fail();
         return;
       }
-      id = id.toUpperCase();
-      var frame = document.createElement('iframe');
-      frame.title = 'iTaukei scholar profile';
-      frame.src = 'itaukei-research-database-master.html?p=' + encodeURIComponent(id);
-      frame.setAttribute('allow', 'web-share; clipboard-write');
-      frame.setAttribute('referrerpolicy', 'same-origin');
-      document.body.appendChild(frame);
+
+      try {
+        var bytes = new TextEncoder().encode(token.toLowerCase());
+        var digest = await crypto.subtle.digest('SHA-256', bytes);
+        var hash = Array.from(new Uint8Array(digest))
+          .map(function (b) { return b.toString(16).padStart(2, '0'); })
+          .join('')
+          .slice(0, 32);
+
+        var shard = hash.charAt(0);
+        var res = await fetch('data/share-index/' + shard + '.json', {
+          cache: 'no-store',
+          credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('share-index unavailable');
+        var data = await res.json();
+        var id = data && data.m && data.m[hash];
+        if (!/^ITK-S\d+$/i.test(String(id || ''))) {
+          fail();
+          return;
+        }
+        id = String(id).toUpperCase();
+
+        // Capability is scoped to this tab/session. The master dashboard will
+        // only honor ?p=... when the matching capability was established here.
+        sessionStorage.setItem('vavelab_share_cap_sid', id);
+        sessionStorage.setItem('vavelab_share_cap_hash', hash);
+
+        var frame = document.createElement('iframe');
+        frame.title = 'iTaukei scholar profile';
+        frame.src = 'itaukei-research-database-master.html?p=' + encodeURIComponent(id) + '&share=1';
+        frame.setAttribute('allow', 'web-share; clipboard-write');
+        frame.setAttribute('referrerpolicy', 'no-referrer');
+        document.body.appendChild(frame);
+      } catch (err) {
+        console.error('Scholar share-link resolution failed', err);
+        fail();
+      }
     })();
   </script>
 </body>
