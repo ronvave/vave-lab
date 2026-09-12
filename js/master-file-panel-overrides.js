@@ -54,27 +54,21 @@
 
   function once(fn) { var done = false; return function () { if (done) return; done = true; fn.apply(this, arguments); }; }
 
-  // Wait for the master state to be present (production loadAll finishes and
-  // then dispatches DOMContentLoaded's downstream renders). Poll cheaply.
   function whenMasterReady(cb) {
     var attempts = 0;
     (function tick() {
       var w = window;
       if (w.__masterHydrated) { cb(); return; }
       attempts++;
-      if (attempts > 200) return; // ~10s max wait
+      if (attempts > 200) return;
       setTimeout(tick, 50);
     })();
   }
 
-  // -------------------------------------------------------------------
-  // 1. Province × confederacy TOTAL columns for B1 and C2
-  // -------------------------------------------------------------------
-  function tallyByProvinceAndConfed(scope /* 'all' | 'itaukei' */) {
+  function tallyByProvinceAndConfed(scope) {
     var st = window.__vavelabDbState || null;
     var master = st && st.master;
     if (!master) return null;
-
     var Mfc = window.MasterFileAdapter.constants;
     var byProv = {};
     var byConfed = {};
@@ -85,14 +79,12 @@
       byConfedAndProv[c] = {};
       Mfc.CONFEDERACIES[c].forEach(function (p) { byConfedAndProv[c][p] = 0; });
     });
-
     var pubs = master.publications.filter(function (p) {
       return HEADLINE_TYPES.indexOf(p['Publication Type']) !== -1;
     });
     if (scope === 'itaukei') {
       pubs = pubs.filter(function (p) { return p._is_itaukei_associated === true; });
     }
-
     pubs.forEach(function (p) {
       Mfc.PROVINCES.forEach(function (prov) {
         if (Number(p[prov] || 0) > 0) {
@@ -111,32 +103,25 @@
   function renderConfedTotalTable(hostEl, tally, scope) {
     if (!hostEl || !tally) return;
     var Mfc = window.MasterFileAdapter.constants;
-    var scopeLabel = scope === 'itaukei'
-      ? 'iTaukei-associated publications'
-      : 'All Fiji publications';
-
+    var scopeLabel = scope === 'itaukei' ? 'iTaukei-associated publications' : 'All Fiji publications';
     var html = '';
     html += '<table class="mf-confed-table" role="table" aria-label="' + scopeLabel + ' by province and confederacy">';
-    html += '<caption class="mf-confed-table__cap">' + scopeLabel +
-            ' \u2014 provinces grouped by confederacy, with confederacy totals</caption>';
+    html += '<caption class="mf-confed-table__cap">' + scopeLabel + ' \u2014 provinces grouped by confederacy, with confederacy totals</caption>';
     html += '<thead><tr><th scope="col" class="mf-th-confed">Confederacy</th>' +
             '<th scope="col" class="mf-th-prov">Province</th>' +
             '<th scope="col" class="mf-th-num">Publications</th>' +
             '<th scope="col" class="mf-th-num mf-th-total">Confederacy TOTAL</th></tr></thead><tbody>';
-
     Object.keys(Mfc.CONFEDERACIES).forEach(function (confed) {
       var provs = Mfc.CONFEDERACIES[confed];
       provs.forEach(function (prov, idx) {
         html += '<tr class="mf-row mf-row--' + confed.toLowerCase() + (idx === 0 ? ' mf-row--first' : '') + '">';
         if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-confed"><span class="mf-badge mf-badge--' +
-                  confed.toLowerCase() + '">' + escapeHtml(confed) + '</span></td>';
+          html += '<td rowspan="' + provs.length + '" class="mf-cell-confed"><span class="mf-badge mf-badge--' + confed.toLowerCase() + '">' + escapeHtml(confed) + '</span></td>';
         }
         html += '<td class="mf-cell-prov">' + escapeHtml(prov) + '</td>';
         html += '<td class="mf-cell-num">' + tally.byProvince[prov].toLocaleString() + '</td>';
         if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-total"><strong>' +
-                  tally.byConfed[confed].toLocaleString() + '</strong></td>';
+          html += '<td rowspan="' + provs.length + '" class="mf-cell-total"><strong>' + tally.byConfed[confed].toLocaleString() + '</strong></td>';
         }
         html += '</tr>';
       });
@@ -187,17 +172,9 @@
     document.head.appendChild(st);
   }
 
-  function findHostAfter(id) {
-    var el = document.querySelector(id);
-    if (!el) return null;
-    return el;
-  }
-
   function injectConfedTotals() {
     injectStylesOnce();
-    var bPanel = document.querySelector('.db-panel--b .db-panel__body')
-              || document.querySelector('[data-panel="B"] .db-panel__body')
-              || document.querySelector('#panel-b .db-panel__body');
+    var bPanel = document.querySelector('.db-panel--b .db-panel__body') || document.querySelector('[data-panel="B"] .db-panel__body') || document.querySelector('#panel-b .db-panel__body');
     if (bPanel) {
       var host = bPanel.querySelector('.mf-confed-totals-host') || document.createElement('div');
       host.className = 'mf-confed-totals-host';
@@ -212,10 +189,7 @@
       host.appendChild(subhost);
       if (!bPanel.querySelector('.mf-confed-totals-host')) bPanel.appendChild(host);
     }
-
-    var c2Panel = document.querySelector('.db-panel--c2 .db-panel__body')
-               || document.querySelector('[data-panel="C2"] .db-panel__body')
-               || document.querySelector('#panel-c2 .db-panel__body');
+    var c2Panel = document.querySelector('.db-panel--c2 .db-panel__body') || document.querySelector('[data-panel="C2"] .db-panel__body') || document.querySelector('#panel-c2 .db-panel__body');
     if (c2Panel) {
       var host2 = c2Panel.querySelector('.mf-confed-totals-host') || document.createElement('div');
       host2.className = 'mf-confed-totals-host';
@@ -232,18 +206,12 @@
     }
   }
 
-  // -------------------------------------------------------------------
-  // 2. Last Master-file update timestamp badge.
-  // -------------------------------------------------------------------
   function injectTimestamp() {
     injectStylesOnce();
     var st = window.__vavelabDbState;
     var master = st && st.master;
     if (!master || !master.lastSync) return;
-    var badgeHost = document.getElementById('db-sync-badge') ||
-                    document.querySelector('.db-hero__meta') ||
-                    document.querySelector('.db-header') ||
-                    document.querySelector('h1');
+    var badgeHost = document.getElementById('db-sync-badge') || document.querySelector('.db-hero__meta') || document.querySelector('.db-header') || document.querySelector('h1');
     if (!badgeHost) return;
     var existing = document.getElementById('mf-updated-badge');
     if (existing) existing.remove();
@@ -251,76 +219,45 @@
     badge.id = 'mf-updated-badge';
     badge.className = 'mf-updated-badge';
     var when = new Date(master.lastSync.finishedAt || Date.now());
-    badge.textContent = 'Last Master-file update: ' + when.toLocaleString('en-US', {
-      dateStyle: 'medium', timeStyle: 'short'
-    });
+    badge.textContent = 'Last Master-file update: ' + when.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
     badge.title = 'Master-file JSON snapshot last refreshed at this time by the every-2h GitHub Actions workflow.';
-    if (badgeHost.parentNode) {
-      badgeHost.parentNode.insertBefore(badge, badgeHost.nextSibling);
-    } else {
-      badgeHost.appendChild(badge);
-    }
+    if (badgeHost.parentNode) badgeHost.parentNode.insertBefore(badge, badgeHost.nextSibling);
+    else badgeHost.appendChild(badge);
   }
 
-  // -------------------------------------------------------------------
-  // 3. Short discipline taxonomy for Panel G.
-  // -------------------------------------------------------------------
-  // Converts detailed scholar disciplines into Ron's eight stable public
-  // categories. This is DISPLAY/FILTER classification only: it does not
-  // overwrite the detailed Primary Discipline / Field in the Master.
   function shortDisciplineName(value) {
     var s = String(value || '').trim();
-    if (!s) return 'Social sciences';
+    if (!s) return '';
     if (SHORT_DISCIPLINES.indexOf(s) !== -1) return s;
     var x = s.toLowerCase();
-
-    if (/theolog|religio|church|biblical|christian|pastoral|ecumen|methodist|anglican|faith|ministry/.test(x)) {
-      return 'Theology and religious studies';
-    }
-    if (/education|teaching|teacher|curriculum|pedagog|school|literacy|tvet|early childhood|educational/.test(x)) {
-      return 'Education';
-    }
-    if (/public health|medicine|medical|nursing|surgery|epidemi|health science|clinical|anaesth|cardiol|paediatr|obstetric|gynaec|dent|intensive care|emergency medicine|infectious|diabetes/.test(x)) {
-      return 'Health sciences';
-    }
-    if (/engineering|technology|information system|information technology|ict|computer|computing|digital|architecture|planning|gis|geomatic|survey|remote sensing|renewable energy|power|control|construction|mining/.test(x)) {
-      return 'Engineering, technology and planning';
-    }
-    if (/marine science|ocean|climate|atmospher|geograph|geolog|hydrolog|coastal process|earth science/.test(x)) {
-      return 'Earth, ocean and atmospheric sciences';
-    }
-    if (/environment|ecolog|biology|agricultur|forestry|fisher|aquaculture|horticultur|animal science|veterinary|plant|entomolog|ornitholog|microbiology|food science|phytochemical|soil|agroforestry|crop|livestock|conservation|biodiversity|chemistry|coral reef|natural products|water quality|pollution/.test(x)) {
-      return 'Life and environmental sciences';
-    }
-    if (/history|linguist|language|literature|archaeolog|heritage|art and design|museum|cultural research|philosoph|humanities/.test(x)) {
-      return 'Humanities';
-    }
+    if (/theolog|religio|church|biblical|christian|pastoral|ecumen|methodist|anglican|faith|ministry/.test(x)) return 'Theology and religious studies';
+    if (/education|teaching|teacher|curriculum|pedagog|school|literacy|tvet|early childhood|educational/.test(x)) return 'Education';
+    if (/public health|medicine|medical|nursing|surgery|epidemi|health science|clinical|anaesth|cardiol|paediatr|obstetric|gynaec|dent|intensive care|emergency medicine|infectious|diabetes/.test(x)) return 'Health sciences';
+    if (/engineering|technology|information system|information technology|ict|computer|computing|digital|architecture|planning|gis|geomatic|survey|remote sensing|renewable energy|power|control|construction|mining/.test(x)) return 'Engineering, technology and planning';
+    if (/marine science|ocean|climate|atmospher|geograph|geolog|hydrolog|coastal process|earth science/.test(x)) return 'Earth, ocean and atmospheric sciences';
+    if (/environment|ecolog|biology|agricultur|forestry|fisher|aquaculture|horticultur|animal science|veterinary|plant|entomolog|ornitholog|microbiology|food science|phytochemical|soil|agroforestry|crop|livestock|conservation|biodiversity|chemistry|coral reef|natural products|water quality|pollution/.test(x)) return 'Life and environmental sciences';
+    if (/history|linguist|language|literature|archaeolog|heritage|art and design|museum|cultural research|philosoph|humanities/.test(x)) return 'Humanities';
     return 'Social sciences';
   }
 
   function applyShortDisciplineTaxonomy() {
     var st = window.__vavelabDbState;
     if (!st) return;
-
-    // Reclassify the item-level discipline sets consumed by Panel G's filter,
-    // publication badges, and subsequent re-renders. Keep the detailed Master
-    // strings untouched in state.master.
     if (st.disciplinesByItem && typeof st.disciplinesByItem.forEach === 'function') {
       st.disciplinesByItem.forEach(function (discSet, itemKey) {
         var shortSet = new Set();
         if (discSet && typeof discSet.forEach === 'function') {
-          discSet.forEach(function (d) { shortSet.add(shortDisciplineName(d)); });
+          discSet.forEach(function (d) {
+            var shortName = shortDisciplineName(d);
+            if (shortName) shortSet.add(shortName);
+          });
         }
         st.disciplinesByItem.set(itemKey, shortSet);
       });
     }
-
-    // Normalize any discipline already restored from the URL before rebuilding
-    // the select, so old shared links do not leave an impossible long value.
     if (st.filter && st.filter.discipline) {
       st.filter.discipline = shortDisciplineName(st.filter.discipline);
     }
-
     var sel = document.querySelector('[data-db-filter="discipline"]');
     if (!sel) return;
     var active = st.filter ? (st.filter.discipline || '') : '';
@@ -335,9 +272,6 @@
     sel.value = SHORT_DISCIPLINES.indexOf(active) !== -1 ? active : '';
   }
 
-  // -------------------------------------------------------------------
-  // Boot: run overrides after production render pass.
-  // -------------------------------------------------------------------
   function boot() {
     whenMasterReady(function () {
       try { applyShortDisciplineTaxonomy(); } catch (e) { console.error('MF short discipline taxonomy failed', e); }
@@ -349,13 +283,9 @@
     });
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot);
-  } else {
-    boot();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 
-  // Expose overrides for debugging.
   window.MasterFilePanelOverrides = {
     injectConfedTotals: injectConfedTotals,
     injectTimestamp: injectTimestamp,
