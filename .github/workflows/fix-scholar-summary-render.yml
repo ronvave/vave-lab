@@ -1,5 +1,5 @@
 name: Fix scholar summary rendering
-on:
+'on':
   push:
     paths:
       - '.github/workflows/fix-scholar-summary-render.yml'
@@ -10,87 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Patch s.html robustly
+      - name: Patch s.html
+        shell: bash
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('s.html')
-          s = p.read_text(encoding='utf-8')
-
-          old_call = "        reviseSummaryPanelText(d, main, card);\n        styleSummaryMetrics(d, main, card);"
-          new_call = "        installSummaryPanelTextGuard(d, main);\n        styleSummaryMetrics(d, main, card);"
-          if old_call not in s:
-              raise SystemExit('summary call anchor not found')
-          s = s.replace(old_call, new_call, 1)
-
-          start = s.find("      function reviseSummaryPanelText(d, main, card) {")
-          end = s.find("      function styleSummaryMetrics(d, main, card) {", start)
-          if start < 0 or end < 0:
-              raise SystemExit('summary helper block not found')
-
-          helper = r'''      function installSummaryPanelTextGuard(d, main) {
-        var today = '12 September 2026';
-        var applying = false;
-
-        function applySummaryText() {
-          if (applying) return;
-          applying = true;
-          try {
-            Array.prototype.slice.call(main.querySelectorAll('.db-section')).forEach(function (section) {
-              var label = section.querySelector('.db-section__label');
-              var hint = section.querySelector('.db-section__hint');
-              var title = String(label && label.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
-              if (title === 'database overview' && hint) {
-                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
-                if (hint.textContent !== wanted) hint.textContent = wanted;
-                hint.classList.add('scholar-summary-description');
-              }
-              if (title === 'itaukei scholarship' && hint) {
-                hint.classList.add('scholar-summary-description');
-              }
-            });
-
-            Array.prototype.slice.call(main.querySelectorAll('.db-kpi__label')).forEach(function (el) {
-              var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim();
-              if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
-                el.textContent = 'Universities attended by iTaukei scholars';
-              }
-            });
-          } finally {
-            applying = false;
-          }
-        }
-
-        applySummaryText();
-        [100, 350, 900, 1800, 3500].forEach(function (delay) {
-          setTimeout(applySummaryText, delay);
-        });
-
-        var observer = new MutationObserver(function () {
-          setTimeout(applySummaryText, 0);
-        });
-        observer.observe(main, { childList:true, subtree:true, characterData:true });
-      }
-
-'''
-          s = s[:start] + helper + s[end:]
-
-          # Make the two descriptive lines visually unambiguous: black, normal-size, normal weight.
-          old_css = ".scholar-direct-main .scholar-summary-description{color:#111!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;}"
-          new_css = ".scholar-direct-main .scholar-summary-description{color:#111!important;font-family:\"DM Sans\",Arial,sans-serif!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;opacity:1!important;}"
-          if old_css in s:
-              s = s.replace(old_css, new_css, 1)
-
-          p.write_text(s, encoding='utf-8')
-          PY
+          echo 'CmZyb20gcGF0aGxpYiBpbXBvcnQgUGF0aAppbXBvcnQgcmUKcD1QYXRoKCJzLmh0bWwiKQpzPXAucmVhZF90ZXh0KGVuY29kaW5nPSJ1dGYtOCIpCnM9cy5yZXBsYWNlKCIgICAgICAgIHJldmlzZVN1bW1hcnlQYW5lbFRleHQoZCwgbWFpbiwgY2FyZCk7XG4gICAgICAgIHN0eWxlU3VtbWFyeU1ldHJpY3MoZCwgbWFpbiwgY2FyZCk7IiwKICAgICAgICAgICAgIiAgICAgICAgaW5zdGFsbFN1bW1hcnlQYW5lbFRleHRHdWFyZChkLCBtYWluKTtcbiAgICAgICAgc3R5bGVTdW1tYXJ5TWV0cmljcyhkLCBtYWluLCBjYXJkKTsiLDEpCnBhdD1yIiAgICAgIGZ1bmN0aW9uIHJldmlzZVN1bW1hcnlQYW5lbFRleHRcKGQsIG1haW4sIGNhcmRcKSBcey4qP1xuICAgICAgXH1cblxuICAgICAgZnVuY3Rpb24gc3R5bGVTdW1tYXJ5TWV0cmljc1woZCwgbWFpbiwgY2FyZFwpIFx7IgpoZWxwZXI9cicnJyAgICAgIGZ1bmN0aW9uIGluc3RhbGxTdW1tYXJ5UGFuZWxUZXh0R3VhcmQoZCwgbWFpbikgewogICAgICAgIHZhciB0b2RheSA9ICcxMiBTZXB0ZW1iZXIgMjAyNic7CiAgICAgICAgdmFyIGFwcGx5aW5nID0gZmFsc2U7CiAgICAgICAgZnVuY3Rpb24gYXBwbHlTdW1tYXJ5VGV4dCgpIHsKICAgICAgICAgIGlmIChhcHBseWluZykgcmV0dXJuOwogICAgICAgICAgYXBwbHlpbmcgPSB0cnVlOwogICAgICAgICAgdHJ5IHsKICAgICAgICAgICAgQXJyYXkucHJvdG90eXBlLnNsaWNlLmNhbGwobWFpbi5xdWVyeVNlbGVjdG9yQWxsKCcuZGItc2VjdGlvbicpKS5mb3JFYWNoKGZ1bmN0aW9uIChzZWN0aW9uKSB7CiAgICAgICAgICAgICAgdmFyIGxhYmVsID0gc2VjdGlvbi5xdWVyeVNlbGVjdG9yKCcuZGItc2VjdGlvbl9fbGFiZWwnKTsKICAgICAgICAgICAgICB2YXIgaGludCA9IHNlY3Rpb24ucXVlcnlTZWxlY3RvcignLmRiLXNlY3Rpb25fX2hpbnQnKTsKICAgICAgICAgICAgICB2YXIgdGl0bGUgPSBTdHJpbmcobGFiZWwgJiYgbGFiZWwudGV4dENvbnRlbnQgfHwgJycpLnJlcGxhY2UoL1xzKy9nLCAnICcpLnRyaW0oKS50b0xvd2VyQ2FzZSgpOwogICAgICAgICAgICAgIGlmICh0aXRsZSA9PT0gJ2RhdGFiYXNlIG92ZXJ2aWV3JyAmJiBoaW50KSB7CiAgICAgICAgICAgICAgICB2YXIgd2FudGVkID0gJ1N0YXRpc3RpY3Mgb2YgZW50aXJlIGluZGV4ZWQgZGF0YWJhc2UgYW5kIHB1YmxpY2F0aW9ucyBvbiBGaWppIChyZWdhcmRsZXNzIG9mIGV0aG5pY2l0eSkgdG8gZGF0ZSAoJyArIHRvZGF5ICsgJykuJzsKICAgICAgICAgICAgICAgIGlmIChoaW50LnRleHRDb250ZW50ICE9PSB3YW50ZWQpIGhpbnQudGV4dENvbnRlbnQgPSB3YW50ZWQ7CiAgICAgICAgICAgICAgICBoaW50LmNsYXNzTGlzdC5hZGQoJ3NjaG9sYXItc3VtbWFyeS1kZXNjcmlwdGlvbicpOwogICAgICAgICAgICAgIH0gZWxzZSBpZiAodGl0bGUgPT09ICdpdGF1a2VpIHNjaG9sYXJzaGlwJyAmJiBoaW50KSB7CiAgICAgICAgICAgICAgICBoaW50LmNsYXNzTGlzdC5hZGQoJ3NjaG9sYXItc3VtbWFyeS1kZXNjcmlwdGlvbicpOwogICAgICAgICAgICAgIH0KICAgICAgICAgICAgfSk7CiAgICAgICAgICAgIEFycmF5LnByb3RvdHlwZS5zbGljZS5jYWxsKG1haW4ucXVlcnlTZWxlY3RvckFsbCgnLmRiLWtwaV9fbGFiZWwnKSkuZm9yRWFjaChmdW5jdGlvbiAoZWwpIHsKICAgICAgICAgICAgICB2YXIgdHh0ID0gU3RyaW5nKGVsLnRleHRDb250ZW50IHx8ICcnKS5yZXBsYWNlKC9ccysvZywgJyAnKS50cmltKCk7CiAgICAgICAgICAgICAgaWYgKC9eVW5pdmVyc2l0aWVzIGF0dGVuZGVkIGJ5IGlUYXVrZWkgZ3JhZHVhdGUgcmVzZWFyY2hlcnMkL2kudGVzdCh0eHQpKSB7CiAgICAgICAgICAgICAgICBlbC50ZXh0Q29udGVudCA9ICdVbml2ZXJzaXRpZXMgYXR0ZW5kZWQgYnkgaVRhdWtlaSBzY2hvbGFycyc7CiAgICAgICAgICAgICAgfQogICAgICAgICAgICB9KTsKICAgICAgICAgIH0gZmluYWxseSB7IGFwcGx5aW5nID0gZmFsc2U7IH0KICAgICAgICB9CiAgICAgICAgYXBwbHlTdW1tYXJ5VGV4dCgpOwogICAgICAgIFsxMDAsMzUwLDkwMCwxODAwLDM1MDBdLmZvckVhY2goZnVuY3Rpb24oZGVsYXkpeyBzZXRUaW1lb3V0KGFwcGx5U3VtbWFyeVRleHQsZGVsYXkpOyB9KTsKICAgICAgICB2YXIgb2JzZXJ2ZXIgPSBuZXcgTXV0YXRpb25PYnNlcnZlcihmdW5jdGlvbigpeyBzZXRUaW1lb3V0KGFwcGx5U3VtbWFyeVRleHQsMCk7IH0pOwogICAgICAgIG9ic2VydmVyLm9ic2VydmUobWFpbix7Y2hpbGRMaXN0OnRydWUsc3VidHJlZTp0cnVlLGNoYXJhY3RlckRhdGE6dHJ1ZX0pOwogICAgICB9CgogICAgICBmdW5jdGlvbiBzdHlsZVN1bW1hcnlNZXRyaWNzKGQsIG1haW4sIGNhcmQpIHsnJycKczIsbj1yZS5zdWJuKHBhdDxoZWxwZXIscyxjb3VudD0xLGZsYWdzPXJlLlMpCmlmIG4hPTE6CiAgICByYWlzZSBTeXN0ZW1FeGl0KGYiaGVscGVyIHJlcGxhY2VtZW50IGNvdW50PXtufSIpCnMyPXMyLnJlcGxhY2UoJy5zY2hvbGFyLWRpcmVjdC1tYWluIC5zY2hvbGFyLXN1bW1hcnktZGVzY3JpcHRpb257Y29sb3I6IzExMSFpbXBvcnRhbnQ7Zm9udC1zaXplOjFyZW0haW1wb3J0YW50O2xpbmUtaGVpZ2h0OjEuNDUhaW1wb3J0YW50O2ZvbnQtd2VpZ2h0OjQwMCFpbXBvcnRhbnQ7Zm9udC1zdHlsZTpub3JtYWwhaW1wb3J0YW50O30nLAogICAgICAgICAgICAgICcuc2Nob2xhci1kaXJlY3QtbWFpbiAuc2Nob2xhci1zdW1tYXJ5LWRlc2NyaXB0aW9ue2NvbG9yOiMxMTEhaW1wb3J0YW50O2ZvbnQtZmFtaWx5OiJETSBTYW5zIixBcmlhbCxzYW5zLXNlcmlmIWltcG9ydGFudDtmb250LXNpemU6MXJlbSFpbXBvcnRhbnQ7bGluZS1oZWlnaHQ6MS40NSFpbXBvcnRhbnQ7Zm9udC13ZWlnaHQ6NDAwIWltcG9ydGFudDtmb250LXN0eWxlOm5vcm1hbCFpbXBvcnRhbnQ7b3BhY2l0eToxIWltcG9ydGFudDt9JywxKQpwLndyaXRlX3RleHQoczIsZW5jb2Rpbmc9InV0Zi04IikK' | base64 -d > /tmp/patch.py
+          python /tmp/patch.py
       - name: Commit patch
+        shell: bash
         run: |
-          if git diff --quiet -- s.html; then
-            echo 'No change produced' >&2
-            exit 1
-          fi
           git config user.name 'Vave Lab automation'
           git config user.email 'actions@users.noreply.github.com'
           git add s.html
+          git diff --cached --quiet && exit 1
           git commit -m 'Fix scholar summary text rendering'
           git push
