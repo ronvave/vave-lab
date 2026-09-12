@@ -27,9 +27,6 @@
         document.body.appendChild(msg);
       }
 
-      // Legacy enumerable ?i=ITK-Sxxxx links are deliberately retired.
-      // Share tokens are opaque 40-character random hex values held privately
-      // in the Master Sheet. Only a truncated SHA-256 digest is published.
       if (!/^[a-f0-9]{40}$/i.test(token) || params.has('i')) {
         fail();
         return;
@@ -57,8 +54,6 @@
         }
         id = String(id).toUpperCase();
 
-        // Capability is scoped to this tab/session. The master dashboard will
-        // only honor ?p=... when the matching capability was established here.
         sessionStorage.setItem('vavelab_share_cap_sid', id);
         sessionStorage.setItem('vavelab_share_cap_hash', hash);
 
@@ -111,20 +106,25 @@
 
         var existingIntro = main.querySelector('.scholar-direct-intro');
         var about = buildAboutBlock(d);
-        if (existingIntro) existingIntro.insertAdjacentElement('beforebegin', about);
-        else main.insertBefore(about, main.firstChild);
+        if (existingIntro) {
+          existingIntro.insertAdjacentElement('beforebegin', about);
+          revisePreLaunchBlock(existingIntro);
+        } else {
+          main.insertBefore(about, main.firstChild);
+        }
 
         var card = main.querySelector('.db-scholar-card');
         if (!card) return;
 
+        styleSummaryMetrics(d, main, card);
         prepareScholarPublicationFilter(w, state, scholarKey);
         buildPublicationReviewWhenReady(w, d, main, state, scholarId, scholarKey, scholarName, card);
       }
 
       function injectStyles(d) {
-        if (d.getElementById('direct-profile-review-v2-style')) return;
+        if (d.getElementById('direct-profile-review-v3-style')) return;
         var style = d.createElement('style');
-        style.id = 'direct-profile-review-v2-style';
+        style.id = 'direct-profile-review-v3-style';
         style.textContent = `
           .scholar-direct-about{
             max-width:980px;margin:0 auto 18px;padding:17px 20px;
@@ -132,23 +132,50 @@
             font-family:"DM Sans",Arial,sans-serif;font-size:.95rem;line-height:1.58;color:#5f6570;
           }
           .scholar-direct-about p{margin:0}.scholar-direct-about a{color:#087d93;text-decoration:underline;text-underline-offset:2px}
+
+          .scholar-direct-intro{max-width:980px!important;margin-left:auto!important;margin-right:auto!important}
+          .scholar-direct-intro .direct-review-badge{
+            display:inline-flex;align-items:center;padding:5px 10px;margin:0 0 10px;
+            border:1px solid #efc85b;border-radius:999px;background:#fff8dc;color:#9a6500;
+            font-weight:800;font-size:.78rem;letter-spacing:.01em;
+          }
+          .scholar-direct-intro p{line-height:1.55}
+
+          .scholar-summary-metric-tile{
+            display:grid!important;grid-template-columns:auto auto minmax(0,1fr)!important;
+            align-items:center!important;column-gap:14px!important;min-height:88px!important;
+            padding-top:12px!important;padding-bottom:12px!important;
+          }
+          .scholar-summary-metric-tile .scholar-summary-number{
+            align-self:center!important;font-size:2rem!important;line-height:1!important;
+            font-weight:800!important;white-space:nowrap!important;margin:0!important;
+          }
+          .scholar-summary-metric-tile .scholar-summary-label{
+            align-self:center!important;font-size:1.03rem!important;line-height:1.16!important;
+            font-weight:700!important;margin:0!important;max-width:220px!important;
+          }
+
           .scholar-pubs-review{max-width:1020px;margin:28px auto 12px;font-family:"DM Sans",Arial,sans-serif}
           .scholar-pubs-review__head{padding:18px 20px;background:rgba(14,116,144,.055);border:1px solid rgba(14,116,144,.20);border-radius:14px;margin-bottom:14px}
           .scholar-pubs-review__head h2{margin:0 0 6px;color:#123f47;font-family:Arial,Helvetica,sans-serif;font-size:1.2rem;font-weight:700}
           .scholar-pubs-review__head p{margin:0 0 9px;color:#4b5563;font-size:.9rem;line-height:1.55}
           .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important}
-          .scholar-geo-editor{margin:12px -1px -1px;padding:12px 14px 14px;border-top:1px dashed #d6d8d9;background:#f8fbfb;border-radius:0 0 10px 10px}
+          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;overflow:visible!important}
+          .scholar-geo-editor{margin:12px -1px -1px;padding:12px 14px 14px;border-top:1px dashed #d6d8d9;background:#f8fbfb;border-radius:0 0 10px 10px;overflow:visible!important}
           .scholar-geo-editor__label{font-weight:700;color:#174852;font-size:.82rem;margin-bottom:7px}
-          .scholar-geo-editor__row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
-          details.scholar-geo-menu{position:relative}
+          .scholar-geo-editor__row{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;overflow:visible!important}
+          details.scholar-geo-menu{position:relative;overflow:visible!important}
           details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none}
           details.scholar-geo-menu>summary::-webkit-details-marker{display:none}
           details.scholar-geo-menu[open]>summary{border-color:#0e7490;box-shadow:0 0 0 2px rgba(14,116,144,.10)}
           .scholar-geo-menu__count{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#0e7490;color:#fff;align-items:center;justify-content:center;font-size:.68rem}
           .scholar-geo-menu.has-selection .scholar-geo-menu__count{display:inline-flex}
-          .scholar-geo-options{position:absolute;z-index:60;top:calc(100% + 5px);left:0;width:280px;max-height:300px;overflow:auto;padding:8px;background:#fff;border:1px solid #cbd5d8;border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.15)}
+          .scholar-geo-options{
+            position:fixed!important;z-index:2147483000!important;width:290px;max-width:calc(100vw - 20px);
+            max-height:min(340px,46vh);overflow:auto;padding:8px;background:#fff;border:1px solid #cbd5d8;
+            border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.22)
+          }
           .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer}
           .scholar-geo-option:hover{background:#eaf7f9}.scholar-geo-option input{margin-top:2px;accent-color:#0e7490}
           .scholar-geo-option--general{border-bottom:1px dashed #d8dfe0;margin-bottom:4px;padding-bottom:8px;font-weight:600}
@@ -158,7 +185,13 @@
           .scholar-geo-submit label{display:block;font-size:.78rem;font-weight:700;color:#174852;margin-bottom:4px}.scholar-geo-submit input,.scholar-geo-submit select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5d8;border-radius:8px;background:#fff;font:inherit;font-size:.84rem}
           .scholar-geo-submit__actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scholar-geo-submit button{border:0;border-radius:8px;padding:9px 15px;background:#0e7490;color:#fff;font-weight:700;cursor:pointer}.scholar-geo-submit button:disabled{opacity:.55;cursor:wait}
           .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
-          @media(max-width:700px){.scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}.scholar-geo-submit__grid{grid-template-columns:1fr}.scholar-geo-options{position:fixed;left:10px;right:10px;top:auto;width:auto;max-height:45vh}}
+          @media(max-width:700px){
+            .scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}
+            .scholar-geo-submit__grid{grid-template-columns:1fr}
+            .scholar-summary-metric-tile{grid-template-columns:auto auto minmax(0,1fr)!important;column-gap:9px!important;min-height:78px!important}
+            .scholar-summary-metric-tile .scholar-summary-number{font-size:1.65rem!important}
+            .scholar-summary-metric-tile .scholar-summary-label{font-size:.9rem!important}
+          }
         `;
         d.head.appendChild(style);
       }
@@ -166,8 +199,56 @@
       function buildAboutBlock(d) {
         var box = d.createElement('section');
         box.className = 'scholar-direct-about';
-        box.innerHTML = '<p>This database has been curated by <a href="index.html" target="_blank" rel="noopener">Professor Ron Vave</a>, an <em>iTaukei</em> (Indigenous Fijian) faculty member at the University of Hawai\u02bbi at M\u0101noa, in an effort to highlight and elevate the scholarly research and contributions of iTaukei postgraduates and researchers \u2014 in Fiji and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our iTaukei researchers and their publications, the hope is that it will help with networking and collaboration \u2014 and perhaps mentorship for up-and-coming iTaukei students thinking of pursuing postgraduate studies, academia, or research more broadly.</p>';
+        box.innerHTML = '<p>This database has been curated by <a href="index.html" target="_blank" rel="noopener">Assistant Professor Ron Vave</a>, an <em>iTaukei</em> (Indigenous Fijian) faculty member at the University of Hawai\u02bbi at M\u0101noa, in an effort to highlight and elevate the scholarly research and contributions of iTaukei postgraduates and researchers \u2014 in Fiji and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our iTaukei researchers and our publications, the hope is that it will help with networking and collaboration \u2014 and perhaps mentorship for up-and-coming iTaukei students thinking of pursuing postgraduate studies, academia, or research more broadly.</p>';
         return box;
+      }
+
+      function revisePreLaunchBlock(existingIntro) {
+        existingIntro.innerHTML =
+          '<div class="direct-review-badge">PRE-LAUNCH PROFILE REVIEW</div>' +
+          '<p><strong>About this database.</strong> The iTaukei Scholarly Research Database is a curated public resource developed to highlight and elevate the scholarship and contributions of iTaukei postgraduates and researchers in Fiji and around the world. It is part of a larger Pacific scholarly database project being replicated across Pacific Island countries. <strong>The database and dashboard are still being developed and have not yet been publicly launched.</strong></p>' +
+          '<p><strong>Why you have been sent this link.</strong> You have been sent a direct link to this scholar profile so the information can be checked and improved. If this is your profile, please use <strong>Update info</strong> to correct or add details. You can provide missing paternal geography, current professional information, graduate-study details and publication information.</p>' +
+          '<p>You can also attach your latest <strong>CV</strong>, upload a <strong>high-resolution JPEG headshot</strong>, and provide either a direct link to or a PDF copy of your Master\u2019s and/or PhD thesis. <strong>Your CV will only be used to extract relevant information for this database, such as publications, awards, positions and related scholarly information. It will not be shared further and will not be displayed on the scholar dashboard.</strong></p>' +
+          '<p><strong>Maternal information is optional.</strong> If you choose to provide it, it will be used only for internal research/database purposes and <strong>will not be displayed on the public dashboard or scholar profile.</strong></p>' +
+          '<p>All submissions are reviewed before changes appear. After public launch, this permanent profile link can also be shared by the scholar, recruiters, collaborators, students and others who want a direct view of the scholar\u2019s profile.</p>';
+      }
+
+      function styleSummaryMetrics(d, main, card) {
+        var labels = [
+          'Publications','Unique authors','Theses','Universities represented','Countries represented','Fiji provinces studied',
+          'Publications with or by iTaukei','With iTaukei as Lead author','With iTaukei as co-author','Theses by iTaukei scholars',
+          'Universities attended by iTaukei graduate researchers','Countries of iTaukei graduate study',
+          'Theses total','Scholars','Masters','PhD','Universities','Countries'
+        ];
+        var norm = function (s) { return String(s || '').replace(/\s+/g,' ').trim().toLowerCase(); };
+        var wanted = new Set(labels.map(norm));
+        var all = Array.prototype.slice.call(main.querySelectorAll('*'));
+        all.forEach(function (labelEl) {
+          if (labelEl.children.length || !wanted.has(norm(labelEl.textContent))) return;
+          if (!(labelEl.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
+          var anc = labelEl.parentElement;
+          var chosen = null;
+          var numberEl = null;
+          for (var depth=0; anc && anc !== main && depth<5; depth++, anc=anc.parentElement) {
+            var leaves = Array.prototype.slice.call(anc.querySelectorAll('*')).filter(function (x) { return !x.children.length; });
+            var labelCount = leaves.filter(function (x) { return wanted.has(norm(x.textContent)); }).length;
+            var nums = leaves.filter(function (x) { return /^\s*[\d,]+\s*$/.test(x.textContent || ''); });
+            if (labelCount === 1 && nums.length >= 1) { chosen = anc; numberEl = nums[0]; break; }
+          }
+          if (!chosen || chosen.dataset.summaryStyled === '1') return;
+          chosen.dataset.summaryStyled = '1';
+          chosen.classList.add('scholar-summary-metric-tile');
+          labelEl.classList.add('scholar-summary-label');
+          numberEl.classList.add('scholar-summary-number');
+          var icon = chosen.querySelector('svg,img');
+          if (icon) {
+            var iconWrap = icon.parentElement;
+            if (iconWrap && iconWrap !== chosen) {
+              iconWrap.style.alignSelf = 'center';
+              iconWrap.style.justifySelf = 'center';
+            }
+          }
+        });
       }
 
       function findProfile(state, scholarId) {
@@ -260,6 +341,7 @@
         var dirty = new Map();
         items.forEach(function (item, idx) {
           var node = sourceNodes[idx] ? sourceNodes[idx].cloneNode(true) : fallbackPublicationCard(d, item);
+          node.style.overflow = 'visible';
           var editor = buildGeoEditor(d, state, item, dirty);
           node.appendChild(editor);
           list.appendChild(node);
@@ -324,8 +406,40 @@
           lab.appendChild(cb); lab.appendChild(span); panel.appendChild(lab);
           cb.addEventListener('change', function () { syncCount(); onChange(); });
         });
+
+        var win = d.defaultView;
         function values() { return Array.prototype.slice.call(panel.querySelectorAll('input:checked')).map(function (c) { return c.value; }); }
         function syncCount() { var n=values().length; details.classList.toggle('has-selection', n>0); summary.querySelector('.scholar-geo-menu__count').textContent=n; }
+        function positionPanel() {
+          if (!details.open) return;
+          var r = summary.getBoundingClientRect();
+          var gap = 6;
+          var vw = win.innerWidth || d.documentElement.clientWidth;
+          var vh = win.innerHeight || d.documentElement.clientHeight;
+          var width = Math.min(290, vw - 20);
+          panel.style.width = width + 'px';
+          var left = Math.max(10, Math.min(r.left, vw - width - 10));
+          panel.style.left = left + 'px';
+          panel.style.top = (r.bottom + gap) + 'px';
+          panel.style.visibility = 'hidden';
+          requestAnimationFrame(function () {
+            var ph = Math.min(panel.scrollHeight, Math.floor(vh * .46));
+            var top = r.bottom + gap;
+            if (top + ph > vh - 8 && r.top - ph - gap >= 8) top = r.top - ph - gap;
+            panel.style.top = Math.max(8, top) + 'px';
+            panel.style.visibility = 'visible';
+          });
+        }
+        details.addEventListener('toggle', function () {
+          if (details.open) {
+            Array.prototype.slice.call(d.querySelectorAll('details.scholar-geo-menu[open]')).forEach(function (other) { if (other !== details) other.open = false; });
+            positionPanel();
+          } else {
+            panel.style.visibility = 'hidden';
+          }
+        });
+        win.addEventListener('resize', positionPanel, {passive:true});
+        win.addEventListener('scroll', positionPanel, {passive:true, capture:true});
         syncCount();
         return { details:details, values:values };
       }
