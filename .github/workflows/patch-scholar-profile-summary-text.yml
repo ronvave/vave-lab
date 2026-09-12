@@ -1,0 +1,80 @@
+name: Patch scholar profile summary text
+on:
+  push:
+    paths:
+      - '.github/workflows/patch-scholar-profile-summary-text.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch s.html
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+
+          # Add a direct-profile text-normalisation pass immediately before KPI styling.
+          old = "        styleSummaryMetrics(d, main, card);\n        prepareScholarPublicationFilter(w, state, scholarKey);"
+          new = "        reviseSummaryPanelText(d, main, card);\n        styleSummaryMetrics(d, main, card);\n        prepareScholarPublicationFilter(w, state, scholarKey);"
+          if old not in s:
+              raise SystemExit('Insertion anchor not found')
+          s = s.replace(old, new, 1)
+
+          # Insert helper before styleSummaryMetrics.
+          anchor = "      function styleSummaryMetrics(d, main, card) {"
+          helper = r'''      function reviseSummaryPanelText(d, main, card) {
+        var today = '12 September 2026';
+        var headings = Array.prototype.slice.call(main.querySelectorAll('h1,h2,h3,h4,.db-panel__title,.db-section-title'));
+        headings.forEach(function (h) {
+          var title = String(h.textContent || '').trim().toLowerCase();
+          if (title === 'database overview') {
+            var panel = h.closest('section,article,.db-panel,.panel') || h.parentElement;
+            var p = panel && panel.querySelector('p');
+            if (p) {
+              p.textContent = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+              p.classList.add('scholar-summary-description');
+            }
+          } else if (title === 'itaukei scholarship' || title === 'itaukei scholarship'.replace('itaukei','iTaukei').toLowerCase()) {
+            var panel2 = h.closest('section,article,.db-panel,.panel') || h.parentElement;
+            var p2 = panel2 && panel2.querySelector('p');
+            if (p2) p2.classList.add('scholar-summary-description');
+          }
+        });
+
+        Array.prototype.slice.call(main.querySelectorAll('.db-kpi--solid .db-kpi__label')).forEach(function (el) {
+          var txt = String(el.textContent || '').replace(/\s+/g,' ').trim();
+          if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
+            el.textContent = 'Universities attended by iTaukei scholars';
+          }
+        });
+      }
+
+'''
+          if anchor not in s:
+              raise SystemExit('Function anchor not found')
+          s = s.replace(anchor, helper + anchor, 1)
+
+          # Force summary descriptive text to normal-size black body copy.
+          css_anchor = "          .scholar-direct-intro p{line-height:1.55}\n"
+          css_new = css_anchor + "          .scholar-direct-main .scholar-summary-description{color:#111!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;}\n"
+          if css_anchor not in s:
+              raise SystemExit('CSS anchor not found')
+          s = s.replace(css_anchor, css_new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet -- s.html; then
+            echo 'No change produced' >&2
+            exit 1
+          fi
+          git config user.name 'Vave Lab automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add s.html
+          git commit -m 'Refine scholar profile summary labels and descriptions'
+          git push
