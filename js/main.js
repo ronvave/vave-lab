@@ -30,7 +30,7 @@
   });
 })();
 
-// ── Sticky header scroll shadow ───────────────
+// ── Sticky header scroll shadow ────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const header = document.querySelector('.site-header');
   if (!header) return;
@@ -85,6 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const MASTER_PAGE = 'itaukei-research-database-master.html';
   if (!location.pathname.endsWith('/' + MASTER_PAGE) && !location.pathname.endsWith(MASTER_PAGE)) return;
 
+  const CAP_SID_KEY  = 'vavelab_share_cap_sid';
+  const CAP_HASH_KEY = 'vavelab_share_cap_hash';
   const SHARE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>';
 
   function addStyles() {
@@ -122,6 +124,14 @@ document.addEventListener('DOMContentLoaded', () => {
         color: #6b7280;
         margin: 0 0 12px;
         text-align: center;
+      }
+      .scholar-direct-invalid {
+        max-width:680px;
+        margin:72px auto;
+        padding:28px;
+        text-align:center;
+        font-family:"DM Sans",sans-serif;
+        color:#374151;
       }
     `;
     document.head.appendChild(style);
@@ -172,9 +182,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return found;
   }
 
-  function shortUrlFor(id) {
-    const base = location.origin + location.pathname.replace(/itaukei-research-database-master\.html$/i, 's.html');
-    return base + '?i=' + encodeURIComponent(id);
+  function directCapabilityId() {
+    const qs = new URLSearchParams(location.search);
+    const requested = String(qs.get('p') || '').toUpperCase();
+    if (!requested || qs.get('share') !== '1') return '';
+    const granted = String(sessionStorage.getItem(CAP_SID_KEY) || '').toUpperCase();
+    const capHash = String(sessionStorage.getItem(CAP_HASH_KEY) || '');
+    if (!/^[a-f0-9]{32}$/i.test(capHash) || granted !== requested) return '';
+    return requested;
+  }
+
+  function secureParentUrlFor(id) {
+    try {
+      const granted = String(sessionStorage.getItem(CAP_SID_KEY) || '').toUpperCase();
+      if (granted !== String(id || '').toUpperCase()) return '';
+      if (window.parent && window.parent !== window && window.parent.location.origin === location.origin && /\/s\.html$/i.test(window.parent.location.pathname)) {
+        const u = new URL(window.parent.location.href);
+        if (/^[a-f0-9]{40}$/i.test(u.searchParams.get('k') || '')) return u.href;
+      }
+    } catch (_) {}
+    return '';
   }
 
   function syncShareSize(updateBtn, shareBtn) {
@@ -195,7 +222,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function shareScholar(id, card, button) {
-    const url = shortUrlFor(id);
+    const url = secureParentUrlFor(id);
+    if (!url) {
+      window.alert('For privacy, secure scholar links are no longer generated from the public dashboard. Copy this scholar’s “Scholar Share URL” from the private Master file.');
+      return;
+    }
     const name = card?.querySelector('.db-scholar-card__name')?.textContent?.trim() || 'iTaukei scholar';
     const data = { title: name + ' — iTaukei Scholar', text: 'View and update this iTaukei scholar profile.', url };
     try {
@@ -285,8 +316,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (footer) footer.insertAdjacentElement('beforebegin', main);
     else document.body.appendChild(main);
 
-    // In direct-profile mode the card itself must not expose/filter the rest
-    // of the unpublished dashboard. External links, Update info and Share stay live.
     card.addEventListener('click', ev => {
       if (ev.target.closest('a, button, input, select, textarea, label')) return;
       ev.preventDefault();
@@ -297,15 +326,31 @@ document.addEventListener('DOMContentLoaded', () => {
     document.title = (card.querySelector('.db-scholar-card__name')?.textContent?.trim() || 'iTaukei Scholar') + ' — iTaukei Scholar Profile';
   }
 
+  function showInvalidDirectLink() {
+    document.body.classList.add('scholar-direct-mode');
+    Array.from(document.querySelectorAll('main')).forEach(m => { m.style.display = 'none'; });
+    const box = document.createElement('main');
+    box.className = 'scholar-direct-invalid';
+    box.textContent = 'This scholar link is invalid or has expired.';
+    document.body.appendChild(box);
+  }
+
   function init() {
     addStyles();
     scanCards();
+
+    const qs = new URLSearchParams(location.search);
+    const requestedP = qs.get('p');
+    const directId = directCapabilityId();
+    if (requestedP && !directId) {
+      showInvalidDirectLink();
+      return;
+    }
 
     const grid = document.querySelector('[data-db-leaders]');
     if (grid) {
       const obs = new MutationObserver(() => {
         scanCards();
-        const directId = new URLSearchParams(location.search).get('p');
         if (directId) {
           const card = findCardForId(directId);
           if (card) enterDirectMode(card, directId);
@@ -314,7 +359,6 @@ document.addEventListener('DOMContentLoaded', () => {
       obs.observe(grid, { childList: true, subtree: true });
     }
 
-    const directId = new URLSearchParams(location.search).get('p');
     if (!directId) return;
 
     let attempts = 0;
