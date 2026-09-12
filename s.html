@@ -116,7 +116,7 @@
         var card = main.querySelector('.db-scholar-card');
         if (!card) return;
 
-        reviseSummaryPanelText(d, main, card);
+        installSummaryPanelTextGuard(d, main);
         styleSummaryMetrics(d, main, card);
         prepareScholarPublicationFilter(w, state, scholarKey);
         buildPublicationReviewWhenReady(w, d, main, state, scholarId, scholarKey, scholarName, card);
@@ -141,7 +141,7 @@
             font-weight:800;font-size:.78rem;letter-spacing:.01em;
           }
           .scholar-direct-intro p{line-height:1.55}
-          .scholar-direct-main .scholar-summary-description{color:#111!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;}
+          .scholar-direct-main .scholar-summary-description{color:#111!important;font-family:"DM Sans",Arial,sans-serif!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;opacity:1!important;}
 
           /* Exact approved KPI treatment from Ron's mockup:
              large circular icon | divider | vertically centred number | label. */
@@ -285,30 +285,37 @@
           '<p>All submissions are reviewed before changes appear. After public launch, this permanent profile link can also be shared by the scholar, recruiters, collaborators, students and others who want a direct view of the scholar\u2019s profile.</p>';
       }
 
-      function reviseSummaryPanelText(d, main, card) {
+      function installSummaryPanelTextGuard(d, main) {
         var today = '12 September 2026';
-        var headings = Array.prototype.slice.call(main.querySelectorAll('h1,h2,h3,h4,.db-panel__title,.db-section-title'));
-        headings.forEach(function (h) {
-          var title = String(h.textContent || '').trim().toLowerCase();
-          if (title === 'database overview') {
-            var panel = h.closest('section,article,.db-panel,.panel') || h.parentElement;
-            var p = panel && panel.querySelector('p');
-            if (p) {
-              p.textContent = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
-              p.classList.add('scholar-summary-description');
-            }
-          } else if (title === 'itaukei scholarship') {
-            var panel2 = h.closest('section,article,.db-panel,.panel') || h.parentElement;
-            var p2 = panel2 && panel2.querySelector('p');
-            if (p2) p2.classList.add('scholar-summary-description');
-          }
-        });
-        Array.prototype.slice.call(main.querySelectorAll('.db-kpi--solid .db-kpi__label')).forEach(function (el) {
-          var txt = String(el.textContent || '').replace(/\s+/g,' ').trim();
-          if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
-            el.textContent = 'Universities attended by iTaukei scholars';
-          }
-        });
+        var applying = false;
+        function applySummaryText() {
+          if (applying) return;
+          applying = true;
+          try {
+            Array.prototype.slice.call(main.querySelectorAll('.db-section')).forEach(function (section) {
+              var label = section.querySelector('.db-section__label');
+              var hint = section.querySelector('.db-section__hint');
+              var title = String(label && label.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+              if (title === 'database overview' && hint) {
+                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+                if (hint.textContent !== wanted) hint.textContent = wanted;
+                hint.classList.add('scholar-summary-description');
+              } else if (title === 'itaukei scholarship' && hint) {
+                hint.classList.add('scholar-summary-description');
+              }
+            });
+            Array.prototype.slice.call(main.querySelectorAll('.db-kpi__label')).forEach(function (el) {
+              var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+              if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
+                el.textContent = 'Universities attended by iTaukei scholars';
+              }
+            });
+          } finally { applying = false; }
+        }
+        applySummaryText();
+        [100,350,900,1800,3500].forEach(function(delay){ setTimeout(applySummaryText,delay); });
+        var observer = new MutationObserver(function(){ setTimeout(applySummaryText,0); });
+        observer.observe(main,{childList:true,subtree:true,characterData:true});
       }
 
       function styleSummaryMetrics(d, main, card) {
