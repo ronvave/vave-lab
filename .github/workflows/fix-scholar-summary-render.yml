@@ -1,0 +1,96 @@
+name: Fix scholar summary rendering
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-scholar-summary-render.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch s.html robustly
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+
+          old_call = "        reviseSummaryPanelText(d, main, card);\n        styleSummaryMetrics(d, main, card);"
+          new_call = "        installSummaryPanelTextGuard(d, main);\n        styleSummaryMetrics(d, main, card);"
+          if old_call not in s:
+              raise SystemExit('summary call anchor not found')
+          s = s.replace(old_call, new_call, 1)
+
+          start = s.find("      function reviseSummaryPanelText(d, main, card) {")
+          end = s.find("      function styleSummaryMetrics(d, main, card) {", start)
+          if start < 0 or end < 0:
+              raise SystemExit('summary helper block not found')
+
+          helper = r'''      function installSummaryPanelTextGuard(d, main) {
+        var today = '12 September 2026';
+        var applying = false;
+
+        function applySummaryText() {
+          if (applying) return;
+          applying = true;
+          try {
+            Array.prototype.slice.call(main.querySelectorAll('.db-section')).forEach(function (section) {
+              var label = section.querySelector('.db-section__label');
+              var hint = section.querySelector('.db-section__hint');
+              var title = String(label && label.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+              if (title === 'database overview' && hint) {
+                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+                if (hint.textContent !== wanted) hint.textContent = wanted;
+                hint.classList.add('scholar-summary-description');
+              }
+              if (title === 'itaukei scholarship' && hint) {
+                hint.classList.add('scholar-summary-description');
+              }
+            });
+
+            Array.prototype.slice.call(main.querySelectorAll('.db-kpi__label')).forEach(function (el) {
+              var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+              if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
+                el.textContent = 'Universities attended by iTaukei scholars';
+              }
+            });
+          } finally {
+            applying = false;
+          }
+        }
+
+        applySummaryText();
+        [100, 350, 900, 1800, 3500].forEach(function (delay) {
+          setTimeout(applySummaryText, delay);
+        });
+
+        var observer = new MutationObserver(function () {
+          setTimeout(applySummaryText, 0);
+        });
+        observer.observe(main, { childList:true, subtree:true, characterData:true });
+      }
+
+'''
+          s = s[:start] + helper + s[end:]
+
+          # Make the two descriptive lines visually unambiguous: black, normal-size, normal weight.
+          old_css = ".scholar-direct-main .scholar-summary-description{color:#111!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;}"
+          new_css = ".scholar-direct-main .scholar-summary-description{color:#111!important;font-family:\"DM Sans\",Arial,sans-serif!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;opacity:1!important;}"
+          if old_css in s:
+              s = s.replace(old_css, new_css, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit patch
+        run: |
+          if git diff --quiet -- s.html; then
+            echo 'No change produced' >&2
+            exit 1
+          fi
+          git config user.name 'Vave Lab automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add s.html
+          git commit -m 'Fix scholar summary text rendering'
+          git push
