@@ -122,9 +122,9 @@
       }
 
       function injectStyles(d) {
-        if (d.getElementById('direct-profile-review-v4-style')) return;
+        if (d.getElementById('direct-profile-review-v5-style')) return;
         var style = d.createElement('style');
-        style.id = 'direct-profile-review-v4-style';
+        style.id = 'direct-profile-review-v5-style';
         style.textContent = `
           .scholar-direct-about{
             max-width:980px;margin:0 auto 18px;padding:17px 20px;
@@ -141,65 +141,80 @@
           }
           .scholar-direct-intro p{line-height:1.55}
 
-          /* Approved direct-profile KPI layout: icon | number | large label. */
+          /* Exact approved KPI treatment from Ron's mockup:
+             large circular icon | divider | vertically centred number | label. */
           .scholar-direct-main .db-kpis{
             grid-template-columns:repeat(3,minmax(0,1fr))!important;
             gap:12px!important;
           }
           .scholar-direct-main .db-kpi--solid{
-            display:flex!important;
+            display:grid!important;
+            grid-template-columns:58px minmax(0,1fr)!important;
             align-items:center!important;
-            min-height:104px!important;
-            padding:14px 18px!important;
-            gap:18px!important;
+            min-height:112px!important;
+            padding:14px 16px!important;
+            column-gap:15px!important;
+            border-radius:12px!important;
+            overflow:hidden!important;
+            background:linear-gradient(100deg,color-mix(in srgb,var(--kpi-bg) 96%,#000 4%),var(--kpi-bg))!important;
+            box-shadow:0 1px 2px rgba(0,0,0,.12)!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__icon{
-            width:56px!important;
-            height:56px!important;
-            flex:0 0 56px!important;
+            width:58px!important;
+            height:58px!important;
+            flex:none!important;
+            margin:0!important;
             position:relative!important;
-            margin-right:8px!important;
+            justify-self:center!important;
+            align-self:center!important;
+            background:rgba(255,255,255,.11)!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{
-            width:31px!important;
-            height:31px!important;
+            width:32px!important;
+            height:32px!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__icon::after{
             content:"";
-            position:absolute;
-            top:0;
-            bottom:0;
-            right:-14px;
-            width:1px;
-            background:rgba(255,255,255,.34);
+            position:absolute!important;
+            top:-3px!important;
+            bottom:-3px!important;
+            right:-15px!important;
+            width:1px!important;
+            background:rgba(255,255,255,.34)!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__body{
             display:grid!important;
-            grid-template-columns:auto minmax(0,1fr)!important;
+            grid-template-columns:minmax(82px,auto) minmax(0,1fr)!important;
             align-items:center!important;
-            gap:20px!important;
+            gap:10px!important;
             min-width:0!important;
-            flex:1 1 auto!important;
+            height:100%!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__num{
-            font-family:Arial,Helvetica,sans-serif!important;
+            font-family:Arial,Helvetica,'Helvetica Neue',sans-serif!important;
             font-size:36px!important;
             line-height:1!important;
             font-weight:800!important;
+            letter-spacing:-.02em!important;
             color:#fff!important;
             margin:0!important;
             white-space:nowrap!important;
             align-self:center!important;
+            justify-self:start!important;
           }
           .scholar-direct-main .db-kpi--solid .db-kpi__label{
-            font-family:Arial,Helvetica,sans-serif!important;
-            font-size:18px!important;
-            line-height:1.15!important;
-            font-weight:600!important;
+            font-family:Arial,Helvetica,'Helvetica Neue',sans-serif!important;
+            font-size:16px!important;
+            line-height:1.18!important;
+            font-weight:700!important;
             color:#fff!important;
             margin:0!important;
             align-self:center!important;
+            justify-self:start!important;
             white-space:normal!important;
+            overflow-wrap:normal!important;
+            word-break:normal!important;
+            text-wrap:balance!important;
           }
 
           .scholar-pubs-review{max-width:1020px;margin:28px auto 12px;font-family:"DM Sans",Arial,sans-serif}
@@ -233,17 +248,19 @@
           .scholar-geo-submit__actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scholar-geo-submit button{border:0;border-radius:8px;padding:9px 15px;background:#0e7490;color:#fff;font-weight:700;cursor:pointer}.scholar-geo-submit button:disabled{opacity:.55;cursor:wait}
           .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
           @media(max-width:900px){
-            .scholar-direct-main .db-kpi--solid{min-height:94px!important;padding:12px 14px!important;gap:14px!important}
-            .scholar-direct-main .db-kpi--solid .db-kpi__icon{width:48px!important;height:48px!important;flex-basis:48px!important;margin-right:6px!important}
-            .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:27px!important;height:27px!important}
-            .scholar-direct-main .db-kpi--solid .db-kpi__body{gap:13px!important}
+            .scholar-direct-main .db-kpi--solid{grid-template-columns:50px minmax(0,1fr)!important;min-height:98px!important;padding:12px 13px!important;column-gap:12px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__icon{width:50px!important;height:50px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:28px!important;height:28px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__icon::after{right:-12px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__body{grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:8px!important}
             .scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:31px!important}
-            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:15px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:14px!important;line-height:1.16!important}
           }
           @media(max-width:700px){
             .scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}
             .scholar-geo-submit__grid{grid-template-columns:1fr}
             .scholar-direct-main .db-kpis{grid-template-columns:1fr!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}
           }
         `;
         d.head.appendChild(style);
