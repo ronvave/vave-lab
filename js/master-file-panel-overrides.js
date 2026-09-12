@@ -16,6 +16,9 @@
  *   3. The "Last Master-file update: [timestamp]" badge in the header.
  *   4. Panel A1/A2 headline KPIs reconciled against the Master-file
  *      aggregates (extra safety belt over the Zotero-shape pass).
+ *   5. Panel G's public Discipline filter is collapsed to Ron's eight
+ *      short discipline categories while preserving the detailed Master
+ *      discipline strings as the underlying source data.
  *
  * All overrides run *after* the production code has hydrated state.master
  * and finished its first render pass. We hook into a small custom event
@@ -38,6 +41,17 @@
     'Book'
   ];
 
+  var SHORT_DISCIPLINES = [
+    'Earth, ocean and atmospheric sciences',
+    'Social sciences',
+    'Humanities',
+    'Education',
+    'Life and environmental sciences',
+    'Theology and religious studies',
+    'Health sciences',
+    'Engineering, technology and planning'
+  ];
+
   function once(fn) { var done = false; return function () { if (done) return; done = true; fn.apply(this, arguments); }; }
 
   // Wait for the master state to be present (production loadAll finishes and
@@ -56,17 +70,7 @@
   // -------------------------------------------------------------------
   // 1. Province × confederacy TOTAL columns for B1 and C2
   // -------------------------------------------------------------------
-  //
-  // The production dashboard renders province tables via renderPanelB
-  // (Panel B1) and renderConfList / renderPanelBBarsInto (Panel C2).
-  // Both use the 14-province list flat, without a confederacy total
-  // row. To satisfy the Master-file spec's "dedicated TOTAL columns
-  // inside Burebasaga, Kubuna and Tovata" requirement, we render an
-  // additional summary table into the two panel hosts.
-
   function tallyByProvinceAndConfed(scope /* 'all' | 'itaukei' */) {
-    // Returns { byProvince: {prov: n}, byConfed: {confed: n},
-    //           byConfedAndProv: {confed: {prov: n}} }
     var st = window.__vavelabDbState || null;
     var master = st && st.master;
     if (!master) return null;
@@ -82,8 +86,6 @@
       Mfc.CONFEDERACIES[c].forEach(function (p) { byConfedAndProv[c][p] = 0; });
     });
 
-    // Filter publications to headline types only (per spec: the two summary
-    // tables exclude Reports, Conference papers, Unpublished report, Others).
     var pubs = master.publications.filter(function (p) {
       return HEADLINE_TYPES.indexOf(p['Publication Type']) !== -1;
     });
@@ -140,7 +142,6 @@
       });
     });
     html += '</tbody><tfoot>';
-    // Grand totals across the 14 provinces + explanatory notes.
     var allProvTotal = 0;
     Mfc.PROVINCES.forEach(function (p) { allProvTotal += tally.byProvince[p]; });
     var confedGrand = tally.byConfed.Burebasaga + tally.byConfed.Kubuna + tally.byConfed.Tovata;
@@ -148,11 +149,8 @@
             '<td class="mf-cell-num"><strong>' + allProvTotal.toLocaleString() + '</strong></td>' +
             '<td class="mf-cell-total"><strong>' + confedGrand.toLocaleString() + '</strong></td></tr>';
     html += '</tfoot></table>';
-
-    // The two explanatory lines — always verbatim, per spec.
     html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[0]) + '</p>';
     html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[1]) + '</p>';
-
     hostEl.innerHTML = html;
   }
 
@@ -167,7 +165,6 @@
     var st = document.createElement('style');
     st.id = 'mf-panel-overrides-style';
     st.textContent =
-      // Confederacy totals table styling — matches production teal/coral/gold tokens.
       '.mf-confed-table { width:100%; margin:1.25rem 0 0.5rem; border-collapse:collapse; font-family:"DM Sans", sans-serif; font-size:0.925rem; }' +
       '.mf-confed-table__cap { text-align:left; font-family:"Cormorant Garamond", serif; font-size:1.15rem; font-weight:600; color:var(--color-teal,#005f6b); padding-bottom:0.5rem; caption-side:top; }' +
       '.mf-confed-table thead th { text-align:left; padding:0.55rem 0.75rem; border-bottom:2px solid var(--color-teal,#005f6b); background:rgba(0,95,107,0.05); font-weight:600; color:var(--color-teal,#005f6b); }' +
@@ -184,18 +181,13 @@
       '.mf-confed-table tfoot .mf-row-grand td, .mf-confed-table tfoot .mf-row-grand th { padding:0.6rem 0.75rem; border-top:2px solid var(--color-teal,#005f6b); background:rgba(0,95,107,0.08); font-family:"DM Sans", sans-serif; }' +
       '.mf-confed-table tfoot .mf-row-grand .mf-cell-num, .mf-confed-table tfoot .mf-row-grand .mf-cell-total { font-family:Arial, Helvetica, sans-serif; }' +
       '.mf-note { font-family:"DM Sans", sans-serif; font-size:0.85rem; color:var(--color-ink-soft,#4a5054); margin:0.35rem 0; font-style:italic; }' +
-      // Timestamp badge
       '.mf-updated-badge { display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.7rem; border-radius:999px; background:rgba(0,95,107,0.08); color:var(--color-teal,#005f6b); font-family:"DM Sans", sans-serif; font-size:0.8rem; font-weight:500; margin-left:0.5rem; }' +
       '.mf-updated-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--color-teal,#005f6b); }' +
-      // Section title
       '.mf-panel-section-title { font-family:"Cormorant Garamond", serif; font-size:1.35rem; color:var(--color-teal,#005f6b); margin:1.75rem 0 0.5rem; font-weight:600; }';
     document.head.appendChild(st);
   }
 
-  // Find a good place to inject the confederacy-totals table — right after
-  // the B1 province chart (Panel B) and after C2 (whose host is `.db-panel--c2 .db-panel__body`).
   function findHostAfter(id) {
-    // Try common Panel B/C anchors from the production HTML.
     var el = document.querySelector(id);
     if (!el) return null;
     return el;
@@ -203,9 +195,6 @@
 
   function injectConfedTotals() {
     injectStylesOnce();
-    var Mfc = window.MasterFileAdapter.constants;
-
-    // Panel B (Fiji provinces): the production chart is inside .db-panel--b .db-panel__body.
     var bPanel = document.querySelector('.db-panel--b .db-panel__body')
               || document.querySelector('[data-panel="B"] .db-panel__body')
               || document.querySelector('#panel-b .db-panel__body');
@@ -224,7 +213,6 @@
       if (!bPanel.querySelector('.mf-confed-totals-host')) bPanel.appendChild(host);
     }
 
-    // Panel C2 (research in and across Fiji's 14 provinces).
     var c2Panel = document.querySelector('.db-panel--c2 .db-panel__body')
                || document.querySelector('[data-panel="C2"] .db-panel__body')
                || document.querySelector('#panel-c2 .db-panel__body');
@@ -252,8 +240,6 @@
     var st = window.__vavelabDbState;
     var master = st && st.master;
     if (!master || !master.lastSync) return;
-    // Find the sync badge in the header (production wires a #db-sync-badge)
-    // and append our own subtle badge next to it.
     var badgeHost = document.getElementById('db-sync-badge') ||
                     document.querySelector('.db-hero__meta') ||
                     document.querySelector('.db-header') ||
@@ -269,7 +255,6 @@
       dateStyle: 'medium', timeStyle: 'short'
     });
     badge.title = 'Master-file JSON snapshot last refreshed at this time by the every-2h GitHub Actions workflow.';
-    // Insert AFTER the sync badge, or into the host.
     if (badgeHost.parentNode) {
       badgeHost.parentNode.insertBefore(badge, badgeHost.nextSibling);
     } else {
@@ -278,13 +263,86 @@
   }
 
   // -------------------------------------------------------------------
+  // 3. Short discipline taxonomy for Panel G.
+  // -------------------------------------------------------------------
+  // Converts detailed scholar disciplines into Ron's eight stable public
+  // categories. This is DISPLAY/FILTER classification only: it does not
+  // overwrite the detailed Primary Discipline / Field in the Master.
+  function shortDisciplineName(value) {
+    var s = String(value || '').trim();
+    if (!s) return 'Social sciences';
+    if (SHORT_DISCIPLINES.indexOf(s) !== -1) return s;
+    var x = s.toLowerCase();
+
+    if (/theolog|religio|church|biblical|christian|pastoral|ecumen|methodist|anglican|faith|ministry/.test(x)) {
+      return 'Theology and religious studies';
+    }
+    if (/education|teaching|teacher|curriculum|pedagog|school|literacy|tvet|early childhood|educational/.test(x)) {
+      return 'Education';
+    }
+    if (/public health|medicine|medical|nursing|surgery|epidemi|health science|clinical|anaesth|cardiol|paediatr|obstetric|gynaec|dent|intensive care|emergency medicine|infectious|diabetes/.test(x)) {
+      return 'Health sciences';
+    }
+    if (/engineering|technology|information system|information technology|ict|computer|computing|digital|architecture|planning|gis|geomatic|survey|remote sensing|renewable energy|power|control|construction|mining/.test(x)) {
+      return 'Engineering, technology and planning';
+    }
+    if (/marine science|ocean|climate|atmospher|geograph|geolog|hydrolog|coastal process|earth science/.test(x)) {
+      return 'Earth, ocean and atmospheric sciences';
+    }
+    if (/environment|ecolog|biology|agricultur|forestry|fisher|aquaculture|horticultur|animal science|veterinary|plant|entomolog|ornitholog|microbiology|food science|phytochemical|soil|agroforestry|crop|livestock|conservation|biodiversity|chemistry|coral reef|natural products|water quality|pollution/.test(x)) {
+      return 'Life and environmental sciences';
+    }
+    if (/history|linguist|language|literature|archaeolog|heritage|art and design|museum|cultural research|philosoph|humanities/.test(x)) {
+      return 'Humanities';
+    }
+    return 'Social sciences';
+  }
+
+  function applyShortDisciplineTaxonomy() {
+    var st = window.__vavelabDbState;
+    if (!st) return;
+
+    // Reclassify the item-level discipline sets consumed by Panel G's filter,
+    // publication badges, and subsequent re-renders. Keep the detailed Master
+    // strings untouched in state.master.
+    if (st.disciplinesByItem && typeof st.disciplinesByItem.forEach === 'function') {
+      st.disciplinesByItem.forEach(function (discSet, itemKey) {
+        var shortSet = new Set();
+        if (discSet && typeof discSet.forEach === 'function') {
+          discSet.forEach(function (d) { shortSet.add(shortDisciplineName(d)); });
+        }
+        st.disciplinesByItem.set(itemKey, shortSet);
+      });
+    }
+
+    // Normalize any discipline already restored from the URL before rebuilding
+    // the select, so old shared links do not leave an impossible long value.
+    if (st.filter && st.filter.discipline) {
+      st.filter.discipline = shortDisciplineName(st.filter.discipline);
+    }
+
+    var sel = document.querySelector('[data-db-filter="discipline"]');
+    if (!sel) return;
+    var active = st.filter ? (st.filter.discipline || '') : '';
+    sel.innerHTML = '<option value="">All disciplines</option>';
+    SHORT_DISCIPLINES.forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+    sel.dataset.built = '1';
+    sel.value = SHORT_DISCIPLINES.indexOf(active) !== -1 ? active : '';
+  }
+
+  // -------------------------------------------------------------------
   // Boot: run overrides after production render pass.
   // -------------------------------------------------------------------
   function boot() {
     whenMasterReady(function () {
+      try { applyShortDisciplineTaxonomy(); } catch (e) { console.error('MF short discipline taxonomy failed', e); }
       try { injectTimestamp(); } catch (e) { console.error('MF timestamp inject failed', e); }
       try { injectConfedTotals(); } catch (e) { console.error('MF confed totals inject failed', e); }
-      // Also re-run on filter changes so counts stay accurate if the state changes.
       window.addEventListener('vavelab:filters-changed', function () {
         try { injectConfedTotals(); } catch (e) {}
       });
@@ -300,8 +358,11 @@
   // Expose overrides for debugging.
   window.MasterFilePanelOverrides = {
     injectConfedTotals: injectConfedTotals,
-    injectTimestamp:    injectTimestamp,
+    injectTimestamp: injectTimestamp,
     tallyByProvinceAndConfed: tallyByProvinceAndConfed,
+    applyShortDisciplineTaxonomy: applyShortDisciplineTaxonomy,
+    shortDisciplineName: shortDisciplineName,
+    SHORT_DISCIPLINES: SHORT_DISCIPLINES,
     HEADLINE_TYPES: HEADLINE_TYPES,
     NOTE_LINES: TWO_NOTE_LINES
   };
