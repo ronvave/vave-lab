@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.body.prepend(sentinel);
   obs.observe(sentinel);
 
-  // ── Mobile menu ────────────────────────────
   const hamburger = document.querySelector('.nav-hamburger');
   const mobileMenu = document.querySelector('.mobile-menu');
   if (hamburger && mobileMenu) {
@@ -53,17 +52,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // ── Active nav link ────────────────────────
   const links = document.querySelectorAll('.nav-links a, .mobile-menu a');
   const current = location.pathname.split('/').pop() || 'index.html';
   links.forEach(link => {
     const href = link.getAttribute('href');
-    if (href === current || (current === 'index.html' && href === 'index.html')) {
-      link.classList.add('active');
-    }
+    if (href === current || (current === 'index.html' && href === 'index.html')) link.classList.add('active');
   });
 
-  // ── Scroll-reveal animation ────────────────
   if ('IntersectionObserver' in window) {
     const revealObs = new IntersectionObserver((entries) => {
       entries.forEach(e => {
@@ -73,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
-
     document.querySelectorAll('.reveal').forEach(el => revealObs.observe(el));
   }
 });
@@ -88,6 +82,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const CAP_SID_KEY  = 'vavelab_share_cap_sid';
   const CAP_HASH_KEY = 'vavelab_share_cap_hash';
   const SHARE_ICON = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>';
+
+  // Public profile permalinks are intentionally stable and non-enumerable.
+  // They are public profile locators, not authentication credentials: once the
+  // dashboard launches, anyone viewing a public scholar card should be able to
+  // copy/share that scholar's permanent profile URL. During the pre-launch
+  // phase, the dashboard's own access gate remains the confidentiality boundary.
+  const publicShareMap = Object.create(null);
+  let shareMapReady = false;
+  const shareMapPromise = Promise.all([0,1,2,3,4].map(i =>
+    fetch('data/share-public/' + i + '.json', { cache: 'no-store', credentials: 'same-origin' })
+      .then(r => { if (!r.ok) throw new Error('share permalink index unavailable'); return r.json(); })
+  )).then(parts => {
+    parts.forEach(doc => Object.assign(publicShareMap, (doc && doc.m) || {}));
+    shareMapReady = true;
+    document.querySelectorAll('[data-scholar-share]').forEach(btn => {
+      btn.disabled = false;
+      btn.removeAttribute('aria-busy');
+      btn.setAttribute('title', 'Share this scholar profile');
+    });
+  }).catch(err => {
+    console.error('Scholar permalink index failed to load', err);
+  });
 
   function addStyles() {
     if (document.getElementById('scholar-share-style')) return;
@@ -107,11 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
         box-sizing: border-box !important;
       }
       .db-scholar-card__share:hover { background:#9f2342 !important; border-color:#9f2342 !important; }
+      .db-scholar-card__share:disabled { opacity:.62; cursor:wait; }
       .db-scholar-card__share svg { flex:0 0 auto; }
-      .scholar-direct-main {
-        width: min(680px, calc(100% - 28px));
-        margin: 28px auto 56px;
-      }
+      .scholar-direct-main { width:min(680px,calc(100% - 28px)); margin:28px auto 56px; }
       .scholar-direct-main .db-scholar-card { width:100%; max-width:none; }
       body.scholar-direct-mode .nav-links,
       body.scholar-direct-mode .mobile-menu,
@@ -119,19 +133,12 @@ document.addEventListener('DOMContentLoaded', () => {
       body.scholar-direct-mode .site-footer { display:none !important; }
       body.scholar-direct-mode .site-header { position:static !important; }
       body.scholar-direct-mode .scholar-direct-note {
-        font-family: "DM Sans", sans-serif;
-        font-size: .88rem;
-        color: #6b7280;
-        margin: 0 0 12px;
-        text-align: center;
+        font-family:"DM Sans",sans-serif; font-size:.88rem; color:#6b7280;
+        margin:0 0 12px; text-align:center;
       }
       .scholar-direct-invalid {
-        max-width:680px;
-        margin:72px auto;
-        padding:28px;
-        text-align:center;
-        font-family:"DM Sans",sans-serif;
-        color:#374151;
+        max-width:680px; margin:72px auto; padding:28px; text-align:center;
+        font-family:"DM Sans",sans-serif; color:#374151;
       }
     `;
     document.head.appendChild(style);
@@ -141,9 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
   }
 
-  function getState() {
-    return window.__vavelabDbState || null;
-  }
+  function getState() { return window.__vavelabDbState || null; }
 
   function profileForId(id) {
     const st = getState();
@@ -152,9 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let found = null;
     map.forEach((p, key) => {
       if (found || !p) return;
-      if (String(p.scholarId || '').toUpperCase() === String(id || '').toUpperCase()) {
-        found = { key, profile: p };
-      }
+      if (String(p.scholarId || '').toUpperCase() === String(id || '').toUpperCase()) found = { key, profile: p };
     });
     return found;
   }
@@ -204,6 +207,14 @@ document.addEventListener('DOMContentLoaded', () => {
     return '';
   }
 
+  function publicPermalinkFor(id) {
+    const sid = String(id || '').toUpperCase();
+    const token = publicShareMap[sid] || '';
+    if (!/^[a-f0-9]{40}$/i.test(token)) return '';
+    const base = location.origin + location.pathname.replace(/itaukei-research-database-master\.html$/i, 's.html');
+    return base + '?k=' + encodeURIComponent(token);
+  }
+
   function syncShareSize(updateBtn, shareBtn) {
     if (!updateBtn || !shareBtn) return;
     const apply = () => {
@@ -216,37 +227,53 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('ResizeObserver' in window) {
       const ro = new ResizeObserver(apply);
       ro.observe(updateBtn);
-    } else {
-      window.addEventListener('resize', apply, { passive: true });
-    }
+    } else window.addEventListener('resize', apply, { passive: true });
+  }
+
+  function flashCopied(button) {
+    const old = button.innerHTML;
+    button.innerHTML = SHARE_ICON + '<span>Copied</span>';
+    setTimeout(() => { button.innerHTML = old; }, 1600);
   }
 
   async function shareScholar(id, card, button) {
-    const url = secureParentUrlFor(id);
+    // On an isolated profile, always preserve the exact parent permalink.
+    // On the full dashboard, use the same stable opaque token from the public
+    // permalink index. No Master-Sheet lookup is required by the user.
+    let url = secureParentUrlFor(id);
     if (!url) {
-      window.alert('For privacy, secure scholar links are no longer generated from the public dashboard. Copy this scholar’s “Scholar Share URL” from the private Master file.');
+      if (!shareMapReady) {
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        button.innerHTML = SHARE_ICON + '<span>Preparing…</span>';
+        try { await shareMapPromise; } catch (_) {}
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+        button.innerHTML = SHARE_ICON + '<span>Share</span>';
+      }
+      url = publicPermalinkFor(id);
+    }
+    if (!url) {
+      window.alert('This scholar profile link is temporarily unavailable. Please refresh the page and try again.');
       return;
     }
+
     const name = card?.querySelector('.db-scholar-card__name')?.textContent?.trim() || 'iTaukei scholar';
-    const data = { title: name + ' — iTaukei Scholar', text: 'View and update this iTaukei scholar profile.', url };
+    const data = { title: name + ' — iTaukei Scholar', text: 'View this iTaukei scholar profile.', url };
     try {
       if (navigator.share) {
         await navigator.share(data);
         return;
       }
       await navigator.clipboard.writeText(url);
-      const old = button.innerHTML;
-      button.innerHTML = SHARE_ICON + '<span>Copied</span>';
-      setTimeout(() => { button.innerHTML = old; }, 1600);
+      flashCopied(button);
     } catch (err) {
       if (err && err.name === 'AbortError') return;
       try {
         await navigator.clipboard.writeText(url);
-        const old = button.innerHTML;
-        button.innerHTML = SHARE_ICON + '<span>Copied</span>';
-        setTimeout(() => { button.innerHTML = old; }, 1600);
+        flashCopied(button);
       } catch (_) {
-        window.prompt('Copy this scholar link:', url);
+        window.prompt('Copy this scholar profile link:', url);
       }
     }
   }
@@ -261,9 +288,13 @@ document.addEventListener('DOMContentLoaded', () => {
     share.type = 'button';
     share.className = 'db-scholar-card__submit db-scholar-card__share';
     share.setAttribute('data-scholar-share', id);
-    share.setAttribute('title', 'Share a private direct link to this scholar profile');
+    share.setAttribute('title', shareMapReady ? 'Share this scholar profile' : 'Preparing scholar profile link');
     share.setAttribute('aria-label', 'Share direct link to this scholar profile');
     share.innerHTML = SHARE_ICON + '<span>Share</span>';
+    if (!shareMapReady && !secureParentUrlFor(id)) {
+      share.disabled = true;
+      share.setAttribute('aria-busy', 'true');
+    }
     share.addEventListener('click', ev => {
       ev.preventDefault();
       ev.stopPropagation();
@@ -273,9 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     syncShareSize(updateBtn, share);
   }
 
-  function scanCards() {
-    document.querySelectorAll('.db-scholar-card').forEach(ensureShareButton);
-  }
+  function scanCards() { document.querySelectorAll('.db-scholar-card').forEach(ensureShareButton); }
 
   function findCardForId(id) {
     const cards = Array.from(document.querySelectorAll('.db-scholar-card'));
@@ -300,7 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function enterDirectMode(card, id) {
     if (!card || document.querySelector('.scholar-direct-main')) return;
     document.body.classList.add('scholar-direct-mode');
-
     Array.from(document.querySelectorAll('main')).forEach(m => { m.style.display = 'none'; });
 
     const main = document.createElement('main');
@@ -369,9 +397,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (card) {
         clearInterval(timer);
         enterDirectMode(card, directId);
-      } else if (attempts > 160) {
-        clearInterval(timer);
-      }
+      } else if (attempts > 160) clearInterval(timer);
     }, 125);
   }
 
