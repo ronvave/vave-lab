@@ -116,6 +116,7 @@
         var card = main.querySelector('.db-scholar-card');
         if (!card) return;
 
+        reviseSummaryPanelText(d, main, card);
         styleSummaryMetrics(d, main, card);
         prepareScholarPublicationFilter(w, state, scholarKey);
         buildPublicationReviewWhenReady(w, d, main, state, scholarId, scholarKey, scholarName, card);
@@ -140,6 +141,7 @@
             font-weight:800;font-size:.78rem;letter-spacing:.01em;
           }
           .scholar-direct-intro p{line-height:1.55}
+          .scholar-direct-main .scholar-summary-description{color:#111!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;}
 
           /* Exact approved KPI treatment from Ron's mockup:
              large circular icon | divider | vertically centred number | label. */
@@ -281,6 +283,32 @@
           '<p>You can also attach your latest <strong>CV</strong>, upload a <strong>high-resolution JPEG headshot</strong>, and provide either a direct link to or a PDF copy of your Master\u2019s and/or PhD thesis. <strong>Your CV will only be used to extract relevant information for this database, such as publications, awards, positions and related scholarly information. It will not be shared further and will not be displayed on the scholar dashboard.</strong></p>' +
           '<p><strong>Maternal information is optional.</strong> If you choose to provide it, it will be used only for internal research/database purposes and <strong>will not be displayed on the public dashboard or scholar profile.</strong></p>' +
           '<p>All submissions are reviewed before changes appear. After public launch, this permanent profile link can also be shared by the scholar, recruiters, collaborators, students and others who want a direct view of the scholar\u2019s profile.</p>';
+      }
+
+      function reviseSummaryPanelText(d, main, card) {
+        var today = '12 September 2026';
+        var headings = Array.prototype.slice.call(main.querySelectorAll('h1,h2,h3,h4,.db-panel__title,.db-section-title'));
+        headings.forEach(function (h) {
+          var title = String(h.textContent || '').trim().toLowerCase();
+          if (title === 'database overview') {
+            var panel = h.closest('section,article,.db-panel,.panel') || h.parentElement;
+            var p = panel && panel.querySelector('p');
+            if (p) {
+              p.textContent = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+              p.classList.add('scholar-summary-description');
+            }
+          } else if (title === 'itaukei scholarship') {
+            var panel2 = h.closest('section,article,.db-panel,.panel') || h.parentElement;
+            var p2 = panel2 && panel2.querySelector('p');
+            if (p2) p2.classList.add('scholar-summary-description');
+          }
+        });
+        Array.prototype.slice.call(main.querySelectorAll('.db-kpi--solid .db-kpi__label')).forEach(function (el) {
+          var txt = String(el.textContent || '').replace(/\s+/g,' ').trim();
+          if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) {
+            el.textContent = 'Universities attended by iTaukei scholars';
+          }
+        });
       }
 
       function styleSummaryMetrics(d, main, card) {
