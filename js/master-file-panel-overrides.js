@@ -19,6 +19,9 @@
  *   5. Panel G's public Discipline filter is collapsed to Ron's eight
  *      short discipline categories while preserving the detailed Master
  *      discipline strings as the underlying source data.
+ *   6. Panel F's scholar Discipline checkbox filter uses the same eight
+ *      short categories, but membership is derived from the discipline tags
+ *      on each scholar's linked works. Multiple ticks retain AND semantics.
  *
  * All overrides run *after* the production code has hydrated state.master
  * and finished its first render pass. We hook into a small custom event
@@ -272,13 +275,163 @@
     sel.value = SHORT_DISCIPLINES.indexOf(active) !== -1 ? active : '';
   }
 
+  // -------------------------------------------------------------------
+  // Panel F short-discipline bridge
+  // -------------------------------------------------------------------
+  // Panel F's production renderer already has the correct checkbox UX,
+  // pagination, summary recalculation and AND logic. The legacy classifier
+  // behind that UI, however, returns an older ten-category taxonomy. Rather
+  // than fork the entire renderer here, this bridge keeps the production UX
+  // intact and supplies the membership answer from the publication-level
+  // discipline tags already used by Panel G.
+  //
+  // A scholar belongs to a short discipline when at least one linked work is
+  // tagged with that short discipline. With two or more boxes ticked, the
+  // production loop still requires EVERY selected category to be present.
+
+  var _panelFWorkDiscByScholar = new Map();
+  var _panelFClassifierSetOwner = new WeakMap();
+  var _panelFOriginalSetHas = null;
+  var _panelFOptionObserver = null;
+  var _panelFNormalizingOptions = false;
+
+  function rebuildPanelFWorkDisciplineIndex() {
+    var st = window.__vavelabDbState;
+    var out = new Map();
+    if (!st || !st.scholarByItem || !st.disciplinesByItem) {
+      _panelFWorkDiscByScholar = out;
+      return out;
+    }
+    st.scholarByItem.forEach(function (scholarNames, itemKey) {
+      var disciplines = st.disciplinesByItem.get(itemKey);
+      if (!disciplines || !disciplines.size || !scholarNames) return;
+      scholarNames.forEach(function (name) {
+        if (!name) return;
+        if (!out.has(name)) out.set(name, new Set());
+        var target = out.get(name);
+        disciplines.forEach(function (d) {
+          var shortName = shortDisciplineName(d);
+          if (shortName) target.add(shortName);
+        });
+      });
+    });
+    _panelFWorkDiscByScholar = out;
+    return out;
+  }
+
+  function normalizePanelFDisciplineOptions() {
+    if (_panelFNormalizingOptions) return;
+    var st = window.__vavelabDbState;
+    var panel = document.querySelector('[data-scholar-disc-panel]');
+    if (!st || !panel) return;
+    var list = panel.querySelector('[data-disc-list]');
+    if (!list) return;
+    var labels = Array.prototype.slice.call(list.querySelectorAll('label.dsf-check-item'));
+    if (!labels.length) return;
+
+    _panelFNormalizingOptions = true;
+    try {
+      // Reuse the first eight production checkbox nodes so their existing
+      // change listeners continue to call the private renderLeaders() closure.
+      for (var i = 0; i < SHORT_DISCIPLINES.length; i++) {
+        var label = labels[i];
+        if (!label) break;
+        var cb = label.querySelector('input[type="checkbox"]');
+        var text = label.querySelector('.dsf-check-item__label');
+        if (cb) {
+          cb.value = SHORT_DISCIPLINES[i];
+          cb.checked = !!(st.scholarDisciplineFilter && st.scholarDisciplineFilter.has(SHORT_DISCIPLINES[i]));
+        }
+        if (text) text.textContent = SHORT_DISCIPLINES[i];
+        label.style.display = '';
+      }
+      // Remove legacy surplus options so only the eight-item shortlist is visible.
+      for (var j = SHORT_DISCIPLINES.length; j < labels.length; j++) labels[j].remove();
+      var count = panel.querySelector('[data-disc-count]');
+      if (count) count.textContent = String(SHORT_DISCIPLINES.length);
+    } finally {
+      _panelFNormalizingOptions = false;
+    }
+  }
+
+  function installPanelFShortDisciplineFilter() {
+    var st = window.__vavelabDbState;
+    if (!st) return;
+    rebuildPanelFWorkDisciplineIndex();
+
+    // The production renderer assigns a fresh Map(name -> legacy Set) to
+    // state.scholarDisciplines on every render. Capture those Set identities so
+    // the existing `has(selectedDiscipline)` call can answer from work tags.
+    if (!st.__mfPanelFShortDiscPropertyBridge) {
+      var currentMap = st.scholarDisciplines;
+      if (currentMap && typeof currentMap.forEach === 'function') {
+        currentMap.forEach(function (set, name) {
+          if (set instanceof Set) _panelFClassifierSetOwner.set(set, name);
+        });
+      }
+      try {
+        Object.defineProperty(st, 'scholarDisciplines', {
+          configurable: true,
+          enumerable: true,
+          get: function () { return currentMap; },
+          set: function (nextMap) {
+            currentMap = nextMap;
+            if (nextMap && typeof nextMap.forEach === 'function') {
+              nextMap.forEach(function (set, name) {
+                if (set instanceof Set) _panelFClassifierSetOwner.set(set, name);
+              });
+            }
+          }
+        });
+        st.__mfPanelFShortDiscPropertyBridge = true;
+      } catch (e) {
+        console.error('MF Panel F discipline property bridge failed', e);
+      }
+    }
+
+    // Scope the Set.has override narrowly: it activates only for one of the
+    // eight exact short labels AND only for Sets known to be Panel F scholar
+    // classifier sets. Every other Set in the dashboard uses native behavior.
+    if (!_panelFOriginalSetHas) {
+      _panelFOriginalSetHas = Set.prototype.has;
+      Set.prototype.has = function (value) {
+        if (SHORT_DISCIPLINES.indexOf(value) !== -1) {
+          var scholarName = _panelFClassifierSetOwner.get(this);
+          if (scholarName) {
+            var tagged = _panelFWorkDiscByScholar.get(scholarName);
+            return !!(tagged && _panelFOriginalSetHas.call(tagged, value));
+          }
+        }
+        return _panelFOriginalSetHas.call(this, value);
+      };
+    }
+
+    normalizePanelFDisciplineOptions();
+
+    // Clear-all rewires the whole filter row and reconstructs the legacy list.
+    // Watch just this list and immediately remap it back to the eight shortlist
+    // while retaining the newly attached production event listeners.
+    var list = document.querySelector('[data-scholar-disc-panel] [data-disc-list]');
+    if (list && !_panelFOptionObserver) {
+      _panelFOptionObserver = new MutationObserver(function () {
+        if (_panelFNormalizingOptions) return;
+        window.setTimeout(function () {
+          normalizePanelFDisciplineOptions();
+        }, 0);
+      });
+      _panelFOptionObserver.observe(list, { childList: true, subtree: true });
+    }
+  }
+
   function boot() {
     whenMasterReady(function () {
       try { applyShortDisciplineTaxonomy(); } catch (e) { console.error('MF short discipline taxonomy failed', e); }
+      try { installPanelFShortDisciplineFilter(); } catch (e) { console.error('MF Panel F short discipline filter failed', e); }
       try { injectTimestamp(); } catch (e) { console.error('MF timestamp inject failed', e); }
       try { injectConfedTotals(); } catch (e) { console.error('MF confed totals inject failed', e); }
       window.addEventListener('vavelab:filters-changed', function () {
         try { injectConfedTotals(); } catch (e) {}
+        try { rebuildPanelFWorkDisciplineIndex(); } catch (e) {}
       });
     });
   }
@@ -291,6 +444,9 @@
     injectTimestamp: injectTimestamp,
     tallyByProvinceAndConfed: tallyByProvinceAndConfed,
     applyShortDisciplineTaxonomy: applyShortDisciplineTaxonomy,
+    installPanelFShortDisciplineFilter: installPanelFShortDisciplineFilter,
+    rebuildPanelFWorkDisciplineIndex: rebuildPanelFWorkDisciplineIndex,
+    normalizePanelFDisciplineOptions: normalizePanelFDisciplineOptions,
     shortDisciplineName: shortDisciplineName,
     SHORT_DISCIPLINES: SHORT_DISCIPLINES,
     HEADLINE_TYPES: HEADLINE_TYPES,
