@@ -122,9 +122,9 @@
       }
 
       function injectStyles(d) {
-        if (d.getElementById('direct-profile-review-v3-style')) return;
+        if (d.getElementById('direct-profile-review-v4-style')) return;
         var style = d.createElement('style');
-        style.id = 'direct-profile-review-v3-style';
+        style.id = 'direct-profile-review-v4-style';
         style.textContent = `
           .scholar-direct-about{
             max-width:980px;margin:0 auto 18px;padding:17px 20px;
@@ -141,18 +141,65 @@
           }
           .scholar-direct-intro p{line-height:1.55}
 
-          .scholar-summary-metric-tile{
-            display:grid!important;grid-template-columns:auto auto minmax(0,1fr)!important;
-            align-items:center!important;column-gap:14px!important;min-height:88px!important;
-            padding-top:12px!important;padding-bottom:12px!important;
+          /* Approved direct-profile KPI layout: icon | number | large label. */
+          .scholar-direct-main .db-kpis{
+            grid-template-columns:repeat(3,minmax(0,1fr))!important;
+            gap:12px!important;
           }
-          .scholar-summary-metric-tile .scholar-summary-number{
-            align-self:center!important;font-size:2rem!important;line-height:1!important;
-            font-weight:800!important;white-space:nowrap!important;margin:0!important;
+          .scholar-direct-main .db-kpi--solid{
+            display:flex!important;
+            align-items:center!important;
+            min-height:104px!important;
+            padding:14px 18px!important;
+            gap:18px!important;
           }
-          .scholar-summary-metric-tile .scholar-summary-label{
-            align-self:center!important;font-size:1.03rem!important;line-height:1.16!important;
-            font-weight:700!important;margin:0!important;max-width:220px!important;
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon{
+            width:56px!important;
+            height:56px!important;
+            flex:0 0 56px!important;
+            position:relative!important;
+            margin-right:8px!important;
+          }
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{
+            width:31px!important;
+            height:31px!important;
+          }
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon::after{
+            content:"";
+            position:absolute;
+            top:0;
+            bottom:0;
+            right:-14px;
+            width:1px;
+            background:rgba(255,255,255,.34);
+          }
+          .scholar-direct-main .db-kpi--solid .db-kpi__body{
+            display:grid!important;
+            grid-template-columns:auto minmax(0,1fr)!important;
+            align-items:center!important;
+            gap:20px!important;
+            min-width:0!important;
+            flex:1 1 auto!important;
+          }
+          .scholar-direct-main .db-kpi--solid .db-kpi__num{
+            font-family:Arial,Helvetica,sans-serif!important;
+            font-size:36px!important;
+            line-height:1!important;
+            font-weight:800!important;
+            color:#fff!important;
+            margin:0!important;
+            white-space:nowrap!important;
+            align-self:center!important;
+          }
+          .scholar-direct-main .db-kpi--solid .db-kpi__label{
+            font-family:Arial,Helvetica,sans-serif!important;
+            font-size:18px!important;
+            line-height:1.15!important;
+            font-weight:600!important;
+            color:#fff!important;
+            margin:0!important;
+            align-self:center!important;
+            white-space:normal!important;
           }
 
           .scholar-pubs-review{max-width:1020px;margin:28px auto 12px;font-family:"DM Sans",Arial,sans-serif}
@@ -185,12 +232,18 @@
           .scholar-geo-submit label{display:block;font-size:.78rem;font-weight:700;color:#174852;margin-bottom:4px}.scholar-geo-submit input,.scholar-geo-submit select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5d8;border-radius:8px;background:#fff;font:inherit;font-size:.84rem}
           .scholar-geo-submit__actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scholar-geo-submit button{border:0;border-radius:8px;padding:9px 15px;background:#0e7490;color:#fff;font-weight:700;cursor:pointer}.scholar-geo-submit button:disabled{opacity:.55;cursor:wait}
           .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
+          @media(max-width:900px){
+            .scholar-direct-main .db-kpi--solid{min-height:94px!important;padding:12px 14px!important;gap:14px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__icon{width:48px!important;height:48px!important;flex-basis:48px!important;margin-right:6px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:27px!important;height:27px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__body{gap:13px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:31px!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:15px!important}
+          }
           @media(max-width:700px){
             .scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}
             .scholar-geo-submit__grid{grid-template-columns:1fr}
-            .scholar-summary-metric-tile{grid-template-columns:auto auto minmax(0,1fr)!important;column-gap:9px!important;min-height:78px!important}
-            .scholar-summary-metric-tile .scholar-summary-number{font-size:1.65rem!important}
-            .scholar-summary-metric-tile .scholar-summary-label{font-size:.9rem!important}
+            .scholar-direct-main .db-kpis{grid-template-columns:1fr!important}
           }
         `;
         d.head.appendChild(style);
@@ -214,39 +267,9 @@
       }
 
       function styleSummaryMetrics(d, main, card) {
-        var labels = [
-          'Publications','Unique authors','Theses','Universities represented','Countries represented','Fiji provinces studied',
-          'Publications with or by iTaukei','With iTaukei as Lead author','With iTaukei as co-author','Theses by iTaukei scholars',
-          'Universities attended by iTaukei graduate researchers','Countries of iTaukei graduate study',
-          'Theses total','Scholars','Masters','PhD','Universities','Countries'
-        ];
-        var norm = function (s) { return String(s || '').replace(/\s+/g,' ').trim().toLowerCase(); };
-        var wanted = new Set(labels.map(norm));
-        var all = Array.prototype.slice.call(main.querySelectorAll('*'));
-        all.forEach(function (labelEl) {
-          if (labelEl.children.length || !wanted.has(norm(labelEl.textContent))) return;
-          if (!(labelEl.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
-          var anc = labelEl.parentElement;
-          var chosen = null;
-          var numberEl = null;
-          for (var depth=0; anc && anc !== main && depth<5; depth++, anc=anc.parentElement) {
-            var leaves = Array.prototype.slice.call(anc.querySelectorAll('*')).filter(function (x) { return !x.children.length; });
-            var labelCount = leaves.filter(function (x) { return wanted.has(norm(x.textContent)); }).length;
-            var nums = leaves.filter(function (x) { return /^\s*[\d,]+\s*$/.test(x.textContent || ''); });
-            if (labelCount === 1 && nums.length >= 1) { chosen = anc; numberEl = nums[0]; break; }
-          }
-          if (!chosen || chosen.dataset.summaryStyled === '1') return;
-          chosen.dataset.summaryStyled = '1';
-          chosen.classList.add('scholar-summary-metric-tile');
-          labelEl.classList.add('scholar-summary-label');
-          numberEl.classList.add('scholar-summary-number');
-          var icon = chosen.querySelector('svg,img');
-          if (icon) {
-            var iconWrap = icon.parentElement;
-            if (iconWrap && iconWrap !== chosen) {
-              iconWrap.style.alignSelf = 'center';
-              iconWrap.style.justifySelf = 'center';
-            }
+        Array.prototype.slice.call(main.querySelectorAll('.db-kpi--solid')).forEach(function (tile) {
+          if (tile.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING) {
+            tile.classList.add('scholar-summary-metric-tile');
           }
         });
       }
