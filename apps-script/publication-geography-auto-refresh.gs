@@ -72,7 +72,7 @@ function publicationGeographyAutoRefreshTick() {
   var last = Number(props.getProperty(GEO_REFRESH_MARKER_PROPERTY) || 0);
   if (newest <= last) return;
 
-  var result = dispatchMasterRefreshFromServer_('publication-geography-approval');
+  var result = dispatchMasterRefreshFromServer_();
   if (!result.ok) {
     console.error('Master refresh dispatch failed: ' + result.message);
     return; // do not advance marker; next minute retries
@@ -84,7 +84,7 @@ function publicationGeographyAutoRefreshTick() {
 
 /** Manual diagnostic/repair helper: dispatch immediately, regardless of marker. */
 function forcePublicationGeographyMasterRefresh() {
-  var result = dispatchMasterRefreshFromServer_('manual-geography-refresh');
+  var result = dispatchMasterRefreshFromServer_();
   if (!result.ok) throw new Error(result.message);
   var newest = newestApprovedGeographyReviewTimestamp_();
   if (newest) {
@@ -106,13 +106,13 @@ function inspectPublicationGeographyAutoRefresh() {
   Logger.log(JSON.stringify({
     tokenPresent: hasToken,
     watcherTriggers: triggers,
-    lastDispatchedApprovalMs: marker,
-    newestApprovedReviewMs: newest,
+    lastDispatchedApprovalKey: marker,
+    newestApprovedReviewKey: newest,
     refreshPending: newest > marker
   }, null, 2));
 }
 
-/** Return newest Approved row's Reviewed At as epoch ms, or 0. */
+/** Return newest Approved row's Reviewed At as sortable numeric key, or 0. */
 function newestApprovedGeographyReviewTimestamp_() {
   var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
   var sh = ss.getSheetByName('Publication Geography Submissions');
@@ -126,12 +126,8 @@ function newestApprovedGeographyReviewTimestamp_() {
     if (String(r[0] || '').trim() !== 'Approved') return;
     var reviewedAt = String(r[16] || '').trim();
     if (!reviewedAt) return;
-    // Stored as yyyy-MM-dd HH:mm:ss in Pacific/Honolulu. Convert explicitly so
-    // comparisons are stable regardless of project locale.
     var m = reviewedAt.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
     if (!m) return;
-    // Utilities.formatDate wrote local HST. Convert to an ordering-safe numeric
-    // key rather than relying on Date parsing/time-zone assumptions.
     var key = Number(m[1] + m[2] + m[3] + m[4] + m[5] + m[6]);
     if (key > newest) newest = key;
   });
@@ -139,7 +135,7 @@ function newestApprovedGeographyReviewTimestamp_() {
 }
 
 /** Server-side GitHub Actions workflow dispatch. Token never reaches browser. */
-function dispatchMasterRefreshFromServer_(reason) {
+function dispatchMasterRefreshFromServer_() {
   var token = PropertiesService.getScriptProperties()
     .getProperty(GEO_REFRESH_TOKEN_PROPERTY);
   if (!token) {
@@ -164,9 +160,15 @@ function dispatchMasterRefreshFromServer_(reason) {
         Accept: 'application/vnd.github+json',
         'X-GitHub-Api-Version': '2022-11-28'
       },
+      // Use only workflow_dispatch inputs that are actually defined in
+      // refresh-master-file.yml. force_commit=true ensures an approved
+      // geography change creates a fresh public snapshot immediately.
       payload: JSON.stringify({
         ref: GEO_REFRESH_WORKFLOW_REF,
-        inputs: { trigger_reason: String(reason || 'geography-approval') }
+        inputs: {
+          force_commit: 'true',
+          dry_run: 'false'
+        }
       })
     });
   } catch (err) {
