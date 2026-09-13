@@ -249,6 +249,9 @@ function doGet(e) {
     if (action === 'readPublicationGeographySubmissions') {
       return handleReadPublicationGeographySubmissions_(params);
     }
+    if (action === 'readScholarProfileSubmissions') {
+      return handleReadScholarProfileSubmissions_(params);
+    }
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
     return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
@@ -403,10 +406,12 @@ function doPost(e) {
     var action = body.action || 'write';
     // Public scholar geography submission is authenticated by the scholar's opaque 40-hex share token, not the Admin shared secret.
     if (action === 'submitPublicationGeography') return handlePublicPublicationGeographySubmission_(body);
+    if (action === 'submitScholarProfileUpdate') return handlePublicScholarProfileSubmission_(body);
     if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     if (action === 'write') return handleWrite_(body);
     if (action === 'resolvePublicationGeographySubmission') return handleResolvePublicationGeographySubmission_(body);
+    if (action === 'resolveScholarProfileSubmission') return handleResolveScholarProfileSubmission_(body);
     if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
@@ -746,6 +751,105 @@ function inspectConfig() {
 
 
 // ---------------- PUBLICATION GEOGRAPHY REVIEW QUEUE ----------------
+var SCHOLAR_SUBMISSION_SHEET = 'Scholar Profile Submissions';
+var SCHOLAR_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Submitted Fields JSON','Structured Submission JSON','Attachments JSON','Review Notes','Reviewed By','Reviewed At','Resolution'];
+
+function ensureScholarSubmissionSheet_(ss) {
+  var sh = ss.getSheetByName(SCHOLAR_SUBMISSION_SHEET);
+  if (!sh) sh = ss.insertSheet(SCHOLAR_SUBMISSION_SHEET);
+  if (sh.getMaxRows() < 5) sh.insertRowsAfter(sh.getMaxRows(), 5 - sh.getMaxRows());
+  if (sh.getMaxColumns() < SCHOLAR_SUBMISSION_HEADERS.length) sh.insertColumnsAfter(sh.getMaxColumns(), SCHOLAR_SUBMISSION_HEADERS.length - sh.getMaxColumns());
+  var current = sh.getRange(4, 1, 1, SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues()[0];
+  if (current.join('|') !== SCHOLAR_SUBMISSION_HEADERS.join('|')) {
+    sh.getRange(4, 1, 1, SCHOLAR_SUBMISSION_HEADERS.length).setValues([SCHOLAR_SUBMISSION_HEADERS]);
+    sh.setFrozenRows(4);
+  }
+  return sh;
+}
+
+function scholarSubmissionFolder_(ss) {
+  var props = PropertiesService.getScriptProperties();
+  var saved = props.getProperty('SCHOLAR_SUBMISSION_FOLDER_ID');
+  if (saved) { try { return DriveApp.getFolderById(saved); } catch (_) {} }
+  var parent;
+  try {
+    var parents = DriveApp.getFileById(ss.getId()).getParents();
+    parent = parents.hasNext() ? parents.next() : DriveApp.getRootFolder();
+  } catch (_) { parent = DriveApp.getRootFolder(); }
+  var matches = parent.getFoldersByName('Scholar Profile Submission Uploads');
+  var folder = matches.hasNext() ? matches.next() : parent.createFolder('Scholar Profile Submission Uploads');
+  props.setProperty('SCHOLAR_SUBMISSION_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+function safeSubmissionObject_(v, maxChars) {
+  var out = v && typeof v === 'object' ? v : {};
+  var text = JSON.stringify(out);
+  if (text.length > maxChars) throw new Error('submission-data-too-large');
+  return text;
+}
+
+function saveScholarSubmissionFiles_(ss, sid, submissionId, files) {
+  if (!Array.isArray(files)) return [];
+  if (files.length > 6) throw new Error('too-many-files');
+  var folder = scholarSubmissionFolder_(ss), saved = [], total = 0;
+  files.forEach(function (f) {
+    if (!f || !f.data) return;
+    var bytes = Utilities.base64Decode(String(f.data));
+    total += bytes.length;
+    if (bytes.length > 12 * 1024 * 1024 || total > 30 * 1024 * 1024) throw new Error('attachment-size-limit');
+    var original = String(f.name || 'attachment').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 180);
+    var name = [submissionId, sid, original].join('-');
+    var blob = Utilities.newBlob(bytes, String(f.type || 'application/octet-stream'), name);
+    var file = folder.createFile(blob);
+    saved.push({ field: String(f.field || 'attachment').slice(0, 80), name: name, url: file.getUrl(), size: bytes.length, fileId: file.getId() });
+  });
+  return saved;
+}
+
+function handlePublicScholarProfileSubmission_(body) {
+  var ss = geoSs_(), sid = String(body.scholarId || '').toUpperCase(), token = String(body.shareToken || '').trim();
+  if (!validScholarShareToken_(ss, sid, token)) return jsonOut_({ status:'unauthorized', reason:'invalid-scholar-share-token' }, 401);
+  var name = String(body.submitterName || '').trim(), email = String(body.submitterEmail || '').trim(), rel = String(body.submitterRelationship || '').trim();
+  if (!name || !rel || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({ status:'bad_request', reason:'valid-name-email-and-relationship-required' }, 400);
+  var now = new Date(), submissionId = 'SPS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,8);
+  var fieldsJson, structuredJson;
+  try {
+    fieldsJson = safeSubmissionObject_(body.fields, 45000);
+    structuredJson = safeSubmissionObject_(body.structuredSubmission, 45000);
+  } catch (err) { return jsonOut_({ status:'bad_request', reason:String(err.message || err) }, 400); }
+  var attachments;
+  try { attachments = saveScholarSubmissionFiles_(ss, sid, submissionId, body.files || []); }
+  catch (err2) { return jsonOut_({ status:'bad_request', reason:String(err2.message || err2) }, 400); }
+  var row = [submissionId, Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss'), 'Pending', sid,
+    String(body.scholarName || '').slice(0,240), name.slice(0,160), email.slice(0,240), rel.slice(0,100),
+    String(body.profileUrl || '').slice(0,700), fieldsJson, structuredJson, JSON.stringify(attachments), '', '', '', ''];
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try { var sh = ensureScholarSubmissionSheet_(ss); sh.getRange(sh.getLastRow()+1,1,1,SCHOLAR_SUBMISSION_HEADERS.length).setValues([row]); }
+  finally { lock.releaseLock(); }
+  return jsonOut_({ status:'ok', submissionId:submissionId, queued:1, attachments:attachments.length });
+}
+
+function handleReadScholarProfileSubmissions_(params) {
+  var ss = geoSs_(), sh = ensureScholarSubmissionSheet_(ss), last = sh.getLastRow();
+  if (last < 5) return jsonOut_({ status:'ok', rows:[] });
+  var vals = sh.getRange(5,1,last-4,SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues(), want = String(params.status || '').trim(), rows = [];
+  vals.forEach(function(r){ if(!r[0] || (want && r[2] !== want)) return; var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';}); rows.push(o); });
+  rows.reverse(); return jsonOut_({ status:'ok', rows:rows });
+}
+
+function handleResolveScholarProfileSubmission_(body) {
+  var id=String(body.submissionId||'').trim(), decision=String(body.decision||'').toLowerCase();
+  if(!id || ['reviewed','reject'].indexOf(decision)<0) return jsonOut_({status:'bad_request',reason:'invalid-resolution'},400);
+  var ss=geoSs_(), sh=ensureScholarSubmissionSheet_(ss), last=sh.getLastRow(), found=0;
+  if(last>=5){var ids=sh.getRange(5,1,last-4,3).getDisplayValues();for(var i=0;i<ids.length;i++){if(ids[i][0]===id){found=i+5;if(ids[i][2]!=='Pending')return jsonOut_({status:'bad_request',reason:'already-resolved'},409);break;}}}
+  if(!found)return jsonOut_({status:'not_found'},404);
+  var now=Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd HH:mm:ss'), notes=String(body.reviewNotes||'').slice(0,1500), reviewer=String(body.reviewedBy||ACTOR_LABEL).slice(0,160);
+  var status=decision==='reviewed'?'Reviewed':'Rejected', resolution=decision==='reviewed'?'Reviewed in Admin V2; apply verified changes through the scholar editor.':'Rejected; no Master-file changes made.';
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);try{sh.getRange(found,3).setValue(status);sh.getRange(found,13,1,4).setValues([[notes,reviewer,now,resolution]]);appendChangeLog_(ss,SCHOLAR_SUBMISSION_SHEET,'',id,'Pending',status);}finally{lock.releaseLock();}
+  return jsonOut_({status:'ok',decision:decision});
+}
+
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Existing Fiji Provinces','Proposed Fiji Provinces','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 

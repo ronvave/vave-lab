@@ -8555,13 +8555,64 @@
   }
 
   // ===================== Submit-info modal =====================
-  // Endpoint that receives the submission. Formsubmit.co sends every field
-  // (including file uploads) to the target email address. First submission
-  // triggers a one-time activation email that must be confirmed by the
-  // recipient before further submissions go through. To switch delivery
-  // providers later (e.g. Formspree, Web3Forms), only this URL needs to
-  // change — the multipart/form-data POST shape is portable.
-  const SUBMIT_ENDPOINT = 'https://formsubmit.co/ronvave2011@gmail.com';
+  // Scholar corrections are queued in the iTaukei V2 Admin backend. They are
+  // never sent through an email-form provider. The public endpoint contains
+  // no Admin secret; each request is authenticated with the scholar's opaque
+  // share token and remains Pending until reviewed in Admin V2.
+  let publicSubmitEndpointPromise = null;
+  function publicSubmitEndpoint() {
+    if (!publicSubmitEndpointPromise) {
+      publicSubmitEndpointPromise = fetch('data/public-submit-endpoint.json', {
+        cache: 'no-store', credentials: 'same-origin'
+      }).then(r => {
+        if (!r.ok) throw new Error('V2 submission endpoint unavailable');
+        return r.json();
+      }).then(doc => {
+        const endpoint = String(doc && doc.endpoint || '').trim();
+        if (!/^https:\/\/script\.google\.com\//i.test(endpoint)) throw new Error('Invalid V2 submission endpoint');
+        return endpoint;
+      });
+    }
+    return publicSubmitEndpointPromise;
+  }
+
+  function scholarIdForSubmission() {
+    const modal = document.getElementById('db-submit-modal');
+    const modalId = String(modal && modal.dataset && modal.dataset.scholarId || '').toUpperCase();
+    if (/^ITK-S\d+$/i.test(modalId)) return modalId;
+    const slug = String(document.getElementById('db-sf-scholar-slug')?.value || '').toUpperCase();
+    if (/^ITK-S\d+$/i.test(slug)) return slug;
+    const name = document.getElementById('db-sf-scholar-name')?.value || '';
+    const p = state.scholarProfilesByName && state.scholarProfilesByName.get(name);
+    return p && /^ITK-S\d+$/i.test(String(p.scholarId || '')) ? String(p.scholarId).toUpperCase() : '';
+  }
+
+  function fileToPayload(file) {
+    if (!file || !file.name) return Promise.resolve(null);
+    const maxBytes = 12 * 1024 * 1024;
+    if (file.size > maxBytes) return Promise.reject(new Error(file.name + ' is larger than the 12 MB upload limit. Please provide a link instead.'));
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({
+        name: file.name,
+        type: file.type || 'application/octet-stream',
+        size: file.size,
+        data: String(reader.result || '').replace(/^data:[^,]*,/, '')
+      });
+      reader.onerror = () => reject(new Error('Could not read ' + file.name));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function formFieldsForSubmission(form) {
+    const fields = {};
+    form.querySelectorAll('input,select,textarea').forEach(el => {
+      if (!el.name || el.type === 'file' || el.type === 'submit' || el.type === 'button') return;
+      if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
+      fields[el.name] = el.value == null ? '' : String(el.value).trim();
+    });
+    return fields;
+  }
 
   // Fill the paternal-province dropdown with the same province list the site
   // already ships. Called lazily on first modal open so the DOM is ready.
@@ -8600,6 +8651,7 @@
     // Pull existing enriched profile (village, institution, urls, etc) so we
     // can pre-populate the form. Fall back to empty strings when unknown.
     const profile = (state.scholarProfilesByName && state.scholarProfilesByName.get(row.name)) || {};
+    if (profile.scholarId) modal.dataset.scholarId = String(profile.scholarId).toUpperCase();
     const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v == null ? '' : String(v); };
 
     setVal('db-sf-yourname', '');
@@ -8693,9 +8745,7 @@
         return;
       }
 
-      // Snapshot every text field as a JSON blob so Ron can paste the entire
-      // structured submission into the admin dashboard in one shot without
-      // re-typing each field.
+      // Snapshot the canonical fields for a human-readable Admin V2 review.
       const jsonBlob = {
         scholar_name:   form.querySelector('#db-sf-scholar-name').value,
         scholar_slug:   form.querySelector('#db-sf-scholar-slug').value,
@@ -8736,25 +8786,40 @@
       showStatus('success', 'Sending your submission\u2026');
 
       try {
-        const fd = new FormData(form);
-        // Formsubmit.co’s AJAX endpoint returns JSON but doesn’t accept file
-        // uploads on that path. When files are attached, fall back to a same-
-        // origin fetch to the regular endpoint (which redirects). We handle
-        // the redirect manually by catching a network-level 'opaqueredirect'.
-        const hasFile = fd.getAll('publications_file').some(v => v && v.name)
-                     || fd.getAll('photo_file').some(v => v && v.name);
-        const url = SUBMIT_ENDPOINT.replace('formsubmit.co/', hasFile ? 'formsubmit.co/' : 'formsubmit.co/ajax/');
-
-        const res = await fetch(url, {
+        const scholarId = scholarIdForSubmission();
+        if (!scholarId) throw new Error('The Scholar ID could not be resolved. Please reopen the scholar card and try again.');
+        const share = window.VaveLabScholarShare;
+        if (!share) throw new Error('The secure scholar-link service is still loading. Please try again.');
+        await share.ready();
+        const shareToken = share.tokenFor(scholarId);
+        if (!/^[a-f0-9]{40}$/i.test(shareToken)) throw new Error('The secure scholar token is unavailable. Please refresh and try again.');
+        const files = (await Promise.all(Array.from(form.querySelectorAll('input[type="file"]')).map(input => {
+          const file = input.files && input.files[0];
+          return fileToPayload(file).then(payload => payload ? Object.assign({ field: input.name || 'attachment' }, payload) : null);
+        }))).filter(Boolean);
+        const endpoint = await publicSubmitEndpoint();
+        const res = await fetch(endpoint, {
           method: 'POST',
-          body: fd,
-          headers: hasFile ? {} : { 'Accept': 'application/json' },
+          body: JSON.stringify({
+            action: 'submitScholarProfileUpdate',
+            scholarId,
+            shareToken,
+            scholarName: jsonBlob.scholar_name,
+            profileUrl: location.href,
+            submitterName: yourName,
+            submitterEmail: yourEmail,
+            submitterRelationship: rel,
+            fields: formFieldsForSubmission(form),
+            structuredSubmission: jsonBlob,
+            files
+          }),
+          headers: { 'Content-Type': 'text/plain;charset=utf-8', 'Accept': 'application/json' },
           redirect: 'follow'
         });
-        // Success = HTTP 200 (json path) or a redirect landed successfully.
-        if (!res.ok && res.status !== 0) throw new Error('HTTP ' + res.status);
+        const response = await res.json();
+        if (!res.ok || !response || response.status !== 'ok') throw new Error((response && (response.error || response.reason)) || ('HTTP ' + res.status));
         showStatus('success',
-          `Thank you! Your submission for ${jsonBlob.scholar_name} has been sent to Vave Lab for review. ` +
+          `Thank you! Your submission for ${jsonBlob.scholar_name} is now in the V2 Admin review queue. ` +
           `We\u2019ll update the public profile once we\u2019ve confirmed the changes with you if needed. ` +
           `You can close this window now.`);
         submitBtn.textContent = 'Submitted';
@@ -8763,8 +8828,8 @@
       } catch (err) {
         console.error('scholar-info submission failed:', err);
         showStatus('error',
-          'Sorry — the submission couldn\u2019t be sent right now. ' +
-          'Please try again in a minute, or email ronvave2011@gmail.com directly with your corrections.');
+          'Sorry — the submission couldn\u2019t be added to the V2 Admin review queue. ' +
+          (err && err.message ? err.message : 'Please try again in a minute.'));
         submitBtn.disabled = false;
         submitBtn.textContent = 'Submit for review';
       }

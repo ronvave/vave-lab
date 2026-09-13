@@ -118,6 +118,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }).catch(err => console.error('Scholar permalink index failed to load', err));
 
+  // Public update forms use the same opaque per-scholar capability token as
+  // direct profile links. Expose a deliberately tiny read-only bridge so the
+  // dashboard submission module can authenticate a queued Admin V2 update
+  // without duplicating or weakening the share-token implementation.
+  window.VaveLabScholarShare = {
+    ready: () => shareMapPromise,
+    tokenFor: id => publicShareMap[String(id || '').toUpperCase()] || '',
+    directScholarId: () => directCapabilityId()
+  };
+
   function addStyles() {
     if (document.getElementById('scholar-share-style')) return;
     const style = document.createElement('style');
