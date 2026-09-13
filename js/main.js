@@ -30,6 +30,26 @@
   });
 })();
 
+// Research page: replace only the transdisciplinary overview illustration.
+(() => {
+  const replacementPath = 'img/research/vave-interdisciplinary-research.png';
+  const targetAlt = 'Watercolour illustration summarising Vave Lab research themes across the Pacific';
+
+  function swapResearchIllustration() {
+    if (!/(^|\/)research\.html$/.test(window.location.pathname)) return;
+    const illustration = Array.from(document.images).find((image) => image.alt === targetAlt);
+    if (illustration && illustration.getAttribute('src') !== replacementPath) {
+      illustration.src = replacementPath;
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', swapResearchIllustration, { once: true });
+  } else {
+    swapResearchIllustration();
+  }
+})();
+
 // ── Sticky header / navigation ────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const header = document.querySelector('.site-header');
