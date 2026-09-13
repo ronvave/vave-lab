@@ -32,7 +32,7 @@
 
 // Research page: replace only the transdisciplinary overview illustration.
 (() => {
-  const replacementPath = 'img/research/vave-interdisciplinary-research.png';
+  const replacementPath = 'img/research/vave-interdisciplinary-research.jpg';
   const targetAlt = 'Watercolour illustration summarising Vave Lab research themes across the Pacific';
 
   function swapResearchIllustration() {
