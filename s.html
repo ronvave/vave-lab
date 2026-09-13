@@ -164,12 +164,15 @@
           .scholar-pubs-review__head p{margin:0 0 9px;color:#4b5563;font-size:.9rem;line-height:1.55}
           .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:590px!important}
+          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:505px!important}
           .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){padding-bottom:235px!important}
           .scholar-geo-editor{display:none!important}
-          .scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;max-width:570px!important;overflow:visible!important;z-index:20!important}
+          .scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;max-width:500px!important;overflow:visible!important;z-index:20!important}
           .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;align-items:center!important;gap:7px!important;flex-wrap:nowrap!important;overflow:visible!important}
           .scholar-geo-toolbar>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;min-height:34px!important;box-sizing:border-box!important;padding:0 12px!important;border-radius:999px!important;font-size:.8rem!important;line-height:1!important;font-weight:600!important;white-space:nowrap!important;}
+          .scholar-review-doi-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#efc4ee!important;color:#542052!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
+          .scholar-review-doi-chip:hover{background:#e7afe5!important;color:#431640!important;}
+          .scholar-review-link-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#cfeaf0!important;color:#075d6b!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
           .scholar-geo-other{display:inline-flex!important;align-items:center!important;height:34px!important;min-height:34px!important;width:150px!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
           .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:190px!important;}
           .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
@@ -310,7 +313,32 @@
 
         var row=editor.querySelector('.scholar-geo-editor__row');if(!row)return;
         var actionAnchor=Array.prototype.slice.call(node.querySelectorAll('a')).find(function(a){return /^(DOI|LINK)\b/i.test(String(a.textContent||'').trim());});
-        var toolbar=actionAnchor&&actionAnchor.parentElement;if(!toolbar){toolbar=node.ownerDocument.createElement('div');toolbar.style.position='absolute';toolbar.style.top='10px';toolbar.style.right='12px';node.appendChild(toolbar);}toolbar.classList.add('scholar-geo-toolbar');toolbar.appendChild(row);editor.remove();
+
+        // Move DOI/source link into the left badge row, immediately after the iTaukei-author badge.
+        // This frees the right side for geography controls and lets title/author text wrap up to them.
+        if(actionAnchor){
+          var actionText=String(actionAnchor.textContent||'').trim();
+          var authorBadge=Array.prototype.slice.call(node.querySelectorAll('span,div,strong,b,a')).find(function(el){
+            return String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()==='itaukei author' && el.children.length===0;
+          });
+          var badgeParent=authorBadge&&authorBadge.parentElement;
+          var formerParent=actionAnchor.parentElement;
+          if(badgeParent){
+            actionAnchor.textContent=/^DOI\b/i.test(actionText)?'DOI':'Link';
+            actionAnchor.classList.add(/^DOI\b/i.test(actionText)?'scholar-review-doi-chip':'scholar-review-link-chip');
+            actionAnchor.removeAttribute('style');
+            if(authorBadge.nextSibling) badgeParent.insertBefore(actionAnchor,authorBadge.nextSibling);
+            else badgeParent.appendChild(actionAnchor);
+            if(formerParent&&formerParent!==badgeParent&&!formerParent.textContent.trim()&&!formerParent.children.length) formerParent.remove();
+          }
+        }
+
+        // Geography controls always get their own top-right toolbar.
+        var toolbar=node.ownerDocument.createElement('div');
+        toolbar.className='scholar-geo-toolbar';
+        node.appendChild(toolbar);
+        toolbar.appendChild(row);
+        editor.remove();
       }
 
       function buildGeoEditor(d,state,item,dirty) {
