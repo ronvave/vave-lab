@@ -1,4 +1,4 @@
-name: Patch scholar review other countries
+name: Patch scholar review geography rail
 
 on:
   push:
@@ -20,36 +20,30 @@ jobs:
           from pathlib import Path
           p = Path('s.html')
           s = p.read_text(encoding='utf-8')
-
-          s = s.replace(
-            ".scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:430px!important}",
-            ".scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:590px!important}"
-          )
-          s = s.replace(
-            ".scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;max-width:410px!important;overflow:visible!important;z-index:20!important}",
-            ".scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;max-width:570px!important;overflow:visible!important;z-index:20!important}"
-          )
-          css_marker = ".scholar-geo-toolbar>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;min-height:34px!important;box-sizing:border-box!important;padding:0 12px!important;border-radius:999px!important;font-size:.8rem!important;line-height:1!important;font-weight:600!important;white-space:nowrap!important;}"
-          css_add = css_marker + "\n          .scholar-geo-other{display:inline-flex!important;align-items:center!important;height:34px!important;min-height:34px!important;width:150px!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}\n          .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:190px!important;}"
-          if css_marker in s and ".scholar-geo-other{" not in s:
-              s = s.replace(css_marker, css_add, 1)
-
-          old_head = "Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken.</p><p>Geotagging allows publications"
-          new_head = "Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>).</p><p>Geotagging allows publications"
-          s = s.replace(old_head, new_head, 1)
-
-          old_country = "var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);\n        var status=d.createElement('div');"
-          new_country = "var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);\n        var otherCountries=d.createElement('input');otherCountries.type='text';otherCountries.className='scholar-geo-other';otherCountries.placeholder='Other countries';otherCountries.setAttribute('aria-label','Other countries; separate multiple countries with semicolons');otherCountries.title='Enter countries outside the Pacific, separated by semicolons (e.g. Jamaica; China)';row.appendChild(otherCountries);otherCountries.addEventListener('input',function(){markDirty();});\n        var status=d.createElement('div');"
-          if old_country not in s:
-              raise SystemExit('country menu marker not found')
-          s = s.replace(old_country, new_country, 1)
-
-          old_dirty = "function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',provinces:provinces,pacific_countries:countries});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;"
-          new_dirty = "function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=String(otherCountries.value||'').split(';').map(function(v){return v.trim();}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;});dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;"
-          if old_dirty not in s:
-              raise SystemExit('markDirty marker not found')
-          s = s.replace(old_dirty, new_dirty, 1)
-
+          marker = "          @media(max-width:900px){"
+          css = '''          /* Scholar review geography rail: compact closed state, in-card expansion. */
+          .scholar-pubs-review__list>.db-item{padding-right:225px!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:310px!important;padding-bottom:12px!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row>details,
+          .scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+          .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
+          .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
+          details.scholar-geo-menu>summary{width:100%!important;box-sizing:border-box!important;justify-content:center!important}
+          .scholar-geo-options{position:relative!important;z-index:1!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;max-height:220px!important;overflow:auto!important;box-sizing:border-box!important;margin-top:7px!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:none!important}
+          .scholar-geo-other{width:100%!important;max-width:100%!important;transition:height .12s ease,border-radius .12s ease!important}
+          .scholar-geo-other:focus{width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important}
+          @media(max-width:700px){
+            .scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:130px!important}
+            .scholar-geo-toolbar{left:12px!important;right:12px!important;top:10px!important;width:auto!important;max-width:none!important}
+          }
+'''
+          if marker not in s:
+              raise SystemExit('media marker not found')
+          if 'Scholar review geography rail: compact closed state' not in s:
+              s = s.replace(marker, css + marker, 1)
           p.write_text(s, encoding='utf-8')
           PY
       - name: Commit and push
@@ -58,5 +52,5 @@ jobs:
           git config user.email 'ronvave2011@gmail.com'
           git add s.html
           if git diff --cached --quiet; then exit 0; fi
-          git commit -m 'Add other-country tagging to scholar publication review'
+          git commit -m 'Stack scholar geography controls in compact right rail'
           git push
