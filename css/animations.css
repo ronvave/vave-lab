@@ -63,3 +63,52 @@
   align-items: center !important;
   justify-content: center !important;
 }
+
+/* =============================================
+   DIRECT SCHOLAR PROFILE — GEOGRAPHY CHECKLIST POPOVER
+   Keep the Province / Pacific Island country checkbox list visually attached
+   to the button that opened it. The direct-profile helper currently computes
+   fixed viewport coordinates; on the embedded scholar page those coordinates
+   can drift sideways/down the page. These higher-specificity !important rules
+   deliberately override those inline coordinates and anchor the checklist to
+   its own <details> control instead.
+   ============================================= */
+html body .scholar-direct-main details.scholar-geo-menu {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1000 !important;
+}
+
+html body .scholar-direct-main details.scholar-geo-menu > .scholar-geo-options {
+  position: absolute !important;
+  left: 0 !important;
+  top: calc(100% + 6px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 290px !important;
+  max-width: min(290px, calc(100vw - 24px)) !important;
+  max-height: min(340px, 46vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  visibility: visible !important;
+  z-index: 2147483647 !important;
+  background: #fff !important;
+  border: 1px solid #cbd5d8 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.22) !important;
+}
+
+/* Ensure publication cards and the geotagging editor never clip the open menu. */
+html body .scholar-direct-main .scholar-pubs-review__list > .db-item,
+html body .scholar-direct-main .scholar-geo-editor,
+html body .scholar-direct-main .scholar-geo-editor__row {
+  overflow: visible !important;
+}
+
+@media (max-width: 700px) {
+  html body .scholar-direct-main details.scholar-geo-menu > .scholar-geo-options {
+    width: min(290px, calc(100vw - 24px)) !important;
+    max-height: 42vh !important;
+  }
+}
