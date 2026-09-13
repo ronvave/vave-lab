@@ -165,10 +165,10 @@
           .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
           .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:225px!important}
-          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:310px!important;padding-bottom:12px!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:300px!important;padding-bottom:12px!important;overflow:hidden!important}
           .scholar-geo-editor{display:none!important}
-          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important}
-          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:hidden!important;z-index:20!important;box-sizing:border-box!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:hidden!important;box-sizing:border-box!important}
           .scholar-geo-toolbar .scholar-geo-editor__row>details,.scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
           .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
           .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
@@ -179,13 +179,13 @@
           .scholar-geo-other{display:block!important;height:34px!important;min-height:34px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
           .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;}
           .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
-          details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important}
+          details.scholar-geo-menu{position:relative!important;overflow:hidden!important;width:100%!important;box-sizing:border-box!important}
           details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none;white-space:nowrap;width:100%!important;box-sizing:border-box!important}
           details.scholar-geo-menu>summary::-webkit-details-marker{display:none}
           details.scholar-geo-menu[open]>summary{border-color:#0e7490;box-shadow:0 0 0 2px rgba(14,116,144,.10)}
           .scholar-geo-menu__count{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#0e7490;color:#fff;align-items:center;justify-content:center;font-size:.68rem}
           .scholar-geo-menu.has-selection .scholar-geo-menu__count{display:inline-flex}
-          .scholar-geo-options{position:relative!important;z-index:1!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;max-height:220px!important;overflow:auto!important;box-sizing:border-box!important;margin-top:7px!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:none!important}
+          .scholar-geo-options{position:relative!important;z-index:1!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;max-height:210px!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;margin-top:7px!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:none!important}
           .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer}
           .scholar-geo-option:hover{background:#eaf7f9}.scholar-geo-option input{margin-top:2px;accent-color:#0e7490}
           .scholar-geo-option--general{border-bottom:1px dashed #d8dfe0;margin-bottom:4px;padding-bottom:8px;font-weight:600}
@@ -352,8 +352,17 @@
       function buildCheckMenu(d,label,options,selected,onChange) {
         var details=d.createElement('details');details.className='scholar-geo-menu';var summary=d.createElement('summary');summary.innerHTML='<span>'+label+'</span><span class="scholar-geo-menu__count"></span><span aria-hidden="true">\u25be</span>';details.appendChild(summary);var panel=d.createElement('div');panel.className='scholar-geo-options';details.appendChild(panel);
         options.forEach(function(opt){var lab=d.createElement('label');lab.className='scholar-geo-option'+(opt.general?' scholar-geo-option--general':'');var cb=d.createElement('input');cb.type='checkbox';cb.value=opt.value;cb.checked=selected&&selected.has(opt.value);var span=d.createElement('span');span.textContent=opt.label;lab.appendChild(cb);lab.appendChild(span);panel.appendChild(lab);cb.addEventListener('change',function(){syncCount();onChange();});});
-        var win=d.defaultView;function values(){return Array.prototype.slice.call(panel.querySelectorAll('input:checked')).map(function(c){return c.value;});}function syncCount(){var n=values().length;details.classList.toggle('has-selection',n>0);summary.querySelector('.scholar-geo-menu__count').textContent=n;}function positionPanel(){if(!details.open)return;var r=summary.getBoundingClientRect();var gap=6;var vw=win.innerWidth||d.documentElement.clientWidth;var vh=win.innerHeight||d.documentElement.clientHeight;var width=Math.min(290,vw-20);panel.style.width=width+'px';var left=Math.max(10,Math.min(r.left,vw-width-10));panel.style.left=left+'px';panel.style.top=(r.bottom+gap)+'px';panel.style.visibility='hidden';requestAnimationFrame(function(){var ph=Math.min(panel.scrollHeight,Math.floor(vh*.46));var top=r.bottom+gap;if(top+ph>vh-8&&r.top-ph-gap>=8)top=r.top-ph-gap;panel.style.top=Math.max(8,top)+'px';panel.style.visibility='visible';});}
-        details.addEventListener('toggle',function(){if(details.open){Array.prototype.slice.call(d.querySelectorAll('details.scholar-geo-menu[open]')).forEach(function(other){if(other!==details)other.open=false;});positionPanel();}else{panel.style.visibility='hidden';}});win.addEventListener('resize',positionPanel,{passive:true});win.addEventListener('scroll',positionPanel,{passive:true,capture:true});syncCount();return{details:details,values:values};
+        function values(){return Array.prototype.slice.call(panel.querySelectorAll('input:checked')).map(function(c){return c.value;});}
+        function syncCount(){var n=values().length;details.classList.toggle('has-selection',n>0);summary.querySelector('.scholar-geo-menu__count').textContent=n;}
+        details.addEventListener('toggle',function(){
+          panel.removeAttribute('style');
+          if(details.open){
+            Array.prototype.slice.call(d.querySelectorAll('details.scholar-geo-menu[open]')).forEach(function(other){if(other!==details)other.open=false;});
+          }
+          panel.removeAttribute('style');
+        });
+        syncCount();
+        return{details:details,values:values};
       }
 
       function updateDirtyCounter(d,n){var el=d.querySelector('[data-geo-dirty-count]');if(el)el.textContent=n+' publication'+(n===1?'':'s')+' changed';}
