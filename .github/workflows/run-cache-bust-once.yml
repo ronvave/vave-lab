@@ -1,0 +1,39 @@
+name: Run cache bust once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/run-cache-bust-once.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bust-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Rewrite cache-bust hashes
+        run: python3 scripts/bust_cache.py
+
+      - name: Commit updated HTML hashes
+        run: |
+          if git diff --quiet; then
+            echo "No cache-bust changes required."
+            exit 0
+          fi
+          git config user.name "vavelab-bot"
+          git config user.email "bot@vavelab.example"
+          git add '*.html'
+          git commit -m "chore: refresh static asset cache-bust hashes"
+          git push
