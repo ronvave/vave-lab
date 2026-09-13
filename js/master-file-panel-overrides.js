@@ -21,6 +21,8 @@
   }
 
   load('js/master-file-panel-overrides-core.js?v=20260913-geo1', function () {
-    load('js/master-file-geography-repair.js?v=20260913-geo2');
+    load('js/master-file-geography-repair.js?v=20260913-geo2', function () {
+      load('js/master-file-geography-authoritative.js?v=20260913-geo3');
+    });
   });
 })();
