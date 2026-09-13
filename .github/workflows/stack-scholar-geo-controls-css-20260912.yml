@@ -1,0 +1,55 @@
+name: Stack scholar geography controls CSS
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stack-scholar-geo-controls-css-20260912.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply stacked in-card geography rail
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+          marker = "          @media(max-width:900px){"
+          if marker not in s:
+              raise SystemExit('media marker not found')
+          css = '''          /* Scholar review geography rail: compact closed state, in-card expansion. */
+          .scholar-pubs-review__list>.db-item{padding-right:225px!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:310px!important;padding-bottom:12px!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row>details,
+          .scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+          .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
+          .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
+          details.scholar-geo-menu>summary{width:100%!important;box-sizing:border-box!important;justify-content:center!important}
+          .scholar-geo-options{position:relative!important;z-index:1!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;max-height:220px!important;overflow:auto!important;box-sizing:border-box!important;margin-top:7px!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:none!important}
+          .scholar-geo-other{width:100%!important;max-width:100%!important;transition:height .12s ease,border-radius .12s ease!important}
+          .scholar-geo-other:focus{width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important}
+          @media(max-width:700px){
+            .scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:130px!important}
+            .scholar-geo-toolbar{left:12px!important;right:12px!important;top:10px!important;width:auto!important;max-width:none!important}
+          }
+'''
+          if 'Scholar review geography rail: compact closed state' not in s:
+              s = s.replace(marker, css + marker, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit
+        run: |
+          git config user.name 'Ron Vave'
+          git config user.email 'ronvave2015@gmail.com'
+          git add s.html
+          git commit -m 'Stack scholar geography controls in compact right rail'
+          git push
