@@ -742,6 +742,40 @@
     );
   }
 
+  // ── Direct scholar-share capability ──────────────────────────────────
+  // A secure s.html URL resolves its opaque 40-hex token against the public
+  // sharded share index, then embeds this dashboard with ?p=<ScholarID>&share=1&k=<token>.
+  // Re-verify that token here before unlocking encrypted data. This makes a
+  // scholar profile work in a fresh/incognito browser without granting access
+  // to the rest of the pre-launch dashboard. Changing ?p= to another scholar
+  // fails because the token maps to exactly one Scholar ID.
+  async function verifyDirectScholarShare() {
+    var params = new URLSearchParams(location.search);
+    if (params.get('share') !== '1') return null;
+    var id = String(params.get('p') || '').trim().toUpperCase();
+    var token = String(params.get('k') || '').trim().toLowerCase();
+    if (!/^ITK-S\d+$/.test(id) || !/^[a-f0-9]{40}$/.test(token)) return null;
+    try {
+      var digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token));
+      var hash = Array.from(new Uint8Array(digest))
+        .map(function (b) { return b.toString(16).padStart(2, '0'); })
+        .join('')
+        .slice(0, 32);
+      var shard = hash.charAt(0);
+      var res = await fetch(bust('data/share-index/' + shard + '.json'), {
+        cache: 'no-store',
+        credentials: 'same-origin'
+      });
+      if (!res.ok) return null;
+      var data = await res.json();
+      var mappedId = String(data && data.m && data.m[hash] || '').trim().toUpperCase();
+      if (mappedId !== id) return null;
+      return { id: id, hash: hash };
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ── Boot ─────────────────────────────────────────────────────────────
   async function boot(onReady) {
     handleDevOptIn();
@@ -749,6 +783,18 @@
     // Wire the admin unlock keyboard chords immediately so they work
     // regardless of which mode we end up in (public / demo / dev).
     wireAdminUnlockKeys();
+
+    // A validated scholar-share URL is a separate, tightly-scoped mode.
+    // It bypasses the demo shell only after the opaque share token is proven
+    // to belong to the requested Scholar ID. The dashboard's existing share=1
+    // rendering then exposes only that direct scholar profile.
+    var directShare = await verifyDirectScholarShare();
+    if (directShare) {
+      mode = 'share';
+      cachedPasscode = BAKED_PASSCODE;
+      onReady();
+      return;
+    }
 
     // Dev mode wins over everything.
     if (isDevMarked()) {

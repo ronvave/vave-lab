@@ -59,7 +59,7 @@
 
         var frame = document.createElement('iframe');
         frame.title = 'iTaukei scholar profile';
-        frame.src = 'itaukei-research-database-master.html?p=' + encodeURIComponent(id) + '&share=1';
+        frame.src = 'itaukei-research-database-master.html?p=' + encodeURIComponent(id) + '&share=1&k=' + encodeURIComponent(token);
         frame.setAttribute('allow', 'web-share; clipboard-write');
         frame.setAttribute('referrerpolicy', 'no-referrer');
         document.body.appendChild(frame);
