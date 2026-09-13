@@ -791,7 +791,15 @@ function scholarSubmissionFolder_(ss) {
 function authorizeScholarSubmissionStorage() {
   var ss = geoSs_();
   var folder = scholarSubmissionFolder_(ss);
-  Logger.log('Scholar submission upload folder ready: ' + folder.getUrl());
+  // Opening the folder alone may reuse a previously granted read-only Drive
+  // scope. Create one harmless marker file so Google explicitly grants and
+  // verifies the write scope that real CV/photo/thesis uploads require.
+  var markerName = 'Scholar submission uploads enabled.txt';
+  var existing = folder.getFilesByName(markerName);
+  if (!existing.hasNext()) {
+    folder.createFile(markerName, 'This file confirms that the iTaukei V2 scholar-update web app is authorised to save submitted attachments.');
+  }
+  Logger.log('Scholar submission upload folder ready with write access: ' + folder.getUrl());
   return folder.getUrl();
 }
 
