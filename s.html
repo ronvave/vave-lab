@@ -164,25 +164,28 @@
           .scholar-pubs-review__head p{margin:0 0 9px;color:#4b5563;font-size:.9rem;line-height:1.55}
           .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
-          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:505px!important}
-          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){padding-bottom:235px!important}
+          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:225px!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:310px!important;padding-bottom:12px!important}
           .scholar-geo-editor{display:none!important}
-          .scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;max-width:500px!important;overflow:visible!important;z-index:20!important}
-          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;align-items:center!important;gap:7px!important;flex-wrap:nowrap!important;overflow:visible!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row>details,.scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+          .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
+          .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
           .scholar-geo-toolbar>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;min-height:34px!important;box-sizing:border-box!important;padding:0 12px!important;border-radius:999px!important;font-size:.8rem!important;line-height:1!important;font-weight:600!important;white-space:nowrap!important;}
           .scholar-review-doi-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#efc4ee!important;color:#542052!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
           .scholar-review-doi-chip:hover{background:#e7afe5!important;color:#431640!important;}
           .scholar-review-link-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#cfeaf0!important;color:#075d6b!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
-          .scholar-geo-other{display:inline-flex!important;align-items:center!important;height:34px!important;min-height:34px!important;width:150px!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
-          .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:190px!important;}
+          .scholar-geo-other{display:block!important;height:34px!important;min-height:34px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
+          .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;}
           .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
-          details.scholar-geo-menu{position:relative!important;overflow:visible!important}
-          details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none;white-space:nowrap}
+          details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important}
+          details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none;white-space:nowrap;width:100%!important;box-sizing:border-box!important}
           details.scholar-geo-menu>summary::-webkit-details-marker{display:none}
           details.scholar-geo-menu[open]>summary{border-color:#0e7490;box-shadow:0 0 0 2px rgba(14,116,144,.10)}
           .scholar-geo-menu__count{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#0e7490;color:#fff;align-items:center;justify-content:center;font-size:.68rem}
           .scholar-geo-menu.has-selection .scholar-geo-menu__count{display:inline-flex}
-          .scholar-geo-options{position:absolute!important;z-index:80!important;top:calc(100% + 6px)!important;right:0!important;width:250px!important;max-width:min(250px,calc(100vw - 28px))!important;max-height:210px!important;overflow:auto!important;padding:8px;background:#fff;border:1px solid #cbd5d8;border-radius:10px;box-shadow:0 10px 24px rgba(0,0,0,.22)}
+          .scholar-geo-options{position:relative!important;z-index:1!important;top:auto!important;left:auto!important;right:auto!important;width:100%!important;max-width:100%!important;max-height:220px!important;overflow:auto!important;box-sizing:border-box!important;margin-top:7px!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:none!important}
           .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer}
           .scholar-geo-option:hover{background:#eaf7f9}.scholar-geo-option input{margin-top:2px;accent-color:#0e7490}
           .scholar-geo-option--general{border-bottom:1px dashed #d8dfe0;margin-bottom:4px;padding-bottom:8px;font-weight:600}
@@ -193,7 +196,7 @@
           .scholar-geo-submit__actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scholar-geo-submit button{border:0;border-radius:8px;padding:9px 15px;background:#0e7490;color:#fff;font-weight:700;cursor:pointer}.scholar-geo-submit button:disabled{opacity:.55;cursor:wait}
           .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
           @media(max-width:900px){.scholar-direct-main .db-kpi--solid{grid-template-columns:50px minmax(0,1fr)!important;min-height:98px!important;padding:12px 13px!important;column-gap:12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon{width:50px!important;height:50px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:28px!important;height:28px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon::after{right:-12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__body{grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:7px!important;padding-left:7px!important}.scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:29px!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:13px!important;line-height:1.16!important}}
-          @media(max-width:700px){.scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}.scholar-geo-submit__grid{grid-template-columns:1fr}.scholar-direct-main .db-kpis{grid-template-columns:1fr!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}.scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:58px!important}.scholar-geo-toolbar{left:12px!important;right:12px!important;max-width:none!important;justify-content:flex-start!important;flex-wrap:wrap!important}}
+          @media(max-width:700px){.scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}.scholar-geo-submit__grid{grid-template-columns:1fr}.scholar-direct-main .db-kpis{grid-template-columns:1fr!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}.scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:130px!important}.scholar-geo-toolbar{left:12px!important;right:12px!important;top:10px!important;width:auto!important;max-width:none!important}}
         `;
         d.head.appendChild(style);
       }
@@ -304,7 +307,6 @@
         if(!node||!editor)return;
         Array.prototype.slice.call(node.querySelectorAll('span,div,strong,b')).forEach(function(el){if(String(el.textContent||'').trim().toUpperCase()!=='DOI')return;if(el.closest('a'))return;var rect=el.getBoundingClientRect();if(rect.width<=80&&rect.height<=40)el.remove();});
 
-        // Remove all direct links back to Zotero from the scholar-review publication cards.
         Array.prototype.slice.call(node.querySelectorAll('a')).forEach(function(a){
           var text=String(a.textContent||'').trim();var href=String(a.getAttribute('href')||'');
           if(/^ZOTERO\b/i.test(text)){a.remove();return;}
@@ -314,8 +316,6 @@
         var row=editor.querySelector('.scholar-geo-editor__row');if(!row)return;
         var actionAnchor=Array.prototype.slice.call(node.querySelectorAll('a')).find(function(a){return /^(DOI|LINK)\b/i.test(String(a.textContent||'').trim());});
 
-        // Move DOI/source link into the left badge row, immediately after the iTaukei-author badge.
-        // This frees the right side for geography controls and lets title/author text wrap up to them.
         if(actionAnchor){
           var actionText=String(actionAnchor.textContent||'').trim();
           var authorBadge=Array.prototype.slice.call(node.querySelectorAll('span,div,strong,b,a')).find(function(el){
@@ -333,7 +333,6 @@
           }
         }
 
-        // Geography controls always get their own top-right toolbar.
         var toolbar=node.ownerDocument.createElement('div');
         toolbar.className='scholar-geo-toolbar';
         node.appendChild(toolbar);
