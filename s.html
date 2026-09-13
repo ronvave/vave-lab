@@ -120,6 +120,22 @@
         styleSummaryMetrics(d, main, card);
         prepareScholarPublicationFilter(w, state, scholarKey);
         buildPublicationReviewWhenReady(w, d, main, state, scholarId, scholarKey, scholarName, card);
+        installGeoDropdownOutsideClick(d);
+      }
+
+      function installGeoDropdownOutsideClick(d) {
+        if (!d || d.documentElement.dataset.geoOutsideClickInstalled === '1') return;
+        d.documentElement.dataset.geoOutsideClickInstalled = '1';
+
+        d.addEventListener('click', function (event) {
+          var target = event.target;
+          var openMenus = d.querySelectorAll('details.scholar-geo-menu[open]');
+          if (!openMenus.length) return;
+
+          openMenus.forEach(function (menu) {
+            if (!menu.contains(target)) menu.removeAttribute('open');
+          });
+        });
       }
 
       function injectStyles(d) {
