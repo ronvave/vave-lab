@@ -1,0 +1,59 @@
+name: Tune scholar KPI typography
+on:
+  push:
+    paths:
+      - '.github/workflows/tune-scholar-kpi-typography.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Adjust scholar-profile KPI sizing and spacing
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = [
+              ("grid-template-columns:minmax(82px,auto) minmax(0,1fr)!important;\n            align-items:center!important;\n            gap:10px!important;",
+               "grid-template-columns:minmax(82px,auto) minmax(0,1fr)!important;\n            align-items:center!important;\n            gap:8px!important;\n            padding-left:8px!important;"),
+              ("font-size:36px!important;",
+               "font-size:33px!important;"),
+              ("font-size:16px!important;\n            line-height:1.18!important;",
+               "font-size:15px!important;\n            line-height:1.18!important;"),
+              ("grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:8px!important}",
+               "grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:7px!important;padding-left:7px!important}"),
+              (".scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:31px!important}",
+               ".scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:29px!important}"),
+              (".scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:14px!important;line-height:1.16!important}",
+               ".scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:13px!important;line-height:1.16!important}"),
+          ]
+
+          changed = False
+          for old, new in replacements:
+              if old in s:
+                  s = s.replace(old, new, 1)
+                  changed = True
+              else:
+                  print('anchor not found:', old[:90])
+
+          if not changed:
+              raise SystemExit('No KPI typography changes applied')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- s.html; then
+            echo 'No file changes to commit' >&2
+            exit 1
+          fi
+          git config user.name 'Vave Lab automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add s.html
+          git commit -m 'Refine scholar summary KPI typography'
+          git push
