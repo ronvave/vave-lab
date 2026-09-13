@@ -59,3 +59,4 @@ async function bulkResolve(){var status=$('#geo-submission-status')?$('#geo-subm
           git add js/publication-geography-admin.js
           git commit -m "Admin: add bulk publication geography review" || exit 0
           git push
+# trigger: 2026-09-13 bulk-review patch
