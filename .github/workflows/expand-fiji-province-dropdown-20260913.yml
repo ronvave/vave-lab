@@ -1,0 +1,47 @@
+name: Expand Fiji province dropdown
+on:
+  push:
+    paths:
+      - '.github/workflows/expand-fiji-province-dropdown-20260913.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Expand geography dropdown inside publication card
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text()
+          old1 = ".scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:300px!important;padding-bottom:12px!important;overflow:hidden!important}"
+          new1 = ".scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:520px!important;padding-bottom:12px!important;overflow:hidden!important}"
+          old2 = "max-height:210px!important;overflow-y:auto!important;overflow-x:hidden!important;"
+          new2 = "max-height:460px!important;overflow-y:auto!important;overflow-x:hidden!important;"
+          if old1 not in s:
+              raise SystemExit('open-card CSS target not found')
+          if old2 not in s:
+              raise SystemExit('dropdown max-height target not found')
+          s = s.replace(old1, new1, 1).replace(old2, new2, 1)
+          p.write_text(s)
+          PY
+      - name: Verify Fiji province source list is complete and alphabetical
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          s=Path('s.html').read_text()
+          expected="var FIJI_PROVINCES=['Ba','Bua','Cakaudrove','Kadavu','Lau','Lomaiviti','Macuata','Nadroga/Navosa','Naitasiri','Namosi','Ra','Rewa','Serua','Tailevu'];"
+          if expected not in s:
+              raise SystemExit('Expected complete alphabetical 14-province list not found')
+          print('Verified complete alphabetical Fiji province list')
+          PY
+      - name: Commit patch and remove one-time workflow
+        run: |
+          git config user.name "ronvave"
+          git config user.email "ronvave2015@gmail.com"
+          rm .github/workflows/expand-fiji-province-dropdown-20260913.yml
+          git add s.html .github/workflows/expand-fiji-province-dropdown-20260913.yml
+          git commit -m "Show full alphabetical Fiji province checklist in scholar review"
+          git push
