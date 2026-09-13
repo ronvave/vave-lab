@@ -1,12 +1,19 @@
 /*
  * Master-file publication geography repair — 2026-09-13
  *
- * The authoritative Research Geography sheet is already exported to
- * master.geography and consumed by the adapter for B4/C2 membership. The
- * legacy publication-card renderer, however, only renders state.provincesByItem
- * and therefore never shows country-level geography (Hawaii, Papua New Guinea,
- * etc.) or a general/national Fiji row. This layer keeps the existing renderer
- * intact and adds the verified Master geography to publication cards.
+ * Research Geography is the authoritative source for publication study
+ * locations. This layer does three things:
+ *   1. adds verified Master geography chips to publication cards;
+ *   2. replaces province membership in dashboard state for publications that
+ *      have verified Research Geography rows, so C2 uses the same source; and
+ *   3. mirrors that authoritative province membership into the in-memory
+ *      Master publication one-hots before the province/confederacy summaries
+ *      are recalculated.
+ *
+ * Publications with NO verified Research Geography rows retain their legacy
+ * province values as a compatibility fallback. Once a publication has one or
+ * more verified Research Geography rows, those rows win and legacy province
+ * flags are ignored for that publication.
  */
 (function () {
   'use strict';
@@ -28,6 +35,13 @@
 
   function publicationKey(pub) {
     return String((pub && (pub['Publication ID / BibTeX Key'] || pub.key)) || '').trim();
+  }
+
+  function getFijiProvinces() {
+    var a = window.MasterFileAdapter && window.MasterFileAdapter.constants;
+    if (a && Array.isArray(a.PROVINCES)) return a.PROVINCES.slice();
+    return ['Ba', 'Bua', 'Cakaudrove', 'Kadavu', 'Lau', 'Lomaiviti', 'Macuata',
+      'Nadroga/Navosa', 'Naitasiri', 'Namosi', 'Ra', 'Rewa', 'Serua', 'Tailevu'];
   }
 
   function buildIndex(master) {
@@ -67,9 +81,6 @@
     (rows || []).forEach(function (g) {
       var country = String(g.Country || '').trim();
       var province = String(g['Fiji Province'] || '').trim();
-
-      // Named Fiji province: show the province. General/national Fiji rows:
-      // show Fiji. Non-Fiji rows: show the recorded country/location.
       var label = '';
       var kind = 'country';
       if (norm(country) === 'fiji') {
@@ -94,7 +105,7 @@
   function existingTagNames(card) {
     var set = new Set();
     card.querySelectorAll('.db-item__tags .db-item__badge').forEach(function (el) {
-      set.add(norm(el.textContent));
+      set.add(norm(el.textContent).replace(/^📍\s*/, ''));
     });
     return set;
   }
@@ -113,7 +124,6 @@
   function annotateCards(master, index) {
     var cards = document.querySelectorAll('[data-db-items] .db-item:not(.db-item__empty)');
     cards.forEach(function (card) {
-      // Rebuild on every render, but never duplicate within the same card.
       card.querySelectorAll('.mf-geo-location-tag').forEach(function (n) { n.remove(); });
 
       var titleEl = card.querySelector('.db-item__title');
@@ -122,8 +132,6 @@
       var year = cardYear(card);
       var candidates = index.byTitleYear.get(title + '||' + year) || [];
       if (!candidates.length) {
-        // Year can be absent in a few records; fall back to title only if it is
-        // unambiguous in the Master publication table.
         var titleMatches = [];
         index.byTitleYear.forEach(function (arr, k) {
           if (k.indexOf(title + '||') === 0) titleMatches = titleMatches.concat(arr);
@@ -154,22 +162,65 @@
     });
   }
 
-  function syncNamedFijiProvincesIntoState(master, index) {
+  /*
+   * Make verified Research Geography authoritative everywhere C2 reads
+   * province membership. For a publication that has verified geography rows:
+   *   - provincesByItem becomes exactly the verified named Fiji provinces;
+   *   - legacy one-hot province flags on the in-memory publication are reset;
+   *   - Fiji general/national is represented by PROVINCE_UNSPEC;
+   *   - old Unsure values are cleared.
+   * Publications without verified rows are deliberately left untouched.
+   */
+  function syncAuthoritativeGeographyIntoState(master, index) {
     var st = window.__vavelabDbState;
-    if (!st || !st.provincesByItem || typeof st.provincesByItem.get !== 'function') return;
+    if (!st) return;
+
+    var provinces = getFijiProvinces();
+    var validProv = new Set(provinces.map(norm));
+    var pubByKey = new Map();
+    (master.publications || []).forEach(function (p) {
+      var key = publicationKey(p);
+      if (key) pubByKey.set(key, p);
+    });
+
     index.geoByKey.forEach(function (rows, key) {
-      rows.forEach(function (g) {
+      var named = new Set();
+      var fijiGeneral = false;
+
+      (rows || []).forEach(function (g) {
         if (norm(g.Country) !== 'fiji') return;
         var province = String(g['Fiji Province'] || '').trim();
-        if (!province || norm(province) === 'unclassified' || norm(province) === 'unsure') return;
-        var set = st.provincesByItem.get(key);
-        if (!set) {
-          set = new Set();
-          st.provincesByItem.set(key, set);
-        }
-        set.add(province);
+        var np = norm(province);
+        if (province && validProv.has(np)) named.add(province);
+        else if (!province || np === 'unclassified' || np === 'unsure') fijiGeneral = true;
       });
+
+      if (st.provincesByItem && typeof st.provincesByItem.set === 'function') {
+        st.provincesByItem.set(key, new Set(Array.from(named)));
+      }
+
+      var p = pubByKey.get(key);
+      if (p) {
+        provinces.forEach(function (prov) { p[prov] = 0; });
+        named.forEach(function (prov) { p[prov] = 1; });
+        p['Fiji - no province specified'] = fijiGeneral ? 1 : 0;
+        p.Unsure = 0;
+      }
     });
+
+    // Rebuild the Master-specific C2/confederacy summary from the now-synced
+    // in-memory publications. This avoids card/totals drift.
+    if (window.MasterFilePanelOverrides &&
+        typeof window.MasterFilePanelOverrides.injectConfedTotals === 'function') {
+      try { window.MasterFilePanelOverrides.injectConfedTotals(); } catch (e) {
+        console.error('Research Geography C2 summary refresh failed', e);
+      }
+    }
+
+    // Production panel renderers listen to the normal filter-change event.
+    // Fire it once after the authoritative province sets are replaced so the
+    // C2 bars and any province-sensitive lists recalculate immediately.
+    try { window.dispatchEvent(new CustomEvent('vavelab:filters-changed')); } catch (e) {}
   }
 
   function installStyles() {
@@ -194,7 +245,7 @@
 
       installStyles();
       var index = buildIndex(master);
-      syncNamedFijiProvincesIntoState(master, index);
+      syncAuthoritativeGeographyIntoState(master, index);
 
       var scheduled = false;
       function applySoon() {
@@ -216,6 +267,12 @@
 
       window.MasterFileGeographyRepair = {
         refresh: applySoon,
+        resync: function () {
+          var fresh = buildIndex(master);
+          syncAuthoritativeGeographyIntoState(master, fresh);
+          index = fresh;
+          applySoon();
+        },
         verifiedRows: Array.from(index.geoByKey.values()).reduce(function (a, b) { return a.concat(b); }, [])
       };
     })();
