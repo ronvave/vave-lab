@@ -1,0 +1,32 @@
+name: Run scholar geotag layout patch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/run-scholar-geotag-layout-patch.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Patch s.html
+        run: python scripts/patch_scholar_geotag_layout.py
+      - name: Commit changes
+        run: |
+          if git diff --quiet -- s.html; then
+            echo 'No changes needed.'
+            exit 0
+          fi
+          git config user.name 'OpenAI'
+          git config user.email 'noreply@openai.com'
+          git add s.html
+          git commit -m 'Refine scholar publication geography controls'
+          git push
