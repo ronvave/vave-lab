@@ -782,6 +782,19 @@ function scholarSubmissionFolder_(ss) {
   return folder;
 }
 
+/**
+ * One-time setup for scholar-update attachments.
+ * Run this function manually from the Apps Script editor as the owner, then
+ * approve the requested Google Drive permission. It creates (or reuses) the
+ * private upload folder beside the iTaukei Master File and remembers its ID.
+ */
+function authorizeScholarSubmissionStorage() {
+  var ss = geoSs_();
+  var folder = scholarSubmissionFolder_(ss);
+  Logger.log('Scholar submission upload folder ready: ' + folder.getUrl());
+  return folder.getUrl();
+}
+
 function safeSubmissionObject_(v, maxChars) {
   var out = v && typeof v === 'object' ? v : {};
   var text = JSON.stringify(out);
@@ -792,9 +805,13 @@ function safeSubmissionObject_(v, maxChars) {
 function saveScholarSubmissionFiles_(ss, sid, submissionId, files) {
   if (!Array.isArray(files)) return [];
   if (files.length > 6) throw new Error('too-many-files');
+  // Do not request Drive access for the common text-only submission path.
+  // DriveApp requires an additional OAuth scope, and an empty attachment
+  // array must not prevent an otherwise valid update reaching Admin V2.
+  var actualFiles = files.filter(function(f){ return !!(f && f.data); });
+  if (!actualFiles.length) return [];
   var folder = scholarSubmissionFolder_(ss), saved = [], total = 0;
-  files.forEach(function (f) {
-    if (!f || !f.data) return;
+  actualFiles.forEach(function (f) {
     var bytes = Utilities.base64Decode(String(f.data));
     total += bytes.length;
     if (bytes.length > 12 * 1024 * 1024 || total > 30 * 1024 * 1024) throw new Error('attachment-size-limit');
