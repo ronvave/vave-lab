@@ -8745,38 +8745,61 @@
         return;
       }
 
+      // main.js upgrades the original compact form after it opens. During
+      // that upgrade it replaces legacy fields (village, paternal province,
+      // degree fields and photo URL) with the fuller lineage/degree blocks.
+      // Read whichever version is present instead of dereferencing a removed
+      // element and aborting the submit click with a TypeError.
+      const formValue = (...selectors) => {
+        for (const selector of selectors) {
+          const input = form.querySelector(selector);
+          if (input) return String(input.value == null ? '' : input.value).trim();
+        }
+        return '';
+      };
+
       // Snapshot the canonical fields for a human-readable Admin V2 review.
       const jsonBlob = {
-        scholar_name:   form.querySelector('#db-sf-scholar-name').value,
-        scholar_slug:   form.querySelector('#db-sf-scholar-slug').value,
+        scholar_name:   formValue('#db-sf-scholar-name'),
+        scholar_slug:   formValue('#db-sf-scholar-slug'),
         submitter: {
           name:  yourName,
           email: yourEmail,
           relationship: rel
         },
         profile: {
-          salutation:       form.querySelector('#db-sf-salutation').value.trim(),
-          village:          form.querySelector('#db-sf-village').value.trim(),
-          paternalProvince: form.querySelector('#db-sf-paternal').value.trim(),
-          title:            form.querySelector('#db-sf-title').value.trim(),
-          institution:      form.querySelector('#db-sf-institution').value.trim(),
-          institutionUrl:   form.querySelector('#db-sf-institution-url').value.trim(),
-          department:       form.querySelector('#db-sf-department').value.trim(),
-          departmentUrl:    form.querySelector('#db-sf-department-url').value.trim(),
-          profileUrl:       form.querySelector('#db-sf-profile-url').value.trim(),
-          googleScholarUrl: form.querySelector('#db-sf-scholar-url').value.trim(),
-          orcidUrl:         form.querySelector('#db-sf-orcid-url').value.trim(),
-          photo:            form.querySelector('#db-sf-photo').value.trim()
+          salutation:       formValue('#db-sf-salutation', '[name="salutation"]'),
+          village:          formValue('[name="paternal_village"]', '#db-sf-village'),
+          paternalProvince: formValue('[name="paternal_province"]', '#db-sf-paternal'),
+          paternalDistrict: formValue('[name="paternal_district"]'),
+          paternalIsland:   formValue('[name="paternal_island"]'),
+          maternalProvince: formValue('[name="maternal_province"]'),
+          maternalDistrict: formValue('[name="maternal_district"]'),
+          maternalVillage:  formValue('[name="maternal_village"]'),
+          maternalIsland:   formValue('[name="maternal_island"]'),
+          gender:           formValue('[name="gender"]'),
+          title:            formValue('#db-sf-title', '[name="title"]'),
+          institution:      formValue('#db-sf-institution', '[name="institution"]'),
+          institutionUrl:   formValue('#db-sf-institution-url', '[name="institution_url"]'),
+          department:       formValue('#db-sf-department', '[name="department"]'),
+          departmentUrl:    formValue('#db-sf-department-url', '[name="department_url"]'),
+          profileUrl:       formValue('#db-sf-profile-url', '[name="profile_url"]'),
+          googleScholarUrl: formValue('#db-sf-scholar-url', '[name="google_scholar_url"]'),
+          orcidUrl:         formValue('#db-sf-orcid-url', '[name="orcid_url"]')
         },
         masters: {
-          university: form.querySelector('#db-sf-masters-uni').value.trim(),
-          country:    form.querySelector('#db-sf-masters-country').value.trim()
+          university: formValue('[name="masters_university"]', '#db-sf-masters-uni'),
+          country:    formValue('[name="masters_country"]', '#db-sf-masters-country'),
+          year:       formValue('[name="masters_year"]', '[name="masters_year_completed"]'),
+          thesisUrl:  formValue('[name="masters_thesis_url"]')
         },
         phd: {
-          university: form.querySelector('#db-sf-phd-uni').value.trim(),
-          country:    form.querySelector('#db-sf-phd-country').value.trim()
+          university: formValue('[name="phd_university"]', '#db-sf-phd-uni'),
+          country:    formValue('[name="phd_country"]', '#db-sf-phd-country'),
+          year:       formValue('[name="phd_year"]', '[name="phd_year_completed"]'),
+          thesisUrl:  formValue('[name="phd_thesis_url"]')
         },
-        notes: form.querySelector('#db-sf-notes').value.trim(),
+        notes: formValue('#db-sf-notes', '[name="notes"]'),
         submittedAt: new Date().toISOString()
       };
       form.querySelector('#db-sf-submission-json').value = JSON.stringify(jsonBlob, null, 2);
