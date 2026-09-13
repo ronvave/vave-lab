@@ -1,0 +1,91 @@
+name: Align scholar publication header controls
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/align-scholar-pub-header-controls.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Align publication controls in s.html
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){padding-bottom:235px!important}
+          .scholar-geo-editor{display:none!important}
+          .scholar-geo-toolbar{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;flex-wrap:wrap!important;position:relative!important;overflow:visible!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;align-items:center!important;gap:7px!important;flex-wrap:nowrap!important;overflow:visible!important}
+'''
+
+          new = '''          .scholar-pubs-review__list>.db-item{
+            margin:0!important;width:auto!important;max-width:none!important;position:relative!important;
+            overflow:hidden!important;box-sizing:border-box!important;padding-right:430px!important;
+          }
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){padding-bottom:235px!important}
+          .scholar-geo-editor{display:none!important}
+          .scholar-geo-toolbar{
+            display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:7px!important;
+            flex-wrap:nowrap!important;position:absolute!important;top:10px!important;right:12px!important;
+            max-width:410px!important;overflow:visible!important;z-index:20!important;
+          }
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;align-items:center!important;gap:7px!important;flex-wrap:nowrap!important;overflow:visible!important}
+'''
+
+          if old not in s:
+              raise SystemExit('Expected scholar publication CSS block not found')
+          s = s.replace(old, new, 1)
+
+          mobile_old = '''          @media(max-width:700px){
+            .scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}
+            .scholar-geo-submit__grid{grid-template-columns:1fr}
+            .scholar-direct-main .db-kpis{grid-template-columns:1fr!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}
+          }
+'''
+
+          mobile_new = '''          @media(max-width:700px){
+            .scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}
+            .scholar-geo-submit__grid{grid-template-columns:1fr}
+            .scholar-direct-main .db-kpis{grid-template-columns:1fr!important}
+            .scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}
+            .scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:58px!important}
+            .scholar-geo-toolbar{top:10px!important;left:12px!important;right:12px!important;max-width:none!important;justify-content:flex-start!important;flex-wrap:wrap!important}
+            .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){padding-bottom:235px!important}
+          }
+'''
+
+          if mobile_old not in s:
+              raise SystemExit('Expected mobile CSS block not found')
+          s = s.replace(mobile_old, mobile_new, 1)
+
+          p.write_text(s, encoding='utf-8')
+          PY
+
+      - name: Commit patch
+        shell: bash
+        run: |
+          if git diff --quiet -- s.html; then
+            echo 'No s.html changes detected'
+            exit 0
+          fi
+          git config user.name 'Ron Vave'
+          git config user.email 'ronvave2015@gmail.com'
+          git add s.html
+          git commit -m 'Align scholar publication controls with badges'
+          git push
