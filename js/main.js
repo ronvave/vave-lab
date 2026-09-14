@@ -171,6 +171,14 @@ document.addEventListener('DOMContentLoaded', () => {
     map.forEach((p,key)=>{if(!found&&p&&String(p.scholarId||'').toUpperCase()===String(id||'').toUpperCase())found={key,profile:p}});return found;
   }
 
+  function profileForOpenForm(id,form){
+    const byId=profileForId(id);if(byId)return byId;
+    const st=getState(),map=st&&st.scholarProfilesByName;if(!map||typeof map.get!=='function')return null;
+    const name=String(form?.querySelector('#db-sf-scholar-name')?.value||'').trim();
+    if(name&&map.has(name))return {key:name,profile:map.get(name)};
+    let found=null;map.forEach((p,key)=>{if(!found&&normalizeText(key)===normalizeText(name))found={key,profile:p}});return found;
+  }
+
   function idForCard(card){
     if(!card)return'';const photo=card.querySelector('.db-scholar-card__photo');
     if(photo){const bg=photo.style.backgroundImage||getComputedStyle(photo).backgroundImage||'';const m=bg.match(/ITK-S\d+/i);if(m)return m[0].toUpperCase()}
@@ -287,7 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function enhanceUpdateForm(){
     const modal=document.getElementById('db-submit-modal'),form=document.getElementById('db-submit-form');if(!modal||!form)return;
-    const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;const found=profileForId(sid);const p=found?.profile||{};
+    const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;const found=profileForOpenForm(sid,form);const p=found?.profile||{};
     if(form.dataset.scholarEnhanced==='1'){
       const set=(name,value)=>{const el=form.querySelector('[name="'+name+'"]');if(el&&el.type!=='file')el.value=value==null?'':String(value)};
       set('paternal_province',clean(p.paternalProvince));set('paternal_district',clean(p.paternalDistrict));set('paternal_village',clean(p.paternalVillage));set('paternal_island',clean(p.paternalIsland));

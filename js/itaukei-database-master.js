@@ -8675,7 +8675,8 @@
     setVal('db-sf-youremail', '');
     setVal('db-sf-relationship', '');
 
-    setVal('db-sf-salutation',   profile.salutation || '');
+    const salutation = String(profile.salutation || '').trim();
+    setVal('db-sf-salutation',   /^(Dr|Prof)$/i.test(salutation) ? salutation + '.' : salutation);
     setVal('db-sf-village',      profile.village || '');
     setVal('db-sf-paternal',     profile.paternalProvince || '');
     setVal('db-sf-title',        profile.title || '');
@@ -8715,8 +8716,11 @@
     // main.js adds the expanded geography and degree controls just after the
     // modal opens. It emits this event when those controls have been populated.
     // The timeout is a fallback for the compact form or a cached older helper.
-    form._scholarSubmissionBaseline = null;
-    setTimeout(() => captureScholarSubmissionBaseline(document.getElementById('db-submit-form')), 80);
+    const form = document.getElementById('db-submit-form');
+    if (form) {
+      form._scholarSubmissionBaseline = null;
+      setTimeout(() => captureScholarSubmissionBaseline(form), 80);
+    }
   }
 
   function closeScholarSubmitModal() {

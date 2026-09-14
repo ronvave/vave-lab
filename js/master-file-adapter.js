@@ -1060,7 +1060,8 @@
         year:       (g['Finish / Completion Year'] || g['Year / Status'] || '').toString().trim(),
         level:      level,
         university: (g['C_Uni name'] || '').trim(),
-        country:    (g['Country'] || '').trim()
+        country:    (g['Country'] || '').trim(),
+        url:        (g['Thesis / Repository URL'] || '').trim()
       };
       rec.all.push(entry);
       if (level === 'phd'     && !rec.phd)     rec.phd     = entry;
