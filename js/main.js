@@ -286,8 +286,18 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function enhanceUpdateForm(){
-    const modal=document.getElementById('db-submit-modal'),form=document.getElementById('db-submit-form');if(!modal||!form||form.dataset.scholarEnhanced==='1')return;
-    form.dataset.scholarEnhanced='1';const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;const found=profileForId(sid);const p=found?.profile||{};
+    const modal=document.getElementById('db-submit-modal'),form=document.getElementById('db-submit-form');if(!modal||!form)return;
+    const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;const found=profileForId(sid);const p=found?.profile||{};
+    if(form.dataset.scholarEnhanced==='1'){
+      const set=(name,value)=>{const el=form.querySelector('[name="'+name+'"]');if(el&&el.type!=='file')el.value=value==null?'':String(value)};
+      set('paternal_province',clean(p.paternalProvince));set('paternal_district',clean(p.paternalDistrict));set('paternal_village',clean(p.paternalVillage));set('paternal_island',clean(p.paternalIsland));
+      set('maternal_province',clean(p.maternalProvince));set('maternal_district',clean(p.maternalDistrict));set('maternal_village',clean(p.maternalVillage));set('maternal_island',clean(p.maternalIsland));
+      set('paternal_confederacy',PROV_CONF[clean(p.paternalProvince)]||clean(p.paternalConfederacy));set('maternal_confederacy',PROV_CONF[clean(p.maternalProvince)]||clean(p.maternalConfederacy));set('gender',p.gender||'');
+      const master=p.masters||{},phd=p.phd||{};set('masters_university',master.university||p.mastersUniversity||'');set('masters_country',master.country||p.mastersCountry||'');set('masters_year',master.year||p.mastersYear||'');set('masters_thesis_url',master.url||'');
+      set('phd_university',phd.university||p.phdUniversity||'');set('phd_country',phd.country||p.phdCountry||'');set('phd_year',phd.year||p.phdYear||'');set('phd_thesis_url',phd.url||'');
+      form.querySelectorAll('input[type="file"]').forEach(el=>{el.value=''});form.dispatchEvent(new Event('scholar-form-ready'));return;
+    }
+    form.dataset.scholarEnhanced='1';
     const fieldsets=Array.from(form.querySelectorAll(':scope > fieldset'));const who=fieldsets.find(fs=>/who is submitting/i.test(fs.querySelector('legend')?.textContent||''));const scholar=fieldsets.find(fs=>/scholar profile/i.test(fs.querySelector('legend')?.textContent||''));const grad=fieldsets.find(fs=>/graduate studies/i.test(fs.querySelector('legend')?.textContent||''));
     if(who){who.insertAdjacentElement('afterend',geoFieldset('Paternal',p));who.nextElementSibling.insertAdjacentElement('afterend',geoFieldset('Maternal',p))}
     if(scholar){
@@ -304,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const name=(p.first&&p.last)?(p.first+' '+p.last):(document.querySelector('[data-direct-scholar] .db-scholar-card__name')?.textContent||document.querySelector('.db-scholar-card__name')?.textContent||'Scholar').replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i,'').trim();
     renameFileInput(form.querySelector('[name="masters_thesis_pdf"]'),'Masters',sid,name);renameFileInput(form.querySelector('[name="phd_thesis_pdf"]'),'PhD',sid,name);
     const cv=form.querySelector('input[type="file"][name*="cv" i]');renameFileInput(cv,'CV',sid,name);const photo=form.querySelector('input[type="file"][name*="photo" i]');renameFileInput(photo,'Headshot',sid,name);
+    form.dispatchEvent(new Event('scholar-form-ready'));
   }
 
   function watchUpdateModal(){const modal=document.getElementById('db-submit-modal');if(!modal)return;const obs=new MutationObserver(()=>{if(modal.classList.contains('is-open')||modal.getAttribute('aria-hidden')==='false'||getComputedStyle(modal).display!=='none'){const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;enhanceUpdateForm()}});obs.observe(modal,{attributes:true,attributeFilter:['class','style','aria-hidden']});document.addEventListener('click',ev=>{if(ev.target.closest('[data-submit-info]'))setTimeout(()=>{const sid=inferOpenScholarId();if(sid)modal.dataset.scholarId=sid;enhanceUpdateForm()},30)},true)}

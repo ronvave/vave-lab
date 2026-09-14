@@ -8604,12 +8604,29 @@
     });
   }
 
-  function formFieldsForSubmission(form) {
-    const fields = {};
+  // Capture the values shown when the modal opens. The review queue must only
+  // receive fields the submitter actually changed; otherwise an unpopulated
+  // control can be mistaken for a request to clear an existing Master value.
+  function captureScholarSubmissionBaseline(form) {
+    const baseline = {};
     form.querySelectorAll('input,select,textarea').forEach(el => {
       if (!el.name || el.type === 'file' || el.type === 'submit' || el.type === 'button') return;
-      if ((el.type === 'checkbox' || el.type === 'radio') && !el.checked) return;
-      fields[el.name] = el.value == null ? '' : String(el.value).trim();
+      if (el.type === 'checkbox' || el.type === 'radio') baseline[el.name] = el.checked ? String(el.value || 'on') : '';
+      else baseline[el.name] = el.value == null ? '' : String(el.value).trim();
+    });
+    form._scholarSubmissionBaseline = baseline;
+  }
+
+  function formFieldsForSubmission(form) {
+    const fields = {};
+    const baseline = form._scholarSubmissionBaseline || null;
+    form.querySelectorAll('input,select,textarea').forEach(el => {
+      if (!el.name || el.type === 'file' || el.type === 'submit' || el.type === 'button') return;
+      const value = (el.type === 'checkbox' || el.type === 'radio')
+        ? (el.checked ? String(el.value || 'on') : '')
+        : (el.value == null ? '' : String(el.value).trim());
+      if (baseline && Object.prototype.hasOwnProperty.call(baseline, el.name) && baseline[el.name] === value) return;
+      fields[el.name] = value;
     });
     return fields;
   }
@@ -8695,6 +8712,11 @@
 
     modal.classList.add('is-visible');
     document.body.style.overflow = 'hidden';
+    // main.js adds the expanded geography and degree controls just after the
+    // modal opens. It emits this event when those controls have been populated.
+    // The timeout is a fallback for the compact form or a cached older helper.
+    form._scholarSubmissionBaseline = null;
+    setTimeout(() => captureScholarSubmissionBaseline(document.getElementById('db-submit-form')), 80);
   }
 
   function closeScholarSubmitModal() {
@@ -8722,6 +8744,8 @@
     const form   = document.getElementById('db-submit-form');
     const status = document.getElementById('db-submit-status');
     const submitBtn = form.querySelector('[data-submit-send]');
+
+    form.addEventListener('scholar-form-ready', () => captureScholarSubmissionBaseline(form));
 
     function showStatus(kind, msg) {
       if (!status) return;
@@ -8760,6 +8784,7 @@
 
       // Snapshot the canonical fields for a human-readable Admin V2 review.
       const jsonBlob = {
+        changedFieldsOnly: true,
         scholar_name:   formValue('#db-sf-scholar-name'),
         scholar_slug:   formValue('#db-sf-scholar-slug'),
         submitter: {

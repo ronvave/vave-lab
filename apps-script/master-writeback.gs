@@ -922,14 +922,24 @@ function buildScholarSubmissionChanges_(ss, submission) {
       if(!degree){writable=false;reason='No existing '+spec.stage+' degree row in Master';}
       else {var dcol=degree.headers.indexOf(spec.field)+1;if(!dcol){writable=false;reason='Master field not found';}else{rowNumber=degree.row;current=normalizeForRead_(gradSheet.getRange(degree.row,dcol).getValue());}}
     }
-    if(normalizeForCompare_(current)===normalizeForCompare_(proposed))return;
+    // Public forms display Master sentinel values such as "Unclassified" as
+    // an empty control. Treat those as equivalent, particularly for legacy
+    // submissions made before the browser began sending changed fields only.
+    var currentCompare=/^(unclassified|unknown|n\/a|na|-)$/i.test(String(current||'').trim())?'':current;
+    if(normalizeForCompare_(currentCompare)===normalizeForCompare_(proposed))return;
     out.push({key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
   });
   // These are deliberately retained as visible manual-review changes because
   // they live in the GitHub enrichment sidecar, not in a Master Sheet column.
-  [{key:'institution_url',label:'Institution URL'},{key:'department_url',label:'Department URL'}].forEach(function(spec){
-    if(Object.prototype.hasOwnProperty.call(fields,spec.key)&&String(fields[spec.key]||'').trim())out.push({key:spec.key,label:spec.label,currentValue:'Stored outside Master',newValue:String(fields[spec.key]).trim(),writable:false,reason:'Sidecar field — apply through the normal scholar editor'});
-  });
+  // Sidecar URLs cannot be compared with the Master sheet. New submissions
+  // contain them only when edited, but legacy submissions contained every
+  // prefilled field. Hide them for legacy rows rather than claiming a change.
+  var structured=parseJsonObject_(submission['Structured Submission JSON']);
+  if(structured.changedFieldsOnly===true){
+    [{key:'institution_url',label:'Institution URL'},{key:'department_url',label:'Department URL'}].forEach(function(spec){
+      if(Object.prototype.hasOwnProperty.call(fields,spec.key))out.push({key:spec.key,label:spec.label,currentValue:'Stored outside Master',newValue:String(fields[spec.key]||'').trim(),writable:false,reason:'Sidecar field — apply through the normal scholar editor'});
+    });
+  }
   return out;
 }
 
