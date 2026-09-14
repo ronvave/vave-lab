@@ -1236,6 +1236,29 @@
     reader.readAsDataURL(file);
   }
 
+  function resizeSubmittedPhoto_ (dataUrl) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var size=400,sw=img.naturalWidth,sh=img.naturalHeight,side=Math.min(sw,sh),sx=(sw-side)/2,sy=(sh-side)/2;
+        var canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+        var ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.drawImage(img,sx,sy,side,side,0,0,size,size);
+        resolve(canvas.toDataURL('image/jpeg',0.9));
+      };
+      img.onerror=function(){reject(new Error('The submitted image could not be decoded.'));};img.src=dataUrl;
+    });
+  }
+
+  async function approveScholarSubmissionPhoto_ (sid, attachment) {
+    sid=String(sid||'').toUpperCase();if(!/^ITK-S\d+$/.test(sid))throw new Error('Invalid Scholar ID for photo approval.');
+    if(!attachment||!/^image\//i.test(String(attachment.type||'')))throw new Error('The selected attachment is not an image.');
+    if(!state.enrichmentDoc||!state.enrichmentDoc.scholars)throw new Error('Admin enrichment data is still loading. Refresh and try again.');
+    var resized=await resizeSubmittedPhoto_('data:'+attachment.type+';base64,'+attachment.data),path='img/scholars/'+sid+'.jpg';
+    await githubUploadBinary(path,dataUrlToBytes(resized),'admin(master): approve submitted photo for '+sid);
+    var written=await pushEncryptedJsonMerged(ENRICHMENT_ENC,ENRICHMENT_URL,function(fresh){if(!fresh.scholars)fresh.scholars={};var current=Object.assign({},fresh.scholars[sid]||{});current.photo=path;current.updatedAt=new Date().toISOString();fresh.scholars[sid]=current;fresh.updatedAt=new Date().toISOString();return fresh;},'admin(master): approve submitted photo for '+sid);
+    state.enrichmentDoc=written;return {path:path};
+  }
+
   // ------------------------- save flow -------------------------
   // Two-phase flow:
   //   1. Collect any master-editable field diffs. If there are any, show the
@@ -2887,4 +2910,6 @@
     // insights preview
     $('#pf-insights-json').addEventListener('input', updateInsightsPreview);
   }
+
+  window.VaveLabScholarSubmissionAdmin={approvePhoto:approveScholarSubmissionPhoto_};
 })();

@@ -252,6 +252,9 @@ function doGet(e) {
     if (action === 'readScholarProfileSubmissions') {
       return handleReadScholarProfileSubmissions_(params);
     }
+    if (action === 'readScholarSubmissionAttachment') {
+      return handleReadScholarSubmissionAttachment_(params);
+    }
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
     return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
@@ -412,6 +415,7 @@ function doPost(e) {
     if (action === 'write') return handleWrite_(body);
     if (action === 'resolvePublicationGeographySubmission') return handleResolvePublicationGeographySubmission_(body);
     if (action === 'resolveScholarProfileSubmission') return handleResolveScholarProfileSubmission_(body);
+    if (action === 'banScholarSubmitter') return handleBanScholarSubmitter_(body);
     if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
   } catch (err) {
@@ -753,6 +757,24 @@ function inspectConfig() {
 // ---------------- PUBLICATION GEOGRAPHY REVIEW QUEUE ----------------
 var SCHOLAR_SUBMISSION_SHEET = 'Scholar Profile Submissions';
 var SCHOLAR_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Submitted Fields JSON','Structured Submission JSON','Attachments JSON','Review Notes','Reviewed By','Reviewed At','Resolution'];
+var SCHOLAR_BLOCKLIST_SHEET = 'Scholar Submission Blocklist';
+var SCHOLAR_BLOCKLIST_HEADERS = ['Email','Submitter Name','Banned At','Banned By','Source Submission ID','Reason','Status'];
+
+function normalizedSubmitterEmail_(email) { return String(email || '').trim().toLowerCase(); }
+
+function ensureScholarBlocklistSheet_(ss) {
+  var sh=ss.getSheetByName(SCHOLAR_BLOCKLIST_SHEET);if(!sh)sh=ss.insertSheet(SCHOLAR_BLOCKLIST_SHEET);
+  if(sh.getMaxRows()<5)sh.insertRowsAfter(sh.getMaxRows(),5-sh.getMaxRows());
+  if(sh.getMaxColumns()<SCHOLAR_BLOCKLIST_HEADERS.length)sh.insertColumnsAfter(sh.getMaxColumns(),SCHOLAR_BLOCKLIST_HEADERS.length-sh.getMaxColumns());
+  var current=sh.getRange(4,1,1,SCHOLAR_BLOCKLIST_HEADERS.length).getDisplayValues()[0];
+  if(current.join('|')!==SCHOLAR_BLOCKLIST_HEADERS.join('|')){sh.getRange(4,1,1,SCHOLAR_BLOCKLIST_HEADERS.length).setValues([SCHOLAR_BLOCKLIST_HEADERS]);sh.setFrozenRows(4);}
+  return sh;
+}
+
+function isScholarSubmitterBlocked_(ss,email){
+  var target=normalizedSubmitterEmail_(email),sh=ensureScholarBlocklistSheet_(ss),last=sh.getLastRow();if(!target||last<5)return false;
+  var vals=sh.getRange(5,1,last-4,7).getDisplayValues();for(var i=0;i<vals.length;i++){if(normalizedSubmitterEmail_(vals[i][0])===target&&String(vals[i][6]||'Active')!=='Lifted')return true;}return false;
+}
 
 function ensureScholarSubmissionSheet_(ss) {
   var sh = ss.getSheetByName(SCHOLAR_SUBMISSION_SHEET);
@@ -824,10 +846,13 @@ function saveScholarSubmissionFiles_(ss, sid, submissionId, files) {
     total += bytes.length;
     if (bytes.length > 12 * 1024 * 1024 || total > 30 * 1024 * 1024) throw new Error('attachment-size-limit');
     var original = String(f.name || 'attachment').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 180);
-    var name = [submissionId, sid, original].join('-');
+    // The browser already standardises known uploads as
+    // ITK-Sxxxx-Scholar Name-Headshot.jpg. Do not add a submission ID or a
+    // second Scholar ID in front of that readable filename.
+    var name = new RegExp('^'+sid.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')+'-', 'i').test(original) ? original : sid+'-'+original;
     var blob = Utilities.newBlob(bytes, String(f.type || 'application/octet-stream'), name);
     var file = folder.createFile(blob);
-    saved.push({ field: String(f.field || 'attachment').slice(0, 80), name: name, url: file.getUrl(), size: bytes.length, fileId: file.getId() });
+    saved.push({ field: String(f.field || 'attachment').slice(0, 80), name: name, url: file.getUrl(), size: bytes.length, type:file.getMimeType(), fileId: file.getId() });
   });
   return saved;
 }
@@ -837,6 +862,7 @@ function handlePublicScholarProfileSubmission_(body) {
   if (!validScholarShareToken_(ss, sid, token)) return jsonOut_({ status:'unauthorized', reason:'invalid-scholar-share-token' }, 401);
   var name = String(body.submitterName || '').trim(), email = String(body.submitterEmail || '').trim(), rel = String(body.submitterRelationship || '').trim();
   if (!name || !rel || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({ status:'bad_request', reason:'valid-name-email-and-relationship-required' }, 400);
+  if (isScholarSubmitterBlocked_(ss,email)) return jsonOut_({status:'forbidden',reason:'submissions-from-this-email-are-blocked'},403);
   var now = new Date(), submissionId = 'SPS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,8);
   var fieldsJson, structuredJson;
   try {
@@ -866,6 +892,33 @@ function handleReadScholarProfileSubmissions_(params) {
     rows.push(o);
   });
   rows.reverse(); return jsonOut_({ status:'ok', rows:rows });
+}
+
+function findScholarSubmission_(ss,id){
+  var sh=ensureScholarSubmissionSheet_(ss),last=sh.getLastRow();if(last<5)return null;
+  var vals=sh.getRange(5,1,last-4,SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues();
+  for(var i=0;i<vals.length;i++){if(vals[i][0]===id){var o={_row:i+5,_sheet:sh};SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,j){o[h]=vals[i][j]||'';});return o;}}return null;
+}
+
+function handleReadScholarSubmissionAttachment_(params){
+  var ss=geoSs_(),sub=findScholarSubmission_(ss,String(params.submissionId||'').trim());if(!sub)return jsonOut_({status:'not_found'},404);
+  var fileId=String(params.fileId||'').trim(),files=parseJsonObject_(sub['Attachments JSON']);if(!Array.isArray(files))files=[];
+  var allowed=null;for(var i=0;i<files.length;i++){if(String(files[i].fileId||'')===fileId){allowed=files[i];break;}}
+  if(!allowed)return jsonOut_({status:'unauthorized',reason:'attachment-not-in-submission'},401);
+  var file=DriveApp.getFileById(fileId),blob=file.getBlob();
+  return jsonOut_({status:'ok',fileId:fileId,name:file.getName(),type:file.getMimeType(),size:blob.getBytes().length,data:Utilities.base64Encode(blob.getBytes())});
+}
+
+function handleBanScholarSubmitter_(body){
+  var ss=geoSs_(),id=String(body.submissionId||'').trim(),sub=findScholarSubmission_(ss,id);if(!sub)return jsonOut_({status:'not_found'},404);
+  var email=normalizedSubmitterEmail_(sub['Submitter Email']),name=String(sub['Submitter Name']||'').trim(),reason=String(body.reason||'Abusive, fraudulent, or inappropriate submission').slice(0,1000);
+  if(!email)return jsonOut_({status:'bad_request',reason:'submission-email-missing'},400);
+  var sh=ensureScholarBlocklistSheet_(ss),last=sh.getLastRow(),row=0;if(last>=5){var emails=sh.getRange(5,1,last-4,1).getDisplayValues();for(var i=0;i<emails.length;i++)if(normalizedSubmitterEmail_(emails[i][0])===email){row=i+5;break;}}
+  var now=Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd HH:mm:ss'),values=[email,name,now,String(body.bannedBy||ACTOR_LABEL).slice(0,160),id,reason,'Active'];
+  if(row)sh.getRange(row,1,1,values.length).setValues([values]);else sh.getRange(sh.getLastRow()+1,1,1,values.length).setValues([values]);
+  if(sub.Status==='Pending')sub._sheet.getRange(sub._row,3).setValue('Rejected');
+  sub._sheet.getRange(sub._row,13,1,4).setValues([[reason,String(body.bannedBy||ACTOR_LABEL).slice(0,160),now,'Submitter banned; submission rejected; no unchecked changes applied.']]);
+  appendChangeLog_(ss,SCHOLAR_BLOCKLIST_SHEET,sub['Scholar ID'],id,'Allowed','Banned '+email);return jsonOut_({status:'ok',email:email,banned:true});
 }
 
 function parseJsonObject_(text) {
