@@ -290,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function renameFileInput(input,suffix,id,personName){
-    if(!input||input.dataset.renameWired)return;input.dataset.renameWired='1';input.addEventListener('change',()=>{const f=input.files&&input.files[0];if(!f||!id)return;const safeName=String(personName||'Scholar').replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').trim();const ext=(f.name.match(/\.[A-Za-z0-9]+$/)||[''])[0].toLowerCase();const newName=id+'-'+safeName+'-'+suffix+(ext||'');try{const nf=new File([f],newName,{type:f.type,lastModified:f.lastModified});const dt=new DataTransfer();dt.items.add(nf);input.files=dt.files;let preview=input.parentElement?.querySelector('.db-file-rename-preview');if(!preview){preview=document.createElement('small');preview.className='db-file-rename-preview';input.insertAdjacentElement('afterend',preview)}preview.textContent='Will upload as: '+newName}catch(_){}})
+    if(!input||input.dataset.renameWired)return;input.dataset.renameWired='1';input.addEventListener('change',()=>{const f=input.files&&input.files[0];if(!f||!id)return;const safeName=String(personName||'Scholar').replace(/[\\/:*?"<>|]+/g,'').replace(/\s+/g,' ').trim();const ext=(f.name.match(/\.[A-Za-z0-9]+$/)||[''])[0].toLowerCase();const newName=id+'-'+safeName+(suffix?'-'+suffix:'')+(ext||'');try{const nf=new File([f],newName,{type:f.type,lastModified:f.lastModified});const dt=new DataTransfer();dt.items.add(nf);input.files=dt.files;let preview=input.parentElement?.querySelector('.db-file-rename-preview');if(!preview){preview=document.createElement('small');preview.className='db-file-rename-preview';input.insertAdjacentElement('afterend',preview)}preview.textContent='Will upload as: '+newName}catch(_){}})
   }
 
   function enhanceUpdateForm(){
@@ -321,7 +321,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Standardise upload filenames: ScholarID-First Last-<short label>.<ext>
     const name=(p.first&&p.last)?(p.first+' '+p.last):(document.querySelector('[data-direct-scholar] .db-scholar-card__name')?.textContent||document.querySelector('.db-scholar-card__name')?.textContent||'Scholar').replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i,'').trim();
     renameFileInput(form.querySelector('[name="masters_thesis_pdf"]'),'Masters',sid,name);renameFileInput(form.querySelector('[name="phd_thesis_pdf"]'),'PhD',sid,name);
-    const cv=form.querySelector('input[type="file"][name*="cv" i]');renameFileInput(cv,'CV',sid,name);const photo=form.querySelector('input[type="file"][name*="photo" i]');renameFileInput(photo,'Headshot',sid,name);
+    const cv=form.querySelector('input[type="file"][name*="cv" i]');renameFileInput(cv,'CV',sid,name);const photo=form.querySelector('input[type="file"][name*="photo" i]');renameFileInput(photo,'',sid,name);
     form.dispatchEvent(new Event('scholar-form-ready'));
   }
 
