@@ -859,8 +859,78 @@ function handleReadScholarProfileSubmissions_(params) {
   var ss = geoSs_(), sh = ensureScholarSubmissionSheet_(ss), last = sh.getLastRow();
   if (last < 5) return jsonOut_({ status:'ok', rows:[] });
   var vals = sh.getRange(5,1,last-4,SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues(), want = String(params.status || '').trim(), rows = [];
-  vals.forEach(function(r){ if(!r[0] || (want && r[2] !== want)) return; var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';}); rows.push(o); });
+  vals.forEach(function(r){
+    if(!r[0] || (want && r[2] !== want)) return;
+    var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';});
+    o.proposedChanges = buildScholarSubmissionChanges_(ss, o);
+    rows.push(o);
+  });
   rows.reverse(); return jsonOut_({ status:'ok', rows:rows });
+}
+
+function parseJsonObject_(text) {
+  try { var v=JSON.parse(String(text||'')); return v && typeof v==='object' ? v : {}; }
+  catch (_) { return {}; }
+}
+
+function scholarSubmissionFieldSpecs_() {
+  return [
+    {key:'salutation',label:'Title / salutation',ws:'Scholars',field:'Title / Salutation',clean:function(v){return String(v||'').replace(/\.$/,'');}},
+    {key:'gender',label:'Gender',ws:'Scholars',field:'Gender'},
+    {key:'paternal_province',label:'Paternal province',ws:'Scholars',field:'Province Paternal'},
+    {key:'paternal_district',label:'Paternal district',ws:'Scholars',field:'District Paternal'},
+    {key:'paternal_village',label:'Paternal village',ws:'Scholars',field:'Village Paternal'},
+    {key:'paternal_island',label:'Paternal island',ws:'Scholars',field:'Island Paternal'},
+    {key:'maternal_province',label:'Maternal province',ws:'Scholars',field:'Province Maternal'},
+    {key:'maternal_district',label:'Maternal district',ws:'Scholars',field:'District Maternal'},
+    {key:'maternal_village',label:'Maternal village',ws:'Scholars',field:'Village Maternal'},
+    {key:'maternal_island',label:'Maternal island',ws:'Scholars',field:'Island Maternal'},
+    {key:'title',label:'Professional title',ws:'Scholars',field:'Current Title / Role'},
+    {key:'institution',label:'Current institution',ws:'Scholars',field:'Current Institution'},
+    {key:'department',label:'Department / unit',ws:'Scholars',field:'Current Department / Unit'},
+    {key:'profile_url',label:'Current profile URL',ws:'Scholars',field:'Current Profile URL'},
+    {key:'google_scholar_url',label:'Google Scholar URL',ws:'Scholars',field:'Google Scholar URL'},
+    {key:'orcid_url',label:'ORCID / Researcher ID',ws:'Scholars',field:'ORCID / Researcher ID'},
+    {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'C_Uni name',stage:'master'},
+    {key:'masters_country',label:'Master\'s country',ws:'Graduate Degrees',field:'Country',stage:'master'},
+    {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'master'},
+    {key:'masters_thesis_url',label:'Master\'s thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'master'},
+    {key:'phd_university',label:'PhD university',ws:'Graduate Degrees',field:'C_Uni name',stage:'phd'},
+    {key:'phd_country',label:'PhD country',ws:'Graduate Degrees',field:'Country',stage:'phd'},
+    {key:'phd_year',label:'PhD completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'phd'},
+    {key:'phd_thesis_url',label:'PhD thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'phd'}
+  ];
+}
+
+function buildScholarSubmissionChanges_(ss, submission) {
+  var fields=parseJsonObject_(submission['Submitted Fields JSON']), sid=String(submission['Scholar ID']||''), out=[];
+  var scholarSheet=ss.getSheetByName('Scholars'), scholarCfg=MAPPING.worksheets.Scholars, scholarInfo=locateRow_(scholarSheet,scholarCfg,{scholarId:sid});
+  var gradSheet=ss.getSheetByName('Graduate Degrees'), gradRows={};
+  if(gradSheet){
+    var lastCol=gradSheet.getLastColumn(), headers=gradSheet.getRange(4,1,1,lastCol).getDisplayValues()[0], sidCol=headers.indexOf('Scholar ID')+1, stageCol=headers.indexOf('Degree Stage')+1, last=gradSheet.getLastRow();
+    if(sidCol&&stageCol&&last>=5){var vals=gradSheet.getRange(5,1,last-4,lastCol).getDisplayValues();vals.forEach(function(r,i){if(String(r[sidCol-1])!==sid)return;var stage=String(r[stageCol-1]||'').toLowerCase();if(!gradRows.master&&/master/.test(stage))gradRows.master={row:i+5,headers:headers};if(!gradRows.phd&&/(phd|doctor)/.test(stage))gradRows.phd={row:i+5,headers:headers};});}
+  }
+  scholarSubmissionFieldSpecs_().forEach(function(spec){
+    if(!Object.prototype.hasOwnProperty.call(fields,spec.key))return;
+    var proposed=spec.clean?spec.clean(fields[spec.key]):String(fields[spec.key]==null?'':fields[spec.key]).trim();
+    var current='',rowNumber=null,writable=true,reason='';
+    if(spec.ws==='Scholars'){
+      if(!scholarInfo.ok){writable=false;reason=scholarInfo.reason||'scholar-not-found';}
+      else {var col=scholarInfo.headers[spec.field];if(!col){writable=false;reason='Master field not found';}else current=normalizeForRead_(scholarSheet.getRange(scholarInfo.row,col).getValue());}
+    } else {
+      var degree=gradRows[spec.stage];
+      if(!degree){writable=false;reason='No existing '+spec.stage+' degree row in Master';}
+      else {var dcol=degree.headers.indexOf(spec.field)+1;if(!dcol){writable=false;reason='Master field not found';}else{rowNumber=degree.row;current=normalizeForRead_(gradSheet.getRange(degree.row,dcol).getValue());}}
+    }
+    if(normalizeForCompare_(current)===normalizeForCompare_(proposed))return;
+    out.push({key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
+  });
+  // These are deliberately retained as visible manual-review changes because
+  // they live in the GitHub enrichment sidecar, not in a Master Sheet column.
+  [{key:'institution_url',label:'Institution URL'},{key:'department_url',label:'Department URL'}].forEach(function(spec){
+    if(Object.prototype.hasOwnProperty.call(fields,spec.key)&&String(fields[spec.key]||'').trim())out.push({key:spec.key,label:spec.label,currentValue:'Stored outside Master',newValue:String(fields[spec.key]).trim(),writable:false,reason:'Sidecar field — apply through the normal scholar editor'});
+  });
+  return out;
 }
 
 function handleResolveScholarProfileSubmission_(body) {
