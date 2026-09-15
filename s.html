@@ -105,12 +105,13 @@
         var scholarName = getScholarName(main, profile);
 
         var existingIntro = main.querySelector('.scholar-direct-intro');
-        var about = buildAboutBlock(d);
         if (existingIntro) {
-          existingIntro.insertAdjacentElement('beforebegin', about);
           revisePreLaunchBlock(existingIntro);
         } else {
-          main.insertBefore(about, main.firstChild);
+          existingIntro = d.createElement('section');
+          existingIntro.className = 'scholar-direct-intro';
+          revisePreLaunchBlock(existingIntro);
+          main.insertBefore(existingIntro, main.firstChild);
         }
 
         var card = main.querySelector('.db-scholar-card');
@@ -221,17 +222,10 @@
         d.head.appendChild(style);
       }
 
-      function buildAboutBlock(d) {
-        var box = d.createElement('section');
-        box.className = 'scholar-direct-about';
-        box.innerHTML = '<p>This database has been curated by <a href="index.html" target="_blank" rel="noopener">Assistant Professor Ron Vave</a>, an <em>iTaukei</em> (Indigenous Fijian) faculty member at the University of Hawai\u02bbi at M\u0101noa, in an effort to highlight and elevate the scholarly research and contributions of iTaukei postgraduates and researchers \u2014 in Fiji and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our iTaukei researchers and our publications, the hope is that it will help with networking and collaboration \u2014 and perhaps mentorship for up-and-coming iTaukei students thinking of pursuing postgraduate studies, academia, or research more broadly.</p>';
-        return box;
-      }
-
       function revisePreLaunchBlock(existingIntro) {
         existingIntro.innerHTML =
           '<div class="direct-review-badge">PRE-LAUNCH PROFILE REVIEW</div>' +
-          '<p><strong>About this database.</strong> The iTaukei Scholarly Research Database is a curated public resource developed to highlight and elevate the scholarship and contributions of iTaukei postgraduates and researchers in Fiji and around the world. It is part of a larger Pacific scholarly database project being replicated across Pacific Island countries. <strong>The database and dashboard are still being developed and have not yet been publicly launched.</strong></p>' +
+          '<p><strong>About this database.</strong> The Fiji Scholarly Research Database is an evolving resource highlighting the scholarship and contributions of iTaukei (Indigenous Fijian) scholars in Fiji and around the world. The project is led and curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Dr. Ron Vave</a>, an <em>iTaukei</em> scholar and Assistant Professor at the University of Hawai\u02bbi at M\u0101noa, and forms part of a wider regional scholarly database initiative that he is spearheading through UH M\u0101noa\u2019s Center for Pacific Islands Studies. The initiative is being developed across Pacific Island countries to support the visibility, networking, collaboration and mentorship of Indigenous students and researchers, while making their scholarship more accessible to wider audiences. As an ongoing passion project, the database is not yet comprehensive. <strong>The database and dashboard remain under development and have not yet been publicly launched.</strong></p>' +
           '<p><strong>Why you have been sent this link.</strong> You have been sent a direct link to this scholar profile so the information can be checked and improved.</p>' +
           '<p class="direct-review-callout"><strong>If this is your scholar profile, please scroll down to see your Scholar Profile card, click on Update info to add, remove or change details.</strong></p>' +
           '<p>You can provide missing paternal geography, current professional information, graduate-study details and publication information. You can also attach your latest <strong>CV</strong>, upload a <strong>high-resolution JPEG headshot</strong>, and provide either a direct link to or a PDF copy of your Master\u2019s and/or PhD thesis. <strong>Your CV will only be used to extract relevant information for this database, such as publications, awards, positions and related scholarly information. It will not be shared further and will not be displayed on the scholar dashboard.</strong></p>' +
