@@ -327,7 +327,7 @@ def canonicalize_university_name(name: str) -> str:
 # tooltip. We fall back to whatever the graduate-studies pipeline already
 # knew; the JS renderer already handles missing iso/region.
 COUNTRY_META: dict[str, tuple[str, str]] = {
-    "Fiji": ("FJ", "Pacific"),
+    "Fiji": ("FJ", "Oceania"),
     "Australia": ("AU", "Oceania"),
     "New Zealand": ("NZ", "Oceania"),
     "United States of America": ("US", "Americas"),

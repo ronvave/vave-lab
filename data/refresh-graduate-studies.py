@@ -110,17 +110,16 @@ COUNTRY_DISPLAY = {
 # region→countries mapping from the data file instead of maintaining a
 # second hardcoded copy in JS.
 #
-# Region names match the client's regionOrder: 'Pacific', 'Oceania', 'Asia',
-# 'Americas', 'Europe', 'Africa', 'Other'. Australia + New Zealand live in
-# 'Pacific' here (not 'Oceania') because that is where the graduate-studies
-# dropdown has always grouped them.
+# Region names match the client's regionOrder: 'Oceania', 'Asia',
+# 'Americas', 'Europe', 'Africa', 'Other'. Pacific Island countries,
+# Australia, and New Zealand are grouped under the UN M49 region Oceania.
 COUNTRY_REGION = {
-    # Pacific
-    "Fiji":             "Pacific",
-    "Australia":        "Pacific",
-    "New Zealand":      "Pacific",
-    "Papua New Guinea": "Pacific",
-    "Tonga":            "Pacific",
+    # Oceania
+    "Fiji":             "Oceania",
+    "Australia":        "Oceania",
+    "New Zealand":      "Oceania",
+    "Papua New Guinea": "Oceania",
+    "Tonga":            "Oceania",
     # Asia
     "China":            "Asia",
     "India":            "Asia",

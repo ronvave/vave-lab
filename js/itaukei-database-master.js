@@ -4825,7 +4825,11 @@
           unisByCountry.get(p.country).add(p.university);
         }
         if (regionOfCountry.has(p.country)) return;
-        const region = p.region || fallbackRegionOf.get(p.country) || 'Other';
+        const rawRegion = p.region || fallbackRegionOf.get(p.country) || 'Other';
+        // The dashboard uses UN M49-style top-level regions. Normalize old
+        // snapshots that still label Fiji as "Pacific" so that Pacific is
+        // never exposed as a separate region alongside Oceania.
+        const region = rawRegion === 'Pacific' ? 'Oceania' : rawRegion;
         regionOfCountry.set(p.country, region);
       });
       // Group countries by resolved region, preserving the display order
@@ -6887,7 +6891,7 @@
     Tovata:     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
   };
 
-  // World-map Region › Country grouping. Regions are ordered so the Pacific
+  // World-map Region › Country grouping. Regions are ordered so Oceania
   // (Ron's home region and the largest cohort) sits at the top of the
   // dropdown. Every country present in graduate-studies.worldPoints must
   // appear here — the render code silently drops any region whose countries
@@ -6899,7 +6903,7 @@
   // ordering and grouping still work if the workflow ever emits a
   // pre-region-field snapshot.
   const WORLD_REGIONS = {
-    Pacific:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea'],
+    Oceania:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea', 'Tonga'],
     Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea'],
     Europe:          ['UK', 'Germany', 'Sweden', 'Portugal', 'Malta'],
     'North America': ['USA', 'Canada']
