@@ -2395,7 +2395,7 @@
   function renderScholarDetailHTML(nm, point, sectionLevel) {
     const rec = lookupScholarThesisForPoint(nm, point, sectionLevel);
     if (!rec) return '';
-    const title = rec.title || '(untitled)';
+    const title = rec.title || 'Thesis/research title not yet identified';
     const year  = rec.year  || '';
     const level = (rec.level === 'phd') ? 'PhD' : (rec.level === 'masters') ? "Master's" : 'Thesis';
     const profile = _lookupScholarProfile(nm) || {};
