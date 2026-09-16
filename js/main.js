@@ -235,8 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function makeB2SummaryClone(){
     const panel=document.querySelector('[data-panel="B2"], .db-panel-b2, [data-db-world-panel]');if(!panel)return null;
     const wrap=document.createElement('section');wrap.className='scholar-direct-b2';
-    const title=panel.querySelector('.db-panel__title, .db-panel-b2__title, h2');const hint=panel.querySelector('.db-panel__hint, p');const kpis=panel.querySelector('.db-kpis');
-    wrap.innerHTML='<h3>'+(title?title.textContent.trim():'iTaukei graduates — global database')+'</h3>'+(hint?'<p>'+hint.textContent.trim()+'</p>':'');if(kpis)wrap.appendChild(kpis.cloneNode(true));return wrap;
+    const title=panel.querySelector('.db-panel__title, .db-panel-b2__title, h2');const kpis=panel.querySelector('.db-kpis');
+    const value=key=>panel.querySelector('[data-b2-kpi="'+key+'"]')?.textContent.trim()||'—';
+    const heading=document.createElement('h3');heading.textContent=title?title.textContent.trim():'iTaukei graduates — global database';wrap.appendChild(heading);
+    const summary=document.createElement('p');summary.textContent='The database currently records '+value('theses')+' Master’s and PhD theses completed by '+value('scholars')+' iTaukei scholars across '+value('unis')+' universities in '+value('countries')+' countries, comprising '+value('masters')+' Master’s theses and '+value('phd')+' PhD theses.';wrap.appendChild(summary);
+    if(kpis)wrap.appendChild(kpis.cloneNode(true));return wrap;
   }
 
   function syncDirectStats(stats){
