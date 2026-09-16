@@ -1,0 +1,753 @@
+<script>
+/**
+ * tongan-admin-controller.html
+ * ────────────────────────────
+ * Boots the admin surface. Talks only to window.tonganAdminBridge (from
+ * tongan-admin-writeback-bridge.html); knows nothing about
+ * google.script.run directly, HMAC, SHARED_SECRET, admin passwords, or
+ * snapshot passcodes. Every value it displays is fetched live from the
+ * Tongan Master Sheet through the bridge.
+ *
+ * User flow:
+ *   1. Page opens → describe() → populate worksheet dropdown, diagnostics.
+ *   2. User picks a worksheet → listKeys() → populate <datalist> for the
+ *      key input.
+ *   3. User types/picks a key + clicks "Load row" → readRow() → render
+ *      one edit row per allowlisted field.
+ *   4. User edits inputs. Rows visually flag as dirty; ALWAYS_CONFIRM
+ *      fields show a red confirm prompt when dirty.
+ *   5. User clicks "Save changes":
+ *      • Collects only dirty fields.
+ *      • If WRITE_ENABLED=false the server forces dry-run and reports
+ *        "would-write" per field; the UI displays that and does not
+ *        change dirty flags.
+ *      • If WRITE_ENABLED=true the server writes and appends Change Log
+ *        rows; the UI reloads the row from live values and refreshes
+ *        the Change Log panel.
+ *   6. "Recent Change Log" panel calls readChangeLog() on demand.
+ */
+(function (global) {
+  'use strict';
+
+  // ────────────────────────────────────────────────────────────
+  // DOM refs — resolved once on DOMContentLoaded.
+  // ────────────────────────────────────────────────────────────
+  var el = {};
+
+  function $(id) { return document.getElementById(id); }
+  function setText(node, text) { if (node) node.textContent = text; }
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function status(msg, cls) {
+    if (!el.status) return;
+    el.status.textContent = msg;
+    el.status.className = cls || '';
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // State
+  // ────────────────────────────────────────────────────────────
+  var state = {
+    describe:      null,   // full apiDescribe response
+    currentWs:     null,   // selected worksheet name
+    currentKey:    null,   // key of the row currently in the edit form
+    currentRow:    null,   // {rowNumber, fields} as returned by apiReadRow
+    dirtyFields:   {},     // { fieldName: newValue }
+    confirmFields: {},     // { fieldName: true } — user must tick to save an ALWAYS_CONFIRM change
+    saving:        false,
+    scholars:      [],     // apiListScholars payload (array of picker rows)
+    scholarById:   {},     // { 'TNG-S0001': {name, ...} } for banner lookup
+    pickerSort:    { field: 'pubs', dir: 'desc' },
+    pickerQuery:   ''
+  };
+
+  // Field grouping for the Scholars worksheet edit form. Order matches the
+  // old Admin dashboard (screenshot 5–6). Fields not listed here fall
+  // through into a trailing "OTHER" group so nothing silently disappears if
+  // the MAPPING gains a field later.
+  var SCHOLAR_FIELD_GROUPS = [
+    { legend: 'Identity', fields: [
+      'Title / Salutation', 'Family Name', 'Given Names', 'Gender',
+      'Year of Birth', 'Alive / Deceased', 'Year of Death',
+      'Primary Discipline / Field'
+    ]},
+    { legend: 'Paternal geography', fields: [
+      'Paternal Island Division', 'District Paternal',
+      'Specific Island Paternal', 'Village/Town Paternal (Kolo)'
+    ]},
+    { legend: 'Maternal geography', fields: [
+      'Maternal Island Division', 'District Maternal',
+      'Specific Island Maternal', 'Village/Town Maternal (Kolo)'
+    ]},
+    { legend: 'Cultural & lineage affiliation', fields: [
+      'Estate / Chiefly Affiliation Paternal (Tofi\u02bba)',
+      'Estate / Chiefly Affiliation Maternal (Tofi\u02bba)',
+      'K\u0101inga Paternal', 'K\u0101inga Maternal',
+      'Self-identified Home / Community Affiliation Paternal',
+      'Self-identified Home / Community Affiliation Maternal'
+    ]},
+    { legend: 'Current position', fields: [
+      'Current Title / Role', 'Current Institution',
+      'Institution Country', 'Current Department / Unit',
+      'Current PG Status'
+    ]},
+    { legend: 'Public profile URLs', fields: [
+      'ORCID / Researcher ID', 'Google Scholar URL',
+      'Current Profile URL', 'Name Variants / Aliases'
+    ]},
+    { legend: 'Provenance & notes', fields: [
+      'Lineage / Provenance Notes', 'Record Notes'
+    ]}
+  ];
+
+  // Fields whose value tends to be long — render across both columns.
+  function _isWideField(fname, cfg) {
+    if (cfg && cfg.maxLen && cfg.maxLen > 240) return true;
+    if (fname === 'Primary Discipline / Field') return true;
+    if (fname === 'Current Profile URL' || fname === 'Google Scholar URL') return true;
+    return false;
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Boot
+  // ────────────────────────────────────────────────────────────
+  function boot() {
+    el.status         = $('status');
+    el.wsSelect       = $('ws-select');
+    el.keyInput       = $('key-input');
+    el.keySuggestions = $('key-suggestions');
+    el.loadBtn        = $('load-btn');
+    el.pingBtn        = $('ping-btn');
+    el.pickerHint     = $('picker-hint');
+    el.editCard       = $('edit-card');
+    el.editSummary    = $('edit-summary');
+    el.fieldsGroups   = $('fields-groups');
+    el.saveBtn        = $('save-btn');
+    el.cancelBtn      = $('cancel-btn');
+    el.saveHint       = $('save-hint');
+    el.logCard        = $('log-card');
+    el.logRefreshBtn  = $('log-refresh-btn');
+    el.logHint        = $('log-hint');
+    el.logTable       = $('log-table').querySelector('tbody');
+    el.diag           = $('diag');
+    el.banner         = $('scholar-banner');
+    el.bannerName     = $('scholar-banner-name');
+    el.bannerSid      = $('scholar-banner-sid');
+    el.pickerCard     = $('scholar-picker-card');
+    el.pickerSearch   = $('scholar-search');
+    el.pickerCount    = $('scholar-count');
+    el.pickerTable    = $('scholar-table');
+    el.pickerBody     = el.pickerTable ? el.pickerTable.querySelector('tbody') : null;
+
+    el.wsSelect.addEventListener('change', onWorksheetChange);
+    el.loadBtn.addEventListener('click', onLoadRow);
+    el.pingBtn.addEventListener('click', onPing);
+    el.saveBtn.addEventListener('click', onSave);
+    el.cancelBtn.addEventListener('click', onCancel);
+    el.logRefreshBtn.addEventListener('click', refreshChangeLog);
+    if (el.pickerSearch) el.pickerSearch.addEventListener('input', onPickerSearch);
+    if (el.pickerTable) {
+      var ths = el.pickerTable.querySelectorAll('thead th[data-sort]');
+      for (var i = 0; i < ths.length; i++) {
+        ths[i].addEventListener('click', onPickerSortClick);
+      }
+    }
+
+    status('Contacting the server (apiDescribe)…', 'busy');
+    if (!global.tonganAdminBridge) {
+      status('Fatal: tonganAdminBridge is not defined. The bridge include is missing.', 'err');
+      return;
+    }
+    global.tonganAdminBridge.describe().then(function (body) {
+      if (!body || body.status !== 'ok') {
+        status('Server responded but did not return ok: ' + JSON.stringify(body), 'err');
+        return;
+      }
+      state.describe = body;
+      populateWorksheetDropdown(body);
+      renderDiagnostics(body);
+      status('Ready. Loading scholar list\u2026', 'busy');
+      // Fetch scholars for the picker card. Failure is non-fatal — the
+      // worksheet-and-key picker still works even if the picker table is
+      // empty (e.g. empty database, missing Scholars sheet).
+      global.tonganAdminBridge.listScholars().then(function (r) {
+        if (r && r.status === 'ok') {
+          state.scholars = r.scholars || [];
+          state.scholarById = {};
+          for (var i = 0; i < state.scholars.length; i++) {
+            state.scholarById[state.scholars[i].scholarId] = state.scholars[i];
+          }
+          if (state.scholars.length && el.pickerCard) {
+            el.pickerCard.style.display = 'block';
+            renderScholarPicker();
+            status('Ready. Click any scholar row, or use the worksheet picker below.', 'ok');
+          } else {
+            status('Ready. Database has no scholars yet \u2014 use the worksheet picker below.', 'ok');
+          }
+        } else {
+          status('Ready. Pick a worksheet and a row to edit.', 'ok');
+        }
+      }).catch(function (err) {
+        status('Ready. Scholar list unavailable (' + err.message + '); use the worksheet picker below.', 'ok');
+      });
+    }).catch(function (err) {
+      status('describe() failed: ' + err.message, 'err');
+      if (el.diag) el.diag.textContent = String(err && err.stack ? err.stack : err);
+    });
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Scholar Picker (card 1) — search + sort + click-to-load.
+  // Reads state.scholars, state.pickerSort, state.pickerQuery.
+  // On row click: sets ws-select to 'Scholars', fills key-input,
+  // clicks Load row.
+  // ────────────────────────────────────────────────────────────
+  function onPickerSearch() {
+    state.pickerQuery = (el.pickerSearch.value || '').trim().toLowerCase();
+    renderScholarPicker();
+  }
+
+  function onPickerSortClick(ev) {
+    var th = ev.currentTarget;
+    var field = th.getAttribute('data-sort');
+    if (!field) return;
+    if (state.pickerSort.field === field) {
+      state.pickerSort.dir = (state.pickerSort.dir === 'asc' ? 'desc' : 'asc');
+    } else {
+      state.pickerSort.field = field;
+      // Numeric fields default to descending; strings default to ascending.
+      state.pickerSort.dir = (field === 'pubs' || field === 'firstAuth') ? 'desc' : 'asc';
+    }
+    renderScholarPicker();
+  }
+
+  function renderScholarPicker() {
+    if (!el.pickerBody) return;
+    // 1. Update sort arrows in headers
+    var ths = el.pickerTable.querySelectorAll('thead th[data-sort]');
+    for (var i = 0; i < ths.length; i++) {
+      var f = ths[i].getAttribute('data-sort');
+      var arrow = ths[i].querySelector('.arrow');
+      if (arrow) arrow.textContent = (f === state.pickerSort.field) ? (state.pickerSort.dir === 'asc' ? '\u2191' : '\u2193') : '';
+    }
+    // 2. Filter
+    var q = state.pickerQuery;
+    var rows = state.scholars;
+    if (q) {
+      rows = rows.filter(function (r) {
+        return (r.scholarId  && r.scholarId.toLowerCase().indexOf(q) !== -1)
+            || (r.name       && r.name.toLowerCase().indexOf(q) !== -1)
+            || (r.discipline && r.discipline.toLowerCase().indexOf(q) !== -1)
+            || (r.currentInstitution && r.currentInstitution.toLowerCase().indexOf(q) !== -1)
+            || (r.islandDivision     && r.islandDivision.toLowerCase().indexOf(q) !== -1);
+      });
+    }
+    // 3. Sort (copy so we don't mutate state.scholars)
+    var f = state.pickerSort.field;
+    var dir = state.pickerSort.dir === 'asc' ? 1 : -1;
+    var sorted = rows.slice();
+    sorted.sort(function (a, b) {
+      var av = a[f], bv = b[f];
+      if (typeof av === 'number' || typeof bv === 'number') {
+        return ((av || 0) - (bv || 0)) * dir;
+      }
+      av = String(av == null ? '' : av);
+      bv = String(bv == null ? '' : bv);
+      return av.localeCompare(bv) * dir;
+    });
+    // 4. Cap render to 500 rows for browser perf; count message stays accurate.
+    var cap = 500;
+    var render = sorted.length > cap ? sorted.slice(0, cap) : sorted;
+    // 5. Update count line
+    if (el.pickerCount) {
+      var total = state.scholars.length;
+      if (q) {
+        el.pickerCount.textContent = sorted.length + ' of ' + total + ' scholars match';
+      } else {
+        el.pickerCount.textContent = total + ' scholars';
+      }
+      if (sorted.length > cap) el.pickerCount.textContent += ' (showing top ' + cap + ')';
+    }
+    // 6. Render tbody
+    el.pickerBody.innerHTML = '';
+    for (var r = 0; r < render.length; r++) {
+      var row = render[r];
+      var tr = document.createElement('tr');
+      tr.dataset.scholarId = row.scholarId;
+      if (state.currentKey === row.scholarId && state.currentWs === 'Scholars') {
+        tr.className = 'selected';
+      }
+      tr.appendChild(_pickerCell(row.scholarId, 'sid'));
+      tr.appendChild(_pickerCell(row.name, 'name'));
+      tr.appendChild(_pickerCell(row.islandDivision, ''));
+      tr.appendChild(_pickerCell(row.discipline, ''));
+      tr.appendChild(_pickerCell(String(row.pubs || 0), 'num'));
+      tr.appendChild(_pickerCell(String(row.firstAuth || 0), 'num'));
+      tr.addEventListener('click', onPickerRowClick);
+      el.pickerBody.appendChild(tr);
+    }
+  }
+
+  function _pickerCell(text, cls) {
+    var td = document.createElement('td');
+    if (cls) td.className = cls;
+    td.textContent = String(text == null ? '' : text);
+    return td;
+  }
+
+  function onPickerRowClick(ev) {
+    var tr = ev.currentTarget;
+    var sid = tr.dataset.scholarId;
+    if (!sid) return;
+    // Programmatically drive the worksheet/key picker so the existing
+    // Load-row path (with all its state resets) is the single code path
+    // that populates the edit form.
+    if (el.wsSelect.value !== 'Scholars') {
+      el.wsSelect.value = 'Scholars';
+      onWorksheetChange();  // async — will populate suggestions
+    }
+    el.keyInput.value = sid;
+    el.loadBtn.disabled = false;
+    onLoadRow();
+  }
+
+  function populateWorksheetDropdown(body) {
+    var mapping = (body && body.mapping) || {};
+    var worksheets = mapping.worksheets || {};
+    var names = Object.keys(worksheets).sort();
+    el.wsSelect.innerHTML = '';
+    var placeholder = document.createElement('option');
+    placeholder.value = '';
+    placeholder.textContent = '(pick a worksheet — ' + names.length + ' available)';
+    el.wsSelect.appendChild(placeholder);
+    names.forEach(function (name) {
+      var opt = document.createElement('option');
+      opt.value = name;
+      var cfg = worksheets[name];
+      var nFields = cfg && cfg.fields ? Object.keys(cfg.fields).length : 0;
+      opt.textContent = name + '  (' + nFields + ' editable fields)';
+      el.wsSelect.appendChild(opt);
+    });
+    el.wsSelect.disabled = false;
+  }
+
+  function renderDiagnostics(body) {
+    if (!el.diag) return;
+    var lines = [
+      'status         : ' + body.status,
+      'activeEmail    : ' + body.activeEmail,
+      'writeEnabled   : ' + body.writeEnabled,
+      'spreadsheetId  : ' + body.spreadsheetId,
+      'sourceTag      : ' + body.sourceTag,
+      'timezone       : ' + body.timezone,
+      'mapping.version: ' + (body.mapping && body.mapping.version),
+      'worksheets     : ' + (body.mapping && body.mapping.worksheets ? Object.keys(body.mapping.worksheets).length : 0),
+      'serverTs       : ' + new Date(body.serverTs).toISOString()
+    ];
+    el.diag.textContent = lines.join('\n');
+  }
+
+  // ────────────────────────────────────────────────────────────
+  // Worksheet + key picker
+  // ────────────────────────────────────────────────────────────
+  function onWorksheetChange() {
+    var ws = el.wsSelect.value || '';
+    state.currentWs  = ws || null;
+    state.currentKey = null;
+    state.currentRow = null;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    el.editCard.style.display = 'none';
+    if (el.banner) el.banner.style.display = 'none';
+    if (el.fieldsGroups) el.fieldsGroups.innerHTML = '';
+    el.keyInput.value = '';
+    el.keyInput.disabled = !ws;
+    el.loadBtn.disabled = true;
+    el.keySuggestions.innerHTML = '';
+    if (!ws) { setText(el.pickerHint, ''); return; }
+
+    var wsCfg = state.describe.mapping.worksheets[ws];
+    setText(el.pickerHint,
+      'Key column for “' + ws + '” is “' + wsCfg.keyColumn + '”. Loading suggestions…');
+    global.tonganAdminBridge.listKeys(ws).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        setText(el.pickerHint, 'listKeys() did not return ok: ' + JSON.stringify(body));
+        return;
+      }
+      var keys = body.keys || [];
+      keys.forEach(function (k) {
+        var opt = document.createElement('option');
+        opt.value = k;
+        el.keySuggestions.appendChild(opt);
+      });
+      setText(el.pickerHint,
+        keys.length + ' existing “' + wsCfg.keyColumn + '” values suggested. Type or pick one and click “Load row”.');
+      el.loadBtn.disabled = false;
+    }).catch(function (err) {
+      setText(el.pickerHint, 'listKeys() failed: ' + err.message);
+    });
+  }
+
+  function onLoadRow() {
+    var ws  = state.currentWs;
+    var key = (el.keyInput.value || '').trim();
+    if (!ws || !key) return;
+    state.currentKey = key;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    status('Loading row “' + key + '” from ' + ws + '…', 'busy');
+    global.tonganAdminBridge.readRow(ws, key).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        status('readRow() did not return ok: ' + JSON.stringify(body), 'err');
+        return;
+      }
+      if (!body.found) {
+        status('No row on “' + ws + '” has ' + state.describe.mapping.worksheets[ws].keyColumn +
+               ' = “' + key + '”.', 'err');
+        el.editCard.style.display = 'none';
+        return;
+      }
+      state.currentRow = { rowNumber: body.rowNumber, fields: body.fields };
+      renderEditForm();
+      status('Loaded row ' + body.rowNumber + '. Edit fields below, then click “Save changes”.', 'ok');
+    }).catch(function (err) {
+      status('readRow() failed: ' + err.message, 'err');
+    });
+  }
+
+  function renderEditForm() {
+    var ws = state.currentWs;
+    var wsCfg = state.describe.mapping.worksheets[ws];
+    var fields = state.currentRow.fields;
+    var alwaysConfirm = state.describe.alwaysConfirm || {};
+    el.editCard.style.display = 'block';
+    setText(el.editSummary,
+      'Worksheet: ' + ws + ' · Row: ' + state.currentRow.rowNumber +
+      ' · Key (' + wsCfg.keyColumn + '): ' + state.currentKey);
+    _renderScholarBanner(ws);
+    el.fieldsGroups.innerHTML = '';
+
+    var allowed = wsCfg.fields || {};
+    var groups = _buildFieldGroups(ws, allowed);
+
+    groups.forEach(function (g) {
+      if (!g.fields.length) return;
+      var fs = document.createElement('fieldset');
+      fs.className = 'field-group';
+      var lg = document.createElement('legend');
+      lg.textContent = g.legend;
+      fs.appendChild(lg);
+      var grid = document.createElement('div');
+      grid.className = 'field-grid';
+      g.fields.forEach(function (fname) {
+        var cfg = allowed[fname];
+        if (!cfg) return;  // MAPPING doesn't include this field
+        var current = fields[fname] != null ? String(fields[fname]) : '';
+        grid.appendChild(_fieldCell(fname, cfg, current, ws, alwaysConfirm));
+      });
+      fs.appendChild(grid);
+      el.fieldsGroups.appendChild(fs);
+    });
+    updateSaveButtonState();
+  }
+
+  function _renderScholarBanner(ws) {
+    if (!el.banner) return;
+    if (ws !== 'Scholars') {
+      el.banner.style.display = 'none';
+      return;
+    }
+    var sid = state.currentKey;
+    var fields = state.currentRow.fields || {};
+    // Prefer the sheet's own "Scholar Name" if present in the loaded row;
+    // otherwise fall back to the picker cache; otherwise reconstruct from
+    // Given + Family; otherwise show the ID alone.
+    var name = String(fields['Scholar Name'] || '').trim();
+    if (!name) {
+      var cached = state.scholarById[sid];
+      if (cached && cached.name) name = cached.name;
+    }
+    if (!name) {
+      var given  = String(fields['Given Names'] || '').trim();
+      var family = String(fields['Family Name'] || '').trim();
+      name = (given + ' ' + family).trim();
+    }
+    setText(el.bannerName, name || '(name not set)');
+    setText(el.bannerSid, sid);
+    el.banner.style.display = 'flex';
+  }
+
+  function _buildFieldGroups(ws, allowed) {
+    // Scholars gets the curated grouping. Every other worksheet renders as
+    // one "Fields" group in MAPPING order, so Positions / Graduate Degrees
+    // still work without a per-sheet definition.
+    var used = {};
+    var groups = [];
+    if (ws === 'Scholars') {
+      SCHOLAR_FIELD_GROUPS.forEach(function (g) {
+        var present = g.fields.filter(function (f) { return allowed[f]; });
+        present.forEach(function (f) { used[f] = 1; });
+        groups.push({ legend: g.legend, fields: present });
+      });
+      // Any field not in the curated list: put it under "Other" so nothing
+      // is silently hidden if MAPPING grows.
+      var leftover = Object.keys(allowed).filter(function (f) { return !used[f]; });
+      if (leftover.length) groups.push({ legend: 'Other', fields: leftover });
+    } else {
+      groups.push({ legend: ws + ' fields', fields: Object.keys(allowed) });
+    }
+    return groups;
+  }
+
+  function _fieldCell(fname, cfg, current, ws, alwaysConfirm) {
+    var cell = document.createElement('div');
+    cell.className = 'field-cell' + (_isWideField(fname, cfg) ? ' wide' : '');
+    cell.dataset.field = fname;
+
+    var lbl = document.createElement('label');
+    lbl.className = 'flabel';
+    lbl.textContent = fname;
+    cell.appendChild(lbl);
+
+    var control;
+    if (cfg.type === 'enum' && Array.isArray(cfg.enum)) {
+      control = document.createElement('select');
+      cfg.enum.forEach(function (v) {
+        var opt = document.createElement('option');
+        opt.value = v;
+        opt.textContent = v === '' ? '(blank)' : v;
+        if (v === current) opt.selected = true;
+        control.appendChild(opt);
+      });
+    } else if (cfg.maxLen && cfg.maxLen > 240) {
+      control = document.createElement('textarea');
+      control.rows = _isWideField(fname, cfg) ? 3 : 2;
+      control.value = current;
+    } else {
+      control = document.createElement('input');
+      control.type = 'text';
+      control.value = current;
+      if (cfg.maxLen) control.maxLength = cfg.maxLen;
+    }
+    var id = 'f-' + fname.replace(/[^a-z0-9]/gi, '-');
+    control.id = id;
+    lbl.setAttribute('for', id);
+    control.dataset.field = fname;
+    control.dataset.original = current;
+    control.addEventListener('input', onFieldInput);
+    control.addEventListener('change', onFieldInput);
+    cell.appendChild(control);
+
+    // meta line
+    var meta = document.createElement('div');
+    meta.className = 'fmeta';
+    var bits = [cfg.type];
+    if (cfg.maxLen)                        bits.push('max ' + cfg.maxLen);
+    if (cfg.min != null || cfg.max != null) bits.push('range ' + (cfg.min == null ? '−∞' : cfg.min) + '..' + (cfg.max == null ? '+∞' : cfg.max));
+    if (cfg.enum)                          bits.push('enum');
+    if (alwaysConfirm[ws + '.' + fname])   bits.push('⚠ always-confirm');
+    meta.textContent = bits.join(' · ');
+    cell.appendChild(meta);
+
+    return cell;
+  }
+
+  function onFieldInput(ev) {
+    var control = ev.target;
+    var fname = control.dataset.field;
+    if (!fname) return;
+    var newValue  = control.value;
+    var original  = control.dataset.original;
+    var cell = control.closest('.field-cell');
+    if (newValue === original) {
+      delete state.dirtyFields[fname];
+      delete state.confirmFields[fname];
+      if (cell) cell.classList.remove('dirty', 'confirm');
+      if (cell) {
+        var oldCb = cell.querySelector('.confirm-line');
+        if (oldCb) oldCb.remove();
+      }
+    } else {
+      state.dirtyFields[fname] = newValue;
+      if (cell) {
+        cell.classList.add('dirty');
+        var alwaysConfirm = (state.describe.alwaysConfirm || {})[state.currentWs + '.' + fname];
+        if (alwaysConfirm) {
+          cell.classList.add('confirm');
+          if (!cell.querySelector('.confirm-check')) {
+            var wrap = document.createElement('div');
+            wrap.className = 'confirm-line';
+            var cb = document.createElement('input');
+            cb.type = 'checkbox';
+            cb.className = 'confirm-check';
+            cb.id = 'confirm-' + fname.replace(/[^a-z0-9]/gi, '-');
+            cb.addEventListener('change', function () {
+              if (cb.checked) state.confirmFields[fname] = true;
+              else delete state.confirmFields[fname];
+              updateSaveButtonState();
+            });
+            var lbl = document.createElement('label');
+            lbl.setAttribute('for', cb.id);
+            lbl.style.marginLeft = '6px';
+            lbl.textContent = 'This is a high-consequence field — tick to confirm.';
+            wrap.appendChild(cb);
+            wrap.appendChild(lbl);
+            cell.appendChild(wrap);
+          }
+        }
+      }
+    }
+    updateSaveButtonState();
+  }
+
+  function updateSaveButtonState() {
+    var dirty = Object.keys(state.dirtyFields);
+    if (!dirty.length) {
+      el.saveBtn.disabled = true;
+      setText(el.saveHint, '');
+      return;
+    }
+    var alwaysConfirm = state.describe.alwaysConfirm || {};
+    var unmet = dirty.filter(function (f) {
+      return alwaysConfirm[state.currentWs + '.' + f] && !state.confirmFields[f];
+    });
+    if (unmet.length) {
+      el.saveBtn.disabled = true;
+      setText(el.saveHint, dirty.length + ' change(s), but confirm the highlighted field(s) first.');
+      return;
+    }
+    el.saveBtn.disabled = state.saving;
+    var writeEnabled = state.describe.writeEnabled;
+    setText(el.saveHint,
+      dirty.length + ' change(s) ready. ' +
+      (writeEnabled
+        ? 'WRITE_ENABLED is true — clicking Save will write to the Master Sheet.'
+        : 'WRITE_ENABLED is false — clicking Save runs a dry-run only.'));
+  }
+
+  function onCancel() {
+    if (!state.currentRow) return;
+    state.dirtyFields = {};
+    state.confirmFields = {};
+    renderEditForm();
+    status('Edits discarded. Row reloaded from the last read.', 'ok');
+  }
+
+  function onSave() {
+    var dirty = state.dirtyFields;
+    var fieldNames = Object.keys(dirty);
+    if (!fieldNames.length) return;
+    state.saving = true;
+    el.saveBtn.disabled = true;
+    status('Saving ' + fieldNames.length + ' change(s)…', 'busy');
+    global.tonganAdminBridge.updateRow(state.currentWs, state.currentKey, dirty)
+      .then(function (body) {
+        state.saving = false;
+        renderSaveResult(body);
+      })
+      .catch(function (err) {
+        state.saving = false;
+        el.saveBtn.disabled = false;
+        status('updateRow() failed: ' + err.message, 'err');
+        if (err.serverBody) el.diag.textContent = JSON.stringify(err.serverBody, null, 2);
+      });
+  }
+
+  function renderSaveResult(body) {
+    if (!body) {
+      status('Server returned no body.', 'err');
+      el.saveBtn.disabled = false;
+      return;
+    }
+    el.diag.textContent = JSON.stringify(body, null, 2);
+    var dryRun = body.dryRun === true;
+    var forced = body.forcedDryRun === true;
+    var results = body.results || [];
+    var okCount   = results.filter(function (r) { return r.status === 'ok'; }).length;
+    var alreadyOk = results.filter(function (r) { return r.status === 'already_satisfied'; }).length;
+    var confirms  = results.filter(function (r) { return r.status === 'needs_confirmation'; }).length;
+    var rejects   = results.filter(function (r) { return r.status === 'rejected'; }).length;
+    var summary =
+      okCount   + ' written · ' +
+      alreadyOk + ' already-satisfied · ' +
+      confirms  + ' needs-confirmation · ' +
+      rejects   + ' rejected';
+
+    if (rejects && !okCount && !alreadyOk && !confirms) {
+      status('Save rejected. ' + summary +
+             '. See diagnostics for per-field reasons.', 'err');
+      el.saveBtn.disabled = false;
+      return;
+    }
+    if (dryRun) {
+      status(
+        (forced ? 'WRITE_ENABLED=false: dry-run only. ' : 'Dry-run: ') +
+        summary + '. Nothing was written.',
+        forced ? 'busy' : 'ok'
+      );
+      el.saveBtn.disabled = false;
+      return;
+    }
+    // Real write happened — reload the row and refresh the change log.
+    status('Wrote ' + okCount + ' field(s). Reloading row…', 'ok');
+    global.tonganAdminBridge.readRow(state.currentWs, state.currentKey).then(function (r) {
+      if (r && r.status === 'ok' && r.found) {
+        state.currentRow = { rowNumber: r.rowNumber, fields: r.fields };
+        state.dirtyFields = {};
+        state.confirmFields = {};
+        renderEditForm();
+        status('Wrote ' + okCount + ' field(s). Row reloaded from Master.', 'ok');
+      }
+      refreshChangeLog();
+    }).catch(function (err) {
+      status('Wrote ' + okCount + ' field(s) but reload failed: ' + err.message, 'err');
+    });
+  }
+
+  function onPing() {
+    status('Pinging server…', 'busy');
+    global.tonganAdminBridge.ping().then(function (body) {
+      status('Ping OK. Active email: ' + body.activeEmail +
+             '. WRITE_ENABLED: ' + body.writeEnabled + '.', 'ok');
+      if (el.diag) el.diag.textContent = JSON.stringify(body, null, 2);
+    }).catch(function (err) {
+      status('Ping failed: ' + err.message, 'err');
+    });
+  }
+
+  function refreshChangeLog() {
+    setText(el.logHint, 'Loading recent Change Log rows…');
+    global.tonganAdminBridge.readChangeLog(25).then(function (body) {
+      if (!body || body.status !== 'ok') {
+        setText(el.logHint, 'readChangeLog() did not return ok: ' + JSON.stringify(body));
+        return;
+      }
+      var rows = body.rows || [];
+      el.logTable.innerHTML = '';
+      rows.forEach(function (row) {
+        var tr = document.createElement('tr');
+        ['rowNumber', 'version', 'date', 'change', 'scope', 'source'].forEach(function (k) {
+          var td = document.createElement('td');
+          td.textContent = String(row[k] == null ? '' : row[k]);
+          tr.appendChild(td);
+        });
+        el.logTable.appendChild(tr);
+      });
+      setText(el.logHint, 'Showing latest ' + rows.length + ' Change Log row(s), newest first.');
+    }).catch(function (err) {
+      setText(el.logHint, 'readChangeLog() failed: ' + err.message);
+    });
+  }
+
+  // Kick off after the DOM is fully parsed.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+})(window);
+</script>

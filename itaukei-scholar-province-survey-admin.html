@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>iTaukei Scholar Province Survey — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f7f6f2;--surface:#fbfbf9;--surface-2:#f1eee8;--text:#28251d;--muted:#6f6d67;--primary:#0b6b72;--primary-dark:#083f43;--gold:#bb7b0f;--gold-soft:#f4e6c7;--green:#214d3c;--green-soft:#dce8df;--border:#d8d2c9;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:22px;--space:16px}
+*{box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.55}
+a{color:var(--primary)} main{max-width:1180px;margin:0 auto;padding:24px 16px 64px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:24px;box-shadow:var(--shadow);padding:24px;margin-bottom:20px}
+h1,h2,h3{margin:0 0 12px;line-height:1.12} h1{font-size:clamp(1.8rem,3.5vw,2.6rem)} h2{font-size:clamp(1.35rem,2.5vw,2rem)} h3{font-size:1.05rem} p{margin:0 0 12px;max-width:72ch} .muted{color:var(--muted)}
+.section-head{display:flex;justify-content:space-between;gap:12px;align-items:end;flex-wrap:wrap;margin-bottom:12px}
+.btn{border:none;border-radius:14px;padding:14px 18px;font-weight:800;cursor:pointer} .btn-primary{background:var(--primary-dark);color:#fff} .btn-secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px} .field{display:flex;flex-direction:column;gap:6px} input[type=text], input[type=password]{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff}
+.note{padding:14px 16px;border-radius:16px;background:#fff;border:1px solid var(--border)}
+details{background:#fff;border:1px solid var(--border);border-radius:16px;padding:12px 14px} details+details{margin-top:10px} summary{cursor:pointer;font-weight:800}
+.small{font-size:.92rem} .hidden{display:none !important}
+.tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#fff;border:1px solid var(--border);font-weight:700;color:var(--primary-dark);font-size:.85rem}
+@media (max-width:860px){.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+  <section class="card">
+    <div class="section-head">
+      <div>
+        <span class="tag">Restricted — Admin only</span>
+        <h1 style="margin-top:10px">iTaukei scholar province survey — admin view</h1>
+        <p class="muted">This is an unlinked private page. Full submission details (including informant name and paternal/maternal village/province fields) are shown here only after an admin key is provided.</p>
+      </div>
+    </div>
+
+    <div id="adminGate" class="note">
+      <p class="small">Enter your Apps Script admin key to load full submissions. You can also load this page directly with <code>?key=YOUR_KEY</code> in the URL.</p>
+      <div class="form-grid" style="margin-top:12px;max-width:700px">
+        <div class="field">
+          <label for="adminPassword">Admin key</label>
+          <input id="adminPassword" type="password" placeholder="Enter admin key">
+        </div>
+        <div class="field" style="align-self:end">
+          <button id="adminLogin" class="btn btn-primary" type="button">Open details</button>
+        </div>
+      </div>
+      <div id="adminStatus" class="small muted" style="margin-top:10px"></div>
+    </div>
+
+    <div id="adminPanel" class="hidden">
+      <div class="note" style="margin-bottom:12px">
+        <strong id="adminRowCount">0</strong> scholar record(s) loaded. Full submission rows are shown below.
+        <button id="lockAdmin" class="btn btn-secondary" type="button" style="float:right;padding:8px 12px;font-size:.9rem">Lock</button>
+      </div>
+      <div id="adminList"></div>
+    </div>
+  </section>
+</main>
+<script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzpnr7wi_ir55QboVj5FEIHUjtUX9gzdlLDpCTNIjQiLINWD1VrmOlB49YFo3DDERBJ/exec';
+let liveAdminRows = [];
+
+function normalizeAdminPayload(data){
+  if(!data) return [];
+  if(Array.isArray(data.rows)) return data.rows;
+  if(data.result && Array.isArray(data.result.rows)) return data.result.rows;
+  return [];
+}
+
+function escapeHtml(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAdmin(){
+  const adminList = document.getElementById('adminList');
+  adminList.innerHTML = '';
+  document.getElementById('adminRowCount').textContent = liveAdminRows.length;
+  if(!liveAdminRows.length){
+    adminList.innerHTML = '<div class="note small">No admin rows returned yet.</div>';
+    return;
+  }
+  liveAdminRows.forEach(row => {
+    const name = `${escapeHtml(row.lastName)}, ${escapeHtml(row.firstName)}`;
+    const submissions = Array.isArray(row.submissions) ? row.submissions : [];
+    const d = document.createElement('details');
+    d.innerHTML = `<summary>${name} — ${submissions.length} submission(s)</summary>`;
+    const inner = document.createElement('div');
+    inner.className = 'small';
+    inner.style.marginTop = '10px';
+    inner.innerHTML = submissions.length
+      ? submissions.map(r => `<div style="padding:10px 0;border-top:1px solid #ece7df"><strong>Informant:</strong> ${escapeHtml(r.informantName)}<br><strong>Paternal village:</strong> ${escapeHtml(r.paternalVillage)}<br><strong>Paternal Province:</strong> ${escapeHtml(r.paternalProvince)}<br><strong>Maternal village:</strong> ${escapeHtml(r.maternalVillage)}<br><strong>Maternal Province:</strong> ${escapeHtml(r.maternalProvince)}<br><strong>Timestamp:</strong> ${escapeHtml(r.timestamp)}</div>`).join('')
+      : '<div style="padding:10px 0;border-top:1px solid #ece7df">No submissions yet.</div>';
+    d.appendChild(inner);
+    adminList.appendChild(d);
+  });
+}
+
+async function unlockAdmin(keyOverride){
+  const status = document.getElementById('adminStatus');
+  const key = (keyOverride != null ? keyOverride : document.getElementById('adminPassword').value).trim();
+  if(!key){ status.textContent = 'Enter your admin key to continue.'; return; }
+  if(GOOGLE_SCRIPT_URL.startsWith('PASTE_')){ status.textContent = 'GOOGLE_SCRIPT_URL is not configured.'; return; }
+  status.textContent = 'Loading admin data…';
+  try{
+    const r = await fetch(`${GOOGLE_SCRIPT_URL}?mode=admin&key=${encodeURIComponent(key)}`, {cache:'no-store'});
+    const data = await r.json();
+    if(data && data.status === 'error'){
+      status.textContent = data.message || 'Admin request failed.';
+      return;
+    }
+    liveAdminRows = normalizeAdminPayload(data);
+    document.getElementById('adminGate').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+    renderAdmin();
+  }catch(e){
+    status.textContent = 'Could not load admin data. Check the admin key and Apps Script deployment.';
+  }
+}
+
+function lockAdmin(){
+  liveAdminRows = [];
+  document.getElementById('adminList').innerHTML = '';
+  document.getElementById('adminPassword').value = '';
+  document.getElementById('adminStatus').textContent = '';
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('adminGate').classList.remove('hidden');
+}
+
+document.getElementById('adminLogin').addEventListener('click', () => unlockAdmin());
+document.getElementById('adminPassword').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); unlockAdmin(); } });
+document.getElementById('lockAdmin').addEventListener('click', lockAdmin);
+
+// Auto-unlock if ?key=... or ?mode=admin&key=... is present in the URL
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const key = params.get('key');
+  if(key){ unlockAdmin(key); }
+})();
+</script>
+</body>
+</html>

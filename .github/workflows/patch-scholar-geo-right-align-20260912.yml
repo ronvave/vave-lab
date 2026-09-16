@@ -1,0 +1,55 @@
+name: Patch scholar geography dropdown right alignment
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-scholar-geo-right-align-20260912.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch s.html
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+          marker = "          .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer}"
+          css = '''          /* Right-align open Province/PIC menus beneath their pills and keep them inside each publication card. */
+          .scholar-geo-toolbar details.scholar-geo-menu[open]{position:relative!important;width:100%!important;}
+          .scholar-geo-toolbar details.scholar-geo-menu[open]>.scholar-geo-options{
+            position:absolute!important;
+            top:calc(100% + 7px)!important;
+            right:0!important;
+            left:auto!important;
+            margin:0!important;
+            width:195px!important;
+            max-width:195px!important;
+            min-width:0!important;
+            box-sizing:border-box!important;
+            z-index:30!important;
+            max-height:210px!important;
+            overflow-y:auto!important;
+            overflow-x:hidden!important;
+          }
+'''
+          if 'Right-align open Province/PIC menus beneath their pills' not in s:
+              if marker not in s:
+                  raise SystemExit('CSS marker not found')
+              s = s.replace(marker, css + marker, 1)
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name 'Ron Vave'
+          git config user.email 'ronvave2011@gmail.com'
+          git add s.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'Right-align scholar geography dropdowns within publication cards'
+          git push

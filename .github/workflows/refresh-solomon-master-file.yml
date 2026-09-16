@@ -1,0 +1,234 @@
+name: Refresh Solomon Islands Master File snapshot
+
+# Sister workflow to refresh-master-file.yml (iTaukei). Runs every 2 hours
+# (offset 5 minutes after the iTaukei/Solomon Islands run to reduce commit-race odds on
+# main) and on manual dispatch — including the Solomon Islands Admin Panel's
+# "Refresh from Sheet" / "Force refresh" buttons, which call the GitHub
+# Actions dispatch API for this workflow.
+#
+# Reads the Solomon Islands Scholars Master Sheet via a service account,
+# transforms + sanitizes, encrypts, and commits. NEVER touches
+# data/itaukei-* files, itaukei_* scripts, or refresh-master-file.yml.
+#
+# Requires GitHub Secrets:
+#   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
+#                                   key (shared with the iTaukei/Solomon Islands workflow);
+#                                   must be granted Editor on the Solomon Islands
+#                                   Master Sheet separately (see docs)
+#   VAVELAB_SOLOMON_PASSCODE      — passcode used to derive AES-GCM key for
+#                                   Solomon Islands data files (distinct from
+#                                   VAVELAB_PASSCODE)
+#
+# Deferred parity item: this workflow intentionally omits a
+# master_file_reconcile.py-equivalent QA step. The iTaukei reconcile
+# script is hard-coded to specific row/column positions on the iTaukei/Solomon Islands
+# Master-file Dashboard tab; the Solomon Islands Dashboard tab's layout has not
+# been confirmed to match, so a strict reconcile step would be guessing.
+# This can be added later once the Solomon Islands Dashboard sheet's QA layout is
+# confirmed.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-solomon-master-file.yml"
+      - "scripts/solomon_master_file_config.py"
+      - "scripts/solomon_master_file_transformer.py"
+      - "scripts/solomon_encrypt_data.py"
+      - "scripts/solomon_decrypt_data.py"
+      - "js/solomon-database-adapter.js"
+      - "js/solomon-database-master.js"
+  schedule:
+    - cron: "5 */2 * * *"   # every 2 hours, 5 min after the hour (UTC)
+  workflow_dispatch:
+    inputs:
+      force_commit:
+        description: "Commit even when totals drift <2% (heartbeat)"
+        required: false
+        default: "false"
+      dry_run:
+        description: "Run transformer but don't commit"
+        required: false
+        default: "false"
+
+concurrency:
+  group: refresh-solomon-master-file
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install \
+            google-api-python-client \
+            google-auth \
+            cryptography
+
+      - name: Decrypt current snapshot (bootstrap for diff)
+        env:
+          VAVELAB_SOLOMON_PASSCODE: ${{ secrets.VAVELAB_SOLOMON_PASSCODE }}
+        run: |
+          set -euo pipefail
+          if [ -f data/solomon-last-master-sync.json.enc ]; then
+            python3 scripts/solomon_decrypt_data.py --all || \
+              echo "Bootstrap decrypt failed (first run?); continuing"
+          else
+            echo "No prior Solomon Islands Master-file snapshot; first run"
+          fi
+
+      - name: Stash previous plaintext for diff
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/prev
+          for f in \
+            data/solomon-last-master-sync.json \
+            data/solomon-master-aggregates.json \
+            data/solomon-master-scholars.json \
+            data/solomon-master-publications.json \
+            data/solomon-master-authorship.json \
+            data/solomon-master-researcher-authorship.json \
+            data/solomon-master-grad-degrees.json \
+            data/solomon-master-mobility.json \
+            data/solomon-master-geography.json \
+            data/solomon-master-geography-coordinates.json \
+            data/solomon-master-institutions.json \
+            data/solomon-master-researchers.json \
+            data/solomon-master-awards.json \
+            data/solomon-master-funding.json \
+            data/solomon-master-positions.json; do
+            [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
+          done
+
+      - name: Fetch, sanitize, and transform Solomon Islands Master file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          python3 scripts/solomon_master_file_transformer.py \
+            --mode=production \
+            --out-dir=data
+
+      - name: Diff vs previous snapshot
+        id: diff
+        run: |
+          set -euo pipefail
+          if [ -f /tmp/prev/solomon-master-aggregates.json ]; then
+            python3 scripts/master_file_diff.py \
+              --prev=/tmp/prev/solomon-master-aggregates.json \
+              --curr=data/solomon-master-aggregates.json \
+              --output=/tmp/solomon_diff.txt || true
+            echo "delta_pct=$(cat /tmp/diff_pct.txt 2>/dev/null || echo '0')" >> "$GITHUB_OUTPUT"
+          else
+            echo "delta_pct=100" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Detect plaintext content changes
+        id: changed
+        run: |
+          set -euo pipefail
+          # Only re-encrypt files whose *plaintext* actually changed.
+          # scripts/solomon_encrypt_data.py generates a fresh AES salt per
+          # run, so a naive re-encrypt would rewrite every .enc even when
+          # the underlying Master-file data is byte-identical. See
+          # scripts/plaintext_changed.py (shared, generic script).
+          #
+          # solomon-last-master-sync.json embeds startedAt/finishedAt
+          # timestamps, so we exclude it from the plaintext-diff and
+          # rewrite it ONLY when at least one content file changed.
+          CONTENT_FILES=(
+            solomon-master-scholars.json
+            solomon-master-publications.json
+            solomon-master-authorship.json
+            solomon-master-researcher-authorship.json
+            solomon-master-grad-degrees.json
+            solomon-master-mobility.json
+            solomon-master-geography.json
+            solomon-master-geography-coordinates.json
+            solomon-master-aggregates.json
+            solomon-master-institutions.json
+            solomon-master-researchers.json
+            solomon-master-awards.json
+            solomon-master-funding.json
+            solomon-master-positions.json
+          )
+          python3 scripts/plaintext_changed.py \
+            --prev-dir=/tmp/prev \
+            --curr-dir=data \
+            "${CONTENT_FILES[@]}" \
+            > /tmp/solomon_changed.txt
+          CHANGED_COUNT=$(wc -l < /tmp/solomon_changed.txt | tr -d ' ')
+          echo "content_changed_count=${CHANGED_COUNT}" >> "$GITHUB_OUTPUT"
+          if [ "${CHANGED_COUNT}" = "0" ]; then
+            echo "No plaintext content changes. Skipping encrypt + commit."
+          else
+            echo "Plaintext-changed files:"
+            cat /tmp/solomon_changed.txt
+          fi
+
+      - name: Encrypt data files
+        if: steps.changed.outputs.content_changed_count != '0'
+        env:
+          VAVELAB_SOLOMON_PASSCODE: ${{ secrets.VAVELAB_SOLOMON_PASSCODE }}
+        run: |
+          set -euo pipefail
+          # Encrypt ONLY the plaintext-changed content files, plus
+          # solomon-last-master-sync.json (safe to refresh timestamps when
+          # at least one content file changed).
+          TARGETS=()
+          while IFS= read -r name; do
+            [ -n "$name" ] && TARGETS+=("$name")
+          done < /tmp/solomon_changed.txt
+          TARGETS+=(solomon-last-master-sync.json)
+          echo "Encrypting: ${TARGETS[*]}"
+          python3 scripts/solomon_encrypt_data.py "${TARGETS[@]}"
+
+      - name: Commit
+        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
+        env:
+          FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
+          DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
+        run: |
+          set -euo pipefail
+          git config user.name "vavelab-bot"
+          git config user.email "bot@vavelab.example"
+          git add \
+            data/solomon-master-*.json.enc \
+            data/solomon-last-master-sync.json.enc
+          if git diff --cached --quiet; then
+            echo "No changes to commit (unexpected — plaintext_changed said yes)"
+            exit 0
+          fi
+          MSG="chore: Solomon Islands Master-file heartbeat"
+          if [ "${DELTA_PCT}" != "0" ] && [ "$(python3 -c "print(float('$DELTA_PCT') >= 2.0)")" = "True" ]; then
+            MSG="Auto-refresh: Solomon Islands Master-file snapshot (delta ${DELTA_PCT}%)"
+          fi
+          if [ "${FORCE_COMMIT}" = "true" ]; then
+            MSG="${MSG} [manual]"
+          fi
+          git commit -m "$MSG"
+          # Rebase-retry push (pattern from the iTaukei/Solomon Islands / Zotero workflows)
+          for attempt in 1 2 3; do
+            git pull --rebase origin main && git push origin main && exit 0
+            echo "Push attempt $attempt failed; retrying..."
+            sleep $((attempt * 5))
+          done
+          echo "Failed to push after 3 attempts"
+          exit 1

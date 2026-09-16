@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Pacific Islands Studies Jeopardy (Coconut Edition) — CPIS, UH Mānoa</title>
+<style>
+  :root{
+    --bg:#060842;
+    --bg2:#0a0e6b;
+    --tile:#0b1cad;
+    --tile-hover:#132fd0;
+    --gold:#f6c545;
+    --gold-2:#ffd971;
+    --ink:#ffffff;
+    --dim:#c9d3ff;
+    --shadow: 0 10px 24px rgba(0,0,0,.35);
+    --shadow-lg: 0 20px 60px rgba(0,0,0,.55);
+    --radius: 10px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:radial-gradient(ellipse at top,#0b1080 0%,#050740 55%,#020327 100%) fixed;color:var(--ink);font-family:'Helvetica Neue',Arial,sans-serif;min-height:100vh;overflow-x:hidden}
+  header{
+    padding:18px 26px 8px;
+    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
+  }
+  header h1{
+    margin:0;font-family:Georgia,serif;letter-spacing:1px;
+    font-size:clamp(22px,2.6vw,38px);
+    color:var(--gold);text-shadow:2px 2px 0 #000,4px 4px 12px rgba(0,0,0,.7);
+    text-align:center
+  }
+  header .subtitle{font-size:13px;color:var(--dim);margin-top:4px;text-align:center}
+  .titles{min-width:0}
+  .brand-right{display:flex;align-items:center;gap:12px;justify-content:flex-end;flex-wrap:wrap}
+  @media (max-width: 900px){
+    header{grid-template-columns:1fr;justify-items:center;gap:10px}
+    .brand-right{justify-content:center}
+  }
+  .logo-chip{
+    background:#fff;border-radius:10px;padding:6px 10px;
+    display:inline-flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px rgba(0,0,0,.35);flex-shrink:0
+  }
+  .logo-chip img{display:block}
+  .logo-uh{height:64px;width:auto;object-fit:contain}
+  .logo-dpis{height:60px;width:auto;object-fit:contain}
+  @media (max-width: 700px){
+    .logo-uh{height:48px}
+    .logo-dpis{height:44px}
+  }
+  .controls{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .btn{
+    appearance:none;border:1px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.08);color:#fff;
+    padding:8px 14px;border-radius:8px;font-weight:600;cursor:pointer;
+    transition:.15s;font-size:14px
+  }
+  .btn:hover{background:rgba(255,255,255,.18)}
+  .btn.gold{background:var(--gold);color:#111;border-color:transparent}
+  .btn.gold:hover{background:var(--gold-2)}
+  .btn.danger{background:#c0392b;border-color:transparent}
+
+  /* Scoreboard */
+  #scoreboard{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+    padding:6px 26px 12px;
+  }
+  .team{
+    background:linear-gradient(180deg,rgba(255,255,255,.08),rgba(255,255,255,.03));
+    border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);
+    padding:10px 14px;display:flex;align-items:center;gap:10px;justify-content:space-between
+  }
+  .team .name{
+    background:transparent;border:none;color:#fff;font-size:15px;font-weight:600;
+    outline:none;width:100%;padding:2px 4px;border-radius:6px
+  }
+  .team .name:focus{background:rgba(255,255,255,.12)}
+  .team .score{
+    font-family:Georgia,serif;font-size:26px;color:var(--gold);min-width:80px;text-align:right;
+    font-weight:bold;
+    text-shadow:1px 1px 0 #000
+  }
+  .team .score.neg{color:#ff8a8a}
+  .team-buttons{display:flex;gap:4px;flex-direction:column}
+  .team-buttons button{
+    background:rgba(255,255,255,.14);color:#fff;border:none;
+    width:26px;height:22px;border-radius:4px;font-weight:bold;cursor:pointer;font-size:12px
+  }
+  .team-buttons button:hover{background:rgba(255,255,255,.28)}
+  .team-buttons .plus{background:rgba(46,204,113,.4)}
+  .team-buttons .minus{background:rgba(231,76,60,.4)}
+  .team.active{outline:2px solid var(--gold);box-shadow:0 0 0 4px rgba(246,197,69,.15)}
+
+  /* Board */
+  #board{
+    display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;
+    padding:6px 20px 26px;
+  }
+  .cat{
+    background:linear-gradient(180deg,#0b1cad 0%, #071068 100%);
+    border:2px solid rgba(255,255,255,.18);
+    border-radius:var(--radius);
+    padding:16px 8px;
+    text-align:center;font-family:Georgia,serif;font-weight:800;
+    text-transform:uppercase;color:#fff;letter-spacing:1px;
+    font-size:clamp(11px,1.05vw,15px);
+    text-shadow:2px 2px 0 #000;min-height:70px;display:flex;align-items:center;justify-content:center
+  }
+  .tile{
+    background:linear-gradient(180deg,var(--tile),#050e70);
+    border:2px solid rgba(255,255,255,.15);border-radius:var(--radius);
+    color:var(--gold);font-family:Georgia,serif;font-weight:800;
+    font-size:clamp(22px,2.6vw,42px);
+    padding:34px 6px;text-align:center;cursor:pointer;
+    text-shadow:2px 2px 0 #000, 3px 3px 8px rgba(0,0,0,.7);
+    transition:.15s;user-select:none;min-height:110px;min-width:0;display:flex;align-items:center;justify-content:center;overflow:hidden
+  }
+  .tile:hover{background:linear-gradient(180deg,var(--tile-hover),#0a1a90);transform:scale(1.02)}
+  .tile.answered{
+    background:#0a0d3e;
+    color:#c9b98a;
+    cursor:default;
+    border-color:rgba(201,185,138,.25);
+    text-shadow:none;
+    opacity:.55;
+    font-weight:600
+  }
+  .tile.answered:hover{transform:none;background:#0a0d3e}
+  .tile.dd::after{content:"★";position:absolute}
+
+  /* Coconut icons for value display */
+  .coco-row{display:flex;flex-wrap:nowrap;gap:3px;align-items:center;justify-content:center;max-width:100%;padding:0 2px}
+  .tile .coco-row img{height:clamp(24px,3.2vw,54px);width:auto;display:block;flex-shrink:1;min-width:0;
+    filter:drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  .team .score .coco-row img{height:26px;width:auto;display:block}
+  .team .score{min-width:170px;display:flex;justify-content:flex-end;align-items:center}
+  .team .score.neg .coco-row img{filter:grayscale(.4) hue-rotate(-120deg) drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  .coco-score{display:inline-flex;align-items:center;gap:6px;font-family:Georgia,serif;font-weight:bold;font-size:22px;color:var(--gold)}
+  .coco-score img{height:28px;width:auto;display:block;filter:drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  .team .score.neg .coco-score{color:#ff8a8a}
+  .team .score.neg .coco-score img{filter:grayscale(.4) hue-rotate(-120deg) drop-shadow(2px 2px 0 rgba(0,0,0,.55))}
+  #c-val .coco-row img{height:36px;width:auto;display:block}
+  #c-val{display:flex;justify-content:center;align-items:center}
+  .coco-neg{color:#ff8a8a;font-family:Georgia,serif;font-weight:bold;font-size:22px;text-shadow:1px 1px 0 #000;margin-right:6px}
+
+  /* Modal / clue view */
+  #overlay{
+    position:fixed;inset:0;background:rgba(4,6,40,.94);z-index:100;
+    display:none;align-items:center;justify-content:center;padding:24px
+  }
+  #overlay.open{display:flex}
+  #clue-panel{
+    background:linear-gradient(180deg,#0b1cad,#050a5c);
+    border:3px solid var(--gold);border-radius:16px;box-shadow:var(--shadow-lg);
+    width:100%;max-width:1240px;padding:32px 44px 26px;position:relative;
+    max-height:94vh;overflow-y:auto
+  }
+  #clue-panel .close{position:absolute;top:12px;right:14px}
+  .clue-category{color:var(--gold);text-transform:uppercase;letter-spacing:2px;font-size:14px;font-weight:600;margin-bottom:6px}
+  .clue-value{color:var(--gold);font-size:24px;font-family:Georgia,serif;font-weight:800;margin-bottom:22px}
+  .clue-media{margin:14px 0;text-align:center}
+  /* Question-state image: sized so image + question + all choices + Reveal button fit above the fold on 900px laptops */
+  .clue-media img{max-width:100%;max-height:44vh;border-radius:8px;border:2px solid rgba(255,255,255,.2);box-shadow:var(--shadow);transition:max-height .35s ease}
+  /* Answer-state (revealed) image: hero-sized for drama; panel scrolls if needed */
+  #clue-panel.answered .clue-media img{max-height:72vh}
+
+  /* ---- Presentation Mode ---- Toggle in header; scales everything up for a projector/classroom */
+  body.present #clue-panel{max-width:1600px;padding:40px 56px 32px}
+  body.present .clue-category{font-size:18px;letter-spacing:3px}
+  body.present .clue-value{font-size:32px}
+  body.present .clue-question{font-size:clamp(28px,3.6vw,52px);margin:24px 0 28px}
+  body.present .choices{gap:16px;margin:18px 0 24px}
+  body.present .choice{font-size:clamp(22px,2vw,30px);padding:20px 26px}
+  body.present .choice .letter{width:40px;height:40px;font-size:19px}
+  body.present .clue-answer{font-size:clamp(20px,1.8vw,26px);padding:20px 26px}
+  body.present .clue-answer .label{font-size:15px}
+  body.present .clue-media img{max-height:50vh}
+  body.present #clue-panel.answered .clue-media img{max-height:78vh}
+  body.present .clue-actions .btn{font-size:18px;padding:12px 22px}
+
+  /* Header toggle-button state */
+  #btn-present.active{background:var(--gold);color:#111;border-color:var(--gold)}
+  #btn-present.active:hover{background:#ffd76b}
+  .clue-media .credit{font-size:12px;color:var(--dim);margin-top:4px}
+  .clue-question{
+    font-family:Georgia,serif;font-size:clamp(22px,3vw,40px);
+    color:#fff;text-shadow:2px 2px 0 #000,3px 3px 12px rgba(0,0,0,.7);
+    text-align:center;line-height:1.35;margin:18px 0 22px
+  }
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 20px}
+  .choice{
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);
+    color:#fff;border-radius:8px;padding:16px 20px;font-size:clamp(17px,1.6vw,22px);text-align:left;
+    display:flex;gap:12px;align-items:center;
+    cursor:default
+  }
+  .choice .letter{
+    background:var(--gold);color:#111;width:32px;height:32px;border-radius:50%;
+    display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex-shrink:0
+  }
+  .choice.correct{background:rgba(46,204,113,.35);border-color:#2ecc71}
+  .choice.correct .letter{background:#2ecc71;color:#fff}
+  .clue-answer{
+    display:none;
+    background:rgba(246,197,69,.14);border:1px solid var(--gold);border-radius:10px;
+    padding:16px 20px;font-size:clamp(16px,1.4vw,19px);color:#fff;margin-top:12px;line-height:1.5
+  }
+  .clue-answer.reveal{display:block}
+  .clue-answer .label{color:var(--gold);font-weight:800;text-transform:uppercase;font-size:12px;letter-spacing:1.5px;display:block;margin-bottom:4px}
+  .clue-actions{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+  .clue-actions .btn{font-size:15px;padding:10px 18px}
+
+  /* Map round overlay */
+  .map-wrap{position:relative;display:inline-block;max-width:100%}
+  .map-wrap img{max-width:100%;max-height:62vh;border-radius:8px;box-shadow:var(--shadow)}
+  .marker{
+    position:absolute;width:26px;height:26px;transform:translate(-50%,-100%);
+    filter:drop-shadow(0 3px 4px rgba(0,0,0,.6));
+    animation:bob 1.2s ease-in-out infinite alternate
+  }
+  @keyframes bob{from{transform:translate(-50%,-100%)}to{transform:translate(-50%,calc(-100% - 6px))}}
+
+  /* Final Jeopardy */
+  #final-jeopardy{
+    display:none;padding:40px 26px;max-width:900px;margin:0 auto;text-align:center
+  }
+  #final-jeopardy.open{display:block}
+  #final-jeopardy .fj-cat{color:var(--gold);text-transform:uppercase;letter-spacing:3px;font-size:16px;margin-bottom:24px}
+  #final-jeopardy .fj-clue{
+    background:linear-gradient(180deg,#0b1cad,#050a5c);border:3px solid var(--gold);border-radius:14px;
+    padding:32px;font-family:Georgia,serif;font-size:clamp(20px,2.8vw,30px);line-height:1.4;
+    text-shadow:2px 2px 0 #000;margin:16px 0 24px
+  }
+  #final-jeopardy .fj-answer{
+    display:none;background:rgba(246,197,69,.15);border:2px solid var(--gold);border-radius:12px;
+    padding:20px;font-size:20px;margin-top:14px
+  }
+  #final-jeopardy .fj-answer.open{display:block}
+
+  /* Footer / footnote */
+  footer{
+    padding:14px 26px 20px;text-align:center;color:var(--dim);font-size:12px;
+  }
+  footer a{color:var(--gold);text-decoration:none}
+  .toolbar-inline{display:flex;gap:8px;justify-content:center;margin-top:8px;flex-wrap:wrap}
+
+  /* Utility */
+  .hidden{display:none !important}
+  @media (max-width: 1100px){
+    #board{grid-template-columns:repeat(4,1fr)}
+  }
+  @media (max-width: 900px){
+    #scoreboard{grid-template-columns:repeat(2,1fr)}
+    #board{grid-template-columns:repeat(3,1fr)}
+    .choices{grid-template-columns:1fr}
+  }
+  @media (max-width: 600px){
+    #board{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo-chip" aria-label="University of Hawaiʻi at Mānoa">
+    <img class="logo-uh" src="images/uh_logo.jpg" alt="University of Hawaiʻi at Mānoa">
+  </span>
+  <div class="titles">
+    <h1>Pacific Islands Studies Jeopardy <span style="color:#a5d67a">🥥 Coconut Edition</span></h1>
+    <div class="subtitle">Department of Pacific Islands Studies · University of Hawaiʻi at Mānoa</div>
+  </div>
+  <div class="brand-right">
+    <span class="logo-chip" aria-label="Department of Pacific Islands Studies">
+      <img class="logo-dpis" src="images/dpis_logo.jpg" alt="Department of Pacific Islands Studies">
+    </span>
+    <div class="controls">
+      <button class="btn" id="btn-present" title="Presentation mode — bigger text and images for projector/classroom (P)">Present</button>
+      <button class="btn" id="btn-final">Final Jeopardy →</button>
+      <button class="btn danger" id="btn-reset">Reset Game</button>
+    </div>
+  </div>
+</header>
+
+<div id="scoreboard"></div>
+<div id="board"></div>
+
+<!-- Final Jeopardy view -->
+<section id="final-jeopardy">
+  <div class="fj-cat">Final Jeopardy — Pacific Thought</div>
+  <div class="fj-clue" id="fj-clue"></div>
+  <div class="clue-actions">
+    <button class="btn gold" id="fj-reveal">Reveal Answer</button>
+    <button class="btn" id="fj-back">← Back to Board</button>
+  </div>
+  <div class="fj-answer" id="fj-answer"></div>
+</section>
+
+<!-- Clue overlay -->
+<div id="overlay" role="dialog" aria-modal="true">
+  <div id="clue-panel">
+    <button class="btn close" id="btn-close">✕ Close</button>
+    <div class="clue-category" id="c-cat"></div>
+    <div class="clue-value" id="c-val"></div>
+    <div class="clue-media" id="c-media"></div>
+    <div class="clue-question" id="c-q"></div>
+    <div class="choices" id="c-choices"></div>
+    <div class="clue-answer" id="c-ans"><span class="label">Correct Answer</span><span id="c-ans-text"></span></div>
+    <div class="clue-actions">
+      <button class="btn gold" id="btn-reveal">Reveal Answer</button>
+      <button class="btn" id="btn-award-team-1">+ Team 1</button>
+      <button class="btn" id="btn-award-team-2">+ Team 2</button>
+      <button class="btn" id="btn-award-team-3">+ Team 3</button>
+      <button class="btn" id="btn-award-team-4">+ Team 4</button>
+      <button class="btn" id="btn-mark-done">Mark Answered</button>
+    </div>
+  </div>
+</div>
+
+<footer>
+  © Center for Pacific Islands Studies, UH Mānoa · Compiled for Discover Mānoa &amp; new-student orientation.
+  Question sources: CPIS internal set; Britannica; Wikipedia; MFAT New Zealand; IUCN; Polynesian Voyaging Society.
+  Images: Wikimedia Commons (public domain / CC-licensed).
+</footer>
+
+<script>
+/* ---- Coconut value renderer ----
+   Each $100 = 1 coconut. Value / 100 = number of coconuts to display. */
+function coconutHTML(value){
+  const n = Math.round(Math.abs(value) / 100);
+  const neg = value < 0 ? '<span class="coco-neg">−</span>' : '';
+  if (n === 0) return '<span class="coco-row"><span style="color:#c9b98a;font-family:Georgia,serif;font-weight:bold;font-size:22px;opacity:.5">0 🥥</span></span>';
+  let imgs = '';
+  for (let i = 0; i < n; i++){
+    imgs += '<img src="images/coconut.png" alt="coconut">';
+  }
+  return `${neg}<span class="coco-row">${imgs}</span>`;
+}
+function coconutScoreHTML(value){
+  const n = Math.round(Math.abs(value) / 100);
+  const word = n === 1 ? 'coconut' : 'coconuts';
+  const sign = value < 0 ? '−' : '';
+  return `<span class="coco-score">${sign}${n} ${word} <img src="images/coconut.png" alt="coconut"></span>`;
+}
+/* ============================================================
+   Pacific Islands Studies Jeopardy — CPIS UH Mānoa
+   Single-file HTML page. No dependencies.
+   ============================================================ */
+
+/* ---- Team state ---- */
+const TEAMS = [
+  { name: "Team Moana",   score: 0 },
+  { name: "Team Vaka",    score: 0 },
+  { name: "Team Kanaloa", score: 0 },
+  { name: "Team Wayfinders", score: 0 },
+];
+
+/* ---- The Board: 6 categories × 5 values ($100..$500) ---- */
+/* Each clue: { q: question text, a: answer text, choices?: [], correct?: index,
+   image?: url, mapMarker?: {x,y}, isMap?: bool }
+*/
+const BOARD = [
+  {
+    title: "Geography",
+    clues: [
+      { value: 100,
+        answerImage: "images/geo_regions_map.jpg",
+        answerCredit: "Melanesia · Micronesia · Polynesia (Britannica)",
+        q: "In the 1800s the islands of Oceania were divided into three sub-regions. What are those three sub-regions?",
+        choices: ["Moana, Oceania, Pasifika","Wantok, Tutok, Tritok","Polynesia, Melanesia, Micronesia","Tefiti, Pulotu, Aotearoa"],
+        correct: 2,
+        a: "Polynesia, Melanesia, Micronesia — coined by French explorer Dumont d’Urville in 1831, these labels grouped islands by perceived cultural and physical traits (‘many islands,’ ‘black islands,’ ‘small islands’). Today Pacific scholars critique the boundaries as colonial constructs, but the terms remain in wide use." },
+      { value: 200,
+        image: "images/geo_200_kiribati_youth.jpg",
+        credit: "Youth in traditional Kiribati dress",
+        hideCredit: true,
+        q: "In which sub-region do you find Kiribati?",
+        choices: ["Micronesia","Melanesia","Polynesia","Gilbert Islands"],
+        correct: 0,
+        a: "Micronesia — but Kiribati is a fascinating exception: its 33 atolls stretch across all three sub-regions, with the Line Islands (including Kiritimati) lying in Polynesian waters. It is the only country in the world spanning the equator and the International Date Line." },
+      { value: 300,
+        answerImage: "images/geo_300_nauru.jpg",
+        answerCredit: "Aerial view of Nauru / Naoero",
+        q: "Which Pacific Island country recently changed its name back to its original name? What is the new name?",
+        choices: ["Cook Islands → Rarotonga","Nauru → Naoero","Fiji → Viti","Ellice Islands → Tuvalu"],
+        correct: 1,
+        a: "Nauru → Naoero — in 2024, Nauru officially readopted the indigenous Nauruan name ‘Naoero.’ The original name means ‘I go to the beach.’ Nauru is the world’s third-smallest country by area (~21 km²) and one of the smallest by population (~12,500)." },
+      { value: 400,
+        answerImage: "images/geo_400_atoll.jpg",
+        answerCredit: "Nukulaelae atoll, Tuvalu (Google Earth)",
+        q: "In which Pacific Island country do you find the island of Nukulaelae?",
+        choices: ["Tuvalu","Tahiti","Vanuatu","New Caledonia"],
+        correct: 0,
+        a: "Tuvalu — Nukulaelae is one of Tuvalu’s nine atolls. Tuvalu (formerly the Ellice Islands) is one of the world’s smallest and lowest-lying nations, with a highest point of just 4.6 m. Sea-level rise threatens the country’s existence, and Tuvalu is pioneering a ‘Digital Nation’ to preserve its statehood in the cloud." },
+      { value: 500,
+        answerImage: "images/geo_500_nauru_mining.jpg",
+        answerCredit: "Phosphate mining pinnacles, Nauru interior",
+        q: "Which Pacific Island country has no capital city?",
+        choices: ["Solomon Islands","Nauru / Naoero","Cook Islands","Palau"],
+        correct: 1,
+        a: "Nauru / Naoero — Nauru has no official capital. Government offices sit in the Yaren District, which is commonly listed as the de facto capital, but there is no legally designated capital city. Nauru is also known for phosphate mining, where decades of lucrative strip-mining turned the island’s interior into a wasteland of jagged limestone pinnacles — the country is one of only a handful of nations in the world with no designated capital." }
+    ]
+  },
+  {
+    title: "Culture",
+    clues: [
+      { value: 100,
+        answerImage: "images/culture_100_war_dances.jpg",
+        answerCredit: "Māori haka · Fijian cibi · Hawaiian haʻa",
+        q: "True or False: All Pacific war dances are called \"haka.\"",
+        choices: ["True","False"],
+        correct: 1,
+        a: "False — ‘haka’ is specifically Māori (Aotearoa/New Zealand). Each Pacific culture has its own martial and ceremonial dances: meke wesi (Fiji), sasa and fa’ataupati (Samoa), kailao and me’etu’upaki (Tonga), cibi (Fijian war dance), and siva tau (Samoan rugby dance). Calling all of them ‘haka’ erases the distinctness of each tradition." },
+      { value: 200,
+        answerImage: "images/culture_200_kava.jpg",
+        answerCredit: "Kava preparation in Fiji · Wikimedia Commons",
+        q: "What traditional Pacific drink is made from the root of Piper methysticum?",
+        choices: ["Noni juice","Kava","Coconut milk","Taro tea"],
+        correct: 1,
+        a: "Kava — known as yaqona in Fiji, ʻawa in Hawaiʻi, sakau in Pohnpei, and ʻava in Samoa. Prepared by pounding or grinding the root and mixing with water, kava is central to ceremonies of welcome, reconciliation, chiefly installation, and everyday social gatherings across much of Melanesia and Polynesia. It has a mild sedative effect and is culturally distinct from alcohol." },
+      { value: 300,
+        image: "images/culture_300_ngatu.jpg",
+        credit: "Tongan ngatu",
+        q: "In Tonga, Samoa, and Fiji, this bark cloth (pictured) is commonly used at:",
+        choices: ["Weddings","Funerals","Ceremonies","All of the above"],
+        correct: 3,
+        a: "All of the above — bark cloth is called ngatu in Tonga, siapo in Samoa, and masi in Fiji. It is made from the inner bark of the paper mulberry tree (Broussonetia papyrifera), beaten flat, and decorated with plant dyes and traditional motifs. Ngatu is presented as koloa (women’s valuables) at weddings, funerals, and chiefly ceremonies, and is a key form of women’s wealth in the Pacific." },
+      { value: 400,
+        image: "images/culture_400_allblacks.jpg",
+        credit: "New Zealand All Blacks performing the haka",
+        q: "Which sport is the New Zealand All Blacks team associated with?",
+        choices: ["Volleyball","Soccer","Netball","Rugby"],
+        correct: 3,
+        a: "Rugby — the All Blacks are Aotearoa/New Zealand’s national rugby union team, one of the most successful teams in world sport. They open every match with a haka, most famously ‘Ka Mate’ (composed c. 1820 by Ngāti Toa chief Te Rauparaha) and the newer ‘Kapa o Pango.’ Many All Blacks are of Māori or wider Pacific (Samoan, Tongan, Fijian) heritage." },
+      { value: 500,
+        image: "images/culture_500_sulu.jpg",
+        credit: "Man in traditional Fijian sulu with tatau body markings",
+        q: "What is the name of the traditional Samoan tattoo worn by men from waist to knees?",
+        choices: ["Malu","Peʻa","Kirikiri","Tatau moko"],
+        correct: 1,
+        a: "Peʻa — the male tatau covers the body from waist to knees in dense geometric patterns and takes weeks to complete using hand tools (au). The corresponding women’s tattoo, from upper thighs to knees, is the malu. Receiving the peʻa is a rite of passage tied to serving one’s ʻāiga (family) and community. The English word ‘tattoo’ derives from the Samoan/Polynesian ‘tatau.’" }
+    ]
+  },
+  {
+    title: "Nature",
+    clues: [
+      { value: 100,
+        image: "images/nature_100_jellyfish.jpg",
+        credit: "Jellyfish Lake, Palau",
+        hideCredit: true,
+        q: "In which Pacific Island country can you swim in a lake full of jellyfish (pictured)?",
+        choices: ["Fiji","Palau","Samoa","Solomon Islands"],
+        correct: 1,
+        a: "Palau — Ongeim’l Tketau (Jellyfish Lake) on Eil Malk island in the Rock Islands. Isolated from the ocean ~12,000 years ago, the lake now hosts millions of an endemic golden jellyfish subspecies (Mastigias papua etpisoni) that have largely lost the ability to sting. They migrate across the lake daily to follow the sun, feeding symbiotic algae inside their tissues." },
+      { value: 200,
+        image: "images/fijian_iguana.jpg",
+        credit: "Brachylophus vitiensis · Wikimedia Commons",
+        hideCredit: true,
+        q: "The Critically Endangered crested iguana pictured is found only in which country?",
+        choices: ["Solomon Islands","Vanuatu","Fiji","Papua New Guinea"],
+        correct: 2,
+        a: "Fiji — Brachylophus vitiensis, the Fijian crested iguana, survives on only a few dry-forest islands in western Fiji (notably Yadua Taba, a protected sanctuary). Iguanas are otherwise a New World family; the Fijian and Tongan iguanas are believed to have rafted across the Pacific from the Americas millions of years ago. Habitat loss and invasive mongooses and cats have driven the species to Critically Endangered status (IUCN)." },
+      { value: 300,
+        answerImage: "images/nature_300_croc.jpg",
+        answerCredit: "Saltwater crocodile (Crocodylus porosus)",
+        q: "Papua New Guinea and the Solomon Islands are home to which large Pacific reptile?",
+        choices: ["Green sea turtle","Saltwater crocodile","Komodo dragon","Fijian banded iguana"],
+        correct: 1,
+        a: "The saltwater crocodile (Crocodylus porosus) — the world’s largest living reptile, with males reaching 6+ m and over 1,000 kg. ‘Salties’ range from India through Southeast Asia to Melanesia, comfortable in both fresh and marine waters. In PNG they hold deep cultural significance and appear in Sepik River clan totems, initiation scarification patterns, and origin stories." },
+      { value: 400,
+        image: "images/nature_400_cuscus.jpg",
+        credit: "Common spotted cuscus (Spilocuscus maculatus)",
+        q: "Which Pacific country’s forests are home to the cuscus (pictured), a marsupial possum?",
+        choices: ["Fiji","Samoa","Papua New Guinea","Kiribati"],
+        correct: 2,
+        a: "Papua New Guinea — the cuscus is a slow-moving arboreal marsupial found across New Guinea, the Solomons, and eastern Indonesia. Papua New Guinea sits on the ‘Australian’ side of the Wallace Line, so its fauna is dominated by marsupials, monotremes (echidnas), and birds-of-paradise, more like Australia than Asia. New Guinea has among the highest terrestrial biodiversity on Earth." },
+      { value: 500,
+        image: "images/nature_500_firewalker_feet.jpg",
+        credit: "",
+        answerImage: "images/nature_500_firewalker_full.jpg",
+        answerCredit: "Fijian firewalker — vilavilairevo tradition, Beqa Island",
+        q: "This Pacific island nation famously has firewalkers who walk on white-hot stones as part of a traditional ceremony.",
+        choices: ["Samoa","Fiji","Tonga","Vanuatu"],
+        correct: 1,
+        a: "Fiji — the vilavilairevo (literally ‘jumping into the oven’) firewalking tradition originates on the island of Beqa, off the south coast of Viti Levu. According to Sawau tribal legend, the gift was granted to their ancestor Tui Nakauvadra by a spirit-god after he spared its life. Only initiated men of certain Sawau clans traditionally perform the ceremony, following strict pre-ceremony taboos." }
+    ]
+  },
+  {
+    title: "History & People",
+    clues: [
+      { value: 100,
+        image: "images/pita_taufatofua.jpg",
+        credit: "Pita Taufatofua at Rio 2016 · Wikimedia Commons",
+        q: "This shirtless flag-bearer at the Rio, PyeongChang, and Tokyo Olympics represented which country?",
+        choices: ["Samoa","Tonga","Fiji","Cook Islands"],
+        correct: 1,
+        a: "Tonga — Pita Taufatofua carried the Tongan flag oiled and bare-chested in traditional ta’ovala at three Olympic Games opening ceremonies, competing in taekwondo (2016, 2020) and cross-country skiing (2018). His appearances brought Tonga global attention and helped raise funds for Tongan disaster relief after the 2022 Hunga Tonga–Hunga Ha’apai volcanic eruption and tsunami." },
+      { value: 200,
+        image: "images/history_200_elder.jpg",
+        credit: "Master navigator Mau Piailug in Polynesian dress",
+        hideCredit: true,
+        q: "This master navigator from Satawal (Micronesia) is credited with reviving traditional wayfinding for Hawaiians.",
+        choices: ["Nainoa Thompson","Mau Piailug","Herb Kāne","Tupaia"],
+        correct: 1,
+        a: "Mau Piailug (1932–2010) — a palu (master navigator) from Satawal atoll in the Federated States of Micronesia. In 1976 he navigated the double-hulled canoe Hōkūleʻa from Hawaiʻi to Tahiti using only the stars, ocean swells, winds, and wildlife — proving that ancestral Polynesians could have voyaged intentionally, not by drift. He then trained a new generation of Hawaiian navigators, including Nainoa Thompson, sparking a Pacific-wide wayfinding renaissance." },
+      { value: 300,
+        image: "images/hokulea.jpg",
+        credit: "Hōkūleʻa · Wikimedia Commons",
+        q: "The Hōkūleʻa, launched in 1975, is what kind of vessel?",
+        choices: ["A racing yacht","An outrigger canoe","A double-hulled Polynesian voyaging canoe","A whaling ship"],
+        correct: 2,
+        a: "A double-hulled Polynesian voyaging canoe (waʻa kaulua) — Hōkūleʻa (‘Star of Gladness,’ the Hawaiian name for Arcturus) was built by the Polynesian Voyaging Society as a floating experiment to test theories of intentional migration. Since 1976 she has sailed over 245,000 nautical miles, including the Mālama Honua Worldwide Voyage (2013–2017), becoming a global symbol of indigenous knowledge, ocean stewardship, and cultural revival." },
+      { value: 400,
+        image: "images/solomon_shell_money.jpg",
+        credit: "Traditional shell money strings, Solomon Islands",
+        hideCredit: true,
+        q: "What is the traditional currency that people in Solomon Islands use?",
+        choices: ["Pearl Shell","Shell Money","Mats","Kava"],
+        correct: 1,
+        a: "Shell Money (tafuliae in Are’are and Kwaio languages) — made in the Langalanga and Malaita lagoons by grinding, drilling, and threading small pieces of red, white, and black shell onto strings that can stretch several metres. Shell money remains active bride-price, compensation payment, and status wealth in the Solomon Islands today, existing alongside the national Solomon dollar. Different colours and lengths hold different values." },
+      { value: 500,
+        image: "images/epeli_hauofa.jpg",
+        credit: "Epeli Hauʻofa (1939–2009)",
+        imageOnReveal: true,
+        q: "Which Pacific anthropologist wrote: “Oceania is vast, Oceania is expanding, Oceania is hospitable and generous, Oceania is humanity rising from the depths of brine and regions of fire deeper still. Oceania is us. We are the sea, we are the ocean…”?",
+        qHTML: 'Which Pacific anthropologist wrote:<br><span style="color:#ffd971;font-style:italic;display:inline-block;margin-top:10px;line-height:1.4">“Oceania is vast, Oceania is expanding, Oceania is hospitable and generous, Oceania is humanity rising from the depths of brine and regions of fire deeper still. Oceania is us. We are the sea, we are the ocean…”</span>',
+        choices: ["Konai Helu Thaman","Epeli Hauʻofa","Albert Wendt","Vilsoni Hereniko"],
+        correct: 1,
+        a: "Epeli Hauʻofa (1939–2009) — a Tongan-Fijian anthropologist, writer, and satirist, born in Papua New Guinea to Tongan missionary parents. His landmark 1993 essay “Our Sea of Islands” reframed Oceania not as scattered, remote, and small “islands in a far sea,” but as a vast, connected “sea of islands.” The essay reshaped Pacific Studies globally and inspired a generation of Pacific scholars, artists, and leaders to imagine the region on its own terms." }
+    ]
+  },
+  {
+    title: "Politics",
+    clues: [
+      { value: 100,
+        image: "images/politics_100_liliuokalani.jpg",
+        credit: "Queen Liliʻuokalani, last sovereign of the Kingdom of Hawaiʻi",
+        hideCredit: true,
+        q: "In January 1893, the Hawaiian Monarch was overthrown. Who was the Queen at that time?",
+        choices: ["Queen Kaʻahumanu","Queen Liliʻuokalani","Queen Emma","Queen Kapiʻolani"],
+        correct: 1,
+        a: "Queen Liliʻuokalani — this sovereign queen was illegally deposed and imprisoned by American insurrectionists on 17 January 1893. The coup was backed by U.S. Marines from the USS Boston and led by American sugar planters. Liliʻuokalani was later placed under house arrest in ʻIolani Palace, where she composed songs including ‘Aloha ʻOe.’ In 1993 the U.S. Congress passed the Apology Resolution formally acknowledging the overthrow was illegal." },
+      { value: 200,
+        image: "images/hilda_heine.jpg",
+        credit: "President Hilda Heine · Wikimedia Commons",
+        hideCredit: true,
+        q: "This woman is the current President of which Pacific nation?",
+        choices: ["Kiribati","Palau","Marshall Islands","Federated States of Micronesia"],
+        correct: 2,
+        a: "The Marshall Islands — Dr. Hilda Heine is the first woman ever elected President of any independent Micronesian country. She first served 2016–2020 and was re-elected in January 2024. A former education minister with a PhD in education, she has been a leading Pacific voice on climate change, women’s rights, and the ongoing legacy of U.S. nuclear testing in the Marshall Islands (67 tests, 1946–1958)." },
+      { value: 300,
+        answerImage: "images/politics_300_tonga_royals.jpg",
+        answerCredit: "Tongan royal family",
+        q: "This island nation is famous for giant decorated bark cloths called ngatu and a monarchy that continues today.",
+        choices: ["Hawaiʻi","French Polynesia","Tonga","Papua New Guinea"],
+        correct: 2,
+        a: "Tonga — the only Pacific country that was never formally colonised and the only remaining Polynesian kingdom. The Tu’i Tonga dynasty dates back over a thousand years; the current monarch, King Tupou VI, ascended in 2012. Ngatu is beaten from paper-mulberry bark, decorated with kupesi stencils and pigments, and can reach dozens of metres in length for royal and ceremonial occasions." },
+      { value: 400,
+        answerImage: "images/politics_400_micronesia.jpg",
+        answerCredit: "Freely Associated States: Palau · FSM · Marshall Islands",
+        q: "Name the three Pacific Island countries that have a Compact of Free Association Agreement with the U.S.",
+        choices: ["Kiribati, Tokelau, Tuvalu","Papua New Guinea, Solomon Islands, Vanuatu","Palau, FSM, Marshall Islands","CNMI, Australia, New Zealand"],
+        correct: 2,
+        a: "Palau, Federated States of Micronesia, and the Marshall Islands — the three ‘Freely Associated States.’ Under the Compacts of Free Association (COFA), the U.S. provides economic assistance and takes responsibility for defence; in exchange, citizens can live, work, and study in the U.S. without visas, and the U.S. military has exclusive access to their waters. All three Compacts were renewed for 20 more years in 2024." },
+      { value: 500,
+        answerImage: "images/politics_500_pif55.jpg",
+        answerCredit: "55th Pacific Islands Forum Leaders Meeting · Palau 2026",
+        q: "The Pacific Islands Forum Leaders meeting will be held August 30 – September 4, 2026. Which Pacific Island country will host?",
+        choices: ["Palau","Aotearoa New Zealand","Papua New Guinea","Nukulau"],
+        correct: 0,
+        a: "Palau — hosting the 55th Pacific Islands Forum Leaders Meeting in Koror under the theme ‘B.E.L.A.U. — Building Economies: Life. Action. Unity.’ The Pacific Islands Forum, founded in 1971, is the region’s premier political and economic policy body, bringing together 18 member states and territories to address shared priorities including climate change, deep-sea mining, and regional security." }
+    ]
+  },
+  {
+    title: "CPIS",
+    clues: [
+      { value: 100,
+        image: "images/cpis_100_anniversary.jpg",
+        credit: "CPIS 75th Anniversary — Continuity & Community at Mānoa",
+        imageOnReveal: true,
+        q: "How old is the Center for Pacific Islands Studies at UH Mānoa?",
+        choices: ["20 years","50 years","75 years","100 years"],
+        correct: 2,
+        a: "75 years — CPIS was established at UH Mānoa in 1950, making it the oldest Pacific Islands Studies program in the world. It coordinates undergraduate and graduate degrees in Pacific Islands Studies, hosts the annual Barbara B. Smith and Kenneth P. Emory lectures, publishes The Contemporary Pacific journal, and serves as an internationally recognized hub for Pacific scholarship." },
+      { value: 200,
+        image: "images/cpis_200_moore_hall.jpg",
+        credit: "Moore Hall, UH Mānoa",
+        imageOnReveal: true,
+        q: "Identify the building and floor on UH Mānoa campus where CPIS is located.",
+        choices: ["Saunders, 8th floor","Sakamaki, 2nd floor","Moore Hall, 2nd floor","Hamilton Library, 5th floor"],
+        correct: 2,
+        a: "Moore Hall, 2nd floor — CPIS offices are in Moore Hall 209 & 210. Moore Hall houses many of UH Mānoa’s language and area-studies programs. It is named after Charles B. Moore, and its central location on campus places CPIS at the heart of the School of Pacific and Asian Studies (SPAS)." },
+      { value: 300,
+        image: "images/cpis_300_students.jpg",
+        credit: "CPIS students at UH Mānoa",
+        hideCredit: true,
+        q: "Hawaiian Studies course code is HWST. What is the code for a Pacific Islands Studies course?",
+        choices: ["PIST","PACS","PACI","OCST"],
+        correct: 1,
+        a: "PACS — e.g. PACS 108 (Pacific Worlds), PACS 201 (Pacific Islands Today), and the graduate core sequence PACS 601–603. The CPIS MA program is the flagship graduate degree in Pacific Islands Studies in the U.S., drawing students from across the Pacific and around the world." },
+      { value: 400,
+        image: "images/cpis_400_mawyer.jpg",
+        credit: "Dr. Alexander Mawyer, CPIS Director",
+        imageOnReveal: true,
+        q: "Who is the current Director of the Center for Pacific Islands Studies?",
+        choices: ["Jennifer Mercado","Alexander Mawyer","Tarcisius Kabutaulaka","Tammy Tabe"],
+        correct: 1,
+        a: "Alexander Mawyer — CPIS Director and Acting DPIS Chair (Moore Hall 210). Dr. Mawyer is a socio-cultural anthropologist specializing in the Māʻohi world (French Polynesia), language and voice, ocean policy, and digital knowledge. He is a co-editor of The Contemporary Pacific and has led CPIS through its 75th-anniversary year." },
+      { value: 500,
+        image: "images/cpis_500_journal.jpg",
+        credit: "The Contemporary Pacific: An Interdisciplinary Journal",
+        imageOnReveal: true,
+        q: "What is the name of the journal published by CPIS?",
+        choices: ["Pacific Studies","The Journal of Pacific History","The Contemporary Pacific: An Interdisciplinary Journal","Oceania"],
+        correct: 2,
+        a: "The Contemporary Pacific: An Interdisciplinary Journal — published by University of Hawaiʻi Press since 1989. Now in its 30+ th volume, it publishes peer-reviewed research on the contemporary Pacific across politics, culture, environment, and the arts, and features an annual ‘Political Reviews’ section that is a standard reference for scholars, journalists, and policy makers working on the region." }
+    ]
+  },
+  {
+    title: "Country Flag",
+    clues: [
+      { value: 100,
+        image: "images/flags/pg.png",
+        credit: "Flag of Papua New Guinea",
+        hideCredit: true,
+        q: "This flag features a golden bird-of-paradise over a red field, paired with the Southern Cross on black. Which country is it?",
+        choices: ["Solomon Islands","Papua New Guinea","Vanuatu","Fiji"], correct:1,
+        a: "Papua New Guinea — the largest Pacific island nation, sharing the island of New Guinea with Indonesia’s West Papua. Independent from Australia in 1975; capital Port Moresby; population ~10 million. PNG is home to more than 800 living languages — over 10% of all the world’s languages — and unmatched biological and cultural diversity. The bird-of-paradise (kumul) is a national symbol." },
+      { value: 200,
+        image: "images/flags/fj.png",
+        credit: "Flag of Fiji",
+        hideCredit: true,
+        q: "This flag keeps the Union Jack in the corner alongside a shield bearing sugar cane, coconuts, and a dove of peace. Which country is it?",
+        choices: ["Tuvalu","Fiji","Cook Islands","New Zealand"], correct:1,
+        a: "Fiji — an archipelago of 300+ islands (around 110 inhabited). Capital Suva; independent from Britain in 1970; population ~930,000. Fijian society blends iTaukei (indigenous Fijian) traditions with a large Indo-Fijian community whose ancestors arrived as indentured labourers under the British colonial girmit system (1879–1916). Fiji hosts the University of the South Pacific and the Pacific Islands Forum Secretariat." },
+      { value: 300,
+        image: "images/flags/ws.png",
+        credit: "Flag of Samoa",
+        hideCredit: true,
+        q: "A red field with a blue canton holding the Southern Cross — but unlike its neighbors, all its stars are plain white, with no smaller fifth star. Which country is it?",
+        choices: ["Tonga","American Samoa","Samoa","Niue"], correct:2,
+        a: "Samoa (formerly Western Samoa) — capital Apia. On 1 January 1962, Samoa became the first Pacific Island nation of the 20th century to gain independence (from New Zealand). Population ~213,000. Samoan society is organized around the faʻa Sāmoa (Samoan way) — a system of matai (chiefs), aiga (extended family), and reciprocal obligation that shapes governance, land, ceremonies, and everyday life." },
+      { value: 400,
+        image: "images/flags/vu.png",
+        credit: "Flag of Vanuatu",
+        hideCredit: true,
+        q: "This flag's black Y-shape, echoing the layout of its islands, frames a boar's tusk encircling two crossed namele leaves. Which country is it?",
+        choices: ["Solomon Islands","New Caledonia","Vanuatu","Papua New Guinea"], correct:2,
+        a: "Vanuatu — formerly the New Hebrides. Capital Port Vila; independent from a unique joint British–French condominium in 1980, a movement led by Father Walter Lini. 80+ islands stretch north to south in a Y-shape, echoed on the flag. Over 100 indigenous languages are spoken by a population of ~320,000 — the highest linguistic density per capita on Earth. The boar’s tusk symbolises prosperity; the namele leaf, peace." },
+      { value: 500,
+        image: "images/flags/ki.png",
+        credit: "Flag of Kiribati",
+        hideCredit: true,
+        q: "A rising sun with 17 rays over a wavy blue-and-white ocean, topped by a golden frigatebird in flight. Which country is it?",
+        choices: ["Tuvalu","Nauru","Marshall Islands","Kiribati"], correct:3,
+        a: "Kiribati (pronounced ‘Kiribas’) — 33 low-lying atolls scattered across 3.5 million km² of ocean, straddling the equator and the International Date Line. Capital South Tarawa; independent from Britain in 1979. The 17 rays represent 16 Gilbert Islands plus Banaba; the frigatebird symbolises authority and freedom. Kiribati is among the countries most immediately threatened by sea-level rise and is a leading voice at the UN on climate justice." }
+    ]
+  }
+];
+
+/* ---- Final Jeopardy ---- */
+const FINAL = {
+  category: "Pacific Thought",
+  q: "This Tongan-Fijian writer and anthropologist wrote the 1993 essay \"Our Sea of Islands,\" reframing Oceania as \"a sea of islands\" rather than \"islands in a far sea.\"",
+  a: "Who is Epeli Hauʻofa? (1939–2009)"
+};
+
+/* ============================================================
+   State & DOM setup
+   ============================================================ */
+
+let activeClue = null;      // {catIndex, clueIndex}
+let awardedThisClue = false;
+
+function el(sel){ return document.querySelector(sel); }
+function els(sel){ return document.querySelectorAll(sel); }
+
+function renderScoreboard(){
+  const sb = el('#scoreboard');
+  sb.innerHTML = "";
+  TEAMS.forEach((t,i)=>{
+    const div = document.createElement('div');
+    div.className = 'team';
+    div.dataset.idx = i;
+    div.innerHTML = `
+      <div style="flex:1">
+        <input class="name" value="${t.name}" data-idx="${i}" />
+        <div class="score${t.score<0?' neg':''}" data-idx="${i}">${coconutScoreHTML(t.score)}</div>
+      </div>
+      <div class="team-buttons">
+        <button class="plus"  data-idx="${i}" data-op="plus">+</button>
+        <button class="minus" data-idx="${i}" data-op="minus">−</button>
+      </div>`;
+    sb.appendChild(div);
+  });
+  // wire name inputs
+  els('#scoreboard input.name').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      TEAMS[+e.target.dataset.idx].name = e.target.value;
+      persist();
+      updateAwardButtons();
+    });
+  });
+  // wire +/-
+  els('#scoreboard .team-buttons button').forEach(b=>{
+    b.addEventListener('click', e=>{
+      const i = +e.target.dataset.idx;
+      const op = e.target.dataset.op;
+      const v = activeClue ? BOARD[activeClue.catIndex].clues[activeClue.clueIndex].value : 100;
+      TEAMS[i].score += (op==='plus'? v : -v);
+      renderScoreboard();
+      persist();
+    });
+  });
+  updateAwardButtons();
+}
+
+function updateAwardButtons(){
+  for (let i=1;i<=4;i++){
+    const btn = el(`#btn-award-team-${i}`);
+    if (!btn) continue;
+    if (TEAMS[i-1]){
+      btn.textContent = `+ ${TEAMS[i-1].name}`;
+      btn.style.display = "";
+    } else {
+      btn.style.display = "none";
+    }
+  }
+}
+
+function renderBoard(){
+  const b = el('#board');
+  b.innerHTML = "";
+  // Row 1: categories
+  BOARD.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'cat';
+    div.textContent = c.title;
+    b.appendChild(div);
+  });
+  // Rows 2-6: tiles, arranged row-major so a value row is one row
+  // But we're using a 6-column grid; we lay them out column-first via ordering.
+  // Simpler: for each value 100..500, iterate categories and append tile.
+  const values = [100,200,300,400,500];
+  values.forEach((v, vi)=>{
+    BOARD.forEach((c, ci)=>{
+      const t = document.createElement('div');
+      t.className = 'tile';
+      t.dataset.cat = ci;
+      t.dataset.clue = vi;
+      t.innerHTML = coconutHTML(v);
+      const answered = (STATE.answered[ci] || {})[vi];
+      if (answered) t.classList.add('answered');
+      t.addEventListener('click', ()=>openClue(ci, vi));
+      b.appendChild(t);
+    });
+  });
+}
+
+function openClue(catIndex, clueIndex){
+  const cat = BOARD[catIndex];
+  const clue = cat.clues[clueIndex];
+  activeClue = { catIndex, clueIndex };
+  awardedThisClue = false;
+
+  el('#c-cat').textContent = cat.title;
+  el('#c-val').innerHTML = coconutHTML(clue.value);
+  if (clue.qHTML) { el('#c-q').innerHTML = clue.qHTML; } else { el('#c-q').textContent = clue.q; }
+
+  // Media / map
+  const media = el('#c-media');
+  media.innerHTML = "";
+  if (clue.isMap){
+    const wrap = document.createElement('div');
+    wrap.className = 'map-wrap';
+    wrap.innerHTML = `
+      <img src="assets/pacific_map_masked_web.jpg" alt="Pacific Ocean map" />
+      <svg class="marker" style="left:${clue.marker.x}%;top:${clue.marker.y}%" viewBox="0 0 24 24">
+        <path fill="#e74c3c" stroke="#fff" stroke-width="1.5" d="M12 2c-4.4 0-8 3.6-8 8 0 5.5 8 12 8 12s8-6.5 8-12c0-4.4-3.6-8-8-8z"/>
+        <circle cx="12" cy="10" r="3" fill="#fff"/>
+      </svg>`;
+    media.appendChild(wrap);
+  } else if (clue.image && !clue.imageOnReveal){
+    const cap = clue.hideCredit ? "" : (clue.credit||"");
+    media.innerHTML = `<img src="${clue.image}" alt=""><div class="credit">${cap}</div>`;
+  }
+
+  // Choices
+  const cbox = el('#c-choices');
+  cbox.innerHTML = "";
+  if (clue.choices && clue.choices.length){
+    const letters = ["A","B","C","D","E"];
+    clue.choices.forEach((choice, i)=>{
+      const d = document.createElement('div');
+      d.className = 'choice';
+      d.dataset.idx = i;
+      d.innerHTML = `<span class="letter">${letters[i]}</span><span>${choice}</span>`;
+      cbox.appendChild(d);
+    });
+  }
+
+  // Reset answer visibility
+  el('#c-ans').classList.remove('reveal');
+  el('#c-ans-text').textContent = clue.a || "";
+
+  // Show
+  el('#overlay').classList.add('open');
+}
+
+function revealAnswer(){
+  if (!activeClue) return;
+  const clue = BOARD[activeClue.catIndex].clues[activeClue.clueIndex];
+  el('#c-ans').classList.add('reveal');
+  el('#clue-panel').classList.add('answered');
+  if (clue.choices && typeof clue.correct === 'number'){
+    els('#c-choices .choice').forEach(c=>{
+      if (+c.dataset.idx === clue.correct) c.classList.add('correct');
+    });
+  }
+  // Swap or reveal image on answer if configured
+  const media = el('#c-media');
+  if (clue.answerImage){
+    const cap = clue.answerCredit || "";
+    media.innerHTML = `<img src="${clue.answerImage}" alt=""><div class="credit">${cap}</div>`;
+  } else if (clue.image && clue.imageOnReveal){
+    const cap = clue.credit || "";
+    media.innerHTML = `<img src="${clue.image}" alt=""><div class="credit">${cap}</div>`;
+  }
+}
+
+function markAnswered(){
+  if (!activeClue) return;
+  STATE.answered[activeClue.catIndex] = STATE.answered[activeClue.catIndex] || {};
+  STATE.answered[activeClue.catIndex][activeClue.clueIndex] = true;
+  persist();
+  renderBoard();
+  closeClue();
+}
+function closeClue(){
+  el('#overlay').classList.remove('open');
+  el('#clue-panel').classList.remove('answered');
+  activeClue = null;
+}
+
+function awardTeam(idx){
+  if (!activeClue) return;
+  const v = BOARD[activeClue.catIndex].clues[activeClue.clueIndex].value;
+  TEAMS[idx].score += v;
+  awardedThisClue = true;
+  renderScoreboard();
+  persist();
+  markAnswered();
+}
+
+/* ---- Final Jeopardy ---- */
+function showFinal(){
+  el('#fj-clue').textContent = FINAL.q;
+  el('#fj-answer').textContent = FINAL.a;
+  el('#fj-answer').classList.remove('open');
+  el('#final-jeopardy').classList.add('open');
+  el('#board').classList.add('hidden');
+}
+function hideFinal(){
+  el('#final-jeopardy').classList.remove('open');
+  el('#board').classList.remove('hidden');
+}
+
+/* ---- Persistence (in-memory + optional localStorage) ---- */
+const STATE_KEY = 'cpis-jeopardy-v1';
+const STATE = { answered: {} };
+function hasLS(){
+  try { return typeof localStorage !== 'undefined' && localStorage && (localStorage.setItem('__t','1'), localStorage.removeItem('__t'), true); }
+  catch(e){ return false; }
+}
+const LS_OK = hasLS();
+function persist(){
+  if (!LS_OK) return;
+  try{
+    localStorage.setItem(STATE_KEY, JSON.stringify({
+      answered: STATE.answered,
+      teams: TEAMS.map(t=>({name:t.name,score:t.score}))
+    }));
+  }catch(e){}
+}
+function restore(){
+  if (!LS_OK) return;
+  try{
+    const raw = localStorage.getItem(STATE_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    if (d.answered) STATE.answered = d.answered;
+    if (Array.isArray(d.teams)){
+      d.teams.forEach((t,i)=>{ if (TEAMS[i]){ TEAMS[i].name=t.name; TEAMS[i].score=t.score; } });
+    }
+  }catch(e){}
+}
+function resetGame(){
+  if (!confirm("Reset the game? All scores and answered tiles will be cleared.")) return;
+  STATE.answered = {};
+  TEAMS.forEach(t=>{ t.score = 0; });
+  if (LS_OK){ try{ localStorage.removeItem(STATE_KEY); }catch(e){} }
+  renderScoreboard();
+  renderBoard();
+}
+
+/* ---- Wire up ---- */
+document.addEventListener('DOMContentLoaded', ()=>{
+  restore();
+  renderScoreboard();
+  renderBoard();
+
+  el('#btn-close').addEventListener('click', closeClue);
+  el('#btn-reveal').addEventListener('click', revealAnswer);
+  el('#btn-mark-done').addEventListener('click', markAnswered);
+  for (let i=1;i<=4;i++){
+    el(`#btn-award-team-${i}`).addEventListener('click', ()=>awardTeam(i-1));
+  }
+  el('#overlay').addEventListener('click', (e)=>{
+    if (e.target.id === 'overlay') closeClue();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape'){
+      if (el('#overlay').classList.contains('open')) closeClue();
+      else if (el('#final-jeopardy').classList.contains('open')) hideFinal();
+    }
+    if (e.key === ' ' && el('#overlay').classList.contains('open')){
+      e.preventDefault();
+      revealAnswer();
+    }
+  });
+
+  el('#btn-final').addEventListener('click', showFinal);
+  el('#fj-back').addEventListener('click', hideFinal);
+  el('#fj-reveal').addEventListener('click', ()=>{
+    el('#fj-answer').classList.add('open');
+  });
+  el('#btn-reset').addEventListener('click', resetGame);
+
+  // Presentation Mode: toggle body.present, persist to localStorage, keyboard shortcut P
+  const PRESENT_KEY = 'pis-jeopardy-present';
+  function applyPresent(on){
+    document.body.classList.toggle('present', !!on);
+    el('#btn-present').classList.toggle('active', !!on);
+    el('#btn-present').setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  let presentOn = false;
+  if (LS_OK){
+    try { presentOn = localStorage.getItem(PRESENT_KEY) === '1'; } catch(e){}
+  }
+  applyPresent(presentOn);
+  el('#btn-present').addEventListener('click', ()=>{
+    presentOn = !presentOn;
+    applyPresent(presentOn);
+    if (LS_OK){ try{ localStorage.setItem(PRESENT_KEY, presentOn ? '1' : '0'); }catch(e){} }
+  });
+  document.addEventListener('keydown', (e)=>{
+    // Only toggle on plain P (no modifiers, not in a text input)
+    if ((e.key === 'p' || e.key === 'P') && !e.ctrlKey && !e.metaKey && !e.altKey){
+      const tag = (document.activeElement && document.activeElement.tagName) || '';
+      if (tag !== 'INPUT' && tag !== 'TEXTAREA'){
+        el('#btn-present').click();
+      }
+    }
+  });
+});
+</script>
+</body>
+</html>

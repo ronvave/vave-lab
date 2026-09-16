@@ -1,0 +1,53 @@
+name: Fix scholar review geography dropdown visibility
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/patch-scholar-other-countries-20260912.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fix dropdown clipping inside publication cards
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('s.html')
+          s = p.read_text(encoding='utf-8')
+
+          replacements = {
+            ".scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:hidden!important;z-index:20!important;box-sizing:border-box!important}":
+            ".scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important;box-sizing:border-box!important}",
+
+            ".scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:hidden!important;box-sizing:border-box!important}":
+            ".scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important;box-sizing:border-box!important}",
+
+            "details.scholar-geo-menu{position:relative!important;overflow:hidden!important;width:100%!important;box-sizing:border-box!important}":
+            "details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important;box-sizing:border-box!important}"
+          }
+
+          changed = 0
+          for old, new in replacements.items():
+              if old in s:
+                  s = s.replace(old, new, 1)
+                  changed += 1
+
+          if changed != 3:
+              raise SystemExit(f'Expected 3 clipping replacements, made {changed}')
+
+          p.write_text(s, encoding='utf-8')
+          PY
+      - name: Commit and push
+        run: |
+          git config user.name 'Vave Lab automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add s.html
+          git diff --cached --quiet && exit 0
+          git commit -m 'Fix scholar geography dropdown visibility inside cards'
+          git push

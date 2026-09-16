@@ -1,0 +1,59 @@
+name: Fix publication geography Apps Script escaping
+
+on:
+  push:
+    paths:
+      - '.github/workflows/fix-publication-geography-appsscript-escaping-20260913.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Convert accidentally literal escape sequences to real Apps Script source
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('apps-script/master-writeback.gs')
+          s = p.read_text(encoding='utf-8')
+          marker = r'\n\n// ---------------- PUBLICATION GEOGRAPHY REVIEW QUEUE ----------------\n'
+          idx = s.find(marker)
+          if idx < 0:
+              # Already repaired is safe/idempotent.
+              if '// ---------------- PUBLICATION GEOGRAPHY REVIEW QUEUE ----------------' in s:
+                  print('Queue block already uses real newlines; nothing to do.')
+                  raise SystemExit(0)
+              raise SystemExit('Escaped geography queue marker not found; refusing unsafe patch')
+
+          head = s[:idx]
+          block = s[idx:]
+          # The previous installer accidentally wrote the Python raw-string escapes
+          # literally into the .gs file. Convert only the appended queue block:
+          #   literal \n -> actual newline
+          #   doubled backslashes -> normal JS/regex backslashes
+          block = block.replace(r'\n', '\n')
+          block = block.replace('\\\\', '\\')
+          s = head + block
+
+          # Guard against the exact failure seen in Apps Script.
+          if r'\nfunction geoSs_' in s or r'\nvar GEO_SUBMISSION_SHEET' in s:
+              raise SystemExit('Literal newline escapes remain in queue block')
+
+          p.write_text(s, encoding='utf-8')
+
+      - name: Commit repaired Apps Script source
+        run: |
+          git config user.name "ChatGPT"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps-script/master-writeback.gs
+          if git diff --cached --quiet; then
+            echo "No changes required"
+          else
+            git commit -m "Fix Apps Script geography queue escaping"
+            git push
+          fi

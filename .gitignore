@@ -1,0 +1,134 @@
+# Plaintext database exports — never commit. Only the .enc versions ship.
+data/fiji-provinces.geojson
+data/fiji-provinces.json
+data/itaukei-graduate-studies.json
+data/itaukei-zotero-snapshot.json
+data/last-sync.json
+data/scholar-insights.json
+data/scholar-profiles.json
+data/workplace-coords.json
+data/world-universities.json
+data/uni-country-overrides.json
+data/auto-resolved.json
+# Master-file plaintext snapshots (only .enc versions are committed).
+data/itaukei-master-scholars.json
+data/itaukei-master-publications.json
+data/itaukei-master-authorship.json
+data/itaukei-master-grad-degrees.json
+data/itaukei-master-mobility.json
+data/itaukei-master-geography.json
+data/itaukei-master-aggregates.json
+data/itaukei-master-worldpoints.json
+data/itaukei-master-researcher-authorship.json
+data/last-master-sync.json
+# Panel C1 body-composition plaintext (encrypted .enc is committed).
+data/body-composition.json
+data/body-composition-master.json
+
+# Tongan Scholar Database — plaintext database exports — never commit.
+# Only the .enc versions ship. Mirrors the iTaukei block above; encrypted
+# with a separate Tongan-specific passcode (see TONGAN-DASHBOARD-BUILD-NOTES.md).
+data/tonga-districts.geojson
+data/tonga-districts.json
+data/tongan-graduate-studies.json
+data/tongan-zotero-snapshot.json
+data/tongan-last-sync.json
+data/tongan-scholar-insights.json
+data/tongan-scholar-profiles.json
+data/tongan-body-composition.json
+data/tongan-body-composition-master.json
+# Tongan Master-file plaintext snapshots (only .enc versions are committed).
+data/tongan-master-scholars.json
+data/tongan-master-publications.json
+data/tongan-master-authorship.json
+data/tongan-master-researcher-authorship.json
+data/tongan-master-grad-degrees.json
+data/tongan-master-mobility.json
+data/tongan-master-geography.json
+data/tongan-master-aggregates.json
+data/tongan-master-worldpoints.json
+data/tongan-last-master-sync.json
+data/tongan-scholar-enrichment.json
+data/tongan-scholar-insights-master.json
+# Tongan-prefixed copies of otherwise-shared reference/lookup data —
+# re-encrypted with the Tongan passcode since tongan-demo-gate.js only
+# knows that passcode (cannot decrypt the shared iTaukei-encrypted files).
+data/tongan-world-universities.json
+data/tongan-workplace-coords.json
+data/tongan-uni-country-overrides.json
+data/tongan-auto-resolved.json
+
+# Solomon Islands Scholarly Database plaintext data (sister of the Tongan
+# and iTaukei sections above). Only the .enc ciphertext is committed; the
+# plaintext .json is produced locally/in CI by
+# scripts/solomon_master_file_transformer.py and re-encrypted with
+# VAVELAB_SOLOMON_PASSCODE via scripts/solomon_encrypt_data.py. NEVER
+# touches data/itaukei-* or data/tongan-* files.
+data/solomon-master-scholars.json
+data/solomon-master-publications.json
+data/solomon-master-authorship.json
+data/solomon-master-researcher-authorship.json
+data/solomon-master-grad-degrees.json
+data/solomon-master-mobility.json
+data/solomon-master-geography.json
+data/solomon-master-geography-coordinates.json
+data/solomon-master-aggregates.json
+data/solomon-master-worldpoints.json
+data/solomon-master-institutions.json
+data/solomon-master-researchers.json
+data/solomon-master-awards.json
+data/solomon-master-funding.json
+data/solomon-master-positions.json
+data/solomon-last-master-sync.json
+data/solomon-body-composition.json
+data/solomon-body-composition-master.json
+data/solomon-zotero-snapshot.json
+data/solomon-scholar-profiles.json
+data/solomon-last-sync.json
+data/solomon-graduate-studies.json
+data/solomon-scholar-insights.json
+data/solomon-scholar-insights-master.json
+data/solomon-scholar-enrichment.json
+data/solomon-workplace-coords.json
+data/solomon-uni-country-overrides.json
+data/solomon-auto-resolved.json
+data/solomon-islands-provinces.json
+data/solomon-islands-provinces.geojson
+data/solomon-world-universities.json
+data/solomon-revoked-demos.json
+
+# Local artefacts
+.DS_Store
+__pycache__/
+*.pyc
+.env
+.venv/
+node_modules/
+scripts/add_grad_only_scholars_audit.txt
+
+# ─── Samoa Scholar Database (plaintext data files) ───────────────────────
+# All .json plaintext lives locally only; only the .enc form is committed.
+data/samoa-districts.geojson
+data/samoa-world-universities.json
+data/samoa-workplace-coords.json
+data/samoa-uni-country-overrides.json
+data/samoa-auto-resolved.json
+data/samoa-last-master-sync.json
+data/samoa-scholar-insights.json
+data/samoa-master-scholars.json
+data/samoa-master-part-indigenous.json
+data/samoa-master-publications.json
+data/samoa-master-authorship.json
+data/samoa-master-researcher-authorship.json
+data/samoa-master-grad-degrees.json
+data/samoa-master-mobility.json
+data/samoa-master-geography.json
+data/samoa-master-geography-coordinates.json
+data/samoa-master-aggregates.json
+data/samoa-master-worldpoints.json
+data/samoa-body-composition.json
+data/samoa-body-composition-master.json
+data/samoa-revoked-demos.json
+
+# Samoa deploy-time secret notes must NEVER be committed
+SECRETS-NOT-COMMITTED.md

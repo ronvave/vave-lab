@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Pre-commit guardrail: refresh `?v=<sha>` cache-bust hashes on every
+# JS/CSS reference in the HTML files whenever a staged change touches
+# a `js/*.js` or `css/*.css` file. The script is idempotent, so it is
+# safe to run on commits that only touch HTML/data/scripts too — it
+# will simply be a no-op.
+#
+# Why: GitHub Pages serves long-lived Cache-Control on our JS/CSS.
+# When the HTML is versioned but the JS is not, returning visitors
+# render new markup against stale JS. That mismatch caused the
+# July 2026 "Fiji click zooms to Sapporo" incident. See
+# scripts/bust_cache.py for the full rationale.
+#
+# Repo-tracked so it survives fresh clones once
+# core.hooksPath is pointed at .githooks (see scripts/install_hooks.sh).
+set -euo pipefail
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+# Only re-hash when the staged diff actually touches HTML/JS/CSS. This
+# keeps commits that only touch data/, docs/, or scripts/ fast.
+staged="$(git diff --cached --name-only --diff-filter=ACMR || true)"
+if ! echo "$staged" | grep -qE '\.(html|js|css)$'; then
+  exit 0
+fi
+
+python3 scripts/bust_cache.py
+
+# Re-stage any HTML that the script updated so the fresh hashes go
+# into THIS commit, not the next one.
+changed_html="$(git diff --name-only -- '*.html' || true)"
+if [ -n "$changed_html" ]; then
+  echo "$changed_html" | xargs git add
+  echo "[pre-commit] cache-bust hashes refreshed and re-staged."
+fi

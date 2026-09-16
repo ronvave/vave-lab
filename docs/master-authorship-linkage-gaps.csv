@@ -1,0 +1,350 @@
+Scholar ID,Scholar Name,Family Name,Given Names,Reason,Actual Authorship rows,Actual First-Author rows,Master Scholars.Linked Publication Count,Master Scholars.First-Author Publication Count,Alive/Deceased,PG Status,Roster Tier,Primary Discipline
+ITK-S0001,"Soko, Adi Vasiti Radinivuna",Soko,Adi Vasiti Radinivuna,sparse-authorship,1,0,1,0,Alive / current record,,Keep — iTaukei,
+ITK-S0010,"Bale, Marika (Marika Baleidelabaci Tamanikaigavo)",Bale,Marika (Marika Baleidelabaci Tamanikaigavo),sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0012,"Baleimakutu, Malakai Koroilagilagi",Baleimakutu,Malakai Koroilagilagi,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0014,"Baleivolivoli, Livai",Baleivolivoli,Livai,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0016,"Balenaivalu, Siliva",Balenaivalu,Siliva,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Education
+ITK-S0018,"Bauleka, Pauliasi",Bauleka,Pauliasi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0026,"Butukoro, Aisea",Butukoro,Aisea,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0027,"Cabealawa, Saimoni",Cabealawa,Saimoni,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0029,"Cagi, Jone",Cagi,Jone,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0031,"Cagivanua, Ulamila Monica",Cagivanua,Ulamila Monica,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,Pacific Studies / Political Science
+ITK-S0033,"Cakau, Marica",Cakau,Marica,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0034,"Cama, Ilai",Cama,Ilai,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0035,"Cavuilati, Elizabeth Rowina",Cavuilati,Elizabeth Rowina,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0036,"Cawanibuka, Lasarusa Turaga",Cawanibuka,Lasarusa Turaga,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0037,"Cawanikawai, Sikeli",Cawanikawai,Sikeli,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0039,"Cokanauto, Susana",Cokanauto,Susana,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0044,"Dalituicama, Lusiana Ranadi",Dalituicama,Lusiana Ranadi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0045,"Dau, Litiana Naivatu",Dau,Litiana Naivatu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0050,"Dewa, Fereti Seru",Dewa,Fereti Seru,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Mathematics Education
+ITK-S0051,"Draunidalo, Adi Elenoa (Titokovesi)",Draunidalo,Adi Elenoa (Titokovesi),no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Tourism & Hospitality Management / Agritourism
+ITK-S0052,"Driu, Sereana",Driu,Sereana,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,Information Technology / Business Analysis / Land Management Systems
+ITK-S0053,"Duaibe, Katalaine",Duaibe,Katalaine,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Disaster Risk Management / Physical Geography / Humanitarian Affairs
+ITK-S0054,"Duaibe, Semi Tikilivi",Duaibe,Semi Tikilivi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Geography / Sustainable Forest Management
+ITK-S0060,"Gaunavinaka, Mereoni",Gaunavinaka,Mereoni,sparse-authorship,1,1,1,1,Alive / current record,,New research / reconciliation,Health Science / Medical Imaging / Radiology
+ITK-S0063,"Gonelevu, Arieta Meru Lutunauca",Gonelevu,Arieta Meru Lutunauca,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Renewable Energy / Electrical Engineering / SIDS Energy Transition
+ITK-S0065,"Gonewai, Joe",Gonewai,Joe,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0066,"Gucake, Roko Netani",Gucake,Roko Netani,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Environmental Management / Indigenous Knowledge
+ITK-S0071,"Kawa, Saiasi Rokona",Kawa,Saiasi Rokona,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Theology / Church Ministry / Pastoral Leadership
+ITK-S0073,"Kedrayate, Vakaoca",Kedrayate,Vakaoca,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,International Law / Security / Strategic Studies / Diplomacy
+ITK-S0074,"Kitolelei, Ana Akata",Kitolelei,Ana Akata,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Linguistics / Fijian Language / Student Learning Support
+ITK-S0077,"Koroi, Iliesa",Koroi,Iliesa,sparse-authorship,1,1,4,2,Alive / current record,PhD in progress,Core 265 roster,Biology / Forestry / Vegetation Ecology
+ITK-S0078,"Koroi, Sefanaia",Koroi,Sefanaia,sparse-authorship,1,1,1,1,Alive / current record,Master's,Core 265 roster,Education / Curriculum Development / Physical Education
+ITK-S0079,"Koroi, Temalesi",Koroi,Temalesi,sparse-authorship,1,1,3,1,Alive / current record,,Core 265 roster,Aquaculture / Fisheries / Aquatic Animal Nutrition
+ITK-S0080,"Koroitamana, Emosi",Koroitamana,Emosi,no-authorship-rows,0,0,2,0,Alive / current record,,New research / reconciliation,Mechanical Engineering / Maintenance Engineering / Fluid Machinery
+ITK-S0081,"Korovavala, Lesikimacuata",Korovavala,Lesikimacuata,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,Politics / Defence & Security / International Relations
+ITK-S0083,"Korovulavula, Jovesa",Korovulavula,Jovesa,no-authorship-rows,0,0,1,0,Alive / current record,,New research / reconciliation,
+ITK-S0084,"Korovusere, Ro Viliama",Korovusere,Ro Viliama,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Medicine / Clinical Medicine
+ITK-S0085,"Koto, Nemaia Waqanivalu",Koto,Nemaia Waqanivalu,sparse-authorship,1,1,2,2,Alive / current record,,Core 265 roster,Geographic Information Systems / Spatial Planning / Hydrology
+ITK-S0086,"Kuilamu, Marika",Kuilamu,Marika,sparse-authorship,1,1,6,1,Alive / current record,,Core 265 roster,Tourism Studies / Sustainable Tourism / Tourism Carrying Capacity
+ITK-S0087,"Kunabuli, Paula Saraniogo",Kunabuli,Paula Saraniogo,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,Education / Educational History / Immigrant Education
+ITK-S0088,"Kuridrani, Litiana N Tuilaselase",Kuridrani,Litiana N Tuilaselase,sparse-authorship,1,1,3,2,Deceased — February 2021,,Existing project tracker,International Public Health / Medical Anthropology / Sociology / iTaukei Studies
+ITK-S0089,"Kuru, Etuate M.",Kuru,Etuate M.,no-authorship-rows,0,0,2,2,Alive / current record,,Core 265 roster,Theology / Christian Baptism / Fijian Context
+ITK-S0090,"Kuruyawa, Salote",Kuruyawa,Salote,sparse-authorship,1,1,2,1,Alive / current record,,Core 265 roster,Gender Studies / Traditional Knowledge / Fisheries
+ITK-S0093,"Lako, Jone Fuala",Lako,Jone Fuala,sparse-authorship,1,1,10,2,Alive / current record,,Core 265 roster,Human Resource Management / Employment Relations / Industrial Relations
+ITK-S0094,"Lalabalavu, Ratu Tevita M. T.",Lalabalavu,Ratu Tevita M. T.,no-authorship-rows,0,0,0,0,Alive / current record,,,Medicine / Clinical Practice
+ITK-S0095,"Latianara, Miriama",Latianara,Miriama,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0097,"Leba, Merewati",Leba,Merewati,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0098,"Lesi, Viola Talemailakeba",Lesi,Viola Talemailakeba,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0099,"Lesuma, Misaele D.",Lesuma,Misaele D.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0100,"Levula, Andrew Vakarau",Levula,Andrew Vakarau,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0101,"Lewatoro, Verenaisi Rokowaqe",Lewatoro,Verenaisi Rokowaqe,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,Agriculture
+ITK-S0104,"Likuseniuwa, Kalara Elisabeta",Likuseniuwa,Kalara Elisabeta,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0105,"Loga, Patricia S.",Loga,Patricia S.,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,Management / Public Administration / Public Policy
+ITK-S0106,"Loganimoce, Isimeli C",Loganimoce,Isimeli C,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0107,"Logavatu, Aloesi Lewatu",Logavatu,Aloesi Lewatu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0108,"Loki, Ratu Lutumailagi Israel Vuniyaca",Loki,Ratu Lutumailagi Israel Vuniyaca,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0109,"Lumelume, Sereima",Lumelume,Sereima,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0110,"Luvu, Joeli T.",Luvu,Joeli T.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0111,"Macanawai, Setareki S.",Macanawai,Setareki S.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0115,"Manoa, Pio Emosi",Manoa,Pio Emosi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0116,"Manulevu, Unaisi Nawalowalo",Manulevu,Unaisi Nawalowalo,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0117,"Matadradra-Dolavale, Anawaite Vuevata",Matadradra-Dolavale,Anawaite Vuevata,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0118,"Mataitini, Adi Losevati",Mataitini,Adi Losevati,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0119,"Mataitoga, Asinate Meke",Mataitoga,Asinate Meke,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0120,"Mataitoga, Setoki Mocebalavu",Mataitoga,Setoki Mocebalavu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0121,"Matakiviti, Kalisiana Marama",Matakiviti,Kalisiana Marama,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,
+ITK-S0123,"Mateiviti-Tulavu, Eseta K",Mateiviti-Tulavu,Eseta K,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0124,"Mateiwai, Josaia Betomakita",Mateiwai,Josaia Betomakita,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0129,"Movono, Make Liku",Movono,Make Liku,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,Marine Science / Marine Ecology / Ecosystem-based Adaptation
+ITK-S0130,"Musudroka, Maria Talei",Musudroka,Maria Talei,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0131,"Nabalarua, Adi Eci",Nabalarua,Adi Eci,no-authorship-rows,0,0,0,0,Alive / current record,,Existing project tracker,
+ITK-S0133,"Naca, Ilaisa",Naca,Ilaisa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0135,"Naikatini, Alifereti Neisava",Naikatini,Alifereti Neisava,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0136,"Nailatikau, Merewalesi V.",Nailatikau,Merewalesi V.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Public Policy / Development Studies
+ITK-S0137,"Nailevu, Losalini",Nailevu,Losalini,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0138,"Nainoca, Fulori Vakalutusau",Nainoca,Fulori Vakalutusau,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0140,"Naioko, Alifereti",Naioko,Alifereti,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0141,"Naiorosui, Romeo Wainimala",Naiorosui,Romeo Wainimala,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0145,"Naivalu, Misieli Naulivou",Naivalu,Misieli Naulivou,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0147,"Naiyaga, Sokoveti",Naiyaga,Sokoveti,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0148,"Nakalevu, Taito",Nakalevu,Taito,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0149,"Nakubuwai, Pio",Nakubuwai,Pio,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0150,"Namosimalua, Veniana Qica",Namosimalua,Veniana Qica,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0151,"Namudu, Merekeleni Talei",Namudu,Merekeleni Talei,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0154,"Nasalo, Salote S.",Nasalo,Salote S.,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0155,"Nasaroa, Esala",Nasaroa,Esala,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0156,"Natuaniyavula, Amele Kurisese",Natuaniyavula,Amele Kurisese,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0157,"Navakamocea, Jone V.",Navakamocea,Jone V.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0158,"Navila, Vilimaina Molidrau",Navila,Vilimaina Molidrau,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0159,"Navoti, Sainivalati S.",Navoti,Sainivalati S.,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0160,"Nawaqaliva, Kesaia Tawa",Nawaqaliva,Kesaia Tawa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Nursing
+ITK-S0161,"Nawele, Kelera",Nawele,Kelera,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0162,"Nayacakalou, Rusiate Raibosa",Nayacakalou,Rusiate Raibosa,no-authorship-rows,0,0,0,0,Deceased,,Core 265 roster,Social Anthropology
+ITK-S0163,"Nayacalevu, Romulo",Nayacalevu,Romulo,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0165,"Oli, Kelera Salusalunitoba",Oli,Kelera Salusalunitoba,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0166,"Oli, Miliakere Ravouvu",Oli,Miliakere Ravouvu,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0171,"Qabale, Ilisapeci Dikelerayani",Qabale,Ilisapeci Dikelerayani,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,Education / Teacher Education / Assessment
+ITK-S0172,"Qalo, Ropate Rakuita",Qalo,Ropate Rakuita,sparse-authorship,1,1,1,1,Deceased,,Core 265 roster,
+ITK-S0173,"Qalubau, Setoki",Qalubau,Setoki,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0174,"Qasenivalu, Mosese Tavaga",Qasenivalu,Mosese Tavaga,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0175,"Qereqeretabua, Sakiusa",Qereqeretabua,Sakiusa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0176,"Qiolevu, Jokapeci Wea Qalo",Qiolevu,Jokapeci Wea Qalo,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0177,"Qionivoka, Joeli (S.)",Qionivoka,Joeli (S.),no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0179,"Rabe, Nanise",Rabe,Nanise,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0180,"Rabo, Karalaini",Rabo,Karalaini,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0182,"Rabuku, Adimaitoga William",Rabuku,Adimaitoga William,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Meteorology / Environmental Science
+ITK-S0183,"Ragogo, Matelita",Ragogo,Matelita,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0185,"Raiula, Taraivini Nailigamasei",Raiula,Taraivini Nailigamasei,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0186,"Raiyawa, Tomasi Vasulailai",Raiyawa,Tomasi Vasulailai,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0187,"Ramacake, Soro",Ramacake,Soro,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0188,"Rarokoliwa, Elina",Rarokoliwa,Elina,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0190,"Ratawa, Taniela",Ratawa,Taniela,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0192,"Ratubulewa, Naivalucava Vilikesa",Ratubulewa,Naivalucava Vilikesa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0193,"Ratumaitavuki, Maciu",Ratumaitavuki,Maciu,sparse-authorship,1,1,1,1,Deceased,,Core 265 roster,
+ITK-S0194,"Ratuniata, Rusiate Lavatani",Ratuniata,Rusiate Lavatani,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0196,"Ratuvakacereivalu, Joji",Ratuvakacereivalu,Joji,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0197,"Rauicava, Watisoni (Watson)",Rauicava,Watisoni (Watson),no-authorship-rows,0,0,0,0,Deceased,,Core 265 roster,
+ITK-S0198,"Ravatu, Semiti Gaunavinaka",Ravatu,Semiti Gaunavinaka,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Library and Information Science
+ITK-S0201,"Ravulo-Leweniqila, Losalini Tuirabe",Ravulo-Leweniqila,Losalini Tuirabe,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0205,"Rika, Pulotu Lewaca Vanua",Rika,Pulotu Lewaca Vanua,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0206,"Rika-Hicks, Sainiana Senikau",Rika-Hicks,Sainiana Senikau,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Education
+ITK-S0207,"Rokocakau, Samuela",Rokocakau,Samuela,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Electrical Engineering / Power Electronics
+ITK-S0208,"Rokodolo, Amalaini",Rokodolo,Amalaini,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0211,"Rokomatu, Isikeli",Rokomatu,Isikeli,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0213,"Rotuivaqali, Masilina Tuiloa",Rotuivaqali,Masilina Tuiloa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0215,"Rova, Eremasi C.",Rova,Eremasi C.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0216,"Saganamua, Litia",Saganamua,Litia,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0218,"Sale-Mario, Emma",Sale-Mario,Emma,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0219,"Samisoni, Mere Tuisalato",Samisoni,Mere Tuisalato,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0220,"Samulala, Iliesa",Samulala,Iliesa,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0223,"Sedra, Jolami Lasawa",Sedra,Jolami Lasawa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0224,"Sekinairai, Alumita Talei",Sekinairai,Alumita Talei,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,Core 265 roster,Oceans Governance / Diplomacy
+ITK-S0225,"Senibulu, Luisa Matanisiga",Senibulu,Luisa Matanisiga,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0227,"Senimoli, Mesulame",Senimoli,Mesulame,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0228,"Sepeti, Adriu",Sepeti,Adriu,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,Transfusion Medicine
+ITK-S0230,"Siga, Amelia",Siga,Amelia,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0231,"Sigadrodro, Seniana",Sigadrodro,Seniana,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0232,"Silatolu, Anasaini Moala (Ana Moala Silatolu)",Silatolu,Anasaini Moala (Ana Moala Silatolu),sparse-authorship,1,0,1,0,Alive / current record,,Core 265 roster,Public Health
+ITK-S0234,"Simpson, Samanunu",Simpson,Samanunu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0235,"Sivo, Loraini Ceva",Sivo,Loraini Ceva,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0236,"Sukanaivalu, Matereti Sarasau",Sukanaivalu,Matereti Sarasau,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Education / Social Research
+ITK-S0237,"Sukanaivalu, Netani",Sukanaivalu,Netani,no-authorship-rows,0,0,0,0,Deceased,,Core 265 roster,
+ITK-S0238,"Susu, Ilimeleki K",Susu,Ilimeleki K,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0239,"Tabakei, Losalini",Tabakei,Losalini,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0240,"Tabilai, Wame Jackson Peni",Tabilai,Wame Jackson Peni,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0241,"Tabua, George V.",Tabua,George V.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0242,"Tabua, Katafono Mereia",Tabua,Katafono Mereia,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0243,"Tabuaciri, Poasa",Tabuaciri,Poasa,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,Animal Science
+ITK-S0245,"Tabuya, Jone Duikoro",Tabuya,Jone Duikoro,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0246,"Tadulala, Malakai Tuinasau",Tadulala,Malakai Tuinasau,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,
+ITK-S0247,"Taga, Raijeli",Taga,Raijeli,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Geoscience / Public Sector Leadership
+ITK-S0248,"Tagi, Epeli Josateki",Tagi,Epeli Josateki,sparse-authorship,1,1,1,1,Deceased,,Core 265 roster,
+ITK-S0249,"Tagicakibau, Ema M. Golea",Tagicakibau,Ema M. Golea,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0250,"Tagicakibau, Sera Salavou Nailagovesi",Tagicakibau,Sera Salavou Nailagovesi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0252,"Tagilala, Lolohea",Tagilala,Lolohea,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0254,"Tagivakatini Jnr, Serupepeli",Tagivakatini Jnr,Serupepeli,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0255,"Tagivakatini, Sereana Railoa",Tagivakatini,Sereana Railoa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0256,"Tamani, Eroni",Tamani,Eroni,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0257,"Tamani, Ledua",Tamani,Ledua,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0258,"Tamanitoakula, Epi",Tamanitoakula,Epi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0260,"Tamata, Ulukalesi B.",Tamata,Ulukalesi B.,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0261,"Tanoa, Samuela",Tanoa,Samuela,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0263,"Tausere, Nemani",Tausere,Nemani,sparse-authorship,1,1,1,1,Deceased,,Existing project tracker,Education Administration / Educational Leadership
+ITK-S0264,"Tavo, Maraia Sera Ratubalavu",Tavo,Maraia Sera Ratubalavu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0268,"Tawake, Mereseini",Tawake,Mereseini,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0269,"Tawaketini, Janet",Tawaketini,Janet,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0270,"Tiko, Lavinia Sauleca Tausere",Tiko,Lavinia Sauleca Tausere,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Education
+ITK-S0273,"Titoko, Judith",Titoko,Judith,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0274,"Titoko, Richard William",Titoko,Richard William,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0275,"Tokalauvere, Lanieta V.",Tokalauvere,Lanieta V.,sparse-authorship,1,0,1,0,Alive / current record,PhD in progress,Existing project tracker,
+ITK-S0276,"Tokalauvere, Maikeli",Tokalauvere,Maikeli,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0277,"Tokasaya, Pauliasi",Tokasaya,Pauliasi,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0278,"Tokavou, Noa",Tokavou,Noa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0279,"Toko, Apete",Toko,Apete,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0280,"Tora, Grace Taito",Tora,Grace Taito,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,Teacher Education / Language Education / Pacific Education
+ITK-S0281,"Tora, Mere Sau",Tora,Mere Sau,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0283,"Tuibeqa, Asaeli Tamanitoakula",Tuibeqa,Asaeli Tamanitoakula,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Development Economics / Entrepreneurship
+ITK-S0284,"Tuidrakulu, Litiana Maituriwai",Tuidrakulu,Litiana Maituriwai,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0285,"Tuikenatabua, Iliesa",Tuikenatabua,Iliesa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0286,"Tuilau, Manasa",Tuilau,Manasa,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0287,"Tuiloa, Tevita",Tuiloa,Tevita,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0288,"Tuimavana, Ruveni W. R.",Tuimavana,Ruveni W. R.,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0289,"Tuinamuana, Katarina",Tuinamuana,Katarina,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0290,"Tuiteci, Jojiana (Jojiana Cokanasiga)",Tuiteci,Jojiana (Jojiana Cokanasiga),no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0293,"Tuiwawa, Senilolia",Tuiwawa,Senilolia,sparse-authorship,1,0,1,0,Alive / current record,,New research / reconciliation,
+ITK-S0295,"Tuqota, Meli T.",Tuqota,Meli T.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0296,"Turagacati, Josefa",Turagacati,Josefa,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0298,"Tuvuki, Suliasi Wavu",Tuvuki,Suliasi Wavu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0300,"Tuwere, Ilaitia Sevati",Tuwere,Ilaitia Sevati,sparse-authorship,1,1,1,1,Deceased,,Core 265 roster,
+ITK-S0302,"Ulago, Jone Davule",Ulago,Jone Davule,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0306,"Vakarau, Nacanieli",Vakarau,Nacanieli,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0307,"Vanualailai, Jito",Vanualailai,Jito,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,Mathematics / Control Systems
+ITK-S0308,"Vanualailai, Paulo",Vanualailai,Paulo,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0309,"Varani-Norton, Eta",Varani-Norton,Eta,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0310,"Vatanimoto-Mausio, Asinate",Vatanimoto-Mausio,Asinate,sparse-authorship,1,1,1,1,Deceased,,Core 265 roster,
+ITK-S0311,"Vatukela, Jese Rokalevulevu",Vatukela,Jese Rokalevulevu,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0317,"Vereivalu, Milika",Vereivalu,Milika,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0319,"Volavola, Saula Golea (Ratu)",Volavola,Saula Golea (Ratu),no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0320,"Vosanibola, Peceli Bakani",Vosanibola,Peceli Bakani,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0321,"Vosawai, Ratu Penaia",Vosawai,Ratu Penaia,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,Existing project tracker,Agriculture / Crop Science
+ITK-S0323,"Votomosi, Mereia Vakatale Siri",Votomosi,Mereia Vakatale Siri,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0324,"Vudiniabola, Alisi Talatoka",Vudiniabola,Alisi Talatoka,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0325,"Vuetikadavakimaiwai, Sefanaia",Vuetikadavakimaiwai,Sefanaia,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0326,"Vuicuvu, Ratu Epi",Vuicuvu,Ratu Epi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0328,"Vukicea, Samuela Loaloa",Vukicea,Samuela Loaloa,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0329,"Vularika, Alumeci",Vularika,Alumeci,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0330,"Vuli, Koini M.",Vuli,Koini M.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0332,"Vunicagi, Kesaia L",Vunicagi,Kesaia L,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0333,"Vunicagi, Masikerei",Vunicagi,Masikerei,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,
+ITK-S0335,"Vuniivi, Viliame",Vuniivi,Viliame,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0337,"Waibuca, Imeri",Waibuca,Imeri,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0338,"Wainiqolo, Iris",Wainiqolo,Iris,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0340,"Waqa, Melikiseteki Vakasenuku",Waqa,Melikiseteki Vakasenuku,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0342,"Waqailiti, Ledua Meke",Waqailiti,Ledua Meke,no-authorship-rows,0,0,2,0,Alive / current record,,New research / reconciliation,
+ITK-S0343,"Waqainabete, Milika",Waqainabete,Milika,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0345,"Waqanicakau, Akanisi Tokalau",Waqanicakau,Akanisi Tokalau,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0346,"Waqanisau, Jeremaia M.",Waqanisau,Jeremaia M.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,
+ITK-S0347,"Whippy, Albert",Whippy,Albert,sparse-authorship,1,0,1,0,Alive / current record,,Core 265 roster,
+ITK-S0348,"Yabaki, Tamarisi",Yabaki,Tamarisi,sparse-authorship,1,1,1,1,Alive / current record,,Existing project tracker,
+ITK-S0349,"Yabaki-Goundar, Mere",Yabaki-Goundar,Mere,sparse-authorship,1,1,1,1,Alive / current record,PhD in progress,Core 265 roster,
+ITK-S0351,"Young, Nanise J.",Young,Nanise J.,sparse-authorship,1,1,1,1,Alive / current record,,Core 265 roster,Anthropology / Heritage
+ITK-S0169,"Puamau, Virisila Qolisaya Lidise",Puamau,Virisila Qolisaya Lidise,no-authorship-rows,0,0,0,0,Alive / current record,,Core 265 roster,
+ITK-S0352,"Baba, Tupeni",Baba,Tupeni,sparse-authorship,1,1,1,1,Deceased,,New from mobility workbook,
+ITK-S0353,"Baleisomi, Sereima",Baleisomi,Sereima,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0354,"Batikaiwai, Eroni",Batikaiwai,Eroni,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0355,"Dawainavesi, Akanisi",Dawainavesi,Akanisi,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0356,"Duaibe, Adi Salote Kuruibua",Duaibe,Adi Salote Kuruibua,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0357,"Gaunavou, Usaia",Gaunavou,Usaia,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0358,"Lekenaua, Alumita Sera Senilagakali",Lekenaua,Alumita Sera Senilagakali,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0359,"Lesuma, Vosawale",Lesuma,Vosawale,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0360,"Marama, Talica",Marama,Talica,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0361,"Nabou, Sainimili Saro",Nabou,Sainimili Saro,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0362,"Naliva, Salanieta",Naliva,Salanieta,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0363,"Raqeukai, Paula",Raqeukai,Paula,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0364,"Savou, Viliame",Savou,Viliame,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0365,"Soro, Apete Tuiyaro",Soro,Apete Tuiyaro,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0366,"Tora, Alfred Tuikoro",Tora,Alfred Tuikoro,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0367,"Tuiketei, Ana",Tuiketei,Ana,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0368,"Tuisuva, Salanieta",Tuisuva,Salanieta,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0369,"Vakamacawai, Esala",Vakamacawai,Esala,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0370,"Varo, Joeli",Varo,Joeli,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,Geomatics / Urban and Regional Planning / Land Management
+ITK-S0371,"Vodo, Sekove",Vodo,Sekove,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0372,"Vusoniwailala, Lasarusa",Vusoniwailala,Lasarusa,no-authorship-rows,0,0,0,0,Deceased,,New from mobility workbook,
+ITK-S0373,"Wainiqolo, Doni",Wainiqolo,Doni,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0374,"Waqalevu, Viliame",Waqalevu,Viliame,no-authorship-rows,0,0,0,0,Alive / current record,,New from mobility workbook,
+ITK-S0375,"Yavalanavanua, Adi Tagimoucia",Yavalanavanua,Adi Tagimoucia,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New from mobility workbook,
+ITK-S0143,"Naisele, Eci Tekuru",Naisele,Eci Tekuru,no-authorship-rows,0,0,0,0,Unknown / not checked,,Existing project tracker,
+ITK-S0376,"Buadromo, Eka",Buadromo,Eka,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Pathology / Laboratory Medicine
+ITK-S0377,"Kubuabola, Ilisapeci",Kubuabola,Ilisapeci,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Public Health / Applied Epidemiology / NCDs
+ITK-S0378,"Nakoro, Elia",Nakoro,Elia,sparse-authorship,1,0,1,0,Alive / current record,,New research / reconciliation,Archaeology / Cultural Heritage
+ITK-S0379,"Ravulo, Jioji",Ravulo,Jioji,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Social Work / Youth / Pacific Studies
+ITK-S0380,"Thomas-Moko, Nunia",Thomas-Moko,Nunia,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Conservation Biology / Biodiversity
+ITK-S0381,"Tudravu, Jemesa",Tudravu,Jemesa,no-authorship-rows,0,0,0,0,Deceased,,New research / reconciliation,Orthopaedic Surgery / Health Administration
+ITK-S0382,"Vuki, Maika",Vuki,Maika,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Chemistry / Electrochemistry / Environmental Analysis
+ITK-S0383,"Waqainabete, Ifereimi",Waqainabete,Ifereimi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,General Surgery / Surgical Education / Global Health
+ITK-S0384,"Waqavakatoga, William",Waqavakatoga,William,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,Politics / International Relations / Pacific Regionalism
+ITK-S0386,"Kanawale, Sheryne Rosalia",Kanawale,Sheryne Rosalia,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Maritime Affairs / Maritime Law & Policy
+ITK-S0387,"Moceiwai, Akeai",Moceiwai,Akeai,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Maritime Affairs / Maritime Education & Training
+ITK-S0388,"Tabaiwalu, Pio",Tabaiwalu,Pio,no-authorship-rows,0,0,0,0,Deceased,,New research / reconciliation,International Relations / Diplomacy / Trade
+ITK-S0389,"Nabalarua-Vakawaletabua, Akanisi",Nabalarua-Vakawaletabua,Akanisi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Law / Business Law / International Public Policy
+ITK-S0390,"Muria, Veremo",Muria,Veremo,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Social Science / Social Protection / Social Policy
+ITK-S0391,"Tiko, Iowane Ponipate",Tiko,Iowane Ponipate,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Education / Mathematics / Education Administration
+ITK-S0392,"Odrovakavula, Sokovoli Basutuka",Odrovakavula,Sokovoli Basutuka,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Civil Engineering / Construction Management / Construction Safety
+ITK-S0393,"Manoa, Lusiana",Manoa,Lusiana,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,Public Health / International Health Policy
+ITK-S0394,"Kama, Mike",Kama,Mike,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,Public Health / Infectious Diseases
+ITK-S0395,"Werekoro, Poasa",Werekoro,Poasa,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,Economics / Finance
+ITK-S0396,"Nairoba, Amelia Marama",Nairoba,Amelia Marama,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,International Studies / Women & Development
+ITK-S0397,"May, Vueti Kosoniu",May,Vueti Kosoniu,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,International Development
+ITK-S0398,"Tikomaisuva, Keleni",Tikomaisuva,Keleni,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,International Development / Development Studies
+ITK-S0399,"Sovanivalu, Akuila Ailevu Taqomakilevanoni",Sovanivalu,Akuila Ailevu Taqomakilevanoni,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,Community Development / Leadership
+ITK-S0400,"Naivalurua, Joshua Tudei",Naivalurua,Joshua Tudei,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / user-confirmed identity,International Political Affairs / International Relations
+ITK-S0401,"Bogitini, Samuela",Bogitini,Samuela,no-authorship-rows,0,0,0,0,Alive / current record,,Keep — iTaukei,Education / Indigenous Education / Teacher Education
+ITK-S0402,"Kubuabola, Sereana",Kubuabola,Sereana,no-authorship-rows,0,0,0,0,Alive / current record,,Keep — iTaukei,Soil Science / Soil Chemistry / Higher Education Quality Assurance
+ITK-S0403,"Rakai, Mele Estella Tupou",Rakai,Mele Estella Tupou,no-authorship-rows,0,0,0,0,Unknown / not checked,,Keep — iTaukei,Surveying / Geomatics / Land Administration / Indigenous Land Tenure
+ITK-S0404,"Nayacakalou, Tukai Jioviliti Tawake",Nayacakalou,Tukai Jioviliti Tawake,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Architecture / Pacific Architecture / Indigenous Design
+ITK-S0405,"Korovakaturaga, Ratu Epeneri Raudreudre Ganilau",Korovakaturaga,Ratu Epeneri Raudreudre Ganilau,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Architecture / Indigenous Architecture / iTaukei Design
+ITK-S0406,"Rabuka-Conklin, Finau",Rabuka-Conklin,Finau,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,Social Work / Pacific Islander Mental Health / Historical Trauma
+ITK-S0408,"Bogidrau, Wainikiti Waqa",Bogidrau,Wainikiti Waqa,no-authorship-rows,0,0,0,0,Deceased,,New research / reconciliation,Pacific Islands Studies / Public Administration / Communications
+ITK-S0409,"Tuivanualevu Ralogaivau, Ratu Filimone",Tuivanualevu Ralogaivau,Ratu Filimone,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Law / Climate Change Policy / International Environmental Law
+ITK-S0410,"Nayacalevu-Masi, Seruwaia",Nayacalevu-Masi,Seruwaia,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Law
+ITK-S0411,"Tausere, John",Tausere,John,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Digital Media / Media Production
+ITK-S0412,"Raravula-Waqaliva, Taina",Raravula-Waqaliva,Taina,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Food Science / Environmental Health / Food Safety
+ITK-S0413,"Seru, Noa",Seru,Noa,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Development Practice / Climate Finance / Community Development
+ITK-S0414,"Simmons, Jiupili Bete Ralulu",Simmons,Jiupili Bete Ralulu,no-authorship-rows,0,0,0,0,Alive / current record,,Keep — iTaukei,TESOL / English Language Education / Academic Literacy
+ITK-S0415,"Komaisavai, Ratu Nabotuiloma",Komaisavai,Ratu Nabotuiloma,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Business Analytics / Data Governance / Information Assurance
+ITK-S0417,"Logavatu, Tirisiane",Logavatu,Tirisiane,no-authorship-rows,0,0,0,0,Alive / current record,Master's in progress,New research / reconciliation,Public Policy / Gender Equality / Climate Policy
+ITK-S0419,"Perham, Sera Canayavusa Lacanivalu",Perham,Sera Canayavusa Lacanivalu,no-authorship-rows,0,0,0,0,Deceased,,New research / reconciliation,Indigenous Studies / Education / English-medium Teaching
+ITK-S0420,"Tuifagalele, Renee",Tuifagalele,Renee,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Indigenous Studies / Pacific Education / Education Research
+ITK-S0421,"Tinivata, Epeli Vitilevu",Tinivata,Epeli Vitilevu,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Public Management / Public Policy / Governance / Policy Analysis
+ITK-S0422,"Vakaloloma, Ulamila",Vakaloloma,Ulamila,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,Aquaculture / Marine Science / Fisheries
+ITK-S0423,"Ligalevu, Leone",Ligalevu,Leone,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Aquaculture / Fisheries
+ITK-S0424,"Korovulavula, Ponijese",Korovulavula,Ponijese,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Agriculture / Food Security / Community Development
+ITK-S0425,"Tauraga, Jale",Tauraga,Jale,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,User explicitly confirmed Jale Tauraga is iTaukei on 2026-08-17; exact paternal and maternal vanua/provenance remains unclassified.
+ITK-S0426,"Bainivesi, Viliame",Bainivesi,Viliame,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,Marine Science / Fisheries / Climate Change
+ITK-S0427,"Gaunavou Savai, Usaia",Gaunavou Savai,Usaia,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Language / Literature / Culture / iTaukei Studies
+ITK-S0428,"Tuilevuka, Amelia S.",Tuilevuka,Amelia S.,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Education / iTaukei Studies
+ITK-S0429,"Baseisei, Mosese",Baseisei,Mosese,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,International Relations / Diplomacy / iTaukei Studies
+ITK-S0430,"Naivaluvou, Salaseini",Naivaluvou,Salaseini,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Law / International Relations / Diplomacy
+ITK-S0431,"Rokuta, Salome A.",Rokuta,Salome A.,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Education / Educational Leadership / iTaukei Studies
+ITK-S0432,"Vukinagauna, Jone",Vukinagauna,Jone,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Information Technology / Computing
+ITK-S0433,"Naivalulevu, Timoci Tuinakelo",Naivalulevu,Timoci Tuinakelo,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Public Health / Conservation Health
+ITK-S0434,"Mocevakaca, Wati Tomasi",Mocevakaca,Wati Tomasi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Agriculture / Livestock Production
+ITK-S0435,"Dokonivalu, Epi",Dokonivalu,Epi,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Commerce / Entrepreneurship / Management
+ITK-S0436,"Taginasedrau, Vilive Cagivinaka",Taginasedrau,Vilive Cagivinaka,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Education
+ITK-S0437,"Qereqeretabua, Timoci",Qereqeretabua,Timoci,sparse-authorship,1,1,1,1,Alive / current record,,New research / reconciliation,Medicine / Surgery
+ITK-S0438,"Rokocakau, Aminiasi",Rokocakau,Aminiasi,sparse-authorship,1,1,1,1,Alive / current record,,New research / reconciliation,Medicine / Internal Medicine
+ITK-S0439,"Makulau, Waisea",Makulau,Waisea,no-authorship-rows,0,0,0,0,Alive / current record,Master's in progress,New research / reconciliation,Hospitality / Management / Employee Wellbeing
+ITK-S0440,"Tuimoala, Jiaoji",Tuimoala,Jiaoji,no-authorship-rows,0,0,0,0,Alive / current record,Master's in progress,New research / reconciliation,Public Health / GIS / Climate and Vector-Borne Disease
+ITK-S0441,"Sakiti, Viliame",Sakiti,Viliame,no-authorship-rows,0,0,0,0,Alive / current record,PhD in progress,New research / reconciliation,Engineering / Sustainable Building Materials
+ITK-S0443,"Goneyali, Apaitia",Goneyali,Apaitia,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Anaesthesia / Intensive Care
+ITK-S0444,"Volavola, Osea",Volavola,Osea,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Emergency Medicine
+ITK-S0445,"Sakumeni, Kelera",Sakumeni,Kelera,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Obstetrics and Gynaecology
+ITK-S0447,"Voceduadua, Simione",Voceduadua,Simione,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Internal Medicine / Nephrology
+ITK-S0448,"Matanaicake Junior, Semesa",Matanaicake Junior,Semesa,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Surgery
+ITK-S0449,"Nasedra, Luke",Nasedra,Luke,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Anaesthesia
+ITK-S0450,"Nasila, Viliame",Nasila,Viliame,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Obstetrics and Gynaecology
+ITK-S0452,"Ligairi, Josua Naua",Ligairi,Josua Naua,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Public Health / Diabetes Care
+ITK-S0453,"Vakamocea, Mafa",Vakamocea,Mafa,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Emergency Medicine
+ITK-S0454,"Seru, Maika Vuli",Seru,Maika Vuli,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Intensive Care / Infectious Disease
+ITK-S0455,"Mua, Mike",Mua,Mike,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Internal Medicine / Infectious Disease
+ITK-S0456,"Namedre, Asela Matai",Namedre,Asela Matai,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Anaesthesia / Intensive Care
+ITK-S0458,"Lawanivalu, Melaia",Lawanivalu,Melaia,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Public Health / Infectious Disease
+ITK-S0459,"Matiaka, Reapi",Matiaka,Reapi,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Paediatrics / Cardiology
+ITK-S0460,"Vakauta, Ana",Vakauta,Ana,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Public Health / Maternal Health
+ITK-S0461,"Cati, Vasitia Talatoka Sisivadra",Cati,Vasitia Talatoka Sisivadra,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Obstetrics and Gynaecology
+ITK-S0462,"Matoto, Veisinia",Matoto,Veisinia,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Public Health / Diabetes
+ITK-S0463,"Navunisaravi, Alipate",Navunisaravi,Alipate,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Surgery
+ITK-S0464,"Senlliri, Iokiml",Senlliri,Iokiml,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine / Cardiology
+ITK-S0466,"Turaga, Kositino",Turaga,Kositino,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0467,"Seru, Viliame",Seru,Viliame,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0468,"Namedre, Mesulame",Namedre,Mesulame,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0469,"Tabua, Unaisi",Tabua,Unaisi,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0470,"Raqasia, Ravuama",Raqasia,Ravuama,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0472,"Ketenilagi, Wati",Ketenilagi,Wati,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Medicine
+ITK-S0473,"Turagakacivi, Mariana",Turagakacivi,Mariana,sparse-authorship,1,1,1,1,Unknown / not checked,,New research / reconciliation,Pharmacy
+ITK-S0474,"Naqiolevu, Waisiki",Naqiolevu,Waisiki,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,English Literature / Humanities
+ITK-S0475,"Tikoitoga, Mosese",Tikoitoga,Mosese,no-authorship-rows,0,0,0,0,Deceased,,New research / reconciliation,Defence and Strategic Studies / Military Leadership
+ITK-S0476,"Kalouniwai, Jone Logavatu",Kalouniwai,Jone Logavatu,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Defence and Strategic Studies / National Security
+ITK-S0477,"Qiliho, Sitiveni",Qiliho,Sitiveni,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Defence and Strategic Studies / Policing / Security
+ITK-S0478,"Rabuka, Sitiveni Ligamamada",Rabuka,Sitiveni Ligamamada,no-authorship-rows,0,0,0,0,Alive / current record,,New research / reconciliation,Military Science / Leadership / Politics
+ITK-S0479,"Laqere, Jone Fleming",Laqere,Jone Fleming,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Political Science
+ITK-S0480,"Loco, Waisiko",Loco,Waisiko,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,English / Literature
+ITK-S0481,"Lalabalavu, Adi Taufa",Lalabalavu,Adi Taufa,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Electronics & Communication Engineering
+ITK-S0482,"Kaunisela, Poate V. Naiqoqo",Kaunisela,Poate V. Naiqoqo,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Business Administration / International Business
+ITK-S0483,"Tuivanua, Ravuama",Tuivanua,Ravuama,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Business Administration
+ITK-S0484,"Rokobani, Nanise",Rokobani,Nanise,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,
+ITK-S0485,"Rokobani, Adiciba",Rokobani,Adiciba,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,Electronics & Communication Engineering
+ITK-S0486,"Nabilivalu, Samisoni",Nabilivalu,Samisoni,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,
+ITK-S0487,"Ratu / Manounou, Evelina",Ratu / Manounou,Evelina,no-authorship-rows,0,0,0,0,Unknown / not checked,,New research / reconciliation,

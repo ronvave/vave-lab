@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<!--
+  admin-samoa-master.html (public GitHub Pages STUB)
+
+  Retired on 2026-08-30 per Ron's architectural fix.
+
+  The Samoa admin panel is NO LONGER served from GitHub Pages. It moved
+  to the Samoa Apps Script web app, where it is gated by Google
+  authentication and an APPROVED_ADMIN_EMAIL Script Property. All Master
+  Sheet writes now execute server-side via google.script.run — no
+  SHARED_SECRET or HMAC signature is delivered to any browser.
+
+  This page exists only to:
+    1. Redirect returning bookmarks to the new Apps Script Admin URL.
+    2. Document the migration for anyone auditing the repo.
+
+  The new Admin URL is stored in a Script Property on the Apps Script
+  project and pasted into ADMIN_URL below by Ron after the first deploy.
+  It is a Google-hosted /exec URL; only the authorized Google account
+  can open it. Everyone else sees a "Not authorized" page.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Samoa Scholar Database — Admin (moved)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    :root {
+      --samoa-fg: #1f2937;
+      --samoa-bg: #f8fafc;
+      --samoa-accent: #0891b2;
+      --samoa-warn: #dc2626;
+      --samoa-muted: #6b7280;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--samoa-bg);
+      color: var(--samoa-fg);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .shell {
+      max-width: 640px;
+      margin: 40px auto;
+      padding: 24px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+    }
+    h1 { color: var(--samoa-accent); margin-top: 0; }
+    .note {
+      background: #fef3c7;
+      border: 1px solid #fcd34d;
+      color: #78350f;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 13px;
+      margin: 16px 0;
+    }
+    a.cta {
+      display: inline-block;
+      background: var(--samoa-accent);
+      color: white;
+      padding: 10px 16px;
+      border-radius: 4px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 12px;
+    }
+    a.cta:hover { background: #0e7490; }
+    .muted { color: var(--samoa-muted); font-size: 13px; margin-top: 20px; }
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <h1>Samoa Admin has moved</h1>
+
+    <p>
+      The Samoa Scholar Database admin panel is no longer served from
+      GitHub Pages. It is now hosted inside the Samoa Apps Script web
+      app, gated by Google authentication and restricted to the
+      approved admin account.
+    </p>
+
+    <div class="note">
+      <b>No browser secrets.</b> The retired browser-HMAC contract has
+      been removed. This page ships no <code>SHARED_SECRET</code>,
+      <code>window.SAMOA_WRITEBACK_SECRET_HEX</code>, admin password
+      hash, or signing key. All Master Sheet writes execute server-side
+      under the authorized Google identity.
+    </div>
+
+    <p id="cta-wrap">
+      <a id="admin-link" class="cta" href="#">Open Samoa Admin</a>
+    </p>
+
+    <div class="muted">
+      If the button above does not point to a Google Apps Script
+      <code>/exec</code> URL, the deployment step is not complete yet.
+      See <code>SAMOA-ADMIN-BUILD-NOTES.md</code> for the deployment
+      procedure. Unauthorized visitors reach a "Not authorized" page —
+      no admin surface is exposed to the public.
+    </div>
+  </div>
+
+  <script>
+    // The Apps Script admin URL is stored in this file at deploy time
+    // via an .htaccess-style local edit, NEVER committed with a real
+    // /exec token in place. The URL itself is not a secret (auth is on
+    // the server side), but keeping the placeholder here forces a
+    // deliberate edit after every redeploy.
+    var ADMIN_URL = 'REPLACE_WITH_APPS_SCRIPT_EXEC_URL';
+
+    var link = document.getElementById('admin-link');
+    if (ADMIN_URL && ADMIN_URL.indexOf('script.google.com') !== -1) {
+      link.href = ADMIN_URL;
+      link.setAttribute('target', '_top');
+    } else {
+      link.textContent = 'Admin URL not yet configured';
+      link.style.background = '#9ca3af';
+      link.style.cursor = 'not-allowed';
+      link.addEventListener('click', function (ev) { ev.preventDefault(); });
+    }
+  </script>
+</body>
+</html>

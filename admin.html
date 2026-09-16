@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="robots" content="noindex, nofollow" />
+<title>Vave Lab · Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --teal: #0e7490;
+    --teal-dark: #062f35;
+    --coral: #b23a48;
+    --gold: #c8a84b;
+    --cream: #f9f6ee;
+    --border: #e2e0d4;
+    --text: #1a1a1a;
+    --muted: #6b7280;
+    --success: #16a34a;
+    --warning: #d97706;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--cream); color: var(--text); line-height: 1.5;
+  }
+  h1, h2, h3 { font-family: 'Cormorant Garamond', serif; font-weight: 500; margin: 0 0 8px; }
+  a { color: var(--teal); }
+
+  /* ==== login gate ==== */
+  #login {
+    min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px;
+  }
+  #login-card {
+    background: #fff; border: 1px solid var(--border); border-radius: 16px;
+    padding: 40px; max-width: 420px; width: 100%;
+    box-shadow: 0 10px 40px rgba(6,47,53,0.10);
+  }
+  #login-card h1 { font-size: 1.8rem; color: var(--teal-dark); margin-bottom: 4px; }
+  #login-card .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 24px; }
+  #login-card label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--teal-dark); }
+  #login-card input[type="password"] {
+    width: 100%; padding: 11px 14px; font: inherit; font-size: 1rem;
+    border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; background: #fff;
+  }
+  #login-card input[type="password"]:focus { outline: 2px solid var(--teal); border-color: var(--teal); }
+  #login-card button {
+    width: 100%; padding: 12px; font: inherit; font-weight: 600; font-size: 1rem;
+    background: var(--teal-dark); color: #fff; border: none; border-radius: 8px; cursor: pointer;
+  }
+  #login-card button:hover { background: var(--teal); }
+  #login-error {
+    margin-top: 10px; padding: 8px 12px; background: #fef2f2; color: #991b1b;
+    border-radius: 6px; font-size: 0.85rem; display: none;
+  }
+  #login-error.is-visible { display: block; }
+
+  /* ==== dashboard shell ==== */
+  #dashboard { display: none; }
+  #dashboard.is-visible { display: block; }
+  header.top {
+    background: var(--teal-dark); color: #fff; padding: 14px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    position: sticky; top: 0; z-index: 50;
+  }
+  header.top h1 { color: #fff; font-size: 1.4rem; margin: 0; }
+  header.top .badge {
+    display: inline-block; background: var(--gold); color: var(--teal-dark);
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 4px; margin-left: 12px; vertical-align: middle;
+  }
+  header.top nav a {
+    color: rgba(255,255,255,0.85); text-decoration: none;
+    font-size: 0.9rem; font-weight: 500; margin-left: 20px;
+  }
+  header.top nav a:hover { color: #fff; }
+  header.top nav button {
+    background: transparent; color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.3);
+    padding: 6px 12px; border-radius: 6px; font: inherit; font-size: 0.85rem;
+    cursor: pointer; margin-left: 16px;
+  }
+  header.top nav button:hover { color: #fff; border-color: #fff; }
+
+  main.wrap { max-width: 1300px; margin: 0 auto; padding: 24px; }
+
+  /* ==== overview stats ==== */
+  .stats {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px;
+  }
+  @media (max-width: 720px) { .stats { grid-template-columns: repeat(2, 1fr); } }
+  .stat {
+    background: #fff; border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+  }
+  .stat .num { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 600; line-height: 1; color: var(--teal-dark); }
+  .stat .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px; }
+  .stat.alert .num { color: var(--warning); }
+
+  /* ==== panels ==== */
+  .panel {
+    background: #fff; border: 1px solid var(--border); border-radius: 12px;
+    padding: 20px 22px; margin-bottom: 20px; box-shadow: 0 2px 6px rgba(6,47,53,0.04);
+  }
+  .panel h2 {
+    color: var(--teal-dark); font-size: 1.4rem; margin: 0 0 4px;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+  .panel .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+  .panel-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+  button.btn {
+    background: var(--teal); color: #fff; border: none; padding: 8px 14px;
+    border-radius: 6px; font: inherit; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer;
+  }
+  button.btn:hover { background: var(--teal-dark); }
+  button.btn.ghost { background: transparent; color: var(--teal); border: 1px solid var(--teal); }
+  button.btn.ghost:hover { background: var(--teal); color: #fff; }
+  button.btn.danger { background: transparent; color: var(--coral); border: 1px solid var(--coral); }
+  button.btn.danger:hover { background: var(--coral); color: #fff; }
+
+  /* ==== data source config ==== */
+  .config-row {
+    display: grid; grid-template-columns: 200px 1fr auto; gap: 10px; align-items: center; margin-bottom: 10px;
+  }
+  .config-row label { font-weight: 600; color: var(--teal-dark); font-size: 0.9rem; }
+  .config-row input[type="text"], .config-row input[type="url"] {
+    padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font: inherit; font-size: 0.9rem;
+  }
+  @media (max-width: 720px) { .config-row { grid-template-columns: 1fr; } }
+
+  /* ==== authors table ==== */
+  .filters {
+    display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .filters input[type="search"] {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; min-width: 260px;
+  }
+  .filters select {
+    padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; background: #fff;
+  }
+
+  table.authors {
+    width: 100%; border-collapse: collapse; font-size: 0.9rem;
+  }
+  table.authors th, table.authors td {
+    padding: 10px 8px; text-align: left; border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  table.authors th {
+    background: #f5f2e8; color: var(--teal-dark);
+    font-weight: 700; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em;
+    position: sticky; top: 0;
+  }
+  table.authors tr:hover { background: #fafafa; }
+  table.authors tr.is-new { background: rgba(217,119,6,0.06); }
+  table.authors tr.is-itaukei { background: rgba(14,116,144,0.04); }
+  table.authors tr.is-itaukei:hover { background: rgba(14,116,144,0.08); }
+  table.authors .name-col { font-weight: 600; }
+  table.authors .status-col { width: 90px; }
+  table.authors .count-col { text-align: right; width: 70px; font-variant-numeric: tabular-nums; }
+  table.authors .action-col { width: 90px; text-align: right; }
+  table.authors .select-col { width: 44px; text-align: center; }
+  table.authors tr.is-mm-selected { background: rgba(217,119,6,0.14) !important; }
+
+  /* ==== Manual merge floating action bar ==== */
+  .mm-bar {
+    position: fixed; left: 50%; transform: translateX(-50%);
+    bottom: 24px; z-index: 90;
+    background: var(--teal-dark, #062f35); color: #fff;
+    padding: 12px 18px; border-radius: 999px;
+    box-shadow: 0 12px 34px rgba(0,0,0,0.3);
+    display: none; align-items: center; gap: 14px;
+    font-size: 0.9rem;
+  }
+  .mm-bar.is-visible { display: inline-flex; }
+  .mm-bar__count { font-weight: 700; }
+  .mm-bar__names { color: rgba(255,255,255,0.75); font-size: 0.8rem; max-width: 380px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .mm-bar .btn { padding: 6px 14px; border-radius: 999px; font-size: 0.85rem; }
+  .mm-bar .btn.primary { background: #fff; color: var(--teal-dark, #062f35); border: none; }
+  .mm-bar .btn.ghost { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,0.4); }
+  .mm-bar .btn.ghost:hover { background: rgba(255,255,255,0.1); }
+
+  /* ==== Manual merge modal — radio list ==== */
+  .mm-radio-list {
+    display: flex; flex-direction: column; gap: 8px;
+    margin: 12px 0 18px;
+    padding: 12px; background: #f9fafb; border-radius: 8px;
+    max-height: 340px; overflow-y: auto;
+  }
+  .mm-radio-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px; cursor: pointer;
+    background: #fff; border: 1px solid var(--border);
+  }
+  .mm-radio-row:hover { border-color: var(--teal); background: rgba(14,116,144,0.03); }
+  .mm-radio-row input { margin: 0; }
+  .mm-radio-name { flex: 1; font-weight: 600; color: var(--teal-dark); }
+  .mm-radio-stats { font-size: 0.82rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .mm-hint { color: var(--muted); font-size: 0.85rem; margin-bottom: 8px; }
+  .flag {
+    display: inline-block; padding: 2px 8px; border-radius: 999px;
+    font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+  }
+  .flag.new { background: rgba(217,119,6,0.12); color: #92400e; }
+  .flag.itaukei { background: rgba(14,116,144,0.12); color: var(--teal); }
+  .flag.filled { background: rgba(22,163,74,0.12); color: var(--success); }
+  .flag.pending { background: #f3f4f6; color: var(--muted); }
+
+  /* ==== profile form modal ==== */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(6,47,53,0.55); z-index: 100;
+    display: none; align-items: flex-start; justify-content: center; padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .modal-backdrop.is-visible { display: flex; }
+  .modal {
+    background: #fff; border-radius: 12px; max-width: 680px; width: 100%;
+    padding: 28px 32px; box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    max-height: calc(100vh - 80px); overflow-y: auto;
+  }
+  .modal h2 { color: var(--teal-dark); margin-bottom: 6px; }
+  .modal .subtitle { color: var(--muted); font-size: 0.88rem; margin-bottom: 20px; }
+  .form-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px;
+  }
+  .form-grid .full { grid-column: 1 / -1; }
+  .form-grid label { display: block; font-weight: 600; font-size: 0.82rem; color: var(--teal-dark); margin-bottom: 4px; }
+  .form-grid input, .form-grid select {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font: inherit; font-size: 0.9rem; background: #fff;
+  }
+  .form-grid small { display: block; color: var(--muted); font-size: 0.75rem; margin-top: 3px; }
+  .modal-actions {
+    margin-top: 22px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  }
+
+  /* ==== photo drop zone ==== */
+  .photo-row {
+    display: grid; grid-template-columns: 96px 1fr; gap: 14px; align-items: stretch;
+  }
+  .photo-preview {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: #f1f5f9 center/cover no-repeat;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 0.7rem; text-align: center; overflow: hidden;
+    flex-shrink: 0;
+  }
+  .photo-dz {
+    border: 2px dashed #cbd5e1; border-radius: 10px;
+    padding: 14px 16px; background: #f8fafc;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; cursor: pointer; transition: border-color 0.15s, background 0.15s;
+    min-height: 96px;
+  }
+  .photo-dz:hover { border-color: var(--teal); background: #f0fdfa; }
+  .photo-dz.is-dragover { border-color: var(--teal); background: #ccfbf1; }
+
+  /* ==== Name-variant merge panel ==== */
+  #variants-panel details > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    background: #f6f4ea;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+    font-weight: 600;
+    user-select: none;
+  }
+  #variants-panel details > summary::-webkit-details-marker { display: none; }
+  #variants-panel details[open] > summary { border-radius: 8px 8px 0 0; margin-bottom: 0; }
+  .variants-summary-caret {
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--muted);
+  }
+  #variants-panel details[open] .variants-summary-caret { transform: rotate(90deg); }
+  #variants-panel .variants-count-badge {
+    color: var(--teal); background: #e0f2f4; padding: 2px 10px; border-radius: 10px;
+    font-size: 0.78rem; font-weight: 600;
+  }
+  #variants-panel .variants-body {
+    border: 1px solid var(--border); border-top: none;
+    border-radius: 0 0 8px 8px;
+    padding: 14px; background: #fff;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .variant-group {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    background: #fbfaf3;
+  }
+  .variant-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    margin-bottom: 8px; flex-wrap: wrap;
+  }
+  .variant-title { font-weight: 600; color: var(--teal-dark); font-size: 0.98rem; }
+  .variant-hint { color: var(--muted); font-size: 0.78rem; margin-top: 2px; }
+  .variant-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .variant-rows { display: flex; flex-direction: column; gap: 4px; }
+  .variant-row {
+    display: grid; grid-template-columns: 20px 20px 1fr auto; gap: 8px; align-items: center;
+    padding: 6px 8px; border-radius: 6px; cursor: pointer;
+    font-size: 0.9rem;
+  }
+  .variant-row:hover { background: #f4f2e6; }
+  .variant-row input[type="radio"], .variant-row input[type="checkbox"] { margin: 0; }
+  .variant-name { color: var(--text); font-weight: 500; }
+  .variant-meta { color: var(--muted); font-size: 0.8rem; }
+
+  /* Batch-merge bar shown above and below the variant group list. */
+  .variant-bulk-bar {
+    display: flex; justify-content: space-between; align-items: center; gap: 12px;
+    padding: 10px 14px; border-radius: 8px;
+    background: #e0f2f4; border: 1px solid #b7dfe3;
+    flex-wrap: wrap;
+  }
+  .variant-bulk-text { color: var(--text); font-size: 0.88rem; line-height: 1.4; flex: 1 1 260px; }
+  .variant-bulk-text strong { color: var(--teal-dark); }
+  .variant-bulk-bar [data-merge-all] { flex-shrink: 0; }
+  .variant-bulk-bar [data-merge-all].is-busy { opacity: 0.6; cursor: progress; }
+  .variant-bulk-bar [data-merge-all]:disabled { cursor: not-allowed; }
+
+  /* Existing merges list */
+  #variants-alias-list {
+    margin-top: 12px; padding-top: 12px;
+    border-top: 1px dashed var(--border);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  #variants-alias-list h4 { margin: 0 0 4px; font-size: 0.85rem; color: var(--muted); font-family: inherit; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .alias-row {
+    display: grid; grid-template-columns: minmax(160px, 240px) 1fr; gap: 12px;
+    align-items: center; font-size: 0.88rem;
+  }
+  .alias-canonical { font-weight: 600; color: var(--teal-dark); }
+  .alias-variants { display: flex; gap: 6px; flex-wrap: wrap; }
+  .alias-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #e6f3f5; color: var(--teal-dark);
+    padding: 3px 4px 3px 10px; border-radius: 12px; font-size: 0.82rem;
+  }
+  .alias-remove {
+    background: none; border: none; color: var(--teal); cursor: pointer;
+    font-size: 1rem; line-height: 1; padding: 0 6px;
+  }
+  .alias-remove:hover { color: var(--coral); }
+  .photo-dz .dz-title { font-weight: 600; color: var(--teal-dark); font-size: 0.9rem; }
+  .photo-dz .dz-sub { color: var(--muted); font-size: 0.78rem; margin-top: 4px; }
+  .photo-actions {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;
+  }
+  .photo-actions button {
+    padding: 5px 10px; font-size: 0.78rem; font-weight: 600;
+    border: 1px solid var(--border); border-radius: 6px;
+    background: #fff; color: var(--teal-dark); cursor: pointer;
+  }
+  .photo-actions button:hover { background: #f0fdfa; border-color: var(--teal); }
+  .photo-actions button.danger { color: #b91c1c; }
+  .photo-actions button.danger:hover { background: #fef2f2; border-color: #fca5a5; }
+
+  /* ==== save output modal ==== */
+  #save-output {
+    background: #0f172a; color: #e5e7eb; font-family: ui-monospace, monospace;
+    font-size: 0.78rem; padding: 14px; border-radius: 8px; max-height: 260px; overflow: auto;
+    white-space: pre; margin-top: 10px;
+  }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--teal-dark); color: #fff;
+    padding: 12px 18px; border-radius: 8px; font-size: 0.9rem;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.25); z-index: 200;
+    opacity: 0; transform: translateY(10px); transition: all 0.2s ease;
+  }
+  .toast.is-visible { opacity: 1; transform: translateY(0); }
+  .toast.error { background: var(--coral); }
+</style>
+</head>
+<body>
+
+<!-- ==== Login gate ==== -->
+<section id="login">
+  <div id="login-card">
+    <h1>Vave Lab · Admin</h1>
+    <p class="subtitle">Enter the admin password to continue.</p>
+    <form id="login-form" autocomplete="off">
+      <label for="pw">Password</label>
+      <input type="password" id="pw" required autofocus />
+      <button type="submit">Sign in</button>
+      <div id="login-error">Wrong password. Try again.</div>
+    </form>
+  </div>
+</section>
+
+<!-- ==== Dashboard ==== -->
+<div id="dashboard">
+  <header class="top">
+    <div>
+      <h1>Vave Lab · Admin Dashboard <span class="badge">iTaukei scholars</span></h1>
+    </div>
+    <nav>
+      <a href="itaukei-research-database.html" target="_blank" rel="noopener">Public database ↗</a>
+      <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener">Zotero library ↗</a>
+      <button id="logout">Sign out</button>
+    </nav>
+  </header>
+
+  <main class="wrap">
+
+    <!-- Overview stats -->
+    <div class="stats">
+      <div class="stat"><div class="num" id="stat-total">—</div><div class="label">Total unique authors</div></div>
+      <div class="stat"><div class="num" id="stat-itaukei">—</div><div class="label">Marked as iTaukei</div></div>
+      <div class="stat"><div class="num" id="stat-enriched">—</div><div class="label">Profiles filled in</div></div>
+      <div class="stat alert"><div class="num" id="stat-new">—</div><div class="label">New authors to triage</div></div>
+      <div class="stat alert"><div class="num" id="stat-pending">—</div><div class="label">Pending new scholars</div></div>
+    </div>
+
+    <!-- Pending new-scholar submissions (from public survey "Add someone not on the list") -->
+    <div class="panel" id="pending-panel">
+      <details open>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Pending new scholars — review before adding</span>
+          <span class="variants-count-badge" id="pending-count">—</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 8px;font-size:0.85rem;">
+            People submitted through the public survey’s “Scholar not on the list?” flow land here <b>for your review</b> — they are <b>not</b> added to the searchable list automatically. Submissions are anonymous (no informant name/email required), so verify each one before approving. <b>Approve</b> adds the scholar to the master list (they become searchable and appear on the progress page). <b>Reject</b> removes the submission.
+          </p>
+          <div class="panel-actions" style="margin-bottom:10px;">
+            <button class="btn ghost" id="pending-reload">Refresh pending list</button>
+            <span id="pending-status" style="color:var(--muted);font-size:0.82rem;"></span>
+          </div>
+          <div id="pending-body"></div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Data source config -->
+    <div class="panel">
+      <h2>Data source
+        <div class="panel-actions">
+          <button class="btn ghost" id="reload-btn" title="Re-fetches the JSON files already in this repo (fast, no Zotero call).">Reload from source</button>
+          <button class="btn" id="sync-zotero-btn" title="Triggers a GitHub Action that pulls the latest Zotero data and pushes it to the repo. Takes ~30–60 seconds.">Force sync from Zotero</button>
+        </div>
+      </h2>
+      <p class="subtitle">Public database reads scholar profiles from a Google Sheet. Paste the sheet’s URL here — stored in your browser only, not committed to the repo.</p>
+      <div class="config-row">
+        <label for="sheet-url">Google Sheet URL</label>
+        <input type="url" id="sheet-url" placeholder="Paste any sheet URL — /pub?output=csv or a plain /edit link" />
+        <button class="btn" id="sheet-save">Save URL</button>
+      </div>
+      <p class="subtitle" style="margin-top:8px; font-size:0.82rem;">
+        <b>Sharing setup:</b> the plain “Anyone with the link — Viewer” setting is <i>not</i> enough &mdash; browsers get a sign-in redirect. Instead, open the sheet in Google &rsaquo; <b>File &rsaquo; Share &rsaquo; Publish to web</b> &rsaquo; choose <b>Comma-separated values (.csv)</b> &rsaquo; Publish, then paste that link. The document itself can stay private; “Publish to web” exposes a read-only CSV snapshot.
+      </p>
+      <div class="config-row">
+        <label>Local fallback</label>
+        <input type="text" value="data/scholar-profiles.json" readonly />
+        <span style="color:var(--muted);font-size:0.82rem;">Used until you set a sheet URL</span>
+      </div>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;" />
+      <p class="subtitle" style="margin-top:0;"><b>GitHub upload (optional):</b> paste a Personal Access Token here so dropped profile photos upload directly to <code>img/scholars/</code> in the repo instead of embedding as base64. Stored in your browser only, never committed.</p>
+      <div class="config-row">
+        <label for="gh-token">GitHub PAT</label>
+        <input type="password" id="gh-token" placeholder="github_pat_… or ghp_… (needs contents:write + actions:write on ronvave/vave-lab)" autocomplete="off" />
+        <button class="btn" id="gh-token-save">Save token</button>
+      </div>
+      <p class="subtitle" style="margin-top:6px;font-size:0.82rem;">Create a <b>fine-grained</b> token at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> → Resource owner: <b>ronvave</b> → Repository access: <b>Only select → ronvave/vave-lab</b> → Repository permissions → <b>Contents: Read and write</b> AND <b>Actions: Read and write</b> (the second one is what lets the “Force sync from Zotero” button trigger the refresh workflow). Set an expiration you’re comfortable with (e.g. 90 days). Without a token, dropped photos fall back to inline base64 + “Download for repo”, and the Force sync button won’t work.</p>
+    </div>
+
+    <!-- Name-variant merge panel -->
+    <div class="panel" id="variants-panel">
+      <details>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Find name variants (potential duplicates)</span>
+          <span class="variants-count-badge" id="variants-count">—</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 6px;font-size:0.85rem;">Groups of authors that share a surname AND have compatible first names (e.g. “K.” vs “Kesaia”). Choose the canonical name in each group, keep only the entries that really are the same person, then Merge — or use <strong>Merge all groups</strong> at the top or bottom of the list to fold every reviewed group in a single push. Merged variants no longer show as separate rows below, and their publications are folded into the canonical author on the public dashboard too.</p>
+          <div id="variants-body"></div>
+          <div>
+            <h4 style="margin: 0 0 4px; font-size: 0.85rem; color: var(--muted); font-family: inherit; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;">Existing merges</h4>
+            <div id="variants-alias-list"></div>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Submitted-info panel -->
+    <div class="panel" id="submissions-panel">
+      <details>
+        <summary>
+          <span class="variants-summary-caret">▶</span>
+          <span>Suggested edits from public dashboard</span>
+          <span class="variants-count-badge">Paste to apply</span>
+        </summary>
+        <div class="variants-body">
+          <p class="subtitle" style="margin:0 0 8px;font-size:0.85rem;">
+            When someone clicks “Submit info” on a scholar card in the public dashboard, their submission is emailed to <code>ronvave@hawaii.edu</code>. The email body contains a machine-readable <code>submission_json</code> block. Paste that JSON here and I’ll open the matching scholar’s Edit form pre-filled with the proposed values so you can review, tweak, and save in one flow.
+          </p>
+          <label for="submission-paste" style="font-size:0.82rem;font-weight:600;color:var(--teal-dark);display:block;margin-bottom:4px;">Paste submission JSON</label>
+          <textarea id="submission-paste" rows="6" placeholder='Paste the submission_json block from the email here — starts with { "scholar_name": ...'
+                    style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:'Menlo','Consolas',monospace;font-size:0.82rem;background:#fbfaf3;"></textarea>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+            <button class="btn" id="submission-apply">Open in Edit form</button>
+            <button class="btn ghost" id="submission-clear">Clear</button>
+            <span id="submission-status" style="color:var(--muted);font-size:0.82rem;"></span>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <!-- Authors panel -->
+    <div class="panel">
+      <h2>Authors extracted from Zotero
+        <div class="panel-actions">
+          <button class="btn" id="flush-itaukei-toggles" disabled title="No pending toggles — the checkbox changes will queue here." style="color:#000;">Save iTaukei toggles</button>
+          <button class="btn" id="push-github" title="Push data/scholar-profiles.json to GitHub. Uses the token you saved in Data source. Public site updates within ~1 minute after the push.">Push all to GitHub</button>
+          <button class="btn" id="sync-to-sheet" title="Add every iTaukei scholar tagged here to the survey and progress pages' Google Sheet. Only appends people who aren't already on the sheet — safe to run repeatedly.">Sync to survey sheet</button>
+          <button class="btn ghost" id="export-csv" title="Copies a tab-separated table — paste into Google Sheets and each column lands in its own cell">Copy for Google Sheets</button>
+          <button class="btn ghost" id="export-json">Copy all as JSON</button>
+        </div>
+      </h2>
+      <p class="subtitle" style="color:#000;">Every unique author across the 531 publications, ranked by publication count. Toggle "iTaukei" per person; only iTaukei rows are editable and included in your Google Sheet. iTaukei toggles queue up and save in one push when you click "Save iTaukei toggles".</p>
+
+      <div class="filters">
+        <input type="search" id="filter-search" placeholder="Search author name…" />
+        <select id="filter-status">
+          <option value="all">All authors</option>
+          <option value="itaukei">iTaukei only</option>
+          <option value="pending">iTaukei · profile blank</option>
+          <option value="new">New (needs triage)</option>
+          <option value="enriched">Profile filled in</option>
+        </select>
+        <span id="filter-count" style="color:var(--muted);font-size:0.85rem;margin-left:auto;"></span>
+      </div>
+
+      <!-- Triage bar — shown only when the "New (needs triage)" filter is active.
+           Lets Ron mark everyone in the untriaged list as non-iTaukei in one push
+           so they never clutter the triage view again. Any iTaukei found in there
+           can be unchecked before saving. -->
+      <div id="triage-bar" style="display:none;padding:12px 16px;background:#FFF9DB;border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;color:#000;">
+          <strong style="color:#000;">Triage mode.</strong>
+          <span style="color:#000;">Everyone here is untriaged. Tick the ones that ARE iTaukei (or leave them all ticked and untick the iTaukei ones), then mark the rest as non-iTaukei so they never appear in this list again.</span>
+          <div style="margin-left:auto;display:flex;gap:8px;">
+            <button class="btn ghost" id="triage-select-all" style="color:#000;" title="Tick every visible author's triage checkbox.">Select all visible</button>
+            <button class="btn ghost" id="triage-select-none" style="color:#000;" title="Clear all triage ticks.">Clear</button>
+            <button class="btn" id="triage-mark-not-itaukei" disabled style="color:#000;" title="Mark every ticked author as non-iTaukei in one GitHub push. They will be excluded from this triage view going forward.">Mark selected as non-iTaukei</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="max-height: 640px; overflow-y: auto; border-top: 1px solid var(--border);">
+        <table class="authors">
+          <thead>
+            <tr>
+              <th class="select-col" title="Tick two or more rows to manually merge them">Merge</th>
+              <th class="name-col">Author</th>
+              <th class="count-col">Total</th>
+              <th class="count-col">First</th>
+              <th class="status-col">iTaukei</th>
+              <th class="status-col">Status</th>
+              <th class="action-col">Action</th>
+            </tr>
+          </thead>
+          <tbody id="authors-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Paste-in Insights (keywords + summary + sources) -->
+    <div class="panel" id="insights-paste-panel">
+      <h2>Paste research insights (keywords + summary)</h2>
+      <p style="color:var(--muted); font-size:0.92rem; margin:4px 0 12px 0;">Paste one or more scholar insight objects here to update <code>data/scholar-insights.json.enc</code>. Format is the same shape you get from the AI-generation pipeline. Names are matched exactly first, then through the alias table, so <code>&quot;Savou, Rusila&quot;</code> and <code>&quot;Savou-Wara, Rusila&quot;</code> both land in the right canonical entry. Existing keys are replaced in place; unknown names are added as new entries.</p>
+      <textarea id="insights-paste-input" placeholder='{
+  "Savou-Wara, Rusila": {
+    "keywords": ["Mangrove Restoration", "Octopus Fishery Biology"],
+    "summary": "HTML summary with <a href=&quot;...&quot;>links</a>.",
+    "summaryFormat": "html",
+    "sources": [ { "title": "...", "url": "https://..." } ]
+  }
+}' style="width:100%; min-height:220px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:0.85rem; padding:10px 12px; border:1px solid var(--border); border-radius:8px; box-sizing:border-box; background:#fff; color:#111;" spellcheck="false"></textarea>
+      <div style="display:flex; gap:10px; margin-top:10px; align-items:center; flex-wrap:wrap;">
+        <button type="button" class="btn primary" id="insights-paste-preview">Preview changes</button>
+        <button type="button" class="btn ghost" id="insights-paste-clear">Clear</button>
+        <span id="insights-paste-status" style="color:var(--muted); font-size:0.9rem;"></span>
+      </div>
+      <div id="insights-paste-report" style="margin-top:12px; display:none;"></div>
+    </div>
+
+    <!-- Bulk gender editor -->
+    <div class="panel" id="bulk-gender-panel">
+      <h2>Bulk edit gender (admin only)
+        <div class="panel-actions">
+          <button class="btn ghost" id="gender-export-csv" title="Download a CSV listing every iTaukei scholar with a gender column. Fill it in a spreadsheet, save as CSV, then upload here.">Export CSV</button>
+          <button class="btn" id="gender-import-csv" title="Upload the filled CSV. Only the gender column is applied — all other scholar fields are left untouched." style="color:#000;">Import CSV…</button>
+          <input type="file" id="gender-import-file" accept=".csv,text/csv" style="display:none;" />
+        </div>
+      </h2>
+      <p class="subtitle" style="color:#000;">
+        Fill in every iTaukei scholar's gender in bulk. This field is stored in <code>scholar-profiles.json</code> and used only in this admin dashboard — the public database, survey, graduate-studies map, and cards never surface it.
+      </p>
+      <ol style="color:#000; font-size:0.9rem; padding-left:20px; margin:0 0 8px;">
+        <li>Click <strong>Export CSV</strong> to download the current roster with a gender column (blank rows are ones you still need to fill).</li>
+        <li>Open the CSV in Google Sheets or Excel. In the <code>gender</code> column, type <code>male</code>, <code>female</code>, or <code>unknown</code> for each scholar.</li>
+        <li>Save as CSV, click <strong>Import CSV…</strong>, and pick the file. Only the gender column is applied.</li>
+        <li>Then click <strong>Push all to GitHub</strong> above to persist the changes to <code>scholar-profiles.json</code>.</li>
+      </ol>
+      <div id="gender-status" style="font-size:0.9rem; color:#000; margin-top:6px;"></div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="panel">
+      <h2>How to sync your profile changes to the public site</h2>
+      <ol style="color:var(--muted); font-size:0.9rem; padding-left:20px;">
+        <li><strong>Set up your Google Sheet</strong> — Create a sheet with columns matching the CSV export below (name, slug, salutation, village, paternalProvince, institution, institutionUrl, googleScholarUrl, photo).</li>
+        <li><strong>Fill in a scholar's profile</strong> here using the "Edit" button next to each iTaukei author.</li>
+        <li><strong>Copy the CSV or JSON</strong> using the buttons above, then paste into your Google Sheet (or into <code>data/scholar-profiles.json</code> for the local fallback).</li>
+        <li><strong>Publish the sheet as CSV</strong> (File → Share → Publish to web → CSV format) and paste that URL in the Data source section above.</li>
+        <li>The public page fetches the sheet on every visit, so changes propagate immediately.</li>
+      </ol>
+    </div>
+  </main>
+</div>
+
+<!-- ==== Manual merge floating action bar ==== -->
+<div class="mm-bar" id="mm-bar" role="region" aria-label="Manual merge selection">
+  <span class="mm-bar__count" id="mm-bar-count">0 selected</span>
+  <span class="mm-bar__names" id="mm-bar-names"></span>
+  <button type="button" class="btn primary" id="mm-bar-merge">Merge…</button>
+  <button type="button" class="btn ghost" id="mm-bar-clear">Clear</button>
+</div>
+
+<!-- ==== Manual merge modal ==== -->
+<div class="modal-backdrop" id="mm-modal">
+  <div class="modal" style="max-width: 560px;">
+    <h2>Merge selected authors</h2>
+    <p class="subtitle" id="mm-modal-subtitle">Pick the canonical name below. All other names will be recorded as aliases and their publications will fold into the canonical author.</p>
+    <p class="mm-hint">Tip: pick the fullest, most correctly spelt name as the canonical.</p>
+    <div class="mm-radio-list" id="mm-radio-list" role="radiogroup" aria-label="Canonical name"></div>
+    <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+      <button type="button" class="btn ghost" id="mm-modal-cancel">Cancel</button>
+      <button type="button" class="btn primary" id="mm-modal-confirm">Merge into selected canonical</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==== Profile edit modal ==== -->
+<div class="modal-backdrop" id="profile-modal">
+  <div class="modal">
+    <h2 id="profile-modal-title">Edit scholar profile</h2>
+    <p class="subtitle" id="profile-modal-subtitle"></p>
+    <form id="profile-form" autocomplete="off" novalidate>
+      <div class="form-grid">
+        <div>
+          <label for="pf-salutation">Salutation</label>
+          <select id="pf-salutation">
+            <option value="">(none)</option>
+            <option>Dr.</option>
+            <option>Mr.</option>
+            <option>Mrs.</option>
+            <option>Ms.</option>
+            <option>Prof.</option>
+          </select>
+        </div>
+        <div>
+          <label for="pf-gender">Gender <span style="color:#64748b;font-weight:normal;font-size:0.85em;">(admin only, not shown publicly)</span></label>
+          <select id="pf-gender">
+            <option value="">(unspecified)</option>
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+            <option value="unknown">Unknown</option>
+          </select>
+          <small>For your analysis only. Never rendered on the public dashboard, never exported into the survey sheet or graduate-studies map.</small>
+        </div>
+        <div>
+          <label for="pf-last">Last name</label>
+          <input type="text" id="pf-last" placeholder="e.g. Thomas-Moko" />
+          <small>Editing this renames the scholar. Any empty stub with the new name is auto-merged, aliases repoint, and the AI insight follows.</small>
+        </div>
+        <div>
+          <label for="pf-first">First name</label>
+          <input type="text" id="pf-first" placeholder="e.g. Nunia" />
+        </div>
+        <div>
+          <label for="pf-village">Village</label>
+          <input type="text" id="pf-village" placeholder="e.g. Tubou" />
+        </div>
+        <div>
+          <label for="pf-paternal-province">Paternal Province</label>
+          <select id="pf-paternal-province">
+            <option value="">(select)</option>
+            <optgroup label="Burebasaga">
+              <option>Kadavu</option><option>Nadroga/Navosa</option><option>Namosi</option><option>Rewa</option><option>Serua</option>
+            </optgroup>
+            <optgroup label="Kubuna">
+              <option>Ba</option><option>Lomaiviti</option><option>Naitasiri</option><option>Ra</option><option>Tailevu</option>
+            </optgroup>
+            <optgroup label="Tovata">
+              <option>Bua</option><option>Cakaudrove</option><option>Lau</option><option>Macuata</option>
+            </optgroup>
+          </select>
+          <label style="display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:400; cursor:pointer;">
+            <input type="checkbox" id="pf-non-itaukei-dad" style="margin:0;" />
+            <span>Non-iTaukei dad <em style="color:var(--muted); font-style:italic;">(scholar will be counted towards mom&rsquo;s province if mom is iTaukei)</em></span>
+          </label>
+          <small>Confederacy is derived automatically from whichever province applies.</small>
+        </div>
+        <div>
+          <label for="pf-maternal-province">Maternal Province</label>
+          <select id="pf-maternal-province">
+            <option value="">(select)</option>
+            <optgroup label="Burebasaga">
+              <option>Kadavu</option><option>Nadroga/Navosa</option><option>Namosi</option><option>Rewa</option><option>Serua</option>
+            </optgroup>
+            <optgroup label="Kubuna">
+              <option>Ba</option><option>Lomaiviti</option><option>Naitasiri</option><option>Ra</option><option>Tailevu</option>
+            </optgroup>
+            <optgroup label="Tovata">
+              <option>Bua</option><option>Cakaudrove</option><option>Lau</option><option>Macuata</option>
+            </optgroup>
+          </select>
+          <small>Optional. Used only when the scholar has a non-iTaukei dad but an iTaukei mother, so their paternal-province chart contribution flows through the mother instead.</small>
+        </div>
+        <div class="full">
+          <label for="pf-institution">Institution name</label>
+          <input type="text" id="pf-institution" placeholder="e.g. University of Tasmania, Australia" />
+        </div>
+        <div class="full">
+          <label for="pf-institution-url">Institution website URL</label>
+          <input type="url" id="pf-institution-url" placeholder="https://www.utas.edu.au" />
+          <small>Homepage of the institution. Linked from the institution name on the public card.</small>
+        </div>
+        <div>
+          <label for="pf-sector">Sector</label>
+          <select id="pf-sector">
+            <option value="">(select)</option>
+            <option value="Academia">Academia</option>
+            <option value="Government">Government</option>
+            <option value="International Organisation">International Organisation</option>
+            <option value="Non-Government / Civil Society">Non-Government / Civil Society</option>
+            <option value="Private Sector">Private Sector</option>
+          </select>
+          <small>Used for the Sector filter on the public dashboard. Auto-seeded from the institution name; adjust if wrong.</small>
+        </div>
+        <div>
+          <label for="pf-institution-country">Country of work</label>
+          <input type="text" id="pf-institution-country" list="pf-country-options" placeholder="e.g. Fiji, Australia, United Kingdom" />
+          <small>Country where the institution is based. Auto-seeded from the institution name; adjust if wrong.</small>
+          <datalist id="pf-country-options">
+            <option value="Australia"></option>
+            <option value="Canada"></option>
+            <option value="Fiji"></option>
+            <option value="Germany"></option>
+            <option value="Guam (USA territory)"></option>
+            <option value="Japan"></option>
+            <option value="New Zealand"></option>
+            <option value="Papua New Guinea"></option>
+            <option value="Samoa"></option>
+            <option value="Solomon Islands"></option>
+            <option value="Tonga"></option>
+            <option value="United Arab Emirates"></option>
+            <option value="United Kingdom"></option>
+            <option value="USA"></option>
+            <option value="Vanuatu"></option>
+          </datalist>
+        </div>
+        <div>
+          <label for="pf-department">Department</label>
+          <input type="text" id="pf-department" placeholder="e.g. School of Marine Studies" />
+        </div>
+        <div>
+          <label for="pf-department-url">Department website URL</label>
+          <input type="url" id="pf-department-url" placeholder="https://… (department page)" />
+          <small>Optional. Linked from the department name on the public card.</small>
+        </div>
+        <div>
+          <label for="pf-title">Professional title</label>
+          <input type="text" id="pf-title" placeholder="e.g. Senior Lecturer, Professor, Postdoctoral Fellow" />
+        </div>
+        <div>
+          <label for="pf-profile-url">Faculty profile URL</label>
+          <input type="url" id="pf-profile-url" placeholder="https://… (their faculty page)" />
+          <small>Personal / faculty profile page. Linked from the professional title on the public card.</small>
+        </div>
+        <div>
+          <label for="pf-scholar-url">Google Scholar profile URL</label>
+          <input type="url" id="pf-scholar-url" placeholder="https://scholar.google.com/citations?user=…" />
+        </div>
+        <div class="full">
+          <label for="pf-orcid-url">ORCID iD URL</label>
+          <input type="url" id="pf-orcid-url" placeholder="https://orcid.org/0000-0000-0000-0000" />
+          <small>Paste the scholar’s ORCID URL (usually <code>https://orcid.org/</code> followed by their 16-digit iD). Leave blank if not linked yet.</small>
+        </div>
+
+        <!-- Memorial (deceased scholars) -->
+        <div class="full" style="margin-top:8px;padding-top:16px;border-top:1px dashed #cbd5e1;">
+          <h4 style="margin:0 0 4px;font-size:0.92rem;text-transform:uppercase;letter-spacing:0.05em;color:#334155;">Memorial (deceased scholars)</h4>
+          <small style="display:block;margin-bottom:8px;color:#64748b;">
+            When “Scholar has passed away” is ticked, a small dark memorial band is shown under the profile photo on the public card. Text is either the full lifespan (e.g. “1942 – 2024”) when both years are known, “d. 2024” when only the death year is known, or “In memoriam” as a fallback. Living scholars are unaffected.
+          </small>
+        </div>
+        <div class="full">
+          <label style="display:inline-flex;align-items:center;gap:8px;font-weight:normal;">
+            <input type="checkbox" id="pf-deceased" />
+            Scholar has passed away
+          </label>
+        </div>
+        <div>
+          <label for="pf-year-of-birth">Year of birth</label>
+          <input type="number" id="pf-year-of-birth" placeholder="e.g. 1938" min="1800" max="2100" step="1" />
+          <small>Optional. Shown in the memorial band when known.</small>
+        </div>
+        <div>
+          <label for="pf-year-of-death">Year of death</label>
+          <input type="number" id="pf-year-of-death" placeholder="e.g. 2024" min="1800" max="2100" step="1" />
+          <small>Required when “passed away” is ticked, if known.</small>
+        </div>
+
+        <!-- Graduate studies -->
+        <div class="full" style="margin-top:8px;padding-top:16px;border-top:1px dashed #cbd5e1;">
+          <h4 style="margin:0 0 4px;font-size:0.92rem;text-transform:uppercase;letter-spacing:0.05em;color:#334155;">Graduate studies</h4>
+          <small style="display:block;margin-bottom:8px;color:#64748b;">
+            Auto-detected from thesis items in this scholar’s Zotero collection. Edit or override as needed. Used for the “Where iTaukei graduates study” world map (not shown on the scholar’s public card).
+          </small>
+          <div class="pf-detected" data-detected-grad style="display:none;font-size:0.85rem;color:#0e7490;background:#e6f3f5;padding:8px 12px;border-radius:6px;margin-bottom:10px;"></div>
+        </div>
+        <div>
+          <label for="pf-masters-uni">Masters — University</label>
+          <input type="text" id="pf-masters-uni" placeholder="e.g. University of the South Pacific" />
+        </div>
+        <div>
+          <label for="pf-masters-country">Masters — Country</label>
+          <input type="text" id="pf-masters-country" placeholder="e.g. Fiji" />
+        </div>
+        <div>
+          <label for="pf-phd-uni">PhD — University</label>
+          <input type="text" id="pf-phd-uni" placeholder="e.g. University of Hawaiʻi at Mānoa" />
+        </div>
+        <div>
+          <label for="pf-phd-country">PhD — Country</label>
+          <input type="text" id="pf-phd-country" placeholder="e.g. USA" />
+        </div>
+        <div class="full">
+          <label>Profile photo</label>
+          <div class="photo-row">
+            <div class="photo-preview" id="pf-photo-preview" aria-label="Profile photo preview">no photo</div>
+            <div>
+              <div class="photo-dz" id="pf-photo-dz" tabindex="0" role="button" aria-label="Drop profile photo here or click to browse">
+                <div class="dz-title">Drag &amp; drop a photo here</div>
+                <div class="dz-sub">or click to browse — JPEG/PNG, auto-cropped to a 400×400 square</div>
+              </div>
+              <input type="file" id="pf-photo-file" accept="image/*" style="display:none;" />
+              <div class="photo-actions">
+                <button type="button" id="pf-photo-download" title="Uploads directly to img/scholars/ in the repo if a GitHub token is set. Otherwise downloads the file so you can drop it in manually.">Upload to repo</button>
+                <button type="button" id="pf-photo-url-toggle" title="Paste a hosted image URL instead">Paste URL instead</button>
+                <button type="button" class="danger" id="pf-photo-clear">Clear photo</button>
+              </div>
+            </div>
+          </div>
+          <input type="text" id="pf-photo" placeholder="https://…/photo.jpg  or  img/scholars/first-last.jpg" style="margin-top:10px; display:none;" />
+          <small>Drop an image or paste a URL. Dropped images are embedded as base64 in the exported JSON. Use “Download for repo” to save the resized file, drop it into <code>img/scholars/</code>, then commit — the exported JSON will reference that path automatically.</small>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn danger" id="pf-cancel">Cancel</button>
+        <div>
+          <button type="button" class="btn ghost" id="pf-clear">Clear iTaukei flag</button>
+          <button type="submit" class="btn">Save changes</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ==== Copy-output modal ==== -->
+<div class="modal-backdrop" id="output-modal">
+  <div class="modal">
+    <h2 id="output-modal-title">Copy this data to your Google Sheet</h2>
+    <p class="subtitle" id="output-modal-subtitle">Ctrl / Cmd + A to select all, then Ctrl / Cmd + C to copy.</p>
+    <textarea id="save-output" readonly style="width:100%;min-height:260px;background:#0f172a;color:#e5e7eb;font-family:ui-monospace,monospace;font-size:0.8rem;padding:14px;border-radius:8px;border:none;"></textarea>
+    <div class="modal-actions">
+      <button type="button" class="btn" id="output-copy">Copy to clipboard</button>
+      <button type="button" class="btn ghost" id="output-close">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==== Toast ==== -->
+<div class="toast" id="toast"></div>
+
+<script src="js/db-gate.js?v=e6b8d487" defer></script>
+<script src="js/admin.js?v=5d1c6033" defer></script>
+
+<!-- ==== Pending new-scholar review (self-contained) ==== -->
+<script defer>
+(function(){
+  'use strict';
+  var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
+  var $ = function(s){ return document.querySelector(s); };
+  var bodyEl, countEl, statEl, statusEl;
+  var loadedOnce = false;
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]; }); }
+
+  function setStatus(msg, isErr){
+    if (!statusEl) return;
+    statusEl.textContent = msg || '';
+    statusEl.style.color = isErr ? '#b3261e' : 'var(--muted)';
+  }
+
+  function fieldRow(label, val){
+    if (!val) return '';
+    return '<div style="display:flex;gap:8px;font-size:0.83rem;margin:2px 0;">'
+      + '<span style="min-width:132px;color:var(--muted);">' + esc(label) + '</span>'
+      + '<span style="color:var(--ink,#222);">' + esc(val) + '</span></div>';
+  }
+
+  function render(rows){
+    if (!bodyEl) return;
+    var n = rows.length;
+    if (countEl) countEl.textContent = n;
+    if (statEl)  statEl.textContent  = n;
+    if (!n){
+      bodyEl.innerHTML = '<p class="subtitle" style="margin:0;">No pending submissions right now. New public submissions will appear here for review.</p>';
+      return;
+    }
+    var html = rows.map(function(r){
+      var name = esc((r.lastName||'') + ', ' + (r.firstName||''));
+      var ts = r.timestamp ? new Date(r.timestamp).toLocaleString() : '';
+      return '<div class="pending-item" data-row="' + esc(r.row) + '" '
+        + 'style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:#fbfaf3;">'
+        + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;">'
+          + '<div style="font-weight:700;font-size:0.98rem;color:var(--teal-dark,#0f6e56);">' + name
+            + (ts ? ' <span style="font-weight:400;color:var(--muted);font-size:0.78rem;">· submitted ' + esc(ts) + '</span>' : '') + '</div>'
+          + '<div style="display:flex;gap:8px;">'
+            + '<button class="btn" data-act="approve" data-row="' + esc(r.row) + '">Approve</button>'
+            + '<button class="btn ghost" data-act="reject" data-row="' + esc(r.row) + '">Reject</button>'
+          + '</div>'
+        + '</div>'
+        + '<div style="margin-top:8px;">'
+          + fieldRow('Degree', r.degree)
+          + fieldRow('Graduation year', r.gradYear)
+          + fieldRow('University', r.university)
+          + fieldRow('Thesis link', r.thesisLink)
+          + fieldRow('Paternal village', r.paternalVillage)
+          + fieldRow('Paternal province', r.paternalProvince)
+          + fieldRow('Maternal village', r.maternalVillage)
+          + fieldRow('Maternal province', r.maternalProvince)
+          + fieldRow('Informant name', r.informantName)
+          + fieldRow('Informant email', r.informantEmail)
+          + (r.notes ? '<div style="margin-top:8px;padding:8px 10px;background:#fff;border:1px solid var(--border);border-radius:8px;">'
+              + '<div style="font-size:0.75rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:3px;">Notes / explanation</div>'
+              + '<div style="font-size:0.85rem;white-space:pre-wrap;">' + esc(r.notes) + '</div></div>' : '')
+          + (!r.thesisLink ? '<div style="margin-top:8px;font-size:0.8rem;color:#b3261e;font-weight:600;">⚠ No thesis/publication link — needs research before adding</div>' : '')
+        + '</div>'
+      + '</div>';
+    }).join('');
+    bodyEl.innerHTML = html;
+  }
+
+  function load(){
+    setStatus('Loading…');
+    return fetch(SCRIPT_URL + '?mode=newScholars&_=' + Date.now(), { redirect:'follow' })
+      .then(function(r){ return r.json(); })
+      .then(function(data){
+        var rows = Array.isArray(data) ? data : (data.rows || (data.result && data.result.rows) || []);
+        // Only show rows still pending (backend marks approved/rejected ones).
+        rows = rows.filter(function(r){ return !r.status || r.status === 'pending'; });
+        render(rows);
+        setStatus(rows.length ? '' : 'All caught up.');
+      })
+      .catch(function(e){
+        setStatus('Could not load pending submissions. If you just deployed the backend, wait a moment and refresh.', true);
+        if (bodyEl) bodyEl.innerHTML = '';
+      });
+  }
+
+  function act(action, row, btn){
+    if (action === 'reject' && !confirm('Reject and remove this submission? This cannot be undone.')) return;
+    if (action === 'approve' && !confirm('Approve this scholar and add them to the master list?')) return;
+    var item = btn.closest('.pending-item');
+    if (item){ item.style.opacity = '0.5'; item.querySelectorAll('button').forEach(function(b){ b.disabled = true; }); }
+    setStatus(action === 'approve' ? 'Approving…' : 'Rejecting…');
+    // no-cors text/plain POST to avoid CORS preflight (same pattern as survey submissions)
+    fetch(SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ type: 'newScholarAction', action: action, row: Number(row) })
+    }).then(function(){
+      // no-cors gives an opaque response; assume success and reload after a beat
+      setTimeout(function(){ load(); }, 900);
+      setStatus(action === 'approve' ? 'Approved — added to master list.' : 'Rejected.');
+    }).catch(function(){
+      setStatus('Action failed — please refresh and try again.', true);
+      if (item){ item.style.opacity = ''; item.querySelectorAll('button').forEach(function(b){ b.disabled = false; }); }
+    });
+  }
+
+  function wire(){
+    bodyEl   = $('#pending-body');
+    countEl  = $('#pending-count');
+    statEl   = $('#stat-pending');
+    statusEl = $('#pending-status');
+    var reload = $('#pending-reload');
+    if (reload) reload.addEventListener('click', load);
+    if (bodyEl) bodyEl.addEventListener('click', function(e){
+      var b = e.target.closest('button[data-act]');
+      if (!b) return;
+      act(b.getAttribute('data-act'), b.getAttribute('data-row'), b);
+    });
+  }
+
+  // The dashboard is hidden until login. Poll for it becoming visible, then load once.
+  function watchForDashboard(){
+    var dash = document.getElementById('dashboard');
+    if (dash && dash.offsetParent !== null && !loadedOnce){
+      loadedOnce = true;
+      load();
+    }
+  }
+
+  if (document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', function(){ wire(); setInterval(watchForDashboard, 800); });
+  } else {
+    wire(); setInterval(watchForDashboard, 800);
+  }
+})();
+</script>
+</body>
+</html>

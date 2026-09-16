@@ -17,3 +17,98 @@
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
+
+/* =============================================
+   PANEL F SCHOLAR CARD — COMPACT VERTICAL RHYTHM
+   Approved 2026-09-12 mockup: retain the existing typography, button sizes,
+   card styling and content while removing unnecessary vertical whitespace.
+   `!important` is intentional because the dashboard's page-specific card
+   rules are declared after this shared stylesheet.
+   ============================================= */
+
+/* Let each scholar card take its natural content height rather than stretching
+   to match the tallest card in its two-column grid row. This removes the large,
+   variable blank area above the research expander on shorter profiles. */
+.db-scholar-card {
+  align-self: start !important;
+}
+
+/* Tighten the vertical stack under the portrait. This controls the gap between
+   Update info and Share as well as the portrait/button stack. */
+.db-scholar-card__photo-col,
+.db-scholar-card__photo-col--is-deceased {
+  gap: 6px !important;
+}
+
+/* The memorial band deliberately cancels the photo-column gap so it remains
+   visually fused to the portrait after the gap changes from 10px to 6px. */
+.db-scholar-card__memorial {
+  margin-top: -6px !important;
+}
+
+/* Reduce the space after the identity/current-position block. In particular,
+   Last update now sits close to the Explain their research control rather than
+   leaving a large empty band. Horizontal padding and top padding are unchanged. */
+.db-scholar-card__body {
+  padding-bottom: 8px !important;
+}
+
+/* Keep both action buttons optically locked together and centered. Share uses
+   the same dimensions/typography as Update info; this rule only normalizes
+   flex alignment for the injected share control regardless of its class name. */
+.db-scholar-card__photo-col > button,
+.db-scholar-card__photo-col > a[role="button"],
+.db-scholar-card__photo-col--is-deceased > button,
+.db-scholar-card__photo-col--is-deceased > a[role="button"] {
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* =============================================
+   DIRECT SCHOLAR PROFILE — GEOGRAPHY CHECKLIST POPOVER
+   Keep the Province / Pacific Island country checkbox list visually attached
+   to the button that opened it. The direct-profile helper currently computes
+   fixed viewport coordinates; on the embedded scholar page those coordinates
+   can drift sideways/down the page. These higher-specificity !important rules
+   deliberately override those inline coordinates and anchor the checklist to
+   its own <details> control instead.
+   ============================================= */
+html body .scholar-direct-main details.scholar-geo-menu {
+  position: relative !important;
+  overflow: visible !important;
+  z-index: 1000 !important;
+}
+
+html body .scholar-direct-main details.scholar-geo-menu > .scholar-geo-options {
+  position: absolute !important;
+  left: 0 !important;
+  top: calc(100% + 6px) !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  width: 290px !important;
+  max-width: min(290px, calc(100vw - 24px)) !important;
+  max-height: min(340px, 46vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  visibility: visible !important;
+  z-index: 2147483647 !important;
+  background: #fff !important;
+  border: 1px solid #cbd5d8 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.22) !important;
+}
+
+/* Ensure publication cards and the geotagging editor never clip the open menu. */
+html body .scholar-direct-main .scholar-pubs-review__list > .db-item,
+html body .scholar-direct-main .scholar-geo-editor,
+html body .scholar-direct-main .scholar-geo-editor__row {
+  overflow: visible !important;
+}
+
+@media (max-width: 700px) {
+  html body .scholar-direct-main details.scholar-geo-menu > .scholar-geo-options {
+    width: min(290px, calc(100vw - 24px)) !important;
+    max-height: 42vh !important;
+  }
+}

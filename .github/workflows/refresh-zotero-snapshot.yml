@@ -1,0 +1,291 @@
+name: Refresh iTaukei Zotero snapshot
+
+# Runs every 3 hours and any time you want to trigger manually from the
+# Actions tab ("Run workflow"). Regenerates ALL public-dashboard data files
+# from source, so every panel on
+# https://ronvave.github.io/vave-lab/itaukei-research-database.html
+# refreshes on the same cadence and against the same commit.
+#
+# The pipeline is:
+#
+#   1. Decrypt existing .enc blobs into plaintext .json / .geojson.
+#   2. Regenerate itaukei-zotero-snapshot.json from the Zotero public API.
+#   3. Regenerate itaukei-graduate-studies.json (world-map degrees) from
+#      the fresh snapshot.
+#   4. Backfill scholar-profiles.json with any grad-only scholars AND copy
+#      their masters / phd degree metadata onto every profile whose
+#      admin-entered fields are still empty. This is what keeps the public
+#      dashboard's "Countries / Universities of study" filter and the
+#      scholar-mobility spreadsheet in sync with any new country a
+#      graduate has studied in (see scripts/add_grad_only_scholars.py).
+#      Admin-entered profile edits are never overwritten — the copy only
+#      writes when the target field is empty.
+#   5. Diff the snapshot vs the previous one, update data/last-sync.json.
+#   6. Re-encrypt every data file so ONLY the .enc blobs are tracked.
+#   7. Commit and push. Commit body is one of two forms depending on
+#      whether any tracked total moved by more than 2%:
+#        - "Auto-refresh Zotero snapshot ..." when the data shifted
+#        - "chore: refresh last-sync heartbeat ..." when it didn't
+#
+# EVERY dashboard panel reads from one of the .enc blobs this workflow
+# rewrites, so a completed run is the definition of "all panels are in
+# sync". A forced sync (workflow_dispatch) uses the same steps as the
+# scheduled run, plus FORCE_COMMIT so the snapshot commits even when no
+# tracked total moved by more than the 2% threshold.
+#
+# Since 2026-07-08 the shipped data files are AES-GCM encrypted (.enc). The
+# plaintext .json versions are gitignored. This workflow uses VAVELAB_PASSCODE
+# (repo secret) to decrypt the previous snapshot for diffing, run the refresh,
+# then re-encrypt every data file and commit ONLY the .enc blobs.
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'  # every 3 hours, UTC
+  workflow_dispatch:        # manual "Run workflow" button in the Actions tab
+
+permissions:
+  contents: write            # required to push commits back to main
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    env:
+      # Same passcode the public dashboard uses. Stored under Settings →
+      # Secrets and variables → Actions. Never printed by any step below.
+      VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install crypto dependency
+        run: |
+          python3 -m pip install --quiet 'cryptography>=42'
+
+      - name: Guard — passcode secret must be set
+        run: |
+          if [ -z "$VAVELAB_PASSCODE" ]; then
+            echo "::error::VAVELAB_PASSCODE repo secret is missing. Set it under Settings → Secrets → Actions."
+            exit 1
+          fi
+
+      - name: Bootstrap plaintext data files from .enc blobs
+        run: |
+          # Refresh scripts and the diff step need certain data files in
+          # plaintext (geojson for confederacy tallies, prior snapshot for the
+          # diff, graduate-studies for the follow-up regenerator). Decrypt
+          # them into place. They stay untracked (gitignored).
+          python3 scripts/decrypt_data.py --all
+
+      - name: Stash previous snapshot for later diff
+        run: |
+          # The refresh step overwrites the plaintext snapshot; the diff step
+          # needs the pre-refresh version to compare against. Copy it to /tmp.
+          if [ -f data/itaukei-zotero-snapshot.json ]; then
+            cp data/itaukei-zotero-snapshot.json /tmp/prev-snapshot.json
+          fi
+
+      - name: Regenerate snapshot from Zotero API
+        run: |
+          python3 data/refresh-zotero-snapshot.py
+
+      - name: Regenerate graduate-studies from snapshot
+        env:
+          # STRICT_COVERAGE=1 fails the workflow only if the auto-resolver
+          # (data/auto_resolve.py) ALSO couldn't find the country or
+          # university. New Zotero entries no longer block the refresh:
+          # data/auto_resolve.py queries restcountries.com for country ISO,
+          # Wikipedia + OpenStreetMap Nominatim for university coordinates,
+          # caches results in data/auto-resolved.json.enc, and patches this
+          # run's world-map JSON so the new location plots on the same run.
+          # Set VAVELAB_DISABLE_AUTO_RESOLVE=1 to bypass the resolver (e.g.
+          # for a hermetic debug). See docs/DATA-COVERAGE-GAPS.md, section
+          # 'Auto-resolve policy'.
+          VAVELAB_STRICT_COVERAGE: "1"
+        run: |
+          python3 data/refresh-graduate-studies.py
+
+      - name: Backfill scholar profiles + degrees from graduate-studies
+        run: |
+          # Ensures the public dashboard's Countries / Universities of study
+          # filter tracks every country a grad student has studied in — the
+          # world map already knew about (e.g.) China / India from the
+          # graduate-studies pipeline, but scholar-profiles.json only had
+          # name stubs for those students and none of their masters / phd
+          # country data, so those countries never appeared in the dropdown.
+          #
+          # Safety: the script only writes when the target profile field is
+          # empty. Admin-dashboard edits (institution, village, province,
+          # sector, discipline, hand-corrected masters / phd, etc.) are
+          # left untouched. See scripts/add_grad_only_scholars.py docstring.
+          python3 scripts/add_grad_only_scholars.py --apply
+
+      - name: Compare vs previous snapshot & write last-sync tracker
+        id: diff
+        run: |
+          python3 - <<'PY'
+          """
+          Diff the newly regenerated snapshot against the previous one. Since
+          the plaintext .json is gitignored, we compare against the decrypted
+          copy the bootstrap step already restored on disk BEFORE the refresh
+          overwrote it. We saved that copy off to /tmp first.
+          Always update data/last-sync.json with the current check timestamp
+          so the public site's Sync badge advances every run, even when
+          nothing material changed. The snapshot file itself is only marked
+          as changed when a tracked total moves by more than 2% (to keep the
+          commit history clean).
+          """
+          import json, os, subprocess, sys, datetime, shutil
+
+          NEW_PATH  = "data/itaukei-zotero-snapshot.json"
+          SYNC_PATH = "data/last-sync.json"
+          PREV_PATH = "/tmp/prev-snapshot.json"
+
+          # 1. Load the freshly written snapshot (working tree)
+          with open(NEW_PATH, "r") as f:
+              new = json.load(f)
+
+          # 2. Load the previous snapshot from the copy we stashed BEFORE the
+          #    refresh ran (see step below).
+          prev = None
+          has_prev = False
+          if os.path.exists(PREV_PATH):
+              try:
+                  with open(PREV_PATH, "r") as f:
+                      prev = json.load(f)
+                  has_prev = True
+              except Exception as e:
+                  print(f"WARN: couldn't parse previous snapshot: {e}")
+
+          # 3. Load geo file to compute confederacy tallies (bootstrap already
+          #    decrypted it into place).
+          with open("data/fiji-provinces.geojson") as f:
+              geo = json.load(f)
+          prov_conf = {}
+          for feat in geo["features"]:
+              p = feat["properties"]
+              key = p.get("zoteroCollectionKey_publicationLocation")
+              if key:
+                  prov_conf[key] = p["confederacy"]
+
+          def totals(snap):
+              items = snap["items"]
+              out = {"items": len(items)}
+              from collections import Counter
+              tc = Counter(i.get("itemType", "?") for i in items)
+              for t in ("journalArticle", "thesis", "bookSection", "book", "report"):
+                  out[f"type:{t}"] = tc.get(t, 0)
+              conf = {"Burebasaga": 0, "Kubuna": 0, "Tovata": 0}
+              for it in items:
+                  for k in it.get("collections", []):
+                      c = prov_conf.get(k)
+                      if c:
+                          conf[c] += 1
+              for c, n in conf.items():
+                  out[f"conf:{c}"] = n
+              return out
+
+          new_t  = totals(new)
+          prev_t = totals(prev) if has_prev else {k: 0 for k in new_t}
+
+          THRESHOLD_PCT = 2.0
+          FORCE_COMMIT = os.environ.get('GITHUB_EVENT_NAME') == 'workflow_dispatch'
+          rows = []
+          data_changed = (not has_prev) or FORCE_COMMIT
+          moved = []
+          for key in sorted(set(prev_t) | set(new_t)):
+              a = prev_t.get(key, 0)
+              b = new_t.get(key, 0)
+              denom = max(1, a)
+              pct = abs(b - a) / denom * 100.0
+              flag = "*" if pct > THRESHOLD_PCT and b != a else " "
+              if flag == "*":
+                  data_changed = True
+                  moved.append({"metric": key, "prev": a, "new": b, "delta": b - a, "pct": round(pct, 2)})
+              rows.append(f"  {flag} {key:20s}  prev={a:>4}  new={b:>4}  delta={b-a:+d}  ({pct:5.2f}%)")
+
+          print("=== Snapshot delta ===")
+          print("\n".join(rows))
+          print(f"=== Threshold: {THRESHOLD_PCT}% ===")
+          print(f"=== data_changed: {data_changed} ===")
+
+          # 4. Determine "last data change" ISO timestamp. We used to pull
+          #    prev-sync from git HEAD; now the previous last-sync.json is on
+          #    disk (bootstrap decrypted it) so just read it directly.
+          now_iso = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+          prev_sync = {}
+          if os.path.exists(SYNC_PATH):
+              try:
+                  with open(SYNC_PATH) as f:
+                      prev_sync = json.load(f)
+              except Exception:
+                  prev_sync = {}
+
+          last_changed = now_iso if data_changed else prev_sync.get("lastChanged") or new.get("generatedAt") or now_iso
+
+          # 5. Write the always-fresh sync tracker
+          summary = ("No tracked total moved by more than "
+                     f"{THRESHOLD_PCT}%.") if not moved else (
+              "Changes: " + ", ".join(f"{m['metric']} {m['prev']}\u2192{m['new']}" for m in moved)
+          )
+          with open(SYNC_PATH, "w") as f:
+              json.dump({
+                  "lastChecked": now_iso,
+                  "lastChanged": last_changed,
+                  "dataChangedThisRun": data_changed,
+                  "totalItems": new_t.get("items", 0),
+                  "movedMetrics": moved,
+                  "summary": summary,
+                  "threshold": f"{THRESHOLD_PCT}%",
+                  "workflowRunUrl": f"https://github.com/{os.environ.get('GITHUB_REPOSITORY','')}/actions/runs/{os.environ.get('GITHUB_RUN_ID','')}"
+              }, f, indent=2)
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"data_changed={'true' if data_changed else 'false'}\n")
+          PY
+
+      - name: Re-encrypt every data file
+        run: |
+          python3 scripts/encrypt_data.py
+
+      - name: Commit and push encrypted blobs
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # Only the .enc versions are tracked (.gitignore keeps plaintext out).
+          # encrypt_data.py rewrites EVERY .enc blob with a fresh shared salt,
+          # so we always stage all of them \u2014 otherwise the JS decrypt step
+          # sees a mixed-salt set and fails on the second file it fetches.
+          git add data/*.enc
+          if [ "${{ steps.diff.outputs.data_changed }}" = "true" ]; then
+            git commit -m "Auto-refresh Zotero snapshot ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
+
+          One or more tracked totals moved by >2% since the last snapshot.
+          Run: ${{ github.run_id }}"
+          else
+            git commit -m "chore: refresh last-sync heartbeat ($(date -u +%Y-%m-%d\ %H:%M\ UTC))
+
+          No tracked total moved by >2% \u2014 snapshot file unchanged.
+          Run: ${{ github.run_id }}"
+          fi
+          # Concurrency-safe push: if another commit (e.g. Ron editing profiles
+          # in the admin dashboard) lands on main while this workflow ran, our
+          # push would be rejected as non-fast-forward. Rebase onto whatever is
+          # currently on origin/main and try again. Up to 3 retries.
+          push_with_rebase() {
+            for attempt in 1 2 3; do
+              if git push origin HEAD:${{ github.ref_name }}; then
+                return 0
+              fi
+              echo "Push rejected (attempt $attempt/3), rebasing onto origin/${{ github.ref_name }}\u2026"
+              git fetch origin ${{ github.ref_name }}
+              git rebase origin/${{ github.ref_name }}
+            done
+            echo "ERROR: push still rejected after 3 rebases"
+            return 1
+          }
+          push_with_rebase

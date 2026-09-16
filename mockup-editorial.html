@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Editorial &amp; Advisory Roles — mockups</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root {
+    --bg: #f3ede0;
+    --ink: #0f172a;
+    --muted: #475569;
+    --hero-dark: #062f35;
+    --gold: #c8a84b;
+    /* Reference palette from image-2 */
+    --tile-1: #0f6d5a;   /* deep green */
+    --tile-2: #7a2e26;   /* red-brown */
+    --tile-3: #6b4321;   /* dark brown */
+    --tile-4: #1e3a8a;   /* deep blue */
+    --tile-5: #4c1d95;   /* violet */
+    --tile-6: #86155a;   /* magenta */
+    --tile-7: #0e7490;   /* teal (extra) */
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; color: var(--ink); }
+  .page { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-family: Arial, sans-serif; font-weight: 800; font-size: 1.6rem; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 0.98rem; margin: 0 0 32px; }
+  .mockup { background: #fff; border: 1px solid rgba(15,23,42,0.08); border-radius: 14px; padding: 28px; margin-bottom: 44px; box-shadow: 0 4px 18px rgba(6,47,53,0.06); }
+  .mockup__label { display: inline-block; background: var(--hero-dark); color: #fff; padding: 5px 12px; border-radius: 999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; margin-bottom: 8px; text-transform: uppercase; }
+  .mockup__title { font-family: Arial, sans-serif; font-weight: 800; font-size: 1.25rem; margin: 4px 0 4px; }
+  .mockup__note { color: var(--muted); font-size: 0.92rem; margin: 0 0 22px; }
+
+  /* Reused: dark heading strip matching the current page banner */
+  .heading-strip {
+    background: var(--hero-dark); color: #fff; padding: 20px 26px; border-radius: 10px;
+    border-left: 4px solid var(--gold); margin-bottom: 18px;
+  }
+  .heading-strip .kicker { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+  .heading-strip .h2 { font-family: Arial, sans-serif; font-weight: 800; font-size: 1.55rem; margin-top: 4px; }
+
+  /* ============ MOCKUP A — Bold horizontal tile bar + revamped timeline ============ */
+  .a-tiles {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 0 0 24px;
+  }
+  .a-tile {
+    padding: 20px 22px; border-radius: 12px; color: #fff;
+    display: grid; grid-template-columns: 44px 1fr; column-gap: 14px; align-items: center;
+    box-shadow: 0 6px 14px rgba(6,47,53,0.14);
+  }
+  .a-tile .icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.18); display: grid; place-items: center;
+  }
+  .a-tile .icon svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; }
+  .a-tile .num { font-family: Arial, sans-serif; font-weight: 800; font-size: 2rem; line-height: 1; letter-spacing: -0.01em; }
+  .a-tile .lbl { font-size: 0.82rem; opacity: 0.92; margin-top: 4px; letter-spacing: 0.01em; }
+  .a-tile.t1 { background: var(--tile-1); }
+  .a-tile.t2 { background: var(--tile-3); }
+  .a-tile.t3 { background: var(--tile-4); }
+
+  .a-timeline { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .a-row {
+    display: grid; grid-template-columns: 130px 1fr auto; gap: 18px; align-items: center;
+    background: #fff; border: 1px solid rgba(15,23,42,0.08); border-left: 6px solid var(--tile-1);
+    padding: 14px 18px; border-radius: 10px;
+  }
+  .a-row.subject   { border-left-color: var(--tile-1); }
+  .a-row.board     { border-left-color: var(--gold); }
+  .a-row.associate { border-left-color: var(--tile-2); }
+  .a-row .since { color: var(--muted); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .a-row .journal { font-weight: 700; font-size: 1.05rem; color: var(--ink); }
+  .a-row .journal a { color: inherit; text-decoration: none; border-bottom: 2px solid rgba(15,23,42,0.15); }
+  .a-row .journal a:hover { border-bottom-color: var(--tile-4); }
+  .a-pill { padding: 6px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em; white-space: nowrap; }
+  .a-pill.subject   { background: var(--tile-1); color: #fff; }
+  .a-pill.board     { background: var(--gold);  color: #4a3a10; }
+  .a-pill.associate { background: var(--tile-2); color: #fff; }
+
+  /* ============ MOCKUP B — Vertical column of colored tiles + card timeline ============ */
+  .b-wrap { display: grid; grid-template-columns: 240px 1fr; gap: 26px; }
+  .b-tiles { display: grid; gap: 12px; }
+  .b-tile {
+    padding: 18px; border-radius: 12px; color: #fff; text-align: left;
+    box-shadow: 0 4px 10px rgba(6,47,53,0.10);
+    display: grid; grid-template-columns: 44px 1fr; gap: 12px; align-items: center;
+  }
+  .b-tile .icon {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); display: grid; place-items: center;
+  }
+  .b-tile .icon svg { width: 22px; height: 22px; stroke: #fff; fill: none; stroke-width: 2; }
+  .b-tile .num { font-family: Arial, sans-serif; font-weight: 800; font-size: 1.85rem; line-height: 1; }
+  .b-tile .lbl { font-size: 0.8rem; opacity: 0.92; margin-top: 3px; }
+  .b-tile.t1 { background: var(--tile-1); }
+  .b-tile.t2 { background: var(--tile-3); }
+  .b-tile.t3 { background: var(--tile-4); }
+
+  .b-timeline { display: grid; gap: 12px; }
+  .b-card {
+    display: grid; grid-template-columns: 6px 1fr; border: 1px solid rgba(15,23,42,0.08);
+    border-radius: 12px; overflow: hidden; background: #fff;
+  }
+  .b-card .stripe { background: var(--tile-1); }
+  .b-card.board   .stripe { background: var(--gold); }
+  .b-card.associate .stripe { background: var(--tile-2); }
+  .b-card .inner { padding: 14px 18px; display: grid; gap: 6px; }
+  .b-card .head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .b-card .since { color: var(--muted); font-size: 0.82rem; font-weight: 600; }
+  .b-card .journal { font-weight: 700; font-size: 1.08rem; }
+  .b-card .journal a { color: var(--ink); text-decoration: none; border-bottom: 2px solid rgba(15,23,42,0.15); }
+  .b-card .journal a:hover { border-bottom-color: var(--tile-1); }
+  .b-card .pill { display: inline-block; padding: 5px 11px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.02em; }
+  .b-card .pill.subject   { background: var(--tile-1); color: #fff; }
+  .b-card .pill.board     { background: var(--gold);  color: #4a3a10; }
+  .b-card .pill.associate { background: var(--tile-2); color: #fff; }
+
+  /* ============ MOCKUP C — Compact tile strip + dotted vertical timeline with colored badges ============ */
+  .c-tiles {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 0 0 26px;
+  }
+  .c-tile {
+    padding: 16px 18px; border-radius: 12px; color: #fff;
+    display: grid; grid-template-columns: 40px 1fr; gap: 12px; align-items: center;
+    box-shadow: 0 4px 10px rgba(6,47,53,0.10);
+  }
+  .c-tile .icon {
+    width: 40px; height: 40px; border-radius: 12px;
+    background: rgba(255,255,255,0.15); display: grid; place-items: center;
+  }
+  .c-tile .icon svg { width: 20px; height: 20px; stroke: #fff; fill: none; stroke-width: 2; }
+  .c-tile .num { font-family: Arial, sans-serif; font-weight: 800; font-size: 1.75rem; line-height: 1; }
+  .c-tile .lbl { font-size: 0.78rem; opacity: 0.92; margin-top: 3px; }
+  .c-tile.t1 { background: var(--tile-1); }
+  .c-tile.t2 { background: var(--tile-3); }
+  .c-tile.t3 { background: var(--tile-4); }
+
+  .c-timeline { position: relative; padding-left: 40px; }
+  .c-timeline::before {
+    content: ''; position: absolute; left: 15px; top: 8px; bottom: 8px;
+    width: 2px; background: repeating-linear-gradient(to bottom, rgba(15,23,42,0.15) 0 6px, transparent 6px 12px);
+  }
+  .c-item { position: relative; margin-bottom: 22px; }
+  .c-item:last-child { margin-bottom: 0; }
+  .c-badge {
+    position: absolute; left: -40px; top: 2px;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    background: var(--tile-1); color: #fff;
+  }
+  .c-badge svg { width: 16px; height: 16px; stroke: #fff; fill: none; stroke-width: 2.4; }
+  .c-item.board .c-badge { background: var(--gold); color: #4a3a10; }
+  .c-item.board .c-badge svg { stroke: #4a3a10; }
+  .c-item.associate .c-badge { background: var(--tile-2); }
+  .c-item .since { display: block; color: var(--muted); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .c-item .journal { display: block; font-weight: 700; font-size: 1.08rem; margin-top: 3px; }
+  .c-item .journal a { color: var(--ink); text-decoration: none; border-bottom: 2px solid rgba(15,23,42,0.15); }
+  .c-item .journal a:hover { border-bottom-color: var(--tile-1); }
+  .c-item .pill { display: inline-block; margin-top: 8px; padding: 5px 11px; border-radius: 999px; font-size: 0.76rem; font-weight: 700; letter-spacing: 0.02em; }
+  .c-item .pill.subject   { background: var(--tile-1); color: #fff; }
+  .c-item .pill.board     { background: var(--gold);  color: #4a3a10; }
+  .c-item .pill.associate { background: var(--tile-2); color: #fff; }
+
+  @media (max-width: 780px) {
+    .a-tiles, .c-tiles { grid-template-columns: 1fr; }
+    .a-row { grid-template-columns: 1fr; row-gap: 6px; }
+    .b-wrap { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>Editorial &amp; Advisory Roles — three mockups</h1>
+  <p class="subtitle">All-Arial, no serifs anywhere. Uses the palette from your reference tiles (deep green, brown, blue) mapped to the three role types (subject editor, board member, associate editor).</p>
+
+  <!-- ==================== MOCKUP A ==================== -->
+  <div class="mockup">
+    <span class="mockup__label">Mockup A</span>
+    <div class="mockup__title">Horizontal tile bar on top · timeline as coloured rows underneath</div>
+    <p class="mockup__note">Reads left-to-right like a stat dashboard. Each timeline row picks up the same colour as its role type — the tile bar and the timeline visually reinforce each other.</p>
+
+    <div class="heading-strip">
+      <div class="kicker">Editorial Service</div>
+      <div class="h2">Editorial &amp; Advisory Roles</div>
+    </div>
+
+    <div class="a-tiles">
+      <div class="a-tile t1">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div><div class="num">5</div><div class="lbl">Editorial roles</div></div>
+      </div>
+      <div class="a-tile t2">
+        <div class="icon"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6M11 8v6"/></svg></div>
+        <div><div class="num">24</div><div class="lbl">Manuscripts reviewed</div></div>
+      </div>
+      <div class="a-tile t3">
+        <div class="icon"><svg viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div><div class="num">22</div><div class="lbl">Journals served</div></div>
+      </div>
+    </div>
+
+    <ol class="a-timeline" role="list">
+      <li class="a-row subject">
+        <div class="since">Since Aug 2025</div>
+        <div class="journal"><a href="#">Ecology and Society</a></div>
+        <span class="a-pill subject">Subject editor</span>
+      </li>
+      <li class="a-row board">
+        <div class="since">Since Aug 2024</div>
+        <div class="journal"><a href="#">The Contemporary Pacific (TCP)</a></div>
+        <span class="a-pill board">Editorial board member</span>
+      </li>
+      <li class="a-row associate">
+        <div class="since">Since May 2024</div>
+        <div class="journal"><a href="#">Journal of Environmental Studies and Sciences (JESS)</a></div>
+        <span class="a-pill associate">Associate editor</span>
+      </li>
+      <li class="a-row board">
+        <div class="since">Since May 2023</div>
+        <div class="journal"><a href="#">Indigenous Science Network (ISN)</a></div>
+        <span class="a-pill board">Editorial board member</span>
+      </li>
+      <li class="a-row board">
+        <div class="since">Since Apr 2023</div>
+        <div class="journal"><a href="#">International Social Science Journal (ISSJ)</a></div>
+        <span class="a-pill board">Editorial board member</span>
+      </li>
+    </ol>
+  </div>
+
+  <!-- ==================== MOCKUP B ==================== -->
+  <div class="mockup">
+    <span class="mockup__label">Mockup B</span>
+    <div class="mockup__title">Preserves current layout · vivid coloured stat column · timeline becomes cards</div>
+    <p class="mockup__note">Closest to your current page structure (tiles left, timeline right) but the tiles adopt the bold coloured tile look, and the timeline turns into stacked cards with a coloured stripe instead of dots.</p>
+
+    <div class="heading-strip">
+      <div class="kicker">Editorial Service</div>
+      <div class="h2">Editorial &amp; Advisory Roles</div>
+    </div>
+
+    <div class="b-wrap">
+      <aside class="b-tiles">
+        <div class="b-tile t1">
+          <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div><div class="num">5</div><div class="lbl">Editorial roles</div></div>
+        </div>
+        <div class="b-tile t2">
+          <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6M11 8v6"/></svg></div>
+          <div><div class="num">24</div><div class="lbl">Manuscripts reviewed</div></div>
+        </div>
+        <div class="b-tile t3">
+          <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+          <div><div class="num">22</div><div class="lbl">Journals served</div></div>
+        </div>
+      </aside>
+
+      <ol class="b-timeline" role="list">
+        <li class="b-card subject"><div class="stripe"></div><div class="inner">
+          <div class="head"><span class="since">Since Aug 2025</span><span class="pill subject">Subject editor</span></div>
+          <div class="journal"><a href="#">Ecology and Society</a></div>
+        </div></li>
+        <li class="b-card board"><div class="stripe"></div><div class="inner">
+          <div class="head"><span class="since">Since Aug 2024</span><span class="pill board">Editorial board member</span></div>
+          <div class="journal"><a href="#">The Contemporary Pacific (TCP)</a></div>
+        </div></li>
+        <li class="b-card associate"><div class="stripe"></div><div class="inner">
+          <div class="head"><span class="since">Since May 2024</span><span class="pill associate">Associate editor</span></div>
+          <div class="journal"><a href="#">Journal of Environmental Studies and Sciences (JESS)</a></div>
+        </div></li>
+        <li class="b-card board"><div class="stripe"></div><div class="inner">
+          <div class="head"><span class="since">Since May 2023</span><span class="pill board">Editorial board member</span></div>
+          <div class="journal"><a href="#">Indigenous Science Network (ISN)</a></div>
+        </div></li>
+        <li class="b-card board"><div class="stripe"></div><div class="inner">
+          <div class="head"><span class="since">Since Apr 2023</span><span class="pill board">Editorial board member</span></div>
+          <div class="journal"><a href="#">International Social Science Journal (ISSJ)</a></div>
+        </div></li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- ==================== MOCKUP C ==================== -->
+  <div class="mockup">
+    <span class="mockup__label">Mockup C</span>
+    <div class="mockup__title">Compact tile strip · dotted spine timeline with round coloured badges</div>
+    <p class="mockup__note">More editorial magazine feel. The timeline keeps the vertical "spine" idea but replaces the small dots with proper round icon badges in the role colour, and the spine is dashed rather than solid to feel lighter.</p>
+
+    <div class="heading-strip">
+      <div class="kicker">Editorial Service</div>
+      <div class="h2">Editorial &amp; Advisory Roles</div>
+    </div>
+
+    <div class="c-tiles">
+      <div class="c-tile t1">
+        <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+        <div><div class="num">5</div><div class="lbl">Editorial roles</div></div>
+      </div>
+      <div class="c-tile t2">
+        <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6M11 8v6"/></svg></div>
+        <div><div class="num">24</div><div class="lbl">Manuscripts reviewed</div></div>
+      </div>
+      <div class="c-tile t3">
+        <div class="icon"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div><div class="num">22</div><div class="lbl">Journals served</div></div>
+      </div>
+    </div>
+
+    <ol class="c-timeline" role="list">
+      <li class="c-item subject">
+        <div class="c-badge"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.4"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <span class="since">Since Aug 2025</span>
+        <span class="journal"><a href="#">Ecology and Society</a></span>
+        <span class="pill subject">Subject editor</span>
+      </li>
+      <li class="c-item board">
+        <div class="c-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <span class="since">Since Aug 2024</span>
+        <span class="journal"><a href="#">The Contemporary Pacific (TCP)</a></span>
+        <span class="pill board">Editorial board member</span>
+      </li>
+      <li class="c-item associate">
+        <div class="c-badge"><svg viewBox="0 0 24 24" stroke="#fff" fill="none" stroke-width="2.4"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg></div>
+        <span class="since">Since May 2024</span>
+        <span class="journal"><a href="#">Journal of Environmental Studies and Sciences (JESS)</a></span>
+        <span class="pill associate">Associate editor</span>
+      </li>
+      <li class="c-item board">
+        <div class="c-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <span class="since">Since May 2023</span>
+        <span class="journal"><a href="#">Indigenous Science Network (ISN)</a></span>
+        <span class="pill board">Editorial board member</span>
+      </li>
+      <li class="c-item board">
+        <div class="c-badge"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.4"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></div>
+        <span class="since">Since Apr 2023</span>
+        <span class="journal"><a href="#">International Social Science Journal (ISSJ)</a></span>
+        <span class="pill board">Editorial board member</span>
+      </li>
+    </ol>
+  </div>
+
+</div>
+</body>
+</html>

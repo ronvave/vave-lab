@@ -1,0 +1,62 @@
+name: Add bulk publication geography review controls
+on:
+  push:
+    paths:
+      - '.github/workflows/add-bulk-publication-geography-review-20260913.yml'
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch Publication Geography Submissions admin UI
+        shell: python
+        run: |
+          from pathlib import Path
+          p = Path('js/publication-geography-admin.js')
+          s = p.read_text(encoding='utf-8')
+
+          old = '''<button id=\"geo-submission-refresh\" type=\"button\" style=\"padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">Refresh queue</button><span id=\"geo-submission-state\" class=\"row-count\"></span>'''
+          new = '''<button id=\"geo-submission-refresh\" type=\"button\" style=\"padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">Refresh queue</button><button id=\"geo-submission-check-all\" type=\"button\" style=\"padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">Check All</button><button id=\"geo-submission-clear-all\" type=\"button\" style=\"padding:8px 12px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer\">Clear All</button><button id=\"geo-submission-approve-checked\" type=\"button\" style=\"padding:8px 12px;border:0;border-radius:6px;background:#166534;color:#fff;font-weight:600;cursor:pointer\">Approve all checked</button><span id=\"geo-submission-state\" class=\"row-count\"></span>'''
+          if old not in s:
+              raise SystemExit('toolbar anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''$('#geo-submission-refresh').addEventListener('click',load);$('#geo-submission-status').addEventListener('change',load);setTimeout(refreshBadge,1200);setTimeout(publishEndpointConfig,1800)'''
+          new = '''$('#geo-submission-refresh').addEventListener('click',load);$('#geo-submission-status').addEventListener('change',load);$('#geo-submission-check-all').addEventListener('click',function(){setAllGeoChecks(true)});$('#geo-submission-clear-all').addEventListener('click',function(){setAllGeoChecks(false)});$('#geo-submission-approve-checked').addEventListener('click',bulkResolve);setTimeout(refreshBadge,1200);setTimeout(publishEndpointConfig,1800)'''
+          if old not in s:
+              raise SystemExit('listener anchor not found')
+          s = s.replace(old, new, 1)
+
+          old = '''<div style=\"display:flex;justify-content:space-between;gap:18px;align-items:flex-start\"><div><div style=\"font-weight:700;color:#062f35\">'''
+          new = '''<div style=\"display:flex;justify-content:space-between;gap:18px;align-items:flex-start\">'+(pending?'<label title=\"Select this submission for approval\" style=\"display:flex;align-items:center;gap:7px;flex:0 0 auto;padding-top:2px;font-size:.8rem;color:#374151;cursor:pointer\"><input type=\"checkbox\" data-geo-select=\"'+esc(r['Submission ID'])+'\" style=\"width:16px;height:16px;accent-color:#166534\"> Select</label>':'')+'<div style=\"flex:1;min-width:0\"><div style=\"font-weight:700;color:#062f35\">'''
+          if old not in s:
+              raise SystemExit('card-header anchor not found')
+          s = s.replace(old, new, 1)
+
+          anchor = '''async function resolve(id,decision){var note=$('[data-review-note=\"'+CSS.escape(id)+'\"]');if(decision==='approve'&&!confirm('Approve this geography suggestion and add any new non-duplicate geography records to Research Geography?'))return;if(decision==='reject'&&!confirm('Reject this geography suggestion?'))return;try{await apiPost({action:'resolvePublicationGeographySubmission',submissionId:id,decision:decision,reviewNotes:note?note.value.trim():'',reviewedBy:'Ron Vave (admin)'});await load();if(decision==='approve')dispatchRefresh()}catch(e){alert('Could not '+decision+': '+e.message)}}
+'''
+          insert = '''function setAllGeoChecks(checked){document.querySelectorAll('#geo-submission-list input[data-geo-select]').forEach(function(cb){cb.checked=!!checked})}
+function updateBulkControls(status,count){var show=String(status||'')==='Pending'&&count>0;['geo-submission-check-all','geo-submission-clear-all','geo-submission-approve-checked'].forEach(function(id){var el=$('#'+id);if(el)el.style.display=show?'inline-block':'none'})}
+async function bulkResolve(){var status=$('#geo-submission-status')?$('#geo-submission-status').value:'';if(status!=='Pending'){alert('Bulk review is available in the Pending queue only.');return}var boxes=Array.from(document.querySelectorAll('#geo-submission-list input[data-geo-select]'));if(!boxes.length){alert('There are no pending submissions in this view.');return}var approved=boxes.filter(function(cb){return cb.checked}).length;var rejected=boxes.length-approved;var msg='This will APPROVE '+approved+' checked submission'+(approved===1?'':'s')+' and REJECT '+rejected+' unchecked submission'+(rejected===1?'':'s')+'.\\n\\nContinue?';if(!confirm(msg))return;var btn=$('#geo-submission-approve-checked');if(btn){btn.disabled=true;btn.textContent='Processing…'}var failures=[];var approvedAny=false;for(var i=0;i<boxes.length;i++){var id=boxes[i].dataset.geoSelect;var decision=boxes[i].checked?'approve':'reject';var note=$('[data-review-note=\"'+CSS.escape(id)+'\"]');try{await apiPost({action:'resolvePublicationGeographySubmission',submissionId:id,decision:decision,reviewNotes:note?note.value.trim():'',reviewedBy:'Ron Vave (admin)'});if(decision==='approve')approvedAny=true}catch(e){failures.push(id+': '+e.message)}}if(approvedAny)dispatchRefresh();await load();if(btn){btn.disabled=false;btn.textContent='Approve all checked'}if(failures.length)alert('Bulk review completed with '+failures.length+' error(s):\\n'+failures.join('\\n'));else alert('Bulk review complete: '+approved+' approved, '+rejected+' rejected.')}
+'''
+          if anchor not in s:
+              raise SystemExit('resolve anchor not found')
+          s = s.replace(anchor, insert + anchor, 1)
+
+          old = '''state.textContent=rows.length+' submission'+(rows.length===1?'':'s');if(!rows.length){out.innerHTML='<p class=\"meta\">No submissions in this view.</p>';refreshBadge();return}'''
+          new = '''state.textContent=rows.length+' submission'+(rows.length===1?'':'s');updateBulkControls(status,rows.length);if(!rows.length){out.innerHTML='<p class=\"meta\">No submissions in this view.</p>';refreshBadge();return}'''
+          if old not in s:
+              raise SystemExit('load status anchor not found')
+          s = s.replace(old, new, 1)
+
+          p.write_text(s, encoding='utf-8')
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/publication-geography-admin.js
+          git commit -m "Admin: add bulk publication geography review" || exit 0
+          git push
+# trigger: 2026-09-13 bulk-review patch

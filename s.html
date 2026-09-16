@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex,nofollow,noarchive" />
+  <meta name="referrer" content="no-referrer" />
+  <title>iTaukei Scholar Profile</title>
+  <style>
+    html, body { margin:0; width:100%; height:100%; background:#f8f7f2; overflow:hidden; }
+    iframe { display:block; width:100%; height:100%; border:0; background:#f8f7f2; }
+    .msg { max-width:680px; margin:80px auto; font-family:Arial,Helvetica,sans-serif; padding:32px; color:#243238; text-align:center; }
+  </style>
+</head>
+<body>
+  <script>
+    (async function () {
+      'use strict';
+      var params = new URLSearchParams(location.search);
+      var token = String(params.get('k') || '').trim();
+
+      function fail() {
+        document.body.innerHTML = '';
+        var msg = document.createElement('div');
+        msg.className = 'msg';
+        msg.textContent = 'This scholar link is invalid or has expired.';
+        document.body.appendChild(msg);
+      }
+
+      if (!/^[a-f0-9]{40}$/i.test(token) || params.has('i')) {
+        fail();
+        return;
+      }
+
+      try {
+        var bytes = new TextEncoder().encode(token.toLowerCase());
+        var digest = await crypto.subtle.digest('SHA-256', bytes);
+        var hash = Array.from(new Uint8Array(digest))
+          .map(function (b) { return b.toString(16).padStart(2, '0'); })
+          .join('')
+          .slice(0, 32);
+
+        var shard = hash.charAt(0);
+        var res = await fetch('data/share-index/' + shard + '.json', {
+          cache: 'no-store',
+          credentials: 'same-origin'
+        });
+        if (!res.ok) throw new Error('share-index unavailable');
+        var data = await res.json();
+        var id = data && data.m && data.m[hash];
+        if (!/^ITK-S\d+$/i.test(String(id || ''))) {
+          fail();
+          return;
+        }
+        id = String(id).toUpperCase();
+
+        sessionStorage.setItem('vavelab_share_cap_sid', id);
+        sessionStorage.setItem('vavelab_share_cap_hash', hash);
+
+        var frame = document.createElement('iframe');
+        frame.title = 'iTaukei scholar profile';
+        frame.src = 'itaukei-research-database-master.html?p=' + encodeURIComponent(id) + '&share=1&k=' + encodeURIComponent(token);
+        frame.setAttribute('allow', 'web-share; clipboard-write');
+        frame.setAttribute('referrerpolicy', 'no-referrer');
+        document.body.appendChild(frame);
+
+        frame.addEventListener('load', function () {
+          enhanceDirectProfile(frame, id);
+        });
+      } catch (err) {
+        console.error('Scholar share-link resolution failed', err);
+        fail();
+      }
+
+      function enhanceDirectProfile(frame, scholarId) {
+        var tries = 0;
+        var timer = setInterval(function () {
+          tries += 1;
+          try {
+            var w = frame.contentWindow;
+            var d = frame.contentDocument;
+            var main = d && d.querySelector('.scholar-direct-main');
+            var state = w && w.__vavelabDbState;
+            if (!main || !state || !state.snapshot || !state.scholarProfilesByName) {
+              if (tries > 240) clearInterval(timer);
+              return;
+            }
+            clearInterval(timer);
+            injectDirectProfileEnhancements(w, d, main, state, scholarId);
+          } catch (e) {
+            if (tries > 240) clearInterval(timer);
+          }
+        }, 125);
+      }
+
+      function injectDirectProfileEnhancements(w, d, main, state, scholarId) {
+        if (main.dataset.profileReviewEnhanced === '1') return;
+        main.dataset.profileReviewEnhanced = '1';
+
+        injectStyles(d);
+
+        var profileEntry = findProfile(state, scholarId);
+        var profile = profileEntry ? profileEntry.profile : {};
+        var scholarKey = profileEntry ? profileEntry.key : '';
+        var scholarName = getScholarName(main, profile);
+
+        var existingIntro = main.querySelector('.scholar-direct-intro');
+        var about = buildAboutBlock(d);
+        if (existingIntro) {
+          existingIntro.insertAdjacentElement('beforebegin', about);
+          revisePreLaunchBlock(existingIntro);
+        } else {
+          main.insertBefore(about, main.firstChild);
+        }
+
+        var card = main.querySelector('.db-scholar-card');
+        if (!card) return;
+
+        installSummaryPanelTextGuard(d, main);
+        styleSummaryMetrics(d, main, card);
+        prepareScholarPublicationFilter(w, state, scholarKey);
+        buildPublicationReviewWhenReady(w, d, main, state, scholarId, scholarKey, scholarName, card);
+        installGeoDropdownOutsideClick(d);
+      }
+
+      function installGeoDropdownOutsideClick(d) {
+        if (!d || d.documentElement.dataset.geoOutsideClickInstalled === '1') return;
+        d.documentElement.dataset.geoOutsideClickInstalled = '1';
+
+        d.addEventListener('click', function (event) {
+          var target = event.target;
+          var openMenus = d.querySelectorAll('details.scholar-geo-menu[open]');
+          if (!openMenus.length) return;
+
+          openMenus.forEach(function (menu) {
+            if (!menu.contains(target)) menu.removeAttribute('open');
+          });
+        });
+      }
+
+      function injectStyles(d) {
+        if (d.getElementById('direct-profile-review-v5-style')) return;
+        var style = d.createElement('style');
+        style.id = 'direct-profile-review-v5-style';
+        style.textContent = `
+          .scholar-direct-about{
+            max-width:980px;margin:0 auto 18px;padding:17px 20px;
+            background:#fff;border:1px solid rgba(14,116,144,.16);border-radius:14px;
+            font-family:"DM Sans",Arial,sans-serif;font-size:.95rem;line-height:1.58;color:#5f6570;
+          }
+          .scholar-direct-about p{margin:0}.scholar-direct-about a{color:#087d93;text-decoration:underline;text-underline-offset:2px}
+
+          .scholar-direct-intro{max-width:980px!important;margin-left:auto!important;margin-right:auto!important}
+          .scholar-direct-intro .direct-review-badge{
+            display:inline-flex;align-items:center;padding:5px 10px;margin:0 0 10px;
+            border:1px solid #efc85b;border-radius:999px;background:#fff8dc;color:#9a6500;
+            font-weight:800;font-size:.78rem;letter-spacing:.01em;
+          }
+          .scholar-direct-intro p{line-height:1.55}
+          .scholar-direct-intro .direct-review-callout{
+            margin:10px 0 12px!important;padding:10px 12px!important;
+            background:#fff4bf!important;border-left:4px solid #d7a800!important;
+            border-radius:8px!important;color:#4b3a00!important;font-weight:600!important;
+            line-height:1.45!important;
+          }
+          .scholar-direct-main .scholar-summary-description{color:#111!important;font-family:"DM Sans",Arial,sans-serif!important;font-size:1rem!important;line-height:1.45!important;font-weight:400!important;font-style:normal!important;opacity:1!important;}
+
+          .scholar-direct-main .db-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important;}
+          .scholar-direct-main .db-kpi--solid{display:grid!important;grid-template-columns:58px minmax(0,1fr)!important;align-items:center!important;min-height:112px!important;padding:14px 16px!important;column-gap:15px!important;border-radius:12px!important;overflow:hidden!important;background:linear-gradient(100deg,color-mix(in srgb,var(--kpi-bg) 96%,#000 4%),var(--kpi-bg))!important;box-shadow:0 1px 2px rgba(0,0,0,.12)!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon{width:58px!important;height:58px!important;flex:none!important;margin:0!important;position:relative!important;justify-self:center!important;align-self:center!important;background:rgba(255,255,255,.11)!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:32px!important;height:32px!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__icon::after{content:"";position:absolute!important;top:-3px!important;bottom:-3px!important;right:-15px!important;width:1px!important;background:rgba(255,255,255,.34)!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__body{display:grid!important;grid-template-columns:minmax(82px,auto) minmax(0,1fr)!important;align-items:center!important;gap:8px!important;padding-left:8px!important;min-width:0!important;height:100%!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__num{font-family:Arial,Helvetica,'Helvetica Neue',sans-serif!important;font-size:33px!important;line-height:1!important;font-weight:800!important;letter-spacing:-.02em!important;color:#fff!important;margin:0!important;white-space:nowrap!important;align-self:center!important;justify-self:start!important;}
+          .scholar-direct-main .db-kpi--solid .db-kpi__label{font-family:Arial,Helvetica,'Helvetica Neue',sans-serif!important;font-size:15px!important;line-height:1.18!important;font-weight:700!important;color:#fff!important;margin:0!important;align-self:center!important;justify-self:start!important;white-space:normal!important;overflow-wrap:normal!important;word-break:normal!important;text-wrap:balance!important;}
+
+          .scholar-pubs-review{max-width:1020px;margin:28px auto 12px;font-family:"DM Sans",Arial,sans-serif}
+          .scholar-pubs-review__head{padding:18px 20px;background:rgba(14,116,144,.055);border:1px solid rgba(14,116,144,.20);border-radius:14px;margin-bottom:14px}
+          .scholar-pubs-review__head h2{margin:0 0 6px;color:#123f47;font-family:Arial,Helvetica,sans-serif;font-size:1.2rem;font-weight:700}
+          .scholar-pubs-review__head p{margin:0 0 9px;color:#4b5563;font-size:.9rem;line-height:1.55}
+          .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
+          .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+          .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:225px!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:520px!important;padding-bottom:12px!important;overflow:hidden!important}
+          .scholar-geo-editor{display:none!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important;box-sizing:border-box!important}
+          .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]){padding-right:390px!important}
+          .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]) .scholar-geo-toolbar{width:360px!important;max-width:360px!important}
+          .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]) details.scholar-geo-menu>summary{width:195px!important;margin-left:auto!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important;box-sizing:border-box!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row>details,.scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+          .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
+          .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
+          .scholar-geo-toolbar>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;min-height:34px!important;box-sizing:border-box!important;padding:0 12px!important;border-radius:999px!important;font-size:.8rem!important;line-height:1!important;font-weight:600!important;white-space:nowrap!important;}
+          .scholar-review-doi-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#efc4ee!important;color:#542052!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
+          .scholar-review-doi-chip:hover{background:#e7afe5!important;color:#431640!important;}
+          .scholar-review-link-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#cfeaf0!important;color:#075d6b!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
+          .scholar-geo-other{display:block!important;height:34px!important;min-height:34px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
+          .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;}
+          .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
+          details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important;box-sizing:border-box!important}
+          details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none;white-space:nowrap;width:100%!important;box-sizing:border-box!important}
+          details.scholar-geo-menu>summary::-webkit-details-marker{display:none}
+          details.scholar-geo-menu[open]>summary{border-color:#0e7490;box-shadow:0 0 0 2px rgba(14,116,144,.10)}
+          .scholar-geo-menu__count{display:none;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#0e7490;color:#fff;align-items:center;justify-content:center;font-size:.68rem}
+          .scholar-geo-menu.has-selection .scholar-geo-menu__count{display:inline-flex}
+          .scholar-geo-options{position:relative!important;z-index:30!important;top:auto!important;left:auto!important;right:auto!important;width:360px!important;min-width:360px!important;max-width:360px!important;max-height:460px!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;margin:7px 0 0!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:0 8px 22px rgba(0,0,0,.12)!important;text-align:left!important}
+          .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;justify-content:flex-start;text-align:left;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer;width:100%;box-sizing:border-box}
+          .scholar-geo-option span{display:block;flex:1 1 auto;min-width:0;text-align:left;white-space:normal;overflow:visible;text-overflow:clip}
+          .scholar-geo-option:hover{background:#eaf7f9}.scholar-geo-option input{margin-top:2px;accent-color:#0e7490;flex:0 0 auto}
+          .scholar-geo-option--general{border-bottom:1px dashed #d8dfe0;margin-bottom:4px;padding-bottom:8px;font-weight:600}
+          .scholar-geo-editor__status{font-size:.75rem;color:#6b7280;margin-top:7px}
+          .scholar-geo-submit{margin-top:16px;padding:16px 18px;background:#fff;border:1px solid rgba(14,116,144,.20);border-radius:14px}
+          .scholar-geo-submit__grid{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:10px;margin:10px 0}
+          .scholar-geo-submit label{display:block;font-size:.78rem;font-weight:700;color:#174852;margin-bottom:4px}.scholar-geo-submit input,.scholar-geo-submit select{width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5d8;border-radius:8px;background:#fff;font:inherit;font-size:.84rem}
+          .scholar-geo-submit__actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.scholar-geo-submit button{border:0;border-radius:8px;padding:9px 15px;background:#0e7490;color:#fff;font-weight:700;cursor:pointer}.scholar-geo-submit button:disabled{opacity:.55;cursor:wait}
+          .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
+          @media(max-width:900px){.scholar-direct-main .db-kpi--solid{grid-template-columns:50px minmax(0,1fr)!important;min-height:98px!important;padding:12px 13px!important;column-gap:12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon{width:50px!important;height:50px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:28px!important;height:28px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon::after{right:-12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__body{grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:7px!important;padding-left:7px!important}.scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:29px!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:13px!important;line-height:1.16!important}}
+          @media(max-width:700px){.scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}.scholar-geo-submit__grid{grid-template-columns:1fr}.scholar-direct-main .db-kpis{grid-template-columns:1fr!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}.scholar-pubs-review__list>.db-item{padding-right:14px!important;padding-top:130px!important}.scholar-geo-toolbar{left:12px!important;right:12px!important;top:10px!important;width:auto!important;max-width:none!important}}
+        `;
+        d.head.appendChild(style);
+      }
+
+      function buildAboutBlock(d) {
+        var box = d.createElement('section');
+        box.className = 'scholar-direct-about';
+        box.innerHTML = '<p>This database has been curated by <a href="index.html" target="_blank" rel="noopener">Assistant Professor Ron Vave</a>, an <em>iTaukei</em> (Indigenous Fijian) faculty member at the University of Hawai\u02bbi at M\u0101noa, in an effort to highlight and elevate the scholarly research and contributions of iTaukei postgraduates and researchers \u2014 in Fiji and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our iTaukei researchers and our publications, the hope is that it will help with networking and collaboration \u2014 and perhaps mentorship for up-and-coming iTaukei students thinking of pursuing postgraduate studies, academia, or research more broadly.</p>';
+        return box;
+      }
+
+      function revisePreLaunchBlock(existingIntro) {
+        existingIntro.innerHTML =
+          '<div class="direct-review-badge">PRE-LAUNCH PROFILE REVIEW</div>' +
+          '<p><strong>About this database.</strong> The iTaukei Scholarly Research Database is a curated public resource developed to highlight and elevate the scholarship and contributions of iTaukei postgraduates and researchers in Fiji and around the world. It is part of a larger Pacific scholarly database project being replicated across Pacific Island countries. <strong>The database and dashboard are still being developed and have not yet been publicly launched.</strong></p>' +
+          '<p><strong>Why you have been sent this link.</strong> You have been sent a direct link to this scholar profile so the information can be checked and improved.</p>' +
+          '<p class="direct-review-callout"><strong>If this is your scholar profile, please scroll down to see your Scholar Profile card, click on Update info to add, remove or change details.</strong></p>' +
+          '<p>You can provide missing paternal geography, current professional information, graduate-study details and publication information. You can also attach your latest <strong>CV</strong>, upload a <strong>high-resolution JPEG headshot</strong>, and provide either a direct link to or a PDF copy of your Master\u2019s and/or PhD thesis. <strong>Your CV will only be used to extract relevant information for this database, such as publications, awards, positions and related scholarly information. It will not be shared further and will not be displayed on the scholar dashboard.</strong></p>' +
+          '<p><strong>Maternal information is optional.</strong> If you choose to provide it, it will be used only for internal research/database purposes and <strong>will not be displayed on the public dashboard or scholar profile.</strong></p>' +
+          '<p>All submissions are reviewed before changes appear. After public launch, this permanent profile link can also be shared by the scholar, recruiters, collaborators, students and others who want a direct view of the scholar\u2019s profile.</p>';
+      }
+
+      function installSummaryPanelTextGuard(d, main) {
+        var today = '12 September 2026';
+        var applying = false;
+        function applySummaryText() {
+          if (applying) return;
+          applying = true;
+          try {
+            Array.prototype.slice.call(main.querySelectorAll('.db-section')).forEach(function (section) {
+              var label = section.querySelector('.db-section__label');
+              var hint = section.querySelector('.db-section__hint');
+              var title = String(label && label.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+              if (title === 'database overview' && hint) {
+                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+                if (hint.textContent !== wanted) hint.textContent = wanted;
+                hint.classList.add('scholar-summary-description');
+              } else if (title === 'itaukei scholarship' && hint) {
+                hint.classList.add('scholar-summary-description');
+              }
+            });
+            Array.prototype.slice.call(main.querySelectorAll('.db-kpi__label')).forEach(function (el) {
+              var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim();
+              if (/^Universities attended by iTaukei graduate researchers$/i.test(txt)) el.textContent = 'Universities attended by iTaukei scholars';
+            });
+          } finally { applying = false; }
+        }
+        applySummaryText();
+        [100,350,900,1800,3500].forEach(function(delay){ setTimeout(applySummaryText,delay); });
+        var observer = new MutationObserver(function(){ setTimeout(applySummaryText,0); });
+        observer.observe(main,{childList:true,subtree:true,characterData:true});
+      }
+
+      function styleSummaryMetrics(d, main, card) {
+        Array.prototype.slice.call(main.querySelectorAll('.db-kpi--solid')).forEach(function (tile) {
+          if (tile.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING) tile.classList.add('scholar-summary-metric-tile');
+        });
+      }
+
+      function findProfile(state, scholarId) {
+        var hit = null;
+        if (!state || !state.scholarProfilesByName || typeof state.scholarProfilesByName.forEach !== 'function') return null;
+        state.scholarProfilesByName.forEach(function (p, key) { if (!hit && p && String(p.scholarId || '').toUpperCase() === scholarId) hit = { key:key, profile:p }; });
+        return hit;
+      }
+
+      function getScholarName(main, profile) {
+        var n = main.querySelector('.db-scholar-card__name');
+        if (n && n.textContent.trim()) return n.textContent.trim().replace(/^(Dr|Prof|Mr|Mrs|Ms)\.?\s+/i, '');
+        return [profile && profile.first || '', profile && profile.last || ''].join(' ').trim() || 'iTaukei scholar';
+      }
+
+      function prepareScholarPublicationFilter(w, state, scholarKey) {
+        if (!state || !state.filter || !scholarKey) return;
+        state.filter.q='';state.filter.itemType='';state.filter.discipline='';state.filter.decade='';state.filter.province='';state.filter.paternal='';state.filter.university='';state.filter.year='';state.filter.scholar=scholarKey;state.shown=10000;
+        try { if (typeof w.__mfAfterFilterChange === 'function') w.__mfAfterFilterChange(); } catch (_) {}
+      }
+
+      function scholarItems(state, scholarKey) {
+        if (!state || !state.snapshot || !Array.isArray(state.snapshot.items)) return [];
+        return state.snapshot.items.filter(function (it) { var set=state.scholarByItem&&state.scholarByItem.get(it.key);return !!(set&&set.has(scholarKey)); }).sort(function (a,b) { return (Number(b.year||0)-Number(a.year||0))||String(a.title||'').localeCompare(String(b.title||'')); });
+      }
+
+      function buildPublicationReviewWhenReady(w,d,main,state,scholarId,scholarKey,scholarName,card) {
+        var expected=parseInt((card.querySelector('.db-scholar-card__stat-num')||{}).textContent||'0',10)||0;var attempts=0;
+        var timer=setInterval(function(){attempts+=1;try{state.shown=10000;if(typeof w.__mfAfterFilterChange==='function')w.__mfAfterFilterChange();var source=d.querySelector('[data-db-items]');var items=scholarItems(state,scholarKey);var rendered=source?source.children.length:0;if(source&&items.length&&rendered>=Math.min(items.length,expected||items.length)){clearInterval(timer);buildPublicationReview(d,main,state,scholarId,scholarName,items,source,expected);}else if(attempts>80){clearInterval(timer);if(source&&items.length)buildPublicationReview(d,main,state,scholarId,scholarName,items,source,expected);}}catch(_){if(attempts>80)clearInterval(timer);}},150);
+      }
+
+      var FIJI_PROVINCES=['Ba','Bua','Cakaudrove','Kadavu','Lau','Lomaiviti','Macuata','Nadroga/Navosa','Naitasiri','Namosi','Ra','Rewa','Serua','Tailevu'];
+      var PACIFIC_COUNTRIES=['American Samoa','Cook Islands','Federated States of Micronesia','French Polynesia','Guam','Kiribati','Marshall Islands','Nauru','New Caledonia','Niue','Northern Mariana Islands','Palau','Papua New Guinea','Pitcairn Islands','Samoa','Solomon Islands','Tokelau','Tonga','Tuvalu','Vanuatu','Wallis and Futuna'];
+
+      function buildPublicationReview(d,main,state,scholarId,scholarName,items,source,expected) {
+        if(main.querySelector('.scholar-pubs-review'))return;
+        var section=d.createElement('section');section.className='scholar-pubs-review';var head=d.createElement('div');head.className='scholar-pubs-review__head';var countText=items.length+(expected&&expected!==items.length?' of '+expected:'');
+        head.innerHTML='<h2>Publications currently linked to this scholar</h2><p><span class="scholar-pubs-review__count">'+countText+' publications</span> are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.</p><p><strong>Please help us geotag the research.</strong> For each thesis, book, book chapter, journal article or report, you can identify the Fiji province or provinces where the study was undertaken. Use <strong>Fiji \u2014 general/national study</strong> where the work concerns Fiji broadly and is not tied to a particular province. Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>).</p><p>Geotagging allows publications to appear when the database is filtered by province. This means provincial governments and other stakeholders \u2014 including Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities themselves \u2014 can more easily find research undertaken in their province and, where useful, draw on that information in planning and decision making. Geographic suggestions are reviewed before they are added to the database.</p>';
+        section.appendChild(head);var list=d.createElement('ol');list.className='scholar-pubs-review__list';section.appendChild(list);var sourceNodes=Array.prototype.slice.call(source.children);var dirty=new Map();
+        items.forEach(function(item,idx){var node=sourceNodes[idx]?sourceNodes[idx].cloneNode(true):fallbackPublicationCard(d,item);node.style.overflow='hidden';var editor=buildGeoEditor(d,state,item,dirty);node.appendChild(editor);integrateGeoControlsIntoPublicationCard(node,editor);list.appendChild(node);});
+        section.appendChild(buildGeoSubmit(d,scholarId,scholarName,dirty));main.appendChild(section);
+      }
+
+      function fallbackPublicationCard(d,item) {
+        var li=d.createElement('li');li.className='db-item';var title=d.createElement('p');title.className='db-item__title';var target=item.DOI?'https://doi.org/'+item.DOI:(item.url||'');
+        if(target){var a=d.createElement('a');a.target='_blank';a.rel='noopener';a.href=target;a.textContent=item.title||'(untitled)';title.appendChild(a);}else{title.textContent=item.title||'(untitled)';}li.appendChild(title);
+        if(item.creators&&item.creators.length){var au=d.createElement('p');au.className='db-item__authors';au.textContent=item.creators.join(', ');li.appendChild(au);}var meta=d.createElement('p');meta.className='db-item__meta';meta.textContent=[item.year,item.publicationTitle||item.university].filter(Boolean).join(' \u00b7 ');li.appendChild(meta);return li;
+      }
+
+      function integrateGeoControlsIntoPublicationCard(node,editor) {
+        if(!node||!editor)return;
+        Array.prototype.slice.call(node.querySelectorAll('span,div,strong,b')).forEach(function(el){if(String(el.textContent||'').trim().toUpperCase()!=='DOI')return;if(el.closest('a'))return;var rect=el.getBoundingClientRect();if(rect.width<=80&&rect.height<=40)el.remove();});
+
+        Array.prototype.slice.call(node.querySelectorAll('a')).forEach(function(a){
+          var text=String(a.textContent||'').trim();var href=String(a.getAttribute('href')||'');
+          if(/^ZOTERO\b/i.test(text)){a.remove();return;}
+          if(/zotero\.org/i.test(href)){var span=node.ownerDocument.createElement('span');span.textContent=text;a.replaceWith(span);}
+        });
+
+        var row=editor.querySelector('.scholar-geo-editor__row');if(!row)return;
+        var actionAnchor=Array.prototype.slice.call(node.querySelectorAll('a')).find(function(a){return /^(DOI|LINK)\b/i.test(String(a.textContent||'').trim());});
+
+        if(actionAnchor){
+          var actionText=String(actionAnchor.textContent||'').trim();
+          var authorBadge=Array.prototype.slice.call(node.querySelectorAll('span,div,strong,b,a')).find(function(el){
+            return String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase()==='itaukei author' && el.children.length===0;
+          });
+          var badgeParent=authorBadge&&authorBadge.parentElement;
+          var formerParent=actionAnchor.parentElement;
+          if(badgeParent){
+            actionAnchor.textContent=/^DOI\b/i.test(actionText)?'DOI':'Link';
+            actionAnchor.classList.add(/^DOI\b/i.test(actionText)?'scholar-review-doi-chip':'scholar-review-link-chip');
+            actionAnchor.removeAttribute('style');
+            if(authorBadge.nextSibling) badgeParent.insertBefore(actionAnchor,authorBadge.nextSibling);
+            else badgeParent.appendChild(actionAnchor);
+            if(formerParent&&formerParent!==badgeParent&&!formerParent.textContent.trim()&&!formerParent.children.length) formerParent.remove();
+          }
+        }
+
+        var toolbar=node.ownerDocument.createElement('div');
+        toolbar.className='scholar-geo-toolbar';
+        node.appendChild(toolbar);
+        toolbar.appendChild(row);
+        editor.remove();
+      }
+
+      function buildGeoEditor(d,state,item,dirty) {
+        var wrap=d.createElement('div');wrap.className='scholar-geo-editor';wrap.innerHTML='<div class="scholar-geo-editor__label">Where was this study/research undertaken?</div>';var row=d.createElement('div');row.className='scholar-geo-editor__row';wrap.appendChild(row);var existing=new Set();try{var ps=state.provincesByItem&&state.provincesByItem.get(item.key);if(ps)ps.forEach(function(p){existing.add(p);});}catch(_){}
+        var provinceMenu=buildCheckMenu(d,'Fiji province(s)',[{value:'Fiji — general/national study',label:'Fiji — general/national study',general:true}].concat(FIJI_PROVINCES.map(function(p){return{value:p,label:p};})),existing,function(){markDirty();});provinceMenu.details.dataset.kind='province';row.appendChild(provinceMenu.details);
+        var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);
+        var otherCountries=d.createElement('input');otherCountries.type='text';otherCountries.className='scholar-geo-other';otherCountries.placeholder='Other countries';otherCountries.setAttribute('aria-label','Other countries; separate multiple countries with semicolons');otherCountries.title='Enter countries outside the Pacific, separated by semicolons (e.g. Jamaica; China)';row.appendChild(otherCountries);otherCountries.addEventListener('input',function(){markDirty();});
+        var status=d.createElement('div');status.className='scholar-geo-editor__status';status.textContent=existing.size?'Existing province tag(s) are pre-selected. Change them only if needed.':'No province tag is currently shown for this publication.';wrap.appendChild(status);
+        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=String(otherCountries.value||'').split(';').map(function(v){return v.trim();}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;});dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
+      }
+
+      function buildCheckMenu(d,label,options,selected,onChange) {
+        var details=d.createElement('details');details.className='scholar-geo-menu';var summary=d.createElement('summary');summary.innerHTML='<span>'+label+'</span><span class="scholar-geo-menu__count"></span><span aria-hidden="true">\u25be</span>';details.appendChild(summary);var panel=d.createElement('div');panel.className='scholar-geo-options';details.appendChild(panel);
+        options.forEach(function(opt){var lab=d.createElement('label');lab.className='scholar-geo-option'+(opt.general?' scholar-geo-option--general':'');var cb=d.createElement('input');cb.type='checkbox';cb.value=opt.value;cb.checked=selected&&selected.has(opt.value);var span=d.createElement('span');span.textContent=opt.label;lab.appendChild(cb);lab.appendChild(span);panel.appendChild(lab);cb.addEventListener('change',function(){syncCount();onChange();});});
+        function values(){return Array.prototype.slice.call(panel.querySelectorAll('input:checked')).map(function(c){return c.value;});}
+        function syncCount(){var n=values().length;details.classList.toggle('has-selection',n>0);summary.querySelector('.scholar-geo-menu__count').textContent=n;}
+        details.addEventListener('toggle',function(){
+          panel.removeAttribute('style');
+          if(details.open){
+            Array.prototype.slice.call(d.querySelectorAll('details.scholar-geo-menu[open]')).forEach(function(other){if(other!==details)other.open=false;});
+          }
+          panel.removeAttribute('style');
+        });
+        syncCount();
+        return{details:details,values:values};
+      }
+
+      function updateDirtyCounter(d,n){var el=d.querySelector('[data-geo-dirty-count]');if(el)el.textContent=n+' publication'+(n===1?'':'s')+' changed';}
+
+      function buildGeoSubmit(d,scholarId,scholarName,dirty) {
+        var box=d.createElement('div');box.className='scholar-geo-submit';box.innerHTML='<strong>Submit publication geography for review</strong><div class="scholar-geo-submit__grid"><div><label>Your name *</label><input type="text" data-geo-submit-name required></div><div><label>Your email *</label><input type="email" data-geo-submit-email required></div><div><label>Relationship to this scholar *</label><select data-geo-submit-rel><option value="self">This is my own profile</option><option value="family">Family / relative</option><option value="colleague">Colleague / collaborator</option><option value="student">Student / mentee</option><option value="supervisor">Supervisor / advisor</option><option value="community">Community member</option><option value="other">Other</option></select></div></div><div class="scholar-geo-submit__actions"><button type="button" data-geo-submit-button>Submit geography for review</button><span class="scholar-geo-submit__state" data-geo-dirty-count>0 publications changed</span><span class="scholar-geo-submit__state" data-geo-submit-state></span></div>';
+        var btn=box.querySelector('[data-geo-submit-button]');btn.addEventListener('click',async function(){var name=box.querySelector('[data-geo-submit-name]').value.trim();var email=box.querySelector('[data-geo-submit-email]').value.trim();var rel=box.querySelector('[data-geo-submit-rel]').value;var stateEl=box.querySelector('[data-geo-submit-state]');stateEl.className='scholar-geo-submit__state';if(!name||!email){stateEl.textContent='Please enter your name and email.';stateEl.classList.add('is-error');return;}if(!dirty.size){stateEl.textContent='No publication geography has been changed yet.';stateEl.classList.add('is-error');return;}btn.disabled=true;stateEl.textContent='Submitting…';var payload=Array.from(dirty.values());try{var cfgRes=await fetch('data/public-submit-endpoint.json?ts='+Date.now(),{cache:'no-store'});if(!cfgRes.ok)throw new Error('Submission service is not configured yet');var cfg=await cfgRes.json();var submitEndpoint=String(cfg&&cfg.endpoint||'').trim();if(!/^https:\/\/script\.google\.com\//.test(submitEndpoint))throw new Error('Submission service is not configured yet');var r=await fetch(submitEndpoint,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8','Accept':'application/json'},body:JSON.stringify({action:'submitPublicationGeography',shareToken:token,scholarId:scholarId,scholarName:scholarName,profileUrl:location.href,submitterName:name,submitterEmail:email,submitterRelationship:rel,changes:payload})});var j=await r.json();if(!r.ok||!j||j.status!=='ok')throw new Error((j&&(j.error||j.reason||j.status))||'Submission failed');dirty.clear();updateDirtyCounter(d,0);stateEl.textContent='Submitted to V2 Admin for review. Thank you.';stateEl.classList.add('is-ok');}catch(e){console.error(e);stateEl.textContent='Could not submit right now. Please try again.';stateEl.classList.add('is-error');}finally{btn.disabled=false;}});return box;
+      }
+    })();
+  </script>
+</body>
+</html>

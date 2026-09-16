@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Pre-push guardrail. See scripts/verify_enc_freshness.py for the
+# actual logic. Repo-tracked so it survives fresh clones once
+# core.hooksPath is pointed at .githooks (see scripts/install_hooks.sh).
+set -euo pipefail
+exec python3 "$(git rev-parse --show-toplevel)/scripts/verify_enc_freshness.py"

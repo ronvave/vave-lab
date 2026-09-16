@@ -1,0 +1,258 @@
+# Samoa Scholar Database — Admin Panel Build Notes
+
+Companion to `SAMOA-DASHBOARD-BUILD-NOTES.md`. Documents the admin panel
+for the Samoa Scholar Database.
+
+## 🧱 Systematic repair — 2026-08-31 (this commit)
+
+The five-file admin from 2026-08-30 was rebuilt as one internally
+consistent four-file set after the hand-patched version hung at
+"Fetching the current MAPPING from the writeback…":
+
+- **`samoa-master-writeback.gs`** — clean server with all HMAC / SHARED_SECRET /
+  legacy sister-DB code physically removed. New `include(name)` helper.
+  Added `apiListKeys`, `apiReadChangeLog`. `apiUpdateRow` now forces a
+  dry-run whenever `WRITE_ENABLED≠'true'` (previously the property was
+  advisory). Change Log actor is the authenticated Google email.
+- **`samoa-admin-app.html`** — the ONLY file with `<?!= … ?>` scriptlets.
+  Includes the bridge and controller directly. Zero nested `getContent()`
+  calls, so scriptlet evaluation happens once.
+- **`samoa-admin-writeback-bridge.html`** — pure `<script>` block.
+  Exposes `window.samoaAdminBridge` with `describe / ping / listKeys /
+  readRow / updateRow / readChangeLog`. Every call uses direct method
+  invocation on `google.script.run` (no `.apply()`).
+- **`samoa-admin-controller.html`** — pure `<script>` block. New
+  Google-auth-native admin UI. No `samoaDbGate`, no password hash, no
+  snapshot passcode, no legacy controller inline. Renders worksheet
+  picker → key autocomplete → edit form → save → Change Log panel.
+- **`samoa-admin-master-inline.html` was deleted** as part of this commit.
+
+Deploy: `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` (rewritten step-by-step, no
+assumed knowledge). WRITE_ENABLED shipped at `false`; only Ron flips it
+after every mandatory test passes.
+
+## ⚠ Architecture change — 2026-08-30 (session 6)
+
+**The browser-HMAC contract is retired.** The admin panel is no longer
+served from GitHub Pages. See `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` for the
+current architecture.
+
+Summary of the change:
+
+- The admin UI is served from the Samoa Apps Script web app (`doGet`
+  → `HtmlService.createTemplateFromFile`). The `/exec` URL is
+  authenticated by Google identity and authorized by an
+  `APPROVED_ADMIN_EMAIL` Script Property.
+- All Master Sheet writes now execute server-side via
+  `google.script.run` → `apiUpdateRow`. Reads for the form (previously
+  from encrypted `.enc` snapshots) now come from `apiReadRow` live off
+  the sheet.
+- The public `admin-samoa-master.html` is a stub whose only content is
+  a link to the Apps Script `/exec` URL. Nothing else. No JS controller,
+  no password hash, no signing key.
+- `doPost` on the writeback returns HTTP 410 Gone. Any HMAC-signed
+  browser request is rejected outright.
+- The previously exposed browser HMAC secret is now permanently
+  irrelevant. No live surface honors it.
+
+Deleted from the repo in this session:
+
+- `js/samoa-admin-writeback-client.js`
+- `js/samoa-admin-insights-migration.js`
+- `js/admin-samoa-master.js` (moved verbatim into `apps-script/samoa-admin-master-inline.html`)
+- `apps-script/hmac-smoke-test.md`
+- `apps-script/run-hmac-smoke-tests.py`
+
+Added to the repo in this session (all under `apps-script/`):
+
+- `samoa-admin-app.html`
+- `samoa-admin-writeback-bridge.html`
+- `samoa-admin-controller.html`
+- `samoa-admin-master-inline.html`
+- `docs/SAMOA-APPS-SCRIPT-DEPLOY.md` (new)
+
+Modified:
+
+- `admin-samoa-master.html` — replaced with public stub.
+- `apps-script/samoa-master-writeback.gs` — `doGet` now serves the
+  admin app; `doPost` returns 410; new `apiDescribe`, `apiPing`,
+  `apiReadRow`, `apiUpdateRow` functions with `_assertAuthorized_`.
+
+## Session log
+
+- **2026-08-30 (session 1)** — Sheet-ID wiring + `MAPPING` regeneration
+  from live sheet + Samoa-native admin infrastructure and form controller.
+- **Session 2 (planned)** — Public dashboard scaffold: `samoa-database-adapter.js`
+  with six-dimension geography constants (no province/ward/confederacy
+  aliases), `samoa-demo-gate.js`, `samoa-main.js`, dashboard HTML shell.
+- **Session 3+ (planned)** — Panel-by-panel semantic rewrite of
+  `samoa-database-master.js`: scholar list, six-dimension filters, map,
+  publications, alluvial, chord, coauthor network, body composition.
+- **Final session (planned)** — Automated + manual verification that
+  no Fiji/Tonga/Solomon geography identifiers or logic remain anywhere.
+
+## Files completed in session 1 (Samoa-native, no aliases)
+
+| Path | Role | Lines | Status |
+|---|---|---:|---|
+| `js/samoa-db-gate.js` | Public-facing passcode gate. PBKDF2 verifier for the Samoa passcode, per-file AES-GCM decryption of `data/samoa-*.json.enc`, `samoalab.db.session.v1` localStorage key. | 311 | ✅ Ready |
+| `js/samoa-admin-writeback-client.js` | HMAC-SHA-256 signed client for the Apps Script writeback. Canonical JSON with sorted keys. `updateRow` / `describe` / `ping`. | 260 | ✅ Ready |
+| `js/samoa-admin-insights-migration.js` | Migrates legacy admin insights blobs to the canonical shape. `REJECTED_KEYS` guard drops any legacy key referencing a sister-jurisdiction concept. | 159 | ✅ Ready |
+| `js/admin-samoa-master.js` | Samoa-native admin controller. Reads `MAPPING` from the writeback and generates the tab-switcher + row-key picker + declarative form. Six geography dimensions are edited as six independent, un-chained fields. `ALWAYS_CONFIRM` popup and `PUBLIC_FACING_FIELDS` refresh trigger. | 645 | ✅ Ready |
+| `admin-samoa-master.html` | Full admin HTML. Login gate for admin password (SHA-256) + data passcode (PBKDF2). Baked `SAMOA_ADMIN_PASSWORD_HASH_HEX` (`526b18a8…`) and `SAMOA_WRITEBACK_SECRET_HEX`. Loads the four JS files in dependency order. | 201 | ✅ Ready |
+| `apps-script/samoa-master-writeback.gs` | Server-side writeback with regenerated `MAPPING` (25 tabs, 454 fields) autogenerated from the live Master Sheet. **Client protocol adaptation still pending** — see "Session 2+" below. | 1,263 | ⚠ Client-protocol adapt needed |
+
+## Session 1 functions completed (by file)
+
+`js/samoa-db-gate.js`
+- `unlock(passcode)` — verifies against `VERIFIER_HASH_HEX`, populates session.
+- `tryResume()` — resumes an unexpired session from localStorage.
+- `isUnlocked()`, `clearSession()`, `listFiles()`.
+- `decryptFile(plainPath)` — fetches `.enc`, parses IVAV magic, derives per-file AES-GCM key, decrypts.
+- `decryptFileJSON(plainPath)` — parses the decrypted bytes as JSON.
+
+`js/samoa-admin-writeback-client.js`
+- `describe(actor)`, `ping(actor)`, `updateRow(worksheet, keyValue, fields, actor)`.
+- `_canonicalJSON` — sorted-key JSON canonicalization (exposed for tests).
+- `_sign` — HMAC-SHA-256 signer (exposed for tests).
+
+`js/samoa-admin-insights-migration.js`
+- `migrate(blob)` — returns `{migrated, warnings}` with strictly-canonical shape.
+
+`js/admin-samoa-master.js`
+- `boot()` — wires login form, resumes existing session, wires logout.
+- `attemptLogin(password)` — SHA-256 comparison against `SAMOA_ADMIN_PASSWORD_HASH_HEX`.
+- `loadMapping()` — calls `describe` and stores the server MAPPING locally.
+- `renderWorksheetTabs()` / `selectWorksheet(name)`.
+- `renderKeyPicker()` / `loadRow(keyValue)` — reads Master snapshot from `samoaDbGate`.
+- `renderForm()` / `groupFields()` — enforces the six-dimension geography grouping.
+- `renderFieldRow(fname, fspec)` — type-aware widget (enum → select, long-string → textarea, etc.), `ALWAYS_CONFIRM` and `PUBLIC_FACING_FIELDS` badges.
+- `submitChanges()` — sends only diffs via `samoaWriteback.updateRow`, pops `ALWAYS_CONFIRM` prompt.
+- `triggerPublicRefresh()` — dispatches the `refresh-samoa-master-file.yml` workflow via GitHub API.
+
+## Verified in session 1
+
+- **Verifier hash** — `PBKDF2-HMAC-SHA256('Zoopilus1!', salt=7e87…, 100k iters, 32B)` equals baked `VERIFIER_HASH_HEX`. ✅ Verified in Python.
+- **AES-GCM wire format** — round-trip encrypt/decrypt of a sample JSON blob works with the exact byte layout `IVAV || salt(16) || iv(12) || ct+tag`. ✅ Verified in Python.
+- **Admin password hash** — `SHA-256('Arachnid1!')` equals baked `SAMOA_ADMIN_PASSWORD_HASH_HEX`. ✅ Verified in shell.
+- **HMAC canonicalization** — computed a signature for a sample `updateRow` payload; the Apps Script side must reproduce this exact byte sequence.
+- **JS syntax** — all four JS files parse clean under `node --check`.
+- **Forbidden-token sweep** — only three matches, all inside `REJECTED_KEYS` in `samoa-admin-insights-migration.js` (the guard that DROPS such keys from legacy blobs). No Samoa runtime path references a sister-jurisdiction concept.
+
+## Session 1 remaining gaps (must land before admin is live)
+
+1. **Apps Script writeback client-protocol adaptation.** The current
+   `apps-script/samoa-master-writeback.gs` inherits its request/response
+   shape from the Tongan sister; the Samoa client uses `action: "update"`
+   with a canonical HMAC-signed JSON body. The Apps Script must be
+   rewritten to accept the Samoa client's contract before the writeback
+   goes live. This is a small, contained change (~150 lines) and will
+   land in session 2 as part of the dashboard scaffold, or earlier if
+   asked.
+
+2. **`SAMOA_WRITEBACK_URL` deploy URL.** The HTML currently has
+   `SAMOA_WRITEBACK_URL = 'REPLACE_ME_AFTER_APPS_SCRIPT_DEPLOY'`. After
+   deploying the Apps Script per `docs/SAMOA-APPS-SCRIPT-DEPLOY.md`,
+   paste the deploy URL in place of the placeholder.
+
+3. **Master snapshot files** — `data/samoa-master-*.json.enc` don't yet
+   exist. The refresh workflow (`refresh-samoa-master-file.yml`) is
+   present but not yet wired to a `SAMOA_SHEETS_API_KEY` secret. The
+   admin form works without them (writeback will still validate on the
+   server side and reject unknown keys), but loading an existing row's
+   values won't show any pre-fill.
+
+4. **`img/scholars/samoa/`** directory doesn't exist yet — will be
+   created empty in session 2 with a `.gitkeep`.
+
+5. **CSS** — `admin-samoa-master.html` uses inline `<style>` for the
+   admin surface plus `css/base.css` + `css/vavelab.css` from the site.
+   No custom CSS file yet; a future refactor will extract into
+   `css/samoa-admin.css`.
+
+## Baked authentication material
+
+Values baked into `admin-samoa-master.html`:
+
+| Constant | Value | Derivation |
+|---|---|---|
+| `SAMOA_ADMIN_PASSWORD_HASH_HEX` | `526b18a8126ddb9e87281dda864e6a9d6b43b19f55cd6424d395546fb949ae2d` | `SHA-256('Arachnid1!')` — Ron's admin password |
+| `SAMOA_WRITEBACK_URL` | `REPLACE_ME_AFTER_APPS_SCRIPT_DEPLOY` | Apps Script deploy URL — replace after deploying |
+| `SAMOA_WRITEBACK_SECRET_HEX` | `<64-char hex, generated out-of-band>` | Fresh 32-byte hex; the identical value must also live in the Apps Script Script Property `SHARED_SECRET`. Never commit the literal to this repo — rotate via `generateSecret()` in the Apps Script editor and paste into both places. |
+
+Values baked into `js/samoa-db-gate.js`:
+
+| Constant | Value | Derivation |
+|---|---|---|
+| `VERIFIER_SALT_HEX` | `7e873db22bc77cf2f63d8a50988156df` | Random 16-byte salt |
+| `VERIFIER_HASH_HEX` | `155c793753f9ffed2db3b51b4e6dda6eb0085fa899c80b946c9c2e1bf37fd0b3` | `PBKDF2-HMAC-SHA256('Zoopilus1!', salt, 100k, 32B)` |
+| `VERIFIER_ITERATIONS` | `100000` | KDF iteration count for verifier |
+| `FILE_ITERATIONS` | `200000` | KDF iteration count for per-file AES-GCM keys |
+
+Plaintext passcodes are stored **only** in the workspace-only
+`samoa_build/SECRETS-NOT-COMMITTED.md` and never leave the sandbox.
+
+## Six-dimension geography discipline
+
+The admin form treats these six as independent, un-chained fields:
+
+1. **Statistical Region** — 4 SBS regions.
+2. **Political/Census District** — 51 SBS political districts.
+3. **Village** — 341 SBS villages.
+4. **Specific Island** — 8 named islands.
+5. **Traditional Itūmālō** — 11 traditional districts.
+6. **Electoral Constituency** — 51 post-2019 territorial constituencies + pre-2019 territorial and individual-voter constituencies (versioned).
+
+The form composer (`groupFields()` in `admin-samoa-master.js`) enforces
+paternal-block and maternal-block groupings but does NOT auto-derive any
+dimension from another. Owner directive (Ron, 2026-08-30) is preserved:
+unresolved values remain visibly unresolved; the admin never invites the
+user to guess.
+
+## ALWAYS_CONFIRM fields (client and server)
+
+- `Scholars.Living Status`
+- `Scholars.Review Status`
+- `Scholars.Roster Tier`
+- `Scholars.Inclusion Status`
+
+## PUBLIC_FACING_FIELDS (client)
+
+The client tags these fields with a green "public" badge; a change
+prompts the user to run "Refresh public data" (dispatches
+`refresh-samoa-master-file.yml`). See `PUBLIC_FACING_FIELDS` in
+`js/admin-samoa-master.js`.
+
+## Cross-jurisdiction identifiers — final position
+
+Remaining `fiji|itaukei|tongan|solomon|province|confederacy|tikina|…`
+occurrences in the Samoa runtime after session 1:
+
+| File | Line(s) | Context | Kept because |
+|---|---|---|---|
+| `js/samoa-admin-insights-migration.js` | 48–50 | `REJECTED_KEYS` array | This IS the guard that drops sister-jurisdiction keys from legacy blobs. Removing it would let those keys survive into a Samoa record. |
+| `scripts/samoa_master_file_config.py` | 267–268 | `_FORBIDDEN_SPREADSHEET_IDS` list | Prevents Samoa writes from targeting the iTaukei / Tongan sheet IDs. |
+| `scripts/samoa_encrypt_data.py` | 67 | `_FORBIDDEN_PREFIXES` tuple | Refuses to encrypt any file whose name collides with a sister-jurisdiction data-file prefix. |
+| `scripts/samoa_decrypt_data.py` | 47 | `_FORBIDDEN_PREFIXES` tuple | Refuses to decrypt any file whose name collides with a sister-jurisdiction data-file prefix. |
+
+All four are data-safety guards that **enumerate the values they
+refuse**. Removing them would materially weaken isolation. They contain
+no operational logic that runs on Samoa data.
+
+## Verification checklist for the follow-up sessions
+
+Before the admin is declared live:
+
+- [ ] `SAMOA_WRITEBACK_URL` populated with the Apps Script deploy URL.
+- [ ] `apps-script/samoa-master-writeback.gs` rewritten to accept the
+      Samoa `action: "update"` contract with HMAC-signed canonical JSON.
+- [ ] Refresh workflow's `SAMOA_SHEETS_API_KEY` and
+      `SAMOA_APPS_SCRIPT_URL` secrets set in the GitHub repo.
+- [ ] `data/samoa-master-*.json.enc` written by the first successful
+      run of `refresh-samoa-master-file.yml`.
+- [ ] End-to-end smoke test: unlock → describe → load `Scholars` row
+      `WSM-S0001` → edit `Display Name` → submit → verify the change
+      lands in the live Master Sheet.
+- [ ] `admin-samoa-master.html` loaded on a real device (Ron's laptop)
+      with the six geography fieldsets rendering correctly for a Scholars
+      row.

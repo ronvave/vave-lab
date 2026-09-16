@@ -1,0 +1,973 @@
+<!-- Vave Lab iTaukei Research Database — Authored by Ron Vave, 2026 -->
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved.">
+<title>iTaukei Postgraduate scholar province survey — mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf6ee;           /* warm paper */
+  --paper:#ffffff;
+  --paper-2:#f4ecdc;      /* warmer surface */
+  --ink:#0f172a;          /* near-black */
+  --ink-soft:#28251d;
+  --line:#d9c9a3;         /* warm border */
+  --line-soft:#ece2c8;
+  --brown:#854F0B;        /* accent — matches dashboard pill */
+  --brown-soft:#faeeda;
+  --brown-ink:#4a2c06;
+  --pat:#7c332d;          /* paternal red — warmer/deeper */
+  --pat-tint:#e8c4bc;
+  --mat:#2d5743;          /* maternal green — warmer/deeper */
+  --mat-tint:#c8d9cd;
+  --shadow:0 8px 28px rgba(63,42,10,.08);
+  --radius:18px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink-soft);line-height:1.6;-webkit-font-smoothing:antialiased}
+.serif{font-family:"Fraunces",Georgia,serif;font-optical-sizing:auto}
+
+/* subtle repeating paper grain via CSS */
+body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:radial-gradient(circle at 25% 25%, rgba(133,79,11,.02) 1px, transparent 2px), radial-gradient(circle at 75% 75%, rgba(63,42,10,.02) 1px, transparent 2px);background-size:120px 120px, 90px 90px;z-index:0}
+
+main{max-width:1160px;margin:0 auto;padding:32px 22px 96px;position:relative;z-index:1}
+
+/* ===== HERO / INTRO ===== */
+.hero{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:44px 44px 36px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+.hero__mark{display:inline-block;font-family:"Fraunces",serif;font-weight:500;font-style:italic;font-size:1rem;color:var(--brown);letter-spacing:.02em;margin-bottom:14px}
+.hero__mark::before{content:"◆  "}
+.hero h1{font-family:"Fraunces",serif;font-weight:600;font-size:clamp(2.2rem,4.2vw,3.6rem);line-height:1.06;letter-spacing:-.015em;margin:0 0 18px;color:var(--ink)}
+.hero h1 em{font-style:italic;color:var(--brown);font-weight:500}
+.hero__lede{font-size:1.18rem;color:var(--ink-soft);margin:0 0 22px}
+.hero__body{font-size:1rem;color:var(--ink-soft);margin:0 0 14px}
+.hero__body a{color:var(--brown);text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+.hero__body a:hover{color:var(--brown-ink)}
+
+/* ===== DATABASE OVERVIEW (stats tiles) ===== */
+.db-overview{margin:26px 0 0;position:relative}
+.db-inner{position:relative;z-index:1}
+.db-panel__head{margin:0 0 14px}
+.db-panel__title{font-family:"Fraunces",serif;font-weight:600;font-size:1.35rem;line-height:1.1;color:#1f2937;margin:0}
+.db-panel__sub{font-size:1rem;color:#000;margin:4px 0 0}
+/* 6-tile row */
+.db-tiles{display:grid;grid-template-columns:repeat(6,1fr);gap:12px}
+.stat-tile{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;color:#fff;min-width:0}
+.stat-tile__badge{flex-shrink:0;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.stat-tile__badge svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8}
+.stat-tile__body{display:flex;flex-direction:column;min-width:0}
+.stat-tile__num{font-family:Arial,Helvetica,sans-serif;font-weight:700;font-size:1.5rem;line-height:1.05;color:#fff;font-variant-numeric:tabular-nums}
+.stat-tile__label{font-size:.76rem;line-height:1.2;color:rgba(255,255,255,.82);font-weight:500;margin-top:2px}
+.stats__note{margin:12px 0 0;font-size:.88rem;color:var(--ink);font-style:italic}
+.stats__note a{color:var(--brown);text-decoration:underline;text-underline-offset:3px}
+@media(max-width:1080px){.db-tiles{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.db-tiles{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== MAP CTA ROW (below stats) ===== */
+.map-cta-row{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:14px auto 26px;max-width:1100px}
+@media(max-width:860px){.map-cta-row{grid-template-columns:1fr}}
+.map-card{display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;background:#0F6E56;border:1px solid #fff;color:#fff;text-decoration:none;cursor:zoom-in;transition:background .15s ease,transform .15s ease}
+.map-card:hover,.map-card:focus{background:#0c5b47;transform:translateY(-1px);outline:none}
+.map-card__badge{flex-shrink:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center}
+.map-card__badge svg{width:24px;height:24px;stroke:#fff;fill:none;stroke-width:1.8}
+.map-card__body{flex:1;min-width:0;display:flex;flex-direction:column}
+.map-card__title{font-weight:700;font-size:1.08rem;line-height:1.25;color:#fff}
+.map-card__sub{font-size:.9rem;color:rgba(255,255,255,.9);margin-top:2px}
+.map-card__expand{flex-shrink:0;width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+
+/* screen anchor */
+.divider{display:flex;align-items:center;gap:18px;margin:56px 0 24px}
+.divider__num{font-family:"Fraunces",serif;font-weight:600;font-size:1rem;color:var(--brown);border:1px solid var(--brown);border-radius:999px;padding:4px 12px;letter-spacing:.03em}
+.divider__line{flex:1;height:1px;background:var(--line)}
+.divider h2{font-family:"Fraunces",serif;font-weight:600;font-size:1.9rem;letter-spacing:-.01em;margin:0;color:var(--ink)}
+
+/* card */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:28px;box-shadow:var(--shadow)}
+.card__sub{color:var(--ink);font-size:1rem;margin:0 0 22px;max-width:64ch}
+
+/* ===== SCREEN 1 — SELECTION ===== */
+.selector-toolbar{display:grid;grid-template-columns:1fr auto;gap:22px;align-items:end;margin-bottom:14px}
+@media(max-width:820px){.selector-toolbar{grid-template-columns:1fr}}
+
+.search-field{position:relative}
+.search-field label{display:block;font-weight:600;font-size:.86rem;color:var(--ink);letter-spacing:.02em;text-transform:uppercase;margin-bottom:8px}
+.search-input{width:100%;padding:14px 16px 14px 46px;border:1px solid var(--line);border-radius:12px;background:var(--paper);font-size:1.02rem;font-family:inherit;color:var(--ink);transition:border-color .15s,box-shadow .15s}
+.search-input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.search-icon{position:absolute;left:16px;bottom:14px;width:20px;height:20px;color:var(--brown);pointer-events:none}
+
+.alpha-nav{display:flex;flex-direction:column;gap:8px}
+.alpha-nav__label{font-weight:600;font-size:.86rem;color:var(--ink);letter-spacing:.02em;text-transform:uppercase}
+.alpha-tabs{display:flex;flex-wrap:wrap;gap:6px;max-width:520px}
+.alpha-tab{border:1px solid var(--line);background:var(--paper);padding:8px 12px;border-radius:8px;font-family:"Fraunces",serif;font-weight:500;font-size:.95rem;color:var(--ink);cursor:pointer;min-width:34px;text-align:center;transition:all .12s}
+.alpha-tab:hover{border-color:var(--brown);color:var(--brown)}
+.alpha-tab.active{background:var(--brown);color:var(--brown-soft);border-color:var(--brown)}
+.alpha-tab[data-empty="true"]{opacity:.28;cursor:not-allowed}
+
+/* scholar list */
+.scholar-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;margin-top:22px;max-height:520px;overflow-y:auto;padding:6px 6px 6px 0}
+.scholar-list::-webkit-scrollbar{width:8px}
+.scholar-list::-webkit-scrollbar-thumb{background:var(--line);border-radius:4px}
+.scholar-row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--paper);border:1px solid var(--line-soft);border-radius:12px;cursor:pointer;transition:all .12s;position:relative}
+.scholar-row:hover{border-color:var(--brown);background:#fffbf3}
+.scholar-row input[type=checkbox]{appearance:none;-webkit-appearance:none;width:20px;height:20px;border:1.5px solid var(--line);border-radius:5px;cursor:pointer;flex-shrink:0;position:relative;background:var(--paper);transition:all .12s}
+.scholar-row input[type=checkbox]:checked{background:var(--brown);border-color:var(--brown)}
+.scholar-row input[type=checkbox]:checked::after{content:"";position:absolute;left:5px;top:1px;width:6px;height:12px;border:solid var(--brown-soft);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.scholar-row__name{flex:1;min-width:0}
+.scholar-row__last{font-weight:600;font-size:.98rem;color:var(--ink);line-height:1.25}
+.scholar-row__first{font-size:.86rem;color:var(--ink);font-style:italic;line-height:1.3;margin-top:2px}
+.scholar-row__meta{display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:.72rem;flex-shrink:0}
+.scholar-row__pubs{background:var(--brown-soft);color:var(--brown-ink);padding:3px 8px;border-radius:999px;font-weight:600;font-variant-numeric:tabular-nums}
+.scholar-row__gap{font-size:.68rem;color:var(--ink);letter-spacing:.02em;text-transform:uppercase;font-weight:600}
+/* Status chips mirror the progress page (Fully tagged / Partial / Needs info). */
+.scholar-row__status{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:99px;font-size:.66rem;font-weight:700;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.scholar-row__status .scholar-row__dot{width:6px;height:6px;border-radius:50%}
+.scholar-row__status--done{background:#c8d9cd;color:#2d5743}
+.scholar-row__status--done .scholar-row__dot{background:#2d5743}
+.scholar-row__status--partial{background:#f7ecc9;color:#7a5a13}
+.scholar-row__status--partial .scholar-row__dot{background:#c99a2f}
+.scholar-row__status--needs{background:#e8c4bc;color:#7c332d}
+.scholar-row__status--needs .scholar-row__dot{background:#7c332d}
+.scholar-row__hint{font-size:.68rem;color:#28251D;font-style:italic;font-weight:500;margin-top:2px;text-align:right}
+.scholar-row__alt{font-size:.75rem;color:var(--ink);line-height:1.3;margin-top:3px}
+.scholar-row__alt strong{font-weight:600;text-transform:uppercase;letter-spacing:.03em;font-size:.66rem;color:var(--brown-ink);margin-right:4px}
+.scholar-row.selected{background:#fffbf3;border-color:var(--brown)}
+
+/* footer bar */
+.selector-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-top:22px;padding:20px 22px;background:var(--paper-2);border-radius:12px;border:1px solid var(--line-soft)}
+.counts{display:flex;gap:22px;flex-wrap:wrap;align-items:center}
+.count{display:flex;align-items:baseline;gap:8px}
+.count__num{font-family:"Fraunces",serif;font-weight:600;font-size:1.5rem;color:var(--brown-ink);font-variant-numeric:tabular-nums}
+.count__label{font-size:.9rem;color:var(--ink);font-weight:500}
+
+/* buttons */
+.btn{border:none;border-radius:12px;padding:14px 22px;font-family:inherit;font-weight:600;font-size:.98rem;cursor:pointer;transition:all .12s;display:inline-flex;align-items:center;gap:8px}
+.btn-primary{background:var(--brown);color:var(--brown-soft)}
+.btn-primary:hover{background:var(--brown-ink)}
+.btn-primary:disabled{background:var(--line);color:var(--ink);cursor:not-allowed;opacity:.7}
+.btn-ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--brown);color:var(--brown)}
+.btn__arrow{transition:transform .12s}
+.btn:hover .btn__arrow{transform:translateX(3px)}
+
+/* "not on list" toggle */
+.notlist-toggle{margin-top:18px}
+.notlist-cta{display:flex;align-items:center;gap:14px;width:100%;box-sizing:border-box;padding:20px 16px;background:#085041;color:#fff;border-radius:12px;text-decoration:none;cursor:pointer;transition:background .18s ease,transform .18s ease,box-shadow .18s ease}
+.notlist-cta:hover,.notlist-cta:focus{background:#0a6152;transform:translateY(-1px);box-shadow:0 4px 14px rgba(8,80,65,.28);outline:none}
+.notlist-cta:focus-visible{box-shadow:0 0 0 3px rgba(8,80,65,.35)}
+.notlist-cta__icon{flex:0 0 auto;color:#fff}
+.notlist-cta__text{flex:1 1 auto;font-size:16px;font-weight:600;color:#fff;line-height:1.3}
+.notlist-cta__arrow{flex:0 0 auto;color:#fff;transition:transform .18s ease}
+.notlist-cta:hover .notlist-cta__arrow,.notlist-cta:focus .notlist-cta__arrow{transform:translateX(3px)}
+.notlist-form{margin-top:22px;padding:24px;background:var(--paper-2);border:1px dashed var(--line);border-radius:14px}
+.notlist-form.hidden{display:none}
+.notlist-form__grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:700px){.notlist-form__grid{grid-template-columns:1fr}}
+.notlist-form__grid label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
+.notlist-form__grid input,.notlist-form__grid select{width:100%;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:.95rem;color:var(--ink)}
+.notlist-form__grid input:focus,.notlist-form__grid select:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.notlist-count{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;margin:0 0 18px;padding:0 0 18px;border-bottom:1px dashed var(--line)}
+.notlist-count__field{flex:0 0 auto;min-width:160px}
+.notlist-count__field label{display:block;font-size:.82rem;font-weight:600;color:var(--ink);margin-bottom:6px;letter-spacing:.02em;text-transform:uppercase}
+.notlist-count__field input{width:120px;padding:11px 14px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:.95rem;color:var(--ink)}
+.notlist-count__field input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.notlist-count__hint{flex:1 1 200px;font-size:.9rem;color:var(--ink);margin:0}
+.newScholar-block{margin-top:18px;padding:18px 20px;background:var(--paper);border:1px solid var(--line);border-radius:12px}
+.newScholar-block__head{font-family:'Fraunces',serif;font-weight:600;font-size:1.02rem;color:var(--brown);margin:0 0 12px}
+
+/* ===== SCREEN 2 — BATCH ENTRY ===== */
+#screen2.hidden{display:none}
+
+.informant-field{margin-bottom:24px}
+.informant-field label{display:block;font-weight:600;font-size:.86rem;color:var(--ink);text-transform:uppercase;letter-spacing:.02em;margin-bottom:8px}
+.informant-field input{width:100%;padding:12px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:1rem;color:var(--ink);box-sizing:border-box}
+.informant-field input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.informant-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:720px;margin-bottom:24px}
+@media(max-width:640px){.informant-grid{grid-template-columns:1fr}}
+.informant-grid .informant-field{margin-bottom:0}
+
+/* scholar entry cards — one card per scholar, no table */
+.entries{display:flex;flex-direction:column;gap:18px}
+.entry{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.entry__head{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;background:var(--paper-2);border-bottom:1px solid var(--line-soft);gap:14px;flex-wrap:wrap}
+.entry__name{font-family:"Fraunces",serif;font-weight:600;font-size:1.2rem;color:var(--ink);line-height:1.2}
+.entry__name em{font-style:italic;color:var(--brown-ink);font-weight:500}
+.entry__num{font-size:.78rem;color:var(--ink);letter-spacing:.06em;text-transform:uppercase;font-weight:600;background:var(--brown-soft);color:var(--brown-ink);padding:4px 10px;border-radius:999px}
+
+/* side split */
+.entry__body{display:grid;grid-template-columns:1fr 1fr;gap:0}
+@media(max-width:840px){.entry__body{grid-template-columns:1fr}}
+.side{padding:20px 22px}
+.side--pat{background:var(--pat-tint);border-right:1px solid var(--line-soft)}
+.side--mat{background:var(--mat-tint)}
+@media(max-width:840px){.side--pat{border-right:none;border-bottom:1px solid var(--line-soft)}}
+.side__label{font-family:"Fraunces",serif;font-weight:600;font-size:1.2rem;letter-spacing:.02em;margin-bottom:4px}
+.side--pat .side__label{color:var(--pat)}
+.side--mat .side__label{color:var(--mat)}
+.side__hint{font-size:1rem;color:var(--ink);font-style:italic;margin-bottom:14px}
+.side__grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){.side__grid{grid-template-columns:1fr}}
+.side__field label{display:block;font-size:.92rem;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.side__field input,.side__field select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-family:inherit;font-size:.94rem;color:var(--ink)}
+.side__field input:focus,.side__field select:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+
+/* paternal/maternal sides reused inside a new-scholar block */
+.newScholar-block__sides{margin-top:16px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden}
+
+/* profile link field — full width bottom of maternal side */
+.entry__extra{padding:14px 22px 20px 22px;border-top:1px solid var(--line-soft);background:var(--paper)}
+.entry__extra label{display:block;font-size:.74rem;font-weight:600;color:var(--ink);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+.entry__extra input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-family:inherit;font-size:.94rem;color:var(--ink)}
+.entry__extra input:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+
+/* extra-info + files block */
+.wrap-up{margin-top:32px;padding:28px;background:var(--paper-2);border:1px solid var(--line-soft);border-radius:14px}
+.wrap-up h3{font-family:"Fraunces",serif;font-weight:600;font-size:1.3rem;color:var(--ink);margin:0 0 8px}
+.wrap-up p{font-size:.95rem;color:var(--ink);margin:0 0 16px;max-width:70ch}
+.wrap-up textarea{width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:10px;background:var(--paper);font-family:inherit;font-size:.98rem;color:var(--ink);min-height:130px;resize:vertical;line-height:1.55}
+.wrap-up textarea:focus{outline:none;border-color:var(--brown);box-shadow:0 0 0 3px var(--brown-soft)}
+.filedrop{margin-top:16px}
+.filedrop > label:first-of-type{display:block;font-size:.82rem;font-weight:600;color:var(--ink);letter-spacing:.02em;text-transform:uppercase;margin-bottom:8px}
+.filedrop__zone{display:block;text-transform:none;letter-spacing:normal;border:1.5px dashed var(--line);border-radius:12px;padding:22px;text-align:center;background:var(--paper);cursor:pointer;transition:border-color .12s,background .12s}
+.filedrop__zone:hover,.filedrop__zone.dragover{border-color:var(--brown);background:#fffbf3}
+.filedrop__zone p{margin:0;color:var(--ink);font-size:.92rem}
+.filedrop__zone strong{color:var(--brown)}
+.filedrop input[type=file]{display:none}
+.filedrop__list{margin-top:10px;font-size:.86rem;color:var(--ink)}
+.filedrop__item{display:inline-block;margin-right:8px;padding:4px 10px;background:var(--brown-soft);color:var(--brown-ink);border-radius:999px;font-weight:500}
+
+/* screen 2 footer */
+.screen2-footer{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-top:24px}
+.screen2-footer .muted{color:var(--ink);font-size:.9rem;font-style:italic}
+
+.status{margin-top:14px;font-weight:600;font-size:.95rem}
+.status.ok{color:var(--mat)}
+.status.err{color:var(--pat)}
+
+/* ===== SAMPLE PROFILE THUMBNAIL (in intro) ===== */
+.sample-profile{margin:20px auto 16px;width:100%}
+.sample-profile>a{display:block;cursor:zoom-in}
+.sample-profile__thumb{display:block;width:100%;height:auto;border:1px solid var(--line-soft);border-radius:10px;box-shadow:0 6px 22px rgba(45,32,10,.10);cursor:zoom-in;transition:transform .18s ease, box-shadow .18s ease;background:#fff}
+.sample-profile__thumb:hover,.sample-profile__thumb:focus{transform:translateY(-2px);box-shadow:0 10px 28px rgba(45,32,10,.16);outline:none}
+
+/* ===== MAP HIGHLIGHT (in stats note) ===== */
+.map-cta{display:inline-flex;align-items:center;gap:6px;background:#fff2b0;color:#5a4200;font-weight:700;text-decoration:none;padding:4px 12px;border-radius:999px;border:1.5px solid #e8c94a;box-shadow:0 2px 6px rgba(212,168,20,.20);cursor:zoom-in;transition:background .15s ease, box-shadow .15s ease, transform .15s ease}
+.map-cta:hover,.map-cta:focus{background:#ffe680;box-shadow:0 4px 10px rgba(212,168,20,.30);transform:translateY(-1px);outline:none}
+.map-cta__icon{font-size:1rem;line-height:1}
+
+/* ===== LIGHTBOX ===== */
+.lb{position:fixed;inset:0;background:rgba(15,23,42,.86);z-index:100;display:none;align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+.lb.open{display:flex}
+.lb img{max-width:100%;max-height:100%;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.lb__close{position:absolute;top:22px;right:26px;background:#fff;border:none;width:44px;height:44px;border-radius:50%;font-size:1.6rem;cursor:pointer;color:var(--ink);display:flex;align-items:center;justify-content:center}
+
+/* small footer link */
+.foot{margin-top:52px;padding-top:24px;border-top:1px solid var(--line-soft);text-align:center;font-size:.9rem;color:var(--ink)}
+.foot a{color:var(--brown);text-decoration:underline;text-underline-offset:3px}
+/* reusable legal footer */
+.legal-footer{margin-top:22px;padding-top:20px;border-top:1px solid var(--line-soft);text-align:center;font-size:.82rem;line-height:1.7;color:var(--ink-soft)}
+.legal-footer__copy{font-weight:600;color:var(--brown-ink)}
+.legal-footer__license{display:block;margin-top:4px}
+.legal-footer a{color:var(--brown);text-decoration:underline;text-underline-offset:2px}
+.legal-footer a:hover{color:var(--brown-ink)}
+.legal-footer__sep{opacity:.5;margin:0 6px}
+
+/* selected preview row on the hero */
+.progress-cta{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;margin-top:22px;padding:16px 22px;background:var(--brown-soft);border-radius:12px;border:1px solid #eddab6}
+.progress-cta p{margin:0;font-size:.98rem;color:var(--brown-ink);font-weight:500}
+.progress-cta a{color:var(--brown-ink);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+/* utility */
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+<main>
+
+  <!-- ===== HERO / INTRO ===== -->
+  <section class="hero">
+    <span class="hero__mark">Vave Lab · community crowdsourcing</span>
+    <p class="hero__lede"><strong>Help us tag every iTaukei Postgraduate scholar and researcher who have <u>published</u> to their village and province.</strong></p>
+
+    <p class="hero__body"><strong>Bula vinaka!! Na yacaqu o Ron Vave, kau gone ni Yavusa Tonga ena koro ko Sawana (Vanua balavu, Lau), kau vasu kina koro ko Tiliva ena yasana vaka turaga o Bua. Ena gauna qo, au veiqaravi tiko ena University of Hawaiʻi at Mānoa e Honolulu.</strong></p>
+
+    <p class="hero__body">For the past two years, I've been curating a database of iTaukei scholarly work, sharing it along the way in a <a href="https://www.facebook.com/groups/651412128782477" target="_blank" rel="noopener">closed Facebook group for iTaukei scholars and iTaukei at large</a>.</p>
+
+    <p class="hero__body">Part of why I do this is that it's <strong>not iTaukei / Pacific Island culture to talk about our own achievements</strong> — successfully completing graduate studies, publishing a thesis, a journal article, and/or a book. Sharing on someone else's behalf takes that pressure off the scholar, and allows the rest of us see the breadth and depth of, not only their work, but the broader iTaukei researcher community.</p>
+
+    <p class="hero__body">The Facebook group only reaches its members, though, and each post is a one-off — it doesn't stay accessible to iTaukei outside the group, to iTaukei communities, to other iTaukei scholars, or to anyone else who'd benefit from knowing about this research. So I built a public database and dashboard: <strong>publications in and on Fiji, by iTaukei scholars and others, including publications by iTaukei scholars living outside Fiji.</strong> The purpose is the same as it's always been — showcase and elevate our scholarly work, and make it accessible to the wider public, especially decision-makers.</p>
+
+    <div class="db-overview">
+      <div class="db-inner">
+        <div class="db-panel__head">
+          <p class="db-panel__title">iTaukei database overview</p>
+          <p class="db-panel__sub">Statistics describing the entire indexed database (as of Thursday, 9th July 2026, 10:05 PM FJT).</p>
+        </div>
+        <div class="db-tiles">
+          <div class="stat-tile" style="background:#085041">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H19a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V4.5Z"/><path d="M4 17.5A1.5 1.5 0 0 1 5.5 16H20"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">2,056</span><span class="stat-tile__label">Scholarly publications</span></span>
+          </div>
+          <div class="stat-tile" style="background:#993C1D">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 2h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Z"/><path d="M14 2v4h4"/><path d="M8 12h8M8 16h8"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">1,380</span><span class="stat-tile__label">Publications by iTaukei</span></span>
+          </div>
+          <div class="stat-tile" style="background:#854F0B">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="8" cy="8" r="3"/><path d="M2 20a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15 20a5 5 0 0 1 7-4.6"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">397</span><span class="stat-tile__label">iTaukei scholars</span></span>
+          </div>
+          <div class="stat-tile" style="background:#3C3489">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 4 22 9l-10 5L2 9l10-5Z"/><path d="M6 11v5c0 1.1 2.7 3 6 3s6-1.9 6-3v-5"/><path d="M22 9v5"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">339</span><span class="stat-tile__label">iTaukei theses</span></span>
+          </div>
+          <div class="stat-tile" style="background:#185FA5">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 21 8H3l9-5Z"/><path d="M5 10v7M9.5 10v7M14.5 10v7M19 10v7"/><path d="M3 20h18"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">62</span><span class="stat-tile__label">Universities represented</span></span>
+          </div>
+          <div class="stat-tile" style="background:#72243E">
+            <span class="stat-tile__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.5 3.8 5.8 3.8 9S14.5 18.5 12 21c-2.5-2.5-3.8-5.8-3.8-9S9.5 5.5 12 3Z"/></svg></span>
+            <span class="stat-tile__body"><span class="stat-tile__num">13</span><span class="stat-tile__label">Countries represented</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="map-cta-row">
+      <a href="#" class="map-card" data-lb="dash-card1-country-totals.jpg" aria-label="Sample dashboard map with study-country totals — view full screen">
+        <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M9 3 3 5v16l6-2 6 2 6-2V3l-6 2-6-2Z"/><path d="M9 3v16M15 5v16"/></svg></span>
+        <span class="map-card__body"><span class="map-card__title">Sample dashboard map</span><span class="map-card__sub">View full screen</span></span>
+        <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </a>
+      <a href="#" class="map-card" data-lb="dash-card2-scholar-popup.jpg" aria-label="Sample dashboard map with scholar popup info — view full screen">
+        <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
+        <span class="map-card__body"><span class="map-card__title">Sample dashboard map with popup info</span><span class="map-card__sub">View full screen</span></span>
+        <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </a>
+      <a href="#" class="map-card" data-lb="dash-card3-tovata-confederacy.jpg" aria-label="Confederacy filter for Tovata showing its scholars and thesis details — view full screen">
+        <span class="map-card__badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/><circle cx="8" cy="6" r="1.6" fill="#fff" stroke="none"/><circle cx="14" cy="12" r="1.6" fill="#fff" stroke="none"/><circle cx="10" cy="18" r="1.6" fill="#fff" stroke="none"/></svg></span>
+        <span class="map-card__body"><span class="map-card__title">Confederacy filter — Tovata</span><span class="map-card__sub">View full screen</span></span>
+        <svg class="map-card__expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+      </a>
+    </div>
+
+    <p class="hero__body">The above stats and the three sample maps (click to view them full screen) showcase only a small portion of the data out there. You can see in the maps that an iTaukei scholar's work that has been tagged to their Province and Confederacy can be used to filter data. Unfortunately, of the 397 iTaukei scholars and researchers in the database, I was only able to tag less than 20 to their paternal village and Province. It's a project I've put a great deal of myself into, built one entry at a time — and it's still growing, since this only reflects what I've been able to gather so far.</p>
+
+    <p class="hero__body"><strong>Sample scholar profile from the database</strong> below. Your contribution in tagging iTaukei scholars and researchers — along with their scholarly publications — to their village and province helps in several ways: <strong>(1)</strong> confederacies and provincial offices/councils can find their own scholars, whose advice can be sought on topics related to their field of expertise; and <strong>(2)</strong> it does something rarely done or seen in academia — grounding scholarly contributions to where we come from. Given the relationships that exist between villages, provinces, and confederacies in Fiji, it also enables <strong>scholarly-relational attribution</strong>, connecting our scholars to one another and opening up networking along the lines of these iTaukei relationships.</p>
+
+    <figure class="sample-profile">
+      <a href="#" data-lb="iTaukei-scholar-profile-sample-2.jpg" aria-label="Open sample scholar profile at full size"><img class="sample-profile__thumb" src="iTaukei-scholar-profile-sample-2.jpg" alt="Sample iTaukei scholar profile card from the dashboard" loading="lazy"></a>
+    </figure>
+
+    <p class="hero__body"><strong>About the information used here.</strong> All of the information in this database is <strong>publicly available</strong> — from university and journal repositories, or elsewhere on the internet. Author names are extracted from the author lists on each paper. And while most iTaukei authors on this list are researchers and scholars, some are <strong>community members and support staff</strong> — people who also hold a lot of knowledge and skill, and who contributed to the success of the research or projects they were part of.</p>
+
+    <p class="hero__body"><strong>Why I'm asking for your help.</strong> One of the most useful things the dashboard does is let you drill down by <strong>confederacy</strong> and <strong>paternal province</strong>. That drilldown only works if we actually know each scholar's village and province — and for many, we still don't. If you know a scholar's village and province — paternal side, maternal side, or both — please add what you know below. You can also add scholars who <strong>aren't in the database yet</strong>. Every submission helps.</p>
+
+    <p class="hero__body"><strong>You don't need to know everything to help.</strong> Even the province alone — paternal or maternal — is enough to tag a scholar to the right confederacy. Fill in whatever you know, and leave the rest blank.</p>
+
+    <p class="hero__body"><strong>Vinaka vakalevu</strong> — thank you for helping lift up iTaukei scholarly work.</p>
+
+    <p class="hero__body">For more info or questions, contact <strong><a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a></strong>.</p>
+
+    <div class="progress-cta">
+      <p>Curious how the crowdsourcing is going? <a href="itaukei-scholar-province-progress.html" target="_blank" rel="noopener">See the public progress page →</a></p>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 1 ===== -->
+  <div class="divider"><span class="divider__num">Step 1</span><h2>Pick the iTaukei Postgraduate scholars you can help with</h2><div class="divider__line"></div></div>
+
+  <section id="screen1" class="card">
+    <p class="card__sub">Search by name or browse the alphabet, tick every scholar you have information about, then continue. You can pick as many as you like in one go.</p>
+
+    <div class="selector-toolbar">
+      <div class="search-field">
+        <label for="scholarSearch">Search by name</label>
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        <input id="scholarSearch" class="search-input" type="text" placeholder="Start typing a first or last name…" autocomplete="off">
+      </div>
+      <div class="alpha-nav">
+        <span class="alpha-nav__label">Browse by last-name initial</span>
+        <div id="alphaTabs" class="alpha-tabs"></div>
+      </div>
+    </div>
+
+    <div id="scholarList" class="scholar-list" aria-live="polite"></div>
+
+    <div class="selector-footer">
+      <div class="counts">
+        <div class="count"><span class="count__num" id="matchCount">0</span><span class="count__label">shown</span></div>
+        <div class="count"><span class="count__num" id="totalCount">0</span><span class="count__label">in database</span></div>
+        <div class="count"><span class="count__num" id="selCount">0</span><span class="count__label">selected</span></div>
+      </div>
+      <button id="continueBtn" class="btn btn-primary" disabled>Continue with 0 selected <span class="btn__arrow">→</span></button>
+    </div>
+
+    <div class="notlist-toggle">
+      <a id="showNotList" class="notlist-cta" role="button" tabindex="0">
+        <svg class="notlist-cta__icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0"/><path d="M6 21v-2a4 4 0 0 1 4 -4h4"/><path d="M16 19h6"/><path d="M19 16v6"/></svg>
+        <span class="notlist-cta__text">Scholar not on the list? Add them here.</span>
+        <svg class="notlist-cta__arrow" xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0"/><path d="M13 18l6 -6"/><path d="M13 6l6 6"/></svg>
+      </a>
+    </div>
+
+    <div id="notListForm" class="notlist-form hidden">
+      <h3 style="font-family:'Fraunces',serif;font-weight:600;margin:0 0 6px;color:var(--ink)">Add someone not on the list</h3>
+      <p style="margin:0 0 14px;font-size:.94rem;color:var(--ink)">These go to a separate <strong>NewScholars</strong> stream for review. If you know their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span> village and province, you can add that below too.</p>
+
+      <div style="margin:0 0 18px;padding:12px 15px;background:var(--gold-tint,#faf3d8);border-left:3px solid var(--gold,#d4a017);border-radius:6px;font-size:.9rem;color:#5c4a12;line-height:1.55">
+        <strong>Before you add someone — please read.</strong> This database is primarily for <strong>scholars</strong>: Masters &amp; PhD by-thesis students, and those who have published journal articles, books, book chapters, and/or reports. For each person, a <strong>link to their thesis or a scientific publication is required</strong> — this is the easiest way to skip the vetting process and have them added quickly. If you can't find one, you may still submit, but you'll need to explain in the <em>notes</em> field (e.g. degree evidence, a news link of their graduation) so they can be researched before being added.
+      </div>
+
+      <div class="informant-grid" style="margin:0 0 18px">
+        <div class="informant-field">
+          <label for="newInformantName">Your name (optional)</label>
+          <input id="newInformantName" type="text" placeholder="e.g. Ron Vave" autocomplete="name">
+        </div>
+        <div class="informant-field">
+          <label for="newInformantEmail">Your email (optional)</label>
+          <input id="newInformantEmail" type="email" placeholder="e.g. name@example.com" autocomplete="email">
+        </div>
+      </div>
+
+      <div class="notlist-count">
+        <div class="notlist-count__field">
+          <label for="newCount">How many to add</label>
+          <input id="newCount" type="number" min="1" max="20" value="1">
+        </div>
+        <button id="setNewCount" class="btn btn-ghost" type="button">Set number</button>
+        <p class="notlist-count__hint">Enter how many scholars you'd like to add, then fill in the blocks below.</p>
+      </div>
+
+      <div id="newScholarBlocks"></div>
+
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:12px">
+        <button id="submitNewScholar" class="btn btn-ghost" type="button">Submit new scholars</button>
+      </div>
+      <div id="newScholarStatus" class="status"></div>
+    </div>
+  </section>
+
+  <!-- ===== SCREEN 2 ===== -->
+  <div id="divider2" class="divider hidden"><span class="divider__num">Step 2</span><h2>Enter what you know</h2><div class="divider__line"></div></div>
+
+  <section id="screen2" class="card hidden">
+    <p class="card__sub">For each scholar you picked, share their <span style="color:var(--pat);font-weight:600">paternal side</span> and/or <span style="color:var(--mat);font-weight:600">maternal side</span>. All fields are optional — partial info still helps.</p>
+    <p class="card__note" style="margin:-6px 0 18px;padding:10px 14px;background:var(--gold-tint,#faf3d8);border-left:3px solid var(--gold,#d4a017);border-radius:6px;font-size:.9rem;color:#5c4a12;line-height:1.5"><strong>Not sure about a field?</strong> Please leave it blank rather than guessing. A scholar counts as <em>fully tagged</em> only when all four — paternal village, paternal province, maternal village, and maternal province — are filled in. If any are blank, it's saved as <em>partial info</em>, which still helps.</p>
+
+    <div class="informant-grid">
+      <div class="informant-field">
+        <label for="informantName">Your name (optional)</label>
+        <input id="informantName" type="text" placeholder="e.g. Ron Vave" autocomplete="name">
+      </div>
+      <div class="informant-field">
+        <label for="informantEmail">Your email (optional)</label>
+        <input id="informantEmail" type="email" placeholder="e.g. name@example.com" autocomplete="email">
+      </div>
+    </div>
+
+    <div id="entries" class="entries"></div>
+
+    <div class="wrap-up">
+      <h3>Anything else you'd like to share?</h3>
+      <p>Optional — the institution the scholar works at now with a link to their profile, thoughts on this initiative, who else this database could serve, or anything else you want me to know.</p>
+      <textarea id="wrapUpNotes" placeholder="Write freely…"></textarea>
+
+      <div class="filedrop">
+        <label for="fileInput">Attach files (optional)</label>
+        <label for="fileInput" class="filedrop__zone" id="fileZone">
+          <p><strong>Click to browse</strong> or drag and drop — head-and-shoulders photos of the scholar, Zotero/EndNote/RIS files, PDFs, anything relevant.</p>
+          <p style="margin:6px 0 0;font-size:.85rem;color:var(--muted,#6b6257);line-height:1.45">Tip: feel free to add the <strong>preferred profile photo</strong> of the person — the one you'd like used on their profile page — especially if you are that person.</p>
+        </label>
+        <input id="fileInput" type="file" multiple accept="image/*,.ris,.bib,.enw,.xml,.zot,.zotero,.pdf,.doc,.docx,.txt">
+        <div id="fileList" class="filedrop__list"></div>
+      </div>
+    </div>
+
+    <div class="screen2-footer">
+      <button id="backBtn" class="btn btn-ghost" type="button">← Back to selection</button>
+      <button id="submitBatch" class="btn btn-primary" type="button">Submit this batch <span class="btn__arrow">→</span></button>
+    </div>
+    <div id="batchStatus" class="status"></div>
+  </section>
+
+  <div class="foot">
+    For more info or questions, contact <a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a> · <em>Vinaka vakalevu.</em>
+  </div>
+
+  <div class="legal-footer" role="contentinfo">
+    <span class="legal-footer__copy">&copy; 2026 Ron Vave / Vave Lab. All rights reserved.</span>
+    <span class="legal-footer__license">
+      Content licensed under
+      <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a>
+      (Attribution &middot; Non-Commercial &middot; No Derivatives).
+      <span class="legal-footer__sep">|</span>
+      <a href="terms.html">Terms of Use</a>
+      <span class="legal-footer__sep">|</span>
+      <a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a>
+    </span>
+  </div>
+
+</main>
+
+<div id="lightbox" class="lb" aria-hidden="true" role="dialog"><button class="lb__close" id="lbClose" aria-label="Close">×</button><img id="lbImg" src="" alt=""></div>
+
+<script>
+const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNBAxheCV29gxktJjvC3xNYhnUDN4JDk-nUdrF3ckdkdgZ6NXoD432avysXY64itAf/exec';
+const PROVINCES = ["Ba","Bua","Cakaudrove","Kadavu","Lau","Lomaiviti","Macuata","Nadroga-Navosa","Naitasiri","Namosi","Ra","Rewa","Serua","Tailevu"];
+
+// Alt-name overrides keyed by "Last, First" (from the master list). Kept as a
+// small static map because Zotero-side aliases don't come through the progress
+// endpoint. If a new alias needs to appear, add it here.
+const NAME_ALT_NAMES = {
+  "Baleivanualala, Sakiusa C.": ["Baleivanualala, Sakiusa"],
+  "Bogiva, Alifereti": ["Bogiva, Alivereti"],
+  "Fong-Lomavatu, Mereia": ["Fong, Mereia", "Lomavatu, Mereia Fong"],
+  "Mailautoka, Kinikoto": ["Mailautoka, Kini Koto"],
+  "Nabobo-Baba, Unaisi": ["Baba, Unaisi Nabobo"],
+  "Naikatini, Alivereti Neisava": ["Naikatini, Alifereti"],
+  "Naqasima-Sobey, Milika": ["Naqasima, Milika"],
+  "Radikedike, Pio": ["Radikedike, Ratu Pio"],
+  "Ratu, Felisita T.": ["Ratu, Felisita Tupou"],
+  "Savou-Wara, Rusila": ["Savou, Rusila"],
+  "Seniloli, Kesaia L.": ["Seniloli, Kesa", "Seniloli, Kesaia"],
+  "Tabunakawai-Vakalalabure, Margaret": ["Vakalalabure, Margaret"],
+  "Tamata, Apolonia N.": ["Apolonia, Tamata"],
+  "Waqa, Oripa Adicoka": ["Waqa, Oripa"]
+};
+
+// Runtime-populated master list. Sourced from the same Apps Script endpoint the
+// progress page uses (mode=progress), so newly admin-tagged scholars flow into
+// this survey automatically. The endpoint returns {id,lastName,firstName,count,status};
+// we derive `initial` and merge `altNames` from NAME_ALT_NAMES above.
+let SCHOLARS = [];
+// --------- STATE ---------
+let activeInitial = 'All';
+const selectedIds = new Set();
+const attachedFiles = [];
+
+// --------- ELEMENTS ---------
+const $ = id => document.getElementById(id);
+const tabsEl = $('alphaTabs'), listEl = $('scholarList');
+const searchEl = $('scholarSearch'), matchCountEl = $('matchCount'), selCountEl = $('selCount'), totalCountEl = $('totalCount');
+const continueBtn = $('continueBtn'), backBtn = $('backBtn');
+const screen1 = $('screen1'), screen2 = $('screen2'), divider2 = $('divider2');
+const entriesEl = $('entries');
+
+// --------- SCREEN 1 ---------
+const ALL_INITIALS = ['All','A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
+
+function renderTabs(){
+  // Compute the set of initials present in the (dynamically loaded) roster each
+  // time we render, so tabs light up correctly once SCHOLARS is populated.
+  const initialsInData = new Set(SCHOLARS.map(s => s.initial));
+  tabsEl.innerHTML = '';
+  ALL_INITIALS.forEach(ch => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'alpha-tab' + (ch === activeInitial ? ' active' : '');
+    b.textContent = ch;
+    if (ch !== 'All' && !initialsInData.has(ch)) {
+      b.dataset.empty = 'true';
+      b.disabled = true;
+    }
+    b.addEventListener('click', () => { activeInitial = ch; renderTabs(); renderScholarList(); });
+    tabsEl.appendChild(b);
+  });
+}
+
+function filteredScholars(){
+  const q = searchEl.value.trim().toLowerCase();
+  return SCHOLARS.filter(s => (activeInitial === 'All' || s.initial === activeInitial) &&
+    (!q || s.lastName.toLowerCase().includes(q) || s.firstName.toLowerCase().includes(q) || (s.altNames||[]).some(n => n.toLowerCase().includes(q))));
+}
+
+function updateCounts(){
+  selCountEl.textContent = selectedIds.size;
+  continueBtn.disabled = selectedIds.size === 0;
+  continueBtn.innerHTML = `Continue with ${selectedIds.size} selected <span class="btn__arrow">→</span>`;
+}
+
+function renderScholarList(){
+  const rows = filteredScholars();
+  matchCountEl.textContent = rows.length;
+  totalCountEl.textContent = SCHOLARS.length;
+  listEl.innerHTML = '';
+  rows.forEach(s => {
+    const row = document.createElement('label');
+    row.className = 'scholar-row' + (selectedIds.has(s.id) ? ' selected' : '');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox'; cb.checked = selectedIds.has(s.id);
+    cb.addEventListener('change', () => {
+      cb.checked ? selectedIds.add(s.id) : selectedIds.delete(s.id);
+      row.classList.toggle('selected', cb.checked);
+      updateCounts();
+    });
+    const nameWrap = document.createElement('div');
+    nameWrap.className = 'scholar-row__name';
+    const altHtml = (s.altNames && s.altNames.length) ? `<div class="scholar-row__alt"><strong>Also listed as</strong>${s.altNames.join('; ')}</div>` : '';
+    nameWrap.innerHTML = `<div class="scholar-row__last">${s.lastName}</div><div class="scholar-row__first">${s.firstName}</div>${altHtml}`;
+    const meta = document.createElement('div');
+    meta.className = 'scholar-row__meta';
+    // Status chip mirrors the progress page. All three statuses stay selectable
+    // — anyone (including the scholar themselves) can add corrections or extra
+    // sources on top of an already-tagged record.
+    const status = s.status || 'needs';
+    const label = status === 'done' ? 'Fully tagged' : status === 'partial' ? 'Partial info' : 'Needs info';
+    const chip = document.createElement('span');
+    chip.className = 'scholar-row__status scholar-row__status--' + status;
+    chip.innerHTML = `<span class="scholar-row__dot"></span>${label}`;
+    meta.appendChild(chip);
+    if (status !== 'needs') {
+      const hint = document.createElement('span');
+      hint.className = 'scholar-row__hint';
+      hint.textContent = status === 'done' ? 'You can still add corrections' : 'You can add more info';
+      meta.appendChild(hint);
+    }
+    row.append(cb, nameWrap, meta);
+    listEl.appendChild(row);
+  });
+  updateCounts();
+}
+
+searchEl.addEventListener('input', renderScholarList);
+
+// --------- SCREEN 2 ---------
+function provinceOptions(){
+  return ['<option value="">Select province…</option>', ...PROVINCES.map(p => `<option value="${p}">${p}</option>`)].join('');
+}
+
+function buildEntries(){
+  entriesEl.innerHTML = '';
+  const chosen = SCHOLARS.filter(s => selectedIds.has(s.id));
+  chosen.forEach((s, i) => {
+    const card = document.createElement('div');
+    card.className = 'entry';
+    card.dataset.id = s.id;
+    card.innerHTML = `
+      <div class="entry__head">
+        <div class="entry__name">${s.lastName}, ${s.firstName}</div>
+        <div class="entry__num">Scholar ${i+1} of ${chosen.length}</div>
+      </div>
+      <div class="entry__body">
+        <div class="side side--pat">
+          <div class="side__label">Paternal side</div>
+          <div class="side__hint">Vanua e cavu tu mai kina</div>
+          <div class="side__grid">
+            <div class="side__field"><label>Village</label><input type="text" class="pv" placeholder="e.g. Naduri"></div>
+            <div class="side__field"><label>Province</label><select class="pp">${provinceOptions()}</select></div>
+          </div>
+        </div>
+        <div class="side side--mat">
+          <div class="side__label">Maternal side</div>
+          <div class="side__hint">Vanua e vasu kina</div>
+          <div class="side__grid">
+            <div class="side__field"><label>Village</label><input type="text" class="mv" placeholder="e.g. Vutia"></div>
+            <div class="side__field"><label>Province</label><select class="mp">${provinceOptions()}</select></div>
+          </div>
+        </div>
+      </div>
+      <div class="entry__extra">
+        <label>Profile link or extra info (optional)</label>
+        <input type="url" class="link" placeholder="https://… or a short note about this scholar">
+      </div>
+    `;
+    entriesEl.appendChild(card);
+  });
+}
+
+continueBtn.addEventListener('click', () => {
+  buildEntries();
+  divider2.classList.remove('hidden');
+  screen2.classList.remove('hidden');
+  divider2.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+backBtn.addEventListener('click', () => {
+  screen1.scrollIntoView({behavior:'smooth', block:'start'});
+});
+
+// --------- FILE ATTACH ---------
+const fileInput = $('fileInput'), fileList = $('fileList'), fileZone = $('fileZone');
+fileInput.addEventListener('change', e => addFiles(e.target.files));
+['dragover','dragenter'].forEach(ev => fileZone.addEventListener(ev, e => { e.preventDefault(); fileZone.classList.add('dragover'); }));
+['dragleave','drop'].forEach(ev => fileZone.addEventListener(ev, e => { e.preventDefault(); fileZone.classList.remove('dragover'); }));
+fileZone.addEventListener('drop', e => { addFiles(e.dataTransfer.files); });
+
+function addFiles(list){
+  for (const f of list) attachedFiles.push(f);
+  renderFileList();
+}
+function renderFileList(){
+  fileList.innerHTML = attachedFiles.length ? attachedFiles.map((f,i) => `<span class="filedrop__item">${f.name} (${Math.round(f.size/1024)} KB)</span>`).join('') : '';
+}
+
+// --------- SUBMISSIONS ---------
+// Read a File into a base64 string (strips the data: prefix) so it can be
+// sent inside the JSON payload and rebuilt on the Apps Script side.
+function readFileAsBase64(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result || '';
+      const comma = result.indexOf(',');
+      resolve({
+        name: file.name,
+        mimeType: file.type || 'application/octet-stream',
+        sizeKB: Math.round(file.size / 1024),
+        data: comma >= 0 ? result.slice(comma + 1) : result
+      });
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+async function submitBatch(){
+  const informantName = $('informantName').value.trim();
+  const informantEmail = $('informantEmail').value.trim();
+  const wrapUpNotes = $('wrapUpNotes').value.trim();
+  const entries = [...entriesEl.querySelectorAll('.entry')].map(card => {
+    const scholar = SCHOLARS.find(s => s.id === Number(card.dataset.id));
+    return {
+      informantName,
+      informantEmail,
+      lastName: scholar.lastName,
+      firstName: scholar.firstName,
+      paternalVillage: card.querySelector('.pv').value.trim(),
+      paternalProvince: card.querySelector('.pp').value,
+      maternalVillage: card.querySelector('.mv').value.trim(),
+      maternalProvince: card.querySelector('.mp').value,
+      profileLink: card.querySelector('.link').value.trim()
+    };
+  });
+
+  const attachmentNames = attachedFiles.map(f => `${f.name} (${Math.round(f.size/1024)} KB)`);
+
+  const status = $('batchStatus');
+  status.textContent = 'Sending…'; status.className = 'status';
+  try {
+    // Read any attached files into base64 so they can travel in the payload
+    // and be saved to Google Drive by the backend.
+    const attachments = [];
+    for (const f of attachedFiles) {
+      try { attachments.push(await readFileAsBase64(f)); }
+      catch (err) { /* skip a file that fails to read, keep the rest */ }
+    }
+    const payload = { type: 'batch', entries, wrapUpNotes, attachmentNames, attachments };
+    // NOTE: use text/plain (not application/json) so the browser does NOT fire a
+    // CORS preflight OPTIONS request. Apps Script web apps don't answer preflight,
+    // which is what caused "Submission failed. Check your connection and try again."
+    // Apps Script still reads the raw body via e.postData.contents and JSON.parse works.
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    // With mode:'no-cors' the response is opaque (can't read status/body), so if
+    // fetch resolves without throwing, the request left the browser successfully.
+    status.className = 'status ok';
+    status.innerHTML = `Vinaka vakalevu — your submission was received. <br><a href="itaukei-scholar-province-progress.html" target="_blank" rel="noopener" style="color:var(--brown);text-decoration:underline">See the public progress page →</a>`;
+  } catch (e) {
+    status.className = 'status err';
+    status.textContent = 'Submission failed. Check your connection and try again.';
+  }
+}
+$('submitBatch').addEventListener('click', submitBatch);
+// end submitBatch
+
+// "not on list" flow
+$('showNotList').addEventListener('click', () => {
+  const el = $('notListForm');
+  el.classList.toggle('hidden');
+  if (!el.classList.contains('hidden') && !$('newScholarBlocks').children.length) {
+    renderNewScholarBlocks(parseInt($('newCount').value, 10) || 1);
+  }
+});
+
+function renderNewScholarBlocks(n){
+  n = Math.max(1, Math.min(20, parseInt(n, 10) || 1));
+  const wrap = $('newScholarBlocks');
+  wrap.innerHTML = '';
+  for (let i = 0; i < n; i++){
+    const block = document.createElement('div');
+    block.className = 'newScholar-block';
+    block.innerHTML = `
+      <p class="newScholar-block__head">Scholar ${i+1} of ${n}</p>
+      <div class="notlist-form__grid">
+        <div><label for="newLast_${i}">Last name</label><input id="newLast_${i}" type="text"></div>
+        <div><label for="newFirst_${i}">First name</label><input id="newFirst_${i}" type="text"></div>
+        <div><label for="newDegree_${i}">Degree</label><select id="newDegree_${i}"><option value="">Select…</option><option>Masters</option><option>PhD</option><option>Other</option></select></div>
+        <div><label for="newYear_${i}">Graduation year</label><input id="newYear_${i}" type="text" placeholder="e.g. 2018"></div>
+        <div><label for="newUni_${i}">University</label><input id="newUni_${i}" type="text"></div>
+        <div><label for="newLink_${i}">Thesis or publication link <span style="color:var(--pat,#a3341f)">*</span></label><input id="newLink_${i}" type="url" class="nlink" placeholder="https://… (thesis, journal article, book, chapter or report)"><span style="display:block;margin-top:4px;font-size:.78rem;color:var(--muted,#7a7266)">Required. If you can't find one, leave blank and explain in notes below.</span></div>
+      </div>
+      <div class="entry__body newScholar-block__sides">
+        <div class="side side--pat">
+          <div class="side__label">Paternal side</div>
+          <div class="side__hint">Vanua e cavu tu mai kina</div>
+          <div class="side__grid">
+            <div class="side__field"><label for="newPatVillage_${i}">Village</label><input id="newPatVillage_${i}" type="text" class="npv" placeholder="e.g. Naduri"></div>
+            <div class="side__field"><label for="newPatProvince_${i}">Province</label><select id="newPatProvince_${i}" class="npp">${provinceOptions()}</select></div>
+          </div>
+        </div>
+        <div class="side side--mat">
+          <div class="side__label">Maternal side</div>
+          <div class="side__hint">Vanua e vasu kina</div>
+          <div class="side__grid">
+            <div class="side__field"><label for="newMatVillage_${i}">Village</label><input id="newMatVillage_${i}" type="text" class="nmv" placeholder="e.g. Vutia"></div>
+            <div class="side__field"><label for="newMatProvince_${i}">Province</label><select id="newMatProvince_${i}" class="nmp">${provinceOptions()}</select></div>
+          </div>
+        </div>
+      </div>
+      <div class="newScholar-block__notes" style="margin-top:14px">
+        <label for="newNotes_${i}" style="display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:4px">Notes or comments (optional)</label>
+        <textarea id="newNotes_${i}" rows="3" placeholder="If you couldn't find a thesis or publication link above, please explain how you know this person is a Masters or PhD graduate — e.g. a news link of their graduation, the institution and year, or any detail that helps us research and verify them before adding." style="width:100%;padding:10px 12px;border:1px solid var(--border,#d9d3c7);border-radius:8px;font:inherit;font-size:.9rem;background:#fff;resize:vertical"></textarea>
+      </div>`;
+    wrap.appendChild(block);
+  }
+}
+$('setNewCount').addEventListener('click', () => {
+  renderNewScholarBlocks($('newCount').value);
+  $('newScholarStatus').textContent = '';
+});
+
+async function submitNewScholar(){
+  const status = $('newScholarStatus');
+  const blocks = $('newScholarBlocks').children;
+  const scholars = [];
+  for (let i = 0; i < blocks.length; i++){
+    const last = ($('newLast_'+i)?.value || '').trim();
+    const first = ($('newFirst_'+i)?.value || '').trim();
+    if (!last && !first) continue; // skip blanks
+    if (!last || !first) { status.className='status err'; status.textContent = `Scholar ${i+1}: please provide both first and last name (or leave both blank to skip).`; return; }
+    const thesisLink = ($('newLink_'+i)?.value || '').trim();
+    const notes = ($('newNotes_'+i)?.value || '').trim();
+    // A thesis/publication link is required. If it's missing, the informant must
+    // explain in notes so the person can be vetted before being added.
+    if (!thesisLink && !notes) {
+      status.className='status err';
+      status.textContent = `Scholar ${i+1} (${last}, ${first}): please add a thesis or publication link, or — if you can't find one — explain in the notes field so they can be researched before being added.`;
+      $('newLink_'+i)?.focus();
+      return;
+    }
+    scholars.push({
+      lastName: last,
+      firstName: first,
+      degree: ($('newDegree_'+i)?.value || ''),
+      gradYear: ($('newYear_'+i)?.value || '').trim(),
+      university: ($('newUni_'+i)?.value || '').trim(),
+      thesisLink: thesisLink,
+      paternalVillage: ($('newPatVillage_'+i)?.value || '').trim(),
+      paternalProvince: ($('newPatProvince_'+i)?.value || ''),
+      maternalVillage: ($('newMatVillage_'+i)?.value || '').trim(),
+      maternalProvince: ($('newMatProvince_'+i)?.value || ''),
+      notes: notes
+    });
+  }
+  if (!scholars.length){ status.className='status err'; status.textContent='Please fill in at least one scholar (first and last name).'; return; }
+  const payload = { type: 'newBatch', scholars: scholars, informantName: ($('newInformantName')?.value || '').trim(), informantEmail: ($('newInformantEmail')?.value || '').trim() };
+  status.textContent = 'Sending…'; status.className='status';
+  try {
+    // Same preflight-free approach as submitBatch(): text/plain + no-cors.
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    });
+    status.className = 'status ok';
+    status.textContent = `${scholars.length} new scholar${scholars.length>1?'s':''} submitted. Vinaka vakalevu.`;
+  } catch (e) { status.className='status err'; status.textContent='Submission failed.'; }
+}
+$('submitNewScholar').addEventListener('click', submitNewScholar);
+
+// --------- LIGHTBOX ---------
+const lb = $('lightbox'), lbImg = $('lbImg'), lbClose = $('lbClose');
+document.querySelectorAll('[data-lb]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    lbImg.src = a.dataset.lb;
+    lbImg.alt = a.textContent;
+    lb.classList.add('open'); lb.setAttribute('aria-hidden','false');
+  });
+});
+function closeLb(){ lb.classList.remove('open'); lb.setAttribute('aria-hidden','true'); lbImg.src=''; }
+lb.addEventListener('click', e => { if (e.target === lb || e.target === lbImg) closeLb(); });
+lbClose.addEventListener('click', closeLb);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && lb.classList.contains('open')) closeLb(); });
+
+// If arriving from the progress page ("Needs help" link), preselect that scholar
+// and jump straight to the data-entry screen. Matches against the built-in list
+// only — new/pending scholars are not auto-included (they await admin review).
+function applyDeepLink(){
+  const params = new URLSearchParams(location.search);
+  const idParam = Number(params.get('id'));
+  const nameParam = (params.get('name') || '').trim().toLowerCase();
+  let target = null;
+  if (idParam) target = SCHOLARS.find(s => s.id === idParam);
+  if (!target && nameParam){
+    target = SCHOLARS.find(s => `${s.lastName}, ${s.firstName}`.toLowerCase() === nameParam)
+          || SCHOLARS.find(s => (`${s.lastName} ${s.firstName}`).toLowerCase() === nameParam);
+  }
+  if (!target) return false;
+  selectedIds.clear();
+  selectedIds.add(target.id);
+  updateCounts();
+  // Advance to Step 2 (same path the Continue button takes)
+  if (typeof goToScreen2 === 'function') { goToScreen2(); }
+  else if (continueBtn && !continueBtn.disabled) { continueBtn.click(); }
+  return true;
+}
+
+// --------- INIT ---------
+async function loadScholars(){
+  // Show a lightweight loading row inside #scholarList; renderTabs/renderScholarList
+  // will overwrite it once the fetch resolves.
+  if (listEl) {
+    listEl.innerHTML = '<div style="padding:16px 12px;color:var(--ink);font-size:.95rem">Loading scholars…</div>';
+  }
+  try {
+    const url = `${GOOGLE_SCRIPT_URL}?mode=progress&_=${Date.now()}`;
+    const res = await fetch(url, { redirect: 'follow' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const rows = Array.isArray(data) ? data
+      : (data.result && Array.isArray(data.result) ? data.result
+         : (data.rows || (data.result && data.result.rows) || []));
+    SCHOLARS = rows
+      .filter(r => r && (r.lastName || r.firstName))
+      .map(r => {
+        const lastName = (r.lastName || '').trim();
+        const firstName = (r.firstName || '').trim();
+        const key = `${lastName}, ${firstName}`;
+        const out = {
+          id: Number(r.id),
+          lastName: lastName,
+          firstName: firstName,
+          initial: (lastName[0] || firstName[0] || '#').toUpperCase(),
+          status: (r.status || 'needs').toLowerCase()
+        };
+        if (NAME_ALT_NAMES[key]) out.altNames = NAME_ALT_NAMES[key];
+        return out;
+      })
+      .sort((a, b) => a.lastName.localeCompare(b.lastName) || a.firstName.localeCompare(b.firstName));
+  } catch (err) {
+    console.error('[survey] could not load scholars:', err);
+    if (listEl) {
+      listEl.innerHTML = `<div style="padding:16px 12px;color:#28251D;font-size:.95rem"><strong>Couldn't load the scholar list right now.</strong><br>Please refresh the page in a moment. If it keeps failing, check your connection.<br><small style="color:#28251D">${(err && err.message) || err}</small></div>`;
+    }
+    return;
+  }
+  renderTabs();
+  renderScholarList();
+  applyDeepLink();
+}
+loadScholars();
+</script>
+</body>
+</html>

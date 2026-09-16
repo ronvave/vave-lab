@@ -1,0 +1,158 @@
+<!doctype html>
+<!--
+  tongan-dashboard-staging-updateinfo-test.html
+  ───────────────────────────────────────────────
+  STAGING-ONLY test harness for the public "Update info" correction form.
+  This file is NOT linked from the live public dashboard nav and does not
+  modify any live dashboard file. It exists purely so the anonymous
+  doPost() contract on the staging Apps Script deployment can be exercised
+  end-to-end (public submission → quarantine storage → Submission ID)
+  before any live dashboard integration is considered.
+
+  Usage: open this file (locally or via GitHub Pages), paste the staging
+  /exec URL once (saved to localStorage for convenience), enter a Scholar
+  ID that exists in the BACKUP sheet, propose a change to one or more
+  public-facing fields, and submit. No Google sign-in involved — this
+  exercises the anonymous path only.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tongan Scholar Database — Update Info (STAGING TEST HARNESS)</title>
+<style>
+  :root { --teal:#0e7490; --teal-dark:#062f35; --coral:#b23a48; --gold:#c8a84b; --cream:#f9f6ee; }
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--cream); color: #1f2937; margin: 0; }
+  .banner { background: var(--gold); color: #3a2e0d; text-align: center; font-weight: 700; font-size: 0.8rem; letter-spacing: 0.04em; text-transform: uppercase; padding: 6px 10px; }
+  header { background: var(--teal-dark); color: #fff; padding: 16px 24px; }
+  header h1 { margin: 0; font-size: 1.2rem; }
+  main { max-width: 760px; margin: 0 auto; padding: 20px; }
+  .card { background: #fff; border: 1px solid #e6e1d3; border-radius: 10px; padding: 18px 22px; margin-bottom: 16px; }
+  .card h2 { font-size: 1rem; color: var(--teal-dark); margin: 0 0 12px; }
+  label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--teal-dark); margin: 10px 0 4px; }
+  input[type="text"], input[type="email"], input[type="url"] { width: 100%; padding: 8px 10px; border: 1px solid #d9d2bd; border-radius: 6px; font: inherit; }
+  .field-row { display: flex; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid #f1ede1; }
+  .field-row label.check { display: flex; align-items: center; gap: 6px; font-weight: 600; width: 45%; margin: 0; }
+  .field-row input[type="text"] { flex: 1; }
+  .hp { position: absolute; left: -9999px; }
+  button { font: inherit; font-weight: 700; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--teal); background: var(--teal); color: #fff; cursor: pointer; }
+  button:hover { filter: brightness(1.05); }
+  #result { margin-top: 14px; padding: 12px 14px; border-radius: 8px; font-size: 0.9rem; display: none; }
+  #result.ok { background: #dcfce7; color: #14532d; display: block; }
+  #result.err { background: #fde2e2; color: #7f1d1d; display: block; }
+  .muted { color: #6b7280; font-size: 0.82rem; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 10px; border-radius: 6px; font-size: 0.75rem; overflow-x: auto; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+  <div class="banner">STAGING TEST HARNESS — not linked from the live public dashboard</div>
+  <header><h1>Tongan Scholar Database — Update Info (test)</h1></header>
+  <main>
+    <div class="card">
+      <h2>1. Staging endpoint</h2>
+      <label for="exec-url">Staging Apps Script /exec URL</label>
+      <input type="url" id="exec-url" placeholder="https://script.google.com/macros/s/.../exec">
+      <p class="muted">Saved locally in this browser only (localStorage). Never committed to the repo.</p>
+    </div>
+
+    <div class="card">
+      <h2>2. Who you are</h2>
+      <label for="scholar-id">Scholar ID</label>
+      <input type="text" id="scholar-id" placeholder="e.g. TNG-S0001">
+      <label for="submitter-name">Your name</label>
+      <input type="text" id="submitter-name">
+      <label for="submitter-email">Your email</label>
+      <input type="email" id="submitter-email">
+      <label for="relationship">Your relationship to this scholar</label>
+      <input type="text" id="relationship" placeholder="e.g. self, colleague, family member">
+      <input type="text" class="hp" id="hp" tabindex="-1" autocomplete="off">
+    </div>
+
+    <div class="card">
+      <h2>3. Propose changes (public-facing fields only)</h2>
+      <div id="fields-container"></div>
+      <p class="muted">Tick a field and enter the corrected value. Untouched fields are not submitted.</p>
+    </div>
+
+    <button id="submit-btn">Submit correction</button>
+    <div id="result"></div>
+    <details style="margin-top:14px;"><summary class="muted">Raw response</summary><pre id="raw-response">(none yet)</pre></details>
+  </main>
+
+<script>
+  var PUBLIC_FIELDS = [
+    'Title / Salutation', 'Family Name', 'Given Names', 'Gender',
+    'Primary Discipline / Field', 'Current Title / Role',
+    'Current Institution', 'Institution Country',
+    'ORCID / Researcher ID', 'Google Scholar URL', 'Current Profile URL'
+  ];
+
+  var execInput = document.getElementById('exec-url');
+  execInput.value = localStorage.getItem('tongan-staging-exec-url') || '';
+  execInput.addEventListener('change', function () { localStorage.setItem('tongan-staging-exec-url', execInput.value.trim()); });
+
+  var container = document.getElementById('fields-container');
+  PUBLIC_FIELDS.forEach(function (f) {
+    var row = document.createElement('div'); row.className = 'field-row';
+    var lbl = document.createElement('label'); lbl.className = 'check';
+    var cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.field = f;
+    lbl.appendChild(cb); lbl.appendChild(document.createTextNode(f));
+    var input = document.createElement('input'); input.type = 'text'; input.dataset.valueFor = f; input.disabled = true;
+    cb.addEventListener('change', function () { input.disabled = !cb.checked; });
+    row.appendChild(lbl); row.appendChild(input);
+    container.appendChild(row);
+  });
+
+  document.getElementById('submit-btn').addEventListener('click', function () {
+    var execUrl = execInput.value.trim();
+    var resultEl = document.getElementById('result');
+    var rawEl = document.getElementById('raw-response');
+    resultEl.className = ''; resultEl.style.display = 'none';
+    if (!execUrl) { resultEl.className = 'err'; resultEl.textContent = 'Enter the staging /exec URL first.'; return; }
+
+    var fields = {};
+    document.querySelectorAll('#fields-container input[type="checkbox"]').forEach(function (cb) {
+      if (cb.checked) {
+        var input = document.querySelector('input[data-value-for="' + cb.dataset.field + '"]');
+        fields[cb.dataset.field] = input.value;
+      }
+    });
+
+    var body = {
+      action: 'submitPublicUpdate',
+      scholarId: document.getElementById('scholar-id').value.trim(),
+      submitterName: document.getElementById('submitter-name').value.trim(),
+      submitterEmail: document.getElementById('submitter-email').value.trim(),
+      relationship: document.getElementById('relationship').value.trim(),
+      fields: fields,
+      hp: document.getElementById('hp').value
+    };
+
+    document.getElementById('submit-btn').disabled = true;
+    fetch(execUrl, {
+      method: 'POST',
+      // text/plain avoids a CORS preflight against the Apps Script exec
+      // endpoint (Apps Script does not implement doOptions); the server
+      // still JSON.parses the raw body itself.
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      rawEl.textContent = JSON.stringify(data, null, 2);
+      if (data.status === 'ok') {
+        resultEl.className = 'ok';
+        resultEl.textContent = 'Submitted. Submission ID: ' + data.submissionId + '. It is now queued for review — nothing was written to the live record yet.';
+      } else {
+        resultEl.className = 'err';
+        resultEl.textContent = 'Rejected: ' + (data.error || data.status);
+      }
+    }).catch(function (err) {
+      resultEl.className = 'err';
+      resultEl.textContent = 'Request failed: ' + err.message + ' (check the exec URL and that the deployment access is set to "Anyone").';
+      rawEl.textContent = String(err);
+    }).finally(function () {
+      document.getElementById('submit-btn').disabled = false;
+    });
+  });
+</script>
+</body>
+</html>
