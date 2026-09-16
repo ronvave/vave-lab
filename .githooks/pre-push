@@ -1,9 +1,22 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Pre-push guardrail. See scripts/verify_enc_freshness.py for the
 # actual logic. Repo-tracked so it survives fresh clones once
 # core.hooksPath is pointed at .githooks (see scripts/install_hooks.sh).
-set -euo pipefail
+set -eu
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-python3 "$REPO_ROOT/scripts/validate_dashboard_integrity.py" --revision HEAD
-exec python3 "$REPO_ROOT/scripts/verify_enc_freshness.py"
+run_python() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$@"
+  elif command -v python >/dev/null 2>&1; then
+    python "$@"
+  elif command -v py >/dev/null 2>&1; then
+    py -3 "$@"
+  else
+    echo "[pre-push] Python was not found; server-side validation will still run."
+    return 0
+  fi
+}
+
+run_python "$REPO_ROOT/scripts/validate_dashboard_integrity.py" --revision HEAD
+run_python "$REPO_ROOT/scripts/verify_enc_freshness.py"

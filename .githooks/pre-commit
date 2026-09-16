@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 # Pre-commit guardrail: refresh `?v=<sha>` cache-bust hashes on every
 # JS/CSS reference in the HTML files whenever a staged change touches
 # a `js/*.js` or `css/*.css` file. The script is idempotent, so it is
@@ -13,7 +13,7 @@
 #
 # Repo-tracked so it survives fresh clones once
 # core.hooksPath is pointed at .githooks (see scripts/install_hooks.sh).
-set -euo pipefail
+set -eu
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 cd "$REPO_ROOT"
@@ -25,7 +25,20 @@ if ! echo "$staged" | grep -qE '\.(html|js|css)$'; then
   exit 0
 fi
 
-python3 scripts/bust_cache.py
+run_python() {
+  if command -v python3 >/dev/null 2>&1; then
+    python3 "$@"
+  elif command -v python >/dev/null 2>&1; then
+    python "$@"
+  elif command -v py >/dev/null 2>&1; then
+    py -3 "$@"
+  else
+    echo "[pre-commit] Python was not found; server-side validation will still run."
+    return 0
+  fi
+}
+
+run_python scripts/bust_cache.py
 
 # Re-stage any HTML that the script updated so the fresh hashes go
 # into THIS commit, not the next one.
@@ -37,4 +50,4 @@ fi
 
 # Validate the exact blobs that will enter the commit. This blocks truncated
 # tool output, missing document structure, and catastrophic size reductions.
-python3 scripts/validate_dashboard_integrity.py --staged --base HEAD
+run_python scripts/validate_dashboard_integrity.py --staged --base HEAD
