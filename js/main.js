@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('[data-scholar-share]').forEach(btn => {
       btn.disabled = false;
       btn.removeAttribute('aria-busy');
-      btn.setAttribute('title', 'Share this scholar profile');
+      btn.setAttribute('title', 'Copy this scholar profile link');
     });
   }).catch(err => console.error('Scholar permalink index failed to load', err));
 
@@ -136,8 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
       .db-scholar-card__share {
         margin-top:6px!important;background:#b72d4f!important;border-color:#b72d4f!important;color:#fff!important;
         display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;text-align:center!important;box-sizing:border-box!important;
+        transition:background-color .16s ease,border-color .16s ease!important;
       }
       .db-scholar-card__share:hover{background:#9f2342!important;border-color:#9f2342!important}.db-scholar-card__share:disabled{opacity:.62;cursor:wait}.db-scholar-card__share svg{flex:0 0 auto}
+      .db-scholar-card__share.is-copied,.db-scholar-card__share.is-copied:hover{background:#16834a!important;border-color:#16834a!important}
       .scholar-direct-main{width:min(1080px,calc(100% - 28px));margin:24px auto 56px}.scholar-direct-main .db-scholar-card{width:min(680px,100%);max-width:none;margin:0 auto}
       body.scholar-direct-mode .nav-links,body.scholar-direct-mode .mobile-menu,body.scholar-direct-mode .nav-hamburger,body.scholar-direct-mode .site-footer{display:none!important}
       body.scholar-direct-mode .site-header{position:static!important}
@@ -202,18 +204,32 @@ document.addEventListener('DOMContentLoaded', () => {
   function publicPermalinkFor(id){const sid=String(id||'').toUpperCase(),token=publicShareMap[sid]||'';if(!/^[a-f0-9]{40}$/i.test(token))return'';const base=location.origin+location.pathname.replace(/itaukei-research-database-master\.html$/i,'s.html');return base+'?k='+encodeURIComponent(token)}
 
   function syncShareSize(updateBtn,shareBtn){if(!updateBtn||!shareBtn)return;const apply=()=>{const w=updateBtn.getBoundingClientRect().width,h=updateBtn.getBoundingClientRect().height;if(w)shareBtn.style.width=w+'px';if(h)shareBtn.style.minHeight=h+'px'};apply();if('ResizeObserver'in window){const ro=new ResizeObserver(apply);ro.observe(updateBtn)}else window.addEventListener('resize',apply,{passive:true})}
-  function flashCopied(button){const old=button.innerHTML;button.innerHTML=SHARE_ICON+'<span>Copied</span>';setTimeout(()=>{button.innerHTML=old},1600)}
+  function flashCopied(button){
+    if(button._copyResetTimer)clearTimeout(button._copyResetTimer);
+    button.classList.add('is-copied');button.innerHTML=SHARE_ICON+'<span>Copied</span>';button.setAttribute('title','Copied to clipboard');button.setAttribute('aria-label','Scholar profile link copied to clipboard');
+    button._copyResetTimer=setTimeout(()=>{button.classList.remove('is-copied');button.innerHTML=SHARE_ICON+'<span>Share</span>';button.setAttribute('title','Copy this scholar profile link');button.setAttribute('aria-label','Copy direct link to this scholar profile');button._copyResetTimer=null},1600);
+  }
+
+  function legacyClipboardCopy(text){
+    const field=document.createElement('textarea');field.value=text;field.setAttribute('readonly','');field.style.position='fixed';field.style.opacity='0';field.style.pointerEvents='none';document.body.appendChild(field);field.focus();field.select();field.setSelectionRange(0,field.value.length);
+    let copied=false;try{copied=document.execCommand('copy')}finally{field.remove()}return copied;
+  }
+
+  async function copyScholarUrl(url){
+    if(navigator.clipboard&&typeof navigator.clipboard.writeText==='function'){try{await navigator.clipboard.writeText(url);return true}catch(_){}}
+    return legacyClipboardCopy(url);
+  }
 
   async function shareScholar(id,card,button){
     let url=secureParentUrlFor(id);if(!url){if(!shareMapReady){button.disabled=true;button.setAttribute('aria-busy','true');button.innerHTML=SHARE_ICON+'<span>Preparing…</span>';try{await shareMapPromise}catch(_){}button.disabled=false;button.removeAttribute('aria-busy');button.innerHTML=SHARE_ICON+'<span>Share</span>'}url=publicPermalinkFor(id)}
     if(!url){window.alert('This scholar profile link is temporarily unavailable. Please refresh the page and try again.');return}
-    const name=card?.querySelector('.db-scholar-card__name')?.textContent?.trim()||'iTaukei scholar';const data={title:name+' — iTaukei Scholar',text:'View this iTaukei scholar profile.',url};
-    try{if(navigator.share){await navigator.share(data);return}await navigator.clipboard.writeText(url);flashCopied(button)}catch(err){if(err&&err.name==='AbortError')return;try{await navigator.clipboard.writeText(url);flashCopied(button)}catch(_){window.prompt('Copy this scholar profile link:',url)}}
+    if(await copyScholarUrl(url)){flashCopied(button);return}
+    window.prompt('Clipboard access is blocked. Copy this scholar profile link:',url);
   }
 
   function ensureShareButton(card){
     if(!card||card.querySelector('[data-scholar-share]'))return;const updateBtn=card.querySelector('[data-submit-info]');if(!updateBtn)return;const id=idForCard(card);if(!id)return;
-    const share=document.createElement('button');share.type='button';share.className='db-scholar-card__submit db-scholar-card__share';share.setAttribute('data-scholar-share',id);share.setAttribute('title',shareMapReady?'Share this scholar profile':'Preparing scholar profile link');share.setAttribute('aria-label','Share direct link to this scholar profile');share.innerHTML=SHARE_ICON+'<span>Share</span>';
+    const share=document.createElement('button');share.type='button';share.className='db-scholar-card__submit db-scholar-card__share';share.setAttribute('data-scholar-share',id);share.setAttribute('title',shareMapReady?'Copy this scholar profile link':'Preparing scholar profile link');share.setAttribute('aria-label','Copy direct link to this scholar profile');share.setAttribute('aria-live','polite');share.innerHTML=SHARE_ICON+'<span>Share</span>';
     if(!shareMapReady&&!secureParentUrlFor(id)){share.disabled=true;share.setAttribute('aria-busy','true')}
     share.addEventListener('click',ev=>{ev.preventDefault();ev.stopPropagation();shareScholar(id,card,share)});updateBtn.insertAdjacentElement('afterend',share);syncShareSize(updateBtn,share);
   }
