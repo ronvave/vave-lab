@@ -2992,6 +2992,26 @@
       const existing = anchor.querySelector('[data-db-map-fs-search-dd]');
       if (existing) existing.remove();
     }
+    function hideAllSearchDropdowns() {
+      document.querySelectorAll('[data-db-map-fs-search-dd]').forEach(dd => dd.remove());
+    }
+
+    // The degree picker is a temporary search result, not a persistent map
+    // panel. Dismiss it whenever the user moves on to another control or the
+    // map, while keeping interactions inside the search/picker area intact.
+    const dismissSearchDropdownUnlessInside = (target) => {
+      if (target && target.closest && target.closest('[data-db-map-fs-search-wrap]')) return;
+      hideAllSearchDropdowns();
+    };
+    document.addEventListener('pointerdown', (e) => {
+      dismissSearchDropdownUnlessInside(e.target);
+    }, true);
+    document.addEventListener('focusin', (e) => {
+      dismissSearchDropdownUnlessInside(e.target);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideAllSearchDropdowns();
+    });
 
     // Search box above the country list — filters by country name, university
     // name, or scholar name substring. Any match at any level is kept.
@@ -2999,6 +3019,7 @@
     const searchClear = document.querySelector('[data-world-search-clear]');
     if (searchInput) {
       searchInput.addEventListener('input', () => {
+        hideAllSearchDropdowns();
         state.worldSearchTerm = (searchInput.value || '').trim().toLowerCase();
         if (searchClear) searchClear.style.display = state.worldSearchTerm ? '' : 'none';
         renderWorldPanel();
@@ -3017,6 +3038,7 @@
     }
     if (searchClear) {
       searchClear.addEventListener('click', () => {
+        hideAllSearchDropdowns();
         if (searchInput) searchInput.value = '';
         state.worldSearchTerm = '';
         searchClear.style.display = 'none';
@@ -3036,6 +3058,7 @@
     const fsSearchClear = document.querySelector('[data-db-map-fs-search-clear]');
     if (fsSearchInput) {
       fsSearchInput.addEventListener('input', () => {
+        hideAllSearchDropdowns();
         state.worldSearchTerm = (fsSearchInput.value || '').trim().toLowerCase();
         if (fsSearchClear) fsSearchClear.style.display = state.worldSearchTerm ? '' : 'none';
         if (searchInput) searchInput.value = fsSearchInput.value;
@@ -3053,6 +3076,7 @@
     }
     if (fsSearchClear) {
       fsSearchClear.addEventListener('click', () => {
+        hideAllSearchDropdowns();
         if (fsSearchInput) fsSearchInput.value = '';
         state.worldSearchTerm = '';
         // Clearing the search box also clears the country scope so
