@@ -2286,12 +2286,20 @@
     opts = opts || {};
     var token = getGhToken();
     var el = $('#dispatch-status');
+    var btn = $('#refresh-master');
+    var interactive = !opts.silent;
+    var originalLabel = btn ? btn.textContent : 'Refresh from Sheet';
     if (!token) {
       if (!opts.silent) { toast('Save a GitHub PAT first.', 'error'); if (el) el.textContent = 'no token'; }
       log('Refresh dispatch skipped: no GitHub PAT saved.', 'warn');
       return false;
     }
     if (el) el.textContent = 'dispatching…';
+    if (interactive && btn) {
+      btn.disabled = true;
+      btn.textContent = 'Refreshing…';
+      btn.setAttribute('aria-busy', 'true');
+    }
     try {
       var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/actions/workflows/refresh-master-file.yml/dispatches';
       var res = await fetch(url, {
@@ -2303,6 +2311,7 @@
         state.lastDispatchAt = Date.now();
         if (el) el.textContent = 'dispatch queued — snapshot refresh takes ~2–5 min.';
         log('Dispatched refresh-master-file.yml', 'ok');
+        if (interactive) toast('Refresh queued. The Sheet snapshot should update in about 2–5 minutes.', 'ok', 8000);
         return true;
       }
       var txt = await res.text();
@@ -2315,6 +2324,12 @@
       log('Dispatch error: ' + e.message, 'error');
       if (!opts.silent) toast('Refresh dispatch error: ' + (e.message || e), 'warn', 9000);
       return false;
+    } finally {
+      if (interactive && btn) {
+        btn.disabled = false;
+        btn.textContent = originalLabel;
+        btn.removeAttribute('aria-busy');
+      }
     }
   }
 
