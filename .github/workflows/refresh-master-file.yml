@@ -17,6 +17,7 @@ on:
     paths:
       - ".github/workflows/refresh-master-file.yml"
       - "scripts/master_file_reconcile.py"
+      - "scripts/sync_scholar_share_tokens.py"
   schedule:
     - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
   workflow_dispatch:
@@ -98,6 +99,17 @@ jobs:
           python3 scripts/master_file_transformer.py \
             --mode=production \
             --out-dir=data
+
+      - name: Synchronize scholar share links
+        run: |
+          set -euo pipefail
+          # Every authoritative ITK-Sxxxx row must receive a permanent direct
+          # profile token in the same refresh that introduces the scholar.
+          # Tokens for IDs no longer in the Indigenous scholar roster are
+          # removed so excluded records cannot retain live profile links.
+          python3 scripts/sync_scholar_share_tokens.py \
+            --scholars=data/itaukei-master-scholars.json \
+            --data-dir=data
 
       - name: Reconcile against Master-file Dashboard sheet
         env:
@@ -196,7 +208,9 @@ jobs:
           git add \
             data/itaukei-master-*.json.enc \
             data/body-composition-master.json.enc \
-            data/last-master-sync.json.enc
+            data/last-master-sync.json.enc \
+            data/share-public/*.json \
+            data/share-index/*.json
           if git diff --cached --quiet; then
             # Should be impossible given the content-changed guard above,
             # but keep the safety net.
