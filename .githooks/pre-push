@@ -3,4 +3,7 @@
 # actual logic. Repo-tracked so it survives fresh clones once
 # core.hooksPath is pointed at .githooks (see scripts/install_hooks.sh).
 set -euo pipefail
-exec python3 "$(git rev-parse --show-toplevel)/scripts/verify_enc_freshness.py"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+
+python3 "$REPO_ROOT/scripts/validate_dashboard_integrity.py" --revision HEAD
+exec python3 "$REPO_ROOT/scripts/verify_enc_freshness.py"

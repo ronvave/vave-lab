@@ -10,5 +10,6 @@ git config core.hooksPath .githooks
 chmod +x .githooks/pre-push .githooks/pre-commit
 
 echo "Hooks path set to .githooks/ and pre-push + pre-commit made executable."
+echo "Dashboard integrity checks will now block truncated master HTML."
 echo "Export VAVELAB_PASSCODE in your shell if you want the pre-push"
 echo "hook to decrypt .enc files and confirm they parse as JSON."

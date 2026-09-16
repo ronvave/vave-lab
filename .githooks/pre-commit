@@ -34,3 +34,7 @@ if [ -n "$changed_html" ]; then
   echo "$changed_html" | xargs git add
   echo "[pre-commit] cache-bust hashes refreshed and re-staged."
 fi
+
+# Validate the exact blobs that will enter the commit. This blocks truncated
+# tool output, missing document structure, and catastrophic size reductions.
+python3 scripts/validate_dashboard_integrity.py --staged --base HEAD

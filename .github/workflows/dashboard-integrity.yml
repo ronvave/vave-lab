@@ -1,0 +1,33 @@
+name: Dashboard integrity
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Reject truncated or structurally damaged dashboards
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUSH_BASE: ${{ github.event.before }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          base="$PUSH_BASE"
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            base="$PR_BASE"
+          fi
+          python3 scripts/validate_dashboard_integrity.py --revision HEAD --base "$base"
