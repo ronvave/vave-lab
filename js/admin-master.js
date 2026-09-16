@@ -2279,6 +2279,74 @@
   }
 
   // ------------------------- refresh workflow dispatch -------------------------
+  // After an interactive refresh, follow the two Actions runs that make the
+  // change live: first the Sheet snapshot, then the validated Pages deploy.
+  // Reload only after both succeed so the KPI and table immediately use the
+  // newly deployed encrypted snapshot.
+  async function waitForAutomaticRefresh_ (queuedAt, token) {
+    var btn = $('#refresh-master');
+    var el = $('#dispatch-status');
+    var deadline = Date.now() + (8 * 60 * 1000);
+    var notBefore = queuedAt - 5000;
+
+    function latestMatchingRun_ (runs, eventName) {
+      return (runs || []).find(function (run) {
+        return run.event === eventName && new Date(run.created_at).getTime() >= notBefore;
+      });
+    }
+
+    async function fetchRuns_ (workflowFile) {
+      var url = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO +
+        '/actions/workflows/' + workflowFile + '/runs?branch=' + encodeURIComponent(GH_BRANCH) + '&per_page=10';
+      var res = await fetch(url, { headers: ghHeaders(token), cache: 'no-store' });
+      if (!res.ok) throw new Error(workflowFile + ' runs GET failed: ' + res.status);
+      return (await res.json()).workflow_runs || [];
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Refreshing…';
+      btn.setAttribute('aria-busy', 'true');
+    }
+    try {
+      while (Date.now() < deadline) {
+        var refreshRun = latestMatchingRun_(await fetchRuns_('refresh-master-file.yml'), 'workflow_dispatch');
+        if (!refreshRun || refreshRun.status !== 'completed') {
+          if (el) el.textContent = 'refreshing snapshot…';
+        } else if (refreshRun.conclusion !== 'success') {
+          throw new Error('Master snapshot workflow ' + refreshRun.conclusion + '.');
+        } else {
+          var deployRun = latestMatchingRun_(await fetchRuns_('deploy-pages-validated.yml'), 'workflow_run');
+          if (!deployRun || deployRun.status !== 'completed') {
+            if (el) el.textContent = 'snapshot ready — publishing site…';
+          } else if (deployRun.conclusion !== 'success') {
+            throw new Error('Pages deployment ' + deployRun.conclusion + '.');
+          } else {
+            if (el) el.textContent = 'published — reloading…';
+            toast('Fresh Sheet data is live. Reloading the admin panel…', 'ok', 3000);
+            await new Promise(function (resolve) { setTimeout(resolve, 1200); });
+            var freshUrl = new URL(window.location.href);
+            freshUrl.searchParams.set('refreshed', Date.now().toString());
+            window.location.replace(freshUrl.toString());
+            return;
+          }
+        }
+        await new Promise(function (resolve) { setTimeout(resolve, 10000); });
+      }
+      throw new Error('Timed out waiting for GitHub Pages to publish.');
+    } catch (e) {
+      log('Automatic refresh error: ' + (e.message || e), 'error');
+      if (el) el.textContent = 'automatic reload failed';
+      toast('Automatic reload failed: ' + (e.message || e), 'warn', 10000);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Refresh from Sheet';
+        btn.removeAttribute('aria-busy');
+      }
+    }
+  }
+
   // Returns a boolean: true on 204 dispatch success, false otherwise.
   // Silent mode is used by the auto-trigger after a successful Master write;
   // interactive mode is used by the Data source tab's manual button.
@@ -2289,6 +2357,7 @@
     var btn = $('#refresh-master');
     var interactive = !opts.silent;
     var originalLabel = btn ? btn.textContent : 'Refresh from Sheet';
+    var keepWaiting = false;
     if (!token) {
       if (!opts.silent) { toast('Save a GitHub PAT first.', 'error'); if (el) el.textContent = 'no token'; }
       log('Refresh dispatch skipped: no GitHub PAT saved.', 'warn');
@@ -2311,7 +2380,11 @@
         state.lastDispatchAt = Date.now();
         if (el) el.textContent = 'dispatch queued — snapshot refresh takes ~2–5 min.';
         log('Dispatched refresh-master-file.yml', 'ok');
-        if (interactive) toast('Refresh queued. The Sheet snapshot should update in about 2–5 minutes.', 'ok', 8000);
+        if (interactive) {
+          toast('Refresh queued. This page will reload automatically when the new Sheet data is live.', 'ok', 8000);
+          keepWaiting = true;
+          waitForAutomaticRefresh_(state.lastDispatchAt, token);
+        }
         return true;
       }
       var txt = await res.text();
@@ -2325,7 +2398,7 @@
       if (!opts.silent) toast('Refresh dispatch error: ' + (e.message || e), 'warn', 9000);
       return false;
     } finally {
-      if (interactive && btn) {
+      if (interactive && btn && !keepWaiting) {
         btn.disabled = false;
         btn.textContent = originalLabel;
         btn.removeAttribute('aria-busy');

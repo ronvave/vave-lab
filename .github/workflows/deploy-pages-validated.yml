@@ -4,6 +4,15 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Commits created with GITHUB_TOKEN do not emit another `push` workflow
+  # event. The Master refresh workflow commits regenerated encrypted snapshots
+  # with that token, so listen for its successful completion explicitly and
+  # deploy the newly updated main branch.
+  workflow_run:
+    workflows:
+      - Refresh iTaukei Master File snapshot
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -16,11 +25,13 @@ concurrency:
 
 jobs:
   validate:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository history
         uses: actions/checkout@v4
         with:
+          ref: main
           fetch-depth: 2
 
       - name: Set up Python
@@ -30,7 +41,7 @@ jobs:
 
       - name: Reject truncated or structurally damaged dashboards
         env:
-          PUSH_BASE: ${{ github.event.before }}
+          PUSH_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: python3 scripts/validate_dashboard_integrity.py --revision HEAD --base "$PUSH_BASE"
 
   deploy:
@@ -42,6 +53,8 @@ jobs:
     steps:
       - name: Check out validated source
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
