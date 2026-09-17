@@ -147,7 +147,7 @@
           .scholar-direct-about{
             max-width:980px;margin:0 auto 18px;padding:17px 20px;
             background:#fff;border:1px solid rgba(14,116,144,.16);border-radius:14px;
-            font-family:"DM Sans",Arial,sans-serif;font-size:.95rem;line-height:1.58;color:#5f6570;
+            font-family:"DM Sans",Arial,sans-serif;font-size:1rem;line-height:1.55;color:#5f6570;
           }
           .scholar-direct-about p{margin:0}.scholar-direct-about a{color:#087d93;text-decoration:underline;text-underline-offset:2px}
 
@@ -157,7 +157,7 @@
             border:1px solid #efc85b;border-radius:999px;background:#fff8dc;color:#9a6500;
             font-weight:800;font-size:.78rem;letter-spacing:.01em;
           }
-          .scholar-direct-intro p{line-height:1.55}
+          .scholar-direct-intro p{font-size:1rem!important;line-height:1.55}
           .scholar-direct-intro .direct-review-callout{
             margin:10px 0 12px!important;padding:10px 12px!important;
             background:#fff4bf!important;border-left:4px solid #d7a800!important;
@@ -180,6 +180,7 @@
           .scholar-pubs-review__head h2{margin:0 0 6px;color:#123f47;font-family:Arial,Helvetica,sans-serif;font-size:1.2rem;font-weight:700}
           .scholar-pubs-review__head p{margin:0 0 9px;color:#4b5563;font-size:.9rem;line-height:1.55}
           .scholar-pubs-review__head p:last-child{margin-bottom:0}.scholar-pubs-review__count{font-weight:700;color:#0e7490}
+          .scholar-geotag-highlight{background:#ffeb3b;color:#111;padding:1px 4px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
           .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:225px!important}
           .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:520px!important;padding-bottom:12px!important;overflow:hidden!important}
@@ -225,7 +226,7 @@
       function revisePreLaunchBlock(existingIntro) {
         existingIntro.innerHTML =
           '<div class="direct-review-badge">PRE-LAUNCH PROFILE REVIEW</div>' +
-          '<p><strong>About this database.</strong> The Fiji Scholarly Research Database is an evolving resource highlighting the scholarship and contributions of iTaukei (Indigenous Fijian) scholars in Fiji and around the world. The project is led and curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Dr. Ron Vave</a>, an <em>iTaukei</em> scholar and Assistant Professor at the University of Hawai\u02bbi at M\u0101noa, and forms part of a wider regional scholarly database initiative that he is spearheading through UH M\u0101noa\u2019s Center for Pacific Islands Studies. The initiative is being developed across Pacific Island countries to support the visibility, networking, collaboration and mentorship of Indigenous students and researchers, while making their scholarship more accessible to wider audiences. As an ongoing passion project, the database is not yet comprehensive. <strong>The database and dashboard remain under development and have not yet been publicly launched.</strong></p>' +
+          '<p><strong>About this database.</strong> The Fiji Scholarly Research Database is an evolving resource highlighting the scholarship and contributions of iTaukei (Indigenous Fijian) scholars in Fiji and around the world. The project is led and curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Dr. Ron Vave</a>, an <em>iTaukei</em> scholar and Assistant Professor at the University of Hawai\u02bbi at M\u0101noa, and is part of a regional scholarly database initiative that he is spearheading through UH M\u0101noa\u2019s <a href="https://hawaii.edu/cpis/" target="_blank" rel="noopener">Center for Pacific Islands Studies</a>. This initiative is being developed across Pacific Island countries to support the visibility, networking, collaboration and mentorship of Indigenous students and researchers, while making our scholarship more accessible to wider audiences. As an ongoing passion project, this database is not comprehensive and is slowly being added to. <strong>The database and dashboard remain under development and have not yet been publicly launched.</strong></p>' +
           '<p><strong>Why you have been sent this link.</strong> You have been sent a direct link to this scholar profile so the information can be checked and improved.</p>' +
           '<p class="direct-review-callout"><strong>If this is your scholar profile, please scroll down to see your Scholar Profile card, click on Update info to add, remove or change details.</strong></p>' +
           '<p>You can provide missing paternal geography, current professional information, graduate-study details and publication information. You can also attach your latest <strong>CV</strong>, upload a <strong>high-resolution JPEG headshot</strong>, and provide either a direct link to or a PDF copy of your Master\u2019s and/or PhD thesis. <strong>Your CV will only be used to extract relevant information for this database, such as publications, awards, positions and related scholarly information. It will not be shared further and will not be displayed on the scholar dashboard.</strong></p>' +
@@ -234,7 +235,6 @@
       }
 
       function installSummaryPanelTextGuard(d, main) {
-        var today = '12 September 2026';
         var applying = false;
         function applySummaryText() {
           if (applying) return;
@@ -245,7 +245,7 @@
               var hint = section.querySelector('.db-section__hint');
               var title = String(label && label.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
               if (title === 'database overview' && hint) {
-                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) to date (' + today + ').';
+                var wanted = 'Statistics of entire indexed database and publications on Fiji (regardless of ethnicity) displayed here was last updated on Saturday, 12th September 2026.';
                 if (hint.textContent !== wanted) hint.textContent = wanted;
                 hint.classList.add('scholar-summary-description');
               } else if (title === 'itaukei scholarship' && hint) {
@@ -305,7 +305,7 @@
       function buildPublicationReview(d,main,state,scholarId,scholarName,items,source,expected) {
         if(main.querySelector('.scholar-pubs-review'))return;
         var section=d.createElement('section');section.className='scholar-pubs-review';var head=d.createElement('div');head.className='scholar-pubs-review__head';var countText=items.length+(expected&&expected!==items.length?' of '+expected:'');
-        head.innerHTML='<h2>Publications currently linked to this scholar</h2><p><span class="scholar-pubs-review__count">'+countText+' publications</span> are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.</p><p><strong>Please help us geotag the research.</strong> For each thesis, book, book chapter, journal article or report, you can identify the Fiji province or provinces where the study was undertaken. Use <strong>Fiji \u2014 general/national study</strong> where the work concerns Fiji broadly and is not tied to a particular province. Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>).</p><p>Geotagging allows publications to appear when the database is filtered by province. This means provincial governments and other stakeholders \u2014 including Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities themselves \u2014 can more easily find research undertaken in their province and, where useful, draw on that information in planning and decision making. Geographic suggestions are reviewed before they are added to the database.</p>';
+        head.innerHTML='<h2>Publications currently linked to this scholar</h2><p><span class="scholar-pubs-review__count">'+countText+' publications</span> are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.</p><p><strong class="scholar-geotag-highlight">Please help us geotag your research</strong>. For each thesis, book, book chapter, journal article or report, you can identify the Fiji province or provinces where the study was undertaken. Use <strong>Fiji \u2014 general/national study</strong> where the work concerns Fiji broadly and is not tied to a particular province. Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>).</p><p>Geotagging allows publications to appear when the database is filtered by province. This means provincial governments and other stakeholders \u2014 including Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities themselves \u2014 can more easily find research undertaken in their province and, where useful, draw on that information in planning and decision making. Geographic suggestions are reviewed before they are added to the database.</p>';
         section.appendChild(head);var list=d.createElement('ol');list.className='scholar-pubs-review__list';section.appendChild(list);var sourceNodes=Array.prototype.slice.call(source.children);var dirty=new Map();
         items.forEach(function(item,idx){var node=sourceNodes[idx]?sourceNodes[idx].cloneNode(true):fallbackPublicationCard(d,item);node.style.overflow='hidden';var editor=buildGeoEditor(d,state,item,dirty);node.appendChild(editor);integrateGeoControlsIntoPublicationCard(node,editor);list.appendChild(node);});
         section.appendChild(buildGeoSubmit(d,scholarId,scholarName,dirty));main.appendChild(section);
