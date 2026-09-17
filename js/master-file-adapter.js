@@ -1219,7 +1219,15 @@
       });
     }
 
-    return { scholars: scholarsMap, worldPoints: worldPoints, universities: [] };
+    return {
+      scholars: scholarsMap,
+      worldPoints: worldPoints,
+      universities: [],
+      // Preserve the authoritative completed-degree totals emitted by
+      // master_b2_worldpoints.py. Panels A2 and B2 consume this same object
+      // so thesis, scholar, university, and country figures cannot drift.
+      totals: (mwp && mwp.totals) ? Object.assign({}, mwp.totals) : null
+    };
   }
 
   // -------------------------------------------------------------------
