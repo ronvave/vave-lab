@@ -1009,24 +1009,26 @@
     });
     const itWorks = itLed + itCoauth;
 
-    let itPhd = 0, itMasters = 0, itThesesOther = 0;
-    theses.forEach(t => {
-      if (!isItaukei(t)) return;
-      const lvl = t.thesisLevel;
-      if (lvl === 'phd') itPhd++;
-      else if (lvl === 'masters') itMasters++;
-      else itThesesOther++;
-    });
-    const itTheses = itPhd + itMasters + itThesesOther;
-
-    // iTaukei graduate-study universities and countries — from the graduate
-    // studies data (theses that appear in a scholar's iTaukei sub-collection).
+    // iTaukei completed-degree totals. The Master-derived world-points
+    // payload is authoritative and includes only Graduate Degrees rows whose
+    // stage is Master's or PhD/Doctorate and whose completion status is
+    // completed. It deliberately excludes current, in-progress, uncertain,
+    // and non-completed episodes. Panel B2 consumes this same payload.
     const grad = state.graduateStudies || { worldPoints: [] };
     const gradUnis = new Set(), gradCountries = new Set();
     (grad.worldPoints || []).forEach(wp => {
       if (wp.university) gradUnis.add(wp.university);
       if (wp.country)    gradCountries.add(wp.country);
     });
+    const gradTotals = grad.totals || {};
+    const countedMasters = (grad.worldPoints || []).reduce((sum, wp) => sum + ((wp.mastersScholars || []).length), 0);
+    const countedPhd = (grad.worldPoints || []).reduce((sum, wp) => sum + ((wp.phdScholars || []).length), 0);
+    const itMasters = Number.isFinite(Number(gradTotals.masters)) ? Number(gradTotals.masters) : countedMasters;
+    const itPhd = Number.isFinite(Number(gradTotals.phd)) ? Number(gradTotals.phd) : countedPhd;
+    const itThesesOther = 0;
+    const itTheses = Number.isFinite(Number(gradTotals.total)) ? Number(gradTotals.total) : (itMasters + itPhd);
+    const completedGradUnis = Number.isFinite(Number(gradTotals.universities)) ? Number(gradTotals.universities) : gradUnis.size;
+    const completedGradCountries = Number.isFinite(Number(gradTotals.countries)) ? Number(gradTotals.countries) : gradCountries.size;
 
     // ---- Populate DOM ----
     const setText = (sel, val) => {
@@ -1084,8 +1086,8 @@
     setText('[data-kpi="it-led"]',       fmt(itLed));
     setText('[data-kpi="it-coauth"]',    fmt(itCoauth));
     setText('[data-kpi="it-theses"]',    fmt(itTheses));
-    setText('[data-kpi="it-unis"]',      fmt(gradUnis.size));
-    setText('[data-kpi="it-countries"]', fmt(gradCountries.size));
+    setText('[data-kpi="it-unis"]',      fmt(completedGradUnis));
+    setText('[data-kpi="it-countries"]', fmt(completedGradCountries));
 
     // Status pills
     const liveTotal = (sync && typeof sync.totalItems === 'number') ? sync.totalItems : totalWorks;
@@ -1128,7 +1130,7 @@
     renderTopNarrative({
       totalWorks, itWorks, itLed, itCoauth,
       itPhd, itMasters, itThesesOther, itTheses,
-      gradUnis: gradUnis.size, gradCountries: gradCountries.size,
+      gradUnis: completedGradUnis, gradCountries: completedGradCountries,
       provincesStudied: provsStudied.size
     });
   }
@@ -1884,11 +1886,16 @@
     const totM = countries.reduce((a, r) => a + r.masters, 0);
     const totP = countries.reduce((a, r) => a + r.phd, 0);
     const totU = countries.reduce((a, r) => a + (r.unknown || 0), 0);
-    const totalTheses = totM + totP + totU;
+    const sourceTotals = grad.totals || {};
+    const totalTheses = Number.isFinite(Number(sourceTotals.total)) ? Number(sourceTotals.total) : (totM + totP + totU);
     // Distinct universities across all countries — each worldPoint corresponds
     // to one (country, university) pair, so the size of `points` is the count.
-    const totalUnis = new Set(points.map(p => `${p.country}||${p.university}`)).size;
-    const totalCountries = countries.length;
+    const totalUnis = Number.isFinite(Number(sourceTotals.universities))
+      ? Number(sourceTotals.universities)
+      : new Set(points.map(p => `${p.country}||${p.university}`)).size;
+    const totalCountries = Number.isFinite(Number(sourceTotals.countries))
+      ? Number(sourceTotals.countries)
+      : countries.length;
 
     // Panel B2 narrative sentence intentionally left blank — Ron removed it
     // July 2026 because it duplicated the panel tally and drifted from truth
@@ -1929,13 +1936,18 @@
         }
       }
     }
-    const totalScholars = scholarNames.size;
+    const totalScholars = Number.isFinite(Number(sourceTotals.scholars))
+      ? Number(sourceTotals.scholars)
+      : scholarNames.size;
+
+    const completedMasters = Number.isFinite(Number(sourceTotals.masters)) ? Number(sourceTotals.masters) : totM;
+    const completedPhd = Number.isFinite(Number(sourceTotals.phd)) ? Number(sourceTotals.phd) : totP;
 
     const kpiPairs = [
       ['theses',    totalTheses],
       ['scholars',  totalScholars],
-      ['masters',   totM],
-      ['phd',       totP],
+      ['masters',   completedMasters],
+      ['phd',       completedPhd],
       ['unis',      totalUnis],
       ['countries', totalCountries],
     ];
