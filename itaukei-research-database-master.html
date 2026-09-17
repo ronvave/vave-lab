@@ -4125,7 +4125,7 @@
         <span class="db-panel__label">A2</span>
         <header class="db-section__head">
           <div class="db-section__label" id="db-section-itaukei">iTaukei scholarship</div>
-          <p class="db-section__hint">Statistics filtered to works and graduate research involving identified iTaukei scholars.</p>
+          <p class="db-section__hint">Statistics filtered to works involving identified iTaukei scholars and completed Master&rsquo;s and PhD degrees. Current, in-progress, non-completed, and uncertain degree records are excluded.</p>
         </header>
         <div class="db-kpis">
           <div class="db-kpi db-kpi--solid db-kpi--teal">
@@ -4142,7 +4142,7 @@
           </div>
           <div class="db-kpi db-kpi--solid db-kpi--amber">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by iTaukei scholars</div></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Completed Master&rsquo;s and PhD degrees</div></div>
           </div>
           <div class="db-kpi db-kpi--solid db-kpi--blue">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
@@ -4305,7 +4305,7 @@
       <div class="db-panel reveal db-panel--wide" data-panel="B2">
         <span class="db-panel__label">B2</span>
         <h2 class="db-panel__title">ITAUKEI GRADUATES — GLOBAL DATABASE <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
-        <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by iTaukei scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
+        <p class="db-panel__hint">Completed Master&rsquo;s and PhD degrees by iTaukei scholars around the world. Current, in-progress, non-completed, and uncertain degree records are excluded. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
         <!-- Panel B2 KPI tiles — mirror the A1/A2 solid-tile family so B2 reads as
              part of the same visual system. Numbers are populated by
              renderWorldPanel() in js/itaukei-database.js from the same
@@ -4344,7 +4344,7 @@
           <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where iTaukei have published</button>
         </div>
         <p class="db-map-scope-note" data-mapscope-note="world" style="font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
-          <strong>Note:</strong> Only theses that appear in a scholar&rsquo;s iTaukei sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
+          <strong>Note:</strong> Figures are drawn from the Master file&rsquo;s Graduate Degrees worksheet and count only completed Master&rsquo;s and completed PhD/Doctorate records. Current, in-progress, non-completed, and uncertain completion records are excluded.
         </p>
         <div class="db-world-wide">
           <div class="db-map-world-wrap" data-db-map-world-wrap>
@@ -5350,8 +5350,8 @@
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
 <script src="js/demo-gate.js?v=0d799249" defer></script>
-<script src="js/master-file-adapter.js?v=717d3318" defer></script>
-<script src="js/itaukei-database-master.js?v=26e4a77d" defer></script>
+<script src="js/master-file-adapter.js?v=completed-degrees-20260917" defer></script>
+<script src="js/itaukei-database-master.js?v=completed-degrees-20260917" defer></script>
 <script src="js/master-file-panel-overrides.js?v=795dbc68" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
