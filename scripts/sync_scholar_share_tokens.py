@@ -30,7 +30,15 @@ def write_json(path: Path, value: dict) -> None:
 
 def scholar_ids(path: Path) -> set[str]:
     doc = load_json(path, {})
-    rows = doc.get("scholars", doc if isinstance(doc, list) else [])
+    # The Master-file transformer writes this snapshot as a JSON list.  Keep
+    # support for the older {"scholars": [...]} envelope, but never call
+    # .get() on a list: that would abort every refresh before deployment.
+    if isinstance(doc, list):
+        rows = doc
+    elif isinstance(doc, dict):
+        rows = doc.get("scholars", [])
+    else:
+        rows = []
     ids = {
         str(row.get("Scholar ID", "")).strip().upper()
         for row in rows
