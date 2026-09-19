@@ -299,6 +299,71 @@
     return (STAGING_SNAPSHOT ? 'data/staging/' : 'data/') + name;
   }
 
+  // The Solomon transformer publishes the current Master-sheet headers.
+  // The dashboard/admin code still contains several legacy aliases inherited
+  // from the earlier iTaukei/Tongan adapter. Add those aliases once at the
+  // adapter boundary so joins and displays use the real Solomon data without
+  // changing the sanitized snapshot contract.
+  function normalizeMasterRows_(master) {
+    master.scholars.forEach(function (s) {
+      s['Scholar Name'] = s['Scholar Name'] || s['Display Name'] || '';
+      s['Province/City Area'] = s['Province/City Area'] ||
+        s['effective_province_group'] || s['Paternal Province/City Area'] ||
+        s['Maternal Province/City Area'] || '';
+      s['Discipline'] = s['Discipline'] || s['Broad Discipline'] ||
+        s['Primary Discipline'] || '';
+    });
+
+    master.publications.forEach(function (p) {
+      p['Publication ID / BibTeX Key'] = p['Publication ID / BibTeX Key'] ||
+        p['Publication ID'] || p['BibTeX Key'] || '';
+      p['Publication Type'] = p['Publication Type'] || p['Type'] || '';
+      p['Authors'] = p['Authors'] || p['Authors as Published'] || '';
+      p['Journal / Book Title'] = p['Journal / Book Title'] ||
+        p['Journal/Publisher'] || '';
+      p['Publisher / Institution / School'] =
+        p['Publisher / Institution / School'] || p['Journal/Publisher'] || '';
+    });
+
+    master.authorship.forEach(function (a) {
+      a['Publication ID / BibTeX Key'] = a['Publication ID / BibTeX Key'] ||
+        a['Publication ID'] || '';
+      if (a['Is First Author?'] == null) {
+        a['Is First Author?'] = a['Is First Author'];
+      }
+      a['Author Name as Recorded'] = a['Author Name as Recorded'] ||
+        a['Author Name as Published'] || '';
+    });
+
+    master.researcherAuthorship.forEach(function (a) {
+      a['Publication ID / BibTeX Key'] = a['Publication ID / BibTeX Key'] ||
+        a['Publication ID'] || '';
+      if (a['Is First Author?'] == null) {
+        a['Is First Author?'] = a['Is First Author'];
+      }
+      a['Author Name as Recorded'] = a['Author Name as Recorded'] ||
+        a['Author Name as Published'] || '';
+    });
+
+    master.gradDegrees.forEach(function (g) {
+      g['Degree Stage'] = g['Degree Stage'] || g['Stage'] || '';
+      g['Degree / Qualification'] = g['Degree / Qualification'] ||
+        g['Degree Name'] || '';
+      g['Thesis / Research Title'] = g['Thesis / Research Title'] ||
+        g['Thesis Title'] || '';
+      g['C_Uni name'] = g['C_Uni name'] ||
+        g['Institution Name (Current)'] || '';
+      g['O_Uni name'] = g['O_Uni name'] ||
+        g['Institution Name (Original)'] || '';
+      g['Finish / Completion Year'] = g['Finish / Completion Year'] ||
+        g['Graduation Year'] || g['End Year'] || '';
+      g['Evidence URL'] = g['Evidence URL'] || g['Repository URL'] || '';
+      g['Publication ID / BibTeX Key'] = g['Publication ID / BibTeX Key'] ||
+        g['Thesis Publication ID'] || '';
+    });
+    return master;
+  }
+
   // -------------------------------------------------------------------
   // Load raw Master JSON (encrypted through the gate).
   // -------------------------------------------------------------------
@@ -347,7 +412,7 @@
       // sources. Optional.
       fetchJson('data/solomon-scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })
     ]).then(function (arr) {
-      return {
+      return normalizeMasterRows_({
         scholars:            arr[0],
         publications:        arr[1],
         authorship:          arr[2],
@@ -362,7 +427,7 @@
         masterWorldPoints:   arr[11],
         adminEnrichment:     arr[12] && arr[12].scholars ? arr[12] : EMPTY_ADMIN_DOC,
         adminInsights:       arr[13] && arr[13].scholars ? arr[13] : EMPTY_ADMIN_DOC
-      };
+      });
     });
   }
 

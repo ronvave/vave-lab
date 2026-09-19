@@ -705,6 +705,15 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
 
     log("Fetching Part-Solomon Islander exclusion set...")
     part_ids = extract_part_solomon_islander_ids(fetch_fn("Part-Solomon Islander"))
+    # Defensive second source: the separate roster can lag behind Scholars.
+    # Any Scholars row explicitly marked Part-Solomon Islander must still be
+    # excluded from Indigenous totals and downstream joins.
+    part_ids.update(
+        str(s.get("Scholar ID") or "").strip()
+        for s in scholars_all
+        if "part-solomon" in str(s.get("Solomon Islander Status") or "").strip().lower()
+    )
+    part_ids.discard("")
     log(f"  -> {len(part_ids)} Part-Solomon-Islander IDs excluded")
 
     scholars = [s for s in scholars_all if s.get("Scholar ID") not in part_ids]
