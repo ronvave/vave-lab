@@ -109,6 +109,23 @@
     'data/solomon-scholar-insights-master.json': 'data/solomon-scholar-insights-master.json.enc'
   };
 
+  // Read-only staging snapshot. These paths are used only by
+  // admin-solomon-islands-staging.html and never replace production blobs.
+  [
+    'solomon-master-scholars.json',
+    'solomon-master-publications.json',
+    'solomon-master-authorship.json',
+    'solomon-master-researcher-authorship.json',
+    'solomon-master-grad-degrees.json',
+    'solomon-master-mobility.json',
+    'solomon-master-geography.json',
+    'solomon-master-geography-coordinates.json',
+    'solomon-master-aggregates.json',
+    'solomon-last-master-sync.json'
+  ].forEach(function (name) {
+    ENC_FILES['data/staging/' + name] = 'data/staging/' + name + '.enc';
+  });
+
   // In-memory state once the visitor is verified. Never leaves the page.
   //   cachedPasscode: string — the passcode itself, kept in memory so we can
   //     derive a fresh per-file AES key on demand.
