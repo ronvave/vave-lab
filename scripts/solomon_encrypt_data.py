@@ -97,13 +97,13 @@ def derive_key(passcode: str, salt: bytes) -> bytes:
     return kdf.derive(passcode.encode("utf-8"))
 
 
-def encrypt_one(name: str, passcode: str) -> bool:
+def encrypt_one(name: str, passcode: str, data_dir: Path = DATA_DIR) -> bool:
     """Encrypt a single plaintext file with its own fresh random salt.
 
     Returns True if the file was encrypted, False if the plaintext was
     missing (caller decides whether that's a warning or an error).
     """
-    src = DATA_DIR / name
+    src = data_dir / name
     if not src.exists():
         return False
     salt = os.urandom(16)
@@ -113,7 +113,7 @@ def encrypt_one(name: str, passcode: str) -> bool:
     plaintext = src.read_bytes()
     body = aes.encrypt(iv, plaintext, associated_data=None)
     blob = MAGIC + salt + iv + body
-    dst = DATA_DIR / (name + ".enc")
+    dst = data_dir / (name + ".enc")
     dst.write_bytes(blob)
     print(
         f"  encrypted {name} \u2192 {name}.enc "
@@ -132,6 +132,12 @@ def main() -> int:
             "File names under data/ to encrypt (e.g. scholar-profiles.json). "
             "If omitted, encrypts every known target whose plaintext exists."
         ),
+    )
+    ap.add_argument(
+        "--data-dir",
+        type=Path,
+        default=DATA_DIR,
+        help="Directory containing plaintext inputs and receiving .enc outputs.",
     )
     args = ap.parse_args()
 
@@ -156,7 +162,7 @@ def main() -> int:
 
     missing: list[str] = []
     for name in names:
-        if not encrypt_one(name, passcode):
+        if not encrypt_one(name, passcode, args.data_dir):
             missing.append(name)
 
     if missing:

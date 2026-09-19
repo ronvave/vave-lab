@@ -223,6 +223,18 @@ def clean_sentinel(v: Any) -> str:
     return s
 
 
+def canonical_gender(v: Any) -> str:
+    """Map current and legacy controlled-vocabulary labels to dashboard keys."""
+    value = str(v or "").strip()
+    aliases = {
+        "female": "Woman",
+        "woman": "Woman",
+        "male": "Man",
+        "man": "Man",
+    }
+    return aliases.get(value.lower(), value)
+
+
 # -----------------------------------------------------------------------------
 # Per-sheet extractors
 # -----------------------------------------------------------------------------
@@ -506,8 +518,8 @@ def compute_aggregates(
     # scheme and NOT assumed final until Ron confirms the terms.
     totals = {
         "scholars": len(scholars),
-        "scholars_woman": sum(1 for s in scholars if (s.get("Gender") or "").strip() == "Woman"),
-        "scholars_man": sum(1 for s in scholars if (s.get("Gender") or "").strip() == "Man"),
+        "scholars_woman": sum(1 for s in scholars if canonical_gender(s.get("Gender")) == "Woman"),
+        "scholars_man": sum(1 for s in scholars if canonical_gender(s.get("Gender")) == "Man"),
         "scholars_gender_self_described": sum(
             1 for s in scholars if "self-described" in (s.get("Gender") or "").strip().lower()
         ),
@@ -585,7 +597,7 @@ def compute_body_composition_master(
     Tongan/iTaukei convention.
     """
     gender_by_sid = {
-        s.get("Scholar ID"): (s.get("Gender") or "").strip()
+        s.get("Scholar ID"): canonical_gender(s.get("Gender"))
         for s in scholars if s.get("Scholar ID")
     }
     scholar_ids = set(gender_by_sid.keys())
@@ -602,7 +614,7 @@ def compute_body_composition_master(
         payload["Man"][js_key] = 0
 
     for s in scholars:
-        g = (s.get("Gender") or "").strip()
+        g = canonical_gender(s.get("Gender"))
         if g == "Woman":
             payload["Woman"]["scholars"] += 1
         elif g == "Man":
@@ -660,7 +672,7 @@ def _compute_grad_stats(grad_degrees: list[dict], scholars: list[dict]) -> dict:
         elif is_phd and is_in_progress:
             phd_inprogress.add(sid)
 
-    gender_by_id = {s["Scholar ID"]: s.get("Gender", "") for s in scholars}
+    gender_by_id = {s["Scholar ID"]: canonical_gender(s.get("Gender")) for s in scholars}
 
     def gendered(ids: set[str]) -> dict:
         return {
@@ -692,13 +704,8 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
     log(f"  -> {len(scholars_all)} scholars (pre Part-Solomon-Islander filter)")
 
     log("Fetching Part-Solomon Islander exclusion set...")
-    part_ids_all = extract_part_solomon_islander_ids(fetch_fn("Part-Solomon Islander"))
-    core_ids = {
-        str(s.get("Scholar ID") or "").strip() for s in scholars_all
-        if str(s.get("Scholar ID") or "").strip()
-    }
-    part_ids = part_ids_all - core_ids
-    log(f"  -> {len(part_ids)} Part-Solomon-Islander-only IDs excluded")
+    part_ids = extract_part_solomon_islander_ids(fetch_fn("Part-Solomon Islander"))
+    log(f"  -> {len(part_ids)} Part-Solomon-Islander IDs excluded")
 
     scholars = [s for s in scholars_all if s.get("Scholar ID") not in part_ids]
     if len(scholars) != len(scholars_all):

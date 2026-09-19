@@ -291,6 +291,14 @@
     });
   }
 
+  // Staging Admin loads an isolated snapshot generated from the staging
+  // spreadsheet. Production pages continue to use data/ unchanged.
+  var STAGING_SNAPSHOT = /admin-solomon-islands-staging\.html$/i.test(location.pathname) ||
+    new URLSearchParams(location.search).get('snapshot') === 'staging';
+  function masterDataUrl_(name) {
+    return (STAGING_SNAPSHOT ? 'data/staging/' : 'data/') + name;
+  }
+
   // -------------------------------------------------------------------
   // Load raw Master JSON (encrypted through the gate).
   // -------------------------------------------------------------------
@@ -302,21 +310,21 @@
     var EMPTY_ADMIN_DOC = { version: 1, scholars: {} };
 
     return Promise.all([
-      fetchJson('data/solomon-master-scholars.json'),
-      fetchJson('data/solomon-master-publications.json'),
-      fetchJson('data/solomon-master-authorship.json'),
+      fetchJson(masterDataUrl_('solomon-master-scholars.json')),
+      fetchJson(masterDataUrl_('solomon-master-publications.json')),
+      fetchJson(masterDataUrl_('solomon-master-authorship.json')),
       // Non-iTaukei researcher authorship links (ITK-R IDs). Panel C2
       // iTaukei view accepts either Scholar-level (`authorship`) or
       // Researcher-level (`researcherAuthorship`) links as evidence that
       // a publication is iTaukei-associated. Optional — empty on error.
-      fetchJson('data/solomon-master-researcher-authorship.json')
+      fetchJson(masterDataUrl_('solomon-master-researcher-authorship.json'))
         .catch(function () { return []; }),
-      fetchJson('data/solomon-master-grad-degrees.json'),
-      fetchJson('data/solomon-master-mobility.json').catch(function () { return []; }),
-      fetchJson('data/solomon-master-geography.json').catch(function () { return []; }),
-      fetchJson('data/solomon-master-geography-coordinates.json').catch(function () { return []; }),
-      fetchJson('data/solomon-master-aggregates.json'),
-      fetchJson('data/solomon-last-master-sync.json').catch(function () { return null; }),
+      fetchJson(masterDataUrl_('solomon-master-grad-degrees.json')),
+      fetchJson(masterDataUrl_('solomon-master-mobility.json')).catch(function () { return []; }),
+      fetchJson(masterDataUrl_('solomon-master-geography.json')).catch(function () { return []; }),
+      fetchJson(masterDataUrl_('solomon-master-geography-coordinates.json')).catch(function () { return []; }),
+      fetchJson(masterDataUrl_('solomon-master-aggregates.json')),
+      fetchJson(masterDataUrl_('solomon-last-master-sync.json')).catch(function () { return null; }),
       // V1 graduate-studies snapshot — used only as a (country, university)
       // coordinate lookup for Panel B2 world map. Master mobility only has 4
       // coordinate rows; the V1 file has 79 curated worldPoints with lat/lng.
