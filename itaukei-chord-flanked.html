@@ -130,7 +130,7 @@
     body.is-itaukei.is-embedded #wrap { max-width:1480px; }
     body.is-itaukei .chord-subtitle, body.is-itaukei.is-embedded .chord-subtitle { font-size:13.5px !important; line-height:1.35 !important; margin:8px 0 !important; }
     .mobility-summary { display:none; }
-    body.is-itaukei .mobility-summary { display:block; text-align:center; font-size:13.5px; line-height:1.4; margin:8px 12px 12px; color:#132c39; }
+    body.is-itaukei .mobility-summary { font-weight:700; white-space:pre-line; display:block; text-align:center; font-size:13.5px; line-height:1.4; margin:8px 12px 12px; color:#132c39; }
     body.is-itaukei.is-embed-fullscreen #wrap { width:100%; min-width:1100px; max-width:none; padding:0 12px; box-sizing:border-box; }
     body.is-itaukei.is-embed-fullscreen .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); min-height:0; align-items:center; }
     body.is-itaukei.is-embed-fullscreen .legend-flank__col { font-size:clamp(11.5px,0.8vw,16px); gap:clamp(5px,0.65vh,9px); }
@@ -682,7 +682,7 @@ function draw(data){
     const countries = new Set(data.uni_list.map(u => COUNTRY_ALIAS[u.country] || u.country).filter(Boolean)).size;
     const regions = new Set(data.uni_list.map(u => u.region).filter(r => r && r !== 'Other')).size;
     document.getElementById('mobility-summary').textContent =
-      `This chart shows where ${count} iTaukei scholars undertook their Master’s and PhD studies, across ${data.uni_list.length} universities in ${countries} countries and ${regions} regions. PhD study includes completed and ongoing degrees.`;
+      `This chart shows where ${count} iTaukei scholars undertook their Master’s and PhD studies,\nacross ${data.uni_list.length} universities in ${countries} countries and ${regions} regions. PhD study includes completed and ongoing degrees.`;
     const explanation = document.querySelector('.chord-subtitle');
     explanation.textContent = 'Ribbons = Master’s → PhD pathways · Inner ring = university · Middle ring = country · Outer ring = region.' +
       (data.excludedPathways ? ` ${data.excludedPathways} further pathways await verified institution details and are not plotted.` : '');
