@@ -134,3 +134,11 @@ belongs in Scholar profile; thesis uploads belong in their degree sections;
 CV has its own private optional section; bibliographic upload and notes belong
 in Publications to add. Retain upload limits, existing payload keys, only-
 changed-fields submission, review requirements and original Master authority.
+
+## Admin queue visibility and attachment previews (2026-09-20)
+
+Both submission tabs display Fiji-style pending-count badges after Admin reaches ready, before either tab is opened. Counts refresh every 30 seconds while visible, on returning to the window, and after queue review reloads. Background count reads do not rebuild review cards or discard notes. Failed reads retain the previous count; zero hides the badge.
+
+Scholar attachments are grouped in a Fiji-style Attachments section with filename, field/size metadata and an automatically loaded secure inline image preview (maximum 280px). The existing authenticated attachment endpoint is used; previews do not publish images. Headshot approval remains explicit and uses the existing Tonga photo service. CV/thesis/bibliography files remain separately reviewed. No Apps Script deployment is required.
+
+Validation: queue tests cover startup before tab click, ready gating, both badges, polling without note loss, failed reads, zero count, and inline authenticated headshot rendering. Existing submission and iTaukei preservation tests pass. No user submission was approved or rejected during these checks.
