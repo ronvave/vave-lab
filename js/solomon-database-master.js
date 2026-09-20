@@ -11,7 +11,7 @@
  *     "District".
  *   - Village/Town (Kolo) and Specific Island are surfaced as their own
  *     displayed fields (not derived from District).
- *   - Gender display labels are Fefine/Tangata (the underlying iTaukei
+ *   - Gender display labels are Female/Male (the underlying iTaukei
  *     silhouette imagery is kept for gender icons per user decision).
  *   - "iTaukei" -> "Solomon Islands" throughout UI text.
  * Loads /data/solomon-zotero-snapshot.json, /data/solomon-islands-provinces.geojson, and
@@ -5765,7 +5765,7 @@
         </div>
         <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
         <div class="db-conf-panel__provs"></div>
-        <p class="db-conf-panel__foot">${provInCf.length} provinces · ${sub} publications</p>
+        <p class="db-conf-panel__foot">${sub ? sub + ' publications with verified province assignments' : 'No verified study-location assignments recorded'}</p>
       `;
       const inner = panel.querySelector('.db-conf-panel__provs');
       provInCf.forEach(p => {
@@ -6097,7 +6097,7 @@
     const publications = Array.isArray(master.publications) ? master.publications : [];
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
     const aggregates = master.aggregates || {};
-    const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), String(s.Gender || '').trim()]));
+    const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), ({m:'Male', male:'Male', f:'Female', female:'Female'}[String(s.Gender || '').trim().toLowerCase()] || '')]));
     // Paternal-info lookup for Panel D milestone annotations. Fields come
     // straight from Scholars (public allowlist covers all of them). We treat
     // 'Unclassified' as blank so it doesn't leak into the rendered chart
@@ -6118,7 +6118,7 @@
     const paternalInfoByScholarId = new Map(scholars.map(s => [
       String(s['Scholar ID'] || '').trim(),
       {
-        village:     cleanPaternal(s["Village/Community Paternal"]),
+        village:     cleanPaternal(s['Paternal Village/Community']),
         district:    '',
         province:    cleanPaternal(s['Paternal Province/City Area']),
         provinceGroup: cleanPaternal(s['Paternal Province/City Area'])
@@ -6176,16 +6176,16 @@
     const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
     // Solomon Islands' Gender enum is stored on the Master sheet (and written by the
-    // Admin Panel / Apps Script) as the literal Solomon Islands terms 'Tangata' (male)
-    // and 'Fefine' (female) per user decision -- not 'Male'/'Female' -- so
+    // Admin Panel / Apps Script) as the literal Solomon Islands terms 'Male' (male)
+    // and 'Female' (female) per user decision -- not 'Male'/'Female' -- so
     // `def.gender` below must match those literal stored values for the
     // genderByScholarId lookups to actually match real data. The underlying
     // iTaukei silhouette imagery for gender icons is kept unchanged per user decision.
     const milestoneDefinitions = [
-      { key: 'firstMaleMasters', label: "1st Tangata Master's", shortLabel: "1st tangata Master's", stage: 'masters', gender: 'Tangata', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemaleMasters', label: "1st Fefine Master's", shortLabel: "1st fefine Master's", stage: 'masters', gender: 'Fefine', color: '#B85450', isFemale: true },
-      { key: 'firstMalePhD', label: '1st Tangata PhD', shortLabel: '1st tangata PhD', stage: 'phd', gender: 'Tangata', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemalePhD', label: '1st Fefine PhD', shortLabel: '1st fefine PhD', stage: 'phd', gender: 'Fefine', color: '#B85450', isFemale: true }
+      { key: 'firstMaleMasters', label: "1st Male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemaleMasters', label: "1st Female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
+      { key: 'firstMalePhD', label: '1st Male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemalePhD', label: '1st Female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
     ];
     // Country name -> ISO-ish 2-letter code for compact milestone labels.
     // Covers every country currently in the Master-file `Country` column plus
@@ -6208,7 +6208,7 @@
       'Solomon Islands': 'SB',
       'Vanuatu': 'VU',
       'Samoa': 'WS',
-      'Solomon Islands': 'TO',
+      'Tonga': 'TO',
       'France': 'FR',
       'Germany': 'DE',
       'Netherlands': 'NL',
@@ -6237,17 +6237,17 @@
     function titleFor(stage, gender) {
       if (stage === 'phd') return 'Dr.';
       if (stage === 'masters') {
-        if (gender === 'Tangata') return 'Mr.';
-        if (gender === 'Fefine') return 'Ms';
+        if (gender === 'Male') return 'Mr.';
+        if (gender === 'Female') return 'Ms';
       }
       return '';
     }
-    // Milestone display line 1 (e.g. "1963: First tangata PhD"). Kept in one
+    // Milestone display line 1 (e.g. "1963: First male PhD"). Kept in one
     // place so we can tweak wording without editing SVG code. Display text
-    // uses Fefine/Tangata (Solomon Islands) instead of female/male; the underlying
-    // `def.gender` enum stays 'Tangata'/'Fefine' to match the Master sheet.
+    // uses Female/Male (Solomon Islands) instead of female/male; the underlying
+    // `def.gender` enum stays 'Male'/'Female' to match the Master sheet.
     function milestoneHeadline(def) {
-      const who = def.gender === 'Tangata' ? 'tangata' : 'fefine';
+      const who = def.gender === 'Male' ? 'male' : 'female';
       const what = def.stage === 'phd' ? 'PhD' : "Masters";
       return `First ${who} ${what}`;
     }
@@ -6281,7 +6281,7 @@
           };
         })
         .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
-      if (!candidates.length) throw new Error(`Panel D milestone data missing: ${def.key}`);
+      if (!candidates.length) return null;
       const year = candidates[0].year;
       const tied = candidates.filter(candidate => candidate.year === year);
       const chosen = tied[0];
@@ -6342,7 +6342,7 @@
         countryCode: cc,
         ties: tied
       };
-    });
+    }).filter(Boolean);
 
     const authorshipByPublication = new Map();
     authorship.forEach(row => {
@@ -6455,7 +6455,7 @@
     if (note) {
       const headlineTotal = filteredItems.filter(it => headlineTypes.has(visualType(it))).length;
       const linkedTotal = linkedScholarIds.size || panelDData.linkedScholarFallback || 0;
-      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Solomon Islander scholars. Fefine share is a 5-year rolling average of lead-author gender.`;
+      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Solomon Islander scholars. Female share is a 5-year rolling average of lead-author gender.`;
     }
 
     if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
@@ -6487,7 +6487,7 @@
 
     const W = 900, H = 340;
     // Padding widened on left (numeric labels + rotated axis title) and right
-    // (secondary %-axis + rotated "Fefine authorship" title).
+    // (secondary %-axis + rotated "Female authorship" title).
     const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
@@ -6609,8 +6609,8 @@
       if (!activeTypeSet.has(visualType(item))) return;
       const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
       const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
-      if (gender !== 'Fefine' && gender !== 'Tangata') return;
-      const bucket = genderCountsByYear.get(year) || { Fefine: 0, Tangata: 0 };
+      if (gender !== 'Female' && gender !== 'Male') return;
+      const bucket = genderCountsByYear.get(year) || { Female: 0, Male: 0 };
       bucket[gender] += 1;
       genderCountsByYear.set(year, bucket);
     });
@@ -6620,8 +6620,8 @@
       for (let rollingYear = year - 4; rollingYear <= year; rollingYear++) {
         const bucket = genderCountsByYear.get(rollingYear);
         if (!bucket) continue;
-        female += bucket.Fefine;
-        male += bucket.Tangata;
+        female += bucket.Female;
+        male += bucket.Male;
       }
       if (female + male >= 3) rollingWomen.set(year, female / (female + male));
     }
@@ -6634,7 +6634,7 @@
       svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 4, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
       svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
     });
-    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Fefine authorship (5-yr rolling)'));
+    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Female authorship (5-yr rolling)'));
     let rollingRun = [];
     const drawRollingRun = () => {
       // Rolling women-authorship line drawn dashed, matching the mockup.
