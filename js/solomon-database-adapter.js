@@ -107,12 +107,12 @@
     PROVINCE_WARDS[prov].forEach(function (ward) { PROVINCE_TO_CONFED[ward] = prov; });
   });
   var WARD_TO_PROVINCE = PROVINCE_TO_CONFED;             // self-documenting alias
-  var PROVINCES = Object.keys(PROVINCE_WARDS);           // 9 provinces + Honiara City (10)
+  var PROVINCES = Object.keys(PROVINCE_WARDS).filter(function (p) { return p !== 'Honiara City'; });           // 9 provinces + Honiara City (10)
   var WARDS = Object.keys(WARD_TO_PROVINCE);             // all 182 wards, flat
   var HONIARA_WARDS = PROVINCE_WARDS['Honiara City'];    // 12 wards, sibling of the 9 provinces
   // Combined national total = the 9 provinces + Honiara City (never fold
   // Honiara into Guadalcanal).
-  var ALL_REPORTING_AREAS = PROVINCES;
+  var ALL_REPORTING_AREAS = Object.keys(PROVINCE_WARDS);
   var PROVINCE_UNSPEC = 'Solomon Islands - no province specified';
   var PROVINCE_UNSURE = 'Unsure';
 
@@ -305,6 +305,11 @@
   // adapter boundary so joins and displays use the real Solomon data without
   // changing the sanitized snapshot contract.
   function normalizeMasterRows_(master) {
+    (master.geography || []).forEach(function (g) {
+      g['Publication ID / BibTeX Key'] = g['Publication ID / BibTeX Key'] || g['Publication ID'] || g['Publication Key'] || '';
+      g['Verification'] = g['Verification'] || g['Verification Status'] || g['Verification / Status'] || '';
+      g['Province/City Area (auto from District)'] = g['Province/City Area'] || g['Province/City Area (auto from District)'] || '';
+    });
     master.scholars.forEach(function (s) {
       s['Scholar Name'] = s['Scholar Name'] || s['Display Name'] || '';
       s['Province/City Area'] = s['Province/City Area'] ||
@@ -873,7 +878,7 @@
         verifiedGeographyRows.push({
           country: rowCountry,
           islandDivision: String(g['Province/City Area (auto from District)'] || '').trim(),
-          district: String(g['District'] || '').trim(),
+          district: '',
           specificIsland: String(g['Specific Island'] || '').trim(),
           site: String(g['Village / Town / Site'] || '').trim(),
           geographyType: String(g['Geography Type'] || '').trim(),
@@ -881,10 +886,10 @@
         });
         if (rowCountry !== 'Solomon Islands') return;
         var division = String(g['Province/City Area (auto from District)'] || '').trim();
-        var prov = String(g['District'] || '').trim();
+        var prov = division;
         var island = String(g['Specific Island'] || '').trim();
         var site = String(g['Village / Town / Site'] || '').trim();
-        if (!division && prov && PROVINCE_TO_CONFED[prov]) division = PROVINCE_TO_CONFED[prov];
+        
         if (division && !seenDivisionForPub.has(division)) {
           seenDivisionForPub.add(division);
           islandDivisionsInPub.push(division);
@@ -898,7 +903,7 @@
         if (!prov) return;
         if (seenProvForPub.has(prov)) return;
         seenProvForPub.add(prov);
-        if (PROVINCE_TO_CONFED[prov]) {
+        if (PROVINCES.indexOf(prov) !== -1) {
           // Named province
           provincesInPub.push(prov);
           collections.push(provLocKeyByName[prov]);
@@ -938,8 +943,8 @@
         if (!sid) return;
         var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
         if (!scholar) return;
-        var prov = cleanSentinel_(scholar['Paternal Ward'] || scholar['Paternal Province/City Area']) ||
-                   cleanSentinel_(scholar['Maternal Ward'] || scholar['Maternal Province/City Area']);
+        var prov = cleanSentinel_(scholar['Paternal Province/City Area']) ||
+                   cleanSentinel_(scholar['Maternal Province/City Area']);
         if (prov && provPaternalKeyByName[prov]) collections.push(provPaternalKeyByName[prov]);
       });
 
@@ -1089,7 +1094,7 @@
       var year = yearMatch ? Number(yearMatch[0]) : null;
       var collections = [scholarKey, COL_BY_WITH];
       var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
-      var district = scholar && (cleanSentinel_(scholar['Paternal Ward']) || cleanSentinel_(scholar['Maternal Ward']));
+      var district = scholar && (cleanSentinel_(scholar['Paternal Province/City Area']) || cleanSentinel_(scholar['Maternal Province/City Area']));
       if (district && provPaternalKeyByName[district]) collections.push(provPaternalKeyByName[district]);
       items.push({
         key: hashKey('grad-thesis:' + (g['Degree ID'] || sid + ':' + level + ':' + titleKey)),
@@ -1146,7 +1151,7 @@
       provinces: PROVINCES.map(function (p) {
         return {
           name: p,
-          provinceGroup: PROVINCE_TO_CONFED[p],
+          provinceGroup: p,
           zoteroCollectionKey_publicationLocation: snap._provLocKeyByName[p],
           zoteroCollectionKey_paternalProvince: snap._provPaternalKeyByName[p]
         };
@@ -1161,31 +1166,23 @@
   // The actual map rendering will need the real geojson; keep a passthrough
   // to the existing static file if it's available.
   // -------------------------------------------------------------------
-  function buildGeoJson(snap) {
-    return fetchJson('data/solomon-islands-provinces.geojson').then(function (geo) {
-      // Overlay the synthesized keys onto each feature so the existing name→key
-      // extractor picks up Master-file keys.
-      if (geo && geo.features) {
-        geo.features.forEach(function (f) {
-          f.properties = f.properties || {};
-          var name = f.properties.name || f.properties.district || '';
-          var division = f.properties.provinceGroup || f.properties.islandDivision ||
-                         PROVINCE_TO_CONFED[name] || '';
-          f.properties.name = name;
-          f.properties.provinceGroup = division;
-          if (name && snap._provLocKeyByName[name]) {
-            f.properties.zoteroCollectionKey_publicationLocation = snap._provLocKeyByName[name];
-          }
-          if (name && snap._provPaternalKeyByName[name]) {
-            f.properties.zoteroCollectionKey_paternalProvince = snap._provPaternalKeyByName[name];
-          }
-        });
-      }
-      return geo;
-    }).catch(function () {
-      // No geojson available — return an empty FeatureCollection.
-      return { type: 'FeatureCollection', features: [] };
-    });
+  function buildGeoJson(snap, master) {
+    // Verified representative locations, not invented administrative boundaries.
+    var rows = master.geographyCoordinates || [];
+    return Promise.resolve({type: 'FeatureCollection', features: PROVINCES.map(function (name) {
+      var row = rows.find(function (r) {
+        return String(r['Canonical Location Name'] || r['Place Name'] || '').trim().replace(/ Province$/i, '') === name &&
+          /^(province|city area)$/i.test(String(r['Location Type'] || r['Level (Country/Province/Ward/Village/Site)'] || '').trim()) &&
+          (!r['Verification / Status'] || /^(verified|strong)/i.test(String(r['Verification / Status']).trim()));
+      });
+      var lat = row && Number(row.Latitude), lng = row && Number(row.Longitude);
+      var valid = row && String(row.Latitude).trim() && String(row.Longitude).trim() &&
+        Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+      return {type: 'Feature', geometry: valid ? {type: 'Point', coordinates: [lng, lat]} : null,
+        properties: {name: name, provinceGroup: name,
+          zoteroCollectionKey_publicationLocation: snap._provLocKeyByName[name],
+          zoteroCollectionKey_paternalProvince: snap._provPaternalKeyByName[name]}};
+    })});
   }
 
   // -------------------------------------------------------------------
@@ -1207,8 +1204,10 @@
       // column and is NEVER derived from Ward/Province -- a ward or
       // province can span multiple physical islands, and a scholar's
       // origin island may not itself be an administrative unit.
-      var paternal = cleanSentinel_(s['Paternal Ward'] || s['Paternal Province/City Area']);
-      var maternal = cleanSentinel_(s['Maternal Ward'] || s['Maternal Province/City Area']);
+      var paternal = cleanSentinel_(s['Paternal Province/City Area']);
+      if (PROVINCES.indexOf(paternal) === -1) paternal = '';
+      var maternal = cleanSentinel_(s['Maternal Province/City Area']);
+      if (PROVINCES.indexOf(maternal) === -1) maternal = '';
       var paternalDivision = cleanSentinel_(s['Paternal Province/City Area']);
       var maternalDivision = cleanSentinel_(s['Maternal Province/City Area']);
       var paternalIsland = cleanSentinel_(s['Paternal Specific Island']);
@@ -1272,8 +1271,8 @@
         maternalSpecificIsland: maternalIsland,
         paternalVillageTown:    paternalVillage,
         maternalVillageTown:    maternalVillage,
-        paternalWard:            paternal,
-        maternalWard:            maternal,
+        paternalWard:            cleanSentinel_(s['Paternal Ward']),
+        maternalWard:            cleanSentinel_(s['Maternal Ward']),
         paternalProvinceCityArea: paternalDivision,
         maternalProvinceCityArea: maternalDivision,
         // Customary/cultural fields are INDEPENDENT of administrative
@@ -1656,7 +1655,7 @@
   function loadFromMaster() {
     return loadRawMaster().then(function (master) {
       var snap = buildZoteroSnapshot(master);
-      return buildGeoJson(snap).then(function (geo) {
+      return buildGeoJson(snap, master).then(function (geo) {
         var profiles = buildProfiles(master, snap);
         var grad = buildGraduateStudies(master, snap, profiles);
         var unis = buildWorldUniversities(master, snap);
@@ -2001,3 +2000,4 @@
   window.MasterFileAdapter = SOLOMONISLANDS_ADAPTER_API;
   window.SolomonIslandsMasterFileAdapter = SOLOMONISLANDS_ADAPTER_API;
 })();
+
