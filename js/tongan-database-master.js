@@ -431,7 +431,8 @@
     if (!window.MasterFileAdapter || typeof window.MasterFileAdapter.load !== 'function') {
       throw new Error('MasterFileAdapter not loaded. Ensure js/master-file-adapter.js is included before itaukei-database-master.js.');
     }
-    const bundle = await window.MasterFileAdapter.load({ masterOnly: true });
+    // Include Admin enrichment so saved scholar photos and insights reach the cards.
+    const bundle = await window.MasterFileAdapter.load();
     // Preserve the raw Master JSON for panel-level overrides that need
     // Master-specific data (14-province TOTAL columns, confederacy rows,
     // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
