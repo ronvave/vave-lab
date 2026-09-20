@@ -6405,6 +6405,40 @@
   // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
+  function layoutMilestoneLabels(milestones, yearMin, yearMax, left, width) {
+    const ctx = document.createElement('canvas').getContext('2d');
+    const boxes = [], gap = 14, maxWidth = Math.min(300, width);
+    const measure = (text,size,bold) => { ctx.font = `${bold ? '700' : '400'} ${size}px Arial`; return ctx.measureText(text).width; };
+    milestones.slice().sort((a,b)=>a.year-b.year || a.key.localeCompare(b.key)).forEach(m => {
+      const lines=[];
+      [[`${m.year}: ${m.headline || m.shortLabel}`,11,true],[m.personLine,10,false],[m.uniLine,10,false],[m.paternalTop,9,false],[m.paternalBottom,9,false]].forEach(([text,size,bold]) => {
+        if (!text) return;
+        let line='';
+        // Character-level overflow also handles unusually long unbroken names.
+        for (const word of String(text).split(/\s+/)) {
+          if (line && measure(line+' '+word,size,bold)>maxWidth) {lines.push({text:line,size,bold});line='';}
+          for (const ch of (line ? ' '+word : word)) {
+            if (measure(line+ch,size,bold)>maxWidth && line) {lines.push({text:line,size,bold});line='';}
+            line+=ch;
+          }
+        }
+        if(line) lines.push({text:line,size,bold});
+      });
+      const w=Math.min(width,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+2);
+      const h=lines.length*14+6;
+      const center=left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width;
+      const x=Math.max(left,Math.min(left+width-w,center-w/2));
+      let y=0;
+      while(true) {
+        const hits=boxes.filter(b=>x<b.x+b.width+gap && x+w+gap>b.x && y<b.y+b.height+gap && y+h+gap>b.y);
+        if(!hits.length) break;
+        y=Math.max(...hits.map(b=>b.y+b.height+gap));
+      }
+      boxes.push({milestone:m,x,y,width:w,height:h,lines});
+    });
+    return {boxes,height:boxes.length ? Math.max(...boxes.map(b=>b.y+b.height))+18 : 0};
+  }
+
   function renderHistogram() {
     const items = state.snapshot.items;
     const authorsMode = state.histAuthors || 'both';
@@ -6477,10 +6511,10 @@
       return;
     }
 
-    const W = 900, H = 340;
+    const W = 900; let H = 340;
     // Padding widened on left (numeric labels + rotated axis title) and right
     // (secondary %-axis + rotated "Female authorship" title).
-    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_TOP = 42, PAD_BOTTOM = 46;
+    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_BOTTOM = 46; let PAD_TOP = 42;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
     // dataMin/dataMax define the domain the timeline can span. We widen the
@@ -6502,6 +6536,10 @@
     if (startEl) { startEl.min = dataMin; startEl.max = dataMax; if (document.activeElement !== startEl) startEl.value = yMin; }
     if (endEl) { endEl.min = dataMin; endEl.max = dataMax; if (document.activeElement !== endEl) endEl.value = yMax; }
 
+    const milestoneLayout = layoutMilestoneLabels(panelDData.milestones.filter(m => m.year >= yMin && m.year <= yMax), yMin, yMax, PAD_LEFT, plotW);
+    PAD_TOP += milestoneLayout.height;
+    H += milestoneLayout.height;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const yearCount = yMax - yMin + 1;
     const bandW = plotW / yearCount;
     const barW = Math.max(1.5, Math.min(40, bandW * 0.78));
@@ -6651,222 +6689,20 @@
     }
     drawRollingRun();
 
-    // Milestone callouts — floating inline in the low-bar whitespace, styled
-    // after the mockup. Each callout is a 3-line block anchored to a small
-    // colored dot:
-    //   Line 1: "YYYY: First male/female PhD/Masters" (year bold+colored)
-    //   Line 2: "Dr./Mr./Ms Given Family"
-    //   Line 3: "University Name (CC)"
-    // Text and titles are pulled from panelDData (see getPanelDData) so they
-    // update automatically whenever the Master file refresh promotes a new
-    // scholar into a milestone slot.
-    const visibleMilestones = panelDData.milestones
-      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax)
-      .map(milestone => {
-        const barTotal = (() => {
-          const bucket = perYear.get(milestone.year);
-          if (!bucket) return 0;
-          return visibleTypes.reduce((sum, type) => sum + (bucket[type] || 0), 0);
-        })();
-        const barTopY = yZero - yScale(barTotal);
-        return { milestone, barTopY };
-      })
-      .sort((a, b) => a.milestone.year - b.milestone.year);
-
-    // Assign each milestone a y-tier so the labels sit at visibly different
-    // heights (echoing the reference mockup where 1963 rides high, 1988 mid,
-    // 1994 slightly lower). We use up to 4 tiers spread across the upper 60%
-    // of the plot. Then, if a label would overlap the previous one
-    // horizontally, lift it one extra tier so callouts stack cleanly.
-    // Rough label footprint: labels are now ~3 lines (headline + name + uni),
-    // and the uni line is the widest, so we bump the width estimate up.
-    const LABEL_W_EST = 220;                       // px, rough label footprint (uni line is widest)
-    const LABEL_LINE_H = 12;                       // px per text line (slightly roomier)
-    // Label block height scales with the max number of lines actually
-    // rendered across visible milestones. Panel D always draws headline +
-    // name + uni (3 lines). Milestones whose scholar has any paternal field
-    // populated get TWO more lines (paternalTop, paternalBottom) that wrap
-    // village + district onto one line and province + provinceGroup onto the
-    // next. To keep tier stacking consistent, we size the block for 5 lines
-    // whenever at least one milestone has any paternal data; otherwise we
-    // keep the tighter 3-line block.
-    const anyPaternalLine = (panelDData.milestones || []).some(m => m && (m.paternalTop || m.paternalBottom));
-    const LABEL_LINES = anyPaternalLine ? 5 : 3;
-    const LABEL_BLOCK_H = LABEL_LINE_H * LABEL_LINES + 10;
-    const MIN_Y = PAD_TOP + 6;
-    // Tier 0 is highest (closest to plot top); higher index = lower on page.
-    // Confine tiers to the upper ~60% of the plot so they stay in whitespace.
-    const TIER_COUNT = 4;
-    const tierTop = MIN_Y + LABEL_BLOCK_H;                           // tier-0 baseY
-    // Extend tier range further down the plot so callouts sit deeper in
-    // whitespace when the block is 5 lines tall — keeps callouts clear of
-    // bar tops in the crowded 1990s onwards.
-    const tierBot = PAD_TOP + plotH * (anyPaternalLine ? 0.70 : 0.55);
-    const tierY = tier => tierTop + (tierBot - tierTop) * (tier / (TIER_COUNT - 1));
-    // For each milestone we also decide whether the label anchors LEFT of
-    // the dot (default) or RIGHT of it. When a milestone sits in the right
-    // portion of the plot the left-anchored label would overflow into the
-    // right y-axis / off-canvas; right-anchoring flips the block so it
-    // grows leftward instead. Threshold: right half of the plot.
-    // The renderer reads `entry.anchor` ("start" or "end") and reorders the
-    // headline year token accordingly.
-    let prevX = -Infinity, prevTier = -1;
-    visibleMilestones.forEach((entry, idx) => {
-      const { milestone, barTopY } = entry;
-      const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
-      // Anchor decision — milestones in the right ~half of the plot use a
-      // right-anchored (text-anchor="end") label so text grows leftward and
-      // doesn't collide with the right y-axis or overflow the bars themselves.
-      // Threshold lowered from 0.65 → 0.50 on 2026-08-23 so the 1994 female-PhD
-      // milestone (dot at ~x = 0.54 of plotW when the range starts at 1956)
-      // flips to end-anchor and no longer overlaps the 1994 bar.
-      const rightAnchor = x > PAD_LEFT + plotW * 0.50;
-      entry.anchor = rightAnchor ? 'end' : 'start';
-      // Preferred tier: distribute the 1st/2nd/3rd/4th visible milestone
-      // across four tiers. Pattern [0, 2, 0, 3] keeps BOTH Master's-thesis
-      // milestones (1st and 3rd in year order) on tier 0 so Nayacakalou 1956
-      // and Vuki 1987 sit at the same height; the two PhD milestones drop
-      // to tiers 2 and 3 so their longer callouts get more clearance from
-      // the busy 1990s+ bar tops. Same-tier horizontal collision is still
-      // caught by the LABEL_W_EST guard below.
-      const zigzag = [0, 2, 0, 3];
-      let tier = zigzag[Math.min(idx, zigzag.length - 1)] % TIER_COUNT;
-      let baseY = tierY(tier);
-      // Push the label down toward the bar only if the bar top is already
-      // below the tier (i.e. the tier sits in empty whitespace above the bar
-      // — leave it there, don't slam it against a tall bar).
-      if (barTopY - 12 < baseY) baseY = Math.min(baseY, Math.max(tierTop, barTopY - 12));
-      // Horizontal collision guard: if we're close in x AND close in y to the
-      // previous label, pick a different tier (one step further from prevTier).
-      if (x - prevX < LABEL_W_EST) {
-        // Choose the tier furthest from prevTier that hasn't been used yet.
-        let bestTier = tier, bestDist = Math.abs(tier - prevTier);
-        for (let t = 0; t < TIER_COUNT; t++) {
-          const d = Math.abs(t - prevTier);
-          if (d > bestDist) { bestDist = d; bestTier = t; }
-        }
-        tier = bestTier;
-        baseY = tierY(tier);
-      }
-      // Extra guard: label block bottom must clear the bar top by ≥6px.
-      // If not, walk the label upward until it does (bounded by MIN_Y).
-      const labelTop = () => baseY - LABEL_BLOCK_H;
-      let safety = 8;
-      while (safety-- > 0 && baseY > barTopY - 6 && labelTop() > MIN_Y) {
-        baseY -= LABEL_LINE_H;
-      }
-      baseY = Math.max(baseY, MIN_Y + LABEL_BLOCK_H); // never above plot area
-      prevX = x; prevTier = tier;
-      entry.labelBaseY = baseY;
-    });
-
-    visibleMilestones.forEach(({ milestone, labelBaseY, anchor }) => {
-      const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
-      const isEnd = anchor === 'end';
-      // The label block spans [labelBaseY - LABEL_BLOCK_H, labelBaseY].
-      // Layout inside (up to 5 lines):
-      //   line 1 (headlineY)   — left anchor: "YYYY: First male PhD"
-      //                          right anchor: "First male PhD: YYYY"
-      //   line 2 (nameY)       — "Dr./Mr./Ms Given Family"
-      //   line 3 (uniY)        — "University name (CC)"
-      //   line 4 (pat1Y)       — "Village vlg, District District,"
-      //   line 5 (pat2Y)       — "Province Province (ProvinceGroup)"
-      // Lines 4/5 only emit when the scholar has paternal fields populated.
-      const topOffset = (LABEL_LINES - 1) * LABEL_LINE_H;
-      const headlineY = labelBaseY - topOffset;
-      const nameY     = headlineY + LABEL_LINE_H;
-      const uniY      = nameY + LABEL_LINE_H;
-      const pat1Y     = uniY + LABEL_LINE_H;
-      const pat2Y     = pat1Y + LABEL_LINE_H;
-      const dotCX = x;
-      const dotCY = headlineY - 3;             // dot sits just left/above the headline
-      // Text anchor position — to the RIGHT of the dot for left-aligned
-      // labels, to the LEFT of the dot for right-aligned labels.
-      const textX = isEnd ? x - 7 : x + 7;
-
-      // Thin dashed drop line in the milestone's color, from just below the
-      // dot down to the x-axis baseline. Drawn first so it sits underneath
-      // any bar it may cross.
-      svg.appendChild(panelDSvg('line', {
-        x1: dotCX, x2: dotCX,
-        y1: dotCY + 4, y2: yZero,
-        stroke: milestone.color,
-        'stroke-width': '0.9',
-        'stroke-dasharray': '2 3',
-        opacity: '0.55'
-      }));
-
-      // Small colored dot (matches mockup)
-      const circle = panelDSvg('circle', { cx: dotCX, cy: dotCY, r: '3.5', fill: milestone.color });
-      // Tooltip also honours the public-name privacy rule: never expose
-      // the full canonical Scholar Name here, only the shortened
-      // 'FirstGiven Family' form (built into milestone.personLine and
-      // milestone.publicPerson upstream).
-      const tiedScholars = milestone.ties && milestone.ties.length > 1
-        ? ` · Tied scholars: ${milestone.ties.map(tie => {
-            const fg = (tie.givenNames || '').trim().split(/\s+/)[0] || '';
-            return (fg && tie.familyName) ? `${fg} ${tie.familyName}` : (tie.name || '');
-          }).join('; ')}` : '';
-      const paternalTooltip = milestone.paternalLine ? ` · ${milestone.paternalLine}` : '';
-      const tooltipText = `Milestone · ${milestone.label} · ${milestone.year} · ${milestone.personLine || milestone.publicPerson || ''} · ${milestone.degree} · ${milestone.uniLine || milestone.uni}${paternalTooltip}${tiedScholars}`;
-      circle.appendChild(panelDSvg('title', {}, tooltipText));
-      svg.appendChild(circle);
-
-      // Line 1: headline. Left-anchored form is "YYYY: rest"; right-anchored
-      //   flips to "rest: YYYY" so the year lands adjacent to the dot (which
-      //   is on the RIGHT edge of the text block when isEnd).
-      //   Entire headline is bold. The year token keeps the milestone color;
-      //   the rest of the headline is bold in body-text grey.
-      const headlineText = panelDSvg('text', {
-        x: textX, y: headlineY, 'text-anchor': anchor,
-        'font-family': 'Arial', 'font-size': '11', 'font-weight': '700', fill: '#4b5563'
+    // Labels occupy a separate measured band: no bar can enter this space.
+    milestoneLayout.boxes.forEach(box => {
+      const m = box.milestone;
+      const x = PAD_LEFT + (m.year - yMin) * bandW + bandW / 2;
+      const bucket = perYear.get(m.year) || {};
+      const barTop = yZero - yScale(visibleTypes.reduce((n,t) => n + (bucket[t] || 0),0));
+      svg.appendChild(panelDSvg('line', {x1:x,x2:x,y1:PAD_TOP,y2:barTop,stroke:m.color,'stroke-width':1,'stroke-dasharray':'2 3',opacity:0.65}));
+      svg.appendChild(panelDSvg('circle', {cx:x,cy:barTop,r:3,fill:m.color}));
+      const group = panelDSvg('g', {'data-milestone-label':m.key});
+      group.appendChild(panelDSvg('title', {}, [m.year,m.headline,m.personLine,m.uniLine,m.paternalLine].filter(Boolean).join(' · ')));
+      box.lines.forEach((line,index) => {
+        group.appendChild(panelDSvg('text', {x:box.x,y:14+box.y+index*14,'font-family':'Arial','font-size':line.size,'font-weight':line.bold ? '700':'400',fill:line.bold ? m.color : '#374151'},line.text));
       });
-      const rest = milestone.headline || milestone.shortLabel || '';
-      if (isEnd) {
-        headlineText.appendChild(panelDSvg('tspan', {}, `${rest}: `));
-        headlineText.appendChild(panelDSvg('tspan', { fill: milestone.color }, String(milestone.year)));
-      } else {
-        headlineText.appendChild(panelDSvg('tspan', { fill: milestone.color }, `${milestone.year}: `));
-        headlineText.appendChild(panelDSvg('tspan', {}, rest));
-      }
-      headlineText.appendChild(panelDSvg('title', {}, tooltipText));
-      svg.appendChild(headlineText);
-
-      // Line 2: scholar name ("Dr./Mr./Ms Given Family")
-      if (milestone.personLine) {
-        svg.appendChild(panelDSvg('text', {
-          x: textX, y: nameY, 'text-anchor': anchor,
-          'font-family': 'Arial', 'font-size': '10', fill: '#111827'
-        }, milestone.personLine));
-      }
-
-      // Line 3: university name + country code, e.g. "University of London (UK)"
-      if (milestone.uniLine) {
-        svg.appendChild(panelDSvg('text', {
-          x: textX, y: uniY, 'text-anchor': anchor,
-          'font-family': 'Arial', 'font-size': '9.5', fill: '#4b5563'
-        }, milestone.uniLine));
-      }
-
-      // Lines 4 + 5: paternal geography wrapped onto two lines. Rendered in
-      // italic dark-olive/green (per Ron's mockup) so the ancestry provenance
-      // is visually distinct from the scholarly-institution line above. If
-      // Master has no populated paternal fields for this scholar, both
-      // strings are '' and nothing is drawn — Panel D never fabricates
-      // ancestry data.
-      const PATERNAL_FILL = '#4A6A2F'; // dark olive/forest green
-      if (milestone.paternalTop) {
-        svg.appendChild(panelDSvg('text', {
-          x: textX, y: pat1Y, 'text-anchor': anchor,
-          'font-family': 'Arial', 'font-size': '9', fill: PATERNAL_FILL, 'font-style': 'italic'
-        }, milestone.paternalTop));
-      }
-      if (milestone.paternalBottom) {
-        svg.appendChild(panelDSvg('text', {
-          x: textX, y: pat2Y, 'text-anchor': anchor,
-          'font-family': 'Arial', 'font-size': '9', fill: PATERNAL_FILL, 'font-style': 'italic'
-        }, milestone.paternalBottom));
-      }
+      svg.appendChild(group);
     });
 
     // X-axis baseline + tick marks. The baseline runs along yZero from the
