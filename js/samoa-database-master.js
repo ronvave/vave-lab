@@ -396,7 +396,7 @@
     if (!window.SamoaScholarDatabaseAdapter || typeof window.SamoaScholarDatabaseAdapter.load !== 'function') {
       throw new Error('SamoaScholarDatabaseAdapter not loaded. Ensure js/samoa-database-adapter.js is included before samoan-database-master.js.');
     }
-    const bundle = await window.SamoaScholarDatabaseAdapter.load();
+    const bundle = await window.SamoaScholarDatabaseAdapter.load({ masterOnly: true });
     // Preserve the raw Master JSON for panel-level overrides that need
     // Master-specific data (14-district TOTAL columns, statistical region rows,
     // Authorship-bridge Samoan classification, C_Uni-only aggregations).
@@ -565,25 +565,7 @@
     // exist as Zotero collection subs. Persisted in data/scholar-profiles.json under
     // "hiddenScholars".
     state.hiddenScholars = new Set(Array.isArray(profiles.hiddenScholars) ? profiles.hiddenScholars : []);
-    const sheetUrl = localStorage.getItem('vavelab_scholar_sheet_url');
-    if (sheetUrl) {
-      try {
-        const csvText = await fetch(sheetUrl, { cache: 'no-cache' }).then(r => r.text());
-        parseCsvToScholars(csvText).forEach(p => {
-          const name = (p.last && p.first) ? `${p.last}, ${p.first}` : (p.name || '');
-          if (!name) return;
-          state.scholarProfilesByName.set(name, Object.assign({}, state.scholarProfilesByName.get(name) || {}, p));
-          if (p.last && p.first) {
-            const stripped = `${p.last}, ${firstToken(p.first)}`;
-            if (stripped !== name) {
-              state.scholarProfilesByName.set(stripped, Object.assign({}, state.scholarProfilesByName.get(stripped) || {}, p));
-            }
-          }
-        });
-      } catch (e) {
-        console.warn('Google Sheet CSV fetch failed; using local snapshot only.', e);
-      }
-    }
+    // Scholar profiles come exclusively from this country’s Master file.
 
     state.provinceMetaByName = new Map();
     provFlat.districts.forEach(p => state.provinceMetaByName.set(p.name, p));
@@ -1130,13 +1112,13 @@
     const daysOldChecked = (Date.now() - new Date(checkedIso).getTime()) / 86400000;
     const status = daysOldChecked > 2 ? 'stale' : 'ok';
     setSyncBadge(status,
-      `Checked ${ago}`,
-      status === 'stale' ? 'Sync heartbeat is over 48h old — GitHub Action may be paused' : ''
+      `Master-file data loaded`,
+      status === 'stale' ? 'Master-file data is more than 48 hours old' : ''
     );
     const badge = $('[data-db-sync]');
     if (badge) {
       const tip = sync && sync.summary
-        ? `Last checked ${new Date(checkedIso).toISOString()} — ${sync.summary}`
+        ? `Master-file update ${new Date(checkedIso).toISOString()}`
         : `Snapshot generated ${new Date(snap.generatedAt).toISOString()}`;
       badge.setAttribute('title', tip);
     }
@@ -9156,9 +9138,8 @@
     // Show the visual sub-type label (e.g. "PhD Thesis") when applicable
     const type = TYPE_LABELS[visualType(it)] || TYPE_LABELS[it.itemType] || TYPE_LABELS.document;
     const authorList = (it.creators || []).slice(0, 5).join(', ') + (it.creators && it.creators.length > 5 ? ', et al.' : '');
-    const zoteroUrl = `https://www.zotero.org/groups/5983386/samoan_scholarly_research/items/${it.key}`;
     const doiUrl = it.DOI ? `https://doi.org/${it.DOI}` : null;
-    const primaryLink = doiUrl || it.url || zoteroUrl;
+    const primaryLink = doiUrl || it.url || null;
 
     const metaParts = [];
     if (it.year) metaParts.push(String(it.year));
@@ -9180,7 +9161,7 @@
     // Title
     li.appendChild(el('p', {
       className: 'db-item__title',
-      html: `<a href="${escapeAttr(primaryLink)}" target="_blank" rel="noopener">${escapeHtml(it.title || '(untitled)')}</a>`
+      html: primaryLink ? `<a href="${escapeAttr(primaryLink)}" target="_blank" rel="noopener">${escapeHtml(it.title || '(untitled)')}</a>` : escapeHtml(it.title || '(untitled)')
     }));
     // Authors
     if (authorList) li.appendChild(el('p', { className: 'db-item__authors' }, authorList));
@@ -9233,7 +9214,6 @@
     } else if (it.url) {
       actions.innerHTML += `<a class="db-item__link" href="${escapeAttr(it.url)}" target="_blank" rel="noopener" title="Open source URL">Link ↗</a>`;
     }
-    actions.innerHTML += `<a class="db-item__link" href="${escapeAttr(zoteroUrl)}" target="_blank" rel="noopener" title="Open in Zotero library">Zotero ↗</a>`;
     // Per-item copy buttons — formatted citation (respects state.citationFormat)
     // and BibTeX entry. Each button copies to clipboard and briefly shows a
     // "Copied" state so the user knows the click landed.
@@ -9640,8 +9620,7 @@
     const cite  = formatCitation(it, citationFmt || 'apa');
     const doi   = it.DOI || '';
     const url   = it.url || '';
-    const zot   = `https://www.zotero.org/groups/5983386/samoan_scholarly_research/items/${it.key}`;
-    return [key, type, auth, it.year || '', it.title || '', it.publicationTitle || '', it.publisher || '', it.university || '', doi, url, zot, cite]
+    return [key, type, auth, it.year || '', it.title || '', it.publicationTitle || '', it.publisher || '', it.university || '', doi, url, cite]
       .map(_csvEscape).join(',');
   }
 
@@ -9670,7 +9649,7 @@
   function exportCsv() {
     const items = currentItems().filter(itemMatches);
     const fmt = state.citationFormat || 'apa';
-    const header = ['ZoteroKey', 'Type', 'Authors', 'Year', 'Title', 'Container', 'Publisher', 'University', 'DOI', 'URL', 'ZoteroURL', 'Citation_' + fmt.toUpperCase()]
+    const header = ['PublicationKey', 'Type', 'Authors', 'Year', 'Title', 'Container', 'Publisher', 'University', 'DOI', 'URL', 'Citation_' + fmt.toUpperCase()]
       .map(_csvEscape).join(',');
     const rows = items.map(it => formatCSVRow(it, fmt));
     // Prepend UTF-8 BOM so Excel treats it as UTF-8 without asking.
@@ -9777,7 +9756,7 @@
       await loadAll();
     } catch (err) {
       console.error('Failed to load database data', err);
-      setSyncBadge('error', 'Master-file snapshot unavailable', 'The encrypted Master-file snapshot failed to load or decrypt — please refresh');
+      setSyncBadge('error', 'Master-file snapshot unavailable', 'This country’s Master-file data could not be loaded. Please reload the page.');
       showFallbackBanner('snapshot-load-failed');
       const items = $('[data-db-items]');
       if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the Master-file snapshot. Please refresh the page in a moment.</li>';
@@ -11060,7 +11039,7 @@
     const filterLabel = filter === 'phd' ? 'PhD theses only'
                        : filter === 'masters' ? 'Masters theses only'
                        : 'all publication types';
-    let note = `Showing ${filterLabel}. “Samoa-focused” means the item is tagged to at least one Samoan district in Zotero; “International” means it isn’t. Statistical Region is attributed via the lead Samoan author’s paternal district.`;
+    let note = `Showing ${filterLabel}. “Samoa-focused” means the item is tagged to at least one Samoan district in the Master file; “International” means it isn’t. Statistical Region is attributed via the lead Samoan author’s paternal district.`;
     if (data.unattributed > 0) {
       note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal district hasn’t been filled in the admin dashboard yet.`;
     }
@@ -11241,7 +11220,7 @@
                    || null;
     if (!whereRoot) {
       const err = document.querySelector('[data-db-b3-map-error]');
-      if (err) { err.style.display = 'block'; err.textContent = 'Zotero "Where study was done" collection not found in snapshot.'; }
+      if (err) { err.style.display = 'block'; err.textContent = 'Research-location data is unavailable in the Master file.'; }
       return;
     }
     // countryOfKey[<any descendant key>] = <country name>
