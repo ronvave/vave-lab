@@ -187,6 +187,8 @@
   // never fetches those URLs, so this map is a strict superset and does not
   // affect production behaviour.
   var ENC_FILES = {
+    'data/solomon-master-institutions.json': 'data/solomon-master-institutions.json.enc',
+    'data/solomon-master-geography-coordinates.json': 'data/solomon-master-geography-coordinates.json.enc',
     'data/solomon-zotero-snapshot.json': 'data/solomon-zotero-snapshot.json.enc',
     'data/solomon-islands-provinces.geojson':      'data/solomon-islands-provinces.geojson.enc',
     // NOTE: world-universities.json is NOT actually fetched by the V2
