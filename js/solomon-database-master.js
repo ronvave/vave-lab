@@ -9520,6 +9520,22 @@
       if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the Master-file snapshot. Please refresh the page in a moment.</li>';
       return;
     }
+    // Map and province totals must not depend on unrelated charts rendering.
+    renderPanelA();
+    let mapLoadAttempts = 0;
+    const initMapWhenReady = () => {
+      if (window.L) {
+        if (!state.map) initMap();
+        if (state.map) requestAnimationFrame(() => state.map.invalidateSize());
+      } else if (++mapLoadAttempts < 150) {
+        setTimeout(initMapWhenReady, 100);
+      } else {
+        const err = $('[data-db-map-error]');
+        if (err) { err.style.display = 'block'; err.textContent = 'The map library could not load. Please reload the page.'; }
+      }
+    };
+    initMapWhenReady();
+
     // Wire the shared "Submit info" modal once (button per card wires open handler).
     wireSubmitModalOnce();
     renderStats();
@@ -9547,12 +9563,6 @@
     renderFilterChips();
     updateClearAllButton();
 
-    // Init map once Leaflet has loaded, then paint Panel A tallies + sync
-    const initMapWhenReady = () => {
-      if (window.L) { initMap(); renderPanelA(); }
-      else setTimeout(initMapWhenReady, 100);
-    };
-    initMapWhenReady();
 
     wireImpactView();
 
