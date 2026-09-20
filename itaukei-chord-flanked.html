@@ -122,11 +122,13 @@
     }
     /* iTaukei B3: inner columns first, overflow on the outer flanks.
        Keep readable text on smaller screens using the existing scroll canvas. */
-    body.is-itaukei #wrap { width:1480px; min-width:1480px; max-width:none; }
-    body.is-itaukei .legend-flank { grid-template-columns:220px 220px 552px 220px 220px; column-gap:12px; align-items:start; }
+    body.is-itaukei #wrap { width:100%; min-width:1100px; max-width:1480px; }
+    body.is-itaukei .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); column-gap:12px; align-items:start; }
     body.is-itaukei .legend-flank__title { grid-column:1 / 6; }
     body.is-itaukei .legend-flank__chart { grid-column:3; grid-row:2; align-self:center; }
-    body.is-itaukei #chart { width:552px; height:auto; }
+    body.is-itaukei #chart { width:100%; height:auto; }
+    body.is-itaukei.is-embedded #wrap { max-width:1480px; }
+    body.is-itaukei.is-embedded .chord-subtitle { font-size:clamp(18px,1.8vw,27px) !important; }
     .legend-flank__outer { display:none; }
     body.is-itaukei .legend-flank__col { align-self:start; }
     body.is-itaukei .legend-flank__col--left { grid-column:2; grid-row:2; align-items:flex-end; text-align:right; }
