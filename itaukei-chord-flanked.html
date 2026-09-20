@@ -966,55 +966,57 @@ function readFile(file){
 // ---- default load: try the repo CSVs, else embedded snapshot -----------------
 let lastMobilityText = null;   // remember uploaded scholar CSV so a later UNSD upload can re-render
 async function init(){
-  configureCohortLabels();
-  if(IS_TONGAN_COHORT){
-    try{
-      if(!window.dbGate){
-        await new Promise((resolve,reject)=>{
-          const s=document.createElement('script');
-          s.src='js/tongan-demo-gate.js?v=tng2';
-          s.onload=resolve;
-          s.onerror=()=>reject(new Error('Tongan data gate failed to load'));
-          document.head.appendChild(s);
-        });
+  const requested = new URLSearchParams(location.search).get('cohort') || 'itaukei';
+  const cohort = ['itaukei','tongan','solomon','samoa'].includes(requested) ? requested : 'itaukei';
+  const labels = {itaukei:'iTaukei', tongan:'Tongan', solomon:'Solomon Islander', samoa:'Samoan'};
+  document.querySelectorAll('.chord-title').forEach(el => { el.textContent = labels[cohort] + ' Scholar Mobility: Master’s → PhD Institutions'; });
+  const caption = document.getElementById('cap');
+  if(caption) caption.textContent = 'Source: ' + labels[cohort] + ' Scholars Master File.';
+  try {
+    let gate;
+    if (window.parent !== window) {
+      // Use the parent dashboard's authorized country-specific reader.
+      for (let i=0;i<120;i++) {
+        gate = window.parent.dbGate;
+        if(gate && typeof gate.fetchJson === 'function' && (!gate.isUnlocked || gate.isUnlocked())) break;
+        await new Promise(resolve=>setTimeout(resolve,500));
       }
-      if(window.dbGate && typeof window.dbGate.unlockEmbeddedRead === 'function'){
-        window.dbGate.unlockEmbeddedRead();
-      }
-      const [mobility, scholars] = await Promise.all([
-        window.dbGate.fetchJson('data/tongan-master-mobility.json'),
-        window.dbGate.fetchJson('data/tongan-master-scholars.json')
-      ]);
-      const scholarById = new Map((scholars||[]).map(s=>[
-        String(s['Scholar ID']||'').trim(), String(s['Scholar Name']||'').trim()
-      ]));
-      const rows=(mobility||[]).map(r=>Object.assign({},r,{
-        scholar: scholarById.get(String(r.scholar_id||r['Scholar ID']||'').trim()) ||
-                 r.scholar || r.scholar_id || ''
-      })).filter(r=>r.m_uni && r.p_uni);
-      const model=buildModel(rows,currentUnsd);
-      draw(model);
-      statusEl.textContent='Master-file data ('+model.flows.length+' scholars, '+model.uni_list.length+' universities).';
-      return;
-    }catch(e){
-      console.error('Tongan mobility load failed',e);
-      statusEl.textContent='Tongan mobility data could not be loaded.';
-      return;
+    } else {
+      const script=document.createElement('script');
+      script.src='js/'+(cohort==='itaukei'?'demo-gate':cohort+'-demo-gate')+'.js';
+      await new Promise((resolve,reject)=>{script.onload=resolve;script.onerror=reject;document.head.appendChild(script);});
+      gate=window.dbGate || (window.samoaDemoGate && window.samoaDemoGate._asDbGate());
     }
-  }
-  try{
-    const [mob,unsd]=await Promise.all([
-      fetch("itaukei-chord-data/mobility.csv").then(r=>{if(!r.ok)throw 0;return r.text();}),
-      fetch("itaukei-chord-data/unsd.csv").then(r=>{if(!r.ok)throw 0;return r.text();})
+    if(!gate || typeof gate.fetchJson!=='function') throw new Error('Master-file reader unavailable');
+    const [mobility, scholars, degrees] = await Promise.all([
+      gate.fetchJson('data/'+cohort+'-master-mobility.json'),
+      gate.fetchJson('data/'+cohort+'-master-scholars.json'),
+      gate.fetchJson('data/'+cohort+'-master-grad-degrees.json')
     ]);
-    currentUnsd = unsdMapFromCsv(unsd);
-    currentIso3 = iso3MapFromCsv(unsd);
-    const model=buildModel(rowsFromCsv(mob), currentUnsd);
+    const list = value => Array.isArray(value) ? value : Object.values(value || {});
+    const scholarById=new Map(list(scholars).map(s=>[String(s['Scholar ID']||s.scholar_id||s.id||'').trim(),s]));
+    const degreeById=new Map(list(degrees).map(d=>[d['Degree ID'],d]));
+    const rows=list(mobility).map(r=>{
+      const sid=String(r.scholar_id||r['Scholar ID']||'').trim();
+      const person=scholarById.get(sid);
+      if(!person) return null;
+      const m=degreeById.get(r["Master's Degree ID"])||{}, p=degreeById.get(r['PhD Degree ID'])||{};
+      return {
+        scholar:person['Scholar Name']||person['Display Name']||person.name||r.scholar||sid,
+        m_uni:r.m_uni||m['Institution Name (Current)']||m['C_Uni name']||'',
+        p_uni:r.p_uni||p['Institution Name (Current)']||p['C_Uni name']||'',
+        m_country:r.m_country||r["Master's Country"]||m.Country||'',
+        p_country:r.p_country||r['PhD Country']||p.Country||''
+      };
+    }).filter(r=>r && r.m_uni && r.p_uni);
+    const model=buildModel(rows,currentUnsd);
     draw(model);
-    statusEl.textContent="Default data ("+model.flows.length+" scholars, "+model.uni_list.length+" universities). Upload a CSV above to rebuild.";
-  }catch(e){
-    draw(EMBEDDED_FALLBACK);
-    statusEl.textContent="Showing the built-in "+EMBEDDED_FALLBACK.flows.length+"-scholar snapshot. Upload a CSV above to rebuild.";
+    statusEl.textContent='Master-file data ('+model.flows.length+' scholars, '+model.uni_list.length+' universities).';
+  } catch(e) {
+    console.error('Master-file mobility data unavailable',e);
+    statusEl.textContent='Mobility data could not be loaded from this country’s Master file.';
+    const wrap=document.getElementById('wrap');
+    if(wrap) { const note=document.createElement('p'); note.textContent=statusEl.textContent; wrap.appendChild(note); }
   }
 }
 
