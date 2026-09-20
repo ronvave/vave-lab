@@ -19,3 +19,23 @@
 .tonga-geo-other::placeholder{color:#174852;opacity:1}.tonga-geo-other:focus{border-color:#0e7490}.tonga-geo-item-status{font-size:12px;color:#006b7b;margin:0}.tonga-geo-item-status:empty{display:none}
 .tonga-geo-submit{border:1px solid #c3d8db;border-radius:12px;padding:20px;background:#fff;margin-top:16px}.tonga-geo-submit h3{margin:0 0 8px}.tonga-geo-submit p{line-height:1.5}.tonga-geo-submit fieldset{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:12px;border:0;padding:0;margin:16px 0}.tonga-geo-submit legend{font-weight:700;margin-bottom:8px}.tonga-geo-submit label{font-size:13px;display:flex;flex-direction:column;gap:5px}.tonga-geo-submit input,.tonga-geo-submit select{box-sizing:border-box;max-width:100%;min-width:0;padding:9px;border:1px solid #cbd5d8;border-radius:8px;font:inherit}.tonga-geo-submit button{background:#0e7490;color:#fff;border:0;border-radius:8px;padding:10px 16px;font:600 14px Arial,sans-serif;cursor:pointer}.tonga-geo-submit button:disabled{opacity:.6;cursor:wait}.tonga-geo-dirty-count{font-size:13px;margin-left:12px}
 @media(max-width:700px){.tonga-portal .tonga-geography-item{grid-template-columns:1fr;gap:12px}.tonga-geo-toolbar{width:100%}.tonga-geo-submit fieldset{grid-template-columns:1fr}.tonga-geo-options{max-height:300px}}
+
+/* Update-info parity: centered native modal, Fiji field grouping and spacing. */
+body:has(dialog.tonga-form[open]){overflow:hidden}
+dialog.tonga-form{position:fixed;inset:0;margin:auto;width:min(720px,calc(100vw - 32px));max-width:none;min-width:0;height:fit-content;max-height:calc(100dvh - 64px);padding:28px 30px 24px;box-sizing:border-box;overflow-y:auto;overflow-x:hidden;border:0;border-radius:14px;background:#fff;color:#292c35;box-shadow:0 20px 60px #062f3559;font-family:'DM Sans',system-ui,sans-serif;font-size:14px;line-height:1.5}
+dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
+.tonga-form h2{font-family:'Cormorant Garamond',serif;font-weight:500;font-size:26px;line-height:1.2;color:#062f35;margin:0 0 4px;letter-spacing:0;text-transform:none;outline:none}
+.tonga-form form{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;min-width:0}
+.tonga-form .tonga-form-subtitle{font-size:14px;line-height:1.6;color:#737985;margin:0}
+.tonga-form .tonga-review-notice{background:#fdf6e3;border-left:4px solid #d97706;color:#78350f;font-size:13.5px;line-height:1.45;padding:10px 14px;margin:0;border-radius:6px}
+.tonga-form fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 14px;min-width:0;width:100%;box-sizing:border-box;border:1px solid #cecac4;border-radius:10px;padding:14px 16px 12px;margin:0}
+.tonga-form legend{padding:0 8px;font-size:14px;font-weight:600;letter-spacing:.02em;color:#062f35;max-width:100%}
+.tonga-form .tonga-geography-paternal{border:2px solid #0767b8}.tonga-form .tonga-geography-maternal{border:2px solid #292929}
+.tonga-form label{display:block;min-width:0;max-width:100%;font-size:13px;line-height:1.5;font-weight:600;color:#062f35;overflow-wrap:anywhere}
+.tonga-form input,.tonga-form select,.tonga-form textarea{display:block;width:100%;min-width:0;max-width:100%;box-sizing:border-box;padding:9px 10px;margin-top:5px;border:1px solid #cecac4;border-radius:6px;background:#fff;color:#292c35;font-family:inherit;font-size:14px;line-height:1.5;font-weight:400}
+.tonga-form input:focus,.tonga-form select:focus,.tonga-form textarea:focus{outline:2px solid #0e7490;outline-offset:1px}.tonga-form input[type=file]{padding:6px;background:#f8fafc}.tonga-form textarea{resize:vertical;min-height:88px}
+.tonga-form small,.tonga-form .tonga-field-help{display:block;color:#78808e;font-size:12px;font-weight:400;line-height:1.5;margin:4px 0 0}.tonga-form .tonga-required{color:#b23a48}.tonga-form .wide{grid-column:1/-1}
+.tonga-form .tonga-form-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-top:0}
+.tonga-form-actions button{width:auto;padding:11px 20px;border:1px solid transparent;border-radius:8px;background:#062f35;color:#fff;font:600 14px 'DM Sans',system-ui,sans-serif;cursor:pointer}.tonga-form-actions .tonga-form-cancel{background:#fff;color:#c52c40;border-color:#c52c40}.tonga-form-actions button:disabled{opacity:.6;cursor:wait}
+.tonga-form [role=status]{font-size:14px;line-height:1.5;margin:12px 0 0;overflow-wrap:anywhere}.tonga-form [role=status]:empty{display:none}
+@media(max-width:560px){dialog.tonga-form{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:20px 16px}.tonga-form fieldset{grid-template-columns:minmax(0,1fr);padding:12px}.tonga-form h2{font-size:24px}}

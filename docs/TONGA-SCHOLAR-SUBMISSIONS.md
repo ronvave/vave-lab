@@ -114,3 +114,23 @@ Unchecking an unsent choice removes it. Outside click and Escape close menus.
 Menus expand within each card; mobile controls stack below the citation.
 Original DOI/source links, publication colors, profile enrichment, summaries,
 and B3 must be preserved. No Apps Script replacement is required.
+
+## Update-info form presentation contract
+
+Use the Fiji-style centered white 720px modal with teal backdrop, compact
+explanation/review notice, two-column fieldsets, blue paternal and dark maternal
+borders, full-width relationship/institution fields, and separate Cancel and
+Submit for review buttons. Explicit inset/margin centering, zero minimum grid
+track widths and border-box controls prevent the global reset and fieldset
+min-content sizing from pushing the dialog left or creating horizontal scroll.
+At narrow widths the fields stack; the dialog scrolls vertically within the
+viewport. Escape and Cancel close the native dialog.
+
+Tonga ancestry fields are Island Division, Specific Island, District and
+Village / Town (Kolo), separately for paternal and optional private maternal
+information. Never introduce Fiji province or confederacy fields. Preserve
+Tonga gender values while showing readable English equivalents. Headshot
+belongs in Scholar profile; thesis uploads belong in their degree sections;
+CV has its own private optional section; bibliographic upload and notes belong
+in Publications to add. Retain upload limits, existing payload keys, only-
+changed-fields submission, review requirements and original Master authority.

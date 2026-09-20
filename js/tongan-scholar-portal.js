@@ -13,7 +13,7 @@ async function send(body){const cap=await fetch(ENDPOINT+'?action=submissionCapa
 function wireShare(card,row){const column=card.querySelector('.db-scholar-card__photo-col');if(!column||!row.scholarId)return;const b=el('button','Share',column);b.type='button';b.className='db-scholar-card__submit tonga-share';b.onclick=async e=>{e.stopPropagation();b.disabled=true;try{const url=profileURL(await tokenFor(row.scholarId));try{await navigator.clipboard.writeText(url);}catch(_){const input=el('textarea',url,document.body);input.select();const ok=document.execCommand('copy');input.remove();if(!ok)throw new Error('Copy unavailable. Open Update info to access the scholar page.');}b.textContent='Copied!';b.classList.add('copied');setTimeout(()=>{b.textContent='Share';b.classList.remove('copied');},1600);}catch(err){b.textContent='Try again';b.title=err.message;alert(err.message);}finally{b.disabled=false;}};}
 function input(parent,label,value='',type='text',options){const wrap=el('label',label,parent),n=el(options?'select':type==='textarea'?'textarea':'input',null,wrap);if(options){el('option','',n).value='';options.forEach(v=>{const o=el('option',v,n);o.value=v;});}else if(type!=='textarea')n.type=type;n.value=value==null?'':String(value);return n;}
 function section(form,title){const fs=el('fieldset',null,form);el('legend',title,fs);return fs;}
-function dialog(title){const d=el('dialog',null,document.body);d.className='tonga-form';el('h2',title,d);const close=el('button','Close',d);close.type='button';close.onclick=()=>d.close();d.addEventListener('close',()=>d.remove());const form=el('form',null,d);form.method='dialog';const status=el('p','',d);status.setAttribute('role','status');d.showModal();return{d,form,status};}
+function dialog(title){const d=el('dialog',null,document.body);d.className='tonga-form';const heading=el('h2',title,d);heading.id='tonga-update-title';heading.tabIndex=-1;d.setAttribute('aria-labelledby',heading.id);d.addEventListener('close',()=>d.remove());const form=el('form',null,d);form.method='dialog';const status=el('p','',d);status.setAttribute('role','status');d.showModal();heading.focus();return{d,form,status};}
 function identity(form){const fs=section(form,'Who is submitting');const name=input(fs,'Your name'),email=input(fs,'Your email','','email'),relationship=input(fs,'Relationship to this scholar','','text',['Self','Family','Friend','Student','Colleague','Other']);[name,email,relationship].forEach(n=>n.required=true);return()=>({submitterName:name.value.trim(),submitterEmail:email.value.trim(),submitterRelationship:relationship.value});}
 function base(row,token){return{scholarId:row.scholarId,scholarName:row.name,shareToken:token,profileUrl:profileURL(token)};}
 function clean(v){return /^(unknown|unclassified|n\/a)$/i.test(String(v||'').trim())?'':String(v||'');}
@@ -21,17 +21,50 @@ async function openUpdate(row,state){
  const profile=(state.scholarProfilesByName&&state.scholarProfilesByName.get(row.name))||row;
  const sid=row.scholarId||profile.scholarId;row=Object.assign({},profile,row,{scholarId:sid});
  let token;try{token=await tokenFor(sid);}catch(e){alert(e.message);return;}
- const {form,status}=dialog('Update info for '+row.name);el('p','Fields are pre-filled with the information currently shown on the public dashboard. Edit only the details you want to add, remove or correct.',form);const notice=el('p','Please read: corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, students and colleagues can also submit on their behalf. CVs and maternal information are for internal review and will not be shown on the public profile.',form);notice.className='tonga-review-notice';const who=identity(form),fields=[];
- function add(fs,key,label,value,options,type){const n=input(fs,label,clean(value),type||'text',options),initial=n.value;fields.push({key,n,initial});return n;}
- for(const side of ['paternal','maternal']){const fs=section(form,side==='paternal'?'Paternal geography':'Maternal geography (optional, internal use)');const publicSide=side==='paternal';add(fs,side+'_island_division','Island division',publicSide?(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision):'',DIVISIONS);add(fs,side+'_district','District',publicSide?profile.paternalDistrictName:'');add(fs,side+'_village','Village / town',publicSide?profile.paternalVillage:'');add(fs,side+'_island','Specific island',publicSide?profile.paternalIsland:'');}
+ const {d,form,status}=dialog('Update info for this scholar');
+ el('p','Correcting / adding info for '+row.name+'. Fields below are pre-filled with the information the public dashboard is currently showing. Edit only what you want to add, remove or correct.',form).className='tonga-form-subtitle';
+ const notice=el('div',null,form);notice.className='tonga-review-notice';el('strong','Please read: ',notice);notice.append(document.createTextNode('corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, students and colleagues can also submit on their behalf.'));
+ const who=identity(form),fields=[],files=[];
+ const identitySet=form.querySelector('fieldset');identitySet.querySelector('legend').textContent='Who is submitting this';
+ identitySet.querySelectorAll('input,select').forEach(n=>{const mark=el('span',' *');mark.className='tonga-required';n.parentElement.insertBefore(mark,n);});
+ const relationship=identitySet.querySelector('select');relationship.parentElement.classList.add('wide');relationship.options[0].textContent='Select one…';
+ function add(fs,key,label,value,options,type){const n=input(fs,label,clean(value),type||'text',options),initial=n.value;n.name=key;fields.push({key,n,initial});if(options)n.options[0].textContent='(select)';if(type==='url')n.placeholder='https://…';return n;}
+ function wide(n){n.parentElement.classList.add('wide');return n;}
+ function hint(n,text){el('small',text,n.parentElement);return n;}
+ function upload(fs,key,label,accept,text,full=false){const n=input(fs,label,'','file');n.name=key;n.accept=accept;files.push({key,n});if(full)wide(n);if(text)hint(n,text);return n;}
+ for(const side of ['paternal','maternal']){
+  const publicSide=side==='paternal',prefix=publicSide?'Paternal':'Maternal',fs=section(form,prefix+' geography');fs.className='tonga-geography-'+side;
+  if(!publicSide){const help=el('p','Optional. Maternal information is for internal research/database purposes and will not be displayed on the public dashboard or scholar profile.',fs);help.className='wide tonga-field-help';}
+  add(fs,side+'_island_division',prefix+' Island Division',publicSide?(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision):'',DIVISIONS);
+  add(fs,side+'_island',prefix+' Specific Island',publicSide?profile.paternalIsland:'');
+  add(fs,side+'_district',prefix+' District',publicSide?profile.paternalDistrictName:'');
+  add(fs,side+'_village',prefix+' Village / Town (Kolo)',publicSide?profile.paternalVillage:'');
+ }
  const fs=section(form,'Scholar profile');
- [['salutation','Salutation',profile.salutation],['title','Professional title',profile.title],['institution','Institution',profile.institution],['department','Department',profile.department],['institution_url','Institution URL',profile.institutionUrl],['department_url','Department URL',profile.departmentUrl],['profile_url','Faculty profile URL',profile.profileUrl],['google_scholar_url','Google Scholar URL',profile.googleScholarUrl],['orcid_url','ORCID URL',profile.orcidUrl]].forEach(([k,l,v])=>add(fs,k,l,v,k==='salutation'?['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms']:null,k.endsWith('_url')?'url':'text'));
- add(fs,'gender','Gender',profile.gender,['Tangata','Fefine','Unknown']);
- for(const [level,title] of [['masters','Master’s'],['phd','PhD']]){const f=section(form,title);const rows=(state.master.gradDegrees||state.master.grad||[]);const matches=rows.filter(g=>g['Scholar ID']===sid&&(level==='masters'?/master/i:/phd|doctor/i).test(g['Degree Stage']||''));const g=matches.length===1?matches[0]:{};add(f,level+'_university','University',profile[level+'University']);add(f,level+'_country','Country',profile[level+'Country']);add(f,level+'_year','Year completed',g['Finish / Completion Year']);add(f,level+'_thesis_url','Thesis / repository URL',g['Thesis / Repository URL'],null,'url');}
- const uploads=section(form,'Optional attachments'),files=[];
- [['headshot','High-resolution JPEG headshot','.jpg,.jpeg,image/jpeg'],['cv','CV (PDF)','.pdf,application/pdf'],['masters_thesis','Master’s thesis (PDF)','.pdf,application/pdf'],['phd_thesis','PhD thesis (PDF)','.pdf,application/pdf'],['publications','Publications to add (BibTeX or EndNote export)','.bib,.ris,.enw']].forEach(([key,label,accept])=>{const n=input(uploads,label,'','file');n.accept=accept;files.push({key,n});});
- el('p','Up to 12 MB per file and 30 MB total. Export an EndNote library as RIS or ENW.',form);
- const notes=input(form,'Anything else we should know?','','textarea'),button=el('button','Submit for review',form);button.type='submit';
+ add(fs,'salutation','Salutation',profile.salutation,['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms']);
+ add(fs,'title','Professional title',profile.title);
+ wide(add(fs,'institution','Institution',profile.institution));
+ add(fs,'institution_url','Institution URL',profile.institutionUrl,null,'url');
+ add(fs,'department','Department',profile.department);
+ add(fs,'department_url','Department URL',profile.departmentUrl,null,'url');
+ add(fs,'profile_url','Faculty profile URL',profile.profileUrl,null,'url');
+ add(fs,'google_scholar_url','Google Scholar URL',profile.googleScholarUrl,null,'url');
+ add(fs,'orcid_url','ORCID iD URL',profile.orcidUrl,null,'url');
+ upload(fs,'headshot','High-resolution headshot (JPEG)','.jpg,.jpeg,image/jpeg','Please upload a clear, high-resolution headshot as a JPEG (.jpg or .jpeg).',true);
+ const gender=add(fs,'gender','Gender',profile.gender,['Tangata','Fefine','Unknown']);[...gender.options].forEach(o=>{if(o.value==='Tangata')o.textContent='Tangata (Male)';if(o.value==='Fefine')o.textContent='Fefine (Female)';});
+ for(const [level,title] of [['masters','Masters'],['phd','PhD']]){
+  const f=section(form,title),rows=(state.master.gradDegrees||state.master.grad||[]),matches=rows.filter(g=>g['Scholar ID']===sid&&(level==='masters'?/master/i:/phd|doctor/i).test(g['Degree Stage']||'')),g=matches.length===1?matches[0]:{};
+  add(f,level+'_university',title+' — University',profile[level+'University']);
+  add(f,level+'_country',title+' — Country',profile[level+'Country']);
+  add(f,level+'_year',title+' — Year completed',g['Finish / Completion Year']);
+  hint(add(f,level+'_thesis_url','Link to '+title+' thesis / degree',g['Thesis / Repository URL'],null,'url'),'Provide a direct university/repository link where possible.');
+  upload(f,level+'_thesis','Upload '+title+' thesis PDF','.pdf,application/pdf','Optional PDF. The uploaded filename includes the Scholar ID.');
+ }
+ const cv=section(form,'CV (optional)');upload(cv,'cv','Upload your latest CV (PDF)','.pdf,application/pdf','Your CV is for internal review only and will not be shared further or displayed on the public dashboard.',true);
+ const pubs=section(form,'Publications to add');upload(pubs,'publications','BibTeX or EndNote file','.bib,.ris,.enw','Attach one file containing all the publications you want added. BibTeX (.bib) is preferred; an EndNote export (.enw or .ris) is also fine.',true);
+ const notes=wide(input(pubs,'Anything else we should know?','','textarea'));notes.rows=3;notes.placeholder='Optional — e.g. context on which fields you edited, or corrections that don’t fit above.';
+ el('p','Attachments: up to 12 MB per file and 30 MB total.',form).className='tonga-field-help';
+ const actions=el('div',null,form);actions.className='tonga-form-actions';const cancel=el('button','Cancel',actions);cancel.type='button';cancel.className='tonga-form-cancel';cancel.onclick=()=>d.close();const button=el('button','Submit for review',actions);button.type='submit';
  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;button.disabled=true;status.textContent='Submitting…';try{const changed={};fields.forEach(f=>{if(f.n.value!==f.initial)changed[f.key]=f.n.value.trim();});const selected=files.filter(f=>f.n.files.length);let total=0;const attachments=[];for(const f of selected){const file=f.n.files[0];total+=file.size;if(file.size>12*1024*1024||total>30*1024*1024)throw new Error('Attachments exceed the size limit.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(file);});attachments.push({field:f.key,name:sid+'-'+file.name,type:file.type||'application/octet-stream',data});}if(!Object.keys(changed).length&&!attachments.length)throw new Error('Change at least one field or attach a file.');const result=await send(Object.assign(base(row,token),who(),{action:'submitScholarProfileUpdate',fields:changed,structuredSubmission:{changedFieldsOnly:true,notes:notes.value.trim()},files:attachments}));status.textContent='Submitted for review. Reference: '+result.submissionId+'. Your public profile will change only after approval and the next data refresh.';button.remove();form.querySelectorAll('input,select,textarea').forEach(n=>n.disabled=true);}catch(err){status.textContent=err.message;button.disabled=false;}};
 }
 // Keep island divisions distinct from specific islands in the Master payload.
