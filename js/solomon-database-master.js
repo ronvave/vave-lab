@@ -8536,7 +8536,7 @@
     'Papua New Guinea': 'pg', 'PNG': 'pg',
     'Samoa': 'ws', 'Western Samoa': 'ws',
     'American Samoa': 'as',
-    'Solomon Islands': 'sb', 'Solomon Islands': 'to', 'Vanuatu': 'vu', 'Kiribati': 'ki',
+    'Solomon Islands': 'sb', 'Tonga': 'to', 'Vanuatu': 'vu', 'Kiribati': 'ki',
     'Cook Islands': 'ck', 'French Polynesia': 'pf', 'New Caledonia': 'nc',
     'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Tuvalu': 'tv',
     'Federated States of Micronesia': 'fm', 'Micronesia': 'fm', 'Marshall Islands': 'mh',
