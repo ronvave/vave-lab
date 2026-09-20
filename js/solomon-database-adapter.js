@@ -100,6 +100,10 @@
   function normalizedPublicationType_(pubType) {
     var raw = String(pubType || '').trim();
     var key = raw.toLowerCase().replace(/\s+/g, ' ');
+    var known = Object.keys(TYPE_MAP).find(function (name) { return name.toLowerCase() === key; });
+    if (known) return known;
+    if (key === 'edited volume') return 'Book';
+    if (/^master(?:'s|s)? dissertation$/.test(key)) return "Master's Thesis";
     if (/^(phd|doctoral|doctorate) thesis$/.test(key)) return 'PhD Thesis';
     if (/^master(?:'s|s)? thesis$/.test(key)) return "Master's Thesis";
     if (key === 'other thesis' || key === 'thesis') return 'Other Thesis';
@@ -233,6 +237,8 @@
   function normalizeMasterRows_(master) {
     (master.geography || []).forEach(function (g) {
       g['Publication ID / BibTeX Key'] = g['Publication ID / BibTeX Key'] || g['Publication ID'] || g['Publication Key'] || '';
+      g['Village / Town / Site'] = g['Village / Town / Site'] || g['Village/Community/Site'] || '';
+      g['Geography Type'] = g['Geography Type'] || g['Geography Scale'] || '';
       g['Verification'] = g['Verification'] || g['Verification Status'] || g['Verification / Status'] || '';
       g['Province/City Area (auto from District)'] = g['Province/City Area'] || g['Province/City Area (auto from District)'] || '';
     });
@@ -262,6 +268,7 @@
       if (a['Is First Author?'] == null) {
         a['Is First Author?'] = a['Is First Author'];
       }
+      if (typeof a['Is First Author?'] === 'string') a['Is First Author?'] = /^(true|yes|1)$/i.test(a['Is First Author?'].trim());
       a['Author Name as Recorded'] = a['Author Name as Recorded'] ||
         a['Author Name as Published'] || '';
     });
@@ -272,14 +279,18 @@
       if (a['Is First Author?'] == null) {
         a['Is First Author?'] = a['Is First Author'];
       }
+      if (typeof a['Is First Author?'] === 'string') a['Is First Author?'] = /^(true|yes|1)$/i.test(a['Is First Author?'].trim());
       a['Author Name as Recorded'] = a['Author Name as Recorded'] ||
         a['Author Name as Published'] || '';
     });
 
+    var scholarsById = new Map(master.scholars.map(function (person) { return [person['Scholar ID'], person]; }));
     var institutionsById = new Map((master.institutions || []).map(function (i) {
       return [i['Institution ID'], i];
     }));
     master.gradDegrees.forEach(function (g) {
+      var person = scholarsById.get(g['Scholar ID']);
+      g['Scholar Name'] = person ? toZoteroCreator(person['Scholar Name'], person['Family Name'], person['Given Names']) : '';
       g['Degree Stage'] = g['Degree Stage'] || g['Stage'] || '';
       g['Degree / Qualification'] = g['Degree / Qualification'] ||
         g['Degree Name'] || '';
