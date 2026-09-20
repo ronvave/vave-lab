@@ -11,6 +11,7 @@ on:
   workflow_run:
     workflows:
       - Refresh iTaukei Master File snapshot
+      - Refresh Solomon Islands Master File snapshot
     types: [completed]
     branches: [main]
 
