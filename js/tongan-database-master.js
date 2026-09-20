@@ -8610,6 +8610,7 @@
       // publication filter on this card.
       if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid, .db-scholar-card__submit')) return;
       if (ev.target.closest('.db-scholar-card__info a')) return;
+      if (window.__tongaSharedScholar) return;
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();
@@ -8702,6 +8703,7 @@
     `;
     wireScholarInsight(card);
     wireScholarSubmit(card, r);
+    if (window.TongaScholarPortal) window.TongaScholarPortal.wireShare(card, r);
     return card;
   }
 
@@ -8739,7 +8741,9 @@
     if (!btn) return;
     btn.addEventListener('click', ev => {
       ev.stopPropagation();
-      openScholarSubmitModal(row);
+      if (window.TongaScholarPortal) {
+        window.TongaScholarPortal.openUpdate(row, state);
+      } else alert('The update form could not be loaded. Please refresh the page.');
     });
   }
 
@@ -9394,10 +9398,21 @@
       await loadAll();
     } catch (err) {
       console.error('Failed to load database data', err);
+      if (window.__tongaSharedScholar) { document.body.textContent='The scholar profile could not be loaded. Please reload.'; document.documentElement.classList.remove('tonga-profile-loading'); return; }
       setSyncBadge('error', 'Master-file snapshot unavailable', 'This country’s Master-file data could not be loaded. Please reload the page.');
       showFallbackBanner('snapshot-load-failed');
       const items = $('[data-db-items]');
       if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the Master-file snapshot. Please refresh the page in a moment.</li>';
+      return;
+    }
+    if (window.__tongaSharedScholar) {
+      try {
+        await window.TongaScholarPortal.renderShared(state, renderScholarCard, renderItemCard);
+      } catch (error) {
+        document.body.replaceChildren(); const message=document.createElement('p');
+        message.textContent='Unable to load this scholar profile: '+error.message; document.body.append(message);
+      }
+      document.documentElement.classList.remove('tonga-profile-loading');
       return;
     }
     // Wire the shared "Submit info" modal once (button per card wires open handler).

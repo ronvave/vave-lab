@@ -1,0 +1,4 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Tonga Scholar Profile — Vave Lab</title><style>body{margin:0}iframe{border:0;width:100%;height:100dvh;display:block}</style></head><body><p id="message">Loading scholar profile…</p><script>
+const token=new URLSearchParams(location.search).get('k');
+if(!/^[0-9a-f]{40}$/.test(token||'')){document.getElementById('message').textContent='Invalid scholar profile link.';}else{const frame=document.createElement('iframe');frame.title='Tonga scholar profile and publication updates';frame.src='tongan-research-database-master.html?tongaProfile='+encodeURIComponent(token);document.body.replaceChildren(frame);}
+</script></body></html>

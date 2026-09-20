@@ -115,6 +115,12 @@
   }
 
   window.adminWriteback = {
+    readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
+    readGeographySubmissions: function (status) { return callGetWithParams('readPublicationGeographySubmissions', {status: status || ''}); },
+    readSubmissionAttachment: function (submissionId, fileId) { return callGetWithParams('readScholarSubmissionAttachment', {submissionId: submissionId, fileId: fileId}); },
+    approveScholarSubmission: function (submissionId, selectedChanges, reviewNotes) { return callPost({action:'approveScholarProfileSubmission', submissionId:submissionId, selectedChanges:selectedChanges, reviewNotes:reviewNotes}); },
+    resolveScholarSubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolveScholarProfileSubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
+    resolveGeographySubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolvePublicationGeographySubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
     getEndpoint: getEndpoint,
     getSecret:   getSecret,
     setEndpoint: setEndpoint,

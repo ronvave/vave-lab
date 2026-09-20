@@ -819,6 +819,25 @@
 
   // ── Boot ─────────────────────────────────────────────────────────────
   async function boot(onReady) {
+    const profileToken = new URLSearchParams(location.search).get('tongaProfile');
+    if (profileToken !== null) {
+      try {
+        if (!/^[0-9a-f]{40}$/.test(profileToken)) throw new Error('Invalid scholar link.');
+        const response = await fetch('data/tongan-share-tokens.json', {cache:'no-cache'});
+        if (!response.ok) throw new Error('Scholar links are not yet available.');
+        const doc = await response.json();
+        const sid = Object.keys(doc.m || {}).find(id => doc.m[id] === profileToken && /^TNG-S\d{4}$/.test(id));
+        if (!sid) throw new Error('This scholar link was not found.');
+        window.__tongaSharedScholar = {scholarId:sid, token:profileToken};
+        cachedPasscode = BAKED_PASSCODE;
+        onReady();
+      } catch (error) {
+        document.body.replaceChildren();
+        const message = document.createElement('p'); message.textContent = error.message;
+        document.body.appendChild(message); document.documentElement.classList.remove('tonga-profile-loading');
+      }
+      return;
+    }
     handleDevOptIn();
     injectShellStyles();
     // Wire the admin unlock keyboard chords immediately so they work

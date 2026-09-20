@@ -226,6 +226,7 @@
   .btn-primary:disabled { background: var(--muted-2); border-color: var(--muted-2); cursor: not-allowed; }
   .divider { height: 1px; background: var(--border); margin: 14px 0; }
 </style>
+<link rel="stylesheet" href="css/tongan-submissions.css?v=38f36f7f">
 </head>
 <body>
 
@@ -271,10 +272,14 @@
       <button class="tab-btn" data-tab="gaps">Authorship linkage gaps</button>
       <button class="tab-btn" data-tab="migration">Migration &amp; tools</button>
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
+      <button class="tab-btn" data-tab="scholar-submissions">Scholar Update Submissions</button>
+      <button class="tab-btn" data-tab="geography-submissions">Publication Geography Submissions</button>
       <button class="tab-btn" data-tab="changelog">Master change log</button>
       <button class="tab-btn" data-tab="log">Action log</button>
     </div>
 
+    <div class="tab-panel" id="tab-scholar-submissions"><div class="card" data-tonga-queue="scholar"><h2>Scholar Update Submissions</h2></div></div>
+    <div class="tab-panel" id="tab-geography-submissions"><div class="card" data-tonga-queue="geography"><h2>Publication Geography Submissions</h2></div></div>
     <!-- ========= SCHOLARS TAB ========= -->
     <div class="tab-panel active" id="tab-scholars">
       <div class="card">
@@ -755,8 +760,9 @@
 <script src="js/tongan-db-gate.js?v=2afd3bb1" defer></script>
 <script src="js/tongan-database-adapter.js?v=8ee1316d" defer></script>
 <script src="js/tongan-admin-insights-migration.js?v=c2bcb539" defer></script>
-<script src="js/tongan-admin-writeback-client.js?v=9bffee58" defer></script>
-<script src="js/admin-tongan-master.js?v=5a5b0638" defer></script>
+<script src="js/tongan-admin-writeback-client.js?v=df6d136d" defer></script>
+<script src="js/admin-tongan-master.js?v=cff83f2a" defer></script>
 
+<script src="js/tongan-submissions-admin.js?v=ee0b01ff" defer></script>
 </body>
 </html>

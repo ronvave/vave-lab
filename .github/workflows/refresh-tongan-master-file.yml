@@ -32,6 +32,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/refresh-tongan-master-file.yml"
+      - "scripts/tongan_sync_share_tokens.py"
       - "scripts/tongan_master_file_config.py"
       - "scripts/tongan_master_file_transformer.py"
       - "scripts/tongan_encrypt_data.py"
@@ -134,6 +135,12 @@ jobs:
             --mode=production \
             --out-dir=data
 
+      - name: Synchronize stable Tonga scholar links
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python3 scripts/tongan_sync_share_tokens.py
+
       - name: Diff vs previous snapshot
         id: diff
         run: |
@@ -206,7 +213,7 @@ jobs:
           python3 scripts/tongan_encrypt_data.py "${TARGETS[@]}"
 
       - name: Commit
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
           FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
           DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
@@ -218,6 +225,7 @@ jobs:
             data/tongan-master-*.json.enc \
             data/tongan-body-composition-master.json.enc \
             data/tongan-last-master-sync.json.enc
+          if [ -f data/tongan-share-tokens.json ]; then git add data/tongan-share-tokens.json; fi
           if git diff --cached --quiet; then
             echo "No changes to commit (unexpected — plaintext_changed said yes)"
             exit 0

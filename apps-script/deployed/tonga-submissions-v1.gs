@@ -1,0 +1,1090 @@
+/** Tonga submission backend, phase 1, 2026-09-20.
+ * Based on the owner's uploaded deployed source. Keep existing Script Properties.
+ * Adds review queues; does not change dashboard, photos, insights or B3.
+ * Public submission routes require a valid Tonga scholar share token.
+ * Admin reads/decisions retain the existing shared-secret authentication.
+ * Bibliography/CV/thesis attachments require review; they are NOT auto-imported.
+ */
+// ------------------------- CONFIG -----------------------------------------
+var SPREADSHEET_ID_HINT = '1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI'; // Tongan Scholars Master File — NEVER the iTaukei ID (1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg)
+var ACTOR_LABEL         = 'Ron Vave (admin)';
+var SOURCE_TAG          = 'admin-master-webapp v1';
+var REPLAY_WINDOW_MS    = 5 * 60 * 1000;
+var LOCK_WAIT_MS        = 30 * 1000;
+var TIMEZONE            = 'Pacific/Honolulu';
+
+// Fields that ALWAYS require the user to explicitly confirm any change,
+// even when the loaded and current Master values match. These are
+// high-consequence status fields (drive memorial band, dashboard flags,
+// etc.) so any change gets a plain-language warning per Ron 2026-08-23.
+// Keyed by `<worksheet>.<field>`.
+var ALWAYS_CONFIRM = {
+  'Scholars.Alive / Deceased': true
+};
+
+// Full editable-field allowlist. Every writable field must appear here.
+// Sheets not listed are read-only. Fields on listed sheets not listed are
+// read-only. Enum values are validated against the `enum` array.
+// MAPPING reflects the ACTUAL Master Google Sheet headers (verified
+// 2026-08-22 against the live sheet). Field keys are the literal header
+// strings including spacing and slashes. Column names come from row 4 of
+// each sheet.
+var MAPPING = {
+  version: '1.4',
+  worksheets: {
+    'Scholars': {
+      keyColumn: 'Scholar ID',
+      headerRow: 4,
+      fields: {
+        // Title / Salutation is an authoritative scholar-level attribute
+        // (Aug 22 approval). Blank means no title.
+        'Title / Salutation':      { type: 'enum',   enum: ['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms',''] },
+        'Family Name':             { type: 'string', maxLen: 120 },
+        'Given Names':             { type: 'string', maxLen: 120 },
+        'Gender':                  { type: 'enum',   enum: ['Tangata','Fefine','Unknown',''] },
+        // Year of Birth: four-digit year, blank when unknown. Do not infer.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Birth':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
+        // Alive / Deceased is a controlled three-value vocabulary in the sheet
+        // (normalized 2026-08-22): Alive, Deceased, Unknown. A sheet-level data
+        // validation enforces the same enum.
+        'Alive / Deceased':        { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        // Year of Death: four-digit year, blank for Alive or Unknown.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Death':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
+        'Paternal Island Division':{ type: 'string', maxLen: 60 },
+        'District Paternal':       { type: 'string', maxLen: 80 },
+        'Specific Island Paternal':{ type: 'string', maxLen: 80 },
+        'Village/Town Paternal (Kolo)': { type: 'string', maxLen: 120 },
+        'Maternal Island Division':{ type: 'string', maxLen: 60 },
+        'District Maternal':       { type: 'string', maxLen: 80 },
+        'Specific Island Maternal':{ type: 'string', maxLen: 80 },
+        'Village/Town Maternal (Kolo)': { type: 'string', maxLen: 120 },
+        // Cultural/lineage fields are stored SEPARATELY from administrative
+        // geography (never derived from village/surname/title resemblance).
+        "Estate / Chiefly Affiliation Paternal (Tofi'a)": { type: 'string', maxLen: 200 },
+        "Estate / Chiefly Affiliation Maternal (Tofi'a)": { type: 'string', maxLen: 200 },
+        "Ha'a / Lineage Paternal": { type: 'string', maxLen: 200 },
+        "Ha'a / Lineage Maternal": { type: 'string', maxLen: 200 },
+        'Kāinga Paternal':         { type: 'string', maxLen: 200 },
+        'Kāinga Maternal':         { type: 'string', maxLen: 200 },
+        'Self-identified Home / Community Affiliation Paternal': { type: 'string', maxLen: 200 },
+        'Self-identified Home / Community Affiliation Maternal': { type: 'string', maxLen: 200 },
+        'Lineage / Provenance Notes': { type: 'string', maxLen: 2000 },
+        'Primary Discipline / Field': { type: 'string', maxLen: 120 },
+        'Current Title / Role':    { type: 'string', maxLen: 240 },
+        'Current Institution':     { type: 'string', maxLen: 200 },
+        'Institution Country':     { type: 'string', maxLen: 80 },
+        'Current Department / Unit':{ type: 'string', maxLen: 200 },
+        'Current PG Status':       { type: 'string', maxLen: 120 },
+        'Current Profile URL':     { type: 'url',    maxLen: 500 },
+        'ORCID / Researcher ID':   { type: 'string', maxLen: 200 },
+        'Google Scholar URL':      { type: 'url',    maxLen: 500 },
+        'Name Variants / Aliases': { type: 'string', maxLen: 500 },
+        'Record Notes':            { type: 'string', maxLen: 4000 }
+        // Non-editable Master computed columns intentionally OMITTED:
+        //   Scholar Name, Paternal Island Division is derived by Lookups so read-only in UI,
+        //   Highest Completed Degree, Degree Episodes, International Degree Episodes,
+        //   Tonga Degree Episodes, Funding Episodes, Awards Count, Gold Medals / Prizes Count,
+        //   Linked Publication Count, First-Author Publication Count,
+        //   Current Leadership Category, Current Leadership Level,
+        //   Review Status, Roster Tier, Source Basis, BibTeX Author Match (roster),
+        //   BibTeX Author Occurrences (roster).
+        // These are computed/audit fields \u2014 do not expose as editable.
+      }
+    },
+    'Positions': {
+      // Positions is edited per-row; row is identified by an explicit
+      // rowNumber field carried by the client (1-based sheet row).
+      keyColumn: 'Scholar ID',
+      headerRow: 4,
+      allowMultiRow: true,
+      fields: {
+        'Institution':                                  { type: 'string', maxLen: 200 },
+        'Country':                                      { type: 'string', maxLen: 80 },
+        'Department / Unit':                            { type: 'string', maxLen: 200 },
+        'Academic / Professional Title (verbatim)':     { type: 'string', maxLen: 240 },
+        'Standardized Academic Rank':                   { type: 'string', maxLen: 120 },
+        'Leadership Title (verbatim)':                  { type: 'string', maxLen: 240 },
+        'Standardized Leadership Category':             { type: 'string', maxLen: 120 },
+        'Leadership Level':                             { type: 'string', maxLen: 60 },
+        'Role Status':                                  { type: 'string', maxLen: 60 },
+        'Start Year':                                   { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'End Year':                                     { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Source URL':                                   { type: 'url',    maxLen: 500 },
+        'Evidence / Notes':                             { type: 'string', maxLen: 2000 },
+        'Last Verified':                                { type: 'string', maxLen: 60 }
+      }
+    },
+    'Graduate Degrees': {
+      keyColumn: 'Scholar ID',
+      headerRow: 4,
+      allowMultiRow: true,
+      fields: {
+        // Sheet-observed values: 'Master\u0027s' and 'PhD/Doctorate'. Keep
+        // string to avoid rejecting existing rows.
+        'Degree Stage':                { type: 'string', maxLen: 60 },
+        'Degree / Qualification':      { type: 'string', maxLen: 200 },
+        'Field / Discipline':          { type: 'string', maxLen: 200 },
+        'C_Uni name':                  { type: 'string', maxLen: 200 },
+        'O_Uni name':                  { type: 'string', maxLen: 200 },
+        'Country':                     { type: 'string', maxLen: 80 },
+        'International from Tonga?':   { type: 'enum',   enum: ['Yes','No','Unknown',''] },
+        'City':                        { type: 'string', maxLen: 120 },
+        'Region':                      { type: 'string', maxLen: 120 },
+        'Year / Status':               { type: 'string', maxLen: 60 },
+        'Completion Status':           { type: 'string', maxLen: 120 },
+        'Thesis / Research Title':     { type: 'string', maxLen: 500 },
+        'Thesis / Repository URL':     { type: 'url',    maxLen: 500 },
+        'Evidence URL 1':              { type: 'url',    maxLen: 500 },
+        'Evidence URL 2':              { type: 'url',    maxLen: 500 },
+        'Verification':                { type: 'string', maxLen: 2000 },
+        'Notes':                       { type: 'string', maxLen: 2000 },
+        'Start Year':                  { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Finish / Completion Year':    { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Duration (years)':            { type: 'string', maxLen: 40 },
+        'Study Date Evidence / Notes': { type: 'string', maxLen: 2000 }
+      }
+    }
+  }
+};
+
+// ------------------------- ENTRY POINTS -----------------------------------
+
+function doGet(e) {
+  try {
+    var params = (e && e.parameter) || {};
+    var action = params.action || 'ping';
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:'tonga-submissions-1', publicSubmissionsEnabled:tongaPublicEnabled_()});
+    if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
+    if (action === 'describe') {
+      return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
+    }
+    if (action === 'ping') {
+      return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
+    }
+    if (action === 'readScholarProfileSubmissions') return handleReadScholarProfileSubmissions_(params);
+    if (action === 'readScholarSubmissionAttachment') return handleReadScholarSubmissionAttachment_(params);
+    if (action === 'readPublicationGeographySubmissions') return handleReadPublicationGeographySubmissions_(params);
+    if (action === 'readScholar') {
+      return handleReadScholar_(params);
+    }
+    if (action === 'readRows') {
+      return handleReadRows_(params);
+    }
+    if (action === 'readChangeLog') {
+      return handleReadChangeLog_(params);
+    }
+    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
+  } catch (err) {
+    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
+  }
+}
+
+// ------------------------- READ HANDLERS ----------------------------------
+
+function handleReadScholar_(params) {
+  var sid = String(params.scholarId || '').trim();
+  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var wsCfg = MAPPING.worksheets['Scholars'];
+  var sheet = ss.getSheetByName('Scholars');
+  if (!sheet) return jsonOut_({ status: 'error', error: 'Scholars sheet not found' }, 500);
+  var info = locateRow_(sheet, wsCfg, { scholarId: sid });
+  if (!info.ok) return jsonOut_({ status: 'not_found', reason: info.reason });
+  var lastCol = sheet.getLastColumn();
+  var rowValues = sheet.getRange(info.row, 1, 1, lastCol).getValues()[0] || [];
+  var headerVals = sheet.getRange(wsCfg.headerRow || 4, 1, 1, lastCol).getValues()[0] || [];
+  var row = {};
+  for (var i = 0; i < headerVals.length; i++) {
+    var h = String(headerVals[i] || '').trim();
+    if (h) row[h] = normalizeForRead_(rowValues[i]);
+  }
+  return jsonOut_({ status: 'ok', worksheet: 'Scholars', scholarId: sid, rowNumber: info.row, fields: row, serverTs: Date.now() });
+}
+
+function handleReadRows_(params) {
+  var ws = String(params.worksheet || '').trim();
+  var sid = String(params.scholarId || '').trim();
+  if (!ws || !MAPPING.worksheets[ws]) return jsonOut_({ status: 'bad_request', reason: 'worksheet-not-allowed' }, 400);
+  if (!sid) return jsonOut_({ status: 'bad_request', reason: 'missing-scholarId' }, 400);
+  var wsCfg = MAPPING.worksheets[ws];
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) return jsonOut_({ status: 'error', error: ws + ' sheet not found' }, 500);
+  var headerRow = wsCfg.headerRow || 1;
+  var lastCol = sheet.getLastColumn();
+  var lastRow = sheet.getLastRow();
+  var headerVals = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  var keyIdx = -1;
+  for (var j = 0; j < headerVals.length; j++) {
+    if (String(headerVals[j] || '').trim() === wsCfg.keyColumn) { keyIdx = j; break; }
+  }
+  if (keyIdx < 0) return jsonOut_({ status: 'error', error: 'key-column-missing' }, 500);
+  var rows = [];
+  if (lastRow > headerRow) {
+    var all = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+    for (var r = 0; r < all.length; r++) {
+      if (String(all[r][keyIdx] || '').trim() !== sid) continue;
+      var obj = {};
+      for (var k = 0; k < headerVals.length; k++) {
+        var h = String(headerVals[k] || '').trim();
+        if (h) obj[h] = normalizeForRead_(all[r][k]);
+      }
+      rows.push({ rowNumber: headerRow + 1 + r, fields: obj });
+    }
+  }
+  return jsonOut_({ status: 'ok', worksheet: ws, scholarId: sid, rows: rows, serverTs: Date.now() });
+}
+
+function handleReadChangeLog_(params) {
+  var limit = Math.min(parseInt(params.limit, 10) || 50, 500);
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName('Change Log');
+  if (!sheet) return jsonOut_({ status: 'ok', rows: [] });
+  var lastRow = sheet.getLastRow();
+  var headerRow = 4;
+  if (lastRow <= headerRow) return jsonOut_({ status: 'ok', rows: [] });
+  var take = Math.min(limit, lastRow - headerRow);
+  var startRow = lastRow - take + 1;
+  // Read A–J so legacy rows with polluted F–J are still surfaced verbatim.
+  // New rows written by the strict 5-column writer only fill A–E, and F–J
+  // will be blank; we then parse actor / worksheet / field / old → new from
+  // the folded Scope/Impact string.
+  var vals = sheet.getRange(startRow, 1, take, 10).getValues();
+  var rows = [];
+  for (var i = vals.length - 1; i >= 0; i--) {
+    var v = vals[i];
+    var scope = normalizeForRead_(v[3]);
+    // Prefer legacy per-column fields when present (pre-2026-08-23 rows);
+    // fall back to parsing the folded Scope/Impact for new rows.
+    var legacyActor = normalizeForRead_(v[5]);
+    var parsed = parseFoldedScope_(scope);
+    rows.push({
+      rowNumber: startRow + i,
+      version:  normalizeForRead_(v[0]),
+      date:     normalizeForRead_(v[1]),
+      change:   normalizeForRead_(v[2]),
+      scope:    scope,
+      source:   normalizeForRead_(v[4]),
+      actor:    legacyActor || parsed.actor || '',
+      worksheet: normalizeForRead_(v[6]) || parsed.worksheet || '',
+      field:    normalizeForRead_(v[7]) || parsed.field || '',
+      oldValue: normalizeForRead_(v[8]) || parsed.oldValue || '',
+      newValue: normalizeForRead_(v[9]) || parsed.newValue || ''
+    });
+  }
+  return jsonOut_({ status: 'ok', rows: rows, serverTs: Date.now() });
+}
+
+// Best-effort parser for the folded Scope/Impact column written by the new
+// strict five-column Change Log writer. Format is:
+//   "<actor> · <SID> · <worksheet>.<field>: <old> → <new>"
+// If the scope doesn't match this pattern (e.g. structural rows like
+// "Structural insert of Year of Birth") returns empty strings so the reader
+// can still render the row without pretending to know internal fields.
+function parseFoldedScope_(scope) {
+  var out = { actor: '', worksheet: '', field: '', oldValue: '', newValue: '' };
+  if (!scope) return out;
+  var s = String(scope);
+  // Split on the arrow first — anything after is newValue.
+  var arrowIdx = s.indexOf(' → ');
+  if (arrowIdx < 0) return out;
+  var newValue = s.substring(arrowIdx + 3);
+  var before = s.substring(0, arrowIdx);
+  // Then split by "· " from the left three times: actor · sid · wsfield: old
+  var parts = before.split(' · ');
+  if (parts.length < 3) return out;
+  var actor = parts[0];
+  var wsFieldOld = parts.slice(2).join(' · '); // rejoin in case field contained ·
+  var colonIdx = wsFieldOld.indexOf(': ');
+  if (colonIdx < 0) return out;
+  var wsField = wsFieldOld.substring(0, colonIdx);
+  var oldValue = wsFieldOld.substring(colonIdx + 2);
+  var dotIdx = wsField.indexOf('.');
+  var worksheet = dotIdx < 0 ? wsField : wsField.substring(0, dotIdx);
+  var field     = dotIdx < 0 ? ''       : wsField.substring(dotIdx + 1);
+  out.actor     = actor;
+  out.worksheet = worksheet;
+  out.field     = field;
+  out.oldValue  = oldValue;
+  out.newValue  = newValue;
+  return out;
+}
+
+function normalizeForRead_(v) {
+  if (v == null) return '';
+  if (v instanceof Date) return Utilities.formatDate(v, TIMEZONE, 'yyyy-MM-dd');
+  return v;
+}
+
+function doPost(e) {
+  var body;
+  try {
+    body = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+  } catch (parseErr) {
+    return jsonOut_({ status: 'bad_request', reason: 'invalid-json' }, 400);
+  }
+  try {
+    var requested = body.action || 'write';
+    if (requested === 'submitScholarProfileUpdate' || requested === 'submitPublicationGeography') {
+      if (!tongaPublicEnabled_()) return jsonOut_({status:'disabled',reason:'TONGA_PUBLIC_SUBMISSIONS_ENABLED is not true'});
+      return requested === 'submitScholarProfileUpdate' ? handlePublicScholarProfileSubmission_(body) : handlePublicPublicationGeographySubmission_(body);
+    }
+    if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
+    if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
+    var action = body.action || 'write';
+    if (action === 'approveScholarProfileSubmission') return tongaApproveScholar_(body);
+    if (action === 'resolveScholarProfileSubmission') return tongaResolveScholar_(body);
+    if (action === 'resolvePublicationGeographySubmission') return handleResolvePublicationGeographySubmission_(body);
+    if (action === 'write') return handleWrite_(body);
+    if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
+    return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
+  } catch (err) {
+    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
+  }
+}
+
+// ------------------------- WRITE HANDLER ----------------------------------
+
+/**
+ * Body shape:
+ *   {
+ *     secret:  "…64 hex chars…",
+ *     clientTs: 1724369100000,
+ *     dryRun:  true | false,          // default false; true = classify only
+ *     changes: [
+ *       { worksheet: "Scholars", scholarId: "TON-S0001", field: "Given Names",
+ *         oldValue: "Joeli", newValue: "Joeli ",
+ *         overrideAuthorized: false,  // optional; user confirmed override
+ *         expectedCurrent: "Alive"    // required with overrideAuthorized
+ *       },
+ *       { worksheet: "Positions", scholarId: "TON-S0001", rowNumber: 27,
+ *         field: "Standardized Academic Rank", oldValue: "Prof", newValue: "Professor" }
+ *     ]
+ *   }
+ *
+ * Response shape:
+ *   {
+ *     status: "ok" | "partial" | "needs_confirmation" | "rejected",
+ *     dryRun: true | false,
+ *     results: [
+ *       { index: 0, status: "ok",                 change: {...}, writtenAt: "..." },
+ *       { index: 1, status: "already_satisfied",  change: {...}, currentValue: "..." },
+ *       { index: 2, status: "needs_confirmation", change: {...}, currentValue: "...",
+ *                   loadedValue: "...", intendedValue: "...", reason: "override-required" },
+ *       { index: 3, status: "rejected",           change: {...}, reason: "..." }
+ *     ],
+ *     writeEnabled: true,
+ *     serverTs: 1724369101234
+ *   }
+ */
+function handleWrite_(body) {
+  var changes = Array.isArray(body.changes) ? body.changes : [];
+  if (!changes.length) return jsonOut_({ status: 'bad_request', reason: 'no-changes' }, 400);
+  var dryRun = body.dryRun === true;
+
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var lock = LockService.getScriptLock();
+  var haveLock = lock.tryLock(LOCK_WAIT_MS);
+  if (!haveLock) return jsonOut_({ status: 'busy', reason: 'lock-timeout' }, 503);
+
+  var results = [];
+  var counts = { ok: 0, already_satisfied: 0, needs_confirmation: 0, rejected: 0 };
+  try {
+    for (var i = 0; i < changes.length; i++) {
+      var c = changes[i] || {};
+      var r = applyOneChange_(ss, c, dryRun);
+      r.index = i;
+      r.change = c;
+      results.push(r);
+      if (counts[r.status] != null) counts[r.status]++;
+    }
+  } finally {
+    try { lock.releaseLock(); } catch (_) {}
+  }
+
+  var overall;
+  if (counts.rejected === results.length)               overall = 'rejected';
+  else if (counts.needs_confirmation > 0)               overall = 'needs_confirmation';
+  else if (counts.rejected > 0 && counts.ok > 0)        overall = 'partial';
+  else if (counts.rejected > 0)                         overall = 'rejected';
+  else                                                  overall = 'ok';
+  return jsonOut_({
+    status: overall,
+    dryRun: dryRun,
+    results: results,
+    counts: counts,
+    writeEnabled: true,
+    serverTs: Date.now()
+  });
+}
+
+/**
+ * Classify + (if not dry-run) apply one field change.
+ *
+ * Decision table (three-way comparison per field, per approval doc 2026-08-23):
+ *
+ *   currentMaster == intended                       → already_satisfied (skip; no log)
+ *   Scholars.Alive / Deceased AND intended != currentMaster:
+ *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
+ *       otherwise                                   → needs_confirmation
+ *   currentMaster == loaded AND intended != currentMaster   → ok (write)
+ *   currentMaster != loaded AND intended != currentMaster (stale-load contradiction):
+ *       overrideAuthorized && expectedCurrent==currentMaster → ok (write)
+ *       otherwise                                   → needs_confirmation
+ *
+ * The old blanket `conflict` status is retired: every case that used to be
+ * `conflict` is now either `already_satisfied` (silent skip) or
+ * `needs_confirmation` (client must re-submit with overrideAuthorized).
+ */
+function applyOneChange_(ss, c, dryRun) {
+  var ws = c.worksheet, sid = c.scholarId, field = c.field;
+  if (!ws || !MAPPING.worksheets[ws])   return { status: 'rejected', reason: 'worksheet-not-allowed' };
+  var wsCfg = MAPPING.worksheets[ws];
+  if (!field || !wsCfg.fields[field])   return { status: 'rejected', reason: 'field-not-allowed' };
+  if (!sid)                             return { status: 'rejected', reason: 'missing-scholarId' };
+
+  var fieldCfg = wsCfg.fields[field];
+  var validation = validateValue_(c.newValue, fieldCfg);
+  if (!validation.ok) return { status: 'rejected', reason: 'invalid-value: ' + validation.reason };
+  var newValue = validation.coerced;
+
+  var sheet = ss.getSheetByName(ws);
+  if (!sheet) return { status: 'rejected', reason: 'worksheet-not-found' };
+
+  var rowInfo = locateRow_(sheet, wsCfg, c);
+  if (!rowInfo.ok) return { status: 'rejected', reason: rowInfo.reason };
+  var col = rowInfo.headers[field];
+  if (!col) return { status: 'rejected', reason: 'field-header-not-found' };
+
+  if (sheet.getRange(rowInfo.row, col).getFormula()) return {status:'rejected',reason:'computed-field-read-only'};
+  if (typeof newValue === 'string' && /^\s*=/.test(newValue)) return {status:'rejected',reason:'formula-text-not-allowed'};
+  var currentRaw    = sheet.getRange(rowInfo.row, col).getValue();
+  var currentStr    = normalizeForCompare_(currentRaw);
+  var loadedStr     = normalizeForCompare_(c.oldValue);
+  var intendedStr   = normalizeForCompare_(newValue);
+
+  var alwaysKey     = ws + '.' + field;
+  var alwaysConfirm = ALWAYS_CONFIRM[alwaysKey] === true;
+
+  // 1. Already satisfied — currentMaster == intended.
+  // This is the fix for Joeli's regression: loaded="Alive / current record",
+  // currentMaster="Alive", intended="Alive" → silent skip.
+  if (currentStr === intendedStr) {
+    return {
+      status: 'already_satisfied',
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
+    };
+  }
+
+  // 2. Genuine contradiction with current Master OR any change to an
+  //    ALWAYS_CONFIRM field → needs_confirmation unless the client has
+  //    explicitly authorized the override.
+  var authorized = c.overrideAuthorized === true &&
+                   normalizeForCompare_(c.expectedCurrent) === currentStr;
+  var mustConfirm = alwaysConfirm || (currentStr !== loadedStr);
+  if (mustConfirm && !authorized) {
+    return {
+      status: 'needs_confirmation',
+      reason: alwaysConfirm ? 'always-confirm-field' : 'master-changed',
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
+    };
+  }
+
+  // Dry-run: classify only, don't write.
+  if (dryRun) {
+    return {
+      status: 'ok',
+      willWrite: true,
+      currentValue: currentStr,
+      loadedValue:  loadedStr,
+      intendedValue: intendedStr
+    };
+  }
+
+  // 3. Clean write. Value written is the validated coerced form; Change Log
+  //    records the true current old value (which may differ from what the
+  //    client had loaded, e.g. after a confirmed override).
+  sheet.getRange(rowInfo.row, col).setValue(newValue);
+  appendChangeLog_(ss, ws, sid, field, currentStr, newValue);
+  return {
+    status: 'ok',
+    willWrite: true,
+    writtenAt: new Date().toISOString(),
+    currentValue: currentStr,
+    intendedValue: intendedStr
+  };
+}
+
+// ------------------------- HELPERS ----------------------------------------
+
+function locateRow_(sheet, wsCfg, c) {
+  var headerRow = wsCfg.headerRow || 1;
+  var lastCol = sheet.getLastColumn();
+  var headerVals = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  var headers = Object.create(null);
+  for (var j = 0; j < headerVals.length; j++) {
+    var h = String(headerVals[j] || '').trim();
+    if (h) headers[h] = j + 1;
+  }
+  var keyCol = headers[wsCfg.keyColumn];
+  if (!keyCol) return { ok: false, reason: 'key-column-missing' };
+
+  // Multi-row worksheets require an explicit rowNumber (1-based over the whole
+  // sheet, i.e. what the user sees in Google Sheets). This is authoritative.
+  if (wsCfg.allowMultiRow) {
+    var rn = parseInt(c.rowNumber, 10);
+    if (!rn || rn <= headerRow) return { ok: false, reason: 'missing-or-bad-rowNumber' };
+    // Confirm the row's Scholar ID matches c.scholarId (defence in depth).
+    var rowSid = String(sheet.getRange(rn, keyCol).getValue() || '').trim();
+    if (rowSid !== String(c.scholarId).trim()) return { ok: false, reason: 'scholarId-does-not-match-rowNumber' };
+    return { ok: true, row: rn, headers: headers };
+  }
+
+  // Single-row worksheets (Scholars): scan column for the SID.
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= headerRow) return { ok: false, reason: 'no-data-rows' };
+  var values = sheet.getRange(headerRow + 1, keyCol, lastRow - headerRow, 1).getValues();
+  for (var r = 0; r < values.length; r++) {
+    if (String(values[r][0] || '').trim() === String(c.scholarId).trim()) {
+      return { ok: true, row: headerRow + 1 + r, headers: headers };
+    }
+  }
+  return { ok: false, reason: 'scholarId-not-found' };
+}
+
+function validateValue_(value, cfg) {
+  if (value == null) {
+    if (cfg.nullable === false) return { ok: false, reason: 'null-not-allowed' };
+    return { ok: true, coerced: '' };
+  }
+  var s = String(value);
+  if (cfg.maxLen != null && s.length > cfg.maxLen) return { ok: false, reason: 'too-long' };
+  if (cfg.pattern != null && s !== '' && !(new RegExp(cfg.pattern)).test(s)) return { ok: false, reason: 'pattern-mismatch' };
+  if (cfg.type === 'string') return { ok: true, coerced: s };
+  if (cfg.type === 'enum')   return (cfg.enum || []).indexOf(s) >= 0 ? { ok: true, coerced: s } : { ok: false, reason: 'not-in-enum' };
+  if (cfg.type === 'int') {
+    if (s === '') return cfg.nullable === false ? { ok: false, reason: 'blank-not-allowed' } : { ok: true, coerced: '' };
+    var n = parseInt(s, 10);
+    if (isNaN(n)) return { ok: false, reason: 'not-integer' };
+    if (cfg.min != null && n < cfg.min) return { ok: false, reason: 'below-min' };
+    if (cfg.max != null && n > cfg.max) return { ok: false, reason: 'above-max' };
+    return { ok: true, coerced: n };
+  }
+  if (cfg.type === 'float') {
+    if (s === '') return { ok: true, coerced: '' };
+    var f = parseFloat(s);
+    if (isNaN(f)) return { ok: false, reason: 'not-number' };
+    return { ok: true, coerced: f };
+  }
+  if (cfg.type === 'url') {
+    if (s === '') return { ok: true, coerced: '' };
+    if (!/^https?:\/\//i.test(s)) return { ok: false, reason: 'url-must-start-with-http' };
+    return { ok: true, coerced: s };
+  }
+  if (cfg.type === 'date') {
+    if (s === '') return { ok: true, coerced: '' };
+    var d = new Date(s);
+    if (isNaN(d.getTime())) return { ok: false, reason: 'not-date' };
+    return { ok: true, coerced: d };
+  }
+  return { ok: false, reason: 'unknown-type' };
+}
+
+function normalizeForCompare_(v) {
+  if (v == null) return '';
+  if (v instanceof Date) return Utilities.formatDate(v, TIMEZONE, 'yyyy-MM-dd');
+  var s = String(v);
+  return s.replace(/\s+$/, '').replace(/^\s+/, '');
+}
+
+function appendChangeLog_(ss, worksheet, sid, field, oldValue, newValue) {
+  var sheet = ss.getSheetByName('Change Log');
+  if (!sheet) return; // If someone removed the tab, silently skip logging (do not fail the write).
+  var today = Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd');
+  var version = 'admin-' + Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd-HHmmss');
+  var change  = 'edit: ' + worksheet + '.' + field;
+  // Scope/Impact folds actor, scholar id, worksheet, field, and the exact
+  // old → new values into one string. Old/new are truncated to keep the
+  // cell readable; the raw values are visible in the diff preview at
+  // write-time and can be reconstructed from Master history if needed.
+  var scope = ACTOR_LABEL + ' · ' + sid + ' · ' + worksheet + '.' + field +
+              ': ' + truncate_(oldValue, 120) + ' → ' + truncate_(newValue, 120);
+  // Strict five-column write. Do not write into columns F onward.
+  sheet.appendRow([version, today, change, scope, SOURCE_TAG]);
+}
+
+function truncate_(s, n) {
+  s = String(s == null ? '' : s);
+  if (s.length <= n) return s;
+  return s.slice(0, n - 1) + '…';
+}
+
+// ------------------------- AUTH -------------------------------------------
+
+function checkAuth_(payload) {
+  var props = PropertiesService.getScriptProperties();
+  var expected = props.getProperty('SHARED_SECRET') || '';
+  if (!expected) return false;
+  var received = String((payload && payload.secret) || '');
+  if (received.length !== expected.length) return false;
+  var eq = 0;
+  for (var i = 0; i < expected.length; i++) eq |= (expected.charCodeAt(i) ^ received.charCodeAt(i));
+  if (eq !== 0) return false;
+  var clientTs = parseInt((payload && payload.clientTs), 10);
+  if (!clientTs) return false;
+  if (Math.abs(Date.now() - clientTs) > REPLAY_WINDOW_MS) return false;
+  return true;
+}
+
+function writeEnabled_() {
+  var v = PropertiesService.getScriptProperties().getProperty('WRITE_ENABLED');
+  return String(v || '').toLowerCase() === 'true';
+}
+
+// ------------------------- OUTPUT -----------------------------------------
+
+function jsonOut_(obj, code) {
+  // Apps Script's HtmlOutput doesn't allow custom status codes for web apps,
+  // but ContentService still returns 200. Include a `status` field so the
+  // caller can inspect the semantic result.
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ------------------------- ADMIN CONSOLE HELPERS --------------------------
+
+/** Run once from the Apps Script editor to generate a fresh 32-byte secret. */
+function generateSecret() {
+  var bytes = Utilities.getUuid() + Utilities.getUuid();
+  bytes = bytes.replace(/-/g, '');
+  Logger.log('SHARED_SECRET = ' + bytes);
+  return bytes;
+}
+
+/** Read-only diagnostic. Safe to run from the editor. */
+function inspectConfig() {
+  var props = PropertiesService.getScriptProperties();
+  Logger.log('WRITE_ENABLED = ' + props.getProperty('WRITE_ENABLED'));
+  Logger.log('SHARED_SECRET present = ' + (!!props.getProperty('SHARED_SECRET')));
+  Logger.log('ADMIN_ORIGIN = ' + props.getProperty('ADMIN_ORIGIN'));
+  Logger.log('Timezone = ' + TIMEZONE);
+}
+var SCHOLAR_SUBMISSION_SHEET = 'Scholar Profile Submissions';
+var SCHOLAR_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Submitted Fields JSON','Structured Submission JSON','Attachments JSON','Review Notes','Reviewed By','Reviewed At','Resolution'];
+var SCHOLAR_BLOCKLIST_SHEET = 'Scholar Submission Blocklist';
+var SCHOLAR_BLOCKLIST_HEADERS = ['Email','Submitter Name','Banned At','Banned By','Source Submission ID','Reason','Status'];
+
+function normalizedSubmitterEmail_(email) { return String(email || '').trim().toLowerCase(); }
+
+function ensureScholarBlocklistSheet_(ss) {
+  var sh=ss.getSheetByName(SCHOLAR_BLOCKLIST_SHEET);if(!sh)sh=ss.insertSheet(SCHOLAR_BLOCKLIST_SHEET);
+  if(sh.getMaxRows()<5)sh.insertRowsAfter(sh.getMaxRows(),5-sh.getMaxRows());
+  if(sh.getMaxColumns()<SCHOLAR_BLOCKLIST_HEADERS.length)sh.insertColumnsAfter(sh.getMaxColumns(),SCHOLAR_BLOCKLIST_HEADERS.length-sh.getMaxColumns());
+  var current=sh.getRange(4,1,1,SCHOLAR_BLOCKLIST_HEADERS.length).getDisplayValues()[0];
+  if(current.some(function(x){return !!x;}) && current.join('|')!==SCHOLAR_BLOCKLIST_HEADERS.join('|'))throw new Error('Blocklist headers differ');
+  if(current.join('|')!==SCHOLAR_BLOCKLIST_HEADERS.join('|')){sh.getRange(4,1,1,SCHOLAR_BLOCKLIST_HEADERS.length).setValues([SCHOLAR_BLOCKLIST_HEADERS]);sh.setFrozenRows(4);}
+  return sh;
+}
+
+function isScholarSubmitterBlocked_(ss,email){
+  var target=normalizedSubmitterEmail_(email),sh=ensureScholarBlocklistSheet_(ss),last=sh.getLastRow();if(!target||last<5)return false;
+  var vals=sh.getRange(5,1,last-4,7).getDisplayValues();for(var i=0;i<vals.length;i++){if(normalizedSubmitterEmail_(vals[i][0])===target&&String(vals[i][6]||'Active')!=='Lifted')return true;}return false;
+}
+
+function ensureScholarSubmissionSheet_(ss) {
+  var sh = ss.getSheetByName(SCHOLAR_SUBMISSION_SHEET);
+  if (!sh) sh = ss.insertSheet(SCHOLAR_SUBMISSION_SHEET);
+  if (sh.getMaxRows() < 5) sh.insertRowsAfter(sh.getMaxRows(), 5 - sh.getMaxRows());
+  if (sh.getMaxColumns() < SCHOLAR_SUBMISSION_HEADERS.length) sh.insertColumnsAfter(sh.getMaxColumns(), SCHOLAR_SUBMISSION_HEADERS.length - sh.getMaxColumns());
+  var current = sh.getRange(4, 1, 1, SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues()[0];
+  if (current.some(function(x){return !!x;}) && current.join('|') !== SCHOLAR_SUBMISSION_HEADERS.join('|')) throw new Error('Scholar submission headers differ; preserve and review them before migration');
+  if (current.join('|') !== SCHOLAR_SUBMISSION_HEADERS.join('|')) {
+    sh.getRange(4, 1, 1, SCHOLAR_SUBMISSION_HEADERS.length).setValues([SCHOLAR_SUBMISSION_HEADERS]);
+    sh.setFrozenRows(4);
+  }
+  return sh;
+}
+
+function scholarSubmissionFolder_(ss) {
+  var props = PropertiesService.getScriptProperties();
+  var saved = props.getProperty('SCHOLAR_SUBMISSION_FOLDER_ID');
+  if (saved) { try { return DriveApp.getFolderById(saved); } catch (_) {} }
+  var folder = DriveApp.createFolder('Tonga Scholar Profile Submission Uploads');
+  props.setProperty('SCHOLAR_SUBMISSION_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+/**
+ * One-time setup for scholar-update attachments.
+ * Run this function manually from the Apps Script editor as the owner, then
+ * approve the requested Google Drive permission. It creates (or reuses) the
+ * private upload folder beside the Tongan Master File and remembers its ID.
+ */
+function authorizeScholarSubmissionStorage() {
+  var ss = geoSs_();
+  var folder = scholarSubmissionFolder_(ss);
+  // Opening the folder alone may reuse a previously granted read-only Drive
+  // scope. Create one harmless marker file so Google explicitly grants and
+  // verifies the write scope that real CV/photo/thesis uploads require.
+  var markerName = 'Scholar submission uploads enabled.txt';
+  var existing = folder.getFilesByName(markerName);
+  if (!existing.hasNext()) {
+    folder.createFile(markerName, 'This file confirms that the Tongan V2 scholar-update web app is authorised to save submitted attachments.');
+  }
+  Logger.log('Scholar submission upload folder ready with write access: ' + folder.getUrl());
+  return folder.getUrl();
+}
+
+function safeSubmissionObject_(v, maxChars) {
+  var out = v && typeof v === 'object' ? v : {};
+  var text = JSON.stringify(out);
+  if (text.length > maxChars) throw new Error('submission-data-too-large');
+  return text;
+}
+
+function saveScholarSubmissionFiles_(ss, sid, submissionId, files) {
+  if (!Array.isArray(files)) return [];
+  if (files.length > 6) throw new Error('too-many-files');
+  // Do not request Drive access for the common text-only submission path.
+  // DriveApp requires an additional OAuth scope, and an empty attachment
+  // array must not prevent an otherwise valid update reaching Admin V2.
+  var actualFiles = files.filter(function(f){ return !!(f && f.data); });
+  if (!actualFiles.length) return [];
+  var folder = scholarSubmissionFolder_(ss), saved = [], total = 0;
+  actualFiles.forEach(function (f) {
+    var bytes = Utilities.base64Decode(String(f.data));
+    total += bytes.length;
+    if (bytes.length > 12 * 1024 * 1024 || total > 30 * 1024 * 1024) throw new Error('attachment-size-limit');
+    var original = String(f.name || 'attachment').replace(/[\\/:*?"<>|]+/g, '-').slice(0, 180);
+    // The browser already standardises known uploads as
+    // TNG-Sxxxx-Scholar Name-Headshot.jpg. Do not add a submission ID or a
+    // second Scholar ID in front of that readable filename.
+    var name = new RegExp('^'+sid.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')+'-', 'i').test(original) ? original : sid+'-'+original;
+    var blob = Utilities.newBlob(bytes, String(f.type || 'application/octet-stream'), name);
+    var file = folder.createFile(blob);
+    saved.push({ field: String(f.field || 'attachment').slice(0, 80), name: name, url: file.getUrl(), size: bytes.length, type:file.getMimeType(), fileId: file.getId() });
+  });
+  return saved;
+}
+
+function handlePublicScholarProfileSubmission_(body) {
+  var ss = geoSs_(), sid = String(body.scholarId || '').toUpperCase(), token = String(body.shareToken || '').trim();
+  if (!validScholarShareToken_(ss, sid, token)) return jsonOut_({ status:'unauthorized', reason:'invalid-scholar-share-token' }, 401);
+  var name = String(body.submitterName || '').trim(), email = String(body.submitterEmail || '').trim(), rel = String(body.submitterRelationship || '').trim();
+  if (!name || !rel || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({ status:'bad_request', reason:'valid-name-email-and-relationship-required' }, 400);
+  if (isScholarSubmitterBlocked_(ss,email)) return jsonOut_({status:'forbidden',reason:'submissions-from-this-email-are-blocked'},403);
+  var now = new Date(), submissionId = 'SPS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,8);
+  var fieldsJson, structuredJson;
+  try {
+    fieldsJson = safeSubmissionObject_(body.fields, 45000);
+    structuredJson = safeSubmissionObject_(body.structuredSubmission, 45000);
+  } catch (err) { return jsonOut_({ status:'bad_request', reason:String(err.message || err) }, 400); }
+  if (!body.fields || Array.isArray(body.fields)) return jsonOut_({status:'bad_request',reason:'fields-object-required'});
+  if (!Object.keys(body.fields).length && !(body.files || []).length) return jsonOut_({status:'bad_request',reason:'no-changes'});
+  var attachments;
+  try { attachments = saveScholarSubmissionFiles_(ss, sid, submissionId, body.files || []); }
+  catch (err2) { return jsonOut_({ status:'bad_request', reason:String(err2.message || err2) }, 400); }
+  var row = [submissionId, Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss'), 'Pending', sid,
+    String(body.scholarName || '').slice(0,240), name.slice(0,160), email.slice(0,240), rel.slice(0,100),
+    String(body.profileUrl || '').slice(0,700), fieldsJson, structuredJson, JSON.stringify(attachments), '', '', '', ''];
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try { var sh = ensureScholarSubmissionSheet_(ss); sh.getRange(sh.getLastRow()+1,1,1,SCHOLAR_SUBMISSION_HEADERS.length).setValues([row.map(tongaLiteral_)]); }
+  finally { lock.releaseLock(); }
+  return jsonOut_({ status:'ok', submissionId:submissionId, queued:1, attachments:attachments.length });
+}
+
+function handleReadScholarProfileSubmissions_(params) {
+  var ss = geoSs_(), sh = ensureScholarSubmissionSheet_(ss), last = sh.getLastRow();
+  if (last < 5) return jsonOut_({ status:'ok', rows:[] });
+  var vals = sh.getRange(5,1,last-4,SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues(), want = String(params.status || '').trim(), rows = [];
+  vals.forEach(function(r){
+    if(!r[0] || (want && r[2] !== want)) return;
+    var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';});
+    o.proposedChanges = buildScholarSubmissionChanges_(ss, o);
+    rows.push(o);
+  });
+  rows.reverse(); return jsonOut_({ status:'ok', rows:rows });
+}
+
+function findScholarSubmission_(ss,id){
+  var sh=ensureScholarSubmissionSheet_(ss),last=sh.getLastRow();if(last<5)return null;
+  var vals=sh.getRange(5,1,last-4,SCHOLAR_SUBMISSION_HEADERS.length).getDisplayValues();
+  for(var i=0;i<vals.length;i++){if(vals[i][0]===id){var o={_row:i+5,_sheet:sh};SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,j){o[h]=vals[i][j]||'';});return o;}}return null;
+}
+
+function handleReadScholarSubmissionAttachment_(params){
+  var ss=geoSs_(),sub=findScholarSubmission_(ss,String(params.submissionId||'').trim());if(!sub)return jsonOut_({status:'not_found'},404);
+  var fileId=String(params.fileId||'').trim(),files=parseJsonObject_(sub['Attachments JSON']);if(!Array.isArray(files))files=[];
+  var allowed=null;for(var i=0;i<files.length;i++){if(String(files[i].fileId||'')===fileId){allowed=files[i];break;}}
+  if(!allowed)return jsonOut_({status:'unauthorized',reason:'attachment-not-in-submission'},401);
+  var file=DriveApp.getFileById(fileId),blob=file.getBlob();
+  return jsonOut_({status:'ok',fileId:fileId,name:file.getName(),type:file.getMimeType(),size:blob.getBytes().length,data:Utilities.base64Encode(blob.getBytes())});
+}
+
+function parseJsonObject_(text) {
+  try { var v=JSON.parse(String(text||'')); return v && typeof v==='object' ? v : {}; }
+  catch (_) { return {}; }
+}
+
+function scholarSubmissionFieldSpecs_() {
+  return [
+    {key:'salutation',label:'Title / salutation',ws:'Scholars',field:'Title / Salutation',clean:function(v){return String(v||'').replace(/\.$/,'');}},
+    {key:'gender',label:'Gender',ws:'Scholars',field:'Gender'},
+    {key:'paternal_island_division',label:'Paternal island division',ws:'Scholars',field:'Paternal Island Division'},
+    {key:'paternal_district',label:'Paternal district',ws:'Scholars',field:'District Paternal'},
+    {key:'paternal_village',label:'Paternal village',ws:'Scholars',field:'Village/Town Paternal (Kolo)'},
+    {key:'paternal_island',label:'Paternal island',ws:'Scholars',field:'Specific Island Paternal'},
+    {key:'maternal_island_division',label:'Maternal island division',ws:'Scholars',field:'Maternal Island Division'},
+    {key:'maternal_district',label:'Maternal district',ws:'Scholars',field:'District Maternal'},
+    {key:'maternal_village',label:'Maternal village',ws:'Scholars',field:'Village/Town Maternal (Kolo)'},
+    {key:'maternal_island',label:'Maternal island',ws:'Scholars',field:'Specific Island Maternal'},
+    {"key": "paternal_estate", "label": "Estate / Chiefly Affiliation Paternal (Tofi'a)", "ws": "Scholars", "field": "Estate / Chiefly Affiliation Paternal (Tofi'a)"},
+    {"key": "paternal_lineage", "label": "Ha'a / Lineage Paternal", "ws": "Scholars", "field": "Ha'a / Lineage Paternal"},
+    {"key": "paternal_kainga", "label": "Kāinga Paternal", "ws": "Scholars", "field": "Kāinga Paternal"},
+    {"key": "paternal_community", "label": "Self-identified Home / Community Affiliation Paternal", "ws": "Scholars", "field": "Self-identified Home / Community Affiliation Paternal"},
+    {"key": "maternal_estate", "label": "Estate / Chiefly Affiliation Maternal (Tofi'a)", "ws": "Scholars", "field": "Estate / Chiefly Affiliation Maternal (Tofi'a)"},
+    {"key": "maternal_lineage", "label": "Ha'a / Lineage Maternal", "ws": "Scholars", "field": "Ha'a / Lineage Maternal"},
+    {"key": "maternal_kainga", "label": "Kāinga Maternal", "ws": "Scholars", "field": "Kāinga Maternal"},
+    {"key": "maternal_community", "label": "Self-identified Home / Community Affiliation Maternal", "ws": "Scholars", "field": "Self-identified Home / Community Affiliation Maternal"},
+    {key:'title',label:'Professional title',ws:'Scholars',field:'Current Title / Role'},
+    {key:'institution',label:'Current institution',ws:'Scholars',field:'Current Institution'},
+    {key:'department',label:'Department / unit',ws:'Scholars',field:'Current Department / Unit'},
+    {key:'profile_url',label:'Current profile URL',ws:'Scholars',field:'Current Profile URL'},
+    {key:'google_scholar_url',label:'Google Scholar URL',ws:'Scholars',field:'Google Scholar URL'},
+    {key:'orcid_url',label:'ORCID / Researcher ID',ws:'Scholars',field:'ORCID / Researcher ID'},
+    {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'C_Uni name',stage:'master'},
+    {key:'masters_country',label:'Master\'s country',ws:'Graduate Degrees',field:'Country',stage:'master'},
+    {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'master'},
+    {key:'masters_thesis_url',label:'Master\'s thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'master'},
+    {key:'phd_university',label:'PhD university',ws:'Graduate Degrees',field:'C_Uni name',stage:'phd'},
+    {key:'phd_country',label:'PhD country',ws:'Graduate Degrees',field:'Country',stage:'phd'},
+    {key:'phd_year',label:'PhD completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'phd'},
+    {key:'phd_thesis_url',label:'PhD thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'phd'}
+  ];
+}
+
+function buildScholarSubmissionChanges_(ss, submission) {
+  var fields=parseJsonObject_(submission['Submitted Fields JSON']), structured=parseJsonObject_(submission['Structured Submission JSON']), changedOnly=structured.changedFieldsOnly===true, sid=String(submission['Scholar ID']||''), out=[];
+  var scholarSheet=ss.getSheetByName('Scholars'), scholarCfg=MAPPING.worksheets.Scholars, scholarInfo=locateRow_(scholarSheet,scholarCfg,{scholarId:sid});
+  var gradSheet=ss.getSheetByName('Graduate Degrees'), gradRows={}, degreeCounts={master:0,phd:0};
+  if(gradSheet){
+    var lastCol=gradSheet.getLastColumn(), headers=gradSheet.getRange(4,1,1,lastCol).getDisplayValues()[0], sidCol=headers.indexOf('Scholar ID')+1, stageCol=headers.indexOf('Degree Stage')+1, last=gradSheet.getLastRow();
+    if(sidCol&&stageCol&&last>=5){var vals=gradSheet.getRange(5,1,last-4,lastCol).getDisplayValues();vals.forEach(function(r,i){if(String(r[sidCol-1])!==sid)return;var stage=String(r[stageCol-1]||'').toLowerCase();if(/master/.test(stage))degreeCounts.master++;if(/(phd|doctor)/.test(stage))degreeCounts.phd++;if(!gradRows.master&&/master/.test(stage))gradRows.master={row:i+5,headers:headers};if(!gradRows.phd&&/(phd|doctor)/.test(stage))gradRows.phd={row:i+5,headers:headers};});}
+  }
+  scholarSubmissionFieldSpecs_().forEach(function(spec){
+    if(!Object.prototype.hasOwnProperty.call(fields,spec.key))return;
+    var proposed=spec.clean?spec.clean(fields[spec.key]):String(fields[spec.key]==null?'':fields[spec.key]).trim();
+    // Older submissions sent every form control and therefore cannot
+    // distinguish an untouched empty control from a deliberate clear. The
+    // safe review behaviour is to suppress legacy blank clears.
+    if(!changedOnly && proposed==='')return;
+    var current='',rowNumber=null,writable=true,reason='';
+    if(spec.ws==='Scholars'){
+      if(!scholarInfo.ok){writable=false;reason=scholarInfo.reason||'scholar-not-found';}
+      else {var col=scholarInfo.headers[spec.field];if(!col){writable=false;reason='Master field not found';}else current=normalizeForRead_(scholarSheet.getRange(scholarInfo.row,col).getValue());}
+    } else {
+      var degree=gradRows[spec.stage];
+      if(degreeCounts[spec.stage]>1){writable=false;reason='Multiple degree rows: use the scholar editor to choose the correct degree';}
+      else if(!degree){writable=false;reason='No existing '+spec.stage+' degree row in Master';}
+      else {var dcol=degree.headers.indexOf(spec.field)+1;if(!dcol){writable=false;reason='Master field not found';}else{rowNumber=degree.row;current=normalizeForRead_(gradSheet.getRange(degree.row,dcol).getValue());}}
+    }
+    // Public forms display Master sentinel values such as "Unclassified" as
+    // an empty control. Treat those as equivalent, particularly for legacy
+    // submissions made before the browser began sending changed fields only.
+    if(writable && spec.ws==='Scholars' && scholarSheet.getRange(scholarInfo.row,scholarInfo.headers[spec.field]).getFormula()){writable=false;reason='Computed field; update its source field in Master';}
+    var fieldCfg=MAPPING.worksheets[spec.ws].fields[spec.field];
+    if(writable && (!fieldCfg || !validateValue_(proposed,fieldCfg).ok || /^\s*=/.test(proposed))){writable=false;reason='Value requires correction before approval';}
+    var currentCompare=/^(unclassified|unknown|n\/a|na|-)$/i.test(String(current||'').trim())?'':current;
+    if(normalizeForCompare_(currentCompare)===normalizeForCompare_(proposed))return;
+    out.push({key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
+  });
+  // These are deliberately retained as visible manual-review changes because
+  // they live in the GitHub enrichment sidecar, not in a Master Sheet column.
+  // Sidecar URLs cannot be compared with the Master sheet. New submissions
+  // contain them only when edited, but legacy submissions contained every
+  // prefilled field. Hide them for legacy rows rather than claiming a change.
+  if(changedOnly){
+    [{key:'institution_url',label:'Institution URL'},{key:'department_url',label:'Department URL'}].forEach(function(spec){
+      if(Object.prototype.hasOwnProperty.call(fields,spec.key))out.push({key:spec.key,label:spec.label,currentValue:'Stored outside Master',newValue:String(fields[spec.key]||'').trim(),writable:false,reason:'Sidecar field — apply through the normal scholar editor'});
+    });
+  }
+  return out;
+}
+
+
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-1';
+var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
+var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
+var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
+function geoSs_(){return SpreadsheetApp.openById(SPREADSHEET_ID_HINT);}
+function tongaPublicEnabled_(){return PropertiesService.getScriptProperties().getProperty('TONGA_PUBLIC_SUBMISSIONS_ENABLED')==='true';}
+function tongaLiteral_(v){return typeof v==='string' && /^[=+@-]/.test(v) ? "'"+v : v;}
+function tongaTable_(ss,name){
+  var sh=ss.getSheetByName(name);if(!sh)throw new Error(name+' worksheet missing');
+  var n=sh.getLastColumn();if(!n)throw new Error(name+' headers missing');
+  var h=sh.getRange(4,1,1,n).getDisplayValues()[0];
+  var rows=sh.getLastRow()>4?sh.getRange(5,1,sh.getLastRow()-4,n).getDisplayValues():[];
+  return {sheet:sh,headers:h,rows:rows};
+}
+function tongaEnsureGeoQueue_(ss){
+  var sh=ss.getSheetByName(GEO_SUBMISSION_SHEET)||ss.insertSheet(GEO_SUBMISSION_SHEET);
+  if(sh.getMaxColumns()<GEO_SUBMISSION_HEADERS.length)sh.insertColumnsAfter(sh.getMaxColumns(),GEO_SUBMISSION_HEADERS.length-sh.getMaxColumns());
+  if(sh.getMaxRows()<5)sh.insertRowsAfter(sh.getMaxRows(),5-sh.getMaxRows());
+  var h=sh.getRange(4,1,1,GEO_SUBMISSION_HEADERS.length).getDisplayValues()[0];
+  if(h.some(function(x){return !!x;})&&h.join('|')!==GEO_SUBMISSION_HEADERS.join('|'))throw new Error('Existing geography queue headers differ; no data overwritten');
+  if(h.join('|')!==GEO_SUBMISSION_HEADERS.join('|'))sh.getRange(4,1,1,GEO_SUBMISSION_HEADERS.length).setValues([GEO_SUBMISSION_HEADERS]);
+  sh.setFrozenRows(4);return sh;
+}
+function validScholarShareToken_(ss,sid,token){
+  if(!/^TNG-S\d{4,}$/i.test(sid)||!/^[a-f0-9]{40}$/i.test(token))return false;
+  var t=tongaTable_(ss,'Scholars'),i=t.headers.indexOf('Scholar ID'),k=t.headers.indexOf('Scholar Share Token');
+  if(i<0||k<0)return false;
+  var matches=t.rows.filter(function(r){return r[i].toUpperCase()===sid.toUpperCase();});
+  return matches.length===1&&matches[0][k].toLowerCase()===token.toLowerCase();
+}
+function tongaQueueObject_(sh,headers,id){
+  var last=sh.getLastRow();if(last<5)return null;
+  var rows=sh.getRange(5,1,last-4,headers.length).getDisplayValues();
+  for(var i=0;i<rows.length;i++)if(rows[i][0]===id){var o={_row:i+5,_sheet:sh};headers.forEach(function(h,j){o[h]=rows[i][j];});return o;}
+  return null;
+}
+function tongaNow_(){return Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd HH:mm:ss');}
+function tongaDivision_(s){
+  var v=String(s||'').trim().replace(/[‘’ʻʼ]/g,"'");
+  for(var i=0;i<TONGA_DIVISIONS.length;i++)if(TONGA_DIVISIONS[i].toLowerCase()===v.toLowerCase())return TONGA_DIVISIONS[i];
+  if(!v)return '';throw new Error('Invalid Tonga island division: '+v);
+}
+function tongaList_(v){
+  if(v==null)return [];if(!Array.isArray(v)||v.length>50)throw new Error('Invalid country list');
+  var out=[];v.forEach(function(x){if(typeof x!=='string')throw new Error('Country must be text');x=x.trim();if(!x||x.length>100||/[;\n\r=]/.test(x))throw new Error('Invalid country name');if(out.indexOf(x)<0)out.push(x);});return out;
+}
+function tongaLocations_(v){
+  if(v==null)return [];if(!Array.isArray(v)||v.length>30)throw new Error('Invalid Tonga location list');
+  return v.map(function(x){
+    if(!x||typeof x!=='object'||Array.isArray(x))throw new Error('Invalid Tonga location');
+    var o={national:x.national===true,division:tongaDivision_(x.division),district:String(x.district||'').trim(),island:String(x.island||'').trim(),village:String(x.village||'').trim()};
+    ['district','island','village'].forEach(function(k){if(o[k].length>160||/[=\r\n]/.test(o[k]))throw new Error('Invalid location text');});
+    if(o.national&&(o.division||o.district||o.island||o.village))throw new Error('National study must not also specify a locality in the same entry');
+    if(!o.national&&!o.division)throw new Error('Choose an island division for a local Tonga study');return o;
+  });
+}
+function tongaLinkedPublication_(ss,sid,key){
+  var t=tongaTable_(ss,'Authorship'),si=t.headers.indexOf('Scholar ID'),pi=t.headers.indexOf('Publication ID / BibTeX Key');
+  if(pi<0)pi=t.headers.indexOf('Publication ID');if(pi<0)pi=t.headers.indexOf('BibTeX Key');
+  if(si<0||pi<0)throw new Error('Authorship headers require verification');
+  return t.rows.some(function(r){return r[si]===sid&&r[pi]===key;});
+}
+function handlePublicPublicationGeographySubmission_(body){
+  var ss=geoSs_(),sid=String(body.scholarId||'').toUpperCase();
+  if(!validScholarShareToken_(ss,sid,String(body.shareToken||'')))return jsonOut_({status:'unauthorized'});
+  var name=String(body.submitterName||'').trim(),email=String(body.submitterEmail||'').trim(),rel=String(body.submitterRelationship||'').trim();
+  if(!name||!rel||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email))throw new Error('Valid name, email and relationship required');
+  if(isScholarSubmitterBlocked_(ss,email))return jsonOut_({status:'forbidden'});
+  if(!Array.isArray(body.changes)||!body.changes.length||body.changes.length>100)throw new Error('Provide 1–100 publication changes');
+  var rows=body.changes.map(function(c){
+    var key=String(c.item_key||'').trim();if(!key||key.length>300||!tongaLinkedPublication_(ss,sid,key))throw new Error('Publication is not linked to this scholar');
+    var loc=tongaLocations_(c.tonga_locations),pac=tongaList_(c.pacific_countries),other=tongaList_(c.other_countries);
+    if(!loc.length&&!pac.length&&!other.length)throw new Error('Choose at least one research location');
+    return ['PGS-'+Utilities.getUuid(),tongaNow_(),'Pending',sid,String(body.scholarName||'').slice(0,240),name.slice(0,160),email.slice(0,240),rel.slice(0,100),String(body.profileUrl||'').slice(0,700),key,String(c.title||'').slice(0,700),String(c.year||'').slice(0,20),JSON.stringify(loc),pac.join('; '),other.join('; '),'','','',''].map(tongaLiteral_);
+  });
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{var sh=tongaEnsureGeoQueue_(ss);sh.getRange(sh.getLastRow()+1,1,rows.length,GEO_SUBMISSION_HEADERS.length).setValues(rows);}finally{lock.releaseLock();}
+  return jsonOut_({status:'ok',queued:rows.length});
+}
+function handleReadPublicationGeographySubmissions_(params){
+  var ss=geoSs_(),sh=tongaEnsureGeoQueue_(ss),last=sh.getLastRow(),out=[];
+  if(last>4)sh.getRange(5,1,last-4,GEO_SUBMISSION_HEADERS.length).getDisplayValues().forEach(function(r){if(!r[0]||(params.status&&r[2]!==params.status))return;var o={};GEO_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i];});out.push(o);});
+  return jsonOut_({status:'ok',rows:out.reverse()});
+}
+function tongaAddGeo_(ss,o){
+  if(!tongaLinkedPublication_(ss,o['Scholar ID'],o['Publication Key']))throw new Error('Publication linkage changed; review again');
+  var t=tongaTable_(ss,'Research Geography');
+  var required=['Geography Record ID','Publication ID / BibTeX Key','Scholar ID (optional)','Geography Type','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)','Coding Basis / Evidence','Source URL / Note','Verification','Last Checked'];
+  required.forEach(function(h){if(t.headers.indexOf(h)<0)throw new Error('Research Geography header missing: '+h);});
+  var loc=tongaLocations_(JSON.parse(o['Proposed Tonga Locations JSON']||'[]')),candidates=[];
+  loc.forEach(function(l){candidates.push({country:'Tonga',division:l.division,district:l.district,island:l.island,village:l.village,type:l.national?'National / general study':'Study location'});});
+  [o['Proposed Pacific Countries'],o['Proposed Other Countries']].forEach(function(s){String(s||'').split(';').map(function(x){return x.trim();}).filter(Boolean).forEach(function(c){candidates.push({country:c,division:'',district:'',island:'',village:'',type:'Country / study location'});});});
+  var keys=['Publication ID / BibTeX Key','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)'];
+  function signature(r){return keys.map(function(h){return String(r[t.headers.indexOf(h)]||'').trim().toLowerCase();}).join('|');}
+  var seen={};t.rows.forEach(function(r){seen[signature(r)]=true;});
+  var added=0;
+  candidates.forEach(function(c){
+    var r=t.headers.map(function(){return '';});function set(h,v){r[t.headers.indexOf(h)]=v;}
+    set('Geography Record ID','GEO-'+Utilities.getUuid());set('Publication ID / BibTeX Key',o['Publication Key']);set('Scholar ID (optional)',o['Scholar ID']);set('Geography Type',c.type);set('Country',c.country);set('District',c.district);set('Village / Town / Site',c.village);set('Specific Island',c.island);set('Island Division (auto from District)',c.division);
+    set('Coding Basis / Evidence','Admin-reviewed scholar submission '+o['Submission ID']);set('Source URL / Note',o['Profile URL']);set('Verification','Verified — Admin approved scholar submission');set('Last Checked',Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd'));
+    var sig=signature(r);if(seen[sig])return;
+    var row=t.sheet.getLastRow()+1;
+    // Never overwrite an existing derived formula, including a prefilled target row.
+    var formulas=t.sheet.getRange(row,1,1,t.headers.length).getFormulas()[0];
+    if(formulas.some(function(f){return !!f;}))throw new Error('Target geography row contains formulas; review append location');
+    t.sheet.getRange(row,1,1,r.length).setValues([r.map(tongaLiteral_)]);seen[sig]=true;added++;
+  });return added;
+}
+function handleResolvePublicationGeographySubmission_(body){
+  if(['approve','reject'].indexOf(body.decision)<0)throw new Error('Invalid decision');
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{
+    var ss=geoSs_(),o=tongaQueueObject_(tongaEnsureGeoQueue_(ss),GEO_SUBMISSION_HEADERS,String(body.submissionId||''));
+    if(!o)return jsonOut_({status:'not_found'});if(o.Status!=='Pending')return jsonOut_({status:'already_resolved',decision:o.Status});
+    var n=body.decision==='approve'?tongaAddGeo_(ss,o):0,status=body.decision==='approve'?'Approved':'Rejected';
+    var resolution=status==='Approved'?n+' new geography rows added; existing geography preserved.':'Rejected; no Master changes.';
+    o._sheet.getRange(o._row,16,1,4).setValues([[tongaLiteral_(String(body.reviewNotes||'').slice(0,1500)),ACTOR_LABEL,tongaNow_(),resolution]]);
+    appendChangeLog_(ss,GEO_SUBMISSION_SHEET,o['Scholar ID'],o['Submission ID'],'Pending',status);
+    o._sheet.getRange(o._row,3).setValue(status);return jsonOut_({status:'ok',decision:body.decision,added:n});
+  }finally{lock.releaseLock();}
+}
+function tongaApproveScholar_(body){
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{
+    var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));
+    if(!o)return jsonOut_({status:'not_found'});if(o.Status!=='Pending')return jsonOut_({status:'already_resolved'});
+    var proposed=buildScholarSubmissionChanges_(ss,o),chosen=body.selectedChanges;
+    if(!Array.isArray(chosen)||!chosen.length)throw new Error('Select at least one field');
+    var changes=[],seen={};chosen.forEach(function(x){
+      if(seen[x.key])throw new Error('Duplicate selected field');seen[x.key]=true;
+      var p=proposed.filter(function(v){return v.key===x.key;})[0];
+      if(!p||!p.writable)throw new Error('Field is not currently writable; refresh review');
+      if(normalizeForCompare_(x.expectedCurrent)!==normalizeForCompare_(p.currentValue))throw new Error('Master changed since review; refresh before approving');
+      changes.push({worksheet:p.worksheet,scholarId:o['Scholar ID'],rowNumber:p.rowNumber,field:p.field,oldValue:p.currentValue,newValue:p.newValue});
+    });
+    // Validate every selected field before the first write. Retain Pending if any operation fails.
+    var checks=changes.map(function(c){return applyOneChange_(ss,c,true);});
+    if(checks.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;}))return jsonOut_({status:'rejected',results:checks});
+    var results=changes.map(function(c){return applyOneChange_(ss,c,false);});
+    if(results.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;}))return jsonOut_({status:'partial',results:results});
+    var pending=buildScholarSubmissionChanges_(ss,o),files=parseJsonObject_(o['Attachments JSON']);
+    var remains=pending.length>0||(Array.isArray(files)&&files.length>0);
+    o._sheet.getRange(o._row,13,1,4).setValues([[tongaLiteral_(String(body.reviewNotes||'').slice(0,1500)),ACTOR_LABEL,tongaNow_(),'Applied '+changes.length+' selected field(s). '+(remains?'Remaining fields/attachments require review.':'All proposed fields applied.')]]);
+    if(!remains)o._sheet.getRange(o._row,3).setValue('Reviewed');
+    return jsonOut_({status:'ok',results:results,remainingReview:remains});
+  }finally{lock.releaseLock();}
+}
+function tongaResolveScholar_(body){
+  if(['reject','reviewed'].indexOf(body.decision)<0)throw new Error('Invalid decision');
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{
+    var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));if(!o)return jsonOut_({status:'not_found'});
+    if(o.Status!=='Pending')return jsonOut_({status:'already_resolved'});
+    if(body.decision==='reviewed'&&!String(body.reviewNotes||'').trim())throw new Error('Describe disposition of remaining fields and attachments');
+    var status=body.decision==='reject'?'Rejected':'Reviewed';
+    var message='Closed review. This action makes no Master, photo or publication changes; earlier approved changes, if any, remain recorded.';
+    o._sheet.getRange(o._row,13,1,4).setValues([[tongaLiteral_(String(body.reviewNotes||'').slice(0,1500)),ACTOR_LABEL,tongaNow_(),message]]);
+    appendChangeLog_(ss,SCHOLAR_SUBMISSION_SHEET,o['Scholar ID'],o['Submission ID'],'Pending',status);o._sheet.getRange(o._row,3).setValue(status);
+    return jsonOut_({status:'ok',decision:body.decision});
+  }finally{lock.releaseLock();}
+}
+/** Run once in the editor. Creates review sheets only; does not enable public submissions. */
+function setupTongaSubmissionQueues(){
+  var ss=geoSs_();
+  if(ss.getId()!=='1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI')throw new Error('Wrong spreadsheet');
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{ensureScholarSubmissionSheet_(ss);ensureScholarBlocklistSheet_(ss);tongaEnsureGeoQueue_(ss);}finally{lock.releaseLock();}
+  Logger.log('Tonga submission queues ready. Public submissions remain '+(tongaPublicEnabled_()?'enabled':'disabled')+'.');
+}
