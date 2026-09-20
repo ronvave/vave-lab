@@ -4100,19 +4100,18 @@
 
       <!-- Compact live-status pill row -->
       <div class="db-status-row" data-db-status>
-        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Automatic check against the live Zotero library">
+        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Data from the Solomon Islands Master file">
           <span class="db-pill__dot db-sync-badge__dot"></span>
           <span data-db-sync-text>Loading…</span>
         </span>
-        <span class="db-pill"><b>Live:</b>&nbsp;<span data-db-live-total>—</span>&nbsp;items</span>
-        <span class="db-pill"><b>Snapshot:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;items indexed</span>
+        <span class="db-pill"><b>Master file:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;publications indexed</span>
         <span class="db-pill"><span data-db-itaukei-count>—</span>&nbsp;works with Solomon Islander authors</span>
         <span class="db-pill db-pill--muted" data-db-updated-pill>Updated —</span>
         <span class="db-sync-note" data-db-sync-note></span>
       </div>
 
       <div class="db-fallback-banner" data-db-fallback>
-        <strong>Live Zotero check unavailable.</strong> Showing the most recent local snapshot &mdash; map, charts, and search remain fully functional. <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener">Open the live Zotero library</a> for the latest additions.
+        <strong>Master-file data could not be loaded.</strong> The dashboard cannot display its figures until this country’s Master-file data is available. Please reload the page.
       </div>
 
       <!-- Database overview: statistics describing the entire indexed database -->
@@ -4226,7 +4225,7 @@
           </div>
           <div>
             <h4>Update cadence</h4>
-            <p>The underlying Zotero group library is the source of truth and is updated continuously. This page loads a cached snapshot for fast rendering and checks the live library each visit to flag additions. The snapshot itself is regenerated on a monthly cadence, or sooner when a substantial batch is added.</p>
+            <p>The Solomon Islands Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
 
             <h4>Known gaps &amp; caveats</h4>
             <ul>
@@ -4303,7 +4302,7 @@
               <span class="db-nonfiji__sub">Publications by or with Solomon Islanders that are not assigned to one of the nine provinces. This includes missing location evidence; it does not mean the research took place overseas.</span>
             </div>
             <div class="db-sync-inline">
-              <b>Sync:</b> <span data-db-sync-inline>loading…</span>
+              <b>Master-file update:</b> <span data-db-sync-inline>loading…</span>
             </div>
           </aside>
         </div>
@@ -4503,7 +4502,7 @@
           <button type="button" class="db-panel__embed-expand" aria-label="Open chord chart full screen" title="Full screen">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
           </button>
-          <iframe src="itaukei-chord-flanked.html?embedded=1&amp;cohort=solomon&amp;v=tng2"
+          <iframe src="itaukei-chord-flanked.html?embedded=1&amp;cohort=solomon&amp;v=e0b26627"
                   title="Solomon Islander scholarly mobility (chord chart)"
                   loading="lazy" referrerpolicy="no-referrer"></iframe>
           <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
@@ -5060,13 +5059,12 @@
       <div class="db-cite reveal">
         <h3>Cite this database</h3>
         <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). Solomon Islands Academic Research: A curated database of scholarly publications on Solomon Islands and Solomon Islanders. Zotero Group Library. Retrieved from https://www.zotero.org/groups/5983386/itaukei_academic_research</code>
+        <code>Vave, R. (2026). Solomon Islands Academic Research: A curated database of scholarly publications on Solomon Islands and Solomon Islanders. Master-file database. Retrieved from https://ronvave.github.io/vave-lab/solomon-islands-research-database-master.html</code>
       </div>
       <div class="db-contribute reveal">
         <h3>Contribute · Suggest an item</h3>
         <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by a Solomon Islander scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
         <a href="mailto:ronvave@hawaii.edu?subject=Solomon Islands%20Scholar%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20Solomon Islander)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
-        <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener" class="btn btn--ghost" style="display:inline-block;margin-left:var(--space-2);">Open Zotero library</a>
       </div>
     </div>
 
@@ -5359,10 +5357,10 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/solomon-demo-gate.js?v=49121e0c" defer></script>
-<script src="js/solomon-database-adapter.js?v=bc3e5a4e" defer></script>
-<script src="js/solomon-database-master.js?v=8f5d4288" defer></script>
-<script src="js/solomon-panel-overrides.js?v=1ace0c6b" defer></script>
+<script src="js/solomon-demo-gate.js?v=4c614b62" defer></script>
+<script src="js/solomon-database-adapter.js?v=bc322ae8" defer></script>
+<script src="js/solomon-database-master.js?v=226f2495" defer></script>
+<script src="js/solomon-panel-overrides.js?v=031c8e5a" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a
@@ -5468,4 +5466,3 @@
 </script>
 </body>
 </html>
-
