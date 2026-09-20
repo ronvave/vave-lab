@@ -267,6 +267,19 @@
     .btn-download:hover{ background:var(--color-primary-hover,#0C4E54); border-color:var(--color-primary-hover,#0C4E54); }
     .dl-hint{ flex-basis:100%; text-align:center; font-size:var(--text-xs); color:var(--color-text-faint); margin-top:2px; }
 
+    /* Expanded B3 owns one viewport. Filters/captions reserve their real height;
+       the remaining slot fits the whole figure, including all university labels. */
+    body.is-tongan.is-embed-fullscreen { margin:0; overflow:hidden; }
+    body.is-tongan.is-embed-fullscreen .chord-canvas { height:100dvh; width:100%; box-sizing:border-box; display:flex; flex-direction:column; overflow:hidden; }
+    body.is-tongan.is-embed-fullscreen .mobility-filters { flex:none; padding:12px 145px 6px 16px; }
+    body.is-tongan.is-embed-fullscreen #wrap { flex:1; min-height:0 !important; min-width:0; width:100%; max-width:none; padding:6px 12px 10px !important; overflow:visible; justify-content:flex-start; }
+    body.is-tongan.is-embed-fullscreen .mobility-summary { flex:none; margin:0 8px 8px; padding:0; font-size:clamp(16px,1vw,22px); }
+    body.is-tongan.is-embedded.is-embed-fullscreen .chord-subtitle { flex:none; margin:8px 8px 0 !important; }
+    body.is-tongan.is-embed-fullscreen .mobility-figure-fit { position:relative; flex:1; min-height:0; width:100%; }
+    body.is-tongan.is-embed-fullscreen .legend-flank { position:absolute; left:50%; top:50%; margin:0; transform-origin:center; }
+    body.is-tongan.is-embed-fullscreen #chart { max-height:var(--mobility-chart-height,60vh); }
+    body.is-tongan.is-embed-fullscreen .legend-flank__col { gap:clamp(3px,0.45vh,7px); }
+
     /* ---- ribbon / arc hover tooltip ---- */
     #chord-tip{
       position:fixed; z-index:60; pointer-events:none; opacity:0;
@@ -458,6 +471,7 @@
              rendered as DOM rows into left/right columns first, and only
              wrapping to the bottom strip when both flanks are full. -->
         <p id="mobility-empty" role="status" hidden></p>
+        <div class="mobility-figure-fit">
         <div class="legend-flank" id="legend-flank">
           <div class="legend-flank__title">University key</div>
           <div class="legend-flank__col legend-flank__col--left legend-flank__outer" id="legend-flank-outer-left"></div>
@@ -476,6 +490,7 @@
           </div>
           <div class="legend-flank__col legend-flank__col--right" id="legend-flank-right"></div>
           <div class="legend-flank__bottom" id="legend-flank-bottom"></div>
+        </div>
         </div>
         <svg id="legend" class="legend-flank__hidden" width="1160" height="177" viewBox="0 -8 1160 177" aria-hidden="true"></svg>
         <div class="caption" id="cap">Source: Tongan Research Database.</div>
@@ -714,7 +729,7 @@ function draw(data){
     const explanation = document.querySelector('.chord-subtitle');
     explanation.textContent = 'Ribbons = Master’s → PhD pathways · Inner ring = university · Middle ring = country · Outer ring = region.' +
       (data.excludedPathways ? ` ${data.excludedPathways} further pathways across the full dataset await verified institution details and are not plotted.` : '');
-    document.getElementById('legend-flank').after(explanation);
+    document.querySelector('.mobility-figure-fit').after(explanation);
   }
   d3.select("#chart").selectAll("*").remove();
   d3.select("#legend").selectAll("*").remove();
@@ -902,6 +917,7 @@ function renderFlankedLegend(nodes, data){
     const perColumn = compact ? Math.ceil(rows.length / 2) : Math.max(27, Math.ceil(rows.length / 4));
     const outerSplit = 2 * perColumn + Math.ceil(Math.max(0, rows.length - 2 * perColumn) / 2);
     rows.forEach((row, i) => (i < perColumn ? leftEl : i < 2 * perColumn ? rightEl : i < outerSplit ? outerLeft : outerRight).appendChild(row));
+    fitExpandedMobility();
     return;
   }
 
@@ -943,6 +959,24 @@ function renderFlankedLegend(nodes, data){
   for (let i = sideCap; i < total; i++) bottomEl.appendChild(rows[i]);
 }
 
+// Fit the full figure rather than clipping a width-driven SVG at the viewport.
+function fitExpandedMobility(){
+  const figure=document.getElementById('legend-flank');
+  const slot=document.querySelector('.mobility-figure-fit');
+  if(!document.body.classList.contains('is-embed-fullscreen')){
+    figure.style.width=''; figure.style.transform='';
+    figure.style.removeProperty('--mobility-chart-height'); return;
+  }
+  const width=slot.clientWidth, height=slot.clientHeight;
+  if(!width || !height || figure.hidden)return;
+  figure.style.width=Math.max(1000,width)+'px';
+  figure.style.setProperty('--mobility-chart-height',height+'px');
+  figure.style.transform='translate(-50%,-50%)';
+  const natural=figure.getBoundingClientRect();
+  const scale=Math.min(1,width/natural.width,height/natural.height);
+  figure.style.transform='translate(-50%,-50%) scale('+scale+')';
+}
+
 // Re-balance the flanked legend when the chart wrapper changes size (fullscreen
 // toggle, window resize, iframe container resize). We debounce because the
 // ResizeObserver can fire on every animation frame during a transition.
@@ -958,7 +992,7 @@ function renderFlankedLegend(nodes, data){
       }
     });
   };
-  const target = document.querySelector(".legend-flank__chart") || document.getElementById("legend-flank");
+  const target = document.querySelector(".mobility-figure-fit") || document.getElementById("legend-flank");
   if (window.ResizeObserver && target) {
     new ResizeObserver(kick).observe(target);
   }

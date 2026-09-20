@@ -111,3 +111,17 @@ not a computed-browser-layout pass. Other-panel behavior and Share/Update info
 were preserved by scoped diffs and guard checks; live interaction is unverified.
 Two pre-existing temporary patch workflows remain failing; they also failed
 at the approved baseline and are unrelated to B3. Required release gates pass.
+
+
+## Expanded B3 viewport fit repair
+User screenshot confirmed the width-driven chart exceeded the screen height.
+Expanded mode now allocates one dynamic viewport to the complete canvas,
+reserves actual filter and caption heights, and uses the remaining flex slot
+for the figure. The circle is height-capped without stretching; the complete
+label-and-chart grid scales only when necessary to fit both dimensions.
+Removed the expanded wrapper's fixed minimum height/width constraints.
+ResizeObserver re-fits after resizing, filtering and fullscreen transitions.
+Embedded behavior and source data are unchanged. Automated fit checks cover
+wide, short, narrow and large-label geometries plus the existing regressions.
+Live browser visual checks remain access-blocked; the synthetic local preview
+was also blocked by the browser's localhost restriction. No visual pass claimed.

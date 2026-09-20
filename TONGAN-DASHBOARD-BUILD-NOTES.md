@@ -91,3 +91,17 @@ Every target in `scripts/tongan_encrypt_data.py`'s `TARGETS` list now has a real
 ## Tonga Panel B3 replication
 
 Adapted the approved iTaukei B3 baseline d48c5ccf9a111ca2cb1250880d9e4fd5d83c4ba6 with a Tonga-only gated loader, canonical paired model, maintained filters, dynamic captions, compact/expanded layout and dropdown dismissal. Canonical Scholar ID is retained by scheduled exports; successful Tonga refreshes now trigger Pages deployment. See docs/TONGAN-B3-MOBILITY-CONTRACT.md for population rules, nine verified institution corrections, unresolved pathways, tests, and scoped rollback. Other panels and Admin content are preserved.
+
+
+## Expanded B3 viewport fit repair
+User screenshot confirmed the width-driven chart exceeded the screen height.
+Expanded mode now allocates one dynamic viewport to the complete canvas,
+reserves actual filter and caption heights, and uses the remaining flex slot
+for the figure. The circle is height-capped without stretching; the complete
+label-and-chart grid scales only when necessary to fit both dimensions.
+Removed the expanded wrapper's fixed minimum height/width constraints.
+ResizeObserver re-fits after resizing, filtering and fullscreen transitions.
+Embedded behavior and source data are unchanged. Automated fit checks cover
+wide, short, narrow and large-label geometries plus the existing regressions.
+Live browser visual checks remain access-blocked; the synthetic local preview
+was also blocked by the browser's localhost restriction. No visual pass claimed.

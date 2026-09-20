@@ -72,6 +72,19 @@ async function fetchJson(url){
  assert.match(chord,/body\.is-tongan\.is-embed-fullscreen \.legend-flank\.is-compact\s*\{ grid-template-columns:minmax\(0,1fr\) minmax\(360px,54%\) minmax\(0,1fr\);/);
  assert.match(chord,/const compact = rows.length <= 54/);
  assert.match(chord,/minmax\(360px,38%\)/);
+ // Exercise viewport fitting against tall, wide, compact and large figures.
+ const fitSource=chord.slice(chord.indexOf('function fitExpandedMobility(){'),chord.indexOf('// Re-balance the flanked legend'));
+ for(const [width,height,naturalWidth,naturalHeight] of [[2024,820,2024,1010],[1342,530,1342,710],[1000,420,1000,900],[760,400,1000,650]]){
+  const style={setProperty(k,v){this[k]=v;},removeProperty(k){delete this[k];}};
+  const figure={style,hidden:false,getBoundingClientRect:()=>({width:naturalWidth,height:naturalHeight})};
+  const fitContext=vm.createContext({document:{body:{classList:{contains:()=>true}},getElementById:()=>figure,querySelector:()=>({clientWidth:width,clientHeight:height})}});
+  vm.runInContext(fitSource+';fitExpandedMobility()',fitContext);
+  const scale=Number(style.transform.match(/scale\(([^)]+)\)/)[1]);
+  assert(naturalWidth*scale<=width+0.001&&naturalHeight*scale<=height+0.001,'Entire figure must fit both dimensions');
+  assert.equal(style['--mobility-chart-height'],height+'px');
+ }
+ assert.match(chord,/min-height:0 !important; min-width:0/);
+ assert.match(chord,/height:100dvh/);
  const share=source('s.html');assert.match(share,/visibility:hidden/);assert.match(share,/profile-ready/);
  console.log('PASS Tonga:',photos,'photos;',summaries,'saved summaries;',new Set(actual.flows.map(f=>f.scholar_id)).size,'scholars;',actual.flows.length,'pathways;',actual.uni_list.length,'universities;',new Set(actual.uni_list.map(u=>u.country)).size,'countries;',new Set(actual.uni_list.map(u=>u.region)).size,'regions;',result.excluded.length,'excluded.');
  console.log('PASS Tonga: canonical IDs, deduplication, distinct degree episodes, ongoing PhD, source loader, gated standalone, dropdown dismissal, compact fullscreen contract.');
