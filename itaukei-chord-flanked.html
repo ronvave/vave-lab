@@ -1005,6 +1005,10 @@ async function init(){
         scholar:person['Scholar Name']||person['Display Name']||person.name||r.scholar||sid,
         m_uni:r.m_uni||m['Institution Name (Current)']||m['C_Uni name']||'',
         p_uni:r.p_uni||p['Institution Name (Current)']||p['C_Uni name']||'',
+        m_year:r.m_year||m['Graduation Year']||m['Finish / Completion Year']||'',
+        p_year:r.p_year||p['Graduation Year']||p['Finish / Completion Year']||'',
+        m_title:r.m_title||m['Thesis Title']||m['Thesis / Research Title']||'',
+        p_title:r.p_title||p['Thesis Title']||p['Thesis / Research Title']||'',
         m_country:r.m_country||r["Master's Country"]||m.Country||'',
         p_country:r.p_country||r['PhD Country']||p.Country||''
       };
