@@ -91,3 +91,6 @@ async function fetchJson(url) {
   assert.match(share,/profile-ready/);
   console.log(`PASS: ${photos} saved photos, ${summaries} research summaries, ${drawn.flows.length} mobility rows / ${drawn.uni_list.length} universities, shared-page guard.`);
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
+// Run filter semantics in both existing deployment validation workflows.
+require('./itaukei-mobility-filters.test.cjs');

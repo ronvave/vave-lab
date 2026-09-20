@@ -15,6 +15,31 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
+
+    .mobility-filters { display:none; }
+    body.is-itaukei .mobility-filters { display:block; position:relative; z-index:5; padding:12px 16px; background:white; color:#132c39; cursor:auto; }
+    .mobility-filter-controls { display:flex; flex-wrap:wrap; align-items:end; gap:12px 24px; }
+    .mobility-filters label { display:block; font-size:13px; }
+    .mobility-filters select, .mobility-filters summary, .mobility-filters button { font:inherit; font-size:14px; border:1px solid #ccd3d5; border-radius:8px; background:white; padding:8px 12px; cursor:pointer; color:#132c39; }
+    .mobility-filters select { display:block; margin-top:4px; min-width:180px; }
+    .mobility-filters details { position:relative; min-width:190px; }
+    .mobility-filter-menu { position:absolute; top:100%; left:0; width:270px; max-height:340px; overflow:auto; padding:12px; background:white; border:1px solid #ccd3d5; border-radius:8px; box-shadow:0 4px 14px #0002; z-index:6; }
+    .mobility-filter-menu label { display:flex; align-items:center; gap:8px; padding:6px 0; cursor:pointer; }
+    .mobility-filter-menu input { width:16px; height:16px; }
+    .mobility-filter-actions { display:flex; gap:8px; margin-bottom:8px; }
+    .mobility-filter-actions button { font-size:12px; padding:5px 8px; }
+    .mobility-filters :focus-visible { outline:3px solid #007e8c; outline-offset:2px; }
+    .mobility-filter-help { margin:8px 0 0; font-size:12px; }
+    #mobility-empty { text-align:center; padding:36px 16px; color:#132c39; font-size:16px; }
+    #mobility-empty[hidden], #legend-flank[hidden] { display:none !important; }
+    body.is-itaukei.is-embed-fullscreen .mobility-filters { padding-top:42px; text-align:center; }
+    body.is-itaukei.is-embed-fullscreen .mobility-filter-controls { justify-content:center; text-align:left; }
+    body.is-itaukei.is-embed-fullscreen #wrap { min-height:calc(100vh - 155px) !important; padding-top:12px !important; }
+    body.is-itaukei .legend-flank.is-compact { grid-template-columns:minmax(0,1fr) minmax(360px,54%) minmax(0,1fr); }
+    body.is-itaukei .legend-flank.is-compact .legend-flank__chart { grid-column:2; }
+    body.is-itaukei .legend-flank.is-compact #legend-flank-left { grid-column:1; }
+    body.is-itaukei .legend-flank.is-compact #legend-flank-right { grid-column:3; }
+    body.is-itaukei .legend-flank.is-compact .legend-flank__outer { display:none !important; }
     .chord-canvas{
       background:#ffffff;
       border:1px solid var(--color-border);
@@ -421,6 +446,7 @@
     </div>
 
     <div class="chord-canvas reveal">
+      <div id="mobility-filters" class="mobility-filters" aria-label="Study pathway filters"></div>
       <div id="wrap">
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
         <div class="mobility-summary" id="mobility-summary" aria-live="polite"></div>
@@ -429,6 +455,7 @@
         <!-- B3A flanked layout: chord in the centre column, university key
              rendered as DOM rows into left/right columns first, and only
              wrapping to the bottom strip when both flanks are full. -->
+        <p id="mobility-empty" role="status" hidden></p>
         <div class="legend-flank" id="legend-flank">
           <div class="legend-flank__title">University key</div>
           <div class="legend-flank__col legend-flank__col--left legend-flank__outer" id="legend-flank-outer-left"></div>
@@ -526,6 +553,7 @@
   </div>
 </footer>
 
+<script src="js/itaukei-mobility-filters.js?v=9425518c"></script>
 <script>
 /* ============================================================================
    iTaukei Scholar Mobility — chord diagram
@@ -677,23 +705,29 @@ function tipForPair(srcFull, tgtFull, flows){
 
 /* ---- 4. DRAW --------------------------------------------------------------- */
 function draw(data){
+  if (document.body.classList.contains('is-itaukei') && !data.filtered) { installMobilityFilters(data); return; }
   if (document.body.classList.contains('is-itaukei')) {
     const count = new Set(data.flows.map(f => f.scholar_id || f.scholar)).size;
     const countries = new Set(data.uni_list.map(u => COUNTRY_ALIAS[u.country] || u.country).filter(Boolean)).size;
     const regions = new Set(data.uni_list.map(u => u.region).filter(r => r && r !== 'Other')).size;
     document.getElementById('mobility-summary').textContent =
-      `This chart shows where ${count} iTaukei scholars undertook their Master’s and PhD studies,\nacross ${data.uni_list.length} universities in ${countries} countries and ${regions} regions. PhD study includes completed and ongoing degrees.`;
+      `This chart shows where ${count} iTaukei ${count === 1 ? "scholar" : "scholars"} undertook their Master’s and PhD studies,\nacross ${data.uni_list.length} ${data.uni_list.length === 1 ? "university" : "universities"} in ${countries} ${countries === 1 ? "country" : "countries"} and ${regions} ${regions === 1 ? "region" : "regions"}. PhD study includes completed and ongoing degrees.`;
     const explanation = document.querySelector('.chord-subtitle');
     explanation.textContent = 'Ribbons = Master’s → PhD pathways · Inner ring = university · Middle ring = country · Outer ring = region.' +
-      (data.excludedPathways ? ` ${data.excludedPathways} further pathways await verified institution details and are not plotted.` : '');
+      (data.excludedPathways ? ` ${data.excludedPathways} further pathways across the full dataset await verified institution details and are not plotted.` : '');
     document.getElementById('legend-flank').after(explanation);
   }
   d3.select("#chart").selectAll("*").remove();
   d3.select("#legend").selectAll("*").remove();
   document.getElementById("cap").textContent =
     data.flows.length + " " + (data.cohortLabel || "iTaukei") + " scholars with recorded Master’s and PhD study pathways. Source: the country’s Scholars Master File." + (data.pairingNote || "");
+  const empty = document.getElementById('mobility-empty');
+  empty.hidden = !!data.flows.length;
+  empty.textContent = !document.body.classList.contains('is-itaukei') ? 'No complete Master’s–PhD pathways are currently recorded.' : data.emptySelection ? 'Select regions and countries to display pathways, or Reset filters.' : 'No matching Master’s–PhD pathways. Adjust or reset the filters.';
+  document.getElementById('legend-flank').hidden = !data.flows.length;
   if (!data.flows.length) {
-    d3.select("#chart").append("text").attr("x",580).attr("y",330).attr("text-anchor","middle").attr("font-size",16).text("No complete Master’s–PhD pathways are currently recorded.");
+    window.__lastLegendNodes = []; window.__lastLegendData = data;
+    renderFlankedLegend([],data);
     return;
   }
 
@@ -855,7 +889,9 @@ function renderFlankedLegend(nodes, data){
     outerRight.innerHTML = '';
     // Keep the first two sets beside the wheel, then balance the overflow
     // across both outer flanks so source cleanup cannot leave an empty side.
-    const perColumn = Math.max(27, Math.ceil(rows.length / 4));
+    const compact = rows.length <= 54;
+    document.getElementById('legend-flank').classList.toggle('is-compact', compact);
+    const perColumn = compact ? Math.ceil(rows.length / 2) : Math.max(27, Math.ceil(rows.length / 4));
     const outerSplit = 2 * perColumn + Math.ceil(Math.max(0, rows.length - 2 * perColumn) / 2);
     rows.forEach((row, i) => (i < perColumn ? leftEl : i < 2 * perColumn ? rightEl : i < outerSplit ? outerLeft : outerRight).appendChild(row));
     return;

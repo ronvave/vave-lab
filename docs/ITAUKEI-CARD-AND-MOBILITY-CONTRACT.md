@@ -70,3 +70,24 @@ below the chart, and the University key heading is hidden for iTaukei only.
 Expanded mode uses the viewport width instead of the former 1480px maximum;
 keep the four flanking columns in outer-third, inner-first, inner-second,
 outer-fourth order. Preserve other country dashboards and Admin enrichment.
+
+## B3 study-location filters — 2026-09-20
+
+The degree selector is single-choice: Either degree, Master's, PhD, Both
+degrees. Both endpoints must belong to the selected location set for Both;
+Either matches at least one endpoint. Preserve complete pathways and stable
+university numbers and colors. Filter the existing completed-Master's plus
+completed/ongoing-PhD population, never add Master's-only scholars.
+
+Region and country controls are multiselect, with country options restricted
+to selected regions. Reset filters restores the full dataset; explicit empty
+selections display a selection message. Normal and expanded views share the
+same iframe and filter state. Escape closes an open dropdown first, then the
+expanded chart. Filter interactions must not toggle fullscreen.
+
+Summary counts and legends use the same filtered model. Unverified pathway
+exclusions are labeled as full-dataset counts. Source records, Admin content,
+other-country behavior, and profile routing are unchanged.
+Run node tests/itaukei-mobility-filters.test.cjs in addition to the existing
+card/mobility regression test. Live visual validation is recorded separately
+in the Master Build and Change-Control Record.
