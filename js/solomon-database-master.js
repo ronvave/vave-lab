@@ -599,6 +599,11 @@
     // Master-specific data (14-province TOTAL columns, provinceGroup rows,
     // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
     state.master = bundle.master;
+    const verifiedLocations = (bundle.master.geography || []).filter(r => /^(verified|strong)/i.test(String(r.Verification || r['Verification Status'] || '').trim()));
+    document.querySelectorAll('[data-geography-coverage]').forEach(note => {
+      note.hidden = verifiedLocations.length > 0;
+      note.textContent = 'No verified study locations are recorded in the Master file yet. Geographic summaries will populate as Research Geography records are added and synced. Locations are not inferred from author affiliations or publication titles.';
+    });
     state.masterAdapter = window.MasterFileAdapter;
     const snap        = bundle.snap;
     const geo         = bundle.geo;
@@ -6079,7 +6084,7 @@
     const publications = Array.isArray(master.publications) ? master.publications : [];
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
     const aggregates = master.aggregates || {};
-    const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), ({m:'Male', male:'Male', f:'Female', female:'Female'}[String(s.Gender || '').trim().toLowerCase()] || '')]));
+    const genderByScholarId = new Map(scholars.map(s => [String(s['Scholar ID'] || '').trim(), ({m:'Male', male:'Male', man:'Male', f:'Female', female:'Female', woman:'Female'}[String(s.Gender || '').trim().toLowerCase()] || '')]));
     // Paternal-info lookup for Panel D milestone annotations. Fields come
     // straight from Scholars (public allowlist covers all of them). We treat
     // 'Unclassified' as blank so it doesn't leak into the rendered chart
@@ -6132,7 +6137,7 @@
       if (info.district) topParts.push(`${info.district} Province`);
       const botParts = [];
       if (info.province) botParts.push(`${info.province} Province`);
-      if (info.provinceGroup) botParts.push(`(${info.provinceGroup})`);
+      if (info.provinceGroup && info.provinceGroup !== info.province) botParts.push(`(${info.provinceGroup})`);
       // Trailing comma on topLine when bottomLine follows (mockup shows
       // "Matokana vlg, Ono-i-Lau District," then wraps to line 5).
       out.topLine = topParts.join(', ');
@@ -6155,7 +6160,12 @@
     const isMasters = row => /master/i.test(String(row['Degree Stage'] || ''));
     const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
     const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
-    const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
+    const seenDegreeIds = new Set();
+    const completedRows = gradDegrees.filter(row => {
+      const id = String(row['Degree ID'] || '').trim();
+      if (!id || seenDegreeIds.has(id) || !scholarsById.has(String(row['Scholar ID'] || '').trim()) || !isCompleted(row) || !(isMasters(row) || isPhd(row))) return false;
+      seenDegreeIds.add(id); return true;
+    });
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
     // Solomon Islands' Gender enum is stored on the Master sheet (and written by the
     // Admin Panel / Apps Script) as the literal Solomon Islands terms 'Male' (male)
@@ -6164,10 +6174,10 @@
     // genderByScholarId lookups to actually match real data. The underlying
     // iTaukei silhouette imagery for gender icons is kept unchanged per user decision.
     const milestoneDefinitions = [
-      { key: 'firstMaleMasters', label: "1st Male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemaleMasters', label: "1st Female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
-      { key: 'firstMalePhD', label: '1st Male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemalePhD', label: '1st Female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
+      { key: 'firstMaleMasters', label: "Earliest recorded male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemaleMasters', label: "Earliest recorded female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
+      { key: 'firstMalePhD', label: 'Earliest recorded male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemalePhD', label: 'Earliest recorded female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
     ];
     // Country name -> ISO-ish 2-letter code for compact milestone labels.
     // Covers every country currently in the Master-file `Country` column plus
@@ -6231,7 +6241,7 @@
     function milestoneHeadline(def) {
       const who = def.gender === 'Male' ? 'male' : 'female';
       const what = def.stage === 'phd' ? 'PhD' : "Masters";
-      return `First ${who} ${what}`;
+      return `Earliest recorded ${who} ${what}`;
     }
     const milestones = milestoneDefinitions.map(def => {
       const candidates = completedDatedRows
@@ -6346,7 +6356,7 @@
     const countries = new Set(completedRows.map(row => String(row.Country || '').trim()).filter(Boolean));
     const kpis = {
       'd-theses': completedRows.length,
-      'd-scholars': scholars.length,
+      'd-scholars': new Set(completedRows.map(row => row['Scholar ID'])).size,
       'd-masters': mastersN,
       'd-phds': phdN,
       'd-unis': universities.size,
