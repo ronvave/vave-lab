@@ -6,8 +6,8 @@
  * following Solomon Islands-specific relabeling applied throughout:
  *   - Fiji's 3 chiefly confederacies (Tovata/Kubuna/Burebasaga) are NEVER
  *     shown; Solomon Islands' 9 Provinces + Honiara City (10 first-level
- *     reporting areas) are shown instead, labeled "Province/City Area".
- *   - Fiji's 14 provinces are replaced by Solomon Islands' 23 districts, labeled
+ *     reporting areas) are shown instead, labeled "Province".
+ *   - Fiji's 14 provinces are replaced by Solomon Islands' nine provinces, labeled
  *     "District".
  *   - Village/Town (Kolo) and Specific Island are surfaced as their own
  *     displayed fields (not derived from District).
@@ -23,7 +23,7 @@
 (function () {
   'use strict';
 
-  // Bright, satellite-legible border colors — one per Solomon Islands Province/City Area
+  // Bright, satellite-legible border colors — one per Solomon Islands Province
   const CONF_COLORS = {
     Central: '#FF5A6E',
     Choiseul: '#4ECDE6',
@@ -34,7 +34,6 @@
     'Rennell-Bellona': '#56CCF2',
     Temotu: '#BB6BD9',
     Western: '#219653',
-    'Honiara City': '#EB5757'
   };
   const TYPE_LABELS = {
     journalArticle:  'Journal Article',
@@ -349,7 +348,7 @@
   function _normalizeIslandStem(v) {
     // Scholar cards show the concise physical-island name. Master values may
     // contain the explanatory qualifier "(main island)" or hierarchy suffix
-    // "Province/City Area"; neither belongs in the public locality line. Then
+    // "Province"; neither belongs in the public locality line. Then
     // trim any pre-existing Is/Island suffix so one canonical " Is" can be
     // appended without stacking.
     return v
@@ -370,10 +369,10 @@
     var islandStem = i ? _normalizeIslandStem(i) : '';
     var vlgPart = v ? (v + ' vlg') : '';
     var islPart = islandStem ? (islandStem + ' Is') : '';
-    // Solomon Islands has districts, not provinces. The stored value is the district
+    // The dashboard displays only the nine provinces. The stored value is the province
     // name; append the correct public suffix exactly once.
     var districtStem = p.replace(/\s+(province|district)\.?$/i, '').trim();
-    var provPart = districtStem ? (districtStem + ' District') : '';
+    var provPart = districtStem ? (districtStem === 'Honiara City' ? districtStem : districtStem + ' Province') : '';
 
     // 1. Village + Province (with or without a shown island).
     if (vlgPart && provPart) {
@@ -471,7 +470,7 @@
     disciplineByColKey: new Map(),   // collectionKey -> discipline name (root)
     disciplinesByItem:  new Map(),   // itemKey -> Set(discipline)
     provincesByItem:    new Map(),   // itemKey -> Set(province name)   (research-location view)
-    islandDivisionsByItem: new Map(), // itemKey -> Set(Solomon Islands Province/City Area)
+    islandDivisionsByItem: new Map(), // itemKey -> Set(Solomon Islands Province)
     paternalByItem:     new Map(),   // itemKey -> Set(province name)
     scholarByItem:      new Map(),   // itemKey -> Set(scholar leaderboard name)
     scholarKeyByName:   new Map(),   // scholar full name -> collectionKey
@@ -1410,16 +1409,16 @@
         ? `Solomon Islander scholars completed ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}% of Solomon Islander-involved works) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`
         : `Solomon Islander scholars completed ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s theses across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
     setText('[data-insight="geo"]',
-      `Solomon Islander scholarship extends across ${fmt(x.gradCountries)} countries and connects with all 23 districts of Solomon Islands.`);
+      `Solomon Islander scholarship extends across ${fmt(x.gradCountries)} countries and connects with all nine provinces of Solomon Islands.`);
   }
 
   // ============ MAP ============
   function initMap() {
     try {
       const map = L.map('db-map', {
-        center: [-19.5, -174.5],
+        center: [-9.2, 162],
         zoom: 7,
-        minZoom: 6,
+        minZoom: 4,
         maxZoom: 12,
         zoomControl: true,
         attributionControl: true,
@@ -1452,7 +1451,7 @@
           e.stopPropagation();
           const m = state.map; if (!m) return;
           m.closePopup();
-          const bounds = state.mapDefaultBounds || [[-21.5, -176.2], [-15.5, -173.6]];
+          const bounds = state.mapDefaultBounds || [[-12.5, 155], [-5, 170.5]];
           m.fitBounds(bounds, { padding: [4, 4], animate: true });
         });
       }
@@ -1465,9 +1464,9 @@
             try {
               const b = layer.getBounds();
               if (b && b.isValid()) m.fitBounds(b, { padding: [40, 40], animate: false });
-            } catch (_) { m.setView([-19.5, -174.5], 7); }
+            } catch (_) { m.setView([-9.2, 162], 7); }
           } else {
-            m.setView([-19.5, -174.5], 7);
+            m.setView([-9.2, 162], 7);
           }
         },
         onClose: () => {
@@ -1508,8 +1507,8 @@
       // Solomon Islands-focused default framing: covers all 9 provinces
       // and Honiara City without wasted margins (same box used as the fullscreen-
       // reset fallback below, so both entry points agree).
-      map.fitBounds([[-21.5, -176.2], [-15.5, -173.6]], { padding: [4, 4] });
-      state.mapDefaultBounds = [[-21.5, -176.2], [-15.5, -173.6]];
+      map.fitBounds([[-12.5, 155], [-5, 170.5]], { padding: [4, 4] });
+      state.mapDefaultBounds = [[-12.5, 155], [-5, 170.5]];
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
@@ -1608,7 +1607,7 @@
   // are counted separately as "Unmatched" so no thesis is silently dropped.
   function buildB2ProvinceGroupRollup() {
     // ProvinceGroup order matches the approved Panel B2 mockup.
-    const CONF_ORDER = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+    const CONF_ORDER = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
 
@@ -1699,7 +1698,7 @@
     );
     parts.push(
       '<div class="db-world-conf-list__label">' +
-        'By Province/City Area ' +
+        'By Province ' +
         '<span class="db-world-conf-list__label-totals">' +
           `Total ${confTotals.total}` +
           ' | ' +
@@ -1783,29 +1782,6 @@
       '</div>'
     );
     parts.push('</div>');
-    parts.push('<div class="db-world-conf-list__prov-label">By Province · descending by total</div>');
-    if (provRows.length === 0) {
-      parts.push('<p class="db-conf-narrative">No provinces matched yet.</p>');
-    } else {
-      parts.push('<div class="db-world-conf-list__prov-grid">');
-      provRows.forEach(r => {
-        parts.push(
-          '<div class="db-world-conf-list__prov-row">' +
-            `<span class="db-world-conf-list__prov-swatch" style="background:${CONF_COLORS[r.conf] || '#94a3b8'};"></span>` +
-            `<span class="db-world-conf-list__prov-name">${escapeHtml(r.name)}</span>` +
-            '<span class="db-world-conf-list__counts">' +
-              `<b>M</b> ${r.masters}` +
-              '<span class="pipe"></span>' +
-              `<b>PhD</b> ${r.phd}` +
-              '<span class="pipe"></span>' +
-              `<span class="db-world-total">Tot ${r.total}</span>` +
-            '</span>' +
-          '</div>'
-        );
-      });
-      parts.push('</div>');
-    }
-
     // Note only calls out non-Masters/PhD higher-degree theses now
     // that the Untagged row surfaces missing-province Masters/PhD
     // theses visually. Coverage-grows reminder stays because it
@@ -1850,10 +1826,10 @@
     if (emptyEl && !showCountry) emptyEl.style.display = 'none';
     if (titleEl) titleEl.textContent = showCountry
       ? 'Countries where Solomon Islanders pursued graduate study'
-      : 'Solomon Islander graduates by Province/City Area · District';
+      : 'Solomon Islander graduates by Province';
     if (explainEl) explainEl.textContent = showCountry
       ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
-      : 'Masters and PhD theses grouped by the scholar’s home Province/City Area (the 9 provinces + Honiara City), then broken down by home Ward in descending order by total.';
+      : 'Masters and PhD theses grouped by the scholar’s home Province (the nine provinces).';
     if (!showCountry && confHost) renderWorldPanelProvinceGroupView(confHost);
   }
 
@@ -3683,7 +3659,7 @@
   // opening the fullscreen "All institutions of work" dropdown.
   state.worldMode          = state.worldMode          || 'study';
 
-  // Ward -> Province/City Area lookup (182 wards across the 9 provinces
+  // Ward -> Province lookup (182 wards across the 9 provinces
   // + Honiara City, Province-Ward Lookup worksheet, Statoids-sourced,
   // pending verification against SIG Gazette No.7 Sup.5, 23 Jan 2024).
   // Honiara City is its own first-level reporting area, a sibling of the
@@ -3691,190 +3667,7 @@
   // name PROVINCE_TO_CONFEDERACY for structural parity with the cloned
   // dashboard code paths; the *content* is the real Solomon province/
   // ward structure, not a Fijian confederacy or Tongan Island Division.
-  const PROVINCE_TO_CONFEDERACY = {
-    'Banika': 'Central',
-    'East Gela': 'Central',
-    'Lovukol': 'Central',
-    'North East Gela': 'Central',
-    'North Savo': 'Central',
-    'North West Gela': 'Central',
-    'Pavuvu': 'Central',
-    'Sandfly/Buenavista': 'Central',
-    'South East Gela': 'Central',
-    'South Savo': 'Central',
-    'South West Gela': 'Central',
-    'Tulagi': 'Central',
-    'Babatana': 'Choiseul',
-    'Bangera': 'Choiseul',
-    'Batava': 'Choiseul',
-    'Katupika': 'Choiseul',
-    'Kerepangara': 'Choiseul',
-    'Kirugela': 'Choiseul',
-    'Polo': 'Choiseul',
-    'Senga': 'Choiseul',
-    'Susuka': 'Choiseul',
-    'Tavula': 'Choiseul',
-    'Tepazaka': 'Choiseul',
-    'Vasipuki': 'Choiseul',
-    'Viviru': 'Choiseul',
-    'Wagina': 'Choiseul',
-    'Aola': 'Guadalcanal',
-    'Avuavu': 'Guadalcanal',
-    'Birao': 'Guadalcanal',
-    'Duidui': 'Guadalcanal',
-    'East Ghaobata': 'Guadalcanal',
-    'East Tasimboko': 'Guadalcanal',
-    'Kolokarako': 'Guadalcanal',
-    'Longgu': 'Guadalcanal',
-    'Malango': 'Guadalcanal',
-    'Moli': 'Guadalcanal',
-    'Paripao': 'Guadalcanal',
-    'Saghalu': 'Guadalcanal',
-    'Savulei': 'Guadalcanal',
-    'Talise': 'Guadalcanal',
-    'Tandai': 'Guadalcanal',
-    'Tangarare': 'Guadalcanal',
-    'Tetekanji': 'Guadalcanal',
-    'Valasi': 'Guadalcanal',
-    'Vatukulau': 'Guadalcanal',
-    'Vulolo': 'Guadalcanal',
-    'Wanderer Bay': 'Guadalcanal',
-    'West Ghaobata': 'Guadalcanal',
-    'Baolo': 'Isabel',
-    'Buala': 'Isabel',
-    'Hovikoilo': 'Isabel',
-    'Japuana': 'Isabel',
-    'Kaloka': 'Isabel',
-    'Kia': 'Isabel',
-    'Kmaga': 'Isabel',
-    'Kokota': 'Isabel',
-    'Kolomola': 'Isabel',
-    'Kolotubi': 'Isabel',
-    'Koviloko': 'Isabel',
-    'Samasodu': 'Isabel',
-    'Sigana': 'Isabel',
-    'Susubona': 'Isabel',
-    'Tatamba': 'Isabel',
-    'Tirotongana': 'Isabel',
-    'Arosi East': 'Makira-Ulawa',
-    'Arosi North': 'Makira-Ulawa',
-    'Arosi South': 'Makira-Ulawa',
-    'Arosi West': 'Makira-Ulawa',
-    'Bauro Central': 'Makira-Ulawa',
-    'Bauro East': 'Makira-Ulawa',
-    'Bauro West': 'Makira-Ulawa',
-    'Haununu': 'Makira-Ulawa',
-    'North Ulawa': 'Makira-Ulawa',
-    'Rawo': 'Makira-Ulawa',
-    'Santa Ana': 'Makira-Ulawa',
-    'Santa Catalina': 'Makira-Ulawa',
-    'South Ulawa': 'Makira-Ulawa',
-    'Star Harbour North': 'Makira-Ulawa',
-    'Star Harbour South': 'Makira-Ulawa',
-    'Ugi and Pio': 'Makira-Ulawa',
-    'Wainoni East': 'Makira-Ulawa',
-    'Wainoni West': 'Makira-Ulawa',
-    'Weather Coast': 'Makira-Ulawa',
-    'West Ulawa': 'Makira-Ulawa',
-    'Aba/Asimeuru': 'Malaita',
-    'Aiaisi': 'Malaita',
-    'Aimela': 'Malaita',
-    'Areare': 'Malaita',
-    'Asimae': 'Malaita',
-    'Auki': 'Malaita',
-    'Buma': 'Malaita',
-    'East Baegu': 'Malaita',
-    'Fauabu': 'Malaita',
-    'Faumamanu/Kwai': 'Malaita',
-    'Fo\'ondo/Gwaiau': 'Malaita',
-    'Fouenda': 'Malaita',
-    'Gulalofou': 'Malaita',
-    'Keaimela/Radefasu': 'Malaita',
-    'Kwarekwareo': 'Malaita',
-    'Langalanga': 'Malaita',
-    'Luaniua': 'Malaita',
-    'Malu\'u': 'Malaita',
-    'Mandalua/Folotana': 'Malaita',
-    'Mareho': 'Malaita',
-    'Matakwalao': 'Malaita',
-    'Nafinua': 'Malaita',
-    'Pelau': 'Malaita',
-    'Raroisu\'u': 'Malaita',
-    'Siesie': 'Malaita',
-    'Sikaiana': 'Malaita',
-    'Sububenu/Burianiasi': 'Malaita',
-    'Sulufou/Kwarande': 'Malaita',
-    'Tai': 'Malaita',
-    'Takwa': 'Malaita',
-    'Waneagu Silana Sina': 'Malaita',
-    'Waneagu/Taelanasina': 'Malaita',
-    'West Baegu/Fataleka': 'Malaita',
-    'East Gaongau': 'Rennell-Bellona',
-    'East Tenggano': 'Rennell-Bellona',
-    'Kanava': 'Rennell-Bellona',
-    'Lughu': 'Rennell-Bellona',
-    'Matangi': 'Rennell-Bellona',
-    'Mugi Henua': 'Rennell-Bellona',
-    'Sa\'aiho': 'Rennell-Bellona',
-    'Te Tau Gangoto': 'Rennell-Bellona',
-    'West Gaongau': 'Rennell-Bellona',
-    'West Tenggano': 'Rennell-Bellona',
-    'Duff Islands': 'Temotu',
-    'Fenualoa': 'Temotu',
-    'Graciosa Bay': 'Temotu',
-    'Lipe/Temua': 'Temotu',
-    'Luva Station': 'Temotu',
-    'Manuopo': 'Temotu',
-    'Nanggu/Lord Howe': 'Temotu',
-    'Nea/Noole': 'Temotu',
-    'Nenumpo': 'Temotu',
-    'Neo': 'Temotu',
-    'Nevenema': 'Temotu',
-    'Nipua/Nopoli': 'Temotu',
-    'North East Santa Cruz': 'Temotu',
-    'Polynesian Outer Islands': 'Temotu',
-    'Tikopia': 'Temotu',
-    'Utupua': 'Temotu',
-    'Vanikoro': 'Temotu',
-    'Central Ranongga': 'Western',
-    'Gizo': 'Western',
-    'Inner Shortlands': 'Western',
-    'Irringgilla': 'Western',
-    'Kolombaghea': 'Western',
-    'Kusaghe': 'Western',
-    'Mbilua': 'Western',
-    'Mbuini Tusu': 'Western',
-    'Munda': 'Western',
-    'Ndovele': 'Western',
-    'Nggatokae': 'Western',
-    'Nono': 'Western',
-    'Noro': 'Western',
-    'North Kolombangara': 'Western',
-    'North Ranongga': 'Western',
-    'North Rendova': 'Western',
-    'North Vangunu': 'Western',
-    'Nusa Roviana': 'Western',
-    'Outer Shortlands': 'Western',
-    'Roviana Lagoon': 'Western',
-    'Simbo': 'Western',
-    'South Kolombangara': 'Western',
-    'South Ranongga': 'Western',
-    'South Rendova': 'Western',
-    'Vonavona': 'Western',
-    'Vonunu': 'Western',
-    'Cruz': 'Honiara City',
-    'Kola\'a': 'Honiara City',
-    'Kukum': 'Honiara City',
-    'Mataniko': 'Honiara City',
-    'Mbumburu': 'Honiara City',
-    'Naha': 'Honiara City',
-    'Nggossi': 'Honiara City',
-    'Panatina': 'Honiara City',
-    'Rove/Lengakiki': 'Honiara City',
-    'Vavaea': 'Honiara City',
-    'Vuhokesa': 'Honiara City',
-    'Vura': 'Honiara City'
-  };
+  const PROVINCE_TO_CONFEDERACY = {"Central": "Central", "Choiseul": "Choiseul", "Guadalcanal": "Guadalcanal", "Isabel": "Isabel", "Makira-Ulawa": "Makira-Ulawa", "Malaita": "Malaita", "Rennell-Bellona": "Rennell-Bellona", "Temotu": "Temotu", "Western": "Western"};
 
   // Alias-aware scholar-name → profile lookup. worldPoints store scholar
   // names in "First Last" order, while state.scholarProfilesByName is keyed
@@ -4117,7 +3910,6 @@
     'Rennell-Bellona': 'linear-gradient(90deg, #56CCF2 0%, #1f8fbf 100%)',
     Temotu: 'linear-gradient(90deg, #BB6BD9 0%, #8e3fae 100%)',
     Western: 'linear-gradient(90deg, #219653 0%, #15703c 100%)',
-    'Honiara City': 'linear-gradient(90deg, #EB5757 0%, #b83a3a 100%)'
   };
   const _WORK_CONF_TEXT = {
     // Most province bars are dark enough to carry white text; a few
@@ -4132,7 +3924,6 @@
     'Rennell-Bellona': '#28251D',
     Temotu: '#ffffff',
     Western: '#ffffff',
-    'Honiara City': '#ffffff'
   };
 
   function _workplaceProvinceForProfile(p) {
@@ -4170,14 +3961,14 @@
     const inst = escapeHtml(point.institution || '');
     // Header/bar colour: use the majority-provinceGroup tint at the
     // institution. Ties fall back to the neutral teal.
-    const confTally = { Central: 0, Choiseul: 0, Guadalcanal: 0, Isabel: 0, 'Makira-Ulawa': 0, Malaita: 0, 'Rennell-Bellona': 0, Temotu: 0, Western: 0, 'Honiara City': 0 };
+    const confTally = { Central: 0, Choiseul: 0, Guadalcanal: 0, Isabel: 0, 'Makira-Ulawa': 0, Malaita: 0, 'Rennell-Bellona': 0, Temotu: 0, Western: 0 };
     scholars.forEach(p => {
       const c = (p.provinceGroup || '').trim() || PROVINCE_TO_CONFEDERACY[(p.paternalProvince || '').trim()] || '';
       if (confTally[c] !== undefined) confTally[c] += 1;
     });
     let topConf = '';
     let topN = 0;
-    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].forEach(c => { if (confTally[c] > topN) { topConf = c; topN = confTally[c]; } });
+    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].forEach(c => { if (confTally[c] > topN) { topConf = c; topN = confTally[c]; } });
     const bar = _WORK_CONF_BAR[topConf] || 'linear-gradient(90deg, #0e7490 0%, #062f35 100%)';
     const barText = _WORK_CONF_TEXT[topConf] || '#ffffff';
 
@@ -4805,8 +4596,8 @@
     const conf = state.worldConfFilter;
     const prov = state.worldProvFilter;
     if (prov && conf) label.textContent = `${conf} › ${prov}`;
-    else if (conf)    label.textContent = `${conf} Province/City Area`;
-    else              label.textContent = 'All Province/City Areas';
+    else if (conf)    label.textContent = `${conf} Province`;
+    else              label.textContent = 'All Provinces';
     wrap.classList.toggle('is-filtered', !!(conf || prov));
     // Update per-row selection marks in the currently rendered lists.
     wrap.querySelectorAll('[data-conf-row]').forEach(r => {
@@ -4857,7 +4648,7 @@
   // row in the provinceGroup panel. Recomputed on wire so future data
   // updates flow through without rebuilding the dashboard.
   function computeProvinceGroupScholarCounts() {
-    const perConf = { Central: new Set(), Choiseul: new Set(), Guadalcanal: new Set(), Isabel: new Set(), 'Makira-Ulawa': new Set(), Malaita: new Set(), 'Rennell-Bellona': new Set(), Temotu: new Set(), Western: new Set(), 'Honiara City': new Set(), Unclassified: new Set() };
+    const perConf = { Central: new Set(), Choiseul: new Set(), Guadalcanal: new Set(), Isabel: new Set(), 'Makira-Ulawa': new Set(), Malaita: new Set(), 'Rennell-Bellona': new Set(), Temotu: new Set(), Western: new Set(), Unclassified: new Set() };
     const perProv = new Map(); // province -> Set of scholar names
     const grad = state.graduateStudies || { worldPoints: [] };
     (grad.worldPoints || []).forEach(p => {
@@ -4975,10 +4766,10 @@
       if (!confList) return;
       const { confCounts } = computeProvinceGroupScholarCounts();
       const rows = [];
-      // "All Province/City Areas" reset row at top. This Solomon Islands-specific public
+      // "All Provinces" reset row at top. This Solomon Islands-specific public
       // wording must never regress to the cloned Fiji label "confederacies".
-      rows.push({ key: '', label: 'All Province/City Areas', count: null, hasChildren: false });
-      ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].forEach(cf => {
+      rows.push({ key: '', label: 'All Provinces', count: null, hasChildren: false });
+      ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].forEach(cf => {
         rows.push({ key: cf, label: cf, count: confCounts[cf] || 0, hasChildren: true });
       });
       const unc = confCounts['Unclassified'] || 0;
@@ -5479,6 +5270,7 @@
     const filteredItems = itemsForMapView();
     const counts = provinceBreakdown(filteredItems);
     state.provinceLayer = L.geoJSON(geo, {
+      pointToLayer: (feature, latlng) => L.circleMarker(latlng, {radius: 10}),
       style: (feature) => {
         const n = (counts.get(feature.properties.name) || { total: 0 }).total;
         return {
@@ -5569,8 +5361,8 @@
     // pick it up — Leaflet re-renders popups on every open, so inline
     // onclick / direct listeners on this node don't survive.
     return `
-      <div class="db-popup-title">${p.name} District</div>
-      <p class="db-popup-meta">${p.provinceGroup} Province/City Area &middot; ${p.mainArea}</p>
+      <div class="db-popup-title">${p.name} Province</div>
+      <p class="db-popup-meta">${p.provinceGroup} Province &middot; ${p.mainArea}</p>
       <p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;">${b.total}</span> ${viewLabel} ${p.name}</p>
       ${rowsHtml}
       ${scholarLine}
@@ -5600,7 +5392,6 @@
       'Rennell-Bellona': { total:0, itaukei:0, coauth:0 },
       Temotu: { total:0, itaukei:0, coauth:0 },
       Western: { total:0, itaukei:0, coauth:0 },
-      'Honiara City': { total:0, itaukei:0, coauth:0 }
     };
     const confByProv = new Map();
     state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.provinceGroup));
@@ -5619,24 +5410,24 @@
 
     // Dynamic map legend title — reflects the currently-selected Panel A sub-tab.
     const legendTitles = {
-      all:    'All Solomon Islands-focused publications by study district',
-      lead:   'Solomon Islander-led publications by study district',
-      coauth: 'Publications co-authored with Solomon Islander scholars by study district'
+      all:    'All Solomon Islands-focused publications by study province',
+      lead:   'Solomon Islander-led publications by study province',
+      coauth: 'Publications co-authored with Solomon Islander scholars by study province'
     };
     const legendTitleEl = $('[data-db-map-legend-title]');
     if (legendTitleEl) legendTitleEl.textContent = legendTitles[state.mapView] || legendTitles.all;
 
     // Dynamic explanation sentence for the provinceGroup summary.
     const explainSentences = {
-      all:    'All Solomon Islands-focused publications, grouped by the Province/City Area of the district studied.',
-      lead:   'Publications led by a Solomon Islander first author, grouped by the Province/City Area of the district studied.',
-      coauth: 'Publications co-authored with Solomon Islander scholars, grouped by the Province/City Area of the district studied.'
+      all:    'All Solomon Islands-focused publications, grouped by the province studied.',
+      lead:   'Publications led by a Solomon Islander first author, grouped by the province studied.',
+      coauth: 'Publications co-authored with Solomon Islander scholars, grouped by the province studied.'
     };
     const explainEl = $('[data-db-conf-explain]');
     if (explainEl) explainEl.textContent = explainSentences[state.mapView] || explainSentences.all;
 
     // Populate the two-line provinceGroup rows. The primary number always reflects
-    // ALL Solomon Islands-focused publications for that Province/City Area (so the reader gets a
+    // ALL Solomon Islands-focused publications for that Province (so the reader gets a
     // stable point of reference). The secondary line adapts to the active
     // sub-tab so it complements what the map is currently showing.
     Object.keys(byConf).forEach(name => {
@@ -5677,7 +5468,7 @@
       } else {
         s += `Of these, ${totalLed.toLocaleString()} are led by a Solomon Islander first author.`;
       }
-      narrativeEl.textContent = s;
+      narrativeEl.textContent = ranked.some(r => r.total > 0) ? s : 'No verified province-level study locations are recorded for these publications. Zero means no recorded evidence, not no research. Map circles mark Master-file representative locations, not province boundaries.';
     }
 
     // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
@@ -5745,13 +5536,13 @@
     const authorshipLegend = document.querySelector('[data-b1-authorship-legend]');
     const groupedLabel  = document.querySelector('[data-b1-grouped-label]');
 
-    const b1Division = (state.b1GroupBy || 'division') !== 'district';
+    const b1Division = true;
 
     if ((state.b1View || 'type') === 'authorship') {
       if (typeFilter) typeFilter.style.display = 'none';
       if (authorshipLegend) authorshipLegend.style.display = '';
       if (authorsSelect) authorsSelect.disabled = true;
-      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Province/City Area' : 'Study district') + ' · Solomon Islander authorship role';
+      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Province' : 'Study province') + ' · Solomon Islander authorship role';
       host.innerHTML = '';
       let rows = b1Division
         ? buildC2DivisionRows_(true, 'all')
@@ -5765,7 +5556,7 @@
     if (typeFilter) typeFilter.style.display = '';
     if (authorshipLegend) authorshipLegend.style.display = 'none';
     if (authorsSelect) authorsSelect.disabled = false;
-    if (groupedLabel) groupedLabel.textContent = b1Division ? 'Province/City Area' : 'Study district';
+    if (groupedLabel) groupedLabel.textContent = b1Division ? 'Province' : 'Study province';
 
     host.innerHTML = '';
     const provs = state.provinces.features.map(f => f.properties);
@@ -5803,7 +5594,7 @@
       const label = document.createElement('div');
       label.className = 'db-bars__prov';
       if (!b1Division && state.filter.province === r.name) label.classList.add('is-active');
-      label.title = b1Division ? `${r.name} Province/City Area` : `${r.conf} Province/City Area`;
+      label.title = b1Division ? `${r.name} Province` : `${r.conf} Province`;
       label.innerHTML = `<span>${r.name}</span><span class="db-bars__prov-dot" style="background:${CONF_COLORS[r.conf]};"></span>`;
       if (!b1Division) {
         label.addEventListener('click', () => {
@@ -5854,7 +5645,7 @@
       host.appendChild(num);
     });
 
-    // ============ Non-district/Solomon Islands bottom bar ============
+    // ============ No province specified/Solomon Islands bottom bar ============
     // Aggregates publications with an explicit verified Research Geography
     // row for "Solomon Islands - no province specified". These are Solomon Islands-wide topics
     // (e.g. national legislation or policy) not tied to one district.
@@ -5886,9 +5677,9 @@
       npLabel.className = 'db-bars__prov db-bars__prov--nonprov';
       const tipText = 'Publications about Solomon Islands broadly or national-level topics '
                     + '\u2014 such as legislation, policy, or nationwide studies '
-                    + '\u2014 that are not tied to a specific district.';
-      npLabel.innerHTML = `<span>Non-district/Solomon Islands</span>`
-        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-district/Solomon Islands" title="${escapeAttr(tipText)}">i</span>`;
+                    + '\u2014 that are not tied to a specific province.';
+      npLabel.innerHTML = `<span>No province specified/Solomon Islands</span>`
+        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About No province specified/Solomon Islands" title="${escapeAttr(tipText)}">i</span>`;
       host.appendChild(npLabel);
 
       // Column 2 — bar at 100% width, percentage-normalised segments.
@@ -5898,7 +5689,7 @@
       row.style.width = '100%';
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `Non-district/Solomon Islands \u00b7 ${nonProv.total} items`;
+      row.title = `No province specified/Solomon Islands \u00b7 ${nonProv.total} items`;
       const segsPendingSizing = [];
       TYPE_ORDER.forEach(t => {
         const n = nonProv.types[t] || 0;
@@ -5949,7 +5740,7 @@
     const host = $('[data-db-conf-grid]');
     if (!host) return;
     host.innerHTML = '';
-    const confs = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+    const confs = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
     const provs = state.provinces.features.map(f => f.properties);
     const perProvTotal = new Map();
     provs.forEach(p => perProvTotal.set(p.name, 0));
@@ -6010,15 +5801,15 @@
       });
     }
     // "View" dropdown: switches the bars between one-per-district (default)
-    // and Province/City Area roll-up. Division mode aggregates the 23 districts
-    // into Solomon Islands' 5 Province/City Areas and disables click-to-filter on the
+    // and Province roll-up. Division mode aggregates the nine provinces
+    // into Solomon Islands' nine provinces and disables click-to-filter on the
     // bars, since the click-to-filter state (state.filter.province) only
     // understands district names.
     const groupSel = document.querySelector('[data-b1-groupby]');
     if (groupSel) {
       groupSel.value = state.b1GroupBy || 'division';
       groupSel.addEventListener('change', () => {
-        state.b1GroupBy = groupSel.value === 'division' ? 'division' : 'district';
+        state.b1GroupBy = 'division';
         renderPanelB();
       });
     }
@@ -6323,20 +6114,20 @@
     // holds that Ward Paternal value (kept under this key name for
     // logic compatibility with the rest of this cloned file); 'district'
     // is left blank (no Solomon Islands sub-district-level field exists); 'provinceGroup'
-    // holds the Paternal Province/City Area value.
+    // holds the Paternal Province value.
     const paternalInfoByScholarId = new Map(scholars.map(s => [
       String(s['Scholar ID'] || '').trim(),
       {
         village:     cleanPaternal(s["Village/Community Paternal"]),
         district:    '',
-        province:    cleanPaternal(s['Ward Paternal']),
+        province:    cleanPaternal(s['Paternal Province/City Area']),
         provinceGroup: cleanPaternal(s['Paternal Province/City Area'])
       }
     ]));
     // Compose the Panel D Line-4/5 annotation from the two paternal fields.
     // Ron's mockup wraps the geography onto TWO lines:
     //   line 4: "Village vlg,"                          (village)
-    //   line 5: "District District (Province/City Area)"   (district + province/city area)
+    //   line 5: "District District (Province)"   (district + province/city area)
     // This keeps callouts compact horizontally so they don't overflow onto
     // the neighboring bars. Any missing field is omitted along with its
     // trailing separator. If every field is blank/Unclassified both lines
@@ -6345,7 +6136,7 @@
     // Returned shape:
     //   { topLine, bottomLine, joined }
     //     - topLine    → line 4 (village)
-    //     - bottomLine → line 5 (district + Province/City Area)
+    //     - bottomLine → line 5 (district + Province)
     //     - joined     → single-line form used only for tooltips
     // NOTE: `info.district` is unused for Solomon Islands (no Solomon Islands sheet column
     // maps to it — see composePaternal's caller above); `info.province`
@@ -6356,9 +6147,9 @@
       if (!info) return out;
       const topParts = [];
       if (info.village)  topParts.push(`${info.village} vlg`);
-      if (info.district) topParts.push(`${info.district} District`);
+      if (info.district) topParts.push(`${info.district} Province`);
       const botParts = [];
-      if (info.province) botParts.push(`${info.province} District`);
+      if (info.province) botParts.push(`${info.province} Province`);
       if (info.provinceGroup) botParts.push(`(${info.provinceGroup})`);
       // Trailing comma on topLine when bottomLine follows (mockup shows
       // "Matokana vlg, Ono-i-Lau District," then wraps to line 5).
@@ -7337,23 +7128,12 @@
       <path d="M12 120 C 12 85, 88 85, 88 120 Z" fill="#b6bcc2"/>
     </svg>`;
 
-  // District groupings per Province/City Area — used to rebuild the district
-  // dropdown when the Province/City Area dropdown changes.
-  // The 23 Solomon Islands districts grouped by Province/City Area.
+  // District groupings per Province — used to rebuild the district
+  // dropdown when the Province dropdown changes.
+  // The 23 Solomon Islands districts grouped by Province.
   // Sourced from solomon-islands-provinces.geojson (each feature has an
   // `islandDivision` property).
-  const CONFEDERACY_PROVINCES = {
-    Central: ['Banika', 'East Gela', 'Lovukol', 'North East Gela', 'North Savo', 'North West Gela', 'Pavuvu', 'Sandfly/Buenavista', 'South East Gela', 'South Savo', 'South West Gela', 'Tulagi'],
-    Choiseul: ['Babatana', 'Bangera', 'Batava', 'Katupika', 'Kerepangara', 'Kirugela', 'Polo', 'Senga', 'Susuka', 'Tavula', 'Tepazaka', 'Vasipuki', 'Viviru', 'Wagina'],
-    Guadalcanal: ['Aola', 'Avuavu', 'Birao', 'Duidui', 'East Ghaobata', 'East Tasimboko', 'Kolokarako', 'Longgu', 'Malango', 'Moli', 'Paripao', 'Saghalu', 'Savulei', 'Talise', 'Tandai', 'Tangarare', 'Tetekanji', 'Valasi', 'Vatukulau', 'Vulolo', 'Wanderer Bay', 'West Ghaobata'],
-    Isabel: ['Baolo', 'Buala', 'Hovikoilo', 'Japuana', 'Kaloka', 'Kia', 'Kmaga', 'Kokota', 'Kolomola', 'Kolotubi', 'Koviloko', 'Samasodu', 'Sigana', 'Susubona', 'Tatamba', 'Tirotongana'],
-    'Makira-Ulawa': ['Arosi East', 'Arosi North', 'Arosi South', 'Arosi West', 'Bauro Central', 'Bauro East', 'Bauro West', 'Haununu', 'North Ulawa', 'Rawo', 'Santa Ana', 'Santa Catalina', 'South Ulawa', 'Star Harbour North', 'Star Harbour South', 'Ugi and Pio', 'Wainoni East', 'Wainoni West', 'Weather Coast', 'West Ulawa'],
-    Malaita: ['Aba/Asimeuru', 'Aiaisi', 'Aimela', 'Areare', 'Asimae', 'Auki', 'Buma', 'East Baegu', 'Fauabu', 'Faumamanu/Kwai', 'Fo\'ondo/Gwaiau', 'Fouenda', 'Gulalofou', 'Keaimela/Radefasu', 'Kwarekwareo', 'Langalanga', 'Luaniua', 'Malu\'u', 'Mandalua/Folotana', 'Mareho', 'Matakwalao', 'Nafinua', 'Pelau', 'Raroisu\'u', 'Siesie', 'Sikaiana', 'Sububenu/Burianiasi', 'Sulufou/Kwarande', 'Tai', 'Takwa', 'Waneagu Silana Sina', 'Waneagu/Taelanasina', 'West Baegu/Fataleka'],
-    'Rennell-Bellona': ['East Gaongau', 'East Tenggano', 'Kanava', 'Lughu', 'Matangi', 'Mugi Henua', 'Sa\'aiho', 'Te Tau Gangoto', 'West Gaongau', 'West Tenggano'],
-    Temotu: ['Duff Islands', 'Fenualoa', 'Graciosa Bay', 'Lipe/Temua', 'Luva Station', 'Manuopo', 'Nanggu/Lord Howe', 'Nea/Noole', 'Nenumpo', 'Neo', 'Nevenema', 'Nipua/Nopoli', 'North East Santa Cruz', 'Polynesian Outer Islands', 'Tikopia', 'Utupua', 'Vanikoro'],
-    Western: ['Central Ranongga', 'Gizo', 'Inner Shortlands', 'Irringgilla', 'Kolombaghea', 'Kusaghe', 'Mbilua', 'Mbuini Tusu', 'Munda', 'Ndovele', 'Nggatokae', 'Nono', 'Noro', 'North Kolombangara', 'North Ranongga', 'North Rendova', 'North Vangunu', 'Nusa Roviana', 'Outer Shortlands', 'Roviana Lagoon', 'Simbo', 'South Kolombangara', 'South Ranongga', 'South Rendova', 'Vonavona', 'Vonunu'],
-    'Honiara City': ['Cruz', 'Kola\'a', 'Kukum', 'Mataniko', 'Mbumburu', 'Naha', 'Nggossi', 'Panatina', 'Rove/Lengakiki', 'Vavaea', 'Vuhokesa', 'Vura']
-  };
+  const CONFEDERACY_PROVINCES = {"Central": ["Central"], "Choiseul": ["Choiseul"], "Guadalcanal": ["Guadalcanal"], "Isabel": ["Isabel"], "Makira-Ulawa": ["Makira-Ulawa"], "Malaita": ["Malaita"], "Rennell-Bellona": ["Rennell-Bellona"], "Temotu": ["Temotu"], "Western": ["Western"]};
 
   // World-map Region › Country grouping. Regions are ordered so the Pacific
   // (Ron's home region and the largest cohort) sits at the top of the
@@ -7531,7 +7311,7 @@
     if (!confSel || !provSel) return;
 
     // Rebuild the province dropdown options based on the currently-selected
-    // Province/City Area (or show every district when "All Province/City Areas" is chosen).
+    // Province (or show every district when "All Provinces" is chosen).
     function rebuildProvinceOptions() {
       const conf = state.scholarConfFilter;
       // Preserve the selected value if it's still valid
@@ -7834,7 +7614,7 @@
   function renderScholarSummary(rows, unfilteredTotal) {
     const bar = document.querySelector('[data-scholar-summary]');
     if (!bar) return;
-    const counts = { Central: 0, Choiseul: 0, Guadalcanal: 0, Isabel: 0, 'Makira-Ulawa': 0, Malaita: 0, 'Rennell-Bellona': 0, Temotu: 0, Western: 0, 'Honiara City': 0, Unclassified: 0 };
+    const counts = { Central: 0, Choiseul: 0, Guadalcanal: 0, Isabel: 0, 'Makira-Ulawa': 0, Malaita: 0, 'Rennell-Bellona': 0, Temotu: 0, Western: 0, Unclassified: 0 };
     (rows || []).forEach(r => {
       const c = r._conf;
       if (c && counts[c] != null) counts[c] += 1;
@@ -7861,15 +7641,20 @@
     if (_provCountEl) {
       _provCountEl.textContent = String(Object.keys(counts).filter(function (k) { return k !== 'Unclassified'; }).length);
     }
-    bar.querySelector('[data-count-unclass]').textContent = String(counts.Unclassified);
+    const unassignedEl = bar.querySelector('[data-count-unclass]');
+    if (unassignedEl) unassignedEl.textContent = String(counts.Unclassified);
+    bar.querySelectorAll('[data-conf-chip]').forEach(chip => {
+      const name = chip.getAttribute('data-conf-chip');
+      if (name !== 'Unclassified' && counts[name] != null) chip.textContent = name + ': ' + counts[name];
+    });
 
-    // Reorder Province/City Area chips by count descending, tie-broken
+    // Reorder Province chips by count descending, tie-broken
     // alphabetically by division name. Unclassified is anchored to the end
-    // of the row regardless of its count (it isn't an Province/City Area, so it
+    // of the row regardless of its count (it isn't an Province, so it
     // never enters the ranked sequence). Order recomputes on every render.
     const chipsHost = bar.querySelector('[data-scholar-summary-chips]');
     if (chipsHost) {
-      const CONFED = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+      const CONFED = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
       const ranked = CONFED.slice().sort((a, b) => {
         const diff = counts[b] - counts[a];
         return diff !== 0 ? diff : a.localeCompare(b);
@@ -8048,8 +7833,8 @@
   function buildConfProvTree() {
     // Same shape as country → unis: provinceGroup → alphabetized provinces.
     const tree = new Map();
-    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].sort().forEach(c => {
-      tree.set(c, (CONFEDERACY_PROVINCES[c] || []).slice().sort((a, b) => a.localeCompare(b)));
+    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].sort().forEach(c => {
+      tree.set(c, []);
     });
     // 'Unclassified' is anchored at the bottom — clicking it filters for
     // iTaukei scholars whose paternal province info isn't yet known.
@@ -8252,7 +8037,7 @@
         root: confRoot, input: null, panel: confPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
         tree, parentLabelSingular: 'Provinces',
-        buildLabel: () => 'All Province/City Areas',
+        buildLabel: () => 'All Provinces',
         isActive: () => {
           const c = state.scholarConfFilter, p = state.scholarProvFilter;
           // Map the internal '__untagged__' sentinel back to the friendly label.
@@ -8705,7 +8490,6 @@
     'Rennell-Bellona': { from: '#56CCF2', to: '#1f8fbf' },
     Temotu: { from: '#BB6BD9', to: '#8e3fae' },
     Western: { from: '#219653', to: '#15703c' },
-    'Honiara City': { from: '#EB5757', to: '#b83a3a' }
   };
   const NEUTRAL_GRADIENT = { from: '#0e7490', to: '#062f35' };
 
@@ -8849,9 +8633,9 @@
     const paternalGeography = {
       village:  (r.paternalVillage  || '').trim(),
       // Prefer the specific island; when it is absent, retain the paternal
-      // Province/City Area as the public island label. formatScholarGeography()
-      // removes "(main island)" / "Province/City Area" and renders one " Is".
-      island:   (r.paternalIsland || r.paternalIslandDivision || '').trim(),
+      // Province as the public island label. formatScholarGeography()
+      // removes "(main island)" / "Province" and renders one " Is".
+      island:   (r.paternalIsland || '').trim(),
       province: (r.paternalProvince || '').trim()
     };
     const village = paternalGeography.village;
@@ -8859,7 +8643,7 @@
     const provinceGroup = provinceToProvinceGroup(paternal);
     const gradient = (provinceGroup && CONF_GRADIENT[provinceGroup]) || NEUTRAL_GRADIENT;
     // Card banners use the concise Island name only. The underlying field is
-    // still the scholar's paternal Province/City Area; this is display-only.
+    // still the scholar's paternal Province; this is display-only.
     const bannerLabel = provinceGroup || 'Solomon Islander Scholar';
     const institution = r.institution || '';
     const title = r.title || '';
@@ -9812,10 +9596,10 @@
   //  PANEL B2 — interactive multi-view chart
   // ============================================================
   // Four views:
-  //   solomon-islands-focused       → Solomon Islander first-author, Solomon Islands-focused, group by paternal district
+  //   solomon-islands-focused       → Solomon Islander first-author, Solomon Islands-focused, group by paternal province
   //   all-locations       → iTaukei first-author, ANY location, group by paternal province
-  //   all-authors         → any author, Solomon Islands-focused, group by study district + Solomon Islands-wide row
-  //   authorship          → any author, Solomon Islands-focused, group by study district, single stacked bar per district by authorship role
+  //   all-authors         → any author, Solomon Islands-focused, group by study province + Solomon Islands-wide row
+  //   authorship          → any author, Solomon Islands-focused, group by study province, single stacked bar per province by authorship role
   //
   // Selected view + its type-filter checkboxes are persisted in URL hash so a
   // link like #b2=all-locations bookmarks the view.
@@ -9830,14 +9614,14 @@
   const B2_META = {
     'solomon-islands-focused': {
       meta: [
-        ['Grouped by',  'First-author paternal district'],
+        ['Grouped by',  'First-author paternal province'],
         ['Scope',       'Solomon Islands-focused'],
         ['Authors',     'Solomon Islander first authors']
       ]
     },
     'all-locations': {
       meta: [
-        ['Grouped by',  'First-author paternal district'],
+        ['Grouped by',  'First-author paternal province'],
         ['Scope',       'Solomon Islands + International'],
         ['Authors',     'Solomon Islander first authors']
       ]
@@ -9951,7 +9735,7 @@
   }
 
   // Solomon Islands-focused is a property of the publication's verified Research
-  // Geography evidence. The author's home district is deliberately excluded:
+  // Geography evidence. The author's home province is deliberately excluded:
   // it describes the person, not where or what the publication studied.
   function c3IsSolomonIslandsFocused_(it) {
     const districts = state.provincesByItem.get(it.key);
@@ -9964,15 +9748,15 @@
   // rows: [{ name, total, types: {vt: n}, conf, isConfirmed }]
   // opts: { activeName, onClick(row), confDotColor(row), maxTotal }
   // Generic row aggregator — collapses district-level rows (each carrying a
-  // `.conf` field with its Province/City Area) into 5 Province/City Area rows,
+  // `.conf` field with its Province) into 5 Province rows,
   // summing every numeric field and every numeric sub-object (types/cats/
   // leadTypes/coTypes) regardless of which buildB2Rows_* / district builder
-  // produced them. Rows with no `.conf` (e.g. "District not yet confirmed",
+  // produced them. Rows with no `.conf` (e.g. "Province not yet confirmed",
   // "Fiji-wide / national") are treated as their own singleton bucket and
   // passed through unchanged, preserved in their original relative order
   // (they are already appended last by every caller). Used by both Panel C2
   // (renderPanelB / renderAuthorshipInto) and Panel C3 (renderPanelB2 family)
-  // when their "Group by" control is set to Province/City Area.
+  // when their "Group by" control is set to Province.
   function aggregateRowsByDivision_(rows) {
     const groups = new Map();
     const passthrough = [];
@@ -10002,20 +9786,20 @@
     return out;
   }
 
-  // C2 Province/City Area totals are COUNT DISTINCT Publication ID within each
+  // C2 Province totals are COUNT DISTINCT Publication ID within each
   // division, not the sum of district bars. A publication evidenced in two
   // A study spanning multiple wards within one province therefore
   // contributes 1 to that province (while a study spanning multiple
   // provinces correctly contributes 1 to each).
   function buildC2DivisionRows_(authorshipView, authorsMode) {
-    const divisions = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+    const divisions = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
     const rows = new Map(divisions.map(name => [name, {
       name, conf: name, total: 0, types: {},
       cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
       isConfirmed: true
     }]));
     const nonDistrict = {
-      name: 'Non-district/Solomon Islands', conf: null, total: 0, types: {},
+      name: 'No province specified/Solomon Islands', conf: null, total: 0, types: {},
       cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
       isConfirmed: false
     };
@@ -10100,14 +9884,14 @@
 
   // -------- Row builders per view --------
   // Returns [{ name, total, types, conf, isConfirmed }] sorted desc, plus a
-  // final “District not yet confirmed” row when appropriate.
+  // final “Province not yet confirmed” row when appropriate.
   function buildB2Rows_paternalGrouped(includeAllLocations) {
     const { scholars, paternalByName } = iTaukeiScholarMaps();
     const rows = new Map();
     state.provinces.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.provinceGroup, total: 0, types: {}, isConfirmed: true });
     });
-    const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -10140,7 +9924,7 @@
     state.provinces.features.forEach(f => {
       rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.provinceGroup, total: 0, types: {}, isConfirmed: true });
     });
-    const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
+    const unconfirmed = { name: 'Province not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -10187,7 +9971,7 @@
       });
     });
     const unconfirmed = {
-      name: 'District not yet confirmed', conf: null,
+      name: 'Province not yet confirmed', conf: null,
       lead: 0, co: 0, total: 0,
       leadTypes: {}, coTypes: {},
       isConfirmed: false
@@ -10236,18 +10020,18 @@
     return out;
   }
 
-  // Direct C3 Province/City Area builder. This avoids summing district rows,
+  // Direct C3 Province builder. This avoids summing district rows,
   // which double-counts one publication when multiple linked Solomon Islands
   // co-authors come from different districts in the same division.
   function buildC3DivisionRows_(includeAllLocations, authMode) {
     const { scholars, paternalByName } = iTaukeiScholarMaps();
-    const divisions = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+    const divisions = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
     const rows = new Map(divisions.map(name => [name, {
       name, conf: name, total: 0, types: {}, lead: 0, co: 0,
       leadTypes: {}, coTypes: {}, isConfirmed: true
     }]));
     const unconfirmed = {
-      name: 'District not yet confirmed', conf: null, total: 0, types: {},
+      name: 'Province not yet confirmed', conf: null, total: 0, types: {},
       lead: 0, co: 0, leadTypes: {}, coTypes: {}, isConfirmed: false
     };
 
@@ -10332,7 +10116,7 @@
         total: 0
       });
     });
-    const fijiWide = { name: 'Non-district/Solomon Islands', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
+    const fijiWide = { name: 'No province specified/Solomon Islands', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -10441,7 +10225,7 @@
     const includeAll = (view === 'all-locations');
     const auth = state.b2Authorship || 'first';
     const layout = state.b2Layout || 'compact';
-    const b2Division = (state.b2GroupBy || 'division') !== 'district';
+    const b2Division = true;
     const blurbEl = $('[data-b2-blurb]');
     const layoutWrap = $('[data-b2-layout-wrap]');
     const authSel = $('[data-b2-authorship]');
@@ -10690,7 +10474,7 @@
       html = `${prov(p1.name)} leads Solomon Islander first-author publications ${scopeWord} with ${fmt(p1.total)} paper${p1.total === 1 ? '' : 's'}`;
       if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
       if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
-      html += `. <em>Together, these three districts account for the bulk of Solomon Islander-led scholarship represented in this database.</em>`;
+      html += `. <em>Together, these three provinces account for the bulk of Solomon Islander-led scholarship represented in this database.</em>`;
     } else if (auth === 'co') {
       const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
       const [p1, p2, p3] = sorted;
@@ -10827,7 +10611,7 @@
 
     // Sort rows. Fiji-wide / national always pinned to the end. Zero-total
     // rows keep their alphabetical fallback so the layout stays readable.
-    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'Non-district/Solomon Islands';
+    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'No province specified/Solomon Islands';
     const sortable = rows.filter(r => !isNonDistrict(r));
     const trailing = rows.filter(isNonDistrict);
     const shareOf = (r, key) => (r.total > 0 ? (r.cats[key] || 0) / r.total : 0);
@@ -11029,14 +10813,14 @@
     });
 
     // "View" dropdown: District (default, one bar per Solomon Islands district) vs.
-    // Province/City Area (rolls the 23 districts up into Solomon Islands' 5 Island
+    // Province (rolls the nine provinces up into Solomon Islands' 5 Island
     // Divisions and disables click-to-filter, since state.filter.province /
     // .paternal only understand district names).
     const groupSel = $('[data-b2-groupby]');
     if (groupSel) {
       groupSel.value = state.b2GroupBy || 'division';
       groupSel.addEventListener('change', () => {
-        state.b2GroupBy = groupSel.value === 'division' ? 'division' : 'district';
+        state.b2GroupBy = 'division';
         renderPanelB2();
       });
     }
@@ -11090,7 +10874,6 @@
                    'Rennell-Bellona': {fiji:0, intl:0, scholars:new Set()},
                    Temotu: {fiji:0, intl:0, scholars:new Set()},
                    Western: {fiji:0, intl:0, scholars:new Set()},
-                   'Honiara City': {fiji:0, intl:0, scholars:new Set()}
                  };
     const confByProv = new Map();
     state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.provinceGroup));
@@ -11150,11 +10933,11 @@
     if (!chart) return;
 
     // Headline numbers
-    const total = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].reduce((s, c) => s + data.conf[c].fiji + data.conf[c].intl, 0);
-    const fiji = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].reduce((s, c) => s + data.conf[c].fiji, 0);
+    const total = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].reduce((s, c) => s + data.conf[c].fiji + data.conf[c].intl, 0);
+    const fiji = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].reduce((s, c) => s + data.conf[c].fiji, 0);
     const intl = total - fiji;
     const allScholars = new Set();
-    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].forEach(c => data.conf[c].scholars.forEach(n => allScholars.add(n)));
+    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].forEach(c => data.conf[c].scholars.forEach(n => allScholars.add(n)));
     $('[data-impact-total]').textContent = total.toLocaleString();
     $('[data-impact-fiji]').textContent = fiji.toLocaleString();
     $('[data-impact-intl]').textContent = intl.toLocaleString();
@@ -11162,7 +10945,7 @@
 
     // Find max across all conf x scope for bar scaling
     const allValues = [];
-    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].forEach(c => { allValues.push(data.conf[c].fiji, data.conf[c].intl); });
+    ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].forEach(c => { allValues.push(data.conf[c].fiji, data.conf[c].intl); });
     const max = Math.max(1, ...allValues);
     const MAX_H = 220; // pixels
 
@@ -11176,7 +10959,6 @@
       { name: 'Rennell-Bellona', color: '#56CCF2' },
       { name: 'Temotu', color: '#BB6BD9' },
       { name: 'Western', color: '#219653' },
-      { name: 'Honiara City', color: '#EB5757' }
     ];
 
     chart.innerHTML = confs.map(c => {
@@ -11207,9 +10989,9 @@
     const filterLabel = filter === 'phd' ? 'PhD theses only'
                        : filter === 'masters' ? 'Masters theses only'
                        : 'all publication types';
-    let note = `Showing ${filterLabel}. “Solomon Islands-focused” means the item is tagged to at least one Solomon Islands district in Zotero; “International” means it isn’t. Province/City Area is attributed via the lead Solomon Islander author’s paternal district.`;
+    let note = `Showing ${filterLabel}. “Solomon Islands-focused” means the item is tagged to at least one Solomon Islands district in Zotero; “International” means it isn’t. Province is attributed via the lead Solomon Islander author’s paternal province.`;
     if (data.unattributed > 0) {
-      note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal district hasn’t been filled in the admin dashboard yet.`;
+      note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal province hasn’t been filled in the admin dashboard yet.`;
     }
     $('[data-impact-footnote]').textContent = note;
   }
@@ -11394,7 +11176,7 @@
       const coord = { lat, lng, name, type: typeRaw, country: String(row.Country || '').trim() };
       let bucket = null;
       if (typeRaw === 'Country') bucket = lookup.country;
-      else if (/^(province|city area|ward)$/i.test(typeRaw)) bucket = lookup.division;
+      else if (/^(province|city area)$/i.test(typeRaw)) bucket = lookup.division;
       else if (/specific island|island$/i.test(typeRaw)) bucket = lookup.island;
       else if (/village|town|site/i.test(typeRaw)) bucket = lookup.site;
       if (bucket) [name].concat(aliases).forEach(alias => bucket.set(norm(alias), coord));
@@ -11445,7 +11227,7 @@
       const rows = rawRows.length ? rawRows.map(g => ({
         country: 'Solomon Islands',
         islandDivision: String(g['Province/City Area (auto from District)'] || '').trim(),
-        district: String(g.District || '').trim(),
+        district: '',
         specificIsland: String(g['Specific Island'] || '').trim(),
         site: String(g['Village / Town / Site'] || '').trim(),
         geographyType: String(g['Geography Type'] || '').trim()
@@ -11843,21 +11625,21 @@
         const divisions = divisionOfItem.get(it.key);
         return divisions && divisions.size;
       }).length;
-      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.provinceGroup ? 'is-active' : ''}" data-conf-pick="">All Province/City Areas <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
-      ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'].forEach(c => {
+      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.provinceGroup ? 'is-active' : ''}" data-conf-pick="">All Provinces <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
+      ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'].forEach(c => {
         const n = confCount.get(c) || 0;
         const active = state.b3Filter.provinceGroup === c ? 'is-active' : '';
         cHtml += `<button type="button" class="db-map-fs-conf__row ${active}" data-conf-pick="${escapeAttr(c)}">${escapeAttr(c)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
       });
       confList.innerHTML = cHtml;
 
-      // District list: filter by active Province/City Area if set.
+      // District list: filter by active Province if set.
       const provOrder = Object.keys(PROVINCE_TO_CONFEDERACY);
       const filteredProvs = state.b3Filter.provinceGroup
         ? provOrder.filter(p => PROVINCE_TO_CONFEDERACY[p] === state.b3Filter.provinceGroup)
         : provOrder;
       const provTotal = filteredProvs.reduce((a, p) => a + (provCount.get(p) || 0), 0);
-      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All districts <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
+      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All provinces <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
       filteredProvs.forEach(p => {
         const n = provCount.get(p) || 0;
         const active = state.b3Filter.province === p ? 'is-active' : '';
@@ -12073,7 +11855,7 @@
   // filtered per-country buckets. When authorship='led' or 'others', the other
   // bucket is emptied. When a Solomon Islander District is active, other countries drop
   // and the Solomon Islands record is narrowed to items whose provincesByItem set
-  // contains that District. Province/City Area filters narrow the same way.
+  // contains that District. Province filters narrow the same way.
   function b3FilteredRecords() {
     const filter = state.b3Filter || {};
     const recs = state.b3Records || [];
@@ -12440,97 +12222,7 @@
     // Province → ProvinceGroup lookup (same table used by buildWorldPopupHtml
     // above). Inlined so we don't reach for the module-scope constant that
     // isn't guaranteed to be in scope this early in the popup lifecycle.
-    const PROV_TO_CONF = {
-      Banika: 'Central', 'East Gela': 'Central', Lovukol: 'Central',
-      'North East Gela': 'Central', 'North Savo': 'Central', 'North West Gela': 'Central',
-      Pavuvu: 'Central', 'Sandfly/Buenavista': 'Central', 'South East Gela': 'Central',
-      'South Savo': 'Central', 'South West Gela': 'Central', Tulagi: 'Central',
-      Babatana: 'Choiseul', Bangera: 'Choiseul', Batava: 'Choiseul',
-      Katupika: 'Choiseul', Kerepangara: 'Choiseul', Kirugela: 'Choiseul',
-      Polo: 'Choiseul', Senga: 'Choiseul', Susuka: 'Choiseul',
-      Tavula: 'Choiseul', Tepazaka: 'Choiseul', Vasipuki: 'Choiseul',
-      Viviru: 'Choiseul', Wagina: 'Choiseul', Aola: 'Guadalcanal',
-      Avuavu: 'Guadalcanal', Birao: 'Guadalcanal', Duidui: 'Guadalcanal',
-      'East Ghaobata': 'Guadalcanal', 'East Tasimboko': 'Guadalcanal', Kolokarako: 'Guadalcanal',
-      Longgu: 'Guadalcanal', Malango: 'Guadalcanal', Moli: 'Guadalcanal',
-      Paripao: 'Guadalcanal', Saghalu: 'Guadalcanal', Savulei: 'Guadalcanal',
-      Talise: 'Guadalcanal', Tandai: 'Guadalcanal', Tangarare: 'Guadalcanal',
-      Tetekanji: 'Guadalcanal', Valasi: 'Guadalcanal', Vatukulau: 'Guadalcanal',
-      Vulolo: 'Guadalcanal', 'Wanderer Bay': 'Guadalcanal', 'West Ghaobata': 'Guadalcanal',
-      Baolo: 'Isabel', Buala: 'Isabel', Hovikoilo: 'Isabel',
-      Japuana: 'Isabel', Kaloka: 'Isabel', Kia: 'Isabel',
-      Kmaga: 'Isabel', Kokota: 'Isabel', Kolomola: 'Isabel',
-      Kolotubi: 'Isabel', Koviloko: 'Isabel', Samasodu: 'Isabel',
-      Sigana: 'Isabel', Susubona: 'Isabel', Tatamba: 'Isabel',
-      Tirotongana: 'Isabel', 'Arosi East': 'Makira-Ulawa', 'Arosi North': 'Makira-Ulawa',
-      'Arosi South': 'Makira-Ulawa', 'Arosi West': 'Makira-Ulawa', 'Bauro Central': 'Makira-Ulawa',
-      'Bauro East': 'Makira-Ulawa', 'Bauro West': 'Makira-Ulawa', Haununu: 'Makira-Ulawa',
-      'North Ulawa': 'Makira-Ulawa', Rawo: 'Makira-Ulawa', 'Santa Ana': 'Makira-Ulawa',
-      'Santa Catalina': 'Makira-Ulawa', 'South Ulawa': 'Makira-Ulawa', 'Star Harbour North': 'Makira-Ulawa',
-      'Star Harbour South': 'Makira-Ulawa', 'Ugi and Pio': 'Makira-Ulawa', 'Wainoni East': 'Makira-Ulawa',
-      'Wainoni West': 'Makira-Ulawa', 'Weather Coast': 'Makira-Ulawa', 'West Ulawa': 'Makira-Ulawa',
-      'Banika': 'Central', 'East Gela': 'Central', 'Lovukol': 'Central',
-      'North East Gela': 'Central', 'North Savo': 'Central', 'North West Gela': 'Central',
-      'Pavuvu': 'Central', 'Sandfly/Buenavista': 'Central', 'South East Gela': 'Central',
-      'South Savo': 'Central', 'South West Gela': 'Central', 'Tulagi': 'Central',
-      'Babatana': 'Choiseul', 'Bangera': 'Choiseul', 'Batava': 'Choiseul',
-      'Katupika': 'Choiseul', 'Kerepangara': 'Choiseul', 'Kirugela': 'Choiseul',
-      'Polo': 'Choiseul', 'Senga': 'Choiseul', 'Susuka': 'Choiseul',
-      'Tavula': 'Choiseul', 'Tepazaka': 'Choiseul', 'Vasipuki': 'Choiseul',
-      'Viviru': 'Choiseul', 'Wagina': 'Choiseul', 'Aola': 'Guadalcanal',
-      'Avuavu': 'Guadalcanal', 'Birao': 'Guadalcanal', 'Duidui': 'Guadalcanal',
-      'East Ghaobata': 'Guadalcanal', 'East Tasimboko': 'Guadalcanal', 'Kolokarako': 'Guadalcanal',
-      'Longgu': 'Guadalcanal', 'Malango': 'Guadalcanal', 'Moli': 'Guadalcanal',
-      'Paripao': 'Guadalcanal', 'Saghalu': 'Guadalcanal', 'Savulei': 'Guadalcanal',
-      'Talise': 'Guadalcanal', 'Tandai': 'Guadalcanal', 'Tangarare': 'Guadalcanal',
-      'Tetekanji': 'Guadalcanal', 'Valasi': 'Guadalcanal', 'Vatukulau': 'Guadalcanal',
-      'Vulolo': 'Guadalcanal', 'Wanderer Bay': 'Guadalcanal', 'West Ghaobata': 'Guadalcanal',
-      'Baolo': 'Isabel', 'Buala': 'Isabel', 'Hovikoilo': 'Isabel',
-      'Japuana': 'Isabel', 'Kaloka': 'Isabel', 'Kia': 'Isabel',
-      'Kmaga': 'Isabel', 'Kokota': 'Isabel', 'Kolomola': 'Isabel',
-      'Kolotubi': 'Isabel', 'Koviloko': 'Isabel', 'Samasodu': 'Isabel',
-      'Sigana': 'Isabel', 'Susubona': 'Isabel', 'Tatamba': 'Isabel',
-      'Tirotongana': 'Isabel', 'Arosi East': 'Makira-Ulawa', 'Arosi North': 'Makira-Ulawa',
-      'Arosi South': 'Makira-Ulawa', 'Arosi West': 'Makira-Ulawa', 'Bauro Central': 'Makira-Ulawa',
-      'Bauro East': 'Makira-Ulawa', 'Bauro West': 'Makira-Ulawa', 'Haununu': 'Makira-Ulawa',
-      'North Ulawa': 'Makira-Ulawa', 'Rawo': 'Makira-Ulawa', 'Santa Ana': 'Makira-Ulawa',
-      'Santa Catalina': 'Makira-Ulawa', 'South Ulawa': 'Makira-Ulawa', 'Star Harbour North': 'Makira-Ulawa',
-      'Star Harbour South': 'Makira-Ulawa', 'Ugi and Pio': 'Makira-Ulawa', 'Wainoni East': 'Makira-Ulawa',
-      'Wainoni West': 'Makira-Ulawa', 'Weather Coast': 'Makira-Ulawa', 'West Ulawa': 'Makira-Ulawa',
-      'Aba/Asimeuru': 'Malaita', 'Aiaisi': 'Malaita', 'Aimela': 'Malaita',
-      'Areare': 'Malaita', 'Asimae': 'Malaita', 'Auki': 'Malaita',
-      'Buma': 'Malaita', 'East Baegu': 'Malaita', 'Fauabu': 'Malaita',
-      'Faumamanu/Kwai': 'Malaita', 'Fo\'ondo/Gwaiau': 'Malaita', 'Fouenda': 'Malaita',
-      'Gulalofou': 'Malaita', 'Keaimela/Radefasu': 'Malaita', 'Kwarekwareo': 'Malaita',
-      'Langalanga': 'Malaita', 'Luaniua': 'Malaita', 'Malu\'u': 'Malaita',
-      'Mandalua/Folotana': 'Malaita', 'Mareho': 'Malaita', 'Matakwalao': 'Malaita',
-      'Nafinua': 'Malaita', 'Pelau': 'Malaita', 'Raroisu\'u': 'Malaita',
-      'Siesie': 'Malaita', 'Sikaiana': 'Malaita', 'Sububenu/Burianiasi': 'Malaita',
-      'Sulufou/Kwarande': 'Malaita', 'Tai': 'Malaita', 'Takwa': 'Malaita',
-      'Waneagu Silana Sina': 'Malaita', 'Waneagu/Taelanasina': 'Malaita', 'West Baegu/Fataleka': 'Malaita',
-      'East Gaongau': 'Rennell-Bellona', 'East Tenggano': 'Rennell-Bellona', 'Kanava': 'Rennell-Bellona',
-      'Lughu': 'Rennell-Bellona', 'Matangi': 'Rennell-Bellona', 'Mugi Henua': 'Rennell-Bellona',
-      'Sa\'aiho': 'Rennell-Bellona', 'Te Tau Gangoto': 'Rennell-Bellona', 'West Gaongau': 'Rennell-Bellona',
-      'West Tenggano': 'Rennell-Bellona', 'Duff Islands': 'Temotu', 'Fenualoa': 'Temotu',
-      'Graciosa Bay': 'Temotu', 'Lipe/Temua': 'Temotu', 'Luva Station': 'Temotu',
-      'Manuopo': 'Temotu', 'Nanggu/Lord Howe': 'Temotu', 'Nea/Noole': 'Temotu',
-      'Nenumpo': 'Temotu', 'Neo': 'Temotu', 'Nevenema': 'Temotu',
-      'Nipua/Nopoli': 'Temotu', 'North East Santa Cruz': 'Temotu', 'Polynesian Outer Islands': 'Temotu',
-      'Tikopia': 'Temotu', 'Utupua': 'Temotu', 'Vanikoro': 'Temotu',
-      'Central Ranongga': 'Western', 'Gizo': 'Western', 'Inner Shortlands': 'Western',
-      'Irringgilla': 'Western', 'Kolombaghea': 'Western', 'Kusaghe': 'Western',
-      'Mbilua': 'Western', 'Mbuini Tusu': 'Western', 'Munda': 'Western',
-      'Ndovele': 'Western', 'Nggatokae': 'Western', 'Nono': 'Western',
-      'Noro': 'Western', 'North Kolombangara': 'Western', 'North Ranongga': 'Western',
-      'North Rendova': 'Western', 'North Vangunu': 'Western', 'Nusa Roviana': 'Western',
-      'Outer Shortlands': 'Western', 'Roviana Lagoon': 'Western', 'Simbo': 'Western',
-      'South Kolombangara': 'Western', 'South Ranongga': 'Western', 'South Rendova': 'Western',
-      'Vonavona': 'Western', 'Vonunu': 'Western', 'Cruz': 'Honiara City',
-      'Kola\'a': 'Honiara City', 'Kukum': 'Honiara City', 'Mataniko': 'Honiara City',
-      'Mbumburu': 'Honiara City', 'Naha': 'Honiara City', 'Nggossi': 'Honiara City',
-      'Panatina': 'Honiara City', 'Rove/Lengakiki': 'Honiara City', 'Vavaea': 'Honiara City',
-      'Vuhokesa': 'Honiara City', 'Vura': 'Honiara City'
-    };
+    const PROV_TO_CONF = PROVINCE_TO_CONFEDERACY;
     // Assemble the V2 hover-chip locality line from a scholar profile.
     //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
     //   'Naduri vlg, Macuata Province.'         (Viti Levu / Vanua Levu — island suppressed)
@@ -12822,3 +12514,4 @@
     });
   }
 })();
+
