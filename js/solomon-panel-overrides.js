@@ -78,53 +78,29 @@
   // Fijian provinceGroup. This file reads those same constants and displays
   // them exclusively under Solomon Islands-appropriate labels.
 
-  function tallyByProvinceAndConfed(scope /* 'all' | 'solomon' */) {
-    // Returns { byProvince: {district: n}, byConfed: {division: n},
-    //           byConfedAndProv: {division: {district: n}} }
-    var st = window.__vavelabDbState || null;
-    var master = st && st.master;
-    if (!master) return null;
-
-    var Mfc = window.MasterFileAdapter.constants;
-    var byProv = {};
-    var byConfed = {};
-    var byConfedAndProv = {};
-    Mfc.PROVINCES.forEach(function (p) { byProv[p] = 0; });
-    Object.keys(Mfc.PROVINCE_GROUPS).forEach(function (c) {
-      byConfed[c] = 0;
-      byConfedAndProv[c] = {};
-      Mfc.PROVINCE_GROUPS[c].forEach(function (p) { byConfedAndProv[c][p] = 0; });
-    });
-
-    // Filter publications to headline types only (per spec: the two summary
-    // tables exclude Reports, Conference papers, Unpublished report, Others).
-    var pubs = master.publications.filter(function (p) {
-      return HEADLINE_TYPES.indexOf(p['Publication Type']) !== -1;
-    });
-    if (scope === 'solomon') {
-      pubs = pubs.filter(function (p) { return p._is_itaukei_associated === true; });
-    }
-
-    pubs.forEach(function (p) {
-      Mfc.PROVINCES.forEach(function (prov) {
-        if (Number(p[prov] || 0) > 0) {
-          byProv[prov]++;
-          var c = Mfc.PROVINCE_TO_CONFED[prov];
-          if (c) {
-            byConfed[c]++;
-            byConfedAndProv[c][prov]++;
-          }
-        }
+  function tallyByProvinceAndConfed(scope) {
+    var st = window.__vavelabDbState;
+    if (!st || !st.snapshot) return null;
+    var sets = {};
+    DIVISION_ORDER.forEach(function (n) { sets[n] = new Set(); });
+    var union = new Set();
+    (st.snapshot.items || []).forEach(function (p) {
+      if (scope === 'solomon' && !(p._linkedSolomonIslandsPeople || []).length) return;
+      var provinces = st.provincesByItem.get(p.key) || new Set();
+      provinces.forEach(function (n) {
+        if (sets[n]) { sets[n].add(p.key); union.add(p.key); }
       });
     });
-    return { byProvince: byProv, byConfed: byConfed, byConfedAndProv: byConfedAndProv };
+    var counts = {};
+    DIVISION_ORDER.forEach(function (n) { counts[n] = sets[n].size; });
+    return {byProvince: counts, uniqueTotal: union.size};
   }
 
   // Stable display order + CSS-safe slug for Solomon Islands' 9 Provinces +
   // Honiara City (10 first-level reporting areas). Honiara City is its own
   // reporting area, a sibling of the 9 provinces -- never folded into
   // Guadalcanal.
-  var DIVISION_ORDER = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western', 'Honiara City'];
+  var DIVISION_ORDER = ['Central', 'Choiseul', 'Guadalcanal', 'Isabel', 'Makira-Ulawa', 'Malaita', 'Rennell-Bellona', 'Temotu', 'Western'];
   var DIVISION_SLUG = {
     'Central': 'central',
     'Choiseul': 'choiseul',
@@ -146,52 +122,12 @@
 
   function renderConfedTotalTable(hostEl, tally, scope) {
     if (!hostEl || !tally) return;
-    var Mfc = window.MasterFileAdapter.constants;
-    var scopeLabel = scope === 'solomon'
-      ? 'Solomon-Islander-associated publications'
-      : 'All Solomon Islands publications';
-
-    var html = '';
-    html += '<table class="mf-confed-table" role="table" aria-label="' + scopeLabel + ' by district and Province/City Area">';
-    html += '<caption class="mf-confed-table__cap">' + scopeLabel +
-            ' \u2014 districts grouped by Province/City Area, with division totals</caption>';
-    html += '<thead><tr><th scope="col" class="mf-th-confed">Province/City Area</th>' +
-            '<th scope="col" class="mf-th-prov">District</th>' +
-            '<th scope="col" class="mf-th-num">Publications</th>' +
-            '<th scope="col" class="mf-th-num mf-th-total">Division TOTAL</th></tr></thead><tbody>';
-
-    orderedDivisions(Object.keys(Mfc.PROVINCE_GROUPS)).forEach(function (division) {
-      var provs = Mfc.PROVINCE_GROUPS[division];
-      provs.forEach(function (prov, idx) {
-        html += '<tr class="mf-row mf-row--' + divisionSlug(division) + (idx === 0 ? ' mf-row--first' : '') + '">';
-        if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-confed"><span class="mf-badge mf-badge--' +
-                  divisionSlug(division) + '">' + escapeHtml(division) + '</span></td>';
-        }
-        html += '<td class="mf-cell-prov">' + escapeHtml(prov) + '</td>';
-        html += '<td class="mf-cell-num">' + tally.byProvince[prov].toLocaleString() + '</td>';
-        if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-total"><strong>' +
-                  tally.byConfed[division].toLocaleString() + '</strong></td>';
-        }
-        html += '</tr>';
-      });
+    var html = '<table class="mf-confed-table"><caption>Publications by province studied</caption><thead><tr><th>Province</th><th>Publications</th></tr></thead><tbody>';
+    DIVISION_ORDER.forEach(function (n) {
+      html += '<tr><td>' + escapeHtml(n) + '</td><td>' + tally.byProvince[n] + '</td></tr>';
     });
-    html += '</tbody><tfoot>';
-    // Grand totals across the 23 districts + explanatory notes.
-    var allProvTotal = 0;
-    Mfc.PROVINCES.forEach(function (p) { allProvTotal += tally.byProvince[p]; });
-    var divisionGrand = 0;
-    Object.keys(tally.byConfed).forEach(function (d) { divisionGrand += tally.byConfed[d]; });
-    html += '<tr class="mf-row-grand"><th scope="row" colspan="2" class="mf-cell-grand-label">Grand total (23 districts)</th>' +
-            '<td class="mf-cell-num"><strong>' + allProvTotal.toLocaleString() + '</strong></td>' +
-            '<td class="mf-cell-total"><strong>' + divisionGrand.toLocaleString() + '</strong></td></tr>';
-    html += '</tfoot></table>';
-
-    // The two explanatory lines — always verbatim, per spec.
-    html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[0]) + '</p>';
-    html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[1]) + '</p>';
-
+    html += '</tbody><tfoot><tr><th>Unique publications across the nine provinces</th><td>' + tally.uniqueTotal + '</td></tr></tfoot></table>';
+    html += '<p>Each publication is counted once per province studied. The overall total counts each publication once. Only verified province assignments are included.</p>';
     hostEl.innerHTML = html;
   }
 
@@ -261,14 +197,14 @@
       host.className = 'mf-confed-totals-host';
       var title = document.createElement('div');
       title.className = 'mf-panel-section-title';
-      title.textContent = 'B \u00b7 Solomon Islands publications by district & Province/City Area (Master-file authoritative)';
+      title.textContent = 'B \u00b7 Solomon Islands publications by province (Master-file authoritative)';
       var subhost = document.createElement('div');
       var tally = tallyByProvinceAndConfed('all');
       if (tally && anyNonZero(tally.byProvince)) {
         renderConfedTotalTable(subhost, tally, 'all');
       } else {
         subhost.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
-          + 'District-tagged Solomon Islands publications have not been populated in the Master file yet. '
+          + 'Province-tagged Solomon Islands publications have not been populated in the Master file yet. '
           + 'This panel will populate automatically once records are added.</p>';
       }
       host.innerHTML = '';
@@ -286,14 +222,14 @@
       host2.className = 'mf-confed-totals-host';
       var title2 = document.createElement('div');
       title2.className = 'mf-panel-section-title';
-      title2.textContent = 'C2 \u00b7 Solomon-Islander-associated publications by district & Province/City Area';
+      title2.textContent = 'C2 \u00b7 Solomon-Islander-associated publications by province';
       var subhost2 = document.createElement('div');
       var tally2 = tallyByProvinceAndConfed('solomon');
       if (tally2 && anyNonZero(tally2.byProvince)) {
         renderConfedTotalTable(subhost2, tally2, 'solomon');
       } else {
         subhost2.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
-          + 'No Solomon-Islander-associated, district-tagged publications have been populated yet. '
+          + 'No Solomon-Islander-associated, province-tagged publications have been populated yet. '
           + 'This panel will populate automatically once records are added.</p>';
       }
       host2.innerHTML = '';
@@ -369,3 +305,4 @@
     NOTE_LINES: TWO_NOTE_LINES
   };
 })();
+
