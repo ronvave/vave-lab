@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Solomon Islands Scholar Database — Prof. Ron Vave | UH Mānoa</title>
-  <meta name="description" content="A curated database of scholarly research by and about Solomon Islander and part-Solomon Islander postgraduates and researchers — across the 5 Province/City Areas and 23 districts of Solomon Islands, universities worldwide, and multiple countries. Maintained by Professor Ron Vave, UH Mānoa." />
+  <meta name="description" content="A curated database of scholarly research by and about Solomon Islander and part-Solomon Islander postgraduates and researchers — across the nine provinces and nine provinces of Solomon Islands, universities worldwide, and multiple countries. Maintained by Professor Ron Vave, UH Mānoa." />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -201,7 +201,7 @@
         Theses           → amber   (A1 card 3, A2 card 4)
         Universities     → blue    (A1 card 4, A2 card 5)
         Countries        → purple  (A1 card 5, A2 card 6)
-        Solomon Islands districts  → pink    (A1 card 6 only)
+        Solomon Islands provinces  → pink    (A1 card 6 only)
         A1 unique authors→ rust    (A1 card 2)
         A2 Lead author   → rust    (echoes authors)
         A2 Co-author     → olive   (Option 1 — A2 only)
@@ -1585,7 +1585,7 @@
     .db-sync-inline b { color: var(--color-text); font-weight: 600; }
 
     /* Panel B — ranked bars. Label column is fixed-width and generous enough to
-       accommodate the longest Solomon Islands-district name ('Tatakamosolomon-islands') without
+       accommodate the longest Solomon Islands-province name ('Tatakamosolomon-islands') without
        clipping. Text is right-aligned inside the column (see .db-bars__prov). */
     .db-bars { display: grid; grid-template-columns: 180px 1fr 44px; gap: 6px; row-gap: 5px; align-items: center; }
     .db-bars__prov {
@@ -2561,7 +2561,7 @@
       row-gap: 8px !important;
     }
     /* Province label: allow wrap so long labels like
-       “District not yet confirmed” stay inside their 170px column. */
+       “Province not yet confirmed” stay inside their 170px column. */
     .db-bars--split-detailed .db-bars__prov {
       grid-column: 1; grid-row: span 2;
       display: flex; align-items: center; justify-content: flex-end;
@@ -3936,6 +3936,10 @@
   .mf-empty-state{ font-family:"DM Sans",system-ui,sans-serif; font-size:0.95rem; color:var(--color-ink-soft,#5c6368); background:rgba(0,95,107,0.05); border:1px dashed rgba(0,95,107,0.25); border-radius:10px; padding:1.1rem 1.3rem; margin:1rem 0; }
   .mf-empty-state strong{ color:var(--color-teal,#005f6b); }
 </style>
+<style>
+[data-scholar-conf-panel] .dsf-combo-col:not(.dsf-combo-col--first) { display:none; }
+[data-db-map-fs-conf-prov-col], [data-db-b3-prov-col] { display:none !important; }
+</style>
 </head>
 <body>
 
@@ -4134,7 +4138,7 @@
           </div>
           <div class="db-kpi db-kpi--solid db-kpi--pink">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Solomon Islands districts studied</div></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Solomon Islands provinces studied</div></div>
           </div>
         </div>
       </section>
@@ -4208,8 +4212,8 @@
 
             <h4>How tags are assigned</h4>
             <ul>
-              <li><strong>District researched</strong> &mdash; assigned to the district(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-district studies are tagged to each relevant district.</li>
-              <li><strong>Paternal district</strong> &mdash; applied only to Solomon Islander first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
+              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
+              <li><strong>Paternal province</strong> &mdash; applied only to Solomon Islander first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
               <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
             </ul>
           </div>
@@ -4235,11 +4239,11 @@
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
 
-      <!-- Panel B1 — Solomon Islands-focused choropleth map (district view) -->
+      <!-- Panel B1 — Solomon Islands-focused province location map (province view) -->
       <div class="db-panel reveal" data-panel="B1">
         <span class="db-panel__label">B1</span>
-        <h2 class="db-panel__title">Where the research is — Solomon Islands, by district</h2>
-        <p class="db-panel__hint">Solomon Islands-focused publications counted by the district studied. Use the sub-tabs to switch between all publications, Solomon Islander lead-author, and Solomon Islander co-authored views.</p>
+        <h2 class="db-panel__title">Where the research is — Solomon Islands, by province</h2>
+        <p class="db-panel__hint">Solomon Islands-focused publications counted by the province studied. Use the sub-tabs to switch between all publications, Solomon Islander lead-author, and Solomon Islander co-authored views.</p>
         <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
           <button type="button" class="is-active" data-mapview="all" aria-selected="true">All publications on Solomon Islands</button>
           <button type="button" data-mapview="lead" aria-selected="false">By Solomon Islander lead-author</button>
@@ -4248,7 +4252,7 @@
         <div class="db-map-a-wrap">
           <div>
             <div class="db-map-world-wrap" data-db-map-fiji-wrap>
-              <div id="db-map" role="application" aria-label="Solomon Islands choropleth map of publications by district"></div>
+              <div id="db-map" role="application" aria-label="Solomon Islands province location map of publications by province"></div>
               <button type="button" class="db-map-reset-btn" data-db-map-fiji-reset-btn
                       aria-label="Reset map view"
                       title="Reset map to default view">
@@ -4270,7 +4274,7 @@
           </div>
           <aside class="db-map-legend-panel" data-mapscope-panel="fiji">
             <div>
-              <h4 data-db-map-legend-title>All Solomon Islands-focused publications by study district</h4>
+              <h4 data-db-map-legend-title>All Solomon Islands-focused publications by study province</h4>
               <div class="db-choro-scale">
                 <span style="background:#fff5eb;border:1px solid #f2d9b8;"></span>
                 <span style="background:#fdd0a2;"></span>
@@ -4281,51 +4285,15 @@
               <div class="db-choro-scale-labels"><span>0</span><span>3</span><span>6</span><span>9</span><span>13+</span></div>
             </div>
             <div>
-              <h4>Publications by study Province/City Area</h4>
-              <p class="db-conf-explain" data-db-conf-explain>All Solomon Islands-focused publications, grouped by the Province/City Area of the district studied.</p>
-              <div data-db-conf-legend>
-                <div class="db-conf-row db-conf-row--one-line">
-                  <span class="db-conf-row__sw" style="background:#FF5A6E;"></span>
-                  <span class="db-conf-row__name">Solomon Islandstapu</span>
-                  <span class="db-conf-row__total" data-conf-total="Solomon Islandstapu">—</span>
-                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-conf-sub="Solomon Islandstapu">—</span>
-                </div>
-                <div class="db-conf-row db-conf-row--one-line">
-                  <span class="db-conf-row__sw" style="background:#4ECDE6;"></span>
-                  <span class="db-conf-row__name">Vavaʻu</span>
-                  <span class="db-conf-row__total" data-conf-total="Vava&#39;u">—</span>
-                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-conf-sub="Vava&#39;u">—</span>
-                </div>
-                <div class="db-conf-row db-conf-row--one-line">
-                  <span class="db-conf-row__sw" style="background:#FFD84A;"></span>
-                  <span class="db-conf-row__name">Haʻapai</span>
-                  <span class="db-conf-row__total" data-conf-total="Ha&#39;apai">—</span>
-                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-conf-sub="Ha&#39;apai">—</span>
-                </div>
-                <div class="db-conf-row db-conf-row--one-line">
-                  <span class="db-conf-row__sw" style="background:#6FCF97;"></span>
-                  <span class="db-conf-row__name">ʻEua</span>
-                  <span class="db-conf-row__total" data-conf-total="&#39;Eua">—</span>
-                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-conf-sub="&#39;Eua">—</span>
-                </div>
-                <div class="db-conf-row db-conf-row--one-line">
-                  <span class="db-conf-row__sw" style="background:#B48CE6;"></span>
-                  <span class="db-conf-row__name">Ongo Niua</span>
-                  <span class="db-conf-row__total" data-conf-total="Ongo Niua">—</span>
-                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-conf-sub="Ongo Niua">—</span>
-                </div>
-              </div>
+              <h4>Publications by study Province</h4>
+              <p class="db-conf-explain" data-db-conf-explain>All Solomon Islands-focused publications, grouped by the province studied.</p>
+<div data-db-conf-legend><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#FF5A6E"></span><span class="db-conf-row__name">Central</span><span class="db-conf-row__total" data-conf-total="Central">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Central">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#4ECDE6"></span><span class="db-conf-row__name">Choiseul</span><span class="db-conf-row__total" data-conf-total="Choiseul">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Choiseul">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#FFD84A"></span><span class="db-conf-row__name">Guadalcanal</span><span class="db-conf-row__total" data-conf-total="Guadalcanal">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Guadalcanal">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#6FCF97"></span><span class="db-conf-row__name">Isabel</span><span class="db-conf-row__total" data-conf-total="Isabel">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Isabel">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#B48CE6"></span><span class="db-conf-row__name">Makira-Ulawa</span><span class="db-conf-row__total" data-conf-total="Makira-Ulawa">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Makira-Ulawa">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#ff963d"></span><span class="db-conf-row__name">Malaita</span><span class="db-conf-row__total" data-conf-total="Malaita">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Malaita">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#df6faf"></span><span class="db-conf-row__name">Rennell-Bellona</span><span class="db-conf-row__total" data-conf-total="Rennell-Bellona">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Rennell-Bellona">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#b657dd"></span><span class="db-conf-row__name">Temotu</span><span class="db-conf-row__total" data-conf-total="Temotu">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Temotu">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#eb374b"></span><span class="db-conf-row__name">Western</span><span class="db-conf-row__total" data-conf-total="Western">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Western">—</span></div></div>
               <p class="db-conf-narrative" data-db-conf-narrative>—</p>
             </div>
             <div class="db-nonfiji">
               <span class="db-nonfiji__num" data-db-nonfiji>—</span>
-              <span class="db-nonfiji__label" data-db-nonfiji-label>Publications beyond Solomon Islands-focused research</span>
-              <span class="db-nonfiji__sub">Research by Solomon Islander authors concerning other places, global topics, laboratory work, and research not limited to Solomon Islands.</span>
+              <span class="db-nonfiji__label" data-db-nonfiji-label>Publications without a verified province assignment</span>
+              <span class="db-nonfiji__sub">Publications by or with Solomon Islanders that are not assigned to one of the nine provinces. This includes missing location evidence; it does not mean the research took place overseas.</span>
             </div>
             <div class="db-sync-inline">
               <b>Sync:</b> <span data-db-sync-inline>loading…</span>
@@ -4395,7 +4363,7 @@
                 <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
               </label>
               <!-- Region › Country › University drilldown. Same visual language
-                   as the "All Province/City Areas" dropdown but three columns wide.
+                   as the "All Provinces" dropdown but three columns wide.
                    Selecting any level zooms the map and rescopes the stats
                    counters via state.worldSearchScope. -->
               <div class="db-map-fs-conf db-map-fs-region" data-db-map-fs-region>
@@ -4420,16 +4388,16 @@
               </div>
               <div class="db-map-fs-conf" data-db-map-fs-conf>
                 <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-conf-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All Province/City Areas</span>
+                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All Provinces</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="db-map-fs-conf__panel" data-db-map-fs-conf-panel role="menu" hidden>
                   <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
-                    <div class="db-map-fs-conf__col-title">Province/City Area</div>
+                    <div class="db-map-fs-conf__col-title">Province</div>
                     <div class="db-map-fs-conf__list" data-db-map-fs-conf-list></div>
                   </div>
                   <div class="db-map-fs-conf__col db-map-fs-conf__col--prov" data-db-map-fs-conf-prov-col>
-                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Districts</div>
+                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Provinces</div>
                     <div class="db-map-fs-conf__list" data-db-map-fs-conf-prov-list></div>
                   </div>
                 </div>
@@ -4482,7 +4450,7 @@
               <p class="db-conf-explain" data-world-list-explain>Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
               <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
                 <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
-                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="province group" aria-selected="false" tabindex="-1">By Province/City Area &amp; District</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="province group" aria-selected="false" tabindex="-1">By Province</button>
               </div>
               <label class="db-world-search" data-world-search-wrap>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -4555,7 +4523,7 @@
           <div class="db-map-world-wrap" data-db-b3-map-wrap>
             <div id="db-map-b3" role="application" aria-label="World map of Solomon Islands research locations"></div>
             <div class="db-map-fs-toolbar" data-db-b3-fs-toolbar>
-              <!-- Region › Country › (Solomon Islands only) Province/City Area › District drilldown.
+              <!-- Region › Country › (Solomon Islands only) Province › Province drilldown.
                    Selecting any level filters the pie markers on the map and
                    the country list below to publications catalogued in that
                    scope. Same visual language as the B2 dropdown. -->
@@ -4574,11 +4542,11 @@
                     <div class="db-map-fs-conf__list" data-db-b3-country-drilldown></div>
                   </div>
                   <div class="db-map-fs-conf__col" data-db-b3-conf-col hidden>
-                    <div class="db-map-fs-conf__col-title">Province/City Area</div>
+                    <div class="db-map-fs-conf__col-title">Province</div>
                     <div class="db-map-fs-conf__list" data-db-b3-conf-list></div>
                   </div>
                   <div class="db-map-fs-conf__col" data-db-b3-prov-col hidden>
-                    <div class="db-map-fs-conf__col-title">District</div>
+                    <div class="db-map-fs-conf__col-title">Province</div>
                     <div class="db-map-fs-conf__list" data-db-b3-prov-list></div>
                   </div>
                 </div>
@@ -4705,17 +4673,17 @@
           <button type="button" role="tab" class="db-b2-tab is-active" data-b1-tab="type" aria-selected="true" tabindex="0">By publication type</button>
           <button type="button" role="tab" class="db-b2-tab" data-b1-tab="authorship" aria-selected="false" tabindex="-1">Authorship</button>
         </div>
-        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Solomon Islands' 23 Districts</h2>
-        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Solomon Islands' 23 districts based on where the study or fieldwork took place, plus a “Non-district/Solomon Islands” category for research on Solomon Islands-wide topics (e.g. national legislation, national mental health policy) not tied to one district. Default view shows Solomon Islander authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
+        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Solomon Islands' nine provinces</h2>
+        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Solomon Islands' nine provinces based on where the study or fieldwork took place, plus a “Non-province/Solomon Islands” category for research on Solomon Islands-wide topics (e.g. national legislation, national mental health policy) not tied to one province. Default view shows Solomon Islander authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
         <div class="db-panel__meta">
-          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study district</span></span>
+          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study province</span></span>
           <span><em>Authors:</em> <select class="db-meta-select" data-b1-authors aria-label="Filter authors">
             <option value="itaukei">Solomon Islander authors</option>
             <option value="all">All authors</option>
           </select></span>
-          <span><em>View:</em> <select class="db-meta-select" data-b1-groupby aria-label="Group bars by district or Province/City Area">
-            <option value="district">District</option>
-            <option value="division" selected>Province/City Area</option>
+          <span><em>View:</em> <select class="db-meta-select" data-b1-groupby aria-label="Group bars by province or Province">
+            
+            <option value="division" selected>Province</option>
           </select></span>
         </div>
         <!-- Authorship-view only: legend for the three coloured segments, shown
@@ -4743,7 +4711,7 @@
         </div>
       </div>
 
-      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal district -->
+      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal province -->
       <div class="db-panel reveal" data-panel="C3">
         <span class="db-panel__label">C3</span>
         <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
@@ -4752,8 +4720,8 @@
           <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="All publications by Solomon Islander authors, including non-Solomon Islands topics">Solomon Islands + International</button>
         </div>
         <div id="db-b2-panel" role="tabpanel">
-          <h2 class="db-panel__title" data-b2-title>Research Output by Solomon Islander Author's Home District</h2>
-          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Solomon Islander first author’s own paternal district. Default scope shows Solomon Islands-focused publications; switch to “Solomon Islands + International” to include research on non-Solomon Islands topics and locations too.</p>
+          <h2 class="db-panel__title" data-b2-title>Research Output by Solomon Islander Author's Home Province</h2>
+          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Solomon Islander first author’s own paternal province. Default scope shows Solomon Islands-focused publications; switch to “Solomon Islands + International” to include research on non-Solomon Islands topics and locations too.</p>
           <div class="db-panel__meta" data-b2-meta></div>
           <!-- Authorship + Layout dropdowns. Styled as teal pills so users can
                tell they're interactive. The Layout dropdown only appears when
@@ -4768,18 +4736,18 @@
                 <option value="split">1st author + co-author, split</option>
               </select>
             </label>
-            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per district. Detailed splits each district into 1st-author and co-author rows with publication-type colours.">
+            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per province. Detailed splits each province into 1st-author and co-author rows with publication-type colours.">
               <span class="db-b2-view-select__label">Layout</span>
               <select data-b2-layout>
                 <option value="compact">Compact (single bar)</option>
                 <option value="detailed">Detailed (with publication types)</option>
               </select>
             </label>
-            <label class="db-b2-view-select" title="District shows one bar per Solomon Islands district. Province/City Area combines the 23 districts into Solomon Islands' 5 Province/City Areas (Solomon Islandstapu, Vavaʻu, Haʻapai, ʻEua, Ongo Niua) and disables click-to-filter on the bars.">
+            <label class="db-b2-view-select" title="Summaries use the nine provinces.">
               <span class="db-b2-view-select__label">View</span>
               <select data-b2-groupby>
-                <option value="district">District</option>
-                <option value="division" selected>Province/City Area</option>
+                
+                <option value="division" selected>Province</option>
               </select>
             </label>
           </div>
@@ -4789,12 +4757,12 @@
           <div class="db-b2-blurb" data-b2-blurb></div>
           <!-- Authorship-view only: sentence that clarifies the province semantics -->
           <p class="db-b2-province-note" data-b2-province-note style="display:none;">
-            <span aria-hidden="true">ⓘ</span> District refers to where the research was conducted.
+            <span aria-hidden="true">ⓘ</span> Province refers to where the research was conducted.
           </p>
           <details class="db-b2-info">
-            <summary>How is “district” defined in this panel?</summary>
-            <p>In the <strong>Solomon Islands-focused</strong> and <strong>All locations</strong> views, district means the <em>paternal district of the Solomon Islander first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, district means the <em>location of the research</em>.</p>
-            <p>A publication covering more than one research district may be counted once in each tagged district.</p>
+            <summary>How is “province” defined in this panel?</summary>
+            <p>In the <strong>Solomon Islands-focused</strong> and <strong>All locations</strong> views, province means the <em>paternal province of the Solomon Islander first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, province means the <em>location of the research</em>.</p>
+            <p>A publication covering more than one research province may be counted once in each tagged province.</p>
           </details>
           <!-- Authorship-view only: legend + counts/percent toggle + sort control -->
           <div class="db-b2-authorship-controls" data-b2-authorship-controls style="display:none;">
@@ -4942,7 +4910,7 @@
           </label>
 
           <button type="button" class="dsf-input dsf-input--combo" data-scholar-conf-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>All Province/City Areas</span>
+            <span class="dsf-input__label" data-label-slot>All Provinces</span>
             <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
             <span class="dsf-input__caret">▾</span>
           </button>
@@ -4972,14 +4940,14 @@
           <button type="button" class="dsf-clear-all" data-scholar-clear-all>Clear all</button>
         </div>
 
-        <!-- Province/City Area / District combo panel -->
+        <!-- Province / Province combo panel -->
         <div class="dsf-combo-panel" data-scholar-conf-panel role="listbox">
           <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Province/City Area</div>
+            <div class="dsf-combo-col__head">Province</div>
             <div data-parent-col></div>
           </div>
           <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Districts</div>
+            <div class="dsf-combo-col__head" data-child-header>Provinces</div>
             <div data-child-col></div>
           </div>
         </div>
@@ -5018,17 +4986,11 @@
           </div>
         </div>
 
-        <!-- Summary bar (Total + Solomon Islands' 5 Province/City Areas + Unclassified) -->
+        <!-- Summary bar (Total + Solomon Islands' nine provinces + Unclassified) -->
         <div class="dsf-summary" data-scholar-summary>
-          <strong>Province/City Area</strong>
+          <strong>Province</strong>
           <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
-          <div class="dsf-summary__chips" data-scholar-summary-chips>
-            <span class="dsf-chip dsf-chip--vavau"     data-conf-chip="Vava&#39;u"><span class="dsf-chip__dot"></span> Vavaʻu: <span data-count-vavau>0</span></span>
-            <span class="dsf-chip dsf-chip--haapai"     data-conf-chip="Ha&#39;apai"><span class="dsf-chip__dot"></span> Haʻapai: <span data-count-haapai>0</span></span>
-            <span class="dsf-chip dsf-chip--solomon-islandstapu" data-conf-chip="Solomon Islandstapu"><span class="dsf-chip__dot"></span> Solomon Islandstapu: <span data-count-solomon-islandstapu>0</span></span>
-            <span class="dsf-chip dsf-chip--eua" data-conf-chip="&#39;Eua"><span class="dsf-chip__dot"></span> ʻEua: <span data-count-eua>0</span></span>
-            <span class="dsf-chip dsf-chip--ongoniua" data-conf-chip="Ongo Niua"><span class="dsf-chip__dot"></span> Ongo Niua: <span data-count-ongoniua>0</span></span>
-            <span class="dsf-chip dsf-chip--unclass"    data-conf-chip="Unclassified"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-summary-chips><span class="dsf-chip" data-conf-chip="Central">Central: 0</span><span class="dsf-chip" data-conf-chip="Choiseul">Choiseul: 0</span><span class="dsf-chip" data-conf-chip="Guadalcanal">Guadalcanal: 0</span><span class="dsf-chip" data-conf-chip="Isabel">Isabel: 0</span><span class="dsf-chip" data-conf-chip="Makira-Ulawa">Makira-Ulawa: 0</span><span class="dsf-chip" data-conf-chip="Malaita">Malaita: 0</span><span class="dsf-chip" data-conf-chip="Rennell-Bellona">Rennell-Bellona: 0</span><span class="dsf-chip" data-conf-chip="Temotu">Temotu: 0</span><span class="dsf-chip" data-conf-chip="Western">Western: 0</span>
           </div>
         </div>
 
@@ -5096,7 +5058,7 @@
       <div class="db-contribute reveal">
         <h3>Contribute · Suggest an item</h3>
         <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by a Solomon Islander scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
-        <a href="mailto:ronvave@hawaii.edu?subject=Solomon Islands%20Scholar%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0ADistrict(s)%20covered%3A%20%0APaternal%20district%20of%201st%20author%20(if%20Solomon Islander)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
+        <a href="mailto:ronvave@hawaii.edu?subject=Solomon Islands%20Scholar%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20Solomon Islander)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
         <a href="https://www.zotero.org/groups/5983386/itaukei_academic_research/library" target="_blank" rel="noopener" class="btn btn--ghost" style="display:inline-block;margin-left:var(--space-2);">Open Zotero library</a>
       </div>
     </div>
@@ -5115,7 +5077,7 @@
     <header class="impact-header">
       <div class="impact-header__eyebrow">Presentation view · Solomon Islands Scholar Database</div>
       <h2 id="impact-title" class="impact-header__title">Solomon Islands research impact <span>across the Pacific</span></h2>
-      <p class="impact-header__sub">Publications grouped by paternal <em>Province/City Area</em>, split by whether the research is <strong>Solomon Islands-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
+      <p class="impact-header__sub">Publications grouped by paternal <em>Province</em>, split by whether the research is <strong>Solomon Islands-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
     </header>
 
     <div class="impact-filters" role="tablist" aria-label="Filter">
@@ -5266,16 +5228,16 @@
             <input type="text" id="db-sf-village" name="village" placeholder="e.g. Kolovai" />
           </div>
           <div>
-            <label for="db-sf-paternal">Paternal District</label>
+            <label for="db-sf-paternal">Paternal Province</label>
             <select id="db-sf-paternal" name="paternal_province">
               <option value="">(select)</option>
             </select>
-            <small>Province/City Area is derived automatically.</small>
+            <small>Province is derived automatically.</small>
           </div>
           <div>
             <label for="db-sf-specific-island">Specific Island (Paternal)</label>
-            <input type="text" id="db-sf-specific-island" name="specific_island" placeholder="e.g. Solomon Islandstapu, Foa, Niuafoʻou" />
-            <small>Independently curated — some districts (e.g. Lulunga) span multiple islands.</small>
+            <input type="text" id="db-sf-specific-island" name="specific_island" placeholder="e.g. Guadalcanal, Malaita, New Georgia" />
+            <small>Independently curated — a province can span multiple islands.</small>
           </div>
           <div>
             <label for="db-sf-title">Professional title</label>
@@ -5391,9 +5353,9 @@
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
 <script src="js/solomon-demo-gate.js?v=a3ac7a84" defer></script>
-<script src="js/solomon-database-adapter.js?v=1fd0b00d" defer></script>
-<script src="js/solomon-database-master.js?v=9e274af5" defer></script>
-<script src="js/solomon-panel-overrides.js?v=a186c287" defer></script>
+<script src="js/solomon-database-adapter.js?v=provinces-20260920" defer></script>
+<script src="js/solomon-database-master.js?v=provinces-20260920" defer></script>
+<script src="js/solomon-panel-overrides.js?v=provinces-20260920" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a
@@ -5499,3 +5461,4 @@
 </script>
 </body>
 </html>
+
