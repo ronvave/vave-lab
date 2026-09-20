@@ -708,7 +708,7 @@ function buildOption(data){
   // the Tongan/iTaukei clone lineage (a generic body-shape chart element,
   // not culturally-specific artwork) and carries no Fijian- or
   // Tongan-specific text.
-  const DISPLAY = { "Woman": "Woman", "Man": "Man" };
+  const DISPLAY = { "Woman": "Female", "Man": "Male" };
   // Three-line axis labels: name, then "N scholars", then "N publications"
   // (counts enlarged and set in black per the reference).
   const axisLabelFmt = g => {
@@ -1064,44 +1064,65 @@ function loadDbGate(){
     document.head.appendChild(s);
   });
 }
+// Use the same Master-derived publications and Scholar-ID links as the dashboard.
+function aggregateMasterGender(bundle) {
+  const groups = {Woman: new Set(), Man: new Set()}, genderById = new Map();
+  let unknown = 0;
+  (bundle.master.scholars || []).forEach(person => {
+    const id = person['Scholar ID']; if (!id || genderById.has(id)) return;
+    const raw = String(person.Gender || '').trim().toLowerCase();
+    const gender = /^(f|female|woman)$/.test(raw) ? 'Woman' : /^(m|male|man)$/.test(raw) ? 'Man' : null;
+    genderById.set(id, gender);
+    if (gender) groups[gender].add(id); else unknown++;
+  });
+  const byPublication = new Map();
+  (bundle.master.authorship || []).forEach(a => {
+    const id = a['Publication ID / BibTeX Key'] || a['Publication ID'];
+    if (!byPublication.has(id)) byPublication.set(id, new Set());
+    byPublication.get(id).add(a['Scholar ID']);
+  });
+  const sets = {};
+  for (const g of ['Woman','Man']) sets[g] = Object.fromEntries(['masters','phd','journal','book','bookSection'].map(k => [k,new Set()]));
+  for (const item of bundle.snap.items || []) {
+    const type = item.itemType === 'thesis' ? item.thesisLevel : ({journalArticle:'journal',book:'book',bookSection:'bookSection'}[item.itemType]);
+    if (!sets.Woman[type]) continue;
+    const ids = byPublication.get(item._masterPublicationId) || new Set(item._syntheticGradDegree ? [item._itaukeiLeadScholarId] : []);
+    for (const id of ids) { const gender = genderById.get(id); if (gender) sets[gender][type].add(item.key); }
+  }
+  const data = {};
+  for (const g of ['Woman','Man']) data[g] = Object.assign({scholars:groups[g].size},Object.fromEntries(Object.entries(sets[g]).map(([k,v]) => [k,v.size])));
+  return {data,unknown};
+}
 async function init(){
   try {
-    let data = null;
-    // Path 1: plaintext (works when data/ is not encrypted, e.g. local dev).
-    try {
-      const dataUrl = IS_MASTER
-        ? 'data/solomon-body-composition-master.json'
-        : 'data/solomon-body-composition.json';
-      const r = await fetch(dataUrl, { cache:'no-store' });
-      if (r.ok) data = await r.json();
-    } catch (e) { /* fall through */ }
-    // Path 2: encrypted. The Solomon Islands public gate has its own read key, so the
-    // iframe must load it even without the older cached iTaukei session key.
-    if (!data){
-      try {
+    let owner = window.parent !== window ? window.parent : window;
+    if (owner !== window) {
+      for (let n=0;n<120 && !owner.__masterHydrated;n++) await new Promise(r=>setTimeout(r,500));
+    }
+    let bundle;
+    if (owner.__masterHydrated && owner.__vavelabDbState) {
+      bundle = {master:owner.__vavelabDbState.master,snap:owner.__vavelabDbState.snapshot};
+    } else {
+      if (owner === window) {
         await loadDbGate();
-        if (window.dbGate && typeof window.dbGate.fetchJson === 'function'){
-          if (typeof window.dbGate.unlockEmbeddedRead === 'function'){
-            window.dbGate.unlockEmbeddedRead();
-          }
-          // dbGate.boot() would show a lock screen; skip it and just try to
-          // decrypt directly. If the cached passcode has been rotated the
-          // fetch throws and we drop back to the empty template.
-          if (typeof window.dbGate.tryUnlockFromStorage === 'function'){
-            await window.dbGate.tryUnlockFromStorage();
-          }
-          data = await window.dbGate.fetchJson(
-            IS_MASTER ? 'data/solomon-body-composition-master.json'
-                      : 'data/solomon-body-composition.json');
-        }
-      } catch (e) { /* stay silent, fall through */ }
+        if (!window.MasterFileAdapter) await new Promise((resolve,reject)=>{
+          const script=document.createElement('script');script.src='js/solomon-database-adapter.js';
+          script.onload=resolve;script.onerror=reject;document.head.appendChild(script);
+        });
+      }
+      if (!owner.MasterFileAdapter) throw new Error('Master-file reader unavailable');
+      bundle = await owner.MasterFileAdapter.load({masterOnly:true});
     }
-    if (data && (data.Woman || data.Man)){
-      render({ Woman: data.Woman||{}, Man: data.Man||{} }, 'Committed dataset');
-      return;
-    }
-  } catch (e) { /* fall through */ }
-  render({ Woman:{scholars:null}, Man:{scholars:null} }, null);
+    const result=aggregateMasterGender(bundle);
+    render(result.data,'Solomon Islands Master File');
+    capEl.textContent='Source: Solomon Islands Master File. '+result.unknown+' scholars have blank or unverified gender and are not assigned to either figure. Each publication is counted once per gender; a publication coauthored across genders appears in both figures.';
+    capEl.style.setProperty('display','block','important');
+  } catch(e) {
+    render({Woman:{scholars:null},Man:{scholars:null}},null);
+    capEl.textContent='Unable to load Solomon Master-file data. Reload the dashboard to retry.';
+    capEl.style.setProperty('display','block','important');
+    console.error('Solomon gender chart',e);
+  }
 }
 
 /* ---- PNG export (aspect-locked, DPI-scalable) — uses ECharts getDataURL --- */
