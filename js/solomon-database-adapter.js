@@ -276,14 +276,19 @@
         a['Author Name as Published'] || '';
     });
 
+    var institutionsById = new Map((master.institutions || []).map(function (i) {
+      return [i['Institution ID'], i];
+    }));
     master.gradDegrees.forEach(function (g) {
       g['Degree Stage'] = g['Degree Stage'] || g['Stage'] || '';
       g['Degree / Qualification'] = g['Degree / Qualification'] ||
         g['Degree Name'] || '';
       g['Thesis / Research Title'] = g['Thesis / Research Title'] ||
         g['Thesis Title'] || '';
-      g['C_Uni name'] = g['C_Uni name'] ||
+      var institution = institutionsById.get(g['Institution ID']);
+      g['C_Uni name'] = (institution && institution['Canonical Name']) || g['C_Uni name'] ||
         g['Institution Name (Current)'] || '';
+      g['Country'] = g['Country'] || (institution && institution['Country']) || '';
       g['O_Uni name'] = g['O_Uni name'] ||
         g['Institution Name (Original)'] || '';
       g['Finish / Completion Year'] = g['Finish / Completion Year'] ||
@@ -322,21 +327,10 @@
       fetchJson(masterDataUrl_('solomon-master-geography-coordinates.json')).catch(function () { return []; }),
       fetchJson(masterDataUrl_('solomon-master-aggregates.json')),
       fetchJson(masterDataUrl_('solomon-last-master-sync.json')).catch(function () { return null; }),
-      // V1 graduate-studies snapshot — used only as a (country, university)
-      // coordinate lookup for Panel B2 world map. Master mobility only has 4
-      // coordinate rows; the V1 file has 79 curated worldPoints with lat/lng.
-      // If the file is unavailable we still render the panel with no markers
-      // rather than fail the whole build.
+      // Reserved legacy slots. Panel B2 is built directly from the current
+      // Solomon Master degree and scholar tables, never an alternate snapshot.
       Promise.resolve(null),
-      // Master-derived Panel B2 world-points payload (country → university
-      // → scholar drill-down). Authoritative source per the 2026-08-25
-      // "V2 Panel B2 Country-University Drilldown Repair" spec. Built by
-      // scripts/master_b2_worldpoints.py. When present, this REPLACES the
-      // adapter's JS-side aggregation and ensures completion filtering,
-      // discipline-string rejection, and canonical C_Uni grouping match
-      // the Python contract. Optional — the JS adapter still contains a
-      // legacy path so an older deploy without this file still renders.
-      fetchJson('data/solomon-master-worldpoints.json').catch(function () { return null; }),
+      Promise.resolve(null),
       // Admin V2 enrichment (Scholar-ID keyed): photo path, institution URL,
       // department URL, sector, year of birth, year of death. Optional.
       (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/solomon-scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; })),
@@ -1322,6 +1316,21 @@
   //   worldPoints: [ { country, city, university, scholars:[...] }, ... ]
   // -------------------------------------------------------------------
   function buildGraduateStudies(master, snap, profilesDoc) {
+    var profileById = new Map(profilesDoc.scholars.map(function (p) {
+      return [String(p.scholarId || '').trim(), p];
+    }));
+    var seenDegrees = new Set();
+    // The graduate panel counts completed degree episodes, including
+    // coursework Master's degrees, joined through stable Scholar IDs.
+    master = Object.assign({}, master, { gradDegrees: master.gradDegrees.filter(function (g) {
+      var id = String(g['Degree ID'] || '').trim();
+      var stage = String(g['Degree Stage'] || '').toLowerCase();
+      if (!profileById.has(String(g['Scholar ID'] || '').trim()) ||
+          !/^completed(?:\b|$)/i.test(String(g['Completion Status'] || '').trim()) ||
+          !/(master|phd|doctor)/.test(stage) || !id || seenDegrees.has(id)) return false;
+      seenDegrees.add(id);
+      return true;
+    }) });
     var scholarsMap = {};
     profilesDoc.scholars.forEach(function (p) {
       scholarsMap[p.name] = {
@@ -1385,151 +1394,153 @@
       if (gname && !scholarsMap[gname]) scholarsMap[gname] = rec;
     });
 
-    // World points: group grad degrees by (Country, City, C_Uni name).
+    // Cartographic reference only: never supplies scholars, qualifications,
+    // counts, or identity. Country-centre fallbacks are labelled explicitly.
+    // University reference points reuse the Fiji map's geographic lookup;
+    // they identify an institution, not a verified attendance campus.
+    var universityLocations = {
+  "Fiji|University of the South Pacific": [
+    -18.148,
+    178.446
+  ],
+  "Australia|Australian National University": [
+    -35.278,
+    149.119
+  ],
+  "United States|University of Hawaiʻi at Mānoa": [
+    21.297,
+    -157.816
+  ],
+  "United Kingdom|University of East Anglia": [
+    52.622,
+    1.242
+  ],
+  "New Zealand|Victoria University of Wellington": [
+    -41.29,
+    174.767
+  ],
+  "Australia|James Cook University": [
+    -19.328,
+    146.759
+  ],
+  "Australia|University of New England": [
+    -30.489,
+    151.652
+  ],
+  "New Zealand|University of Canterbury": [
+    -43.523,
+    172.583
+  ],
+  "New Zealand|University of Waikato": [
+    -37.788,
+    175.32
+  ],
+  "New Zealand|Massey University": [
+    -40.383,
+    175.612
+  ],
+  "New Zealand|University of Otago": [
+    -45.865,
+    170.514
+  ],
+  "Australia|Victoria University": [
+    -37.799,
+    144.881
+  ],
+  "Australia|University of Sydney": [
+    -33.888,
+    151.187
+  ],
+  "New Zealand|University of Auckland": [
+    -36.852,
+    174.769
+  ],
+  "United Kingdom|Loughborough University": [
+    52.766,
+    -1.226
+  ],
+  "New Zealand|Auckland University of Technology": [
+    -36.853,
+    174.766
+  ],
+  "Australia|The Australian National University": [
+    -35.278,
+    149.119
+  ],
+  "Canada|University of British Columbia": [
+    49.267,
+    -123.253
+  ],
+  "Australia|University of Wollongong": [
+    -34.406,
+    150.877
+  ],
+  "United Kingdom|Lancaster University": [
+    54.01,
+    -2.786
+  ],
+  "Fiji|Pasifika Communities University": [
+    -18.1583,
+    178.4356
+  ],
+  "Australia|Charles Sturt University": [
+    -35.084,
+    147.325
+  ],
+  "Australia|University of Melbourne": [
+    -37.797,
+    144.961
+  ],
+  "Australia|University of New South Wales": [
+    -33.917,
+    151.231
+  ],
+  "Australia|University of Queensland": [
+    -27.497,
+    153.014
+  ],
+  "Australia|Murdoch University": [
+    -32.07,
+    115.837
+  ],
+  "United Kingdom|University of Reading": [
+    51.442,
+    -0.945
+  ]
+};
+    var countryLocations = {"Australia": [-25, 134], "Canada": [56, -106], "Fiji": [-18, 178], "Ireland": [53, -8], "New Zealand": [-41, 174], "Norway": [61, 8], "Singapore": [1.35, 103.82], "Solomon Islands": [-9.6, 160.2], "Trinidad and Tobago": [10.5, -61.3], "United Kingdom": [54, -2], "United States": [39, -98]};
     var wpByKey = new Map();
     master.gradDegrees.forEach(function (g) {
-      var country = (g['Country'] || '').trim();
-      var uni = (g['C_Uni name'] || '').trim();
-      var city = (g['City'] || '').trim();
+      var profile = profileById.get(String(g['Scholar ID'] || '').trim());
+      if (!profile) return;
+      var country = String(g['Country'] || '').trim();
+      var uni = String(g['C_Uni name'] || '').trim();
       if (!country || !uni) return;
-      var key = country + '|' + city + '|' + uni;
+      var key = country + '|' + uni;
       var pt = wpByKey.get(key);
       if (!pt) {
+        var loc = universityLocations[key] || countryLocations[country];
         pt = {
-          country: country,
-          city: city,
-          university: uni,
-          region: g['Region'] || '',
-          scholarsCount: 0,
-          scholars: []
+          country: country, city: '', university: uni, region: '',
+          lat: loc ? loc[0] : null, lng: loc ? loc[1] : null,
+          locationPrecision: universityLocations[key] ? 'institution-reference' : 'country',
+          locationNote: universityLocations[key]
+            ? 'Approximate institution location; attendance campus is not recorded.'
+            : 'Country-level location; university coordinates are not yet available.',
+          scholarsCount: 0, scholars: [], mastersScholars: [], phdScholars: [], unknownScholars: []
         };
         wpByKey.set(key, pt);
       }
       pt.scholars.push({
-        name: g['Scholar Name'] || '',
-        scholarId: g['Scholar ID'],
-        degree: (g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || ''),
-        year: g['Finish / Completion Year'] || g['Year / Status'] || '',
-        completed: /^Completed/i.test(g['Completion Status'] || '')
+        name: profile.name, scholarId: profile.scholarId,
+        degree: g['Degree Stage'] + ' ' + (g['Degree / Qualification'] || ''),
+        degreeId: g['Degree ID'], year: g['Finish / Completion Year'] || '', completed: true
       });
-      pt.scholarsCount = pt.scholars.length;
-      // Also emit the shape the production world-map / B2-KPI code reads:
-      // three parallel arrays of scholar names bucketed by degree level.
-      // Ron's Panel B2 KPI computation (renderPanelB2) sums the array
-      // lengths per country and derives Universities/Countries totals
-      // from the point set, so these arrays must exist on every point.
-      if (!pt.mastersScholars) pt.mastersScholars = [];
-      if (!pt.phdScholars)     pt.phdScholars = [];
-      if (!pt.unknownScholars) pt.unknownScholars = [];
-      var stage = (g['Degree Stage'] || '').toLowerCase();
-      var scholarName = g['Scholar Name'] || '';
-      if (scholarName) {
-        if (stage.indexOf('master') !== -1)               pt.mastersScholars.push(scholarName);
-        else if (stage.indexOf('phd') !== -1 || stage.indexOf('doctor') !== -1) pt.phdScholars.push(scholarName);
-        else                                              pt.unknownScholars.push(scholarName);
-      }
+      var stage = String(g['Degree Stage']).toLowerCase();
+      (stage.indexOf('master') !== -1 ? pt.mastersScholars : pt.phdScholars).push(profile.name);
+      pt.scholarsCount = new Set(pt.scholars.map(function (x) { return x.scholarId; })).size;
     });
     var worldPoints = Array.from(wpByKey.values());
-
-    // ------------------------------------------------------------------
-    // AUTHORITATIVE OVERRIDE
-    //
-    // If scripts/master_b2_worldpoints.py has published a Master-derived
-    // world-points payload, use it verbatim for Panel B2 aggregation.
-    // That payload enforces:
-    //   • only Completed Master's + PhD/Doctorate episodes count
-    //     (including 'Completed / year unresolved' and every
-    //     'Completed — …' variant);
-    //   • discipline-shaped C_Uni values (e.g.
-    //     'Agriculture / Horticulture / Breadfruit Propagation') and
-    //     placeholders ('not found', 'TBD') are excluded;
-    //   • grouping is by canonical C_Uni across cities so PTC→PCU and
-    //     Alafua rows never split;
-    //   • country strings are validated so 'University of the South
-    //     Pacific' cannot leak into the country dimension.
-    // The legacy JS aggregation above is retained only as a fallback for
-    // older deploys that lack the Master B2 payload.
-    // ------------------------------------------------------------------
-    var mwp = master.masterWorldPoints;
-    if (mwp && Array.isArray(mwp.worldPoints) && mwp.worldPoints.length > 0) {
-      worldPoints = mwp.worldPoints.map(function (p) {
-        // The Python payload uses the same key names as the JS shape,
-        // but we defensively normalize numeric coord fields and ensure
-        // the scholar-arrays exist so downstream code that reads
-        // `pt.mastersScholars.length` never sees `undefined`.
-        var lat = (typeof p.lat === 'number') ? p.lat : null;
-        var lng = (typeof p.lng === 'number') ? p.lng : null;
-        return {
-          country:          p.country || '',
-          iso:              p.iso || '',
-          region:           p.region || '',
-          university:       p.university || '',
-          city:             p.city || '',
-          lat:              lat,
-          lng:              lng,
-          phdScholars:      Array.isArray(p.phdScholars)     ? p.phdScholars.slice()     : [],
-          mastersScholars:  Array.isArray(p.mastersScholars) ? p.mastersScholars.slice() : [],
-          unknownScholars:  Array.isArray(p.unknownScholars) ? p.unknownScholars.slice() : [],
-          // Panel B2 uses `.scholars` too for popup lists; synthesize
-          // from the per-degree records so hovering the university
-          // popup still lists every graduate. Each entry mirrors the
-          // legacy shape wirePopupScholarHovers reads.
-          scholars: (Array.isArray(p.degrees) ? p.degrees : []).map(function (d) {
-            return {
-              name:       d.scholarName || '',
-              scholarId:  d.scholarId  || '',
-              degree:     ((d.stage === 'Masters' ? "Master's " : d.stage === 'PhD' ? 'PhD/Doctorate ' : '') + (d.qualification || '')).trim(),
-              year:       d.year || '',
-              completed:  true   // Python side already enforces this.
-            };
-          }),
-          scholarsCount: Array.isArray(p.degrees) ? p.degrees.length : 0,
-          degrees:       Array.isArray(p.degrees) ? p.degrees.slice() : []
-        };
-      });
-    }
-
-    // Attach lat/lng from the V1 graduate-studies coordinate lookup, keyed
-    // primarily by university name (unique across the dataset) with a
-    // country+city fallback for universities present under multiple keys.
-    // This is why Panel B2 markers went missing in the Master port: Master
-    // mobility rows only carry 4 coordinate pairs, so a plain m_lat/m_lon
-    // join dropped ~99% of points and the map filtered them all out. The V1
-    // snapshot bundles 79 curated coordinates covering every university
-    // present in the Master grad-degrees table today.
-    var v1 = master.v1GradStudies;
-    if (v1 && Array.isArray(v1.worldPoints)) {
-      var coordByUni = new Map();
-      var coordByCountryUni = new Map();
-      v1.worldPoints.forEach(function (v) {
-        if (typeof v.lat === 'number' && typeof v.lng === 'number') {
-          if (v.university && !coordByUni.has(v.university)) {
-            coordByUni.set(v.university, { lat: v.lat, lng: v.lng, iso: v.iso, region: v.region });
-          }
-          if (v.country && v.university) {
-            coordByCountryUni.set(v.country + '|' + v.university, { lat: v.lat, lng: v.lng, iso: v.iso, region: v.region });
-          }
-        }
-      });
-      worldPoints.forEach(function (pt) {
-        // Do not overwrite coords the authoritative Master B2 payload
-        // already resolved. The Master payload encodes country-specific
-        // campus overrides (e.g. USP Alafua for Samoa) which the V1
-        // graduate-studies lookup lacks — V1 has only a single USP row
-        // keyed to Fiji, so its fallback `coordByUni` match would drag
-        // Samoa/Vanuatu/Solomon Islands/Solomon Islands USP rows back to Suva.
-        var hasCoord = typeof pt.lat === 'number' && typeof pt.lng === 'number';
-        var hit = coordByCountryUni.get(pt.country + '|' + pt.university) || coordByUni.get(pt.university);
-        if (hit) {
-          if (!hasCoord) {
-            pt.lat = hit.lat;
-            pt.lng = hit.lng;
-          }
-          if (!pt.iso    && hit.iso)    pt.iso    = hit.iso;
-          if (!pt.region && hit.region) pt.region = hit.region;
-        }
-      });
-    }
 
     return { scholars: scholarsMap, worldPoints: worldPoints, universities: [] };
   }
