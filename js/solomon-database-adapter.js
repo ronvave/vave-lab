@@ -221,8 +221,7 @@
 
   // Staging Admin loads an isolated snapshot generated from the staging
   // spreadsheet. Production pages continue to use data/ unchanged.
-  var STAGING_SNAPSHOT = /admin-solomon-islands-staging\.html$/i.test(location.pathname) ||
-    new URLSearchParams(location.search).get('snapshot') === 'staging';
+  var STAGING_SNAPSHOT = /admin-solomon-islands-staging\.html$/i.test(location.pathname);
   function masterDataUrl_(name) {
     return (STAGING_SNAPSHOT ? 'data/staging/' : 'data/') + name;
   }
@@ -299,7 +298,8 @@
   // -------------------------------------------------------------------
   // Load raw Master JSON (encrypted through the gate).
   // -------------------------------------------------------------------
-  function loadRawMaster() {
+  function loadRawMaster(options) {
+    var masterOnly = !!(options && options.masterOnly);
     // Empty-shell fallback for admin V2 files that may not exist yet on the
     // first deploy. Both files are Scholar-ID keyed maps; a missing file
     // simply means "no admin enrichment yet" and the dashboard degrades
@@ -327,7 +327,7 @@
       // coordinate rows; the V1 file has 79 curated worldPoints with lat/lng.
       // If the file is unavailable we still render the panel with no markers
       // rather than fail the whole build.
-      fetchJson('data/solomon-graduate-studies.json').catch(function () { return null; }),
+      Promise.resolve(null),
       // Master-derived Panel B2 world-points payload (country → university
       // → scholar drill-down). Authoritative source per the 2026-08-25
       // "V2 Panel B2 Country-University Drilldown Repair" spec. Built by
@@ -339,10 +339,10 @@
       fetchJson('data/solomon-master-worldpoints.json').catch(function () { return null; }),
       // Admin V2 enrichment (Scholar-ID keyed): photo path, institution URL,
       // department URL, sector, year of birth, year of death. Optional.
-      fetchJson('data/solomon-scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; }),
+      (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/solomon-scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; })),
       // Admin V2 research insights (Scholar-ID keyed): keywords, summaryHtml,
       // sources. Optional.
-      fetchJson('data/solomon-scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; }),
+      (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJson('data/solomon-scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })),
       fetchJson('data/solomon-master-institutions.json')
     ]).then(function (arr) {
       return normalizeMasterRows_({
@@ -1285,17 +1285,17 @@
         googleScholarUrl: s['Google Scholar'] || '',
         profileUrl:       s['Personal/Official Profile URL'] || '',
         // ——— Admin V2 enrichment overlay ———
-        photo:            adminExtras.photo || '',
+        photo:            s['Photo URL'] || adminExtras.photo || '',
         // V2 per-scholar 'Last update' timestamp. Sourced from
         // scholar-enrichment.json.enc scholars[<sid>].updatedAt, which is
         // written by Admin V2 on every save. Renderer formats it as
         // 'Last update: DD Mon YYYY'. Absent when the scholar has never
         // been touched by Admin V2 — the renderer omits the line rather
         // than fabricating a date. (Master schema unchanged.)
-        lastUpdate:       adminExtras.updatedAt || '',
-        institutionUrl:   adminExtras.institutionUrl || '',
-        departmentUrl:    adminExtras.departmentUrl || '',
-        sector:           adminExtras.sector || '',
+        lastUpdate:       s['Last Updated'] || adminExtras.updatedAt || '',
+        institutionUrl:   s['Institution URL'] || adminExtras.institutionUrl || '',
+        departmentUrl:    s['Department URL'] || adminExtras.departmentUrl || '',
+        sector:           s['Sector'] || adminExtras.sector || '',
         // yearOfBirth / yearOfDeath are now sourced from the Master
         // Scholars sheet's structured columns (2026-08-23 approval).
         // Sidecar admin-extras values remain as legacy fallbacks so any
@@ -1575,8 +1575,8 @@
   // sync, grad, insightsDoc, workplaceCoordsDoc, uniCountryDoc,
   // progressRoster } bundle the production loadAll expects.
   // -------------------------------------------------------------------
-  function loadFromMaster() {
-    return loadRawMaster().then(function (master) {
+  function loadFromMaster(options) {
+    return loadRawMaster(options).then(function (master) {
       var snap = buildZoteroSnapshot(master);
       return buildGeoJson(snap, master).then(function (geo) {
         var profiles = buildProfiles(master, snap);
@@ -1923,4 +1923,3 @@
   window.MasterFileAdapter = SOLOMONISLANDS_ADAPTER_API;
   window.SolomonIslandsMasterFileAdapter = SOLOMONISLANDS_ADAPTER_API;
 })();
-
