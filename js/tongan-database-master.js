@@ -5614,7 +5614,7 @@
         </div>
         <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
         <div class="db-conf-panel__provs"></div>
-        <p class="db-conf-panel__foot">${provInCf.length} provinces · ${sub} publications</p>
+        <p class="db-conf-panel__foot">${provInCf.length} villages · ${sub} publications</p>
       `;
       const inner = panel.querySelector('.db-conf-panel__provs');
       provInCf.forEach(p => {
