@@ -308,92 +308,28 @@
   }
 
   // ------------------------------------------------------------------
-  // Shared scholar-geography formatter (V2 public display).
-  //
-  // Renders one canonical Solomon Islands locality string from village / island /
-  // district Master values. Display-only — never mutates the Master. The
-  // legacy parameter/property name `province` is retained internally for
-  // compatibility, but public Solomon Islander scholar cards append the correct
-  // Solomon Islands-specific "District" suffix and never append "Province".
-  //
-  //   village + ward + province               → 'Study Site vlg (Guadalcanal Is), Aola Ward.'
-  //   village + district, no island            → 'Te\'ekiu vlg, Kolovai District.'
-  //   village + island, no ward                → 'Study Site vlg (Guadalcanal Is)'
-  //   district only                            → 'Kolovai District.'
-  //   outer island only                       → 'Gau Is'
-  //   nothing meaningful                      → ''
-  //
-  // Placeholders (Unclassified / Unknown / N/A / null / undefined /
-  // 'null' / 'undefined') are stripped before formatting, so the public
-  // string never leaks a sentinel.
-  //
-  // Island suffix normalization: strips a trailing ' Is' / ' Island' from
-  // the stored value (case-insensitive, whole word) so re-suffixing with
-  // ' Is' can never produce 'Moala Is Is' or 'Gau Island Is'.
-  //
-  // The trailing period appears when a district is shown; island-only or
-  // village-only forms stay unpunctuated so they read
-  // cleanly in chips.
-  // ------------------------------------------------------------------
-  const _MAINLAND_ISLANDS_SUPPRESS = /^(viti\s*levu|vanua\s*levu)$/i;
+  // Shared locality line: village and physical island only. Province remains
+  // available to banners, filters and aggregation, but not this name subtitle.
   const _GEO_SENTINELS = /^(unclassified|unknown|n\/?a|na|null|undefined|none|-|\.|_)$/i;
 
   function _cleanGeoField(v) {
     var s = (v == null ? '' : String(v)).trim();
-    if (!s) return '';
-    if (_GEO_SENTINELS.test(s)) return '';
-    return s;
+    return !s || _GEO_SENTINELS.test(s) ? '' : s;
   }
 
   function _normalizeIslandStem(v) {
-    // Scholar cards show the concise physical-island name. Master values may
-    // contain the explanatory qualifier "(main island)" or hierarchy suffix
-    // "Province"; neither belongs in the public locality line. Then
-    // trim any pre-existing Is/Island suffix so one canonical " Is" can be
-    // appended without stacking.
-    return v
-      .replace(/\s*\(\s*main\s+island\s*\)\s*/ig, ' ')
+    return v.replace(/\s*\(\s*main\s+island\s*\)\s*/ig, ' ')
       .replace(/\s+island\s+division$/i, '')
-      .replace(/\s+(is\.?|island)$/i, '')
-      .trim();
+      .replace(/\s+(is\.?|island)$/i, '').trim();
   }
 
   function formatScholarGeography(village, island, province) {
-    var v = _cleanGeoField(village);
-    var i = _cleanGeoField(island);
-    var p = _cleanGeoField(province);
-
-    // Suppress island name entirely for Fiji's two large mainlands.
-    if (i && _MAINLAND_ISLANDS_SUPPRESS.test(i)) i = '';
-
-    var islandStem = i ? _normalizeIslandStem(i) : '';
-    var vlgPart = v ? (v + ' vlg') : '';
-    var islPart = islandStem ? (islandStem + ' Is') : '';
-    // The dashboard displays only the nine provinces. The stored value is the province
-    // name; append the correct public suffix exactly once.
-    var districtStem = p.replace(/\s+(province|district)\.?$/i, '').trim();
-    var provPart = districtStem ? (districtStem === 'Honiara City' ? districtStem : districtStem + ' Province') : '';
-
-    // 1. Village + Province (with or without a shown island).
-    if (vlgPart && provPart) {
-      var localityPart = islPart ? (vlgPart + ' (' + islPart + ')') : vlgPart;
-      return localityPart + ', ' + provPart + '.';
-    }
-    // 2. Village + Island, no province — no trailing comma / fake province.
-    if (vlgPart && islPart) {
-      return vlgPart + ' (' + islPart + ')';
-    }
-    // 3. Village only.
-    if (vlgPart) return vlgPart;
-    // 4. Island + District, no village — keep both instead of dropping
-    //    the island (happens when the village cell is blank OR a scrubbed
-    //    sentinel like 'Unclassified').
-    if (islPart && provPart) return islPart + ', ' + provPart + '.';
-    // 5. District only.
-    if (provPart) return provPart + '.';
-    // 6. Island only.
-    if (islPart) return islPart;
-    return '';
+    var v = _cleanGeoField(village).replace(/\s+(vlg\.?|village)$/i, '');
+    var i = _normalizeIslandStem(_cleanGeoField(island));
+    var vlgPart = v ? v + ' vlg' : '';
+    var islPart = i ? (/\bislands$/i.test(i) ? i : i + ' Island') : '';
+    if (vlgPart && islPart) return vlgPart + ' (' + islPart + ').';
+    return vlgPart || islPart;
   }
 
   // Expose the formatter for tests / other modules (e.g. hover chips built
@@ -594,7 +530,7 @@
     if (!window.MasterFileAdapter || typeof window.MasterFileAdapter.load !== 'function') {
       throw new Error('MasterFileAdapter not loaded. Ensure js/master-file-adapter.js is included before itaukei-database-master.js.');
     }
-    const bundle = await window.MasterFileAdapter.load({ masterOnly: true });
+    const bundle = await window.MasterFileAdapter.load();
     // Preserve the raw Master JSON for panel-level overrides that need
     // Master-specific data (14-province TOTAL columns, provinceGroup rows,
     // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
