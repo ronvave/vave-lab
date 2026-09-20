@@ -2456,9 +2456,10 @@
     // centered against the wrapped sentence.
     return (
       `<div class="db-popup-title">${escapeHtml(p.university)} (${escapeHtml(p.country)})</div>` +
+      `<div class="db-popup-location-note">${escapeHtml(p.locationNote || '')}</div>` +
       `<div class="db-popup-count-row">` +
         `<span class="db-popup-count">${total}</span>` +
-        `<span class="db-popup-count-text">Solomon Islander scholar${total === 1 ? '' : 's'} completed graduate work here</span>` +
+        `<span class="db-popup-count-text">completed graduate degree${total === 1 ? '' : 's'} held by Solomon Islander scholars</span>` +
       `</div>` +
       `<div class="db-popup-scholar-detail" data-popup-detail></div>` +
       `<div class="db-popup-scroll">` + sections.join('') + `</div>`
@@ -2827,7 +2828,7 @@
 
   function zoomToWorldCountry(name) {
     const grad = state.graduateStudies || { worldPoints: [] };
-    const pts = (grad.worldPoints || []).filter(p => p.country === name);
+    const pts = (grad.worldPoints || []).filter(p => p.country === name && Number.isFinite(p.lat) && Number.isFinite(p.lng));
     if (!pts.length || !state.worldMap) return;
     // maxZoom bumped to 8 so country-level zoom actually shows the country,
     // not the whole region (typing "Fiji" used to leave AU + NZ in frame).
@@ -2844,8 +2845,8 @@
   function zoomToWorldUniversity(uniName) {
     const grad = state.graduateStudies || { worldPoints: [] };
     const p = (grad.worldPoints || []).find(x => x.university === uniName);
-    if (!p || !state.worldMap) return;
-    state.worldMap.setView([p.lat, _normLngForWorldMap(p.lng)], 8, { animate: true });
+    if (!p || !state.worldMap || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+    state.worldMap.setView([p.lat, _normLngForWorldMap(p.lng)], p.locationPrecision === 'country' ? 4 : 8, { animate: true });
   }
 
   function wireWorldPanel() {
