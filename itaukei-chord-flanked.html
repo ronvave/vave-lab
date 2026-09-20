@@ -120,6 +120,21 @@
       .legend-flank__col--left .legend-flank__item { flex-direction:row; }
       .legend-flank__bottom { grid-column: 1 / 2; }
     }
+    /* iTaukei B3: inner columns first, overflow on the outer flanks.
+       Keep readable text on smaller screens using the existing scroll canvas. */
+    body.is-itaukei #wrap { width:1480px; min-width:1480px; max-width:none; }
+    body.is-itaukei .legend-flank { grid-template-columns:220px 220px 552px 220px 220px; column-gap:12px; align-items:start; }
+    body.is-itaukei .legend-flank__title { grid-column:1 / 6; }
+    body.is-itaukei .legend-flank__chart { grid-column:3; grid-row:2; align-self:center; }
+    body.is-itaukei #chart { width:552px; height:auto; }
+    .legend-flank__outer { display:none; }
+    body.is-itaukei .legend-flank__col { align-self:start; }
+    body.is-itaukei .legend-flank__col--left { grid-column:2; grid-row:2; align-items:flex-end; text-align:right; }
+    body.is-itaukei .legend-flank__col--right { grid-column:4; grid-row:2; align-items:flex-start; text-align:left; }
+    body.is-itaukei #legend-flank-outer-left { display:flex; grid-column:1; }
+    body.is-itaukei #legend-flank-outer-right { display:flex; grid-column:5; }
+    body.is-itaukei .legend-flank__col--left .legend-flank__item { flex-direction:row-reverse; }
+    body.is-itaukei .legend-flank__bottom { display:none; }
     .chord-title{ text-align:center; font-family:var(--font-display); font-size:26px; font-weight:600; color:#1c2530; padding-top:8px; }
     .chord-subtitle{ text-align:center; font-size:13.5px; color:#5b6572; margin-top:4px; }
     /* NOTE: no `fill` here on purpose. A CSS `fill` rule OVERRIDES the inline
@@ -400,6 +415,8 @@
              wrapping to the bottom strip when both flanks are full. -->
         <div class="legend-flank" id="legend-flank">
           <div class="legend-flank__title">University key</div>
+          <div class="legend-flank__col legend-flank__col--left legend-flank__outer" id="legend-flank-outer-left"></div>
+          <div class="legend-flank__col legend-flank__col--right legend-flank__outer" id="legend-flank-outer-right"></div>
           <div class="legend-flank__col legend-flank__col--left" id="legend-flank-left"></div>
           <div class="legend-flank__chart">
             <!-- The chord draw code uses an internal coordinate system of
@@ -804,6 +821,18 @@ function renderFlankedLegend(nodes, data){
     return row;
   });
 
+  if (document.body.classList.contains('is-itaukei')) {
+    const outerLeft = document.getElementById('legend-flank-outer-left');
+    const outerRight = document.getElementById('legend-flank-outer-right');
+    outerLeft.innerHTML = '';
+    outerRight.innerHTML = '';
+    // 27 entries per set today; grow evenly beyond 108 without losing labels.
+    const perColumn = Math.max(27, Math.ceil(rows.length / 4));
+    const columns = [leftEl, rightEl, outerLeft, outerRight];
+    rows.forEach((row, i) => columns[Math.floor(i / perColumn)].appendChild(row));
+    return;
+  }
+
   // Decide how many rows each side column can hold before we spill to the
   // bottom strip. The visible height budget = the rendered chart height.
   // We measure the chart wrapper live so the calc adapts to fullscreen and
@@ -1016,6 +1045,7 @@ async function init(){
   const requested = new URLSearchParams(location.search).get('cohort') || 'itaukei';
   const cohort = ['itaukei','tongan','solomon','samoa'].includes(requested) ? requested : 'itaukei';
   document.body.classList.toggle('is-solomon', cohort === 'solomon');
+  document.body.classList.toggle('is-itaukei', cohort === 'itaukei');
   const labels = {itaukei:'iTaukei', tongan:'Tongan', solomon:'Solomon Islander', samoa:'Samoan'};
   document.querySelectorAll('.chord-title').forEach(el => { el.textContent = labels[cohort] + ' Scholar Mobility: Master’s → PhD Institutions'; });
   const caption = document.getElementById('cap');
