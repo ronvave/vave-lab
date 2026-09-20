@@ -89,3 +89,25 @@ Tonga-specific Pages additions. Preserve newer snapshots, source corrections,
 Admin enrichment, unrelated country work and the approved Fiji baseline.
 Do not restore whole repository trees or overwrite the Master Sheet.
 
+
+## Release verification
+Implementation commit: 874d43d63a26df8bf45365509624d2918dc4febd.
+Scheduled exporter completed successfully in Actions run 35523816308 and
+created snapshot commit d880e6f96d73c8b84eaad22337f0a95b72d4b071.
+Pages run 35523933269 deployed that refreshed snapshot successfully; both
+iTaukei and Tonga card/mobility tests passed in its validation job.
+Cache verification and dashboard integrity passed.
+Downloaded refreshed mobility and degree snapshots passed the local Tonga test:
+86 scholars/pathways, 47 universities, seven countries, four regions, nine
+excluded pathways; 14 photos and 13 rich summaries preserved. Source changes
+therefore traversed the normal Sheet → transformer → encrypted snapshot → model
+pipeline; no manual editing of snapshot content was used.
+
+Browser observation: the live Tonga page still displayed its collaborator
+password gate after the secure sign-in handoff. No authenticated visual,
+resize, hover, or click-through acceptance check is claimed. Compact/large-grid
+CSS, dropdown dismissal and two-step Escape have automated/source coverage,
+not a computed-browser-layout pass. Other-panel behavior and Share/Update info
+were preserved by scoped diffs and guard checks; live interaction is unverified.
+Two pre-existing temporary patch workflows remain failing; they also failed
+at the approved baseline and are unrelated to B3. Required release gates pass.

@@ -1076,6 +1076,11 @@ let lastMobilityText = null;   // remember uploaded scholar CSV so a later UNSD 
 async function init(){
   document.body.classList.add('is-tongan');
   configureCohortLabels();
+  // Degree/reset clicks are outside both menus too; close menus without
+  // swallowing the control's own event or changing fullscreen state.
+  document.getElementById('mobility-filters').addEventListener('click',function(ev){
+    if (!ev.target.closest('details')) this.querySelectorAll('details[open]').forEach(menu=>{menu.open=false;});
+  },true);
   try {
     // This chart is an embedded view of the gated Tonga dashboard, not a
     // separate route for exposing its unpublished data.

@@ -47,7 +47,7 @@ async function fetchJson(url){
  assert.equal(paired.rows([explicit],roster,[{'Degree ID':'TEST-M','Scholar ID':'TNG-S9999','Completion Status':'Uncertain'}]).rejected.length,1);
  assert.equal(paired.rows([explicit],roster,[{'Degree ID':'TEST-M','Scholar ID':'TNG-S9999','Completion Status':'Completed'},{'Degree ID':'TEST-P','Scholar ID':'TNG-S9999','Completion Status':'Ongoing'}]).rows.length,1);
  let drawn;const statusEl={textContent:''};
- Object.assign(ctx,{TonganMobility:paired,currentUnsd:{},statusEl,configureCohortLabels(){},document:{body:{classList:{add(){}}}},buildModel:r=>({flows:r,uni_list:[...new Set(r.flatMap(x=>[x.m_uni,x.p_uni]))]}),draw:m=>{drawn=m;}});
+ Object.assign(ctx,{TonganMobility:paired,currentUnsd:{},statusEl,configureCohortLabels(){},document:{body:{classList:{add(){}}},getElementById:()=>({addEventListener(){}})},buildModel:r=>({flows:r,uni_list:[...new Set(r.flatMap(x=>[x.m_uni,x.p_uni]))]}),draw:m=>{drawn=m;}});
  window.parent={dbGate:{isUnlocked:()=>true,fetchJson:url=>url==='data/tongan-master-mobility.json'?Promise.resolve(raw):fetchJson(url)}};
  await vm.runInContext(chord.slice(chord.indexOf('async function init(){'),chord.indexOf('// ---- upload wiring'))+';init()',ctx);
  assert.equal(drawn.flows.length,result.rows.length);assert.equal(drawn.excludedPathways,result.excluded.length);
@@ -63,6 +63,12 @@ async function fetchJson(url){
  assert(!menu.open&&expanded);clickContext.handler(outside);assert.equal(toggles,0);
  expanded=false;clickContext.handler({target:{closest:()=>({})}});assert(!expanded,'Controls must not expand');clickContext.handler(outside);assert(expanded);
  assert.match(dashboard,/doc.addEventListener\('keydown', onKey\)/);
+ const keyBody=dashboard.slice(dashboard.indexOf('    function onKey(ev){'),dashboard.indexOf('    // Same-origin iframes swallow clicks'));
+ const keyContext=vm.createContext({document:{querySelectorAll:()=>expanded?[{}]:[]},toggleFullscreen:()=>{expanded=false;}});
+ vm.runInContext(keyBody,keyContext); menu.open=true;expanded=true;
+ const escape={key:'Escape',target:{ownerDocument:{querySelector:()=>menu.open?menu:null}},preventDefault(){},stopPropagation(){}};
+ keyContext.onKey(escape);assert(!menu.open&&expanded,'First Escape closes menu only');keyContext.onKey(escape);assert(!expanded,'Second Escape exits');
+
  assert.match(chord,/body\.is-tongan\.is-embed-fullscreen \.legend-flank\.is-compact\s*\{ grid-template-columns:minmax\(0,1fr\) minmax\(360px,54%\) minmax\(0,1fr\);/);
  assert.match(chord,/const compact = rows.length <= 54/);
  assert.match(chord,/minmax\(360px,38%\)/);
