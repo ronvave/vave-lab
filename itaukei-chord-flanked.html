@@ -238,6 +238,7 @@
     body.is-embedded .site-footer,
     body.is-embedded .uploader,
     body.is-embedded .chord-embedded-hide { display:none !important; }
+    body.is-embedded.is-solomon .caption { display:block !important; font-size:12px; }
     body.is-embedded main { padding:0; }
     body.is-embedded .section { padding:0; }
     body.is-embedded .container { max-width:none; padding:0; }
@@ -539,6 +540,7 @@ const shorten = u => SHORT[(u||"").trim()] || (u||"").trim();
 // dataset country spelling -> UNSD "Country or Area" spelling (extend as needed)
 const COUNTRY_ALIAS = {
   "USA":"United States of America",
+  "United States":"United States of America",
   "United Kingdom":"United Kingdom of Great Britain and Northern Ireland"
 };
 
@@ -645,7 +647,11 @@ function draw(data){
   d3.select("#chart").selectAll("*").remove();
   d3.select("#legend").selectAll("*").remove();
   document.getElementById("cap").textContent =
-    data.flows.length + " iTaukei scholars who completed both a Master's and a PhD. Source: iTaukei Research Database.";
+    data.flows.length + " " + (data.cohortLabel || "iTaukei") + " scholars with completed Master’s and PhD degrees. Source: the country’s Scholars Master File." + (data.pairingNote || "");
+  if (!data.flows.length) {
+    d3.select("#chart").append("text").attr("x",580).attr("y",330).attr("text-anchor","middle").attr("font-size",16).text("No complete Master’s–PhD pathways are currently recorded.");
+    return;
+  }
 
   const nodes = data.uni_list.map(d=>({name:d.uni, n:d.n, country:d.country, region:d.region}));
   const index = new Map(nodes.map((n,i)=>[n.name,i]));
@@ -965,9 +971,51 @@ function readFile(file){
 
 // ---- default load: try the repo CSVs, else embedded snapshot -----------------
 let lastMobilityText = null;   // remember uploaded scholar CSV so a later UNSD upload can re-render
+// Solomon's normalized schema stores degree episodes separately from people.
+// Rebuild one pathway per included scholar on every load; never use a fixed list.
+function solomonMobilityRows(scholars, degrees, institutions) {
+  const people = new Map(scholars.filter(s => !s['Inclusion Status'] || /^included$/i.test(s['Inclusion Status'].trim()))
+    .map(s => [String(s['Scholar ID'] || '').trim(), s]));
+  const universities = new Map(institutions.map(i => [i['Institution ID'], i]));
+  const grouped = new Map(), seen = new Set();
+  const year = d => Number(d['Graduation Year'] || d['Finish / Completion Year'] || d['End Year']) || Infinity;
+  for (const d of degrees) {
+    const sid = String(d['Scholar ID'] || '').trim(), id = d['Degree ID'];
+    if (!people.has(sid) || !id || seen.has(id) || !/^completed\b/i.test(String(d['Completion Status'] || '').trim())) continue;
+    const stage = String(d.Stage || d['Degree Stage'] || '').toLowerCase();
+    const level = /master/.test(stage) ? 'masters' : /phd|doctor/.test(stage) ? 'phd' : null;
+    if (!level) continue;
+    seen.add(id);
+    if (!grouped.has(sid)) grouped.set(sid, {masters:[], phd:[]});
+    grouped.get(sid)[level].push(d);
+  }
+  const rows = [];
+  const order = (a,b) => (year(a)-year(b)) || String(a['Degree ID']).localeCompare(String(b['Degree ID']));
+  for (const [sid, group] of grouped) {
+    group.masters.sort(order); group.phd.sort(order);
+    const m = group.masters[0], p = group.phd[0];
+    if (!m || !p || (Number.isFinite(year(m)) && Number.isFinite(year(p)) && year(m)>year(p))) continue;
+    const mi = universities.get(m['Institution ID']) || {}, pi = universities.get(p['Institution ID']) || {};
+    const person = people.get(sid);
+    const row = {
+      scholar: person['Display Name'] || person['Scholar Name'] || [person['Given Names'],person['Family Name']].filter(Boolean).join(' ') || sid,
+      scholar_id: sid,
+      m_uni: mi['Canonical Name'] || m['Institution Name (Current)'] || m['C_Uni name'] || '',
+      p_uni: pi['Canonical Name'] || p['Institution Name (Current)'] || p['C_Uni name'] || '',
+      m_country: m.Country || mi.Country || '', p_country: p.Country || pi.Country || '',
+      m_year: Number.isFinite(year(m)) ? year(m) : '', p_year: Number.isFinite(year(p)) ? year(p) : '',
+      m_title: m['Thesis Title'] || m['Thesis / Research Title'] || '',
+      p_title: p['Thesis Title'] || p['Thesis / Research Title'] || ''
+    };
+    if (row.m_uni && row.p_uni && row.m_country && row.p_country) rows.push(row);
+  }
+  return rows;
+}
+
 async function init(){
   const requested = new URLSearchParams(location.search).get('cohort') || 'itaukei';
   const cohort = ['itaukei','tongan','solomon','samoa'].includes(requested) ? requested : 'itaukei';
+  document.body.classList.toggle('is-solomon', cohort === 'solomon');
   const labels = {itaukei:'iTaukei', tongan:'Tongan', solomon:'Solomon Islander', samoa:'Samoan'};
   document.querySelectorAll('.chord-title').forEach(el => { el.textContent = labels[cohort] + ' Scholar Mobility: Master’s → PhD Institutions'; });
   const caption = document.getElementById('cap');
@@ -988,15 +1036,16 @@ async function init(){
       gate=window.dbGate || (window.samoaDemoGate && window.samoaDemoGate._asDbGate());
     }
     if(!gate || typeof gate.fetchJson!=='function') throw new Error('Master-file reader unavailable');
-    const [mobility, scholars, degrees] = await Promise.all([
-      gate.fetchJson('data/'+cohort+'-master-mobility.json'),
+    const [mobility, scholars, degrees, institutions] = await Promise.all([
+      cohort === 'solomon' ? Promise.resolve([]) : gate.fetchJson('data/'+cohort+'-master-mobility.json'),
       gate.fetchJson('data/'+cohort+'-master-scholars.json'),
-      gate.fetchJson('data/'+cohort+'-master-grad-degrees.json')
+      gate.fetchJson('data/'+cohort+'-master-grad-degrees.json'),
+      cohort === 'solomon' ? gate.fetchJson('data/solomon-master-institutions.json') : Promise.resolve([])
     ]);
     const list = value => Array.isArray(value) ? value : Object.values(value || {});
     const scholarById=new Map(list(scholars).map(s=>[String(s['Scholar ID']||s.scholar_id||s.id||'').trim(),s]));
     const degreeById=new Map(list(degrees).map(d=>[d['Degree ID'],d]));
-    const rows=list(mobility).map(r=>{
+    const rows=cohort === 'solomon' ? solomonMobilityRows(list(scholars),list(degrees),list(institutions)) : list(mobility).map(r=>{
       const sid=String(r.scholar_id||r['Scholar ID']||'').trim();
       const person=scholarById.get(sid);
       if(!person) return null;
@@ -1014,6 +1063,8 @@ async function init(){
       };
     }).filter(r=>r && r.m_uni && r.p_uni);
     const model=buildModel(rows,currentUnsd);
+    model.cohortLabel = labels[cohort];
+    model.pairingNote = cohort === 'solomon' ? ' One pathway per scholar, using the earliest recorded completed Master’s and PhD. Scholars need both degrees and recorded institutions/countries.' : '';
     draw(model);
     statusEl.textContent='Master-file data ('+model.flows.length+' scholars, '+model.uni_list.length+' universities).';
   } catch(e) {
