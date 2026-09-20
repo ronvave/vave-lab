@@ -10904,8 +10904,9 @@
         }
       }
       if (!attributed) { unattributed += 1; return; }
-      const provSet = state.provincesByItem.get(it.key);
-      const isFiji = provSet && provSet.size > 0;
+      const locations = (it._masterGeographyRows || []).map(g => g.country).filter(Boolean);
+      if (!locations.length) return;
+      const isFiji = locations.includes('Solomon Islands');
       const bucket = conf[attributed];
       if (!bucket) return;
       if (isFiji) bucket.fiji += 1; else bucket.intl += 1;
@@ -10989,7 +10990,7 @@
     const filterLabel = filter === 'phd' ? 'PhD theses only'
                        : filter === 'masters' ? 'Masters theses only'
                        : 'all publication types';
-    let note = `Showing ${filterLabel}. “Solomon Islands-focused” means the item is tagged to at least one Solomon Islands district in Zotero; “International” means it isn’t. Province is attributed via the lead Solomon Islander author’s paternal province.`;
+    let note = `Showing ${filterLabel}. Study locations use verified Master-file geography: “Solomon Islands-focused” includes research in Solomon Islands; “International” includes verified overseas locations with no Solomon Islands study location. Records without verified country evidence are excluded from this comparison. Province is attributed via the lead Solomon Islander author’s paternal province.`;
     if (data.unattributed > 0) {
       note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal province hasn’t been filled in the admin dashboard yet.`;
     }
