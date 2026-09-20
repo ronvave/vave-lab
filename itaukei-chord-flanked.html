@@ -1046,7 +1046,9 @@ async function init(){
     const scholarById=new Map(list(scholars).map(s=>[String(s['Scholar ID']||s.scholar_id||s.id||'').trim(),s]));
     const degreeById=new Map(list(degrees).map(d=>[d['Degree ID'],d]));
     const rows=cohort === 'solomon' ? solomonMobilityRows(list(scholars),list(degrees),list(institutions)) : list(mobility).map(r=>{
-      const sid=String(r.scholar_id||r['Scholar ID']||'').trim();
+      // The Fiji worksheet contains BOTH a canonical Scholar ID and a legacy
+      // numeric scholar_id. Never interpret the legacy number as an ITK-S ID.
+      const sid=String(r['Scholar ID']||r.scholar_id||'').trim();
       const person=scholarById.get(sid);
       if(!person) return null;
       const m=degreeById.get(r["Master's Degree ID"])||{}, p=degreeById.get(r['PhD Degree ID'])||{};

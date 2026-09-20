@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Check iTaukei Admin card data and mobility joins
+        run: node tests/itaukei-card-mobility.test.cjs
+
       - name: Reject truncated or structurally damaged dashboards
         env:
           EVENT_NAME: ${{ github.event_name }}

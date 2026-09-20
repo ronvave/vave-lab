@@ -264,6 +264,7 @@ GRAD_DEGREE_PRIVATE_FIELDS = [
 # M>PhD mobility: coords/university fields — these are already aggregated
 # for the chord/sankey and are safe to publish. Info links + Notes are private.
 MOBILITY_PUBLIC_FIELDS = [
+    "Scholar ID",  # Canonical join key; scholar_id is an unrelated legacy number.
     "scholar_id",
     "New?",
     "m_uni",

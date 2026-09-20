@@ -45,6 +45,9 @@ jobs:
           PUSH_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: python3 scripts/validate_dashboard_integrity.py --revision HEAD --base "$PUSH_BASE"
 
+      - name: Check iTaukei Admin card data and mobility joins
+        run: node tests/itaukei-card-mobility.test.cjs
+
   deploy:
     environment:
       name: github-pages

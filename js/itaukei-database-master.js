@@ -375,7 +375,10 @@
     if (!window.MasterFileAdapter || typeof window.MasterFileAdapter.load !== 'function') {
       throw new Error('MasterFileAdapter not loaded. Ensure js/master-file-adapter.js is included before itaukei-database-master.js.');
     }
-    const bundle = await window.MasterFileAdapter.load({ masterOnly: true });
+    // Master tables remain authoritative; Admin owns photos and research insights.
+    // Load both before rendering, including on shared pre-launch profiles.
+    // See docs/ITAUKEI-CARD-AND-MOBILITY-CONTRACT.md before changing this contract.
+    const bundle = await window.MasterFileAdapter.load();
     // Preserve the raw Master JSON for panel-level overrides that need
     // Master-specific data (14-province TOTAL columns, confederacy rows,
     // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
