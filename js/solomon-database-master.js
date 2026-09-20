@@ -62,7 +62,7 @@
   };
   // Solomon Islands district map-pin jitter. No pre-tuned per-district visual offsets
   // exist yet for Solomon Islands' geojson boundaries (unlike the hand-tuned Fiji
-  // offsets above); districts default to [0,0] (no jitter) until a Solomon Islands
+  // offsets above); districts default to [0,0] (no jitter) until a Solomon Islander
   // cartographer supplies tuned values. Safe no-op: pins still render at
   // their true centroid.
   const PIN_OFFSETS = {
@@ -405,10 +405,10 @@
     window.VaveLabV2.formatScholarGeography = formatScholarGeography;
   }
 
-  // Find the top-level Zotero collection that groups every Solomon Islands-authored
-  // sub-collection. Named 'Solomon Islands authors (>N papers)' by the Solomon Islands adapter
+  // Find the top-level Zotero collection that groups every Solomon Islander-authored
+  // sub-collection. Named 'Solomon Islander authors (>N papers)' by the Solomon Islands adapter
   // (js/solomon-database-adapter.js), so we match any top-level collection
-  // whose name begins with 'Solomon Islands authors' — that's still the unambiguous
+  // whose name begins with 'Solomon Islander authors' — that's still the unambiguous
   // root in this Zotero group. Returns null if no such collection exists.
   function findItaukeiRootCollection(cols) {
     if (!Array.isArray(cols)) return null;
@@ -444,7 +444,7 @@
     //   'both'   — lead + coauth (any iTaukei involvement; default)
     //   'all'    — every publication in the database
     histTypeSet: new Set(TYPE_ORDER),
-    histAuthors: 'lead',                 // 'lead' | 'coauth' | 'both' | 'all' — Panel D default: Solomon Islands lead
+    histAuthors: 'lead',                 // 'lead' | 'coauth' | 'both' | 'all' — Panel D default: Solomon Islander lead
     // Panel D x-axis range — null means "use full data range" (default: All)
     histRange: { start: null, end: null, preset: 'all' },
     filter: {
@@ -1381,9 +1381,9 @@
       const itTheses = (typeof x.itTheses === 'number')
         ? x.itTheses
         : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
-      parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with Solomon Islands authors.`);
+      parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with Solomon Islander authors.`);
       if (x.itWorks > 0) {
-        parts.push(`Within this Solomon Islands-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by a Solomon Islands first author \u2014 a substantial signal of research leadership.`);
+        parts.push(`Within this Solomon Islander-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by a Solomon Islander first author \u2014 a substantial signal of research leadership.`);
         parts.push(`A further ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are co-authored with scholars of other ethnicities, from within Solomon Islands and abroad, who are leading the authorship.`);
       }
       if (itTheses > 0) {
@@ -1400,14 +1400,14 @@
       ? x.itTheses
       : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
     setText('[data-insight="participation"]',
-      `${fmt(x.itWorks)} of ${fmt(x.totalWorks)} indexed works (${pct(x.itWorks, x.totalWorks)}%) include at least one identified Solomon Islands author.`);
+      `${fmt(x.itWorks)} of ${fmt(x.totalWorks)} indexed works (${pct(x.itWorks, x.totalWorks)}%) include at least one identified Solomon Islander author.`);
     setText('[data-insight="leadership"]',
       x.itWorks > 0
-        ? `${fmt(x.itLed)} of ${fmt(x.itWorks)} Solomon Islands-involved works (${pct(x.itLed, x.itWorks)}%) are led by a Solomon Islands first author; the remaining ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors.`
-        : 'No Solomon Islands-authored works have been indexed yet.');
+        ? `${fmt(x.itLed)} of ${fmt(x.itWorks)} Solomon Islander-involved works (${pct(x.itLed, x.itWorks)}%) are led by a Solomon Islander first author; the remaining ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors.`
+        : 'No Solomon Islander-authored works have been indexed yet.');
     setText('[data-insight="grad"]',
       x.itWorks > 0
-        ? `Solomon Islander scholars completed ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}% of Solomon Islands-involved works) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`
+        ? `Solomon Islander scholars completed ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}% of Solomon Islander-involved works) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`
         : `Solomon Islander scholars completed ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s theses across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
     setText('[data-insight="geo"]',
       `Solomon Islander scholarship extends across ${fmt(x.gradCountries)} countries and connects with all 23 districts of Solomon Islands.`);
@@ -1849,8 +1849,8 @@
     if (confHost)    confHost.style.display    = showCountry ? 'none' : '';
     if (emptyEl && !showCountry) emptyEl.style.display = 'none';
     if (titleEl) titleEl.textContent = showCountry
-      ? 'Countries of Solomon Islands graduate study'
-      : 'Solomon Islands graduates by Province/City Area · District';
+      ? 'Countries where Solomon Islanders pursued graduate study'
+      : 'Solomon Islander graduates by Province/City Area · District';
     if (explainEl) explainEl.textContent = showCountry
       ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
       : 'Masters and PhD theses grouped by the scholar’s home Province/City Area (the 9 provinces + Honiara City), then broken down by home Ward in descending order by total.';
@@ -5546,7 +5546,7 @@
 
   function makeProvincePopup(p, b) {
     const viewLabel = state.mapView === 'lead'
-      ? 'Solomon Islands lead-authored'
+      ? 'Solomon Islander lead-authored'
       : (state.mapView === 'coauth' ? 'Co-authored with Solomon Islander scholars' : 'All publications on');
     const rows = [];
     const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.provinceGroup]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
@@ -5620,7 +5620,7 @@
     // Dynamic map legend title — reflects the currently-selected Panel A sub-tab.
     const legendTitles = {
       all:    'All Solomon Islands-focused publications by study district',
-      lead:   'Solomon Islands-led publications by study district',
+      lead:   'Solomon Islander-led publications by study district',
       coauth: 'Publications co-authored with Solomon Islander scholars by study district'
     };
     const legendTitleEl = $('[data-db-map-legend-title]');
@@ -5629,7 +5629,7 @@
     // Dynamic explanation sentence for the provinceGroup summary.
     const explainSentences = {
       all:    'All Solomon Islands-focused publications, grouped by the Province/City Area of the district studied.',
-      lead:   'Publications led by a Solomon Islands first author, grouped by the Province/City Area of the district studied.',
+      lead:   'Publications led by a Solomon Islander first author, grouped by the Province/City Area of the district studied.',
       coauth: 'Publications co-authored with Solomon Islander scholars, grouped by the Province/City Area of the district studied.'
     };
     const explainEl = $('[data-db-conf-explain]');
@@ -5649,11 +5649,11 @@
       if (subEl) {
         let secondary;
         if (state.mapView === 'lead') {
-          secondary = `${k} Solomon Islands-led · ${co} co-authored`;
+          secondary = `${k} Solomon Islander-led · ${co} co-authored`;
         } else if (state.mapView === 'coauth') {
-          secondary = `${co} co-authored with Solomon Islander scholars · ${k} Solomon Islands-led`;
+          secondary = `${co} co-authored with Solomon Islander scholars · ${k} Solomon Islander-led`;
         } else {
-          secondary = `${k} Solomon Islands-led publication${k === 1 ? '' : 's'}`;
+          secondary = `${k} Solomon Islander-led publication${k === 1 ? '' : 's'}`;
         }
         subEl.textContent = secondary;
       }
@@ -5673,9 +5673,9 @@
       if (state.mapView === 'coauth') {
         s += `Of these, ${totalCoauth.toLocaleString()} include a Solomon Islander scholar as a co-author.`;
       } else if (state.mapView === 'lead') {
-        s += `Of these, ${totalLed.toLocaleString()} are led by a Solomon Islands first author.`;
+        s += `Of these, ${totalLed.toLocaleString()} are led by a Solomon Islander first author.`;
       } else {
-        s += `Of these, ${totalLed.toLocaleString()} are led by a Solomon Islands first author.`;
+        s += `Of these, ${totalLed.toLocaleString()} are led by a Solomon Islander first author.`;
       }
       narrativeEl.textContent = s;
     }
@@ -5751,7 +5751,7 @@
       if (typeFilter) typeFilter.style.display = 'none';
       if (authorshipLegend) authorshipLegend.style.display = '';
       if (authorsSelect) authorsSelect.disabled = true;
-      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Province/City Area' : 'Study district') + ' · Solomon Islands authorship role';
+      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Province/City Area' : 'Study district') + ' · Solomon Islander authorship role';
       host.innerHTML = '';
       let rows = b1Division
         ? buildC2DivisionRows_(true, 'all')
@@ -8456,7 +8456,7 @@
   // sub-collection (or if the scholar only has 1 publication and doesn't meet
   // the informal >3-papers convention).
   //
-  //   Source A: Zotero sub-collections under 'Solomon Islands authors (>3 papers)'.
+  //   Source A: Zotero sub-collections under 'Solomon Islander authors (>3 papers)'.
   //             These are the primary iTaukei-scholar collections curated in
   //             Zotero Desktop.
   //   Source B: Admin profiles whose scholar has no matching sub-collection.
@@ -8860,7 +8860,7 @@
     const gradient = (provinceGroup && CONF_GRADIENT[provinceGroup]) || NEUTRAL_GRADIENT;
     // Card banners use the concise Island name only. The underlying field is
     // still the scholar's paternal Province/City Area; this is display-only.
-    const bannerLabel = provinceGroup || 'Solomon Islands Scholar';
+    const bannerLabel = provinceGroup || 'Solomon Islander Scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);
@@ -9521,7 +9521,7 @@
       <span class="db-item__badge db-item__badge--type-${it.itemType}">${type}</span>
       ${doiUrl ? `<span class="db-item__badge db-item__badge--doi" title="Has DOI">DOI</span>` : ''}
       ${isOpenAccess(it) ? `<span class="db-item__badge db-item__badge--oa" title="Open-access or freely available online">OA</span>` : ''}
-      ${isItaukei(it) ? `<span class="db-item__badge db-item__badge--itaukei">Solomon Islands author</span>` : ''}
+      ${isItaukei(it) ? `<span class="db-item__badge db-item__badge--itaukei">Solomon Islander author</span>` : ''}
     `;
     li.appendChild(topline);
 
@@ -9616,7 +9616,7 @@
     if (state.filter.university) add('University:', state.filter.university, () => clearFilter('university'));
     if (state.filter.scholar)    add('Scholar:',    state.filter.scholar, () => clearFilter('scholar'));
     if (state.filter.b2Authorship) {
-      const auth = { itaukeiFirst: 'Solomon Islands first author', includesItaukei: 'Solomon Islands co-author, not first author', noItaukei: 'No Solomon Islands author identified' }[state.filter.b2Authorship] || state.filter.b2Authorship;
+      const auth = { itaukeiFirst: 'Solomon Islander first author', includesItaukei: 'Solomon Islander co-author, not first author', noItaukei: 'No Solomon Islander author identified' }[state.filter.b2Authorship] || state.filter.b2Authorship;
       add('Authorship:', auth, () => clearFilter('b2Authorship'));
     }
   }
@@ -9812,7 +9812,7 @@
   //  PANEL B2 — interactive multi-view chart
   // ============================================================
   // Four views:
-  //   solomon-islands-focused       → Solomon Islands first-author, Solomon Islands-focused, group by paternal district
+  //   solomon-islands-focused       → Solomon Islander first-author, Solomon Islands-focused, group by paternal district
   //   all-locations       → iTaukei first-author, ANY location, group by paternal province
   //   all-authors         → any author, Solomon Islands-focused, group by study district + Solomon Islands-wide row
   //   authorship          → any author, Solomon Islands-focused, group by study district, single stacked bar per district by authorship role
@@ -9832,14 +9832,14 @@
       meta: [
         ['Grouped by',  'First-author paternal district'],
         ['Scope',       'Solomon Islands-focused'],
-        ['Authors',     'Solomon Islands first authors']
+        ['Authors',     'Solomon Islander first authors']
       ]
     },
     'all-locations': {
       meta: [
         ['Grouped by',  'First-author paternal district'],
         ['Scope',       'Solomon Islands + International'],
-        ['Authors',     'Solomon Islands first authors']
+        ['Authors',     'Solomon Islander first authors']
       ]
     }
   };
@@ -9851,9 +9851,9 @@
     noItaukei:       '#9ca3af'   // neutral grey — not yet identified
   };
   const AUTHORSHIP_LABELS = {
-    itaukeiFirst:    'Solomon Islands first author',
-    includesItaukei: 'Solomon Islands co-author, not first author',
-    noItaukei:       'No Solomon Islands author identified'
+    itaukeiFirst:    'Solomon Islander first author',
+    includesItaukei: 'Solomon Islander co-author, not first author',
+    noItaukei:       'No Solomon Islander author identified'
   };
   const AUTHORSHIP_KEYS = ['itaukeiFirst', 'includesItaukei', 'noItaukei'];
 
@@ -10368,7 +10368,7 @@
   // Build the inline Panel B2 title dropdown pill. Style comes from the shared
   // .db-title-select CSS (brown pill + cream text). Changing the selection
   // moves the user to the corresponding B2 view:
-  //   Solomon Islands authors → solomon-islands-focused (Solomon Islands-focused + Solomon Islands first author)
+  //   Solomon Islander authors → solomon-islands-focused (Solomon Islands-focused + Solomon Islander first author)
   //   All authors     → all-authors  (Solomon Islands-focused + any author)
   // We deliberately don't try to preserve 'all-locations' when switching to
   // 'all authors': there is no All locations + all authors view today, and
@@ -10381,7 +10381,7 @@
     sel.setAttribute('data-b2-authors', '');
     sel.setAttribute('aria-label', 'Filter authors');
     const opts = [
-      { value: 'itaukei', label: 'Solomon Islands authors' },
+      { value: 'itaukei', label: 'Solomon Islander authors' },
       { value: 'all',     label: 'All authors' }
     ];
     opts.forEach(o => {
@@ -10687,15 +10687,15 @@
       const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
       const [p1, p2, p3] = sorted;
       if (!p1) { el.innerHTML = ''; return; }
-      html = `${prov(p1.name)} leads Solomon Islands first-author publications ${scopeWord} with ${fmt(p1.total)} paper${p1.total === 1 ? '' : 's'}`;
+      html = `${prov(p1.name)} leads Solomon Islander first-author publications ${scopeWord} with ${fmt(p1.total)} paper${p1.total === 1 ? '' : 's'}`;
       if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
       if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
-      html += `. <em>Together, these three districts account for the bulk of Solomon Islands-led scholarship represented in this database.</em>`;
+      html += `. <em>Together, these three districts account for the bulk of Solomon Islander-led scholarship represented in this database.</em>`;
     } else if (auth === 'co') {
       const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
       const [p1, p2, p3] = sorted;
       if (!p1) { el.innerHTML = ''; return; }
-      html = `${prov(p1.name)} tops Solomon Islands co-authored publications ${scopeWord} at ${fmt(p1.total)}`;
+      html = `${prov(p1.name)} tops Solomon Islander co-authored publications ${scopeWord} at ${fmt(p1.total)}`;
       if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
       if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
       html += ` — <em>provinces whose scholars appear more often as collaborators than as lead authors on these works.</em>`;
@@ -10791,7 +10791,7 @@
       </div>`;
     }).join('');
     const note = (r.cats.noItaukei || 0) > 0
-      ? `<div class="db-b2-tip__note">“No Solomon Islands author identified” means none has yet been identified in the current database.</div>`
+      ? `<div class="db-b2-tip__note">“No Solomon Islander author identified” means none has yet been identified in the current database.</div>`
       : '';
     tip.innerHTML = `
       <div class="db-b2-tip__title">${escapeHtml(r.name)}</div>
@@ -11076,8 +11076,8 @@
   }
 
   // ============ IMPACT VIEW (Ron's presentation overlay) ============
-  // Publications grouped by paternal provinceGroup of the iTaukei/Solomon Islands lead author,
-  // split by whether the item is Solomon Islands-focused (has a Solomon Islands-district tag) or
+  // Publications grouped by paternal provinceGroup of the iTaukei/Solomon Islander lead author,
+  // split by whether the item is Solomon Islands-focused (has a Solomon Islander-district tag) or
   // international-focused. Toggle filters restrict to PhD / Masters theses.
   function computeImpactData(filter) {
     const conf = {
@@ -11207,7 +11207,7 @@
     const filterLabel = filter === 'phd' ? 'PhD theses only'
                        : filter === 'masters' ? 'Masters theses only'
                        : 'all publication types';
-    let note = `Showing ${filterLabel}. “Solomon Islands-focused” means the item is tagged to at least one Solomon Islands district in Zotero; “International” means it isn’t. Province/City Area is attributed via the lead Solomon Islands author’s paternal district.`;
+    let note = `Showing ${filterLabel}. “Solomon Islands-focused” means the item is tagged to at least one Solomon Islands district in Zotero; “International” means it isn’t. Province/City Area is attributed via the lead Solomon Islander author’s paternal district.`;
     if (data.unattributed > 0) {
       note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal district hasn’t been filled in the admin dashboard yet.`;
     }
@@ -11258,13 +11258,13 @@
   //   country collection is a publication whose research was carried out
   //   there. Multiple site rows in one country are deduplicated by publication.
   //   For each item we compute the first-author's Solomon Islands status via
-  //   itaukeiAuthorship(item): 'lead' = Solomon Islands first-author (rust bucket),
+  //   itaukeiAuthorship(item): 'lead' = Solomon Islander first-author (rust bucket),
   //   'coauth' | 'none' = someone else first-authored (teal bucket).
   //
   //   The pill above the map toggles which count drives the marker size:
-  //     - With Solomon Islands: total items with a Solomon Islands author on the byline
+  //     - With Solomon Islands: total items with a Solomon Islander author on the byline
   //                     (lead + coauth). Both slices of the pie visible.
-  //     - Led by Solomon Islands: only items where a Solomon Islands is first author.
+  //     - Led by Solomon Islands: only items where a Solomon Islander is first author.
   //                       Pie collapses to the rust slice.
   //
   // Popup:
@@ -11497,7 +11497,7 @@
   // Fit every populated country into the visible map with enough pixel room
   // for the full marker circles. Longitudes are first moved onto the same
   // Pacific-centred world copy; otherwise Leaflet treats the United States
-  // and Solomon Islands as being almost a full world apart and clips one map edge.
+  // and Solomon Islanders as being almost a full world apart and clips one map edge.
   function b3FitOverview(options) {
     const bmap = state.b3Map;
     if (!bmap) return;
@@ -11958,14 +11958,14 @@
       const othersN = totalFor(recs, 'others');
       const rows = [
         { key: null,     label: 'All authorship', n: total },
-        { key: 'led',    label: 'Solomon Islands led',    n: ledN   },
+        { key: 'led',    label: 'Solomon Islander led',    n: ledN   },
         { key: 'others', label: 'Other led',      n: othersN }
       ];
       authList.innerHTML = rows.map(r => {
         const active = state.b3Filter.authorship === r.key ? 'is-active' : '';
         return `<button type="button" class="db-map-fs-conf__row ${active}" data-auth-pick="${escapeAttr(r.key == null ? '' : r.key)}">${escapeAttr(r.label)} <span class="db-map-fs-conf__row-count">${r.n}</span></button>`;
       }).join('');
-      authLabel.textContent = state.b3Filter.authorship === 'led' ? 'Solomon Islands led'
+      authLabel.textContent = state.b3Filter.authorship === 'led' ? 'Solomon Islander led'
                             : state.b3Filter.authorship === 'others' ? 'Other led'
                             : 'All authorship';
     }
@@ -12071,7 +12071,7 @@
 
   // Apply the current filter to a records array (country records) and produce
   // filtered per-country buckets. When authorship='led' or 'others', the other
-  // bucket is emptied. When a Solomon Islands District is active, other countries drop
+  // bucket is emptied. When a Solomon Islander District is active, other countries drop
   // and the Solomon Islands record is narrowed to items whose provincesByItem set
   // contains that District. Province/City Area filters narrow the same way.
   function b3FilteredRecords() {
@@ -12105,7 +12105,7 @@
         others = others.filter(matchItem);
       } else if (!isSolomonIslands && (filter.provinceGroup || filter.province)) {
         // Other countries have no Solomon Islands District tagging; drop them when the
-        // user drills into a Solomon Islands sub-scope.
+        // user drills into a Solomon Islander sub-scope.
         return null;
       }
 
@@ -12390,7 +12390,7 @@
       if (!items.length) return '';
       const sorted = items.slice().sort((a, b) => (b.year || 0) - (a.year || 0));
       const header = (kind === 'led')
-        ? `<div class="db-popup-scholar-header is-led">Solomon Islands as Lead (${sorted.length}):</div>`
+        ? `<div class="db-popup-scholar-header is-led">Solomon Islanders as Lead (${sorted.length}):</div>`
         : `<div class="db-popup-scholar-header is-others">Others as Lead (${sorted.length}):</div>`;
       const parts = sorted.map((it, i) => {
         // Alternate between two color classes so consecutive citations are
@@ -12571,7 +12571,7 @@
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
-        // Never rediscover Solomon Islands participation from creators[]. That array is
+        // Never rediscover Solomon Islander participation from creators[]. That array is
         // deliberately bibliographic and may contain only the non-Solomon-Islander lead.
         // The adapter publishes the union of the Scholar Authorship and
         // Researcher Authorship bridges as the authoritative identity payload.
@@ -12603,7 +12603,7 @@
         });
 
         // Others-led works feature every linked Solomon Islander scholar/researcher.
-        // Solomon Islands-led works prefer the bridge row explicitly marked first.
+        // Solomon Islander-led works prefer the bridge row explicitly marked first.
         const featuredSolomonIslandsPeople = rec.isLed
           ? (linkedSolomonIslandsPeople.filter(person => person.isFirstAuthor).length
               ? linkedSolomonIslandsPeople.filter(person => person.isFirstAuthor)
@@ -12614,7 +12614,7 @@
 
         // ---- Left photo strip ----
         // iTaukei-led:    use the lead's photo (unchanged behaviour).
-        // Others + 1 Solomon Islands: permanent photo of the linked Solomon Islands person.
+        // Others + 1 Solomon Islands: permanent photo of the linked Solomon Islander.
         // Others + >=2: rotate through available Solomon Islands portraits every 2s.
         // Others + 0:    empty strip (same as before).
         let photoUrl = '';
@@ -12632,7 +12632,7 @@
         // by their (Village, Province) chip. Uses the lead's name in bold/dark
         // grey as the anchor so the reader still knows who first-authored.
         // Preserve a non-Solomon-Islander bibliographic lead exactly as recorded. For a
-        // Solomon Islands-led work, prefer the canonical scholar profile resolved from
+        // Solomon Islander-led work, prefer the canonical scholar profile resolved from
         // the Authorship bridge so the elevated name and portrait stay paired.
         const displayLead = rec.isLed && resolvedLeadProfile
           ? resolvedLeadProfile.name
@@ -12706,7 +12706,7 @@
           `</div>`
         );
 
-        // If multiple Solomon Islands people have portraits, cycle them every 2s. Skips missing
+        // If multiple Solomon Islanders have portraits, cycle them every 2s. Skips missing
         // photos so the strip only shows real portraits and doesn't briefly
         // flash the empty tile between real images.
         if (rotationUrls.length > 1) {
