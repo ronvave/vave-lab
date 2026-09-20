@@ -51,12 +51,10 @@
   // Verifier constants — used to prove a passcode is correct BEFORE we try
   // to decrypt any file, so a wrong entry fails fast with a clear message.
   // Brand-new Solomon Islands passcode + brand-new hash — NOT the iTaukei
-  // or Tongan verifier and NOT derived from either sister system's passcode.
   //
   // IMPORTANT: this MUST be the same data-decryption passcode baked into
   // js/solomon-demo-gate.js's BAKED_PASSCODE, because both gates decrypt
   // the SAME on-disk data/solomon-master-*.json.enc files (mirrors the
-  // iTaukei/Tongan pattern, where each sister system's db-gate.js verifier
   // and demo-gate.js's BAKED_PASSCODE are the same passcode). This is
   // intentionally NOT the separate admin-login passcode (PASSWORD_HASH in
   // js/admin-solomon-master.js), which is its own independent gate.
@@ -72,6 +70,7 @@
   // the on-disk .enc URL. All Solomon Islands-prefixed \u2014 never overlaps with the
   // iTaukei ENC_FILES map.
   var ENC_FILES = {
+    'data/solomon-master-institutions.json': 'data/solomon-master-institutions.json.enc',
     'data/solomon-zotero-snapshot.json': 'data/solomon-zotero-snapshot.json.enc',
     'data/solomon-islands-provinces.geojson':      'data/solomon-islands-provinces.geojson.enc',
     'data/world-universities.json':      'data/world-universities.json.enc',

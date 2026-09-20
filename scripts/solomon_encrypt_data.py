@@ -77,7 +77,6 @@ TARGETS = [
     "solomon-master-worldpoints.json",
     "solomon-body-composition-master.json",
     "solomon-last-master-sync.json",
-    # ==== Additional Master-file sheets with no direct Tongan/iTaukei
     #      equivalent (Solomon-specific rosters/registers) ====
     "solomon-master-institutions.json",
     "solomon-master-researchers.json",

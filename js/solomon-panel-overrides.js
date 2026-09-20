@@ -15,8 +15,6 @@
  *      province (one total per province, plus a separate Honiara City
  *      total -- Honiara is a sibling reporting area, never folded into
  *      Guadalcanal). Per the crosswalk's explicit rule, no Fijian or
- *      Tongan grouping name is ever shown here -- every place the
- *      iTaukei/Tongan dashboards show ProvinceGroup/Island Division, this
  *      clone shows Province/City Area, labeled as such.
  *   2. The two required explanatory lines about excluded pub types and
  *      non-Solomon-Islander records appear verbatim below the summary tables.

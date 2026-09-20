@@ -1,42 +1,4 @@
-/* ============================================================================
- * admin-solomon-islands-master.js  —  Vave Lab Solomon Islands Scholar Database Admin (V2)
- *
- * Sister clone of js/admin-master.js. Every CRUD control/tab/filter/
- * validation is preserved exactly, except: Province/ProvinceGroup relabeled
- * to District/Province/City Area; Village/Town (Kolo) and Specific Island are
- * separate curated fields (never derived from District); Gender labels are
- * Fefine/Tangata (iTaukei silhouette icon set kept per user decision);
- * Fiji-specific vocabulary (province list, province/city area list) is replaced by
- * the Solomon Islands District / Island-Division lookups; Scholar IDs are stable
- * `SOL-S####` (never iTaukei's `PSI-S####`). CRUD joins by stable Scholar ID
- * string, never by row number \u2014 same as the iTaukei/Solomon Islands admin.
- *
- * Purpose
- * -------
- * Manage the admin-owned supplementary data that overlays the Master Google
- * Sheet for the Solomon Islands Scholar dashboard:
- *
- *   - data/solomon-scholar-enrichment.json.enc      (Scholar-ID keyed)
- *   - data/solomon-scholar-insights-master.json.enc (Scholar-ID keyed)
- *   - img/scholars/<SOL-Sxxxx>.jpg          (400×400 in-browser resize)
- *
- * The Master Google Sheet remains the single source of truth for scholar
- * demographics, publication authorship, etc. This admin only writes fields
- * the sheet does NOT own: profile photo path, external URLs (institution
- * homepage, department homepage, public profile URL), sector categorisation,
- * years of birth/death, and long-form research insights.
- *
- * Publication counts shown here call the SAME canonical function the public
- * dashboard uses — window.MasterFileAdapter.computePublicationTotals(...) —
- * so counts can never drift between Admin and Panel F.
- *
- * File-level encryption is handled by window.dbGate (same PBKDF2/AES-GCM
- * pipeline that protects all V2 data files, but loaded here from
- * js/solomon-db-gate.js with its own brand-new passcode/verifier hash and its
- * own ENC_FILES map — fully separate from the iTaukei/Solomon Islands gate). Every push
- * generates a fresh per-file salt, so uploading one file NEVER invalidates
- * any other.
- * ==========================================================================*/
+/* Solomon Islands admin. All editable field names match the Solomon Islands Master schema. */
 (function () {
   'use strict';
 
@@ -44,7 +6,6 @@
   // Admin login gate (SHA-256 of the passcode, checked client-side). This
   // is a brand-new Solomon-specific admin-login passcode, independent of
   // the js/solomon-db-gate.js data-decryption passcode AND independent of
-  // the iTaukei/Tongan admin PASSWORD_HASH constants -- Ron should change
   // this before real data goes live (see SOLOMON-ADMIN-BUILD-NOTES.md).
   //   placeholder passcode = "HoniaraAdmin7!" -- SET/ROTATE THIS
   var PASSWORD_HASH = '1d27a783cbd15319fa46f96b1680ad812fd8a1ba311897952657ce197c930130';
@@ -62,26 +23,26 @@
   // Non-public Master edits (Provenance & Notes, obscure back-of-house
   // fields) do NOT need to trigger a public refresh.
   var MASTER_PANELF_FIELDS = {
-    'Scholars.Title / Salutation':        true,
+    'Scholars.Title/Salutation':        true,
     'Scholars.Family Name':                true,
     'Scholars.Given Names':                true,
-    'Scholars.Alive / Deceased':           true,
-    'Scholars.Year of Birth':              true,
-    'Scholars.Year of Death':              true,
-    'Scholars.Ward Paternal':          true,
-    'Scholars.Village/Community Paternal': true,
-    'Scholars.Specific Island Paternal':   true,
-    'Scholars.Ward Maternal':          true,
-    'Scholars.Village/Community Maternal': true,
-    'Scholars.Specific Island Maternal':   true,
-    'Scholars.Current Title / Role':       true,
-    'Scholars.Current Institution':        true,
-    'Scholars.Current Department / Unit':  true,
+    'Scholars.Alive/Deceased':           true,
+    'Scholars.Birth Year':              true,
+    'Scholars.Death Year':              true,
+    'Scholars.Paternal Province/City Area':          true,
+    'Scholars.Paternal Village/Community': true,
+    'Scholars.Paternal Specific Island':   true,
+    'Scholars.Maternal Province/City Area':          true,
+    'Scholars.Maternal Village/Community': true,
+    'Scholars.Maternal Specific Island':   true,
+    'Scholars.Current Role':       true,
+    'Scholars.Current Institution ID':        true,
+    'Scholars.Department':  true,
     'Scholars.Institution Country':        true,
-    'Scholars.Primary Discipline / Field': true,
-    'Scholars.ORCID / Researcher ID':      true,
-    'Scholars.Google Scholar URL':         true,
-    'Scholars.Current Profile URL':        true,
+    'Scholars.Primary Discipline': true,
+    'Scholars.ORCID':      true,
+    'Scholars.Google Scholar':         true,
+    'Scholars.Personal/Official Profile URL':        true,
     'Scholars.Gender':                     true,
     // Positions and Graduate Degrees rows are shown on Panel F as well.
     'Positions.*':                         true,
@@ -94,80 +55,7 @@
     return false;
   }
 
-  // Ward -> Province/City Area lookup (derived from the Master Sheet's
-  // "Province-Ward Lookup" worksheet). Used to derive Maternal/Paternal
-  // Province/City Area read-only for display and to drive dependent
-  // dropdowns for Paternal Ward -> Paternal Province/City Area and Maternal
-  // Ward -> Maternal Province/City Area. Honiara City is its own
-  // first-level reporting area (a sibling of the 9 provinces, NOT folded
-  // into Guadalcanal) with its own 12 wards. Specific Island is a SEPARATE,
-  // independent attribute -- never derived from Ward/Province here.
-  // Sourced from the Province-Ward Lookup worksheet (Statoids, Sep 2025;
-  // pending verification against SIG Gazette No.7 Sup.5, 23 Jan 2024).
-  var DISTRICT_TO_DIVISION = {
-    'Banika': 'Central', 'East Gela': 'Central', 'Lovukol': 'Central',
-    'North East Gela': 'Central', 'North Savo': 'Central', 'North West Gela': 'Central',
-    'Pavuvu': 'Central', 'Sandfly/Buenavista': 'Central', 'South East Gela': 'Central',
-    'South Savo': 'Central', 'South West Gela': 'Central', 'Tulagi': 'Central',
-    'Babatana': 'Choiseul', 'Bangera': 'Choiseul', 'Batava': 'Choiseul',
-    'Katupika': 'Choiseul', 'Kerepangara': 'Choiseul', 'Kirugela': 'Choiseul',
-    'Polo': 'Choiseul', 'Senga': 'Choiseul', 'Susuka': 'Choiseul',
-    'Tavula': 'Choiseul', 'Tepazaka': 'Choiseul', 'Vasipuki': 'Choiseul',
-    'Viviru': 'Choiseul', 'Wagina': 'Choiseul', 'Aola': 'Guadalcanal',
-    'Avuavu': 'Guadalcanal', 'Birao': 'Guadalcanal', 'Duidui': 'Guadalcanal',
-    'East Ghaobata': 'Guadalcanal', 'East Tasimboko': 'Guadalcanal', 'Kolokarako': 'Guadalcanal',
-    'Longgu': 'Guadalcanal', 'Malango': 'Guadalcanal', 'Moli': 'Guadalcanal',
-    'Paripao': 'Guadalcanal', 'Saghalu': 'Guadalcanal', 'Savulei': 'Guadalcanal',
-    'Talise': 'Guadalcanal', 'Tandai': 'Guadalcanal', 'Tangarare': 'Guadalcanal',
-    'Tetekanji': 'Guadalcanal', 'Valasi': 'Guadalcanal', 'Vatukulau': 'Guadalcanal',
-    'Vulolo': 'Guadalcanal', 'Wanderer Bay': 'Guadalcanal', 'West Ghaobata': 'Guadalcanal',
-    'Baolo': 'Isabel', 'Buala': 'Isabel', 'Hovikoilo': 'Isabel',
-    'Japuana': 'Isabel', 'Kaloka': 'Isabel', 'Kia': 'Isabel',
-    'Kmaga': 'Isabel', 'Kokota': 'Isabel', 'Kolomola': 'Isabel',
-    'Kolotubi': 'Isabel', 'Koviloko': 'Isabel', 'Samasodu': 'Isabel',
-    'Sigana': 'Isabel', 'Susubona': 'Isabel', 'Tatamba': 'Isabel',
-    'Tirotongana': 'Isabel', 'Arosi East': 'Makira-Ulawa', 'Arosi North': 'Makira-Ulawa',
-    'Arosi South': 'Makira-Ulawa', 'Arosi West': 'Makira-Ulawa', 'Bauro Central': 'Makira-Ulawa',
-    'Bauro East': 'Makira-Ulawa', 'Bauro West': 'Makira-Ulawa', 'Haununu': 'Makira-Ulawa',
-    'North Ulawa': 'Makira-Ulawa', 'Rawo': 'Makira-Ulawa', 'Santa Ana': 'Makira-Ulawa',
-    'Santa Catalina': 'Makira-Ulawa', 'South Ulawa': 'Makira-Ulawa', 'Star Harbour North': 'Makira-Ulawa',
-    'Star Harbour South': 'Makira-Ulawa', 'Ugi and Pio': 'Makira-Ulawa', 'Wainoni East': 'Makira-Ulawa',
-    'Wainoni West': 'Makira-Ulawa', 'Weather Coast': 'Makira-Ulawa', 'West Ulawa': 'Makira-Ulawa',
-    'Aba/Asimeuru': 'Malaita', 'Aiaisi': 'Malaita', 'Aimela': 'Malaita',
-    'Areare': 'Malaita', 'Asimae': 'Malaita', 'Auki': 'Malaita',
-    'Buma': 'Malaita', 'East Baegu': 'Malaita', 'Fauabu': 'Malaita',
-    'Faumamanu/Kwai': 'Malaita', 'Fo\'ondo/Gwaiau': 'Malaita', 'Fouenda': 'Malaita',
-    'Gulalofou': 'Malaita', 'Keaimela/Radefasu': 'Malaita', 'Kwarekwareo': 'Malaita',
-    'Langalanga': 'Malaita', 'Luaniua': 'Malaita', 'Malu\'u': 'Malaita',
-    'Mandalua/Folotana': 'Malaita', 'Mareho': 'Malaita', 'Matakwalao': 'Malaita',
-    'Nafinua': 'Malaita', 'Pelau': 'Malaita', 'Raroisu\'u': 'Malaita',
-    'Siesie': 'Malaita', 'Sikaiana': 'Malaita', 'Sububenu/Burianiasi': 'Malaita',
-    'Sulufou/Kwarande': 'Malaita', 'Tai': 'Malaita', 'Takwa': 'Malaita',
-    'Waneagu Silana Sina': 'Malaita', 'Waneagu/Taelanasina': 'Malaita', 'West Baegu/Fataleka': 'Malaita',
-    'East Gaongau': 'Rennell-Bellona', 'East Tenggano': 'Rennell-Bellona', 'Kanava': 'Rennell-Bellona',
-    'Lughu': 'Rennell-Bellona', 'Matangi': 'Rennell-Bellona', 'Mugi Henua': 'Rennell-Bellona',
-    'Sa\'aiho': 'Rennell-Bellona', 'Te Tau Gangoto': 'Rennell-Bellona', 'West Gaongau': 'Rennell-Bellona',
-    'West Tenggano': 'Rennell-Bellona', 'Duff Islands': 'Temotu', 'Fenualoa': 'Temotu',
-    'Graciosa Bay': 'Temotu', 'Lipe/Temua': 'Temotu', 'Luva Station': 'Temotu',
-    'Manuopo': 'Temotu', 'Nanggu/Lord Howe': 'Temotu', 'Nea/Noole': 'Temotu',
-    'Nenumpo': 'Temotu', 'Neo': 'Temotu', 'Nevenema': 'Temotu',
-    'Nipua/Nopoli': 'Temotu', 'North East Santa Cruz': 'Temotu', 'Polynesian Outer Islands': 'Temotu',
-    'Tikopia': 'Temotu', 'Utupua': 'Temotu', 'Vanikoro': 'Temotu',
-    'Central Ranongga': 'Western', 'Gizo': 'Western', 'Inner Shortlands': 'Western',
-    'Irringgilla': 'Western', 'Kolombaghea': 'Western', 'Kusaghe': 'Western',
-    'Mbilua': 'Western', 'Mbuini Tusu': 'Western', 'Munda': 'Western',
-    'Ndovele': 'Western', 'Nggatokae': 'Western', 'Nono': 'Western',
-    'Noro': 'Western', 'North Kolombangara': 'Western', 'North Ranongga': 'Western',
-    'North Rendova': 'Western', 'North Vangunu': 'Western', 'Nusa Roviana': 'Western',
-    'Outer Shortlands': 'Western', 'Roviana Lagoon': 'Western', 'Simbo': 'Western',
-    'South Kolombangara': 'Western', 'South Ranongga': 'Western', 'South Rendova': 'Western',
-    'Vonavona': 'Western', 'Vonunu': 'Western', 'Cruz': 'Honiara City',
-    'Kola\'a': 'Honiara City', 'Kukum': 'Honiara City', 'Mataniko': 'Honiara City',
-    'Mbumburu': 'Honiara City', 'Naha': 'Honiara City', 'Nggossi': 'Honiara City',
-    'Panatina': 'Honiara City', 'Rove/Lengakiki': 'Honiara City', 'Vavaea': 'Honiara City',
-    'Vuhokesa': 'Honiara City', 'Vura': 'Honiara City',
-    'Unclassified': 'Unclassified'
-  };
+  var SOLOMON_PROVINCES = ["Central", "Choiseul", "Guadalcanal", "Isabel", "Makira-Ulawa", "Malaita", "Rennell-Bellona", "Temotu", "Western", "Honiara City"];
 
   var ENRICHMENT_URL = 'data/solomon-scholar-enrichment.json';
   var INSIGHTS_URL   = 'data/solomon-scholar-insights-master.json';
@@ -380,7 +268,7 @@
       var ins = state.insightsDoc.scholars[sid] || {};
       if (enr.photo) withPhotos++;
       if (ins.summaryHtml || (ins.keywords && ins.keywords.length)) withInsights++;
-      var alive = String(s['Alive / Deceased'] || s['Alive/Deceased'] || '').toLowerCase();
+      var alive = String(s['Alive/Deceased'] || s['Alive/Deceased'] || '').toLowerCase();
       if (alive.indexOf('deceased') !== -1) deceased++;
       var linkageStatus = classifyLinkage(sid);
       if (linkageStatus === 'no-authorship-rows') gaps++;
@@ -423,7 +311,7 @@
     if (q) {
       rows = rows.filter(function (s) {
         return [s['Scholar ID'], s['Scholar Name'], s['Family Name'], s['Given Names'],
-                s['Current Institution'], s['Current Department / Unit'], s['Current Department']]
+                institutionName(s['Current Institution ID']), s['Department'], s['Current Department']]
           .some(function (v) { return v && String(v).toLowerCase().indexOf(q) !== -1; });
       });
     }
@@ -477,7 +365,7 @@
       case 'scholarId':    return sid || '';
       case 'name':         return (s['Scholar Name'] || (s['Family Name'] + ', ' + s['Given Names']) || '').toLowerCase();
       case 'islandDivision':  return String(s['Province/City Area'] || '');
-      case 'discipline':   return String(s['Discipline'] || s['Primary Discipline / Field'] || '');
+      case 'discipline':   return String(s['Discipline'] || s['Primary Discipline'] || '');
       case 'total':        return c.total;
       case 'firstAuthored':return c.firstAuthored;
       default:             return '';
@@ -494,19 +382,19 @@
     var confSlug = ['Burebasaga', 'Kubuna', 'Tovata'].indexOf(conf) !== -1 ? conf : 'none';
     var confLabel = confSlug === 'none' ? '—' : conf;
     var name = s['Scholar Name'] || ((s['Family Name'] || '') + ', ' + (s['Given Names'] || ''));
-    var discipline = s['Discipline'] || s['Primary Discipline / Field'] || '—';
+    var discipline = s['Discipline'] || s['Primary Discipline'] || '—';
     var totalClass = link === 'no-authorship-rows' ? 'pub-count gap' :
                      link === 'sparse-authorship'  ? 'pub-count sparse' : 'pub-count';
 
     var flagBadges = [];
     if (link === 'no-authorship-rows')  flagBadges.push('<span class="badge badge-gap" title="Master Authorship has zero rows for this scholar">0 rows</span>');
     if (link === 'sparse-authorship')   flagBadges.push('<span class="badge badge-incomplete" title="Master Authorship has only 1 row — likely incomplete">1 row</span>');
-    if (String(s['Alive / Deceased'] || s['Alive/Deceased'] || '').toLowerCase().indexOf('deceased') !== -1) flagBadges.push('<span class="badge" style="background:#eee;color:var(--muted)">deceased</span>');
+    if (String(s['Alive/Deceased'] || s['Alive/Deceased'] || '').toLowerCase().indexOf('deceased') !== -1) flagBadges.push('<span class="badge" style="background:#eee;color:var(--muted)">deceased</span>');
 
     var linkBits = [];
-    if (s['ORCID / Researcher ID']) linkBits.push('<span class="check" title="ORCID / Researcher ID present">O</span>');
-    if (s['Google Scholar URL']) linkBits.push('<span class="check" title="Google Scholar URL present">G</span>');
-    if (s['Current Profile URL'] || enr.profileUrl) linkBits.push('<span class="check" title="Profile URL present">P</span>');
+    if (s['ORCID']) linkBits.push('<span class="check" title="ORCID / Researcher ID present">O</span>');
+    if (s['Google Scholar']) linkBits.push('<span class="check" title="Google Scholar URL present">G</span>');
+    if (s['Personal/Official Profile URL'] || enr.profileUrl) linkBits.push('<span class="check" title="Profile URL present">P</span>');
 
     return '<tr data-sid="' + esc(sid) + '">' +
       '<td class="sid">' + esc(sid) + '</td>' +
@@ -583,50 +471,35 @@
     // stores the exact value the modal was opened with; on save we compare
     // against that snapshot to build a changes[] batch, and the server does
     // an optimistic-lock check against the live cell.
-    // Populate district dropdowns from DISTRICT_TO_DIVISION (canonical list).
+    // Populate Solomon Islands province choices.
     populateProvinceDropdowns();
-    var provPat = s['Ward Paternal'] || '';
-    var provMat = s['Ward Maternal'] || '';
-    setMe('me-title-salutation', s['Title / Salutation'] || '');
+    var provPat = s['Paternal Province/City Area'] || '';
+    var provMat = s['Maternal Province/City Area'] || '';
+    setMe('me-title-salutation', s['Title/Salutation'] || '');
     setMe('me-family',         s['Family Name'] || '');
     setMe('me-given',          s['Given Names'] || '');
     setMe('me-gender',         s['Gender'] || '');
-    setMe('me-year-of-birth',  s['Year of Birth'] || '');
-    setMe('me-alive',          s['Alive / Deceased'] || '');
-    setMe('me-year-of-death',  s['Year of Death'] || '');
-    setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
+    setMe('me-year-of-birth',  s['Birth Year'] || '');
+    setMe('me-alive',          s['Alive/Deceased'] || '');
+    setMe('me-year-of-death',  s['Death Year'] || '');
+    setMe('me-discipline',     s['Primary Discipline'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
     setMe('me-prov-paternal',  provPat);
-    setMe('me-vil-paternal',   s["Village/Community Paternal"] || s['Village Paternal'] || '');
-    setMe('me-isl-paternal',   s['Specific Island Paternal'] || s['Island Paternal'] || '');
+    setMe('me-vil-paternal',   s["Paternal Village/Community"] || s['Village Paternal'] || '');
+    setMe('me-isl-paternal',   s['Paternal Specific Island'] || s['Island Paternal'] || '');
     setMe('me-prov-maternal',  provMat);
-    setMe('me-vil-maternal',   s["Village/Community Maternal"] || s['Village Maternal'] || '');
-    setMe('me-isl-maternal',   s['Specific Island Maternal'] || s['Island Maternal'] || '');
-    setMe('me-title',          s['Current Title / Role'] || s['Current Title'] || '');
-    setMe('me-institution',    s['Current Institution'] || '');
+    setMe('me-vil-maternal',   s["Maternal Village/Community"] || s['Village Maternal'] || '');
+    setMe('me-isl-maternal',   s['Maternal Specific Island'] || s['Island Maternal'] || '');
+    setMe('me-title',          s['Current Role'] || s['Current Title'] || '');
+    populateInstitutionDropdown(s['Current Institution ID']);
+    setMe('me-institution',    s['Current Institution ID'] || '');
     setMe('me-inst-country',   s['Institution Country'] || s['Current Country'] || '');
-    setMe('me-department',     s['Current Department / Unit'] || s['Current Department'] || '');
+    setMe('me-department',     s['Department'] || s['Current Department'] || '');
     setMe('me-pg-status',      s['Current PG Status'] || '');
-    setMe('me-orcid',          s['ORCID / Researcher ID'] || s['ORCID'] || '');
-    setMe('me-gs-url',         s['Google Scholar URL'] || '');
-    setMe('me-profile-url',    s['Current Profile URL'] || '');
-    setMe('me-name-variants',  s['Name Variants / Aliases'] || '');
-    setMe('me-vanua-notes',    s['Lineage / Provenance Notes'] || s['Vanua / Provenance Notes'] || '');
+    setMe('me-orcid',          s['ORCID'] || '');
+    setMe('me-gs-url',         s['Google Scholar'] || '');
+    setMe('me-profile-url',    s['Personal/Official Profile URL'] || '');
+    setMe('me-name-variants',  s['Aliases'] || '');
     setMe('me-record-notes',   s['Record Notes'] || '');
-    // Cultural & lineage affiliation — no Fiji V2 equivalent, never inferred
-    // from geography/surname/title, curated per scholar (split Paternal/
-    // Maternal per user decision 2026-08-28).
-    setMe('me-estate-paternal', s["Estate / Chiefly Affiliation Paternal (Tofi'a)"] || '');
-    setMe('me-estate-maternal', s["Estate / Chiefly Affiliation Maternal (Tofi'a)"] || '');
-    setMe('me-haa-paternal',    s["Ha'a / Lineage Paternal"] || '');
-    setMe('me-haa-maternal',    s["Ha'a / Lineage Maternal"] || '');
-    setMe('me-kainga-paternal', s['K\u0101inga Paternal'] || '');
-    setMe('me-kainga-maternal', s['K\u0101inga Maternal'] || '');
-    setMe('me-selfid-paternal', s['Self-identified Home / Community Affiliation Paternal'] || '');
-    setMe('me-selfid-maternal', s['Self-identified Home / Community Affiliation Maternal'] || '');
-    // Derived Province/City Areas (read-only, driven by district dropdowns).
-    $('#me-div-paternal-derived').value = DISTRICT_TO_DIVISION[provPat.trim()] || (s['Paternal Province/City Area'] || s['Province/City Area'] || '');
-    $('#me-div-maternal-derived').value = DISTRICT_TO_DIVISION[provMat.trim()] || '';
-
     // Load Positions and Graduate Degrees rows asynchronously from the endpoint.
     // We do not block the modal; each fieldset shows "Loading…" until fetched.
     state.positionRows = null;
@@ -688,14 +561,37 @@
     var el = document.getElementById(id);
     if (!el) return;
     var s = val == null ? '' : String(val);
+    if (el.tagName === 'SELECT' && s && !Array.from(el.options).some(function(o) { return o.value === s; })) {
+      var option = document.createElement('option'); option.value = s; option.textContent = s; el.appendChild(option);
+    }
     el.value = s;
     el.setAttribute('data-loaded', s);
+  }
+
+  function institutionName(id) {
+    var rows = (state.bundle.master && state.bundle.master.institutions) || [];
+    var row = rows.find(function(i) { return i['Institution ID'] === id; });
+    return row ? row['Canonical Name'] : (id || '');
+  }
+
+  function populateInstitutionDropdown(currentId) {
+    var sel = document.getElementById('me-institution');
+    var rows = (state.bundle.master && state.bundle.master.institutions) || [];
+    sel.innerHTML = '<option value="">(unset)</option>';
+    rows.slice().sort(function(a,b) { return String(a['Canonical Name']).localeCompare(String(b['Canonical Name'])); }).forEach(function(row) {
+      var opt = document.createElement('option');
+      opt.value = row['Institution ID']; opt.textContent = row['Canonical Name'] || opt.value;
+      sel.appendChild(opt);
+    });
+    if (currentId && !Array.from(sel.options).some(function(o) { return o.value === currentId; })) {
+      var opt = document.createElement('option'); opt.value = currentId; opt.textContent = currentId; sel.appendChild(opt);
+    }
   }
 
   var _provinceDropdownsFilled = false;
   function populateProvinceDropdowns () {
     if (_provinceDropdownsFilled) return;
-    var districts = Object.keys(DISTRICT_TO_DIVISION).sort();
+    var districts = SOLOMON_PROVINCES;
     ['me-prov-paternal', 'me-prov-maternal'].forEach(function (id) {
       var sel = document.getElementById(id);
       if (!sel) return;
@@ -704,12 +600,7 @@
         opt.value = p; opt.textContent = p;
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', function () {
-        var div = DISTRICT_TO_DIVISION[sel.value] || '';
-        var derived = id === 'me-prov-paternal' ? 'me-div-paternal-derived' : 'me-div-maternal-derived';
-        var el = document.getElementById(derived);
-        if (el) el.value = div;
-      });
+
     });
     _provinceDropdownsFilled = true;
   }
@@ -739,26 +630,11 @@
       container.innerHTML = '<div class="meta" style="color:var(--muted);">No Positions rows on the Master sheet for this scholar. Positions can only be added by editing the sheet directly (write-back is per-existing-row for now).</div>';
       return;
     }
-    var fields = [
-      { name: 'Role Status',                                  label: 'Role status' },
-      { name: 'Academic / Professional Title (verbatim)',     label: 'Academic / professional title (verbatim)' },
-      { name: 'Standardized Academic Rank',                   label: 'Standardized academic rank' },
-      { name: 'Institution',                                  label: 'Institution' },
-      { name: 'Department / Unit',                            label: 'Department / unit' },
-      { name: 'Country',                                      label: 'Country' },
-      { name: 'Leadership Title (verbatim)',                  label: 'Leadership title (verbatim)' },
-      { name: 'Standardized Leadership Category',             label: 'Standardized leadership category' },
-      { name: 'Leadership Level',                             label: 'Leadership level' },
-      { name: 'Start Year',                                   label: 'Start year',        type: 'number' },
-      { name: 'End Year',                                     label: 'End year',          type: 'number' },
-      { name: 'Source URL',                                   label: 'Source URL',        type: 'url' },
-      { name: 'Evidence / Notes',                             label: 'Evidence / notes' },
-      { name: 'Last Verified',                                label: 'Last verified' }
-    ];
+    var fields = [{"name": "Title", "label": "Title"}, {"name": "Institution ID", "label": "Institution ID"}, {"name": "Department", "label": "Department"}, {"name": "Country", "label": "Country"}, {"name": "Leadership Category", "label": "Leadership Category"}, {"name": "Leadership Level", "label": "Leadership Level"}, {"name": "Start Year", "label": "Start Year"}, {"name": "End Year", "label": "End Year"}, {"name": "Current Flag", "label": "Current Flag"}, {"name": "Notes", "label": "Notes"}];
     var html = '';
     rows.forEach(function (r, idx) {
       html += '<div class="row-block" style="border:1px solid var(--cream); border-radius:8px; padding:12px; margin-bottom:12px;">';
-      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(r.fields['Role Status'] || 'no status') + '</div>';
+      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(r.fields['Current Flag'] || 'no status') + '</div>';
       html += '<div class="form-grid">';
       fields.forEach(function (f) {
         var val = r.fields[f.name] == null ? '' : String(r.fields[f.name]);
@@ -793,32 +669,10 @@
       container.innerHTML = '<div class="meta" style="color:var(--muted);">No Graduate Degrees rows on the Master sheet for this scholar.</div>';
       return;
     }
-    var fields = [
-      { name: 'Degree Stage',                label: 'Degree stage' },
-      { name: 'Degree / Qualification',      label: 'Degree / qualification' },
-      { name: 'Field / Discipline',          label: 'Field / discipline' },
-      { name: 'C_Uni name',                  label: 'University (current name)' },
-      { name: 'O_Uni name',                  label: 'University (original name)' },
-      { name: 'Country',                     label: 'Country' },
-      { name: 'International from Solomon Islands?',   label: 'International from Solomon Islands?' },
-      { name: 'City',                        label: 'City' },
-      { name: 'Region',                      label: 'Region' },
-      { name: 'Year / Status',               label: 'Year / status' },
-      { name: 'Completion Status',           label: 'Completion status' },
-      { name: 'Thesis / Research Title',     label: 'Thesis / research title' },
-      { name: 'Thesis / Repository URL',     label: 'Thesis / repository URL', type: 'url' },
-      { name: 'Evidence URL 1',              label: 'Evidence URL 1',  type: 'url' },
-      { name: 'Evidence URL 2',              label: 'Evidence URL 2',  type: 'url' },
-      { name: 'Verification',                label: 'Verification' },
-      { name: 'Notes',                       label: 'Notes' },
-      { name: 'Start Year',                  label: 'Start year',      type: 'number' },
-      { name: 'Finish / Completion Year',    label: 'Finish / completion year', type: 'number' },
-      { name: 'Duration (years)',            label: 'Duration (years)' },
-      { name: 'Study Date Evidence / Notes', label: 'Study date evidence / notes' }
-    ];
+    var fields = [{"name": "Stage", "label": "Stage"}, {"name": "Degree Name", "label": "Degree Name"}, {"name": "Field/Discipline", "label": "Field/Discipline"}, {"name": "Broad Discipline", "label": "Broad Discipline"}, {"name": "Thesis Title", "label": "Thesis Title"}, {"name": "Institution ID", "label": "Institution ID"}, {"name": "Institution Name (Original)", "label": "Institution Name (Original)"}, {"name": "Institution Name (Current)", "label": "Institution Name (Current)"}, {"name": "Country", "label": "Country"}, {"name": "Start Year", "label": "Start Year"}, {"name": "End Year", "label": "End Year"}, {"name": "Graduation Year", "label": "Graduation Year"}, {"name": "Completion Status", "label": "Completion Status"}, {"name": "Repository URL", "label": "Repository URL"}, {"name": "DOI/Handle", "label": "DOI/Handle"}, {"name": "Notes", "label": "Notes"}];
     var html = '';
     rows.forEach(function (r) {
-      var stage = r.fields['Degree Stage'] || '';
+      var stage = r.fields['Stage'] || '';
       html += '<div class="row-block" style="border:1px solid var(--cream); border-radius:8px; padding:12px; margin-bottom:12px;">';
       html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(stage) + '</div>';
       html += '<div class="form-grid">';
@@ -1013,7 +867,7 @@
 
   function renderConfirmButtons_ (r) {
     // Field-specific labels for Alive / Deceased per Ron's plain-language spec.
-    var isAlive = (r.change.worksheet === 'Scholars' && r.change.field === 'Alive / Deceased');
+    var isAlive = (r.change.worksheet === 'Scholars' && r.change.field === 'Alive/Deceased');
     var keepLabel   = isAlive ? ('Keep \u201C' + (r.current || 'blank') + '\u201D')   : 'Keep Master value';
     var changeLabel = isAlive ? ('Change to \u201C' + (r.intended || 'blank') + '\u201D') : 'Overwrite Master';
     return '<div class="preview-decision" style="display:flex;gap:0.4rem;">' +
@@ -2466,8 +2320,8 @@
                        : 'OK',
         reason:         st,
         priority:       computeRepairPriority(c.total, oldTotal, st),
-        aliveDeceased:  s['Alive / Deceased'] || s['Alive/Deceased'] || '',
-        discipline:     s['Discipline'] || s['Primary Discipline / Field'] || '',
+        aliveDeceased:  s['Alive/Deceased'] || s['Alive/Deceased'] || '',
+        discipline:     s['Discipline'] || s['Primary Discipline'] || '',
         islandDivision:    s['Paternal Province/City Area'] || s['Province/City Area'] || '',
         rosterTier:     s['Roster Tier'] || s['Roster Tier / Priority'] || ''
       });
@@ -2878,8 +2732,8 @@
           counts.total++;
           if (hasB && hasD) counts.both++; else if (hasB) counts.birthOnly++; else counts.deathOnly++;
           var m = state.scholarById[sid] || {};
-          var mBirth = (m['Year of Birth'] || '').toString().trim();
-          var mDeath = (m['Year of Death'] || '').toString().trim();
+          var mBirth = (m['Birth Year'] || '').toString().trim();
+          var mDeath = (m['Death Year'] || '').toString().trim();
           var noteParts = [];
           if (hasB) {
             if (!mBirth) { noteParts.push('Master YoB BLANK, enrichment=' + enr.yearOfBirth); counts.masterBlank++; }
@@ -2916,7 +2770,7 @@
           rows.forEach(function (r) { lines.push('  ' + r); });
         }
         lines.push('');
-        lines.push('Nothing has been written. To migrate a value, open that scholar in the Scholars tab, put the value in the Master "Year of Birth" or "Year of Death" input in the Identity fieldset, and Save & push. The next refresh will drop the sidecar out of the public composed profile.');
+        lines.push('Nothing has been written. To migrate a value, open that scholar in the Scholars tab, put the value in the Master "Birth Year" or "Death Year" input in the Identity fieldset, and Save & push. The next refresh will drop the sidecar out of the public composed profile.');
         out.textContent = lines.join('\n');
         log('YoB/YoD inspection: ' + counts.total + ' legacy sidecar records; ' + counts.masterBlank + ' Master-blank candidates, ' + counts.masterConflict + ' conflicts.', 'warn');
       });

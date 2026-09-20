@@ -1,45 +1,4 @@
-/**
- * solomon-admin-insights-migration.js
- *
- * Sister clone of js/admin-insights-migration.js for the Solomon Islands Scholar
- * Database. Client-side one-off migration for the V1 name-keyed
- * research-insights file (data/solomon-scholar-insights.json.enc) to a
- * Scholar-ID-keyed file (data/solomon-scholar-insights-master.json.enc)
- * consumed by the Solomon Islands V2 dashboard. Fully separate data files from the
- * iTaukei/Solomon Islands sister system \u2014 never reads or writes an iTaukei-prefixed path.
- *
- * Same relabeling as the rest of the Solomon Islands admin build: District / Island
- * Division / Village-Town(Kolo) / Specific Island geography terms, Fefine /
- * Tangata gender labels, and SOL-S#### Scholar IDs \u2014 none of which
- * affect this file's logic since it operates only on Scholar Name / Family
- * Name / Given Names / Scholar ID, which are unchanged field names.
- *
- * Per the approval doc (Aug 22, 2026), key rules:
- *   - The V1 passcode is Ron's browser-side database passcode. He has already
- *     entered it via db-gate.js to unlock this admin session. The migration
- *     therefore uses window.dbGate.fetchJson to decrypt the V1 file in this
- *     same session. NO passcode input UI, NO passcode in code, NO passcode
- *     in any log or migration report.
- *   - Preserve every field of every V1 entry verbatim (keywords, summary
- *     HTML including <a>/<em>/<strong>, summaryFormat, signature, sources,
- *     summarySource, publicationCount, regeneratedAt, lastGeneratedUtc).
- *   - Classify each entry into MATCHED / AMBIGUOUS / UNMATCHED / INVALID and
- *     NEVER discard an unresolved record.
- *   - Do NOT regenerate existing good insights merely because they are
- *     being migrated \u2014 curated summaries survive the round trip unchanged.
- *   - The migration report never contains passcodes, secrets, or PATs.
- *
- * Ambiguity note: V1 was keyed by "Family, Given" strings assembled from
- * Zotero sub-collections. The Master file authoritatively assigns a Scholar
- * ID to each researcher; several Master rows may share a Family+Given (e.g.
- * "Vave, Ron" and a hypothetical "Vave, Ron K."). We resolve by, in order:
- *   1) exact Scholar Name match (case-insensitive)
- *   2) exact Family Name + Given Names match
- *   3) Family Name + first token of Given Names
- * If step 1 or 2 returns exactly one Master row, MATCHED. If step 3 returns
- * two or more, AMBIGUOUS (report all candidates). If nothing matches,
- * UNMATCHED.
- */
+/* Migrate Solomon Islands research insights to stable SOL-S scholar IDs. */
 (function () {
   'use strict';
 

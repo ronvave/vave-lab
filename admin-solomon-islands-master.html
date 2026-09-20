@@ -248,7 +248,7 @@
   <header class="topbar">
     <div>
       <h1>Solomon Islands Scholar Database Admin (V2)</h1>
-      <div class="subtitle">Authoritative source: Solomon Islands Master Google Sheet (new spreadsheet, own ID — not yet linked here; see SOLOMON-ADMIN-BUILD-NOTES.md) · Admin edits supplementary fields only</div>
+      <div class="subtitle">Authoritative source: Solomon Islands Master Google Sheet</div>
     </div>
     <div class="actions">
       <span class="status-pill" id="db-status">unlocking…</span>
@@ -283,14 +283,7 @@
 
         <div class="filter-row">
           <input type="search" id="search-scholars" placeholder="Search Scholar ID, name, institution…" />
-          <select id="filter-island-division">
-            <option value="">All Province/City Areas</option>
-            <option value="Solomon Islandstapu">Solomon Islandstapu</option>
-            <option value="Vava'u">Vava'u</option>
-            <option value="Ha'apai">Ha'apai</option>
-            <option value="'Eua">'Eua</option>
-            <option value="Ongo Niua">Ongo Niua</option>
-          </select>
+          <select id="filter-island-division"><option value="">All Provinces</option><option>Central</option><option>Choiseul</option><option>Guadalcanal</option><option>Isabel</option><option>Makira-Ulawa</option><option>Malaita</option><option>Rennell-Bellona</option><option>Temotu</option><option>Western</option><option>Honiara City</option></select>
           <label class="filter-chip" data-chip="has-photo">Has photo <span class="count" data-chip-count="has-photo">0</span></label>
           <label class="filter-chip" data-chip="missing-photo">Missing photo <span class="count" data-chip-count="missing-photo">0</span></label>
           <label class="filter-chip" data-chip="has-insights">Has insights <span class="count" data-chip-count="has-insights">0</span></label>
@@ -530,7 +523,7 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Title / Salutation</label>
-            <select id="me-title-salutation" data-ws="Scholars" data-field="Title / Salutation">
+            <select id="me-title-salutation" data-ws="Scholars" data-field="Title/Salutation">
               <option value="">(no title)</option>
               <option value="Dr">Dr</option>
               <option value="Prof">Prof</option>
@@ -546,16 +539,16 @@
           <div class="form-group"><label>Gender</label>
             <select id="me-gender" data-ws="Scholars" data-field="Gender">
               <option value="">(unset)</option>
-              <option value="Tangata">Tangata</option><option value="Fefine">Fefine</option><option value="Unknown">Unknown</option>
+              <option value="Man">Male</option><option value="Woman">Female</option><option value="Self-described (see free text)">Self-described</option><option value="Not yet verified">Unknown</option>
             </select>
           </div>
           <div class="form-group">
             <label>Year of Birth <span class="hint" style="font-size:0.75rem;color:var(--muted);">(YYYY; blank if unknown)</span></label>
-            <input type="text" id="me-year-of-birth" data-ws="Scholars" data-field="Year of Birth" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 1942" />
+            <input type="text" id="me-year-of-birth" data-ws="Scholars" data-field="Birth Year" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 1942" />
           </div>
           <div class="form-group">
             <label>Alive / Deceased</label>
-            <select id="me-alive" data-ws="Scholars" data-field="Alive / Deceased">
+            <select id="me-alive" data-ws="Scholars" data-field="Alive/Deceased">
               <option value="">(unset)</option>
               <option value="Alive">Alive</option>
               <option value="Deceased">Deceased</option>
@@ -564,67 +557,27 @@
           </div>
           <div class="form-group">
             <label>Year of Death <span class="hint" style="font-size:0.75rem;color:var(--muted);">(YYYY; blank if Alive/Unknown)</span></label>
-            <input type="text" id="me-year-of-death" data-ws="Scholars" data-field="Year of Death" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 2021" />
+            <input type="text" id="me-year-of-death" data-ws="Scholars" data-field="Death Year" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 2021" />
           </div>
-          <div class="form-group"><label>Primary discipline / field</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline / Field" /></div>
+          <div class="form-group"><label>Primary discipline / field</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline" /></div>
         </div>
       </fieldset>
 
-      <fieldset class="fieldset section-border-blue">
-        <legend>Master fields — Paternal geography <span class="master-tag">editable via write-back</span></legend>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Paternal district</label>
-            <select id="me-prov-paternal" data-ws="Scholars" data-field="Ward Paternal">
-              <option value="">(unset)</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Paternal Province/City Area <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived)</span></label><input type="text" id="me-div-paternal-derived" disabled /></div>
-          <div class="form-group"><label>Paternal village/town (Kolo)</label><input type="text" id="me-vil-paternal" data-ws="Scholars" data-field="Village/Community Paternal" /></div>
-          <div class="form-group"><label>Paternal specific island <span class="hint" style="font-size:0.75rem;color:var(--muted);">(curated — never derived from district)</span></label><input type="text" id="me-isl-paternal" data-ws="Scholars" data-field="Specific Island Paternal" /></div>
-        </div>
-      </fieldset>
+      <fieldset class="fieldset section-border-blue"><legend>Master fields — paternal geography <span class="master-tag">editable via write-back</span></legend><div class="form-grid"><div class="form-group"><label>Province</label><select id="me-prov-paternal" data-ws="Scholars" data-field="Paternal Province/City Area"><option value="">(unset)</option></select></div><div class="form-group"><label>Island</label><input type="text" id="me-isl-paternal" data-ws="Scholars" data-field="Paternal Specific Island" /></div><div class="form-group"><label>Village</label><input type="text" id="me-vil-paternal" data-ws="Scholars" data-field="Paternal Village/Community" /></div></div></fieldset>
 
-      <fieldset class="fieldset section-border-black">
-        <legend>Master fields — Maternal geography <span class="master-tag">editable via write-back</span></legend>
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Maternal district</label>
-            <select id="me-prov-maternal" data-ws="Scholars" data-field="Ward Maternal">
-              <option value="">(unset)</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Maternal Province/City Area <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived via Lookups, no Master column)</span></label><input type="text" id="me-div-maternal-derived" disabled /></div>
-          <div class="form-group"><label>Maternal village/town (Kolo)</label><input type="text" id="me-vil-maternal" data-ws="Scholars" data-field="Village/Community Maternal" /></div>
-          <div class="form-group"><label>Maternal specific island <span class="hint" style="font-size:0.75rem;color:var(--muted);">(curated — never derived from district)</span></label><input type="text" id="me-isl-maternal" data-ws="Scholars" data-field="Specific Island Maternal" /></div>
-        </div>
-      </fieldset>
+      <fieldset class="fieldset section-border-blue"><legend>Master fields — maternal geography <span class="master-tag">editable via write-back</span></legend><div class="form-grid"><div class="form-group"><label>Province</label><select id="me-prov-maternal" data-ws="Scholars" data-field="Maternal Province/City Area"><option value="">(unset)</option></select></div><div class="form-group"><label>Island</label><input type="text" id="me-isl-maternal" data-ws="Scholars" data-field="Maternal Specific Island" /></div><div class="form-group"><label>Village</label><input type="text" id="me-vil-maternal" data-ws="Scholars" data-field="Maternal Village/Community" /></div></div></fieldset>
 
-      <fieldset class="fieldset section-border-black">
-        <legend>Master fields — Cultural &amp; lineage affiliation <span class="master-tag">editable via write-back</span>
-          <span class="hint" style="font-size:0.75rem;color:var(--muted);">No Fiji V2 equivalent. Never inferred from geography, surname, or title — curated per scholar, split Paternal/Maternal per user decision (2026-08-28).</span>
-        </legend>
-        <div class="form-grid">
-          <div class="form-group"><label>Estate / Chiefly affiliation, paternal (Tofiʻa)</label><input type="text" id="me-estate-paternal" data-ws="Scholars" data-field="Estate / Chiefly Affiliation Paternal (Tofi'a)" /></div>
-          <div class="form-group"><label>Estate / Chiefly affiliation, maternal (Tofiʻa)</label><input type="text" id="me-estate-maternal" data-ws="Scholars" data-field="Estate / Chiefly Affiliation Maternal (Tofi'a)" /></div>
-          <div class="form-group"><label>Haʻa / Lineage, paternal</label><input type="text" id="me-haa-paternal" data-ws="Scholars" data-field="Ha'a / Lineage Paternal" /></div>
-          <div class="form-group"><label>Haʻa / Lineage, maternal</label><input type="text" id="me-haa-maternal" data-ws="Scholars" data-field="Ha'a / Lineage Maternal" /></div>
-          <div class="form-group"><label>Kāinga, paternal</label><input type="text" id="me-kainga-paternal" data-ws="Scholars" data-field="Kāinga Paternal" /></div>
-          <div class="form-group"><label>Kāinga, maternal</label><input type="text" id="me-kainga-maternal" data-ws="Scholars" data-field="Kāinga Maternal" /></div>
-          <div class="form-group"><label>Self-identified home / community affiliation, paternal</label><input type="text" id="me-selfid-paternal" data-ws="Scholars" data-field="Self-identified Home / Community Affiliation Paternal" /></div>
-          <div class="form-group"><label>Self-identified home / community affiliation, maternal</label><input type="text" id="me-selfid-maternal" data-ws="Scholars" data-field="Self-identified Home / Community Affiliation Maternal" /></div>
-        </div>
-      </fieldset>
+
 
       <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Current position <span class="master-tag">editable via write-back</span>
           <span class="hint" style="font-size:0.75rem;color:var(--muted);">Scholars-tab summary; edit underlying Positions rows below for a full history.</span>
         </legend>
         <div class="form-grid">
-          <div class="form-group"><label>Current title / role</label><input type="text" id="me-title" data-ws="Scholars" data-field="Current Title / Role" /></div>
-          <div class="form-group"><label>Current institution</label><input type="text" id="me-institution" data-ws="Scholars" data-field="Current Institution" /></div>
+          <div class="form-group"><label>Current title / role</label><input type="text" id="me-title" data-ws="Scholars" data-field="Current Role" /></div>
+          <div class="form-group"><label>Current institution</label><select id="me-institution" data-ws="Scholars" data-field="Current Institution ID"></select></div>
           <div class="form-group"><label>Institution country</label><input type="text" id="me-inst-country" data-ws="Scholars" data-field="Institution Country" /></div>
-          <div class="form-group"><label>Current department / unit</label><input type="text" id="me-department" data-ws="Scholars" data-field="Current Department / Unit" /></div>
+          <div class="form-group"><label>Current department / unit</label><input type="text" id="me-department" data-ws="Scholars" data-field="Department" /></div>
           <div class="form-group"><label>Current PG status</label><input type="text" id="me-pg-status" data-ws="Scholars" data-field="Current PG Status" /></div>
         </div>
       </fieldset>
@@ -632,17 +585,17 @@
       <fieldset class="fieldset section-border-black">
         <legend>Master fields — Public profile URLs <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID / Researcher ID" placeholder="0000-0000-0000-0000 or https://orcid.org/0000-0000-0000-0000" title="Accepts either the 16-digit ORCID iD or the full ORCID URL. Saved as the canonical URL." /></div>
-          <div class="form-group"><label>Google Scholar URL</label><input type="url" id="me-gs-url" data-ws="Scholars" data-field="Google Scholar URL" placeholder="https://scholar.google.com/citations?user=…" /></div>
-          <div class="form-group"><label>Current profile URL</label><input type="url" id="me-profile-url" data-ws="Scholars" data-field="Current Profile URL" placeholder="https://…" /></div>
-          <div class="form-group"><label>Name variants / aliases</label><input type="text" id="me-name-variants" data-ws="Scholars" data-field="Name Variants / Aliases" /></div>
+          <div class="form-group"><label>ORCID / Researcher ID</label><input type="text" id="me-orcid" data-ws="Scholars" data-field="ORCID" placeholder="0000-0000-0000-0000 or https://orcid.org/0000-0000-0000-0000" title="Accepts either the 16-digit ORCID iD or the full ORCID URL. Saved as the canonical URL." /></div>
+          <div class="form-group"><label>Google Scholar URL</label><input type="url" id="me-gs-url" data-ws="Scholars" data-field="Google Scholar" placeholder="https://scholar.google.com/citations?user=…" /></div>
+          <div class="form-group"><label>Current profile URL</label><input type="url" id="me-profile-url" data-ws="Scholars" data-field="Personal/Official Profile URL" placeholder="https://…" /></div>
+          <div class="form-group"><label>Name variants / aliases</label><input type="text" id="me-name-variants" data-ws="Scholars" data-field="Aliases" /></div>
         </div>
       </fieldset>
 
       <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Provenance &amp; notes <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group" style="grid-column: span 2;"><label>Lineage / Provenance notes</label><textarea id="me-vanua-notes" data-ws="Scholars" data-field="Lineage / Provenance Notes" rows="3" style="width:100%;"></textarea></div>
+
           <div class="form-group" style="grid-column: span 2;"><label>Record notes</label><textarea id="me-record-notes" data-ws="Scholars" data-field="Record Notes" rows="3" style="width:100%;"></textarea></div>
         </div>
       </fieldset>
@@ -753,11 +706,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/solomon-db-gate.js?v=a307102c" defer></script>
-<script src="js/solomon-database-adapter.js?v=3a7209e7" defer></script>
+<script src="js/solomon-db-gate.js?v=sol-admin-20260920" defer></script>
+<script src="js/solomon-database-adapter.js?v=sol-admin-20260920" defer></script>
 <script src="js/solomon-admin-insights-migration.js?v=4b870115" defer></script>
-<script src="js/solomon-admin-writeback-client.js?v=6e147389" defer></script>
-<script src="js/admin-solomon-master.js?v=cc7c89c7" defer></script>
+<script src="js/solomon-admin-writeback-client.js?v=sol-admin-20260920" defer></script>
+<script src="js/admin-solomon-master.js?v=sol-admin-20260920" defer></script>
 
 </body>
 </html>

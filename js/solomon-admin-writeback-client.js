@@ -58,6 +58,7 @@
 
   async function callPost(payload) {
     requireConfigured();
+    await verifySolomonEndpoint();
     var url = getEndpoint();
     // Apps Script Content-Type quirk: to avoid the CORS preflight (which the
     // web-app endpoint doesn't support cleanly), we send text/plain and let
@@ -81,6 +82,7 @@
   // Extra GET with named params.
   async function callGetWithParams(action, params) {
     requireConfigured();
+    await verifySolomonEndpoint();
     var qs = 'action=' + encodeURIComponent(action) +
              '&secret=' + encodeURIComponent(getSecret()) +
              '&clientTs=' + Date.now();
@@ -94,7 +96,16 @@
   }
 
   // Convenience wrappers.
-  async function ping()     { return callGet('ping'); }
+  var EXPECTED_SPREADSHEET_ID = '1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY';
+  async function verifySolomonEndpoint() {
+    var result = await callGet('ping');
+    if (result.status !== 'ok') throw new Error(result.error || result.reason || 'Solomon Islands endpoint is unavailable.');
+    if (result.spreadsheetId !== EXPECTED_SPREADSHEET_ID) {
+      throw new Error('Endpoint does not identify the Solomon Islands Master spreadsheet. Check the Solomon Islands endpoint in Data source. No changes were sent.');
+    }
+    return result;
+  }
+  async function ping() { return verifySolomonEndpoint(); }
   async function describe() { return callGet('describe'); }
   // write(changes, opts) supports { dryRun: true } for the Phase 3.4
   // three-way preview classification. Without opts it behaves identically

@@ -14,7 +14,6 @@
  *   1. In the Master spreadsheet: Extensions → Apps Script.
  *   2. Paste this file into the project as `solomon-master-writeback.gs`.
  *   3. In Project Settings → Script Properties, add:
- *        SHARED_SECRET      = <SET THIS -- run generateSecret() below to mint a fresh 32-byte hex secret; never reuse the iTaukei or Tongan SHARED_SECRET>
  *        WRITE_ENABLED      = true
  *        ADMIN_ORIGIN       = https://ronvave.github.io
  *   4. In this editor's console, run `generateSecret()` once to get a fresh
@@ -101,7 +100,6 @@
 // documented fallback default (the real Solomon Islands Scholars Master
 // File) for local testing before the Script Property is set -- it is NOT a
 // secret; NEVER the iTaukei ID (1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg)
-// or the Tongan ID (1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI).
 var SPREADSHEET_ID_FALLBACK = '1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY';
 function getSpreadsheetId_() {
   var fromProps = PropertiesService.getScriptProperties().getProperty('SOLOMON_SPREADSHEET_ID');

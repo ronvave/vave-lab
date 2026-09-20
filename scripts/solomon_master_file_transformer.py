@@ -1,55 +1,7 @@
 #!/usr/bin/env python3
-"""
-Solomon Islands Master File -> sanitized JSON snapshots
-=========================================================
-
-Sister clone of scripts/tongan_master_file_transformer.py (Tongan) /
-scripts/master_file_transformer.py (iTaukei). Reads the Solomon Islands
-Scholars Master File via a service-account, sanitizes each worksheet
-against a public-field allowlist, and writes plaintext JSON to
-data/solomon-master-*.json. The encryption step
-(scripts/solomon_encrypt_data.py) converts these to .enc for commit.
-
-Runs from CI (.github/workflows/refresh-solomon-master-file.yml), and on
-manual dispatch from the Solomon Islands Admin Panel's "Refresh from
-Sheet" / "Force refresh" buttons.
-
-Contract:
-- Reads the Solomon Islands Master Sheet via google-api-python-client +
-  service-account JSON (env: GOOGLE_SERVICE_ACCOUNT_JSON = raw JSON
-  string of key), OR via the `gws` CLI in the agent sandbox (--mode=gws).
-- Writes sanitized JSON to /workspace/data/solomon-master-*.json.
-- On any validation failure: preserves last valid snapshot, logs the
-  discrepancy, exits with code that keeps the old .enc unchanged.
-- Never publishes private fields (see solomon_master_file_config.py
-  allowlists).
-- Never uses Original/historical institution-name fields for
-  aggregations -- only the canonical "Institution Name (Current)".
-- Never infers Solomon Islander identity from surname; only via the
-  Authorship bridge (or the Researcher Authorship bridge for SOL-R IDs).
-- GEOGRAPHY: Specific Island and customary fields (Clan/Tribe/Lineage,
-  Customary Place, Self-identified Home/Community) are read verbatim
-  from their own dedicated columns and are NEVER derived from
-  Ward/Province. Honiara City is kept as its own first-level reporting
-  area, never folded into Guadalcanal.
-- NEVER touches data/itaukei-* or data/tongan-* files or either sister
-  sheet -- additive-only sister implementation.
-- The Master Sheet currently has ZERO scholar/publication/degree data
-  rows (headers + controlled vocabularies only). This script must run
-  correctly against that header-only state and emit valid, empty
-  snapshot files -- it is expected output, not a bug, until Ron
-  populates real records.
-
-Usage:
-    export GOOGLE_SERVICE_ACCOUNT_JSON="$(cat sa-key.json)"
-    python3 scripts/solomon_master_file_transformer.py --mode=production
-
-    # Agent-sandbox path (uses the `gws` CLI, api_credentials=["gws"]):
-    python3 scripts/solomon_master_file_transformer.py --mode=gws
-
-    # Local dev, reading from a /tmp dump instead of the live sheet:
-    python3 scripts/solomon_master_file_transformer.py --mode=local
-"""
+"""Build sanitized Solomon Islands dashboard snapshots from the Solomon Islands Master.
+Reads only the configured Solomon Islands spreadsheet and publishes Solomon-prefixed data.
+Field allowlists protect private data; encryption runs separately before publication."""
 from __future__ import annotations
 
 import argparse
@@ -514,7 +466,6 @@ def compute_aggregates(
     # text)" / "Not yet verified" (Lookups worksheet, pending community
     # consultation per SOLOMON-DASHBOARD-BUILD-NOTES.md). Aggregate KEY
     # NAMES stay generically named (scholars_woman/scholars_man) to match
-    # the controlled vocabulary; this is NOT the Tongan Fefine/Tangata
     # scheme and NOT assumed final until Ron confirms the terms.
     totals = {
         "scholars": len(scholars),
@@ -592,9 +543,9 @@ def compute_body_composition_master(
 
     Gender vocabulary is the Master Sheet's placeholder "Man"/"Woman"
     (pending community consultation -- see SOLOMON-DASHBOARD-BUILD-NOTES.md),
-    not the Tongan Fefine/Tangata scheme. Mixed-gender publications are
+
     counted in BOTH columns (non-exclusive by design), matching the
-    Tongan/iTaukei convention.
+
     """
     gender_by_sid = {
         s.get("Scholar ID"): canonical_gender(s.get("Gender"))

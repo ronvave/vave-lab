@@ -3666,7 +3666,6 @@
   // 9 provinces -- never folded into Guadalcanal. Kept under the legacy
   // name PROVINCE_TO_CONFEDERACY for structural parity with the cloned
   // dashboard code paths; the *content* is the real Solomon province/
-  // ward structure, not a Fijian confederacy or Tongan Island Division.
   const PROVINCE_TO_CONFEDERACY = {"Central": "Central", "Choiseul": "Choiseul", "Guadalcanal": "Guadalcanal", "Isabel": "Isabel", "Makira-Ulawa": "Makira-Ulawa", "Malaita": "Malaita", "Rennell-Bellona": "Rennell-Bellona", "Temotu": "Temotu", "Western": "Western"};
 
   // Alias-aware scholar-name → profile lookup. worldPoints store scholar
@@ -7635,7 +7634,6 @@
     }
     // Solomon Islands has 10 first-level reporting areas (9 provinces +
     // Honiara City), too many for fixed per-province DOM count chips like
-    // the old 5-division Tongan layout used. The province breakdown renders
     // dynamically via renderProvList() instead of fixed data-count-* nodes.
     var _provCountEl = bar.querySelector('[data-count-provinces]');
     if (_provCountEl) {

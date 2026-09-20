@@ -1,75 +1,6 @@
-/*
- * Solomon Islands Master-file -> Zotero-shape adapter
- * ==========================================
- *
- * Sister clone of js/tongan-database-adapter.js (Tongan), itself a sister
- * of js/master-file-adapter.js (iTaukei), pointed at the Solomon Islands
- * Master-file JSON snapshots (produced by scripts/solomon_master_file_transformer.py
- * against spreadsheet ID 1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY).
- * Fully separate from the iTaukei/Tongan sister systems -- never reads an
- * iTaukei- or tongan-prefixed data file.
- *
- * Produces a { snap, geo, unis, provFlat, profiles, sync, grad, insightsDoc,
- * workplaceCoordsDoc, uniCountryDoc, progressRoster } bundle in the exact shape
- * the production `js/solomon-database-master.js` expects (itself a clone of
- * `js/tongan-database-master.js` / `js/itaukei-database-master.js`), but
- * reading its ground truth from the Solomon Islands Master-file JSON
- * snapshots.
- *
- * Downstream benefit: every existing render function, panel, filter, map,
- * chord, browser, and export in the production code path continues to work
- * unchanged. The adapter is the *only* file that needs to know that data now
- * comes from a Google Sheet instead of Zotero.
- *
- * ================================================================
- * GEOGRAPHY MODEL -- THE KEY STRUCTURAL DIFFERENCE FROM TONGA/FIJI
- * ================================================================
- * Tonga/iTaukei use a flat two-level model (District -> Island
- * Division / Confederacy). Solomon Islands uses a THREE-level
- * administrative model plus two INDEPENDENT attributes:
- *
- *   Village/Community/Study Site -> Ward -> Province/City Area -> Solomon Islands
- *
- *   - Honiara City is its OWN first-level reporting area with its own 12
- *     wards -- a sibling of the 9 provinces, NOT folded into Guadalcanal.
- *     A combined national total = Honiara + the 9 provinces.
- *   - Specific Island is a SEPARATE, independent attribute from
- *     administrative geography. A ward/province can span multiple islands;
- *     a scholar's origin island may not itself be an administrative unit.
- *     It is NEVER derived from ward/province, and never overwritten by a
- *     ward/province edit.
- *   - Customary/cultural fields (Clan/Tribe/Lineage, Customary Place,
- *     Self-identified Home/Community) are separate from administrative
- *     geography and must never be inferred from it.
- *
- * Internal variable names below intentionally mirror the shape the cloned
- * dashboard JS (js/solomon-database-master.js, js/solomon-panel-overrides.js)
- * expects from the Tongan/iTaukei lineage (PROVINCE_GROUPS, PROVINCE_TO_CONFED,
- * PROVINCES, etc.) so downstream chart/filter/tooltip code runs unmodified --
- * but the *content* of every one of these constants is the real Solomon
- * Islands 9-province + Honiara-City / 182-ward structure (Province-Ward
- * Lookup worksheet in the Master Sheet, Statoids-sourced, pending
- * verification against SIG Gazette No.7 Sup.5, 23 Jan 2024). New,
- * self-documenting aliases (PROVINCE_WARDS, WARD_TO_PROVINCE, WARDS,
- * HONIARA_WARDS, ALL_REPORTING_AREAS) are exposed alongside the legacy
- * names for any Solomon-aware code that wants clearer names.
- *
- * Key semantic rules applied here (per Master-file spec, Solomon Islands):
- *   - Scholar identity -> Scholar ID (SOL-S####).
- *   - Publication identity -> Publication ID / BibTeX Key.
- *   - Solomon-Islander-associated status -> Authorship bridge link to a
- *     Scholar ID (or Researcher Authorship link to a SOL-R#### Researcher ID).
- *   - Lead author -> Author Position = 1 OR Is First Author? = Yes.
- *   - Specific Island is never derived from Ward/Province; Customary
- *     fields (Clan/Tribe/Lineage, Customary Place, Self-identified
- *     Home/Community) are never derived from administrative geography.
- *
- * The Master-file JSON files loaded here all pass through the encrypted
- * gate (js/solomon-db-gate.js). Absence of the .enc files -> the caller
- * sees a graceful "no data yet" / "awaiting verified records" state -- the
- * Master Sheet currently has ZERO scholar/publication/degree data rows
- * (headers + controlled vocabularies only), so this is the expected state
- * until Ron populates real records.
+/* Solomon Islands Master adapter. Reads only Solomon Islands snapshots.
+ * Uses canonical Master headers for scholar fields and institution IDs.
+ * Province, island and village are independent paternal/maternal fields.
  */
 
 (function () {
@@ -83,9 +14,7 @@
   // Mirrors scripts/solomon_master_file_config.py PROVINCE_WARDS.
   //
   // PROVINCE_GROUPS/PROVINCE_TO_CONFED/PROVINCES are kept as legacy alias
-  // names for structural parity with the Tongan/iTaukei adapters that the
   // cloned dashboard JS still references in some call sites; every one of
-  // them now holds real Solomon Province -> Ward content, not a Tongan
   // Island Division or Fijian confederacy.
   // -------------------------------------------------------------------
 
@@ -118,7 +47,6 @@
 
   // Human-readable aliases exposed alongside the legacy names above so any
   // Solomon-aware code (solomon-database-master.js / solomon-panel-overrides.js)
-  // can read self-documenting names instead of the Tongan/Fijian-shaped
   // originals inherited from the clone lineage.
   var ISLAND_DIVISIONS = PROVINCE_GROUPS;   // legacy alias -- actually Province -> Wards
   var DISTRICT_TO_DIVISION = PROVINCE_TO_CONFED; // legacy alias -- actually Ward -> Province
@@ -301,7 +229,6 @@
 
   // The Solomon transformer publishes the current Master-sheet headers.
   // The dashboard/admin code still contains several legacy aliases inherited
-  // from the earlier iTaukei/Tongan adapter. Add those aliases once at the
   // adapter boundary so joins and displays use the real Solomon data without
   // changing the sanitized snapshot contract.
   function normalizeMasterRows_(master) {
@@ -415,10 +342,12 @@
       fetchJson('data/solomon-scholar-enrichment.json').catch(function () { return EMPTY_ADMIN_DOC; }),
       // Admin V2 research insights (Scholar-ID keyed): keywords, summaryHtml,
       // sources. Optional.
-      fetchJson('data/solomon-scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; })
+      fetchJson('data/solomon-scholar-insights-master.json').catch(function () { return EMPTY_ADMIN_DOC; }),
+      fetchJson('data/solomon-master-institutions.json')
     ]).then(function (arr) {
       return normalizeMasterRows_({
         scholars:            arr[0],
+        institutions:        arr[14],
         publications:        arr[1],
         authorship:          arr[2],
         researcherAuthorship: arr[3],
@@ -509,7 +438,7 @@
     var disciplineCollections = [];
     var disciplineSet = new Set();
     master.scholars.forEach(function (s) {
-      var d = (s['Primary Discipline / Field'] || '').trim();
+      var d = (s['Primary Discipline'] || '').trim();
       if (d) disciplineSet.add(d);
     });
     disciplineSet.forEach(function (d) {
@@ -592,7 +521,7 @@
     // Build a Scholar ID → discipline collection key lookup for items.
     var disciplineKeyByScholarId = {};
     master.scholars.forEach(function (s) {
-      var d = (s['Primary Discipline / Field'] || '').trim();
+      var d = (s['Primary Discipline'] || '').trim();
       if (d) disciplineKeyByScholarId[s['Scholar ID']] = disciplineKeyByName[d];
     });
 
@@ -1195,7 +1124,6 @@
       var last = (parts[0] || '').trim();
       var first = (parts[1] || '').trim();
       // Solomon Islands schema is a genuine THREE-tier administrative model,
-      // unlike the flat 2-tier Tongan/iTaukei sheets this adapter was
       // cloned from: Village/Community -> Ward -> Province/City Area ->
       // Solomon Islands. "paternal"/"maternal" below hold the WARD (closest
       // to the old tikina-equivalent cell for backwards render-path
@@ -1229,9 +1157,9 @@
       // normalization): {Alive, Deceased, Unknown, ''}. Prefer the exact
       // enum match; fall back to any pre-existing sidecar admin extras
       // that already flag a death year.
-      var aliveEnum   = String(s['Alive / Deceased'] || '').trim();
-      var masterYoB   = parseYearOrNull_(s['Year of Birth']);
-      var masterYoD   = parseYearOrNull_(s['Year of Death']);
+      var aliveEnum   = String(s['Alive/Deceased'] || '').trim();
+      var masterYoB   = parseYearOrNull_(s['Birth Year']);
+      var masterYoD   = parseYearOrNull_(s['Death Year']);
       var isDeceased  = (aliveEnum === 'Deceased') ||
                         Number.isFinite(masterYoD) ||
                         Number.isFinite(adminExtras.yearOfDeath);
@@ -1244,7 +1172,6 @@
         last: last,
         // NOTE: `paternalProvince`/`maternalProvince`/`paternalDistrict`/
         // `maternalDistrict` are internal property names kept identical to
-        // the Tongan/iTaukei adapter lineage so the cloned dashboard JS's
         // render/filter logic runs unmodified. For Solomon Islands:
         // paternalProvince/maternalProvince actually hold the WARD value
         // (displayed as "Ward" in the UI); paternalDistrict/maternalDistrict
@@ -1266,7 +1193,6 @@
         maternalVillage:   maternalVillage,
         // Explicit Solomon Islands-named aliases (same values, self-documenting keys)
         // for any Solomon-aware rendering code that prefers not to read the
-        // Fiji/Tonga-shaped property names directly.
         paternalSpecificIsland: paternalIsland,
         maternalSpecificIsland: maternalIsland,
         paternalVillageTown:    paternalVillage,
@@ -1286,7 +1212,6 @@
         customaryPlace:            cleanSentinel_(s['Customary Place']),
         selfIdentifiedHomeCommunity: cleanSentinel_(s['Self-identified Home/Community']),
         // Legacy alias names kept for any cloned render path that still
-        // reads the Tongan-shaped keys; values point at the same Solomon
         // customary data (never geography-derived).
         estateAffiliationPaternal: cleanSentinel_(s['Paternal Clan/Tribe/Lineage']),
         estateAffiliationMaternal: cleanSentinel_(s['Maternal Clan/Tribe/Lineage']),
@@ -1307,9 +1232,7 @@
         // as internal property names for logic compatibility with the
         // cloned dashboard JS, but for Solomon Islands they hold the real
         // PROVINCE/CITY-AREA value (one of the 9 provinces or Honiara City),
-        // never a Fijian confederacy or Tongan Island Division name.
         // Auto-derived from Ward via the Province-Ward Lookup-equivalent
-        // table (read-only), matching the iTaukei/Tongan systems' actual
         // current (formula-derived) behavior.
         provinceGroup: (paternalDivision || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
         paternalProvinceGroup: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
@@ -1318,16 +1241,16 @@
         paternalIslandDivision: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
         maternalIslandDivision: (maternalDivision || PROVINCE_TO_CONFED[maternal] || ''),
         gender: s['Gender'] || '',
-        title: s['Current Title / Role'] || '',
-        institution: s['Current Institution'] || '',
+        title: s['Current Role'] || '',
+        institution: ((master.institutions || []).find(function(i) { return i['Institution ID'] === s['Current Institution ID']; }) || {})['Canonical Name'] || '',
         institutionCountry: s['Institution Country'] || '',
-        department: s['Current Department / Unit'] || '',
-        alive: s['Alive / Deceased'] || '',
+        department: s['Department'] || '',
+        alive: s['Alive/Deceased'] || '',
         // Title / Salutation authoritative in Master (Aug 22 approval).
         // Sidecar adminExtras.salutation is a legacy fallback for any
         // scholars whose Title was populated in the sidecar before it
         // moved into the Master schema.
-        salutation:       (s['Title / Salutation'] || adminExtras.salutation || ''),
+        salutation:       (s['Title/Salutation'] || adminExtras.salutation || ''),
         // Degrees — mastersUniversity/phdUniversity use C_Uni ONLY per rule.
         mastersUniversity: mastersRow ? mastersRow['C_Uni name'] : '',
         mastersCountry:    mastersRow ? mastersRow['Country'] : '',
@@ -1351,16 +1274,16 @@
         // fields. (2026-08-25 Panel F Paternal Geography Isolation fix.)
         village: paternalVillage,
         island:  paternalIsland,
-        subject: s['Primary Discipline / Field'] || '',
+        subject: s['Primary Discipline'] || '',
         // Canonical V2 property is `orcidUrl` (the renderer expects a URL).
         // The Master field 'ORCID / Researcher ID' may hold a bare 16-digit
         // identifier or a full URL — normalizeOrcidUrl_() collapses both to
         // 'https://orcid.org/<ID>' or '' if malformed. `orcid` is retained
         // as an alias for any legacy V2 caller that still reads it.
-        orcidUrl:         normalizeOrcidUrl_(s['ORCID / Researcher ID']),
-        orcid:            normalizeOrcidUrl_(s['ORCID / Researcher ID']),
-        googleScholarUrl: s['Google Scholar URL'] || '',
-        profileUrl:       s['Current Profile URL'] || '',
+        orcidUrl:         normalizeOrcidUrl_(s['ORCID']),
+        orcid:            normalizeOrcidUrl_(s['ORCID']),
+        googleScholarUrl: s['Google Scholar'] || '',
+        profileUrl:       s['Personal/Official Profile URL'] || '',
         // ——— Admin V2 enrichment overlay ———
         photo:            adminExtras.photo || '',
         // V2 per-scholar 'Last update' timestamp. Sourced from

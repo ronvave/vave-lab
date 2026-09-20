@@ -71,7 +71,6 @@
   // button revokes by jti, and Ron can add any jti to the revocations
   // list at any time.
   // NOTE: this key is unique to the Solomon Islands Scholar Database and differs
-  // from the iTaukei and Tongan sister systems' DEMO_SIGN_KEY_B64 -- see
   // SOLOMON-DASHBOARD-BUILD-NOTES.md.
   var DEMO_SIGN_KEY_B64 = '0CKhHj4fu0fLoh88YRMpJtwFNOFzcxX/G8B1PaRSWMg=';
 

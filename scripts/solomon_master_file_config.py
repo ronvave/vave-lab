@@ -1,40 +1,13 @@
-"""
-Central configuration for the Solomon Islands Master file -> dashboard-snapshot
-pipeline.
-
-Sister clone of scripts/tongan_master_file_config.py (Tongan) / 
-scripts/master_file_config.py (iTaukei). Points at the Solomon Islands
-Scholars Master File spreadsheet ID, never the iTaukei or Tongan sheets.
-
-This module is the single source of truth for:
-- Spreadsheet ID
-- Sheet names and header-row offsets
-- Public-field allowlists (which columns are safe to publish)
-- Publication type taxonomy
-- Province/City Area -> Ward geography (9 provinces + Honiara City, 182 wards)
-- Guide-required constants
-
-GEOGRAPHY MODEL (the key structural difference from Tonga/Fiji):
-    Village/Community/Study Site -> Ward -> Province/City Area -> Solomon Islands
-
-  - Honiara City is its OWN first-level reporting area with its own 12
-    wards -- a sibling of the 9 provinces, NOT folded into Guadalcanal.
-    A combined national total = the 9 provinces + Honiara City.
-  - Specific Island is a SEPARATE, independent attribute from administrative
-    geography (a ward/province can span multiple islands; a scholar's
-    origin island may not itself be an administrative unit). It is NEVER
-    derived from ward/province.
-  - Customary/cultural fields (Clan/Tribe/Lineage, Customary Place,
-    Self-identified Home/Community) are separate from administrative
-    geography and must never be inferred from it.
-"""
+"""Configuration for the Solomon Islands Master spreadsheet and encrypted dashboard snapshots.
+Administrative lookup data covers nine provinces and Honiara City.
+Paternal and maternal islands and villages are independently recorded."""
 from __future__ import annotations
 
 # =============================================================================
 # Source spreadsheet
 # =============================================================================
 
-SPREADSHEET_ID = "1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY"  # Solomon Islands Scholars Master File -- NEVER the iTaukei or Tongan sheets
+SPREADSHEET_ID = "1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY"
 SPREADSHEET_HUMAN_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
 )
@@ -42,7 +15,6 @@ SPREADSHEET_HUMAN_URL = (
 # =============================================================================
 # Sheet-name -> (header_row_1indexed, first_data_row_1indexed) mapping
 #
-# Unlike the Tongan/iTaukei Master Sheets (title banner row 1, description
 # row 2, group-label row 3, header row 4), the Solomon Islands Master Sheet
 # was built with the header as ROW 1 on every data worksheet (verified via
 # `gws sheets spreadsheets values get` against the live sheet, Aug 2026).
@@ -106,9 +78,7 @@ OTHER_PUBLICATION_TYPES_SEEN = [
 # verification against SIG Gazette No.7 Sup.5, 23 Jan 2024's figure of 172
 # wards -- see SOLOMON-DASHBOARD-BUILD-NOTES.md.)
 #
-# "PROVINCE_GROUPS" name kept for structural parity with the Tongan/iTaukei
 # config modules; values are the real Solomon province -> ward structure,
-# never a Fijian confederacy or Tongan Island Division.
 # =============================================================================
 
 PROVINCE_GROUPS = {
@@ -243,7 +213,6 @@ PUBLICATION_PUBLIC_FIELDS = [
     "Language",
     "Verification Status",
     # 9 provinces + Honiara City + unspecified/unsure -- one-hot columns
-    # (mirrors the Tongan/iTaukei sheets' wide-format geography columns, if
     # the Solomon Publications sheet is later extended with them; currently
     # per-publication geography lives in the separate Research Geography
     # sheet and is joined in by Publication ID instead).
