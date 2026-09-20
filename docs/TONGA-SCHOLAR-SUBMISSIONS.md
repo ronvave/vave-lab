@@ -93,3 +93,24 @@ other Pacific/world countries, semicolon entry, multiple sites, and the value
 of geography for local decision making. Keep original Master publication IDs
 and the working authenticated review backend. This presentation repair does
 not change submission approval, public activation or B3.
+
+## Inline publication geography contract
+
+The shared profile uses Fiji-style per-publication controls: Tonga checkbox
+menu (national study, the five island divisions, and specific islands drawn
+from Tonga Research Geography), Pacific Island country checkbox menu, and
+Other countries semicolon input. Specific islands remain separate from
+island divisions in the submitted payload; Ongo Niua maps to backend Niuas.
+Only Tonga records with an established division supply island options; do
+not infer localities from scholar ancestry. The menu is not an exhaustive
+island gazetteer. Existing approved locations stay visible and matching
+checkboxes are checked and locked because this backend adds locations.
+
+One identity form below the list submits all changed publications for review,
+using canonical Master publication IDs. Batches respect the 100-publication
+server limit; failed/unsent entries remain editable, and confirmed entries
+are cleared from the pending selection map to prevent accidental resubmission.
+Unchecking an unsent choice removes it. Outside click and Escape close menus.
+Menus expand within each card; mobile controls stack below the citation.
+Original DOI/source links, publication colors, profile enrichment, summaries,
+and B3 must be preserved. No Apps Script replacement is required.
