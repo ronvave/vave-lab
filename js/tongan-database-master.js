@@ -9407,6 +9407,8 @@
     }
     if (window.__tongaSharedScholar) {
       try {
+        renderStats();
+        renderWorldPanel();
         await window.TongaScholarPortal.renderShared(state, renderScholarCard, renderItemCard);
       } catch (error) {
         document.body.replaceChildren(); const message=document.createElement('p');

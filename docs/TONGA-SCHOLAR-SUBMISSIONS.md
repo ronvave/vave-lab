@@ -79,3 +79,17 @@ Do not replace it or ask the owner to paste it into chat.
 
 A successful public capabilities GET does not prove authenticated approvals,
 Drive authorization, or a complete submission-to-dashboard round trip.
+
+## Shared page presentation contract
+
+The country shared page must include the full initiative and curator/collaborator
+context, purpose of the review link, highlighted Update info instructions, CV
+privacy, optional private maternal information, and review-before-publication
+policy. Preserve the institutional banner. Render live A1/A2 totals and B2
+graduate summary using the same dashboard rendering functions, before the
+scholar card. Never hard-code Fiji counts, dates or administrative units.
+Publication guidance must explain national and local Tonga study locations,
+other Pacific/world countries, semicolon entry, multiple sites, and the value
+of geography for local decision making. Keep original Master publication IDs
+and the working authenticated review backend. This presentation repair does
+not change submission approval, public activation or B3.
