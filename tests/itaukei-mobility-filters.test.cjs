@@ -19,3 +19,25 @@ assert.equal(base.flows.length,4,'source unchanged');
 base.unis.X={country:'Germany',region:'Europe'};base.uni_list.push({uni:'X',n:5});base.flows.push({scholar_id:'5',source:'X',target:'A'});
 state.regions=new Set(['Europe']);state.countries=new Set(['Germany']);ids('either',['5']);
 console.log('PASS: degree matching, country unions, region scope, full endpoints, empty states, stable IDs, new records.');
+
+// Exercise the actual iframe click handler with a dropdown open and closed.
+const dashboard=fs.readFileSync('itaukei-research-database-master.html','utf8');
+const clickBody=dashboard.match(/doc\.addEventListener\('click', function\(ev\)\{([\s\S]*?)\n          \}\);/)[1];
+let expanded=true,toggles=0;
+const menu={open:true};
+const clickContext=vm.createContext({
+ wrap:{id:'db-embed-b3-chord',classList:{contains:()=>expanded}},
+ doc:{querySelectorAll:()=>menu.open?[menu]:[]},
+ toggleFullscreen:(_wrap,on)=>{expanded=on;toggles++;}
+});
+vm.runInContext('var handler=function(ev){'+clickBody+'};',clickContext);
+const outside={target:{closest:()=>null}};
+clickContext.handler(outside);
+assert.equal(menu.open,false,'outside click closes the menu');
+assert.equal(expanded,true,'outside click keeps fullscreen open');
+clickContext.handler(outside);
+assert.equal(toggles,0,'ordinary chart clicks do not exit fullscreen');
+expanded=false;
+clickContext.handler(outside);
+assert.equal(expanded,true,'chart click still enters fullscreen');
+console.log('PASS: dropdown dismissal preserves fullscreen; chart click enters but does not exit.');

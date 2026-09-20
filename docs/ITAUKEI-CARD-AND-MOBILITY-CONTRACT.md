@@ -91,3 +91,12 @@ other-country behavior, and profile routing are unchanged.
 Run node tests/itaukei-mobility-filters.test.cjs in addition to the existing
 card/mobility regression test. Live visual validation is recorded separately
 in the Master Build and Change-Control Record.
+
+## B3 filtered fullscreen layout and dropdown dismissal — 2026-09-20
+
+Compact (54 or fewer universities) layouts must use three columns in BOTH
+normal and fullscreen mode: equal side columns and a centered 54% chart
+column. Fullscreen's five-column default must not override that compact rule.
+Outside clicks close open filter menus without collapsing fullscreen or
+changing selections. Once expanded, ordinary chart clicks keep B3 expanded;
+the Close full screen button and Escape remain explicit exit controls.
