@@ -463,7 +463,8 @@
   // -------------------------------------------------------------------
   // Public entry point: load the full bundle.
   // -------------------------------------------------------------------
-  function load() {
+  function load(options) {
+    var masterOnly = !!(options && options.masterOnly);
     var EMPTY_ADMIN_DOC = { version: 1, scholars: {} };
 
     return Promise.all([
@@ -479,11 +480,11 @@
       fetchJsonOr('data/samoa-master-aggregates.json', null),
       fetchJsonOr('data/samoa-master-part-indigenous.json', []),
       fetchJsonOr('data/samoa-body-composition-master.json', null),
-      fetchJsonOr('data/samoa-auto-resolved.json', {}),
-      fetchJsonOr('data/samoa-scholar-insights.json', EMPTY_ADMIN_DOC),
-      fetchJsonOr('data/samoa-workplace-coords.json', {}),
-      fetchJsonOr('data/samoa-uni-country-overrides.json', {}),
-      fetchJsonOr('data/samoa-world-universities.json', []),
+      (masterOnly ? Promise.resolve({}) : fetchJsonOr('data/samoa-auto-resolved.json', {})),
+      (masterOnly ? Promise.resolve(EMPTY_ADMIN_DOC) : fetchJsonOr('data/samoa-scholar-insights.json', EMPTY_ADMIN_DOC)),
+      (masterOnly ? Promise.resolve({}) : fetchJsonOr('data/samoa-workplace-coords.json', {})),
+      (masterOnly ? Promise.resolve({}) : fetchJsonOr('data/samoa-uni-country-overrides.json', {})),
+      (masterOnly ? Promise.resolve([]) : fetchJsonOr('data/samoa-world-universities.json', [])),
       fetchJsonOr('data/samoa-districts.geojson', { type: 'FeatureCollection', features: [] }),
       fetchJsonOr('data/samoa-last-master-sync.json', null)
     ]).then(function (arr) {
