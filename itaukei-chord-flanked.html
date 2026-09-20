@@ -132,11 +132,15 @@
     .mobility-summary { display:none; }
     body.is-itaukei .mobility-summary { display:block; text-align:center; font-size:13.5px; line-height:1.4; margin:8px 12px 12px; color:#132c39; }
     body.is-itaukei.is-embed-fullscreen #wrap { width:100%; min-width:1100px; max-width:none; padding:0 12px; box-sizing:border-box; }
-    body.is-itaukei.is-embed-fullscreen .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); min-height:calc(100vh - 110px); align-items:center; }
+    body.is-itaukei.is-embed-fullscreen .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); min-height:0; align-items:center; }
     body.is-itaukei.is-embed-fullscreen .legend-flank__col { font-size:clamp(11.5px,0.8vw,16px); gap:clamp(5px,0.65vh,9px); }
     body.is-itaukei.is-embed-fullscreen .legend-flank__badge { width:1.5em; height:1.5em; font-size:0.95em; }
     body.is-itaukei.is-embed-fullscreen #chart { max-height:calc(100vh - 125px); }
-    body.is-itaukei.is-embed-fullscreen .mobility-summary { padding:0 170px; }
+    /* Keep both captions adjacent to the figure, not pinned to viewport edges. */
+    body.is-itaukei.is-embed-fullscreen #wrap { min-height:100vh; display:flex; flex-direction:column; justify-content:center; padding-top:50px; padding-bottom:18px; }
+    body.is-itaukei.is-embed-fullscreen .mobility-summary { padding:0 30px; margin:0 12px 14px; font-size:clamp(18px,1vw,22px); line-height:1.35; }
+    body.is-itaukei.is-embedded.is-embed-fullscreen .chord-subtitle { font-size:clamp(18px,1vw,22px) !important; line-height:1.35 !important; margin:14px 24px 0 !important; }
+    body.is-itaukei.is-embed-fullscreen .legend-flank { flex:none; }
 
     .legend-flank__outer { display:none; }
     body.is-itaukei .legend-flank__col { align-self:start; }
