@@ -85,3 +85,9 @@ Every target in `scripts/tongan_encrypt_data.py`'s `TARGETS` list now has a real
 ---
 
 **Encryption passcode reference (for your records — never commit this value in plaintext anywhere else):** `Ongoongo9!`
+
+
+
+## Tonga Panel B3 replication
+
+Adapted the approved iTaukei B3 baseline d48c5ccf9a111ca2cb1250880d9e4fd5d83c4ba6 with a Tonga-only gated loader, canonical paired model, maintained filters, dynamic captions, compact/expanded layout and dropdown dismissal. Canonical Scholar ID is retained by scheduled exports; successful Tonga refreshes now trigger Pages deployment. See docs/TONGAN-B3-MOBILITY-CONTRACT.md for population rules, nine verified institution corrections, unresolved pathways, tests, and scoped rollback. Other panels and Admin content are preserved.

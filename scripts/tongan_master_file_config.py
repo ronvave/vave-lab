@@ -288,6 +288,7 @@ GRAD_DEGREE_PRIVATE_FIELDS = [
 # M>PhD mobility: coords/university fields — these are already aggregated
 # for the chord/sankey and are safe to publish. Info links + Notes are private.
 MOBILITY_PUBLIC_FIELDS = [
+    "Scholar ID",  # canonical ID; legacy scholar_id is never padded or inferred
     "scholar_id",
     "New?",
     "m_uni",
@@ -357,3 +358,4 @@ OUTPUT_FILES = {
     "snapshot": "data/tongan-master-snapshot.json",  # compat wrapper
     "last_sync": "data/tongan-last-master-sync.json",
 }
+

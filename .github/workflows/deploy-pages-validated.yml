@@ -12,6 +12,7 @@ on:
     workflows:
       - Refresh iTaukei Master File snapshot
       - Refresh Solomon Islands Master File snapshot
+      - Refresh Tongan Master File snapshot
     types: [completed]
     branches: [main]
 
@@ -48,6 +49,9 @@ jobs:
       - name: Check iTaukei Admin card data and mobility joins
         run: node tests/itaukei-card-mobility.test.cjs
 
+      - name: Check Tongan Admin card data and mobility joins
+        run: node tests/tongan-card-mobility.test.cjs
+
   deploy:
     environment:
       name: github-pages
@@ -71,3 +75,4 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
+
