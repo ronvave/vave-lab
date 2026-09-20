@@ -124,11 +124,20 @@
        Keep readable text on smaller screens using the existing scroll canvas. */
     body.is-itaukei #wrap { width:100%; min-width:1100px; max-width:1480px; }
     body.is-itaukei .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); column-gap:12px; align-items:start; }
-    body.is-itaukei .legend-flank__title { grid-column:1 / 6; }
+    body.is-itaukei .legend-flank__title { display:none; }
     body.is-itaukei .legend-flank__chart { grid-column:3; grid-row:2; align-self:center; }
     body.is-itaukei #chart { width:100%; height:auto; }
     body.is-itaukei.is-embedded #wrap { max-width:1480px; }
-    body.is-itaukei.is-embedded .chord-subtitle { font-size:clamp(18px,1.8vw,27px) !important; }
+    body.is-itaukei .chord-subtitle { font-size:13.5px !important; line-height:1.35 !important; margin:8px 0 !important; }
+    .mobility-summary { display:none; }
+    body.is-itaukei .mobility-summary { display:block; text-align:center; font-size:13.5px; line-height:1.4; margin:8px 12px 12px; color:#132c39; }
+    body.is-itaukei.is-embed-fullscreen #wrap { width:100%; min-width:1100px; max-width:none; padding:0 12px; box-sizing:border-box; }
+    body.is-itaukei.is-embed-fullscreen .legend-flank { grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(360px,38%) minmax(0,1fr) minmax(0,1fr); min-height:calc(100vh - 110px); align-items:center; }
+    body.is-itaukei.is-embed-fullscreen .legend-flank__col { font-size:clamp(11.5px,0.8vw,16px); gap:clamp(5px,0.65vh,9px); }
+    body.is-itaukei.is-embed-fullscreen .legend-flank__badge { width:1.5em; height:1.5em; font-size:0.95em; }
+    body.is-itaukei.is-embed-fullscreen #chart { max-height:calc(100vh - 125px); }
+    body.is-itaukei.is-embed-fullscreen .mobility-summary { padding:0 115px; }
+
     .legend-flank__outer { display:none; }
     body.is-itaukei .legend-flank__col { align-self:start; }
     body.is-itaukei .legend-flank__col--left { grid-column:2; grid-row:2; align-items:flex-end; text-align:right; }
@@ -410,6 +419,7 @@
     <div class="chord-canvas reveal">
       <div id="wrap">
         <div class="chord-title">iTaukei Scholar Mobility: Master&rsquo;s &rarr; PhD Institutions</div>
+        <div class="mobility-summary" id="mobility-summary" aria-live="polite"></div>
         <div class="chord-subtitle">Ribbons = scholars&rsquo; Master&rsquo;s&rarr;PhD moves &nbsp;&middot;&nbsp; Inner ring = university &nbsp;&middot;&nbsp; Middle ring = country<br>Outer ring = region</div>
 
         <!-- B3A flanked layout: chord in the centre column, university key
@@ -603,13 +613,13 @@ function buildModel(rows, unsdMap){
   // rows: [{m_uni,m_country,p_uni,p_country,scholar}]  (region derived from UNSD)
   const regionOf = c => {
     const key = COUNTRY_ALIAS[c] || c;
-    return unsdMap[key] || "Other";
+    return key === "Taiwan" ? "Asia" : unsdMap[key] || "Other";
   };
   const flows=[], unis={};
   rows.forEach(r=>{
     const mu=shorten(r.m_uni), pu=shorten(r.p_uni);
     if(!mu||!pu) return;
-    flows.push({source:mu,target:pu,scholar:r.scholar||"",
+    flows.push({source:mu,target:pu,scholar_id:r.scholar_id||"",scholar:r.scholar||"",
       m_year:r.m_year||"", p_year:r.p_year||"", m_title:r.m_title||"", p_title:r.p_title||"",
       m_full:(r.m_uni||"").trim(), p_full:(r.p_uni||"").trim()});
     unis[mu]={country:(r.m_country||"").trim(),region:regionOf((r.m_country||"").trim()),full:(r.m_uni||"").trim()};
@@ -663,10 +673,21 @@ function tipForPair(srcFull, tgtFull, flows){
 
 /* ---- 4. DRAW --------------------------------------------------------------- */
 function draw(data){
+  if (document.body.classList.contains('is-itaukei')) {
+    const count = new Set(data.flows.map(f => f.scholar_id || f.scholar)).size;
+    const countries = new Set(data.uni_list.map(u => COUNTRY_ALIAS[u.country] || u.country).filter(Boolean)).size;
+    const regions = new Set(data.uni_list.map(u => u.region).filter(r => r && r !== 'Other')).size;
+    document.getElementById('mobility-summary').textContent =
+      `This chart shows where ${count} iTaukei scholars undertook their Master’s and PhD studies, across ${data.uni_list.length} universities in ${countries} countries and ${regions} regions. PhD study includes completed and ongoing degrees.`;
+    const explanation = document.querySelector('.chord-subtitle');
+    explanation.textContent = 'Ribbons = Master’s → PhD pathways · Inner ring = university · Middle ring = country · Outer ring = region.' +
+      (data.excludedPathways ? ` ${data.excludedPathways} further pathways await verified institution details and are not plotted.` : '');
+    document.getElementById('legend-flank').after(explanation);
+  }
   d3.select("#chart").selectAll("*").remove();
   d3.select("#legend").selectAll("*").remove();
   document.getElementById("cap").textContent =
-    data.flows.length + " " + (data.cohortLabel || "iTaukei") + " scholars with completed Master’s and PhD degrees. Source: the country’s Scholars Master File." + (data.pairingNote || "");
+    data.flows.length + " " + (data.cohortLabel || "iTaukei") + " scholars with recorded Master’s and PhD study pathways. Source: the country’s Scholars Master File." + (data.pairingNote || "");
   if (!data.flows.length) {
     d3.select("#chart").append("text").attr("x",580).attr("y",330).attr("text-anchor","middle").attr("font-size",16).text("No complete Master’s–PhD pathways are currently recorded.");
     return;
@@ -815,7 +836,7 @@ function renderFlankedLegend(nodes, data){
     const label = document.createElement("span");
     label.className = "legend-flank__label";
     const full = (data.unis[nd.name] && data.unis[nd.name].full) ? data.unis[nd.name].full : nd.name;
-    const name = full.length > 32 ? nd.name : full;
+    const name = document.body.classList.contains('is-itaukei') ? full : (full.length > 32 ? nd.name : full);
     const iso  = iso3Of(nd.country);
     label.textContent = (iso ? iso + ": " : "") + name;
     row.appendChild(badge);
@@ -931,7 +952,7 @@ let currentUnsd = Object.assign({}, EMBEDDED_UNSD);
 // ISO-alpha3 reference in effect; same lifecycle as currentUnsd.
 let currentIso3 = Object.assign({}, EMBEDDED_ISO3);
 // country -> ISO-alpha3 via the same alias map used for regions (USA, UK spellings).
-function iso3Of(c){ const key=COUNTRY_ALIAS[c]||c; return currentIso3[key] || ""; }
+function iso3Of(c){ const key=COUNTRY_ALIAS[c]||c; return key === "Taiwan" ? "TWN" : currentIso3[key] || ""; }
 
 function setMsg(text, kind){
   msgEl.textContent = text || "";
@@ -1085,6 +1106,7 @@ async function init(){
       if(!person) return null;
       const m=degreeById.get(r["Master's Degree ID"])||{}, p=degreeById.get(r['PhD Degree ID'])||{};
       return {
+        scholar_id:sid,
         scholar:person['Scholar Name']||person['Display Name']||person.name||r.scholar||sid,
         m_uni:r.m_uni||m['Institution Name (Current)']||m['C_Uni name']||'',
         p_uni:r.p_uni||p['Institution Name (Current)']||p['C_Uni name']||'',
@@ -1096,7 +1118,11 @@ async function init(){
         p_country:r.p_country||r['PhD Country']||p.Country||''
       };
     }).filter(r=>r && r.m_uni && r.p_uni);
-    const model=buildModel(rows,currentUnsd);
+    // An unresolved institution is a source-data gap, never a university node.
+    const knownInstitution = value => Boolean(String(value || '').trim()) && !/^(not found|unknown|unresolved|n\/a|unsure)$/i.test(String(value).trim());
+    const chartRows = cohort === 'itaukei' ? rows.filter(r => knownInstitution(r.m_uni) && knownInstitution(r.p_uni) && r.m_country && r.p_country) : rows;
+    const model=buildModel(chartRows,currentUnsd);
+    model.excludedPathways = rows.length - chartRows.length;
     model.cohortLabel = labels[cohort];
     model.pairingNote = cohort === 'solomon' ? ' One pathway per scholar, using the earliest recorded completed Master’s and PhD. Scholars need both degrees and recorded institutions/countries.' : '';
     draw(model);

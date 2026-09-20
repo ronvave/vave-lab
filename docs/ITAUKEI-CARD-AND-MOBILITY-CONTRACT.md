@@ -50,3 +50,23 @@ claiming a visually verified deployment. Keep cache hashes current. Update the
 Master Build and Change-Control Record with deployment and validation evidence,
 including any limitations. Revert only the scoped code changes when necessary;
 do not overwrite newer source data or Admin content.
+
+## B3 university and layout correction — 2026-09-20
+
+Correct institutions in the Master worksheet before refreshing the encrypted
+mobility snapshot. Subjects, qualifications, thesis titles and "not found" are
+not universities. Preserve unresolved records in the source; omit incomplete
+institution pathways from the plotted university population and disclose their
+number. Never guess an awarding institution from employment or a PhD location.
+Use full canonical university names and canonical Scholar IDs. The corrected
+snapshot has 153 source pathways, of which 151 have known institutions; 78
+universities remain after canonical-name merging. Koliyavu and Savou-Wara still
+need a verified Master's institution. These counts are observations, not UI constants.
+
+The top sentence derives distinct scholars, universities, countries and regions
+from the plotted model. It explicitly includes ongoing PhD study. Taiwan maps
+to Asia for geographic grouping. The small ribbons/rings explanation belongs
+below the chart, and the University key heading is hidden for iTaukei only.
+Expanded mode uses the viewport width instead of the former 1480px maximum;
+keep the four flanking columns in outer-third, inner-first, inner-second,
+outer-fourth order. Preserve other country dashboards and Admin enrichment.

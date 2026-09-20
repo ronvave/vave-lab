@@ -61,11 +61,29 @@ async function fetchJson(url) {
   });
   window.parent = {dbGate:{fetchJson, isUnlocked:()=>true}};
   await vm.runInContext(init+';init()',context);
-  const expected = bundle.master.mobility.filter(r => r.m_uni && r.p_uni);
+  const expected = bundle.master.mobility.filter(r => r.m_uni && r.p_uni && r.m_country && r.p_country && !/^(not found|unknown|unresolved|n\/a|unsure)$/i.test(r.m_uni.trim()) && !/^(not found|unknown|unresolved|n\/a|unsure)$/i.test(r.p_uni.trim()));
   assert.equal(drawn?.flows.length, expected.length, 'B3 silently dropped mobility rows');
   assert(expected.length > 2);
+  assert.equal(drawn.excludedPathways, bundle.master.mobility.filter(r=>r.m_uni && r.p_uni).length - expected.length);
+  for (const row of drawn.flows) {
+    assert(!/^(Nursing|MA Education;|Agriculture \/ Horticulture|Contemporary migration)/i.test(row.m_uni));
+    assert(!/^(Nursing|MA Education;|Agriculture \/ Horticulture|Contemporary migration)/i.test(row.p_uni));
+  }
+  assert.equal(drawn.flows.find(r=>r.scholar_id==='ITK-S0081').m_uni, 'Lancaster University');
+  assert.equal(drawn.flows.find(r=>r.scholar_id==='ITK-S0057').p_uni, 'University of New South Wales');
   const people = new Map(bundle.master.scholars.map(s=>[s['Scholar ID'],s]));
   expected.forEach((r,i)=>assert.equal(drawn.flows[i].scholar,people.get(r['Scholar ID'])['Scholar Name']));
+  // Exercise the production model: institution aliases must merge, and Taiwan
+  // must contribute to Asia rather than an unclassified extra region.
+  const modelContext = vm.createContext({rows:drawn.flows});
+  const constants = chord.slice(chord.indexOf('const SHORT ='), chord.indexOf('/* ---- 2. EMBEDDED FALLBACK'));
+  const modelSource = chord.slice(chord.indexOf('function buildModel('), chord.indexOf('/* ---- 3b. TOOLTIP'));
+  const actual = vm.runInContext(constants + modelSource + ';buildModel(rows,EMBEDDED_UNSD)',modelContext);
+  assert.equal(actual.uni_list.length, drawn.uni_list.length);
+  assert(actual.uni_list.every(u=>u.region !== 'Other'), 'Unclassified university geography');
+  assert.equal(actual.uni_list.filter(u=>u.full==='University of New South Wales').length,1);
+  assert(actual.uni_list.filter(u=>u.country==='Taiwan').every(u=>u.region==='Asia'));
+  console.log('Model totals:',new Set(actual.flows.map(f=>f.scholar_id)).size,'scholars,',actual.uni_list.length,'universities,',new Set(actual.uni_list.map(u=>u.country)).size,'countries,',new Set(actual.uni_list.map(u=>u.region)).size,'regions.');
   assert(source('scripts/master_file_config.py').split('MOBILITY_PUBLIC_FIELDS = [')[1].split(']')[0].includes('"Scholar ID"'), 'Next sync would strip the canonical ID');
   // Preserve the no-dashboard-flash guard on shared links.
   const share = source('s.html');
