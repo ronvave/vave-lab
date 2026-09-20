@@ -128,7 +128,7 @@
     body.is-itaukei .legend-flank__chart { grid-column:3; grid-row:2; align-self:center; }
     body.is-itaukei #chart { width:100%; height:auto; }
     body.is-itaukei.is-embedded #wrap { max-width:1480px; }
-    body.is-itaukei .chord-subtitle { font-size:13.5px !important; line-height:1.35 !important; margin:8px 0 !important; }
+    body.is-itaukei .chord-subtitle, body.is-itaukei.is-embedded .chord-subtitle { font-size:13.5px !important; line-height:1.35 !important; margin:8px 0 !important; }
     .mobility-summary { display:none; }
     body.is-itaukei .mobility-summary { display:block; text-align:center; font-size:13.5px; line-height:1.4; margin:8px 12px 12px; color:#132c39; }
     body.is-itaukei.is-embed-fullscreen #wrap { width:100%; min-width:1100px; max-width:none; padding:0 12px; box-sizing:border-box; }
@@ -849,10 +849,11 @@ function renderFlankedLegend(nodes, data){
     const outerRight = document.getElementById('legend-flank-outer-right');
     outerLeft.innerHTML = '';
     outerRight.innerHTML = '';
-    // 27 entries per set today; grow evenly beyond 108 without losing labels.
+    // Keep the first two sets beside the wheel, then balance the overflow
+    // across both outer flanks so source cleanup cannot leave an empty side.
     const perColumn = Math.max(27, Math.ceil(rows.length / 4));
-    const columns = [leftEl, rightEl, outerLeft, outerRight];
-    rows.forEach((row, i) => columns[Math.floor(i / perColumn)].appendChild(row));
+    const outerSplit = 2 * perColumn + Math.ceil(Math.max(0, rows.length - 2 * perColumn) / 2);
+    rows.forEach((row, i) => (i < perColumn ? leftEl : i < 2 * perColumn ? rightEl : i < outerSplit ? outerLeft : outerRight).appendChild(row));
     return;
   }
 
