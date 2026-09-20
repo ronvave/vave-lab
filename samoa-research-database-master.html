@@ -4137,19 +4137,18 @@
 
       <!-- Compact live-status pill row -->
       <div class="db-status-row" data-db-status>
-        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Automatic check against the live Zotero library">
+        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Data from the Samoa Master file">
           <span class="db-pill__dot db-sync-badge__dot"></span>
           <span data-db-sync-text>Loading…</span>
         </span>
-        <span class="db-pill"><b>Live:</b>&nbsp;<span data-db-live-total>—</span>&nbsp;items</span>
-        <span class="db-pill"><b>Snapshot:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;items indexed</span>
+        <span class="db-pill"><b>Master file:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;publications indexed</span>
         <span class="db-pill"><span data-db-samoan-count>—</span>&nbsp;works with Samoan authors</span>
         <span class="db-pill db-pill--muted" data-db-updated-pill>Updated —</span>
         <span class="db-sync-note" data-db-sync-note></span>
       </div>
 
       <div class="db-fallback-banner" data-db-fallback>
-        <strong>Live Zotero check unavailable.</strong> Showing the most recent local snapshot &mdash; map, charts, and search remain fully functional. <a href="https://www.zotero.org/groups/5983386/samoan_scholarly_research/library" target="_blank" rel="noopener">Open the live Zotero library</a> for the latest additions.
+        <strong>Master-file data could not be loaded.</strong> The dashboard cannot display its figures until this country’s Master-file data is available. Please reload the page.
       </div>
 
       <!-- Database overview: statistics describing the entire indexed database -->
@@ -4263,7 +4262,7 @@
           </div>
           <div>
             <h4>Update cadence</h4>
-            <p>The underlying Zotero group library is the source of truth and is updated continuously. This page loads a cached snapshot for fast rendering and checks the live library each visit to flag additions. The snapshot itself is regenerated on a monthly cadence, or sooner when a substantial batch is added.</p>
+            <p>The Samoa Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
 
             <h4>Known gaps &amp; caveats</h4>
             <ul>
@@ -4362,7 +4361,7 @@
               <span class="db-nonfiji__sub">Research by Samoan authors concerning other places, global topics, laboratory work, and research not limited to Samoa.</span>
             </div>
             <div class="db-sync-inline">
-              <b>Sync:</b> <span data-db-sync-inline>loading…</span>
+              <b>Master-file update:</b> <span data-db-sync-inline>loading…</span>
             </div>
           </aside>
         </div>
@@ -4568,7 +4567,7 @@
             </svg>
           </button>
           <iframe
-            src="samoan-chord-flanked.html?embedded=1&v=c0d80cd8"
+            src="samoan-chord-flanked.html?embedded=1&v=a999232a"
             title="Samoan scholarly mobility (chord chart)"
             loading="lazy"
             style="width:100%;height:680px;border:0;display:block;"
@@ -4593,7 +4592,7 @@
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF SAMOAN RESEARCH</h2>
         <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Samoan as first author; gold = others as first author (an Samoan author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
         <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
-          <strong>Note:</strong> Only items catalogued in a country sub-collection of the Zotero &ldquo;Where study was done&rdquo; collection are counted. Use the dropdowns in the full-screen view to filter by region, country, or authorship.
+          <strong>Note:</strong> Only publications with a research location recorded in this country’s Master file are counted. Use the dropdowns in the full-screen view to filter by region, country, or authorship.
         </p>
         <div class="db-world-wide">
           <div class="db-map-world-wrap" data-db-b3-map-wrap>
@@ -5149,7 +5148,7 @@
           </select>
           <button type="button" class="db-clear-btn is-hidden" data-db-clear>Clear all</button>
           <button type="button" class="db-filter" data-db-export="bib" title="Export the currently filtered items as BibTeX">Export .bib</button>
-          <button type="button" class="db-filter" data-db-export="ris" title="Export the currently filtered items as RIS (EndNote/Zotero/Mendeley)">Export .ris</button>
+          <button type="button" class="db-filter" data-db-export="ris" title="Export the currently filtered items as RIS (reference managers)">Export .ris</button>
           <button type="button" class="db-filter" data-db-export="csv" title="Export the currently filtered items as CSV">Export .csv</button>
         </div>
       </div>
@@ -5163,13 +5162,12 @@
       <div class="db-cite reveal">
         <h3>Cite this database</h3>
         <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). Samoan Scholarly Research: A curated database of scholarly publications on Samoa and Samoans. Zotero Group Library. Retrieved from https://www.zotero.org/groups/5983386/samoan_scholarly_research</code>
+        <code>Vave, R. (2026). Samoan Scholarly Research: A curated database of scholarly publications on Samoa and Samoans. Master-file database. Retrieved from https://ronvave.github.io/vave-lab/samoa-research-database-master.html</code>
       </div>
       <div class="db-contribute reveal">
         <h3>Contribute · Suggest an item</h3>
         <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by an Samoan scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
         <a href="mailto:ronvave@hawaii.edu?subject=Samoan%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20district%20of%201st%20author%20(if%20Samoan)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
-        <a href="https://www.zotero.org/groups/5983386/samoan_scholarly_research/library" target="_blank" rel="noopener" class="btn btn--ghost" style="display:inline-block;margin-left:var(--space-2);">Open Zotero library</a>
       </div>
     </div>
 
@@ -5458,9 +5456,9 @@
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
 <script src="js/samoa-demo-gate.js?v=e59d6c90" defer></script>
-<script src="js/samoa-database-adapter.js?v=70e210f9" defer></script>
-<script src="js/samoa-database-master.js?v=a4fb07e9" defer></script>
-<script src="js/samoa-panel-overrides.js?v=2ff4a9c2" defer></script>
+<script src="js/samoa-database-adapter.js?v=8471fc2d" defer></script>
+<script src="js/samoa-database-master.js?v=916d0323" defer></script>
+<script src="js/samoa-panel-overrides.js?v=37aa0cfc" defer></script>
 
 <script>
   /* -------- samoaDemoGate → dbGate bridge ---------------------------------
