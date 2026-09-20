@@ -6405,9 +6405,9 @@
   // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
-  function layoutMilestoneLabels(milestones, yearMin, yearMax, left, width) {
+  function layoutMilestoneLabels(milestones, yearMin, yearMax, left, width, top, height, bars) {
     const ctx = document.createElement('canvas').getContext('2d');
-    const boxes = [], gap = 14, maxWidth = Math.min(300, width);
+    const boxes = [], gap = 8, maxWidth = Math.min(250, width-16);
     const measure = (text,size,bold) => { ctx.font = `${bold ? '700' : '400'} ${size}px Arial`; return ctx.measureText(text).width; };
     milestones.slice().sort((a,b)=>a.year-b.year || a.key.localeCompare(b.key)).forEach(m => {
       const lines=[];
@@ -6427,16 +6427,23 @@
       const w=Math.min(width,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+2);
       const h=lines.length*14+6;
       const center=left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width;
-      const x=Math.max(left,Math.min(left+width-w,center-w/2));
-      let y=0;
-      while(true) {
-        const hits=boxes.filter(b=>x<b.x+b.width+gap && x+w+gap>b.x && y<b.y+b.height+gap && y+h+gap>b.y);
-        if(!hits.length) break;
-        y=Math.max(...hits.map(b=>b.y+b.height+gap));
+      const candidates=[];
+      const xs=[center+8,center-w-8];
+      for(let xx=left+6;xx+w<=left+width-6;xx+=12) xs.push(xx);
+      const overlaps=(a,b)=>a.x<b.x+b.width+gap && a.x+a.width+gap>b.x && a.y<b.y+b.height+gap && a.y+a.height+gap>b.y;
+      for(const x of xs) {
+        if(x<left+6 || x+w>left+width-6) continue;
+        for(let y=top+8;y+h<=top+height-8;y+=10) {
+          const box={x,y,width:w,height:h};
+          if(boxes.some(b=>overlaps(box,b)) || bars.some(b=>overlaps(box,b))) continue;
+          const edge = x+w/2<center ? x+w : x;
+          candidates.push({...box,score:Math.abs(edge-center)+(y-top)*0.35,anchor:x+w/2<center?'end':'start'});
+        }
       }
-      boxes.push({milestone:m,x,y,width:w,height:h,lines});
+      candidates.sort((a,b)=>a.score-b.score);
+      if(candidates.length) boxes.push({...candidates[0],milestone:m,lines});
     });
-    return {boxes,height:boxes.length ? Math.max(...boxes.map(b=>b.y+b.height))+18 : 0};
+    return {boxes,complete:boxes.length===milestones.length};
   }
 
   function renderHistogram() {
@@ -6536,10 +6543,6 @@
     if (startEl) { startEl.min = dataMin; startEl.max = dataMax; if (document.activeElement !== startEl) startEl.value = yMin; }
     if (endEl) { endEl.min = dataMin; endEl.max = dataMax; if (document.activeElement !== endEl) endEl.value = yMax; }
 
-    const milestoneLayout = layoutMilestoneLabels(panelDData.milestones.filter(m => m.year >= yMin && m.year <= yMax), yMin, yMax, PAD_LEFT, plotW);
-    PAD_TOP += milestoneLayout.height;
-    H += milestoneLayout.height;
-    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
     const yearCount = yMax - yMin + 1;
     const bandW = plotW / yearCount;
     const barW = Math.max(1.5, Math.min(40, bandW * 0.78));
@@ -6552,10 +6555,24 @@
     // Y-axis breathing room: add ~5 units of headroom above the tallest bar
     // before rounding to a nice number, so the tallest stack never touches
     // the top of the plot.
-    const niceMax = niceCeil((maxStack || 1) + 5);
+    let niceMax = niceCeil((maxStack || 1) + 5);
     const yScale = value => plotH * (value / niceMax);
     const yZero = PAD_TOP + plotH;
     const plotRight = W - PAD_RIGHT;
+    const milestonesInView=panelDData.milestones.filter(m=>m.year>=yMin && m.year<=yMax);
+    let milestoneLayout;
+    for(let attempt=0;attempt<24;attempt++) {
+      const bars=[];
+      perYear.forEach((bucket,year)=>{
+        if(year<yMin || year>yMax) return;
+        const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
+        if(total) bars.push({x:PAD_LEFT+(year-yMin)*bandW+bandGap,y:yZero-yScale(total),width:barW,height:yScale(total)});
+      });
+      milestoneLayout=layoutMilestoneLabels(milestonesInView,yMin,yMax,PAD_LEFT,plotW,PAD_TOP,plotH,bars);
+      if(milestoneLayout.complete) break;
+      niceMax=niceCeil(niceMax*1.25); // add space inside the existing axes, never above the chart
+    }
+
 
     // Decade shading. Non-shaded decades are pure white; shaded decades are a
     // slightly darker warm gray so the alternation reads clearly (previous
@@ -6689,18 +6706,18 @@
     }
     drawRollingRun();
 
-    // Labels occupy a separate measured band: no bar can enter this space.
+    // Measured callouts remain inside the axes and avoid every bar and label.
     milestoneLayout.boxes.forEach(box => {
       const m = box.milestone;
       const x = PAD_LEFT + (m.year - yMin) * bandW + bandW / 2;
       const bucket = perYear.get(m.year) || {};
       const barTop = yZero - yScale(visibleTypes.reduce((n,t) => n + (bucket[t] || 0),0));
-      svg.appendChild(panelDSvg('line', {x1:x,x2:x,y1:PAD_TOP,y2:barTop,stroke:m.color,'stroke-width':1,'stroke-dasharray':'2 3',opacity:0.65}));
+      svg.appendChild(panelDSvg('line', {x1:box.anchor==='end'?box.x+box.width:box.x,x2:x,y1:box.y+box.height,y2:barTop,stroke:m.color,'stroke-width':1,'stroke-dasharray':'2 3',opacity:0.65}));
       svg.appendChild(panelDSvg('circle', {cx:x,cy:barTop,r:3,fill:m.color}));
       const group = panelDSvg('g', {'data-milestone-label':m.key});
       group.appendChild(panelDSvg('title', {}, [m.year,m.headline,m.personLine,m.uniLine,m.paternalLine].filter(Boolean).join(' · ')));
       box.lines.forEach((line,index) => {
-        group.appendChild(panelDSvg('text', {x:box.x,y:14+box.y+index*14,'font-family':'Arial','font-size':line.size,'font-weight':line.bold ? '700':'400',fill:line.bold ? m.color : '#374151'},line.text));
+        group.appendChild(panelDSvg('text', {x:box.anchor==='end'?box.x+box.width:box.x,'text-anchor':box.anchor,y:12+box.y+index*14,'font-family':'Arial','font-size':line.size,'font-weight':line.bold ? '700':'400',fill:line.bold ? m.color : '#374151'},line.text));
       });
       svg.appendChild(group);
     });
