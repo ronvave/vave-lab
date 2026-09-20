@@ -34,7 +34,7 @@
 
   var TWO_NOTE_LINES = [
     '*The above summary does not include Reports, Conference papers, Unpublished report, and Others.',
-    '**Non-Solomon-Islander records are publications on Solomon Islands by non-Solomon-Islander without any Solomon Islands authors'
+    '**Non-Solomon-Islander records are publications on Solomon Islands by non-Solomon-Islander without any Solomon Islander authors'
   ];
 
   var HEADLINE_TYPES = [
