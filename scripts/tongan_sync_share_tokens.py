@@ -17,7 +17,7 @@ def column(n):
         out = chr(65 + r) + out
     return out
 
-def prepare(rows):
+def prepare(rows, create_missing=True):
     headers = rows[3]
     sid_col = headers.index('Scholar ID')
     token_col = headers.index('Scholar Share Token') if 'Scholar Share Token' in headers else len(headers)
@@ -25,20 +25,24 @@ def prepare(rows):
     if token_col == len(headers):
         writes.append({'range': f"'Scholars'!{column(token_col+1)}4", 'values': [['Scholar Share Token']]})
     mapping = {}
+    seen_ids = set()
     for i, row in enumerate(rows[4:], 5):
         sid = str(row[sid_col] if len(row) > sid_col else '').strip()
         if not sid:
             continue
-        if not re.fullmatch(r'TNG-S\d{4}', sid) or sid in mapping:
+        if not re.fullmatch(r'TNG-S\d{4}', sid) or sid in seen_ids:
             raise ValueError('Invalid or duplicate Tonga Scholar ID')
+        seen_ids.add(sid)
         token = str(row[token_col] if len(row) > token_col else '').strip()
         if token and not re.fullmatch(r'[0-9a-f]{40}', token):
             raise ValueError('Existing token is malformed; manual review required')
+        if not token and not create_missing:
+            continue
         if not token:
             token = secrets.token_hex(20)
             writes.append({'range': f"'Scholars'!{column(token_col+1)}{i}", 'values': [[token]]})
         mapping[sid] = token
-    if not mapping or len(set(mapping.values())) != len(mapping):
+    if not seen_ids or len(set(mapping.values())) != len(mapping):
         raise ValueError('Missing roster or duplicate share token')
     return writes, mapping
 
@@ -50,12 +54,19 @@ def main():
     rows = api.get(spreadsheetId=SHEET_ID,range="'Scholars'!A:ZZ").execute().get('values',[])
     writes, mapping = prepare(rows)
     if writes:
-        api.batchUpdate(spreadsheetId=SHEET_ID,body={'valueInputOption':'RAW','data':writes}).execute()
-    # Reread before publication; never publish a token not stored in Master.
+        try:
+            api.batchUpdate(spreadsheetId=SHEET_ID,body={'valueInputOption':'RAW','data':writes}).execute()
+        except Exception as exc:
+            if getattr(getattr(exc, 'resp', None), 'status', None) != 403:
+                raise
+            print('::warning::Refresh account cannot create missing share tokens. Owner must initialize new scholar tokens in Master; existing links still refresh.')
+    # Publish only tokens confirmed in Master, never unpersisted random values.
     fresh = api.get(spreadsheetId=SHEET_ID,range="'Scholars'!A:ZZ").execute().get('values',[])
-    pending, confirmed = prepare(fresh)
-    if pending or confirmed != mapping:
-        raise RuntimeError('Master changed during token sync; retry before publishing')
+    _, confirmed = prepare(fresh, create_missing=False)
+    missing = len(mapping) - len(confirmed)
+    if missing:
+        print(f'::warning::{missing} scholar links await owner initialization.')
+    mapping = confirmed
     Path('data/tongan-share-tokens.json').write_text(json.dumps({'v':1,'country':'Tonga','m':mapping},sort_keys=True,separators=(',',':'))+'\n')
     print(f'Confirmed stable share tokens for {len(mapping)} Tonga scholars.')
 

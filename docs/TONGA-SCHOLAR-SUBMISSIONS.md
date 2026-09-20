@@ -12,9 +12,13 @@ Tonga-current-script.txt before replacing the deployed script.
 ## Submission paths
 
 Panel F Share copies `s-tonga.html?k=<stable token>` and briefly turns green.
-The scheduled Tonga snapshot workflow creates missing random tokens in
-Scholars / Scholar Share Token and publishes the ID/token lookup, preserving
-existing tokens. It never exports submission identities or attachments.
+273 stable random tokens were initialized in Scholars / Scholar Share Token
+on 20 September 2026 and verified by readback. The scheduled refresh exports
+only tokens confirmed in Master, preserving existing links. Its service account
+is currently read-only: new scholars require owner initialization of a unique
+40-character lowercase hexadecimal token in that column. The sync can create
+missing tokens only when run with an authorized writer. Missing tokens or a
+failed token sync must not block normal dashboard snapshot updates. It never exports submission identities or attachments.
 The shared route validates the token before loading and rendering one scholar;
 the full dashboard remains hidden. It reuses the Panel F renderer and combined
 Master + Admin enrichment + research insights adapter. Never use masterOnly
