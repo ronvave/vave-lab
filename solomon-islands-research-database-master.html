@@ -667,7 +667,7 @@
        Both columns stretch to the taller sibling's height so the map's bottom
        edge lines up with the sidebar's bottom edge. */
     .db-map-a-wrap {
-      display: grid; grid-template-columns: 1.15fr 1fr; gap: var(--space-3);
+      display: grid; grid-template-columns: 1fr; gap: var(--space-3);
       align-items: stretch;
     }
     @media (max-width: 640px) { .db-map-a-wrap { grid-template-columns: 1fr; } }
@@ -681,10 +681,10 @@
        .db-map-world-wrap class (position:relative + fullscreen rules)
        so both maps share behaviour. */
     .db-map-a-wrap .db-map-world-wrap {
-      flex: 1 1 auto; min-height: 480px; display: flex;
+      flex: none; width: 100%; aspect-ratio: 16 / 9; min-height: 260px; display: flex;
     }
     .db-map-a-wrap .db-map-world-wrap > #db-map {
-      flex: 1 1 auto; min-height: 480px;
+      flex: 1 1 auto; min-height: 0; height: 100%;
     }
     #db-map {
       width: 100%;
@@ -3940,7 +3940,14 @@
 [data-scholar-conf-panel] .dsf-combo-col:not(.dsf-combo-col--first) { display:none; }
 [data-db-map-fs-conf-prov-col], [data-db-b3-prov-col] { display:none !important; }
 </style>
-</head>
+<style>
+.db-map-a-wrap > .db-map-side { width:100%; }
+.db-map-a-wrap [data-db-conf-legend] { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0 24px; }
+.db-map-a-wrap .db-conf-row { flex-wrap:wrap; }
+.db-map-a-wrap .db-conf-row__sub { white-space:normal; }
+@media(max-width:700px) { .db-map-a-wrap [data-db-conf-legend] { grid-template-columns:1fr; } }
+.db-map-a-wrap .db-map-world-wrap.is-fullscreen { aspect-ratio:auto; }
+</style></head>
 <body>
 
 <header class="site-header" role="banner">
@@ -5354,7 +5361,7 @@
 ===================================================================== -->
 <script src="js/solomon-demo-gate.js?v=a3ac7a84" defer></script>
 <script src="js/solomon-database-adapter.js?v=3a7209e7" defer></script>
-<script src="js/solomon-database-master.js?v=010ec3ba" defer></script>
+<script src="js/solomon-database-master.js?v=landscape-map-20260920" defer></script>
 <script src="js/solomon-panel-overrides.js?v=9b32fb38" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
