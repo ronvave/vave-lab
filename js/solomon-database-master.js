@@ -6581,6 +6581,39 @@
       boxes.push(placed);
       leaders.push(chosen.route);
     });
+    // Fallback: if an unusually dense future milestone set cannot satisfy
+    // every strict connector constraint, place the remaining labels into the
+    // first non-overlapping annotation lane. This guarantees that data labels
+    // are never silently dropped. Because this fallback still checks label
+    // boxes, text never overlaps; only the connector route is simplified.
+    const placedKeys=new Set(boxes.map(b=>b.milestone.key));
+    milestones.slice().sort((a,b)=>a.year-b.year || a.key.localeCompare(b.key)).forEach(m=>{
+      if(placedKeys.has(m.key)) return;
+      const lines=buildLines(m);
+      if(!lines.length) return;
+      const w=Math.min(maxWidth,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+4);
+      const h=lines.length*14+6;
+      const point={
+        x:left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width,
+        y:m._anchorY != null ? m._anchorY : top+height
+      };
+      let chosen=null;
+      for(let y=top+6;y+h<=top+height-6 && !chosen;y+=Math.max(18,h+gap)){
+        for(let x=left+6;x+w<=left+width-6;x+=12){
+          const box={x,y,width:w,height:h};
+          if(boxes.some(b=>rectOverlap(box,b,gap))) continue;
+          chosen=box; break;
+        }
+      }
+      if(!chosen) return;
+      const attach={x:Math.max(chosen.x+8,Math.min(chosen.x+chosen.width-8,point.x)),y:chosen.y+chosen.height};
+      const route={attach,segs:[
+        {a:point,b:{x:point.x,y:attach.y}},
+        {a:{x:point.x,y:attach.y},b:attach}
+      ].filter(s=>Math.abs(s.a.x-s.b.x)>0.5 || Math.abs(s.a.y-s.b.y)>0.5)};
+      boxes.push({...chosen,milestone:m,lines,anchor:'middle',leader:route});
+      leaders.push(route);
+    });
     return {boxes,complete:boxes.length===milestones.length};
   }
 
@@ -6656,12 +6689,22 @@
       return;
     }
 
-    const W = 900; let H = 340;
-    // Padding widened on left (numeric labels + rotated axis title) and right
-    // (secondary %-axis + rotated "Female authorship" title).
-    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_BOTTOM = 46; let PAD_TOP = 42;
+    const W = 900;
+    // Milestone annotations live in their own band ABOVE the publication
+    // plot. The band grows with milestone density; the publication plot keeps
+    // a stable height and a data-derived Y scale. This prevents label layout
+    // from ever inflating the publication axis (the previous failure mode
+    // produced scales in the thousands and visually flattened the bars).
+    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_BOTTOM = 46;
+    const BASE_PLOT_H = 252;
+    const ANNOTATION_TOP = 28;
+    const visibleMilestoneCount = (panelDData.milestones || []).length;
+    const annotationRows = Math.max(1, Math.ceil(visibleMilestoneCount / 3));
+    const ANNOTATION_H = Math.max(112, annotationRows * 70);
+    const PAD_TOP = ANNOTATION_TOP + ANNOTATION_H;
+    let H = PAD_TOP + BASE_PLOT_H + PAD_BOTTOM;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
-    const plotH = H - PAD_TOP - PAD_BOTTOM;
+    const plotH = BASE_PLOT_H;
     // dataMin/dataMax define the domain the timeline can span. We widen the
     // lower bound to include milestone years so the default "All" view always
     // captures every milestone (e.g. 1963 first male PhD is earlier than the
@@ -6698,25 +6741,24 @@
     const yZero = PAD_TOP + plotH;
     const plotRight = W - PAD_RIGHT;
     const milestonesInView=panelDData.milestones.filter(m=>m.year>=yMin && m.year<=yMax);
-    let milestoneLayout;
-    for(let attempt=0;attempt<24;attempt++) {
-      const bars=[];
-      perYear.forEach((bucket,year)=>{
-        if(year<yMin || year>yMax) return;
-        const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
-        if(total) bars.push({x:PAD_LEFT+(year-yMin)*bandW+bandGap,y:yZero-yScale(total),width:barW,height:yScale(total)});
-      });
-      // Feed each milestone's current bar-top anchor into the collision solver.
-      // If there is no publication bar in that year, anchor at the baseline.
-      milestonesInView.forEach(m=>{
-        const bucket=perYear.get(m.year)||{};
-        const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
-        m._anchorY=yZero-yScale(total);
-      });
-      milestoneLayout=layoutMilestoneLabels(milestonesInView,yMin,yMax,PAD_LEFT,plotW,PAD_TOP,plotH,bars);
-      if(milestoneLayout.complete) break;
-      niceMax=niceCeil(niceMax*1.25); // create more in-axis whitespace and retry
-    }
+    // Publication Y scale is FINAL at this point. Milestone layout is not
+    // allowed to change niceMax. Labels are solved in the dedicated annotation
+    // band above the plot while their anchors remain at the true bar tops.
+    milestonesInView.forEach(m=>{
+      const bucket=perYear.get(m.year)||{};
+      const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
+      m._anchorY=yZero-yScale(total);
+    });
+    const milestoneLayout=layoutMilestoneLabels(
+      milestonesInView,
+      yMin,
+      yMax,
+      PAD_LEFT,
+      plotW,
+      ANNOTATION_TOP,
+      ANNOTATION_H - 8,
+      []
+    );
 
 
     // Decade shading. Non-shaded decades are pure white; shaded decades are a
