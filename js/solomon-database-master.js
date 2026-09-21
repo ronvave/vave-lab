@@ -6381,42 +6381,205 @@
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
   function layoutMilestoneLabels(milestones, yearMin, yearMax, left, width, top, height, bars) {
+    // Dynamic collision-aware milestone layout.
+    //
+    // Every candidate is evaluated against:
+    //   1) chart bounds,
+    //   2) publication bars,
+    //   3) already-placed label boxes,
+    //   4) already-routed leader lines.
+    //
+    // Connectors use orthogonal (elbow) routes instead of one long diagonal.
+    // This prevents the criss-crossing seen when milestone years cluster
+    // together. Because the routine derives positions from the current
+    // milestones + current bars on every render, newly-added data is handled
+    // automatically without hard-coded scholar coordinates.
     const ctx = document.createElement('canvas').getContext('2d');
-    const boxes = [], gap = 8, maxWidth = Math.min(250, width-16);
-    const measure = (text,size,bold) => { ctx.font = `${bold ? '700' : '400'} ${size}px Arial`; return ctx.measureText(text).width; };
-    milestones.slice().sort((a,b)=>a.year-b.year || a.key.localeCompare(b.key)).forEach(m => {
+    const boxes = [];
+    const leaders = [];
+    const gap = 7;
+    const barGap = 4;
+    const lineGap = 3;
+    const maxWidth = Math.min(235, Math.max(145, width * 0.28));
+
+    const measure = (text, size, bold) => {
+      ctx.font = `${bold ? '700' : '400'} ${size}px Arial`;
+      return ctx.measureText(text).width;
+    };
+
+    const rectOverlap = (a, b, pad = gap) =>
+      a.x < b.x + b.width + pad &&
+      a.x + a.width + pad > b.x &&
+      a.y < b.y + b.height + pad &&
+      a.y + a.height + pad > b.y;
+
+    const pointInRect = (p, r, pad = 0) =>
+      p.x >= r.x - pad && p.x <= r.x + r.width + pad &&
+      p.y >= r.y - pad && p.y <= r.y + r.height + pad;
+
+    const orientation = (a, b, d) => {
+      const v = (b.y - a.y) * (d.x - b.x) - (b.x - a.x) * (d.y - b.y);
+      if (Math.abs(v) < 0.001) return 0;
+      return v > 0 ? 1 : 2;
+    };
+    const onSegment = (a, b, d) =>
+      b.x <= Math.max(a.x, d.x) + 0.001 && b.x + 0.001 >= Math.min(a.x, d.x) &&
+      b.y <= Math.max(a.y, d.y) + 0.001 && b.y + 0.001 >= Math.min(a.y, d.y);
+
+    const segmentsIntersect = (s1, s2) => {
+      const a=s1.a,b=s1.b,c=s2.a,d=s2.b;
+      const o1=orientation(a,b,c), o2=orientation(a,b,d), o3=orientation(c,d,a), o4=orientation(c,d,b);
+      if (o1 !== o2 && o3 !== o4) return true;
+      if (o1===0 && onSegment(a,c,b)) return true;
+      if (o2===0 && onSegment(a,d,b)) return true;
+      if (o3===0 && onSegment(c,a,d)) return true;
+      if (o4===0 && onSegment(c,b,d)) return true;
+      return false;
+    };
+
+    const segmentHitsRect = (seg, rect, pad = lineGap) => {
+      const r={x:rect.x-pad,y:rect.y-pad,width:rect.width+2*pad,height:rect.height+2*pad};
+      if (pointInRect(seg.a,r) || pointInRect(seg.b,r)) return true;
+      const tl={x:r.x,y:r.y}, tr={x:r.x+r.width,y:r.y};
+      const br={x:r.x+r.width,y:r.y+r.height}, bl={x:r.x,y:r.y+r.height};
+      return [
+        {a:tl,b:tr},{a:tr,b:br},{a:br,b:bl},{a:bl,b:tl}
+      ].some(edge=>segmentsIntersect(seg,edge));
+    };
+
+    const buildLines = m => {
       const lines=[];
-      [[`${m.year}: ${m.headline || m.shortLabel}`,11,true],[m.personLine,10,false],[m.uniLine,10,false],[m.paternalTop,9,false],[m.paternalBottom,9,false]].forEach(([text,size,bold]) => {
+      [[`${m.year}: ${m.headline || m.shortLabel}`,11,true],
+       [m.personLine,10,false],
+       [m.uniLine,10,false],
+       [m.paternalTop,9,false],
+       [m.paternalBottom,9,false]].forEach(([text,size,bold]) => {
         if (!text) return;
         let line='';
-        // Character-level overflow also handles unusually long unbroken names.
         for (const word of String(text).split(/\s+/)) {
-          if (line && measure(line+' '+word,size,bold)>maxWidth) {lines.push({text:line,size,bold});line='';}
-          for (const ch of (line ? ' '+word : word)) {
-            if (measure(line+ch,size,bold)>maxWidth && line) {lines.push({text:line,size,bold});line='';}
+          const token = line ? ' ' + word : word;
+          if (line && measure(line + token,size,bold) > maxWidth) {
+            lines.push({text:line,size,bold});
+            line='';
+          }
+          for (const ch of (line ? ' ' + word : word)) {
+            if (line && measure(line+ch,size,bold)>maxWidth) {
+              lines.push({text:line,size,bold});
+              line='';
+            }
             line+=ch;
           }
         }
-        if(line) lines.push({text:line,size,bold});
+        if (line) lines.push({text:line,size,bold});
       });
-      const w=Math.min(width,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+2);
-      const h=lines.length*14+6;
-      const center=left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width;
-      const candidates=[];
-      const xs=[center+8,center-w-8];
-      for(let xx=left+6;xx+w<=left+width-6;xx+=12) xs.push(xx);
-      const overlaps=(a,b)=>a.x<b.x+b.width+gap && a.x+a.width+gap>b.x && a.y<b.y+b.height+gap && a.y+a.height+gap>b.y;
-      for(const x of xs) {
-        if(x<left+6 || x+w>left+width-6) continue;
-        for(let y=top+8;y+h<=top+height-8;y+=10) {
-          const box={x,y,width:w,height:h};
-          if(boxes.some(b=>overlaps(box,b)) || bars.some(b=>overlaps(box,b))) continue;
-          const edge = x+w/2<center ? x+w : x;
-          candidates.push({...box,score:Math.abs(edge-center)+(y-top)*0.35,anchor:x+w/2<center?'end':'start'});
-        }
+      return lines;
+    };
+
+    const routeLeader = (box, point) => {
+      // Attach to the nearest horizontal edge when possible. The route then
+      // rises/falls vertically from the milestone point and turns once toward
+      // the label. This is much easier to keep non-crossing than a diagonal.
+      const boxMid = box.x + box.width/2;
+      const leftOf = point.x < box.x;
+      const rightOf = point.x > box.x + box.width;
+      let attach;
+      if (leftOf) attach={x:box.x, y:Math.max(box.y+8, Math.min(box.y+box.height-8, point.y))};
+      else if (rightOf) attach={x:box.x+box.width, y:Math.max(box.y+8, Math.min(box.y+box.height-8, point.y))};
+      else attach={x:Math.max(box.x+8,Math.min(box.x+box.width-8,point.x)), y:box.y+box.height};
+
+      // Prefer an elbow just below the label when the label is above the bar.
+      // If the point is already level with the box, use a direct horizontal.
+      let elbow;
+      if (Math.abs(point.y-attach.y) < 4) {
+        elbow={x:point.x,y:attach.y};
+      } else {
+        elbow={x:point.x,y:attach.y};
       }
-      candidates.sort((a,b)=>a.score-b.score);
-      if(candidates.length) boxes.push({...candidates[0],milestone:m,lines});
+      const segs=[];
+      if (Math.abs(point.y-elbow.y)>0.5) segs.push({a:point,b:elbow});
+      if (Math.abs(elbow.x-attach.x)>0.5 || Math.abs(elbow.y-attach.y)>0.5) segs.push({a:elbow,b:attach});
+      return {attach,segs};
+    };
+
+    const leaderCollides = (route, ownBox) => {
+      // Connector may end on its own box, but must not travel through any
+      // other label, bar, or connector.
+      for (const seg of route.segs) {
+        if (boxes.some(b => b !== ownBox && segmentHitsRect(seg,b,lineGap))) return true;
+        // Ignore a tiny neighbourhood around the milestone start point so
+        // the connector can legitimately originate at the top of its bar.
+        if (bars.some(bar => {
+          const shrunk={x:bar.x-barGap,y:bar.y-barGap,width:bar.width+2*barGap,height:bar.height+2*barGap};
+          if (pointInRect(seg.a,shrunk,1)) {
+            const clipped={a:{x:seg.a.x,y:seg.a.y-2},b:seg.b};
+            return segmentHitsRect(clipped,shrunk,0);
+          }
+          return segmentHitsRect(seg,shrunk,0);
+        })) return true;
+        if (leaders.some(existing => existing.segs.some(oldSeg => segmentsIntersect(seg,oldSeg)))) return true;
+      }
+      return false;
+    };
+
+    // Place the most constrained labels first: later years and taller labels
+    // tend to live in the busiest part of this chart. Stable tie-breaks keep
+    // positions deterministic between renders.
+    const ordered = milestones.slice().map(m=>({m,lines:buildLines(m)}))
+      .sort((a,b) => b.lines.length-a.lines.length || a.m.year-b.m.year || a.m.key.localeCompare(b.m.key));
+
+    ordered.forEach(({m,lines}) => {
+      if (!lines.length) return;
+      const w=Math.min(maxWidth,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+4);
+      const h=lines.length*14+6;
+      const point={
+        x:left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width,
+        y:m._anchorY != null ? m._anchorY : top+height
+      };
+
+      // Candidate X positions: nearest-right/nearest-left first, then a dense
+      // scan across the plot. Candidate Y tiers alternate high → mid → low
+      // so nearby milestones naturally occupy different rows.
+      const xs=[];
+      const pushX=x=>{ if(x>=left+6 && x+w<=left+width-6 && !xs.some(v=>Math.abs(v-x)<1)) xs.push(x); };
+      pushX(point.x+12);
+      pushX(point.x-w-12);
+      for(let delta=24;delta<=width;delta+=24){ pushX(point.x+delta); pushX(point.x-w-delta); }
+      for(let x=left+6;x+w<=left+width-6;x+=18) pushX(x);
+
+      const ys=[];
+      const pushY=y=>{ if(y>=top+6 && y+h<=top+height-6 && !ys.some(v=>Math.abs(v-y)<1)) ys.push(y); };
+      const tierStep=Math.max(18,Math.min(30,h*0.65));
+      for(let y=top+8;y+h<=top+height-8;y+=tierStep) pushY(y);
+      for(let y=top+height-h-8;y>=top+8;y-=tierStep) pushY(y);
+
+      const candidates=[];
+      xs.forEach(x=>{
+        ys.forEach(y=>{
+          const box={x,y,width:w,height:h};
+          if (boxes.some(b=>rectOverlap(box,b,gap))) return;
+          if (bars.some(b=>rectOverlap(box,b,barGap))) return;
+          const route=routeLeader(box,point);
+          if (leaderCollides(route,box)) return;
+
+          // Score: short connector, slight preference for higher labels, and
+          // preference for labels staying on the same side as their milestone.
+          const connectorLen=route.segs.reduce((n,s)=>n+Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y),0);
+          const horizontalDrift=Math.abs((box.x+box.width/2)-point.x);
+          const verticalPenalty=(box.y-top)*0.12;
+          const sidePenalty=(point.x<left+width/2 && box.x<point.x-w ? 10 : 0);
+          candidates.push({box,route,score:connectorLen+horizontalDrift*0.18+verticalPenalty+sidePenalty});
+        });
+      });
+
+      candidates.sort((a,b)=>a.score-b.score || a.box.y-b.box.y || a.box.x-b.box.x);
+      if (!candidates.length) return;
+      const chosen=candidates[0];
+      const anchor = chosen.route.attach.x <= chosen.box.x+2 ? 'start'
+                   : chosen.route.attach.x >= chosen.box.x+chosen.box.width-2 ? 'end'
+                   : 'middle';
+      const placed={...chosen.box,milestone:m,lines,anchor,leader:chosen.route};
+      boxes.push(placed);
+      leaders.push(chosen.route);
     });
     return {boxes,complete:boxes.length===milestones.length};
   }
@@ -6543,9 +6706,16 @@
         const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
         if(total) bars.push({x:PAD_LEFT+(year-yMin)*bandW+bandGap,y:yZero-yScale(total),width:barW,height:yScale(total)});
       });
+      // Feed each milestone's current bar-top anchor into the collision solver.
+      // If there is no publication bar in that year, anchor at the baseline.
+      milestonesInView.forEach(m=>{
+        const bucket=perYear.get(m.year)||{};
+        const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
+        m._anchorY=yZero-yScale(total);
+      });
       milestoneLayout=layoutMilestoneLabels(milestonesInView,yMin,yMax,PAD_LEFT,plotW,PAD_TOP,plotH,bars);
       if(milestoneLayout.complete) break;
-      niceMax=niceCeil(niceMax*1.25); // add space inside the existing axes, never above the chart
+      niceMax=niceCeil(niceMax*1.25); // create more in-axis whitespace and retry
     }
 
 
@@ -6681,18 +6851,35 @@
     }
     drawRollingRun();
 
-    // Measured callouts remain inside the axes and avoid every bar and label.
+    // Collision-solved callouts. Leader routes are orthogonal and were
+    // validated against bars, other labels, and other leaders by
+    // layoutMilestoneLabels(), so newly-added milestones reflow automatically.
     milestoneLayout.boxes.forEach(box => {
       const m = box.milestone;
       const x = PAD_LEFT + (m.year - yMin) * bandW + bandW / 2;
       const bucket = perYear.get(m.year) || {};
       const barTop = yZero - yScale(visibleTypes.reduce((n,t) => n + (bucket[t] || 0),0));
-      svg.appendChild(panelDSvg('line', {x1:box.anchor==='end'?box.x+box.width:box.x,x2:x,y1:box.y+box.height,y2:barTop,stroke:m.color,'stroke-width':1,'stroke-dasharray':'2 3',opacity:0.65}));
+
+      const route=box.leader && box.leader.segs ? box.leader.segs : [];
+      route.forEach(seg=>{
+        svg.appendChild(panelDSvg('line',{
+          x1:seg.a.x,y1:seg.a.y,x2:seg.b.x,y2:seg.b.y,
+          stroke:m.color,'stroke-width':1,'stroke-dasharray':'2 3',
+          'stroke-linecap':'round',opacity:0.72
+        }));
+      });
       svg.appendChild(panelDSvg('circle', {cx:x,cy:barTop,r:3,fill:m.color}));
+
       const group = panelDSvg('g', {'data-milestone-label':m.key});
       group.appendChild(panelDSvg('title', {}, [m.year,m.headline,m.personLine,m.uniLine,m.paternalLine].filter(Boolean).join(' · ')));
+      const textX = box.anchor==='end' ? box.x+box.width : box.anchor==='middle' ? box.x+box.width/2 : box.x;
       box.lines.forEach((line,index) => {
-        group.appendChild(panelDSvg('text', {x:box.anchor==='end'?box.x+box.width:box.x,'text-anchor':box.anchor,y:12+box.y+index*14,'font-family':'Arial','font-size':line.size,'font-weight':line.bold ? '700':'400',fill:line.bold ? m.color : '#374151'},line.text));
+        group.appendChild(panelDSvg('text', {
+          x:textX,'text-anchor':box.anchor,y:12+box.y+index*14,
+          'font-family':'Arial','font-size':line.size,
+          'font-weight':line.bold ? '700':'400',
+          fill:line.bold ? m.color : '#374151'
+        },line.text));
       });
       svg.appendChild(group);
     });
