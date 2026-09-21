@@ -39,3 +39,10 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-form-actions button{width:auto;padding:11px 20px;border:1px solid transparent;border-radius:8px;background:#062f35;color:#fff;font:600 14px 'DM Sans',system-ui,sans-serif;cursor:pointer}.tonga-form-actions .tonga-form-cancel{background:#fff;color:#c52c40;border-color:#c52c40}.tonga-form-actions button:disabled{opacity:.6;cursor:wait}
 .tonga-form [role=status]{font-size:14px;line-height:1.5;margin:12px 0 0;overflow-wrap:anywhere}.tonga-form [role=status]:empty{display:none}
 @media(max-width:560px){dialog.tonga-form{width:calc(100vw - 20px);max-height:calc(100dvh - 24px);padding:20px 16px}.tonga-form fieldset{grid-template-columns:minmax(0,1fr);padding:12px}.tonga-form h2{font-size:24px}}
+
+/* Success receipt stays visible after the Update info dialog closes. */
+.tonga-submission-confirmation{position:fixed;z-index:100001;bottom:20px;left:50%;transform:translateX(-50%);width:min(620px,calc(100% - 32px));box-sizing:border-box;display:flex;gap:16px;align-items:center;padding:16px 20px;border:1px solid #86b89a;border-left:5px solid #166534;border-radius:10px;background:#f0fdf4;color:#14532d;box-shadow:0 6px 24px rgba(0,0,0,.16);font:inherit}
+.tonga-submission-confirmation p{margin:0;font-size:.9rem;line-height:1.5;overflow-wrap:anywhere}
+.tonga-submission-confirmation button{flex-shrink:0;padding:8px 12px;border:1px solid #166534;border-radius:6px;background:white;color:#14532d;font:inherit;cursor:pointer}
+.tonga-submission-confirmation button:focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+@media(max-width:480px){.tonga-submission-confirmation{align-items:flex-start;flex-direction:column;gap:10px;bottom:12px;padding:14px}}

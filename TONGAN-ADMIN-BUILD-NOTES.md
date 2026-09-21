@@ -231,3 +231,7 @@ Sheet + data pipeline (out of scope here) are built and populated.
 
 Baseline `f968602073fd22af13ea67081b03524afefab1f1`; backup ref `backup/tonga-review-parity-20260921`.
 Implemented Tonga-only Fiji-style review cards/toolbars, combined durable per-item review, private-file dispositions, capability-gated bans, live geography comparisons, bulk decisions and public-refresh reporting. Added isolated review-v2 fixtures and retained existing submission, queue badge, card/mobility and Fiji preservation checks. See `docs/TONGA-REVIEW-V2-DEPLOY.md` for the exact existing deployment ID, replacement source, backup, owner steps, rollback and live verification limits. No real queue decisions were made.
+
+## Change-control: successful Update info dialog closure
+
+The shared Tonga Update info dialog now closes on confirmed success and shows a dismissible receipt with its reference on the profile page. Failed submissions retain their entries. Successful forms cannot submit twice. Existing submission and iTaukei preservation tests pass; real queue records were not altered. Changes are confined to the Tonga portal JS/CSS, cache references, tests and notes. Apps Script is unchanged.
