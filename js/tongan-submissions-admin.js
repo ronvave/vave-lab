@@ -9,7 +9,7 @@ function link(text,url,parent){try{const u=new URL(url);if(!['https:','http:','m
 function locationText(l){return l.national?'Tonga — general / national study':[l.division,l.island,l.district,l.village].filter(Boolean).join(' · ')||'Tonga';}
 function chips(parent,title,values){const group=el('div',null,parent);el('strong',title,group);const wrap=el('div',null,group);if(!values.length)el('span','—',wrap).className='meta';values.forEach(v=>el('span',v,wrap).className='tonga-location-chip');}
 function countries(s){return String(s||'').split(';').map(x=>x.trim()).filter(Boolean);}
-async function refreshPublic(){try{return window.TongaSubmissionAdmin&&await window.TongaSubmissionAdmin.refresh({silent:true})?'Public snapshot refresh queued; publication is not yet verified.':'Master saved; public snapshot refresh was not dispatched. Use Refresh from Sheet.';}catch(e){return 'Master saved; public refresh failed: '+e.message;}}
+async function refreshPublic(){if(window.TongaSubmissionAdmin?.refreshMessage)return window.TongaSubmissionAdmin.refreshMessage;try{return window.TongaSubmissionAdmin&&await window.TongaSubmissionAdmin.refresh({silent:true})?'Public snapshot refresh queued; publication is not yet verified.':'Master saved; public snapshot refresh was not dispatched. Use Refresh from Sheet.';}catch(e){return 'Master saved; public refresh failed: '+e.message;}}
 document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  const kind=host.dataset.tongaQueue,scholar=kind==='scholar';
  const tab=document.querySelector('[data-tab="'+(scholar?'scholar-submissions':'geography-submissions')+'"]');
@@ -63,7 +63,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   const label=el('label','Optional review note',card);label.className='tonga-note-label';c.note=el('textarea',null,label);c.note.value=saved?.note||row.reviewPlan?.note||'';c.note.setAttribute('aria-label','Review note for '+row['Submission ID']);
   const actions=el('div',null,card);actions.className='tonga-review-actions';
   if(scholar){
-    const ban=button('Ban submitter',actions,()=>banSubmitter(c),'tonga-ban');ban.disabled=!caps.banSubmitter;if(ban.disabled)ban.title='Requires verified Tonga review backend v2.';
+    const ban=button('Ban submitter',actions,()=>banSubmitter(c),'tonga-ban');ban.disabled=!caps.banSubmitter;if(ban.disabled)ban.title=caps.role==='admin'?'Only the Owner can ban submitters.':'Requires verified Tonga review backend v2.';
     const approve=button(row.reviewPlan?'Resume checked review':'Approve all checked',actions,()=>approveScholar(c),'tonga-approve');approve.disabled=!caps.combinedReview;
     if(!caps.combinedReview)el('p','Combined approval requires Tonga Apps Script review backend v2. Queue reads and secure downloads remain available.',card).className='tonga-error';
   }else button('Approve',actions,()=>resolveOne(c,'approve'),'tonga-approve');

@@ -2,7 +2,7 @@
  * Based on the owner's uploaded deployed source. Keep existing Script Properties.
  * Adds review queues; does not change dashboard, photos, insights or B3.
  * Public submission routes require a valid Tonga scholar share token.
- * Admin reads/decisions retain the existing shared-secret authentication.
+ * Admin reads/decisions accept verified Google roles; owner secret retained for recovery.
  * Bibliography/CV/thesis attachments require review; they are NOT auto-imported.
  */
 // ------------------------- CONFIG -----------------------------------------
@@ -156,8 +156,16 @@ function doGet(e) {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
     if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_()});
-    if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,combinedReview:true,banSubmitter:true,currentGeography:true});
+    if (params.idToken || !tongaAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
+    return tongaReadAction_(params);
+  } catch (err) {
+    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
+  }
+}
+
+function tongaReadAction_(params) {
+  var action=params.action||'ping';
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,combinedReview:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
     if (action === 'describe') {
       return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
     }
@@ -177,9 +185,6 @@ function doGet(e) {
       return handleReadChangeLog_(params);
     }
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
-  } catch (err) {
-    return jsonOut_({ status: 'error', error: String(err && err.message || err) }, 500);
-  }
 }
 
 // ------------------------- READ HANDLERS ----------------------------------
@@ -332,7 +337,8 @@ function doPost(e) {
       if (!tongaPublicEnabled_()) return jsonOut_({status:'disabled',reason:'TONGA_PUBLIC_SUBMISSIONS_ENABLED is not true'});
       return requested === 'submitScholarProfileUpdate' ? handlePublicScholarProfileSubmission_(body) : handlePublicPublicationGeographySubmission_(body);
     }
-    if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
+    if (!tongaAuthorize_(body, requested)) return jsonOut_({ status: 'unauthorized', reason:'Sign in with an authorized Google account.' }, 401);
+    if (TONGA_READ_ACTIONS.indexOf(requested)>=0) return tongaReadAction_(body);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
     if (action === 'beginScholarReview') return tongaBeginReview_(body);
@@ -927,7 +933,7 @@ function buildScholarSubmissionChanges_(ss, submission) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-2';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-3';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1155,7 +1161,7 @@ function tongaApplyPlan_(ss,o,plan){
   pending.forEach(function(item){
     var result=applyOneChange_(ss,item._write,false);delete item._write;
     results.push({key:item.key,status:result.status});
-    if(['ok','already_satisfied'].indexOf(result.status)>=0){item.state='applied';item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);}
+    if(['ok','already_satisfied'].indexOf(result.status)>=0){item.state='applied';item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);}
   });
   return jsonOut_({status:results.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;})?'partial':'ok',results:results,plan:plan,remainingReview:true});
 }
@@ -1166,12 +1172,13 @@ function tongaRecordAttachment_(body){return tongaWithSubmission_(body,function(
   if(item.state!=='pending')return jsonOut_({status:'ok',plan:plan,alreadyRecorded:true});
   var disposition=String(body.disposition||''),evidence=String(body.evidence||'').trim();
   if(item.field==='headshot'){
+    if(TONGA_REQUEST_ROLE!=='owner')throw new Error('Photo publication must be completed by the Owner; this item stays Pending.');
     if(disposition!=='published'||!/^img\/scholars\/TNG-S\d+\.jpg$/.test(evidence)||evidence!=='img/scholars/'+o['Scholar ID']+'.jpg')throw new Error('Successful Tonga photo service result required');
   }else{
     if(['reviewed_privately','imported'].indexOf(disposition)<0||evidence.length<10)throw new Error('Describe actual private review or completed import; downloading is not importing');
     if(/bibliograph|bibtex|ris|enw/i.test(item.field+' '+item.name)&&disposition!=='imported')throw new Error('Bibliography requires a completed import with evidence');
   }
-  item.state=disposition;item.evidence=evidence.slice(0,1500);item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);
+  item.state=disposition;item.evidence=evidence.slice(0,1500);item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);
   return jsonOut_({status:'ok',plan:plan});
 });}
 function tongaFinishReview_(body){return tongaWithSubmission_(body,function(ss,o){
@@ -1216,4 +1223,77 @@ function backupTongaReviewDataV2(){
   var ss=geoSs_();if(ss.getId()!==SPREADSHEET_ID_HINT)throw new Error('Wrong Tonga Master');
   var copy=DriveApp.getFileById(ss.getId()).makeCopy('Tonga Master before review v2 '+tongaNow_());
   Logger.log('Private backup created: '+copy.getUrl());return copy.getUrl();
+}
+
+// Google reviewer access. The private roster is never sent to the browser.
+// The existing secret remains an Owner-only recovery path. Never share it.
+var TONGA_REQUEST_ROLE = 'owner';
+var TONGA_READ_ACTIONS = ['reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
+var TONGA_REVIEW_ACTIONS = ['reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+function tongaAuthorize_(payload, action) {
+  TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';
+  // Never accept a caller's claimed email, role or actor. Never fall back to the
+  // owner secret after a failed Google credential.
+  if (payload.idToken) {
+    try {
+      var identity=tongaVerifyGoogle_(String(payload.idToken));
+      var role=tongaRoleForIdentity_(identity);
+      if (!role || (role!=='owner' && TONGA_REVIEW_ACTIONS.indexOf(action)<0)) return false;
+      TONGA_REQUEST_ROLE=role;
+      ACTOR_LABEL=identity.email+' ('+role+'; Google '+identity.sub+')';
+      return true;
+    } catch (_) { return false; }
+  }
+  if (!checkAuth_(payload)) return false;
+  TONGA_REQUEST_ROLE='owner'; ACTOR_LABEL='Owner (legacy secret)';
+  return true;
+}
+function tongaVerifyGoogle_(token) {
+  if(token.length>16000)throw new Error('Invalid credential');
+  var parts=token.split('.');if(parts.length!==3)throw new Error('Invalid credential');
+  var header=JSON.parse(TongaJWT.decode(parts[0]));
+  if(header.alg!=='RS256'||typeof header.kid!=='string'||header.kid.length>160)throw new Error('Invalid algorithm');
+  var props=PropertiesService.getScriptProperties(),aud=props.getProperty('TONGA_GOOGLE_CLIENT_ID');
+  if(!aud)throw new Error('Google sign-in is not configured');
+  var keys=tongaGoogleKeys_(),key=keys.filter(function(k){return k.kid===header.kid&&k.kty==='RSA'&&k.alg==='RS256'&&k.use==='sig';})[0];
+  if(!key)throw new Error('Unknown Google signing key. Try again later.');
+  if(!TongaJWT.JWS.verify(token,TongaJWT.KEYUTIL.getKey(key),['RS256']))throw new Error('Invalid signature');
+  var claims=JSON.parse(TongaJWT.decode(parts[1])),now=Math.floor(Date.now()/1000);
+  if(claims.aud!==aud||(claims.azp&&claims.azp!==aud)||['accounts.google.com','https://accounts.google.com'].indexOf(claims.iss)<0)throw new Error('Invalid issuer or audience');
+  if(typeof claims.exp!=='number'||claims.exp<=now||typeof claims.iat!=='number'||claims.iat>now+60||claims.exp-claims.iat>7200||(claims.nbf&&claims.nbf>now))throw new Error('Expired or invalid credential');
+  if(typeof claims.sub!=='string'||!/^\d{1,255}$/.test(claims.sub)||claims.email_verified!==true||typeof claims.email!=='string')throw new Error('Unverified identity');
+  claims.email=claims.email.toLowerCase();
+  if(!/@gmail\.com$/.test(claims.email)&&!(typeof claims.hd==='string'&&claims.hd&&claims.email.split('@')[1]===claims.hd.toLowerCase()))throw new Error('Google-hosted identity required');
+  return claims;
+}
+function tongaGoogleKeys_() {
+  var cache=CacheService.getScriptCache(),key='tonga-google-jwks-v1',cached=cache.get(key);
+  if(cached)return JSON.parse(cached);
+  var response=UrlFetchApp.fetch('https://www.googleapis.com/oauth2/v3/certs',{muteHttpExceptions:true});
+  if(response.getResponseCode()!==200)throw new Error('Google signing keys unavailable');
+  var keys=JSON.parse(response.getContentText()).keys;
+  if(!Array.isArray(keys)||!keys.length)throw new Error('Invalid signing keys');
+  var headers=response.getAllHeaders(),control='';
+  Object.keys(headers).forEach(function(k){if(k.toLowerCase()==='cache-control')control=String(headers[k]);});
+  var maxAge=/max-age=(\d+)/.exec(control),ttl=Math.min(21600,maxAge?Number(maxAge[1]):300);
+  if(ttl>0)cache.put(key,JSON.stringify(keys),ttl);
+  return keys;
+}
+function tongaRoleForIdentity_(identity) {
+  var props=PropertiesService.getScriptProperties();
+  var owner=String(props.getProperty('TONGA_OWNER_EMAIL')||'').trim().toLowerCase();
+  if(!owner)return ''; // Fail closed until the Owner configures access.
+  var admins=String(props.getProperty('TONGA_REVIEWER_EMAILS')||'').toLowerCase().split(/[\s,;]+/);
+  var role=identity.email===owner?'owner':admins.indexOf(identity.email)>=0?'admin':'';
+  if(!role)return '';
+  // Bind each authorized email to Google's immutable account ID on first login.
+  // Subsequent logins require BOTH the current roster entry and that identity.
+  var key='TONGA_GOOGLE_SUB_'+Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,identity.email)).replace(/=+$/,'');
+  var lock=LockService.getScriptLock();lock.waitLock(10000);
+  try {
+    var bound=props.getProperty(key);
+    if(bound&&bound!==identity.sub)return '';
+    if(!bound)props.setProperty(key,identity.sub);
+  } finally {lock.releaseLock();}
+  return role;
 }
