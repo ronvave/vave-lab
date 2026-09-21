@@ -6509,9 +6509,12 @@
             if(boxes.some(b=>rectOverlap(box,b,gap)))return;
             const route=makeRoute(box,point,side);
             const len=route.segs.reduce((n,s)=>n+Math.abs(s.b.x-s.a.x)+Math.abs(s.b.y-s.a.y),0);
+            const boxBarHits=bars.filter(bar=>rectOverlap(box,bar,barPad)).length;
             const barHits=bars.reduce((n,bar)=>n+route.segs.filter(seg=>segHitsRect(seg,bar,1)).length,0);
             const leaderHits=leaders.reduce((n,prior)=>n+route.segs.reduce((m,seg)=>m+prior.segs.filter(old=>segCross(seg,old)).length,0),0);
-            candidates.push({box,route,side,score:len+(y-top)*0.12+barHits*1000+leaderHits*700});
+            // A leader may cross a bar in this emergency path, but the label
+            // itself should remain over clear chart space whenever possible.
+            candidates.push({box,route,side,score:len+(y-top)*0.12+boxBarHits*6000+barHits*1000+leaderHits*700});
           });
         }
       }
