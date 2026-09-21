@@ -1281,13 +1281,21 @@
     });
   }
 
-  async function approveScholarSubmissionPhoto_ (sid, attachment) {
+  async function approveScholarSubmissionPhoto_ (sid, attachment, reviewKey) {
     sid=String(sid||'').toUpperCase();if(!/^TNG-S\d+$/.test(sid))throw new Error('Invalid Scholar ID for photo approval.');
     if(!attachment||!/^image\//i.test(String(attachment.type||'')))throw new Error('The selected attachment is not an image.');
     if(!state.enrichmentDoc||!state.enrichmentDoc.scholars)throw new Error('Admin enrichment data is still loading. Refresh and try again.');
+    if(reviewKey){
+      reviewKey=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(reviewKey)))).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+      var token=getGhToken();if(!token)throw new Error('No GitHub token');
+      var metaResponse=await fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+encodeURI(ENRICHMENT_ENC)+'?ref='+GH_BRANCH,{headers:ghHeaders(token),cache:'no-store'});
+      if(!metaResponse.ok)throw new Error('Could not check prior photo approval ('+metaResponse.status+')');
+      var meta=await metaResponse.json(),fresh=await fetchEncryptedAtSha_(ENRICHMENT_ENC,meta.sha,token);
+      if(fresh.scholars&&fresh.scholars[sid]&&fresh.scholars[sid].submissionPhotoReviewKey===reviewKey)return {path:fresh.scholars[sid].photo,alreadyPublished:true};
+    }
     var resized=await resizeSubmittedPhoto_('data:'+attachment.type+';base64,'+attachment.data),path='img/scholars/'+sid+'.jpg';
     await githubUploadBinary(path,dataUrlToBytes(resized),'admin(master): approve submitted photo for '+sid);
-    var written=await pushEncryptedJsonMerged(ENRICHMENT_ENC,ENRICHMENT_URL,function(fresh){if(!fresh.scholars)fresh.scholars={};var current=Object.assign({},fresh.scholars[sid]||{});current.photo=path;current.updatedAt=new Date().toISOString();fresh.scholars[sid]=current;fresh.updatedAt=new Date().toISOString();return fresh;},'admin(master): approve submitted photo for '+sid);
+    var written=await pushEncryptedJsonMerged(ENRICHMENT_ENC,ENRICHMENT_URL,function(fresh){if(!fresh.scholars)fresh.scholars={};var current=Object.assign({},fresh.scholars[sid]||{});current.photo=path;if(reviewKey)current.submissionPhotoReviewKey=reviewKey;current.updatedAt=new Date().toISOString();fresh.scholars[sid]=current;fresh.updatedAt=new Date().toISOString();return fresh;},'admin(master): approve submitted photo for '+sid);
     state.enrichmentDoc=written;renderKpi();renderScholars();return {path:path};
   }
 
@@ -2963,5 +2971,5 @@
     // insights preview
     $('#pf-insights-json').addEventListener('input', updateInsightsPreview);
   }
-  window.TongaSubmissionAdmin={approvePhoto:approveScholarSubmissionPhoto_};
+  window.TongaSubmissionAdmin={approvePhoto:approveScholarSubmissionPhoto_,refresh:dispatchRefresh};
 })();

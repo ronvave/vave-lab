@@ -1,9 +1,27 @@
-.tonga-review{border:1px solid #ccd5d5;border-radius:10px;padding:18px;margin:16px 0}.tonga-review table{width:100%;border-collapse:collapse;table-layout:fixed}.tonga-review th,.tonga-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #ddd;overflow-wrap:anywhere;white-space:pre-wrap}.tonga-review textarea{width:100%;min-height:70px;box-sizing:border-box;margin:12px 0}.tonga-review button,[data-tonga-queue] select{padding:8px 12px;margin:5px;border-radius:6px}.tonga-review .manual{color:#835300}.tonga-queue-status{white-space:pre-wrap;margin:12px 0}.tonga-review-actions{display:flex;flex-wrap:wrap;gap:6px}
-
-.tonga-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.tonga-submission-badge[hidden]{display:none}
-
-.tonga-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}
-.tonga-attachment{margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}
-.tonga-attachment>.meta{color:#6b7280;font-size:.8rem}
-.tonga-attachment-preview{margin-top:8px;color:#6b7280}
-.tonga-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+[data-tonga-queue]{min-width:0;color:#062f35}
+[data-tonga-queue] h2{font-size:1.35rem}
+.tonga-queue-helper{font-size:.85rem;color:#6b7280;margin:8px 0 16px}
+.tonga-queue-toolbar,.tonga-bulk-controls,.tonga-review-actions,.tonga-selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.tonga-queue-count{margin-left:auto;font-size:.82rem;color:#6b7280}
+[data-tonga-queue] button,[data-tonga-queue] select{font:inherit;font-size:.85rem;padding:8px 12px;border:1px solid #e2e0d4;border-radius:6px;background:white;color:#062f35;cursor:pointer}
+[data-tonga-queue] button:disabled,[data-tonga-queue] input:disabled{opacity:.55;cursor:not-allowed}
+[data-tonga-queue] :focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+[data-tonga-queue] .tonga-approve{background:#166534;color:white;border-color:#166534}
+[data-tonga-queue] .tonga-reject{background:#991b1b;color:white;border-color:#991b1b}
+.tonga-ban{margin-right:auto}
+.tonga-review{background:white;border:1px solid #e2e0d4;border-left:4px solid #d97706;border-radius:8px;padding:16px;margin:14px 0;min-width:0;overflow-wrap:anywhere}
+.tonga-review--reviewed,.tonga-review--approved{border-left-color:#16a34a}.tonga-review--rejected{border-left-color:#b91c1c}
+.tonga-review-heading{display:flex;gap:12px;align-items:flex-start}.tonga-review-heading>div{min-width:0;flex:1}.tonga-review-heading h3{font-family:inherit;font-weight:700;font-size:1rem;margin:0 0 4px}
+.tonga-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+.tonga-submitter,.tonga-review .meta{font-size:.82rem;color:#6b7280}.tonga-submitter{margin:10px 0}
+.tonga-selection-controls{margin:10px 0}.tonga-review summary{font-weight:700;cursor:pointer;margin:10px 0}
+.tonga-review table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.86rem}.tonga-review th,.tonga-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e0d4;overflow-wrap:anywhere;white-space:pre-wrap}.tonga-review th:first-child{width:42px;box-sizing:border-box}.tonga-review td:nth-child(2){font-weight:700}.tonga-review td:nth-child(3){color:#6b7280}.tonga-review td:nth-child(4){font-weight:700;color:#b91c1c}
+.tonga-positive{color:#166534;font-size:.85rem}.tonga-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}.tonga-queue-status:empty{display:none}.tonga-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+.tonga-note-label{display:block;font-size:.85rem;margin:14px 0 8px}.tonga-review textarea,.tonga-attachment input[type=text]{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #dbe4e8;border-radius:6px;font:inherit}.tonga-review textarea{min-height:60px;margin-top:5px}
+.tonga-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.tonga-submission-badge[hidden],.tonga-bulk-controls[hidden]{display:none}
+.tonga-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}.tonga-attachment{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}.tonga-attachment>input{margin-top:5px}.tonga-attachment label{display:block;font-size:.82rem;margin:8px 0}.tonga-attachment select{max-width:100%;display:block}.tonga-attachment-preview{margin:8px 0;color:#6b7280}.tonga-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+.tonga-geography-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.84rem;margin:12px 0}.tonga-location-chip{display:inline-block;border:1px solid #d8d8ce;border-radius:999px;padding:2px 7px;margin:2px;font-size:.75rem;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){.tonga-geography-grid{grid-template-columns:1fr}.tonga-review-heading{flex-wrap:wrap}.tonga-review{padding:12px}.tonga-review table{font-size:.8rem}.tonga-review th,.tonga-review td{padding:8px 4px}.tonga-review th:first-child{width:32px}.tonga-queue-toolbar{align-items:flex-start}.tonga-review-actions button{flex:1}.tonga-ban{margin-right:0}}
+/* The existing Tonga shell must not force the queue outside a narrow viewport. */
+.tabs{flex-wrap:wrap}
+@media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-tonga-queue]{padding:12px}}

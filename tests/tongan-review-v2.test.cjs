@@ -1,0 +1,61 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
+const src=fs.readFileSync('apps-script/deployed/tonga-submissions-v1.gs','utf8');
+const ctx={console};vm.createContext(ctx);vm.runInContext(src,ctx);
+ctx.tongaPlanSignature_=p=>require('crypto').createHmac('sha256','fixture-only').update(JSON.stringify(p)).digest('base64');ctx.jsonOut_=o=>o;ctx.tongaNow_=()=> 'fixture-time';ctx.LockService={getScriptLock:()=>({waitLock(){},releaseLock(){}})};
+const copy=o=>JSON.parse(JSON.stringify(o));
+let current='Old',writes=0,logs=[],throwAfterWrite=false,formula=false,multiple=false;
+const o={'Submission ID':'TEST-S1','Scholar ID':'TNG-S0001',Status:'Pending','Structured Submission JSON':'{}','Submitted Fields JSON':'{"title":"New"}','Attachments JSON':JSON.stringify([{fileId:'photo',field:'headshot',name:'Headshot.jpg'},{fileId:'bib',field:'bibliography',name:'Works.ris'},{fileId:'cv',field:'cv',name:'CV.pdf'}]),_row:5};
+o._sheet={getRange(row,col){return{setValue(v){if(col===11)o['Structured Submission JSON']=v;if(col===3)o.Status=v;},setValues(v){o.lastWrite=v;}};}};
+ctx.geoSs_=()=>({});ctx.findScholarSubmission_=()=>o;ctx.appendChangeLog_=(...a)=>logs.push(a);
+ctx.buildScholarSubmissionChanges_=()=>current==='New'?[]:[{key:'title',label:'Title',worksheet:'Scholars',field:'Current Title / Role',currentValue:current,newValue:'New',writable:!formula&&!multiple}];
+ctx.applyOneChange_=(ss,c,dry)=>{if(formula)return{status:'rejected'};if(current===c.newValue)return{status:'already_satisfied'};if(current!==c.oldValue)return{status:'needs_confirmation'};if(!dry){current=c.newValue;writes++;if(throwAfterWrite){throwAfterWrite=false;throw Error('lost acknowledgement');}}return{status:'ok'};};
+const begin=files=>ctx.tongaBeginReview_({submissionId:'TEST-S1',selectedChanges:[{key:'title',expectedCurrent:'Old'}],selectedFiles:files,reviewNotes:'Fixture only'});
+current='Conflict';assert.throws(()=>begin([]),/Master changed/);current='Old';formula=true;assert.throws(()=>begin([]),/fresh review/);formula=false;
+let p=begin(['photo','bib','cv']).plan;assert.equal(p.items.filter(x=>x.state==='pending').length,4);
+throwAfterWrite=true;assert.throws(()=>ctx.tongaApproveScholar_({submissionId:'TEST-S1'}),/lost acknowledgement/);assert.equal(current,'New');
+let out=ctx.tongaApproveScholar_({submissionId:'TEST-S1'});assert.equal(out.status,'ok');assert.equal(writes,1,'Retry never reapplies successful text');
+assert.equal(ctx.tongaFinishReview_({submissionId:'TEST-S1'}).remainingReview,true);
+assert.throws(()=>ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'photo',disposition:'published',evidence:'img/scholars/TNG-S9999.jpg'}),/result required/);
+ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'photo',disposition:'published',evidence:'img/scholars/TNG-S0001.jpg'});
+assert.equal(ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'photo'}).alreadyRecorded,true);
+assert.throws(()=>ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'bib',disposition:'reviewed_privately',evidence:'Downloaded file only'}),/completed import/);
+ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'cv',disposition:'reviewed_privately',evidence:'Checked CV against fixture degrees; no public upload'});
+assert.equal(ctx.tongaFinishReview_({submissionId:'TEST-S1'}).pending,1);
+ctx.tongaRecordAttachment_({submissionId:'TEST-S1',fileId:'bib',disposition:'imported',evidence:'Fixture P1/P2 imported and Authorship verified'});
+assert.equal(ctx.tongaFinishReview_({submissionId:'TEST-S1'}).remainingReview,false);assert.equal(o.Status,'Reviewed');
+// Geography uses the canonical publication key and established island mapping.
+const rows=[['P1','Tonga','Niuas',"Niuafo'ou",'','','Study location'],['P2','Tonga','Tongatapu','Tongatapu','','','Study location']];
+ctx.tongaTable_=()=>({headers:['Publication ID / BibTeX Key','Country','Island Division (auto from District)','Specific Island','District','Village / Town / Site','Geography Type'],rows});
+assert.equal(ctx.tongaCurrentGeo_({},'P1')[0].island,"Niuafo'ou");assert.equal(ctx.tongaCurrentGeo_({},'P3').length,0);
+ctx.tongaValidateLocationLinks_({},[{island:"Niuafo'ou",division:'Niuas'}]);assert.throws(()=>ctx.tongaValidateLocationLinks_({},[{island:"Niuafo'ou",division:'Tongatapu'}]),/requires verification/);
+assert.equal(ctx.tongaDivision_('Ongo Niua'),'Niuas');assert.equal(ctx.tongaDivision_('Haʻapai'),"Ha'apai");assert.throws(()=>ctx.tongaLocations_([{national:true,island:'Tongatapu'}]),/National study/);
+// Rejecting unfinished work preserves previously successful item dispositions.
+o.Status='Pending';let savedPlan=ctx.tongaReviewPlan_(o);savedPlan.items.push({kind:'file',key:'unfinished',state:'pending'});ctx.tongaSavePlan_(o,savedPlan);
+ctx.tongaRejectRemaining_(o);assert.equal(ctx.tongaReviewPlan_(o).items.find(x=>x.key==='unfinished').state,'rejected');assert.equal(ctx.tongaReviewPlan_(o).items.find(x=>x.key==='photo').state,'published');
+const forged=JSON.parse(o['Structured Submission JSON']);forged.adminReviewV2.items[0].state='forged';const originalJournal=o['Structured Submission JSON'];o['Structured Submission JSON']=JSON.stringify(forged);assert.throws(()=>ctx.tongaReviewPlan_(o),/signature/);o['Structured Submission JSON']=originalJournal;
+// Blocklist fixtures: confirmation/reason required and Tonga scope retained.
+o['Submitter Email']='Fixture@Example.invalid';o['Submitter Name']='Fixture';let banned=[];
+ctx.isScholarSubmitterBlocked_=()=>banned.length>0;ctx.ensureScholarBlocklistSheet_=()=>({getLastRow:()=>4,getRange:()=>({setValues:r=>banned.push(r)})});
+assert.throws(()=>ctx.tongaBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason'}),/confirmation/);
+ctx.tongaBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason',confirmed:true});ctx.tongaBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason',confirmed:true});assert.equal(banned.length,1);assert.equal(banned[0][0][0],'fixture@example.invalid');
+// Append-only geography retries deduplicate and recheck Authorship.
+const gh=['Geography Record ID','Publication ID / BibTeX Key','Scholar ID (optional)','Geography Type','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)','Coding Basis / Evidence','Source URL / Note','Verification','Last Checked'],gr=[];
+let linkage=true;ctx.tongaLinkedPublication_=()=>linkage;ctx.tongaValidateLocationLinks_=()=>{};
+ctx.Utilities={getUuid:()=>String(gr.length+1),formatDate:()=> 'fixture-date'};
+ctx.tongaTable_=()=>({headers:gh,rows:gr,sheet:{getLastRow:()=>gr.length+4,getRange:()=>({getFormulas:()=>[gh.map(()=> '')],setValues:rows=>gr.push(...rows)})}});
+const suggestion={'Submission ID':'GEO-FIXTURE','Scholar ID':'TNG-S0001','Publication Key':'P1','Proposed Tonga Locations JSON':'[{"national":true}]','Proposed Pacific Countries':'Fiji','Proposed Other Countries':'Australia'};
+assert.equal(ctx.tongaAddGeo_({},suggestion),3);assert.equal(ctx.tongaAddGeo_({},suggestion),0);assert.equal(gr.length,3);linkage=false;assert.throws(()=>ctx.tongaAddGeo_({},suggestion),/linkage changed/);assert.equal(gr.length,3);
+console.log('PASS backend fixtures: conflict/readonly checks; interrupted write retry; durable photo outcomes; unfinished CV/bibliography; canonical live geography; island/division validation.');
+(async()=>{
+ const dom=new JSDOM('<button data-tab="scholar-submissions">Scholar</button><button data-tab="geography-submissions">Geo</button><div data-tonga-queue="scholar"></div><div data-tonga-queue="geography"></div>',{runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+ const tick=()=>new Promise(r=>setTimeout(r,15));let decisions=[],confirmation='',fail=true;
+ const geo=[1,2].map(n=>({'Submission ID':'G'+n,'Scholar ID':'TNG-S0001','Publication Title':'Fixture '+n,Status:'Pending',currentTongaLocations:[], 'Proposed Tonga Locations JSON':'[{"national":true}]'}));
+ w.confirm=s=>{confirmation=s;return true;};w.TongaSubmissionAdmin={refresh:async()=>false};
+ w.adminWriteback={isConfigured:()=>true,readScholarSubmissions:async()=>({status:'ok',rows:[]}),readGeographySubmissions:async()=>({status:'ok',rows:geo.filter(x=>x.Status==='Pending')}),resolveGeographySubmission:async(id,d)=>{decisions.push([id,d]);if(id==='G2'&&fail)throw Error('fixture offline');geo.find(x=>x['Submission ID']===id).Status=d==='approve'?'Approved':'Rejected';return{status:'ok'};}};
+ w.eval(fs.readFileSync('js/tongan-submissions-admin.js','utf8'));w.document.querySelector('[data-tab="geography-submissions"]').click();await tick();
+ assert.equal([...w.document.querySelectorAll('.tonga-review input[type=checkbox]')].filter(x=>x.checked).length,0);
+ w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();
+ assert.match(confirmation,/APPROVE 0.*REJECT 2/);assert.deepEqual(decisions,[['G1','reject'],['G2','reject']]);assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/Failed and retained/);assert.equal(w.document.querySelectorAll('.tonga-review').length,1);
+ fail=false;w.document.querySelector('.tonga-review input').checked=true;w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/not dispatched/);
+ dom.window.close();console.log('PASS UI fixtures: unchecked geography default, zero-selected bulk confirmation, mixed failures retained, retry, honest refresh failure.');
+})().catch(e=>{console.error(e);process.exit(1)});

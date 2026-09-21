@@ -115,6 +115,11 @@
   }
 
   window.adminWriteback = {
+    reviewCapabilities: function () { return callGet('reviewCapabilities'); },
+    beginScholarReview: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return callPost({action:'beginScholarReview',submissionId:submissionId,selectedChanges:selectedChanges,selectedFiles:selectedFiles,reviewNotes:reviewNotes}); },
+    recordAttachmentReview: function (submissionId, fileId, disposition, evidence) { return callPost({action:'recordScholarAttachmentReview',submissionId:submissionId,fileId:fileId,disposition:disposition,evidence:evidence}); },
+    finishScholarReview: function (submissionId, reviewNotes) { return callPost({action:'finishScholarReview',submissionId:submissionId,reviewNotes:reviewNotes}); },
+    banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
     readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
     readGeographySubmissions: function (status) { return callGetWithParams('readPublicationGeographySubmissions', {status: status || ''}); },
     readSubmissionAttachment: function (submissionId, fileId) { return callGetWithParams('readScholarSubmissionAttachment', {submissionId: submissionId, fileId: fileId}); },

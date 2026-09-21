@@ -155,8 +155,9 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:'tonga-submissions-1', publicSubmissionsEnabled:tongaPublicEnabled_()});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_()});
     if (!checkAuth_(params)) return jsonOut_({ status: 'unauthorized' }, 401);
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,combinedReview:true,banSubmitter:true,currentGeography:true});
     if (action === 'describe') {
       return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
     }
@@ -334,6 +335,10 @@ function doPost(e) {
     if (!checkAuth_(body)) return jsonOut_({ status: 'unauthorized' }, 401);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
+    if (action === 'beginScholarReview') return tongaBeginReview_(body);
+    if (action === 'recordScholarAttachmentReview') return tongaRecordAttachment_(body);
+    if (action === 'finishScholarReview') return tongaFinishReview_(body);
+    if (action === 'banScholarSubmitter') return tongaBanSubmitter_(body);
     if (action === 'approveScholarProfileSubmission') return tongaApproveScholar_(body);
     if (action === 'resolveScholarProfileSubmission') return tongaResolveScholar_(body);
     if (action === 'resolvePublicationGeographySubmission') return handleResolvePublicationGeographySubmission_(body);
@@ -784,7 +789,9 @@ function handlePublicScholarProfileSubmission_(body) {
   var fieldsJson, structuredJson;
   try {
     fieldsJson = safeSubmissionObject_(body.fields, 45000);
-    structuredJson = safeSubmissionObject_(body.structuredSubmission, 45000);
+    var publicStructured=JSON.parse(safeSubmissionObject_(body.structuredSubmission, 45000));
+    delete publicStructured.adminReviewV2;delete publicStructured.adminReviewV2Signature;
+    structuredJson=JSON.stringify(publicStructured);
   } catch (err) { return jsonOut_({ status:'bad_request', reason:String(err.message || err) }, 400); }
   if (!body.fields || Array.isArray(body.fields)) return jsonOut_({status:'bad_request',reason:'fields-object-required'});
   if (!Object.keys(body.fields).length && !(body.files || []).length) return jsonOut_({status:'bad_request',reason:'no-changes'});
@@ -807,6 +814,7 @@ function handleReadScholarProfileSubmissions_(params) {
   vals.forEach(function(r){
     if(!r[0] || (want && r[2] !== want)) return;
     var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';});
+    o.reviewPlan=tongaReviewPlan_(o);
     o.proposedChanges = buildScholarSubmissionChanges_(ss, o);
     rows.push(o);
   });
@@ -919,7 +927,7 @@ function buildScholarSubmissionChanges_(ss, submission) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-1';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-2';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -959,7 +967,7 @@ function tongaNow_(){return Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd
 function tongaDivision_(s){
   var v=String(s||'').trim().replace(/[‘’ʻʼ]/g,"'");
   for(var i=0;i<TONGA_DIVISIONS.length;i++)if(TONGA_DIVISIONS[i].toLowerCase()===v.toLowerCase())return TONGA_DIVISIONS[i];
-  if(!v)return '';throw new Error('Invalid Tonga island division: '+v);
+  if(v==='Ongo Niua')return 'Niuas';if(!v)return '';throw new Error('Invalid Tonga island division: '+v);
 }
 function tongaList_(v){
   if(v==null)return [];if(!Array.isArray(v)||v.length>50)throw new Error('Invalid country list');
@@ -1000,7 +1008,8 @@ function handlePublicPublicationGeographySubmission_(body){
 }
 function handleReadPublicationGeographySubmissions_(params){
   var ss=geoSs_(),sh=tongaEnsureGeoQueue_(ss),last=sh.getLastRow(),out=[];
-  if(last>4)sh.getRange(5,1,last-4,GEO_SUBMISSION_HEADERS.length).getDisplayValues().forEach(function(r){if(!r[0]||(params.status&&r[2]!==params.status))return;var o={};GEO_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i];});out.push(o);});
+  if(last>4)sh.getRange(5,1,last-4,GEO_SUBMISSION_HEADERS.length).getDisplayValues().forEach(function(r){if(!r[0]||(params.status&&r[2]!==params.status))return;var o={};GEO_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i];});try{o.currentTongaLocations=tongaCurrentGeo_(ss,o['Publication Key']);}catch(e){o.currentGeographyError=String(e.message||e);}
+  out.push(o);});
   return jsonOut_({status:'ok',rows:out.reverse()});
 }
 function tongaAddGeo_(ss,o){
@@ -1009,6 +1018,7 @@ function tongaAddGeo_(ss,o){
   var required=['Geography Record ID','Publication ID / BibTeX Key','Scholar ID (optional)','Geography Type','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)','Coding Basis / Evidence','Source URL / Note','Verification','Last Checked'];
   required.forEach(function(h){if(t.headers.indexOf(h)<0)throw new Error('Research Geography header missing: '+h);});
   var loc=tongaLocations_(JSON.parse(o['Proposed Tonga Locations JSON']||'[]')),candidates=[];
+  tongaValidateLocationLinks_(ss,loc);
   loc.forEach(function(l){candidates.push({country:'Tonga',division:l.division,district:l.district,island:l.island,village:l.village,type:l.national?'National / general study':'Study location'});});
   [o['Proposed Pacific Countries'],o['Proposed Other Countries']].forEach(function(s){String(s||'').split(';').map(function(x){return x.trim();}).filter(Boolean).forEach(function(c){candidates.push({country:c,division:'',district:'',island:'',village:'',type:'Country / study location'});});});
   var keys=['Publication ID / BibTeX Key','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)'];
@@ -1045,6 +1055,7 @@ function tongaApproveScholar_(body){
   try{
     var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));
     if(!o)return jsonOut_({status:'not_found'});if(o.Status!=='Pending')return jsonOut_({status:'already_resolved'});
+    var plan=tongaReviewPlan_(o);if(plan)return tongaApplyPlan_(ss,o,plan);
     var proposed=buildScholarSubmissionChanges_(ss,o),chosen=body.selectedChanges;
     if(!Array.isArray(chosen)||!chosen.length)throw new Error('Select at least one field');
     var changes=[],seen={};chosen.forEach(function(x){
@@ -1072,6 +1083,8 @@ function tongaResolveScholar_(body){
   try{
     var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));if(!o)return jsonOut_({status:'not_found'});
     if(o.Status!=='Pending')return jsonOut_({status:'already_resolved'});
+    if(body.decision==='reviewed'&&tongaReviewPlan_(o))throw new Error('Finish the per-item review before closing this submission');
+    if(body.decision==='reject')tongaRejectRemaining_(o);
     if(body.decision==='reviewed'&&!String(body.reviewNotes||'').trim())throw new Error('Describe disposition of remaining fields and attachments');
     var status=body.decision==='reject'?'Rejected':'Reviewed';
     var message='Closed review. This action makes no Master, photo or publication changes; earlier approved changes, if any, remain recorded.';
@@ -1087,4 +1100,120 @@ function setupTongaSubmissionQueues(){
   var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
   try{ensureScholarSubmissionSheet_(ss);ensureScholarBlocklistSheet_(ss);tongaEnsureGeoQueue_(ss);}finally{lock.releaseLock();}
   Logger.log('Tonga submission queues ready. Public submissions remain '+(tongaPublicEnabled_()?'enabled':'disabled')+'.');
+}
+
+// Review v2 stores its private journal inside existing Structured Submission JSON.
+// No queue columns are migrated. The public export does not read this worksheet.
+function tongaPlanSignature_(plan){return Utilities.base64Encode(Utilities.computeHmacSha256Signature(JSON.stringify(plan),PropertiesService.getScriptProperties().getProperty('SHARED_SECRET')));}
+function tongaReviewPlan_(o){var s=parseJsonObject_(o['Structured Submission JSON']);if(!s.adminReviewV2)return null;if(s.adminReviewV2Signature!==tongaPlanSignature_(s.adminReviewV2))throw new Error('Invalid review journal signature; owner inspection required');return s.adminReviewV2;}
+function tongaSavePlan_(o,p){
+  var structured=parseJsonObject_(o['Structured Submission JSON']);structured.adminReviewV2=p;structured.adminReviewV2Signature=tongaPlanSignature_(p);
+  var serialized=JSON.stringify(structured);if(serialized.length>49000)throw new Error('Review journal exceeds cell capacity; review manually');
+  o._sheet.getRange(o._row,11).setValue(serialized);o['Structured Submission JSON']=serialized;
+}
+function tongaWithSubmission_(body,fn){
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));if(!o)throw new Error('Submission not found');
+    if(o.Status!=='Pending')throw new Error('Submission already '+o.Status);return fn(ss,o);
+  }finally{lock.releaseLock();}
+}
+function tongaBeginReview_(body){return tongaWithSubmission_(body,function(ss,o){
+  var old=tongaReviewPlan_(o);if(old)return jsonOut_({status:'ok',plan:old,resumed:true});
+  var proposed=buildScholarSubmissionChanges_(ss,o),selected=body.selectedChanges||[],fileIds=body.selectedFiles||[];
+  if(!Array.isArray(selected)||!Array.isArray(fileIds))throw new Error('Invalid review selection');
+  var keys={};selected.forEach(function(x){if(keys[x.key])throw new Error('Duplicate selection');keys[x.key]=x;
+    var p=proposed.filter(function(c){return c.key===x.key;})[0];
+    if(!p||!p.writable)throw new Error('Selected field requires a fresh review');
+    if(normalizeForCompare_(x.expectedCurrent)!==normalizeForCompare_(p.currentValue))throw new Error('Master changed since review; refresh before approving');
+  });
+  var files=parseJsonObject_(o['Attachments JSON']);if(!Array.isArray(files))files=[];
+  fileIds.forEach(function(id){if(!files.some(function(f){return f.fileId===id;}))throw new Error('Attachment not in submission');});
+  var plan={version:2,reviewer:ACTOR_LABEL,startedAt:tongaNow_(),note:String(body.reviewNotes||'').slice(0,1500),items:[]};
+  proposed.forEach(function(c){plan.items.push({kind:'text',key:c.key,label:c.label,selected:!!keys[c.key],state:keys[c.key]?'pending':'rejected',change:c});});
+  files.forEach(function(f){plan.items.push({kind:'file',key:f.fileId,field:f.field,name:f.name,selected:fileIds.indexOf(f.fileId)>=0,state:fileIds.indexOf(f.fileId)>=0?'pending':'rejected'});});
+  tongaSavePlan_(o,plan);return jsonOut_({status:'ok',plan:plan});
+});}
+function tongaApplyPlan_(ss,o,plan){
+  var pending=plan.items.filter(function(x){return x.kind==='text'&&x.state==='pending';}),results=[];
+  // Check all pending fields before applying any; re-resolve degree rows each time.
+  var current=buildScholarSubmissionChanges_(ss,o);
+  pending.forEach(function(item){
+    var c=item.change,p=current.filter(function(x){return x.key===item.key;})[0];
+    if(p&&(!p.writable||normalizeForCompare_(p.currentValue)!==normalizeForCompare_(c.currentValue)))throw new Error('Master conflict for '+item.label+'; pending review retained');
+    // If a previous write succeeded but acknowledgement failed, applyOneChange_
+    // recognizes the desired value. For degree rows still require a unique row.
+    var target=p||c;
+    if(c.worksheet==='Graduate Degrees'&&!p){
+      var t=tongaTable_(ss,'Graduate Degrees'),si=t.headers.indexOf('Scholar ID'),di=t.headers.indexOf('Degree Stage');
+      var stage=scholarSubmissionFieldSpecs_().filter(function(x){return x.key===item.key;})[0].stage;
+      var rows=t.rows.map(function(r,i){return {r:r,n:i+5};}).filter(function(x){return x.r[si]===o['Scholar ID']&&(stage==='master'?/master/i:/(phd|doctor)/i).test(x.r[di]);});
+      if(rows.length!==1)throw new Error('Ambiguous degree row; pending review retained');target.rowNumber=rows[0].n;
+    }
+    item._write={worksheet:c.worksheet,scholarId:o['Scholar ID'],rowNumber:target.rowNumber,field:c.field,oldValue:c.currentValue,newValue:c.newValue};
+    var test=applyOneChange_(ss,item._write,true);if(['ok','already_satisfied'].indexOf(test.status)<0)throw new Error('Field validation failed: '+item.label+' ('+test.status+')');
+  });
+  pending.forEach(function(item){
+    var result=applyOneChange_(ss,item._write,false);delete item._write;
+    results.push({key:item.key,status:result.status});
+    if(['ok','already_satisfied'].indexOf(result.status)>=0){item.state='applied';item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);}
+  });
+  return jsonOut_({status:results.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;})?'partial':'ok',results:results,plan:plan,remainingReview:true});
+}
+function tongaRecordAttachment_(body){return tongaWithSubmission_(body,function(ss,o){
+  var plan=tongaReviewPlan_(o);if(!plan)throw new Error('Begin review first');
+  var item=plan.items.filter(function(x){return x.kind==='file'&&x.key===body.fileId;})[0];
+  if(!item||!item.selected)throw new Error('Attachment not selected');
+  if(item.state!=='pending')return jsonOut_({status:'ok',plan:plan,alreadyRecorded:true});
+  var disposition=String(body.disposition||''),evidence=String(body.evidence||'').trim();
+  if(item.field==='headshot'){
+    if(disposition!=='published'||!/^img\/scholars\/TNG-S\d+\.jpg$/.test(evidence)||evidence!=='img/scholars/'+o['Scholar ID']+'.jpg')throw new Error('Successful Tonga photo service result required');
+  }else{
+    if(['reviewed_privately','imported'].indexOf(disposition)<0||evidence.length<10)throw new Error('Describe actual private review or completed import; downloading is not importing');
+    if(/bibliograph|bibtex|ris|enw/i.test(item.field+' '+item.name)&&disposition!=='imported')throw new Error('Bibliography requires a completed import with evidence');
+  }
+  item.state=disposition;item.evidence=evidence.slice(0,1500);item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);
+  return jsonOut_({status:'ok',plan:plan});
+});}
+function tongaFinishReview_(body){return tongaWithSubmission_(body,function(ss,o){
+  var plan=tongaReviewPlan_(o);if(!plan)throw new Error('Begin review first');
+  var remains=plan.items.filter(function(x){return x.state==='pending';});
+  if(remains.length)return jsonOut_({status:'ok',remainingReview:true,pending:remains.length,plan:plan});
+  var summary=plan.items.map(function(x){return x.kind+':'+x.key+'='+x.state;}).join('; ');
+  o._sheet.getRange(o._row,13,1,4).setValues([[tongaLiteral_(String(body.reviewNotes||plan.note).slice(0,1500)),ACTOR_LABEL,tongaNow_(),summary]]);
+  appendChangeLog_(ss,SCHOLAR_SUBMISSION_SHEET,o['Scholar ID'],o['Submission ID'],'Pending','Reviewed');
+  o._sheet.getRange(o._row,3).setValue('Reviewed');return jsonOut_({status:'ok',remainingReview:false,plan:plan});
+});}
+function tongaRejectRemaining_(o){
+  var plan=tongaReviewPlan_(o);
+  if(!plan){var fields=parseJsonObject_(o['Submitted Fields JSON']),files=parseJsonObject_(o['Attachments JSON']);plan={version:2,reviewer:ACTOR_LABEL,items:Object.keys(fields).map(function(k){return {kind:'text',key:k,state:'rejected'};})};
+    if(Array.isArray(files))files.forEach(function(f){plan.items.push({kind:'file',key:f.fileId,state:'rejected'});});}
+  plan.items.forEach(function(x){if(x.state==='pending')x.state='rejected';});tongaSavePlan_(o,plan);
+}
+function tongaBanSubmitter_(body){return tongaWithSubmission_(body,function(ss,o){
+  var reason=String(body.reason||'').trim();if(reason.length<5||body.confirmed!==true)throw new Error('A reason and explicit confirmation are required');
+  var email=normalizedSubmitterEmail_(o['Submitter Email']);if(!email)throw new Error('No submitter email');
+  if(!isScholarSubmitterBlocked_(ss,email)){var sh=ensureScholarBlocklistSheet_(ss);sh.getRange(sh.getLastRow()+1,1,1,7).setValues([[email,o['Submitter Name'],tongaNow_(),ACTOR_LABEL,o['Submission ID'],reason.slice(0,1500),'Active'].map(tongaLiteral_)]);}
+  appendChangeLog_(ss,SCHOLAR_BLOCKLIST_SHEET,o['Scholar ID'],o['Submission ID'],'','Submitter blocked: '+reason.slice(0,500));
+  return jsonOut_({status:'ok',blocked:true});
+});}
+function tongaCurrentGeo_(ss,key){
+  var t=tongaTable_(ss,'Research Geography'),pi=t.headers.indexOf('Publication ID / BibTeX Key'),ci=t.headers.indexOf('Country');
+  if(pi<0||ci<0)throw new Error('Research Geography headers require verification');
+  function val(r,h){var i=t.headers.indexOf(h);return i<0?'':r[i];}
+  return t.rows.filter(function(r){return r[pi]===key&&String(r[ci]).trim().toLowerCase()==='tonga';}).map(function(r){return {national:/national|general/i.test(val(r,'Geography Type')),division:val(r,'Island Division (auto from District)'),district:val(r,'District'),island:val(r,'Specific Island'),village:val(r,'Village / Town / Site')};});
+}
+
+function tongaValidateLocationLinks_(ss,locations){
+  var t=tongaTable_(ss,'Research Geography'),ci=t.headers.indexOf('Country'),ii=t.headers.indexOf('Specific Island'),di=t.headers.indexOf('Island Division (auto from District)');
+  function norm(v){return String(v||'').trim().replace(/[‘’ʻʼ]/g,"'").replace(/\s*\([^)]*\)\s*$/,'').toLowerCase();}
+  locations.forEach(function(l){if(!l.island)return;
+    var divisions={};t.rows.forEach(function(r){if(norm(r[ci])==='tonga'&&norm(r[ii])===norm(l.island)&&r[di])divisions[tongaDivision_(r[di])]=true;});
+    if(Object.keys(divisions).length!==1||!divisions[l.division])throw new Error('Island/division relationship requires verification in Tonga Master geography: '+l.island);
+  });
+}
+/** Owner backup before deploying review v2. Does not change any live queue. */
+function backupTongaReviewDataV2(){
+  var ss=geoSs_();if(ss.getId()!==SPREADSHEET_ID_HINT)throw new Error('Wrong Tonga Master');
+  var copy=DriveApp.getFileById(ss.getId()).makeCopy('Tonga Master before review v2 '+tongaNow_());
+  Logger.log('Private backup created: '+copy.getUrl());return copy.getUrl();
 }

@@ -142,3 +142,9 @@ Both submission tabs display Fiji-style pending-count badges after Admin reaches
 Scholar attachments are grouped in a Fiji-style Attachments section with filename, field/size metadata and an automatically loaded secure inline image preview (maximum 280px). The existing authenticated attachment endpoint is used; previews do not publish images. Headshot approval remains explicit and uses the existing Tonga photo service. CV/thesis/bibliography files remain separately reviewed. No Apps Script deployment is required.
 
 Validation: queue tests cover startup before tab click, ready gating, both badges, polling without note loss, failed reads, zero count, and inline authenticated headshot rendering. Existing submission and iTaukei preservation tests pass. No user submission was approved or rejected during these checks.
+
+## Review v2 implementation
+
+The Fiji-style Tonga review layout now supports per-card Check all/Clear all, changed-only emphasized tables, secure inline attachments, signed per-item review journals, combined text/photo review and explicit private-file completion evidence. Geography gains current-versus-proposed locations and confirmed approve-checked/reject-unchecked bulk decisions with partial failures retained. Existing badges, isolation, photos/insights, public forms and B3 are preserved.
+
+Backend activation and unverified live checks are documented in `docs/TONGA-REVIEW-V2-DEPLOY.md`. The source filename remains `tonga-submissions-v1.gs` but its new runtime is `tonga-submissions-2`. The earlier v1 review instructions above describe the historical baseline; the v2 section and deployment guide govern once activated.

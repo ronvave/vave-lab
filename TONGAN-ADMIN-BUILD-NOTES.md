@@ -226,3 +226,8 @@ and, once unlocked with `xIN2rULfs6kUd4jB`, the admin login screen (same
 passcode, see judgment call #1). No Tongan data files exist on the server
 yet, so all panels will show an honest empty state until the Tongan Master
 Sheet + data pipeline (out of scope here) are built and populated.
+
+## Review-panel parity implementation — 2026-09-21
+
+Baseline `f968602073fd22af13ea67081b03524afefab1f1`; backup ref `backup/tonga-review-parity-20260921`.
+Implemented Tonga-only Fiji-style review cards/toolbars, combined durable per-item review, private-file dispositions, capability-gated bans, live geography comparisons, bulk decisions and public-refresh reporting. Added isolated review-v2 fixtures and retained existing submission, queue badge, card/mobility and Fiji preservation checks. See `docs/TONGA-REVIEW-V2-DEPLOY.md` for the exact existing deployment ID, replacement source, backup, owner steps, rollback and live verification limits. No real queue decisions were made.
