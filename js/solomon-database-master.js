@@ -6381,239 +6381,154 @@
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
   function layoutMilestoneLabels(milestones, yearMin, yearMax, left, width, top, height, bars) {
-    // Dynamic collision-aware milestone layout.
-    //
-    // Every candidate is evaluated against:
-    //   1) chart bounds,
-    //   2) publication bars,
-    //   3) already-placed label boxes,
-    //   4) already-routed leader lines.
-    //
-    // Connectors use orthogonal (elbow) routes instead of one long diagonal.
-    // This prevents the criss-crossing seen when milestone years cluster
-    // together. Because the routine derives positions from the current
-    // milestones + current bars on every render, newly-added data is handled
-    // automatically without hard-coded scholar coordinates.
-    const ctx = document.createElement('canvas').getContext('2d');
-    const boxes = [];
-    const leaders = [];
-    const gap = 7;
-    const barGap = 4;
-    const lineGap = 3;
-    const maxWidth = Math.min(235, Math.max(145, width * 0.28));
+    // Dynamic in-plot milestone layout.
+    // Labels are always kept INSIDE the chart axes, aligned either left or
+    // right (never centered), and routed with orthogonal leader lines.
+    // Placement is recomputed from the current bars + milestones every render.
+    const ctx=document.createElement('canvas').getContext('2d');
+    const boxes=[], leaders=[];
+    const gap=8, barPad=5, linePad=3;
+    const maxWidth=Math.min(235,Math.max(150,width*0.27));
 
-    const measure = (text, size, bold) => {
-      ctx.font = `${bold ? '700' : '400'} ${size}px Arial`;
+    const measure=(text,size,bold)=>{
+      ctx.font=`${bold?'700':'400'} ${size}px Arial`;
       return ctx.measureText(text).width;
     };
+    const rectOverlap=(a,b,pad=gap)=>
+      a.x < b.x+b.width+pad && a.x+a.width+pad > b.x &&
+      a.y < b.y+b.height+pad && a.y+a.height+pad > b.y;
 
-    const rectOverlap = (a, b, pad = gap) =>
-      a.x < b.x + b.width + pad &&
-      a.x + a.width + pad > b.x &&
-      a.y < b.y + b.height + pad &&
-      a.y + a.height + pad > b.y;
-
-    const pointInRect = (p, r, pad = 0) =>
-      p.x >= r.x - pad && p.x <= r.x + r.width + pad &&
-      p.y >= r.y - pad && p.y <= r.y + r.height + pad;
-
-    const orientation = (a, b, d) => {
-      const v = (b.y - a.y) * (d.x - b.x) - (b.x - a.x) * (d.y - b.y);
-      if (Math.abs(v) < 0.001) return 0;
-      return v > 0 ? 1 : 2;
+    const orientation=(a,b,c)=>{
+      const v=(b.y-a.y)*(c.x-b.x)-(b.x-a.x)*(c.y-b.y);
+      return Math.abs(v)<0.001?0:(v>0?1:2);
     };
-    const onSegment = (a, b, d) =>
-      b.x <= Math.max(a.x, d.x) + 0.001 && b.x + 0.001 >= Math.min(a.x, d.x) &&
-      b.y <= Math.max(a.y, d.y) + 0.001 && b.y + 0.001 >= Math.min(a.y, d.y);
-
-    const segmentsIntersect = (s1, s2) => {
+    const onSeg=(a,b,c)=>b.x<=Math.max(a.x,c.x)+0.001&&b.x+0.001>=Math.min(a.x,c.x)&&
+      b.y<=Math.max(a.y,c.y)+0.001&&b.y+0.001>=Math.min(a.y,c.y);
+    const segCross=(s1,s2)=>{
       const a=s1.a,b=s1.b,c=s2.a,d=s2.b;
-      const o1=orientation(a,b,c), o2=orientation(a,b,d), o3=orientation(c,d,a), o4=orientation(c,d,b);
-      if (o1 !== o2 && o3 !== o4) return true;
-      if (o1===0 && onSegment(a,c,b)) return true;
-      if (o2===0 && onSegment(a,d,b)) return true;
-      if (o3===0 && onSegment(c,a,d)) return true;
-      if (o4===0 && onSegment(c,b,d)) return true;
+      const o1=orientation(a,b,c),o2=orientation(a,b,d),o3=orientation(c,d,a),o4=orientation(c,d,b);
+      if(o1!==o2&&o3!==o4)return true;
+      if(o1===0&&onSeg(a,c,b))return true;
+      if(o2===0&&onSeg(a,d,b))return true;
+      if(o3===0&&onSeg(c,a,d))return true;
+      if(o4===0&&onSeg(c,b,d))return true;
       return false;
     };
-
-    const segmentHitsRect = (seg, rect, pad = lineGap) => {
-      const r={x:rect.x-pad,y:rect.y-pad,width:rect.width+2*pad,height:rect.height+2*pad};
-      if (pointInRect(seg.a,r) || pointInRect(seg.b,r)) return true;
-      const tl={x:r.x,y:r.y}, tr={x:r.x+r.width,y:r.y};
-      const br={x:r.x+r.width,y:r.y+r.height}, bl={x:r.x,y:r.y+r.height};
-      return [
-        {a:tl,b:tr},{a:tr,b:br},{a:br,b:bl},{a:bl,b:tl}
-      ].some(edge=>segmentsIntersect(seg,edge));
+    const pointInRect=(p,r,pad=0)=>p.x>=r.x-pad&&p.x<=r.x+r.width+pad&&p.y>=r.y-pad&&p.y<=r.y+r.height+pad;
+    const segHitsRect=(seg,r,pad=linePad)=>{
+      const rr={x:r.x-pad,y:r.y-pad,width:r.width+pad*2,height:r.height+pad*2};
+      if(pointInRect(seg.a,rr)||pointInRect(seg.b,rr)) return true;
+      const tl={x:rr.x,y:rr.y},tr={x:rr.x+rr.width,y:rr.y},br={x:rr.x+rr.width,y:rr.y+rr.height},bl={x:rr.x,y:rr.y+rr.height};
+      return [{a:tl,b:tr},{a:tr,b:br},{a:br,b:bl},{a:bl,b:tl}].some(e=>segCross(seg,e));
     };
 
-    const buildLines = m => {
+    const buildLines=m=>{
       const lines=[];
-      [[`${m.year}: ${m.headline || m.shortLabel}`,11,true],
-       [m.personLine,10,false],
-       [m.uniLine,10,false],
-       [m.paternalTop,9,false],
-       [m.paternalBottom,9,false]].forEach(([text,size,bold]) => {
-        if (!text) return;
+      [[`${m.year}: ${m.headline||m.shortLabel}`,11,true],
+       [m.personLine,10,false],[m.uniLine,10,false],
+       [m.paternalTop,9,false],[m.paternalBottom,9,false]].forEach(([text,size,bold])=>{
+        if(!text)return;
         let line='';
-        for (const word of String(text).split(/\s+/)) {
-          const token = line ? ' ' + word : word;
-          if (line && measure(line + token,size,bold) > maxWidth) {
-            lines.push({text:line,size,bold});
-            line='';
-          }
-          for (const ch of (line ? ' ' + word : word)) {
-            if (line && measure(line+ch,size,bold)>maxWidth) {
-              lines.push({text:line,size,bold});
-              line='';
-            }
-            line+=ch;
-          }
-        }
-        if (line) lines.push({text:line,size,bold});
+        String(text).split(/\s+/).forEach(word=>{
+          const trial=line?line+' '+word:word;
+          if(line&&measure(trial,size,bold)>maxWidth){lines.push({text:line,size,bold});line=word;}
+          else line=trial;
+        });
+        if(line)lines.push({text:line,size,bold});
       });
       return lines;
     };
 
-    const routeLeader = (box, point) => {
-      // Attach to the nearest horizontal edge when possible. The route then
-      // rises/falls vertically from the milestone point and turns once toward
-      // the label. This is much easier to keep non-crossing than a diagonal.
-      const boxMid = box.x + box.width/2;
-      const leftOf = point.x < box.x;
-      const rightOf = point.x > box.x + box.width;
-      let attach;
-      if (leftOf) attach={x:box.x, y:Math.max(box.y+8, Math.min(box.y+box.height-8, point.y))};
-      else if (rightOf) attach={x:box.x+box.width, y:Math.max(box.y+8, Math.min(box.y+box.height-8, point.y))};
-      else attach={x:Math.max(box.x+8,Math.min(box.x+box.width-8,point.x)), y:box.y+box.height};
-
-      // Prefer an elbow just below the label when the label is above the bar.
-      // If the point is already level with the box, use a direct horizontal.
-      let elbow;
-      if (Math.abs(point.y-attach.y) < 4) {
-        elbow={x:point.x,y:attach.y};
-      } else {
-        elbow={x:point.x,y:attach.y};
-      }
+    const makeRoute=(box,point,side)=>{
+      // side='left' means label sits left of milestone; text is right-aligned.
+      // side='right' means label sits right of milestone; text is left-aligned.
+      const edgeX=side==='left'?box.x+box.width:box.x;
+      const attachY=Math.max(box.y+10,Math.min(box.y+box.height-8,box.y+box.height*0.65));
+      const elbow={x:point.x,y:attachY};
       const segs=[];
-      if (Math.abs(point.y-elbow.y)>0.5) segs.push({a:point,b:elbow});
-      if (Math.abs(elbow.x-attach.x)>0.5 || Math.abs(elbow.y-attach.y)>0.5) segs.push({a:elbow,b:attach});
-      return {attach,segs};
+      if(Math.abs(point.y-elbow.y)>0.5) segs.push({a:point,b:elbow});
+      if(Math.abs(elbow.x-edgeX)>0.5) segs.push({a:elbow,b:{x:edgeX,y:attachY}});
+      return {segs,attach:{x:edgeX,y:attachY}};
     };
 
-    const leaderCollides = (route, ownBox) => {
-      // Connector may end on its own box, but must not travel through any
-      // other label, bar, or connector.
-      for (const seg of route.segs) {
-        if (boxes.some(b => b !== ownBox && segmentHitsRect(seg,b,lineGap))) return true;
-        // Ignore a tiny neighbourhood around the milestone start point so
-        // the connector can legitimately originate at the top of its bar.
-        if (bars.some(bar => {
-          const shrunk={x:bar.x-barGap,y:bar.y-barGap,width:bar.width+2*barGap,height:bar.height+2*barGap};
-          if (pointInRect(seg.a,shrunk,1)) {
-            const clipped={a:{x:seg.a.x,y:seg.a.y-2},b:seg.b};
-            return segmentHitsRect(clipped,shrunk,0);
-          }
-          return segmentHitsRect(seg,shrunk,0);
-        })) return true;
-        if (leaders.some(existing => existing.segs.some(oldSeg => segmentsIntersect(seg,oldSeg)))) return true;
+    const routeOk=(route,ownPoint)=>{
+      for(const seg of route.segs){
+        if(boxes.some(b=>segHitsRect(seg,b,linePad))) return false;
+        if(leaders.some(r=>r.segs.some(s=>segCross(seg,s)))) return false;
+        // Leaders may originate at their own bar top but must not traverse
+        // unrelated publication bars.
+        if(bars.some(bar=>{
+          if(pointInRect(ownPoint,bar,2) && pointInRect(seg.a,bar,2)) return false;
+          return segHitsRect(seg,bar,1);
+        })) return false;
       }
-      return false;
+      return true;
     };
 
-    // Place the most constrained labels first: later years and taller labels
-    // tend to live in the busiest part of this chart. Stable tie-breaks keep
-    // positions deterministic between renders.
-    const ordered = milestones.slice().map(m=>({m,lines:buildLines(m)}))
-      .sort((a,b) => b.lines.length-a.lines.length || a.m.year-b.m.year || a.m.key.localeCompare(b.m.key));
+    const ordered=milestones.slice().map(m=>({m,lines:buildLines(m)}))
+      .sort((a,b)=>a.m.year-b.m.year||a.m.key.localeCompare(b.m.key));
 
-    ordered.forEach(({m,lines}) => {
-      if (!lines.length) return;
+    ordered.forEach(({m,lines})=>{
+      if(!lines.length)return;
       const w=Math.min(maxWidth,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+4);
       const h=lines.length*14+6;
       const point={
         x:left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width,
-        y:m._anchorY != null ? m._anchorY : top+height
+        y:m._anchorY!=null?m._anchorY:top+height
       };
 
-      // Candidate X positions: nearest-right/nearest-left first, then a dense
-      // scan across the plot. Candidate Y tiers alternate high → mid → low
-      // so nearby milestones naturally occupy different rows.
-      const xs=[];
-      const pushX=x=>{ if(x>=left+6 && x+w<=left+width-6 && !xs.some(v=>Math.abs(v-x)<1)) xs.push(x); };
-      pushX(point.x+12);
-      pushX(point.x-w-12);
-      for(let delta=24;delta<=width;delta+=24){ pushX(point.x+delta); pushX(point.x-w-delta); }
-      for(let x=left+6;x+w<=left+width-6;x+=18) pushX(x);
-
-      const ys=[];
-      const pushY=y=>{ if(y>=top+6 && y+h<=top+height-6 && !ys.some(v=>Math.abs(v-y)<1)) ys.push(y); };
-      const tierStep=Math.max(18,Math.min(30,h*0.65));
-      for(let y=top+8;y+h<=top+height-8;y+=tierStep) pushY(y);
-      for(let y=top+height-h-8;y>=top+8;y-=tierStep) pushY(y);
-
       const candidates=[];
-      xs.forEach(x=>{
-        ys.forEach(y=>{
-          const box={x,y,width:w,height:h};
-          if (boxes.some(b=>rectOverlap(box,b,gap))) return;
-          if (bars.some(b=>rectOverlap(box,b,barGap))) return;
-          const route=routeLeader(box,point);
-          if (leaderCollides(route,box)) return;
+      const yStep=Math.max(18,Math.min(26,h*0.55));
+      const ys=[];
+      for(let y=top+8;y+h<=top+height-8;y+=yStep) ys.push(y);
 
-          // Score: short connector, slight preference for higher labels, and
-          // preference for labels staying on the same side as their milestone.
-          const connectorLen=route.segs.reduce((n,s)=>n+Math.hypot(s.b.x-s.a.x,s.b.y-s.a.y),0);
-          const horizontalDrift=Math.abs((box.x+box.width/2)-point.x);
-          const verticalPenalty=(box.y-top)*0.12;
-          const sidePenalty=(point.x<left+width/2 && box.x<point.x-w ? 10 : 0);
-          candidates.push({box,route,score:connectorLen+horizontalDrift*0.18+verticalPenalty+sidePenalty});
+      // Search nearest left/right placements first, then fan outward.
+      const offsets=[12,24,36,52,72,96,126,160,200,250,320];
+      offsets.forEach(off=>{
+        const leftX=point.x-w-off;
+        const rightX=point.x+off;
+        [['left',leftX],['right',rightX]].forEach(([side,x])=>{
+          if(x<left+7||x+w>left+width-7)return;
+          ys.forEach(y=>{
+            const box={x,y,width:w,height:h};
+            if(boxes.some(b=>rectOverlap(box,b,gap)))return;
+            if(bars.some(b=>rectOverlap(box,b,barPad)))return;
+            const route=makeRoute(box,point,side);
+            if(!routeOk(route,point))return;
+            const len=route.segs.reduce((n,s)=>n+Math.abs(s.b.x-s.a.x)+Math.abs(s.b.y-s.a.y),0);
+            const score=len+(y-top)*0.10+off*0.18;
+            candidates.push({box,route,side,score});
+          });
         });
       });
 
-      candidates.sort((a,b)=>a.score-b.score || a.box.y-b.box.y || a.box.x-b.box.x);
-      if (!candidates.length) return;
+      // Dense fallback search across all legal x positions, still left/right.
+      if(!candidates.length){
+        for(let x=left+8;x+w<=left+width-8;x+=16){
+          const center=x+w/2;
+          const side=center<point.x?'left':'right';
+          if(side==='left'&&x+w>=point.x-6)continue;
+          if(side==='right'&&x<=point.x+6)continue;
+          ys.forEach(y=>{
+            const box={x,y,width:w,height:h};
+            if(boxes.some(b=>rectOverlap(box,b,gap))||bars.some(b=>rectOverlap(box,b,barPad)))return;
+            const route=makeRoute(box,point,side);
+            if(!routeOk(route,point))return;
+            const len=route.segs.reduce((n,s)=>n+Math.abs(s.b.x-s.a.x)+Math.abs(s.b.y-s.a.y),0);
+            candidates.push({box,route,side,score:len+(y-top)*0.12});
+          });
+        }
+      }
+
+      candidates.sort((a,b)=>a.score-b.score||a.box.y-b.box.y||a.box.x-b.box.x);
+      if(!candidates.length)return;
       const chosen=candidates[0];
-      const anchor = chosen.route.attach.x <= chosen.box.x+2 ? 'start'
-                   : chosen.route.attach.x >= chosen.box.x+chosen.box.width-2 ? 'end'
-                   : 'middle';
+      const anchor=chosen.side==='left'?'end':'start';
       const placed={...chosen.box,milestone:m,lines,anchor,leader:chosen.route};
       boxes.push(placed);
       leaders.push(chosen.route);
     });
-    // Fallback: if an unusually dense future milestone set cannot satisfy
-    // every strict connector constraint, place the remaining labels into the
-    // first non-overlapping annotation lane. This guarantees that data labels
-    // are never silently dropped. Because this fallback still checks label
-    // boxes, text never overlaps; only the connector route is simplified.
-    const placedKeys=new Set(boxes.map(b=>b.milestone.key));
-    milestones.slice().sort((a,b)=>a.year-b.year || a.key.localeCompare(b.key)).forEach(m=>{
-      if(placedKeys.has(m.key)) return;
-      const lines=buildLines(m);
-      if(!lines.length) return;
-      const w=Math.min(maxWidth,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+4);
-      const h=lines.length*14+6;
-      const point={
-        x:left+(m.year-yearMin+0.5)/(yearMax-yearMin+1)*width,
-        y:m._anchorY != null ? m._anchorY : top+height
-      };
-      let chosen=null;
-      for(let y=top+6;y+h<=top+height-6 && !chosen;y+=Math.max(18,h+gap)){
-        for(let x=left+6;x+w<=left+width-6;x+=12){
-          const box={x,y,width:w,height:h};
-          if(boxes.some(b=>rectOverlap(box,b,gap))) continue;
-          chosen=box; break;
-        }
-      }
-      if(!chosen) return;
-      const attach={x:Math.max(chosen.x+8,Math.min(chosen.x+chosen.width-8,point.x)),y:chosen.y+chosen.height};
-      const route={attach,segs:[
-        {a:point,b:{x:point.x,y:attach.y}},
-        {a:{x:point.x,y:attach.y},b:attach}
-      ].filter(s=>Math.abs(s.a.x-s.b.x)>0.5 || Math.abs(s.a.y-s.b.y)>0.5)};
-      boxes.push({...chosen,milestone:m,lines,anchor:'middle',leader:route});
-      leaders.push(route);
-    });
+
     return {boxes,complete:boxes.length===milestones.length};
   }
 
@@ -6690,21 +6605,13 @@
     }
 
     const W = 900;
-    // Milestone annotations live in their own band ABOVE the publication
-    // plot. The band grows with milestone density; the publication plot keeps
-    // a stable height and a data-derived Y scale. This prevents label layout
-    // from ever inflating the publication axis (the previous failure mode
-    // produced scales in the thousands and visually flattened the bars).
-    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_BOTTOM = 46;
-    const BASE_PLOT_H = 252;
-    const ANNOTATION_TOP = 28;
-    const visibleMilestoneCount = (panelDData.milestones || []).length;
-    const annotationRows = Math.max(1, Math.ceil(visibleMilestoneCount / 3));
-    const ANNOTATION_H = Math.max(112, annotationRows * 70);
-    const PAD_TOP = ANNOTATION_TOP + ANNOTATION_H;
-    let H = PAD_TOP + BASE_PLOT_H + PAD_BOTTOM;
-    const plotW = W - PAD_LEFT - PAD_RIGHT;
-    const plotH = BASE_PLOT_H;
+    // Milestone labels live INSIDE the plot. The plot is deliberately taller
+    // than the old 340px version so there is ample in-axis whitespace above
+    // the publication bars, while the data-derived Y scale remains unchanged.
+    const PAD_LEFT=62, PAD_RIGHT=74, PAD_BOTTOM=46, PAD_TOP=36;
+    let H=430;
+    const plotW=W-PAD_LEFT-PAD_RIGHT;
+    const plotH=H-PAD_TOP-PAD_BOTTOM;
     // dataMin/dataMax define the domain the timeline can span. We widen the
     // lower bound to include milestone years so the default "All" view always
     // captures every milestone (e.g. 1963 first male PhD is earlier than the
@@ -6741,23 +6648,24 @@
     const yZero = PAD_TOP + plotH;
     const plotRight = W - PAD_RIGHT;
     const milestonesInView=panelDData.milestones.filter(m=>m.year>=yMin && m.year<=yMax);
-    // Publication Y scale is FINAL at this point. Milestone layout is not
-    // allowed to change niceMax. Labels are solved in the dedicated annotation
-    // band above the plot while their anchors remain at the true bar tops.
+    const milestoneBars=[];
+    perYear.forEach((bucket,year)=>{
+      if(year<yMin||year>yMax)return;
+      const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
+      if(total) milestoneBars.push({
+        x:PAD_LEFT+(year-yMin)*bandW+bandGap,
+        y:yZero-yScale(total),
+        width:barW,
+        height:yScale(total)
+      });
+    });
     milestonesInView.forEach(m=>{
       const bucket=perYear.get(m.year)||{};
       const total=visibleTypes.reduce((n,t)=>n+(bucket[t]||0),0);
       m._anchorY=yZero-yScale(total);
     });
     const milestoneLayout=layoutMilestoneLabels(
-      milestonesInView,
-      yMin,
-      yMax,
-      PAD_LEFT,
-      plotW,
-      ANNOTATION_TOP,
-      ANNOTATION_H - 8,
-      []
+      milestonesInView,yMin,yMax,PAD_LEFT,plotW,PAD_TOP,plotH,milestoneBars
     );
 
 
@@ -6914,7 +6822,7 @@
 
       const group = panelDSvg('g', {'data-milestone-label':m.key});
       group.appendChild(panelDSvg('title', {}, [m.year,m.headline,m.personLine,m.uniLine,m.paternalLine].filter(Boolean).join(' · ')));
-      const textX = box.anchor==='end' ? box.x+box.width : box.anchor==='middle' ? box.x+box.width/2 : box.x;
+      const textX = box.anchor==='end' ? box.x+box.width : box.x;
       box.lines.forEach((line,index) => {
         group.appendChild(panelDSvg('text', {
           x:textX,'text-anchor':box.anchor,y:12+box.y+index*14,
