@@ -8594,9 +8594,12 @@
     const paternal = paternalGeography.province;
     const provinceGroup = provinceToProvinceGroup(paternal);
     const gradient = (provinceGroup && CONF_GRADIENT[provinceGroup]) || NEUTRAL_GRADIENT;
-    // Card banners use the concise Island name only. The underlying field is
-    // still the scholar's paternal Province; this is display-only.
-    const bannerLabel = provinceGroup || 'Solomon Islander Scholar';
+    // Card banners spell out the geographic level for clarity. Strip any
+    // existing suffix before appending it so refreshed Master data cannot
+    // produce labels such as "Western Province Province". Scholars without
+    // a classified paternal province use the project-wide neutral label.
+    const provinceBannerName = String(provinceGroup || '').replace(/\s+Province$/i, '').trim();
+    const bannerLabel = provinceBannerName ? `${provinceBannerName} Province` : 'Solomon Island Scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);
