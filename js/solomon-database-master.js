@@ -6272,6 +6272,45 @@
       };
     }).filter(Boolean);
 
+    // National-first milestone that predates the earliest PhD currently inside
+    // the strict canonical Indigenous roster. Nathan Kere's completed 1992
+    // doctorate is first-party verified and SINU explicitly describes it as
+    // the first PhD for Solomon Islands. He remains in Review Queue because
+    // the project's person-level Indigenous identity/ancestry gate is still
+    // unresolved, so this callout is deliberately labelled as a NATIONAL
+    // milestone rather than an Indigenous-roster milestone.
+    milestones.push({
+      key: 'firstSolomonIslandsPhDNational',
+      label: 'First Solomon Islands PhD (national milestone)',
+      shortLabel: '1st Solomon Islands PhD',
+      stage: 'phd',
+      gender: 'Male',
+      color: '#6B7280',
+      isFemale: false,
+      year: 1992,
+      name: 'Sir Dr Nathan Kumamusa Kere',
+      familyName: 'Kere',
+      givenNames: 'Nathan Kumamusa',
+      firstGiven: 'Nathan',
+      publicPerson: 'Nathan Kere',
+      title: 'Dr.',
+      personLine: 'Dr. Nathan Kere',
+      uniLine: 'University of London (UK)',
+      uniRenamed: false,
+      paternalInfo: {},
+      paternalLine: 'Indigenous identity verification pending',
+      paternalTop: 'National first; Indigenous identity',
+      paternalBottom: 'verification pending',
+      headline: 'First Solomon Islands PhD (national)',
+      degree: 'Doctor of Philosophy',
+      uni: 'University of London',
+      cUni: 'University of London',
+      oUni: '',
+      country: 'United Kingdom',
+      countryCode: 'UK',
+      ties: []
+    });
+
     const authorshipByPublication = new Map();
     authorship.forEach(row => {
       const publicationId = String(row['Publication ID / BibTeX Key'] || '').trim();
