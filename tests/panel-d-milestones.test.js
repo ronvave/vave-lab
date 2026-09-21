@@ -49,7 +49,9 @@ function pickMilestone(defs, scholars, gradDegrees) {
       }))
       .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
     if (!candidates.length) return null;
-    const chosen = candidates[0];
+    const chosen = (def.confirmedScholarId
+      ? candidates.find(candidate => candidate.scholarId === def.confirmedScholarId)
+      : null) || candidates[0];
     const title = titleFor(def.stage, def.gender);
     const publicPerson = shortenPublicName(chosen.givenNames, chosen.familyName, chosen.name);
     const personLine = [title, publicPerson].filter(Boolean).join(' ');
@@ -124,5 +126,22 @@ console.log('\n[6] Missing country → empty (not fabricated)');
 const missCountry = [{ 'Scholar ID': 'ITK-S0162', 'Degree Stage': "Master's", 'Completion Status': 'Completed', 'Finish / Completion Year': '1956', 'C_Uni name': 'University of Auckland', 'O_Uni name': 'University of Auckland', Country: '' }];
 const picks4 = pickMilestone([{ key: 'firstMaleMasters', stage: 'masters', gender: 'Male' }], scholars, missCountry);
 assertEq(picks4[0].country, '', 'Blank country stays blank');
+
+// -------- Test 7: confirmed historical-first pin survives refresh ordering --------
+console.log('\n[7] Confirmed Solomon Islands male PhD remains Dr Nathan Kere');
+const solomonScholars = [
+  { 'Scholar ID': 'SOL-S0084', 'Scholar Name': 'Kere, Nathan Kumamusa', Gender: 'Male', 'Family Name': 'Kere', 'Given Names': 'Nathan Kumamusa' },
+  { 'Scholar ID': 'SOL-S0999', 'Scholar Name': 'Provisional, Older', Gender: 'Male', 'Family Name': 'Provisional', 'Given Names': 'Older' },
+];
+const solomonDegrees = [
+  { 'Scholar ID': 'SOL-S0084', 'Degree Stage': 'PhD', 'Completion Status': 'Completed', 'Finish / Completion Year': '1992', 'C_Uni name': 'University of London', 'O_Uni name': 'University of London', Country: 'United Kingdom' },
+  { 'Scholar ID': 'SOL-S0999', 'Degree Stage': 'PhD', 'Completion Status': 'Completed', 'Finish / Completion Year': '1990', 'C_Uni name': 'Provisional University', 'O_Uni name': 'Provisional University', Country: 'Australia' },
+];
+const kerePick = pickMilestone([
+  { key: 'firstMalePhD', stage: 'phd', gender: 'Male', confirmedScholarId: 'SOL-S0084' },
+], solomonScholars, solomonDegrees)[0];
+assertEq(kerePick.scholarId, 'SOL-S0084', 'Confirmed male PhD → Nathan Kere');
+assertEq(kerePick.year, 1992, 'Nathan Kere PhD year → 1992');
+assertEq(kerePick.personLine, 'Dr. Nathan Kere', 'Nathan Kere public label');
 
 console.log('\nDone.');

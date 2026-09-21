@@ -6112,7 +6112,12 @@
     const milestoneDefinitions = [
       { key: 'firstMaleMasters', label: "Earliest recorded male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
       { key: 'firstFemaleMasters', label: "Earliest recorded female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
-      { key: 'firstMalePhD', label: 'Earliest recorded male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
+      // Confirmed project decision (2026-09-21): keep Dr Nathan Kere as the
+      // earliest recorded male PhD for now.  The Scholar ID pin prevents a
+      // later automated refresh or an older provisional record from silently
+      // replacing the confirmed callout.  Remove confirmedScholarId when the
+      // historical-first review is formally reopened.
+      { key: 'firstMalePhD', label: 'Earliest recorded male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false, confirmedScholarId: 'SOL-S0084' },
       { key: 'firstFemalePhD', label: 'Earliest recorded female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
     ];
     // Country name -> ISO-ish 2-letter code for compact milestone labels.
@@ -6210,9 +6215,12 @@
         })
         .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
       if (!candidates.length) return null;
-      const year = candidates[0].year;
+      const confirmedCandidate = def.confirmedScholarId
+        ? candidates.find(candidate => candidate.scholarId === def.confirmedScholarId)
+        : null;
+      const chosen = confirmedCandidate || candidates[0];
+      const year = chosen.year;
       const tied = candidates.filter(candidate => candidate.year === year);
-      const chosen = tied[0];
       // Build display strings: title + FIRST-given + family, uni (CC).
       //
       // Public chart name privacy rule (culturally required in iTaukei
