@@ -6491,6 +6491,31 @@
         }
       }
 
+      // Last-resort placement: a confirmed milestone must never disappear
+      // just because the ideal leader route intersects a bar or an existing
+      // leader.  Keep labels inside the plot and non-overlapping with one
+      // another, then choose the least-obstructed route.  This is especially
+      // important when the male and female PhD milestones sit close together
+      // in the 1990s.  Bar/leader crossings are preferable to silently
+      // dropping a historically meaningful milestone from Panel D.
+      if(!candidates.length){
+        for(let x=left+8;x+w<=left+width-8;x+=12){
+          const center=x+w/2;
+          const side=center<point.x?'left':'right';
+          if(side==='left'&&x+w>=point.x-6)continue;
+          if(side==='right'&&x<=point.x+6)continue;
+          ys.forEach(y=>{
+            const box={x,y,width:w,height:h};
+            if(boxes.some(b=>rectOverlap(box,b,gap)))return;
+            const route=makeRoute(box,point,side);
+            const len=route.segs.reduce((n,s)=>n+Math.abs(s.b.x-s.a.x)+Math.abs(s.b.y-s.a.y),0);
+            const barHits=bars.reduce((n,bar)=>n+route.segs.filter(seg=>segHitsRect(seg,bar,1)).length,0);
+            const leaderHits=leaders.reduce((n,prior)=>n+route.segs.reduce((m,seg)=>m+prior.segs.filter(old=>segCross(seg,old)).length,0),0);
+            candidates.push({box,route,side,score:len+(y-top)*0.12+barHits*1000+leaderHits*700});
+          });
+        }
+      }
+
       candidates.sort((a,b)=>a.score-b.score||a.box.y-b.box.y||a.box.x-b.box.x);
       if(!candidates.length)return;
       const chosen=candidates[0];
