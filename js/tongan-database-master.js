@@ -8420,7 +8420,7 @@
     'American Samoa': 'as',
     'Solomon Islands': 'sb', 'Tonga': 'to', 'Vanuatu': 'vu', 'Kiribati': 'ki',
     'Cook Islands': 'ck', 'French Polynesia': 'pf', 'New Caledonia': 'nc',
-    'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Tuvalu': 'tv',
+    'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Naoero': 'nr', 'Tuvalu': 'tv',
     'Federated States of Micronesia': 'fm', 'Micronesia': 'fm', 'Marshall Islands': 'mh',
     'Japan': 'jp', 'Canada': 'ca', 'Germany': 'de',
     'India': 'in', 'China': 'cn', 'Malaysia': 'my', 'Singapore': 'sg',
@@ -10964,7 +10964,7 @@
     'Papua New Guinea': { lat: -6.3149, lng: 143.9555, region: 'Pacific' },
     'India':          { lat:  20.5937, lng:  78.9629, region: 'Asia' },
     'Philippines':    { lat:  12.8797, lng: 121.7740, region: 'Asia' },
-    'Nauru':          { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
+    'Naoero':         { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
     // Zotero collection is named 'FSM'; displayName expands it for the
     // country-row label and popup title.
     // FSM parent center is placed in empty ocean between Yap (west) and
@@ -11031,12 +11031,21 @@
     }
   };
 
-  // Display-name transform — the Zotero collection key is unchanged.
+  // Country naming policy: legacy source records remain readable, but B4
+  // groups both spellings under Naoero before deduplicating publications.
+  function b4CanonicalCountry(country) {
+    const name = String(country || '').trim();
+    return /^(nauru|naoero)$/i.test(name) ? 'Naoero' : name;
+  }
+
+  // Display-name transform — the source collection key is unchanged.
   function b3DisplayName(country) {
+    country = b4CanonicalCountry(country);
     const meta = B3_COUNTRY_COORDS[country];
     return (meta && meta.displayName) ? meta.displayName : country;
   }
   function b3RegionOf(country) {
+    country = b4CanonicalCountry(country);
     const meta = B3_COUNTRY_COORDS[country];
     return (meta && meta.region) ? meta.region : 'Other';
   }
@@ -11056,7 +11065,8 @@
         return;
       }
       const typeRaw = String(row['Location Type'] || '').trim();
-      const name = String(row['Canonical Location Name'] || row.Country || '').trim();
+      const rawName = String(row['Canonical Location Name'] || row.Country || '').trim();
+      const name = typeRaw === 'Country' ? b4CanonicalCountry(rawName) : rawName;
       if (!name) return;
       const aliases = String(row['Alias Notes'] || '').split(';').map(x => x.trim()).filter(Boolean);
       const coord = { lat, lng, name, type: typeRaw, country: String(row.Country || '').trim() };
@@ -11220,8 +11230,9 @@
     const subLocOfKey = new Map();
     const countries = [];
     cols.filter(c => c.parent === whereRoot.key).forEach(country => {
-      countries.push(country.name);
-      countryOfKey.set(country.key, country.name);
+      const canonicalCountry = b4CanonicalCountry(country.name);
+      if (!countries.includes(canonicalCountry)) countries.push(canonicalCountry);
+      countryOfKey.set(country.key, canonicalCountry);
       subLocOfKey.set(country.key, null);
       const subDef = B3_SUBLOCATIONS[country.name] || null;
       // Recurse into descendants. A descendant whose name matches a known
@@ -11232,7 +11243,7 @@
       const stack = cols.filter(c => c.parent === country.key).map(c => ({ col: c, subLoc: subDef && subDef[c.name] ? c.name : null }));
       while (stack.length) {
         const { col, subLoc } = stack.shift();
-        countryOfKey.set(col.key, country.name);
+        countryOfKey.set(col.key, canonicalCountry);
         subLocOfKey.set(col.key, subLoc);
         cols.filter(x => x.parent === col.key).forEach(x => stack.push({
           col: x,
@@ -12409,3 +12420,4 @@
     });
   }
 })();
+

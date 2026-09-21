@@ -105,3 +105,7 @@ Embedded behavior and source data are unchanged. Automated fit checks cover
 wide, short, narrow and large-label geometries plus the existing regressions.
 Live browser visual checks remain access-blocked; the synthetic local preview
 was also blocked by the browser's localhost restriction. No visual pass claimed.
+
+
+## Panel B4 canonical country name Naoero
+Per the user's naming instruction, B4 now canonicalizes both Nauru and Naoero to Naoero before country grouping and publication deduplication. Country summaries, selectors and popup labels share the canonical name. Legacy source spellings remain accepted; coordinates and NR flag identity are preserved. No source records or counts are rewritten. Updated the dashboard script cache hash. Syntax and a mixed-spelling fixture passed: three unique publications produce one Naoero country bucket even when one publication carries both aliases. User reference: https://www.nytimes.com/2026/08/03/world/naoero-nauru-name-change.html (article could not be accessed during implementation; naming change implements the user's explicit instruction).
