@@ -1,0 +1,34 @@
+name: Solomon scholar submission checks
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*solomon*'
+      - '.github/workflows/solomon-submissions.yml'
+  pull_request:
+    paths:
+      - '**/*solomon*'
+      - '.github/workflows/solomon-submissions.yml'
+permissions:
+  contents: read
+jobs:
+  isolated-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm install --prefix /tmp/solomon-test-deps jsdom@26 --no-audit --no-fund
+      - name: Test private review and public form with isolated fixtures
+        env:
+          NODE_PATH: /tmp/solomon-test-deps/node_modules
+        run: |
+          for test in tests/solomon-*.test.cjs; do node "$test" || exit 1; done
+          python3 tests/solomon-sharing.test.py
+          python3 scripts/build_solomon_submission_bundle.py
+          git diff --exit-code -- apps-script/deployed/solomon-submissions-v1.gs
+          python3 scripts/bust_cache.py --check

@@ -147,14 +147,9 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Paternal Ward",
     "Paternal Specific Island",
     "Paternal Village/Community",
-    "Maternal Province/City Area",
-    "Maternal Ward",
-    "Maternal Specific Island",
-    "Maternal Village/Community",
     # Customary/cultural -- independent of administrative geography, never
     # inferred from it.
     "Paternal Clan/Tribe/Lineage",
-    "Maternal Clan/Tribe/Lineage",
     "Customary Place",
     "Self-identified Home/Community",
     "Primary Discipline",

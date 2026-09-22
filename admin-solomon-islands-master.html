@@ -226,6 +226,7 @@
   .btn-primary:disabled { background: var(--muted-2); border-color: var(--muted-2); cursor: not-allowed; }
   .divider { height: 1px; background: var(--border); margin: 14px 0; }
 </style>
+<link rel="stylesheet" href="css/solomon-submissions.css?v=c2f1d54d">
 </head>
 <body>
 
@@ -234,6 +235,7 @@
   <div id="login-card">
     <h1>Vave Lab · Solomon Islands Scholar Database Admin (V2)</h1>
     <p class="subtitle">Scholar-ID keyed enrichment for the Solomon Islands Scholar Master dashboard.</p>
+    <p><a href="admin-solomon-review.html">Google sign-in for submission reviewers</a></p>
     <form id="login-form" autocomplete="off">
       <label for="pw">Password</label>
       <input type="password" id="pw" required autofocus />
@@ -271,6 +273,8 @@
       <button class="tab-btn" data-tab="gaps">Authorship linkage gaps</button>
       <button class="tab-btn" data-tab="migration">Migration &amp; tools</button>
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
+      <button class="tab-btn" data-tab="scholar-submissions">Scholar Update Submissions</button>
+      <button class="tab-btn" data-tab="geography-submissions">Publication Geography Submissions</button>
       <button class="tab-btn" data-tab="changelog">Master change log</button>
       <button class="tab-btn" data-tab="log">Action log</button>
     </div>
@@ -412,8 +416,8 @@
 
       <div class="card">
         <h2>Master write-back endpoint</h2>
-        <p class="meta">Apps Script Web App URL and shared secret used to write edits back to the Master sheet. Both are stored only in this browser's <span class="mono">localStorage</span> and are never sent to GitHub or any AI service. See <a href="docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md">docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md</a> for one-time setup.</p>
-        <p class="meta" style="background:#fff3cd; color:#7a5c00; padding:8px 12px; border-radius:6px; margin:8px 0;"><strong>Writeback endpoint not yet configured.</strong> The Solomon Islands Apps Script backend has not been deployed yet. Saves will not reach the Master sheet until an owner completes the one-time deploy steps in <a href="docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md">docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md</a> and pastes the resulting endpoint URL + secret below.</p>
+        <p class="meta">Apps Script Web App URL and shared secret used to write edits back to the Master sheet. The secret is stored only in this browser's <span class="mono">localStorage</span> and is never sent to GitHub. Activating submissions publishes only the public endpoint and Google client ID. See <a href="docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md">docs/SOLOMON-ISLANDS-APPS-SCRIPT-DEPLOY.md</a> for one-time setup.</p>
+        <p class="meta">Keep your existing Solomon endpoint and secret. After deploying the submission backend, activate the public connection below.</p>
         <div class="form-row">
           <label for="writeback-endpoint">Endpoint URL</label>
           <input id="writeback-endpoint" type="url" placeholder="https://script.google.com/macros/s/AKfyc.../exec" style="width: 100%; max-width: 700px;">
@@ -425,6 +429,7 @@
         <div class="flex-row" style="margin-top:10px">
           <button class="btn btn-primary" id="writeback-save">Save endpoint</button>
           <button class="btn" id="writeback-test">Test connection</button>
+          <button class="btn" id="submissions-activate">Activate scholar submissions</button>
           <button class="btn" id="writeback-clear">Clear</button>
           <span class="status-pill" id="writeback-status" style="background: var(--cream); color: var(--muted);">unchecked</span>
         </div>
@@ -467,6 +472,8 @@
     </div>
 
     <!-- ========= LOG TAB ========= -->
+    <div class="tab-panel" id="tab-scholar-submissions"><div class="card" data-solomon-queue="scholar"><h2>Scholar Update Submissions</h2></div></div>
+    <div class="tab-panel" id="tab-geography-submissions"><div class="card" data-solomon-queue="geography"><h2>Publication Geography Submissions</h2></div></div>
     <div class="tab-panel" id="tab-changelog">
       <div class="card">
         <h2>Master change log</h2>
@@ -707,10 +714,11 @@
 
 <!-- scripts -->
 <script src="js/solomon-db-gate.js?v=02651daa" defer></script>
-<script src="js/solomon-database-adapter.js?v=60fefaae" defer></script>
+<script src="js/solomon-database-adapter.js?v=286c2a19" defer></script>
 <script src="js/solomon-admin-insights-migration.js?v=ed7594a1" defer></script>
-<script src="js/solomon-admin-writeback-client.js?v=02f30296" defer></script>
-<script src="js/admin-solomon-master.js?v=1c976ef9" defer></script>
+<script src="js/solomon-admin-writeback-client.js?v=18e18b02" defer></script>
+<script src="js/admin-solomon-master.js?v=fcd0135d" defer></script>
 
+<script src="js/solomon-submissions-admin.js?v=8cc026c4" defer></script>
 </body>
 </html>

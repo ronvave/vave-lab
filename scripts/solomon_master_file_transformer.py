@@ -196,7 +196,7 @@ SCHOLAR_ID_RE = re.compile(r"SOL-S\d{4}")
 
 def extract_scholars(rows: list[list]) -> list[dict]:
     """Sanitized scholar records. Adds derived fields:
-    - effective_paternal_province: falls back to maternal if paternal blank
+    - effective_paternal_province: paternal data only; maternal remains private
     - effective_province_group: Province/City Area via the Ward lookup
     Never infers Specific Island or customary fields from geography.
     """
@@ -209,10 +209,8 @@ def extract_scholars(rows: list[list]) -> list[dict]:
         if SCHOLAR_ID_RE.fullmatch(str(s.get("Scholar ID") or "").strip())
     ]
     for s in clean:
-        ward = clean_sentinel(s.get("Paternal Ward")) or clean_sentinel(s.get("Maternal Ward"))
-        province = clean_sentinel(s.get("Paternal Province/City Area")) or clean_sentinel(
-            s.get("Maternal Province/City Area")
-        )
+        ward = clean_sentinel(s.get("Paternal Ward"))
+        province = clean_sentinel(s.get("Paternal Province/City Area"))
         s["effective_paternal_ward"] = ward or "Unclassified"
         s["effective_province_group"] = (
             province or PROVINCE_TO_CONFEDERACY.get(ward, "Unclassified")
@@ -221,7 +219,7 @@ def extract_scholars(rows: list[list]) -> list[dict]:
         # Ward/Province -- read-through only, defensive re-affirmation.
         s["effective_specific_island"] = clean_sentinel(
             s.get("Paternal Specific Island")
-        ) or clean_sentinel(s.get("Maternal Specific Island"))
+        )
     return clean
 
 

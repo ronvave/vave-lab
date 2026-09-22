@@ -36,6 +36,7 @@ on:
       - "scripts/solomon_master_file_transformer.py"
       - "scripts/solomon_encrypt_data.py"
       - "scripts/solomon_decrypt_data.py"
+      - "scripts/solomon_sync_share_tokens.py"
       - "js/solomon-database-adapter.js"
       - "js/solomon-database-master.js"
   schedule:
@@ -126,6 +127,12 @@ jobs:
             --mode=production \
             --out-dir=data
 
+      - name: Persist and publish Solomon share tokens
+        if: github.event.inputs.dry_run != 'true'
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python3 scripts/solomon_sync_share_tokens.py
+
       - name: Diff vs previous snapshot
         id: diff
         run: |
@@ -201,7 +208,7 @@ jobs:
           python3 scripts/solomon_encrypt_data.py "${TARGETS[@]}"
 
       - name: Commit
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
           FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
           DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
@@ -211,7 +218,8 @@ jobs:
           git config user.email "bot@vavelab.example"
           git add \
             data/solomon-master-*.json.enc \
-            data/solomon-last-master-sync.json.enc
+            data/solomon-last-master-sync.json.enc \
+            data/solomon-share-tokens.json
           if git diff --cached --quiet; then
             echo "No changes to commit (unexpected — plaintext_changed said yes)"
             exit 0

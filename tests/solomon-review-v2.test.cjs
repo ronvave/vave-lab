@@ -1,0 +1,40 @@
+const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
+const src=fs.readFileSync('apps-script/solomon-master-writeback.gs','utf8');
+const ctx={console,PropertiesService:{getScriptProperties:()=>({getProperty:()=>''})}};vm.createContext(ctx);vm.runInContext(src,ctx);
+ctx.solomonPlanSignature_=p=>require('crypto').createHmac('sha256','fixture-only').update(JSON.stringify(p)).digest('base64');ctx.jsonOut_=o=>o;ctx.solomonNow_=()=> 'fixture-time';ctx.LockService={getScriptLock:()=>({waitLock(){},releaseLock(){}})};
+const copy=o=>JSON.parse(JSON.stringify(o));
+let current='Old',writes=0,logs=[],throwAfterWrite=false,formula=false,multiple=false;
+const o={'Submission ID':'TEST-S1','Scholar ID':'SOL-S0001',Status:'Pending','Structured Submission JSON':'{}','Submitted Fields JSON':'{"title":"New"}','Attachments JSON':JSON.stringify([{fileId:'photo',field:'headshot',name:'Headshot.jpg'},{fileId:'bib',field:'bibliography',name:'Works.ris'},{fileId:'cv',field:'cv',name:'CV.pdf'}]),_row:5};
+o._sheet={getRange(row,col){return{setValue(v){if(col===11)o['Structured Submission JSON']=v;if(col===3)o.Status=v;},setValues(v){o.lastWrite=v;}};}};
+ctx.geoSs_=()=>({});ctx.findScholarSubmission_=()=>o;ctx.appendChangeLog_=(...a)=>logs.push(a);
+ctx.buildScholarSubmissionChanges_=()=>current==='New'?[]:[{key:'title',label:'Title',worksheet:'Scholars',field:'Current Title / Role',currentValue:current,newValue:'New',writable:!formula&&!multiple}];
+ctx.applyOneChange_=(ss,c,dry)=>{if(formula)return{status:'rejected'};if(current===c.newValue)return{status:'already_satisfied'};if(current!==c.oldValue)return{status:'needs_confirmation'};if(!dry){current=c.newValue;writes++;if(throwAfterWrite){throwAfterWrite=false;throw Error('lost acknowledgement');}}return{status:'ok'};};
+const begin=files=>ctx.solomonBeginReview_({submissionId:'TEST-S1',selectedChanges:[{key:'title',expectedCurrent:'Old'}],selectedFiles:files,reviewNotes:'Fixture only'});
+current='Conflict';assert.throws(()=>begin([]),/Master changed/);current='Old';formula=true;assert.throws(()=>begin([]),/fresh review/);formula=false;
+let p=begin(['photo','bib','cv']).plan;assert.equal(p.items.filter(x=>x.state==='pending').length,4);
+throwAfterWrite=true;assert.throws(()=>ctx.solomonApproveScholar_({submissionId:'TEST-S1'}),/lost acknowledgement/);assert.equal(current,'New');
+let out=ctx.solomonApproveScholar_({submissionId:'TEST-S1'});assert.equal(out.status,'ok');assert.equal(writes,1,'Retry never reapplies successful text');
+assert.equal(ctx.solomonFinishReview_({submissionId:'TEST-S1'}).remainingReview,true);
+assert.throws(()=>ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'photo',disposition:'published',evidence:'img/scholars/SOL-S9999.jpg'}),/result required/);
+ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'photo',disposition:'published',evidence:'img/scholars/SOL-S0001.jpg'});
+assert.equal(ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'photo'}).alreadyRecorded,true);
+assert.throws(()=>ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'bib',disposition:'reviewed_privately',evidence:'Downloaded file only'}),/completed import/);
+ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'cv',disposition:'reviewed_privately',evidence:'Checked CV against fixture degrees; no public upload'});
+assert.equal(ctx.solomonFinishReview_({submissionId:'TEST-S1'}).pending,1);
+ctx.solomonRecordAttachment_({submissionId:'TEST-S1',fileId:'bib',disposition:'imported',evidence:'Fixture P1/P2 imported and Authorship verified'});
+assert.equal(ctx.solomonFinishReview_({submissionId:'TEST-S1'}).remainingReview,false);assert.equal(o.Status,'Reviewed');
+// Solomon province validation is separate from island and village.
+assert.equal(ctx.solomonProvince_('western'),'Western');
+assert.throws(()=>ctx.solomonProvince_('Tongatapu'),/Invalid/);
+assert.throws(()=>ctx.solomonLocations_([{national:true,province:'Western'}]),/National study/);
+assert.deepEqual(copy(ctx.solomonList_(['Nauru','Naoero'])),['Naoero']);
+// Rejecting unfinished work preserves previously successful item dispositions.
+o.Status='Pending';let savedPlan=ctx.solomonReviewPlan_(o);savedPlan.items.push({kind:'file',key:'unfinished',state:'pending'});ctx.solomonSavePlan_(o,savedPlan);
+ctx.solomonRejectRemaining_(o);assert.equal(ctx.solomonReviewPlan_(o).items.find(x=>x.key==='unfinished').state,'rejected');assert.equal(ctx.solomonReviewPlan_(o).items.find(x=>x.key==='photo').state,'published');
+const forged=JSON.parse(o['Structured Submission JSON']);forged.adminReviewV2.items[0].state='forged';const originalJournal=o['Structured Submission JSON'];o['Structured Submission JSON']=JSON.stringify(forged);assert.throws(()=>ctx.solomonReviewPlan_(o),/signature/);o['Structured Submission JSON']=originalJournal;
+// Blocklist fixtures: confirmation/reason required and Solomon scope retained.
+o['Submitter Email']='Fixture@Example.invalid';o['Submitter Name']='Fixture';let banned=[];
+ctx.isScholarSubmitterBlocked_=()=>banned.length>0;ctx.ensureScholarBlocklistSheet_=()=>({getLastRow:()=>4,getRange:()=>({setValues:r=>banned.push(r)})});
+assert.throws(()=>ctx.solomonBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason'}),/confirmation/);
+ctx.solomonBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason',confirmed:true});ctx.solomonBanSubmitter_({submissionId:'TEST-S1',reason:'Fixture reason',confirmed:true});assert.equal(banned.length,1);assert.equal(banned[0][0][0],'fixture@example.invalid');
+console.log('PASS: Solomon durable review, conflict checks, private file outcomes, retries and signed journal');

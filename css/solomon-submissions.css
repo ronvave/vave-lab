@@ -1,0 +1,27 @@
+[data-solomon-queue]{min-width:0;color:#062f35}
+[data-solomon-queue] h2{font-size:1.35rem}
+.solomon-queue-helper{font-size:.85rem;color:#6b7280;margin:8px 0 16px}
+.solomon-queue-toolbar,.solomon-bulk-controls,.solomon-review-actions,.solomon-selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.solomon-queue-count{margin-left:auto;font-size:.82rem;color:#6b7280}
+[data-solomon-queue] button,[data-solomon-queue] select{font:inherit;font-size:.85rem;padding:8px 12px;border:1px solid #e2e0d4;border-radius:6px;background:white;color:#062f35;cursor:pointer}
+[data-solomon-queue] button:disabled,[data-solomon-queue] input:disabled{opacity:.55;cursor:not-allowed}
+[data-solomon-queue] :focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+[data-solomon-queue] .solomon-approve{background:#166534;color:white;border-color:#166534}
+[data-solomon-queue] .solomon-reject{background:#991b1b;color:white;border-color:#991b1b}
+.solomon-ban{margin-right:auto}
+.solomon-review{background:white;border:1px solid #e2e0d4;border-left:4px solid #d97706;border-radius:8px;padding:16px;margin:14px 0;min-width:0;overflow-wrap:anywhere}
+.solomon-review--reviewed,.solomon-review--approved{border-left-color:#16a34a}.solomon-review--rejected{border-left-color:#b91c1c}
+.solomon-review-heading{display:flex;gap:12px;align-items:flex-start}.solomon-review-heading>div{min-width:0;flex:1}.solomon-review-heading h3{font-family:inherit;font-weight:700;font-size:1rem;margin:0 0 4px}
+.solomon-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+.solomon-submitter,.solomon-review .meta{font-size:.82rem;color:#6b7280}.solomon-submitter{margin:10px 0}
+.solomon-selection-controls{margin:10px 0}.solomon-review summary{font-weight:700;cursor:pointer;margin:10px 0}
+.solomon-review table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.86rem}.solomon-review th,.solomon-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e0d4;overflow-wrap:anywhere;white-space:pre-wrap}.solomon-review th:first-child{width:42px;box-sizing:border-box}.solomon-review td:nth-child(2){font-weight:700}.solomon-review td:nth-child(3){color:#6b7280}.solomon-review td:nth-child(4){font-weight:700;color:#b91c1c}
+.solomon-positive{color:#166534;font-size:.85rem}.solomon-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}.solomon-queue-status:empty{display:none}.solomon-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+.solomon-note-label{display:block;font-size:.85rem;margin:14px 0 8px}.solomon-review textarea,.solomon-attachment input[type=text]{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #dbe4e8;border-radius:6px;font:inherit}.solomon-review textarea{min-height:60px;margin-top:5px}
+.solomon-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.solomon-submission-badge[hidden],.solomon-bulk-controls[hidden]{display:none}
+.solomon-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}.solomon-attachment{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}.solomon-attachment>input{margin-top:5px}.solomon-attachment label{display:block;font-size:.82rem;margin:8px 0}.solomon-attachment select{max-width:100%;display:block}.solomon-attachment-preview{margin:8px 0;color:#6b7280}.solomon-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+.solomon-geography-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.84rem;margin:12px 0}.solomon-location-chip{display:inline-block;border:1px solid #d8d8ce;border-radius:999px;padding:2px 7px;margin:2px;font-size:.75rem;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){.solomon-geography-grid{grid-template-columns:1fr}.solomon-review-heading{flex-wrap:wrap}.solomon-review{padding:12px}.solomon-review table{font-size:.8rem}.solomon-review th,.solomon-review td{padding:8px 4px}.solomon-review th:first-child{width:32px}.solomon-queue-toolbar{align-items:flex-start}.solomon-review-actions button{flex:1}.solomon-ban{margin-right:0}}
+/* The existing Solomon shell must not force the queue outside a narrow viewport. */
+.tabs{flex-wrap:wrap}
+@media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-solomon-queue]{padding:12px}}

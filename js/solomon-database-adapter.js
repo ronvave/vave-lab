@@ -245,8 +245,7 @@
     master.scholars.forEach(function (s) {
       s['Scholar Name'] = s['Scholar Name'] || s['Display Name'] || '';
       s['Province/City Area'] = s['Province/City Area'] ||
-        s['effective_province_group'] || s['Paternal Province/City Area'] ||
-        s['Maternal Province/City Area'] || '';
+        s['effective_province_group'] || s['Paternal Province/City Area'] || '';
       s['Discipline'] = s['Discipline'] || s['Broad Discipline'] ||
         s['Primary Discipline'] || '';
     });

@@ -1176,6 +1176,37 @@
     reader.readAsDataURL(file);
   }
 
+  function resizeSubmittedPhoto_ (dataUrl) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        var size=400,sw=img.naturalWidth,sh=img.naturalHeight,side=Math.min(sw,sh),sx=(sw-side)/2,sy=(sh-side)/2;
+        var canvas=document.createElement('canvas');canvas.width=size;canvas.height=size;
+        var ctx=canvas.getContext('2d');ctx.imageSmoothingQuality='high';ctx.fillStyle='#fff';ctx.fillRect(0,0,size,size);ctx.drawImage(img,sx,sy,side,side,0,0,size,size);
+        resolve(canvas.toDataURL('image/jpeg',0.9));
+      };
+      img.onerror=function(){reject(new Error('The submitted image could not be decoded.'));};img.src=dataUrl;
+    });
+  }
+
+  async function approveScholarSubmissionPhoto_ (sid, attachment, reviewKey) {
+    sid=String(sid||'').toUpperCase();if(!/^SOL-S\d+$/.test(sid))throw new Error('Invalid Scholar ID for photo approval.');
+    if(!attachment||!/^image\//i.test(String(attachment.type||'')))throw new Error('The selected attachment is not an image.');
+    if(!state.enrichmentDoc||!state.enrichmentDoc.scholars)throw new Error('Admin enrichment data is still loading. Refresh and try again.');
+    if(reviewKey){
+      reviewKey=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(reviewKey)))).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+      var token=getGhToken();if(!token)throw new Error('No GitHub token');
+      var metaResponse=await fetch('https://api.github.com/repos/'+GH_OWNER+'/'+GH_REPO+'/contents/'+encodeURI(ENRICHMENT_ENC)+'?ref='+GH_BRANCH,{headers:ghHeaders(token),cache:'no-store'});
+      if(!metaResponse.ok)throw new Error('Could not check prior photo approval ('+metaResponse.status+')');
+      var meta=await metaResponse.json(),fresh=await fetchEncryptedAtSha_(ENRICHMENT_ENC,meta.sha,token);
+      if(fresh.scholars&&fresh.scholars[sid]&&fresh.scholars[sid].submissionPhotoReviewKey===reviewKey)return {path:fresh.scholars[sid].photo,alreadyPublished:true};
+    }
+    var resized=await resizeSubmittedPhoto_('data:'+attachment.type+';base64,'+attachment.data),path='img/scholars/'+sid+'.jpg';
+    await githubUploadBinary(path,dataUrlToBytes(resized),'admin(master): approve submitted photo for '+sid);
+    var written=await pushEncryptedJsonMerged(ENRICHMENT_ENC,ENRICHMENT_URL,function(fresh){if(!fresh.scholars)fresh.scholars={};var current=Object.assign({},fresh.scholars[sid]||{});current.photo=path;if(reviewKey)current.submissionPhotoReviewKey=reviewKey;current.updatedAt=new Date().toISOString();fresh.scholars[sid]=current;fresh.updatedAt=new Date().toISOString();return fresh;},'admin(master): approve submitted photo for '+sid);
+    state.enrichmentDoc=written;renderKpi();renderScholars();return {path:path};
+  }
+
   // ------------------------- save flow -------------------------
   // Two-phase flow:
   //   1. Collect any master-editable field diffs. If there are any, show the
@@ -2848,4 +2879,19 @@
     // insights preview
     $('#pf-insights-json').addEventListener('input', updateInsightsPreview);
   }
+  document.getElementById('submissions-activate')?.addEventListener('click',async function(){
+    var button=this;button.disabled=true;
+    try{
+      await window.adminWriteback.ping();
+      var endpoint=window.adminWriteback.getEndpoint();
+      if(!/^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test(endpoint))throw new Error('Use the Solomon web app /exec URL.');
+      var cap=await fetch(endpoint+'?action=submissionCapabilities',{cache:'no-store'}).then(function(r){return r.json();});
+      if(cap.status!=='ok'||cap.country!=='Solomon Islands'||cap.spreadsheetId!=='1um6pHKriEhbtvmkm7e8E1j0_Zt9A-oYpY88fuPoAmFY'||!cap.publicSubmissionsEnabled)throw new Error('Deploy the Solomon submission backend and enable SOLOMON_PUBLIC_SUBMISSIONS_ENABLED first.');
+      var cfg={country:'Solomon Islands',spreadsheetId:cap.spreadsheetId,endpoint:endpoint,googleClientId:cap.googleClientId||''};
+      await githubUploadBinary('js/solomon-submission-config.js',new TextEncoder().encode('/* Public Solomon Islands connection settings; no secrets. */\nwindow.SolomonSubmissionConfig=Object.freeze('+JSON.stringify(cfg)+');\n'),'Enable Solomon Islands public scholar submissions');
+      await dispatchRefresh({silent:true});
+      toast('Public connection saved. Wait for Pages deployment and share-token refresh.'+(cfg.googleClientId?'':' Google reviewer sign-in still needs a client ID.'),'success');
+    }catch(e){toast(e.message,'error');}finally{button.disabled=false;}
+  });
+  window.SolomonSubmissionAdmin={approvePhoto:approveScholarSubmissionPhoto_,refresh:dispatchRefresh};
 })();

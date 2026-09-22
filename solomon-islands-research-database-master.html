@@ -3947,7 +3947,9 @@
 .db-map-a-wrap .db-conf-row__sub { white-space:normal; }
 @media(max-width:700px) { .db-map-a-wrap [data-db-conf-legend] { grid-template-columns:1fr; } }
 .db-map-a-wrap .db-map-world-wrap.is-fullscreen { aspect-ratio:auto; }
-</style></head>
+</style><link rel="stylesheet" href="css/solomon-scholar-portal.css?v=85e25ca6">
+<script>if(new URLSearchParams(location.search).has("solomonProfile"))document.documentElement.classList.add("solomon-profile-loading");</script>
+<style>.solomon-profile-loading body{visibility:hidden}</style></head>
 <body>
 
 <header class="site-header" role="banner">
@@ -5184,165 +5186,6 @@
 </footer>
 
 <script src="js/solomon-main.js?v=2cf4b3f9"></script>
-<!-- ==== Submit-info modal (for scholars to propose corrections) ==== -->
-<div class="db-submit-modal" id="db-submit-modal" role="dialog" aria-modal="true" aria-labelledby="db-submit-modal-title">
-  <div class="db-submit-modal__dialog">
-    <h2 id="db-submit-modal-title">Update info for this scholar</h2>
-    <p class="db-submit-modal__sub" id="db-submit-modal-sub"></p>
-    <div class="db-submit-modal__notice">
-      <strong>Please read:</strong> corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, or students can also submit on their behalf.
-    </div>
-
-    <form id="db-submit-form" enctype="multipart/form-data" novalidate>
-      <fieldset>
-        <legend>Who is submitting this</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-yourname">Your name <span class="req">*</span></label>
-            <input type="text" id="db-sf-yourname" name="submitter_name" required maxlength="120" />
-          </div>
-          <div>
-            <label for="db-sf-youremail">Your email <span class="req">*</span></label>
-            <input type="email" id="db-sf-youremail" name="submitter_email" required maxlength="200" />
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-relationship">Relationship to this scholar <span class="req">*</span></label>
-            <select id="db-sf-relationship" name="submitter_relationship" required>
-              <option value="">Select one…</option>
-              <option value="self">This is my own profile</option>
-              <option value="family">Family / relative</option>
-              <option value="colleague">Colleague / collaborator</option>
-              <option value="student">Student / mentee</option>
-              <option value="supervisor">Supervisor / advisor</option>
-              <option value="community">Community member</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Scholar profile</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-salutation">Salutation</label>
-            <select id="db-sf-salutation" name="salutation">
-              <option value="">(none)</option>
-              <option>Dr.</option><option>Prof.</option>
-              <option>Mr.</option><option>Mrs.</option><option>Ms.</option>
-            </select>
-          </div>
-          <div>
-            <label for="db-sf-village">Village/Town (Kolo)</label>
-            <input type="text" id="db-sf-village" name="village" placeholder="Village or community name" />
-          </div>
-          <div>
-            <label for="db-sf-paternal">Paternal Province</label>
-            <select id="db-sf-paternal" name="paternal_province">
-              <option value="">(select)</option>
-            </select>
-            <small>Province is derived automatically.</small>
-          </div>
-          <div>
-            <label for="db-sf-specific-island">Specific Island (Paternal)</label>
-            <input type="text" id="db-sf-specific-island" name="specific_island" placeholder="e.g. Guadalcanal, Malaita, New Georgia" />
-            <small>Independently curated — a province can span multiple islands.</small>
-          </div>
-          <div>
-            <label for="db-sf-title">Professional title</label>
-            <input type="text" id="db-sf-title" name="title" placeholder="e.g. Senior Lecturer" />
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-institution">Institution</label>
-            <input type="text" id="db-sf-institution" name="institution" />
-          </div>
-          <div>
-            <label for="db-sf-institution-url">Institution URL</label>
-            <input type="url" id="db-sf-institution-url" name="institution_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-department">Department</label>
-            <input type="text" id="db-sf-department" name="department" />
-          </div>
-          <div>
-            <label for="db-sf-department-url">Department URL</label>
-            <input type="url" id="db-sf-department-url" name="department_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-profile-url">Faculty profile URL</label>
-            <input type="url" id="db-sf-profile-url" name="profile_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-scholar-url">Google Scholar URL</label>
-            <input type="url" id="db-sf-scholar-url" name="google_scholar_url" placeholder="https://scholar.google.com/citations?user=…" />
-          </div>
-          <div>
-            <label for="db-sf-orcid-url">ORCID iD URL</label>
-            <input type="url" id="db-sf-orcid-url" name="orcid_url" placeholder="https://orcid.org/0000-0000-0000-0000" />
-          </div>
-          <div>
-            <label for="db-sf-photo">Profile photo URL</label>
-            <input type="url" id="db-sf-photo" name="photo_url" placeholder="https://… or leave blank" />
-            <small>Or attach the image file below.</small>
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-photo-file">Attach a photo (optional)</label>
-            <input type="file" id="db-sf-photo-file" name="photo_file" accept="image/*" />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Graduate studies (optional)</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-masters-uni">Masters — University</label>
-            <input type="text" id="db-sf-masters-uni" name="masters_university" />
-          </div>
-          <div>
-            <label for="db-sf-masters-country">Masters — Country</label>
-            <input type="text" id="db-sf-masters-country" name="masters_country" />
-          </div>
-          <div>
-            <label for="db-sf-phd-uni">PhD — University</label>
-            <input type="text" id="db-sf-phd-uni" name="phd_university" />
-          </div>
-          <div>
-            <label for="db-sf-phd-country">PhD — Country</label>
-            <input type="text" id="db-sf-phd-country" name="phd_country" />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Publications to add</legend>
-        <label for="db-sf-bib-file">BibTeX or EndNote file</label>
-        <input type="file" id="db-sf-bib-file" name="publications_file" accept=".bib,.enl,.enw,.ris,.txt,.xml" />
-        <small>Attach a single file containing <strong>all</strong> the publications you want added. BibTeX (.bib) is preferred; EndNote (.enw / .enl / .ris) is also fine.</small>
-        <div style="margin-top: 10px;">
-          <label for="db-sf-notes">Anything else we should know?</label>
-          <textarea id="db-sf-notes" name="notes" rows="3" placeholder="Optional — e.g. context on which fields you edited, or corrections that don't fit above."></textarea>
-        </div>
-      </fieldset>
-
-      <!-- Formsubmit.co configuration — hidden fields -->
-      <input type="hidden" name="_subject" id="db-sf-subject" value="Vave Lab scholar-info submission" />
-      <input type="hidden" name="_captcha" value="false" />
-      <input type="hidden" name="_template" value="table" />
-      <input type="hidden" name="scholar_name" id="db-sf-scholar-name" value="" />
-      <input type="hidden" name="scholar_slug" id="db-sf-scholar-slug" value="" />
-      <input type="hidden" name="submission_json" id="db-sf-submission-json" value="" />
-
-      <div class="db-submit-modal__actions">
-        <button type="button" class="db-submit-modal__btn db-submit-modal__btn--ghost" data-submit-cancel>Cancel</button>
-        <button type="submit" class="db-submit-modal__btn db-submit-modal__btn--primary" data-submit-send>Submit for review</button>
-      </div>
-
-      <div class="db-submit-modal__status" id="db-submit-status"></div>
-    </form>
-  </div>
-</div>
-
 <!-- =====================================================================
      Solomon Islands Scholar Database — MASTER-FILE PREVIEW (V2)
 
@@ -5361,9 +5204,11 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/solomon-demo-gate.js?v=49121e0c" defer></script>
-<script src="js/solomon-database-adapter.js?v=60fefaae" defer></script>
-<script src="js/solomon-database-master.js?v=bc8eade4" defer></script>
+<script src="js/solomon-demo-gate.js?v=b0e14e57" defer></script>
+<script src="js/solomon-database-adapter.js?v=286c2a19" defer></script>
+<script src="js/solomon-submission-config.js?v=384dcbe2"></script>
+<script src="js/solomon-scholar-portal.js?v=e00f4913" defer></script>
+<script src="js/solomon-database-master.js?v=1b90d6f3" defer></script>
 <script src="js/solomon-panel-overrides.js?v=1ace0c6b" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

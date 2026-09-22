@@ -126,6 +126,18 @@
   }
 
   window.adminWriteback = {
+    reviewCapabilities: function () { return callPost({action:'reviewCapabilities'}); },
+    beginScholarReview: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return callPost({action:'beginScholarReview',submissionId:submissionId,selectedChanges:selectedChanges,selectedFiles:selectedFiles,reviewNotes:reviewNotes}); },
+    recordAttachmentReview: function (submissionId, fileId, disposition, evidence) { return callPost({action:'recordScholarAttachmentReview',submissionId:submissionId,fileId:fileId,disposition:disposition,evidence:evidence}); },
+    finishScholarReview: function (submissionId, reviewNotes) { return callPost({action:'finishScholarReview',submissionId:submissionId,reviewNotes:reviewNotes}); },
+    banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
+    readScholarSubmissions: function (status) { return callPost({action:'readScholarProfileSubmissions',status:status||''}); },
+    readGeographySubmissions: function (status) { return callPost({action:'readPublicationGeographySubmissions',status:status||''}); },
+    readSubmissionAttachment: function (submissionId, fileId) { return callPost({action:'readScholarSubmissionAttachment',submissionId:submissionId,fileId:fileId}); },
+    approveScholarSubmission: function (submissionId, selectedChanges, reviewNotes) { return callPost({action:'approveScholarProfileSubmission', submissionId:submissionId, selectedChanges:selectedChanges, reviewNotes:reviewNotes}); },
+    resolveScholarSubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolveScholarProfileSubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
+    resolveGeographySubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolvePublicationGeographySubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
+
     getEndpoint: getEndpoint,
     getSecret:   getSecret,
     setEndpoint: setEndpoint,
