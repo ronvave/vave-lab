@@ -18,6 +18,9 @@
     if (!panel.id) panel.id = 'panel-nav-' + code.toLowerCase();
     panel.classList.add('panel-menu-target'); targets.set(code, panel);
   });
+  const navStyle = document.createElement('style');
+  navStyle.textContent = '.db-panel-menu { background: rgba(229, 243, 245, .97) !important; border-top: 1px solid rgba(14, 116, 144, .15); border-bottom: 1px solid rgba(14, 116, 144, .24); box-shadow: 0 5px 16px rgba(5, 65, 76, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(25, 57, 63, .97) !important; border-color: rgba(150, 213, 223, .27); }';
+  document.head.appendChild(navStyle);
   const nav = document.createElement('nav');
   nav.className = 'db-panel-menu'; nav.setAttribute('aria-label','Dashboard panels'); nav.hidden = true;
   const strip = document.createElement('div'); strip.className = 'db-panel-menu__pills'; nav.appendChild(strip);
@@ -61,7 +64,7 @@
     entries = entries.filter(([code]) => targets.has(code)); if (!entries.length) return;
     let pill;
     if (entries.length === 1) {
-      pill = link(entries[0][0], 'Panel ' + group); pill.title = entries[0][1];
+      pill = link(entries[0][0], ({D:'Timeline',E:'Confederacy',F:'Profiles',G:'Publications'})[group] || 'Panel ' + group); pill.title = entries[0][1];
       pill.setAttribute('aria-label','Panel ' + group + ': ' + entries[0][1]);
     } else {
       pill = document.createElement('button'); pill.type = 'button'; pill.textContent = 'Panel ' + group + ' ▾';
