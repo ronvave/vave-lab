@@ -107,3 +107,22 @@ transparent alternating white/teal row fills, with the olive Total column
 preserved and lightly differentiated. Both toggle views use the same styles.
 No data calculations or other panels changed. Refreshed the CSS content hash;
 DOM toggle and existing card/mobility regression checks passed.
+
+## 2026-09-22 — Floating dashboard panel navigation
+
+Added a dashboard-only A–G pill bar after the visitor scrolls beyond the first
+viewport. A–C expose the agreed short panel names; D–G jump directly to their
+single destinations. The bar sits below the measured sticky site header,
+highlights the visible panel group, and uses horizontal pill scrolling on
+narrow screens. Dropdowns support keyboard focus, Escape and outside clicks.
+A3 opens its disclosure before navigation. Jumps account for the fixed bar
+and preserve the existing filter hash. Stable existing panel IDs are retained.
+The bar is suppressed in shared/profile routes, embedded dashboards and
+fullscreen charts. No data model or existing panel handler changed.
+
+Passed DOM navigation checks covering visibility, destination mapping,
+dropdown exclusivity/dismissal, keyboard operation, A3, direct links, filter
+hash preservation and shared-profile isolation; JavaScript syntax and content
+hash checks; and the existing iTaukei card/mobility regressions (56 photos,
+76 insights, 151 pathways, 78 universities). Browser screenshot verification
+is not claimed. Release is via the validated Pages workflow.

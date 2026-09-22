@@ -1,0 +1,22 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),assert=require('node:assert/strict');
+const html=fs.readFileSync('itaukei-research-database-master.html','utf8');
+const code=fs.readFileSync('js/itaukei-panel-menu.js','utf8');
+(async()=>{
+ const dom=new JSDOM(html,{url:'https://example.com/dashboard#b2=fiji-focused&b2a=first',runScripts:'outside-only',pretendToBeVisual:true});
+ const w=dom.window,d=w.document;w.matchMedia=()=>({matches:true});let scroll;
+ w.scrollTo=options=>{scroll=options;};
+ w.eval(code);const nav=d.querySelector('.db-panel-menu');assert(nav.hidden);
+ assert.equal(nav.querySelectorAll('.db-panel-menu__pill').length,7);
+ w.scrollY=1200;w.dispatchEvent(new w.Event('scroll'));await new Promise(r=>setTimeout(r,30));assert.equal(nav.hidden,false);
+ const pills=nav.querySelectorAll('.db-panel-menu__pill');pills[1].click();assert.equal(nav.querySelectorAll('.db-panel-menu__dropdown a').length,5);assert.equal(pills[1].getAttribute('aria-expanded'),'true');
+ pills[2].click();assert.equal(pills[1].getAttribute('aria-expanded'),'false');assert.equal(nav.querySelectorAll('.db-panel-menu__dropdown a').length,3);
+ d.body.click();assert.equal(pills[2].getAttribute('aria-expanded'),'false');
+ pills[1].dispatchEvent(new w.KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));assert.equal(d.activeElement.dataset.panelDestination,'B1');
+ d.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(d.activeElement,pills[1]);assert.equal(pills[1].getAttribute('aria-expanded'),'false');
+ pills[0].click();nav.querySelector('[data-panel-destination="A3"]').click();assert(d.querySelector('details.db-about').open);assert(scroll);assert.equal(w.location.hash,'#b2=fiji-focused&b2a=first');
+ pills[5].click();assert.equal(d.activeElement.id,'panel-nav-f');
+ w.scrollY=0;w.dispatchEvent(new w.Event('scroll'));await new Promise(r=>setTimeout(r,30));assert(nav.hidden);
+ dom.window.close();
+ const profile=new JSDOM(html,{url:'https://example.com/dashboard?p=ITK-S0315&share=1',runScripts:'outside-only'});profile.window.eval(code);assert.equal(profile.window.document.querySelector('.db-panel-menu'),null);profile.window.close();
+ console.log('PASS: first-screen visibility, A–G destinations, single dropdown, outside click, Escape, keyboard access, A3 expansion, direct links, filter hash and profile isolation');
+})();
