@@ -20,9 +20,12 @@ def column(n):
 def prepare(rows, create_missing=True):
     headers = rows[0]
     sid_col = headers.index('Scholar ID')
-    token_col = headers.index('Scholar Share Token') if 'Scholar Share Token' in headers else len(headers)
+    has_token_header = 'Scholar Share Token' in headers
+    # Sheets trims trailing empty header cells. Unnamed columns may still
+    # hold historical notes: append after every occupied column, never reuse them.
+    token_col = headers.index('Scholar Share Token') if has_token_header else max(map(len, rows))
     writes = []
-    if token_col == len(headers):
+    if not has_token_header:
         writes.append({'range': f"'Scholars'!{column(token_col+1)}1", 'values': [['Scholar Share Token']]})
     mapping = {}
     seen_ids = set()
@@ -50,11 +53,18 @@ def main():
     from google.oauth2 import service_account
     from googleapiclient.discovery import build
     creds = service_account.Credentials.from_service_account_info(json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_JSON']), scopes=['https://www.googleapis.com/auth/spreadsheets'])
-    api = build('sheets','v4',credentials=creds,cache_discovery=False).spreadsheets().values()
+    sheets_api = build('sheets','v4',credentials=creds,cache_discovery=False).spreadsheets()
+    api = sheets_api.values()
     rows = api.get(spreadsheetId=SHEET_ID,range="'Scholars'!A:ZZ").execute().get('values',[])
     writes, mapping = prepare(rows)
     if writes:
         try:
+            metadata = sheets_api.get(spreadsheetId=SHEET_ID, fields='sheets.properties').execute()
+            scholar = next(s['properties'] for s in metadata['sheets'] if s['properties']['title'] == 'Scholars')
+            required_columns = rows[0].index('Scholar Share Token') + 1 if 'Scholar Share Token' in rows[0] else max(map(len, rows)) + 1
+            extra = required_columns - scholar['gridProperties']['columnCount']
+            if extra > 0:
+                sheets_api.batchUpdate(spreadsheetId=SHEET_ID, body={'requests':[{'appendDimension':{'sheetId':scholar['sheetId'],'dimension':'COLUMNS','length':extra}}]}).execute()
             api.batchUpdate(spreadsheetId=SHEET_ID,body={'valueInputOption':'RAW','data':writes}).execute()
         except Exception as exc:
             if getattr(getattr(exc, 'resp', None), 'status', None) != 403:

@@ -21,3 +21,10 @@ assert not any('maternal' in k.lower() for k in out[0])
 assert out[0]['effective_specific_island']==''
 assert out[0]['effective_province_group']=='Unclassified'
 print('PASS: persisted tokens stable after row reorder, unpersisted tokens never exported, country/duplicate identity rejected, maternal privacy and no paternal fallback.')
+
+# Empty last header does not make an occupied historical-note column reusable.
+writes, links = prepare([['Scholar ID','Name'],['SOL-S0001','Fixture','Historical note']])
+assert writes[0]['range']=="'Scholars'!D1"
+assert writes[1]['range']=="'Scholars'!D2"
+assert len(links['SOL-S0001']) == 40
+print('PASS: new token column appends after occupied unnamed columns.')

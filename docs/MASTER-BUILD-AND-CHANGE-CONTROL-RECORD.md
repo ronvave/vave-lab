@@ -40,3 +40,5 @@ Verified with isolated Apps Script spreadsheet fixtures and browser DOM tests: s
 Deployment requirement: follow docs/SOLOMON-SUBMISSIONS-ACTIVATION.md; the generated single-file backend is apps-script/deployed/solomon-submissions-v1.gs. Public config remains empty until the existing Solomon deployment is updated and the Owner activates it. No backend deployment, reviewer list or live end-to-end approval is claimed by this repository change.
 
 The cache-bust and dashboard-integrity gates and the required iTaukei preservation regression pass. Pixel-level browser QA was unavailable because the Chromium download timed out; DOM integration tests ran against the real encrypted snapshot. Live owner/backend activation remains outstanding.
+
+Live deployment verification: frontend published in f38039f969093062617e16ec82bbf10aa91bcdcc; GitHub submission tests, integrity, cache checks and Pages passed. Initial token sync safely rejected historical notes in an unnamed trailing Scholars column. Follow-up appends the token header after every occupied column and expands the grid only as needed, preserving the notes.
