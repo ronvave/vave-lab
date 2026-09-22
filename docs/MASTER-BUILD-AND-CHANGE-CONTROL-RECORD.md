@@ -86,3 +86,14 @@ photos, 76 research summaries, 151 pathways, 78 universities). Browser screensho
 validation could not run because the Chromium download returned an invalid
 archive; no live visual verification is claimed. Deployment workflow evidence
 is recorded after publication.
+
+Release evidence: implementation commit ba55d0e5092841cfe9353d38db44f47df4416a7b.
+Pages deployment 35769660706 completed successfully. Live HTTP checks confirm
+new B4, renamed B5, and the content-hashed JS (3f64e45b) and CSS (50c7f719).
+Automatic cache-bust commit 30747b6 corrected the initial asset version strings;
+local hash verification passes against that published HTML. Master refresh
+35769660772 succeeded and produced a99f082ac491a763bd7a8370259fae3e0ec5a476;
+its decrypted aggregate independently confirms 368 total / 341 Master's /
+133 PhD and denominators 371 / 345. The refresh-triggered Pages run follows
+the existing deployment queue. Browser screenshots remain unverified.
+
