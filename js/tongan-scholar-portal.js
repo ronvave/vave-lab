@@ -30,7 +30,7 @@ async function openUpdate(row,state){
  let token;try{token=await tokenFor(sid);}catch(e){alert(e.message);return;}
  const {d,form,status}=dialog('Update info for this scholar');
  el('p','Correcting / adding info for '+row.name+'. Fields below are pre-filled with the information the public dashboard is currently showing. Edit only what you want to add, remove or correct.',form).className='tonga-form-subtitle';
- const notice=el('div',null,form);notice.className='tonga-review-notice';el('strong','Please read: ',notice);notice.append(document.createTextNode('corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, students and colleagues can also submit on their behalf.'));
+ const notice=el('div',null,form);notice.className='tonga-review-notice';el('strong','Please read: ',notice);notice.append(document.createTextNode('corrections are reviewed by Tongan scholar collaborators, Professor Tēvita Kaʻili and Associate Professor ‘Inoke Hafoka, before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves. However, friends, family, students and colleagues can also submit updates on their behalf.'));
  const who=identity(form),fields=[],files=[];
  const identitySet=form.querySelector('fieldset');identitySet.querySelector('legend').textContent='Who is submitting this';
  identitySet.querySelectorAll('input,select').forEach(n=>{const mark=el('span',' *');mark.className='tonga-required';n.parentElement.insertBefore(mark,n);});
