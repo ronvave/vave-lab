@@ -44,3 +44,9 @@ The cache-bust and dashboard-integrity gates and the required iTaukei preservati
 Live deployment verification: frontend published in f38039f969093062617e16ec82bbf10aa91bcdcc; GitHub submission tests, integrity, cache checks and Pages passed. Initial token sync safely rejected historical notes in an unnamed trailing Scholars column. Follow-up appends the token header after every occupied column and expands the grid only as needed, preserving the notes.
 
 The corrected live refresh passed. Its service account is read-only, so the authorized connected spreadsheet account initialized 81 stable tokens in the new Scholars BG1:BG82 column on 2026-09-22. Readback verified every token and Scholar ID; occupied unnamed BF cells were preserved. Published map contains only those Master-confirmed tokens. Google Apps Script activation remains the sole owner-side deployment dependency.
+
+## 2026-09-22 — Solomon Islands pre-launch introduction
+
+Matched the shared Solomon Islands profile introduction to the Tonga pre-launch format: review badge, project background, highlighted Update info instruction, document guidance, privacy statement and reviewed-publication explanation. Named Professor Transform Aqorau and Associate Professor Tarcisius Kabutaulaka with the user-supplied profile links. Retained Indigenous Solomon Islands scope and submission-on-behalf guidance. Existing matching CSS supplies the typography and callout styling.
+
+JavaScript syntax, cache hashes, dashboard integrity, Solomon submission/portal regression and required iTaukei card/mobility regression passed. This is an introduction-only change; no backend activation or live approval is claimed. Updated the portal script cache hash.
