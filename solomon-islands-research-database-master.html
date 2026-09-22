@@ -4724,13 +4724,13 @@
       <div class="db-panel reveal" data-panel="C3">
         <span class="db-panel__label">C3</span>
         <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
-        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
-          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Solomon Islands topics or set in Solomon Islands">Solomon Islands-focused</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="All publications by Solomon Islander authors, including non-Solomon Islands topics">Solomon Islands + International</button>
+        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel C3 view">
+          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="solomon-islands-focused" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="Only publications with verified Solomon Islands research-location evidence">Solomon Islands-focused</button>
+          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="all-locations" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="All publications by Solomon Islander authors, including non-Solomon Islands topics">Solomon Islands + International</button>
         </div>
         <div id="db-b2-panel" role="tabpanel">
           <h2 class="db-panel__title" data-b2-title>Research Output by Solomon Islander Author's Home Province</h2>
-          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Solomon Islander first author’s own paternal province. Default scope shows Solomon Islands-focused publications; switch to “Solomon Islands + International” to include research on non-Solomon Islands topics and locations too.</p>
+          <p class="db-panel__hint" data-b2-hint>This chart groups publications by the Solomon Islander author’s recorded paternal province. The default “Solomon Islands + International” scope includes all research locations. “Solomon Islands-focused” requires verified research-location evidence; zero in that scope can mean location evidence is not yet recorded.</p>
           <div class="db-panel__meta" data-b2-meta></div>
           <!-- Authorship + Layout dropdowns. Styled as teal pills so users can
                tell they're interactive. The Layout dropdown only appears when
@@ -4766,12 +4766,12 @@
           <div class="db-b2-blurb" data-b2-blurb></div>
           <!-- Authorship-view only: sentence that clarifies the province semantics -->
           <p class="db-b2-province-note" data-b2-province-note style="display:none;">
-            <span aria-hidden="true">ⓘ</span> Province refers to where the research was conducted.
+            <span aria-hidden="true">ⓘ</span> Province refers to the author’s recorded paternal home province.
           </p>
           <details class="db-b2-info">
             <summary>How is “province” defined in this panel?</summary>
-            <p>In the <strong>Solomon Islands-focused</strong> and <strong>All locations</strong> views, province means the <em>paternal province of the Solomon Islander first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, province means the <em>location of the research</em>.</p>
-            <p>A publication covering more than one research province may be counted once in each tagged province.</p>
+            <p>Province always means the author’s recorded <em>paternal home province</em>. The authorship control selects first authors, co-authors where no Solomon Islander is first author, or both roles split. Research location is grouped separately in Panel C2.</p>
+            <p>A co-authored publication counts once per distinct home province of its linked Solomon Islander co-authors. Missing paternal provinces appear under “Province not yet confirmed”.</p>
           </details>
           <!-- Authorship-view only: legend + counts/percent toggle + sort control -->
           <div class="db-b2-authorship-controls" data-b2-authorship-controls style="display:none;">
@@ -5363,7 +5363,7 @@
 ===================================================================== -->
 <script src="js/solomon-demo-gate.js?v=49121e0c" defer></script>
 <script src="js/solomon-database-adapter.js?v=60fefaae" defer></script>
-<script src="js/solomon-database-master.js?v=9a3d8508" defer></script>
+<script src="js/solomon-database-master.js?v=ec20ff18" defer></script>
 <script src="js/solomon-panel-overrides.js?v=1ace0c6b" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

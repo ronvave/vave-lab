@@ -6441,6 +6441,9 @@
 
     ordered.forEach(({m,lines})=>{
       if(!lines.length)return;
+      // Keep these complete callouts left of their year markers, with every
+      // line right-anchored. Earlier milestones retain their existing layout.
+      const rightAligned=Number(m.year)===1992||Number(m.year)===2001;
       const w=Math.min(maxWidth,Math.max(...lines.map(l=>measure(l.text,l.size,l.bold)))+4);
       const h=lines.length*14+6;
       const point={
@@ -6459,6 +6462,7 @@
         const leftX=point.x-w-off;
         const rightX=point.x+off;
         [['left',leftX],['right',rightX]].forEach(([side,x])=>{
+          if(rightAligned&&side!=='left')return;
           if(x<left+7||x+w>left+width-7)return;
           ys.forEach(y=>{
             const box={x,y,width:w,height:h};
@@ -6478,6 +6482,7 @@
         for(let x=left+8;x+w<=left+width-8;x+=16){
           const center=x+w/2;
           const side=center<point.x?'left':'right';
+          if(rightAligned&&side!=='left')continue;
           if(side==='left'&&x+w>=point.x-6)continue;
           if(side==='right'&&x<=point.x+6)continue;
           ys.forEach(y=>{
@@ -6502,6 +6507,7 @@
         for(let x=left+8;x+w<=left+width-8;x+=12){
           const center=x+w/2;
           const side=center<point.x?'left':'right';
+          if(rightAligned&&side!=='left')continue;
           if(side==='left'&&x+w>=point.x-6)continue;
           if(side==='right'&&x<=point.x+6)continue;
           ys.forEach(y=>{
@@ -6510,6 +6516,10 @@
             const route=makeRoute(box,point,side);
             const len=route.segs.reduce((n,s)=>n+Math.abs(s.b.x-s.a.x)+Math.abs(s.b.y-s.a.y),0);
             const boxBarHits=bars.filter(bar=>rectOverlap(box,bar,barPad)).length;
+            // Even the fallback must keep these labels clear of connectors,
+            // especially the 2001 leader passing the earlier 1992 callout.
+            if(rightAligned&&(route.segs.some(seg=>boxes.some(b=>segHitsRect(seg,b)))||
+              leaders.some(prior=>prior.segs.some(seg=>segHitsRect(seg,box)))))return;
             const barHits=bars.reduce((n,bar)=>n+route.segs.filter(seg=>segHitsRect(seg,bar,1)).length,0);
             const leaderHits=leaders.reduce((n,prior)=>n+route.segs.reduce((m,seg)=>m+prior.segs.filter(old=>segCross(seg,old)).length,0),0);
             // A leader may cross a bar in this emergency path, but the label
