@@ -126,3 +126,13 @@ hash preservation and shared-profile isolation; JavaScript syntax and content
 hash checks; and the existing iTaukei card/mobility regressions (56 photos,
 76 insights, 151 pathways, 78 universities). Browser screenshot verification
 is not claimed. Release is via the validated Pages workflow.
+
+## 2026-09-22 — Attach navigation dropdowns to their pills
+
+Corrected a containing-block mismatch: backdrop-filter on the floating bar
+made its fixed dropdown relative to the bar, while the script supplied viewport
+coordinates, adding the header offset twice. Dropdowns now use absolute
+coordinates relative to the bar and sit four pixels below the selected pill.
+Horizontal viewport clamping, scroll/resize repositioning, and all navigation
+behaviour remain intact. Added a regression with a 76px header/bar offset and
+verified the resulting 4px pill-to-dropdown gap. Updated content hashes.

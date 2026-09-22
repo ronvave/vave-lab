@@ -46,11 +46,16 @@
   function positionDropdown() {
     if (!opened) return;
     const box = opened.getBoundingClientRect();
+    const bar = nav.getBoundingClientRect();
     const width = Math.min(340,window.innerWidth - 24);
+    const viewportLeft = Math.max(12,Math.min(box.left,window.innerWidth-width-12));
+    const viewportTop = box.bottom + 4;
+    // The blurred fixed bar establishes a containing block. Position the
+    // dropdown relative to that bar, not in viewport coordinates a second time.
     dropdown.style.width = width + 'px';
-    dropdown.style.left = Math.max(12,Math.min(box.left,window.innerWidth-width-12)) + 'px';
-    dropdown.style.top = (nav.getBoundingClientRect().bottom + 6) + 'px';
-    dropdown.style.maxHeight = Math.max(100,window.innerHeight-nav.getBoundingClientRect().bottom-24) + 'px';
+    dropdown.style.left = (viewportLeft - bar.left) + 'px';
+    dropdown.style.top = (viewportTop - bar.top) + 'px';
+    dropdown.style.maxHeight = Math.max(100,window.innerHeight-viewportTop-12) + 'px';
   }
   Object.entries(groups).forEach(([group, entries]) => {
     entries = entries.filter(([code]) => targets.has(code)); if (!entries.length) return;

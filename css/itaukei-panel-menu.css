@@ -4,7 +4,7 @@
 .db-panel-menu__pill{flex-shrink:0;display:inline-block;padding:8px 17px;border:1px solid #acc7c5;border-radius:24px;background:#fff;color:#0b4951;font:600 .88rem 'DM Sans',sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;line-height:1.5}
 .db-panel-menu__pill:hover,.db-panel-menu__pill[aria-expanded=true]{background:#e6f2ef;color:#0b4951}
 .db-panel-menu__pill.is-current{background:#006575;border-color:#006575;color:#fff}
-.db-panel-menu__dropdown{position:fixed;overflow-y:auto;background:#fff;border:1px solid #b9cfcb;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(8,47,54,.18)}
+.db-panel-menu__dropdown{position:absolute;overflow-y:auto;background:#fff;border:1px solid #b9cfcb;border-radius:12px;padding:6px;box-shadow:0 8px 24px rgba(8,47,54,.18)}
 .db-panel-menu__dropdown a{display:block;padding:11px 12px;color:#133d46;text-decoration:none;font-size:.88rem;line-height:1.4;border-radius:7px}
 .db-panel-menu__dropdown a:hover,.db-panel-menu__dropdown a[aria-current]{background:#e7f2ef;color:#064f5c}
 .db-panel-menu a:focus-visible,.db-panel-menu button:focus-visible{outline:3px solid #b67818;outline-offset:2px}
