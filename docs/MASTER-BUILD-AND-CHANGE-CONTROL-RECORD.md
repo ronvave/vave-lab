@@ -42,3 +42,5 @@ Deployment requirement: follow docs/SOLOMON-SUBMISSIONS-ACTIVATION.md; the gener
 The cache-bust and dashboard-integrity gates and the required iTaukei preservation regression pass. Pixel-level browser QA was unavailable because the Chromium download timed out; DOM integration tests ran against the real encrypted snapshot. Live owner/backend activation remains outstanding.
 
 Live deployment verification: frontend published in f38039f969093062617e16ec82bbf10aa91bcdcc; GitHub submission tests, integrity, cache checks and Pages passed. Initial token sync safely rejected historical notes in an unnamed trailing Scholars column. Follow-up appends the token header after every occupied column and expands the grid only as needed, preserving the notes.
+
+The corrected live refresh passed. Its service account is read-only, so the authorized connected spreadsheet account initialized 81 stable tokens in the new Scholars BG1:BG82 column on 2026-09-22. Readback verified every token and Scholar ID; occupied unnamed BF cells were preserved. Published map contains only those Master-confirmed tokens. Google Apps Script activation remains the sole owner-side deployment dependency.
