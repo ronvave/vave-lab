@@ -19,7 +19,7 @@
     panel.classList.add('panel-menu-target'); targets.set(code, panel);
   });
   const navStyle = document.createElement('style');
-  navStyle.textContent = '.db-panel-menu { background: rgba(229, 243, 245, .97) !important; border-top: 1px solid rgba(14, 116, 144, .15); border-bottom: 1px solid rgba(14, 116, 144, .24); box-shadow: 0 5px 16px rgba(5, 65, 76, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(25, 57, 63, .97) !important; border-color: rgba(150, 213, 223, .27); }';
+  navStyle.textContent = '.db-panel-menu { background: rgba(255, 241, 223, .97) !important; border-top: 1px solid rgba(236, 210, 173, .55); border-bottom: 1px solid rgba(236, 210, 173, .9); box-shadow: 0 5px 16px rgba(89, 64, 34, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(65, 49, 37, .97) !important; border-color: rgba(236, 210, 173, .27); }';
   document.head.appendChild(navStyle);
   const nav = document.createElement('nav');
   nav.className = 'db-panel-menu'; nav.setAttribute('aria-label','Dashboard panels'); nav.hidden = true;
