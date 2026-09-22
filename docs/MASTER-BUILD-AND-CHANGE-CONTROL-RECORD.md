@@ -97,3 +97,13 @@ its decrypted aggregate independently confirms 368 total / 341 Master's /
 133 PhD and denominators 371 / 345. The refresh-triggered Pages run follows
 the existing deployment queue. Browser screenshots remain unverified.
 
+
+## 2026-09-22 — B4 readability refinements
+
+Added a short instruction beneath Graduate research disciplines explaining the
+default Gender view and Degree toggle. The interpretation caption now shares
+B5's db-panel__hint typography (0.9rem), retaining its italics. Applied subtle
+transparent alternating white/teal row fills, with the olive Total column
+preserved and lightly differentiated. Both toggle views use the same styles.
+No data calculations or other panels changed. Refreshed the CSS content hash;
+DOM toggle and existing card/mobility regression checks passed.

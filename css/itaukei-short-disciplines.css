@@ -8,10 +8,12 @@
 .short-disciplines-table th,.short-disciplines-table td{border:1px solid #b9c6c4;padding:10px 14px;text-align:center;font-variant-numeric:tabular-nums}
 .short-disciplines-table th:first-child{text-align:left;width:52%}
 .short-disciplines-table thead th{background:#10756f;color:white;font-weight:700}
-.short-disciplines-table tbody th{font-weight:400;background:#fff}
-.short-disciplines-table tbody td{background:#fff}
+.short-disciplines-table tbody th{font-weight:400}
+.short-disciplines-table tbody tr:nth-child(odd)>:not(:last-child){background:rgba(255,255,255,.45)}
+.short-disciplines-table tbody tr:nth-child(even)>:not(:last-child){background:rgba(16,117,111,.07)}
+.short-disciplines-table tbody tr:nth-child(even)>:last-child{box-shadow:inset 0 0 0 100vmax rgba(0,0,0,.04)}
 .short-disciplines-table tr>:last-child,.short-disciplines-table tfoot td{background:#707810;color:white;font-weight:700}
 .short-disciplines-table tfoot th{background:#eef1e1;font-weight:700}
-.short-disciplines-caption{font-style:italic;line-height:1.55;margin:16px 0 8px}
+.short-disciplines-caption{font-style:italic;line-height:1.5;margin:16px 0 8px}
 .short-disciplines-updated{font-size:.8rem;color:var(--color-text-muted,#596873)}
 @media(max-width:600px){.short-disciplines-table{font-size:.85rem}.short-disciplines-table th,.short-disciplines-table td{padding:8px 6px}.short-disciplines-table th:first-child{width:43%}}
