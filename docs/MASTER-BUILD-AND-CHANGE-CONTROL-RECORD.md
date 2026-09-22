@@ -50,3 +50,39 @@ The corrected live refresh passed. Its service account is read-only, so the auth
 Matched the shared Solomon Islands profile introduction to the Tonga pre-launch format: review badge, project background, highlighted Update info instruction, document guidance, privacy statement and reviewed-publication explanation. Named Professor Transform Aqorau and Associate Professor Tarcisius Kabutaulaka with the user-supplied profile links. Retained Indigenous Solomon Islands scope and submission-on-behalf guidance. Existing matching CSS supplies the typography and callout styling.
 
 JavaScript syntax, cache hashes, dashboard integrity, Solomon submission/portal regression and required iTaukei card/mobility regression passed. This is an introduction-only change; no backend activation or live approval is claimed. Updated the portal script cache hash.
+
+## 2026-09-22 — New iTaukei graduate discipline panel B4
+
+Inserted a single Gender / Degree table after unchanged B3. Former B4 research
+geography is now B5; there were no subsequent B-series panels. Its legacy map,
+filter and embed identifiers remain unchanged, preserving existing handlers.
+The new panel has the stable `graduate-disciplines` anchor. Other sections and
+shared profile layouts are unchanged.
+
+The Master transformer now exports `shortDisciplines` inside the existing
+encrypted aggregates snapshot. It uses the actual Graduate Degrees Short
+Discipline column, completion statuses beginning Completed, exact Master's /
+PhD/Doctorate stages, and distinct Scholar ID sets before degree display
+record deduplication. It preserves the existing Part-iTaukei exclusion list.
+The existing two-hour refresh generates new categories, totals and matching
+caption counts; the UI also rerenders on Master hydration without resetting
+its Gender / Degree selection. Reload retrieves the latest published snapshot.
+
+Reconciliation: the current worksheet tables include ITK-S0416 and ITK-S0418
+in discipline totals although these IDs are on Part-iTaukei and absent from
+Scholars. The sheet displays 370 overall but its genders sum to 368. Preserving
+the dashboard's existing exclusions yields 368 overall (194 male, 174 female),
+341 completed Master's and 133 completed PhD scholars with Short Discipline.
+The eligible population before blank-discipline exclusion is 371 overall and
+345 Master's scholars. Source captions' fixed included counts are therefore
+not copied as constants. No source spreadsheet cells were changed. Seeded only
+the new aggregate property from the live source; other aggregate fields remain
+unchanged. No individual-level data is added to the summary payload.
+
+Passed Python distinct-count fixtures, DOM checks for both views, dynamic
+captions, retained selection, empty/error states and B1–B5 order; JavaScript
+syntax; and existing iTaukei card/mobility and filter regression tests (56
+photos, 76 research summaries, 151 pathways, 78 universities). Browser screenshot
+validation could not run because the Chromium download returned an invalid
+archive; no live visual verification is claimed. Deployment workflow evidence
+is recorded after publication.

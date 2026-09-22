@@ -237,6 +237,7 @@ GRAD_DEGREE_PUBLIC_FIELDS = [
     "Scholar Name",
     "Degree Stage",
     "Degree / Qualification",
+    "Short Discipline",
     "Field / Discipline",
     "C_Uni name",  # canonical for all counts/aggregations
     "O_Uni name",  # historical only — for tooltip/profile display

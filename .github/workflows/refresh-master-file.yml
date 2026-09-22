@@ -17,6 +17,9 @@ on:
     paths:
       - ".github/workflows/refresh-master-file.yml"
       - "scripts/master_file_reconcile.py"
+      - "scripts/master_short_disciplines.py"
+      - "scripts/master_file_config.py"
+      - "scripts/master_file_transformer.py"
       - "scripts/sync_scholar_share_tokens.py"
   schedule:
     - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
@@ -90,6 +93,9 @@ jobs:
             data/body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
+
+      - name: Verify unique scholar discipline counts
+        run: python3 -m unittest discover -s scripts/tests -p test_short_disciplines.py
 
       - name: Fetch, sanitize, and transform Master file
         env:

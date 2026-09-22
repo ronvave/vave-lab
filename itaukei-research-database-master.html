@@ -3917,6 +3917,7 @@
   .footer-bottom .legal-footer a:hover{ color:#fff; }
   .footer-bottom .legal-footer__sep{ opacity:.45; margin:0 6px; }
 </style>
+<link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=20260922-1">
 </head>
 <body>
 
@@ -4515,13 +4516,31 @@
         </button>
       </div>
 
-      <!-- Panel B4 — Where iTaukei research has been undertaken. Sourced from the
+      <!-- B4 uses completed-degree Short Disciplines; independent of publication filters. -->
+      <section class="db-panel reveal db-panel--wide" data-panel="B4" id="graduate-disciplines" aria-labelledby="short-disciplines-heading">
+        <span class="db-panel__label">B4</span>
+        <h2 class="db-panel__title" id="short-disciplines-heading">Graduate research disciplines</h2>
+        <div class="short-disciplines-toggle" role="group" aria-label="Summarise disciplines by">
+          <button type="button" data-discipline-view="gender" aria-pressed="true">Gender</button>
+          <button type="button" data-discipline-view="degree" aria-pressed="false">Degree</button>
+        </div>
+        <p data-disciplines-status role="status">Loading graduate research disciplines…</p>
+        <div class="short-disciplines-scroll" tabindex="0" role="region" aria-label="Graduate research disciplines table">
+          <table class="short-disciplines-table" aria-describedby="short-disciplines-caption" hidden>
+            <caption></caption><thead></thead><tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <p id="short-disciplines-caption" class="short-disciplines-caption"></p>
+        <p class="short-disciplines-updated" data-disciplines-updated></p>
+      </section>
+
+      <!-- Panel B5 — Where iTaukei research has been undertaken. Sourced from the
            Zotero "Where study was done" collection (V3HLPDPL). Each country sub-
            collection under it is a research location; items are bucketed as
            "Led by iTaukei" (first-author matches the master roster) or
            "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B4">
-        <span class="db-panel__label">B4</span>
+      <div class="db-panel reveal db-panel--wide" data-panel="B5">
+        <span class="db-panel__label">B5</span>
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF ITAUKEI RESEARCH</h2>
         <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = iTaukei as first author; gold = others as first author (an iTaukei author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
         <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
@@ -5350,6 +5369,7 @@
 <script src="js/demo-gate.js?v=0d799249" defer></script>
 <script src="js/master-file-adapter.js?v=497dd845" defer></script>
 <script src="js/itaukei-database-master.js?v=1ea7e8d9" defer></script>
+<script src="js/itaukei-short-disciplines.js?v=20260922-1" defer></script>
 <script src="js/master-file-panel-overrides.js?v=795dbc68" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

@@ -34,6 +34,7 @@ import argparse
 import json
 import os
 import subprocess
+from master_short_disciplines import build_short_disciplines
 import sys
 import time
 from datetime import datetime, timezone
@@ -806,6 +807,11 @@ def run(
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
         researcher_authorship=researcher_authorship,
+    )
+    # Mirror source set counting before display deduplication; preserve the
+    # existing dashboard Part-iTaukei exclusions on every surface.
+    aggregates["shortDisciplines"] = build_short_disciplines(
+        [g for g in grad_degrees_all if g.get("Scholar ID") not in part_itaukei_ids], scholars
     )
     t = aggregates["totals"]
     log(f"  → scholars={t['scholars']} pubs={t['publications_total']} "
