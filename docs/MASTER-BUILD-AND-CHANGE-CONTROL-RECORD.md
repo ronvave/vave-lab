@@ -161,3 +161,13 @@ and UNDP. Pacific Blue Foundation has both Fiji and US offices, so its blank
 country is left unresolved without guessing a scholar's workplace. No
 deployment or browser visual check is claimed.
 Local shell and Node tools could not start (runtime ownership missing).
+
+Release evidence (2026-09-23 UTC): user authorized publication. PR #7 merged
+as e262d0134b647637f79b24b55a2e64227468c04b. Validated Pages run
+https://github.com/ronvave/vave-lab/actions/runs/35847108189 passed its
+integrity, iTaukei and Tongan preservation checks and deployed successfully;
+GitHub Pages reported success at 10:09:34 UTC. The published script reference
+uses content hash ab699240. Full-profile/filter and cache validation also
+passed for final implementation 1e53513. Direct live HTTP retrieval and the
+browser tool were unavailable in this session, so visual verification is not
+claimed. Deployment success is confirmed by GitHub Pages.
