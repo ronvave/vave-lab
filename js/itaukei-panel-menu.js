@@ -22,7 +22,7 @@
   navStyle.textContent = '.site-header { z-index: 6000 !important; background: var(--color-bg) !important; } .db-panel-menu { z-index: 5000 !important; background: rgba(255, 241, 223, .97) !important; border-top: 1px solid rgba(236, 210, 173, .55); border-bottom: 1px solid rgba(236, 210, 173, .9); box-shadow: 0 5px 16px rgba(89, 64, 34, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(65, 49, 37, .97) !important; border-color: rgba(236, 210, 173, .27); }';
   document.head.appendChild(navStyle);
   const nav = document.createElement('nav');
-  nav.className = 'db-panel-menu'; nav.setAttribute('aria-label','Dashboard panels'); nav.hidden = true;
+  nav.className = 'db-panel-menu'; nav.setAttribute('aria-label','Dashboard panels'); nav.hidden = false;
   const strip = document.createElement('div'); strip.className = 'db-panel-menu__pills'; nav.appendChild(strip);
   const dropdown = document.createElement('div'); dropdown.className = 'db-panel-menu__dropdown'; dropdown.id = 'dashboard-panel-dropdown'; dropdown.hidden = true; nav.appendChild(dropdown);
   let opened = null, current = '', scheduled = false;
@@ -85,11 +85,10 @@
     const header = document.querySelector('.site-header');
     const top = Math.max(0,header ? header.getBoundingClientRect().bottom : 0);
     nav.style.top = top + 'px';
-    // Reveal the floating panel as soon as the user begins scrolling. The old
-    // viewport-height threshold delayed it until roughly Panel B1, which made
-    // the navigation unavailable through the entire opening section.
-    nav.hidden = window.scrollY <= 0;
-    if (nav.hidden) close(false);
+    // Keep the dashboard navigator mounted from the beginning of the page.
+    // This avoids any viewport-height/scroll-event threshold: it is already
+    // available when the first downward scroll begins.
+    nav.hidden = false;
     const edge = top + nav.getBoundingClientRect().height + 24;
     let active = targets.keys().next().value;
     targets.forEach((panel,code) => { if(panel.getBoundingClientRect().top <= edge) active=code; });
