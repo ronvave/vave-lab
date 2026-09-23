@@ -37,6 +37,7 @@ module.exports = function checkWorkLocations(profiles) {
   for (const [alias, country] of [[' UK ', 'United Kingdom'], ['United States', 'USA'], ['PNG','Papua New Guinea'], ['Guam','Guam (USA territory)']]) {
     assert.equal(api.canonicalWorkCountry(alias), country);
   }
+  console.log('Work university input audit:', JSON.stringify([...new Set(profiles.flatMap(api.scholarWorkInstitutions))].sort()));
   const all = [...profiles, ...fixtures.map(f=>f[0])];
   const before = JSON.stringify(all);
   state.scholarProfilesByName = new Map(all.map((p,i)=>[String(i),p]));
