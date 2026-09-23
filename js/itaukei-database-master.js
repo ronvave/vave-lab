@@ -7323,11 +7323,8 @@
         return items.some(g => g.country === wantC && (!wantU || g.university === wantU));
       });
     }
-    // Country/University of work — use scholarWorkCountry() which falls back
-    // to institution-string parsing when institutionCountry is not yet set.
-    // University comparison strips any " (Country)" suffix on both sides so
-    // the filter matches regardless of whether the admin entered the country
-    // suffix in the institution field for card display purposes.
+    // Share the menu's canonical location and institution resolution. Keep
+    // counts and publication filtering aligned, including misplaced employers.
     if (state.scholarWorkCountry) {
       const wantC = state.scholarWorkCountry;
       const wantU = state.scholarWorkUni;
@@ -7528,6 +7525,11 @@
   // rules used in the admin so the public work filter is populated even
   // before Ron pushes the auto-seeded profile updates.
   const WORK_COUNTRY_RULES = [
+    // Specific Pacific offices verified against their official contact pages:
+    // https://pacificdisability.org/who-we-are/get-in-touch/
+    // https://www.undp.org/pacific/contact-us
+    [/^pacific disability forum$/i, 'Fiji'],
+    [/^united nations development programme\s*(\(undp\))?\s*pacific office$/i, 'Fiji'],
     // ---- Fiji (universities, museums, regional NGOs headquartered in Suva) ----
     [/\bfiji national university\b|\bfnu\b/i, 'Fiji'],
     [/\buniversity of the south pacific\b|\busp\b/i, 'Fiji'],
@@ -7556,7 +7558,7 @@
   // Only exact canonical geography or aliases can become a first-level option.
   // Keep this independent of profile data: a misspelled employer must never
   // teach the menu a new "country". ISO country/territory names include Cuba.
-  const WORK_LOCATIONS = ["Andorra","United Arab Emirates","Afghanistan","Antigua & Barbuda","Anguilla","Albania","Armenia","Angola","Antarctica","Argentina","American Samoa","Austria","Australia","Aruba","Åland Islands","Azerbaijan","Bosnia & Herzegovina","Barbados","Bangladesh","Belgium","Burkina Faso","Bulgaria","Bahrain","Burundi","Benin","St. Barthélemy","Bermuda","Brunei","Bolivia","Caribbean Netherlands","Brazil","Bahamas","Bhutan","Bouvet Island","Botswana","Belarus","Belize","Canada","Cocos (Keeling) Islands","Congo - Kinshasa","Central African Republic","Congo - Brazzaville","Switzerland","Côte d’Ivoire","Cook Islands","Chile","Cameroon","China","Colombia","Costa Rica","Cuba","Cape Verde","Curaçao","Christmas Island","Cyprus","Czechia","Germany","Djibouti","Denmark","Dominica","Dominican Republic","Algeria","Ecuador","Estonia","Egypt","Western Sahara","Eritrea","Spain","Ethiopia","Finland","Fiji","Falkland Islands (Islas Malvinas)","Micronesia","Faroe Islands","France","Gabon","United Kingdom","Grenada","Georgia","French Guiana","Guernsey","Ghana","Gibraltar","Greenland","Gambia","Guinea","Guadeloupe","Equatorial Guinea","Greece","South Georgia & South Sandwich Islands","Guatemala","Guam (USA territory)","Guinea-Bissau","Guyana","Hong Kong","Heard & McDonald Islands","Honduras","Croatia","Haiti","Hungary","Indonesia","Ireland","Israel","Isle of Man","India","British Indian Ocean Territory","Iraq","Iran","Iceland","Italy","Jersey","Jamaica","Jordan","Japan","Kenya","Kyrgyzstan","Cambodia","Kiribati","Comoros","St. Kitts & Nevis","North Korea","South Korea","Kuwait","Cayman Islands","Kazakhstan","Laos","Lebanon","St. Lucia","Liechtenstein","Sri Lanka","Liberia","Lesotho","Lithuania","Luxembourg","Latvia","Libya","Morocco","Monaco","Moldova","Montenegro","St. Martin","Madagascar","Marshall Islands","North Macedonia","Mali","Myanmar (Burma)","Mongolia","Macao","Northern Mariana Islands","Martinique","Mauritania","Montserrat","Malta","Mauritius","Maldives","Malawi","Mexico","Malaysia","Mozambique","Namibia","New Caledonia","Niger","Norfolk Island","Nigeria","Nicaragua","Netherlands","Norway","Nepal","Nauru","Niue","New Zealand","Oman","Panama","Peru","French Polynesia","Papua New Guinea","Philippines","Pakistan","Poland","St. Pierre & Miquelon","Pitcairn Islands","Puerto Rico","Palestine","Portugal","Palau","Paraguay","Qatar","Réunion","Romania","Serbia","Russia","Rwanda","Saudi Arabia","Solomon Islands","Seychelles","Sudan","Sweden","Singapore","St. Helena","Slovenia","Svalbard & Jan Mayen","Slovakia","Sierra Leone","San Marino","Senegal","Somalia","Suriname","South Sudan","São Tomé & Príncipe","El Salvador","Sint Maarten","Syria","Eswatini","Turks & Caicos Islands","Chad","French Southern Territories","Togo","Thailand","Tajikistan","Tokelau","Timor-Leste","Turkmenistan","Tunisia","Tonga","Türkiye","Trinidad & Tobago","Tuvalu","Taiwan","Tanzania","Ukraine","Uganda","U.S. Outlying Islands","USA","Uruguay","Uzbekistan","Vatican City","St. Vincent & Grenadines","Venezuela","British Virgin Islands","U.S. Virgin Islands","Vietnam","Vanuatu","Wallis & Futuna","Samoa","Yemen","Mayotte","South Africa","Zambia","Zimbabwe"];
+  const WORK_LOCATIONS = ["Andorra","United Arab Emirates","Afghanistan","Antigua & Barbuda","Anguilla","Albania","Armenia","Angola","Antarctica","Argentina","American Samoa","Austria","Australia","Aruba","Åland Islands","Azerbaijan","Bosnia & Herzegovina","Barbados","Bangladesh","Belgium","Burkina Faso","Bulgaria","Bahrain","Burundi","Benin","St. Barthélemy","Bermuda","Brunei","Bolivia","Caribbean Netherlands","Brazil","Bahamas","Bhutan","Bouvet Island","Botswana","Belarus","Belize","Canada","Cocos (Keeling) Islands","Congo - Kinshasa","Central African Republic","Congo - Brazzaville","Switzerland","Côte d’Ivoire","Cook Islands","Chile","Cameroon","China","Colombia","Costa Rica","Cuba","Cape Verde","Curaçao","Christmas Island","Cyprus","Czechia","Germany","Djibouti","Denmark","Dominica","Dominican Republic","Algeria","Ecuador","Estonia","Egypt","Western Sahara","Eritrea","Spain","Ethiopia","Finland","Fiji","Falkland Islands (Islas Malvinas)","Micronesia","Faroe Islands","France","Gabon","United Kingdom","Grenada","Georgia","French Guiana","Guernsey","Ghana","Gibraltar","Greenland","Gambia","Guinea","Guadeloupe","Equatorial Guinea","Greece","South Georgia & South Sandwich Islands","Guatemala","Guam (USA territory)","Guinea-Bissau","Guyana","Hong Kong","Heard & McDonald Islands","Honduras","Croatia","Haiti","Hungary","Indonesia","Ireland","Israel","Isle of Man","India","British Indian Ocean Territory","Iraq","Iran","Iceland","Italy","Jersey","Jamaica","Jordan","Japan","Kenya","Kyrgyzstan","Cambodia","Kiribati","Comoros","St. Kitts & Nevis","North Korea","South Korea","Kuwait","Cayman Islands","Kazakhstan","Laos","Lebanon","St. Lucia","Liechtenstein","Sri Lanka","Liberia","Lesotho","Lithuania","Luxembourg","Latvia","Libya","Morocco","Monaco","Moldova","Montenegro","St. Martin","Madagascar","Marshall Islands","North Macedonia","Mali","Myanmar (Burma)","Mongolia","Macao","Northern Mariana Islands","Martinique","Mauritania","Montserrat","Malta","Mauritius","Maldives","Malawi","Mexico","Malaysia","Mozambique","Namibia","New Caledonia","Niger","Norfolk Island","Nigeria","Nicaragua","Netherlands","Norway","Nepal","Nauru","Niue","New Zealand","Oman","Panama","Peru","French Polynesia","Papua New Guinea","Philippines","Pakistan","Poland","St. Pierre & Miquelon","Pitcairn Islands","Puerto Rico","Palestine","Portugal","Palau","Paraguay","Qatar","Réunion","Romania","Serbia","Russia","Rwanda","Saudi Arabia","Solomon Islands","Seychelles","Sudan","Sweden","Singapore","St. Helena","Slovenia","Svalbard & Jan Mayen","Slovakia","Sierra Leone","San Marino","Senegal","Somalia","Suriname","South Sudan","São Tomé & Príncipe","El Salvador","Sint Maarten","Syria","Eswatini","Turks & Caicos Islands","Chad","French Southern Territories","Togo","Thailand","Tajikistan","Tokelau","Timor-Leste","Turkmenistan","Tunisia","Tonga","Türkiye","Trinidad & Tobago","Tuvalu","Taiwan","Tanzania","Ukraine","Uganda","U.S. Outlying Islands","USA","Uruguay","Uzbekistan","Vatican City","St. Vincent & Grenadines","Venezuela","British Virgin Islands","U.S. Virgin Islands","Vietnam","Vanuatu","Wallis & Futuna","Samoa","Yemen","Mayotte","South Africa","Zambia","Zimbabwe","Indo-Pacific"];
   const WORK_LOCATION_ALIASES = {
     'united states': 'USA', 'united states of america': 'USA',
     'us': 'USA', 'u.s.': 'USA', 'u.s.a.': 'USA', 'america': 'USA',
@@ -7576,6 +7578,7 @@
     'hawaii': 'USA', 'hawaiʻi': 'USA', "hawai'i": 'USA'
   };
   const WORK_LOCATION_NAMES = new Map(WORK_LOCATIONS.map(c => [c.toLowerCase(), c]));
+  const WORK_LOCATION_SEARCH = [...WORK_LOCATION_NAMES.keys()].sort((a, b) => b.length - a.length);
   function canonicalWorkCountry(value) {
     const key = String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
     return WORK_LOCATION_NAMES.get(key) || (Object.prototype.hasOwnProperty.call(WORK_LOCATION_ALIASES, key) ? WORK_LOCATION_ALIASES[key] : '');
@@ -7605,9 +7608,8 @@
     if (suffix) return suffix.country;
     // A geographic name may be embedded in an employer, e.g. GES Fiji.
     // Longest names first avoid Samoa swallowing American Samoa.
-    const names = [...WORK_LOCATION_NAMES.keys()].sort((a, b) => b.length - a.length);
     const lower = s.toLowerCase();
-    for (const name of names) {
+    for (const name of WORK_LOCATION_SEARCH) {
       let pos = lower.indexOf(name);
       while (pos >= 0) {
         const before = lower[pos - 1] || '';
@@ -7648,7 +7650,7 @@
     // Preserve employer text accidentally entered in the country column in
     // the submenu as well as the untouched source record.
     const misplaced = String(p.institutionCountry || '').trim();
-    if (/university|college|institute|institution|school|museum|ministry|department|hospital|service|foundation|association|society|council|centre|center|agency|organisation|organization|company|consult|\b(ltd|inc|ngo|fnu|usp|spc|wwf|wcs|ges)\b/i.test(misplaced)) {
+    if (/university|college|institute|institution|school|museum|ministry|department|hospital|service|foundation|association|society|council|centre|center|agency|organisation|organization|company|consult|forum|church|development|\b(ltd|inc|ngo|fnu|usp|spc|wwf|wcs|ges)\b/i.test(misplaced)) {
       add(misplaced);
     }
     return [...new Set(institutions)];

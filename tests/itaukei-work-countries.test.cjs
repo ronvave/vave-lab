@@ -11,6 +11,12 @@ module.exports = function checkWorkLocations(profiles) {
   const state = {scholarProfilesByName: new Map()};
   const api = vm.runInNewContext(helpers + ';({canonicalWorkCountry,scholarWorkCountry,scholarWorkInstitutions,stripCountrySuffix,buildWorkTree})', {state});
   const fixtures = [
+    [{institutionCountry:'Tetra Tech International Development',institution:'Associate Director for Climate and Disaster, Indo-Pacific'}, 'Indo-Pacific', 'Tetra Tech International Development'],
+    [{institutionCountry:'Pacific Disability Forum',institution:'Chief Executive Officer'}, 'Fiji', 'Pacific Disability Forum'],
+    [{institutionCountry:'United Nations Development Programme (UNDP) Pacific Office',institution:'Programme Analyst — Resilience and Climate Change'}, 'Fiji', 'United Nations Development Programme (UNDP) Pacific Office'],
+    [{institutionCountry:'Methodist Church in Fiji and Rotuma'}, 'Fiji', 'Methodist Church in Fiji and Rotuma'],
+    [{institutionCountry:'University of Fiji'}, 'Fiji', 'University of Fiji'],
+    [{institutionCountry:'University of the South Pacific'}, 'Fiji', 'University of the South Pacific'],
     [{institutionCountry:'Fiji National University'}, 'Fiji', 'Fiji National University'],
     [{institutionCountry:'Green Environmental Services (GES) Fiji'}, 'Fiji', 'Green Environmental Services (GES) Fiji'],
     [{institution:'Example Institute (Germany)', institutionCountry:'Example Institute'}, 'Germany', 'Example Institute'],

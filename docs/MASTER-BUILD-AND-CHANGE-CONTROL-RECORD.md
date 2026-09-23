@@ -151,6 +151,13 @@ are unchanged. The script cache hash is refreshed. Executable synthetic
 fixtures cover employers in the country column, aliases, Cuba, country-only
 selection, institution selection, reset and record immutability. The required
 card/mobility regression now also audits all current adapter profiles through
-the actual Panel F filter code. GitHub validation results will be recorded
-after the draft change runs; no deployment or browser visual check is claimed.
+the actual Panel F filter code. GitHub Dashboard integrity and cache-hash checks passed for 992645a1.
+The snapshot audit covers 474 profiles and identified all eight distinct
+employer labels in the country column, plus five geographic variants. It
+preserves 56 saved photos, 76 research summaries and 151 mobility pathways.
+The follow-up covers every audited employer (including Tetra Tech's recorded
+Indo-Pacific scope), and verified Fiji offices for Pacific Disability Forum
+and UNDP. Pacific Blue Foundation has both Fiji and US offices, so its blank
+country is left unresolved without guessing a scholar's workplace. No
+deployment or browser visual check is claimed.
 Local shell and Node tools could not start (runtime ownership missing).
