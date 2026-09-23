@@ -31,6 +31,7 @@ async function fetchJson(url) {
   const enrichment = await fetchJson('data/scholar-enrichment.json');
   const insights = await fetchJson('data/scholar-insights-master.json');
   const profiles = bundle.profiles.scholars;
+  require('./itaukei-work-countries.test.cjs')(profiles);
   const profilesById = new Map(profiles.map(p => [p.scholarId, p]));
   let photos = 0, summaries = 0;
   for (const s of bundle.master.scholars) {
