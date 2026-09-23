@@ -4,12 +4,12 @@ const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const source = fs.readFileSync('js/itaukei-database-master.js', 'utf8');
 const helpers = source.slice(source.indexOf('  const WORK_COUNTRY_RULES = ['), source.indexOf('  function buildConfProvTree()'));
-const filterStart = source.indexOf('    if (state.scholarWorkCountry) {', source.indexOf('// Country/University of work'));
+const filterStart = source.indexOf('    if (state.scholarWorkCountry) {', source.indexOf('// Share the menu'));
 const filterCode = source.slice(filterStart, source.indexOf('\n\n    // Recompute', filterStart));
 
 module.exports = function checkWorkLocations(profiles) {
   const state = {scholarProfilesByName: new Map()};
-  const api = vm.runInNewContext(helpers + ';({canonicalWorkCountry,scholarWorkCountry,scholarWorkInstitutions,stripCountrySuffix,buildWorkTree})', {state});
+  const api = vm.runInNewContext(helpers + ';({canonicalWorkCountry,scholarWorkCountry,scholarWorkInstitutions,stripCountrySuffix,buildWorkTree,canonicalWorkUniversities,scholarWorkUniversities})', {state});
   const fixtures = [
     [{institutionCountry:'Tetra Tech International Development',institution:'Associate Director for Climate and Disaster, Indo-Pacific'}, 'Indo-Pacific', 'Tetra Tech International Development'],
     [{institutionCountry:'Pacific Disability Forum',institution:'Chief Executive Officer'}, 'Fiji', 'Pacific Disability Forum'],
@@ -37,7 +37,26 @@ module.exports = function checkWorkLocations(profiles) {
   for (const [alias, country] of [[' UK ', 'United Kingdom'], ['United States', 'USA'], ['PNG','Papua New Guinea'], ['Guam','Guam (USA territory)']]) {
     assert.equal(api.canonicalWorkCountry(alias), country);
   }
-  console.log('Work university input audit:', JSON.stringify([...new Set(profiles.flatMap(api.scholarWorkInstitutions))].sort()));
+  const universityCases = [
+    ['University of the South Pacific College of Agriculture', ['University of the South Pacific']],
+    ['USP / School of Agriculture', ['University of the South Pacific']],
+    ['University of the South Pacific / Tourism Fiji', ['University of the South Pacific']],
+    ['Fiji National University / Centre for Customs and Excise Studies', ['Fiji National University']],
+    ['FNU', ['Fiji National University']],
+    ['UNSW Sydney', ['University of New South Wales']],
+    ['University of Central Lancashire', ['University of Lancashire']],
+    ['University of Hawai’i at Mānoa', ['University of Hawaiʻi at Mānoa']],
+    ['University of Bergen, Norway I University of the South Pacific', ['University of Bergen', 'University of the South Pacific']],
+    ['CEO', []], ['Associate Dean TVET', []], ['Aspen Medical Lautoka', []],
+    ['Academic Quality Agency for New Zealand Universities (AQA)', []],
+    ['Excelsia University College', []], ['Davuilevu Theological College', []],
+    ['Fiji Museum', []], ['Green Environmental Services (GES) Fiji', []]
+  ];
+  universityCases.forEach(([raw, expected]) => assert.deepEqual(Array.from(api.canonicalWorkUniversities(raw)), expected, raw));
+  const grouped = ['University of the South Pacific', 'USP', 'University of the South Pacific College of Agriculture'].map(institution=>({institution,institutionCountry:'Fiji'}));
+  state.scholarProfilesByName = new Map(grouped.map((p,i)=>[String(i),p]));
+  assert.deepEqual(Array.from(api.buildWorkTree().get('Fiji')), ['University of the South Pacific'], 'University count must merge variants');
+  fixtures.push(...grouped.map(p=>[p]));
   const all = [...profiles, ...fixtures.map(f=>f[0])];
   const before = JSON.stringify(all);
   state.scholarProfilesByName = new Map(all.map((p,i)=>[String(i),p]));
@@ -53,11 +72,16 @@ module.exports = function checkWorkLocations(profiles) {
     const expected = rows.filter(r=>api.scholarWorkCountry(enrichedByName.get(r.name))===country);
     assert.deepEqual(Array.from(runFilter(country,''),r=>r.name), expected.map(r=>r.name));
     for (const institution of institutions) {
+      assert.deepEqual(Array.from(api.canonicalWorkUniversities(institution)), [institution], 'Submenu contains noncanonical/non-university entry');
       const matches = runFilter(country,institution);
       assert(matches.length > 0, 'Dead institution submenu: '+institution);
-      assert.deepEqual(Array.from(matches,r=>r.name), expected.filter(r=>api.scholarWorkInstitutions(enrichedByName.get(r.name)).includes(institution)).map(r=>r.name));
+      assert.deepEqual(Array.from(matches,r=>r.name), expected.filter(r=>api.scholarWorkUniversities(enrichedByName.get(r.name)).includes(institution)).map(r=>r.name));
     }
   }
+  assert.equal(runFilter('Fiji', 'University of the South Pacific').filter(r=>Number(r.name)>=profiles.length+fixtures.length-3).length, 3, 'Canonical university selection lost department/alias scholars');
+  state.scholarProfilesByName = new Map(profiles.map((p,i)=>[String(i),p]));
+  console.log('Canonical work universities:', JSON.stringify([...api.buildWorkTree()]));
+  console.log('Excluded non-university labels:', JSON.stringify([...new Set(profiles.flatMap(api.scholarWorkInstitutions).filter(s=>!api.canonicalWorkUniversities(s).length))].sort()));
   assert.equal(runFilter('', '').length, rows.length, 'Reset changed population');
   assert.equal(JSON.stringify(all), before, 'Classification mutated scholar data');
   const invalid = [...new Set(profiles.map(p=>String(p.institutionCountry||'').trim()).filter(c=>c && !api.canonicalWorkCountry(c)))];

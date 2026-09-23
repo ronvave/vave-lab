@@ -171,3 +171,29 @@ uses content hash ab699240. Full-profile/filter and cache validation also
 passed for final implementation 1e53513. Direct live HTTP retrieval and the
 browser tool were unavailable in this session, so visual verification is not
 claimed. Deployment success is confirmed by GitHub Pages.
+
+## 2026-09-23 — Canonical universities in the Fiji work submenu
+
+The work filter's right-hand menu now includes recognized universities only.
+A work-specific registry canonicalizes department/college suffixes, aliases,
+and mixed affiliations. USP College of Agriculture and USP group under
+University of the South Pacific; UNSW Sydney groups under University of New
+South Wales. Lancashire's old name maps to its current name, supported by
+https://www.officeforstudents.org.uk/for-providers/registering-with-the-ofs/university-title/decisions/.
+Standalone colleges, NGOs, employers and job titles are omitted from the
+university submenu. Excelsia is a University College, not a university
+(https://www.teqsa.gov.au/about-us/news-and-events/latest-news/teqsa-registers-excelsia-college-university-college).
+
+Country-only filtering continues to include all scholars working there.
+Country badges count distinct canonical universities; selecting one uses the
+same canonical membership for scholar counts and linked publications. Original
+profile fields and styling are untouched. Renamed the pill Countries /
+Universities of work and refreshed its script hash.
+
+Audited all current workplace labels via the existing encrypted adapter
+snapshot. Added regression cases for subunits, aliases, non-universities,
+multiple university affiliations, deduplication, selection of all three USP
+variants, reset and record immutability. Synthetic execution and JavaScript
+syntax pass. Full snapshot and preservation checks run in the PR and deployment
+workflows. Local execution/browser tools remain unavailable; no visual QA is
+claimed. Deployment evidence follows after release.

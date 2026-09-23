@@ -7331,7 +7331,7 @@
       rows = rows.filter(r => {
         const p = enrichedByName.get(r.name) || {};
         return scholarWorkCountry(p) === wantC
-            && (!wantU || scholarWorkInstitutions(p).includes(wantU));
+            && (!wantU || scholarWorkUniversities(p).includes(wantU));
       });
     }
 
@@ -7656,13 +7656,119 @@
     return [...new Set(institutions)];
   }
 
+  // Work-filter registry, audited against every current profile. Match known
+  // university identities, never arbitrary employers containing "university".
+  // Subunits and mixed affiliations are grouped without altering card data.
+  // Independent colleges (including Excelsia University College) are excluded.
+  const WORK_UNIVERSITIES = [
+  "Adelaide University",
+  "Auckland University of Technology",
+  "Australian Catholic University",
+  "Australian National University",
+  "California State University, Los Angeles",
+  "Fiji National University",
+  "Kagoshima University",
+  "La Trobe University",
+  "Lincoln University",
+  "Massey University",
+  "Pasifika Communities University",
+  "San Francisco State University",
+  "University of New South Wales",
+  "University of Auckland",
+  "University of Bergen",
+  "University of Canterbury",
+  "University of Fiji",
+  "University of Guam",
+  "University of Hawaiʻi at Mānoa",
+  "University of Lancashire",
+  "University of Otago",
+  "University of Pavia",
+  "University of Queensland",
+  "University of Sydney",
+  "University of Tasmania",
+  "University of Utah",
+  "University of Waikato",
+  "University of the South Pacific",
+  "Western Sydney University",
+  "Victoria University of Wellington",
+  "James Cook University",
+  "Griffith University",
+  "University of Melbourne",
+  "University of Southampton",
+  "University of Oxford",
+  "University of Cambridge",
+  "University of Newcastle",
+  "University of New England",
+  "University of Adelaide",
+  "Charles Darwin University",
+  "Murdoch University",
+  "Macquarie University",
+  "University of the Sunshine Coast"
+];
+  const WORK_UNIVERSITY_ALIASES = {
+  "University of the South Pacific": [
+    "USP",
+    "University of South Pacific"
+  ],
+  "Fiji National University": [
+    "FNU"
+  ],
+  "Australian National University": [
+    "ANU"
+  ],
+  "University of New South Wales": [
+    "UNSW",
+    "UNSW Sydney"
+  ],
+  "University of Hawaiʻi at Mānoa": [
+    "University of Hawaii at Manoa",
+    "University of Hawaii Manoa",
+    "University of Hawaiʻi, Mānoa"
+  ],
+  "University of Lancashire": [
+    "University of Central Lancashire",
+    "UCLan"
+  ],
+  "Victoria University of Wellington": [
+    "VUW"
+  ],
+  "California State University, Los Angeles": [
+    "California State University Los Angeles",
+    "Cal State LA"
+  ],
+  "San Francisco State University": [
+    "SFSU"
+  ],
+  "Auckland University of Technology": [
+    "AUT"
+  ]
+};
+  function workUniversityKey(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase().replace(/['’ʻʼ]/g, '').replace(/&/g, ' and ')
+      .replace(/[^a-z0-9]+/g, ' ').trim();
+  }
+  const WORK_UNIVERSITY_MATCHERS = WORK_UNIVERSITIES.map(name => ({
+    name,
+    keys: [name, ...(WORK_UNIVERSITY_ALIASES[name] || [])].map(workUniversityKey)
+  }));
+  function canonicalWorkUniversities(value) {
+    const text = ' ' + workUniversityKey(value) + ' ';
+    return WORK_UNIVERSITY_MATCHERS
+      .filter(entry => entry.keys.some(key => text.includes(' ' + key + ' ')))
+      .map(entry => entry.name);
+  }
+  function scholarWorkUniversities(p) {
+    return [...new Set(scholarWorkInstitutions(p).flatMap(canonicalWorkUniversities))];
+  }
+
   function buildWorkTree() {
     const tree = new Map();
     (state.scholarProfilesByName || new Map()).forEach(p => {
       const c = scholarWorkCountry(p);
       if (!c) return;
       if (!tree.has(c)) tree.set(c, new Set());
-      scholarWorkInstitutions(p).forEach(u => tree.get(c).add(u));
+      scholarWorkUniversities(p).forEach(u => tree.get(c).add(u));
     });
     return new Map([...tree.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
@@ -8029,7 +8135,7 @@
         root: workRoot, input, panel: workPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
         tree, parentLabelSingular: 'Universities',
-        buildLabel: () => 'Countries / Institutions of work',
+        buildLabel: () => 'Countries / Universities of work',
         isActive: () => {
           const c = state.scholarWorkCountry, u = state.scholarWorkUni;
           if (c && u) return { active: true, value: `${c} › ${u}` };
