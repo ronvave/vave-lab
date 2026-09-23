@@ -85,7 +85,10 @@
     const header = document.querySelector('.site-header');
     const top = Math.max(0,header ? header.getBoundingClientRect().bottom : 0);
     nav.style.top = top + 'px';
-    nav.hidden = window.scrollY < window.innerHeight;
+    // Reveal the floating panel as soon as the user begins scrolling. The old
+    // viewport-height threshold delayed it until roughly Panel B1, which made
+    // the navigation unavailable through the entire opening section.
+    nav.hidden = window.scrollY <= 0;
     if (nav.hidden) close(false);
     const edge = top + nav.getBoundingClientRect().height + 24;
     let active = targets.keys().next().value;
