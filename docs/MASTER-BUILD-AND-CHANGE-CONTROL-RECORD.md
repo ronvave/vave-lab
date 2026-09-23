@@ -197,3 +197,11 @@ variants, reset and record immutability. Synthetic execution and JavaScript
 syntax pass. Full snapshot and preservation checks run in the PR and deployment
 workflows. Local execution/browser tools remain unavailable; no visual QA is
 claimed. Deployment evidence follows after release.
+
+Release evidence: PR #8 merged as 836ee626b3e1d967c3d0432e4ea005ad6348e792.
+GitHub Pages run https://github.com/ronvave/vave-lab/actions/runs/35848360039
+completed validation and deployment successfully. Final script hash:
+fd00b7ee. All 474 adapter profiles passed country/university filtering,
+canonical membership, deduplication, reset and immutability checks. Existing
+preservation checks passed with 56 photos, 76 summaries and 151 mobility rows.
+No browser visual verification is claimed.
