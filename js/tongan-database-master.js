@@ -4908,7 +4908,14 @@
           unisByCountry.get(p.country).add(p.university);
         }
         if (regionOfCountry.has(p.country)) return;
-        const region = p.region || fallbackRegionOf.get(p.country) || 'Other';
+        // Canonical dropdown taxonomy follows the Fiji dashboard. Prefer the
+        // explicit country mapping here so stale/legacy feed labels (for
+        // example "Pacific", "Other", or a misassigned North America) cannot
+        // strand a known country in the wrong region. Only genuinely unknown
+        // countries fall back to the feed's region.
+        const mappedRegion = fallbackRegionOf.get(p.country);
+        const rawRegion = mappedRegion || p.region || 'Other';
+        const region = rawRegion === 'Pacific' ? 'Oceania' : rawRegion;
         regionOfCountry.set(p.country, region);
       });
       // Group countries by resolved region, preserving the display order
@@ -7082,10 +7089,12 @@
   // ordering and grouping still work if the workflow ever emits a
   // pre-region-field snapshot.
   const WORLD_REGIONS = {
-    Pacific:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea'],
-    Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea'],
-    Europe:          ['UK', 'Germany', 'Sweden', 'Portugal', 'Malta'],
-    'North America': ['USA', 'Canada']
+    Oceania:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea', 'Tonga', 'Samoa', 'Solomon Islands', 'Vanuatu', 'Federated States of Micronesia', 'Kiribati', 'Marshall Islands', 'Naoero', 'Nauru', 'Palau', 'Tuvalu', 'Cook Islands', 'Niue', 'New Caledonia', 'French Polynesia'],
+    Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea', 'Singapore'],
+    Europe:          ['United Kingdom', 'UK', 'Ireland', 'Germany', 'Sweden', 'Portugal', 'Malta', 'Norway', 'France', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Denmark', 'Finland', 'Spain', 'Italy'],
+    'North America': ['United States', 'USA', 'Canada'],
+    'Latin America and the Caribbean': ['Trinidad and Tobago', 'Cuba', 'Mexico', 'Brazil', 'Chile', 'Argentina'],
+    Africa:          ['South Africa', 'Ghana', 'Kenya', 'Nigeria', 'Uganda', 'Tanzania']
   };
 
   // =========================================================================
