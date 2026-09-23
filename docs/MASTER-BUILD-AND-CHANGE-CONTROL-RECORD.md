@@ -136,3 +136,21 @@ coordinates relative to the bar and sit four pixels below the selected pill.
 Horizontal viewport clamping, scroll/resize repositioning, and all navigation
 behaviour remain intact. Added a regression with a 76px header/bar offset and
 verified the resulting 4px pill-to-dropdown gap. Updated content hashes.
+
+## 2026-09-22 — Fiji scholar work-country classification
+
+The Panel F work filter now admits only canonical country/territory names and
+recognized aliases at its first level. Malformed country fields are resolved
+from existing institution/location evidence; employer names remain available
+in the country submenu. Both tree construction and row filtering use the same
+resolver and institution list. Trailing parentheses/commas are stripped only
+when their contents are a recognized country, preserving employer acronyms.
+
+Source scholar records, Admin content, styling and unrelated panel handlers
+are unchanged. The script cache hash is refreshed. Executable synthetic
+fixtures cover employers in the country column, aliases, Cuba, country-only
+selection, institution selection, reset and record immutability. The required
+card/mobility regression now also audits all current adapter profiles through
+the actual Panel F filter code. GitHub validation results will be recorded
+after the draft change runs; no deployment or browser visual check is claimed.
+Local shell and Node tools could not start (runtime ownership missing).

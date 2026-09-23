@@ -7334,7 +7334,7 @@
       rows = rows.filter(r => {
         const p = enrichedByName.get(r.name) || {};
         return scholarWorkCountry(p) === wantC
-            && (!wantU || stripCountrySuffix(p.institution || '') === wantU);
+            && (!wantU || scholarWorkInstitutions(p).includes(wantU));
       });
     }
 
@@ -7553,44 +7553,114 @@
     [/\bsamoa\b/i, 'Samoa'],
     [/\btonga\b/i, 'Tonga'],
   ];
-  function guessWorkCountry(inst) {
-    const s = String(inst || '');
-    if (!s.trim()) return '';
-    for (const [pattern, country] of WORK_COUNTRY_RULES) {
-      if (pattern.test(s)) return country;
+  // Only exact canonical geography or aliases can become a first-level option.
+  // Keep this independent of profile data: a misspelled employer must never
+  // teach the menu a new "country". ISO country/territory names include Cuba.
+  const WORK_LOCATIONS = ["Andorra","United Arab Emirates","Afghanistan","Antigua & Barbuda","Anguilla","Albania","Armenia","Angola","Antarctica","Argentina","American Samoa","Austria","Australia","Aruba","Åland Islands","Azerbaijan","Bosnia & Herzegovina","Barbados","Bangladesh","Belgium","Burkina Faso","Bulgaria","Bahrain","Burundi","Benin","St. Barthélemy","Bermuda","Brunei","Bolivia","Caribbean Netherlands","Brazil","Bahamas","Bhutan","Bouvet Island","Botswana","Belarus","Belize","Canada","Cocos (Keeling) Islands","Congo - Kinshasa","Central African Republic","Congo - Brazzaville","Switzerland","Côte d’Ivoire","Cook Islands","Chile","Cameroon","China","Colombia","Costa Rica","Cuba","Cape Verde","Curaçao","Christmas Island","Cyprus","Czechia","Germany","Djibouti","Denmark","Dominica","Dominican Republic","Algeria","Ecuador","Estonia","Egypt","Western Sahara","Eritrea","Spain","Ethiopia","Finland","Fiji","Falkland Islands (Islas Malvinas)","Micronesia","Faroe Islands","France","Gabon","United Kingdom","Grenada","Georgia","French Guiana","Guernsey","Ghana","Gibraltar","Greenland","Gambia","Guinea","Guadeloupe","Equatorial Guinea","Greece","South Georgia & South Sandwich Islands","Guatemala","Guam (USA territory)","Guinea-Bissau","Guyana","Hong Kong","Heard & McDonald Islands","Honduras","Croatia","Haiti","Hungary","Indonesia","Ireland","Israel","Isle of Man","India","British Indian Ocean Territory","Iraq","Iran","Iceland","Italy","Jersey","Jamaica","Jordan","Japan","Kenya","Kyrgyzstan","Cambodia","Kiribati","Comoros","St. Kitts & Nevis","North Korea","South Korea","Kuwait","Cayman Islands","Kazakhstan","Laos","Lebanon","St. Lucia","Liechtenstein","Sri Lanka","Liberia","Lesotho","Lithuania","Luxembourg","Latvia","Libya","Morocco","Monaco","Moldova","Montenegro","St. Martin","Madagascar","Marshall Islands","North Macedonia","Mali","Myanmar (Burma)","Mongolia","Macao","Northern Mariana Islands","Martinique","Mauritania","Montserrat","Malta","Mauritius","Maldives","Malawi","Mexico","Malaysia","Mozambique","Namibia","New Caledonia","Niger","Norfolk Island","Nigeria","Nicaragua","Netherlands","Norway","Nepal","Nauru","Niue","New Zealand","Oman","Panama","Peru","French Polynesia","Papua New Guinea","Philippines","Pakistan","Poland","St. Pierre & Miquelon","Pitcairn Islands","Puerto Rico","Palestine","Portugal","Palau","Paraguay","Qatar","Réunion","Romania","Serbia","Russia","Rwanda","Saudi Arabia","Solomon Islands","Seychelles","Sudan","Sweden","Singapore","St. Helena","Slovenia","Svalbard & Jan Mayen","Slovakia","Sierra Leone","San Marino","Senegal","Somalia","Suriname","South Sudan","São Tomé & Príncipe","El Salvador","Sint Maarten","Syria","Eswatini","Turks & Caicos Islands","Chad","French Southern Territories","Togo","Thailand","Tajikistan","Tokelau","Timor-Leste","Turkmenistan","Tunisia","Tonga","Türkiye","Trinidad & Tobago","Tuvalu","Taiwan","Tanzania","Ukraine","Uganda","U.S. Outlying Islands","USA","Uruguay","Uzbekistan","Vatican City","St. Vincent & Grenadines","Venezuela","British Virgin Islands","U.S. Virgin Islands","Vietnam","Vanuatu","Wallis & Futuna","Samoa","Yemen","Mayotte","South Africa","Zambia","Zimbabwe"];
+  const WORK_LOCATION_ALIASES = {
+    'united states': 'USA', 'united states of america': 'USA',
+    'us': 'USA', 'u.s.': 'USA', 'u.s.a.': 'USA', 'america': 'USA',
+    'uk': 'United Kingdom', 'u.k.': 'United Kingdom',
+    'great britain': 'United Kingdom', 'england': 'United Kingdom',
+    'scotland': 'United Kingdom', 'wales': 'United Kingdom',
+    'northern ireland': 'United Kingdom',
+    'aotearoa': 'New Zealand', 'aotearoa new zealand': 'New Zealand',
+    'nz': 'New Zealand', 'uae': 'United Arab Emirates',
+    'png': 'Papua New Guinea', 'guam': 'Guam (USA territory)',
+    'western samoa': 'Samoa', 'micronesia': 'Micronesia',
+    'federated states of micronesia': 'Micronesia',
+    'republic of korea': 'South Korea', 'korea': 'South Korea',
+    'czech republic': 'Czechia', 'turkey': 'Türkiye',
+    'east timor': 'Timor-Leste', 'vatican city': 'Vatican City',
+    'russian federation': 'Russia', 'viet nam': 'Vietnam',
+    'hawaii': 'USA', 'hawaiʻi': 'USA', "hawai'i": 'USA'
+  };
+  const WORK_LOCATION_NAMES = new Map(WORK_LOCATIONS.map(c => [c.toLowerCase(), c]));
+  function canonicalWorkCountry(value) {
+    const key = String(value || '').trim().replace(/\s+/g, ' ').toLowerCase();
+    return WORK_LOCATION_NAMES.get(key) || (Object.prototype.hasOwnProperty.call(WORK_LOCATION_ALIASES, key) ? WORK_LOCATION_ALIASES[key] : '');
+  }
+
+  function workCountrySuffix(value) {
+    const s = String(value || '').trim();
+    // Try the full parenthesized suffix before a comma suffix. Never strip
+    // an acronym, department, or employer simply because it is in brackets.
+    const bracket = s.match(/\s*\(([^()]*)\)\s*$/);
+    if (bracket && canonicalWorkCountry(bracket[1])) {
+      return {country: canonicalWorkCountry(bracket[1]), index: bracket.index};
     }
-    const m = s.match(/[\(,]\s*([A-Za-z][A-Za-z\s]{2,25}?)\s*\)?\s*$/);
-    return m ? m[1].trim() : '';
+    const comma = s.match(/,\s*([^,]+)$/);
+    if (comma && canonicalWorkCountry(comma[1])) {
+      return {country: canonicalWorkCountry(comma[1]), index: comma.index};
+    }
+    return null;
   }
 
-  // Resolve the country of work for a scholar: explicit field first,
-  // falling back to the guesser so the Work filter functions before the
-  // admin has pushed auto-seeded values.
-  function scholarWorkCountry(p) {
-    if (!p) return '';
-    if (p.institutionCountry && String(p.institutionCountry).trim()) return String(p.institutionCountry).trim();
-    return guessWorkCountry(p.institution);
-  }
-
-  // Strip a trailing " (Country)" suffix from an institution string — that
-  // suffix is included in the admin-entered field only so the scholar card
-  // displays it; in the filter dropdown we want the institution name on its
-  // own so a listing reads "Australian National University" rather than
-  // "Australian National University (Australia)".
-  function stripCountrySuffix(inst) {
+  function guessWorkCountry(inst) {
     const s = String(inst || '').trim();
     if (!s) return '';
-    return s.replace(/\s*[\(,]\s*[A-Za-z][A-Za-z\s]{1,30}?\s*\)?\s*$/, '').trim() || s;
+    const exact = canonicalWorkCountry(s);
+    if (exact) return exact;
+    const suffix = workCountrySuffix(s);
+    if (suffix) return suffix.country;
+    // A geographic name may be embedded in an employer, e.g. GES Fiji.
+    // Longest names first avoid Samoa swallowing American Samoa.
+    const names = [...WORK_LOCATION_NAMES.keys()].sort((a, b) => b.length - a.length);
+    const lower = s.toLowerCase();
+    for (const name of names) {
+      let pos = lower.indexOf(name);
+      while (pos >= 0) {
+        const before = lower[pos - 1] || '';
+        const after = lower[pos + name.length] || '';
+        if (!/[\p{L}\p{N}]/u.test(before) && !/[\p{L}\p{N}]/u.test(after)) {
+          return WORK_LOCATION_NAMES.get(name);
+        }
+        pos = lower.indexOf(name, pos + 1);
+      }
+    }
+    for (const [pattern, country] of WORK_COUNTRY_RULES) {
+      if (pattern.test(s)) return canonicalWorkCountry(country);
+    }
+    return '';
+  }
+
+  function scholarWorkCountry(p) {
+    if (!p) return '';
+    return canonicalWorkCountry(p.institutionCountry)
+        || guessWorkCountry(p.institution)
+        || guessWorkCountry(p.institutionCountry);
+  }
+
+  function stripCountrySuffix(inst) {
+    const s = String(inst || '').trim();
+    const suffix = workCountrySuffix(s);
+    return suffix ? s.slice(0, suffix.index).trim() || s : s;
+  }
+
+  function scholarWorkInstitutions(p) {
+    if (!p) return [];
+    const institutions = [];
+    const add = value => {
+      const raw = String(value || '').trim();
+      if (raw && !canonicalWorkCountry(raw)) institutions.push(stripCountrySuffix(raw));
+    };
+    add(p.institution);
+    // Preserve employer text accidentally entered in the country column in
+    // the submenu as well as the untouched source record.
+    const misplaced = String(p.institutionCountry || '').trim();
+    if (/university|college|institute|institution|school|museum|ministry|department|hospital|service|foundation|association|society|council|centre|center|agency|organisation|organization|company|consult|\b(ltd|inc|ngo|fnu|usp|spc|wwf|wcs|ges)\b/i.test(misplaced)) {
+      add(misplaced);
+    }
+    return [...new Set(institutions)];
   }
 
   function buildWorkTree() {
     const tree = new Map();
     (state.scholarProfilesByName || new Map()).forEach(p => {
       const c = scholarWorkCountry(p);
-      const uRaw = (p.institution || '').trim();
       if (!c) return;
       if (!tree.has(c)) tree.set(c, new Set());
-      if (uRaw) tree.get(c).add(stripCountrySuffix(uRaw));
+      scholarWorkInstitutions(p).forEach(u => tree.get(c).add(u));
     });
     return new Map([...tree.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
