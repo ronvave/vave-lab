@@ -2686,27 +2686,57 @@
     return x;
   }
 
+  // Frame dropdown selections to the marker copies actually rendered on the
+  // map. Using the current viewport centre to normalize longitude can select
+  // an adjacent wrapped copy of a country/region where no scholar markers
+  // exist, leaving a large empty map after filtering.
+  function _renderedWorldLatLngs(predicate) {
+    if (!state.worldLayer || !state.worldLayer.getLayers) return [];
+    return state.worldLayer.getLayers()
+      .filter(l => l && l._worldPoint && l._worldHome && predicate(l._worldPoint))
+      .map(l => [l._worldHome[0], l._worldHome[1]]);
+  }
+
   function zoomToWorldCountry(name) {
-    const grad = state.graduateStudies || { worldPoints: [] };
-    const pts = (grad.worldPoints || []).filter(p => p.country === name);
-    if (!pts.length || !state.worldMap) return;
-    // maxZoom bumped to 8 so country-level zoom actually shows the country,
-    // not the whole region (typing "Fiji" used to leave AU + NZ in frame).
-    // Longitudes normalized to the visible world-wrap so North American
-    // countries don't frame the empty left-hand copy of the map.
-    const latlngs = pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]);
+    if (!state.worldMap) return;
+    let latlngs = _renderedWorldLatLngs(p => p.country === name);
+    if (!latlngs.length) {
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const pts = (grad.worldPoints || []).filter(p => p.country === name);
+      const anchor = state.worldMapFullscreen ? 140 : state.worldMap.getCenter().lng;
+      const wrapToAnchor = lng => {
+        const candidates = [lng - 360, lng, lng + 360];
+        return candidates.reduce((best, x) =>
+          Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
+      };
+      latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+    }
+    if (!latlngs.length) return;
     if (latlngs.length === 1) {
       state.worldMap.setView(latlngs[0], 7, { animate: true });
     } else {
-      const bounds = L.latLngBounds(latlngs);
-      state.worldMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 8, animate: true });
+      state.worldMap.fitBounds(L.latLngBounds(latlngs), {
+        padding: [60, 60], maxZoom: 8, animate: true
+      });
     }
   }
   function zoomToWorldUniversity(uniName) {
+    if (!state.worldMap) return;
+    const rendered = _renderedWorldLatLngs(p => p.university === uniName);
+    if (rendered.length) {
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const p = (grad.worldPoints || []).find(x => x.university === uniName);
+      state.worldMap.setView(rendered[0], p ? (8) : 8, { animate: true });
+      return;
+    }
     const grad = state.graduateStudies || { worldPoints: [] };
     const p = (grad.worldPoints || []).find(x => x.university === uniName);
-    if (!p || !state.worldMap) return;
-    state.worldMap.setView([p.lat, _normLngForWorldMap(p.lng)], 8, { animate: true });
+    if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+    const anchor = state.worldMapFullscreen ? 140 : state.worldMap.getCenter().lng;
+    const candidates = [p.lng - 360, p.lng, p.lng + 360];
+    const lng = candidates.reduce((best, x) =>
+      Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, p.lng);
+    state.worldMap.setView([p.lat, lng], 8, { animate: true });
   }
 
   function wireWorldPanel() {
@@ -5082,14 +5112,25 @@
     function zoomToRegion(countries) {
       const m = state.worldMap;
       if (!m) return;
-      const grad = state.graduateStudies || { worldPoints: [] };
       const set = new Set(countries);
-      const pts = (grad.worldPoints || []).filter(p => set.has(p.country));
-      if (!pts.length) return;
-      // Antimeridian fix: see _normLngForWorldMap. Framing raw longitudes
-      // for Americas would zoom to the empty left-hand US copy.
-      const bounds = L.latLngBounds(pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]));
-      m.fitBounds(bounds, { padding: [80, 80], maxZoom: 5, animate: true });
+      let latlngs = _renderedWorldLatLngs(p => set.has(p.country));
+      if (!latlngs.length) {
+        const grad = state.graduateStudies || { worldPoints: [] };
+        const pts = (grad.worldPoints || []).filter(p => set.has(p.country) && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+        const anchor = state.worldMapFullscreen ? 140 : m.getCenter().lng;
+        const wrapToAnchor = lng => {
+          const candidates = [lng - 360, lng, lng + 360];
+          return candidates.reduce((best, x) =>
+            Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
+        };
+        latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+      }
+      if (!latlngs.length) return;
+      if (latlngs.length === 1) {
+        m.setView(latlngs[0], 5, { animate: true });
+      } else {
+        m.fitBounds(L.latLngBounds(latlngs), { padding: [80, 80], maxZoom: 5, animate: true });
+      }
     }
 
     // Reset the fullscreen map to its default whole-world framing.
