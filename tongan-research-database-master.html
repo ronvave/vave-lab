@@ -3940,6 +3940,7 @@
   .mf-empty-state strong{ color:var(--color-teal,#005f6b); }
 </style>
   <link rel="stylesheet" href="css/tongan-panel-menu.css?v=44020c99">
+<link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=e5e135f9">
 </head>
 <body>
 
@@ -4543,13 +4544,32 @@
         </button>
       </div>
 
-      <!-- Panel B4 — Where Tongan research has been undertaken. Sourced from the
+      <!-- B4 uses completed-degree Short Disciplines; independent of publication filters. -->
+      <section class="db-panel reveal db-panel--wide" data-panel="B4" id="graduate-disciplines" aria-labelledby="short-disciplines-heading">
+        <span class="db-panel__label">B4</span>
+        <h2 class="db-panel__title" id="short-disciplines-heading">Graduate research disciplines</h2>
+        <p class="db-panel__hint">The table defaults to Gender. Select Degree below to see the number of scholars with completed Master&rsquo;s and PhD degrees in each discipline.</p>
+        <div class="short-disciplines-toggle" role="group" aria-label="Summarise disciplines by">
+          <button type="button" data-discipline-view="gender" aria-pressed="true">Gender</button>
+          <button type="button" data-discipline-view="degree" aria-pressed="false">Degree</button>
+        </div>
+        <p data-disciplines-status role="status">Loading graduate research disciplines…</p>
+        <div class="short-disciplines-scroll" tabindex="0" role="region" aria-label="Graduate research disciplines table">
+          <table class="short-disciplines-table" aria-describedby="short-disciplines-caption" hidden>
+            <caption></caption><thead></thead><tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <p id="short-disciplines-caption" class="short-disciplines-caption db-panel__hint"></p>
+        <p class="short-disciplines-updated" data-disciplines-updated></p>
+      </section>
+
+      <!-- Panel B5 — Where Tongan research has been undertaken. Sourced from the
            Master file Research Geography evidence bridge. Each verified country
            is a research location; items are bucketed as
            "Led by Tongan" (first-author matches the master roster) or
            "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B4">
-        <span class="db-panel__label">B4</span>
+      <div class="db-panel reveal db-panel--wide" data-panel="B5" id="panel-nav-b4">
+        <span class="db-panel__label">B5</span>
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF TONGAN RESEARCH</h2>
         <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Tongan as first author; gold = others as first author (a Tongan author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
         <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
@@ -5408,6 +5428,7 @@
 <script src="js/tongan-database-adapter.js?v=ba90cea8" defer></script>
 <script src="js/tongan-scholar-portal.js?v=623d3b3b" defer></script>
 <script src="js/tongan-database-master.js?v=3aa0113d" defer></script>
+<script src="js/tongan-short-disciplines.js?v=e8ca80d9" defer></script>
 <script src="js/tongan-panel-overrides.js?v=408417f6" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
@@ -5526,7 +5547,7 @@
     }
   })();
 </script>
-<script src="js/tongan-panel-menu.js?v=255ca4e8" defer></script>
+<script src="js/tongan-panel-menu.js?v=f15f90bf" defer></script>
 </body>
 </html>
 

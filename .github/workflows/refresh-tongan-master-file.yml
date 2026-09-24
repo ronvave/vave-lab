@@ -35,6 +35,8 @@ on:
       - "scripts/tongan_sync_share_tokens.py"
       - "scripts/tongan_master_file_config.py"
       - "scripts/tongan_master_file_transformer.py"
+      - "scripts/tongan_short_disciplines.py"
+      - "scripts/master_short_disciplines.py"
       - "scripts/tongan_encrypt_data.py"
       - "scripts/tongan_decrypt_data.py"
       - "js/tongan-database-adapter.js"

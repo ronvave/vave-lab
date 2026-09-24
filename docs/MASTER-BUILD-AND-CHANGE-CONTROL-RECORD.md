@@ -1,5 +1,27 @@
 # Master Build and Change-Control Record
 
+## 2026-09-24 — Tonga B4 graduate research disciplines
+
+Added Fiji-style Gender/Degree discipline table, using Tonga Master aggregates,
+confirmed Scholar-ID unions and Tangata/Fefine mapping. Export now retains
+Short Discipline and calculates the aggregate before degree display deduplication.
+The live Graduate Degrees sheet lacked this field; added AA4 without disturbing
+existing columns (Z contains unheaded evidence notes). No classifications were
+invented. The current live roster has 234 completed-degree scholars, 174 with a
+completed Master's, and zero classified scholars; B4 explicitly displays that
+coverage gap rather than manufactured discipline counts. Thirteen completed-degree
+IDs absent from the core roster are excluded from this standalone reconciliation.
+
+Moved the research-location map to visible B5, retaining its existing internal
+map IDs and old panel-nav-b4 bookmark. The menu targets the new B4 independently.
+Added source aggregation and UI regression tests for gender mapping, duplicate
+records, union totals, orphan IDs, missing data, independent filters and hydration.
+Tonga preservation tests pass (14 photos, 13 summaries, 86 pathways); iTaukei
+preservation tests pass (59 photos, 77 summaries, 151 pathways). Shared Fiji
+aggregation and styling remain unchanged. Publishing through the established
+Pages and Tonga snapshot workflows; deployment verification follows publication.
+
+
 ## 2026-09-24 — Tonga card Island Division and paternal clan
 
 Card banners, Panel F division counts and division filtering now use the explicit

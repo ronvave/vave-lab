@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Check completed-degree discipline aggregation
+        run: python3 -m unittest discover -s scripts/tests -p 'test*short_disciplines.py'
+
       - name: Check iTaukei Admin card data and mobility joins
         run: node tests/itaukei-card-mobility.test.cjs
 
