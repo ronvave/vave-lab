@@ -643,6 +643,20 @@
     var el = document.getElementById(id);
     if (!el) return;
     var s = val == null ? '' : String(val);
+    // A Master value can predate the current dropdown vocabulary. Native
+    // selects silently turn an unmatched value into blank, which previously
+    // made an unrelated field look edited and could clear it on Save & push.
+    if (el.tagName === 'SELECT') {
+      Array.prototype.slice.call(el.querySelectorAll('option[data-master-value]'))
+        .forEach(function (option) { option.remove(); });
+      if (s && !Array.prototype.some.call(el.options, function (option) { return option.value === s; })) {
+        var existing = document.createElement('option');
+        existing.value = s;
+        existing.textContent = s + ' (existing Master value)';
+        existing.setAttribute('data-master-value', '');
+        el.appendChild(existing);
+      }
+    }
     el.value = s;
     el.setAttribute('data-loaded', s);
   }
