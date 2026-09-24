@@ -1,5 +1,21 @@
 # Master Build and Change-Control Record
 
+## 2026-09-24 — Tonga card Island Division and paternal clan
+
+Card banners, Panel F division counts and division filtering now use the explicit
+paternal Island Division, independently of District. Adapter division fields no
+longer infer values from District or maternal geography. Village labels use
+`Village vlg (Clan)` and tolerate equivalent apostrophe characters in clan
+counts/filtering while preserving the supplied clan order. Empty villages retain
+the existing placeholder. Refreshed dashboard and Admin asset hashes.
+
+Verified the current encrypted export for TNG-S0002 contains Tongatapu and
+Haʻa Lātūhifo. The new card-geography regression exercises that actual record,
+blank District, maternal privacy, clan counts and filters, and the placeholder.
+Tonga and iTaukei card/mobility preservation tests passed (Tonga: 14 photos,
+13 summaries; iTaukei: 56 photos, 76 summaries). JavaScript syntax passed.
+
+
 ## 2026-09-21 — Tonga scholar update review notice
 
 Updated the yellow Update info notice in the Tonga scholar portal and the

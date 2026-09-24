@@ -25,6 +25,15 @@
 
   // Bright, satellite-legible border colors — one per Tonga Island Division
   const CLANS = window.TONGAN_CLANS || [];
+  const geographyKey = value => String(value || '').normalize('NFC').replace(/[‘’ʻʼ`]/g, "'").trim();
+  function paternalDivision(profile) {
+    const value = geographyKey(profile && profile.paternalIslandDivision);
+    return value === 'Niuas' ? 'Ongo Niua' : value;
+  }
+  function paternalClan(profile) {
+    const value = String(profile && profile.paternalClan || '').trim();
+    return CLANS.find(name => geographyKey(name) === geographyKey(value)) || value;
+  }
   // Stable palette keyed to the hierarchy position, never to count rank.
   const clanColor = index => `hsl(${Math.round(index * 360 / 20)} 60% 38%)`;
   const CONF_COLORS = {
@@ -133,18 +142,10 @@
   // removes them from state.snapshot.items entirely.
   const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report'];
 
-  // Effective paternal-province for a scholar profile: prefer the explicit
-  // paternal province, but fall back to the maternal province when paternal
-  // is blank. Used for confederacy chips, Panel B2 grouping, and every place
-  // the dashboard describes a scholar's 'home' province. This handles the
-  // case where a scholar considers themselves iTaukei via their mother
-  // (e.g. Aporosa Apo — Naduri village, Macuata Province via mother).
-  // The admin form records `nonItaukeiDad` and `maternalProvince` explicitly;
-  // the public dashboard doesn't need those flags separately, just the
-  // effective province.
+  // Public geography uses paternal values only; maternal data stays private.
   function effectivePaternalProvince(profile) {
     if (!profile) return '';
-    return (profile.paternalProvince || profile.maternalProvince || '').trim();
+    return (profile.paternalProvince || '').trim();
   }
 
   // ------------------------------------------------------------------
@@ -1657,7 +1658,7 @@
       [['masters', point.mastersScholars || []], ['phd', point.phdScholars || []]].forEach(([kind, names]) => {
         names.forEach(name => {
           const profile = b2LookupScholarProfile(name);
-          const clan = profile && String(profile.paternalClan || '').trim();
+          const clan = paternalClan(profile);
           if (counts.has(clan)) counts.get(clan)[kind]++;
         });
       });
@@ -3774,7 +3775,7 @@
       const c = (profile.confederacy || '').trim();
       if (c !== conf) {
         // Try inferring from province if confederacy was blank.
-        const pp = (profile.paternalProvince || profile.maternalProvince || '').trim();
+        const pp = (profile.paternalProvince || '').trim();
         if (!pp || PROVINCE_TO_CONFEDERACY[pp] !== conf) return false;
       }
     }
@@ -7248,7 +7249,7 @@
     const names = new Set();
     (state.scholarProfilesByName || new Map()).forEach((profile, name) => {
       const p = effectivePaternalProvince(profile);
-      const c = p ? (provConf.get(p) || '') : '';
+      const c = paternalDivision(profile);
 
       // Confederacy check
       if (conf === '__untagged__') {
@@ -7422,7 +7423,7 @@
         }
 
         enriched._prov = effectivePaternalProvince(enrichment);
-        enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
+        enriched._conf = paternalDivision(enrichment);
         return enriched;
       })
       // Scholar-card leaderboard sort order (see docs/NAMES-DO-NOT-MERGE.md
@@ -7468,7 +7469,7 @@
       rows = rows.filter(r => r._prov === provF);
     }
     if (state.scholarClanFilter) {
-      rows = rows.filter(r => r.paternalClan === state.scholarClanFilter);
+      rows = rows.filter(r => paternalClan(r) === state.scholarClanFilter);
     }
     // Name search (case-insensitive substring; matches "Last, First" AND "First Last")
     const nameQ = (state.scholarNameSearch || '').trim().toLowerCase();
@@ -7640,7 +7641,7 @@
     if (clanBar) {
       const clanCounts = new Map(CLANS.map(name => [name, 0]));
       (rows || []).forEach(row => {
-        const name = String(row.paternalClan || '').trim();
+        const name = paternalClan(row);
         if (clanCounts.has(name)) clanCounts.set(name, clanCounts.get(name) + 1);
       });
       clanBar.querySelector('[data-count-clans-total]').textContent = String([...clanCounts.values()].reduce((a, b) => a + b, 0));
@@ -8632,7 +8633,7 @@
     };
     const village = paternalGeography.village;
     const paternal = paternalGeography.province;
-    const confederacy = provinceToConfederacy(paternal);
+    const confederacy = paternalDivision(r);
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
     // Card banners use the concise Island name only. The underlying field is
     // still the scholar's paternal Island Division; this is display-only.
@@ -8657,8 +8658,8 @@
     // the string in a placeholder chip when it's empty. See the formatter
     // definition near the top of this file.
     const island = paternalGeography.island;
-    const clan = CLANS.includes(r.paternalClan) ? r.paternalClan : '';
-    const geoLine = village ? `${village} vlg${clan ? ` (${clan} clan)` : ''}` : '';
+    const clan = paternalClan(r);
+    const geoLine = village ? `${village} vlg${clan ? ` (${clan})` : ''}` : '';
     const metaHtml = geoLine
       ? escapeHtml(geoLine)
       : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';

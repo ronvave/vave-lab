@@ -1160,21 +1160,14 @@
         // directly and never rely on any "effective" or fallback field.
         // (2026-08-25 Panel F Paternal Geography Isolation fix.)
         effectivePaternalProvince: paternal,
-        // Paternal confederacy: Master column if present, else derived from paternal province.
-        // (Kept in existing `confederacy` field for backwards-compat with dashboards.)
-        // "confederacy"/"paternalConfederacy"/"maternalConfederacy" are kept
-        // as internal property names for logic compatibility with the
-        // cloned dashboard JS, but for Tonga they hold ISLAND DIVISION
-        // values (Tongatapu / Vava'u / Ha'apai / 'Eua / Ongo Niua), never a
-        // Fijian confederacy name. Auto-derived from District via the
-        // Lookups-equivalent table (read-only), matching the iTaukei
-        // system's actual current (formula-derived) behavior.
-        confederacy: (paternalDivision || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
-        paternalConfederacy: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
-        maternalConfederacy: (maternalDivision || PROVINCE_TO_CONFED[maternal] || ''),
-        islandDivision: (paternalDivision || PROVINCE_TO_CONFED[paternal] || PROVINCE_TO_CONFED[maternal] || ''),
-        paternalIslandDivision: (paternalDivision || PROVINCE_TO_CONFED[paternal] || ''),
-        maternalIslandDivision: (maternalDivision || PROVINCE_TO_CONFED[maternal] || ''),
+        // Island Divisions are explicit Master values, independent of District.
+        // Legacy property names remain for dashboard compatibility.
+        confederacy: paternalDivision,
+        paternalConfederacy: paternalDivision,
+        maternalConfederacy: maternalDivision,
+        islandDivision: paternalDivision,
+        paternalIslandDivision: paternalDivision,
+        maternalIslandDivision: maternalDivision,
         gender: s['Gender'] || '',
         title: s['Current Title / Role'] || '',
         institution: s['Current Institution'] || '',
