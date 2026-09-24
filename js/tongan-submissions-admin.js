@@ -42,7 +42,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    count.textContent=(out.rows||[]).length+' submission'+((out.rows||[]).length===1?'':'s');bulk.hidden=scholar||filter.value!=='Pending'||!cards.length;
    if(!cards.length)el('p',scholar?'No scholar-profile submissions in this view.':'No submissions in this view.',list).className='meta';
    message(after||'');loaded=true;
- }catch(e){message(e.message,true);}finally{busy=false;refresh.disabled=false;filter.disabled=false;}}
+ }catch(e){message((after?after+' Queue display could not reload: ':'')+e.message,true);}finally{busy=false;refresh.disabled=false;filter.disabled=false;}}
  function pick(parent,label,key,enabled,selected,c){const box=el('input',null,parent);box.type='checkbox';box.setAttribute('aria-label',label);box.disabled=!enabled;box.checked=!!selected;const p={box,key};c.picks.push(p);return p;}
  function render(row,saved){
   const pending=row.Status==='Pending',card=el('article',null,list),c={row,card,picks:[]};cards.push(c);
@@ -103,7 +103,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  async function run(c,fn){
    if(busy)return;
    busy=true;
-   const progress=c&&el('p','Review in progress…',c.card);if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
+   const progress=c&&el('p','Saving and verifying review…',c.card);if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
    const controls=[...host.querySelectorAll('button,select,input,textarea')],disabled=controls.map(x=>x.disabled);
    controls.forEach(x=>x.disabled=true);
    try{const text=await fn();busy=false;await load(text);}
@@ -141,13 +141,13 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
        }catch(e){notes.push(p.file.name+': '+e.message);}
      }
      const result=checked(await api.finishScholarReview(id,c.note.value));
-     let msg=result.remainingReview?'Review remains Pending: '+result.pending+' item(s) need work. Successful items are recorded for safe retry.':'Review completed. Per-item outcomes recorded.';
+     let msg=result.remainingReview?'Review remains Pending: '+result.pending+' item(s) need work. Successful items are recorded for safe retry.':'Approved — saved and verified. Per-item outcomes recorded.';
      if(masterChanged)msg+=' '+await refreshPublic();if(notes.length)msg+=' File errors: '+notes.join('; ');return msg;
    });
  }
  async function resolveOne(c,decision){
    if(busy||!confirm(decision==='approve'?'Approve this suggestion and append new non-duplicate geography? Existing geography will be preserved.':'Reject '+(scholar?'all remaining items in this submission':'this suggestion')+'? Nothing new will be added; earlier approved work is preserved.'))return;
-   await run(c,async()=>{checked(await(scholar?window.adminWriteback.resolveScholarSubmission(c.row['Submission ID'],'reject',c.note.value):window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],decision,c.note.value)));return (decision==='approve'?'Geography approved. '+await refreshPublic():'Rejected. No new Master changes.');});
+   await run(c,async()=>{checked(await(scholar?window.adminWriteback.resolveScholarSubmission(c.row['Submission ID'],'reject',c.note.value):window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],decision,c.note.value)));return (decision==='approve'?'Geography approved. '+await refreshPublic():'Rejected — saved and verified.');});
  }
  async function banSubmitter(c){const reason=prompt('Reason for blocking this submitter in Tonga:');if(!reason?.trim()||!confirm('Block future Tonga submissions from '+c.row['Submitter Email']+'? Reason: '+reason))return;await run(c,async()=>{checked(await window.adminWriteback.banScholarSubmitter(c.row['Submission ID'],reason));return 'Submitter blocked for Tonga. The submission remains available for review.';});}
  async function bulkResolve(){
