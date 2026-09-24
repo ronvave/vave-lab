@@ -67,6 +67,8 @@
     'Scholars.Alive / Deceased':           true,
     'Scholars.Year of Birth':              true,
     'Scholars.Year of Death':              true,
+    'Scholars.Paternal Island Division': true,
+    'Scholars.Maternal Island Division': true,
     'Scholars.District Paternal':          true,
     'Scholars.Village/Town Paternal (Kolo)': true,
     'Scholars.Specific Island Paternal':   true,
@@ -578,9 +580,9 @@
     setMe('me-selfid-maternal', s['Self-identified Home / Community Affiliation Maternal'] || '');
     setMe('me-clan-paternal', s['Clan Paternal'] || '');
     setMe('me-clan-maternal', s['Clan Maternal'] || '');
-    // Derived Island Divisions (read-only, driven by district dropdowns).
-    $('#me-div-paternal-derived').value = DISTRICT_TO_DIVISION[provPat.trim()] || (s['Paternal Island Division'] || s['Island Division'] || '');
-    $('#me-div-maternal-derived').value = DISTRICT_TO_DIVISION[provMat.trim()] || '';
+    // Island divisions are independent Master inputs; district is optional.
+    setMe('me-div-paternal-derived', s['Paternal Island Division'] || s['Island Division'] || '');
+    setMe('me-div-maternal-derived', s['Maternal Island Division'] || '');
 
     // Load Positions and Graduate Degrees rows asynchronously from the endpoint.
     // We do not block the modal; each fieldset shows "Loading…" until fetched.
@@ -673,12 +675,7 @@
         opt.value = p; opt.textContent = p;
         sel.appendChild(opt);
       });
-      sel.addEventListener('change', function () {
-        var div = DISTRICT_TO_DIVISION[sel.value] || '';
-        var derived = id === 'me-prov-paternal' ? 'me-div-paternal-derived' : 'me-div-maternal-derived';
-        var el = document.getElementById(derived);
-        if (el) el.value = div;
-      });
+
     });
     _provinceDropdownsFilled = true;
   }

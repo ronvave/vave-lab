@@ -43,11 +43,10 @@ async function openUpdate(row,state){
  for(const side of ['paternal','maternal']){
   const publicSide=side==='paternal',prefix=publicSide?'Paternal':'Maternal',fs=section(form,prefix+' geography');fs.className='tonga-geography-'+side;
   if(!publicSide){const help=el('p','Optional. Maternal information is for internal research/database purposes and will not be displayed on the public dashboard or scholar profile.',fs);help.className='wide tonga-field-help';}
-  add(fs,side+'_island_division',prefix+' Island Division',publicSide?(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision):'',DIVISIONS);
-  add(fs,side+'_island',prefix+' Specific Island',publicSide?profile.paternalIsland:'');
+  add(fs,side+'_island_division',prefix+' Island Division',publicSide?String(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision||'').replace(/[ʻ‘’ʼ]/g,"'"):'',DIVISIONS);
+  add(fs,side+'_district',prefix+' District',publicSide?profile.paternalDistrictName:profile.maternalDistrictName);
   add(fs,side+'_clan','Clan',publicSide?profile.paternalClan:profile.maternalClan,CLANS);
   add(fs,side+'_village',prefix+' Village / Town (Kolo)',publicSide?profile.paternalVillage:profile.maternalVillage);
-  add(fs,side+'_district',prefix+' District',publicSide?profile.paternalDistrictName:profile.maternalDistrictName);
  }
  const fs=section(form,'Scholar profile');
  add(fs,'salutation','Salutation',profile.salutation,['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms']);
