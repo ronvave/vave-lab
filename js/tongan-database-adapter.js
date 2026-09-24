@@ -1129,7 +1129,9 @@
         paternalIsland:    paternalIsland,
         maternalIsland:    maternalIsland,
         paternalVillage:   paternalVillage,
+        paternalClan:      cleanSentinel_(s['Clan Paternal']),
         maternalVillage:   maternalVillage,
+        maternalClan:      cleanSentinel_(s['Clan Maternal']),
         // Explicit Tonga-named aliases (same values, self-documenting keys)
         // for any Tonga-aware rendering code that prefers not to read the
         // Fiji-shaped property names directly.

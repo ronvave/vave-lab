@@ -578,30 +578,22 @@
       <fieldset class="fieldset section-border-blue">
         <legend>Master fields — Paternal geography <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group">
-            <label>Paternal district</label>
-            <select id="me-prov-paternal" data-ws="Scholars" data-field="District Paternal">
-              <option value="">(unset)</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Paternal Island Division <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived)</span></label><input type="text" id="me-div-paternal-derived" disabled /></div>
+          <div class="form-group"><label>Paternal Island Division (derived)</label><input type="text" id="me-div-paternal-derived" disabled /></div>
+          <div class="form-group"><label>Paternal specific island</label><input type="text" id="me-isl-paternal" data-ws="Scholars" data-field="Specific Island Paternal" /></div>
+          <div class="form-group"><label>Clan</label><select id="me-clan-paternal" data-ws="Scholars" data-field="Clan Paternal"><option value="">(unset)</option></select></div>
           <div class="form-group"><label>Paternal village/town (Kolo)</label><input type="text" id="me-vil-paternal" data-ws="Scholars" data-field="Village/Town Paternal (Kolo)" /></div>
-          <div class="form-group"><label>Paternal specific island <span class="hint" style="font-size:0.75rem;color:var(--muted);">(curated — never derived from district)</span></label><input type="text" id="me-isl-paternal" data-ws="Scholars" data-field="Specific Island Paternal" /></div>
+          <div class="form-group"><label>Paternal district</label><select id="me-prov-paternal" data-ws="Scholars" data-field="District Paternal"><option value="">(unset)</option></select></div>
         </div>
       </fieldset>
 
       <fieldset class="fieldset section-border-black">
         <legend>Master fields — Maternal geography <span class="master-tag">editable via write-back</span></legend>
         <div class="form-grid">
-          <div class="form-group">
-            <label>Maternal district</label>
-            <select id="me-prov-maternal" data-ws="Scholars" data-field="District Maternal">
-              <option value="">(unset)</option>
-            </select>
-          </div>
-          <div class="form-group"><label>Maternal Island Division <span class="hint" style="font-size:0.75rem;color:var(--muted);">(derived via Lookups, no Master column)</span></label><input type="text" id="me-div-maternal-derived" disabled /></div>
+          <div class="form-group"><label>Maternal Island Division (derived)</label><input type="text" id="me-div-maternal-derived" disabled /></div>
+          <div class="form-group"><label>Maternal specific island</label><input type="text" id="me-isl-maternal" data-ws="Scholars" data-field="Specific Island Maternal" /></div>
+          <div class="form-group"><label>Clan</label><select id="me-clan-maternal" data-ws="Scholars" data-field="Clan Maternal"><option value="">(unset)</option></select></div>
           <div class="form-group"><label>Maternal village/town (Kolo)</label><input type="text" id="me-vil-maternal" data-ws="Scholars" data-field="Village/Town Maternal (Kolo)" /></div>
-          <div class="form-group"><label>Maternal specific island <span class="hint" style="font-size:0.75rem;color:var(--muted);">(curated — never derived from district)</span></label><input type="text" id="me-isl-maternal" data-ws="Scholars" data-field="Specific Island Maternal" /></div>
+          <div class="form-group"><label>Maternal district</label><select id="me-prov-maternal" data-ws="Scholars" data-field="District Maternal"><option value="">(unset)</option></select></div>
         </div>
       </fieldset>
 
@@ -759,10 +751,11 @@
 
 <!-- scripts -->
 <script src="js/tongan-db-gate.js?v=2afd3bb1" defer></script>
+<script src="js/tongan-clans.js?v=1" defer></script>
 <script src="js/tongan-database-adapter.js?v=8ee1316d" defer></script>
 <script src="js/tongan-admin-insights-migration.js?v=c2bcb539" defer></script>
 <script src="js/tongan-admin-writeback-client.js?v=d4ef123e" defer></script>
-<script src="js/admin-tongan-master.js?v=a2ef879b" defer></script>
+<script src="js/admin-tongan-master.js?v=clan1" defer></script>
 
 <script src="js/tongan-submissions-admin.js?v=291de56a" defer></script>
 </body>

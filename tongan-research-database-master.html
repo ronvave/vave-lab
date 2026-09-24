@@ -4486,6 +4486,7 @@
               <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
                 <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
                 <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="confederacy" aria-selected="false" tabindex="-1">By Island Division &amp; District</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="clan" aria-selected="false" tabindex="-1">By Clan</button>
               </div>
               <label class="db-world-search" data-world-search-wrap>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -5035,6 +5036,12 @@
           </div>
         </div>
 
+        <div class="dsf-summary dsf-summary--clans" data-scholar-clan-summary>
+          <strong>Clans</strong>
+          <span class="dsf-chip dsf-chip--total" title="Scholars with a recorded paternal clan">Total: <span data-count-clans-total>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-clan-chips></div>
+        </div>
+
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
         <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
           <strong>Publications</strong>
@@ -5393,9 +5400,10 @@
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
 <script src="js/tongan-demo-gate.js?v=a619a881" defer></script>
-<script src="js/tongan-database-adapter.js?v=8ee1316d" defer></script>
-<script src="js/tongan-scholar-portal.js?v=3efcb80f" defer></script>
-<script src="js/tongan-database-master.js?v=95b93fd4" defer></script>
+<script src="js/tongan-clans.js?v=1" defer></script>
+<script src="js/tongan-database-adapter.js?v=clan1" defer></script>
+<script src="js/tongan-scholar-portal.js?v=clan1" defer></script>
+<script src="js/tongan-database-master.js?v=clan1" defer></script>
 <script src="js/tongan-panel-overrides.js?v=408417f6" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --

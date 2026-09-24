@@ -29,6 +29,7 @@ var ALWAYS_CONFIRM = {
 // 2026-08-22 against the live sheet). Field keys are the literal header
 // strings including spacing and slashes. Column names come from row 4 of
 // each sheet.
+var TONGAN_CLANS_ = ["Tuʻipelehake", "Kalaniuvalu", "Kau Falefā", "Kau Sinaʻe", "Ongo Haʻangana", "Haʻa Falefisi", "Haʻa Moheofo", "Haʻa Maʻafu", "Haʻa Lātūhifo", "Haʻa Ngata Motuʻa", "Haʻa Ngata Tupu", "Haʻa Havea Lahi", "Haʻa Havea Siʻi", "Haʻa Vaea", "Haʻa Fokololo ʻo e Hau", "Falehaʻakili", "Haʻa Matāpule", "Kau Nimatapu", "Haʻa Tufunga", "Kanolotoʻā ʻo e Hau"];
 var MAPPING = {
   version: '1.4',
   worksheets: {
@@ -56,6 +57,8 @@ var MAPPING = {
         'District Paternal':       { type: 'string', maxLen: 80 },
         'Specific Island Paternal':{ type: 'string', maxLen: 80 },
         'Village/Town Paternal (Kolo)': { type: 'string', maxLen: 120 },
+        'Clan Paternal': { type: 'enum', enum: (typeof TONGAN_CLANS_ !== 'undefined' ? TONGAN_CLANS_ : []).concat(['']) },
+        'Clan Maternal': { type: 'enum', enum: (typeof TONGAN_CLANS_ !== 'undefined' ? TONGAN_CLANS_ : []).concat(['']) },
         'Maternal Island Division':{ type: 'string', maxLen: 60 },
         'District Maternal':       { type: 'string', maxLen: 80 },
         'Specific Island Maternal':{ type: 'string', maxLen: 80 },
@@ -854,6 +857,8 @@ function scholarSubmissionFieldSpecs_() {
     {key:'paternal_island_division',label:'Paternal island division',ws:'Scholars',field:'Paternal Island Division'},
     {key:'paternal_district',label:'Paternal district',ws:'Scholars',field:'District Paternal'},
     {key:'paternal_village',label:'Paternal village',ws:'Scholars',field:'Village/Town Paternal (Kolo)'},
+    {key:'paternal_clan',label:'Paternal clan',ws:'Scholars',field:'Clan Paternal'},
+    {key:'maternal_clan',label:'Maternal clan',ws:'Scholars',field:'Clan Maternal'},
     {key:'paternal_island',label:'Paternal island',ws:'Scholars',field:'Specific Island Paternal'},
     {key:'maternal_island_division',label:'Maternal island division',ws:'Scholars',field:'Maternal Island Division'},
     {key:'maternal_district',label:'Maternal district',ws:'Scholars',field:'District Maternal'},
