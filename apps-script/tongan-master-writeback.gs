@@ -42,6 +42,7 @@ var ALWAYS_CONFIRM = {
   'Scholars.Alive / Deceased': true
 };
 
+var TONGAN_CLANS_ = ["Tuʻipelehake", "Kalaniuvalu", "Kau Falefā", "Kau Sinaʻe", "Ongo Haʻangana", "Haʻa Falefisi", "Haʻa Moheofo", "Haʻa Maʻafu", "Haʻa Lātūhifo", "Haʻa Ngata Motuʻa", "Haʻa Ngata Tupu", "Haʻa Havea Lahi", "Haʻa Havea Siʻi", "Haʻa Vaea", "Haʻa Fokololo ʻo e Hau", "Falehaʻakili", "Haʻa Matāpule", "Kau Nimatapu", "Haʻa Tufunga", "Kanolotoʻā ʻo e Hau"];
 var MAPPING = {
   version: '2.0-tongan',
   worksheets: {
@@ -69,6 +70,8 @@ var MAPPING = {
         'District Paternal':       { type: 'string', maxLen: 80 },
         'Specific Island Paternal':{ type: 'string', maxLen: 80 },
         'Village/Town Paternal (Kolo)': { type: 'string', maxLen: 120 },
+        'Clan Paternal': { type: 'enum', enum: (typeof TONGAN_CLANS_ !== 'undefined' ? TONGAN_CLANS_ : []).concat(['']) },
+        'Clan Maternal': { type: 'enum', enum: (typeof TONGAN_CLANS_ !== 'undefined' ? TONGAN_CLANS_ : []).concat(['']) },
         'Maternal Island Division':{ type: 'string', maxLen: 60 },
         'District Maternal':       { type: 'string', maxLen: 80 },
         'Specific Island Maternal':{ type: 'string', maxLen: 80 },

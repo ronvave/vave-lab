@@ -93,6 +93,11 @@
     return false;
   }
 
+  // Preserve the project-supplied hierarchy in both editable dropdowns.
+  document.querySelectorAll('#me-clan-paternal, #me-clan-maternal').forEach(select => {
+    (window.TONGAN_CLANS || []).forEach(name => { const option = document.createElement('option'); option.value = option.textContent = name; select.appendChild(option); });
+  });
+
   // District → Island Division lookup (derived from the Master Sheet Lookups
   // tab / "Tonga District-Island Division Lookup" worksheet). Used to derive
   // Maternal Island Division read-only for display (mirrors the iTaukei
@@ -569,6 +574,8 @@
     setMe('me-kainga-maternal', s['K\u0101inga Maternal'] || '');
     setMe('me-selfid-paternal', s['Self-identified Home / Community Affiliation Paternal'] || '');
     setMe('me-selfid-maternal', s['Self-identified Home / Community Affiliation Maternal'] || '');
+    setMe('me-clan-paternal', s['Clan Paternal'] || '');
+    setMe('me-clan-maternal', s['Clan Maternal'] || '');
     // Derived Island Divisions (read-only, driven by district dropdowns).
     $('#me-div-paternal-derived').value = DISTRICT_TO_DIVISION[provPat.trim()] || (s['Paternal Island Division'] || s['Island Division'] || '');
     $('#me-div-maternal-derived').value = DISTRICT_TO_DIVISION[provMat.trim()] || '';

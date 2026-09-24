@@ -24,6 +24,9 @@
   'use strict';
 
   // Bright, satellite-legible border colors — one per Tonga Island Division
+  const CLANS = window.TONGAN_CLANS || [];
+  // Stable palette keyed to the hierarchy position, never to count rank.
+  const clanColor = index => `hsl(${Math.round(index * 360 / 20)} 60% 38%)`;
   const CONF_COLORS = {
     Tongatapu: '#FF5A6E',
     "Vava'u":  '#4ECDE6',
@@ -1643,6 +1646,25 @@
     host.innerHTML = parts.join('');
   }
 
+  function renderWorldPanelClanView(host) {
+    const counts = new Map(CLANS.map(name => [name, { masters: 0, phd: 0 }]));
+    const grad = state.graduateStudies || { worldPoints: [] };
+    (grad.worldPoints || []).forEach(point => {
+      [['masters', point.mastersScholars || []], ['phd', point.phdScholars || []]].forEach(([kind, names]) => {
+        names.forEach(name => {
+          const profile = b2LookupScholarProfile(name);
+          const clan = profile && String(profile.paternalClan || '').trim();
+          if (counts.has(clan)) counts.get(clan)[kind]++;
+        });
+      });
+    });
+    const html = CLANS.map((name, i) => {
+      const c = counts.get(name);
+      return `<div class="db-world-conf-list__prov-row"><span class="db-world-conf-list__prov-swatch" style="background:${clanColor(i)}"></span><span class="db-world-conf-list__prov-name">${escapeHtml(name)}</span><span class="db-world-conf-list__counts"><b>M</b> ${c.masters}<span class="pipe"></span><b>PhD</b> ${c.phd}<span class="pipe"></span><span class="db-world-total">Total ${c.masters + c.phd}</span></span></div>`;
+    }).join('');
+    host.innerHTML = '<div class="db-world-conf-list__prov-label">Completed degrees by paternal clan</div><div class="db-world-conf-list__prov-grid">' + html + '</div>';
+  }
+
   function applyWorldListView() {
     const view = state.worldListView || 'country';
     const listView = document.querySelector('[data-world-list-view]');
@@ -1669,11 +1691,12 @@
     if (emptyEl && !showCountry) emptyEl.style.display = 'none';
     if (titleEl) titleEl.textContent = showCountry
       ? 'Countries of Tongan graduate study'
-      : 'Tongan graduates by Island Division · District';
+      : view === 'clan' ? 'Tongan graduates by clan' : 'Tongan graduates by Island Division · District';
     if (explainEl) explainEl.textContent = showCountry
       ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
+      : view === 'clan' ? 'Completed Masters and PhD degrees grouped by the scholar’s recorded paternal clan.'
       : 'Masters and PhD theses grouped by the scholar’s home Island Division (Tongatapu, Vavaʻu, Haʻapai, ʻEua, Ongo Niua), then broken down by home District in descending order by total.';
-    if (!showCountry && confHost) renderWorldPanelConfederacyView(confHost);
+    if (!showCountry && confHost) { if (view === 'clan') renderWorldPanelClanView(confHost); else renderWorldPanelConfederacyView(confHost); }
   }
 
   function bindWorldListTabs() {
@@ -7604,6 +7627,19 @@
       if (unclass) chipsHost.appendChild(unclass); // always last
     }
 
+    const clanBar = document.querySelector('[data-scholar-clan-summary]');
+    if (clanBar) {
+      const clanCounts = new Map(CLANS.map(name => [name, 0]));
+      (rows || []).forEach(row => {
+        const name = String(row.paternalClan || '').trim();
+        if (clanCounts.has(name)) clanCounts.set(name, clanCounts.get(name) + 1);
+      });
+      clanBar.querySelector('[data-count-clans-total]').textContent = String([...clanCounts.values()].reduce((a, b) => a + b, 0));
+      clanBar.querySelector('[data-scholar-clan-chips]').innerHTML = CLANS.map((name, i) =>
+        `<span class="dsf-chip" style="background:${clanColor(i)}18;color:${clanColor(i)};border:1px solid ${clanColor(i)}55"><span class="dsf-chip__dot" style="background:${clanColor(i)}"></span> ${escapeHtml(name)}: ${clanCounts.get(name)}</span>`
+      ).join('');
+    }
+
     // ---- Results II — sum publication types across the shown scholars ----
     // Each scholar row already carries a `types` object built by
     // deriveScholarRows(). We aggregate them and only show chips for
@@ -8597,7 +8633,8 @@
     // the string in a placeholder chip when it's empty. See the formatter
     // definition near the top of this file.
     const island = paternalGeography.island;
-    const geoLine = formatScholarGeography(village, island, paternal);
+    const clan = CLANS.includes(r.paternalClan) ? r.paternalClan : '';
+    const geoLine = village ? `${village} vlg${clan ? ` (${clan} clan)` : ''}` : '';
     const metaHtml = geoLine
       ? escapeHtml(geoLine)
       : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
