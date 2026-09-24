@@ -64,7 +64,8 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   const actions=el('div',null,card);actions.className='tonga-review-actions';
   if(scholar){
     const ban=button('Ban submitter',actions,()=>banSubmitter(c),'tonga-ban');ban.disabled=!caps.banSubmitter;if(ban.disabled)ban.title=caps.role==='admin'?'Only the Owner can ban submitters.':'Requires verified Tonga review backend v2.';
-    const approve=button(row.reviewPlan?'Resume checked review':'Approve all checked',actions,()=>approveScholar(c),'tonga-approve');approve.disabled=!caps.combinedReview;
+   const approve=button(row.reviewPlan?'Resume checked review':'Approve all checked',actions,()=>approveScholar(c),'tonga-approve');approve.disabled=!caps.combinedReview;
+   if(row.reviewPlan)el('p','Selections are locked because this review has started. Resume applies the pending items; any problem will appear below this card.',card).className='meta';
     if(!caps.combinedReview)el('p','Combined approval requires Tonga Apps Script review backend v2. Queue reads and secure downloads remain available.',card).className='tonga-error';
   }else button('Approve',actions,()=>resolveOne(c,'approve'),'tonga-approve');
   button(scholar?'Reject all':'Reject',actions,()=>resolveOne(c,'reject'),'tonga-reject');
@@ -99,7 +100,16 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     }
   });
  }
- async function run(c,fn){if(busy)return;busy=true;const controls=[...host.querySelectorAll('button,select,input,textarea')],disabled=controls.map(x=>x.disabled);controls.forEach(x=>x.disabled=true);try{const text=await fn();busy=false;await load(text);}catch(e){message(e.message,true);}finally{busy=false;controls.forEach((x,i)=>x.disabled=disabled[i]);if(c?.row.reviewPlan){c.picks.forEach(p=>p.box.disabled=true);const resume=c.card.querySelector('.tonga-review-actions .tonga-approve');if(resume)resume.textContent='Resume checked review';}refreshBadge();}}
+ async function run(c,fn){
+   if(busy)return;
+   busy=true;
+   const progress=c&&el('p','Review in progress…',c.card);if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
+   const controls=[...host.querySelectorAll('button,select,input,textarea')],disabled=controls.map(x=>x.disabled);
+   controls.forEach(x=>x.disabled=true);
+   try{const text=await fn();busy=false;await load(text);}
+   catch(e){const detail=e.message||String(e);message(detail,true);if(progress){progress.textContent='Review stopped: '+detail;progress.classList.add('tonga-error');}}
+   finally{busy=false;controls.forEach((x,i)=>x.disabled=disabled[i]);if(c?.row.reviewPlan){c.picks.forEach(p=>p.box.disabled=true);const resume=c.card.querySelector('.tonga-review-actions .tonga-approve');if(resume)resume.textContent='Resume checked review';}refreshBadge();}
+ }
  async function approveScholar(c){
    if(busy)return;
    const chosen=c.picks.filter(p=>p.box.checked),text=chosen.filter(p=>p.change&&p.change.writable),files=chosen.filter(p=>p.file);
@@ -112,7 +122,11 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
      if(plan.items.some(x=>x.kind==='text'&&x.state==='pending')){
        const response=await api.approveScholarSubmission(id,[],c.note.value);
        if(response?.results?.some(r=>r.status==='ok'||r.status==='already_satisfied'))masterChanged=true;
-       if(response?.status!=='ok'){const error=new Error(response?.error||response?.reason||response?.status||'Approval failed');if(masterChanged)error.message+=' '+await refreshPublic();throw error;}
+       if(response?.status!=='ok'){
+         const rejected=(response?.results||[]).filter(r=>!['ok','already_satisfied'].includes(r.status)).map(r=>[r.field||r.key||r.change?.field,r.reason||r.status].filter(Boolean).join(': '));
+         const error=new Error(response?.error||response?.reason||rejected.join('; ')||response?.status||'Approval failed');
+         if(masterChanged)error.message+=' '+await refreshPublic();throw error;
+       }
        const out=checked(response);plan=out.plan;masterChanged=true;
      }
      for(const item of plan.items.filter(x=>x.kind==='file'&&x.state==='pending')){
