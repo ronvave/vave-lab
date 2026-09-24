@@ -78,6 +78,44 @@
     return out;
   }
 
+  // Confirm review mutations from the durable queue, including lost POST responses.
+  // Never replay a write just because its HTTP acknowledgement was lost.
+  async function reviewPost(payload) {
+    var response;
+    try { response = await callPost(payload); }
+    catch (err) { response = {status:'error', error:err.message}; }
+    var geography = payload.action === 'resolvePublicationGeographySubmission';
+    for (var attempt = 0; attempt < 3; attempt++) {
+      if (attempt) await new Promise(function(resolve){setTimeout(resolve, 700);});
+      try {
+        var result = await callGetWithParams(geography ? 'readPublicationGeographySubmissions' : 'readScholarProfileSubmissions', {status:''});
+        if (result.status !== 'ok' || !Array.isArray(result.rows)) continue;
+        var row = result.rows.find(function(r){return r['Submission ID'] === payload.submissionId;});
+        if (!row) continue; // Absence from Pending is not proof of success.
+        var plan = row.reviewPlan, items = plan && plan.items || [], verified = false;
+        switch (payload.action) {
+          case 'resolveScholarProfileSubmission':
+            verified = row.Status === (payload.decision === 'reject' ? 'Rejected' : 'Reviewed'); break;
+          case 'resolvePublicationGeographySubmission':
+            verified = row.Status === (payload.decision === 'reject' ? 'Rejected' : 'Approved'); break;
+          case 'beginScholarReview':
+            var expected = (payload.selectedChanges || []).map(function(x){return 'text:'+x.key;}).concat((payload.selectedFiles || []).map(function(x){return 'file:'+x;})).sort();
+            var actual = items.filter(function(x){return x.selected;}).map(function(x){return x.kind+':'+x.key;}).sort();
+            verified = !!plan && JSON.stringify(expected) === JSON.stringify(actual); break;
+          case 'approveScholarProfileSubmission':
+            verified = !!plan && items.filter(function(x){return x.kind === 'text' && x.selected;}).every(function(x){return x.state === 'applied';}); break;
+          case 'recordScholarAttachmentReview':
+            verified = items.some(function(x){return x.kind === 'file' && x.key === payload.fileId && x.state === payload.disposition && x.evidence === payload.evidence;}); break;
+          case 'finishScholarReview':
+            verified = !!plan && (row.Status === 'Reviewed' || (response.status === 'ok' && response.remainingReview && row.Status === 'Pending')); break;
+        }
+        if (verified) return Object.assign({}, response, {status:'ok', error:undefined, verified:true, plan:plan,
+          remainingReview:row.Status === 'Pending', pending:items.filter(function(x){return x.state === 'pending';}).length});
+      } catch (_) { /* Retry only the read. */ }
+    }
+    return {status:'error', error:'Could not verify the saved review outcome. Your selection is retained. '+(response.error || response.reason || 'Please retry when the connection is available.')};
+  }
+
   // Extra GET with named params.
   async function callGetWithParams(action, params) {
     requireConfigured();
@@ -116,16 +154,16 @@
 
   window.adminWriteback = {
     reviewCapabilities: function () { return callGet('reviewCapabilities'); },
-    beginScholarReview: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return callPost({action:'beginScholarReview',submissionId:submissionId,selectedChanges:selectedChanges,selectedFiles:selectedFiles,reviewNotes:reviewNotes}); },
-    recordAttachmentReview: function (submissionId, fileId, disposition, evidence) { return callPost({action:'recordScholarAttachmentReview',submissionId:submissionId,fileId:fileId,disposition:disposition,evidence:evidence}); },
-    finishScholarReview: function (submissionId, reviewNotes) { return callPost({action:'finishScholarReview',submissionId:submissionId,reviewNotes:reviewNotes}); },
+    beginScholarReview: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return reviewPost({action:'beginScholarReview',submissionId:submissionId,selectedChanges:selectedChanges,selectedFiles:selectedFiles,reviewNotes:reviewNotes}); },
+    recordAttachmentReview: function (submissionId, fileId, disposition, evidence) { return reviewPost({action:'recordScholarAttachmentReview',submissionId:submissionId,fileId:fileId,disposition:disposition,evidence:evidence}); },
+    finishScholarReview: function (submissionId, reviewNotes) { return reviewPost({action:'finishScholarReview',submissionId:submissionId,reviewNotes:reviewNotes}); },
     banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
     readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
     readGeographySubmissions: function (status) { return callGetWithParams('readPublicationGeographySubmissions', {status: status || ''}); },
     readSubmissionAttachment: function (submissionId, fileId) { return callGetWithParams('readScholarSubmissionAttachment', {submissionId: submissionId, fileId: fileId}); },
-    approveScholarSubmission: function (submissionId, selectedChanges, reviewNotes) { return callPost({action:'approveScholarProfileSubmission', submissionId:submissionId, selectedChanges:selectedChanges, reviewNotes:reviewNotes}); },
-    resolveScholarSubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolveScholarProfileSubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
-    resolveGeographySubmission: function (submissionId, decision, reviewNotes) { return callPost({action:'resolvePublicationGeographySubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
+    approveScholarSubmission: function (submissionId, selectedChanges, reviewNotes) { return reviewPost({action:'approveScholarProfileSubmission', submissionId:submissionId, selectedChanges:selectedChanges, reviewNotes:reviewNotes}); },
+    resolveScholarSubmission: function (submissionId, decision, reviewNotes) { return reviewPost({action:'resolveScholarProfileSubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
+    resolveGeographySubmission: function (submissionId, decision, reviewNotes) { return reviewPost({action:'resolvePublicationGeographySubmission', submissionId:submissionId, decision:decision, reviewNotes:reviewNotes}); },
     getEndpoint: getEndpoint,
     getSecret:   getSecret,
     setEndpoint: setEndpoint,
