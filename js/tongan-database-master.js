@@ -921,12 +921,15 @@
     // everything (they narrow both the cards and the item list).
     state.scholarConfFilter = '';
     state.scholarProvFilter = '';
+    state.scholarClanFilter = '';
     state.scholarPage = 1;
     if (typeof computeScholarFilterNames === 'function') computeScholarFilterNames();
     const confSel = $('[data-scholar-conf-filter]');
     const provSel = $('[data-scholar-prov-filter]');
     if (confSel) confSel.value = '';
     if (provSel) provSel.value = '';
+    const clanSel = $('[data-scholar-clan]');
+    if (clanSel) clanSel.value = '';
     const search = $('[data-db-search]');
     if (search) search.value = '';
     $$('.db-filter[data-db-filter]').forEach(s => { s.value = ''; });
@@ -947,7 +950,8 @@
     if (!btn) return;
     const any = FILTER_KEYS.some(k => state.filter[k] !== '' && state.filter[k] != null)
               || !!state.scholarConfFilter
-              || !!state.scholarProvFilter;
+              || !!state.scholarProvFilter
+              || !!state.scholarClanFilter;
     btn.classList.toggle('is-hidden', !any);
   }
 
@@ -7069,6 +7073,7 @@
   state.scholarPage = 1;
   state.scholarConfFilter = '';  // '', '__untagged__', 'Tongatapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'
   state.scholarProvFilter = '';  // '', '__untagged__', or a province name
+  state.scholarClanFilter = '';  // paternal clan, in the supplied hierarchy
   state.scholarNameSearch = '';  // free-text name search (case-insensitive substring)
   state.scholarKeywordSearch = ''; // research-keyword search across insights + publications
   state.scholarSectorFilter = ''; // '' or one of SECTORS
@@ -7462,6 +7467,9 @@
     } else if (provF) {
       rows = rows.filter(r => r._prov === provF);
     }
+    if (state.scholarClanFilter) {
+      rows = rows.filter(r => r.paternalClan === state.scholarClanFilter);
+    }
     // Name search (case-insensitive substring; matches "Last, First" AND "First Last")
     const nameQ = (state.scholarNameSearch || '').trim().toLowerCase();
     if (nameQ) {
@@ -7572,6 +7580,7 @@
         || !!(state.scholarKeywordSearch && state.scholarKeywordSearch.trim())
         || !!state.scholarConfFilter
         || !!state.scholarProvFilter
+        || !!state.scholarClanFilter
         || !!state.scholarSectorFilter
         || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
         || !!state.scholarStudyCountry || !!state.scholarStudyUni
@@ -8039,6 +8048,19 @@
       });
     }
 
+    // ---- Paternal clan dropdown: retain the supplied hierarchical order ----
+    const clanSel = document.querySelector('[data-scholar-clan]');
+    if (clanSel) {
+      clanSel.innerHTML = '<option value="">All Clans</option>' +
+        CLANS.map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+      clanSel.value = state.scholarClanFilter || '';
+      clanSel.onchange = () => {
+        state.scholarClanFilter = clanSel.value;
+        state.scholarPage = 1;
+        renderLeaders();
+      };
+    }
+
     // ---- Sector dropdown (native <select>) ----
     const secSel = document.querySelector('[data-scholar-sector]');
     if (secSel) {
@@ -8195,6 +8217,7 @@
         state.scholarNameSearch = '';
         state.scholarKeywordSearch = '';
         state.scholarConfFilter = ''; state.scholarProvFilter = '';
+        state.scholarClanFilter = '';
         state.scholarSectorFilter = '';
         state.scholarDisciplineFilter.clear();
         state.scholarStudyCountry = ''; state.scholarStudyUni = '';
