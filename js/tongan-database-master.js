@@ -7635,9 +7635,10 @@
         if (clanCounts.has(name)) clanCounts.set(name, clanCounts.get(name) + 1);
       });
       clanBar.querySelector('[data-count-clans-total]').textContent = String([...clanCounts.values()].reduce((a, b) => a + b, 0));
-      clanBar.querySelector('[data-scholar-clan-chips]').innerHTML = CLANS.map((name, i) =>
-        `<span class="dsf-chip" style="background:${clanColor(i)}18;color:${clanColor(i)};border:1px solid ${clanColor(i)}55"><span class="dsf-chip__dot" style="background:${clanColor(i)}"></span> ${escapeHtml(name)}: ${clanCounts.get(name)}</span>`
-      ).join('');
+      clanBar.querySelector('[data-scholar-clan-chips]').innerHTML = CLANS.map((name, i) => {
+        const hue = Math.round(i * 360 / CLANS.length);
+        return `<span class="dsf-chip dsf-chip--clan" style="background:hsl(${hue} 70% 88%);color:hsl(${hue} 65% 27%)"><span class="dsf-chip__dot" style="background:${clanColor(i)}"></span> ${escapeHtml(name)}: ${clanCounts.get(name)}</span>`;
+      }).join('');
     }
 
     // ---- Results II — sum publication types across the shown scholars ----
@@ -12507,4 +12508,3 @@
     });
   }
 })();
-
