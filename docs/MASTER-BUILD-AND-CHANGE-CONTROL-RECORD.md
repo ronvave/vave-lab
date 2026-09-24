@@ -243,3 +243,12 @@ fd00b7ee. All 474 adapter profiles passed country/university filtering,
 canonical membership, deduplication, reset and immutability checks. Existing
 preservation checks passed with 56 photos, 76 summaries and 151 mobility rows.
 No browser visual verification is claimed.
+
+
+## 2026-09-24 — Tonga graduate-discipline mapping and refresh reruns
+
+Mapped 345 Graduate Degrees records in the Tonga Master Sheet to Fiji's eight short-discipline categories. The AA5 array formula uses Field / Discipline and Broad discipline, with twelve explicit degree-ID supplements from recorded qualifications/fields. Four unresolved or ambiguous degree records have review notes and remain blank. Reconciliation gives 231 classified core scholars out of 234 completed-degree scholars.
+
+A refresh rerun checked out its original triggering commit and conflicted with newer encrypted snapshots. Checkout now explicitly uses main so reruns start with the current snapshot. Existing content-change detection and rebase safeguards remain in place.
+
+Pre-publication preservation check passed: node tests/itaukei-card-mobility.test.cjs; 59 saved photos, 77 research summaries, and 151 mobility rows retained. No card implementation changed. Live publication verification follows the refresh; no browser visual verification is claimed.
