@@ -3,9 +3,9 @@
   'use strict';
   if (window.self !== window.top || new URLSearchParams(location.search).has('p') || new URLSearchParams(location.search).has('share')) return;
   const groups = {
-    A: [['A1','Database overview'],['A2','iTaukei scholarship'],['A3','About & methodology']],
-    B: [['B1','Research across Fiji'],['B2','Where scholars studied'],['B3','Master’s–PhD pathways'],['B4','Graduate research disciplines'],['B5','Research around the world']],
-    C: [['C1','Publications by gender'],['C2','Research by study province'],['C3','Research by scholar’s home province']],
+    A: [['A1','Database overview'],['A2','Tongan scholarship'],['A3','About & methodology']],
+    B: [['B1','Research across Tonga'],['B2','Where scholars studied'],['B3','Master’s–PhD pathways'],['B4','Graduate research disciplines'],['B5','Research around the world']],
+    C: [['C1','Publications by gender'],['C2','Research by study district'],['C3','Research by scholar’s home district']],
     D: [['D','Publications over time']], E: [['E','Rankings by confederacy']],
     F: [['F','Scholar profiles']], G: [['G','Browse publications']]
   };

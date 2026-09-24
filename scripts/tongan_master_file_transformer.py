@@ -36,6 +36,8 @@ Usage:
 from __future__ import annotations
 
 import argparse
+from tongan_short_disciplines import build_tongan_short_disciplines
+
 import json
 import os
 import re
@@ -924,6 +926,10 @@ def run(
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
         researcher_authorship=researcher_authorship,
+    )
+    # Count raw degree episodes by Scholar-ID sets before display deduplication.
+    aggregates["shortDisciplines"] = build_tongan_short_disciplines(
+        [g for g in grad_degrees_all if g.get("Scholar ID") not in part_tongan_ids], scholars
     )
     t = aggregates["totals"]
     log(f"  → scholars={t['scholars']} pubs={t['publications_total']} "
