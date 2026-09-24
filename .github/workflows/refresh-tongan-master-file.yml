@@ -69,6 +69,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          # Refreshes, including reruns, must build on the latest published snapshot.
+          ref: main
           persist-credentials: true
           fetch-depth: 0
 
