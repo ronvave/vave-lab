@@ -499,7 +499,14 @@
   }
 
   // ------------------------- edit modal -------------------------
-  function openEditModal (sid) {
+  var editLoadGeneration = 0;
+  async function openEditModal (sid) {
+    var generation = ++editLoadGeneration;
+    if (window.adminWriteback && adminWriteback.isConfigured()) {
+      toast("Loading current Master fields…");
+      if (!await refreshMasterForScholar(sid)) { toast("Could not load current Master fields. Please try opening the scholar again.", "error"); return; }
+      if (generation !== editLoadGeneration) return;
+    }
     var s = state.scholarById[sid];
     if (!s) { toast('Scholar not found: ' + sid, 'error'); return; }
     state.editingSid = sid;
@@ -539,7 +546,7 @@
     // against that snapshot to build a changes[] batch, and the server does
     // an optimistic-lock check against the live cell.
     // Populate district dropdowns from DISTRICT_TO_DIVISION (canonical list).
-    populateProvinceDropdowns();
+
     var provPat = s['District Paternal'] || '';
     var provMat = s['District Maternal'] || '';
     setMe('me-title-salutation', s['Title / Salutation'] || '');
@@ -552,10 +559,8 @@
     setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
     setMe('me-prov-paternal',  provPat);
     setMe('me-vil-paternal',   s["Village/Town Paternal (Kolo)"] || s['Village Paternal'] || '');
-    setMe('me-isl-paternal',   s['Specific Island Paternal'] || s['Island Paternal'] || '');
     setMe('me-prov-maternal',  provMat);
     setMe('me-vil-maternal',   s["Village/Town Maternal (Kolo)"] || s['Village Maternal'] || '');
-    setMe('me-isl-maternal',   s['Specific Island Maternal'] || s['Island Maternal'] || '');
     setMe('me-title',          s['Current Title / Role'] || s['Current Title'] || '');
     setMe('me-institution',    s['Current Institution'] || '');
     setMe('me-inst-country',   s['Institution Country'] || s['Current Country'] || '');
@@ -627,6 +632,7 @@
   }
 
   function closeEditModal () {
+    editLoadGeneration++;
     $('#edit-modal').classList.remove('is-visible');
     state.editingSid = null;
     state.photoDataUrl = null;
@@ -661,23 +667,6 @@
     }
     el.value = s;
     el.setAttribute('data-loaded', s);
-  }
-
-  var _provinceDropdownsFilled = false;
-  function populateProvinceDropdowns () {
-    if (_provinceDropdownsFilled) return;
-    var districts = Object.keys(DISTRICT_TO_DIVISION).sort();
-    ['me-prov-paternal', 'me-prov-maternal'].forEach(function (id) {
-      var sel = document.getElementById(id);
-      if (!sel) return;
-      districts.forEach(function (p) {
-        var opt = document.createElement('option');
-        opt.value = p; opt.textContent = p;
-        sel.appendChild(opt);
-      });
-
-    });
-    _provinceDropdownsFilled = true;
   }
 
   // Load Positions rows for a scholar (Master live) and render an editable
@@ -1044,15 +1033,17 @@
   async function refreshMasterForScholar (sid) {
     try {
       var res = await adminWriteback.readScholar(sid);
-      if (res.status !== 'ok') return;
-      var live = res.fields || {};
+      if (res.status !== 'ok' || !res.fields) return false;
+      var live = res.fields;
       var s = state.scholarById[sid];
       if (s) {
         Object.keys(live).forEach(function (k) { s[k] = live[k]; });
       }
     } catch (e) {
       log('Master refresh failed for ' + sid + ': ' + (e.message || e), 'error');
+      return false;
     }
+    return true;
   }
 
   // Load the Master sheet's Change Log via the endpoint and render it.
