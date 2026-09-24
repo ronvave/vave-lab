@@ -70,9 +70,11 @@
     'Scholars.District Paternal':          true,
     'Scholars.Village/Town Paternal (Kolo)': true,
     'Scholars.Specific Island Paternal':   true,
+    'Scholars.Clan Paternal':               true,
     'Scholars.District Maternal':          true,
     'Scholars.Village/Town Maternal (Kolo)': true,
     'Scholars.Specific Island Maternal':   true,
+    'Scholars.Clan Maternal':               true,
     'Scholars.Current Title / Role':       true,
     'Scholars.Current Institution':        true,
     'Scholars.Current Department / Unit':  true,
@@ -1016,6 +1018,15 @@
     return adminWriteback.write(changes, opts || {});
   }
 
+  function requireWritebackResults_ (res, changes) {
+    if (res && Array.isArray(res.results) && res.results.length === changes.length) return res;
+    var detail = res && (res.error || res.reason || res.message || res.status);
+    throw new Error('The write-back endpoint did not classify all ' + changes.length +
+      ' changed field' + (changes.length === 1 ? '' : 's') +
+      (detail ? ' (' + detail + ')' : '') +
+      '. No Master change was confirmed. Check that the Apps Script deployment supports the Clan fields, then try again.');
+  }
+
   // After a successful (or partial) writeback, refresh the master snapshot
   // for this scholar from the server so the modal reflects the new state
   // and the underlying state.scholarById is consistent.
@@ -1381,11 +1392,7 @@
     try {
       state.pendingChanges = masterChanges;
       var res = await executeMasterWriteback(masterChanges, { dryRun: true });
-      if (res.status === 'unauthorized' || res.status === 'disabled') {
-        toast('Master write-back is not available: ' + res.status + '.', 'error', 8000);
-        log('Dry-run classify failed: ' + res.status, 'error');
-        return;
-      }
+      requireWritebackResults_(res, masterChanges);
       renderPreviewClassification(sid, res);
     } catch (e) {
       console.error(e);
@@ -1454,6 +1461,7 @@
     if (previewCancelBtn) previewCancelBtn.disabled = true;
     try {
       var res = await executeMasterWriteback(toSubmit, { dryRun: false });
+      requireWritebackResults_(res, toSubmit);
       var results = res.results || [];
       var okCount = 0, confirmCount = 0, satisfiedCount = 0, rejectCount = 0;
       var messages = [];
@@ -1503,6 +1511,7 @@
         // Re-run the full dry-run on the ORIGINAL pending set so already-
         // satisfied and previously-ok fields also refresh.
         var reRes = await executeMasterWriteback(state.pendingChanges, { dryRun: true });
+        requireWritebackResults_(reRes, state.pendingChanges);
         renderPreviewClassification(sid, reRes);
         return;
       }
