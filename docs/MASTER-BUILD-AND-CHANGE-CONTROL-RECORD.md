@@ -263,4 +263,10 @@ Preservation tests pass: Fiji 59 photos, 77 summaries, 151 mobility rows;
 Tonga 15 photos, 14 summaries, 86 scholar pathways. These are observed snapshot
 counts, not hardcoded UI totals. Shared-profile submission fixtures preserve
 photos, summaries and linked publications. Live Apps Script deployment and real
-Google login verification remain pending authenticated access.
+Google login verification were initially pending authenticated access.
+
+Backend release: signed in as the Owner, verified the baseline source and existing
+private access settings, and found the missing token verifier. Created a private
+Master backup and deployed the complete V4 bundle as Apps Script Version 6 on
+2026-09-26 UTC. The safe runtime diagnostic passed with verifier present and three
+reviewers configured. Frontend publication and live login verification follow.

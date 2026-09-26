@@ -16,7 +16,10 @@ saved photos/insights are not rewritten by installation.
 - Country validation only checked string length and punctuation, so cities and
   malformed combinations passed validation.
 - All Google authentication exceptions were swallowed and the frontend replaced
-  the response with a generic message. The production login cause is not proven.
+  the response with a generic message. Live inspection found the sole source file referenced TongaJWT but did not include
+  its verifier, and no library was installed. The saved source exactly matched
+  the repository baseline. Existing Owner, three-reviewer roster, and client ID
+  properties were already correct; those properties were preserved.
 
 V4 uses one locked request for a text selection, durable per-item review outcomes,
 request-local table reuse on queue reads, one row/formula read per scholar instead
@@ -116,7 +119,12 @@ Master backup over subsequent legitimate approvals as a routine rollback.
 
 ## Live verification status
 
-At preparation: public capabilities report V3. Google Apps Script is not signed
-in in the available browser. Live configuration, deployed source, queue contents,
-actual Google Owner/Admin login, production timings and backend rollout remain
-unverified. Local tests are not evidence that these live steps have completed.
+Backend deployed on 2026-09-26 UTC as Apps Script deployment Version 6, preserving
+the existing URL and Execute as Me / Anyone settings. The complete source was
+compared byte-for-byte after paste and saved. inspectTongaReviewAccess completed
+with V4, verifierLoaded=true, clientIdConfigured=true, ownerConfigured=true,
+reviewerCount=3, writeEnabled=true. A private Master backup completed before
+deployment. No real submissions were approved or rejected.
+
+Frontend publication and live Owner/Admin login verification are still in progress.
+Production approval timings and collaborator account checks remain unverified.
