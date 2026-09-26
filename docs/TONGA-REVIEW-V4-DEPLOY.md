@@ -126,5 +126,25 @@ with V4, verifierLoaded=true, clientIdConfigured=true, ownerConfigured=true,
 reviewerCount=3, writeEnabled=true. A private Master backup completed before
 deployment. No real submissions were approved or rejected.
 
-Frontend publication and live Owner/Admin login verification are still in progress.
-Production approval timings and collaborator account checks remain unverified.
+Frontend released via PR #21, merge 767d1d5c61e68a5349f431428d23ee8f377d7a75.
+Pages run 36232082658 completed successfully; integrity and content-hash gates
+passed. Live profile UI confirmed five fields and red invalid-country feedback;
+local test entries were cleared without submitting.
+
+Google sign-in remains BLOCKED: the live Owner diagnostic reports missing
+script.external_request authorization when fetching Google's public signing keys.
+The roster and client ID are correct. The initial missing-verifier defect is fixed,
+but it was not the sole cause. Declaring the existing three scopes explicitly did
+not restore consent; the original manifest was restored. No new permission was
+granted. Automatic approval review blocked running the new editor-only
+`authorizeTongaReviewAccess` helper until the Owner specifically approves the
+external-request scope. The helper uses Google's supported ScriptApp.requireScopes
+flow; it does not bypass consent or relax token validation. Diagnostic/helper source
+is saved in the editor but not included in deployment Version 6 yet.
+
+Next: with explicit Owner approval, run authorizeTongaReviewAccess and complete
+Google's consent for external requests; confirm googleSigningKeyCount succeeds,
+then verify live Owner login and both queues. Test each collaborator using their
+own account; do not request their passwords or impersonate them. Production
+approval timings, live collaborator sessions, and revocation remain unverified.
+Fixture authorization/security tests pass. No real pending items were decided.
