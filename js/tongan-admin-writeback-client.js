@@ -123,6 +123,10 @@
   }
 
   window.adminWriteback = {
+    readAttachmentAnalysis: submissionId => callPost({action:'readAttachmentAnalysis',submissionId}),
+    analyseScholarAttachment: params => callPost(Object.assign({},params,{action:'analyseScholarAttachment'})),
+    editAttachmentProposal: params => callPost(Object.assign({},params,{action:'editAttachmentProposal'})),
+    approveAttachmentProposals: params => reviewPost(Object.assign({},params,{action:'approveAttachmentProposals'})),
     reviewCapabilities: function () { return callPost({action:'reviewCapabilities'}); },
     reviewQueueCounts: function () { return callPost({action:'reviewQueueCounts'}); },
     reviewScholarSelection: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return reviewPost({action:'reviewScholarSelection',submissionId,selectedChanges,selectedFiles,reviewNotes}); },

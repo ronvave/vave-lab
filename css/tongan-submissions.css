@@ -25,3 +25,17 @@
 /* The existing Tonga shell must not force the queue outside a narrow viewport. */
 .tabs{flex-wrap:wrap}
 @media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-tonga-queue]{padding:12px}}
+
+/* Private attachment proposal review */
+.tonga-attachment-analysis{margin-top:20px;padding:18px;border:1px solid #c7d8d9;border-radius:8px;background:#f7fbfa}
+.tonga-attachment-analysis h4{font-size:1.1rem;margin:0 0 8px}
+.tonga-analysis-summary{font-weight:600;color:#06464c}
+.tonga-analysis-item{background:#fff;border:1px solid #d7dfdf;border-radius:6px;padding:16px;margin:14px 0}
+.tonga-analysis-item input[type=checkbox]{margin-right:10px}
+.tonga-attachment-analysis pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font:inherit;font-size:.9em;background:#f1f4f3;padding:12px}
+.tonga-attachment-analysis details{margin:8px 0}
+.tonga-attachment-analysis summary{cursor:pointer;font-weight:600}
+.tonga-proposal-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.tonga-proposal-form label{display:flex;flex-direction:column;gap:5px}
+.tonga-proposal-form input,.tonga-proposal-form select{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px}
+.tonga-attachment-analysis td{overflow-wrap:anywhere;vertical-align:top}

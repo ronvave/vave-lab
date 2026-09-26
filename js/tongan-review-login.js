@@ -21,6 +21,10 @@ async function call(action,params={}){
 }
 window.adminWriteback={
  isConfigured:()=>!!token,
+ readAttachmentAnalysis: submissionId=>call('readAttachmentAnalysis',{submissionId}),
+ analyseScholarAttachment: params=>call('analyseScholarAttachment',params),
+ editAttachmentProposal: params=>call('editAttachmentProposal',params),
+ approveAttachmentProposals: params=>call('approveAttachmentProposals',params),
  reviewCapabilities:()=>call('reviewCapabilities'),
  reviewQueueCounts:()=>call('reviewQueueCounts'),
  readScholarSubmission:submissionId=>call('readScholarProfileSubmissions',{submissionId}),
@@ -58,7 +62,7 @@ async function signedIn(result){
   $('sign-in').hidden=true;$('review-app').hidden=false;$('db-status').textContent='ready';
   clearTimeout(expiryTimer);expiryTimer=setTimeout(logout,Math.max(0,payload.exp*1000-Date.now()));
   if(!document.getElementById('queue-script')){
-   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=review-v4';
+   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=attachment-review-v1';
    script.onload=()=>document.querySelector('[data-tab="scholar-submissions"]').click();document.body.append(script);
   }else location.reload();
  }catch(e){token='';message(e.message||'Sign-in failed. Try again.');}

@@ -112,6 +112,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
       el('p','Checking this file does not import it. Record only review or import work actually completed; otherwise it stays pending.',content).className='meta';
     }
   });
+  window.TongaAttachmentReview?.mount(card,row,caps);
  }
  async function run(c,fn){
    if(busy)return;
