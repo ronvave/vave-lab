@@ -40,14 +40,6 @@ async function openUpdate(row,state){
  function wide(n){n.parentElement.classList.add('wide');return n;}
  function hint(n,text){el('small',text,n.parentElement);return n;}
  function upload(fs,key,label,accept,text,full=false){const n=input(fs,label,'','file');n.name=key;n.accept=accept;files.push({key,n});if(full)wide(n);if(text)hint(n,text);return n;}
- for(const side of ['paternal','maternal']){
-  const publicSide=side==='paternal',prefix=publicSide?'Paternal':'Maternal',fs=section(form,prefix+' geography');fs.className='tonga-geography-'+side;
-  if(!publicSide){const help=el('p','Optional. Maternal information is for internal research/database purposes and will not be displayed on the public dashboard or scholar profile.',fs);help.className='wide tonga-field-help';}
-  add(fs,side+'_island_division',prefix+' Island Division',publicSide?String(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision||'').replace(/[ʻ‘’ʼ]/g,"'"):'',DIVISIONS);
-  add(fs,side+'_district',prefix+' District',publicSide?profile.paternalDistrictName:profile.maternalDistrictName);
-  add(fs,side+'_clan','Clan',publicSide?profile.paternalClan:profile.maternalClan,CLANS);
-  add(fs,side+'_village',prefix+' Village / Town (Kolo)',publicSide?profile.paternalVillage:profile.maternalVillage);
- }
  const names=section(form,'Name shown on your public profile');
  const nameHelp=el('p','Enter the given and family names you want people to see. Given names can include your first and middle names; omit any middle names you do not want displayed. Your full canonical name is retained in the Master file. Changes require Admin approval.',names);nameHelp.className='wide tonga-field-help';
  const given=add(names,'preferred_given_names','Given name(s)',profile.first||'');
@@ -56,6 +48,14 @@ async function openUpdate(row,state){
  const preview=el('p','',names);preview.className='wide tonga-field-help';preview.setAttribute('aria-live','polite');
  const showName=()=>{preview.textContent='Public name preview: '+[given.value.trim(),family.value.trim()].filter(Boolean).join(' ');};
  given.addEventListener('input',showName);family.addEventListener('input',showName);showName();
+ for(const side of ['paternal','maternal']){
+  const publicSide=side==='paternal',prefix=publicSide?'Paternal':'Maternal',fs=section(form,prefix+' geography');fs.className='tonga-geography-'+side;
+  if(!publicSide){const help=el('p','Optional. Maternal information is for internal research/database purposes and will not be displayed on the public dashboard or scholar profile.',fs);help.className='wide tonga-field-help';}
+  add(fs,side+'_island_division',prefix+' Island Division',publicSide?String(profile.paternalIslandDivision==='Ongo Niua'?'Niuas':profile.paternalIslandDivision||'').replace(/[ʻ‘’ʼ]/g,"'"):'',DIVISIONS);
+  add(fs,side+'_district',prefix+' District',publicSide?profile.paternalDistrictName:profile.maternalDistrictName);
+  add(fs,side+'_clan','Clan',publicSide?profile.paternalClan:profile.maternalClan,CLANS);
+  add(fs,side+'_village',prefix+' Village / Town (Kolo)',publicSide?profile.paternalVillage:profile.maternalVillage);
+ }
  const fs=section(form,'Scholar profile');
  add(fs,'salutation','Salutation',profile.salutation,['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms']);
  add(fs,'title','Professional title',profile.title);
