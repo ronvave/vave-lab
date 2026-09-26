@@ -349,6 +349,7 @@ function doPost(e) {
     if (TONGA_READ_ACTIONS.indexOf(requested)>=0) return tongaReadAction_(body);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
+    if (action === 'refreshAttachmentProposals') return tongaRefreshAnalysis_(body);
     if (action === 'analyseScholarAttachment') return tongaAnalyseAttachment_(body);
     if (action === 'editAttachmentProposal') return tongaEditAnalysis_(body);
     if (action === 'approveAttachmentProposals') return tongaApproveAnalysis_(body);
@@ -1280,7 +1281,7 @@ function backupTongaReviewDataV2(){
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
 var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+var TONGA_REVIEW_ACTIONS = ['refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the

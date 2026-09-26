@@ -40,14 +40,21 @@ function tongaAnalysisAuthor_(r,scholar){
 function tongaAnalysisPublication_(r,model,o){
  var match=tongaAnalysisMatch_(r,model),pub=match.publication,pid=pub&&pub['Publication ID / BibTeX Key'],linked=pid&&model.authorship.some(function(a){return a['Scholar ID']===o['Scholar ID']&&a['Publication ID / BibTeX Key']===pid;});
  var values={'Entry Type':r.type,'Publication Type':r.publicationType,Title:r.title,Year:r.year,'Journal / Book Title':r.venue,'Publisher / Institution / School':r.publisher,DOI:r.doi,URL:r.url},updates=[];
- if(pub)Object.keys(values).forEach(function(k){if(values[k]&&String(pub[k]||'')!==String(values[k]))updates.push({field:k,current:pub[k]||'',value:values[k]});});
+ if(pub)Object.keys(values).forEach(function(k){
+  // A BibTeX entry type is not evidence for recategorising a verified editorial/report.
+  if((k==='Publication Type'||k==='Entry Type')&&pub[k])return;
+  var same=['Title','Journal / Book Title','Publisher / Institution / School'].indexOf(k)>=0?TongaAttachmentParser.norm(pub[k])===TongaAttachmentParser.norm(values[k]):k==='DOI'?TongaAttachmentParser.doi(pub[k])===TongaAttachmentParser.doi(values[k]):String(pub[k]||'')===String(values[k]);
+  if(values[k]&&!same)updates.push({field:k,current:pub[k]||'',value:values[k]});
+ });
  var issue=match.reason||(!r.title?'Missing title':!r.year?'Missing publication year; unpublished/in-press work needs manual review':!r.publicationType?'Unrecognized publication type; review before import':'');
+ if(!issue&&updates.some(function(u){return String(u.current).trim()!=='';}))issue='Differs from existing Master metadata. Verify the original sources before accepting a replacement.';
  return {kind:'publication',record:r,publicationId:pid||'',authorPosition:tongaAnalysisAuthor_(r,model.scholar),linked:!!linked,updates:updates,state:issue?'needs_review':linked&&!updates.length?'existing':'pending',reason:issue,current:pub?{title:pub.Title,year:pub.Year,doi:pub.DOI||'',linked:!!linked}:'Not in Master',label:pub?(linked?'Update publication metadata':'Link existing publication to scholar'):'Add publication and authorship'};
 }
 function tongaAnalysisCv_(ss,o,proposal){
+ if(proposal.key==='institution')proposal.value=String(proposal.value).split(/\s{2,}/)[0].trim();
  var fields={};fields[proposal.key]=proposal.value;var fake={};Object.keys(o).forEach(function(k){fake[k]=o[k];});fake['Submitted Fields JSON']=JSON.stringify(fields);
  var changes=buildScholarSubmissionChanges_(ss,fake),c=changes.filter(function(x){return x.key===proposal.key;})[0];
- return {kind:'profile',key:proposal.key,value:proposal.value,source:proposal.source,evidence:proposal.evidence,label:c?c.label:proposal.key,change:c||null,state:c?(c.writable?'pending':'needs_review'):'existing',reason:c?c.reason||'Verify the extracted value against the source page':'Already matches the Master'};
+ return {kind:'profile',key:proposal.key,value:proposal.value,source:proposal.source,evidence:proposal.evidence,label:c?c.label:proposal.key,change:c||null,state:c?(c.writable&&!String(c.currentValue||'').trim()?'pending':'needs_review'):'existing',reason:c?c.reason||'Verify the extracted value against the source page':'Already matches the Master'};
 }
 function tongaAnalyseAttachment_(body){return tongaWithSubmission_(body,function(ss,o){
  var f=tongaAnalysisFiles_(o).filter(function(x){return x.fileId===body.fileId;})[0];if(!f)throw Error('Attachment not in submission');
@@ -155,4 +162,10 @@ function tongaApproveAnalysis_(body){return tongaWithSubmission_(body,function(s
    item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();delete item.error;tongaAnalysisSave_(o,a);results.push({id:id,status:'ok'});
   }catch(e){item.error=String(e.message||e);tongaAnalysisSave_(o,a);results.push({id:id,status:'error',error:item.error});}
  });return jsonOut_({status:'ok',analysis:a,results:results});
+});}
+
+function tongaRefreshAnalysis_(body){return tongaWithSubmission_(body,function(ss,o){
+ var a=tongaAnalysisLoad_(o);if(!a)throw Error('Analyse attachments first');if(a.revision!==body.revision)throw Error('Analysis changed; reload first');var model=tongaAnalysisModel_(ss,o);
+ a.items.forEach(function(item){if(['applied','dismissed','duplicate'].indexOf(item.state)>=0)return;var fresh=item.kind==='publication'?tongaAnalysisPublication_(item.record,model,o):tongaAnalysisCv_(ss,o,{key:item.key,value:item.value,source:item.source,evidence:item.evidence});Object.keys(fresh).forEach(function(k){item[k]=fresh[k];});delete item.error;});
+ return jsonOut_({status:'ok',analysis:tongaAnalysisSave_(o,a)});
 });}
