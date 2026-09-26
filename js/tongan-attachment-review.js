@@ -23,9 +23,9 @@ async function pdfPages(attachment,progress){
 window.TongaAttachmentReview={mount(host,row,caps){
  const files=JSON.parse(row['Attachments JSON']||'[]');if(!files.length)return;
  const box=E('section',null,host);box.className='tonga-attachment-analysis';E('h4','Attachment analysis & proposed changes',box);
- E('p','Read CV PDFs and BibTeX / EndNote / RIS references, compare with the Master, then approve individual proposals. Extracted proposals start unchecked. Nothing is imported by analysing a file.',box).className='meta';
+ E('p','Read CV PDFs and BibTeX / EndNote / RIS references, compare with the Master, then approve individual proposals. Extracted proposals are checked by default, including items needing attention. Uncheck anything you do not want. Nothing is imported by analysing a file.',box).className='meta';
  if(!caps.attachmentAnalysis){E('p','Attachment analysis is awaiting the updated Tonga backend.',box);return;}
- let a=null,busy=false,selection=new Set(),loaded=false;
+ let a=null,busy=false,selection=new Set(),seenSelection=new Set(),loaded=false;
  const tools=E('div',null,box);tools.className='tonga-review-actions';
  const status=E('p','',box);status.setAttribute('role','status');
  const content=E('div',null,box);
@@ -42,14 +42,14 @@ window.TongaAttachmentReview={mount(host,row,caps){
     a=ok(await window.adminWriteback.analyseScholarAttachment(params)).analysis;
    }catch(e){failures.push(f.name+': '+e.message);}
   }
-  say(failures.length?'Completed files saved. Retry analysis for: '+failures.join('; '):'Analysis saved. Review the evidence and select the changes you want.',!!failures.length);
+  say(failures.length?'Completed files saved. Retry analysis for: '+failures.join('; '):'Analysis saved. Review the evidence and uncheck any changes you do not want.',!!failures.length);
  }));analyse.disabled=row.Status!=='Pending';
  function field(parent,label,value){const l=E('label',label,parent),input=E('input',null,l);input.value=value??'';return input;}
  function cvEditor(parent,item,file){
   const d=E('details',null,parent);E('summary',item?'Edit / refresh proposed value':'Add a proposal from this CV',d);const form=E('div',null,d);form.className='tonga-proposal-form';
   const fl=E('label','Master field',form),key=E('select',null,fl);Object.entries(labels).forEach(([v,t])=>{E('option',t,key).value=v;});key.value=item?.key||'title';
   const value=field(form,'Proposed value',item?.value||''),page=field(form,'Source page',item?.source?.match(/\d+/)?.[0]||1);page.type='number';page.min=1;page.max=file.pages;
-  B('Save proposal for review',form,()=>run(async()=>{a=ok(await window.adminWriteback.editAttachmentProposal({submissionId:row['Submission ID'],revision:a.revision,kind:'profile',itemId:item?.id,fileId:file.fileId,key:key.value,value:value.value,page:Number(page.value)})).analysis;say('Proposal saved. Check it when you are ready to approve.');}));
+  B('Save proposal for review',form,()=>run(async()=>{a=ok(await window.adminWriteback.editAttachmentProposal({submissionId:row['Submission ID'],revision:a.revision,kind:'profile',itemId:item?.id,fileId:file.fileId,key:key.value,value:value.value,page:Number(page.value)})).analysis;say('Proposal saved. Review its selection before approving.');}));
  }
  function publicationEditor(parent,item){const d=E('details',null,parent);E('summary','Edit / refresh proposed metadata and author position',d);const form=E('div',null,d);form.className='tonga-proposal-form';const inputs={};
   ['title','year','doi','url','venue','publisher'].forEach(k=>inputs[k]=field(form,k==='doi'?'DOI':k[0].toUpperCase()+k.slice(1),item.record[k]));
@@ -75,13 +75,16 @@ window.TongaAttachmentReview={mount(host,row,caps){
   }
  }
  function draw(){if(!loaded)return;content.replaceChildren();if(!a)return;
+  const actionable=a.items.filter(i=>['pending','needs_review'].includes(i.state)&&row.Status==='Pending');
+  for(const id of selection)if(!actionable.some(i=>i.id===id))selection.delete(id);
+  actionable.forEach(i=>{if(!seenSelection.has(i.id)){selection.add(i.id);seenSelection.add(i.id);}});
   const totals={};a.items.forEach(i=>totals[i.state]=(totals[i.state]||0)+1);
   E('p',a.files.length+' of '+files.length+' attachments analysed · '+(totals.pending||0)+' proposals · '+(totals.needs_review||0)+' need attention · '+(totals.existing||0)+' already recorded · '+(totals.duplicate||0)+' duplicates · '+(totals.applied||0)+' approved',content).className='tonga-analysis-summary';
   a.files.forEach(f=>{const d=E('details',null,content);E('summary',f.name+(f.records?' — '+f.records+' reference records':'')+(f.pages?' — '+f.pages+' CV pages':'')+(f.status==='manual'?' — manual review':''),d);f.warnings.forEach(w=>E('p',w,d));
    if(f.sections){f.sections.forEach(s=>{const e=E('details',null,d);E('summary','Page '+s.page+' · '+s.section,e);E('pre',s.excerpt,e);});if(row.Status==='Pending')cvEditor(d,null,f);}
   });
-  if(row.Status==='Pending'){B('Refresh comparison with Master',content,()=>run(async()=>{a=ok(await window.adminWriteback.refreshAttachmentProposals({submissionId:row['Submission ID'],revision:a.revision})).analysis;selection.clear();say('Comparison refreshed. Completed outcomes retained; review the remaining proposals.');}));const controls=E('div',null,content);controls.className='tonga-review-actions';
-   B('Check ready proposals',controls,()=>{a.items.filter(i=>i.state==='pending').forEach(i=>selection.add(i.id));draw();});B('Clear checks',controls,()=>{selection.clear();draw();});
+  if(row.Status==='Pending'){B('Refresh comparison with Master',content,()=>run(async()=>{a=ok(await window.adminWriteback.refreshAttachmentProposals({submissionId:row['Submission ID'],revision:a.revision})).analysis;say('Comparison refreshed. Completed outcomes retained; review the remaining proposals.');}));const controls=E('div',null,content);controls.className='tonga-review-actions';
+   B('Check all proposals',controls,()=>{a.items.filter(i=>['pending','needs_review'].includes(i.state)).forEach(i=>selection.add(i.id));draw();});B('Clear checks',controls,()=>{selection.clear();draw();});
    const decide=decision=>run(async()=>{const itemIds=[...selection].filter(id=>a.items.some(i=>i.id===id&&['pending','needs_review'].includes(i.state)));if(!itemIds.length){say('Select at least one proposal.');return;}if(!confirm((decision==='dismiss'?'Decline ':'Approve ')+itemIds.length+' selected attachment proposals? Unchecked proposals remain pending.'))return;
     for(let start=0;start<itemIds.length;start+=5){say('Saving proposals '+(start+1)+'–'+Math.min(start+5,itemIds.length)+' of '+itemIds.length+'…');a=ok(await window.adminWriteback.approveAttachmentProposals({submissionId:row['Submission ID'],revision:a.revision,itemIds:itemIds.slice(start,start+5),decision})).analysis;}selection.clear();say(a.items.some(i=>i.error)?'Some proposals could not be saved. Their errors are shown below.':'Selected outcomes saved. Public profiles update after the next data refresh.');
    });B('Approve selected proposals',controls,()=>decide('approve')).className='tonga-approve';B('Decline selected proposals',controls,()=>decide('dismiss'));
