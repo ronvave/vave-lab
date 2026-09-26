@@ -279,3 +279,12 @@ A runtime diagnostic identified UrlFetchApp permission failure. Automatic approv
 review requires explicit Owner approval for script.external_request before the
 Google consent helper can run. Original manifest restored; no permission granted.
 Do not report collaborator login repaired until live verification passes.
+
+Authorization follow-up: the Owner explicitly approved external requests and
+completed Google consent on 2026-09-26 UTC. The diagnostic fetched two public
+Google signing keys successfully. Live Google login now identifies the Owner and
+loads both queues (0 scholar / 16 geography Pending). Invalid historical country
+values are flagged and cannot be approved. No real submission decisions were made.
+The existing Version 6 deployment works after consent; editor-only diagnostics are
+saved for maintenance. Individual collaborator sessions and live revocation remain
+untested; signed-token role/security fixtures pass.
