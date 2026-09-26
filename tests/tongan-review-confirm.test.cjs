@@ -1,20 +1,11 @@
 const fs=require('fs'),vm=require('vm'),assert=require('node:assert/strict');
 const source=fs.readFileSync('js/tongan-admin-writeback-client.js','utf8');
-async function fixture(rows,post={status:'error',error:'non-JSON response (HTTP 404)'}){
- let writes=0;const ctx={window:{},localStorage:{getItem:()=> 'fixture'},setTimeout:fn=>fn(),fetch:async(url,opts)=>{if(opts.method==='POST'){writes++;return{json:async()=>post};}return{json:async()=>({status:'ok',rows})};}};
- vm.runInNewContext(source,ctx);return{api:ctx.window.adminWriteback,writes:()=>writes};
-}
 (async()=>{
- let f=await fixture([{'Submission ID':'S1',Status:'Rejected'}]);
- assert.equal((await f.api.resolveScholarSubmission('S1','reject','')).verified,true);assert.equal(f.writes(),1);
- f=await fixture([]);assert.equal((await f.api.resolveScholarSubmission('S1','reject','')).status,'error');assert.equal(f.writes(),1);
- f=await fixture([{'Submission ID':'S1',Status:'Pending'}]);assert.equal((await f.api.resolveScholarSubmission('S1','reject','')).status,'error');
- f=await fixture([{'Submission ID':'S1',Status:'Reviewed'}]);assert.equal((await f.api.resolveScholarSubmission('S1','reject','')).status,'error');
- const plan={items:[{kind:'text',key:'title',selected:true,state:'applied'}]};
- f=await fixture([{'Submission ID':'S1',Status:'Pending',reviewPlan:plan}]);
- assert.equal((await f.api.beginScholarReview('S1',[{key:'title'}],[],'')).verified,true);
- assert.equal((await f.api.beginScholarReview('S1',[{key:'gender'}],[],'')).status,'error');
- assert.equal((await f.api.approveScholarSubmission('S1',[],'')).verified,true);
- f=await fixture([{'Submission ID':'S1',Status:'Reviewed',reviewPlan:plan}]);assert.equal((await f.api.finishScholarReview('S1','')).verified,true);
- console.log('Review outcome confirmation tests passed');
+ let calls=[];let outcome={status:'ok'},lost=false;
+ const ctx={AbortSignal,window:{},localStorage:{getItem:()=> 'fixture'},fetch:async(url,opts)=>{calls.push(opts.method);if(lost)throw Error('network');return{json:async()=>outcome};}};
+ vm.runInNewContext(source,ctx);const api=ctx.window.adminWriteback;
+ assert.equal((await api.resolveScholarSubmission('S1','reject','')).status,'ok');assert.deepEqual(calls,['POST'],'Successful durable response needs no extra full queue reads');
+ calls=[];lost=true;const result=await api.reviewScholarSelection('S1',[],[],'');assert.equal(result.status,'error');assert.match(result.error,/acknowledgement was lost/);assert.deepEqual(calls,['POST'],'No automatic replay after uncertain response');
+ lost=false;outcome={status:'already_resolved'};assert.equal((await api.resolveScholarSubmission('S1','reject','')).status,'already_resolved');
+ console.log('PASS durable acknowledgement, no redundant reads, lost response retained, conflicting decision not reported as success');
 })().catch(e=>{console.error(e);process.exitCode=1;});

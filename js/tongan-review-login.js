@@ -11,7 +11,7 @@ function logout(){token='';clearTimeout(expiryTimer);google.accounts.id.disableA
 $('logout').onclick=logout;
 async function call(action,params={}){
  if(!token)throw new Error('Please sign in again.');
- const response=await fetch(ENDPOINT,{method:'POST',credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...params,action,idToken:token})});
+ const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...params,action,idToken:token})});
  const out=await response.json();
  if(out.status==='unauthorized'){
   token='';$('review-app').hidden=true;$('sign-in').hidden=false;$('identity').textContent='';
@@ -22,6 +22,9 @@ async function call(action,params={}){
 window.adminWriteback={
  isConfigured:()=>!!token,
  reviewCapabilities:()=>call('reviewCapabilities'),
+ reviewQueueCounts:()=>call('reviewQueueCounts'),
+ readScholarSubmission:submissionId=>call('readScholarProfileSubmissions',{submissionId}),
+ reviewScholarSelection:(submissionId,selectedChanges,selectedFiles,reviewNotes)=>call('reviewScholarSelection',{submissionId,selectedChanges,selectedFiles,reviewNotes}),
  readScholarSubmissions:status=>call('readScholarProfileSubmissions',{status}),
  readGeographySubmissions:status=>call('readPublicationGeographySubmissions',{status}),
  readSubmissionAttachment:(submissionId,fileId)=>call('readScholarSubmissionAttachment',{submissionId,fileId}),
@@ -49,13 +52,13 @@ async function signedIn(result){
   if(payload.nonce!==nonce)throw new Error('Sign-in did not match this page. Reload and try again.');
   token=result.credential;message('Checking Admin access…');
   const caps=await call('reviewCapabilities');
-  if(caps.status!=='ok'||!['owner','admin'].includes(caps.role))throw new Error('Google Admin access is not enabled for this account yet.');
+  if(caps.status!=='ok'||!['owner','admin'].includes(caps.role))throw new Error(caps.reason||caps.error||'The deployed backend did not return a Google review role. Ask the Owner to check the deployed version and private access settings.');
   $('identity').textContent=payload.email+' · '+(caps.role==='owner'?'Owner':'Admin');
   $('owner-link').hidden=caps.role!=='owner';$('logout').hidden=false;
   $('sign-in').hidden=true;$('review-app').hidden=false;$('db-status').textContent='ready';
   clearTimeout(expiryTimer);expiryTimer=setTimeout(logout,Math.max(0,payload.exp*1000-Date.now()));
   if(!document.getElementById('queue-script')){
-   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=google-roles-1';
+   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=review-v4';
    script.onload=()=>document.querySelector('[data-tab="scholar-submissions"]').click();document.body.append(script);
   }else location.reload();
  }catch(e){token='';message(e.message||'Sign-in failed. Try again.');}

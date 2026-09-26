@@ -55,7 +55,10 @@ console.log('PASS backend fixtures: conflict/readonly checks; interrupted write 
  w.eval(fs.readFileSync('js/tongan-submissions-admin.js','utf8'));w.document.querySelector('[data-tab="geography-submissions"]').click();await tick();
  assert.equal([...w.document.querySelectorAll('.tonga-review input[type=checkbox]')].filter(x=>x.checked).length,0);
  w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();
- assert.match(confirmation,/APPROVE 0.*REJECT 2/);assert.deepEqual(decisions,[['G1','reject'],['G2','reject']]);assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/Failed and retained/);assert.equal(w.document.querySelectorAll('.tonga-review').length,1);
- fail=false;w.document.querySelector('.tonga-review input').checked=true;w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/not dispatched/);
- dom.window.close();console.log('PASS UI fixtures: unchecked geography default, zero-selected bulk confirmation, mixed failures retained, retry, honest refresh failure.');
+ assert.equal(confirmation,'');assert.deepEqual(decisions,[]);
+ w.document.querySelectorAll('.tonga-review input[type=checkbox]').forEach(x=>{x.checked=true;x.dispatchEvent(new w.Event('change',{bubbles:true}));});
+ w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();
+ assert.match(confirmation,/Unchecked submissions and fields remain pending/);assert.deepEqual(decisions,[['G1','approve'],['G2','approve']]);assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/Failed and retained/);assert.equal(w.document.querySelectorAll('.tonga-review').length,1);
+ fail=false;w.document.querySelector('.tonga-review input').checked=true;w.document.querySelector('.tonga-review input').dispatchEvent(new w.Event('change',{bubbles:true}));w.document.querySelector('[data-tonga-queue="geography"] .tonga-bulk-controls .tonga-approve').click();await tick();assert.match(w.document.querySelector('[data-tonga-queue="geography"] .tonga-queue-status').textContent,/scheduled data refresh/);
+ dom.window.close();console.log('PASS UI fixtures: unchecked geography default, zero-selected disabled, mixed failures retained, retry, honest refresh failure.');
 })().catch(e=>{console.error(e);process.exit(1)});

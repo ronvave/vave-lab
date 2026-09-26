@@ -46,3 +46,18 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-submission-confirmation button{flex-shrink:0;padding:8px 12px;border:1px solid #166534;border-radius:6px;background:white;color:#14532d;font:inherit;cursor:pointer}
 .tonga-submission-confirmation button:focus-visible{outline:3px solid #0e7490;outline-offset:2px}
 @media(max-width:480px){.tonga-submission-confirmation{align-items:flex-start;flex-direction:column;gap:10px;bottom:12px;padding:14px}}
+
+
+/* Country drafts and validation are scoped to Tonga's geography form. */
+.tonga-country-editor{min-width:240px;max-width:100%;padding:12px;border:1px solid #d8d4ca;border-radius:8px;text-align:left}
+.tonga-country-editor p{font-size:.85rem;margin:5px 0 10px}
+.tonga-country-editor label{display:block;font-size:.9rem}
+.tonga-country-editor input{padding:8px;border:1px solid #bdb7ac;border-radius:4px;max-width:100%;box-sizing:border-box}
+.tonga-country-editor input[type=number]{width:5rem;margin-left:8px}
+.tonga-country-row{display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin:10px 0}
+.tonga-country-row label{flex:1;min-width:180px}.tonga-country-row input{display:block;width:100%}
+.tonga-country-row [aria-invalid=true]{border:2px solid #b42318;background:#fff8f7}
+.tonga-country-error{order:3;flex-basis:100%;color:#9b2117;font-size:.85rem}
+.tonga-country-error:empty{display:none}.tonga-country-editor button{padding:7px 10px}
+.tonga-bulk-controls{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px}
+.tonga-bulk-controls[hidden]{display:none}

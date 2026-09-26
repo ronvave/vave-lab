@@ -105,24 +105,28 @@ function buildGeographyToolbar(li,item,options,dirty,updateCount){
  const approved=item._masterGeographyRows||[],selected=new Set();
  for(const g of approved){if(g.Country!=='Tonga')continue;const division=divisionName(g['Island Division (auto from District)']),island=islandName(g['Specific Island']);if(island&&division)selected.add('island:'+division+':'+island);else if(division&&!g.District&&!g['Village / Town / Site'])selected.add('division:'+division);else if(!division&&!island&&!g.District&&/national|general/i.test(g['Geography Type']||''))selected.add('national');}
  const national=checkMenu(toolbar,'Tonga',options,selected,changed);
- const pacific=checkMenu(toolbar,'Pacific Island country',PACIFIC.map(c=>({value:c,label:c})),new Set(approved.map(g=>g.Country)),changed);
- const other=el('input',null,toolbar);other.type='text';other.className='tonga-geo-other';other.placeholder='Other countries';other.setAttribute('aria-label','Other countries; separate names with semicolons');other.title='Separate country names with semicolons, for example Jamaica; China';other.oninput=changed;
+ const canonical=v=>TongaCountries.resolve(v)?.name||v;
+ const pacific=checkMenu(toolbar,'Pacific Island country',PACIFIC.map(c=>({value:canonical(c),label:canonical(c)})),new Set(approved.map(g=>canonical(g.Country))),changed);
+ const other=TongaCountryInputs(toolbar,String(window.__tongaSharedScholar?.scholarId||'')+':'+item._masterPublicationId,changed);
  const status=el('p','',toolbar);status.className='tonga-geo-item-status';status.setAttribute('role','status');
  function changed(){
   const loc=national.values().map(v=>options.find(o=>o.value===v).location),pac=pacific.values();
-  const existingCountries=new Set(approved.filter(g=>g.Country!=='Tonga'&&!PACIFIC.includes(g.Country)).map(g=>String(g.Country).toLowerCase()));
-  const countries=other.value.split(';').map(c=>c.trim()).filter(Boolean).filter((c,i,a)=>a.findIndex(v=>v.toLowerCase()===c.toLowerCase())===i&&!existingCountries.has(c.toLowerCase()));
+  const existingCountries=new Set(approved.map(g=>canonical(g.Country).toLowerCase()));
+  const countries=other.values().filter(c=>c!=='Tonga'&&!pac.includes(c)&&!existingCountries.has(c.toLowerCase()));
   if(loc.length||pac.length||countries.length){dirty.set(item._masterPublicationId,{item_key:item._masterPublicationId,title:item.title,year:item.year,tonga_locations:loc,pacific_countries:pac,other_countries:countries});status.textContent='Selections ready to submit below.';}else{dirty.delete(item._masterPublicationId);status.textContent='';}updateCount();
  }
- return{submitted(){[...national.checks,...pacific.checks].forEach(cb=>{if(cb.checked)cb.disabled=true;});other.value='';status.textContent='Submitted for review.';},toolbar};
+ other.restore();
+ return{invalid:()=>other.invalid(),validate:()=>other.validate(),submitted(){[...national.checks,...pacific.checks].forEach(cb=>{if(cb.checked)cb.disabled=true;});other.submitted();status.textContent='Valid locations submitted for review. Any invalid country entries remain in your draft.';},toolbar};
 }
 function buildGeographySubmit(main,row,token,dirty,editors,list){
  const form=el('form',null,main);form.className='tonga-geo-submit';el('h3','Submit publication geography for review',form);el('p','Select locations beside the publications above, then submit them together. Approved locations are preserved; new suggestions appear publicly only after review and a data refresh.',form);const who=identity(form);
  const button=el('button','Submit geography for review',form);button.type='submit';const count=el('span','0 publications changed',form);count.className='tonga-geo-dirty-count';const status=el('p','',form);status.setAttribute('role','status');
  function updateCount(){count.textContent=dirty.size+' publication'+(dirty.size===1?'':'s')+' changed';}
  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;if(!dirty.size){status.textContent='Select or enter at least one new study location above.';return;}
+  const invalid=[...editors.values()].flatMap(editor=>{editor.validate();return editor.invalid();});
+  if(invalid.length&&!confirm('These invalid entries will NOT be submitted: '+invalid.join('; ')+'. They remain in your draft if device saving succeeded. Submit valid locations only?'))return;
   const changes=[...dirty.values()];if(changes.some(c=>c.tonga_locations.length>30)){status.textContent='Please select no more than 30 Tonga locations per publication.';return;}
-  const controls=[...list.querySelectorAll('input'),...form.querySelectorAll('input,select,button')],disabled=controls.map(n=>n.disabled);controls.forEach(n=>n.disabled=true);let completed=0;status.textContent='Submitting…';
+  const controls=[...list.querySelectorAll('input,select,button'),...form.querySelectorAll('input,select,button')],disabled=controls.map(n=>n.disabled);controls.forEach(n=>n.disabled=true);let completed=0;status.textContent='Submitting…';
   try{for(let i=0;i<changes.length;i+=100){const batch=changes.slice(i,i+100);await send(Object.assign(base(row,token),who(),{action:'submitPublicationGeography',changes:batch}));batch.forEach(c=>dirty.delete(c.item_key));completed+=batch.length;updateCount();}status.textContent=completed+' publication'+(completed===1?'':'s')+' submitted to the Tonga Admin panel for review. Thank you.';}
   catch(err){status.textContent=(completed?completed+' publications submitted. Remaining selections are retained. ':'')+err.message;}
   finally{controls.forEach((n,i)=>n.disabled=disabled[i]);changes.filter(c=>!dirty.has(c.item_key)).forEach(c=>editors.get(c.item_key).submitted());}
@@ -155,7 +159,7 @@ async function renderShared(state,renderCard,renderItem){
  const ids=new Set((state.master.authorship||[]).filter(a=>a['Scholar ID']===scholarId).map(a=>a['Publication ID / BibTeX Key']));const items=state.snapshot.items.filter(it=>ids.has(it._masterPublicationId));
  const pubHead=el('section',null,main);pubHead.className='tonga-portal-intro tonga-publications-head';el('h2','Publications currently linked to this scholar',pubHead);
  el('p',items.length+' publications are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.',pubHead);
- const guidance=el('p',null,pubHead);guidance.innerHTML='<strong class="scholar-geotag-highlight">Please help us geotag your research.</strong> For each thesis, book, book chapter, journal article or report, use the <strong>Tonga</strong> dropdown to select the islands or island groups where the study was undertaken. Specific islands are listed beneath their island group. Use <strong>Tonga — general / national study</strong> where the work concerns Tonga broadly and is not tied to a particular locality. Where relevant, identify another Pacific Island country or territory. For research outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>). You can select multiple locations for each publication, then use <strong>Submit geography for review</strong> below the publication list.';
+ const guidance=el('p',null,pubHead);guidance.innerHTML='<strong class="scholar-geotag-highlight">Please help us geotag your research.</strong> For each thesis, book, book chapter, journal article or report, use the <strong>Tonga</strong> dropdown to select the islands or island groups where the study was undertaken. Specific islands are listed beneath their island group. Use <strong>Tonga — general / national study</strong> where the work concerns Tonga broadly and is not tied to a particular locality. Where relevant, identify another Pacific Island country or territory. For research outside the Pacific, use <strong>Other countries</strong> and choose how many country fields to add. Select one country or area per field from the suggestions. You can select multiple locations for each publication, then use <strong>Submit geography for review</strong> below the publication list.';
  el('p','Geotagging allows publications to appear when the database is filtered by study location. This helps government agencies, Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities find research undertaken in their island division or district and draw on it in planning and decision making. Geographic suggestions are reviewed before they are added to the database. Existing approved study locations are shown with each publication and are preserved when you suggest additional locations.',pubHead);
  const list=el('ul',null,main);list.className='db-items tonga-geography-list';
  const dirty=new Map(),editors=new Map(),options=tongaOptions(state);let updateCount=()=>{};
@@ -167,7 +171,7 @@ async function renderShared(state,renderCard,renderItem){
   li.querySelectorAll('.db-item__tags').forEach(n=>{const clone=n.cloneNode(true);n.replaceWith(clone);});
   editors.set(item._masterPublicationId,buildGeographyToolbar(li,item,options,dirty,()=>updateCount()));list.append(li);
  });
- if(items.length)updateCount=buildGeographySubmit(main,row,token,dirty,editors,list);
+ if(items.length){updateCount=buildGeographySubmit(main,row,token,dirty,editors,list);updateCount();}
  document.body.replaceChildren(...[sprites,header,banner,main].filter(Boolean));
 }
 window.TongaScholarPortal={wireShare,openUpdate,renderShared};

@@ -252,3 +252,21 @@ Mapped 345 Graduate Degrees records in the Tonga Master Sheet to Fiji's eight sh
 A refresh rerun checked out its original triggering commit and conflicted with newer encrypted snapshots. Checkout now explicitly uses main so reruns start with the current snapshot. Existing content-change detection and rebase safeguards remain in place.
 
 Pre-publication preservation check passed: node tests/itaukei-card-mobility.test.cjs; 59 saved photos, 77 research summaries, and 151 mobility rows retained. No card implementation changed. Live publication verification follows the refresh; no browser visual verification is claimed.
+
+## Tonga review V4 preparation 2026-09-26
+
+Approved scope: faster review, approve-only bulk selection, canonical country
+entry and collaborator access diagnosis. See `TONGA-REVIEW-V4-DEPLOY.md` for exact
+changes, measured fixture timings, deployment order and deferred-journal rollback
+constraint. No real submissions were approved/rejected during preparation.
+Preservation tests pass: Fiji 59 photos, 77 summaries, 151 mobility rows;
+Tonga 15 photos, 14 summaries, 86 scholar pathways. These are observed snapshot
+counts, not hardcoded UI totals. Shared-profile submission fixtures preserve
+photos, summaries and linked publications. Live Apps Script deployment and real
+Google login verification were initially pending authenticated access.
+
+Backend release: signed in as the Owner, verified the baseline source and existing
+private access settings, and found the missing token verifier. Created a private
+Master backup and deployed the complete V4 bundle as Apps Script Version 6 on
+2026-09-26 UTC. The safe runtime diagnostic passed with verifier present and three
+reviewers configured. Frontend publication and live login verification follow.
