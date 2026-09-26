@@ -22,6 +22,7 @@ async function call(action,params={}){
 window.adminWriteback={
  isConfigured:()=>!!token,
  readAttachmentAnalysis: submissionId=>call('readAttachmentAnalysis',{submissionId}),
+ refreshAttachmentProposals: params=>call('refreshAttachmentProposals',params),
  analyseScholarAttachment: params=>call('analyseScholarAttachment',params),
  editAttachmentProposal: params=>call('editAttachmentProposal',params),
  approveAttachmentProposals: params=>call('approveAttachmentProposals',params),

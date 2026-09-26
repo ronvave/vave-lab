@@ -124,6 +124,7 @@
 
   window.adminWriteback = {
     readAttachmentAnalysis: submissionId => callPost({action:'readAttachmentAnalysis',submissionId}),
+    refreshAttachmentProposals: params => callPost(Object.assign({},params,{action:'refreshAttachmentProposals'})),
     analyseScholarAttachment: params => callPost(Object.assign({},params,{action:'analyseScholarAttachment'})),
     editAttachmentProposal: params => callPost(Object.assign({},params,{action:'editAttachmentProposal'})),
     approveAttachmentProposals: params => reviewPost(Object.assign({},params,{action:'approveAttachmentProposals'})),
