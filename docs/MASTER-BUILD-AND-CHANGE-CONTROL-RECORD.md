@@ -316,3 +316,9 @@ HST formatting, missing/blank/truncated values, HTML escaping, asynchronous titl
 and filter state. Required preservation test passed: 59 saved photos, 77 research
 summaries, 151 mobility rows. Live authenticated visual verification requires the
 Owner panel login; no production log rows or submissions were modified in testing.
+
+## Tonga preferred public names — 2026-09-26
+
+Scholar Update info now prefills editable Given name(s) and Family name and previews the public name. Changes enter the existing reviewed submission flow. Approval writes only Preferred Given Names / Preferred Family Name; canonical Given Names, Family Name and Scholar Name are retained. Missing preferred columns are appended only during an authenticated, validated write under the existing lock, never during reads/dry runs. Repeated approvals remain idempotent. The public export substitutes approved names before sanitization and applies the public name to ID-linked degree, mobility and authorship display records. Publication citation author strings are not rewritten.
+
+Validation: new JS fixtures passed for prefill/changed-only submission, canonical preservation, append-only columns, dry runs, retries, conflict and invalid-input handling. Python export fixtures passed for preferred names, unchanged defaults and unmodified canonical input. Existing Tonga submissions and review-v2 tests passed. Preservation checks: Fiji 59 photos, 77 summaries, 151 mobility rows; Tonga 15 photos, 14 summaries, 86 pathways. Full deployed backend source was compared against tracked source and patched without changing private Script Properties or deployment access.

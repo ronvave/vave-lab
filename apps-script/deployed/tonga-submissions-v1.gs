@@ -42,6 +42,8 @@ var MAPPING = {
         'Title / Salutation':      { type: 'enum',   enum: ['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms',''] },
         'Family Name':             { type: 'string', maxLen: 120 },
         'Given Names':             { type: 'string', maxLen: 120 },
+        'Preferred Given Names':   { type: 'string', maxLen: 120 },
+        'Preferred Family Name':   { type: 'string', maxLen: 120 },
         'Gender':                  { type: 'enum',   enum: ['Tangata','Fefine','Unknown',''] },
         // Year of Birth: four-digit year, blank when unknown. Do not infer.
         // Sheet stores as text; server accepts 4-digit strings.
@@ -158,7 +160,7 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_()});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true});
     if (params.idToken || !tongaAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
     return tongaReadAction_(params);
   } catch (err) {
@@ -455,6 +457,8 @@ function handleWrite_(body) {
  * `conflict` is now either `already_satisfied` (silent skip) or
  * `needs_confirmation` (client must re-submit with overrideAuthorized).
  */
+function tongaPreferredNameField_(ws, field) { return ws==='Scholars' && ['Preferred Given Names','Preferred Family Name'].indexOf(field)>=0; }
+
 function applyOneChange_(ss, c, dryRun) {
   var ws = c.worksheet, sid = c.scholarId, field = c.field;
   if (!ws || !MAPPING.worksheets[ws])   return { status: 'rejected', reason: 'worksheet-not-allowed' };
@@ -473,11 +477,13 @@ function applyOneChange_(ss, c, dryRun) {
   var rowInfo = locateRow_(sheet, wsCfg, c);
   if (!rowInfo.ok) return { status: 'rejected', reason: rowInfo.reason };
   var col = rowInfo.headers[field];
-  if (!col) return { status: 'rejected', reason: 'field-header-not-found' };
+  var newNameColumn=!col && tongaPreferredNameField_(ws,field);
+  if (!col && !newNameColumn) return { status: 'rejected', reason: 'field-header-not-found' };
+  if(tongaPreferredNameField_(ws,field) && (!String(newValue).trim() || /^[=+@-]/.test(String(newValue).trim())))return {status:'rejected',reason:'invalid-preferred-name'};
 
-  if (sheet.getRange(rowInfo.row, col).getFormula()) return {status:'rejected',reason:'computed-field-read-only'};
+  if (col && sheet.getRange(rowInfo.row, col).getFormula()) return {status:'rejected',reason:'computed-field-read-only'};
   if (typeof newValue === 'string' && /^\s*=/.test(newValue)) return {status:'rejected',reason:'formula-text-not-allowed'};
-  var currentRaw    = sheet.getRange(rowInfo.row, col).getValue();
+  var currentRaw    = col ? sheet.getRange(rowInfo.row, col).getValue() : '';
   var currentStr    = normalizeForCompare_(currentRaw);
   var loadedStr     = normalizeForCompare_(c.oldValue);
   var intendedStr   = normalizeForCompare_(newValue);
@@ -527,6 +533,12 @@ function applyOneChange_(ss, c, dryRun) {
   // 3. Clean write. Value written is the validated coerced form; Change Log
   //    records the true current old value (which may differ from what the
   //    client had loaded, e.g. after a confirmed override).
+  if(newNameColumn){
+    col=sheet.getLastColumn()+1;
+    if(col>sheet.getMaxColumns())sheet.insertColumnsAfter(sheet.getMaxColumns(),1);
+    sheet.getRange(wsCfg.headerRow,col).setValue(field);
+    sheet.getRange(wsCfg.headerRow,col).setNote('Approved public display name. Original Given Names, Family Name and Scholar Name remain the canonical record.');
+  }
   sheet.getRange(rowInfo.row, col).setValue(newValue);
   appendChangeLog_(ss, ws, sid, field, currentStr, newValue);
   return {
@@ -856,6 +868,8 @@ function parseJsonObject_(text) {
 
 function scholarSubmissionFieldSpecs_() {
   return [
+    {key:'preferred_given_names',label:'Public given name(s) — canonical names retained',ws:'Scholars',field:'Preferred Given Names'},
+    {key:'preferred_family_name',label:'Public family name — canonical names retained',ws:'Scholars',field:'Preferred Family Name'},
     {key:'salutation',label:'Title / salutation',ws:'Scholars',field:'Title / Salutation',clean:function(v){return String(v||'').replace(/\.$/,'');}},
     {key:'gender',label:'Gender',ws:'Scholars',field:'Gender'},
     {key:'paternal_island_division',label:'Paternal island division',ws:'Scholars',field:'Paternal Island Division'},
@@ -916,7 +930,7 @@ function buildScholarSubmissionChanges_(ss, submission) {
     var current='',rowNumber=null,writable=true,reason='';
     if(spec.ws==='Scholars'){
       if(!scholarInfo.ok){writable=false;reason=scholarInfo.reason||'scholar-not-found';}
-      else {var col=scholarInfo.headers[spec.field];if(!col){writable=false;reason='Master field not found';}else current=normalizeForRead_(scholarValues[col-1]);}
+      else {var col=scholarInfo.headers[spec.field];if(!col){if(!tongaPreferredNameField_(spec.ws,spec.field)){writable=false;reason='Master field not found';}}else current=normalizeForRead_(scholarValues[col-1]);}
     } else {
       var degree=gradRows[spec.stage];
       if(degreeCounts[spec.stage]>1){writable=false;reason='Multiple degree rows: use the scholar editor to choose the correct degree';}
