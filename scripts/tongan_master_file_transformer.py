@@ -211,7 +211,17 @@ def extract_scholars(rows: list[list]) -> list[dict]:
     _, dicts = rows_to_dicts(
         rows, SHEETS["Scholars"]["header_row"], SHEETS["Scholars"]["first_data"]
     )
-    clean = sanitize(dicts, SCHOLAR_PUBLIC_FIELDS)
+    public_rows = []
+    for original in dicts:
+        s = dict(original)
+        given = str(s.get('Preferred Given Names') or '').strip()
+        family = str(s.get('Preferred Family Name') or '').strip()
+        if given or family:
+            s['Given Names'] = given or s.get('Given Names', '')
+            s['Family Name'] = family or s.get('Family Name', '')
+            s['Scholar Name'] = ' '.join(str(s.get(k) or '').strip() for k in ['Given Names', 'Family Name']).strip()
+        public_rows.append(s)
+    clean = sanitize(public_rows, SCHOLAR_PUBLIC_FIELDS)
     # The Google Sheet is pre-provisioned to row 1000 and formula-bearing
     # template rows are not technically empty. Only an assigned canonical
     # Scholar ID constitutes a roster record.
@@ -921,6 +931,16 @@ def run(
         if str(row.get("Country") or "").strip()
     })
     log(f"  → {len(coordinate_countries)} coordinate countries: {', '.join(coordinate_countries)}")
+
+    # Public identity follows Scholar ID; never rewrite publication citation authors.
+    public_names = {s['Scholar ID']: s['Scholar Name'] for s in scholars}
+    for table in [authorship, researcher_authorship, grad_degrees, mobility]:
+        for record in table:
+            sid = record.get('Scholar ID')
+            if sid in public_names:
+                for field in ['Scholar Name', 'scholar_name']:
+                    if field in record:
+                        record[field] = public_names[sid]
 
     log("Computing aggregates...")
     aggregates = compute_aggregates(
