@@ -39,3 +39,8 @@
 .tonga-proposal-form label{display:flex;flex-direction:column;gap:5px}
 .tonga-proposal-form input,.tonga-proposal-form select{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px}
 .tonga-attachment-analysis td{overflow-wrap:anywhere;vertical-align:top}
+/* Attachment comparisons have three content columns, without a checkbox column. */
+.tonga-review .tonga-attachment-analysis th:first-child{width:20%}
+.tonga-review .tonga-attachment-analysis th:nth-child(2),.tonga-review .tonga-attachment-analysis th:nth-child(3){width:40%}
+.tonga-review .tonga-attachment-analysis td:nth-child(2){font-weight:400;color:#475569}
+.tonga-review .tonga-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
