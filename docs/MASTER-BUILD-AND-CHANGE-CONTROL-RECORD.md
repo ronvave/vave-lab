@@ -270,3 +270,21 @@ private access settings, and found the missing token verifier. Created a private
 Master backup and deployed the complete V4 bundle as Apps Script Version 6 on
 2026-09-26 UTC. The safe runtime diagnostic passed with verifier present and three
 reviewers configured. Frontend publication and live login verification follow.
+
+Frontend release: PR #21 merged as 767d1d5c61e68a5349f431428d23ee8f377d7a75;
+Pages run 36232082658 passed and deployed. Live profile country fields and invalid
+input warnings verified, with no submission sent. Backend public capabilities
+report V4. Owner Google login remains blocked by missing external-request consent.
+A runtime diagnostic identified UrlFetchApp permission failure. Automatic approval
+review requires explicit Owner approval for script.external_request before the
+Google consent helper can run. Original manifest restored; no permission granted.
+Do not report collaborator login repaired until live verification passes.
+
+Authorization follow-up: the Owner explicitly approved external requests and
+completed Google consent on 2026-09-26 UTC. The diagnostic fetched two public
+Google signing keys successfully. Live Google login now identifies the Owner and
+loads both queues (0 scholar / 16 geography Pending). Invalid historical country
+values are flagged and cannot be approved. No real submission decisions were made.
+The existing Version 6 deployment works after consent; editor-only diagnostics are
+saved for maintenance. Individual collaborator sessions and live revocation remain
+untested; signed-token role/security fixtures pass.

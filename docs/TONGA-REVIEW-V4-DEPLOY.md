@@ -126,5 +126,22 @@ with V4, verifierLoaded=true, clientIdConfigured=true, ownerConfigured=true,
 reviewerCount=3, writeEnabled=true. A private Master backup completed before
 deployment. No real submissions were approved or rejected.
 
-Frontend publication and live Owner/Admin login verification are still in progress.
-Production approval timings and collaborator account checks remain unverified.
+Frontend released via PR #21, merge 767d1d5c61e68a5349f431428d23ee8f377d7a75.
+Pages run 36232082658 completed successfully; integrity and content-hash gates
+passed. Live profile UI confirmed five fields and red invalid-country feedback;
+local test entries were cleared without submitting.
+
+Google sign-in verified on 2026-09-26 UTC after the Owner explicitly approved
+Connect to an external service and completed Google's consent flow. The helper
+returned googleSigningKeyCount=2, verifierLoaded=true and reviewerCount=3.
+The live reviewer panel identifies the signed-in account as Owner. Both queues
+loaded: zero pending scholar submissions and 16 pending geography submissions.
+Invalid historical geography values were visibly flagged with approval disabled.
+No real pending items were approved or rejected.
+
+The original manifest remains restored. Diagnostic/helper source is saved in the
+editor but is not part of deployment Version 6; the authorization grant fixed the
+existing deployment without redeployment. Helpers are editor-only and expose no
+new web route. Collaborators must test their own Google sessions. Production
+approval timings, live collaborator sessions, and live revocation remain
+unverified; fixture authorization/security tests pass.

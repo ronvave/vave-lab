@@ -1337,9 +1337,14 @@ function tongaRoleForIdentity_(identity) {
 
 function tongaAuthError_(message){var e=new Error(message);e.tongaAuthSafe=message;return e;}
 /** Owner runs this locally in Apps Script. No secrets or roster values logged. */
+function authorizeTongaReviewAccess(){
+ ScriptApp.requireScopes(ScriptApp.AuthMode.FULL,['https://www.googleapis.com/auth/script.external_request']);
+ return inspectTongaReviewAccess();
+}
 function inspectTongaReviewAccess(){
  var p=PropertiesService.getScriptProperties();
  var result={version:TONGA_SUBMISSIONS_VERSION,verifierLoaded:typeof TongaJWT!=='undefined',clientIdConfigured:!!p.getProperty('TONGA_GOOGLE_CLIENT_ID'),ownerConfigured:!!p.getProperty('TONGA_OWNER_EMAIL'),reviewerCount:String(p.getProperty('TONGA_REVIEWER_EMAILS')||'').split(/[\s,;]+/).filter(Boolean).length,writeEnabled:writeEnabled_()};
+ try { result.googleSigningKeyCount=tongaGoogleKeys_().length; } catch(e) { result.googleSigningKeysError=String(e&&e.message||e); }
  Logger.log(JSON.stringify(result));return result;
 }
 function tongaQueueCounts_(){
