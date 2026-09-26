@@ -288,3 +288,10 @@ values are flagged and cannot be approved. No real submission decisions were mad
 The existing Version 6 deployment works after consent; editor-only diagnostics are
 saved for maintenance. Individual collaborator sessions and live revocation remain
 untested; signed-token role/security fixtures pass.
+
+## 2026-09-26 — Tonga direct-profile emphasis color
+
+Set bold inline text and URL links on Tonga direct scholar pages to #804b03,
+including profile content and update-dialog links. Scoped CSS preserves the main
+dashboard, Admin panels, other countries, and all scholar data. Required
+iTaukei preservation check passed (59 photos, 77 summaries, 151 mobility rows).

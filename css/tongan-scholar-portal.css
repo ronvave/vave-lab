@@ -61,3 +61,8 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-country-error:empty{display:none}.tonga-country-editor button{padding:7px 10px}
 .tonga-bulk-controls{display:inline-flex;align-items:center;flex-wrap:wrap;gap:8px}
 .tonga-bulk-controls[hidden]{display:none}
+
+/* Requested emphasis color on direct Tonga scholar profiles only. */
+.tonga-portal :is(strong,b,a[href]),
+.tonga-profile-header :is(strong,b,a[href]),
+.tonga-form :is(strong,b,a[href]){color:#804b03!important}
