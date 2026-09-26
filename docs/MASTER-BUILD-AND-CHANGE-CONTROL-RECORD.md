@@ -325,3 +325,11 @@ Validation: new JS fixtures passed for prefill/changed-only submission, canonica
 
 ## Tonga name-block order — 2026-09-26
 Moved Name shown on your public profile immediately after Who is submitting this, before paternal/maternal geography. No field, approval or data behavior changes. Refreshed direct-profile iframe version and asset hash. Syntax and preferred-name fixtures passed; required preservation check passed (59 photos, 77 summaries, 151 mobility rows).
+
+## 2026-09-26 — Tonga private attachment analysis
+
+Added an authenticated, saved attachment review beside each scholar submission on both Owner and collaborator screens. BibTeX, RIS and EndNote text are parsed from original private Drive uploads; PDF CV text is extracted in the browser using pinned PDF.js 6.3.289. Parsing runs asynchronously while the tab stays open; each completed file is saved privately and reopening resumes without re-parsing it. No external AI/OCR service receives CV content. Scanned PDFs and unsupported formats remain explicit manual-review work.
+
+Proposals show current/proposed values, source record or CV page, CV/bibliography cross-references, duplicate/uncertain statuses, editable metadata and author position, and unchecked approval controls. Selected approvals run in batches of five, validate current Master values, preserve canonical/preferred names, and never remove records absent from a CV. New publication/authorship IDs are deterministic and retries fill a missing link without creating duplicates. Existing formulas cannot be overwritten. Signed private analysis, revision checks, attachment fingerprints and role allowlists protect review state; final decisions identify the reviewer. Unresolved analysed proposals prevent completing their file review. CV history, awards, service and work-in-progress remain review evidence rather than automatically counted publications.
+
+Verified with the real submitted bibliography (17 records parsed; original private file is excluded from git), parser/duplicate/ambiguous author fixtures, conflict and interrupted import retries, selected-only approval and DOM text safety. Existing Tonga v2/v4 review, authentication, preferred-name and required iTaukei preservation tests pass (59 photos, 77 research summaries, 151 mobility rows). No real scholar proposals were approved as part of feature verification.

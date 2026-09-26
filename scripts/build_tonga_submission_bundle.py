@@ -5,5 +5,6 @@ p=argparse.ArgumentParser();p.add_argument('output');args=p.parse_args()
 root=Path(__file__).resolve().parents[1]
 backend=(root/'apps-script/deployed/tonga-submissions-v1.gs').read_text()
 verifier=(root/'apps-script/vendor/tonga-jwt.gs').read_text()
-Path(args.output).write_text('// Complete Tonga review backend v4. Preserve all existing Script Properties.\n'+verifier+'\n'+backend)
+analysis=(root/'js/tongan-attachment-parser.js').read_text()+'\n'+(root/'apps-script/tonga-attachment-analysis.gs').read_text()
+Path(args.output).write_text('// Complete Tonga review backend v4. Preserve all existing Script Properties.\n'+verifier+'\n'+backend+'\n'+analysis)
 print(args.output)

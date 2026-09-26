@@ -170,7 +170,8 @@ function doGet(e) {
 
 function tongaReadAction_(params) {
   var action=params.action||'ping';
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,combinedReview:true,selectionReview:true,queueCounts:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,queueCounts:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
+    if (action === 'readAttachmentAnalysis') return tongaReadAnalysis_(params);
     if (action === 'reviewQueueCounts') return tongaQueueCounts_();
     if (action === 'describe') {
       return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
@@ -348,6 +349,9 @@ function doPost(e) {
     if (TONGA_READ_ACTIONS.indexOf(requested)>=0) return tongaReadAction_(body);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
+    if (action === 'analyseScholarAttachment') return tongaAnalyseAttachment_(body);
+    if (action === 'editAttachmentProposal') return tongaEditAnalysis_(body);
+    if (action === 'approveAttachmentProposals') return tongaApproveAnalysis_(body);
     if (action === 'reviewScholarSelection') return tongaReviewSelection_(body);
     if (action === 'beginScholarReview') return tongaBeginReview_(body);
     if (action === 'recordScholarAttachmentReview') return tongaRecordAttachment_(body);
@@ -1214,12 +1218,14 @@ function tongaRecordAttachment_(body){return tongaWithSubmission_(body,function(
   if(!item||!item.selected)throw new Error('Attachment not selected');
   if(item.state!=='pending')return jsonOut_({status:'ok',plan:plan,alreadyRecorded:true});
   var disposition=String(body.disposition||''),evidence=String(body.evidence||'').trim();
+  var analysis=typeof tongaAnalysisLoad_==='function'?tongaAnalysisLoad_(o):null;
+  if(analysis&&analysis.items.some(function(x){return x.fileId===body.fileId&&['pending','needs_review'].indexOf(x.state)>=0;}))throw Error('Review or decline remaining attachment proposals before completing this file');
   if(item.field==='headshot'){
     if(TONGA_REQUEST_ROLE!=='owner')throw new Error('Photo publication must be completed by the Owner; this item stays Pending.');
     if(disposition!=='published'||!/^img\/scholars\/TNG-S\d+\.jpg$/.test(evidence)||evidence!=='img/scholars/'+o['Scholar ID']+'.jpg')throw new Error('Successful Tonga photo service result required');
   }else{
     if(['reviewed_privately','imported'].indexOf(disposition)<0||evidence.length<10)throw new Error('Describe actual private review or completed import; downloading is not importing');
-    if(/bibliograph|bibtex|ris|enw/i.test(item.field+' '+item.name)&&disposition!=='imported')throw new Error('Bibliography requires a completed import with evidence');
+    if(/bibliograph|bibtex|ris|enw/i.test(item.field+' '+item.name)&&disposition!=='imported'&&!(analysis&&analysis.files.some(function(f){return f.fileId===body.fileId&&f.status==='analysed'&&!f.warnings.length;})&&disposition==='reviewed_privately'))throw new Error('Bibliography requires a completed import with evidence');
   }
   item.state=disposition;item.evidence=evidence.slice(0,1500);item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);
   return jsonOut_({status:'ok',plan:plan});
@@ -1273,8 +1279,8 @@ function backupTongaReviewDataV2(){
 // The existing secret remains an Owner-only recovery path. Never share it.
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
-var TONGA_READ_ACTIONS = ['reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
+var TONGA_REVIEW_ACTIONS = ['readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the
