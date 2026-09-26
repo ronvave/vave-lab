@@ -1,15 +1,13 @@
 const {JSDOM}=require('jsdom'),assert=require('node:assert/strict'),fs=require('fs');
 (async()=>{
- const dom=new JSDOM('<span id="db-status">unlocking…</span><button data-tab="scholar-submissions">Scholar</button><button data-tab="geography-submissions">Geography</button><div data-tonga-queue="scholar"></div><div data-tonga-queue="geography"></div>',{runScripts:'outside-only',pretendToBeVisual:true});
- const w=dom.window;let count=2,fail=false,calls=0;const timers=[];
- w.setInterval=fn=>timers.push(fn);w.setTimeout=fn=>timers.push(fn);
- w.adminWriteback={isConfigured:()=>true,readScholarSubmissions:async status=>{calls++;assert.equal(status,'Pending');if(fail)throw Error('offline');return{status:'ok',rows:Array.from({length:count},(_,i)=>({'Submission ID':String(i),Status:'Pending','Attachments JSON':JSON.stringify([{field:'headshot',name:'Scholar.jpg',fileId:'photo',type:'image/jpeg',size:2048}])}))}},readSubmissionAttachment:async()=>({status:'ok',type:'image/jpeg',name:'Scholar.jpg',data:'/9j/'}),readGeographySubmissions:async()=>({status:'ok',rows:[{}]})};
- w.eval(fs.readFileSync('js/tongan-submissions-admin.js','utf8'));
- const tick=()=>new Promise(r=>setImmediate(r));timers.forEach(f=>f());await tick();assert.equal(calls,0,'Wait for unlock');
- w.document.getElementById('db-status').textContent='ready';await tick();
- const badges=w.document.querySelectorAll('.tonga-submission-badge');assert.equal(badges[0].textContent,'2');assert.equal(badges[1].textContent,'1');assert.equal(w.document.querySelectorAll('.tonga-review').length,0,'Counts load before tab opened');
- w.document.querySelector('[data-tab="scholar-submissions"]').click();await tick();assert.equal(w.document.querySelector('.tonga-attachment-preview img').getAttribute('src'),'data:image/jpeg;base64,/9j/');assert.match(w.document.querySelector('.tonga-attachments').textContent,/Scholar.jpg/);const notes=w.document.querySelector('textarea');notes.value='Keep my review notes';count=3;timers.forEach(f=>f());await tick();assert.equal(badges[0].textContent,'3');assert.equal(notes.value,'Keep my review notes');
- fail=true;w.dispatchEvent(new w.Event('focus'));await tick();assert.equal(badges[0].textContent,'3','Network failure must not imply zero');
- fail=false;count=0;w.dispatchEvent(new w.Event('focus'));await tick();assert(badges[0].hidden,'Hide zero pending');dom.window.close();
- console.log('PASS: badges load after unlock before tab click; both queues refresh; notes survive polling; failures retain count; zero hides badge.');
-})().catch(e=>{console.error(e);process.exit(1)});
+ const dom=new JSDOM('<span id="db-status">unlocking…</span><button data-tab="scholar-submissions">Scholar</button><button data-tab="geography-submissions">Geography</button><div data-tonga-queue="scholar"></div><div data-tonga-queue="geography"></div>',{runScripts:'outside-only',pretendToBeVisual:true}),w=dom.window;
+ let count=2,fail=false,calls=0,reads=0,now=100000;const timers=[];w.Date.now=()=>now;w.setInterval=fn=>timers.push(fn);w.setTimeout=fn=>timers.push(fn);
+ w.adminWriteback={isConfigured:()=>true,reviewQueueCounts:async()=>{calls++;if(fail)throw Error('offline');return{status:'ok',scholar:count,geography:1}},readScholarSubmissions:async()=>{reads++;return{status:'ok',rows:[{'Submission ID':'S1',Status:'Pending',proposedChanges:[],'Attachments JSON':'[{"field":"headshot","name":"Photo.jpg","fileId":"photo","type":"image/jpeg"}]'}]}},readSubmissionAttachment:async()=>({status:'ok',type:'image/jpeg',data:'/9j/'}),reviewCapabilities:async()=>({status:'ok',version:'v4',selectionReview:true})};
+ w.eval(fs.readFileSync('js/tongan-submissions-admin.js','utf8'));const tick=()=>new Promise(r=>setImmediate(r));timers.forEach(f=>f());await tick();assert.equal(calls,0);
+ w.document.getElementById('db-status').textContent='ready';await tick();const badges=w.document.querySelectorAll('.tonga-submission-badge');assert.equal(badges[0].textContent,'2');assert.equal(badges[1].textContent,'1');assert.equal(calls,1,'Both badges share a count request');assert.equal(reads,0);
+ w.document.querySelector('[data-tab="scholar-submissions"]').click();await tick();assert(!w.document.querySelector('.tonga-attachment-preview img'),'No eager private attachment downloads');w.document.querySelector('.tonga-attachment-preview button').click();await tick();assert(w.document.querySelector('.tonga-attachment-preview img'));
+ const notes=w.document.querySelector('textarea');notes.value='Keep notes';notes.dispatchEvent(new w.Event('change',{bubbles:true}));await tick();assert.equal(calls,1,'Checkbox and note changes cause no count request');
+ now+=31000;count=3;timers.forEach(f=>f());await tick();assert.equal(badges[0].textContent,'3');assert.equal(notes.value,'Keep notes');assert.equal(reads,1);
+ now+=31000;fail=true;w.dispatchEvent(new w.Event('focus'));await tick();assert.equal(badges[0].textContent,'3');now+=31000;fail=false;count=0;w.dispatchEvent(new w.Event('focus'));await tick();assert(badges[0].hidden);dom.window.close();
+ console.log('PASS shared count-only request, no change-triggered reads, lazy previews, notes preserved, failed count retained');
+})().catch(e=>{console.error(e);process.exitCode=1});

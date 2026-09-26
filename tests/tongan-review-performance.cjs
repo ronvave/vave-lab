@@ -1,0 +1,10 @@
+/* Controlled transport benchmark, not production latency. Run from repository root. */
+const fs=require('fs'),vm=require('vm'),{execFileSync}=require('child_process'),{performance}=require('perf_hooks');
+const before=execFileSync('git',['show','aa4ec0024040700b3f2ecad112e718897bf7792c:js/tongan-admin-writeback-client.js'],{encoding:'utf8'}),after=fs.readFileSync('js/tongan-admin-writeback-client.js','utf8');
+async function trial(source,mode,n){let calls=0,row={Status:'Pending','Submission ID':'S1',reviewPlan:{items:[]}};
+ const ctx={AbortSignal,window:{},localStorage:{getItem:()=> 'fixture'},setTimeout,fetch:async(url,o)=>{calls++;await new Promise(r=>setTimeout(r,40));if(o.method==='GET')return{json:async()=>({status:'ok',rows:[row]})};const body=JSON.parse(o.body);if(body.action==='beginScholarReview')row.reviewPlan={items:[{kind:'text',key:'title',selected:true,state:'pending'}]};if(body.action==='approveScholarProfileSubmission')row.reviewPlan.items[0].state='applied';if(body.action==='finishScholarReview')row.Status='Reviewed';if(body.action==='resolveScholarProfileSubmission')row.Status='Rejected';return{json:async()=>({status:'ok',plan:row.reviewPlan,remainingReview:row.Status==='Pending'})};}};
+ vm.runInNewContext(source,ctx);const a=ctx.window.adminWriteback,start=performance.now();
+ for(let i=0;i<n;i++){row.Status='Pending';if(mode==='reject')await a.resolveScholarSubmission('S1','reject','');else if(a.reviewScholarSelection)await a.reviewScholarSelection('S1',[{key:'title'}],[],'');else{await a.beginScholarReview('S1',[{key:'title'}],[],'');await a.approveScholarSubmission('S1',[],'');await a.finishScholarReview('S1','');}}
+ return {requests:calls,milliseconds:Math.round(performance.now()-start)};
+}
+(async()=>{const out={environment:'Local Node transport fixture, fixed 40 ms per network request; excludes spreadsheet latency and UI refresh overhead',results:[]};for(const [mode,n] of [['approve',1],['reject',1],['approve',5]])out.results.push({operation:mode,count:n,before:await trial(before,mode,n),after:await trial(after,mode,n)});console.log(JSON.stringify(out,null,2));})();
