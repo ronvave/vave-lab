@@ -1069,25 +1069,8 @@
         status.textContent = '0 entries';
         return;
       }
-      var html = '<table class="table"><thead><tr>' +
-        '<th>Row</th><th>Version</th><th>Date</th><th>Actor</th><th>Worksheet</th><th>Field</th><th>Old value</th><th>New value</th><th>Source</th>' +
-        '</tr></thead><tbody>';
-      rows.forEach(function (r) {
-        html += '<tr>' +
-          '<td class="mono">' + esc(r.rowNumber) + '</td>' +
-          '<td class="mono">' + esc(r.version) + '</td>' +
-          '<td class="mono">' + esc(r.date) + '</td>' +
-          '<td>' + esc(r.actor) + '</td>' +
-          '<td>' + esc(r.worksheet) + '</td>' +
-          '<td>' + esc(r.field) + '</td>' +
-          '<td class="mono" style="color:var(--muted);">' + esc(r.oldValue) + '</td>' +
-          '<td class="mono">' + esc(r.newValue) + '</td>' +
-          '<td class="mono" style="color:var(--muted);">' + esc(r.source) + '</td>' +
-          '</tr>';
-      });
-      html += '</tbody></table>';
-      wrap.innerHTML = html;
-      status.textContent = rows.length + ' entries (most recent first)';
+      await window.TongaChangeLog.show({wrap:wrap,status:status,rows:rows,
+        scholars:state.scholarById,client:adminWriteback});
     } catch (e) {
       wrap.innerHTML = '<div class="meta" style="color:var(--danger);">Change Log load failed: ' + esc(e.message || e) + '</div>';
       status.textContent = 'error';

@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/tongan-change-log.css?v=5154c1cc">
 <style>
   :root {
     --teal: #0e7490;
@@ -482,7 +483,7 @@
     <div class="tab-panel" id="tab-changelog">
       <div class="card">
         <h2>Master change log</h2>
-        <p class="meta">Last write-back edits appended to the Master sheet's <span class="mono">Change Log</span> tab (via the Apps Script endpoint). Read-only view.</p>
+        <p class="meta">Who changed what, and what it was before. A read-only view of the Master change history.</p>
         <div class="flex-row" style="margin-bottom:10px">
           <button class="btn" id="changelog-refresh">Refresh</button>
           <span class="meta" id="changelog-status" style="align-self:center;color:var(--muted);">not yet loaded</span>
@@ -753,7 +754,8 @@
 <script src="js/tongan-database-adapter.js?v=ba90cea8" defer></script>
 <script src="js/tongan-admin-insights-migration.js?v=c2bcb539" defer></script>
 <script src="js/tongan-admin-writeback-client.js?v=76882a2d" defer></script>
-<script src="js/admin-tongan-master.js?v=f4f615f2" defer></script>
+<script src="js/tongan-change-log.js?v=66455d1f" defer></script>
+<script src="js/admin-tongan-master.js?v=e391c445" defer></script>
 
 <script src="js/tonga-countries.js?v=ff034128" defer></script>
 <script src="js/tongan-submissions-admin.js?v=e5a6fed5" defer></script>

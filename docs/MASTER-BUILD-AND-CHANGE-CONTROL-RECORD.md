@@ -295,3 +295,24 @@ Set bold inline text and URL links on Tonga direct scholar pages to #804b03,
 including profile content and update-dialog links. Scoped CSS preserves the main
 dashboard, Admin panels, other countries, and all scholar data. Required
 iTaukei preservation check passed (59 photos, 77 summaries, 151 mobility rows).
+
+## 2026-09-26 — Tonga Master change log comparison table
+
+Implemented the selected Option A as a read-only UI: HST date/time, friendly
+reviewer names, scholar/publication context, meaningful change descriptions, and
+Before/After. Original row, event reference, actor, worksheet, field, scope and
+source remain available under Technical details. Search and reviewer/type filters
+operate locally over the latest 100 loaded entries. One background queue read
+resolves geography publication titles; it does not block the initial log display.
+
+Historical shared-secret actions remain Owner / individual not recorded. Google
+actor aliases are display-only exact email digests; they do not authorize users.
+Review statuses are explicitly distinguished from data edits. Historical truncated
+values and missing times remain labelled, never reconstructed from current data.
+The Master Change Log records, backend, access controls and other tabs are unchanged.
+
+Validation: change-log fixtures passed for identity fallback, status/data distinction,
+HST formatting, missing/blank/truncated values, HTML escaping, asynchronous titles,
+and filter state. Required preservation test passed: 59 saved photos, 77 research
+summaries, 151 mobility rows. Live authenticated visual verification requires the
+Owner panel login; no production log rows or submissions were modified in testing.
