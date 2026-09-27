@@ -44,3 +44,5 @@
 .tonga-review .tonga-attachment-analysis th:nth-child(2),.tonga-review .tonga-attachment-analysis th:nth-child(3){width:40%}
 .tonga-review .tonga-attachment-analysis td:nth-child(2){font-weight:400;color:#475569}
 .tonga-review .tonga-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
+
+.tonga-review .tonga-recorded-fields th:first-child{width:18%}

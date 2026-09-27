@@ -287,6 +287,9 @@ function handleReadChangeLog_(params) {
       newValue: normalizeForRead_(v[9]) || parsed.newValue || ''
     });
   }
+  // Return display names only for scholars referenced by these audit entries.
+  var st=tongaTable_(ss,'Scholars'),si=st.headers.indexOf('Scholar ID'),ni=st.headers.indexOf('Scholar Name');
+  rows.forEach(function(r){var match=String(r.scope||'').match(/(?:^| · )(TNG-S\d+)(?: · |$)/);if(!match)return;r.scholarId=match[1];var scholar=st.rows.find(function(v){return v[si]===r.scholarId;});if(scholar)r.scholarName=String(scholar[ni]||'');});
   return jsonOut_({ status: 'ok', rows: rows, serverTs: Date.now() });
 }
 
@@ -846,6 +849,7 @@ function handleReadScholarProfileSubmissions_(params) {
     var o={}; SCHOLAR_SUBMISSION_HEADERS.forEach(function(h,i){o[h]=r[i]||'';});
     o.reviewPlan=tongaReviewPlan_(o);
     o.proposedChanges = buildScholarSubmissionChanges_(ss, o);
+    o.recordedFields = buildScholarSubmissionChanges_(ss,o,true).filter(function(c){return c.alreadyRecorded;});
     rows.push(o);
   });
   rows.reverse(); return jsonOut_({ status:'ok', rows:rows });
@@ -912,7 +916,7 @@ function scholarSubmissionFieldSpecs_() {
   ];
 }
 
-function buildScholarSubmissionChanges_(ss, submission) {
+function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
   var fields=parseJsonObject_(submission['Submitted Fields JSON']), structured=parseJsonObject_(submission['Structured Submission JSON']), changedOnly=structured.changedFieldsOnly===true, sid=String(submission['Scholar ID']||''), out=[];
   var st=tongaTable_(ss,'Scholars'), scholarSheet=st.sheet, scholarCfg=MAPPING.worksheets.Scholars;
   var si=st.headers.indexOf(scholarCfg.keyColumn), sr=st.rows.findIndex(function(r){return String(r[si])===sid;});
@@ -949,8 +953,11 @@ function buildScholarSubmissionChanges_(ss, submission) {
     var fieldCfg=MAPPING.worksheets[spec.ws].fields[spec.field];
     if(writable && (!fieldCfg || !validateValue_(proposed,fieldCfg).ok || /^\s*=/.test(proposed))){writable=false;reason='Value requires correction before approval';}
     var currentCompare=/^(unclassified|unknown|n\/a|na|-)$/i.test(String(current||'').trim())?'':current;
-    if(normalizeForCompare_(currentCompare)===normalizeForCompare_(proposed))return;
-    out.push({key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
+    var alreadyRecorded=normalizeForCompare_(currentCompare)===normalizeForCompare_(proposed);
+    if(alreadyRecorded&&!includeRecorded)return;
+    var displayCurrent=current;
+    if(tongaPreferredNameField_(spec.ws,spec.field)&&!current){var canonical=spec.field==='Preferred Given Names'?'Given Names':'Family Name';displayCurrent=normalizeForRead_(scholarValues[scholarInfo.headers[canonical]-1]);}
+    out.push({alreadyRecorded:alreadyRecorded,currentDisplayValue:displayCurrent,key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
   });
   // These are deliberately retained as visible manual-review changes because
   // they live in the GitHub enrichment sidecar, not in a Master Sheet column.
@@ -1281,7 +1288,7 @@ function backupTongaReviewDataV2(){
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
 var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the
@@ -1346,9 +1353,11 @@ function tongaRoleForIdentity_(identity) {
   // Bind each authorized email to Google's immutable account ID on first login.
   // Subsequent logins require BOTH the current roster entry and that identity.
   var key='TONGA_GOOGLE_SUB_'+Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,identity.email)).replace(/=+$/,'');
+  var bound=props.getProperty(key);
+  if(bound)return bound===identity.sub?role:''; // Existing accounts never contend with review write locks.
   var lock=LockService.getScriptLock();lock.waitLock(10000);
   try {
-    var bound=props.getProperty(key);
+    bound=props.getProperty(key);
     if(bound&&bound!==identity.sub)return '';
     if(!bound)props.setProperty(key,identity.sub);
   } finally {lock.releaseLock();}
@@ -1379,6 +1388,12 @@ function tongaReviewSelection_(body){
  try{
   var ss=geoSs_(),o=findScholarSubmission_(ss,String(body.submissionId||''));if(!o)throw new Error('Submission not found');
   if(o.Status!=='Pending')return jsonOut_({status:o.Status==='Reviewed'?'ok':'already_resolved',alreadyRecorded:true,row:tongaReviewRow_(ss,o),remainingReview:false});
+  var remaining=buildScholarSubmissionChanges_(ss,o),files=parseJsonObject_(o['Attachments JSON']),old=tongaReviewPlan_(o);
+  if(!remaining.length&&(!Array.isArray(files)||!files.length)&&!(old&&old.items.some(function(i){return i.state==='pending'||i.state==='deferred';}))&&!(body.selectedChanges||[]).length&&!(body.selectedFiles||[]).length){
+    var recorded=buildScholarSubmissionChanges_(ss,o,true);if(!recorded.length)throw new Error('No recognised submitted fields; Owner inspection required');
+    var done={version:3,reviewer:ACTOR_LABEL,startedAt:tongaNow_(),note:String(body.reviewNotes||'').slice(0,1500),items:recorded.map(function(c){return {kind:'text',key:c.key,label:c.label,state:'already_recorded',change:c,reviewedBy:ACTOR_LABEL,reviewedAt:tongaNow_()};})};
+    tongaSavePlan_(o,done);var closed=tongaFinishPlan_(body,ss,o);closed.row=tongaReviewRow_(ss,o);return jsonOut_(closed);
+  }
   var plan=tongaBeginPlan_(body,ss,o);
   var applied=tongaApplyPlan_(ss,o,plan),result=typeof applied.getContent==='function'?JSON.parse(applied.getContent()):applied;
   if(result.status!=='ok')return applied;
@@ -1386,7 +1401,7 @@ function tongaReviewSelection_(body){
   return jsonOut_(finished);
  }finally{lock.releaseLock();}
 }
-function tongaReviewRow_(ss,o){var row={};SCHOLAR_SUBMISSION_HEADERS.forEach(function(h){row[h]=o[h]||'';});row.reviewPlan=tongaReviewPlan_(o);row.proposedChanges=buildScholarSubmissionChanges_(ss,o);return row;}
+function tongaReviewRow_(ss,o){var row={};SCHOLAR_SUBMISSION_HEADERS.forEach(function(h){row[h]=o[h]||'';});row.reviewPlan=tongaReviewPlan_(o);row.proposedChanges=buildScholarSubmissionChanges_(ss,o);row.recordedFields=buildScholarSubmissionChanges_(ss,o,true).filter(function(c){return c.alreadyRecorded;});return row;}
 
 /* UN M49 country or area vocabulary, retrieved 2026-09-26.
  * Source: https://unstats.un.org/unsd/methodology/m49/

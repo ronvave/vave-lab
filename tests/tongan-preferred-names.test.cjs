@@ -4,14 +4,14 @@ const headers=['Scholar ID','Scholar Name','Given Names','Family Name'],record=[
 const sh={getLastColumn:()=>headers.length,getLastRow:()=>5,getMaxColumns:()=>100,getRange(r,c,n=1,m=1){return{getValues:()=>Array.from({length:n},(_,i)=>Array.from({length:m},(_,j)=>(r+i===4?headers:record)[c+j-1]||'')),getDisplayValues(){return this.getValues()},getFormulas:()=>[Array(m).fill('')],getFormula:()=>'',getValue:()=>record[c-1]||'',setValue:v=>(r===4?headers:record)[c-1]=v,setNote(){}};}};
 const ss={getSheetByName:n=>n==='Scholars'?sh:null};ctx.appendChangeLog_=(...a)=>logs.push(a);
 const submission={'Scholar ID':'TNG-S0001','Submitted Fields JSON':JSON.stringify({preferred_given_names:'Mele',preferred_family_name:'Test-Family'}),'Structured Submission JSON':'{"changedFieldsOnly":true}'};
-const changes=ctx.buildScholarSubmissionChanges_(ss,submission);assert.equal(changes.length,2);assert(changes.every(x=>x.writable));
+const changes=ctx.buildScholarSubmissionChanges_(ss,submission);assert.equal(changes.length,2);assert(changes.every(x=>x.writable));assert.equal(changes[0].currentDisplayValue,'Mele Ana');
 const c={worksheet:'Scholars',scholarId:'TNG-S0001',field:'Preferred Given Names',oldValue:'',newValue:'Mele'};
 assert.equal(ctx.applyOneChange_(ss,c,true).status,'ok');assert.equal(headers.length,4,'Dry run never adds columns');
 assert.equal(ctx.applyOneChange_(ss,c,false).status,'ok');assert.equal(record[4],'Mele');assert.deepEqual(record.slice(0,4),['TNG-S0001','Mele Ana Test','Mele Ana','Test']);
 assert.equal(ctx.applyOneChange_(ss,c,false).status,'already_satisfied');assert.equal(logs.length,1);
 assert.equal(ctx.applyOneChange_(ss,{...c,newValue:'Changed'},false).status,'needs_confirmation');
 for(const name of ['','=1+1','@bad'])assert.equal(ctx.applyOneChange_(ss,{...c,newValue:name},false).status,'rejected');
-assert.equal(ctx.applyOneChange_(ss,{...c,field:'Preferred Family Name',newValue:'Test-Family'},false).status,'ok');assert.equal(headers.length,6);assert.equal(record[5],'Test-Family');
+assert.equal(ctx.applyOneChange_(ss,{...c,field:'Preferred Family Name',newValue:'Test-Family'},false).status,'ok');assert.equal(headers.length,6);assert.equal(record[5],'Test-Family');assert.equal(ctx.buildScholarSubmissionChanges_(ss,submission).length,0);const recorded=ctx.buildScholarSubmissionChanges_(ss,submission,true);assert.equal(recorded.length,2);assert(recorded.every(c=>c.alreadyRecorded));assert.equal(recorded[1].newValue,'Test-Family');
 (async()=>{
  const dom=new JSDOM('<body></body>',{url:'https://example.invalid/s-tonga.html',runScripts:'outside-only'}),w=dom.window;w.HTMLDialogElement.prototype.showModal=function(){};w.HTMLDialogElement.prototype.close=function(){this.remove()};let sent=[];
  w.fetch=async(url,opts)=>({ok:true,json:async()=>opts?.method==='POST'?(sent.push(JSON.parse(opts.body)),{status:'ok',submissionId:'TEST'}):String(url).includes('submissionCapabilities')?{status:'ok',country:'Tonga',publicSubmissionsEnabled:true,preferredNames:true}:{m:{'TNG-S0001':'a'.repeat(40)}}});
