@@ -9380,6 +9380,153 @@
     }
   }
 
+  // Reviewed display-only topic splits. Preserve established compound fields
+  // and relational topics; expand shared modifiers only where meaning is clear.
+  const PUBLICATION_TOPIC_PARTS = {
+    "adult and non-formal education": [
+        "Adult education",
+        "Non-formal education"
+    ],
+    "animal genetics & breeding": [
+        "Animal genetics",
+        "Animal breeding"
+    ],
+    "pasture & rangeland management": [
+        "Pasture management",
+        "Rangeland management"
+    ],
+    "disaster & security administration": [
+        "Disaster administration",
+        "Security administration"
+    ],
+    "electrical & electronics engineering": [
+        "Electrical engineering",
+        "Electronics engineering"
+    ],
+    "electronics & communication engineering": [
+        "Electronics engineering",
+        "Communication engineering"
+    ],
+    "environmental & health education": [
+        "Environmental education",
+        "Health education"
+    ],
+    "family & technology": [
+        "Family",
+        "Technology"
+    ],
+    "fijian language & phonology": [
+        "Fijian language",
+        "Fijian phonology"
+    ],
+    "human resource management & development": [
+        "Human resource management",
+        "Human resource development"
+    ],
+    "inclusive & multicultural education": [
+        "Inclusive education",
+        "Multicultural education"
+    ],
+    "indigenous & pacific education": [
+        "Indigenous education",
+        "Pacific education"
+    ],
+    "indigenous & pacific social work": [
+        "Indigenous social work",
+        "Pacific social work"
+    ],
+    "indigenous knowledge & cultural heritage": [
+        "Indigenous knowledge",
+        "Cultural heritage"
+    ],
+    "maritime law & policy": [
+        "Maritime law",
+        "Maritime policy"
+    ],
+    "occupational & environmental health": [
+        "Occupational health",
+        "Environmental health"
+    ],
+    "pacific gender and community development": [
+        "Pacific gender",
+        "Community development"
+    ],
+    "politics & international affairs": [
+        "Politics",
+        "International affairs"
+    ],
+    "resource & environmental planning": [
+        "Resource planning",
+        "Environmental planning"
+    ],
+    "resource and environmental planning": [
+        "Resource planning",
+        "Environmental planning"
+    ],
+    "rural & island health": [
+        "Rural health",
+        "Island health"
+    ],
+    "seafarer qualifications & licensing": [
+        "Seafarer qualifications",
+        "Seafarer licensing"
+    ],
+    "tourism & hospitality management": [
+        "Tourism management",
+        "Hospitality management"
+    ],
+    "tourism & travel management": [
+        "Tourism management",
+        "Travel management"
+    ],
+    "urban and regional planning": [
+        "Urban planning",
+        "Regional planning"
+    ],
+    "itaukei language & literacy": [
+        "iTaukei language",
+        "iTaukei literacy"
+    ],
+    "gender & safeguards": [
+        "Gender",
+        "Safeguards"
+    ],
+    "english; open, distance and flexible learning; higher education": [
+        "English",
+        "Open learning",
+        "Distance learning",
+        "Flexible learning",
+        "Higher education"
+    ],
+    "biological / environmental sciences — student-level evidence only; graduate status unresolved": [
+        "Biological sciences",
+        "Environmental sciences — student-level evidence only; graduate status unresolved"
+    ]
+};
+
+  function publicationTopicLabels(value) {
+    const text = String(value || '').trim();
+    const reviewed = PUBLICATION_TOPIC_PARTS[text.toLowerCase()];
+    if (reviewed) return reviewed;
+    // Keep punctuation within qualifiers and unspaced compounds intact.
+    const parts = [];
+    let start = 0, depth = 0;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '(' || c === '[') depth++;
+      if (c === ')' || c === ']') depth = Math.max(0, depth - 1);
+      if (!depth && (/[,;|]/.test(c) ||
+          (/[/–—]/.test(c) && /\s/.test(text[i - 1] || '') && /\s/.test(text[i + 1] || '')))) {
+        parts.push(text.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(text.slice(start));
+    return parts.map(topic => topic.trim()).filter(Boolean).flatMap(topic =>
+      PUBLICATION_TOPIC_PARTS[topic.toLowerCase()] || [topic]
+    );
+  }
+
   function renderItemCard(it) {
     // data-type uses the visual sub-type so the coloured left border reflects
     // PhD/Masters/base for theses.
@@ -9438,19 +9585,25 @@
     }
     const discSet = state.disciplinesByItem.get(it.key);
     if (discSet && discSet.size) {
+      const seenTopics = new Set();
       discSet.forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by discipline: ${name}`,
-          onclick: () => {
-            state.filter.discipline = name;
-            state.shown = state.pageSize;
-            const sel = $('[data-db-filter="discipline"]');
-            if (sel) sel.value = name;
-            afterFilterChange();
-          }
-        }, name);
-        tags.appendChild(chip);
+        publicationTopicLabels(name).forEach(topic => {
+          const key = topic.toLowerCase();
+          if (seenTopics.has(key)) return;
+          seenTopics.add(key);
+          const chip = el('span', {
+            className: 'db-item__badge db-item__badge--tag is-clickable',
+            title: `Filter by discipline: ${name}`,
+            onclick: () => {
+              state.filter.discipline = name;
+              state.shown = state.pageSize;
+              const sel = $('[data-db-filter="discipline"]');
+              if (sel) sel.value = name;
+              afterFilterChange();
+            }
+          }, topic);
+          tags.appendChild(chip);
+        });
       });
     }
     if (tags.childNodes.length) li.appendChild(tags);

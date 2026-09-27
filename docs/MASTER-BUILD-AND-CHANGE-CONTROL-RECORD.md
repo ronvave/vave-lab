@@ -392,3 +392,19 @@ expanded (Analytical chemistry; Organic chemistry); established compound fields
 remain intact. Spaced list delimiters no longer break K–12 or Indigenous/Pacific.
 Source values and original filter keys are preserved. Syntax, vocabulary fixtures,
 and Tonga/iTaukei card-mobility checks pass. No authenticated visual pass claimed.
+
+### 2026-09-27 — Fiji publication topic pills
+
+Reviewed all 351 current discipline strings. Publication cards now separate
+list-delimited fields and use 29 explicit editorial mappings for distinct
+combined topics and shared modifiers (e.g. Indigenous education / Pacific
+education, Electrical engineering / Electronics engineering). Established
+compound fields and relational topics remain intact; parenthetical qualifiers
+retain their punctuation. Repeated topics are suppressed per publication.
+The original source discipline remains the click-filter key. This display-only
+change uses the existing publication renderer, including shared profiles.
+Validation: all current labels, actual rendered chips, deduplication, filter
+callbacks, shared modifiers and preserved compounds pass targeted fixtures.
+Syntax and Fiji/Tonga card-mobility preservation suites pass (Fiji: 59 photos,
+77 summaries, 151 mobility rows / 78 universities). Asset hash refreshed.
+Authenticated live visual verification is not claimed.
