@@ -358,3 +358,15 @@ Comma-separated publication topic labels now render as separate pills on direct 
 Live Master audit: all 16 Approved geography submissions have corresponding verified Research Geography rows; both rejected suggestions remain excluded. The current exported snapshot contains the reviewed evidence, so no duplicate source rows or re-approval is necessary. B5 already consumes the verified country bridge. Fixed C2 Island Division counts and the Island Division summary cards to include explicit division-only approvals, count each publication once per division, and show how many have no district specified. Country-only/national Tonga evidence now enters the non-district category without inventing district assignments. Supplemental summary tables also use the evidence bridge instead of legacy Publications flags.
 
 Validation: `tongan-approved-geography-panels.test.cjs` exercises real approved records through the adapter, B5 country collections, C2 national/division totals and summary cards, including multi-district deduplication. `itaukei-card-mobility.test.cjs` passes (59 saved photos, 77 summaries, 151 mobility rows, 78 universities). Approved data still appears after the successful scheduled Master refresh (every two hours) or Owner-triggered refresh.
+
+### 2026-09-27 — Tonga direct-profile summary readability
+
+Matched Fiji's direct-profile KPI typography (33px bold numbers, 15px labels,
+112px cards, larger icons and dividers) in Tonga's shared-page summaries.
+Added fuller Tonga-specific descriptions for Database overview and Tongan
+scholarship, with 16px dark text. Counts and their populations are unchanged;
+no completed-degree exclusion or fixed update date was invented. Responsive
+cards switch to two columns and then one column. Updated asset and iframe
+cache versions. JavaScript syntax, diff whitespace, and the required
+itaukei-card-mobility regression test pass (59 photos, 77 summaries, 151
+mobility rows / 78 universities). Live visual verification pending deployment.

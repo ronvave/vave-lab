@@ -160,7 +160,14 @@ async function renderShared(state,renderCard,renderItem){
  <p><strong>Maternal information is optional.</strong> If you choose to provide it, it will be used only for internal research/database purposes and <strong>will not be displayed on the public dashboard or scholar profile.</strong></p>
  <p>All submissions are reviewed before changes appear. After public launch, this permanent profile link can also be shared by the scholar, recruiters, collaborators, students and others who want a direct view of the scholar’s profile.</p>`;
  el('h2','Current database totals',main).className='tonga-summary-heading';
- for(const selector of ['.db-section--overview','.db-section--itaukei']){const panel=document.querySelector(selector)?.cloneNode(true);if(panel){panel.classList.add('tonga-summary');main.append(panel);}}
+ for(const selector of ['.db-section--overview','.db-section--itaukei']){const panel=document.querySelector(selector)?.cloneNode(true);if(panel){
+  panel.classList.add('tonga-summary');
+  const hint=panel.querySelector('.db-section__hint');
+  if(hint)hint.textContent=selector==='.db-section--overview'
+   ? 'Statistics for the entire indexed database of research on Tonga, regardless of the authors’ ethnicity. These totals cover recorded publications, authors and theses, the universities and countries represented, and Tonga districts studied.'
+   : 'Statistics filtered to publications and graduate research involving identified Tongan and part-Tongan scholars. These totals highlight lead authorship and co-authorship, recorded theses, and the universities and countries represented in Tongan graduate study.';
+  main.append(panel);
+ }}
  const source=document.querySelector('[data-panel="B2"]');
  if(source){const summary=el('section',null,main);summary.className='db-section tonga-summary';el('h2','TONGAN GRADUATES — GLOBAL DATABASE',summary).className='db-section__label';const value=k=>source.querySelector('[data-b2-kpi="'+k+'"]')?.textContent||'0';el('p',`The database currently records ${value('theses')} Master’s and PhD theses completed by ${value('scholars')} Tongan scholars across ${value('unis')} universities in ${value('countries')} countries, comprising ${value('masters')} Master’s theses and ${value('phd')} PhD theses.`,summary).className='db-section__hint';const tiles=source.querySelector('[data-b2-kpis]');if(tiles)summary.append(tiles.cloneNode(true));}
  const card=renderCard(row);main.append(card);card.title='Scholar profile';
