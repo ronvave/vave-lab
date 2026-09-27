@@ -408,3 +408,18 @@ callbacks, shared modifiers and preserved compounds pass targeted fixtures.
 Syntax and Fiji/Tonga card-mobility preservation suites pass (Fiji: 59 photos,
 77 summaries, 151 mobility rows / 78 universities). Asset hash refreshed.
 Authenticated live visual verification is not claimed.
+
+### 2026-09-27 — Solomon Islands publication topic pills
+
+Reviewed all 79 current Primary Discipline labels. The publication renderer now
+separates list-delimited fields into individual chips and applies 33 reviewed
+compound-topic mappings, including international fisheries law / ocean governance
+and language education / literacy education. Sexual and reproductive health,
+peace and conflict resolution, and other meaningful compounds remain intact.
+Parenthetical qualifiers retain punctuation and duplicate chips are suppressed.
+Original discipline values remain the filter keys; source data is unchanged.
+This renderer also supplies shared scholar publication lists.
+Validation: all current labels, actual rendered chips, click filtering, deduplication,
+shared modifiers and preserved compounds pass targeted fixtures. JavaScript syntax,
+Solomon sharing and required iTaukei card-mobility preservation checks pass.
+Dashboard asset hash refreshed. No authenticated visual verification claimed.

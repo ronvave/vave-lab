@@ -9089,6 +9089,166 @@
     }
   }
 
+  // Reviewed display-only topic splits. Preserve established compound fields
+  // and relational topics; expand shared modifiers only where meaning is clear.
+  const PUBLICATION_TOPIC_PARTS = {
+    "indigenous knowledge and community development": [
+        "Indigenous knowledge",
+        "Community development"
+    ],
+    "early childhood education and teacher education": [
+        "Early childhood education",
+        "Teacher education"
+    ],
+    "educational leadership and indigenous cultural pedagogies": [
+        "Educational leadership",
+        "Indigenous cultural pedagogies"
+    ],
+    "evolutionary biology and conservation": [
+        "Evolutionary biology",
+        "Conservation"
+    ],
+    "pacific studies and vernacular language education": [
+        "Pacific Studies",
+        "Vernacular language education"
+    ],
+    "leadership and indigenous knowledge": [
+        "Leadership",
+        "Indigenous knowledge"
+    ],
+    "peacebuilding and indigenous knowledge": [
+        "Peacebuilding",
+        "Indigenous knowledge"
+    ],
+    "social justice and indigenous leadership": [
+        "Social justice",
+        "Indigenous leadership"
+    ],
+    "climate change adaptation and biodiversity conservation": [
+        "Climate change adaptation",
+        "Biodiversity conservation"
+    ],
+    "indigenous music and cultural studies": [
+        "Indigenous music",
+        "Cultural studies"
+    ],
+    "nursing and sexual and reproductive health": [
+        "Nursing",
+        "Sexual and reproductive health"
+    ],
+    "film and television": [
+        "Film",
+        "Television"
+    ],
+    "leadership and community development": [
+        "Leadership",
+        "Community development"
+    ],
+    "law and politics": [
+        "Law",
+        "Politics"
+    ],
+    "nursing and adult education": [
+        "Nursing",
+        "Adult education"
+    ],
+    "international fisheries law and ocean governance": [
+        "International fisheries law",
+        "Ocean governance"
+    ],
+    "diplomacy and governance": [
+        "Diplomacy",
+        "Governance"
+    ],
+    "media freedom and communications": [
+        "Media freedom",
+        "Communications"
+    ],
+    "language and literacy education": [
+        "Language education",
+        "Literacy education"
+    ],
+    "diplomacy and academic administration": [
+        "Diplomacy",
+        "Academic administration"
+    ],
+    "land and history": [
+        "Land",
+        "History"
+    ],
+    "biblical languages and translation": [
+        "Biblical languages",
+        "Translation"
+    ],
+    "malaria and public health": [
+        "Malaria",
+        "Public health"
+    ],
+    "ocean science and marine natural products chemistry": [
+        "Ocean science",
+        "Marine natural products chemistry"
+    ],
+    "governance and development": [
+        "Governance",
+        "Development"
+    ],
+    "political science and international relations": [
+        "Political Science",
+        "International Relations"
+    ],
+    "indigenous knowledge and development": [
+        "Indigenous knowledge",
+        "Development"
+    ],
+    "public health and epidemiology": [
+        "Public health",
+        "Epidemiology"
+    ],
+    "medical entomology and environmental science": [
+        "Medical entomology",
+        "Environmental science"
+    ],
+    "history and religious studies": [
+        "History",
+        "Religious studies"
+    ],
+    "climate change and relocation": [
+        "Climate Change",
+        "Relocation"
+    ],
+    "theology and ethics": [
+        "Theology",
+        "Ethics"
+    ],
+    "tropical ecology and conservation biology": [
+        "Tropical ecology",
+        "Conservation biology"
+    ]
+};
+
+  function publicationTopicLabels(value) {
+    const text = String(value || '').trim();
+    const reviewed = PUBLICATION_TOPIC_PARTS[text.toLowerCase()];
+    if (reviewed) return reviewed;
+    // Keep punctuation within qualifiers and unspaced compounds intact.
+    const parts = [];
+    let start = 0, depth = 0;
+    for (let i = 0; i < text.length; i++) {
+      const c = text[i];
+      if (c === '(' || c === '[') depth++;
+      if (c === ')' || c === ']') depth = Math.max(0, depth - 1);
+      if (!depth && (/[,;|]/.test(c) ||
+          (/[/–—]/.test(c) && /\s/.test(text[i - 1] || '') && /\s/.test(text[i + 1] || '')))) {
+        parts.push(text.slice(start, i));
+        start = i + 1;
+      }
+    }
+    parts.push(text.slice(start));
+    return parts.map(topic => topic.trim()).filter(Boolean).flatMap(topic =>
+      PUBLICATION_TOPIC_PARTS[topic.toLowerCase()] || [topic]
+    );
+  }
+
   function renderItemCard(it) {
     // data-type uses the visual sub-type so the coloured left border reflects
     // PhD/Masters/base for theses.
@@ -9147,19 +9307,25 @@
     }
     const discSet = state.disciplinesByItem.get(it.key);
     if (discSet && discSet.size) {
+      const seenTopics = new Set();
       discSet.forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by discipline: ${name}`,
-          onclick: () => {
-            state.filter.discipline = name;
-            state.shown = state.pageSize;
-            const sel = $('[data-db-filter="discipline"]');
-            if (sel) sel.value = name;
-            afterFilterChange();
-          }
-        }, name);
-        tags.appendChild(chip);
+        publicationTopicLabels(name).forEach(topic => {
+          const key = topic.toLowerCase();
+          if (seenTopics.has(key)) return;
+          seenTopics.add(key);
+          const chip = el('span', {
+            className: 'db-item__badge db-item__badge--tag is-clickable',
+            title: `Filter by discipline: ${name}`,
+            onclick: () => {
+              state.filter.discipline = name;
+              state.shown = state.pageSize;
+              const sel = $('[data-db-filter="discipline"]');
+              if (sel) sel.value = name;
+              afterFilterChange();
+            }
+          }, topic);
+          tags.appendChild(chip);
+        });
       });
     }
     if (tags.childNodes.length) li.appendChild(tags);
