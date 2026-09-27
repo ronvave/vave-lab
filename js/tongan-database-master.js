@@ -5668,19 +5668,27 @@
     host.innerHTML = '';
     const confs = ['Tongatapu',"Vava'u","Ha'apai","'Eua",'Ongo Niua'];
     const provs = state.provinces.features.map(f => f.properties);
+    const divisionRows = new Map(buildC2DivisionRows_(false, 'all').map(r => [r.name, r]));
+    const divisionOnly = new Map(confs.map(c => [c, 0]));
     const perProvTotal = new Map();
     provs.forEach(p => perProvTotal.set(p.name, 0));
     state.snapshot.items.forEach(it => {
       if (!state.typeSet.has(visualType(it))) return;
       const ps = state.provincesByItem.get(it.key);
-      if (!ps) return;
-      ps.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
+      const districts = ps || new Set();
+      districts.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
+      (state.islandDivisionsByItem.get(it.key) || new Set()).forEach(cf => {
+        if (divisionOnly.has(cf) && !Array.from(districts).some(d => PROVINCE_TO_CONFEDERACY[d] === cf)) {
+          divisionOnly.set(cf, divisionOnly.get(cf) + 1);
+        }
+      });
     });
     confs.forEach(cf => {
       const provInCf = provs.filter(p => p.confederacy === cf)
         .map(p => ({ name: p.name, total: perProvTotal.get(p.name) || 0 }))
         .sort((a,b) => b.total - a.total);
-      const sub = provInCf.reduce((a,p) => a + p.total, 0);
+      const sub = divisionRows.get(cf)?.total || 0;
+      const unassigned = divisionOnly.get(cf) || 0;
       const max = Math.max(1, ...provInCf.map(p => p.total));
       const panel = document.createElement('div');
       panel.className = 'db-conf-panel';
@@ -5691,7 +5699,7 @@
         </div>
         <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
         <div class="db-conf-panel__provs"></div>
-        <p class="db-conf-panel__foot">${provInCf.length} villages · ${sub} publications</p>
+        <p class="db-conf-panel__foot">${provInCf.length} districts · ${sub} distinct publications${unassigned ? ` · ${unassigned} with no district specified` : ''}. A publication may appear in more than one district.</p>
       `;
       const inner = panel.querySelector('.db-conf-panel__provs');
       provInCf.forEach(p => {
@@ -9826,15 +9834,15 @@
         nonDistrict.types[vt] = (nonDistrict.types[vt] || 0) + 1;
         nonDistrict.cats[cat] = (nonDistrict.cats[cat] || 0) + 1;
       }
-      const districts = state.provincesByItem.get(it.key);
-      if (!districts || !districts.size) return;
-      const itemDivisions = new Set();
+      const districts = state.provincesByItem.get(it.key) || new Set();
+      const itemDivisions = new Set(state.islandDivisionsByItem.get(it.key) || []);
       districts.forEach(d => {
         const division = PROVINCE_TO_CONFEDERACY[d];
         if (division) itemDivisions.add(division);
       });
       itemDivisions.forEach(division => {
         const row = rows.get(division);
+        if (!row) return;
         row.total += 1;
         row.types[vt] = (row.types[vt] || 0) + 1;
         row.cats[cat] = (row.cats[cat] || 0) + 1;
