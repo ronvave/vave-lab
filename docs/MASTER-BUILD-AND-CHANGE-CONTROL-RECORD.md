@@ -339,3 +339,11 @@ Live verification: backend Version 8 and Pages PR #28 deployed successfully. Ino
 ### 2026-09-26 — Attachment proposal selection default
 
 At Ron’s request, actionable attachment proposals (including needs-attention items) now start checked in both Owner and collaborator review panels. Explicit unchecks survive redraws and comparison refreshes within the open panel. Existing, duplicate, approved and declined items are excluded. Approval remains an explicit action. Verified attachment UI selection behavior and the iTaukei card/mobility preservation test.
+
+### 2026-09-26 — Collaborator continuity, submitted names and audit log
+
+Google token expiry now opens inline reauthentication while preserving the review DOM, notes and selections; same-account renewal does not reload. Already-bound Google identities no longer acquire the approval write lock during every authorization check. Token signature/expiry, current roster, account binding and Owner-only write restrictions remain enforced. Collaborators gain read-only `readChangeLog` access and the existing readable log presentation.
+
+Submitted values already matching Master are shown explicitly, including repeated preferred names. New name changes display the effective current name while retaining raw expected-current values for conflict detection. Text-only submissions already satisfied can be completed explicitly without rewriting Master values. Original canonical names are retained. Live queue inspection found Hopoate-Kinikini approved at 12:19 HST and subsequently resubmitted unchanged; the latest encrypted public snapshot already contains the preferred spelling.
+
+Validation: auth concurrency/expiry/renewal, name comparisons and canonical preservation, selected review, read-only collaborator log, and iTaukei card/mobility preservation regressions. No live submissions approved as part of testing.

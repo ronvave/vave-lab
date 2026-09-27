@@ -4,23 +4,26 @@
 const CLIENT_ID='736953802264-krjcv9i8onhoesmg5fe6vhaie9lc7o4k.apps.googleusercontent.com';
 const ENDPOINT='https://script.google.com/macros/s/AKfycbwm6ZOEFya_NOPmMswjxjpqLsoXaYuoH5tMvc2hP29YakWf7dV9728y0iEHmx3WsKGSow/exec';
 const $=id=>document.getElementById(id);
-let token='',expiryTimer,signingIn=false;
+let token='',expiresAt=0,expiryTimer,renewTimer,signingIn=false,identitySub='';
+function renew(messageText){$('sign-in').hidden=false;message(messageText||'Sign in again to continue saving. Your open review and selections are preserved.');$('db-status').textContent='sign-in required';}
+function expire(){token='';renew();}
+function checkExpiry(){if(token&&Date.now()>=expiresAt)expire();}
+window.addEventListener('focus',checkExpiry);document.addEventListener('visibilitychange',checkExpiry);
 const nonce=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');
 function message(t){$('auth-message').textContent=t;}
-function logout(){token='';clearTimeout(expiryTimer);google.accounts.id.disableAutoSelect();location.reload();}
+function logout(){token='';clearTimeout(expiryTimer);clearTimeout(renewTimer);google.accounts.id.disableAutoSelect();location.reload();}
 $('logout').onclick=logout;
 async function call(action,params={}){
- if(!token)throw new Error('Please sign in again.');
- const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...params,action,idToken:token})});
+ checkExpiry();if(!token){renew();throw new Error('Sign in again above, then retry. Your review is preserved.');}
+ const requestToken=token;
+ const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...params,action,idToken:requestToken})});
  const out=await response.json();
- if(out.status==='unauthorized'){
-  token='';$('review-app').hidden=true;$('sign-in').hidden=false;$('identity').textContent='';
-  message('Your sign-in expired or this account is not authorized. Sign in again.');
- }
+ if(out.status==='unauthorized'&&token===requestToken){token='';renew((out.reason||'Please sign in again.')+' Your open review and selections are preserved.');}
  return out;
 }
 window.adminWriteback={
- isConfigured:()=>!!token,
+ isConfigured:()=>!!token&&Date.now()<expiresAt,
+ readChangeLog:limit=>call('readChangeLog',{limit:limit||100}),
  readAttachmentAnalysis: submissionId=>call('readAttachmentAnalysis',{submissionId}),
  refreshAttachmentProposals: params=>call('refreshAttachmentProposals',params),
  analyseScholarAttachment: params=>call('analyseScholarAttachment',params),
@@ -55,17 +58,21 @@ async function signedIn(result){
   // verifies the signature/claims; this decode alone never grants access.
   const payload=JSON.parse(atob(result.credential.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
   if(payload.nonce!==nonce)throw new Error('Sign-in did not match this page. Reload and try again.');
-  token=result.credential;message('Checking Admin access…');
+  if(identitySub&&payload.sub!==identitySub)throw new Error('Use the same Google account to resume this review. To switch accounts, log out first.');
+  if(!Number.isFinite(payload.exp)||payload.exp*1000<=Date.now())throw new Error('Google returned an expired sign-in. Please sign in again.');
+  token=result.credential;expiresAt=payload.exp*1000;message('Checking Admin access…');
   const caps=await call('reviewCapabilities');
   if(caps.status!=='ok'||!['owner','admin'].includes(caps.role))throw new Error(caps.reason||caps.error||'The deployed backend did not return a Google review role. Ask the Owner to check the deployed version and private access settings.');
+  identitySub=payload.sub;
   $('identity').textContent=payload.email+' · '+(caps.role==='owner'?'Owner':'Admin');
   $('owner-link').hidden=caps.role!=='owner';$('logout').hidden=false;
   $('sign-in').hidden=true;$('review-app').hidden=false;$('db-status').textContent='ready';
-  clearTimeout(expiryTimer);expiryTimer=setTimeout(logout,Math.max(0,payload.exp*1000-Date.now()));
+  clearTimeout(expiryTimer);clearTimeout(renewTimer);expiryTimer=setTimeout(expire,Math.max(0,expiresAt-Date.now()));
+  renewTimer=setTimeout(()=>renew('Your Google sign-in will expire soon. Sign in here to renew it without losing your review.'),Math.max(0,expiresAt-Date.now()-120000));
   if(!document.getElementById('queue-script')){
-   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=attachment-review-v1';
+   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=review-resume-names-v2';
    script.onload=()=>document.querySelector('[data-tab="scholar-submissions"]').click();document.body.append(script);
-  }else location.reload();
+  } // Reauthentication keeps the existing queue DOM, notes and selections intact.
  }catch(e){token='';message(e.message||'Sign-in failed. Try again.');}
  finally{signingIn=false;}
 }

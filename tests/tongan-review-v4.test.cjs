@@ -12,6 +12,12 @@ let out=request([{key:'title',expectedCurrent:'Old'}]);assert.equal(current.titl
 out=request([{key:'title',expectedCurrent:'Old'}]);assert.equal(writes,1,'Lost acknowledgement retry is idempotent');
 current.gender='Changed elsewhere';assert.throws(()=>request([{key:'gender',expectedCurrent:'M'}]),/Master changed/);assert.equal(writes,1);current.gender='M';
 out=request([{key:'gender',expectedCurrent:'M'}]);assert.equal(out.remainingReview,false);assert.equal(o.Status,'Reviewed');assert.equal(writes,2);assert.equal(request([{key:'gender',expectedCurrent:'M'}]).alreadyRecorded,true);
+// A repeated text-only submission can finish without writing the Master again.
+o.Status='Pending';o['Structured Submission JSON']='{}';
+ctx.buildScholarSubmissionChanges_=(ss,row,includeRecorded)=>includeRecorded?[{key:'preferred_family_name',label:'Public family name',alreadyRecorded:true,currentValue:'Test',currentDisplayValue:'Test',newValue:'Test',writable:true}]:[];
+out=request([]);assert.equal(o.Status,'Reviewed');assert.equal(writes,2);assert.equal(out.plan.items[0].state,'already_recorded');
+o.Status='Pending';o['Structured Submission JSON']='{}';ctx.buildScholarSubmissionChanges_=()=>[];
+assert.throws(()=>request([]),/No recognised submitted fields/);assert.equal(o.Status,'Pending');
 for(const bad of ['Jerusalem','Jerusalem-Tonga','Jerusalem - Tonga','Isra','Isreal'])assert.throws(()=>ctx.tongaList_([bad]),/Invalid country/);
 assert.deepEqual(JSON.parse(JSON.stringify(ctx.tongaList_(['Israel','israel','USA']))),['Israel','United States of America']);
 assert.equal(ctx.TongaCountries.rows.length,248);assert.equal(ctx.TongaCountries.resolve('Nauru').m49,'520');assert.equal(ctx.TongaCountries.suggest('Isra')[0].name,'Israel');
