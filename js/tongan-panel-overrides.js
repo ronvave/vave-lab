@@ -104,17 +104,17 @@
       pubs = pubs.filter(function (p) { return p._is_itaukei_associated === true; });
     }
 
-    pubs.forEach(function (p) {
-      Mfc.PROVINCES.forEach(function (prov) {
-        if (Number(p[prov] || 0) > 0) {
-          byProv[prov]++;
-          var c = Mfc.PROVINCE_TO_CONFED[prov];
-          if (c) {
-            byConfed[c]++;
-            byConfedAndProv[c][prov]++;
-          }
-        }
+    var allowed = new Set(pubs.map(function (p) { return p['Publication ID / BibTeX Key']; }));
+    (st.snapshot.items || []).forEach(function (item) {
+      if (!allowed.has(item._masterPublicationId)) return;
+      var divisions = new Set(item._masterIslandDivisions || []);
+      (item._masterProvinces || []).forEach(function (prov) {
+        if (!Object.prototype.hasOwnProperty.call(byProv, prov)) return;
+        byProv[prov]++;
+        var c = Mfc.PROVINCE_TO_CONFED[prov];
+        if (c) { divisions.add(c); byConfedAndProv[c][prov]++; }
       });
+      divisions.forEach(function (c) { if (Object.prototype.hasOwnProperty.call(byConfed, c)) byConfed[c]++; });
     });
     return { byProvince: byProv, byConfed: byConfed, byConfedAndProv: byConfedAndProv };
   }

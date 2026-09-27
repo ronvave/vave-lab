@@ -764,6 +764,9 @@
         if (site && !seenSiteForPub.has(site)) {
           seenSiteForPub.add(site); researchSitesInPub.push(site);
         }
+        // Country-only/national approvals belong in the non-district bucket.
+        // Division/island/site-only evidence must never invent a district.
+        if (!prov && !division && !island && !site) prov = PROVINCE_UNSPEC;
         if (!prov) return;
         if (seenProvForPub.has(prov)) return;
         seenProvForPub.add(prov);

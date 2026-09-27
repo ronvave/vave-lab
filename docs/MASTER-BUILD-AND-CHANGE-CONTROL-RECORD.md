@@ -351,3 +351,10 @@ Validation: auth concurrency/expiry/renewal, name comparisons and canonical pres
 ### 2026-09-26 — Tonga shared-profile topic pills
 
 Comma-separated publication topic labels now render as separate pills on direct Tonga scholar profiles. Pills wrap within the publication text column and long individual labels wrap internally, keeping country controls unobstructed. Source metadata and dashboard filters are unchanged. Required iTaukei card/mobility preservation test passed.
+
+
+## 2026-09-26 — Approved Tonga publication geography in dashboard summaries
+
+Live Master audit: all 16 Approved geography submissions have corresponding verified Research Geography rows; both rejected suggestions remain excluded. The current exported snapshot contains the reviewed evidence, so no duplicate source rows or re-approval is necessary. B5 already consumes the verified country bridge. Fixed C2 Island Division counts and the Island Division summary cards to include explicit division-only approvals, count each publication once per division, and show how many have no district specified. Country-only/national Tonga evidence now enters the non-district category without inventing district assignments. Supplemental summary tables also use the evidence bridge instead of legacy Publications flags.
+
+Validation: `tongan-approved-geography-panels.test.cjs` exercises real approved records through the adapter, B5 country collections, C2 national/division totals and summary cards, including multi-district deduplication. `itaukei-card-mobility.test.cjs` passes (59 saved photos, 77 summaries, 151 mobility rows, 78 universities). Approved data still appears after the successful scheduled Master refresh (every two hours) or Owner-triggered refresh.
