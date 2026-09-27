@@ -176,7 +176,14 @@ async function renderShared(state,renderCard,renderItem){
   const content=el('div');content.className='tonga-publication-content';while(li.firstChild)content.append(li.firstChild);li.append(content);
   const link=content.querySelector('.db-item__actions a'),topline=content.querySelector('.db-item__topline');if(link&&topline){content.querySelector('.db-item__badge--doi')?.remove();link.textContent=item.DOI?'DOI':'Link';topline.append(link);}content.querySelector('.db-item__actions')?.remove();
   const geoLabels=[...new Set((item._masterGeographyRows||[]).map(g=>[g.Country,g['Island Division (auto from District)'],g.District,g['Specific Island'],g['Village / Town / Site']].filter(Boolean).join(' · ')).filter(Boolean))];if(geoLabels.length)el('p','Approved study locations: '+geoLabels.join('; '),content).className='tonga-approved-locations';
-  li.querySelectorAll('.db-item__tags').forEach(n=>{const clone=n.cloneNode(true);n.replaceWith(clone);});
+  li.querySelectorAll('.db-item__tags').forEach(n=>{
+   const clone=n.cloneNode(true);
+   clone.querySelectorAll('.db-item__badge--tag').forEach(chip=>{
+    const topics=chip.textContent.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean);
+    chip.replaceWith(...topics.map(topic=>{const pill=el('span',topic);pill.className='db-item__badge db-item__badge--tag';return pill;}));
+   });
+   n.replaceWith(clone);
+  });
   editors.set(item._masterPublicationId,buildGeographyToolbar(li,item,options,dirty,()=>updateCount()));list.append(li);
  });
  if(items.length){updateCount=buildGeographySubmit(main,row,token,dirty,editors,list);updateCount();}
