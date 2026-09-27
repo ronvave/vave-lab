@@ -1,6 +1,6 @@
 const fs=require('fs'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
 (async()=>{
- const dom=new JSDOM('<button data-tab="master-change-log">Log</button><button id="review-log-refresh">Refresh</button><p id="review-log-status"></p><div id="review-log-entries"></div>',{runScripts:'outside-only'}),w=dom.window;
+ const dom=new JSDOM('<button data-tab="tab-changelog">Log</button><button id="review-log-refresh">Refresh</button><p id="review-log-status"></p><div id="review-log-entries"></div>',{runScripts:'outside-only'}),w=dom.window;
  let calls=0,rendered;
  w.adminWriteback={readChangeLog:async limit=>{calls++;assert.equal(limit,200);return{status:'ok',rows:[{scholarId:'TNG-S0001',scholarName:'Test Scholar'}]}}};
  w.TongaChangeLog={show:async args=>{rendered=args;}};
