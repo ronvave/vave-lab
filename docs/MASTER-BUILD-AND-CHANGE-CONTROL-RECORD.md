@@ -381,3 +381,14 @@ counts, profile enrichment and geography controls are unchanged.
 Validation: actual renderer fixture confirms individual pills and click filtering;
 JavaScript syntax and Tonga/iTaukei card-mobility preservation suites pass.
 Dashboard asset hash refreshed. Authenticated live visual checks not claimed.
+
+### 2026-09-27 — Distinct publication topics within conjunctions
+
+Reviewed all 240 current discipline labels and added explicit display mappings
+for 129 combined phrases. Gambling harm and Tongan studies, Pacific nursing
+and Indigenous research methods, and similar distinct topics now get separate
+pills on the dashboard and its shared-profile renderer. Shared modifiers are
+expanded (Analytical chemistry; Organic chemistry); established compound fields
+remain intact. Spaced list delimiters no longer break K–12 or Indigenous/Pacific.
+Source values and original filter keys are preserved. Syntax, vocabulary fixtures,
+and Tonga/iTaukei card-mobility checks pass. No authenticated visual pass claimed.
