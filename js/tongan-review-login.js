@@ -16,8 +16,18 @@ $('logout').onclick=logout;
 async function call(action,params={}){
  checkExpiry();if(!token){renew();throw new Error('Sign in again above, then retry. Your review is preserved.');}
  const requestToken=token;
- const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...params,action,idToken:requestToken})});
- const out=await response.json();
+ const send=async(name,values={})=>{const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...values,action:name,idToken:requestToken})});return response.json();};
+ let out=await send(action,params);
+ if(out.status==='unauthorized'&&token===requestToken&&action!=='reviewCapabilities'&&Date.now()<expiresAt){
+  // A redirected/transient response must not discard a still-valid session.
+  // Probe the signed server capability; never replay a write automatically.
+  const probe=await send('reviewCapabilities');
+  if(probe.status==='ok'&&['owner','admin'].includes(probe.role)){
+   if(/^(read|reviewQueueCounts$)/.test(action))out=await send(action,params);
+   if(out.status==='unauthorized')return {status:'error',error:'This request was interrupted. Your sign-in and open review are preserved. Refresh the queue to check the saved outcome before retrying.'};
+  }else if(probe.status==='unauthorized'&&probe.reason){out=probe;}
+  else return {status:'error',error:'The service could not confirm this request. Your open review is preserved. Try again shortly.'};
+ }
  if(out.status==='unauthorized'&&token===requestToken){token='';renew((out.reason||'Please sign in again.')+' Your open review and selections are preserved.');}
  return out;
 }
