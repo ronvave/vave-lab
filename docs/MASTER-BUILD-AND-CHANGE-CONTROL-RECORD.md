@@ -370,3 +370,14 @@ cards switch to two columns and then one column. Updated asset and iframe
 cache versions. JavaScript syntax, diff whitespace, and the required
 itaukei-card-mobility regression test pass (59 photos, 77 summaries, 151
 mobility rows / 78 universities). Live visual verification pending deployment.
+
+### 2026-09-27 — Tonga dashboard publication topic pills
+
+Panel G now renders comma, slash, semicolon, pipe and dash-separated discipline
+lists as individual topic pills, matching the direct profile presentation.
+Compound phrases containing “and” stay intact. Repeated display topics are
+removed and each pill retains its original discipline filter key. Master data,
+counts, profile enrichment and geography controls are unchanged.
+Validation: actual renderer fixture confirms individual pills and click filtering;
+JavaScript syntax and Tonga/iTaukei card-mobility preservation suites pass.
+Dashboard asset hash refreshed. Authenticated live visual checks not claimed.

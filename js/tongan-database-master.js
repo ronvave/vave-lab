@@ -9345,19 +9345,27 @@
     }
     const discSet = state.disciplinesByItem.get(it.key);
     if (discSet && discSet.size) {
+      const displayedTopics = new Set();
       discSet.forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by discipline: ${name}`,
-          onclick: () => {
-            state.filter.discipline = name;
-            state.shown = state.pageSize;
-            const sel = $('[data-db-filter="discipline"]');
-            if (sel) sel.value = name;
-            afterFilterChange();
-          }
-        }, name);
-        tags.appendChild(chip);
+        // Separate legacy topic lists while preserving compound phrases and
+        // the original discipline key used by the existing filters.
+        String(name).split(/\s*[,;|/\u2013\u2014]\s*/).map(topic => topic.trim()).filter(Boolean).forEach(topic => {
+          const topicKey = topic.toLocaleLowerCase();
+          if (displayedTopics.has(topicKey)) return;
+          displayedTopics.add(topicKey);
+          const chip = el('span', {
+            className: 'db-item__badge db-item__badge--tag is-clickable',
+            title: `Filter by discipline: ${name}`,
+            onclick: () => {
+              state.filter.discipline = name;
+              state.shown = state.pageSize;
+              const sel = $('[data-db-filter="discipline"]');
+              if (sel) sel.value = name;
+              afterFilterChange();
+            }
+          }, topic);
+          tags.appendChild(chip);
+        });
       });
     }
     if (tags.childNodes.length) li.appendChild(tags);
