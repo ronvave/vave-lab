@@ -66,3 +66,7 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-portal :is(strong,b,a[href]),
 .tonga-profile-header :is(strong,b,a[href]),
 .tonga-form :is(strong,b,a[href]){color:#804b03!important}
+
+/* Keep research topics inside the text column, clear of country controls. */
+.tonga-publication-content .db-item__tags{max-width:100%;min-width:0;gap:6px}
+.tonga-publication-content .db-item__badge--tag{max-width:100%;box-sizing:border-box;white-space:normal;overflow-wrap:anywhere;line-height:1.5}

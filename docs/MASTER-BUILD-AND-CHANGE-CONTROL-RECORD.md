@@ -347,3 +347,7 @@ Google token expiry now opens inline reauthentication while preserving the revie
 Submitted values already matching Master are shown explicitly, including repeated preferred names. New name changes display the effective current name while retaining raw expected-current values for conflict detection. Text-only submissions already satisfied can be completed explicitly without rewriting Master values. Original canonical names are retained. Live queue inspection found Hopoate-Kinikini approved at 12:19 HST and subsequently resubmitted unchanged; the latest encrypted public snapshot already contains the preferred spelling.
 
 Validation: auth concurrency/expiry/renewal, name comparisons and canonical preservation, selected review, read-only collaborator log, and iTaukei card/mobility preservation regressions. No live submissions approved as part of testing.
+
+### 2026-09-26 — Tonga shared-profile topic pills
+
+Comma-separated publication topic labels now render as separate pills on direct Tonga scholar profiles. Pills wrap within the publication text column and long individual labels wrap internally, keeping country controls unobstructed. Source metadata and dashboard filters are unchanged. Required iTaukei card/mobility preservation test passed.
