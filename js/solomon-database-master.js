@@ -5977,7 +5977,7 @@
       p.addEventListener('mouseenter', () => p.setAttribute('opacity', '0.75'));
       p.addEventListener('mouseleave', () => p.setAttribute('opacity', '1'));
       p.addEventListener('click', () => {
-        state.filter.discipline = state.filter.discipline === name ? '' : name;
+        state.filter.discipline = state.filter.discipline === shortDisciplineName(name) ? '' : shortDisciplineName(name);
         state.shown = state.pageSize;
         const sel = $('[data-db-filter="discipline"]');
         if (sel) sel.value = state.filter.discipline;
@@ -6010,7 +6010,7 @@
         'data-discipline': name,
         style: 'display:flex;align-items:center;gap:6px;',
         onclick: () => {
-          state.filter.discipline = state.filter.discipline === name ? '' : name;
+          state.filter.discipline = state.filter.discipline === shortDisciplineName(name) ? '' : shortDisciplineName(name);
           state.shown = state.pageSize;
           const sel = $('[data-db-filter="discipline"]');
           if (sel) sel.value = state.filter.discipline;
@@ -6027,7 +6027,7 @@
   }
   function renderDonutLegendActive() {
     $$('#db-donut-legend > div').forEach(row => {
-      row.classList.toggle('is-active', row.getAttribute('data-discipline') === state.filter.discipline);
+      row.classList.toggle('is-active', shortDisciplineName(row.getAttribute('data-discipline')) === state.filter.discipline);
     });
   }
 
@@ -7107,16 +7107,47 @@
     sel.dataset.built = '1';
     if (state.filter.decade) sel.value = state.filter.decade;
   }
+  // Match Fiji’s public publication-filter taxonomy; retain detailed card topics.
+  var SHORT_DISCIPLINES = [
+    'Earth, ocean and atmospheric sciences',
+    'Social sciences',
+    'Humanities',
+    'Education',
+    'Life and environmental sciences',
+    'Theology and religious studies',
+    'Health sciences',
+    'Engineering, technology and planning'
+  ];
+
+  function shortDisciplineName(value) {
+    var s = String(value || '').trim();
+    if (!s) return '';
+    if (SHORT_DISCIPLINES.indexOf(s) !== -1) return s;
+    var x = s.toLowerCase();
+    if (/theolog|religio|church|biblical|christian|pastoral|ecumen|methodist|anglican|faith|ministry/.test(x)) return 'Theology and religious studies';
+    if (/education|teaching|teacher|curriculum|pedagog|school|literacy|tvet|early childhood|educational/.test(x)) return 'Education';
+    if (/public health|medicine|medical|nursing|surgery|epidemi|health science|clinical|anaesth|cardiol|paediatr|obstetric|gynaec|dent|intensive care|emergency medicine|infectious|diabetes/.test(x)) return 'Health sciences';
+    if (/engineering|technology|information system|information technology|ict|computer|computing|digital|architecture|planning|gis|geomatic|survey|remote sensing|renewable energy|power|control|construction|mining/.test(x)) return 'Engineering, technology and planning';
+    if (/marine science|ocean|climate|atmospher|geograph|geolog|hydrolog|coastal process|earth science/.test(x)) return 'Earth, ocean and atmospheric sciences';
+    if (/environment|ecolog|biology|agricultur|forestry|fisher|aquaculture|horticultur|animal science|veterinary|plant|entomolog|ornitholog|microbiology|food science|phytochemical|soil|agroforestry|crop|livestock|conservation|biodiversity|chemistry|coral reef|natural products|water quality|pollution/.test(x)) return 'Life and environmental sciences';
+    if (/history|linguist|language|literature|archaeolog|heritage|art and design|museum|cultural research|philosoph|humanities/.test(x)) return 'Humanities';
+    return 'Social sciences';
+  }
+
   function populateDisciplineSelect() {
     const sel = $('[data-db-filter="discipline"]');
     if (!sel || sel.dataset.built === '1') return;
-    disciplineEntries.forEach(([name]) => {
+    sel.innerHTML = '<option value="">All disciplines</option>';
+    SHORT_DISCIPLINES.forEach(name => {
       const opt = document.createElement('option');
       opt.value = name; opt.textContent = name;
       sel.appendChild(opt);
     });
     sel.dataset.built = '1';
-    if (state.filter.discipline) sel.value = state.filter.discipline;
+    if (state.filter.discipline) {
+      state.filter.discipline = shortDisciplineName(state.filter.discipline);
+      sel.value = state.filter.discipline;
+    }
   }
 
   // ============ SCHOLAR CARDS (paginated, image-4 style) ============
@@ -9013,7 +9044,8 @@
     }
     if (f.discipline) {
       const set = state.disciplinesByItem.get(item.key);
-      if (!set || !set.has(f.discipline)) return false;
+      if (!set || !Array.from(set).some(name =>
+        name === f.discipline || shortDisciplineName(name) === f.discipline)) return false;
     }
     if (f.province) {
       const set = state.provincesByItem.get(item.key);
@@ -9315,12 +9347,12 @@
           seenTopics.add(key);
           const chip = el('span', {
             className: 'db-item__badge db-item__badge--tag is-clickable',
-            title: `Filter by discipline: ${name}`,
+            title: `Filter by discipline: ${shortDisciplineName(name)}`,
             onclick: () => {
-              state.filter.discipline = name;
+              state.filter.discipline = shortDisciplineName(name);
               state.shown = state.pageSize;
               const sel = $('[data-db-filter="discipline"]');
-              if (sel) sel.value = name;
+              if (sel) sel.value = state.filter.discipline;
               afterFilterChange();
             }
           }, topic);

@@ -423,3 +423,18 @@ Validation: all current labels, actual rendered chips, click filtering, deduplic
 shared modifiers and preserved compounds pass targeted fixtures. JavaScript syntax,
 Solomon sharing and required iTaukei card-mobility preservation checks pass.
 Dashboard asset hash refreshed. No authenticated visual verification claimed.
+
+### 2026-09-27 — Tonga and Solomon publication discipline dropdowns
+
+Panel G now uses the same eight short discipline labels, ordering and classifier
+as Fiji's public dropdown. Matching uses the original publication discipline
+sets without replacing their detailed values, preserving the separated topic
+chips on publication cards and shared profiles. Discipline chip/chart clicks
+select the corresponding broad category; dropdown selection, active highlighting,
+filter chips and reset remain aligned. Source fields and other filter scopes
+are unchanged.
+Validation: exact parity with Fiji's categories and classification across 240
+Tonga and 79 Solomon labels, dropdown construction, matching/nonmatching/missing
+publication tags and clearing the discipline filter pass. Syntax, required
+Fiji/Tonga card-mobility and Solomon sharing checks pass. Asset hashes refreshed.
+No authenticated browser visual verification claimed.
