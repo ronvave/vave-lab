@@ -10,13 +10,13 @@
 <script src="js/tongan-review-login.js?v=d030745b" defer></script>
 <script src="js/tongan-attachment-review.js?v=a0b7c190" defer></script>
 <script src="js/tongan-change-log.js?v=66455d1f" defer></script>
-<script src="js/tongan-review-change-log.js?v=286bc0c7" defer></script>
+<script src="js/tongan-review-change-log.js?v=f66494ae" defer></script>
 </head><body>
 <header><h1>Tongan Scholar Submission Review</h1><div><span id="identity"></span> <button id="logout" hidden>Log out</button></div></header>
 <main><section id="sign-in"><h2>Admin sign-in</h2><p>Use your authorized Google account to review scholar updates and publication geography suggestions.</p><div id="google-button"></div><p id="auth-message" role="status">Loading Google sign-in…</p><a href="admin-tongan-master.html">Owner panel</a></section>
-<div id="review-app" hidden><p id="review-notice" class="meta">Approved Master changes appear after the next scheduled dashboard refresh. Submitted profile photos remain pending for the Owner to publish.</p><nav aria-label="Submission queues"><button data-tab="scholar-submissions" aria-selected="true">Scholar Update Submissions</button><button data-tab="geography-submissions" aria-selected="false">Publication Geography Submissions</button><button data-tab="master-change-log" aria-selected="false">Master change log</button></nav>
+<div id="review-app" hidden><p id="review-notice" class="meta">Approved Master changes appear after the next scheduled dashboard refresh. Submitted profile photos remain pending for the Owner to publish.</p><nav aria-label="Submission queues"><button data-tab="scholar-submissions" aria-selected="true">Scholar Update Submissions</button><button data-tab="geography-submissions" aria-selected="false">Publication Geography Submissions</button><button data-tab="tab-changelog" aria-selected="false">Master change log</button></nav>
 <section id="scholar-submissions"><h2>Scholar Update Submissions</h2><div data-tonga-queue="scholar"></div></section>
 <section id="geography-submissions" hidden><h2>Publication Geography Submissions</h2><div data-tonga-queue="geography"></div></section>
-<section id="master-change-log" hidden><h2>Master change log</h2><p class="meta">Read-only history of recorded edits and review decisions.</p><button id="review-log-refresh">Refresh log</button><p id="review-log-status" role="status">Open this tab to load the change log.</p><div id="review-log-entries"></div></section>
+<section id="tab-changelog" hidden><h2>Master change log</h2><p class="meta">Read-only history of recorded edits and review decisions.</p><button id="review-log-refresh">Refresh log</button><p id="review-log-status" role="status">Open this tab to load the change log.</p><div id="review-log-entries"></div></section>
 <a id="owner-link" href="admin-tongan-master.html" hidden>Open Owner panel for photos and database settings</a>
 <span id="db-status" hidden>signed out</span></div></main></body></html>
