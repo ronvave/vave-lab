@@ -17,6 +17,10 @@ const fs=require('fs'),assert=require('node:assert/strict'),{JSDOM}=require('jsd
  await assert.rejects(w.adminWriteback.readChangeLog(),/Sign in again/);
  await gis.callback({credential:credential(gis.nonce)});assert.equal(note.value,'Unfinished review');assert.equal(note.isConnected,true);assert.equal(w.document.getElementById('sign-in').hidden,true);
  await w.adminWriteback.readChangeLog(200);assert.equal(JSON.parse(requests.at(-1).options.body).action,'readChangeLog');
+ let sequence=[],writeAttempts=0;w.fetch=async(url,options)=>{const action=JSON.parse(options.body).action;sequence.push(action);if(action==='reviewCapabilities')return{json:async()=>({status:'ok',role:'admin'})};return{json:async()=>({status:'unauthorized'})};};
+ const interrupted=await w.adminWriteback.resolveGeographySubmission('G1','reject','');assert.equal(interrupted.status,'error');assert.deepEqual(sequence,['resolvePublicationGeographySubmission','reviewCapabilities']);assert(w.adminWriteback.isConfigured(),'Transient response must not discard verified session');assert.equal(note.isConnected,true);
+ sequence=[];await w.adminWriteback.readChangeLog();assert.deepEqual(sequence,['readChangeLog','reviewCapabilities','readChangeLog'],'Read may retry once; writes never automatically replay');
+ w.fetch=async()=>({json:async()=>({status:'unauthorized',reason:'Account revoked'})});await w.adminWriteback.readChangeLog();assert.equal(w.adminWriteback.isConfigured(),false,'Confirmed revocation requires reauthentication');
  await assert.rejects(w.TongaSubmissionAdmin.approvePhoto(),/Owner/);
  dom.window.close();console.log('PASS browser nonce, reviewer identity, hidden owner controls, credential POST-only transport, no stored credentials, explicit pending-photo behavior.');
 })().catch(e=>{console.error(e);process.exit(1)});
