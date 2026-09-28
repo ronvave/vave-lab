@@ -1,5 +1,6 @@
 const fs = require('node:fs'), vm = require('node:vm'), assert = require('node:assert/strict'), crypto = require('node:crypto');
-const source = fs.readFileSync('js/itaukei-database-master.js', 'utf8');
+const country = process.argv[2] || 'itaukei';
+const source = fs.readFileSync('js/'+country+'-database-master.js', 'utf8');
 function extract(name) {
  const start = source.indexOf('  function '+name+'(');
  const next = source.indexOf('\n  function ', start+1);

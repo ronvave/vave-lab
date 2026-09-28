@@ -501,3 +501,15 @@ in inline/fullscreen views, including Ron Vave's PhD, popup opening and name
 preselection. Required card/mobility preservation suite passes (61 photos,
 79 research summaries, 151 pathways). Updated dashboard asset hash.
 Browser visual verification is not claimed; deployment verification follows.
+
+### 2026-09-28 — Tonga and Solomon Islands B2 search alignment
+
+Applied the approved Fiji marker-position fix to both dashboards: degree
+selection and fallback search frame displayed markers; popup selection uses
+institution identity rather than raw coordinates. Updated both asset hashes.
+The shared geographic regression fixture exercises 928 scholar-degree choices
+at 109 institutions against each dashboard's actual search functions in both
+inline/fullscreen modes, including wrapped and collocated markers. These are
+regression fixture counts, not Tonga/Solomon roster counts. JavaScript syntax,
+Fiji preservation and Tonga card/mobility suites pass. Browser visual testing
+is not claimed. User explicitly approved pushing this update.
