@@ -473,3 +473,15 @@ and linked the complete titles and names. Updated the portal asset hash.
 JavaScript syntax and required iTaukei card/mobility preservation checks pass.
 Only the attribution sentence and its cache version changed; no browser visual
 verification is claimed.
+
+### 2026-09-27 HST — Tonga owner audit display
+
+At Ron's request, legacy Owner audit entries now display Ron Vave in both the
+Owner and collaborator Master change logs. Named Google-account attribution
+remains exact; unknown/missing actors are not relabeled. Raw historical audit
+records remain available in Technical details. Owner authorization is unchanged.
+The backend source now records Ron Vave (owner; legacy login) after successful
+legacy authentication, ignoring any caller-supplied actor. That writer change
+requires Apps Script redeployment; browser access currently redirects to the
+signed-out Apps Script landing page. UI asset hashes updated. Auth regression
+and required card/mobility preservation tests pass.

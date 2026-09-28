@@ -1305,7 +1305,7 @@ function tongaAuthorize_(payload, action) {
     } catch (err) { TONGA_AUTH_ERROR=err.tongaAuthSafe||'Google identity could not be verified. Sign in again; if this persists, ask the Owner to run inspectTongaReviewAccess in Apps Script.';return false; }
   }
   if (!checkAuth_(payload)) return false;
-  TONGA_REQUEST_ROLE='owner'; ACTOR_LABEL='Owner (legacy secret)';
+  TONGA_REQUEST_ROLE='owner'; ACTOR_LABEL='Ron Vave (owner; legacy login)';
   return true;
 }
 function tongaVerifyGoogle_(token) {

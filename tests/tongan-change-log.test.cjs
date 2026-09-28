@@ -9,7 +9,10 @@ const api=ctx.module.exports;
 const row={rowNumber:533,version:'admin-20260925-233840',date:'2026-09-25',actor:'Owner (legacy secret)',worksheet:'Publication Geography Submissions',field:'PGS-fixture',scope:'Owner (legacy secret) · TNG-S0001 · Publication Geography Submissions.PGS-fixture: Pending → Rejected',oldValue:'Pending',newValue:'Rejected',source:'fixture'};
 const scholars={'TNG-S0001':{'Scholar Name':'Example scholar'}};
 (async()=>{
- const legacy=await api.actor(row.actor);assert.equal(legacy.name,'Owner');assert.match(legacy.note,/individual not recorded/);
+ const legacy=await api.actor(row.actor);assert.equal(legacy.name,'Ron Vave');assert.equal(legacy.role,'Owner');assert.equal(legacy.note,'');
+ for(const label of ['Owner','Ron Vave (owner; legacy login)','Ron Vave (admin)']) assert.equal((await api.actor(label)).name,'Ron Vave');
+ assert.equal((await api.actor('ronvave@hawaii.edu (owner; Google 12345)')).name,'Ron Vave');
+ assert.equal((await api.actor('')).name,'Not recorded');
  const unknown=await api.actor('person@example.org (admin; Google 12345)');assert.equal(unknown.name,'person@example.org');assert.equal(unknown.role,'Admin');
  let r=api.normalize(row,scholars,{});assert.equal(r.scholar,'Example scholar');assert.equal(r.before,'Awaiting review');assert.equal(r.after,'Declined');assert.equal(r.action,'Geography suggestion declined');assert.equal(r.category,'Review decision');assert.equal(r.when.time,'11:38 pm');
  assert.equal(api.when({date:'2026-09-25',version:'release-1'}).time,'Time not recorded');
