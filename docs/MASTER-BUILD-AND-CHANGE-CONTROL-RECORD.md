@@ -485,3 +485,19 @@ legacy authentication, ignoring any caller-supplied actor. That writer change
 requires Apps Script redeployment; browser access currently redirects to the
 signed-out Apps Script landing page. UI asset hashes updated. Auth regression
 and required card/mobility preservation tests pass.
+
+
+### 2026-09-28 — Fiji B2 scholar-search marker alignment
+
+Fixed scholar degree selection, single-result search and multi-result framing
+to use the displayed university marker position. Fullscreen markers wrap near
+140°E; search previously zoomed to canonical negative longitudes and matched
+popups by those coordinates, hiding Hawaiʻi and other wrapped institutions.
+Popup lookup now uses country/university identity, also preserving correct
+selection when nearby institutions share coordinates or are spread apart.
+
+Regression checks pass for 928 scholar-degree selections at 109 universities
+in inline/fullscreen views, including Ron Vave's PhD, popup opening and name
+preselection. Required card/mobility preservation suite passes (61 photos,
+79 research summaries, 151 pathways). Updated dashboard asset hash.
+Browser visual verification is not claimed; deployment verification follows.

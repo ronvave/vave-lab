@@ -2701,6 +2701,30 @@
     state.worldMap.setView([p.lat, lng], 8, { animate: true });
   }
 
+  // Search must use the displayed marker, including its wrapped world copy.
+  // Match institution identity rather than coordinates: nearby universities
+  // can share coordinates, and the overlap layout can move a marker.
+  function worldMarkerForPoint(point) {
+    const layers = state.worldLayer && state.worldLayer.getLayers
+      ? state.worldLayer.getLayers() : [];
+    return layers.find(layer => {
+      const p = layer._worldPoint;
+      return p && p.university === point.university && p.country === point.country;
+    });
+  }
+
+  function worldSearchLatLng(point) {
+    const marker = worldMarkerForPoint(point);
+    if (marker) return marker.getLatLng();
+    // Before rendering, use the same fixed wrap anchor as renderWorldMap.
+    let lng = point.lng;
+    if (state.worldMapFullscreen) {
+      while (lng - 140 > 180) lng -= 360;
+      while (lng - 140 < -180) lng += 360;
+    }
+    return [point.lat, lng];
+  }
+
   function wireWorldPanel() {
     const back = document.querySelector('[data-world-back]');
     if (back) {
@@ -2861,10 +2885,10 @@
 
       if (matches.length === 1) {
         const p = matches[0];
-        m.setView([p.lat, p.lng], 7, { animate: true });
+        m.setView(worldSearchLatLng(p), 7, { animate: true });
         setTimeout(() => openMarkerPopupAt(m, p), 320);
       } else {
-        const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
+        const bounds = L.latLngBounds(matches.map(worldSearchLatLng));
         m.fitBounds(bounds, { padding: [60, 60], maxZoom: 6, animate: true });
       }
     }
@@ -2872,18 +2896,10 @@
     // Find and open the popup for the circle marker at a given point, then
     // return the popup DOM node once it's rendered.
     function openMarkerPopupAt(m, p, cb) {
-      let opened = false;
-      m.eachLayer(layer => {
-        if (opened) return;
-        if (layer && layer.getLatLng && layer.getPopup) {
-          const ll = layer.getLatLng();
-          if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
-            layer.openPopup();
-            opened = true;
-            if (cb) setTimeout(() => cb(layer.getPopup().getElement()), 120);
-          }
-        }
-      });
+      const marker = worldMarkerForPoint(p);
+      if (!marker || !marker.getPopup()) return;
+      marker.openPopup();
+      if (cb) setTimeout(() => cb(marker.getPopup().getElement()), 120);
     }
 
     // Zoom to a point, open its popup, then dispatch mouseenter on the
@@ -2894,7 +2910,7 @@
     // scholar has multiple degrees at the same university.
     function zoomAndPreselect(m, point, scholarName, preferredLevel) {
       state.preselectPreferredLevel = preferredLevel || null;
-      m.setView([point.lat, point.lng], 6, { animate: true });
+      m.setView(worldSearchLatLng(point), 6, { animate: true });
       setTimeout(() => {
         openMarkerPopupAt(m, point, (popupEl) => {
           if (!popupEl) return;
