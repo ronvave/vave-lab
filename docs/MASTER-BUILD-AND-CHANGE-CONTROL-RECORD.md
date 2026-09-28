@@ -462,3 +462,14 @@ The MA record now resolves to 1974 with its thesis title. Required Fiji and
 Tonga card/mobility preservation suites pass; Tonga retains 22 photos, 22
 summaries and 86 pathways / 47 universities. No browser visual verification
 is claimed. Public display categories and filters were not redesigned.
+
+
+### 2026-09-27 — Tonga shared-profile project attribution
+
+Replaced the shared-profile About paragraph's project-lead sentence with Ron's
+provided wording, including titles, Indigenous Fijian (iTaukei) identification,
+and Tongan collaborator names. Retained all three existing link destinations
+and linked the complete titles and names. Updated the portal asset hash.
+JavaScript syntax and required iTaukei card/mobility preservation checks pass.
+Only the attribution sentence and its cache version changed; no browser visual
+verification is claimed.
