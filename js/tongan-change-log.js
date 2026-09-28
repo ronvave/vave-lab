@@ -8,7 +8,8 @@
   var esc = function (v) { return text(v).replace(/[&<>"']/g, function (c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
   async function actor(raw) {
     raw = text(raw);
-    if (/^Owner \(legacy secret\)$/i.test(raw)) return {name:'Owner', role:'Owner', note:'Legacy login — individual not recorded'};
+    // Ron confirmed that the legacy Owner entries are his actions.
+    if (/^(?:Owner(?: \(legacy secret\))?|Ron Vave(?: \((?:admin|owner; legacy login)\))?)$/i.test(raw.trim())) return {name:'Ron Vave', role:'Owner', note:''};
     var email = raw.match(/^([^\s]+@[^\s()]+)/);
     var role = /\(owner[;)]/i.test(raw) ? 'Owner' : /\(admin[;)]/i.test(raw) ? 'Admin' : '';
     if (email) {

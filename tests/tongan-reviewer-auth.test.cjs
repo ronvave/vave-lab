@@ -19,7 +19,7 @@ for(const [name,t] of Object.entries({expired:sign({exp:now-1}),audience:sign({a
 props.set('TONGA_REVIEWER_EMAILS','');assert.equal(post({action:'reviewCapabilities',idToken:token}).status,'unauthorized','revocation applies to current token');
 props.set('TONGA_REVIEWER_EMAILS','reviewer@gmail.com');assert.equal(post({action:'reviewCapabilities',idToken:token}).role,'admin');
 const owner=sign({email:'owner@example.edu',hd:'example.edu',sub:'87654321'});assert.equal(post({action:'reviewCapabilities',idToken:owner}).role,'owner');assert.equal(post({action:'write',idToken:owner}).status,'ok');
-assert.equal(post({action:'reviewCapabilities',secret:'fixture-secret',clientTs:Date.now()}).role,'owner');
+const legacyOwner=post({action:'reviewCapabilities',secret:'fixture-secret',clientTs:Date.now(),actor:'Someone else'});assert.equal(legacyOwner.role,'owner');assert.equal(legacyOwner.actor,'Ron Vave (owner; legacy login)');
 assert.equal(ctx.doGet({parameter:{action:'reviewCapabilities',idToken:token}}).status,'unauthorized','Google tokens never accepted in URL');
 props.set('TONGA_OWNER_EMAIL','');assert.equal(post({action:'reviewCapabilities',idToken:token}).status,'unauthorized','owner setting required');
 // A reviewer cannot claim an uploaded headshot was published.
