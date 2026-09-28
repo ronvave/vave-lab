@@ -438,3 +438,27 @@ Tonga and 79 Solomon labels, dropdown construction, matching/nonmatching/missing
 publication tags and clearing the discipline filter pass. Syntax, required
 Fiji/Tonga card-mobility and Solomon sharing checks pass. Asset hashes refreshed.
 No authenticated browser visual verification claimed.
+
+
+### 2026-09-28 — Konai Helu Thaman CV reconciliation (TNG-S0038)
+
+Updated the original Tongan Scholars Master file from the user-supplied, undated
+CV (activities through 2022), preserving existing IDs and newer metadata.
+Added 64 bibliography/report records and 65 contribution links, 31 historical
+appointments/service records, one funding record and 66 activity/evidence rows.
+Recorded provenance in Source Register and Change Log. Corrected the 1974 UCSB
+work to a Master's thesis and completed its degree year/title using USP's
+institutional repository. One ambiguous 2009 citation remains pending review;
+it was not counted as a new publication. Private CV contact details and the
+full CV were not published.
+
+Native read-back verified 3,649 populated cells with no differences. Refresh
+run 36357104444 (rerun job 108758380891) succeeded, producing snapshot 567428b.
+The actual dashboard adapter resolves the original shared-profile token to
+TNG-S0038, with 93 distinct linked records; its existing display rules return
+86 publications / 78 first-authored, including conference records in the
+canonical total. Saved photo and approved research summary remain intact.
+The MA record now resolves to 1974 with its thesis title. Required Fiji and
+Tonga card/mobility preservation suites pass; Tonga retains 22 photos, 22
+summaries and 86 pathways / 47 universities. No browser visual verification
+is claimed. Public display categories and filters were not redesigned.
