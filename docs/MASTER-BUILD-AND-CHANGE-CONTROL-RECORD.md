@@ -513,3 +513,28 @@ inline/fullscreen modes, including wrapped and collocated markers. These are
 regression fixture counts, not Tonga/Solomon roster counts. JavaScript syntax,
 Fiji preservation and Tonga card/mobility suites pass. Browser visual testing
 is not claimed. User explicitly approved pushing this update.
+
+
+### 2026-09-29 — Repeatable Tonga graduate-degree submissions
+
+The shared-profile Update info form now prefills every recorded Master's/PhD
+and provides Add a 2nd / 3rd / subsequent degree buttons. Each block has its
+own university, country, completion year, thesis URL and PDF upload. Existing
+multiple-degree edits retain Degree IDs; a single existing degree retains the
+legacy changed-only approval route. Blank added blocks produce no submission.
+
+Additional-degree changes are retained in Structured Submission JSON and an
+automatically generated degree-details review attachment, supported by the
+existing deployed endpoint. Admin displays them separately with Degree IDs.
+New degree creation / multiple-degree corrections require manual reconciliation
+in Graduate Degrees, followed by the existing attachment import/review outcome;
+this change does not claim automatic degree-row creation. The attachment keeps
+that work pending, including text-only additional-degree submissions. Distinct
+upload field names preserve PDF associations. Existing six-file, 12 MB/file and
+30 MB total service limits are checked in the form.
+
+Validation: repeatable-degree DOM/submission tests cover third degrees, existing
+IDs, blank sections, changed-only behavior and PDF identity. Preferred-name and
+review-v4 tests, JS syntax, diff checks, and required Fiji/Tonga card/mobility
+preservation suites pass. Portal/CSS/Admin cache hashes refreshed. No live
+synthetic submission was sent and no browser visual verification is claimed.

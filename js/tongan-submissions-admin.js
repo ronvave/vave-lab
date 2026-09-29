@@ -96,7 +96,13 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   if(row.recordedFields?.length){const recorded=el('details',null,card);recorded.open=true;el('summary','Submitted values already in Master ('+row.recordedFields.length+')',recorded);const table=el('table',null,recorded);table.className='tonga-recorded-fields';const head=el('tr',null,el('thead',null,table));['Status','Field','Current Master value','Submitted value'].forEach(t=>el('th',t,head));const body=el('tbody',null,table);row.recordedFields.forEach(c=>{const tr=el('tr',null,body);['Already in Master',c.label,c.currentDisplayValue??c.currentValue,c.newValue].forEach(t=>el('td',t===''?'(empty)':t,tr));});
    if(pending&&!changes.length&&!parse(row['Attachments JSON'],[]).length&&!plan?.items.some(i=>['pending','deferred'].includes(i.state)))button('Complete review — already recorded',card,async()=>{if(busy||!confirm('Complete this review? All submitted values are already in Master; no Master values will be changed.'))return;await run(c,()=>saveScholar(c));});
   }
-  const structured=parse(row['Structured Submission JSON'],{});if(structured.notes)el('p','Submitter notes: '+structured.notes,card);
+  const structured=parse(row['Structured Submission JSON'],{});
+  if(Array.isArray(structured.degrees)&&structured.degrees.length){
+   const section=el('section',null,card);section.className='tonga-additional-degree-review';el('h4','Additional degree details — review each degree separately',section);
+   el('p','Add new degrees as separate Graduate Degrees rows. For corrections, use the listed Degree ID. Do not overwrite another degree. The degree-details attachment stays pending until its review/import outcome is recorded below.',section);
+   structured.degrees.forEach(g=>{const block=el('div',null,section);el('strong',(g.operation==='add'?'New ':'Update ')+(g.level==='phd'?'PhD':'Masters')+' #'+g.number+(g.degreeId?' · '+g.degreeId:''),block);const values=g.values||{};for(const [key,label] of [['university','University'],['country','Country'],['year','Year completed'],['thesis_url','Thesis / degree URL']]){const line=el('p',null,block);line.append(label+': ');if(key==='thesis_url'&&values[key])link(values[key],values[key],line);else line.append(String(values[key]||'(empty)'));}el('p','Thesis upload field: '+g.uploadField,block);});
+  }
+  if(structured.notes)el('p','Submitter notes: '+structured.notes,card);
   if(plan){const journal=el('details',null,card);el('summary','Recorded item outcomes',journal);plan.items.forEach(x=>el('p',(x.label||x.name||x.key)+': '+x.state,journal));}
   const files=parse(row['Attachments JSON'],[]),attachments=el('section',null,card);attachments.className='tonga-attachments';el('strong','Attachments ('+files.length+')',attachments);
   files.forEach(f=>{

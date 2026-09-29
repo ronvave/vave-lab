@@ -83,3 +83,7 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-summary .db-section__hint{color:#111;font-family:"DM Sans",Arial,sans-serif;font-size:1rem;line-height:1.45;font-weight:400;font-style:normal;opacity:1}
 @media(max-width:1000px){.tonga-summary .db-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
 @media(max-width:700px){.tonga-summary .db-kpis{grid-template-columns:1fr!important}}
+
+/* Repeatable postgraduate degrees retain the existing fieldset layout. */
+.tonga-degree-group{display:grid;gap:12px;min-width:0}
+.tonga-form .tonga-add-degree{justify-self:start;background:#eef6f6;color:#075565;border:1px solid #8ab3b9;font-weight:600}

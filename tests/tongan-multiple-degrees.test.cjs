@@ -1,0 +1,19 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),{JSDOM}=require('jsdom');
+(async()=>{
+ const dom=new JSDOM('<body></body>',{url:'https://example.invalid/s-tonga.html',runScripts:'outside-only'}),w=dom.window;let sent=[];
+ w.HTMLDialogElement.prototype.showModal=function(){};w.HTMLDialogElement.prototype.close=function(){this.remove()};
+ w.fetch=async(url,opts)=>({ok:true,json:async()=>opts?.method==='POST'?(sent.push(JSON.parse(opts.body)),{status:'ok',submissionId:'TEST'}):String(url).includes('submissionCapabilities')?{status:'ok',country:'Tonga',publicSubmissionsEnabled:true,preferredNames:true}:{m:{'TNG-S0001':'a'.repeat(40)}}});
+ w.eval(fs.readFileSync('js/tongan-scholar-portal.js','utf8'));
+ const p={scholarId:'TNG-S0001',name:'Example Scholar',first:'Example',last:'Scholar'};
+ async function open(degrees=[]){await w.TongaScholarPortal.openUpdate(p,{master:{gradDegrees:degrees}});const f=w.document.querySelector('form');f.querySelectorAll('fieldset input')[0].value='Tester';f.querySelectorAll('fieldset input')[1].value='tester@example.invalid';f.querySelector('select').value='Self';return f;}
+ const click=text=>{const b=[...w.document.querySelectorAll('button')].find(b=>b.textContent===text);assert(b,text);b.click()};
+ let f=await open();click('Add a 2nd Masters');f.elements.masters_2_university.value='University Two';f.elements.masters_2_country.value='Fiji';f.elements.masters_2_year.value='2010';f.elements.masters_2_thesis_url.value='https://example.invalid/thesis';click('Add a 3rd Masters');f.elements.masters_3_university.value='University Three';click('Add a 2nd PhD');f.elements.phd_2_university.value='Doctorate Two';
+ assert([...f.querySelectorAll('button')].some(b=>b.textContent==='Add a 4th Masters'));assert([...f.querySelectorAll('button')].some(b=>b.textContent==='Add a 3rd PhD'));
+ const names=[...f.elements].map(x=>x.name).filter(Boolean);assert.equal(new Set(names).size,names.length);
+ await f.onsubmit({preventDefault(){}});assert.equal(sent.length,1);assert.equal(sent[0].structuredSubmission.degrees.length,3);assert(!sent[0].fields.masters_university);const attachment=sent[0].files.find(x=>x.field==='degree_details');assert(attachment);const details=JSON.parse(Buffer.from(attachment.data,'base64').toString());assert.equal(details.degrees[0].values.year,'2010');assert.equal(details.degrees[2].level,'phd');
+ f=await open();click('Add a 2nd Masters');f.elements.title.value='New title';await f.onsubmit({preventDefault(){}});assert.deepEqual(sent[1].fields,{title:'New title'});assert.equal(sent[1].files.length,0,'Blank extra section is ignored');
+ const degrees=[1,2].map(n=>({'Scholar ID':p.scholarId,'Degree ID':'TNG-D000'+n,'Degree Stage':"Master's",'C_Uni name':'University '+n,'Country':'Fiji','Finish / Completion Year':2000+n}));
+ f=await open(degrees);assert.equal(f.elements.masters_1_university.value,'University 1');assert.equal(f.elements.masters_2_university.value,'University 2');assert(!f.elements.masters_university,'Ambiguous legacy keys are not used');f.elements.masters_2_year.value='2009';await f.onsubmit({preventDefault(){}});assert.equal(sent[2].structuredSubmission.degrees[0].degreeId,'TNG-D0002');assert.equal(sent[2].structuredSubmission.degrees[0].operation,'update');
+ f=await open();click('Add a 2nd Masters');Object.defineProperty(f.elements.masters_2_thesis,'files',{value:[new w.File(['pdf'],'same.pdf',{type:'application/pdf'})]});await f.onsubmit({preventDefault(){}});assert.equal(sent[3].files[0].field,'masters_2_thesis');assert.equal(sent[3].files[0].name,'TNG-S0001-masters_2_thesis-same.pdf');assert.equal(sent[3].structuredSubmission.degrees.length,1);
+ dom.window.close();console.log('PASS repeatable Masters/PhD, ordinal buttons, distinct fields/uploads, changed-only data, existing degree IDs and review attachment.');
+})().catch(e=>{console.error(e);process.exit(1)});

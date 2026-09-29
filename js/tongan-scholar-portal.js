@@ -68,21 +68,40 @@ async function openUpdate(row,state){
  add(fs,'orcid_url','ORCID iD URL',profile.orcidUrl,null,'url');
  upload(fs,'headshot','High-resolution headshot (JPEG)','.jpg,.jpeg,image/jpeg','Please upload a clear, high-resolution headshot as a JPEG (.jpg or .jpeg).',true);
  const gender=add(fs,'gender','Gender',profile.gender,['Tangata','Fefine','Unknown']);[...gender.options].forEach(o=>{if(o.value==='Tangata')o.textContent='Tangata (Male)';if(o.value==='Fefine')o.textContent='Fefine (Female)';});
+ const degreeEntries=[];
+ const ordinal=n=>n+(n%100>=11&&n%100<=13?'th':({1:'st',2:'nd',3:'rd'}[n%10]||'th'));
  for(const [level,title] of [['masters','Masters'],['phd','PhD']]){
-  const f=section(form,title),rows=(state.master.gradDegrees||state.master.grad||[]),matches=rows.filter(g=>g['Scholar ID']===sid&&(level==='masters'?/master/i:/phd|doctor/i).test(g['Degree Stage']||'')),g=matches.length===1?matches[0]:{};
-  add(f,level+'_university',title+' — University',profile[level+'University']);
-  add(f,level+'_country',title+' — Country',profile[level+'Country']);
-  add(f,level+'_year',title+' — Year completed',g['Finish / Completion Year']);
-  hint(add(f,level+'_thesis_url','Link to '+title+' thesis / degree',g['Thesis / Repository URL'],null,'url'),'Provide a direct university/repository link where possible.');
-  upload(f,level+'_thesis','Upload '+title+' thesis PDF','.pdf,application/pdf','Optional PDF. The uploaded filename includes the Scholar ID.');
+  const group=el('div',null,form);group.className='tonga-degree-group';
+  const rows=(state.master.gradDegrees||state.master.grad||[]),matches=rows.filter(g=>g['Scholar ID']===sid&&(level==='masters'?/master/i:/phd|doctor/i).test(g['Degree Stage']||''));
+  let count=0,addButton;
+  function addDegree(g={},existing=false){
+   const number=++count,label=number===1?title:ordinal(number)+' '+title;
+   const f=section(group,label);f.className='tonga-degree-entry';
+   if(addButton)group.insertBefore(f,addButton);
+   // Legacy keys remain safe only when there is a single existing degree.
+   const legacy=number===1&&matches.length<=1,prefix=legacy?level:level+'_'+number;
+   const entry={level,number,degreeId:g['Degree ID']||'',existing,inputs:{},initial:{},legacy};degreeEntries.push(entry);
+   function degreeField(key,text,value,type){const n=legacy?add(f,prefix+'_'+key,text,value,null,type):input(f,text,clean(value),type||'text');n.name=prefix+'_'+key;entry.inputs[key]=n;entry.initial[key]=n.value;return n;}
+   const fallback=number===1&&!matches.length;
+   const first=degreeField('university',label+' — University',g['C_Uni name']||g['O_Uni name']||(fallback?profile[level+'University']:''));
+   degreeField('country',label+' — Country',g.Country||(fallback?profile[level+'Country']:''));
+   degreeField('year',label+' — Year completed',g['Finish / Completion Year']);
+   hint(degreeField('thesis_url','Link to '+label+' thesis / degree',g['Thesis / Repository URL'],'url'),'Provide a direct university/repository link where possible.');
+   entry.upload=upload(f,prefix+'_thesis','Upload '+label+' thesis PDF','.pdf,application/pdf','Optional PDF. The uploaded filename includes the Scholar ID.');
+   entry.uploadField=prefix+'_thesis';
+   if(addButton){addButton.textContent='Add a '+ordinal(count+1)+' '+title;first.focus();}
+  }
+  if(matches.length)matches.forEach(g=>addDegree(g,true));else addDegree();
+  addButton=el('button','Add a '+ordinal(count+1)+' '+title,group);addButton.type='button';addButton.className='tonga-add-degree';addButton.onclick=()=>addDegree();
  }
+ function degreeChanges(){return degreeEntries.filter(e=>!e.legacy&&(Object.keys(e.inputs).some(k=>e.inputs[k].value!==e.initial[k])||e.upload.files.length)).map(e=>({level:e.level,number:e.number,degreeId:e.degreeId,operation:e.existing?'update':'add',values:Object.fromEntries(Object.entries(e.inputs).map(([k,n])=>[k,n.value.trim()])),previous:e.initial,uploadField:e.uploadField}));}
  const cv=section(form,'CV (optional)');upload(cv,'cv','Upload your latest CV (PDF)','.pdf,application/pdf','Your CV is for internal review only and will not be shared further or displayed on the public dashboard.',true);
  const pubs=section(form,'Publications to add');upload(pubs,'publications','BibTeX or EndNote file','.bib,.ris,.enw','Attach one file containing all the publications you want added. BibTeX (.bib) is preferred; an EndNote export (.enw or .ris) is also fine.',true);
  const notes=wide(input(pubs,'Anything else we should know?','','textarea'));notes.rows=3;notes.placeholder='Optional — e.g. context on which fields you edited, or corrections that don’t fit above.';
- el('p','Attachments: up to 12 MB per file and 30 MB total.',form).className='tonga-field-help';
+ el('p','Attachments: up to 12 MB per file and 30 MB total. Up to 6 files per submission (5 when additional degree details are included). You can use thesis links instead of PDFs.',form).className='tonga-field-help';
  const actions=el('div',null,form);actions.className='tonga-form-actions';const cancel=el('button','Cancel',actions);cancel.type='button';cancel.className='tonga-form-cancel';cancel.onclick=()=>d.close();const button=el('button','Submit for review',actions);button.type='submit';
  let submitting=false,submitted=false;
- form.onsubmit=async e=>{e.preventDefault();if(submitting||submitted||!form.reportValidity())return;submitting=true;button.disabled=true;status.textContent='Submitting…';try{const changed={};fields.forEach(f=>{if(f.n.value!==f.initial)changed[f.key]=f.n.value.trim();});for(const key of ['preferred_given_names','preferred_family_name']){if(Object.prototype.hasOwnProperty.call(changed,key)&&(!changed[key]||/^[=+@\-]/.test(changed[key])))throw new Error('Enter a valid '+(key==='preferred_given_names'?'given name':'family name')+'.');}const selected=files.filter(f=>f.n.files.length);let total=0;const attachments=[];for(const f of selected){const file=f.n.files[0];total+=file.size;if(file.size>12*1024*1024||total>30*1024*1024)throw new Error('Attachments exceed the size limit.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(file);});attachments.push({field:f.key,name:sid+'-'+file.name,type:file.type||'application/octet-stream',data});}if(!Object.keys(changed).length&&!attachments.length)throw new Error('Change at least one field or attach a file.');const result=await send(Object.assign(base(row,token),who(),{action:'submitScholarProfileUpdate',fields:changed,structuredSubmission:{changedFieldsOnly:true,notes:notes.value.trim()},files:attachments}));submitted=true;d.close();showSubmissionConfirmation(result.submissionId);}catch(err){status.textContent=err.message;button.disabled=false;}finally{submitting=false;}};
+ form.onsubmit=async e=>{e.preventDefault();if(submitting||submitted||!form.reportValidity())return;submitting=true;button.disabled=true;status.textContent='Submitting…';try{const changed={};fields.forEach(f=>{if(f.n.value!==f.initial)changed[f.key]=f.n.value.trim();});for(const key of ['preferred_given_names','preferred_family_name']){if(Object.prototype.hasOwnProperty.call(changed,key)&&(!changed[key]||/^[=+@\-]/.test(changed[key])))throw new Error('Enter a valid '+(key==='preferred_given_names'?'given name':'family name')+'.');}const degrees=degreeChanges();const selected=files.filter(f=>f.n.files.length);if(selected.length+(degrees.length?1:0)>6)throw new Error('Too many attachments. Use thesis links or submit remaining PDFs in another update.');let total=0;const attachments=[];for(const f of selected){const file=f.n.files[0];total+=file.size;if(file.size>12*1024*1024||total>30*1024*1024)throw new Error('Attachments exceed the size limit.');const data=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result).split(',')[1]);r.onerror=reject;r.readAsDataURL(file);});attachments.push({field:f.key,name:sid+'-'+(/_thesis$/.test(f.key)?f.key+'-':'')+file.name,type:file.type||'application/octet-stream',data});}if(degrees.length){changed.degree_updates=degrees.map(g=>(g.operation==='add'?'Add ':'Update ')+g.level+' #'+g.number+(g.degreeId?' ('+g.degreeId+')':'')).join('; ');const detail=JSON.stringify({scholarId:sid,degrees},null,2);attachments.push({field:'degree_details',name:sid+'-additional-degree-details.json',type:'application/json',data:btoa(unescape(encodeURIComponent(detail)))});}if(!Object.keys(changed).length&&!attachments.length)throw new Error('Change at least one field or attach a file.');const result=await send(Object.assign(base(row,token),who(),{action:'submitScholarProfileUpdate',fields:changed,structuredSubmission:{changedFieldsOnly:true,notes:notes.value.trim(),degrees},files:attachments}));submitted=true;d.close();showSubmissionConfirmation(result.submissionId);}catch(err){status.textContent=err.message;button.disabled=false;}finally{submitting=false;}};
 }
 // Keep island divisions distinct from specific islands in the Master payload.
 function geoName(value){return String(value||'').trim().replace(/[ʻ’‘ʼ]/g,"'");}
