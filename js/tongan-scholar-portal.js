@@ -91,8 +91,8 @@ async function openUpdate(row,state){
    entry.uploadField=prefix+'_thesis';
    if(addButton){addButton.textContent='Add a '+ordinal(count+1)+' '+title;first.focus();}
   }
-  if(matches.length)matches.forEach(g=>addDegree(g,true));else addDegree();
-  addButton=el('button','Add a '+ordinal(count+1)+' '+title,group);addButton.type='button';addButton.className='tonga-add-degree';addButton.onclick=()=>addDegree();
+  if(matches.length)addDegree(matches[0],true);else addDegree();
+  addButton=el('button','Add a '+ordinal(count+1)+' '+title,group);addButton.type='button';addButton.className='tonga-add-degree';addButton.onclick=()=>{const recorded=matches[count];addDegree(recorded||{},!!recorded);};
  }
  function degreeChanges(){return degreeEntries.filter(e=>!e.legacy&&(Object.keys(e.inputs).some(k=>e.inputs[k].value!==e.initial[k])||e.upload.files.length)).map(e=>({level:e.level,number:e.number,degreeId:e.degreeId,operation:e.existing?'update':'add',values:Object.fromEntries(Object.entries(e.inputs).map(([k,n])=>[k,n.value.trim()])),previous:e.initial,uploadField:e.uploadField}));}
  const cv=section(form,'CV (optional)');upload(cv,'cv','Upload your latest CV (PDF)','.pdf,application/pdf','Your CV is for internal review only and will not be shared further or displayed on the public dashboard.',true);

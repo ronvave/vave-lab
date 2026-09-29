@@ -538,3 +538,12 @@ IDs, blank sections, changed-only behavior and PDF identity. Preferred-name and
 review-v4 tests, JS syntax, diff checks, and required Fiji/Tonga card/mobility
 preservation suites pass. Portal/CSS/Admin cache hashes refreshed. No live
 synthetic submission was sent and no browser visual verification is claimed.
+
+
+### 2026-09-29 — Additional Tonga degree sections opened on demand
+
+Show only the first Masters and PhD blocks initially, even when multiple degrees
+are recorded. The Add a 2nd / 3rd button reveals the next saved degree before
+creating a blank block. Hidden degree records remain untouched. The targeted
+multiple-degree test verifies initial hiding and prefill on click; syntax and
+required card/mobility preservation checks pass. Portal hash refreshed.
