@@ -1,5 +1,15 @@
 # Master Build and Change-Control Record
 
+## 2026-09-30 — Tonga direct scholar page regional initiative wording
+
+Replaced the shared About sentence with Ron’s supplied wording identifying
+Fiji, Solomon Islands, and Vanuatu as sister scholarly database projects.
+The CPIS hyperlink is preserved. All Tongan direct scholar/publication links
+use this shared portal template. Refreshed its dashboard asset cache hash.
+JavaScript syntax, iTaukei card/mobility preservation, and Tonga card/mobility
+preservation checks passed. Live publication verification follows deployment;
+no visual deployment claim is made in this record.
+
 ## 2026-09-24 — Tonga B4 graduate research disciplines
 
 Added Fiji-style Gender/Degree discipline table, using Tonga Master aggregates,
