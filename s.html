@@ -218,8 +218,16 @@
           .scholar-review-doi-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#efc4ee!important;color:#542052!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
           .scholar-review-doi-chip:hover{background:#e7afe5!important;color:#431640!important;}
           .scholar-review-link-chip{display:inline-flex!important;align-items:center!important;justify-content:center!important;padding:4px 10px!important;border-radius:999px!important;background:#cfeaf0!important;color:#075d6b!important;text-decoration:none!important;font-size:.72rem!important;line-height:1!important;font-weight:800!important;white-space:nowrap!important;box-shadow:none!important;border:0!important;}
-          .scholar-geo-other{display:block!important;height:34px!important;min-height:34px!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:0 12px!important;border:1px solid #cbd5d8!important;border-radius:999px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;font-weight:600!important;line-height:1!important;outline:none!important;}
-          .scholar-geo-other::placeholder{color:#174852!important;opacity:1!important}.scholar-geo-other:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;width:100%!important;height:210px!important;min-height:210px!important;border-radius:12px!important;padding:12px!important;}
+          .scholar-geo-other{display:block!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;padding:10px 12px!important;border:1px solid #cbd5d8!important;border-radius:10px!important;background:#fff!important;color:#174852!important;font-family:inherit!important;font-size:.8rem!important;line-height:1.35!important;}
+          .scholar-geo-other__title{font-weight:800!important;color:#263238!important;font-size:.9rem!important;margin-bottom:8px!important}
+          .scholar-geo-other__help{font-size:.75rem!important;color:#4b5563!important;line-height:1.45!important;margin:0 0 8px!important}
+          .scholar-geo-other__count-label,.scholar-geo-other__field-label{display:block!important;font-size:.75rem!important;color:#374151!important;margin:7px 0 4px!important}
+          .scholar-geo-other__count{width:64px!important;box-sizing:border-box!important;padding:6px 8px!important;border:1px solid #cbd5d8!important;border-radius:6px!important;background:#fff!important;font:inherit!important}
+          .scholar-geo-other__fields{display:grid!important;gap:7px!important;margin-top:6px!important}
+          .scholar-geo-other__country{width:100%!important;box-sizing:border-box!important;padding:7px 9px!important;border:1px solid #cbd5d8!important;border-radius:7px!important;background:#fff!important;color:#174852!important;font:inherit!important}
+          .scholar-geo-other__country:focus,.scholar-geo-other__count:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;outline:none!important}
+          .scholar-geo-other__error{display:none!important;margin-top:6px!important;color:#b42318!important;font-size:.72rem!important;font-weight:700!important}
+          .scholar-geo-other.has-error .scholar-geo-other__error{display:block!important}
           .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
           details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important;box-sizing:border-box!important}
           details.scholar-geo-menu>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #cbd5d8;border-radius:999px;background:#fff;color:#174852;font-size:.8rem;font-weight:600;user-select:none;white-space:nowrap;width:100%!important;box-sizing:border-box!important}
@@ -326,7 +334,7 @@
       function buildPublicationReview(d,main,state,scholarId,scholarName,items,source,expected) {
         if(main.querySelector('.scholar-pubs-review'))return;
         var section=d.createElement('section');section.className='scholar-pubs-review';var head=d.createElement('div');head.className='scholar-pubs-review__head';var countText=items.length+(expected&&expected!==items.length?' of '+expected:'');
-        head.innerHTML='<h2>Publications currently linked to this scholar</h2><p><span class="scholar-pubs-review__count">'+countText+' publications</span> are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.</p><p><strong class="scholar-geotag-highlight">Please help us geotag your research</strong>. For each thesis, book, book chapter, journal article or report, you can identify the Fiji province or provinces where the study was undertaken. Use <strong>Fiji \u2014 general/national study</strong> where the work concerns Fiji broadly and is not tied to a particular province. Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong> and enter country names separated by semicolons (for example, <strong>Jamaica; China</strong>).</p><p>Geotagging allows publications to appear when the database is filtered by province. This means provincial governments and other stakeholders \u2014 including Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities themselves \u2014 can more easily find research undertaken in their province and, where useful, draw on that information in planning and decision making. Geographic suggestions are reviewed before they are added to the database.</p>';
+        head.innerHTML='<h2>Publications currently linked to this scholar</h2><p><span class="scholar-pubs-review__count">'+countText+' publications</span> are shown below using the same records, publication-type colors and working DOI/source links as the main dashboard.</p><p><strong class="scholar-geotag-highlight">Please help us geotag your research</strong>. For each thesis, book, book chapter, journal article or report, you can identify the Fiji province or provinces where the study was undertaken. Use <strong>Fiji \u2014 general/national study</strong> where the work concerns Fiji broadly and is not tied to a particular province. Where relevant, you can also identify another Pacific Island country or territory where the research was undertaken. For research undertaken outside the Pacific, use <strong>Other countries</strong>. Choose how many countries or areas you want to add, then enter one UN M49 country or area per field. Entries that are not in the UN M49 list are rejected.</p><p>Geotagging allows publications to appear when the database is filtered by province. This means provincial governments and other stakeholders \u2014 including Non-Government Organizations (NGOs), Civil Society Organizations (CSOs), and local communities themselves \u2014 can more easily find research undertaken in their province and, where useful, draw on that information in planning and decision making. Geographic suggestions are reviewed before they are added to the database.</p>';
         section.appendChild(head);var list=d.createElement('ol');list.className='scholar-pubs-review__list';section.appendChild(list);var sourceNodes=Array.prototype.slice.call(source.children);var dirty=new Map();
         items.forEach(function(item,idx){var node=sourceNodes[idx]?sourceNodes[idx].cloneNode(true):fallbackPublicationCard(d,item);node.style.overflow='hidden';var editor=buildGeoEditor(d,state,item,dirty);node.appendChild(editor);integrateGeoControlsIntoPublicationCard(node,editor);list.appendChild(node);});
         section.appendChild(buildGeoSubmit(d,scholarId,scholarName,dirty));main.appendChild(section);
@@ -379,9 +387,44 @@
         var wrap=d.createElement('div');wrap.className='scholar-geo-editor';wrap.innerHTML='<div class="scholar-geo-editor__label">Where was this study/research undertaken?</div>';var row=d.createElement('div');row.className='scholar-geo-editor__row';wrap.appendChild(row);var existing=new Set();try{var ps=state.provincesByItem&&state.provincesByItem.get(item.key);if(ps)ps.forEach(function(p){existing.add(p);});}catch(_){}
         var provinceMenu=buildCheckMenu(d,'Fiji province(s)',[{value:'Fiji — general/national study',label:'Fiji — general/national study',general:true}].concat(FIJI_PROVINCES.map(function(p){return{value:p,label:p};})),existing,function(){markDirty();});provinceMenu.details.dataset.kind='province';row.appendChild(provinceMenu.details);
         var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);
-        var otherCountries=d.createElement('input');otherCountries.type='text';otherCountries.className='scholar-geo-other';otherCountries.placeholder='Other countries';otherCountries.setAttribute('aria-label','Other countries; separate multiple countries with semicolons');otherCountries.title='Enter countries outside the Pacific, separated by semicolons (e.g. Jamaica; China)';row.appendChild(otherCountries);otherCountries.addEventListener('input',function(){markDirty();});
+        var otherCountries=buildM49CountryEditor(d,function(){markDirty();});row.appendChild(otherCountries.root);
         var status=d.createElement('div');status.className='scholar-geo-editor__status';status.textContent=existing.size?'Existing province tag(s) are pre-selected. Change them only if needed.':'No province tag is currently shown for this publication.';wrap.appendChild(status);
-        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=String(otherCountries.value||'').split(';').map(function(v){return v.trim();}).filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;});dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
+        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=otherCountries.values();if(other===null){status.textContent='Please choose only countries or areas from the UN M49 list.';return;}dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
+      }
+
+      var M49_COUNTRY_CACHE=null;
+      function loadM49Countries() {
+        if(M49_COUNTRY_CACHE)return M49_COUNTRY_CACHE;
+        M49_COUNTRY_CACHE=fetch('data/tonga-country-list.json',{cache:'no-store',credentials:'same-origin'}).then(function(r){if(!r.ok)throw new Error('UN M49 country list unavailable');return r.json();}).then(function(j){return Array.isArray(j&&j.countries)?j.countries.map(function(x){return String(x&&x.name||'').trim();}).filter(Boolean):[];});
+        return M49_COUNTRY_CACHE;
+      }
+
+      function buildM49CountryEditor(d,onChange) {
+        var root=d.createElement('div');root.className='scholar-geo-other';
+        root.innerHTML='<div class="scholar-geo-other__title">Other countries or areas</div><p class="scholar-geo-other__help">Choose one country or area per field from the UN M49 list, which includes territories.</p><label class="scholar-geo-other__count-label">How many countries or areas would you like to add?</label>';
+        var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value='0';count.className='scholar-geo-other__count';root.appendChild(count);
+        var fields=d.createElement('div');fields.className='scholar-geo-other__fields';root.appendChild(fields);
+        var error=d.createElement('div');error.className='scholar-geo-other__error';error.textContent='Please choose a country or area from the UN M49 list.';root.appendChild(error);
+        var names=[];var canon=new Map();var listId='m49-'+Math.random().toString(36).slice(2);
+        var dl=d.createElement('datalist');dl.id=listId;root.appendChild(dl);
+        loadM49Countries().then(function(arr){names=arr;arr.forEach(function(n){canon.set(n.toLowerCase(),n);var o=d.createElement('option');o.value=n;dl.appendChild(o);});}).catch(function(e){console.error(e);error.textContent='The UN M49 country list could not be loaded. Please reload the page.';root.classList.add('has-error');});
+        function render(){
+          var n=Math.max(0,Math.min(20,parseInt(count.value,10)||0));count.value=String(n);
+          var old=Array.prototype.slice.call(fields.querySelectorAll('input')).map(function(x){return x.value;});
+          fields.innerHTML='';
+          for(var i=0;i<n;i++){var lab=d.createElement('label');lab.className='scholar-geo-other__field-label';lab.textContent='Country or area '+(i+1);var inp=d.createElement('input');inp.type='text';inp.className='scholar-geo-other__country';inp.setAttribute('list',listId);inp.setAttribute('autocomplete','off');inp.value=old[i]||'';lab.appendChild(inp);fields.appendChild(lab);inp.addEventListener('change',validateAndChange);inp.addEventListener('blur',validateAndChange);}
+          root.classList.remove('has-error');onChange();
+        }
+        function values(){
+          var vals=Array.prototype.slice.call(fields.querySelectorAll('input')).map(function(x){return String(x.value||'').trim();}).filter(Boolean);
+          if(!vals.length){root.classList.remove('has-error');return [];}
+          if(!names.length){root.classList.add('has-error');return null;}
+          var out=[];for(var i=0;i<vals.length;i++){var canonical=canon.get(vals[i].toLowerCase());if(!canonical){root.classList.add('has-error');return null;}if(out.indexOf(canonical)<0)out.push(canonical);}
+          root.classList.remove('has-error');return out;
+        }
+        function validateAndChange(){var v=values();if(v!==null)onChange();}
+        count.addEventListener('change',render);count.addEventListener('input',function(){if(String(count.value).length)render();});
+        return{root:root,values:values};
       }
 
       function buildCheckMenu(d,label,options,selected,onChange) {
