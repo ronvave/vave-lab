@@ -204,14 +204,18 @@
           .scholar-geotag-highlight{background:#ffeb3b;color:#111;padding:1px 4px;border-radius:2px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
           .scholar-pubs-review__list{list-style:none;margin:0;padding:0;display:grid;gap:12px}
           .scholar-pubs-review__list>.db-item{margin:0!important;width:auto!important;max-width:none!important;position:relative!important;overflow:hidden!important;box-sizing:border-box!important;padding-right:225px!important}
-          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]),.scholar-pubs-review__list>.db-item:has(.scholar-geo-other:focus){min-height:520px!important;padding-bottom:12px!important;overflow:hidden!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-menu[open]){min-height:520px!important;padding-bottom:12px!important;overflow:hidden!important}
+          .scholar-pubs-review__list>.db-item:has(.scholar-geo-other){min-height:390px!important;padding-bottom:18px!important;overflow:hidden!important;padding-right:390px!important}
           .scholar-geo-editor{display:none!important}
-          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:195px!important;max-width:195px!important;overflow:visible!important;z-index:20!important;box-sizing:border-box!important}
+          .scholar-geo-toolbar{display:block!important;position:absolute!important;top:10px!important;right:12px!important;width:360px!important;max-width:360px!important;overflow:visible!important;z-index:20!important;box-sizing:border-box!important}
           .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]){padding-right:390px!important}
           .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]) .scholar-geo-toolbar{width:360px!important;max-width:360px!important}
           .scholar-pubs-review__list>.db-item:has(details.scholar-geo-menu[open]) details.scholar-geo-menu>summary{width:195px!important;margin-left:auto!important}
           .scholar-geo-toolbar .scholar-geo-editor__row{display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:8px!important;width:100%!important;overflow:visible!important;box-sizing:border-box!important}
           .scholar-geo-toolbar .scholar-geo-editor__row>details,.scholar-geo-toolbar .scholar-geo-editor__row>.scholar-geo-other{width:100%!important;max-width:100%!important;box-sizing:border-box!important}
+          .scholar-geo-toolbar .scholar-geo-editor__row>details>summary{width:195px!important;margin-left:auto!important}
+          .scholar-geo-toolbar .scholar-geo-other{margin-left:auto!important;width:195px!important;max-width:195px!important}
+          .scholar-geo-toolbar .scholar-geo-other:has(.scholar-geo-other__count:not([value="0"])){width:360px!important;max-width:360px!important}
           .scholar-geo-editor__row:has(details.scholar-geo-menu[open])>*:not(details.scholar-geo-menu[open]){display:none!important}
           .scholar-geo-editor__row:has(.scholar-geo-other:focus)>details{display:none!important}
           .scholar-geo-toolbar>a{display:inline-flex!important;align-items:center!important;justify-content:center!important;height:34px!important;min-height:34px!important;box-sizing:border-box!important;padding:0 12px!important;border-radius:999px!important;font-size:.8rem!important;line-height:1!important;font-weight:600!important;white-space:nowrap!important;}
@@ -227,6 +231,10 @@
           .scholar-geo-other__country{width:100%!important;box-sizing:border-box!important;padding:7px 9px!important;border:1px solid #cbd5d8!important;border-radius:7px!important;background:#fff!important;color:#174852!important;font:inherit!important}
           .scholar-geo-other__country:focus,.scholar-geo-other__count:focus{border-color:#0e7490!important;box-shadow:0 0 0 2px rgba(14,116,144,.10)!important;outline:none!important}
           .scholar-geo-other__error{display:none!important;margin-top:6px!important;color:#b42318!important;font-size:.72rem!important;font-weight:700!important}
+          .scholar-geo-other:not(.has-country-fields){padding:7px 10px!important;border-radius:10px!important}
+          .scholar-geo-other:not(.has-country-fields) .scholar-geo-other__title{margin-bottom:3px!important}
+          .scholar-geo-other:not(.has-country-fields) .scholar-geo-other__help{font-size:.68rem!important;line-height:1.25!important;margin-bottom:5px!important}
+          .scholar-geo-other.has-country-fields{width:360px!important;max-width:360px!important}
           .scholar-geo-other.has-error .scholar-geo-other__error{display:block!important}
           .scholar-geo-editor__label,.scholar-geo-editor__status{display:none!important}
           details.scholar-geo-menu{position:relative!important;overflow:visible!important;width:100%!important;box-sizing:border-box!important}
@@ -402,14 +410,14 @@
       function buildM49CountryEditor(d,onChange) {
         var root=d.createElement('div');root.className='scholar-geo-other';
         root.innerHTML='<div class="scholar-geo-other__title">Other countries or areas</div><p class="scholar-geo-other__help">Choose one country or area per field from the UN M49 list, which includes territories.</p><label class="scholar-geo-other__count-label">How many countries or areas would you like to add?</label>';
-        var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value='0';count.className='scholar-geo-other__count';root.appendChild(count);
+        var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value='0';count.setAttribute('value','0');count.className='scholar-geo-other__count';root.appendChild(count);
         var fields=d.createElement('div');fields.className='scholar-geo-other__fields';root.appendChild(fields);
         var error=d.createElement('div');error.className='scholar-geo-other__error';error.textContent='Please choose a country or area from the UN M49 list.';root.appendChild(error);
         var names=[];var canon=new Map();var listId='m49-'+Math.random().toString(36).slice(2);
         var dl=d.createElement('datalist');dl.id=listId;root.appendChild(dl);
         loadM49Countries().then(function(arr){names=arr;arr.forEach(function(n){canon.set(n.toLowerCase(),n);var o=d.createElement('option');o.value=n;dl.appendChild(o);});}).catch(function(e){console.error(e);error.textContent='The UN M49 country list could not be loaded. Please reload the page.';root.classList.add('has-error');});
         function render(){
-          var n=Math.max(0,Math.min(20,parseInt(count.value,10)||0));count.value=String(n);
+          var n=Math.max(0,Math.min(20,parseInt(count.value,10)||0));count.value=String(n);count.setAttribute('value',String(n));root.classList.toggle('has-country-fields',n>0);
           var old=Array.prototype.slice.call(fields.querySelectorAll('input')).map(function(x){return x.value;});
           fields.innerHTML='';
           for(var i=0;i<n;i++){var lab=d.createElement('label');lab.className='scholar-geo-other__field-label';lab.textContent='Country or area '+(i+1);var inp=d.createElement('input');inp.type='text';inp.className='scholar-geo-other__country';inp.setAttribute('list',listId);inp.setAttribute('autocomplete','off');inp.value=old[i]||'';lab.appendChild(inp);fields.appendChild(lab);inp.addEventListener('change',validateAndChange);inp.addEventListener('blur',validateAndChange);}
