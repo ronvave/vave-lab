@@ -571,3 +571,10 @@ the counted cohort. Adapter graduate maps and Panel D use a separate counting
 view, while profiles and personal publication totals use the full records.
 B3 filters the explicit exclusion. No missing-parent inference or other-country
 changes. Regression verification is recorded with the deployment result.
+
+
+## 2026-09-30 — Fiji direct-profile publication card sizing
+
+Rendered inspection of Ron Vave's live direct profile showed publication cards at 390px minimum height with an absolutely positioned geography toolbar measuring approximately 220px collapsed. Tonga uses publication content and geography controls as two normal-flow columns. Commit 6ceb492 groups Fiji publication content into one column and places the geography toolbar alongside it in a single natural-height grid row, replacing the 20-row span in the latest source. Original publication metadata is cloned to preserve thesis and university details. Province, Pacific country and UN M49 editors and submission handlers remain intact.
+
+Validation: `node tests/itaukei-card-mobility.test.cjs` passed (65 saved photos, 82 research summaries, 151 mobility rows / 78 universities); diff whitespace check passed. GitHub Dashboard integrity and cache checks passed. Pre-commit desktop preview was blocked by browser ERR_BLOCKED_BY_CLIENT. User subsequently authorized pushing. Deployment 36770267742 is pending behind an earlier waiting Pages deployment; no live visual verification or claim of a deployed fix has been made. User requested another push, recorded by this follow-up commit to retrigger deployment.
