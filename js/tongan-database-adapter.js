@@ -1558,13 +1558,26 @@
   // sync, grad, insightsDoc, workplaceCoordsDoc, uniCountryDoc,
   // progressRoster } bundle the production loadAll expects.
   // -------------------------------------------------------------------
+  function countingMaster(master) {
+    var excluded = new Set((master.scholars || []).filter(function (s) {
+      return String(s['Roster Tier'] || '').trim() === 'Retained profile; excluded from Indigenous Tongan counts';
+    }).map(function (s) { return s['Scholar ID']; }));
+    var copy = Object.assign({}, master);
+    ['scholars', 'gradDegrees', 'authorship', 'mobility'].forEach(function (key) {
+      copy[key] = (master[key] || []).filter(function (r) { return !excluded.has(r['Scholar ID']); });
+    });
+    return copy;
+  }
+
   function loadFromMaster(options) {
     return loadRawMaster(options).then(function (master) {
       var snap = buildZoteroSnapshot(master);
       return buildGeoJson(snap).then(function (geo) {
         var profiles = buildProfiles(master, snap);
-        var grad = buildGraduateStudies(master, snap, profiles);
-        var unis = buildWorldUniversities(master, snap);
+        var counted = countingMaster(master);
+        var countedIds = new Set(counted.scholars.map(function (s) { return s['Scholar ID']; }));
+        var grad = buildGraduateStudies(counted, snap, {scholars: profiles.scholars.filter(function (p) { return countedIds.has(p.scholarId); })});
+        var unis = buildWorldUniversities(counted, snap);
         // Compose insightsDoc.insights (name-keyed) from the Scholar-ID-keyed
         // admin insights map so the existing dashboard lookup (`state.scholarInsights[name]`)
         // works with zero changes. Also expose the Scholar-ID map on the
@@ -1580,6 +1593,7 @@
 
         return {
           master: master,
+          countingMaster: counted,
           snap: snap,
           geo: geo,
           unis: unis,
@@ -1900,6 +1914,7 @@
     },
     keyifyName: keyifyName,
     hashKey: hashKey,
+    countingMaster: countingMaster,
     computePublicationTotals: computePublicationTotals,
     findAuthorshipLinkageGaps: findAuthorshipLinkageGaps
   };

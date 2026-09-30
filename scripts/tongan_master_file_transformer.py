@@ -461,6 +461,14 @@ def extract_positions(rows: list[list]) -> list[dict]:
 # -----------------------------------------------------------------------------
 
 
+COUNT_EXCLUDED_TIER = "Retained profile; excluded from Indigenous Tongan counts"
+
+
+def counted_scholar(s):
+    """Counting policy is independent of profile visibility; never infer ancestry."""
+    return str(s.get("Roster Tier") or "").strip() != COUNT_EXCLUDED_TIER
+
+
 def compute_aggregates(
     scholars: list[dict],
     publications: list[dict],
@@ -942,15 +950,25 @@ def run(
                     if field in record:
                         record[field] = public_names[sid]
 
+    counted_scholars = [s for s in scholars if counted_scholar(s)]
+    counted_ids = {s["Scholar ID"] for s in counted_scholars}
+    counted_degrees = [g for g in grad_degrees if g.get("Scholar ID") in counted_ids]
+    counted_authorship = [a for a in authorship if a.get("Scholar ID") in counted_ids]
+    counted_mobility = [m for m in mobility if m.get("Scholar ID") in counted_ids]
     log("Computing aggregates...")
     aggregates = compute_aggregates(
-        scholars, publications, authorship, grad_degrees, mobility,
+        counted_scholars, publications, counted_authorship, counted_degrees, counted_mobility,
         researcher_authorship=researcher_authorship,
     )
     # Count raw degree episodes by Scholar-ID sets before display deduplication.
     aggregates["shortDisciplines"] = build_tongan_short_disciplines(
-        [g for g in grad_degrees_all if g.get("Scholar ID") not in part_tongan_ids], scholars
+        [g for g in grad_degrees_all if g.get("Scholar ID") in counted_ids], counted_scholars
     )
+    aggregates["countingPolicy"] = {
+        "rule": "Indigenous Tongan totals use the database's Tongan-paternal criterion.",
+        "retainedProfilesExcluded": len(scholars) - len(counted_scholars),
+        "note": "Some retained scholar profiles are excluded from Indigenous Tongan scholar and degree totals under the paternal criterion."
+    }
     t = aggregates["totals"]
     log(f"  → scholars={t['scholars']} pubs={t['publications_total']} "
         f"headline5={t['publications_headline_five']} "
@@ -985,7 +1003,7 @@ def run(
     # with the Master Dashboard instead of drifting from a stale one-off
     # snapshot.
     log("Building Panel C1 body-composition payload...")
-    body_comp = compute_body_composition_master(scholars, publications, authorship)
+    body_comp = compute_body_composition_master(counted_scholars, publications, counted_authorship)
     _write_json(out_dir / "tongan-body-composition-master.json", body_comp)
     log(
         f"  → C1 payload: Woman scholars={body_comp['Woman']['scholars']}, "
@@ -1020,7 +1038,7 @@ def run(
 
     try:
         b2_payload = write_worldpoints(
-            grad_degrees,
+            counted_degrees,
             repo=b2_repo,
             out_path=out_dir / "tongan-master-worldpoints.json",
             excluded_md_path=excluded_md,

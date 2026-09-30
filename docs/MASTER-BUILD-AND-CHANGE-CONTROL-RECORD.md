@@ -547,3 +547,17 @@ are recorded. The Add a 2nd / 3rd button reveals the next saved degree before
 creating a blank block. Hidden degree records remain untouched. The targeted
 multiple-degree test verifies initial hiding and prefill on click; syntax and
 required card/mobility preservation checks pass. Portal hash refreshed.
+
+
+## 2026-09-29 — retained Tonga profiles and statistical eligibility
+
+Ron instructed that TNG-S0164 remain visible, with all publications and degrees,
+but be excluded from paternal-criteria Indigenous Tongan totals. Master Roster
+Tier is the explicit counting flag; README row 8 records the rule and future
+summary reminder. Counted Scholars / Graduate Degrees / Authorship are hidden,
+formula-driven views for Dashboard statistics; original relational rows remain.
+Transformer aggregates, discipline tables, world points and body-composition use
+the counted cohort. Adapter graduate maps and Panel D use a separate counting
+view, while profiles and personal publication totals use the full records.
+B3 filters the explicit exclusion. No missing-parent inference or other-country
+changes. Regression verification is recorded with the deployment result.

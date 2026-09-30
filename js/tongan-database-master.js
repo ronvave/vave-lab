@@ -441,6 +441,7 @@
     // Master-specific data (14-province TOTAL columns, confederacy rows,
     // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
     state.master = bundle.master;
+    state.countingMaster = bundle.countingMaster || bundle.master;
     state.masterAdapter = window.MasterFileAdapter;
     const snap        = bundle.snap;
     const geo         = bundle.geo;
@@ -6034,7 +6035,7 @@
   function getPanelDData() {
     if (state.panelDDataCache) return state.panelDDataCache;
 
-    const master = state.master || {};
+    const master = state.countingMaster || state.master || {};
     // Ignore formula-bearing template rows pre-provisioned through row 1000.
     // The roster is defined by distinct canonical TNG-S#### Scholar IDs.
     const scholarsById = new Map();

@@ -20,6 +20,7 @@
       // A numeric legacy ID is never converted into a TNG-S identifier.
       const sid=text(r['Scholar ID'] || r.scholar_id),person=people.get(sid);
       if(!/^TNG-S\d+$/.test(sid) || !person){rejected.push({id:sid,reason:'not in eligible Tonga roster'});continue;}
+      if(text(person['Roster Tier'])==='Retained profile; excluded from Indigenous Tongan counts'){excluded.push({id:sid,reason:'excluded from statistical cohort by recorded counting policy'});continue;}
       const m=byDegree.get(text(r["Master's Degree ID"]))||{},p=byDegree.get(text(r['PhD Degree ID']))||{};
       // If explicit degree links are supplied, do not accept a cross-scholar
       // join or a known population conflict. The current sheet has no links.
