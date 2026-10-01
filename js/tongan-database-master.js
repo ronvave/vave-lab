@@ -9519,22 +9519,26 @@
     // Tag chips: provinces + disciplines (clickable to filter)
     const tags = document.createElement('div');
     tags.className = 'db-item__tags';
-    const provSet = state.provincesByItem.get(it.key);
-    if (provSet && provSet.size) {
-      (provSet || new Set()).forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by province researched: ${name}`,
-          onclick: () => {
-            state.filter.province = name;
-            state.filter.paternal = '';
-            state.shown = state.pageSize;
-            afterFilterChange();
-          }
-        }, `📍 ${name}`);
-        tags.appendChild(chip);
-      });
-    }
+    const geographyLabels = new Map();
+    const addGeography = (name, country) => { const label=String(name||'').trim();if(label&&!geographyLabels.has(label))geographyLabels.set(label,country); };
+    (it._masterGeographyRows || []).forEach(g => {
+      if(g.country === 'Tonga'){
+        const local=[g.islandDivision,g.district,g.specificIsland,g.site].map(v=>String(v||'').trim()).filter(Boolean);
+        if(local.length)local.forEach(name=>addGeography(name,false));
+        else addGeography('Tonga — general / national study',true);
+      }else addGeography(g.country,true);
+    });
+    if(!geographyLabels.size)(state.provincesByItem.get(it.key)||new Set()).forEach(name=>addGeography(name,false));
+    geographyLabels.forEach((country,name)=>{
+      const chip=el('span',{className:'db-item__badge db-item__badge--tag',title:'Approved study location: '+name});
+      chip.dataset.approvedGeography='1';
+      if(!country&&(state.provincesByItem.get(it.key)||new Set()).has(name)){chip.classList.add('is-clickable');chip.onclick=()=>{state.filter.province=name;state.filter.paternal='';state.shown=state.pageSize;afterFilterChange();};}
+      if(country){
+        chip.innerHTML='<svg aria-hidden="true" viewBox="0 0 12 16" style="width:10px;height:13px;vertical-align:middle;margin-right:4px"><path d="M6 9v7" stroke="#82909c" stroke-width="1"/><circle cx="6" cy="5" r="4" fill="#1976d2"/><circle cx="4.8" cy="3.8" r="1.1" fill="#fff" opacity=".65"/></svg>';
+        chip.appendChild(document.createTextNode(name));
+      }else chip.textContent='📍 '+name;
+      tags.appendChild(chip);
+    });
     const discSet = state.disciplinesByItem.get(it.key);
     if (discSet && discSet.size) {
       const displayedTopics = new Set();
