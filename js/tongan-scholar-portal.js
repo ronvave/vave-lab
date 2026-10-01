@@ -130,15 +130,15 @@ function checkMenu(parent,label,options,selected,onChange){
 function buildGeographyToolbar(li,item,options,dirty,updateCount){
  const toolbar=el('div',null,li);toolbar.className='tonga-geo-toolbar';toolbar.setAttribute('aria-label','Study locations for '+item.title);
  const approved=item._masterGeographyRows||[],selected=new Set();
- for(const g of approved){if(g.Country!=='Tonga')continue;const division=divisionName(g['Island Division (auto from District)']),island=islandName(g['Specific Island']);if(island&&division)selected.add('island:'+division+':'+island);else if(division&&!g.District&&!g['Village / Town / Site'])selected.add('division:'+division);else if(!division&&!island&&!g.District&&/national|general/i.test(g['Geography Type']||''))selected.add('national');}
+ for(const g of approved){if(g.country!=='Tonga')continue;const division=divisionName(g.islandDivision),island=islandName(g.specificIsland);if(island&&division)selected.add('island:'+division+':'+island);else if(division&&!g.district&&!g.site)selected.add('division:'+division);else if(!division&&!island&&!g.district&&(!g.site||/national|general/i.test(g.geographyType||'')))selected.add('national');}
  const national=checkMenu(toolbar,'Tonga',options,selected,changed);
  const canonical=v=>TongaCountries.resolve(v)?.name||v;
- const pacific=checkMenu(toolbar,'Pacific Island country',PACIFIC.map(c=>({value:canonical(c),label:canonical(c)})),new Set(approved.map(g=>canonical(g.Country))),changed);
- const other=TongaCountryInputs(toolbar,String(window.__tongaSharedScholar?.scholarId||'')+':'+item._masterPublicationId,changed);
+ const pacific=checkMenu(toolbar,'Pacific Island country',PACIFIC.map(c=>({value:canonical(c),label:canonical(c)})),new Set(approved.map(g=>canonical(g.country))),changed);
+ const other=TongaCountryInputs(toolbar,String(window.__tongaSharedScholar?.scholarId||'')+':'+item._masterPublicationId,changed,[...new Set(approved.map(g=>canonical(g.country)).filter(c=>c&&c!=='Tonga'&&!PACIFIC.map(canonical).includes(c)))]);
  const status=el('p','',toolbar);status.className='tonga-geo-item-status';status.setAttribute('role','status');
  function changed(){
   const loc=national.values().map(v=>options.find(o=>o.value===v).location),pac=pacific.values();
-  const existingCountries=new Set(approved.map(g=>canonical(g.Country).toLowerCase()));
+  const existingCountries=new Set(approved.map(g=>canonical(g.country).toLowerCase()));
   const countries=other.values().filter(c=>c!=='Tonga'&&!pac.includes(c)&&!existingCountries.has(c.toLowerCase()));
   if(loc.length||pac.length||countries.length){dirty.set(item._masterPublicationId,{item_key:item._masterPublicationId,title:item.title,year:item.year,tonga_locations:loc,pacific_countries:pac,other_countries:countries});status.textContent='Selections ready to submit below.';}else{dirty.delete(item._masterPublicationId);status.textContent='';}updateCount();
  }
@@ -205,6 +205,7 @@ async function renderShared(state,renderCard,renderItem){
   li.querySelectorAll('.db-item__tags').forEach(n=>{
    const clone=n.cloneNode(true);
    clone.querySelectorAll('.db-item__badge--tag').forEach(chip=>{
+    if(chip.dataset.approvedGeography){chip.classList.remove('is-clickable');return;}
     const topics=chip.textContent.split(/\s*,\s*/).map(s=>s.trim()).filter(Boolean);
     chip.replaceWith(...topics.map(topic=>{const pill=el('span',topic);pill.className='db-item__badge db-item__badge--tag';return pill;}));
    });
