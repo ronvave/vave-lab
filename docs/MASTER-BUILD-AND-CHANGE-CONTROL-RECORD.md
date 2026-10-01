@@ -599,3 +599,10 @@ Validation: existing card/mobility integrity suite passed (65 saved photos, 82 r
 ## 2026-10-01 — Compact geography pills
 
 Commit 3ef71702c05415cb5b211349d31f6e4823541614 removes the cloned provincial geography badges before rendering one deduplicated set in the original tag container, preserves discipline badges, and uses the existing db-item__badge--tag style for every geography pill. Provinces retain their pink pin; countries and Fiji national/general use a small blue SVG pin. Profile syntax and card/mobility integrity checks passed. Deployment visual verification pending.
+
+
+## 2026-10-01 — Tonga approved publication geography display
+
+Restored approved geography on both shared scholar profiles and dashboard publication lists. Profile toolbar now consumes the adapter's normalized country/islandDivision/district/specificIsland/site fields, preselects approved Tonga and Pacific locations, and displays approved other countries as read-only fields separately from new draft entries. Publication rendering emits one compact deduplicated set of approved locality and country badges, preserves clickable district filters, and uses blue country pins. Profile cloning preserves geography icons instead of splitting their text. Adapter resolves unique legacy synthesized publication keys to Master IDs while rejecting ambiguous aliases; new profile submissions already use canonical Master IDs. Cache revisions updated. Master data unchanged.
+
+Validation passed: Tonga card/mobility suite; approved-geography C2/division suite; real adapter legacy-key/country-field fixture; jsdom renderer/editor checks for compact unique badges, blue country SVGs, restored Tongatapu/Solomon Islands selections and read-only Germany. Deployment visual verification pending. Final code/cache commit ffa363598cb11e01ffdb9efa6b6c9d0e55a7d952.
