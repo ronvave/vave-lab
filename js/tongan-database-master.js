@@ -8716,9 +8716,16 @@
     const island = paternalGeography.island;
     const clan = paternalClan(r);
     const geoLine = village ? `${village} vlg${clan ? ` (${clan})` : ''}` : '';
-    const metaHtml = geoLine
-      ? escapeHtml(geoLine)
-      : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
+    // Ron's two-line geography display trial is limited to Tevita's dashboard card.
+    const tevitaGeographyTrial = String(r.scholarId || '') === 'TNG-S0002';
+    const maternalVillage = String(r.maternalVillage || '').trim();
+    const maternalClan = String(r.maternalClan || '').trim();
+    const maternalGeoLine = maternalVillage ? `${maternalVillage} vlg${maternalClan ? ` (${maternalClan})` : ''}` : '';
+    const metaHtml = tevitaGeographyTrial
+      ? `<span class="db-scholar-card__paternal-line">P: ${escapeHtml(geoLine)}</span>${maternalGeoLine ? `<br><span class="db-scholar-card__maternal-line">M: ${escapeHtml(maternalGeoLine)}</span>` : ''}`
+      : geoLine
+        ? escapeHtml(geoLine)
+        : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
 
     // Institution: linked to r.institutionUrl (institution homepage) if present
     let institutionHtml;
