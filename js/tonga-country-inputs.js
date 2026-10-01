@@ -1,11 +1,12 @@
 /* Tonga publication country editor. Drafts stay on this device, per scholar/publication. */
 (function(){
 'use strict';
-window.TongaCountryInputs=function(parent,key,onChange){
+window.TongaCountryInputs=function(parent,key,onChange,approvedCountries=[]){
  const root=document.createElement('fieldset');root.className='tonga-country-editor';parent.append(root);
  const legend=document.createElement('legend');legend.textContent='Other countries or areas';root.append(legend);
  const help=document.createElement('p');help.textContent='Choose one country or area per field from the UN M49 list, which includes territories.';root.append(help);
- const countLabel=document.createElement('label');countLabel.textContent='How many countries or areas would you like to add?';root.append(countLabel);
+ if(approvedCountries.length){const approved=document.createElement('div');approved.className='tonga-approved-countries';root.append(approved);const label=document.createElement('p');label.textContent='Approved countries or areas';approved.append(label);[...new Set(approvedCountries)].forEach(country=>{const input=document.createElement('input');input.type='text';input.value=country;input.readOnly=true;input.setAttribute('aria-label','Approved study country or area');approved.append(input);});}
+ const countLabel=document.createElement('label');countLabel.textContent='How many new countries or areas would you like to add?';root.append(countLabel);
  const count=document.createElement('input');count.type='number';count.min='0';count.max='50';count.step='1';count.value='0';countLabel.append(count);
  const rowsHost=document.createElement('div');root.append(rowsHost);
  const add=document.createElement('button');add.type='button';add.textContent='Add another country';root.append(add);
