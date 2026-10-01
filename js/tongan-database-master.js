@@ -8689,43 +8689,36 @@
     };
     const village = paternalGeography.village;
     const paternal = paternalGeography.province;
-    const confederacy = paternalDivision(r);
+    const paternalBannerDivision = paternalDivision(r);
+    const confederacy = Object.prototype.hasOwnProperty.call(CONF_GRADIENT, paternalBannerDivision) ? paternalBannerDivision : '';
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
     // Card banners use the concise Island name only. The underlying field is
     // still the scholar's paternal Island Division; this is display-only.
-    const bannerLabel = confederacy || 'Tongan Scholar';
+    const bannerLabel = confederacy || 'Tonga scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);
     const t = r.types || {};
     const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
 
-    // Meta line format (V2 canonical, per Ron's 2026-08-24 spec):
-    //   village + island + district        →  'Te\'ekiu vlg (Tongatapu Is), Kolovai District.'
-    //   village + district                 →  'Te\'ekiu vlg, Kolovai District.'
-    //   village only                       →  'Malawai vlg'
-    //   island only (outer)                →  'Gau Is'
-    //   district only                      →  'Kolovai District.'
-    //   nothing                            →  '<em>Village not yet added</em>' (empty-state chip)
-    //
-    // The 'vlg' + 'Is' abbreviations, the mainland-island suppression, the
-    // island-suffix normalization, and the sentinel/placeholder scrubbing
-    // are all handled by formatScholarGeography(); this renderer only wraps
-    // the string in a placeholder chip when it's empty. See the formatter
-    // definition near the top of this file.
-    const island = paternalGeography.island;
-    const clan = paternalClan(r);
-    const geoLine = village ? `${village} vlg${clan ? ` (${clan})` : ''}` : '';
-    // Ron's two-line geography display trial is limited to Tevita's dashboard card.
-    const tevitaGeographyTrial = String(r.scholarId || '') === 'TNG-S0002';
-    const maternalVillage = String(r.maternalVillage || '').trim();
-    const maternalClan = String(r.maternalClan || '').trim();
-    const maternalGeoLine = maternalVillage ? `${maternalVillage} vlg${maternalClan ? ` (${maternalClan})` : ''}` : '';
-    const metaHtml = tevitaGeographyTrial
-      ? `<span class="db-scholar-card__paternal-line">P: ${escapeHtml(geoLine)}</span>${maternalGeoLine ? `<br><span class="db-scholar-card__maternal-line">M: ${escapeHtml(maternalGeoLine)}</span>` : ''}`
-      : geoLine
-        ? escapeHtml(geoLine)
-        : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
+    // Show only supplied village/clan fields, independently for each parent.
+    const cleanLocality = value => {
+      const text = String(value || '').trim();
+      return /^(?:unclassified|unknown|n\/?a|null|undefined|not provided|not yet added|none|-|—)$/i.test(text) ? '' : text;
+    };
+    const localityLine = (villageValue, clanValue) => {
+      const villageText = cleanLocality(villageValue);
+      const clanText = cleanLocality(clanValue);
+      return villageText
+        ? `${villageText} vlg${clanText ? ` (${clanText})` : ''}`
+        : clanText ? `(${clanText})` : '';
+    };
+    const paternalGeoLine = localityLine(r.paternalVillage, paternalClan(r));
+    const maternalGeoLine = localityLine(r.maternalVillage, r.maternalClan);
+    const metaHtml = [
+      paternalGeoLine ? `<span class="db-scholar-card__paternal-line">P: ${escapeHtml(paternalGeoLine)}</span>` : '',
+      maternalGeoLine ? `<span class="db-scholar-card__maternal-line">M: ${escapeHtml(maternalGeoLine)}</span>` : ''
+    ].filter(Boolean).join('<br>');
 
     // Institution: linked to r.institutionUrl (institution homepage) if present
     let institutionHtml;
@@ -8857,7 +8850,7 @@
         ${photoHtml}
         <div class="db-scholar-card__info">
           <h3 class="db-scholar-card__name">${escapeHtml(displayName || (first + ' ' + last).trim())}</h3>
-          <div class="db-scholar-card__meta">${metaHtml}</div>
+          ${metaHtml ? `<div class="db-scholar-card__meta">${metaHtml}</div>` : ''}
           <div class="db-scholar-card__institution">${institutionHtml}</div>
           ${departmentHtml ? `<div class="db-scholar-card__department">${departmentHtml}</div>` : ''}
           ${title ? `<div class="db-scholar-card__title">${titleHtml}</div>` : ''}
