@@ -480,9 +480,12 @@
     });
 
     // Geography index: publication ID → verified/manual evidence rows.
-    var geoByPub = {};
+    var geoByPub = {}, geoIds = new Map(), ambiguousGeoKeys = new Set();
+    master.publications.forEach(function(p){var id=String(p['Publication ID / BibTeX Key']||'').trim();if(id)geoIds.set(id,id);});
+    master.publications.forEach(function(p){var id=String(p['Publication ID / BibTeX Key']||'').trim();if(!id)return;var key=hashKey('pub:'+id);if(geoIds.has(key)&&geoIds.get(key)!==id)ambiguousGeoKeys.add(key);else geoIds.set(key,id);});
     (master.geography || []).forEach(function (g) {
-      var pid = g['Publication ID / BibTeX Key'];
+      var key = String(g['Publication ID / BibTeX Key'] || '').trim();
+      var pid = ambiguousGeoKeys.has(key) ? null : geoIds.get(key);
       if (!pid) return;
       (geoByPub[pid] = geoByPub[pid] || []).push(g);
     });
@@ -884,6 +887,7 @@
         // Master-file specific extras (harmless to the production code):
         _masterPublicationType: p['Publication Type'],
         _masterProvinces:   provincesInPub,
+        _masterCountries:  Array.from(b4CountriesForPub),
         _masterIslandDivisions: islandDivisionsInPub,
         _masterSpecificIslands: specificIslandsInPub,
         _masterResearchSites: researchSitesInPub,
