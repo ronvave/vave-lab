@@ -363,6 +363,11 @@
           var topLine=li.querySelector('.db-item__topline'),action=Array.prototype.slice.call(template.querySelectorAll('a')).find(function(a){return /^(DOI|LINK)\b/i.test(String(a.textContent||'').trim())||/doi\.org/i.test(String(a.href||''));});
           if(action&&topLine){var ac=action.cloneNode(true);ac.textContent=item.DOI?'DOI':'Link';ac.className=item.DOI?'scholar-review-doi-chip':'scholar-review-link-chip';topLine.appendChild(ac);}
         }
+        var geography=d.createElement('div');geography.className='db-item__tags scholar-approved-geography';
+        var labels=(item._masterProvinces||[]).slice();if(item._masterFijiNational)labels.push('Fiji — general/national study');
+        (item._masterCountries||[]).forEach(function(c){if(c!=='Fiji')labels.push(c);});
+        Array.from(new Set(labels)).forEach(function(label){var tag=d.createElement('span');tag.className='db-tag';tag.textContent='📍 '+label;geography.appendChild(tag);});
+        if(geography.children.length)li.appendChild(geography);
         return li;
       }
 
@@ -417,11 +422,12 @@
 
       function buildGeoEditor(d,state,item,dirty) {
         var wrap=d.createElement('div');wrap.className='scholar-geo-editor';wrap.innerHTML='<div class="scholar-geo-editor__label">Where was this study/research undertaken?</div>';var row=d.createElement('div');row.className='scholar-geo-editor__row';wrap.appendChild(row);var existing=new Set();try{var ps=state.provincesByItem&&state.provincesByItem.get(item.key);if(ps)ps.forEach(function(p){existing.add(p);});}catch(_){}
-        var provinceMenu=buildCheckMenu(d,'Fiji province(s)',[{value:'Fiji — general/national study',label:'Fiji — general/national study',general:true}].concat(FIJI_PROVINCES.map(function(p){return{value:p,label:p};})),existing,function(){markDirty();});provinceMenu.details.dataset.kind='province';row.appendChild(provinceMenu.details);
-        var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);
-        var otherCountries=buildM49CountryEditor(d,function(){markDirty();});row.appendChild(otherCountries.root);
+        if(item._masterFijiNational)existing.add('Fiji — general/national study');var provinceMenu=buildCheckMenu(d,'Fiji province(s)',[{value:'Fiji — general/national study',label:'Fiji — general/national study',general:true}].concat(FIJI_PROVINCES.map(function(p){return{value:p,label:p};})),existing,function(){markDirty();});provinceMenu.details.dataset.kind='province';row.appendChild(provinceMenu.details);
+        if(item._masterFijiNational)existing.add('Fiji — general/national study');var savedCountries=item._masterCountries||[];
+        var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(savedCountries.filter(function(c){return PACIFIC_COUNTRIES.indexOf(c)>=0;})),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);
+        var otherCountries=buildM49CountryEditor(d,function(){markDirty();},savedCountries.filter(function(c){return c!=='Fiji'&&PACIFIC_COUNTRIES.indexOf(c)<0;}));row.appendChild(otherCountries.root);
         var status=d.createElement('div');status.className='scholar-geo-editor__status';status.textContent=existing.size?'Existing province tag(s) are pre-selected. Change them only if needed.':'No province tag is currently shown for this publication.';wrap.appendChild(status);
-        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=otherCountries.values();if(other===null){status.textContent='Please choose only countries or areas from the UN M49 list.';return;}dirty.set(item.key,{item_key:item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
+        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=otherCountries.values();if(other===null){status.textContent='Please choose only countries or areas from the UN M49 list.';return;}dirty.set(item.key,{item_key:item._masterPublicationId||item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
       }
 
       var M49_COUNTRY_CACHE=null;
@@ -431,10 +437,10 @@
         return M49_COUNTRY_CACHE;
       }
 
-      function buildM49CountryEditor(d,onChange) {
+      function buildM49CountryEditor(d,onChange,initialCountries) {
         var root=d.createElement('div');root.className='scholar-geo-other';
         root.innerHTML='<div class="scholar-geo-other__title">Other countries or areas</div><p class="scholar-geo-other__help">Choose one country or area per field from the UN M49 list, which includes territories.</p><label class="scholar-geo-other__count-label">How many countries or areas would you like to add?</label>';
-        var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value='0';count.setAttribute('value','0');count.className='scholar-geo-other__count';root.appendChild(count);
+        var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value=String((initialCountries||[]).length);count.setAttribute('value',count.value);count.className='scholar-geo-other__count';root.appendChild(count);
         var fields=d.createElement('div');fields.className='scholar-geo-other__fields';root.appendChild(fields);
         var error=d.createElement('div');error.className='scholar-geo-other__error';error.textContent='Please choose a country or area from the UN M49 list.';root.appendChild(error);
         var names=[];var canon=new Map();var listId='m49-'+Math.random().toString(36).slice(2);
@@ -455,6 +461,7 @@
           root.classList.remove('has-error');return out;
         }
         function validateAndChange(){var v=values();if(v!==null)onChange();}
+        if(initialCountries&&initialCountries.length){root.classList.add('has-country-fields');initialCountries.forEach(function(country,i){var lab=d.createElement('label');lab.className='scholar-geo-other__field-label';lab.textContent='Country or area '+(i+1);var inp=d.createElement('input');inp.type='text';inp.className='scholar-geo-other__country';inp.setAttribute('list',listId);inp.value=country;lab.appendChild(inp);fields.appendChild(lab);inp.addEventListener('change',validateAndChange);inp.addEventListener('blur',validateAndChange);});}
         count.addEventListener('change',render);count.addEventListener('input',function(){if(String(count.value).length)render();});
         return{root:root,values:values};
       }
