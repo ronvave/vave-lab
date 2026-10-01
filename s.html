@@ -240,6 +240,8 @@
           .scholar-geo-menu.has-selection .scholar-geo-menu__count{display:inline-flex}
           .scholar-geo-options{position:relative!important;z-index:30!important;width:100%!important;min-width:0!important;max-width:100%!important;max-height:360px!important;overflow-y:auto!important;overflow-x:hidden!important;box-sizing:border-box!important;margin:7px 0 0!important;padding:8px!important;background:#fff!important;border:1px solid #cbd5d8!important;border-radius:10px!important;box-shadow:0 4px 12px rgba(18,63,71,.10)!important;text-align:left!important}
           .scholar-direct-main .scholar-pubs-review .scholar-geo-toolbar details.scholar-geo-menu>.scholar-geo-options{position:relative!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:100%!important;min-width:0!important;max-width:100%!important}
+          .scholar-geography-pill{display:inline-flex!important;align-items:center!important;gap:4px!important}
+          .scholar-country-pin{width:10px!important;height:13px!important;flex:0 0 10px!important;vertical-align:middle!important}
           .scholar-geo-option{display:flex;gap:8px;align-items:flex-start;justify-content:flex-start;text-align:left;padding:6px 7px;border-radius:7px;font-size:.8rem;color:#374151;cursor:pointer;width:100%;box-sizing:border-box}
           .scholar-geo-option span{display:block;flex:1 1 auto;min-width:0;text-align:left;white-space:normal;overflow:visible;text-overflow:clip}
           .scholar-geo-option:hover{background:#eaf7f9}.scholar-geo-option input{margin-top:2px;accent-color:#0e7490;flex:0 0 auto}
@@ -363,11 +365,24 @@
           var topLine=li.querySelector('.db-item__topline'),action=Array.prototype.slice.call(template.querySelectorAll('a')).find(function(a){return /^(DOI|LINK)\b/i.test(String(a.textContent||'').trim())||/doi\.org/i.test(String(a.href||''));});
           if(action&&topLine){var ac=action.cloneNode(true);ac.textContent=item.DOI?'DOI':'Link';ac.className=item.DOI?'scholar-review-doi-chip':'scholar-review-link-chip';topLine.appendChild(ac);}
         }
-        var geography=d.createElement('div');geography.className='db-item__tags scholar-approved-geography';
-        var labels=(item._masterProvinces||[]).slice();if(item._masterFijiNational)labels.push('Fiji — general/national study');
-        (item._masterCountries||[]).forEach(function(c){if(c!=='Fiji')labels.push(c);});
-        Array.from(new Set(labels)).forEach(function(label){var tag=d.createElement('span');tag.className='db-tag';tag.textContent='📍 '+label;geography.appendChild(tag);});
-        if(geography.children.length)li.appendChild(geography);
+        // Replace cloned geography badges once; retain the discipline badges.
+        var geography=li.querySelector('.db-item__tags');
+        if(!geography){geography=d.createElement('div');geography.className='db-item__tags';li.appendChild(geography);}
+        Array.prototype.slice.call(geography.children).forEach(function(tag){if(/^📍/.test(String(tag.textContent||'').trim()))tag.remove();});
+        geography.classList.add('scholar-approved-geography');
+        var locations=(item._masterProvinces||[]).map(function(label){return{label:label,country:false};});
+        if(item._masterFijiNational)locations.push({label:'Fiji — general/national study',country:true});
+        (item._masterCountries||[]).forEach(function(c){if(c!=='Fiji')locations.push({label:c,country:true});});
+        var seenLocations=new Set();
+        locations.forEach(function(location){
+          if(seenLocations.has(location.label))return;seenLocations.add(location.label);
+          var tag=d.createElement('span');tag.className='db-item__badge db-item__badge--tag scholar-geography-pill';
+          if(location.country){
+            tag.innerHTML='<svg class="scholar-country-pin" aria-hidden="true" viewBox="0 0 12 16"><path d="M6 9v7" stroke="#82909c" stroke-width="1"/><circle cx="6" cy="5" r="4" fill="#1976d2"/><circle cx="4.8" cy="3.8" r="1.1" fill="#fff" opacity=".65"/></svg>';
+            tag.appendChild(d.createTextNode(' '+location.label));
+          }else tag.textContent='📍 '+location.label;
+          geography.appendChild(tag);
+        });
         return li;
       }
 
