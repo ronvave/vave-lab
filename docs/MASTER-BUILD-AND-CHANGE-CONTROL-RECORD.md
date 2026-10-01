@@ -594,3 +594,8 @@ Master inspection confirmed Ron Vave's Oct 1 approvals wrote verified geography 
 Adapter commit 92d5bbfec0bf22fbb7f27aa89c4d41cfe12d60c3 resolves unique legacy keys through the real publication roster, refuses ambiguous mappings, and exposes geography for profile rendering. Dashboard cache updated in b33c0661ec601ec1026d68955baf7a1b627ccf1e. Profile commit ffe1f3f753186c4e15b9b1ed41745e12b5c97154 restores saved countries and Fiji national selections, renders approved location tags, and sends canonical publication IDs for future submissions. Master records and approval evidence preserved.
 
 Validation: existing card/mobility integrity suite passed (65 saved photos, 82 research summaries, 151 mobility rows / 78 universities); profile JavaScript syntax passed. Executing repaired adapter against the current live geography snapshot (1593 rows) verified the Solwara chapter's 12 locations, the authorship article's Fiji/Palau/Solomon Islands/New Zealand, and all 14 provinces for Cultural ecosystem services. Live deployment verification pending at time of entry.
+
+
+## 2026-10-01 — Compact geography pills
+
+Commit 3ef71702c05415cb5b211349d31f6e4823541614 removes the cloned provincial geography badges before rendering one deduplicated set in the original tag container, preserves discipline badges, and uses the existing db-item__badge--tag style for every geography pill. Provinces retain their pink pin; countries and Fiji national/general use a small blue SVG pin. Profile syntax and card/mobility integrity checks passed. Deployment visual verification pending.
