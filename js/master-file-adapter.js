@@ -422,8 +422,24 @@
 
     // Geography index: publication ID → array of geography rows.
     var geoByPub = {};
+    // Older profile approvals saved the displayed item key instead of the Master ID.
+    // Resolve only unique keys from the actual publication roster.
+    var geoPublicationIds = new Map(), ambiguousGeoKeys = new Set();
+    master.publications.forEach(function (p) {
+      var pid = String(p['Publication ID / BibTeX Key'] || '').trim();
+      if (!pid) return;
+      geoPublicationIds.set(pid, pid);
+    });
+    master.publications.forEach(function (p) {
+      var pid = String(p['Publication ID / BibTeX Key'] || '').trim();
+      if (!pid) return;
+      var key = hashKey('pub:' + pid);
+      if (geoPublicationIds.has(key) && geoPublicationIds.get(key) !== pid) ambiguousGeoKeys.add(key);
+      else geoPublicationIds.set(key, pid);
+    });
     (master.geography || []).forEach(function (g) {
-      var pid = g['Publication ID / BibTeX Key'];
+      var key = String(g['Publication ID / BibTeX Key'] || '').trim();
+      var pid = ambiguousGeoKeys.has(key) ? null : geoPublicationIds.get(key);
       if (!pid) return;
       (geoByPub[pid] = geoByPub[pid] || []).push(g);
     });
@@ -770,6 +786,8 @@
         // Master-file specific extras (harmless to the production code):
         _masterPublicationType: p['Publication Type'],
         _masterProvinces:   provincesInPub,
+        _masterCountries:  Array.from(b4CountriesForPub),
+        _masterFijiNational: geoRowsForPub.some(function (g) { return String(g.Country || '').trim() === 'Fiji' && !String(g['Fiji Province'] || '').trim() && (/^verified/i.test(String(g.Verification || '').trim()) || String(g.Verification || '').toLowerCase() === 'strong'); }),
         _masterFiji:        Number(p['Tagged Fiji?'] || 0) > 0,
         _masterITaukei:     p._is_itaukei_associated === true,
         _masterAuthorship:  masterAuthorship,
