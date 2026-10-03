@@ -1,0 +1,29 @@
+name: Validate Vanuatu dashboard and Admin
+on:
+  pull_request:
+    paths: ['**/*vanuatu*', 'tests/vanuatu-*', 'apps-script/vanuatu-*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install cryptography
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --prefix "$RUNNER_TEMP/vanuatu-test-runtime" --no-save --ignore-scripts jsdom@26.1.0
+      - run: |
+          python3 -m unittest discover -s tests -p 'vanuatu_export_test.py'
+          node tests/vanuatu-model.test.cjs
+          node tests/vanuatu-backend.test.cjs
+          python3 scripts/check_vanuatu_assets.py
+      - name: Simulated DOM integration (not rendered-browser acceptance)
+        env:
+          VANUATU_JSDOM_PATH: ${{ runner.temp }}/vanuatu-test-runtime/node_modules/jsdom
+        run: node tests/vanuatu-dom.test.cjs

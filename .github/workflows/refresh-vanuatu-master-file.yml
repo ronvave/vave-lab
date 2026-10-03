@@ -1,0 +1,60 @@
+name: Refresh Vanuatu Master File snapshot
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Validate source and exact field approval without committing
+        type: boolean
+        default: true
+
+# Deliberately manual until Vanuatu secrets, source ACL and export policy are
+# activated by the owner. Do not copy another country's passcode or credentials.
+permissions:
+  contents: write
+concurrency:
+  group: refresh-vanuatu-master-file
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install google-api-python-client google-auth cryptography
+      - name: Test Vanuatu schema, privacy and model
+        run: |
+          python3 -m unittest discover -s tests -p 'vanuatu_export_test.py'
+          node tests/vanuatu-model.test.cjs
+          node tests/vanuatu-backend.test.cjs
+      - name: Read, validate and sanitize Vanuatu source
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
+          VANUATU_ENRICHMENT_FILE_ID: ${{ secrets.VANUATU_ENRICHMENT_FILE_ID }}
+          VAN_DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          if [ "$VAN_DRY_RUN" = "true" ]; then
+            python3 scripts/vanuatu_master_file_transformer.py --dry-run
+          else
+            python3 scripts/vanuatu_master_file_transformer.py --out-dir=data
+          fi
+      - name: Commit only the validated Vanuatu snapshot
+        if: inputs.dry_run == false
+        run: |
+          set -euo pipefail
+          git config user.name 'Vave Lab Vanuatu snapshot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/vanuatu-master-bundle.json.enc
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'data: refresh validated Vanuatu Master snapshot'
+          git pull --rebase origin main
+          git push origin HEAD:main
