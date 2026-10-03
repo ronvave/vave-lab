@@ -1,0 +1,4 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Shared Vanuatu scholar profile — Vave Lab</title><style>body{margin:0}iframe{width:100%;height:100dvh;border:0}</style></head><body><p id="error" hidden>Invalid Vanuatu profile identifier.</p><iframe id="profile" title="Shared Vanuatu scholar profile" hidden></iframe><script>
+const q=new URLSearchParams(location.search),id=q.get('scholar');if(/^VAN-S\d{4,}$/.test(id||'')){const u=new URL('vanuatu-research-database-master.html',location.href);u.searchParams.set('scholar',id);if(q.get('preview')==='1')u.searchParams.set('preview','1');const f=document.getElementById('profile');f.src=u.href;f.hidden=false;}else document.getElementById('error').hidden=false;
+// Stable public Scholar IDs are navigation, not private share tokens or Admin auth.
+</script></body></html>

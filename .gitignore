@@ -98,6 +98,11 @@ data/solomon-world-universities.json
 data/solomon-revoked-demos.json
 
 # Local artefacts
+# Vanuatu private source exports / plaintext are never Pages assets.
+data/vanuatu-master-bundle.json
+data/vanuatu-private-*.json
+data/vanuatu-scholar-enrichment.json
+data/vanuatu-scholar-insights-master.json
 .DS_Store
 __pycache__/
 *.pyc

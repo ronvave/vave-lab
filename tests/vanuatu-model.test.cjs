@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const M=require('../js/vanuatu-model.js'),G=require('../js/vanuatu-geography.js');
+const ctx={window:{}};vm.createContext(ctx);vm.runInContext(fs.readFileSync('js/vanuatu-preview-data.js','utf8'),ctx);const bundle=JSON.parse(JSON.stringify(ctx.window.VANUATU_PREVIEW));
+let tests=0;function test(name,fn){fn();tests++;console.log('PASS',name);}
+test('official six provinces and 71 councils',()=>{assert.equal(G.provinces.length,6);assert.equal(Object.values(G.councils).flat().length,71);assert.equal(G.municipalities.length,3);});
+test('separate degree episodes and real bibliographic works',()=>{assert.deepEqual(M.counts(M.build(bundle)),{scholars:3,publications:3,masters:2,phd:1,countries:3});});
+test('either, paternal and maternal are explicit and independent',()=>{const s=bundle.tables.Scholars[0];assert.deepEqual(M.affiliation(s),['Sanma','Penama']);assert.deepEqual(M.affiliation(s,'maternal'),['Penama']);assert.equal(M.filtered(M.build(bundle),{basis:'maternal',province:'Penama'}).scholars.length,1);});
+test('identity eligibility never uses surname or paternal geography',()=>{assert(M.eligible({'Identity Verification Status':'Verified','Public Display Approved':true,'Paternal Province':''},true));assert(!M.eligible({'Identity Verification Status':'Probable','Public Display Approved':true,'Scholar Name':'Vanuatu'},true));});
+test('no synthetic theses from completed degrees',()=>{const b=structuredClone(bundle);b.tables.Publications=[];b.tables.Authorship=[];const m=M.build(b);assert.equal(M.counts(m).publications,0);assert.equal(M.counts(m).masters,2);});
+test('same person may have repeated legitimate masters',()=>{const b=structuredClone(bundle);b.tables['Graduate Degrees'].push({...b.tables['Graduate Degrees'][0],'Degree ID':'VAN-D9004'});assert.equal(M.counts(M.build(b)).masters,3);assert.equal(M.counts(M.build(b)).scholars,3);});
+test('authorship is ID-linked, not inferred from title or byline',()=>{const m=M.build(bundle);assert.equal(M.authorClass(m,'VAN-P900003'),'coauthor');assert.equal(M.authorClass(m,'missing'),'unlinked');});
+test('one work counts once at each place',()=>{assert.deepEqual(M.groups([{id:'p1',place:'Sanma'},{id:'p1',place:'Sanma'},{id:'p1',place:'Shefa'}],r=>r.place,r=>r.id),[{name:'Sanma',count:1},{name:'Shefa',count:1}]);});
+test('Nauru and Naoero share one country',()=>{assert.equal(G.country('Nauru'),G.country('Naoero'));});
+test('explicit mobility pairs, no automatic Cartesian product',()=>{const b=structuredClone(bundle);const m=M.build(b);assert.equal(M.mobility(m).rows.length,1);b.tables['Study Pathways']=[];assert.equal(M.mobility(M.build(b)).rows.length,0);});
+test('duplicate pairs collapse and wrong-owner pair rejected',()=>{const b=structuredClone(bundle);b.tables['Study Pathways'].push({...b.tables['Study Pathways'][0],'Pathway ID':'VAN-PATH9002'});assert.equal(M.mobility(M.build(b)).rows.length,1);b.tables['Study Pathways'][0]['Scholar ID']='VAN-S9002';assert.equal(M.mobility(M.build(b)).excluded.length,1);});
+test('counted reports; excluded conference and unknown works',()=>{const b=structuredClone(bundle);b.tables.Publications.push({'Publication ID':'VAN-P900005',Title:'Conference','Publication Type':'Conference Paper'});assert.equal(M.build(b).pubs.length,3);assert(M.build(b).pubs.some(p=>p['Publication Type']==='Report'));});
+test('restricted views are unavailable, not zero',()=>{const b=structuredClone(bundle);b.fields['Graduate Degrees']=[];b.fields.Publications=[];const c=M.counts(M.build(b));assert.equal(c.masters,null);assert.equal(c.publications,null);});
+test('unsafe URL and BibTeX escaping',()=>{assert.equal(M.safeURL('javascript:alert(1)'),'');assert(M.bibtex({'Publication ID':'VAN-P1',Title:'A {test}',Year:'2024','Publication Type':'Report'}).includes('\\{test\\}'));});
+test('country scope is enforced',()=>assert.throws(()=>M.build({...bundle,country:'Tonga'})));
+test('study filters preserve complete degree records and linked outputs',()=>{const v=M.filtered(M.build(bundle),{country:'New Zealand'});assert.equal(v.scholars.length,1);assert.equal(v.pubs.length,1);});
+console.log(tests+' Vanuatu model tests passed.');
