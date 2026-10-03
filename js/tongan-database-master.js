@@ -140,7 +140,7 @@
   // The underlying items remain in BibTeX export (which does not depend
   // on TYPE_ORDER); preprints are also dropped there because step (3)
   // removes them from state.snapshot.items entirely.
-  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report'];
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book'];
 
   // Public geography uses paternal values only; maternal data stays private.
   function effectivePaternalProvince(profile) {
@@ -496,10 +496,8 @@
     // item filter.
     if (snap && Array.isArray(snap.items)) {
       const beforeCount = snap.items.length;
-      snap.items = snap.items.filter(it => it
-        && it.itemType !== 'conferencePaper'
-        && it.itemType !== 'preprint'
-        && it.itemType !== 'document');
+      snap.items = snap.items.filter(it => it &&
+        window.TonganMasterFileAdapter.isCountedPublicationType(visualType(it)));
       state.hiddenConferencePapers = beforeCount - snap.items.length;
 
       // Client-side year backfill. The Python snapshot builder used to reject
@@ -8568,7 +8566,7 @@
   //   the item filter, no chip would render.
   // 'conferencePaper' likewise remains in the list purely as a legacy
   //   safety net; conference papers are filtered out at load time too.
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper'];
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters'];
 
   // Country name → ISO 3166-1 alpha-2 code, used for flag icons in the card header.
   // Only countries that actually appear in the current dataset (or are
