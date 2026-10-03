@@ -22,7 +22,13 @@ async function pdfPages(attachment,progress){
 }
 window.TongaAttachmentReview={mount(host,row,caps){
  const files=JSON.parse(row['Attachments JSON']||'[]');if(!files.length)return;
+ const supported=files.filter(f=>/\.(bib|ris|enw)$/i.test(f.name||'')||(f.field==='cv'&&/\.pdf$/i.test(f.name||'')));
  const box=E('section',null,host);box.className='tonga-attachment-analysis';E('h4','Attachment analysis & proposed changes',box);
+ if(!supported.length){
+  const headshotsOnly=files.every(f=>f.field==='headshot');
+  const status=E('p',headshotsOnly?'Only a headshot was submitted. No CV or reference file is available to analyse.':'No supported documents were submitted for automatic analysis. Supported files are CV PDFs and BibTeX (.bib), RIS (.ris), or EndNote (.enw) text exports. Download the originals above for manual review.',box);status.setAttribute('role','status');
+  B('Analyse attachments',box,()=>{}).disabled=true;return;
+ }
  E('p','Read CV PDFs and BibTeX / EndNote / RIS references, compare with the Master, then approve individual proposals. Extracted proposals are checked by default, including items needing attention. Uncheck anything you do not want. Nothing is imported by analysing a file.',box).className='meta';
  if(!caps.attachmentAnalysis){E('p','Attachment analysis is awaiting the updated Tonga backend.',box);return;}
  let a=null,busy=false,selection=new Set(),seenSelection=new Set(),loaded=false;
@@ -36,7 +42,7 @@ window.TongaAttachmentReview={mount(host,row,caps){
  B('Show saved analysis',tools,()=>run(async()=>{await load();say(a?'Saved analysis loaded.':'No saved analysis yet. Choose Analyse attachments.');}));
  const analyse=B('Analyse attachments',tools,()=>run(async()=>{
   await load();let failures=[];
-  for(const f of files){if(a?.files.some(x=>x.fileId===f.fileId))continue;say('Analysing '+f.name+'… Keep this tab open. Each completed file is saved.');
+  for(const f of supported){if(a?.files.some(x=>x.fileId===f.fileId))continue;say('Analysing '+f.name+'… Keep this tab open. Each completed file is saved.');
    try{let params={submissionId:row['Submission ID'],fileId:f.fileId};
     if(/\.pdf$/i.test(f.name)&&f.field==='cv'){const data=ok(await window.adminWriteback.readSubmissionAttachment(row['Submission ID'],f.fileId));Object.assign(params,await pdfPages(data,t=>say(f.name+': '+t)));}
     a=ok(await window.adminWriteback.analyseScholarAttachment(params)).analysis;
@@ -79,7 +85,7 @@ window.TongaAttachmentReview={mount(host,row,caps){
   for(const id of selection)if(!actionable.some(i=>i.id===id))selection.delete(id);
   actionable.forEach(i=>{if(!seenSelection.has(i.id)){selection.add(i.id);seenSelection.add(i.id);}});
   const totals={};a.items.forEach(i=>totals[i.state]=(totals[i.state]||0)+1);
-  E('p',a.files.length+' of '+files.length+' attachments analysed · '+(totals.pending||0)+' proposals · '+(totals.needs_review||0)+' need attention · '+(totals.existing||0)+' already recorded · '+(totals.duplicate||0)+' duplicates · '+(totals.applied||0)+' approved',content).className='tonga-analysis-summary';
+  E('p',a.files.filter(f=>f.status==='analysed'&&supported.some(s=>s.fileId===f.fileId)).length+' of '+supported.length+' supported documents analysed · '+(totals.pending||0)+' proposals · '+(totals.needs_review||0)+' need attention · '+(totals.existing||0)+' already recorded · '+(totals.duplicate||0)+' duplicates · '+(totals.applied||0)+' approved',content).className='tonga-analysis-summary';
   a.files.forEach(f=>{const d=E('details',null,content);E('summary',f.name+(f.records?' — '+f.records+' reference records':'')+(f.pages?' — '+f.pages+' CV pages':'')+(f.status==='manual'?' — manual review':''),d);f.warnings.forEach(w=>E('p',w,d));
    if(f.sections){f.sections.forEach(s=>{const e=E('details',null,d);E('summary','Page '+s.page+' · '+s.section,e);E('pre',s.excerpt,e);});if(row.Status==='Pending')cvEditor(d,null,f);}
   });
