@@ -13,6 +13,7 @@ on:
       - Refresh iTaukei Master File snapshot
       - Refresh Solomon Islands Master File snapshot
       - Refresh Tongan Master File snapshot
+      - Refresh Vanuatu Master File snapshot
     types: [completed]
     branches: [main]
 
