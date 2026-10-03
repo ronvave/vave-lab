@@ -880,6 +880,7 @@
         abstractNote:       '',                  // Private per allowlist
         // Master-file specific extras (harmless to the production code):
         _masterPublicationType: p['Publication Type'],
+        _vanuatuCountryScope: window.VanuatuDashboardModel.countryScope(p),
         _masterProvinces:   provincesInPub,
         _masterCountries:  Array.from(b4CountriesForPub),
         _masterIslandDivisions: islandDivisionsInPub,

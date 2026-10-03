@@ -9848,6 +9848,7 @@
   // Geography evidence. The author's home district is deliberately excluded:
   // it describes the person, not where or what the publication studied.
   function c3IsVanuatuFocused_(it) {
+    if (it._vanuatuCountryScope === 'vanuatu') return true;
     const districts = state.provincesByItem.get(it.key);
     if (districts && districts.size > 0) return true;
     const nonDistrictKey = state.nonProvincialFijiKey;

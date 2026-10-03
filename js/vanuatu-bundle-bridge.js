@@ -32,7 +32,7 @@ async function nativeState(){native=await rpc('getVanuatuAdminState');use({count
 async function fetchJson(path){inherit();path=path.split('?')[0];if(path==='data/vanuatu-provinces.geojson'){const r=await fetch(path);if(!r.ok)throw Error('Vanuatu province boundaries unavailable.');const geo=await r.json();geo.features.forEach(f=>{f.properties.name=G.province(f.properties.shapeName);f.properties.confederacy=f.properties.name;f.properties.islandDivision=f.properties.name;});return geo;}
  if(!bundle)throw Error('Unlock the Vanuatu data first.');
  const map={'scholars':'Scholars','publications':'Publications','authorship':'Authorship','grad-degrees':'Graduate Degrees','geography':'Research Geography'};const suffix=path.replace(/^data\/vanuatu-master-/,'').replace(/\.json$/,'');if(map[suffix])return rows(map[suffix]);
- if(/master-mobility/.test(path))return M.mobility(M.build(bundle)).rows;
+ if(/master-mobility/.test(path))return w.VanuatuDashboardModel.pathways(M.build(bundle)).rows;
  if(/last-master-sync/.test(path))return {finishedAt:bundle.generatedAt||null,preview:!!bundle.preview};
  if(/master-aggregates/.test(path)){
   if(!w.VanuatuDashboardModel)return {};

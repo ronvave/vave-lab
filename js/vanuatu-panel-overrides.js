@@ -276,8 +276,36 @@
   // -------------------------------------------------------------------
   // Boot: run overrides after production render pass.
   // -------------------------------------------------------------------
+  function showGeographyCoverage() {
+    var bundle = window.VanuatuBundle.current();
+    if (!bundle) return;
+    var tables = bundle.tables || {};
+    var institutions = tables.Institutions || [];
+    var hasCoordinates = institutions.some(function (r) {
+      return r.Latitude !== '' && r.Longitude !== '' &&
+        Number.isFinite(Number(r.Latitude)) && Number.isFinite(Number(r.Longitude));
+    });
+    function note(selector, message) {
+      var panel = document.querySelector(selector);
+      if (!panel || panel.querySelector('[data-geography-coverage]')) return;
+      var p = document.createElement('p');
+      p.className = 'db-panel__hint';
+      p.setAttribute('data-geography-coverage', '');
+      p.textContent = message;
+      var hint = panel.querySelector('.db-panel__hint');
+      if (hint) hint.after(p); else panel.appendChild(p);
+    }
+    if (!hasCoordinates) note('[data-panel="B2"]',
+      'University map coordinates have not yet been recorded in the Master file. Graduate counts and the country–university list remain available below.');
+    if (!(tables['Research Geography'] || []).length) {
+      note('[data-panel="B5"]', 'Research locations have not yet been coded in the Master file. No location markers can be plotted yet; this does not mean there are no publications.');
+      note('[data-panel="C2"]', 'Research provinces have not yet been coded in the Master file. Province counts are unavailable until study locations are verified.');
+    }
+  }
+
   function boot() {
     whenMasterReady(function () {
+      showGeographyCoverage();
       try { injectTimestamp(); } catch (e) { console.error('MF timestamp inject failed', e); }
       try { injectConfedTotals(); } catch (e) { console.error('MF Island-Division totals inject failed', e); }
       // Also re-run on filter changes so counts stay accurate if the state changes.
