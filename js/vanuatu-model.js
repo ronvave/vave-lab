@@ -21,7 +21,7 @@
     const byPub=new Map(pubs.map(p=>[p['Publication ID'],p]));
     const authors=(t.Authorship||[]).filter(a=>byScholar.has(a['Scholar ID'])&&byPub.has(a['Publication ID']));
     const geography=(t['Research Geography']||[]).filter(g=>byPub.has(g['Publication ID']));
-    const completed=degrees.filter(d=>text(d['Completion Status'])==='Completed');
+    const completed=degrees.filter(d=>text(d['Completion Status'])==='Completed'&&['masters','phd'].includes(level(d)));
     const coverage={degrees:can('Graduate Degrees',['Degree ID','Scholar ID','Degree Level','Completion Status']),publications:can('Publications',['Publication ID','Publication Type','Title']),authorship:can('Authorship',['Publication ID','Scholar ID','Author Position']),geography:can('Research Geography',['Publication ID','Country','Province']),community:can('Scholars',['Paternal Province','Maternal Province']),gender:can('Scholars',['Gender'])};
     return {bundle,scholars,byScholar,degrees,completed,pubs,byPub,authors,geography,coverage};
   }

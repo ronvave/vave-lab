@@ -1,25 +1,5 @@
-<!-- Vave Lab Vanuatu Scholar Database — Sister clone of the iTaukei Research Database. Authored by Ron Vave, 2026 -->
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<script>if(new URLSearchParams(location.search).has('vanuatuProfile'))document.documentElement.classList.add('vanuatu-profile-loading');</script>
-<style>.vanuatu-profile-loading body{visibility:hidden}</style>
-<link rel="stylesheet" href="css/vanuatu-scholar-portal.css?v=9ce40bd8">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vanuatu Scholar Database — Assistant Professor Ron Vave | UH Mānoa</title>
-  <meta name="description" content="A curated database of scholarly research by and about Vanuatu and part-Vanuatu postgraduates and researchers — across the six provinces, islands and area councils of Vanuatu, universities worldwide, and multiple countries. Maintained by Assistant Professor Ron Vave, UH Mānoa." />
-  <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/tokens.css?v=ec2c3516" />
-  <link rel="stylesheet" href="css/base.css?v=c71999b9" />
-  <link rel="stylesheet" href="css/animations.css?v=47091677" />
-  <!-- Leaflet for the map -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <style>
+/* Visual baseline copied from Tongan dashboard at 83fbb222. Country-independent styles only. */
+
     /* ============ Page-specific styles ============ */
     .db-hero { padding: var(--space-3) 0 var(--space-6); }
     /* Tighten the first section's top padding — the site-wide default leaves
@@ -97,7 +77,7 @@
     .db-pill--status.is-stale .db-pill__dot { background: #d97706; box-shadow: 0 0 0 3px rgba(217,119,6,0.18); }
     .db-pill--status.is-error .db-pill__dot { background: #b91c1c; box-shadow: 0 0 0 3px rgba(185,28,28,0.18); }
 
-    /* Sectioned KPI panel (Database overview / ni-Vanuatu scholarship).
+    /* Sectioned KPI panel (Database overview / Tongan scholarship).
        Both sections use the same pale-filled bordered container so they read
        as sibling blocks. Titles are Arial bold so they stand apart from the
        page's regular serif display type. */
@@ -204,7 +184,7 @@
         Theses           → amber   (A1 card 3, A2 card 4)
         Universities     → blue    (A1 card 4, A2 card 5)
         Countries        → purple  (A1 card 5, A2 card 6)
-        Vanuatu provinces  → pink    (A1 card 6 only)
+        Tonga districts  → pink    (A1 card 6 only)
         A1 unique authors→ rust    (A1 card 2)
         A2 Lead author   → rust    (echoes authors)
         A2 Co-author     → olive   (Option 1 — A2 only)
@@ -227,7 +207,7 @@
     /* Legacy ".db-stats" retained defensively — no longer emitted by the page */
     .db-stats { display: none; }
 
-    /* Vanuatu narrative summary card */
+    /* Tongan narrative summary card */
     .db-narrative {
       margin-top: var(--space-3);
       padding: var(--space-4) var(--space-5);
@@ -261,7 +241,7 @@
       gap: 10px; margin-bottom: 4px;
     }
     @media (max-width: 900px) { .db-narrative__insights { grid-template-columns: repeat(2, 1fr); } }
-    /* Insight tiles inside the "Vanuatu scholarly research at a glance" card.
+    /* Insight tiles inside the "Tongan scholarly research at a glance" card.
        Each tile carries a colored top accent bar; the title inherits that
        accent color so the two match. Body text is a comfortable reading size. */
     .db-insight {
@@ -358,7 +338,7 @@
 
     /* Panel C/D — stacked-by-type histogram.
        The SVG viewBox height grows when milestone footnote lines are
-       drawn inside the SVG (see js/vanuatu-database-master.js). Cap at
+       drawn inside the SVG (see js/tongan-database-master.js). Cap at
        420px so a heavy renames list can't visually overtake the plot,
        but let the SVG size itself for the common 0- or 2-line case. */
     #db-source-histogram { max-height: 420px; width: 100%; display: block; }
@@ -704,7 +684,7 @@
        reference image), and the country/university/scholar list stacks
        underneath in a light legend panel. */
     .db-panel--wide { grid-column: 1 / -1; }
-    /* Panel B3 (Vanuatu scholarly mobility — data not yet available) sits on a pure-white
+    /* Panel B3 (Tongan scholarly mobility — data not yet available) sits on a pure-white
        background so the chart and legend read cleanly against the neighbouring
        cream panels — matches the flat, uniform look Ron requested (like B2). */
     [data-panel="B3"] { background:#ffffff; }
@@ -1168,7 +1148,7 @@
        Darker blue = PhD (higher degree), lighter blue = Masters. */
     .db-map-fs-stats__cell--phd     { background: #1e3a8a; }
     .db-map-fs-stats__cell--masters { background: #3b82f6; }
-    /* Panel B3 tinted cells: Vanuatu-led = rust with white text; Other-led =
+    /* Panel B3 tinted cells: Tongan-led = rust with white text; Other-led =
        amber-gold with black text. Matches the pie-slice colors so the
        counter reads like a mini-legend. */
     .db-map-fs-stats__cell--led { background: #712B13; }
@@ -1247,7 +1227,7 @@
        (near-black), so comma-separated "Last, First" pairs are easy to scan. */
     .db-scholar-list { line-height: 1.55; }
     /* Bounded scroll container for scholar sections inside world-map popups.
-       Caps the popup height so countries with lots of scholars (e.g. Vanuatu)
+       Caps the popup height so countries with lots of scholars (e.g. Tonga)
        don't produce a popup taller than the map itself. The thesis-detail
        slot sits above this container and stays visible while scrolling. */
     .db-popup-scroll {
@@ -1324,7 +1304,7 @@
     .b3-work-detail__name { font-weight: 700; color: #222; font-size: 0.92rem; }
     .b3-work-detail__year { color: #666; font-weight: 500; margin-left: 4px; }
     /* Village + (province) – Confederacy chip. Same look as the B2 hover
-       chip: teal text, no underline. Only shown for Vanuatu-led entries. */
+       chip: teal text, no underline. Only shown for Tongan-led entries. */
     .b3-work-detail__village {
       color: #01696F;
       font-size: 0.82rem;
@@ -1333,11 +1313,11 @@
     }
     .b3-work-detail__title { color: #444; font-size: 0.85rem; margin-top: 2px; font-style: italic; line-height: 1.3; }
     /* Journal / venue line — dark blue italic per the July 2026 spec. Used for
-       the full reference on both Vanuatu-led and Others-led hovers. */
+       the full reference on both Tongan-led and Others-led hovers. */
     .b3-work-detail__venue { color: #0B3A66; font-size: 0.82rem; margin-top: 3px; font-style: italic; }
-    /* Inline Vanuatu co-author names on Others-as-Lead hovers — alternating
+    /* Inline Tongan co-author names on Others-as-Lead hovers — alternating
        two tones so consecutive names separated by semicolons are visually
-       distinct. Rust (Vanuatu-led red) and dark teal, same alt-tone pattern
+       distinct. Rust (Tongan-led red) and dark teal, same alt-tone pattern
        B2 uses for its scholar-name lists. */
     .b3-work-detail__coauth {
       display: inline;
@@ -1348,7 +1328,7 @@
     .b3-work-detail__coauth.is-alt-b { color: #1B474D; }
     .b3-work-detail__coauth-sep { color: #171614; font-weight: 500; margin: 0 2px; }
     /* Village/(province) chip inline next to each co-author name. Teal to
-       match the existing village chip on Vanuatu-led hovers. */
+       match the existing village chip on Tongan-led hovers. */
     .b3-work-detail__coauth-chip {
       color: #01696F;
       font-size: 0.78rem;
@@ -1392,7 +1372,7 @@
     .b3-country-table-head .b3-cell--others { color: #8A6100; }
     .b3-country-table-head .b3-cell--total  { color: #222; }
 
-    /* Every row is a 4-column mini-table: name (L) → Vanuatu count (R, bold, rust)
+    /* Every row is a 4-column mini-table: name (L) → Tongan count (R, bold, rust)
        → others count (R, gold) → total (R, bold). The parent .db-world-grid keeps
        CSS column-count:2 so the list flows into two side-by-side blocks. */
     .b3-country-list .db-world-country-row {
@@ -1478,7 +1458,7 @@
       margin-top: 5px; font-variant-numeric: tabular-nums;
     }
     /* Confederacy legend row — one line per confederacy:
-         [swatch]  TONGATAPU  107 Publications [14 Vanuatu as Lead author]
+         [swatch]  TONGATAPU  107 Publications [14 Tongan as Lead author]
        Uses flex so the parts stay on a single line and truncate if the
        sidebar is narrow. */
     .db-conf-row {
@@ -1512,7 +1492,7 @@
     .db-conf-row__stat strong { color: #0f172a; font-weight: 700; font-size: 0.98rem; }
 
     /* One-line confederacy row: big colored swatch — name — large total —
-       pipe — descriptive Vanuatu count. Uses grid so the columns line up
+       pipe — descriptive Tongan count. Uses grid so the columns line up
        vertically across all three confederacies. */
     .db-conf-row--one-line {
       display: grid;
@@ -1588,7 +1568,7 @@
     .db-sync-inline b { color: var(--color-text); font-weight: 600; }
 
     /* Panel B — ranked bars. Label column is fixed-width and generous enough to
-       accommodate the longest Vanuatu-district name ('Tatakamovanuatu') without
+       accommodate the longest Tonga-district name ('Tatakamotonga') without
        clipping. Text is right-aligned inside the column (see .db-bars__prov). */
     .db-bars { display: grid; grid-template-columns: 180px 1fr 44px; gap: 6px; row-gap: 5px; align-items: center; }
     .db-bars__prov {
@@ -2312,7 +2292,7 @@
       line-height: 1.2;
       /* Constrain width so the sentence always wraps to 2 lines regardless
          of popup width — matches Ron's sketch. ~15em fits
-         'ni-Vanuatu scholars completed' on line 1 and 'graduate work here' on
+         'Tongan scholars completed' on line 1 and 'graduate work here' on
          line 2 at 1.05rem. */
       flex: 0 1 15em;
       min-width: 0;
@@ -2474,8 +2454,8 @@
     .db-b2-info p { margin: 6px 0; line-height: 1.5; }
 
     /* ---- Authorship + Layout dropdowns (Panel C2) ----
-       Styled as brown pills so they visually match the Vanuatu-focused /
-       Vanuatu + International scope pills above them — one coherent brown
+       Styled as brown pills so they visually match the Tonga-focused /
+       Tonga + International scope pills above them — one coherent brown
        pill family for all interactive controls in this panel.
     */
     .db-b2-view-hint {
@@ -2564,7 +2544,7 @@
       row-gap: 8px !important;
     }
     /* Province label: allow wrap so long labels like
-       “Province not yet confirmed” stay inside their 170px column. */
+       “District not yet confirmed” stay inside their 170px column. */
     .db-bars--split-detailed .db-bars__prov {
       grid-column: 1; grid-row: span 2;
       display: flex; align-items: center; justify-content: flex-end;
@@ -2972,7 +2952,7 @@
     }
     /* Two-column layout for the countries/universities list, using CSS
        multi-column so rows flow TOP-TO-BOTTOM then wrap to the next column.
-       That way the highest-ranking rows (Vanuatu, Australia, NZ...) all sit in
+       That way the highest-ranking rows (Tonga, Australia, NZ...) all sit in
        the left column, and only after the left column is full do items
        spill into the right column — which reads naturally as descending
        order down the left side, continuing down the right side.
@@ -3609,7 +3589,7 @@
     .db-b2-sort                { font-size: 0.9rem;  }
     .db-b2-mode button         { font-size: 0.9rem;  }
 
-    /* Exception (per spec): the small "Last update: <date>" text on Vanuatu
+    /* Exception (per spec): the small "Last update: <date>" text on Tongan
        scholar cards stays exactly as it was. Explicit re-declaration so it
        cannot be caught by any broader selector added above or later. */
     .db-scholar-card__updated  { font-size: 0.78rem; }
@@ -3795,13 +3775,13 @@
     .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
     .dsf-chip--vavau       { background: #cffafe; color: #155e75; }
     .dsf-chip--haapai      { background: #fef3c7; color: #92400e; }
-    .dsf-chip--vanuatutapu   { background: #fecaca; color: #991b1b; }
+    .dsf-chip--tongatapu   { background: #fecaca; color: #991b1b; }
     .dsf-chip--eua         { background: #d9f2e3; color: #1e5631; }
     .dsf-chip--ongoniua    { background: #ece3fa; color: #4b2f7a; }
     .dsf-chip--unclass     { background: #d1e8ea; color: #062f35; }
     .dsf-chip--vavau      .dsf-chip__dot { background: #0891b2; }
     .dsf-chip--haapai     .dsf-chip__dot { background: #eab308; }
-    .dsf-chip--vanuatutapu  .dsf-chip__dot { background: #dc2626; }
+    .dsf-chip--tongatapu  .dsf-chip__dot { background: #dc2626; }
     .dsf-chip--eua        .dsf-chip__dot { background: #2f9e5c; }
     .dsf-chip--ongoniua   .dsf-chip__dot { background: #7c4dbd; }
     .dsf-chip--unclass    .dsf-chip__dot { background: #062f35; }
@@ -3904,17 +3884,8 @@
     .db-submit-modal__status.is-visible { display: block; }
     .db-submit-modal__status.is-success { background: #ecfdf5; color: #065f46; border-left: 4px solid #16a34a; }
     .db-submit-modal__status.is-error   { background: #fef2f2; color: #991b1b; border-left: 4px solid #b91c1c; }
-  </style>
-<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-7LJP79H70W"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-7LJP79H70W');
-</script>
-<!-- Vave Lab legal-footer styles (dark footer variant) -->
-<style>
+  
+
   .footer-bottom .legal-footer{
     flex-basis:100%;
     width:100%;
@@ -3932,1587 +3903,9 @@
   .footer-bottom .legal-footer a:hover{ color:#fff; }
   .footer-bottom .legal-footer__sep{ opacity:.45; margin:0 6px; }
   /* Static fallback for the "data not yet available" empty-state boxes
-     (Panel B3 and any other Vanuatu panel with no data yet). Also defined
-     dynamically by js/vanuatu-panel-overrides.js; kept here too so panels
+     (Panel B3 and any other Tonga panel with no data yet). Also defined
+     dynamically by js/tongan-panel-overrides.js; kept here too so panels
      that render before that script's injectStylesOnce() runs still look
      correct on first paint. */
   .mf-empty-state{ font-family:"DM Sans",system-ui,sans-serif; font-size:0.95rem; color:var(--color-ink-soft,#5c6368); background:rgba(0,95,107,0.05); border:1px dashed rgba(0,95,107,0.25); border-radius:10px; padding:1.1rem 1.3rem; margin:1rem 0; }
   .mf-empty-state strong{ color:var(--color-teal,#005f6b); }
-</style>
-  <link rel="stylesheet" href="css/vanuatu-panel-menu.css?v=44020c99">
-<link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=e5e135f9">
-</head>
-<body>
-
-<header class="site-header" role="banner">
-  <div class="container">
-    <div class="nav-inner">
-      <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
-        <img src="img/ron-vave-portrait.jpg" alt="Assistant Professor Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid var(--color-primary-highlight);" />
-        Assistant Professor Ron Vave
-      </a>
-      <nav aria-label="Main navigation">
-        <ul class="nav-links" role="list">
-          <li><a href="index.html">Home</a></li>
-          <li class="nav-dropdown"><a href="research.html">Research</a>
-            <div class="nav-dropdown__menu">
-              <a href="research.html#research-philosophy">Research Philosophy</a>
-              <a href="research.html#current-projects">Current Projects</a>
-              <a href="research.html#intl-projects">International Projects</a>
-            </div>
-          </li>
-          <li><a href="publications.html">Publications</a></li>
-          <li class="nav-dropdown"><a href="supervision.html">Supervision</a>
-            <div class="nav-dropdown__menu">
-              <a href="supervision.html#uh-students">UH Students</a>
-              <a href="supervision.html#non-uh-students">Non-UH Students</a>
-            </div>
-          </li>
-          <li class="nav-dropdown"><a href="teaching.html">Teaching</a>
-            <div class="nav-dropdown__menu">
-              <a href="teaching.html#new-courses">New Courses</a>
-              <a href="teaching.html#existing-courses">Existing Courses</a>
-              <a href="teaching.html#past-courses">Past Courses</a>
-            </div>
-          </li>
-          <li class="nav-dropdown"><a href="service.html">Service</a>
-            <div class="nav-dropdown__menu">
-              <a href="service.html#editorial-roles">Editorial Roles</a>
-              <a href="service.html#thesis-exam">Thesis Examination</a>
-              <a href="service.html#peer-review">Peer Review</a>
-              <a href="service.html#guest-lectures">Guest Lectures</a>
-            </div>
-          </li>
-          <li class="nav-dropdown"><a href="media.html">Media</a>
-            <div class="nav-dropdown__menu">
-              <a href="media.html#video">Video</a>
-              <a href="media.html#infographics">Infographics</a>
-              <a href="media.html#news">News & Articles</a>
-            </div>
-          </li>
-        </ul>
-      </nav>
-      <div class="nav-actions">
-        <button class="theme-toggle" data-theme-toggle aria-label="Toggle dark mode"></button>
-        <button class="nav-hamburger" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-    </div>
-    <div class="mobile-menu" id="mobile-menu" role="navigation" aria-label="Mobile navigation">
-      <a href="index.html">Home</a>
-      <a href="research.html">Research</a>
-      <a href="publications.html">Publications</a>
-      <a href="supervision.html">Supervision</a>
-      <a href="teaching.html">Teaching</a>
-      <a href="service.html">Service</a>
-      <a href="media.html">Media</a>
-    </div>
-  </div>
-</header>
-
-<section class="page-banner" aria-label="Page header">
-  <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
-    <div>
-      <p class="page-banner__eyebrow">Public Resource · Curated by Assistant Professor Ron Vave</p>
-      <h1 class="page-banner__title">Vanuatu Scholar Database</h1>
-    </div>
-    <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
-  </div>
-</section>
-
-<!-- Icon symbol library used by KPI cards, insight tiles and confederacy narrative.
-     Line-art (Lucide-style), inherits `color` so it stays consistent with the teal palette. -->
-<svg width="0" height="0" style="position:absolute;" aria-hidden="true" focusable="false">
-  <defs>
-    <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
-      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
-    </symbol>
-    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-      <circle cx="9" cy="7" r="4"/>
-      <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
-      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </symbol>
-    <symbol id="i-cap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M22 10 12 5 2 10l10 5 10-5z"/>
-      <path d="M6 12v5c3 2 9 2 12 0v-5"/>
-    </symbol>
-    <symbol id="i-building" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 21h18"/>
-      <path d="M12 3 3 8h18z"/>
-      <path d="M6 21V10"/>
-      <path d="M10 21V10"/>
-      <path d="M14 21V10"/>
-      <path d="M18 21V10"/>
-    </symbol>
-    <symbol id="i-globe" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <path d="M2 12h20"/>
-      <path d="M12 2a15.3 15.3 0 0 1 0 20"/>
-      <path d="M12 2a15.3 15.3 0 0 0 0 20"/>
-    </symbol>
-    <symbol id="i-pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </symbol>
-    <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-    </symbol>
-    <symbol id="i-handshake" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="m11 17 2 2a1 1 0 1 0 3-3"/>
-      <path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4"/>
-      <path d="m21 3 1 11h-2"/>
-      <path d="M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3"/>
-      <path d="M3 4h8"/>
-    </symbol>
-    <symbol id="i-scroll" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M15 12h-5"/>
-      <path d="M15 8h-5"/>
-      <path d="M19 17V5a2 2 0 0 0-2-2H4"/>
-      <path d="M8 21h12a2 2 0 0 0 2-2v-1a1 1 0 0 0-1-1H11a1 1 0 0 0-1 1v1a2 2 0 1 1-4 0V5a2 2 0 1 0-4 0v2a1 1 0 0 0 1 1h3"/>
-    </symbol>
-    <symbol id="i-plane" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M17.8 19.2 16 11l3.5-3.5a1.5 1.5 0 1 0-2.12-2.12L14 8.9 5.8 7.2a.5.5 0 0 0-.4.9L11 12l-3 3H5l-1.5 2.5L6 18l2.5 2.5L10 19v-3l4.5 5.5a.5.5 0 0 0 .9-.4l-.6-1.9z"/>
-    </symbol>
-    <symbol id="i-leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19.5 2c1 3 .5 6 0 9-1 4.5-4.5 7.5-8.5 8z"/>
-      <path d="M2 21c0-3 1.85-5.36 5.08-6"/>
-    </symbol>
-  </defs>
-</svg>
-
-<main>
-<section class="section">
-  <div class="container">
-
-    <div class="db-hero reveal">
-      <p class="db-lede">
-        This database is a sister project to the iTaukei Scholarly Research Database, curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa, in collaboration with Vanuatu scholar contributors and Vanuatu scholar contributors of Brigham Young University–Hawaii. The project seeks to highlight and elevate the scholarly research and contributions of Vanuatu and part-Vanuatu postgraduates and researchers &mdash; in Vanuatu and around the world. It is not comprehensive and is being expanded over time as a passion project. Beyond elevating Vanuatu researchers and their publications, the hope is that it will support networking and collaboration &mdash; and perhaps mentorship for up-and-coming Vanuatu students considering postgraduate study, academia, or research more broadly.
-      </p>
-
-      <!-- Compact live-status pill row -->
-      <div class="db-status-row" data-db-status>
-        <span class="db-pill db-pill--status db-sync-badge" data-db-sync title="Data from the Vanuatu Master file">
-          <span class="db-pill__dot db-sync-badge__dot"></span>
-          <span data-db-sync-text>Loading…</span>
-        </span>
-        <span class="db-pill"><b>Master file:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;publications indexed</span>
-        <span class="db-pill"><span data-db-itaukei-count>—</span>&nbsp;works with ni-Vanuatu authors</span>
-        <span class="db-pill db-pill--muted" data-db-updated-pill>Updated —</span>
-        <span class="db-sync-note" data-db-sync-note></span>
-      </div>
-
-      <div class="db-fallback-banner" data-db-fallback>
-        <strong>Master-file data could not be loaded.</strong> The dashboard cannot display its figures until this country’s Master-file data is available. Please reload the page.
-      </div>
-
-      <!-- Database overview: statistics describing the entire indexed database -->
-      <section class="db-section db-section--overview has-panel-badge" aria-labelledby="db-section-overview">
-        <span class="db-panel__label">A1</span>
-        <header class="db-section__head">
-          <div class="db-section__label" id="db-section-overview">Database overview</div>
-          <p class="db-section__hint">Statistics describing the entire indexed database.</p>
-        </header>
-        <div class="db-kpis">
-          <div class="db-kpi db-kpi--solid db-kpi--teal">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-works">—</div><div class="db-kpi__label">Publications</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--rust">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-authors">—</div><div class="db-kpi__label">Unique authors</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--amber">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-theses">—</div><div class="db-kpi__label">Theses</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--blue">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-unis">—</div><div class="db-kpi__label">Universities represented</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--purple">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-countries">—</div><div class="db-kpi__label">Countries represented</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--pink">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Vanuatu provinces studied</div></div>
-          </div>
-        </div>
-      </section>
-
-      <!-- ni-Vanuatu scholarship: statistics filtered to publications involving ni-Vanuatu scholars -->
-      <section class="db-section db-section--itaukei has-panel-badge" aria-labelledby="db-section-itaukei">
-        <span class="db-panel__label">A2</span>
-        <header class="db-section__head">
-          <div class="db-section__label" id="db-section-itaukei">ni-Vanuatu scholarship</div>
-          <p class="db-section__hint">Statistics filtered to works and graduate research involving identified ni-Vanuatu scholars.</p>
-        </header>
-        <div class="db-kpis">
-          <div class="db-kpi db-kpi--solid db-kpi--teal">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-works">—</div><div class="db-kpi__label">Publications with or by Vanuatu</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--rust">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-star"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-led">—</div><div class="db-kpi__label">With Vanuatu as Lead author</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--olive">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-handshake"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-coauth">—</div><div class="db-kpi__label">With Vanuatu as co-author</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--amber">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-theses">—</div><div class="db-kpi__label">Theses by ni-Vanuatu scholars</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--blue">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-unis">—</div><div class="db-kpi__label">Universities attended by Vanuatu graduate researchers</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--purple">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-plane"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="it-countries">—</div><div class="db-kpi__label">Countries of Vanuatu graduate study</div></div>
-          </div>
-        </div>
-
-        <!-- Narrative summary card -->
-        <div class="db-narrative">
-          <h3 class="db-narrative__title">Vanuatu scholarly research at a glance</h3>
-          <p class="db-narrative__lede">This database highlights the knowledge, leadership, and academic contributions of ni-Vanuatu scholars across Vanuatu and the world.</p>
-          <p class="db-narrative__body" data-narrative-body>—</p>
-          <div class="db-narrative__insights">
-            <div class="db-insight db-insight--teal"><div class="db-insight__title">Vanuatu participation</div><div class="db-insight__body" data-insight="participation">—</div></div>
-            <div class="db-insight db-insight--pink"><div class="db-insight__title">Research leadership</div><div class="db-insight__body" data-insight="leadership">—</div></div>
-            <div class="db-insight db-insight--amber"><div class="db-insight__title">Graduate scholarship</div><div class="db-insight__body" data-insight="grad">—</div></div>
-            <div class="db-insight db-insight--blue"><div class="db-insight__title">Geographic reach</div><div class="db-insight__body" data-insight="geo">—</div></div>
-          </div>
-          <p class="db-narrative__note">Figures are based on the current database snapshot and update as records are added or revised.</p>
-        </div>
-      </section>
-
-    </div>
-
-    <!-- About / inclusion criteria -->
-    <details class="db-about reveal has-panel-badge">
-      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">A3</span></summary>
-      <div class="db-about__body">
-        <p><strong>Counting note:</strong> Indigenous Vanuatu scholar and graduate-degree totals follow this database’s Vanuatu-paternal criterion. Some retained scholar profiles are excluded from these totals; their profiles, qualifications and publications remain available.</p>
-        <div class="db-about-grid">
-          <div>
-            <h4>What's included</h4>
-            <p>Scholarly publications where Vanuatu or Vanuatus are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
-            <ul>
-              <li>Peer-reviewed journal articles, book chapters, and books</li>
-              <li>Master's, PhD, and equivalent higher-degree theses</li>
-              <li>Technical reports and conference papers from recognised institutions</li>
-              <li>Preprints archived on established repositories</li>
-            </ul>
-            <p>Special emphasis on work authored or co-authored by <em>Vanuatu</em> scholars, regardless of subject discipline.</p>
-
-            <h4>How tags are assigned</h4>
-            <ul>
-              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
-              <li><strong>Paternal province</strong> &mdash; applied only to Vanuatu first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
-              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
-            </ul>
-          </div>
-          <div>
-            <h4>Update cadence</h4>
-            <p>The Vanuatu Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
-
-            <h4>Known gaps &amp; caveats</h4>
-            <ul>
-              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
-              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
-              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
-              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
-            </ul>
-
-            <h4>Feedback</h4>
-            <p>Corrections, additions, and suggestions are welcome &mdash; email <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> or use the <em>Contribute</em> panel below.</p>
-          </div>
-        </div>
-      </div>
-    </details>
-
-    <!-- ============ Where the research is — 2×2 dashboard ============ -->
-    <div class="db-dashboard">
-
-      <!-- Panel B1 — Vanuatu-focused choropleth map (province view) -->
-      <div class="db-panel reveal" data-panel="B1">
-        <span class="db-panel__label">B1</span>
-        <h2 class="db-panel__title">Where the research is — Vanuatu, by province</h2>
-        <p class="db-panel__hint">Vanuatu-focused publications counted by the province studied. Use the sub-tabs to switch between all publications, ni-Vanuatu lead-author, and Vanuatu co-authored views.</p>
-        <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
-          <button type="button" class="is-active" data-mapview="all" aria-selected="true">All publications on Vanuatu</button>
-          <button type="button" data-mapview="lead" aria-selected="false">By ni-Vanuatu lead-author</button>
-          <button type="button" data-mapview="coauth" aria-selected="false">Co-authored with Vanuatu</button>
-        </div>
-        <div class="db-map-a-wrap">
-          <div>
-            <div class="db-map-world-wrap" data-db-map-fiji-wrap>
-              <div id="db-map" role="application" aria-label="Vanuatu choropleth map of publications by province"></div>
-              <button type="button" class="db-map-reset-btn" data-db-map-fiji-reset-btn
-                      aria-label="Reset map view"
-                      title="Reset map to default view">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
-                </svg>
-                <span>Reset</span>
-              </button>
-              <button type="button" class="db-map-fs-btn" data-db-map-fiji-fs-btn
-                      aria-label="Expand map to full screen"
-                      title="Expand map to full screen (Esc to exit)"
-                      aria-pressed="false">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
-                </svg>
-              </button>
-            </div>
-            <div class="db-map-error" data-db-map-error>Map couldn't load — the rest of the page is still available.</div>
-          </div>
-          <aside class="db-map-legend-panel" data-mapscope-panel="fiji">
-            <div>
-              <h4 data-db-map-legend-title>All Vanuatu-focused publications by study province</h4>
-              <div class="db-choro-scale">
-                <span style="background:#fff5eb;border:1px solid #f2d9b8;"></span>
-                <span style="background:#fdd0a2;"></span>
-                <span style="background:#fd8d3c;"></span>
-                <span style="background:#e6550d;"></span>
-                <span style="background:#a63603;"></span>
-              </div>
-              <div class="db-choro-scale-labels"><span>0</span><span>3</span><span>6</span><span>9</span><span>13+</span></div>
-            </div>
-            <div>
-              <h4>Publications by study Province</h4>
-              <p class="db-conf-explain" data-db-conf-explain>All Vanuatu-focused publications, grouped by the Province of the province studied.</p>
-<div data-db-conf-legend><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#496a9c;"></span><span class="db-conf-row__name">Torba</span><span class="db-conf-row__total" data-conf-total="Torba">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Torba">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#007d83;"></span><span class="db-conf-row__name">Sanma</span><span class="db-conf-row__total" data-conf-total="Sanma">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Sanma">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#80703a;"></span><span class="db-conf-row__name">Penama</span><span class="db-conf-row__total" data-conf-total="Penama">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Penama">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#a0543c;"></span><span class="db-conf-row__name">Malampa</span><span class="db-conf-row__total" data-conf-total="Malampa">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Malampa">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#87639d;"></span><span class="db-conf-row__name">Shefa</span><span class="db-conf-row__total" data-conf-total="Shefa">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Shefa">—</span></div><div class="db-conf-row db-conf-row--one-line"><span class="db-conf-row__sw" style="background:#486c49;"></span><span class="db-conf-row__name">Tafea</span><span class="db-conf-row__total" data-conf-total="Tafea">—</span><span class="db-conf-row__pipe" aria-hidden="true"></span><span class="db-conf-row__sub" data-conf-sub="Tafea">—</span></div></div>
-              <p class="db-conf-narrative" data-db-conf-narrative>—</p>
-            </div>
-            <div class="db-nonfiji">
-              <span class="db-nonfiji__num" data-db-nonfiji>—</span>
-              <span class="db-nonfiji__label" data-db-nonfiji-label>Publications beyond Vanuatu-focused research</span>
-              <span class="db-nonfiji__sub">Research by ni-Vanuatu authors concerning other places, global topics, laboratory work, and research not limited to Vanuatu.</span>
-            </div>
-            <div class="db-sync-inline">
-              <b>Master-file update:</b> <span data-db-sync-inline>loading…</span>
-            </div>
-          </aside>
-        </div>
-      </div>
-
-      <!-- Panel A2 — Whole-world map of Vanuatu graduate studies (wide layout) -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B2">
-        <span class="db-panel__label">B2</span>
-        <h2 class="db-panel__title">VANUATU GRADUATES — GLOBAL DATABASE <span class="db-world-selection-chip" data-world-selection-chip style="display:none;"><span class="db-world-selection-chip__label" data-world-selection-chip-label></span><button type="button" class="db-world-selection-chip__clear" data-filtered-clear aria-label="Clear selection">×</button></span></h2>
-        <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by ni-Vanuatu scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
-        <!-- Panel B2 KPI tiles — mirror the A1/A2 solid-tile family so B2 reads as
-             part of the same visual system. Numbers are populated by
-             renderWorldPanel() in js/itaukei-database.js from the same
-             graduate-studies data the map/list already use, so they stay in sync
-             with database growth. Tiles always reflect the full-database
-             totals — they intentionally do not respond to country / university
-             / confederacy / province selection. -->
-        <div class="db-kpis db-kpis--b2" data-b2-kpis>
-          <div class="db-kpi db-kpi--solid db-kpi--teal">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="theses">—</div><div class="db-kpi__label">Theses total</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--amber">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="scholars">—</div><div class="db-kpi__label">Scholars</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--rust">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="masters">—</div><div class="db-kpi__label">Masters</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--olive">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="phd">—</div><div class="db-kpi__label">PhD</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--blue">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="unis">—</div><div class="db-kpi__label">Universities</div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--purple">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-b2-kpi="countries">—</div><div class="db-kpi__label">Countries</div></div>
-          </div>
-        </div>
-        <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
-          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where Vanuatu graduates study</button>
-          <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where Vanuatu have published</button>
-        </div>
-        <p class="db-map-scope-note" data-mapscope-note="world" style="font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
-          <strong>Note:</strong> Only theses that appear in a scholar&rsquo;s Vanuatu sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
-        </p>
-        <div class="db-world-wide">
-          <div class="db-map-world-wrap" data-db-map-world-wrap>
-            <div id="db-map-world" role="application" aria-label="World map of Vanuatu graduate studies"></div>
-            <!-- Fullscreen-only floating toolbar. Hidden inline (via CSS) and
-                 revealed when .db-map-world-wrap.is-fullscreen is set. Holds
-                 the search box, the confederacy/province filter, and the
-                 (countries / universities / scholars) stat readout — all
-                 centered as a single row across the top of the fullscreen
-                 map. -->
-            <div class="db-map-fs-toolbar" data-db-map-fs-toolbar>
-              <label class="db-map-fs-search" data-db-map-fs-search-wrap>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="search" placeholder="Search by scholar name…" data-db-map-fs-search aria-label="Search scholars by name" />
-                <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
-              </label>
-              <!-- Region › Country › University drilldown. Same visual language
-                   as the "All Provinces" dropdown but three columns wide.
-                   Selecting any level zooms the map and rescopes the stats
-                   counters via state.worldSearchScope. -->
-              <div class="db-map-fs-conf db-map-fs-region" data-db-map-fs-region>
-                <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-region-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-map-fs-region-label>All regions</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="db-map-fs-conf__panel db-map-fs-region__panel" data-db-map-fs-region-panel role="menu" hidden>
-                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
-                    <div class="db-map-fs-conf__col-title">Region</div>
-                    <div class="db-map-fs-conf__list" data-db-map-fs-region-list></div>
-                  </div>
-                  <div class="db-map-fs-conf__col" data-db-map-fs-region-country-col>
-                    <div class="db-map-fs-conf__col-title" data-db-map-fs-region-country-title>Country</div>
-                    <div class="db-map-fs-conf__list" data-db-map-fs-region-country-list></div>
-                  </div>
-                  <div class="db-map-fs-conf__col" data-db-map-fs-region-uni-col>
-                    <div class="db-map-fs-conf__col-title" data-db-map-fs-region-uni-title>University</div>
-                    <div class="db-map-fs-conf__list" data-db-map-fs-region-uni-list></div>
-                  </div>
-                </div>
-              </div>
-              <div class="db-map-fs-conf" data-db-map-fs-conf>
-                <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-conf-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All Provinces</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="db-map-fs-conf__panel" data-db-map-fs-conf-panel role="menu" hidden>
-                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
-                    <div class="db-map-fs-conf__col-title">Province</div>
-                    <div class="db-map-fs-conf__list" data-db-map-fs-conf-list></div>
-                  </div>
-                  <div class="db-map-fs-conf__col db-map-fs-conf__col--prov" data-db-map-fs-conf-prov-col>
-                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Provinces</div>
-                    <div class="db-map-fs-conf__list" data-db-map-fs-conf-prov-list></div>
-                  </div>
-                </div>
-              </div>
-              <div class="db-map-fs-stats" data-db-map-fs-stats aria-live="polite">
-                <div class="db-map-fs-stats__cell">
-                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-countries>0</span>
-                  <span class="db-map-fs-stats__label">Countries</span>
-                </div>
-                <div class="db-map-fs-stats__cell">
-                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-unis>0</span>
-                  <span class="db-map-fs-stats__label">Universities</span>
-                </div>
-                <div class="db-map-fs-stats__cell">
-                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-scholars>0</span>
-                  <span class="db-map-fs-stats__label">Scholars</span>
-                </div>
-                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--masters">
-                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-masters>0</span>
-                  <span class="db-map-fs-stats__label">Masters</span>
-                </div>
-                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--phd">
-                  <span class="db-map-fs-stats__num" data-db-map-fs-stats-phd>0</span>
-                  <span class="db-map-fs-stats__label">PhD</span>
-                </div>
-              </div>
-            </div>
-            <div class="db-map-fs-coverage" data-db-map-fs-coverage hidden></div>
-            <button type="button" class="db-map-reset-btn" data-db-map-reset-btn
-                    aria-label="Reset map view"
-                    title="Reset map to default world view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/>
-              </svg>
-              <span>Reset</span>
-            </button>
-            <button type="button" class="db-map-fs-btn" data-db-map-fs-btn
-                    aria-label="Expand map to full screen"
-                    title="Expand map to full screen (Esc to exit)"
-                    aria-pressed="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-db-map-fs-icon="expand">
-                <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
-              </svg>
-            </button>
-          </div>
-          <div class="db-map-error" data-db-worldmap-error>Map couldn't load — the country list below is still available.</div>
-          <aside class="db-world-panel-wide">
-            <div data-world-list-view>
-              <h4 data-world-list-title>Countries of Vanuatu graduate study</h4>
-              <p class="db-conf-explain" data-world-list-explain>Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
-              <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
-                <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
-                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="confederacy" aria-selected="false" tabindex="-1">By Province &amp; Province</button>
-                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="area council" aria-selected="false" tabindex="-1">By Area council</button>
-              </div>
-              <label class="db-world-search" data-world-search-wrap>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-                <input type="search" placeholder="Search country, university, or scholar…" data-world-search aria-label="Search countries, universities, and scholars" />
-                <button type="button" class="db-world-search__clear" data-world-search-clear aria-label="Clear search" style="display:none;">×</button>
-              </label>
-              <div class="db-world-country-list db-world-grid" data-world-country-list></div>
-              <p class="db-world-empty" data-world-empty style="display:none;">No countries, universities, or scholars match that search.</p>
-              <p class="db-conf-narrative" data-world-narrative>—</p>
-              <div class="db-world-conf-list" data-world-confederacy-list style="display:none;"></div>
-            </div>
-            <div data-world-detail-view style="display:none;">
-              <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
-              <h4 data-world-detail-title>—</h4>
-              <p class="db-conf-explain" data-world-detail-subtitle>—</p>
-              <div class="db-world-uni-list db-world-grid" data-world-uni-list></div>
-            </div>
-            <div data-world-uni-detail-view style="display:none;">
-              <a href="#" class="db-world-back" data-world-uni-back><span aria-hidden="true">←</span>&nbsp;Back to universities</a>
-              <h4 data-world-uni-detail-title>—</h4>
-              <p class="db-conf-explain" data-world-uni-detail-subtitle>—</p>
-              <div class="db-world-uni-scholars" data-world-uni-scholars></div>
-            </div>
-            <div class="db-sync-inline">
-              <b>Note:</b> Only theses catalogued in each scholar&rsquo;s Vanuatu sub-collection are counted.
-            </div>
-          </aside>
-        </div>
-      </div>
-
-      <!-- Panel B3 — Vanuatu scholarly mobility (region ↔ country ↔ university).
-           Renders itaukei-chord-flanked.html via <iframe>: the chord chart
-           sits centred with the university-key legend flanking it left and
-           right, vertically centred against the chart. Extra items only wrap
-           to a bottom strip when both side columns are full at chart height.
-           Standalone visitors can still open the chord page directly;
-           embedded=1 tells that page to hide its own chrome. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B3">
-        <span class="db-panel__label">B3</span>
-        <h2 class="db-panel__title">VANUATU SCHOLARLY MOBILITY</h2>
-        <p class="db-panel__hint">Where ni-Vanuatu scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
-        <div class="db-panel__embed" id="db-embed-b3-chord">
-          <button type="button" class="db-panel__embed-expand" aria-label="Open chord chart full screen" title="Full screen">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
-          </button>
-          <iframe src="vanuatu-chord-flanked.html?embedded=1&amp;cohort=vanuatu&amp;v=6b59c429"
-                  title="Vanuatu scholarly mobility (chord chart)"
-                  loading="lazy" referrerpolicy="no-referrer"></iframe>
-          <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
-        </div>
-        <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3-chord" aria-label="Close full-screen chord chart">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          Close full screen
-        </button>
-      </div>
-
-      <!-- B4 uses completed-degree Short Disciplines; independent of publication filters. -->
-      <section class="db-panel reveal db-panel--wide" data-panel="B4" id="graduate-disciplines" aria-labelledby="short-disciplines-heading">
-        <span class="db-panel__label">B4</span>
-        <h2 class="db-panel__title" id="short-disciplines-heading">Graduate research disciplines</h2>
-        <p class="db-panel__hint">The table defaults to Gender. Select Degree below to see the number of scholars with completed Master&rsquo;s and PhD degrees in each discipline.</p>
-        <div class="short-disciplines-toggle" role="group" aria-label="Summarise disciplines by">
-          <button type="button" data-discipline-view="gender" aria-pressed="true">Gender</button>
-          <button type="button" data-discipline-view="degree" aria-pressed="false">Degree</button>
-        </div>
-        <p data-disciplines-status role="status">Loading graduate research disciplines…</p>
-        <div class="short-disciplines-scroll" tabindex="0" role="region" aria-label="Graduate research disciplines table">
-          <table class="short-disciplines-table" aria-describedby="short-disciplines-caption" hidden>
-            <caption></caption><thead></thead><tbody></tbody><tfoot></tfoot>
-          </table>
-        </div>
-        <p id="short-disciplines-caption" class="short-disciplines-caption db-panel__hint"></p>
-        <p class="short-disciplines-updated" data-disciplines-updated></p>
-      </section>
-
-      <!-- Panel B5 — Where Vanuatu research has been undertaken. Sourced from the
-           Master file Research Geography evidence bridge. Each verified country
-           is a research location; items are bucketed as
-           "Led by Vanuatu" (first-author matches the master roster) or
-           "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B5" id="panel-nav-b4">
-        <span class="db-panel__label">B5</span>
-        <h2 class="db-panel__title">GLOBAL LOCATIONS OF VANUATU RESEARCH</h2>
-        <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Vanuatu as first author; gold = others as first author (a ni-Vanuatu author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
-        <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
-          <strong>Note:</strong> Only publications with verified study-location evidence in the Master file&rsquo;s Research Geography worksheet are counted. Use the dropdowns in the full-screen view to filter by region, country, or authorship.
-        </p>
-        <div class="db-world-wide">
-          <div class="db-map-world-wrap" data-db-b3-map-wrap>
-            <div id="db-map-b3" role="application" aria-label="World map of Vanuatu research locations"></div>
-            <div class="db-map-fs-toolbar" data-db-b3-fs-toolbar>
-              <!-- Region › Country › (Vanuatu only) Province › Province drilldown.
-                   Selecting any level filters the pie markers on the map and
-                   the country list below to publications catalogued in that
-                   scope. Same visual language as the B2 dropdown. -->
-              <div class="db-map-fs-conf db-map-fs-region" data-db-b3-region>
-                <button type="button" class="db-map-fs-conf__btn" data-db-b3-region-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-b3-region-label>All regions</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="db-map-fs-conf__panel db-map-fs-region__panel" data-db-b3-region-panel role="menu" hidden>
-                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
-                    <div class="db-map-fs-conf__col-title">Region</div>
-                    <div class="db-map-fs-conf__list" data-db-b3-region-list></div>
-                  </div>
-                  <div class="db-map-fs-conf__col" data-db-b3-country-col>
-                    <div class="db-map-fs-conf__col-title" data-db-b3-country-title>Country</div>
-                    <div class="db-map-fs-conf__list" data-db-b3-country-drilldown></div>
-                  </div>
-                  <div class="db-map-fs-conf__col" data-db-b3-conf-col hidden>
-                    <div class="db-map-fs-conf__col-title">Province</div>
-                    <div class="db-map-fs-conf__list" data-db-b3-conf-list></div>
-                  </div>
-                  <div class="db-map-fs-conf__col" data-db-b3-prov-col hidden>
-                    <div class="db-map-fs-conf__col-title">Province</div>
-                    <div class="db-map-fs-conf__list" data-db-b3-prov-list></div>
-                  </div>
-                </div>
-              </div>
-              <!-- Authorship filter (All / iTaukei led / Other led). Same widget
-                   as the region dropdown but single-column. -->
-              <div class="db-map-fs-conf" data-db-b3-auth>
-                <button type="button" class="db-map-fs-conf__btn" data-db-b3-auth-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-b3-auth-label>All authorship</span>
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </button>
-                <div class="db-map-fs-conf__panel" data-db-b3-auth-panel role="menu" hidden>
-                  <div class="db-map-fs-conf__col db-map-fs-conf__col--conf">
-                    <div class="db-map-fs-conf__col-title">Authorship</div>
-                    <div class="db-map-fs-conf__list" data-db-b3-auth-list></div>
-                  </div>
-                </div>
-              </div>
-              <div class="db-map-fs-stats" data-db-b3-stats aria-live="polite">
-                <div class="db-map-fs-stats__cell">
-                  <span class="db-map-fs-stats__num" data-b3-stats-countries>0</span>
-                  <span class="db-map-fs-stats__label">Countries</span>
-                </div>
-                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--led">
-                  <span class="db-map-fs-stats__num" data-b3-stats-led>0</span>
-                  <span class="db-map-fs-stats__label">Vanuatu led</span>
-                </div>
-                <div class="db-map-fs-stats__cell db-map-fs-stats__cell--others">
-                  <span class="db-map-fs-stats__num" data-b3-stats-others>0</span>
-                  <span class="db-map-fs-stats__label">Other led</span>
-                </div>
-                <div class="db-map-fs-stats__cell">
-                  <span class="db-map-fs-stats__num" data-b3-stats-total>0</span>
-                  <span class="db-map-fs-stats__label">Total</span>
-                </div>
-              </div>
-              <!-- Clear filters button. Only enabled when at least one filter
-                   is active; resets state.b3Filter to the empty shape and
-                   repaints map, labels, table, stats, and dropdowns. -->
-              <button type="button" class="db-map-fs-clear" data-db-b3-clear
-                      aria-label="Clear all filters"
-                      title="Clear all filters"
-                      disabled>
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
-                </svg>
-                <span>Clear filters</span>
-              </button>
-            </div>
-            <button type="button" class="db-map-fs-btn" data-db-b3-fs-btn
-                    aria-label="Expand map to full screen"
-                    title="Expand map to full screen (Esc to exit)"
-                    aria-pressed="false">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 9V4h5"/><path d="M20 9V4h-5"/><path d="M4 15v5h5"/><path d="M20 15v5h-5"/>
-              </svg>
-            </button>
-          </div>
-          <div class="db-map-error" data-db-b3-map-error>Map couldn&rsquo;t load &mdash; the country list below is still available.</div>
-          <aside class="db-world-panel-wide">
-            <div>
-              <h4>Countries where research was undertaken</h4>
-              <p class="db-conf-explain">Click a country to zoom the map. Hover a country marker to see the citation list; hover a citation for the work detail.</p>
-              <div class="b3-country-table-head b3-country-table-head--two-up" data-b3-country-thead>
-                <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Vanuatu is the first author">Vanuatu led</span>
-                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Vanuatu may still be on the byline)">Others</span>
-                <span class="b3-country-table-head__num b3-cell--total">Total</span>
-                <span class="b3-country-table-head__spacer" aria-hidden="true"></span>
-                <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Vanuatu is the first author">Vanuatu led</span>
-                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Vanuatu may still be on the byline)">Others</span>
-                <span class="b3-country-table-head__num b3-cell--total">Total</span>
-              </div>
-              <div class="db-world-country-list db-world-grid b3-country-list" data-b3-country-list></div>
-            </div>
-            <div class="db-sync-inline">
-              <b>Note:</b> A publication is &ldquo;Vanuatu led&rdquo; when the first-listed author matches the master Vanuatu roster. Everything else counts under &ldquo;Others&rdquo; even if a ni-Vanuatu author appears further down the byline.
-            </div>
-          </aside>
-        </div>
-      </div>
-
-      <!-- Panel C1 — Body composition of iTaukei scholars by gender. Aggregated
-           counts (scholars, Masters, PhD, journal, book, book-section) are
-           stored encrypted at data/body-composition.json.enc; the embedded
-           page decrypts opportunistically via db-gate when the visitor is
-           already unlocked. Per-scholar gender is never exposed. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="C1">
-        <span class="db-panel__label">C1</span>
-        <h2 class="db-panel__title">VANUATU SCHOLARLY PUBLICATIONS BY GENDER</h2>
-        <p class="db-panel__hint">Scholars and publications by gender, shown as filled pictorial bodies. The two figures use the same visual scale so counts are directly comparable. Each body = 100 % of that gender&rsquo;s publications, split by type; bands fill bottom-to-top. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
-        <div class="db-panel__embed" id="db-embed-c1-bc">
-          <button type="button" class="db-panel__embed-expand" aria-label="Open body-composition chart full screen" title="Full screen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <polyline points="9 21 3 21 3 15"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
-          </button>
-          <iframe
-            src="vanuatu-body-composition.html?embedded=1&src=master&v=2"
-            title="Vanuatu body composition by gender — data not yet available"
-            loading="lazy"
-            style="width:100%;height:820px;border:0;display:block;"
-            referrerpolicy="same-origin"
-            sandbox="allow-same-origin allow-scripts allow-popups"
-          ></iframe>
-          <div class="db-panel__embed-click" data-embed-target="db-embed-c1-bc" aria-hidden="true"></div>
-        </div>
-        <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-c1-bc" aria-label="Close full-screen body composition">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          Close full screen
-        </button>
-      </div>
-
-      <!-- Panel C2 — ranked bar chart, province-tagged research (study location) -->
-      <div class="db-panel reveal" data-panel="C2">
-        <span class="db-panel__label">C2</span>
-        <!-- Panel B1 tab row: publication-type stack (default) vs. authorship stack.
-             Reuses the .db-panel-b2__tabs styling for visual consistency. -->
-        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B1 view" data-b1-tabs>
-          <button type="button" role="tab" class="db-b2-tab is-active" data-b1-tab="type" aria-selected="true" tabindex="0">By publication type</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b1-tab="authorship" aria-selected="false" tabindex="-1">Authorship</button>
-        </div>
-        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Vanuatu's Six Provinces</h2>
-        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Vanuatu's six provinces based on where the study or fieldwork took place, plus a “Vanuatu-wide / province unspecified” category for research on Vanuatu-wide topics (e.g. national legislation, national mental health policy) not tied to one province. Default view shows ni-Vanuatu authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
-        <div class="db-panel__meta">
-          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study province</span></span>
-          <span><em>Authors:</em> <select class="db-meta-select" data-b1-authors aria-label="Filter authors">
-            <option value="itaukei">ni-Vanuatu authors</option>
-            <option value="all">All authors</option>
-          </select></span>
-          <span><em>View:</em> <select class="db-meta-select" data-b1-groupby aria-label="Group bars by province or Province">
-            <option value="province">Province</option>
-            <option value="division" selected>Province</option>
-          </select></span>
-        </div>
-        <!-- Authorship-view only: legend for the three coloured segments, shown
-             beneath the description (identical to what B2 previously used). -->
-        <div class="db-b2-authorship-controls" data-b1-authorship-legend style="display:none;">
-          <div class="db-b2-legend">
-            <span><span class="db-b2-legend__sw" style="background:#0f766e;"></span>Vanuatu first author</span>
-            <span><span class="db-b2-legend__sw" style="background:#5fa6ae;"></span>Vanuatu co-author, not first author</span>
-            <span><span class="db-b2-legend__sw" style="background:#9ca3af;"></span>No ni-Vanuatu author identified</span>
-          </div>
-        </div>
-        <div class="db-bars" data-db-bars></div>
-        <div class="db-type-filter" data-db-type-filter>
-          <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
-          <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Masters Thesis</label>
-          <label><input type="checkbox" value="journalArticle" checked><i style="background:#B8860B;"></i> Journal Article</label>
-          <label><input type="checkbox" value="bookSection" checked><i style="background:#C08388;"></i> Book Chapter</label>
-          <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
-          <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
-          <label><input type="checkbox" value="preprint" checked><i style="background:#6b7280;"></i> Preprint</label>
-          <span class="db-type-filter__actions">
-            <button type="button" data-db-type-all>Check all</button>
-            <button type="button" data-db-type-none>Clear</button>
-          </span>
-        </div>
-      </div>
-
-      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal province -->
-      <div class="db-panel reveal" data-panel="C3">
-        <span class="db-panel__label">C3</span>
-        <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
-        <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
-          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Vanuatu topics or set in Vanuatu">Vanuatu-focused</button>
-          <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="All publications by ni-Vanuatu authors, including non-Vanuatu topics">Vanuatu + International</button>
-        </div>
-        <div id="db-b2-panel" role="tabpanel">
-          <h2 class="db-panel__title" data-b2-title>Research Output by Vanuatu Author's Home Province</h2>
-          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Vanuatu first author’s own paternal province. Default scope shows Vanuatu-focused publications; switch to “Vanuatu + International” to include research on non-Vanuatu topics and locations too.</p>
-          <div class="db-panel__meta" data-b2-meta></div>
-          <!-- Authorship + Layout dropdowns. Styled as teal pills so users can
-               tell they're interactive. The Layout dropdown only appears when
-               the split view is active (see JS). -->
-          <div class="db-b2-view-hint" aria-hidden="true">Change how the data is grouped — click a pill to open its dropdown</div>
-          <div class="db-b2-view-controls">
-            <label class="db-b2-view-select" title="Choose whose publications to show: only papers where a Vanuatu person is 1st author, only papers where they're a co-author but not 1st, or both roles side by side.">
-              <span class="db-b2-view-select__label">Authorship</span>
-              <select data-b2-authorship>
-                <option value="first">Vanuatu as 1st author</option>
-                <option value="co">Vanuatu as co-author</option>
-                <option value="split">1st author + co-author, split</option>
-              </select>
-            </label>
-            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per province. Detailed splits each province into 1st-author and co-author rows with publication-type colours.">
-              <span class="db-b2-view-select__label">Layout</span>
-              <select data-b2-layout>
-                <option value="compact">Compact (single bar)</option>
-                <option value="detailed">Detailed (with publication types)</option>
-              </select>
-            </label>
-            <label class="db-b2-view-select" title="One bar per Vanuatu province; province and island information are recorded independently.">
-              <span class="db-b2-view-select__label">View</span>
-              <select data-b2-groupby>
-                <option value="province">Province</option>
-                <option value="division" selected>Province</option>
-              </select>
-            </label>
-          </div>
-          <!-- Interpretation blurb — auto-generated from the current filtered
-               view. Placed above the chart, below the description, per user
-               preference. Updates live on every control change. -->
-          <div class="db-b2-blurb" data-b2-blurb></div>
-          <!-- Authorship-view only: sentence that clarifies the province semantics -->
-          <p class="db-b2-province-note" data-b2-province-note style="display:none;">
-            <span aria-hidden="true">ⓘ</span> Province refers to where the research was conducted.
-          </p>
-          <details class="db-b2-info">
-            <summary>How is “province” defined in this panel?</summary>
-            <p>In the <strong>Vanuatu-focused</strong> and <strong>All locations</strong> views, province means the <em>paternal province of the Vanuatu first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, province means the <em>location of the research</em>.</p>
-            <p>A publication covering more than one research province may be counted once in each tagged province.</p>
-          </details>
-          <!-- Authorship-view only: legend + counts/percent toggle + sort control -->
-          <div class="db-b2-authorship-controls" data-b2-authorship-controls style="display:none;">
-            <div class="db-b2-legend">
-              <span><span class="db-b2-legend__sw" style="background:#0f766e;"></span>Vanuatu first author</span>
-              <span><span class="db-b2-legend__sw" style="background:#5fa6ae;"></span>Vanuatu co-author, not first author</span>
-              <span><span class="db-b2-legend__sw" style="background:#9ca3af;"></span>No ni-Vanuatu author identified</span>
-            </div>
-            <div class="db-b2-authorship-actions">
-              <div class="db-b2-mode" role="radiogroup" aria-label="Measure">
-                <button type="button" role="radio" class="is-active" data-b2-mode="counts" aria-checked="true">Counts</button>
-                <button type="button" role="radio" data-b2-mode="percent" aria-checked="false">Percentage</button>
-              </div>
-              <label class="db-b2-sort">
-                <span>Sort by:</span>
-                <select data-b2-sort>
-                  <option value="total">Total publications</option>
-                  <option value="first-share">Vanuatu first-author share</option>
-                  <option value="any-share">Any ni-Vanuatu authorship</option>
-                </select>
-              </label>
-            </div>
-          </div>
-          <div class="db-bars" data-b2-bars></div>
-          <!-- Authorship-view only: methodological caveat about "no iTaukei author identified" -->
-          <p class="db-b2-caveat" data-b2-caveat style="display:none;">
-            <span aria-hidden="true">ⓘ</span> “No ni-Vanuatu author identified” means that no ni-Vanuatu author has yet been identified in the current database. It does not necessarily establish that no Vanuatu person contributed to the research.
-          </p>
-          <div class="db-type-filter" data-b2-type-filter>
-            <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
-            <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Masters Thesis</label>
-            <label><input type="checkbox" value="journalArticle" checked><i style="background:#B8860B;"></i> Journal Article</label>
-            <label><input type="checkbox" value="bookSection" checked><i style="background:#C08388;"></i> Book Chapter</label>
-            <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
-            <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
-            <span class="db-type-filter__actions">
-              <button type="button" data-b2-type-all>Check all</button>
-              <button type="button" data-b2-type-none>Clear</button>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel D — stacked-by-type histogram over time -->
-      <div class="db-panel reveal" data-panel="D">
-        <span class="db-panel__label">D</span>
-        <div class="db-panel__titlebar">
-          <h2 class="db-panel__title">Publications over time, by source type</h2>
-          <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel D authors filter" data-hist-authors-tabs>
-            <button type="button" role="tab" class="db-b2-tab is-active" data-hist-authors="lead" aria-selected="true" tabindex="0" title="Only publications where the first-listed author is Vanuatu">Vanuatu lead</button>
-            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="coauth" aria-selected="false" tabindex="-1" title="Only publications where a ni-Vanuatu author appears but is not first-listed">Vanuatu coauthor</button>
-            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="both" aria-selected="false" tabindex="-1" title="Publications with any ni-Vanuatu author (lead or coauthor)">Vanuatu both</button>
-            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="all" aria-selected="false" tabindex="-1" title="All publications in the database regardless of author ethnicity">All authors</button>
-          </div>
-        </div>
-        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Use the checkboxes to toggle source types independently of Panel B.</p>
-        <div class="db-type-filter" data-hist-type-filter>
-          <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
-          <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Master&rsquo;s Thesis</label>
-          <label><input type="checkbox" value="journalArticle" checked><i style="background:#B8860B;"></i> Journal Article</label>
-          <label><input type="checkbox" value="bookSection" checked><i style="background:#C08388;"></i> Book Chapter</label>
-          <label><input type="checkbox" value="book" checked><i style="background:#7a1419;"></i> Book</label>
-          <label><input type="checkbox" value="report" checked><i style="background:#1e40af;"></i> Report</label>
-          <label><input type="checkbox" value="preprint" checked><i style="background:#6b7280;"></i> Preprint</label>
-          <span class="db-type-filter__actions">
-            <button type="button" data-hist-type-all>Check all</button>
-            <button type="button" data-hist-type-none>Clear</button>
-          </span>
-        </div>
-        <div class="db-panel-d__chart-wrap" data-panel-d-chart>
-          <button type="button" class="db-panel-d__expand" data-panel-d-expand aria-label="Expand chart to full screen" title="Expand to full screen">
-            <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-          <button type="button" class="db-panel-d__close" data-panel-d-close aria-label="Close full-screen view" title="Close full-screen view">Close ✕</button>
-          <svg id="db-source-histogram" viewBox="0 0 900 340" width="100%" height="340" aria-label="Stacked histogram of publications per year by source type"></svg>
-        </div>
-        <p class="db-panel__note" data-hist-note></p>
-        <div class="db-hist-controls" data-db-hist-controls>
-          <label>From <input type="number" data-hist-start step="1" /></label>
-          <label>To <input type="number" data-hist-end step="1" /></label>
-          <span class="db-hist-presets" data-hist-presets>
-            <button type="button" data-preset="all">All</button>
-            <button type="button" data-preset="25">Last 25 yrs</button>
-            <button type="button" data-preset="10">Last 10 yrs</button>
-            <button type="button" data-preset="5">Last 5 yrs</button>
-          </span>
-          <button type="button" class="db-hist-reset" data-hist-reset>Reset</button>
-        </div>
-        <div class="db-kpis db-panel-d-kpis">
-          <div class="db-kpi db-kpi--solid db-kpi--teal">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-cap"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-theses">—</div><div class="db-kpi__label">Theses total</div><div class="db-kpi__sub" data-kpi-sub="d-theses"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--rust">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-users"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-scholars">—</div><div class="db-kpi__label">Scholars</div><div class="db-kpi__sub" data-kpi-sub="d-scholars"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--amber">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-scroll"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-masters">—</div><div class="db-kpi__label">Master&rsquo;s</div><div class="db-kpi__sub" data-kpi-sub="d-masters"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--blue">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-award"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-phds">—</div><div class="db-kpi__label">PhDs</div><div class="db-kpi__sub" data-kpi-sub="d-phds"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--purple">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-building"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-unis">—</div><div class="db-kpi__label">Universities</div><div class="db-kpi__sub" data-kpi-sub="d-unis"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--olive">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-globe"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-countries">—</div><div class="db-kpi__label">Countries</div><div class="db-kpi__sub" data-kpi-sub="d-countries"></div></div>
-          </div>
-          <div class="db-kpi db-kpi--solid db-kpi--pink">
-            <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-star"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="d-milestones">—</div><div class="db-kpi__label">Key milestones</div><div class="db-kpi__sub" data-kpi-sub="d-milestones"></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Panel E — confederacy multiples -->
-      <div class="db-panel reveal" data-panel="E">
-        <span class="db-panel__label">E</span>
-        <h2 class="db-panel__title">By island</h2>
-        <p class="db-panel__hint">Ranked within each island. Reflects your item-type selection in panel B.</p>
-        <div class="db-conf-grid" data-db-conf-grid></div>
-      </div>
-
-    </div>
-
-    <!-- iTaukei scholars — paginated profile cards -->
-    <div class="db-leaderboard reveal has-panel-badge">
-      <span class="db-panel__label">F</span>
-      <div class="db-leaderboard__head">
-        <h3 class="db-leaderboard__title">Vanuatu published scholars <span class="db-filtered-indicator" data-filtered-indicator="F" style="display:none;"><span class="db-filtered-indicator__blink">Filtered</span> <button type="button" class="db-filtered-indicator__clear" data-filtered-clear>Clear filter</button></span></h3>
-        <div class="dsf-row">
-          <label class="dsf-input dsf-input--search">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" placeholder="Search by name…" data-scholar-name-search aria-label="Search scholars by name" />
-          </label>
-
-          <label class="dsf-input dsf-input--search dsf-input--wide" title="Scans publication titles, journal names, tags, and the AI-generated research keywords + summary for each scholar. Example: 'funeral', 'systematic literature review', 'coral reef'.">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="search" placeholder="Search by research keyword…" data-scholar-keyword-search aria-label="Search scholars by research keyword, publication title, or topic" />
-          </label>
-
-          <button type="button" class="dsf-input dsf-input--combo" data-scholar-conf-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>All Provinces</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <select class="dsf-input dsf-input--select" data-scholar-clan aria-label="Filter by paternal area council">
-            <option value="">All Area councils</option>
-          </select>
-
-          <select class="dsf-input dsf-input--select" data-scholar-sector aria-label="Filter by sector">
-            <option value="">All sectors</option>
-          </select>
-
-          <button type="button" class="dsf-input dsf-input--combo" data-scholar-disc-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>Discipline</span>
-            <span class="dsf-input__badge" data-disc-badge style="display:none;"></span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-study-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>Countries / Universities of study</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-work-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>Countries / Institutions of work</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-clear-all" data-scholar-clear-all>Clear all</button>
-        </div>
-
-        <!-- Province / Province combo panel -->
-        <div class="dsf-combo-panel" data-scholar-conf-panel role="listbox">
-          <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Province</div>
-            <div data-parent-col></div>
-          </div>
-          <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Province detail</div>
-            <div data-child-col></div>
-          </div>
-        </div>
-
-        <!-- Discipline checkbox panel -->
-        <div class="dsf-check-panel" data-scholar-disc-panel role="listbox">
-          <div class="dsf-check-panel__head">
-            <span>Discipline (10)</span>
-            <button type="button" class="dsf-check-panel__clear" data-disc-clear>Clear</button>
-          </div>
-          <div data-disc-list></div>
-          <div class="dsf-check-panel__foot">Ticking multiple disciplines narrows results (AND) — a scholar must sit in every ticked discipline.</div>
-        </div>
-
-        <!-- Study combo panel -->
-        <div class="dsf-combo-panel" data-scholar-study-panel role="listbox">
-          <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Country of study</div>
-            <div data-parent-col></div>
-          </div>
-          <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Universities</div>
-            <div data-child-col></div>
-          </div>
-        </div>
-
-        <!-- Work combo panel -->
-        <div class="dsf-combo-panel" data-scholar-work-panel role="listbox">
-          <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Country of work</div>
-            <div data-parent-col></div>
-          </div>
-          <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Universities</div>
-            <div data-child-col></div>
-          </div>
-        </div>
-
-        <!-- Summary bar (Total + Vanuatu's 5 Provinces + Unclassified) -->
-        <div class="dsf-summary" data-scholar-summary>
-          <strong>Province</strong>
-          <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
-<div class="dsf-summary__chips" data-scholar-summary-chips><span class="dsf-chip" data-conf-chip="Torba" style="--conf-color:#496a9c"><span class="dsf-chip__dot" style="background:#496a9c"></span>Torba: <span data-count-torba>0</span></span><span class="dsf-chip" data-conf-chip="Sanma" style="--conf-color:#007d83"><span class="dsf-chip__dot" style="background:#007d83"></span>Sanma: <span data-count-sanma>0</span></span><span class="dsf-chip" data-conf-chip="Penama" style="--conf-color:#80703a"><span class="dsf-chip__dot" style="background:#80703a"></span>Penama: <span data-count-penama>0</span></span><span class="dsf-chip" data-conf-chip="Malampa" style="--conf-color:#a0543c"><span class="dsf-chip__dot" style="background:#a0543c"></span>Malampa: <span data-count-malampa>0</span></span><span class="dsf-chip" data-conf-chip="Shefa" style="--conf-color:#87639d"><span class="dsf-chip__dot" style="background:#87639d"></span>Shefa: <span data-count-shefa>0</span></span><span class="dsf-chip" data-conf-chip="Tafea" style="--conf-color:#486c49"><span class="dsf-chip__dot" style="background:#486c49"></span>Tafea: <span data-count-tafea>0</span></span><span class="dsf-chip dsf-chip--unclass" data-conf-chip="Unclassified">Unclassified: <span data-count-unclass>0</span></span></div>
-        </div>
-
-        <div class="dsf-summary dsf-summary--clans" data-scholar-clan-summary>
-          <strong>Area councils</strong>
-          <span class="dsf-chip dsf-chip--total" title="Scholars with a recorded paternal area council">Total: <span data-count-clans-total>0</span></span>
-          <div class="dsf-summary__chips" data-scholar-clan-chips></div>
-        </div>
-
-        <!-- Results II — publication-type breakdown of the filtered scholars' works -->
-        <div class="dsf-summary dsf-summary--ii" data-scholar-summary-ii>
-          <strong>Publications</strong>
-          <span class="dsf-chip dsf-chip--total" title="Total publications by the currently-shown scholars">Total: <span data-count-pubs-total>0</span></span>
-          <div class="dsf-summary__chips" data-scholar-summary-ii-chips>
-            <span class="dsf-chip dsf-chip--phd"      data-pub-chip="thesisPhd"       style="display:none;"><span class="dsf-chip__dot"></span> PhD Thesis: <span data-count-pub-phd>0</span></span>
-            <span class="dsf-chip dsf-chip--masters"  data-pub-chip="thesisMasters"   style="display:none;"><span class="dsf-chip__dot"></span> Masters Thesis: <span data-count-pub-masters>0</span></span>
-            <span class="dsf-chip dsf-chip--journal"  data-pub-chip="journalArticle"  style="display:none;"><span class="dsf-chip__dot"></span> Journal Article: <span data-count-pub-journal>0</span></span>
-            <span class="dsf-chip dsf-chip--chapter"  data-pub-chip="bookSection"     style="display:none;"><span class="dsf-chip__dot"></span> Book Chapter: <span data-count-pub-chapter>0</span></span>
-            <span class="dsf-chip dsf-chip--book"     data-pub-chip="book"            style="display:none;"><span class="dsf-chip__dot"></span> Book: <span data-count-pub-book>0</span></span>
-            <span class="dsf-chip dsf-chip--report"   data-pub-chip="report"          style="display:none;"><span class="dsf-chip__dot"></span> Report: <span data-count-pub-report>0</span></span>
-            <span class="dsf-chip dsf-chip--conf"     data-pub-chip="conferencePaper" style="display:none;"><span class="dsf-chip__dot"></span> Conference Paper: <span data-count-pub-conf>0</span></span>
-            <span class="dsf-chip dsf-chip--preprint" data-pub-chip="preprint"        style="display:none;"><span class="dsf-chip__dot"></span> Preprint: <span data-count-pub-preprint>0</span></span>
-          </div>
-        </div>
-      </div>
-      <p class="db-leaderboard__hint">Click a card to see that scholar’s papers below.</p>
-      <div class="db-scholars-grid" data-db-leaders>Loading…</div>
-      <div class="db-pager" data-db-pager></div>
-    </div>
-
-    <!-- Items list -->
-    <div class="db-items reveal has-panel-badge">
-      <span class="db-panel__label">G</span>
-      <div class="db-items-header">
-        <h3>All items (<span data-db-item-count>0</span>) <span class="db-filtered-indicator" data-filtered-indicator="G" style="display:none;"><span class="db-filtered-indicator__blink">Filtered</span> <button type="button" class="db-filtered-indicator__clear" data-filtered-clear>Clear filter</button></span></h3>
-        <div class="db-items-tools">
-          <input type="search" class="db-search" placeholder="Search title, author, journal, keyword…" data-db-search aria-label="Search items" />
-          <select class="db-filter" data-db-filter="itemType" aria-label="Filter by item type">
-            <option value="">All types</option>
-            <option value="journalArticle">Journal Articles</option>
-            <option value="thesisPhd">PhD Theses</option>
-            <option value="thesisMasters">Masters Theses</option>
-            <option value="bookSection">Book Chapters</option>
-            <option value="book">Books</option>
-            <option value="conferencePaper">Conference Papers</option>
-            <option value="report">Reports</option>
-            <option value="preprint">Preprints</option>
-          </select>
-          <select class="db-filter" data-db-filter="discipline" aria-label="Filter by discipline">
-            <option value="">All disciplines</option>
-          </select>
-          <select class="db-filter" data-db-filter="decade" aria-label="Filter by decade">
-            <option value="">All decades</option>
-          </select>
-          <button type="button" class="db-clear-btn is-hidden" data-db-clear>Clear all</button>
-          <button type="button" class="db-filter" data-db-export="bib" title="Export the currently filtered items as BibTeX">Export .bib</button>
-        </div>
-      </div>
-      <div class="db-chips-row" id="db-filter-chips" data-db-chips></div>
-      <ol class="db-item-list" data-db-items></ol>
-      <button type="button" class="db-load-more" data-db-load-more style="display:none;">Show 25 more</button>
-    </div>
-
-    <!-- Cite + contribute -->
-    <div class="db-context">
-      <div class="db-cite reveal">
-        <h3>Cite this database</h3>
-        <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). Vanuatu Academic Research: A curated database of scholarly publications on Vanuatu and Vanuatus. Master-file database. Retrieved from https://ronvave.github.io/vave-lab/vanuatu-research-database-master.html</code>
-      </div>
-      <div class="db-contribute reveal">
-        <h3>Contribute · Suggest an item</h3>
-        <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by a Vanuatu scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
-        <a href="mailto:ronvave@hawaii.edu?subject=Vanuatu%20Scholar%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20Vanuatu)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
-      </div>
-    </div>
-
-    <p class="db-updated" data-db-updated></p>
-
-  </div>
-</section>
-</main>
-
-<!-- ============ Impact View overlay (Ron's presentation view) ============ -->
-<div class="impact-overlay" data-impact-overlay role="dialog" aria-labelledby="impact-title" aria-modal="true" hidden>
-  <div class="impact-modal">
-    <button type="button" class="impact-close" data-impact-close aria-label="Close impact view">×</button>
-
-    <header class="impact-header">
-      <div class="impact-header__eyebrow">Presentation view · Vanuatu Scholar Database</div>
-      <h2 id="impact-title" class="impact-header__title">Vanuatu research impact <span>across the Pacific</span></h2>
-      <p class="impact-header__sub">Publications grouped by paternal <em>Province</em>, split by whether the research is <strong>Vanuatu-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
-    </header>
-
-    <div class="impact-filters" role="tablist" aria-label="Filter">
-      <button type="button" class="is-active" data-impact-filter="all">All publications</button>
-      <button type="button" data-impact-filter="phd">PhD theses only</button>
-      <button type="button" data-impact-filter="masters">Masters theses only</button>
-    </div>
-
-    <div class="impact-headline" data-impact-headline>
-      <div class="impact-headline__stat">
-        <div class="impact-headline__num" data-impact-total>—</div>
-        <div class="impact-headline__label">Total items in view</div>
-      </div>
-      <div class="impact-headline__stat">
-        <div class="impact-headline__num" data-impact-fiji>—</div>
-        <div class="impact-headline__label">Vanuatu-focused</div>
-      </div>
-      <div class="impact-headline__stat">
-        <div class="impact-headline__num" data-impact-intl>—</div>
-        <div class="impact-headline__label">International-focused</div>
-      </div>
-      <div class="impact-headline__stat">
-        <div class="impact-headline__num" data-impact-scholars>—</div>
-        <div class="impact-headline__label">ni-Vanuatu scholars represented</div>
-      </div>
-    </div>
-
-    <div class="impact-chart" data-impact-chart>
-      <!-- Populated by JS: three grouped column pairs (Fiji vs Intl) per confederacy -->
-    </div>
-
-    <div class="impact-legend">
-      <span><span class="impact-legend__sw" style="background:#0e7490;"></span>Vanuatu-focused research</span>
-      <span><span class="impact-legend__sw" style="background:#c2410c;"></span>International-focused research</span>
-    </div>
-
-    <p class="impact-footnote" data-impact-footnote></p>
-  </div>
-</div>
-
-<footer class="site-footer" role="contentinfo">
-  <div class="container">
-    <div class="footer-grid">
-      <div class="footer-brand">
-        <p class="footer-brand__name">Assistant Professor Ron Vave</p>
-        <p class="footer-brand__tagline">Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.</p>
-        <div class="footer-social">
-          <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
-          <a href="https://orcid.org/0000-0001-6137-3685" target="_blank" rel="noopener">ORCID</a>
-          <a href="https://www.researchgate.net/profile/Ron-Vave" target="_blank" rel="noopener">ResearchGate</a>
-          <a href="https://www.linkedin.com/in/ron-vave-041325114/" target="_blank" rel="noopener">LinkedIn</a>
-        </div>
-      </div>
-      <div class="footer-section">
-        <h3 class="footer-section__title">Navigate</h3>
-        <ul class="footer-nav-list" role="list">
-          <li><a href="index.html">Home</a></li>
-          <li><a href="research.html">Research</a></li>
-          <li><a href="publications.html">Publications</a></li>
-          <li><a href="supervision.html">Supervision</a></li>
-          <li><a href="teaching.html">Teaching</a></li>
-          <li><a href="service.html">Service</a></li>
-          <li></li>
-          <li><a href="media.html">Media</a></li>
-        </ul>
-      </div>
-      <div class="footer-section">
-        <h3 class="footer-section__title">Contact</h3>
-        <address>
-          Department of Pacific Islands Studies<br>
-          University of Hawaiʻi at Mānoa<br>
-          1890 East-West Road, Moore Hall 214<br>
-          Honolulu, Hawaiʻi, U.S.A.<br><br>
-          Office: <a href="tel:+18089560229">(808) 956-0229</a><br>
-          Email: <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a>
-        </address>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p class="footer-bottom__copy">&copy; 2026 Ron Vave &middot; University of Hawaiʻi at Mānoa</p>
-      <div class="legal-footer" role="contentinfo">
-        <span class="legal-footer__copy">&copy; 2026 Ron Vave / Vave Lab. All rights reserved.</span>
-        <span class="legal-footer__license">
-          Content licensed under
-          <a href="https://creativecommons.org/licenses/by-nc-nd/4.0/" target="_blank" rel="license noopener">CC BY-NC-ND 4.0</a>
-          (Attribution &middot; Non-Commercial &middot; No Derivatives).
-          <span class="legal-footer__sep">|</span>
-          <a href="terms.html">Terms of Use</a>
-          <span class="legal-footer__sep">|</span>
-          <a href="mailto:itaukeischolar@gmail.com">itaukeischolar@gmail.com</a>
-        </span>
-      </div>
-    </div>
-  </div>
-</footer>
-
-<script src="js/vanuatu-main.js?v=2cf4b3f9"></script>
-<!-- ==== Submit-info modal (for scholars to propose corrections) ==== -->
-<div class="db-submit-modal" id="db-submit-modal" role="dialog" aria-modal="true" aria-labelledby="db-submit-modal-title">
-  <div class="db-submit-modal__dialog">
-    <h2 id="db-submit-modal-title">Update info for this scholar</h2>
-    <p class="db-submit-modal__sub" id="db-submit-modal-sub"></p>
-    <div class="db-submit-modal__notice">
-      <strong>Please read:</strong> corrections are reviewed by Vanuatu scholar collaborators, Professor Tēvita Kaʻili and Associate Professor ‘Inoke Hafoka, before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves. However, friends, family, students and colleagues can also submit updates on their behalf.
-    </div>
-
-    <form id="db-submit-form" enctype="multipart/form-data" novalidate>
-      <fieldset>
-        <legend>Who is submitting this</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-yourname">Your name <span class="req">*</span></label>
-            <input type="text" id="db-sf-yourname" name="submitter_name" required maxlength="120" />
-          </div>
-          <div>
-            <label for="db-sf-youremail">Your email <span class="req">*</span></label>
-            <input type="email" id="db-sf-youremail" name="submitter_email" required maxlength="200" />
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-relationship">Relationship to this scholar <span class="req">*</span></label>
-            <select id="db-sf-relationship" name="submitter_relationship" required>
-              <option value="">Select one…</option>
-              <option value="self">This is my own profile</option>
-              <option value="family">Family / relative</option>
-              <option value="colleague">Colleague / collaborator</option>
-              <option value="student">Student / mentee</option>
-              <option value="supervisor">Supervisor / advisor</option>
-              <option value="community">Community member</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Scholar profile</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-salutation">Salutation</label>
-            <select id="db-sf-salutation" name="salutation">
-              <option value="">(none)</option>
-              <option>Dr.</option><option>Prof.</option>
-              <option>Mr.</option><option>Mrs.</option><option>Ms.</option>
-            </select>
-          </div>
-          <div>
-            <label for="db-sf-village">Village / town / community</label>
-            <input type="text" id="db-sf-village" name="village" placeholder="e.g. Port Vila" />
-          </div>
-          <div>
-            <label for="db-sf-paternal">Paternal Province</label>
-            <select id="db-sf-paternal" name="paternal_province">
-              <option value="">(select)</option>
-            </select>
-            <small>Province and island are recorded independently.</small>
-          </div>
-          <div>
-            <label for="db-sf-specific-island">Specific Island (Paternal)</label>
-            <input type="text" id="db-sf-specific-island" name="specific_island" placeholder="e.g. Efate, Santo, Tanna" />
-            <small>Independently curated — provinces can include multiple islands.</small>
-          </div>
-          <div>
-            <label for="db-sf-title">Professional title</label>
-            <input type="text" id="db-sf-title" name="title" placeholder="e.g. Senior Lecturer" />
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-institution">Institution</label>
-            <input type="text" id="db-sf-institution" name="institution" />
-          </div>
-          <div>
-            <label for="db-sf-institution-url">Institution URL</label>
-            <input type="url" id="db-sf-institution-url" name="institution_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-department">Department</label>
-            <input type="text" id="db-sf-department" name="department" />
-          </div>
-          <div>
-            <label for="db-sf-department-url">Department URL</label>
-            <input type="url" id="db-sf-department-url" name="department_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-profile-url">Faculty profile URL</label>
-            <input type="url" id="db-sf-profile-url" name="profile_url" placeholder="https://…" />
-          </div>
-          <div>
-            <label for="db-sf-scholar-url">Google Scholar URL</label>
-            <input type="url" id="db-sf-scholar-url" name="google_scholar_url" placeholder="https://scholar.google.com/citations?user=…" />
-          </div>
-          <div>
-            <label for="db-sf-orcid-url">ORCID iD URL</label>
-            <input type="url" id="db-sf-orcid-url" name="orcid_url" placeholder="https://orcid.org/0000-0000-0000-0000" />
-          </div>
-          <div>
-            <label for="db-sf-photo">Profile photo URL</label>
-            <input type="url" id="db-sf-photo" name="photo_url" placeholder="https://… or leave blank" />
-            <small>Or attach the image file below.</small>
-          </div>
-          <div style="grid-column: 1 / -1;">
-            <label for="db-sf-photo-file">Attach a photo (optional)</label>
-            <input type="file" id="db-sf-photo-file" name="photo_file" accept="image/*" />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Graduate studies (optional)</legend>
-        <div class="grid">
-          <div>
-            <label for="db-sf-masters-uni">Masters — University</label>
-            <input type="text" id="db-sf-masters-uni" name="masters_university" />
-          </div>
-          <div>
-            <label for="db-sf-masters-country">Masters — Country</label>
-            <input type="text" id="db-sf-masters-country" name="masters_country" />
-          </div>
-          <div>
-            <label for="db-sf-phd-uni">PhD — University</label>
-            <input type="text" id="db-sf-phd-uni" name="phd_university" />
-          </div>
-          <div>
-            <label for="db-sf-phd-country">PhD — Country</label>
-            <input type="text" id="db-sf-phd-country" name="phd_country" />
-          </div>
-        </div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Publications to add</legend>
-        <label for="db-sf-bib-file">BibTeX or EndNote file</label>
-        <input type="file" id="db-sf-bib-file" name="publications_file" accept=".bib,.enl,.enw,.ris,.txt,.xml" />
-        <small>Attach a single file containing <strong>all</strong> the publications you want added. BibTeX (.bib) is preferred; EndNote (.enw / .enl / .ris) is also fine.</small>
-        <div style="margin-top: 10px;">
-          <label for="db-sf-notes">Anything else we should know?</label>
-          <textarea id="db-sf-notes" name="notes" rows="3" placeholder="Optional — e.g. context on which fields you edited, or corrections that don't fit above."></textarea>
-        </div>
-      </fieldset>
-
-      <!-- Formsubmit.co configuration — hidden fields -->
-      <input type="hidden" name="_subject" id="db-sf-subject" value="Vave Lab scholar-info submission" />
-      <input type="hidden" name="_captcha" value="false" />
-      <input type="hidden" name="_template" value="table" />
-      <input type="hidden" name="scholar_name" id="db-sf-scholar-name" value="" />
-      <input type="hidden" name="scholar_slug" id="db-sf-scholar-slug" value="" />
-      <input type="hidden" name="submission_json" id="db-sf-submission-json" value="" />
-
-      <div class="db-submit-modal__actions">
-        <button type="button" class="db-submit-modal__btn db-submit-modal__btn--ghost" data-submit-cancel>Cancel</button>
-        <button type="submit" class="db-submit-modal__btn db-submit-modal__btn--primary" data-submit-send>Submit for review</button>
-      </div>
-
-      <div class="db-submit-modal__status" id="db-submit-status"></div>
-    </form>
-  </div>
-</div>
-
-<!-- =====================================================================
-     Vanuatu Scholar Database — MASTER-FILE PREVIEW (V2)
-
-     This preview file is IDENTICAL in look/feel to the production dashboard
-     (`itaukei-research-database.html`) but its data layer is driven by the
-     Vanuatu Master file Google Sheet instead of Zotero.
-
-     The `js/vanuatu-database-master.js` bundle fetches Master-file
-     sanitized JSON snapshots (produced by refresh-master-file.yml every 2h)
-     and reshapes them into the same state.snapshot shape the existing
-     panel code expects, so the majority of panels render identically.
-
-     For the initial preview, this bundle renders the KPI, gender,
-     publication-type, Vanuatu-geography, and grad-stat panels directly from
-     Master data with reconciled counts that match the Dashboard sheet.
-
-     Do NOT link this file from site navigation until Ron approves swap.
-===================================================================== -->
-<script src="js/vanuatu-geography.js?v=62b754c3" defer></script>
-<script src="js/vanuatu-model.js?v=b8079a2c" defer></script>
-<script src="js/vanuatu-config.js?v=612e5024" defer></script>
-<script src="js/vanuatu-preview-data.js?v=ba76ab44" defer></script>
-<script src="js/vanuatu-dashboard-model.js?v=0009ecec" defer></script>
-<script src="js/vanuatu-bundle-bridge.js?v=df5d0888" defer></script>
-<script src="js/vanuatu-demo-gate.js?v=24f0f409" defer></script>
-
-<script src="js/vanuatu-database-adapter.js?v=fb5b478b" defer></script>
-<script src="js/vanuatu-countries.js?v=bdac3577" defer></script>
-<script src="js/vanuatu-country-inputs.js?v=1ea21541" defer></script>
-<script src="js/vanuatu-scholar-portal.js?v=c6304649" defer></script>
-<script src="js/vanuatu-database-master.js?v=c2de7180" defer></script>
-<script src="js/vanuatu-short-disciplines.js?v=e9b8cfb1" defer></script>
-<script src="js/vanuatu-panel-overrides.js?v=c774ff38" defer></script>
-<script>
-  /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
-     Two panels ship a .db-panel__embed wrapper with an expand button and a
-     transparent click overlay. Clicking either toggles .is-fullscreen on
-     the wrapper (which pins it to the viewport via CSS) and reveals the
-     matching .db-panel__embed-close pill. Escape also closes.
-
-     We DO NOT use the native Fullscreen API here because same-origin iframes
-     still lose their scroll/resize context when the browser enters full
-     fullscreen, and Ron's chord/body-comp pages already handle window resize
-     internally — a plain CSS pinned overlay is more reliable across desktops
-     and mobile. */
-  (function initEmbedFullscreen(){
-    var attached = false;
-    function toggleFullscreen(wrap, on){
-      if (!wrap) return;
-      wrap.classList.toggle('is-fullscreen', !!on);
-      document.body.classList.toggle('db-embed-fullscreen-lock', !!on);
-      // Nudge the iframe to resize its inner ECharts / SVG after the CSS
-      // repaints. Same-origin so we can safely poke its window. We also
-      // toggle an `is-embed-fullscreen` class on the iframe's <body> so the
-      // embedded page can grow its chart to fill the viewport (C1 body
-      // composition otherwise stays at its embedded 760px height).
-      try {
-        var iframe = wrap.querySelector('iframe');
-        if (iframe && iframe.contentWindow) {
-          try {
-            var idoc = iframe.contentDocument;
-            if (idoc && idoc.body) idoc.body.classList.toggle('is-embed-fullscreen', !!on);
-          } catch(e2){}
-          setTimeout(function(){
-            try { iframe.contentWindow.dispatchEvent(new Event('resize')); } catch(e){}
-          }, 50);
-        }
-      } catch(e){}
-    }
-    function onDocClick(ev){
-      var overlay = ev.target.closest('.db-panel__embed-click');
-      var expand = ev.target.closest('.db-panel__embed-expand');
-      var close  = ev.target.closest('.db-panel__embed-close');
-      if (close){
-        var targetId = close.getAttribute('data-embed-close');
-        toggleFullscreen(document.getElementById(targetId), false);
-        return;
-      }
-      if (expand){
-        var wrap = expand.closest('.db-panel__embed');
-        toggleFullscreen(wrap, !wrap.classList.contains('is-fullscreen'));
-        return;
-      }
-      if (overlay){
-        var targetId2 = overlay.getAttribute('data-embed-target');
-        var wrap2 = document.getElementById(targetId2);
-        if (wrap2) toggleFullscreen(wrap2, !wrap2.classList.contains('is-fullscreen'));
-      }
-    }
-    function onKey(ev){
-      if (ev.key === 'Escape'){
-        var sourceDoc = ev.target && ev.target.ownerDocument;
-        var openMenu = sourceDoc && sourceDoc.querySelector('.mobility-filters details[open]');
-        if (openMenu) { openMenu.open = false; ev.preventDefault(); ev.stopPropagation(); return; }
-        document.querySelectorAll('.db-panel__embed.is-fullscreen').forEach(function(w){
-          toggleFullscreen(w, false);
-        });
-      }
-    }
-    // Same-origin iframes swallow clicks (they don't bubble up to the parent
-     // document). To make the chart itself clickable-to-expand, we reach into
-     // each iframe's document after load and add a plain click listener that
-     // toggles the parent wrapper. Any click on the iframe body — including
-     // on the ECharts canvas or the chord SVG — triggers fullscreen. The
-     // ECharts hover-tooltip still works normally because tooltips use
-     // mousemove/mouseover, not click.
-    function wireIframeClick(wrap){
-      var iframe = wrap.querySelector('iframe');
-      if (!iframe) return;
-      function bind(){
-        try {
-          var doc = iframe.contentDocument;
-          if (!doc) return;
-          doc.addEventListener('click', function(ev){
-            // B3 outside-click dismisses an open filter before any expansion.
-            // Once expanded, only Close full screen or Escape should exit.
-            if (wrap.id === 'db-embed-b3-chord') {
-              var openMenus = doc.querySelectorAll('.mobility-filters details[open]');
-              if (!ev.target.closest('.mobility-filters') && openMenus.length) {
-                openMenus.forEach(function(menu){ menu.open = false; });
-                return;
-              }
-              if (wrap.classList.contains('is-fullscreen')) return;
-            }
-            // Ignore clicks on real interactive controls inside the embedded
-            // page (buttons, inputs, links) — they should behave normally.
-            if (ev.target.closest('button, a, input, select, textarea, label, summary, .mobility-filters')) return;
-            toggleFullscreen(wrap, !wrap.classList.contains('is-fullscreen'));
-          });
-          doc.addEventListener('keydown', onKey);
-          doc.body && (doc.body.style.cursor = 'zoom-in');
-        } catch(e){ /* cross-origin (shouldn't happen here) */ }
-      }
-      if (iframe.contentDocument && iframe.contentDocument.readyState === 'complete') bind();
-      iframe.addEventListener('load', bind);
-    }
-    function attach(){
-      if (attached) return;
-      attached = true;
-      document.addEventListener('click', onDocClick);
-      document.addEventListener('keydown', onKey);
-      document.querySelectorAll('.db-panel__embed').forEach(wireIframeClick);
-    }
-    if (document.readyState === 'loading'){
-      document.addEventListener('DOMContentLoaded', attach);
-    } else {
-      attach();
-    }
-  })();
-</script>
-<script src="js/vanuatu-panel-menu.js?v=e2ea0e74" defer></script>
-</body>
-</html>

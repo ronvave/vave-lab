@@ -13,7 +13,8 @@ position editors, photo/summary tools, review queues and change log.
 
 ## Validation
 
-13 Python export tests, 16 model checks, 12 mocked backend checks, simulated
+13 Python export tests, 16 model checks, 8 dashboard-model parity checks,
+12 mocked backend checks, simulated
 DOM integration, JavaScript syntax, local assets and six province joins passed.
 The DOM tests cover full reference-panel parity, search/reset, scoped scholar
 profiles, the owner-editor layout, independent province/island/council inputs,

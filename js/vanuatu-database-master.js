@@ -5285,9 +5285,9 @@
 
     // Dynamic explanation sentence for the confederacy summary.
     const explainSentences = {
-      all:    "All Vanuatu-focused publications, grouped by the Province of the province studied.",
-      lead:   "Publications led by a Vanuatu first author, grouped by the Province of the province studied.",
-      coauth: "Publications co-authored with Vanuatu scholars, grouped by the Province of the province studied."
+      all:    "All Vanuatu-focused publications, grouped by the study province.",
+      lead:   "Publications led by a Vanuatu first author, grouped by the study province.",
+      coauth: "Publications co-authored with Vanuatu scholars, grouped by the study province."
     };
     const explainEl = $('[data-db-conf-explain]');
     if (explainEl) explainEl.textContent = explainSentences[state.mapView] || explainSentences.all;
@@ -5511,7 +5511,7 @@
       host.appendChild(num);
     });
 
-    // ============ Non-district/Vanuatu bottom bar ============
+    // ============ Vanuatu-wide / province unspecified bottom bar ============
     // Aggregates publications with an explicit verified Research Geography
     // row for "Vanuatu - no district specified". These are Vanuatu-wide topics
     // (e.g. national legislation or policy) not tied to one district.
@@ -5544,8 +5544,8 @@
       const tipText = 'Publications about Vanuatu broadly or national-level topics '
                     + '\u2014 such as legislation, policy, or nationwide studies '
                     + "— that are not tied to a specific province.";
-      npLabel.innerHTML = `<span>Non-district/Vanuatu</span>`
-        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-district/Vanuatu" title="${escapeAttr(tipText)}">i</span>`;
+      npLabel.innerHTML = `<span>Vanuatu-wide / province unspecified</span>`
+        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Vanuatu-wide / province unspecified" title="${escapeAttr(tipText)}">i</span>`;
       host.appendChild(npLabel);
 
       // Column 2 — bar at 100% width, percentage-normalised segments.
@@ -5555,7 +5555,7 @@
       row.style.width = '100%';
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `Non-district/Vanuatu \u00b7 ${nonProv.total} items`;
+      row.title = `Vanuatu-wide / province unspecified \u00b7 ${nonProv.total} items`;
       const segsPendingSizing = [];
       TYPE_ORDER.forEach(t => {
         const n = nonProv.types[t] || 0;
@@ -9680,6 +9680,8 @@
     renderFilterChips();
     updateClearAllButton();
 
+    renderPanelA(); // Province totals render even when map libraries are unavailable.
+
     // Init map once Leaflet has loaded, then paint Panel A tallies + sync
     const initMapWhenReady = () => {
       if (window.L) { initMap(); renderPanelA(); }
@@ -9931,7 +9933,7 @@
       isConfirmed: true
     }]));
     const nonDistrict = {
-      name: 'Non-district/Vanuatu', conf: null, total: 0, types: {},
+      name: 'Vanuatu-wide / province unspecified', conf: null, total: 0, types: {},
       cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
       isConfirmed: false
     };
@@ -10248,7 +10250,7 @@
         total: 0
       });
     });
-    const fijiWide = { name: 'Non-district/Vanuatu', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
+    const fijiWide = { name: 'Vanuatu-wide / province unspecified', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -10743,7 +10745,7 @@
 
     // Sort rows. Fiji-wide / national always pinned to the end. Zero-total
     // rows keep their alphabetical fallback so the layout stays readable.
-    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'Non-district/Vanuatu';
+    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'Vanuatu-wide / province unspecified';
     const sortable = rows.filter(r => !isNonDistrict(r));
     const trailing = rows.filter(isNonDistrict);
     const shareOf = (r, key) => (r.total > 0 ? (r.cats[key] || 0) / r.total : 0);

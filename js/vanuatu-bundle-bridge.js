@@ -24,7 +24,12 @@ async function fetchJson(path){inherit();path=path.split('?')[0];if(path==='data
  const map={'scholars':'Scholars','publications':'Publications','authorship':'Authorship','grad-degrees':'Graduate Degrees','geography':'Research Geography'};const suffix=path.replace(/^data\/vanuatu-master-/,'').replace(/\.json$/,'');if(map[suffix])return rows(map[suffix]);
  if(/master-mobility/.test(path))return M.mobility(M.build(bundle)).rows;
  if(/last-master-sync/.test(path))return {finishedAt:bundle.generatedAt||null,preview:!!bundle.preview};
- if(/master-aggregates/.test(path))return {};
+ if(/master-aggregates/.test(path)){
+  if(!w.VanuatuDashboardModel)return {};
+  const model=M.build(bundle),data=w.VanuatuDashboardModel.disciplines(model),sizes=r=>Object.fromEntries(['male','female','masters','phd','total'].map(k=>[k,r[k].size]));
+  return {shortDisciplines:{rows:data.rows.map(r=>({discipline:r.name,...sizes(r)})),overall:sizes(data.all),allCompleted:new Set(model.completed.map(r=>r['Scholar ID'])).size,allMasters:new Set(model.completed.filter(r=>M.level(r)==='masters').map(r=>r['Scholar ID'])).size,generatedAt:bundle.generatedAt||null}};
+ }
+
  if(/scholar-enrichment/.test(path))return {version:1,scholars:bundle.enrichment||{}};
  if(/scholar-insights-master/.test(path)){const out={};for(const [id,e] of Object.entries(bundle.enrichment||{}))if(e.summary||e.insights)out[id]=e.insights||{keywords:e.keywords||[],sources:e.sources||[],summaryHtml:e.summary||'',summaryFormat:'plain'};return {version:1,scholars:out};}
  if(/body-composition/.test(path)){

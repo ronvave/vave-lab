@@ -26,10 +26,10 @@
     row(table.tHead, ['Short Discipline', ...(gender ? ['Male','Female'] : ['Completed Master’s','Completed PhD']), 'Total'], true);
     model.rows.forEach(item => row(table.tBodies[0], [item.discipline, ...keys.map(k => number(item[k]))]));
     row(table.tFoot, ['Unique scholars overall', ...keys.map(k => number(model.overall[k]))]);
-    const intro = 'Interpretation: This table uses the Short Discipline column in Graduate Degrees and counts unique Vanuatu Scholar IDs with completed degrees, not degree records. Only records whose completion status begins with Completed are included; degrees currently in progress, non-completed, or uncertain about completion are excluded. ';
+    const intro = 'Interpretation: This table groups the recorded Broad Discipline and Field / Discipline values in Graduate Degrees using the documented eight-category crosswalk and counts unique Vanuatu Scholar IDs with completed degrees, not degree records. Only records whose completion status begins with Completed are included; degrees currently in progress, non-completed, or uncertain about completion are excluded. ';
     caption.textContent = intro + (gender
-      ? `Blank Short Discipline entries are also excluded, so this table currently includes ${number(model.overall.total)} of the ${number(model.allCompleted)} unique scholars with either a completed Master's or completed PhD. A scholar with completed degrees in more than one short discipline is counted once in each relevant discipline; the final row counts each scholar once overall.`
-      : `Blank Short Discipline entries are also excluded, which is why this table currently includes ${number(model.overall.masters)} of the ${number(model.allMasters)} completed Master's scholars. The Completed Master's and Completed PhD columns count each scholar once within that stage. Total counts each scholar once per short discipline, even when the scholar completed both stages; totals across disciplines should not be summed.`);
+      ? `Unmapped or ambiguous discipline entries are also excluded, so this table currently includes ${number(model.overall.total)} of the ${number(model.allCompleted)} unique scholars with either a completed Master's or completed PhD. A scholar with completed degrees in more than one short discipline is counted once in each relevant discipline; the final row counts each scholar once overall.`
+      : `Unmapped or ambiguous discipline entries are also excluded, which is why this table currently includes ${number(model.overall.masters)} of the ${number(model.allMasters)} completed Master's scholars. The Completed Master's and Completed PhD columns count each scholar once within that stage. Total counts each scholar once per short discipline, even when the scholar completed both stages; totals across disciplines should not be summed.`);
     if (!gender) caption.textContent += ' For example, a scholar with both stages in Education counts once in its Total; a scholar with a Master’s in Education and a PhD in Social sciences appears in both rows, but once overall.';
     if (gender && model.overall.total > model.overall.male + model.overall.female) caption.textContent += ' Scholars without a recorded Male or Female value remain included in Total.';
     table.hidden = false;
@@ -43,7 +43,7 @@
       tr.appendChild(td); table.tBodies[0].appendChild(tr);
     }
     status.textContent = warning;
-    root.querySelector('[data-disciplines-updated]').textContent = 'Data updated: ' + new Date(model.generatedAt).toLocaleString() + '. Master snapshots refresh every two hours; reload to retrieve the latest snapshot.';
+    root.querySelector('[data-disciplines-updated]').textContent = (window.VanuatuBundle.isPreview()?'Fictional example data':model.generatedAt?'Data updated: '+new Date(model.generatedAt).toLocaleString():'Snapshot timestamp unavailable') + '. Reload after an approved Vanuatu snapshot refresh.';
   }
   root.querySelectorAll('[data-discipline-view]').forEach(button => button.addEventListener('click', () => {
     view = button.dataset.disciplineView;

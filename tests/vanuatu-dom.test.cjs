@@ -17,6 +17,8 @@ function create(file,query='?preview=1'){
  const original=new JSDOM(fs.readFileSync('tongan-research-database-master.html','utf8'));
  assert.deepEqual([...d.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel),[...original.window.document.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel));original.window.close();
  assert.equal(d.querySelectorAll('.db-scholar-card').length,3);assert.equal(w.__vavelabDbState.provinces.features.length,6);
+ assert(d.querySelector('[data-conf-total="Sanma"]').textContent !== '—');
+ assert(!d.body.textContent.includes('Division TOTAL'));
  assert.deepEqual(Object.keys(w.MasterFileAdapter.constants.CONFEDERACIES),Array.from(w.VanuatuGeography.provinces));
  d.querySelector('[data-scholar-name-search]').value='Example Scholar B';d.querySelector('[data-scholar-name-search]').dispatchEvent(new w.Event('input'));await ready(()=>d.querySelectorAll('.db-scholar-card').length===1);assert.equal(d.querySelectorAll('.db-scholar-card').length,1);assert(d.querySelector('.db-scholar-card').textContent.includes('Example Scholar B'));
  d.querySelector('[data-scholar-clear-all]').click();assert.equal(d.querySelectorAll('.db-scholar-card').length,3);

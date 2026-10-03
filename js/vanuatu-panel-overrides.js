@@ -1,32 +1,5 @@
-/*
- * Vanuatu Master-file panel overrides
- * ===================================
- *
- * Sister clone of js/master-file-panel-overrides.js (iTaukei). The
- * production dashboard code in js/vanuatu-database-master.js was forked
- * from js/itaukei-database-master.js and now runs against Vanuatu
- * Master-file data synthesized into Zotero shape by
- * js/vanuatu-database-adapter.js. Almost every panel works verbatim. This
- * file layers on the *Master-file-specific* requirements the Zotero shape
- * cannot express directly:
- *
- *   1. The two district summary tables (B1 + C2) show the 23 Vanuatu
- *      districts grouped by Island Division WITH dedicated TOTAL columns
- *      per division (Vanuatutapu total, Vava'u total, Ha'apai total, 'Eua
- *      total, Ongo Niua total). Per the crosswalk's explicit rule, no
- *      Fijian Confederacy name (Tovata / Kubuna / Burebasaga) is ever
- *      shown here — every place the iTaukei dashboard shows Confederacy,
- *      this clone shows Island Division, labeled as such.
- *   2. The two required explanatory lines about excluded pub types and
- *      non-Vanuatu records appear verbatim below the summary tables.
- *   3. The "Last Master-file update: [timestamp]" badge in the header.
- *   4. Panel A1/A2 headline KPIs reconciled against the Master-file
- *      aggregates (extra safety belt over the Zotero-shape pass).
- *
- * All overrides run *after* the production code has hydrated state.master
- * and finished its first render pass. We hook into a small custom event
- * ("vavelab:master-hydrated") fired near the tail of loadAll().
- */
+/* Vanuatu Master-file province totals and publication scope notes.
+ * Uses the full reference renderer with six Vanuatu provinces. */
 
 (function () {
   'use strict';
@@ -137,42 +110,16 @@
       ? 'Vanuatu-associated publications'
       : 'All Vanuatu publications';
 
-    var html = '';
-    html += '<table class="mf-confed-table" role="table" aria-label="' + scopeLabel + " by province\">";
-    html += '<caption class="mf-confed-table__cap">' + scopeLabel +
-            " — six province totals</caption>";
-    html += "<thead><tr><th scope=\"col\" class=\"mf-th-confed\">Province</th>" +
-            "<th scope=\"col\" class=\"mf-th-prov\">Province</th>" +
-            '<th scope="col" class="mf-th-num">Publications</th>' +
-            '<th scope="col" class="mf-th-num mf-th-total">Division TOTAL</th></tr></thead><tbody>';
-
-    orderedDivisions(Object.keys(Mfc.CONFEDERACIES)).forEach(function (division) {
-      var provs = Mfc.CONFEDERACIES[division];
-      provs.forEach(function (prov, idx) {
-        html += '<tr class="mf-row mf-row--' + divisionSlug(division) + (idx === 0 ? ' mf-row--first' : '') + '">';
-        if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-confed"><span class="mf-badge mf-badge--' +
-                  divisionSlug(division) + '">' + escapeHtml(division) + '</span></td>';
-        }
-        html += '<td class="mf-cell-prov">' + escapeHtml(prov) + '</td>';
-        html += '<td class="mf-cell-num">' + tally.byProvince[prov].toLocaleString() + '</td>';
-        if (idx === 0) {
-          html += '<td rowspan="' + provs.length + '" class="mf-cell-total"><strong>' +
-                  tally.byConfed[division].toLocaleString() + '</strong></td>';
-        }
-        html += '</tr>';
-      });
+    var html = '<table class="mf-confed-table" aria-label="' + scopeLabel + ' by province">';
+    html += '<caption class="mf-confed-table__cap">' + scopeLabel + ' — six province totals</caption>';
+    html += '<thead><tr><th scope="col">Province</th><th scope="col" class="mf-th-num">Publications</th></tr></thead><tbody>';
+    var total = 0;
+    DIVISION_ORDER.forEach(function (province) {
+      var count = tally.byProvince[province] || 0; total += count;
+      html += '<tr><th scope="row">' + escapeHtml(province) + '</th><td class="mf-cell-num">' + count.toLocaleString() + '</td></tr>';
     });
-    html += '</tbody><tfoot>';
-    // Grand totals across the 23 districts + explanatory notes.
-    var allProvTotal = 0;
-    Mfc.PROVINCES.forEach(function (p) { allProvTotal += tally.byProvince[p]; });
-    var divisionGrand = 0;
-    Object.keys(tally.byConfed).forEach(function (d) { divisionGrand += tally.byConfed[d]; });
-    html += "<tr class=\"mf-row-grand\"><th scope=\"row\" colspan=\"2\" class=\"mf-cell-grand-label\">Grand total (six provinces)</th>" +
-            '<td class="mf-cell-num"><strong>' + allProvTotal.toLocaleString() + '</strong></td>' +
-            '<td class="mf-cell-total"><strong>' + divisionGrand.toLocaleString() + '</strong></td></tr>';
-    html += '</tfoot></table>';
+    html += '</tbody><tfoot><tr class="mf-row-grand"><th scope="row">Province assignments</th><td class="mf-cell-num">' + total.toLocaleString() + '</td></tr></tfoot></table>';
+    html += '<p class="mf-note">A publication studied in several provinces is counted once in each province.</p>';
 
     // The two explanatory lines — always verbatim, per spec.
     html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[0]) + '</p>';
@@ -254,7 +201,7 @@
         renderConfedTotalTable(subhost, tally, 'all');
       } else {
         subhost.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
-          + 'District-tagged Vanuatu publications have not been populated in the Master file yet. '
+          + 'Province-tagged Vanuatu publications have not been populated in the Master file yet. '
           + 'This panel will populate automatically once records are added.</p>';
       }
       host.innerHTML = '';
@@ -279,7 +226,7 @@
         renderConfedTotalTable(subhost2, tally2, 'vanuatu');
       } else {
         subhost2.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
-          + 'No Vanuatu-associated, district-tagged publications have been populated yet. '
+          + 'No Vanuatu-associated, province-tagged publications have been populated yet. '
           + 'This panel will populate automatically once records are added.</p>';
       }
       host2.innerHTML = '';
