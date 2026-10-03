@@ -1038,12 +1038,9 @@
 
     // iTaukei graduate-study universities and countries — from the graduate
     // studies data (theses that appear in a scholar's iTaukei sub-collection).
-    const grad = state.graduateStudies || { worldPoints: [] };
-    const gradUnis = new Set(), gradCountries = new Set();
-    (grad.worldPoints || []).forEach(wp => {
-      if (wp.university) gradUnis.add(wp.university);
-      if (wp.country)    gradCountries.add(wp.country);
-    });
+    const completed = (state.master.gradDegrees || []).filter(g => /^completed$/i.test(g['Completion Status'] || ''));
+    const gradUnis = new Set(completed.map(g => g['C_Uni name']).filter(Boolean));
+    const gradCountries = new Set(completed.map(g => g.Country).filter(Boolean));
 
     // ---- Populate DOM ----
     const setText = (sel, val) => {
@@ -1062,36 +1059,8 @@
     // (a) itaukei-graduate-studies.json worldPoints, (b) world-universities.json,
     // (c) data/uni-country-overrides.json for names not covered by (a) or (b).
     // See docs/NAMES-DO-NOT-MERGE.md “A1 Panel — DB-wide universities/countries”.
-    const dbUnis = new Set();
-    const dbCountries = new Set();
-    {
-      const lookup = new Map();
-      const put = (name, country) => {
-        if (!name || !country) return;
-        const k = String(name).trim().toLowerCase();
-        if (!k) return;
-        if (!lookup.has(k)) lookup.set(k, country);
-      };
-      ((state.universities && state.universities.universities) || []).forEach(u => put(u.name, u.country));
-      ((state.graduateStudies && state.graduateStudies.worldPoints) || []).forEach(w => put(w.university, w.country));
-      Object.entries(state.uniCountryOverrides || {}).forEach(([k, v]) => lookup.set(String(k).toLowerCase(), v));
-      const resolveCountry = raw => {
-        const s = String(raw || '').trim().toLowerCase();
-        if (!s) return null;
-        if (lookup.has(s)) return lookup.get(s);
-        if (s.startsWith('the ') && lookup.has(s.slice(4))) return lookup.get(s.slice(4));
-        return null;
-      };
-      theses.forEach(t => {
-        const u = (t.university || '').trim();
-        if (!u) return;
-        const uLower = u.toLowerCase();
-        if (uLower.startsWith('institution not') || uLower === 'unspecified') return;
-        dbUnis.add(u);
-        const c = resolveCountry(u);
-        if (c) dbCountries.add(c);
-      });
-    }
+    const dbUnis = gradUnis;
+    const dbCountries = gradCountries;
     setText('[data-kpi="db-unis"]',      fmt(dbUnis.size));
     setText('[data-kpi="db-countries"]', fmt(dbCountries.size));
     setText('[data-kpi="db-provinces"]', fmt(provsStudied.size));
@@ -1110,6 +1079,12 @@
     setText('[data-db-snap-total]', fmt(totalWorks));
     setText('[data-db-itaukei-count]', fmt(itWorks));
 
+    if (window.VanuatuBundle.isPreview()) {
+      setSyncBadge('ok', 'Fictional layout preview', 'Example records; not live Master-file data.');
+      const pill = $('[data-db-updated-pill]'); if (pill) pill.textContent = 'Fictional examples';
+      const source = $('[data-db-snap-total]')?.parentElement; if(source) source.firstChild.textContent = 'Preview: ';
+      return;
+    }
     const checkedIso = (sync && sync.lastChecked) || snap.generatedAt;
     const changedIso = (sync && sync.lastChanged) || snap.generatedAt;
     const ago = relativeTime(checkedIso);

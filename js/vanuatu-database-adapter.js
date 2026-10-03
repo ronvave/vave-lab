@@ -933,46 +933,7 @@
       };
     });
 
-    // Some completed theses are catalogued only on Graduate Degrees, not in
-    // Publications/Authorship. Add a synthetic item when a completed, titled
-    // degree has no matching thesis publication for that scholar.
-    function normalizedTitle_(value) {
-      return String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-    }
-    master.gradDegrees.forEach(function (g) {
-      var sid = g['Scholar ID'];
-      var scholarKey = scholarKeyById[sid];
-      var title = String(g['Thesis / Research Title'] || '').trim();
-      var status = String(g['Completion Status'] || g['Current Status'] || '').trim();
-      if (!scholarKey || !title || !/^completed\b/i.test(status)) return;
-      var degreeText = String((g['Degree Stage'] || '') + ' ' + (g['Degree / Qualification'] || '')).trim();
-      var level = /phd|doctor/i.test(degreeText) ? 'phd' : (/master/i.test(degreeText) ? 'masters' : null);
-      if (!level) return;
-      var titleKey = normalizedTitle_(title);
-      var duplicate = items.some(function (item) {
-        return item.itemType === 'thesis' && item.collections.indexOf(scholarKey) !== -1 &&
-          normalizedTitle_(item.title) === titleKey;
-      });
-      if (duplicate) return;
-      var yearRaw = g['Finish / Completion Year'] || g['Year / Status'] || '';
-      var yearMatch = String(yearRaw).match(/\b(18|19|20|21)\d{2}\b/);
-      var year = yearMatch ? Number(yearMatch[0]) : null;
-      var collections = [scholarKey, COL_BY_WITH];
-      var scholar = master.scholars.find(function (s) { return s['Scholar ID'] === sid; });
-      var district = scholar && (cleanSentinel_(scholar['District Paternal']) || cleanSentinel_(scholar['District Maternal']));
-      if (district && provPaternalKeyByName[district]) collections.push(provPaternalKeyByName[district]);
-      items.push({
-        key: hashKey('grad-thesis:' + (g['Degree ID'] || sid + ':' + level + ':' + titleKey)),
-        itemType: 'thesis', title: title, date: year ? String(year) : '', year: year,
-        creators: [scholarNameById[sid]], tags: [], collections: collections,
-        publicationTitle: '', university: g['C_Uni name'] || g['O_Uni name'] || '',
-        thesisType: level === 'phd' ? 'PhD Thesis' : "Master's Thesis", thesisLevel: level,
-        DOI: '', url: g['Evidence URL'] || '', publisher: '', abstractNote: '',
-        _masterPublicationType: level === 'phd' ? 'PhD Thesis' : "Master's Thesis",
-        _masterPublicationId: '', _masterAuthorship: 'lead', _syntheticGradDegree: true,
-        _itaukeiLeadScholarId: sid, _itaukeiCoauthorScholarIds: []
-      });
-    });
+    // Degree episodes remain separate from explicitly catalogued publications.
 
     // Dedupe synthesized country/uni collections (they can be pushed many times).
     var seenColKeys = new Set();
@@ -985,7 +946,7 @@
       });
 
     return {
-      generatedAt: (master.lastSync && master.lastSync.finishedAt) || new Date().toISOString(),
+      generatedAt: (master.lastSync && master.lastSync.finishedAt) || null,
       items:       items,
       collections: allCollections,
       // Preserve any extra Master metadata for panel-level overrides.
@@ -1731,59 +1692,6 @@
       }
     });
 
-    // Protect completed theses/degree works that exist in Graduate Degrees but not yet in
-    // Publications/Authorship. The dashboard snapshot already synthesizes
-    // these items; the canonical scholar-card counter must do the same or its
-    // later override silently removes Master's Thesis from the card badges,
-    // total-publication count, and first-authored count.
-    //
-    // A titled thesis already linked through Authorship is detected by
-    // normalized title + level and is not added twice. A completed degree row
-    // with a blank thesis title is still retained using its stable Degree ID;
-    // otherwise scholars such as Tēvita O. Kaʻili lose their Master's counts
-    // solely because title metadata remains incomplete. A synthesized degree
-    // work is treated as first-authored because theses are individual works.
-    (master.gradDegrees || []).forEach(function (g) {
-      var sid = g['Scholar ID'];
-      var title = String(g['Thesis / Research Title'] || '').trim();
-      var status = String(g['Completion Status'] || g['Current Status'] || '').trim();
-      if (!sid || !/^completed\b/i.test(status)) return;
-
-      var degreeText = String((g['Degree Stage'] || '') + ' ' +
-                              (g['Degree / Qualification'] || '')).trim();
-      var vt = /phd|doctor/i.test(degreeText) ? 'thesisPhd' :
-               (/master/i.test(degreeText) ? 'thesisMasters' : null);
-      if (!vt) return;
-
-      var bucket = idx[sid];
-      if (!bucket) {
-        bucket = idx[sid] = {
-          totalSet: new Set(),
-          firstSet: new Set(),
-          typesTotalByPid: {}
-        };
-      }
-
-      var titleKey = _normalizedThesisTitle(title);
-      var duplicate = false;
-      if (titleKey) {
-        bucket.totalSet.forEach(function (pid) {
-          if (duplicate) return;
-          var pub = pubsById[pid] || {};
-          if (_visualPubType(pub) !== vt) return;
-          var pubTitle = pub['Title'] || pub['Publication Title'] || pub['Thesis / Research Title'] || '';
-          if (_normalizedThesisTitle(pubTitle) === titleKey) duplicate = true;
-        });
-      }
-      if (duplicate) return;
-
-      var degreeIdentity = g['Degree ID'] || (sid + ':' + vt + ':' +
-        (titleKey || String(g['Degree / Qualification'] || g['Degree Stage'] || 'untitled')));
-      var syntheticPid = 'grad-thesis:' + String(degreeIdentity);
-      bucket.totalSet.add(syntheticPid);
-      bucket.firstSet.add(syntheticPid);
-      bucket.typesTotalByPid[syntheticPid] = vt;
-    });
     if (master) master._scholarCountIndex = idx;
     return idx;
   }

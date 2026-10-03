@@ -247,7 +247,7 @@
     injectStylesOnce();
     var st = window.__vavelabDbState;
     var master = st && st.master;
-    if (!master || !master.lastSync) return;
+    if (!master || !master.lastSync || window.VanuatuBundle.isPreview() || !master.lastSync.finishedAt) return;
     // Find the sync badge in the header (production wires a #db-sync-badge)
     // and append our own subtle badge next to it.
     var badgeHost = document.getElementById('db-sync-badge') ||
@@ -264,7 +264,7 @@
     badge.textContent = 'Last Master-file update: ' + when.toLocaleString('en-US', {
       dateStyle: 'medium', timeStyle: 'short'
     });
-    badge.title = 'Master-file JSON snapshot last refreshed at this time by the every-2h GitHub Actions workflow.';
+    badge.title = 'Approved Vanuatu Master-file snapshot generation time.';
     // Insert AFTER the sync badge, or into the host.
     if (badgeHost.parentNode) {
       badgeHost.parentNode.insertBefore(badge, badgeHost.nextSibling);

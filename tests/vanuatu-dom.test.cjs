@@ -16,6 +16,11 @@ function create(file,query='?preview=1'){
  assert(d.getElementById('vanuatu-preview-notice').textContent.includes('FICTIONAL'));
  const original=new JSDOM(fs.readFileSync('tongan-research-database-master.html','utf8'));
  assert.deepEqual([...d.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel),[...original.window.document.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel));original.window.close();
+ assert.equal(w.__vavelabDbState.snapshot.items.length,3,'Degree records must not synthesize publications');
+ assert.equal(d.querySelector('[data-kpi="db-unis"]').textContent,'3');
+ assert.equal(d.querySelector('[data-kpi="db-provinces"]').textContent,'2');
+ assert(d.querySelector('[data-db-bars]').textContent.includes('Sanma'));
+ assert.equal(w.MasterFileAdapter.computePublicationTotals(w.__vavelabDbState.master,'VAN-S9001').total,1);
  assert.equal(d.querySelectorAll('.db-scholar-card').length,3);assert.equal(w.__vavelabDbState.provinces.features.length,6);
  assert(d.querySelector('[data-conf-total="Sanma"]').textContent !== '—');
  assert(!d.body.textContent.includes('Division TOTAL'));
