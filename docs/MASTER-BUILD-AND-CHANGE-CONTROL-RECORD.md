@@ -631,3 +631,7 @@ Ron revised the publication policy to include Reports for all Tongan scholars. A
 
 ## 2026-10-03 — Ron Vave: fallback scholar heading
 Changed the neutral scholar-card banner from TONGA SCHOLAR to TONGAN SCHOLAR when no recognized paternal island division supplies its heading. Existing island headings and Master data are preserved.
+
+### Vanuatu rendered acceptance follow-up — 2026-10-03
+
+The full reference Dashboard and owner Admin were merged in PR #41. Live inspection detected inherited degree-to-publication synthesis and a verification-field mismatch. The Vanuatu adapter now counts only explicitly catalogued publications, maps already approved research geography into the reference renderer, and counts graduate destinations from completed degree records. Fictional previews do not display invented refresh timestamps or collaboration claims. Meaningful DOM regressions verify three example publications, three graduate universities, two study provinces, and one linked work for VAN-S9001.
