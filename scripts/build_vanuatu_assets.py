@@ -6,6 +6,7 @@ import json
 import re
 import argparse
 from pathlib import Path
+from bust_cache import _rewrite
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -19,16 +20,16 @@ def build():
     html = html.replace('js/main.js?v=86450a67', 'js/vanuatu-main.js')
     # Parent controls fullscreen without replacing/reloading the iframe.
     html = html.replace('async function init(){', "window.addEventListener('message',function(e){if(e.source!==window.parent||e.origin!==location.origin||e.data?.type!=='embed-fullscreen')return;document.body.classList.toggle('is-embed-fullscreen',e.data.value===true);window.dispatchEvent(new Event('resize'));});\nasync function init(){")
-    (ROOT / 'vanuatu-chord-flanked.html').write_text(html.rstrip() + '\n')
     (ROOT / 'js/vanuatu-main.js').write_text((ROOT / 'js/tongan-main.js').read_text())
+    (ROOT / 'vanuatu-chord-flanked.html').write_text(_rewrite(html).rstrip() + '\n')
     # Local relative assets do not resolve in Apps Script's sandbox. Inline our
     # exact source assets, not arbitrary remote code or secret configuration.
     admin = (ROOT / 'admin-vanuatu-master.html').read_text()
     css = (ROOT / 'css/vanuatu-database.css').read_text()
-    admin = admin.replace('<link rel="stylesheet" href="css/vanuatu-database.css">', '<style>' + css + '</style>')
+    admin = re.sub(r'<link rel="stylesheet" href="css/vanuatu-database\.css(?:\?v=[^\"]+)?">', lambda _: '<style>' + css + '</style>', admin)
     for name in ['vanuatu-geography', 'vanuatu-model', 'vanuatu-config', 'vanuatu-preview-data', 'admin-vanuatu-master']:
         script = (ROOT / f'js/{name}.js').read_text().replace('</script', '<\\/script')
-        admin = admin.replace(f'<script defer src="js/{name}.js"></script>', '')
+        admin = re.sub(r'<script defer src="js/' + re.escape(name) + r'\.js(?:\?v=[^\"]+)?"></script>', '', admin)
         admin = admin.replace('</body>', '<script>' + script + '</script></body>')
     admin = admin.replace('href="vanuatu-research-database-master.html"', 'href="https://ronvave.github.io/vave-lab/vanuatu-research-database-master.html" target="_blank" rel="noopener"')
     (ROOT / 'apps-script/vanuatu-admin-app.html').write_text(admin)
