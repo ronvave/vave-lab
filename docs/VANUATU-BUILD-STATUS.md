@@ -1,41 +1,63 @@
-# Vanuatu dashboard and Admin build
+# Vanuatu dashboard and owner Admin
 
-Recovered and validated on 2026-10-03. This change adds Vanuatu-specific dashboard,
-shared-profile, mobility and Admin pages adapted from the Tonga implementation.
-Geography uses the six provinces, islands and area councils. Identity eligibility,
-degree episodes and publication authorship remain separate, explicitly linked records.
+Corrected on 2026-10-03 to use the full Tongan HTML, styles, panel renderer,
+chart embeds and owner Admin editor. The earlier compact collaborator interface
+has been replaced. Tonga and iTaukei assets remain unchanged.
 
-## Passed locally
+The dashboard preserves panels A1–A3, B1–B5, C1–C3 and D–G, scholar cards,
+linked filters, publication lists and expanded charts. Geography uses Torba,
+Sanma, Penama, Malampa, Shefa and Tafea, with independently recorded islands
+and area councils. No island affiliation or identity is inferred from a name.
+The Admin preserves the reference layout, scholar table, filters, degree and
+position editors, photo/summary tools, review queues and change log.
 
-- 13 Python export tests.
-- 16 JavaScript model checks and 12 backend checks with a mocked Google runtime.
-- Simulated DOM integration: preview, filters, reset, expansion, lock, scoped
-  profiles, Admin tables and read-only preview editing.
-- Asset paths, namespaces, province joins and JavaScript syntax checks.
+## Validation
 
-The DOM test uses `VANUATU_JSDOM_PATH` when jsdom is installed outside the repository.
-These results do not establish rendered-browser acceptance or live backend operation.
+13 Python export tests, 16 model checks, 12 mocked backend checks, simulated
+DOM integration, JavaScript syntax, local assets and six province joins passed.
+The DOM tests cover full reference-panel parity, search/reset, scoped scholar
+profiles, the owner-editor layout, independent province/island/council inputs,
+report counts, country isolation and read-only preview. Existing Tonga and
+iTaukei card/mobility checks also passed. These do not establish live backend
+operation. Rendered live-page verification is performed after publication.
 
-## Deployment status
+## Data and owner connection
 
-The code is prepared for review. The authenticated Apps Script Admin service is
-not deployed/configured: `js/vanuatu-config.js` has an empty `adminURL`.
-The encrypted `data/vanuatu-master-bundle.json.enc` snapshot is not present.
-The manual refresh workflow requires the Vanuatu passcode, source access and
-approved export fields before activation. No real private export or credentials
-are included in this commit.
+The static pages provide clearly labelled **fictional layout previews**.
+`data/vanuatu-master-bundle.json.enc` is not yet present and `adminURL` in
+`js/vanuatu-config.js` remains empty. No real Vanuatu totals are claimed.
+Public submissions and direct browser GitHub uploads are disabled.
 
-The dashboard and Admin offer an explicitly labelled fictional preview. Preview
-examples are never substituted for real scholars or verified totals.
-Publishing these static files alone will not activate real-data access or editing.
+To activate the owner service, deploy `apps-script/vanuatu-admin-app.html` and
+`apps-script/vanuatu-master-writeback.gs` together in Apps Script, enable the
+advanced Sheets service, require Google sign-in, and configure an explicit
+`VANUATU_ROLES` email-to-owner/reviewer mapping in Script Properties. Empty
+Google identity and unlisted accounts are denied on every call. Set
+`VANUATU_WRITE_ENABLED=true` only after the owner validates source headers,
+Lookups and authenticated writes. Configure the private approved-enrichment
+Drive file through `VANUATU_ENRICHMENT_FILE_ID` and put only the deployment URL
+in `adminURL`. The source is the established Vanuatu Master spreadsheet.
 
-## Entry points
+Master updates use canonical entity IDs, optimistic conflicts, explicit
+confirmation and a Change Log. Supplementary summaries are stored as plain
+text; approved field-by-field export controls still apply. Public snapshots
+require a separate refresh/publication after owner changes.
 
-- `vanuatu-research-database-master.html`
-- `admin-vanuatu-master.html`
-- `admin-vanuatu-review.html`
-- `s-vanuatu.html`
-- `vanuatu-chord-flanked.html`
+Run the manual `refresh-vanuatu-master-file.yml` in dry-run mode first after
+configuring the Vanuatu passcode secret, source access and exact Public Export
+Config approvals. Do not reuse another country's password or credentials.
+Publish the approved encrypted bundle only after that validation succeeds.
 
-Complete snapshot/backend configuration, rendered-browser acceptance and live
-deployment verification before describing this build as production-complete.
+Rebuild the native Admin after source edits with
+`python3 scripts/build_vanuatu_assets.py`.
+
+## Pages
+
+- `vanuatu-research-database-master.html` — full scholar dashboard
+- `admin-vanuatu-master.html` — full owner Admin layout
+- `s-vanuatu.html?scholar=VAN-S…` — a scoped scholar profile
+- `vanuatu-chord-flanked.html` — explicit reviewed study pathways
+- `vanuatu-body-composition.html` — publication/gender chart
+
+This corrects the interface and static publication. Real-data activation and
+live authenticated editing remain separate, unconfigured deployment steps.

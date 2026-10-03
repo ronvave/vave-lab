@@ -1,5 +1,17 @@
 # Master Build and Change-Control Record
 
+## 2026-10-03 — Vanuatu full Tonga-template correction
+
+Replaced the compact Vanuatu dashboard and Admin with the full Tongan panel
+layout and owner editor. Province boundaries and inputs use the six Vanuatu
+provinces, independently recorded islands, and the existing area-council registry.
+The preview is fictional and read-only; no Tonga data, credentials or submission
+endpoints are reused. The native Vanuatu Admin template now embeds the same
+full editor. Actual snapshot and owner deployment remain unconfigured.
+Export/model/backend/DOM/asset checks and Tonga/iTaukei preservation checks
+passed locally. Live static-page checks follow publication; no live backend
+claim is made. See `VANUATU-BUILD-STATUS.md` for activation requirements.
+
 ## 2026-09-30 — Tonga direct scholar page regional initiative wording
 
 Replaced the shared About sentence with Ron’s supplied wording identifying
