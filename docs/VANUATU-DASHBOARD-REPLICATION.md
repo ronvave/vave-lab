@@ -1,0 +1,34 @@
+# Vanuatu dashboard replication
+
+Reference: Tongan dashboard, repository revision `83fbb22234e42032e7981e8fd21d517afcf31987`, inspected unlocked on 3 October 2026 HST.
+
+## Implemented
+
+The existing Vanuatu route now uses the lab header/banner and copied Tonga visual baseline, warm-sand menu, A1–A3, B1–B5, C1–C3, D–G, scholar cards, publication browsing and filtered BibTeX export. Vanuatu-specific computations live in `js/vanuatu-dashboard-model.js`; no Tonga data URLs or credentials are reused. Existing Admin assets are unchanged.
+
+B4 uses unique Scholar IDs and an explicit eight-category crosswalk. Ambiguous combined broad fields remain unmapped. B3 accepts explicit reviewed pairs or a unique completed Master's/doctorate pair with consistent completion years; multiple candidates are excluded instead of Cartesian pairing. Study geography, scholar affiliations, and research locations remain distinct. The six counted publication types include Reports.
+
+## Release status
+
+The repository has no `data/vanuatu-master-bundle.json.enc`. The manual Vanuatu refresh workflow requires the original source, its exact export approvals, and a Vanuatu-specific encryption secret. No credentials or display flags were changed. The existing encrypted access mechanism is retained. The dashboard shell is visible while locked; a clearly marked fictional preview is available only by explicit selection or `?preview=1`.
+
+The supplied workbook snapshot permits Scholar ID and Scholar Name, plus two degree thesis-description fields, individually. The other broad allowlist labels do not currently release individual columns through the existing exact-field exporter. A proposed field manifest is in `docs/vanuatu-dashboard-proposed-fields.json`. It is documentation, not an approval grant or a live-source mutation. The owner must review these fields before live activation. Never publish the Master workbook itself.
+
+Snapshot baseline: 106 verified display-approved scholars; 5 verified display-approved publications, with 5 eligible authorship links; 119 eligible completed degrees (96 Master's and 23 doctorates, 104 unique scholars); zero Research Geography rows. These row-level baselines do not override field-level export constraints or later source changes.
+
+The Vanuatu submission service URL remains unconfigured. Update info reports that state honestly and gives the curator contact; it does not simulate a successful submission. Shared profiles use public Scholar IDs for navigation and preserve the same encrypted data gate. They display both the scholar card and linked publications.
+
+## Validation
+
+Run:
+
+```
+node tests/vanuatu-dashboard-parity.test.cjs
+node tests/vanuatu-model.test.cjs
+node tests/vanuatu-backend.test.cjs
+python3 -m unittest discover -s tests -p vanuatu_export_test.py
+python3 scripts/check_vanuatu_assets.py
+VANUATU_JSDOM_PATH=/path/to/jsdom node tests/vanuatu-dom.test.cjs
+```
+
+Rendered acceptance is a separate step. Compare the live preview with Tonga; check default layout, menus, B2 drilldown, B3 full-screen, B4 toggle, scholar filters, publication cards, and lock behavior. A fictional preview proves layout/interaction only, not live-source readiness.

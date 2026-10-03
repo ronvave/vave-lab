@@ -1,0 +1,130 @@
+{
+  "status": "PROPOSED ONLY \u2014 no new disclosure is authorized by this file",
+  "purpose": "Fields needed for Vanuatu dashboard parity after explicit source approval",
+  "row_rules": {
+    "Scholars": "Verified identity AND Public Display Approved",
+    "Graduate Degrees": "Verified AND Public Display Approved AND eligible Scholar ID",
+    "Publications": "Verified AND Public Display Approved",
+    "Authorship": "Verified AND eligible Scholar ID AND eligible Publication ID",
+    "Research Geography": "Verified AND Public Display Approved AND eligible Publication ID"
+  },
+  "fields": {
+    "Scholars": [
+      "Scholar ID",
+      "Scholar Name",
+      "Salutation",
+      "Gender",
+      "Vital Status",
+      "Paternal Province",
+      "Paternal Island",
+      "Paternal Area Council / Locality",
+      "Paternal Village / Community",
+      "Maternal Province",
+      "Maternal Island",
+      "Maternal Area Council / Locality",
+      "Maternal Village / Community",
+      "Primary Discipline / Field",
+      "Current Title / Role",
+      "Current Institution",
+      "Institution Country",
+      "Current Department / Unit",
+      "Current Profile URL",
+      "ORCID / Researcher ID",
+      "Google Scholar URL"
+    ],
+    "Graduate Degrees": [
+      "Degree ID",
+      "Scholar ID",
+      "Degree Level",
+      "Degree Name",
+      "Field / Discipline",
+      "Broad Discipline",
+      "Original University Name (O_Uni)",
+      "Canonical University Name (C_Uni)",
+      "University Country",
+      "Start Year",
+      "Completion Year",
+      "Completion Status",
+      "Thesis / Dissertation Title",
+      "Thesis URL / Handle",
+      "Repository URL"
+    ],
+    "Publications": [
+      "Publication ID",
+      "Title",
+      "Publication Type",
+      "Year",
+      "Authors \u2014 Full Ordered List",
+      "Container / Journal",
+      "Volume",
+      "Issue",
+      "Pages",
+      "Publisher / Institution",
+      "DOI",
+      "Handle / ISBN",
+      "Primary URL",
+      "Open Access URL / PDF",
+      "Abstract",
+      "Author Keywords",
+      "Indexed Keywords",
+      "Language",
+      "Country Focus",
+      "About Country?",
+      "Methodology Tags",
+      "Peer Reviewed",
+      "License"
+    ],
+    "Authorship": [
+      "Authorship ID",
+      "Publication ID",
+      "Scholar ID",
+      "Author Position",
+      "Author Name as Published",
+      "Lead / First Author?"
+    ],
+    "Research Geography": [
+      "Geography Record ID",
+      "Publication ID",
+      "Geography Type",
+      "Country",
+      "Province",
+      "Island",
+      "Area Council / Locality",
+      "Village / Community",
+      "Latitude",
+      "Longitude"
+    ],
+    "Institutions": [
+      "Institution ID",
+      "Canonical Institution (C_Uni)",
+      "Country",
+      "City / Locality",
+      "Latitude",
+      "Longitude",
+      "Website"
+    ]
+  },
+  "supplementary_fields": {
+    "Admin enrichment": [
+      "photo",
+      "summary",
+      "sources"
+    ]
+  },
+  "never_export": [
+    "Attachments JSON",
+    "Coding Basis / Evidence",
+    "Community / Ancestral Notes",
+    "Evidence",
+    "Evidence / Notes",
+    "Identity Evidence",
+    "Identity Source URL",
+    "Name Variants / Aliases",
+    "Record Notes",
+    "Scholar Share Token",
+    "Source Basis",
+    "Source URL / Note",
+    "Submitter Email",
+    "Submitter Name"
+  ]
+}

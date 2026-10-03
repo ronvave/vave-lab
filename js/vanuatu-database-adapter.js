@@ -19,7 +19,7 @@
   // current sanitized Vanuatu bundle is exposed; no other country's fallback.
   const dbGate={isUnlocked:()=>!!bundle,fetchJson:async path=>{
     if(!bundle)throw Error('Unlock the Vanuatu dashboard first.');
-    if(path==='data/vanuatu-master-mobility.json')return root.VanuatuModel.mobility(root.VanuatuModel.build(bundle)).rows;
+    if(path==='data/vanuatu-master-mobility.json')return (root.VanuatuDashboardModel?.pathways||root.VanuatuModel.mobility)(root.VanuatuModel.build(bundle)).rows;
     if(path==='data/vanuatu-master-scholars.json')return bundle.tables.Scholars;
     if(path==='data/vanuatu-master-grad-degrees.json')return bundle.tables['Graduate Degrees']||[];
     throw Error('Unsupported Vanuatu data resource.');
