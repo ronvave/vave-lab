@@ -8692,7 +8692,7 @@
     const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
     // Card banners use the concise Island name only. The underlying field is
     // still the scholar's paternal Island Division; this is display-only.
-    const bannerLabel = confederacy || 'Tonga scholar';
+    const bannerLabel = confederacy || 'Tongan scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);

@@ -616,3 +616,6 @@ Fixed canonical scholar totals retaining reports/conference papers while badges 
 
 ## 2026-10-03 — Ron Vave: include Reports
 Ron revised the publication policy to include Reports for all Tongan scholars. Added reports to the canonical total/first-authored allowlist, dashboard type filters, card badges and geography summary overrides; revised the exclusion note, repository policy and regression test. All other excluded types remain excluded.
+
+## 2026-10-03 — Ron Vave: fallback scholar heading
+Changed the neutral scholar-card banner from TONGA SCHOLAR to TONGAN SCHOLAR when no recognized paternal island division supplies its heading. Existing island headings and Master data are preserved.
