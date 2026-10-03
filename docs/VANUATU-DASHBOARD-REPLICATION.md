@@ -40,3 +40,9 @@ GitHub Pages deployment passed on 3 October 2026. Browser review verified the li
 ## Field approval — 3 October 2026
 
 Ron Vave explicitly approved the proposed fields at 10:17 HST. Added and read back 81 exact-field rows in the live Master Public Export Config A20:J100, preserving the four existing explicit approvals and all private-field exclusions. The manifest retains its original filename for link continuity; its status now records approval. Scholar and publication eligibility flags were not changed. A fresh live-source transform passes the exact allowlist checks. This supersedes the earlier field-approval blocker above. Encrypted snapshot activation remains pending the GitHub workflow and Vanuatu-specific secret; no secret was created, retrieved, or copied from another country.
+
+## Separate viewing passwords — 3 October 2026
+
+Ron requested an owner-only viewing password and a different shared collaborator viewing password. `VAVELAB_VANUATU_PASSCODE` encrypts the owner snapshot; optional `VAVELAB_VANUATU_COLLABORATOR_PASSCODE` encrypts a second copy of the same approved dataset. The dashboard accepts either. The keys must differ. Neither viewing password grants an Admin role; Google-authenticated backend authorization still controls editing. The refresh stages and verifies all new ciphertext before publishing both in the same commit. The collaborator key can be added even when the owner generation is unchanged. Existing ciphertext requires its matching key; rotation requires an explicit rekey procedure, not simply overwriting a secret. No plaintext source or password is committed.
+
+Owner secret presence was verified. First refresh run 37152049207 passed tests but source read returned HTTP 403; source service-account Viewer access remains pending owner permission. Collaborator secret entry remains pending.

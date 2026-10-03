@@ -14,7 +14,17 @@ function rows(name){const t=bundle?.tables||{},out=(t[name]||[]).map(adapt);
 }
 async function decrypt(bytes,pw){const a=new Uint8Array(bytes);if(new TextDecoder().decode(a.slice(0,4))!=='IVAV')throw Error('Unsupported Vanuatu snapshot format.');const seed=await crypto.subtle.importKey('raw',new TextEncoder().encode(pw),'PBKDF2',false,['deriveKey']);const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:a.slice(4,20),iterations:200000,hash:'SHA-256'},seed,{name:'AES-GCM',length:256},false,['decrypt']);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:a.slice(20,32)},key,a.slice(32))));}
 function use(next){M.build(next);bundle=next;return next;}
-async function load(pw){const r=await fetch(w.VANUATU_CONFIG.snapshot,{cache:'no-store'});if(!r.ok)throw Error(r.status===404?'Vanuatu data is not connected yet. Preview the dashboard layout below.':'Vanuatu snapshot could not load ('+r.status+').');let data;try{data=await decrypt(await r.arrayBuffer(),pw);}catch{throw Error('Unable to unlock the Vanuatu data. Check the Vanuatu password.');}use(data);password=pw;return data;}
+// Both passwords unlock the same approved viewing data. Neither grants Admin roles.
+async function load(pw){
+ let found=false,networkError=false;
+ for(const path of [w.VANUATU_CONFIG.snapshot,w.VANUATU_CONFIG.collaboratorSnapshot].filter(Boolean)){
+  let r;try{r=await fetch(path,{cache:'no-store'});}catch{networkError=true;continue;}
+  if(!r.ok){if(r.status!==404)networkError=true;continue;}
+  found=true;let data;try{data=await decrypt(await r.arrayBuffer(),pw);}catch{continue;}
+  use(data);password=pw;return data;
+ }
+ throw Error(found?'Unable to unlock the Vanuatu data. Check your owner or collaborator password.':networkError?'Vanuatu snapshot could not load. Please try again.':'Vanuatu data is not connected yet. Preview the dashboard layout below.');
+}
 function inherit(){try{if(w.parent!==w&&w.parent.location.origin===location.origin&&w.parent.VanuatuBundle?.current())use(w.parent.VanuatuBundle.current());}catch{}}
 function preview(){password='';return use(w.VANUATU_PREVIEW);}
 function rpc(name,payload){return new Promise((resolve,reject)=>{if(!w.google?.script?.run)return reject(Error('Open the Vanuatu Admin deployment to edit the Master file.'));w.google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(Error(e.message||'Vanuatu Admin request failed.')))[name](payload);});}

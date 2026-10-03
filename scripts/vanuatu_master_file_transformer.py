@@ -249,23 +249,43 @@ def main():
         print(json.dumps({'country':'Vanuatu','generation':bundle['generation'],'publicScholars':len(bundle['tables']['Scholars']),'releasedFields':bundle['fields'],'privacy':'exact allowlist; private evidence/queues absent'}));return
     passcode=os.environ.get('VAVELAB_VANUATU_PASSCODE')
     if not passcode:raise ValueError('Vanuatu-specific encryption secret is missing; no snapshot written')
-    args.out_dir.mkdir(parents=True,exist_ok=True);target=args.out_dir/C.OUTPUT_NAME
-    if target.exists():
-        old=json.loads(decrypt(target.read_bytes(),passcode))
-        if old.get('enrichment') and set(old['enrichment'])-set(bundle['enrichment']):
-            raise ValueError('Approved sidecars disappeared; explicit owner reconciliation required before replacing snapshot')
-        if old.get('generation')==bundle['generation']:
-            print('No public content changes; retaining previous coherent generation.');return
+    collaborator=os.environ.get('VAVELAB_VANUATU_COLLABORATOR_PASSCODE')
+    if collaborator and collaborator == passcode:
+        raise ValueError('Owner and collaborator passwords must differ; no snapshot written')
+    args.out_dir.mkdir(parents=True,exist_ok=True)
+    targets=[(args.out_dir/C.OUTPUT_NAME,passcode)]
+    collaborator_target=args.out_dir/'vanuatu-collaborator-bundle.json.enc'
+    if collaborator:
+        targets.append((collaborator_target,collaborator))
+    elif collaborator_target.exists():
+        raise ValueError('Existing collaborator snapshot requires its secret; no snapshot written')
+    pending=[]
+    for target,key in targets:
+        if target.exists():
+            old=json.loads(decrypt(target.read_bytes(),key))
+            if old.get('enrichment') and set(old['enrichment'])-set(bundle['enrichment']):
+                raise ValueError('Approved sidecars disappeared; explicit owner reconciliation required before replacing snapshot')
+            if old.get('generation')==bundle['generation']:
+                continue
+        pending.append((target,key))
+    if not pending:
+        print('No public content changes; retaining previous coherent generation.');return
     bundle['generatedAt']=datetime.now(timezone.utc).isoformat()
     payload=json.dumps(bundle,ensure_ascii=False,sort_keys=True).encode()
-    ciphertext=encrypt(payload,passcode)
-    if decrypt(ciphertext,passcode)!=payload:raise ValueError('Encryption round-trip failed')
-    # All validation and encryption have succeeded before replacing one complete
-    # generation. No separately written panels can become out of sync.
-    with tempfile.NamedTemporaryFile(dir=args.out_dir,delete=False) as f:
-        f.write(ciphertext);staged=Path(f.name)
-    staged.replace(target)
-    print('Wrote coherent encrypted Vanuatu generation '+bundle['generation'])
+    staged=[]
+    try:
+        # Stage and round-trip every new ciphertext before replacing any file.
+        # Git publishes both viewing copies together; neither contains Admin credentials.
+        for target,key in pending:
+            ciphertext=encrypt(payload,key)
+            if decrypt(ciphertext,key)!=payload:raise ValueError('Encryption round-trip failed')
+            with tempfile.NamedTemporaryFile(dir=args.out_dir,delete=False) as f:
+                f.write(ciphertext);staged.append((Path(f.name),target))
+        for temp,target in staged:temp.replace(target)
+    finally:
+        for temp,target in staged:temp.unlink(missing_ok=True)
+    print('Wrote '+str(len(pending))+' encrypted Vanuatu viewing snapshot(s), generation '+bundle['generation'])
+
 
 
 if __name__=='__main__':

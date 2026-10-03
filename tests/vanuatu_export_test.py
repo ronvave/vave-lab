@@ -3,6 +3,9 @@ import importlib.util
 import json
 import sys
 import unittest
+import os
+import tempfile
+from unittest.mock import patch
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'scripts'))
 import vanuatu_master_file_config as C
@@ -56,6 +59,26 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(T.transform(fixture())['generation'],T.transform(fixture())['generation'])
     def test_institution_alias_conservative(self):
         self.assertEqual(T.canonical_institution('Te Herenga Waka—Victoria University of Wellington'),'Victoria University of Wellington');self.assertEqual(T.canonical_institution('Example Wellington College'),'Example Wellington College')
+
+    def test_add_collaborator_without_changing_owner_snapshot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);source=root/'source.json';source.write_text(json.dumps(fixture()))
+            args=['transform','--source',str(source),'--out-dir',str(root/'out')]
+            env={'VAVELAB_VANUATU_PASSCODE':'test-only-owner','VAVELAB_VANUATU_COLLABORATOR_PASSCODE':''}
+            with patch.dict(os.environ,env),patch.object(sys,'argv',args):T.main()
+            owner=root/'out'/C.OUTPUT_NAME;before=owner.read_bytes()
+            env['VAVELAB_VANUATU_COLLABORATOR_PASSCODE']='test-only-collaborator'
+            with patch.dict(os.environ,env),patch.object(sys,'argv',args):T.main()
+            collab=root/'out'/'vanuatu-collaborator-bundle.json.enc'
+            self.assertEqual(owner.read_bytes(),before)
+            a=json.loads(T.decrypt(before,'test-only-owner'));b=json.loads(T.decrypt(collab.read_bytes(),'test-only-collaborator'))
+            self.assertEqual(a['tables'],b['tables']);self.assertEqual(a['generation'],b['generation'])
+            self.assertNotIn('PRIVATE',json.dumps(b))
+            with self.assertRaises(Exception):T.decrypt(collab.read_bytes(),'test-only-owner')
+            with self.assertRaises(Exception):T.decrypt(before,'test-only-collaborator')
+            env['VAVELAB_VANUATU_COLLABORATOR_PASSCODE']='test-only-owner'
+            with patch.dict(os.environ,env),patch.object(sys,'argv',args),self.assertRaisesRegex(ValueError,'must differ'):T.main()
+            self.assertEqual(owner.read_bytes(),before)
 
 
 if __name__=='__main__':unittest.main()

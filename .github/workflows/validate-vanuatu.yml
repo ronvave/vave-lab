@@ -21,6 +21,7 @@ jobs:
       - run: |
           python3 -m unittest discover -s tests -p 'vanuatu_export_test.py'
           node tests/vanuatu-model.test.cjs
+          node tests/vanuatu-access.test.cjs
           node tests/vanuatu-dashboard-parity.test.cjs
           node tests/vanuatu-backend.test.cjs
           python3 scripts/check_vanuatu_assets.py
