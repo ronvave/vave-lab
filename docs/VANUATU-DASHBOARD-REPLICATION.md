@@ -1,6 +1,6 @@
 # Vanuatu dashboard replication
 
-Reference: Tongan dashboard, repository revision `83fbb22234e42032e7981e8fd21d517afcf31987`, inspected unlocked on 3 October 2026 HST.
+Reference: Tongan dashboard, repository revision `83fbb22234e42032e7981e8fd21d517afcf31987`, inspected unlocked on 3 October 2026 UTC.
 
 ## Implemented
 
@@ -32,3 +32,7 @@ VANUATU_JSDOM_PATH=/path/to/jsdom node tests/vanuatu-dom.test.cjs
 ```
 
 Rendered acceptance is a separate step. Compare the live preview with Tonga; check default layout, menus, B2 drilldown, B3 full-screen, B4 toggle, scholar filters, publication cards, and lock behavior. A fictional preview proves layout/interaction only, not live-source readiness.
+
+## Published acceptance
+
+GitHub Pages deployment passed on 3 October 2026. Browser review verified the live page header, overview cards, study-country linked scholar results, B4 degree toggle, province and global research tables, and B3 full-screen chart. Fictional examples were used throughout. Local model, export, backend-mock, asset and simulated-DOM checks passed. Map tables render independently of optional map-library availability.

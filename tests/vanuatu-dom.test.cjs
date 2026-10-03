@@ -12,6 +12,7 @@ function create(file,url,scripts){
  const scripts=['vanuatu-geography','vanuatu-model','vanuatu-dashboard-model','vanuatu-config','vanuatu-preview-data','vanuatu-database-adapter','vanuatu-database-master'];
  const dom=create('vanuatu-research-database-master.html','https://example.invalid/vanuatu-research-database-master.html?preview=1',scripts),w=dom.window,d=w.document;
  assert.equal(d.getElementById('dashboard').hidden,false);assert(d.getElementById('release-notice').textContent.includes('FICTIONAL'));assert.equal(d.querySelectorAll('.scholar').length,3);
+ assert(d.getElementById('research-table').textContent.includes('Sanma'));assert(d.getElementById('global-research').textContent.includes('Fiji'));assert(!d.getElementById('research-table').textContent.includes('Unlock'));
  d.getElementById('province').value='Penama';d.getElementById('province').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('.scholar').length,1);assert(d.querySelector('.scholar h3').textContent.includes('Example Scholar A'));
  d.getElementById('basis').value='paternal';d.getElementById('basis').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('.scholar').length,0);
  d.getElementById('all-reset').click();assert.equal(d.querySelectorAll('.scholar').length,3);
