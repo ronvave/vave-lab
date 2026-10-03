@@ -13,7 +13,7 @@ FIELDS = {
  'Research Geography': ['Geography Record ID','Publication ID','Geography Type','Country','Province','Island','Area Council / Locality','Village / Community','Latitude','Longitude'],
  'Institutions': ['Institution ID','Canonical Institution (C_Uni)','Country','City / Locality','Latitude','Longitude','Website'],
  'Study Pathways': ['Pathway ID','Scholar ID',"Master's Degree ID",'PhD Degree ID'],
- 'Admin enrichment': ['photo','summary','sources'],
+ 'Admin enrichment': ['photo','summary','sources','keywords','sector','institutionUrl','departmentUrl'],
 }
 REQUIRED = {
  'Scholars':['Scholar ID','Scholar Name','Identity Verification Status','Public Display Approved'],

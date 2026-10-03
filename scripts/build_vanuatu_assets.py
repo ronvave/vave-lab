@@ -25,12 +25,18 @@ def build():
     # Local relative assets do not resolve in Apps Script's sandbox. Inline our
     # exact source assets, not arbitrary remote code or secret configuration.
     admin = (ROOT / 'admin-vanuatu-master.html').read_text()
-    css = (ROOT / 'css/vanuatu-database.css').read_text()
-    admin = re.sub(r'<link rel="stylesheet" href="css/vanuatu-database\.css(?:\?v=[^\"]+)?">', lambda _: '<style>' + css + '</style>', admin)
-    for name in ['vanuatu-geography', 'vanuatu-model', 'vanuatu-config', 'vanuatu-preview-data', 'admin-vanuatu-master']:
-        script = (ROOT / f'js/{name}.js').read_text().replace('</script', '<\\/script')
-        admin = re.sub(r'<script defer src="js/' + re.escape(name) + r'\.js(?:\?v=[^\"]+)?"></script>', '', admin)
-        admin = admin.replace('</body>', '<script>' + script + '</script></body>')
+    def inline_script(match):
+        source = (ROOT / match.group(1).split('?')[0]).read_text().replace('</script', '<\\/script')
+        return '<script>' + source + '</script>'
+    scripts = []
+    def collect_script(match):
+        scripts.append(inline_script(match))
+        return ''
+    admin = re.sub(r'<script[^>]*src="(js/[^" ]+)"[^>]*></script>', collect_script, admin)
+    def inline_css(match):
+        return '<style>' + (ROOT / match.group(1).split('?')[0]).read_text() + '</style>'
+    admin = re.sub(r'<link[^>]*href="(css/[^" ]+)"[^>]*>', inline_css, admin)
+    admin = admin.replace('</body>', '\n'.join(scripts) + '</body>')
     admin = admin.replace('href="vanuatu-research-database-master.html"', 'href="https://ronvave.github.io/vave-lab/vanuatu-research-database-master.html" target="_blank" rel="noopener"')
     (ROOT / 'apps-script/vanuatu-admin-app.html').write_text(admin)
 

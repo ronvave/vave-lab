@@ -168,6 +168,12 @@ def transform(source, enrichment=None):
                 out[field]=r[field]
             elif field=='summary':
                 out[field]=str(r.get(field,''))[:12000]
+            elif field=='keywords' and isinstance(r.get(field),list):
+                out[field]=[v[:200] for v in r[field][:50] if isinstance(v,str)]
+            elif field=='sector':
+                out[field]=str(r.get(field,''))[:200]
+            elif field in ('institutionUrl','departmentUrl') and str(r.get(field,'')).startswith('https://'):
+                out[field]=r[field]
             elif field=='sources' and isinstance(r.get(field),list):
                 out[field]=[u for u in r[field] if isinstance(u,str) and u.startswith(('http://','https://'))]
         if out:

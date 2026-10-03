@@ -1,0 +1,48 @@
+[data-vanuatu-queue]{min-width:0;color:#062f35}
+[data-vanuatu-queue] h2{font-size:1.35rem}
+.vanuatu-queue-helper{font-size:.85rem;color:#6b7280;margin:8px 0 16px}
+.vanuatu-queue-toolbar,.vanuatu-bulk-controls,.vanuatu-review-actions,.vanuatu-selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.vanuatu-queue-count{margin-left:auto;font-size:.82rem;color:#6b7280}
+[data-vanuatu-queue] button,[data-vanuatu-queue] select{font:inherit;font-size:.85rem;padding:8px 12px;border:1px solid #e2e0d4;border-radius:6px;background:white;color:#062f35;cursor:pointer}
+[data-vanuatu-queue] button:disabled,[data-vanuatu-queue] input:disabled{opacity:.55;cursor:not-allowed}
+[data-vanuatu-queue] :focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+[data-vanuatu-queue] .vanuatu-approve{background:#166534;color:white;border-color:#166534}
+[data-vanuatu-queue] .vanuatu-reject{background:#991b1b;color:white;border-color:#991b1b}
+.vanuatu-ban{margin-right:auto}
+.vanuatu-review{background:white;border:1px solid #e2e0d4;border-left:4px solid #d97706;border-radius:8px;padding:16px;margin:14px 0;min-width:0;overflow-wrap:anywhere}
+.vanuatu-review--reviewed,.vanuatu-review--approved{border-left-color:#16a34a}.vanuatu-review--rejected{border-left-color:#b91c1c}
+.vanuatu-review-heading{display:flex;gap:12px;align-items:flex-start}.vanuatu-review-heading>div{min-width:0;flex:1}.vanuatu-review-heading h3{font-family:inherit;font-weight:700;font-size:1rem;margin:0 0 4px}
+.vanuatu-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+.vanuatu-submitter,.vanuatu-review .meta{font-size:.82rem;color:#6b7280}.vanuatu-submitter{margin:10px 0}
+.vanuatu-selection-controls{margin:10px 0}.vanuatu-review summary{font-weight:700;cursor:pointer;margin:10px 0}
+.vanuatu-review table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.86rem}.vanuatu-review th,.vanuatu-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e0d4;overflow-wrap:anywhere;white-space:pre-wrap}.vanuatu-review th:first-child{width:42px;box-sizing:border-box}.vanuatu-review td:nth-child(2){font-weight:700}.vanuatu-review td:nth-child(3){color:#6b7280}.vanuatu-review td:nth-child(4){font-weight:700;color:#b91c1c}
+.vanuatu-positive{color:#166534;font-size:.85rem}.vanuatu-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}.vanuatu-queue-status:empty{display:none}.vanuatu-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+.vanuatu-note-label{display:block;font-size:.85rem;margin:14px 0 8px}.vanuatu-review textarea,.vanuatu-attachment input[type=text]{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #dbe4e8;border-radius:6px;font:inherit}.vanuatu-review textarea{min-height:60px;margin-top:5px}
+.vanuatu-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.vanuatu-submission-badge[hidden],.vanuatu-bulk-controls[hidden]{display:none}
+.vanuatu-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}.vanuatu-attachment{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}.vanuatu-attachment>input{margin-top:5px}.vanuatu-attachment label{display:block;font-size:.82rem;margin:8px 0}.vanuatu-attachment select{max-width:100%;display:block}.vanuatu-attachment-preview{margin:8px 0;color:#6b7280}.vanuatu-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+.vanuatu-geography-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.84rem;margin:12px 0}.vanuatu-location-chip{display:inline-block;border:1px solid #d8d8ce;border-radius:999px;padding:2px 7px;margin:2px;font-size:.75rem;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){.vanuatu-geography-grid{grid-template-columns:1fr}.vanuatu-review-heading{flex-wrap:wrap}.vanuatu-review{padding:12px}.vanuatu-review table{font-size:.8rem}.vanuatu-review th,.vanuatu-review td{padding:8px 4px}.vanuatu-review th:first-child{width:32px}.vanuatu-queue-toolbar{align-items:flex-start}.vanuatu-review-actions button{flex:1}.vanuatu-ban{margin-right:0}}
+/* The existing Vanuatu shell must not force the queue outside a narrow viewport. */
+.tabs{flex-wrap:wrap}
+@media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-vanuatu-queue]{padding:12px}}
+
+/* Private attachment proposal review */
+.vanuatu-attachment-analysis{margin-top:20px;padding:18px;border:1px solid #c7d8d9;border-radius:8px;background:#f7fbfa}
+.vanuatu-attachment-analysis h4{font-size:1.1rem;margin:0 0 8px}
+.vanuatu-analysis-summary{font-weight:600;color:#06464c}
+.vanuatu-analysis-item{background:#fff;border:1px solid #d7dfdf;border-radius:6px;padding:16px;margin:14px 0}
+.vanuatu-analysis-item input[type=checkbox]{margin-right:10px}
+.vanuatu-attachment-analysis pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font:inherit;font-size:.9em;background:#f1f4f3;padding:12px}
+.vanuatu-attachment-analysis details{margin:8px 0}
+.vanuatu-attachment-analysis summary{cursor:pointer;font-weight:600}
+.vanuatu-proposal-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.vanuatu-proposal-form label{display:flex;flex-direction:column;gap:5px}
+.vanuatu-proposal-form input,.vanuatu-proposal-form select{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px}
+.vanuatu-attachment-analysis td{overflow-wrap:anywhere;vertical-align:top}
+/* Attachment comparisons have three content columns, without a checkbox column. */
+.vanuatu-review .vanuatu-attachment-analysis th:first-child{width:20%}
+.vanuatu-review .vanuatu-attachment-analysis th:nth-child(2),.vanuatu-review .vanuatu-attachment-analysis th:nth-child(3){width:40%}
+.vanuatu-review .vanuatu-attachment-analysis td:nth-child(2){font-weight:400;color:#475569}
+.vanuatu-review .vanuatu-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
+
+.vanuatu-review .vanuatu-recorded-fields th:first-child{width:18%}

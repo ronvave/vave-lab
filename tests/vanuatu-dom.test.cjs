@@ -1,29 +1,35 @@
-/* Simulated DOM integration. No rendered-browser/layout pass is claimed. */
+/* Simulated DOM integration, not rendered-browser acceptance. */
 const fs=require('node:fs'),assert=require('node:assert/strict');
-const {JSDOM}=require(process.env.VANUATU_JSDOM_PATH||'jsdom');
-const tick=()=>new Promise(resolve=>setTimeout(resolve,0));
-function create(file,url,scripts){
- const dom=new JSDOM(fs.readFileSync(file,'utf8'),{url,runScripts:'outside-only'}),w=dom.window;
- w.HTMLElement.prototype.scrollIntoView=function(){};w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;};w.confirm=()=>true;w.fetch=async()=>({ok:false,status:404});
- for(const script of scripts)w.eval(fs.readFileSync('js/'+script+'.js','utf8'));
- return dom;
+const {JSDOM,VirtualConsole}=require(process.env.VANUATU_JSDOM_PATH||'jsdom');
+const tick=()=>new Promise(r=>setTimeout(r,30));
+async function ready(test){for(let i=0;i<100;i++){if(test())return;await tick();}throw Error('Timed out waiting for DOM hydration');}
+function create(file,query='?preview=1'){
+ const errors=[],requests=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e.message));vc.on('error',(...args)=>errors.push(args.map(String).join(' ')));
+ const dom=new JSDOM(fs.readFileSync(file,'utf8'),{url:'https://example.invalid/'+file+query,runScripts:'outside-only',pretendToBeVisual:true,virtualConsole:vc}),w=dom.window;
+ w.TextEncoder=TextEncoder;w.TextDecoder=TextDecoder;w.matchMedia=()=>({matches:false,addEventListener(){},addListener(){}});w.HTMLElement.prototype.scrollIntoView=function(){};w.ResizeObserver=w.IntersectionObserver=class{observe(){}unobserve(){}disconnect(){}};w.confirm=()=>true;w.alert=()=>{};w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};
+ w.fetch=async url=>{const p=String(url).split('?')[0];requests.push(p);if(p==='data/vanuatu-provinces.geojson')return{ok:true,json:async()=>JSON.parse(fs.readFileSync(p,'utf8'))};return{ok:false,status:404};};
+ for(const script of w.document.querySelectorAll('script[src]')){const src=script.getAttribute('src').split('?')[0];if(src.startsWith('js/'))w.eval(fs.readFileSync(src,'utf8'));}
+ return {dom,w,d:w.document,errors,requests};
 }
 (async()=>{
- const scripts=['vanuatu-geography','vanuatu-model','vanuatu-dashboard-model','vanuatu-config','vanuatu-preview-data','vanuatu-database-adapter','vanuatu-database-master'];
- const dom=create('vanuatu-research-database-master.html','https://example.invalid/vanuatu-research-database-master.html?preview=1',scripts),w=dom.window,d=w.document;
- assert.equal(d.getElementById('dashboard').hidden,false);assert(d.getElementById('release-notice').textContent.includes('FICTIONAL'));assert.equal(d.querySelectorAll('.scholar').length,3);
- assert(d.getElementById('research-table').textContent.includes('Sanma'));assert(d.getElementById('global-research').textContent.includes('Fiji'));assert(!d.getElementById('research-table').textContent.includes('Unlock'));
- d.getElementById('province').value='Penama';d.getElementById('province').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('.scholar').length,1);assert(d.querySelector('.scholar h3').textContent.includes('Example Scholar A'));
- d.getElementById('basis').value='paternal';d.getElementById('basis').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('.scholar').length,0);
- d.getElementById('all-reset').click();assert.equal(d.querySelectorAll('.scholar').length,3);
- d.getElementById('study-country').value='New Zealand';d.getElementById('study-country').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('.scholar').length,1);assert(d.getElementById('items').textContent.includes('community-led'));
- d.getElementById('all-reset').click();d.getElementById('pub-type').value='Report';d.getElementById('pub-type').dispatchEvent(new w.Event('change'));assert.equal(d.querySelectorAll('#items .item').length,1);assert(d.getElementById('items').textContent.includes('learning across'));
- d.querySelector('[data-expand="panel-b3"]').click();assert(d.getElementById('panel-b3').classList.contains('expanded'));d.querySelector('[data-expand="panel-b3"]').click();assert(!d.getElementById('panel-b3').classList.contains('expanded'));
- d.getElementById('lock').click();assert.equal(d.getElementById('access').hidden,false);assert.equal(d.querySelectorAll('.scholar').length,0);assert.equal(w.dbGate.isUnlocked(),false);
- dom.window.close();
- const shared=create('vanuatu-research-database-master.html','https://example.invalid/vanuatu-research-database-master.html?preview=1&scholar=VAN-S9001',scripts);assert.equal(shared.window.document.querySelectorAll('.scholar').length,1);assert.equal(shared.window.document.getElementById('panel-g').hidden,false);shared.window.close();
- const admin=create('admin-vanuatu-master.html','https://example.invalid/admin-vanuatu-master.html?preview=1',['vanuatu-geography','vanuatu-model','vanuatu-dashboard-model','vanuatu-config','vanuatu-preview-data','admin-vanuatu-master']);
- const ad=admin.window.document;assert.equal(ad.getElementById('admin-workspace').hidden,false);assert(ad.getElementById('admin-banner').textContent.includes('FICTIONAL'));ad.querySelector('[data-record]').click();assert(ad.getElementById('admin-editor').open);assert(ad.getElementById('editor-save').disabled);ad.getElementById('editor-close').click();
- ad.querySelector('[data-tab="degrees"]').click();assert(ad.getElementById('admin-table').textContent.includes('VAN-D9001'));ad.querySelector('[data-record]').click();assert.equal(ad.getElementById('editor-id').textContent,'VAN-D9001');assert(ad.getElementById('editor-save').disabled);admin.window.close();
- console.log('PASS: simulated DOM preview, linked filters, reset, expansion, lock, scoped profiles, Admin tables and read-only editing.');
-})().catch(e=>{console.error(e);process.exitCode=1;});
+ let c=create('vanuatu-research-database-master.html');await ready(()=>c.w.__masterHydrated);const {w,d}=c;
+ assert(d.getElementById('vanuatu-preview-notice').textContent.includes('FICTIONAL'));
+ const original=new JSDOM(fs.readFileSync('tongan-research-database-master.html','utf8'));
+ assert.deepEqual([...d.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel),[...original.window.document.querySelectorAll('[data-panel]')].map(x=>x.dataset.panel));original.window.close();
+ assert.equal(d.querySelectorAll('.db-scholar-card').length,3);assert.equal(w.__vavelabDbState.provinces.features.length,6);
+ assert(d.querySelector('[data-conf-total="Sanma"]').textContent !== '—');
+ assert(!d.body.textContent.includes('Division TOTAL'));
+ assert.deepEqual(Object.keys(w.MasterFileAdapter.constants.CONFEDERACIES),Array.from(w.VanuatuGeography.provinces));
+ d.querySelector('[data-scholar-name-search]').value='Example Scholar B';d.querySelector('[data-scholar-name-search]').dispatchEvent(new w.Event('input'));await ready(()=>d.querySelectorAll('.db-scholar-card').length===1);assert.equal(d.querySelectorAll('.db-scholar-card').length,1);assert(d.querySelector('.db-scholar-card').textContent.includes('Example Scholar B'));
+ d.querySelector('[data-scholar-clear-all]').click();assert.equal(d.querySelectorAll('.db-scholar-card').length,3);
+ const body=await w.dbGate.fetchJson('data/vanuatu-body-composition-master.json');assert.equal(body.Woman.scholars,1);assert.equal(body.Man.scholars,1);assert.equal(body.Man.report,1);
+ assert(c.requests.every(x=>!x.includes('tongan')&&!x.includes('script.google')&&!x.includes('formsubmit')));assert.equal(c.errors.length,0,c.errors.join('\n'));c.dom.window.close();
+ c=create('vanuatu-research-database-master.html','?preview=1&scholar=VAN-S9001');await ready(()=>c.d.querySelector('.vanuatu-portal'));assert.equal(c.d.querySelectorAll('.db-scholar-card').length,1);assert(c.d.body.textContent.includes('FICTIONAL'));assert(!c.d.querySelector('[data-panel="G"]'));assert.equal(c.errors.length,0,c.errors.join('\n'));c.dom.window.close();
+ c=create('admin-vanuatu-master.html');await ready(()=>c.d.getElementById('db-status').textContent==='ready');assert(c.d.getElementById('dashboard').classList.contains('is-visible'));assert.equal(c.d.querySelectorAll('#scholars-tbody tr[data-sid]').length,3);assert.equal(c.d.getElementById('filter-island-division').querySelectorAll('option').length,7);
+ c.d.getElementById('filter-island-division').value='Shefa';c.d.getElementById('filter-island-division').dispatchEvent(new c.w.Event('change'));assert.equal(c.d.querySelectorAll('#scholars-tbody tr[data-sid]').length,1);
+ c.d.querySelector('#scholars-tbody tr[data-sid]').click();await ready(()=>c.d.getElementById('modal-save').disabled);await ready(()=>c.d.querySelectorAll('#graddegrees-container .me-row-input').length>0);assert.equal(c.d.getElementById('me-div-paternal-derived').value,'Shefa');assert.equal(c.d.getElementById('me-prov-paternal').value,'Efate');assert.equal(c.d.getElementById('me-gender').value,'Male');assert(c.d.getElementById('me-clan-paternal').querySelector('option[value="North Efate"]'));
+ c.d.getElementById('me-div-paternal-derived').value='Sanma';c.d.getElementById('me-div-paternal-derived').dispatchEvent(new c.w.Event('change'));assert(c.d.getElementById('me-clan-paternal').querySelector('option[value="East Malo"]'));assert(!c.d.getElementById('me-clan-paternal').querySelector('option[value="North Efate"]'));assert.equal(c.d.getElementById('me-prov-paternal').value,'Efate','Island must not be inferred from changed province');
+ await assert.rejects(c.w.adminWriteback.write([]),/authorized Vanuatu owner/);assert(c.d.getElementById('refresh-master').disabled);assert(c.d.getElementById('top-force-refresh').disabled);assert.equal(c.errors.length,0,c.errors.join('\n'));c.dom.window.close();
+ c=create('admin-vanuatu-master.html','');await tick();assert(!c.w.VanuatuBundle.current());assert(!c.d.getElementById('dashboard').classList.contains('is-visible'));assert.equal(c.requests.length,0);c.dom.window.close();
+ console.log('PASS: full reference panels, six provinces, linked scholar filters, shared profiles, gender/report counts, original Admin editor, independent geography, read-only preview and isolated requests.');
+})().catch(e=>{console.error(e);process.exit(1);});

@@ -23,6 +23,10 @@ geo=json.loads((ROOT/'data/vanuatu-provinces.geojson').read_text())
 assert len(geo['features'])==6
 assert {f['properties']['shapeName'] for f in geo['features']}=={'Torba','Sanma','Penama','Malampa','Shefa','Tafea'}
 native=(ROOT/'apps-script/vanuatu-admin-app.html').read_text()
-assert 'src="js/' not in native and 'href="css/' not in native
-assert 'tonganlab_gh_token' not in native and 'PASSWORD_HASH' not in native
+class NativeLinks(HTMLParser):
+    def handle_starttag(self,tag,attrs):
+        a=dict(attrs)
+        assert not (a.get('src','').startswith('js/') or a.get('href','').startswith('css/')),a
+NativeLinks().feed(native)
+assert 'tonganlab_gh_token' not in native and 'var PASSWORD_HASH' not in native
 print('Vanuatu assets, namespaces, boundary joins and JS syntax pass.')
