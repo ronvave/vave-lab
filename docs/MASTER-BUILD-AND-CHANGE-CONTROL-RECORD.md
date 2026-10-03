@@ -613,3 +613,6 @@ Headshot-only submissions now display “Only a headshot was submitted. No CV or
 
 ## 2026-10-03 — Ron Vave: Tonga publication-count policy
 Fixed canonical scholar totals retaining reports/conference papers while badges hid conferences. One explicit five-type eligibility rule now controls canonical totals/first-authored/type tallies and the dashboard snapshot; public type filters and chips match. Master source rows are preserved. Direct-profile iframe and script versions refreshed. Added regression coverage for the screenshot's 61-to-19 scenario, duplicate/missing links, excluded types and badge-sum equality; preserved existing thesis and card/mobility tests. Latest synced TNG-S0165 data verifies 18 total / 15 first-authored (6 journal articles, 7 chapters, 2 books, 1 PhD thesis, 2 Master's theses). Policy recorded in AGENTS.md.
+
+## 2026-10-03 — Ron Vave: include Reports
+Ron revised the publication policy to include Reports for all Tongan scholars. Added reports to the canonical total/first-authored allowlist, dashboard type filters, card badges and geography summary overrides; revised the exclusion note, repository policy and regression test. All other excluded types remain excluded.

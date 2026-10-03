@@ -1797,7 +1797,7 @@
   // Ron Vave's publication policy: one allowlist for totals, first-authored
   // totals and type badges. Excluded records remain in the Master for audit.
   var COUNTED_PUBLICATION_TYPES = ['journalArticle', 'bookSection', 'book',
-    'thesisPhd', 'thesisMasters'];
+    'thesisPhd', 'thesisMasters', 'report'];
   function isCountedPublicationType(type) {
     return COUNTED_PUBLICATION_TYPES.indexOf(type) !== -1;
   }

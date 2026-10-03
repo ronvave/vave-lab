@@ -14,12 +14,13 @@ master.authorship.push({...master.authorship[0]}); // Duplicate link must not in
 master.authorship.push({'Scholar ID':'ruth','Publication ID / BibTeX Key':'missing'});
 for (const options of [undefined, {excludePreprints:true,excludeDocuments:true}]) {
  const stats = adapter.computePublicationTotals(master, 'ruth', options);
- assert.equal(stats.total, 19);
- assert.equal(stats.firstAuthored, 11);
+ assert.equal(stats.total, 31);
+ assert.equal(stats.types.report,12);
+ assert.equal(stats.firstAuthored, 17);
  assert.equal(Object.values(stats.types).reduce((a,b)=>a+b,0),stats.total);
- for(const type of ['report','conferencePaper','preprint','document','thesisUnknown']) assert.equal(stats.types[type],0);
+ for(const type of ['conferencePaper','preprint','document','thesisUnknown']) assert.equal(stats.types[type],0);
 }
 const dashboard=fs.readFileSync('js/tongan-database-master.js','utf8');
 assert(dashboard.includes('isCountedPublicationType(visualType(it))'));
-assert(dashboard.includes("const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters'];"));
-console.log('PASS: 19 eligible publications; first-authored uses same scope; badge sum equals total; excluded types and duplicate/missing links do not inflate counts.');
+assert(dashboard.includes("const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report'];"));
+console.log('PASS: 31 eligible publications including 12 reports; first-authored uses same scope; badge sum equals total; excluded types and duplicate/missing links do not inflate counts.');

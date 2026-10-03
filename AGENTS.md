@@ -25,8 +25,9 @@ Tongan-paternal counting criterion. This is a statistical scope rule; do not
 present it as denying maternal Tongan heritage. Master README row 8 records it.
 
 ## Publication counting — Ron Vave, 2026-10-03
-Count only journal articles, books, book chapters, Master's theses and PhD
-theses. Exclude reports, conference papers/abstracts, preprints, unpublished or
+Count journal articles, books, book chapters, Master's theses, PhD theses and
+Reports (Ron explicitly added Reports on 2026-10-03). Exclude conference
+papers/abstracts, preprints, unpublished or
 forthcoming works, patents and other/unknown types. Totals, first-authored
 counts, rankings and badges must use the same eligible records; never hide a
 badge while retaining its records in the total. Preserve excluded Master rows.

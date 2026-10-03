@@ -140,7 +140,7 @@
   // The underlying items remain in BibTeX export (which does not depend
   // on TYPE_ORDER); preprints are also dropped there because step (3)
   // removes them from state.snapshot.items entirely.
-  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book'];
+  const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report'];
 
   // Public geography uses paternal values only; maternal data stays private.
   function effectivePaternalProvince(profile) {
@@ -8566,7 +8566,7 @@
   //   the item filter, no chip would render.
   // 'conferencePaper' likewise remains in the list purely as a legacy
   //   safety net; conference papers are filtered out at load time too.
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters'];
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report'];
 
   // Country name → ISO 3166-1 alpha-2 code, used for flag icons in the card header.
   // Only countries that actually appear in the current dataset (or are

@@ -32,7 +32,7 @@
   'use strict';
 
   var TWO_NOTE_LINES = [
-    '*The above summary does not include Reports, Conference papers, Unpublished report, and Others.',
+    '*The above summary does not include Conference papers, Unpublished report, and Others.',
     '**Non-Tongan records are publications on Tonga by non-Tongan without any Tongan authors'
   ];
 
@@ -41,7 +41,8 @@
     "Master's Thesis",
     'PhD Thesis',
     'Book Chapter',
-    'Book'
+    'Book',
+    'Report'
   ];
 
   function once(fn) { var done = false; return function () { if (done) return; done = true; fn.apply(this, arguments); }; }
@@ -96,7 +97,7 @@
     });
 
     // Filter publications to headline types only (per spec: the two summary
-    // tables exclude Reports, Conference papers, Unpublished report, Others).
+    // tables exclude Conference papers, Unpublished report, Others).
     var pubs = master.publications.filter(function (p) {
       return HEADLINE_TYPES.indexOf(p['Publication Type']) !== -1;
     });
