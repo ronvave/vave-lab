@@ -1,6 +1,6 @@
 {
-  "status": "PROPOSED ONLY \u2014 no new disclosure is authorized by this file",
-  "purpose": "Fields needed for Vanuatu dashboard parity after explicit source approval",
+  "status": "APPROVED \u2014 Ron Vave, 2026-10-03 10:17 HST",
+  "purpose": "Approved fields for the password-protected Vanuatu dashboard; applied to the live Master Public Export Config A20:J100",
   "row_rules": {
     "Scholars": "Verified identity AND Public Display Approved",
     "Graduate Degrees": "Verified AND Public Display Approved AND eligible Scholar ID",
@@ -126,5 +126,13 @@
     "Source URL / Note",
     "Submitter Email",
     "Submitter Name"
-  ]
+  ],
+  "approval": {
+    "approved_by": "Ron Vave",
+    "approved_at": "2026-10-03T10:17:05-10:00",
+    "source": "Explicit approval in Vanuatu dashboard conversation",
+    "applied_range": "'Public Export Config'!A20:J100",
+    "new_field_rows": 81,
+    "row_approvals_changed": false
+  }
 }

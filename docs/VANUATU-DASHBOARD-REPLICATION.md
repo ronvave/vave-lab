@@ -36,3 +36,7 @@ Rendered acceptance is a separate step. Compare the live preview with Tonga; che
 ## Published acceptance
 
 GitHub Pages deployment passed on 3 October 2026. Browser review verified the live page header, overview cards, study-country linked scholar results, B4 degree toggle, province and global research tables, and B3 full-screen chart. Fictional examples were used throughout. Local model, export, backend-mock, asset and simulated-DOM checks passed. Map tables render independently of optional map-library availability.
+
+## Field approval — 3 October 2026
+
+Ron Vave explicitly approved the proposed fields at 10:17 HST. Added and read back 81 exact-field rows in the live Master Public Export Config A20:J100, preserving the four existing explicit approvals and all private-field exclusions. The manifest retains its original filename for link continuity; its status now records approval. Scholar and publication eligibility flags were not changed. A fresh live-source transform passes the exact allowlist checks. This supersedes the earlier field-approval blocker above. Encrypted snapshot activation remains pending the GitHub workflow and Vanuatu-specific secret; no secret was created, retrieved, or copied from another country.
