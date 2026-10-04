@@ -891,7 +891,7 @@
     // everything (they narrow both the cards and the item list).
     state.scholarConfFilter = '';
     state.scholarProvFilter = '';
-    state.scholarClanFilter = '';
+    state.scholarClanFilter = ''; state.scholarIslandFilter = '';
     state.scholarPage = 1;
     if (typeof computeScholarFilterNames === 'function') computeScholarFilterNames();
     const confSel = $('[data-scholar-conf-filter]');
@@ -921,7 +921,8 @@
     const any = FILTER_KEYS.some(k => state.filter[k] !== '' && state.filter[k] != null)
               || !!state.scholarConfFilter
               || !!state.scholarProvFilter
-              || !!state.scholarClanFilter;
+              || !!state.scholarClanFilter
+        || !!state.scholarIslandFilter;
     btn.classList.toggle('is-hidden', !any);
   }
 
@@ -7028,7 +7029,7 @@
   state.scholarPage = 1;
   state.scholarConfFilter = '';  // '', '__untagged__', 'Vanuatutapu', "Vava'u", "Ha'apai", "'Eua", 'Ongo Niua'
   state.scholarProvFilter = '';  // '', '__untagged__', or a province name
-  state.scholarClanFilter = '';  // paternal clan, in the supplied hierarchy
+  state.scholarClanFilter = ''; state.scholarIslandFilter = '';  // paternal clan, in the supplied hierarchy
   state.scholarNameSearch = '';  // free-text name search (case-insensitive substring)
   state.scholarKeywordSearch = ''; // research-keyword search across insights + publications
   state.scholarSectorFilter = ''; // '' or one of SECTORS
@@ -7187,7 +7188,8 @@
   function computeScholarFilterNames() {
     const conf = state.scholarConfFilter;
     const prov = state.scholarProvFilter;
-    if (!conf && !prov) { state.scholarFilterNames = null; return; }
+    const island = state.scholarIslandFilter;
+    if (!conf && !prov && !island) { state.scholarFilterNames = null; return; }
 
     const provConf = new Map();
     if (state.provinces && state.provinces.features) {
@@ -7211,11 +7213,12 @@
       } else if (prov) {
         if (p !== prov) return;
       }
+      if (island && !window.VanuatuGeography.scholarIslands(profile).includes(island)) return;
       names.add(name);
     });
     // Also allow scholar names that exist in Zotero collections but have no
     // profile at all — they count as "untagged" for both dropdowns.
-    if ((conf === '__untagged__' || !conf) && (prov === '__untagged__' || !prov)) {
+    if (!island && (conf === '__untagged__' || !conf) && (prov === '__untagged__' || !prov)) {
       const enriched = state.scholarProfilesByName || new Map();
       state.snapshot.collections.forEach(c => {
         const root = findItaukeiRootCollection(state.snapshot.collections);
@@ -7419,6 +7422,7 @@
     if (state.scholarClanFilter) {
       rows = rows.filter(r => paternalClan(r) === state.scholarClanFilter);
     }
+    if (state.scholarIslandFilter) rows = rows.filter(r => window.VanuatuGeography.scholarIslands(r).includes(state.scholarIslandFilter));
     // Name search (case-insensitive substring; matches "Last, First" AND "First Last")
     const nameQ = (state.scholarNameSearch || '').trim().toLowerCase();
     if (nameQ) {
@@ -7530,6 +7534,7 @@
         || !!state.scholarConfFilter
         || !!state.scholarProvFilter
         || !!state.scholarClanFilter
+        || !!state.scholarIslandFilter
         || !!state.scholarSectorFilter
         || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
         || !!state.scholarStudyCountry || !!state.scholarStudyUni
@@ -7583,18 +7588,25 @@
       if (unclass) chipsHost.appendChild(unclass); // always last
     }
 
-    const clanBar = document.querySelector('[data-scholar-clan-summary]');
-    if (clanBar) {
-      const clanCounts = new Map(CLANS.map(name => [name, 0]));
+    const islandBar = document.querySelector('[data-scholar-island-summary]');
+    if (islandBar) {
+      const G = window.VanuatuGeography;
+      const counts = new Map(Object.values(G.inhabitedIslands).flat().map(name => [name, 0]));
+      let recorded = 0;
       (rows || []).forEach(row => {
-        const name = paternalClan(row);
-        if (clanCounts.has(name)) clanCounts.set(name, clanCounts.get(name) + 1);
+        const names = G.scholarIslands(row);
+        if (names.length) recorded++;
+        names.forEach(name => counts.set(name, (counts.get(name) || 0) + 1));
       });
-      clanBar.querySelector('[data-count-clans-total]').textContent = String([...clanCounts.values()].reduce((a, b) => a + b, 0));
-      clanBar.querySelector('[data-scholar-clan-chips]').innerHTML = CLANS.map((name, i) => {
-        const hue = Math.round(i * 360 / CLANS.length);
-        return `<span class="dsf-chip dsf-chip--clan" style="background:hsl(${hue} 70% 88%);color:hsl(${hue} 65% 27%)"><span class="dsf-chip__dot" style="background:${clanColor(i)}"></span> ${escapeHtml(name)}: ${clanCounts.get(name)}</span>`;
-      }).join('');
+      islandBar.querySelector('[data-count-islands-total]').textContent = String(recorded);
+      const chip = (name, province) => `<span class="dsf-chip dsf-chip--island" data-island-chip="${escapeAttr(name)}" style="--conf-color:${G.colors[province] || G.colors.Unclassified}"><span class="dsf-chip__dot" style="background:${G.colors[province] || G.colors.Unclassified}"></span>${escapeHtml(name)}: ${counts.get(name) || 0}</span>`;
+      let html = G.provinces.map(province => G.inhabitedIslands[province].map(name => chip(name, province)).join('')).join('');
+      // Preserve recorded names not yet in the registry; never silently drop them.
+      const known = new Set(Object.values(G.inhabitedIslands).flat());
+      counts.forEach((n, name) => { if (!known.has(name)) html += chip(name, 'Unclassified'); });
+      const missing = (rows || []).length - recorded;
+      html += `<span class="dsf-chip dsf-chip--unclass">Unclassified: ${missing}</span>`;
+      islandBar.querySelector('[data-scholar-island-chips]').innerHTML = html;
     }
 
     // ---- Results II — sum publication types across the shown scholars ----
@@ -7763,7 +7775,7 @@
     // Same shape as country → unis: confederacy → alphabetized provinces.
     const tree = new Map();
     ["Torba", "Sanma", "Penama", "Malampa", "Shefa", "Tafea"].sort().forEach(c => {
-      tree.set(c, (CONFEDERACY_PROVINCES[c] || []).slice().sort((a, b) => a.localeCompare(b)));
+      tree.set(c, (window.VanuatuGeography.inhabitedIslands[c] || []).slice().sort((a, b) => a.localeCompare(b)));
     });
     // 'Unclassified' is anchored at the bottom — clicking it filters for
     // iTaukei scholars whose paternal province info isn't yet known.
@@ -7965,10 +7977,10 @@
       const combo = initTwoColumnCombo({
         root: confRoot, input: null, panel: confPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
-        tree, parentLabelSingular: 'Provinces',
+        tree, parentLabelSingular: 'Inhabited islands',
         buildLabel: () => "All Provinces",
         isActive: () => {
-          const c = state.scholarConfFilter, p = state.scholarProvFilter;
+          const c = state.scholarConfFilter, p = state.scholarIslandFilter;
           // Map the internal '__untagged__' sentinel back to the friendly label.
           const cDisplay = c === '__untagged__' ? 'Unclassified' : c;
           if (cDisplay && p) return { active: true, value: `${cDisplay} › ${p}` };
@@ -7980,7 +7992,8 @@
           // 'Unclassified' is the friendly label — the filter engine uses the
           // internal '__untagged__' sentinel to mean "no paternal province".
           state.scholarConfFilter = parent === 'Unclassified' ? '__untagged__' : (parent || '');
-          state.scholarProvFilter = child || '';
+          state.scholarProvFilter = '';
+          state.scholarIslandFilter = child || '';
           state.scholarPage = 1;
           renderLeaders();
           combo.refreshLabel();
@@ -7988,24 +8001,11 @@
       });
       confRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
         ev.stopPropagation();
-        state.scholarConfFilter = ''; state.scholarProvFilter = '';
+        state.scholarConfFilter = ''; state.scholarProvFilter = ''; state.scholarIslandFilter = '';
         state.scholarPage = 1;
         renderLeaders();
         combo.refreshLabel();
       });
-    }
-
-    // ---- Paternal clan dropdown: retain the supplied hierarchical order ----
-    const clanSel = document.querySelector('[data-scholar-clan]');
-    if (clanSel) {
-      clanSel.innerHTML = "<option value=\"\">All Area councils</option>" +
-        CLANS.map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
-      clanSel.value = state.scholarClanFilter || '';
-      clanSel.onchange = () => {
-        state.scholarClanFilter = clanSel.value;
-        state.scholarPage = 1;
-        renderLeaders();
-      };
     }
 
     // ---- Sector dropdown (native <select>) ----
@@ -8163,8 +8163,8 @@
       clearAll.addEventListener('click', () => {
         state.scholarNameSearch = '';
         state.scholarKeywordSearch = '';
-        state.scholarConfFilter = ''; state.scholarProvFilter = '';
-        state.scholarClanFilter = '';
+        state.scholarConfFilter = ''; state.scholarProvFilter = ''; state.scholarIslandFilter = '';
+        state.scholarClanFilter = ''; state.scholarIslandFilter = '';
         state.scholarSectorFilter = '';
         state.scholarDisciplineFilter.clear();
         state.scholarStudyCountry = ''; state.scholarStudyUni = '';

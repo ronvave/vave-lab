@@ -3790,6 +3790,11 @@
       display: inline-flex; align-items: center; gap: 7px;
       padding: 5px 14px; border-radius: 14px; font-size: 0.98rem;
     }
+    [data-scholar-summary] [data-conf-chip]:not([data-conf-chip="Unclassified"]),
+    [data-scholar-island-summary] .dsf-chip--island {
+      background: color-mix(in srgb, var(--conf-color) 20%, white);
+      color: color-mix(in srgb, var(--conf-color) 75%, black);
+    }
     .dsf-chip__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
     /* Total pill — black fill, white text so it stands out from the coloured breakdown chips. */
     .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
@@ -4937,9 +4942,6 @@
             <span class="dsf-input__caret">▾</span>
           </button>
 
-          <select class="dsf-input dsf-input--select" data-scholar-clan aria-label="Filter by paternal area council">
-            <option value="">All Area councils</option>
-          </select>
 
           <select class="dsf-input dsf-input--select" data-scholar-sector aria-label="Filter by sector">
             <option value="">All sectors</option>
@@ -4973,7 +4975,7 @@
             <div data-parent-col></div>
           </div>
           <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Province detail</div>
+            <div class="dsf-combo-col__head" data-child-header>Inhabited islands</div>
             <div data-child-col></div>
           </div>
         </div>
@@ -5019,10 +5021,10 @@
 <div class="dsf-summary__chips" data-scholar-summary-chips><span class="dsf-chip" data-conf-chip="Torba" style="--conf-color:#496a9c"><span class="dsf-chip__dot" style="background:#496a9c"></span>Torba: <span data-count-torba>0</span></span><span class="dsf-chip" data-conf-chip="Sanma" style="--conf-color:#007d83"><span class="dsf-chip__dot" style="background:#007d83"></span>Sanma: <span data-count-sanma>0</span></span><span class="dsf-chip" data-conf-chip="Penama" style="--conf-color:#80703a"><span class="dsf-chip__dot" style="background:#80703a"></span>Penama: <span data-count-penama>0</span></span><span class="dsf-chip" data-conf-chip="Malampa" style="--conf-color:#a0543c"><span class="dsf-chip__dot" style="background:#a0543c"></span>Malampa: <span data-count-malampa>0</span></span><span class="dsf-chip" data-conf-chip="Shefa" style="--conf-color:#87639d"><span class="dsf-chip__dot" style="background:#87639d"></span>Shefa: <span data-count-shefa>0</span></span><span class="dsf-chip" data-conf-chip="Tafea" style="--conf-color:#486c49"><span class="dsf-chip__dot" style="background:#486c49"></span>Tafea: <span data-count-tafea>0</span></span><span class="dsf-chip dsf-chip--unclass" data-conf-chip="Unclassified">Unclassified: <span data-count-unclass>0</span></span></div>
         </div>
 
-        <div class="dsf-summary dsf-summary--clans" data-scholar-clan-summary>
-          <strong>Area councils</strong>
-          <span class="dsf-chip dsf-chip--total" title="Scholars with a recorded paternal area council">Total: <span data-count-clans-total>0</span></span>
-          <div class="dsf-summary__chips" data-scholar-clan-chips></div>
+        <div class="dsf-summary dsf-summary--islands" data-scholar-island-summary>
+          <strong>Islands</strong>
+          <span class="dsf-chip dsf-chip--total" title="Scholars with a recorded paternal island">Total: <span data-count-islands-total>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-island-chips></div>
         </div>
 
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
@@ -5382,7 +5384,7 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/vanuatu-geography.js?v=62b754c3" defer></script>
+<script src="js/vanuatu-geography.js?v=7310d9f6" defer></script>
 <script src="js/vanuatu-model.js?v=b8079a2c" defer></script>
 <script src="js/vanuatu-config.js?v=dc4e4775" defer></script>
 <script src="js/vanuatu-preview-data.js?v=ba76ab44" defer></script>
@@ -5394,7 +5396,7 @@
 <script src="js/vanuatu-countries.js?v=bdac3577" defer></script>
 <script src="js/vanuatu-country-inputs.js?v=1ea21541" defer></script>
 <script src="js/vanuatu-scholar-portal.js?v=c6304649" defer></script>
-<script src="js/vanuatu-database-master.js?v=47e4feef" defer></script>
+<script src="js/vanuatu-database-master.js?v=3e266b23" defer></script>
 <script src="js/vanuatu-short-disciplines.js?v=e9b8cfb1" defer></script>
 <script src="js/vanuatu-panel-overrides.js?v=9037f935" defer></script>
 <script>

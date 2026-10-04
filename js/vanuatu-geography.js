@@ -15,12 +15,21 @@
     Tafea:['North Tanna','East Tanna','Central Tanna','West Tanna','Southwest Tanna','South Tanna','Southeast Tanna','Aneityum','North Erromango','South Erromango','Aniwa','Futuna']
   };
   const islands={Torba:['Banks Islands','Torres Group'],Sanma:['Espiritu Santo','Malo','Aore'],Penama:['Pentecost','Ambae','Maewo'],Malampa:['Malekula','Ambrym','Paama'],Shefa:['Shepherds Islands','Epi','Efate'],Tafea:['Tanna','Aneityum','Futuna','Erromango','Aniwa']};
+  // Panel F: individual islands with resident cases in VNSO's 2020 census.
+  // Source: https://microdata.pacificdata.org/index.php/catalog/769/variable/F17/V1059?name=island
+  // Province membership: census geographic codes and province island lists.
+  // Separate from the administrative council registry used elsewhere.
+  const inhabitedIslands = {"Torba": ["Gaua", "Hiu", "Kwakea", "Loh", "Mere Lava", "Merig", "Metoma", "Mota", "Mota Lava", "Rah", "Tegua", "Toga", "Ureparapara", "Vanua Lava"], "Sanma": ["Aese", "Aore", "Araki", "Bokissa", "Espiritu Santo", "Le Tharo", "Malo", "Malokilikili", "Mavea", "Tangoa", "Tangisi", "Tutuba"], "Penama": ["Ambae", "Maewo", "Pentecost"], "Malampa": ["Akhamb", "Ambrym", "Atchin", "Avokh", "Awei", "Lembong", "Malekula", "Norsup", "Paama", "Rano", "Tomman", "Uliveo", "Uri", "Uripiv", "Vao", "Wala"], "Shefa": ["Buninga", "Efate", "Emae", "Emau", "Epi", "Hideaway", "Ifira", "Lamen", "Lelepa", "Makira", "Mataso", "Moso", "Nguna", "Pele", "Tongoa", "Tongariki"], "Tafea": ["Aneityum", "Aniwa", "Erromango", "Futuna", "Tanna"]};
+  const islandAliases = {santo:'Espiritu Santo',hiw:'Hiu',lo:'Loh',ra:'Rah',motalava:'Mota Lava',vanualava:'Vanua Lava',merelava:'Mere Lava',malakula:'Malekula',uluveo:'Uliveo',avock:'Avokh',emao:'Emau',makura:'Makira',anatom:'Aneityum',aoba:'Ambae'};
+  const islandKey = v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+island$/i,'').trim().toLowerCase();
+  function island(v) { const k=islandKey(v);return islandAliases[k] || Object.values(inhabitedIslands).flat().find(n=>islandKey(n)===k) || clean(v); }
+  function scholarIslands(profile) { return [...new Set(String(profile && profile.paternalIsland || '').split(/[;|,]/).map(island).filter(Boolean))]; }
   const municipalities=[{name:'Port Vila',island:'Efate'},{name:'Luganville',island:'Espiritu Santo'},{name:'Lenakel',island:'Tanna'}];
   const clean=v=>String(v??'').trim();
   function province(v){return provinces.find(p=>p.toLowerCase()===clean(v).toLowerCase())||clean(v);}
   function country(v){const x=clean(v);return ({Nauru:'Naoero',Naoero:'Naoero',USA:'United States','United States of America':'United States',UK:'United Kingdom'})[x]||x;}
   function council(v){return clean(v).replace(/\s+area council$/i,'');}
-  const api={provinces,colors,councils,islands,municipalities,province,country,council,
+  const api={provinces,colors,councils,islands,inhabitedIslands,island,scholarIslands,municipalities,province,country,council,
     sources:{provinces:'https://dla.gov.vu/index.php/about-us/provinces',councils:'https://dla.gov.vu/index.php/about-us/area-councils'},checked:'2026-10-03'};
   root.VanuatuGeography=api;if(typeof module==='object')module.exports=api;
 })(typeof window==='object'?window:globalThis);
