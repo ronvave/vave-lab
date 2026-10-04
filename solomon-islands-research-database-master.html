@@ -3790,18 +3790,20 @@
     .dsf-chip__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
     /* Total pill — black fill, white text so it stands out from the coloured breakdown chips. */
     .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
-    .dsf-chip--vavau       { background: #cffafe; color: #155e75; }
-    .dsf-chip--haapai      { background: #fef3c7; color: #92400e; }
-    .dsf-chip--solomon-islandstapu   { background: #fecaca; color: #991b1b; }
-    .dsf-chip--eua         { background: #d9f2e3; color: #1e5631; }
-    .dsf-chip--ongoniua    { background: #ece3fa; color: #4b2f7a; }
-    .dsf-chip--unclass     { background: #d1e8ea; color: #062f35; }
-    .dsf-chip--vavau      .dsf-chip__dot { background: #0891b2; }
-    .dsf-chip--haapai     .dsf-chip__dot { background: #eab308; }
-    .dsf-chip--solomon-islandstapu  .dsf-chip__dot { background: #dc2626; }
-    .dsf-chip--eua        .dsf-chip__dot { background: #2f9e5c; }
-    .dsf-chip--ongoniua   .dsf-chip__dot { background: #7c4dbd; }
-    .dsf-chip--unclass    .dsf-chip__dot { background: #062f35; }
+    /* Province breakdown — use the same coloured-pill treatment as Publications. */
+    [data-scholar-summary] .dsf-chip[data-conf-chip]::before {
+      content: ""; display: inline-block; width: 10px; height: 10px;
+      flex: 0 0 10px; border-radius: 50%; background: currentColor;
+    }
+    [data-conf-chip="Central"]        { background: #ffe5e9; color: #a51f34; }
+    [data-conf-chip="Choiseul"]       { background: #ddf7fb; color: #126c7d; }
+    [data-conf-chip="Guadalcanal"]    { background: #fff4c2; color: #7a5a08; }
+    [data-conf-chip="Isabel"]         { background: #e2f5ea; color: #20623d; }
+    [data-conf-chip="Makira-Ulawa"]   { background: #efe7fa; color: #5f3f8f; }
+    [data-conf-chip="Malaita"]        { background: #ffead8; color: #93440d; }
+    [data-conf-chip="Rennell-Bellona"] { background: #f9e3f0; color: #8d3168; }
+    [data-conf-chip="Temotu"]         { background: #f2e2f9; color: #713191; }
+    [data-conf-chip="Western"]        { background: #fde3e6; color: #9e1f30; }
 
     /* ---- Results II — publication-type breakdown of currently-filtered scholars ---- */
     .dsf-summary--ii { margin-top: -6px; }
