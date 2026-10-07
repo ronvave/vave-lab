@@ -16,11 +16,11 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  const kind=host.dataset.tongaQueue,scholar=kind==='scholar';
  const tab=document.querySelector('[data-tab="'+(scholar?'scholar-submissions':'geography-submissions')+'"]');
  const badge=el('span',null,tab);badge.className='tonga-submission-badge';badge.hidden=true;badge.setAttribute('aria-live','polite');
- let badgeBusy=false,badgeGeneration=0,busy=false,loaded=false,caps={},cards=[];
+ let badgeBusy=false,badgeGeneration=0,busy=false,loaded=false,caps={},cards=[],lastLoaded=0,dirty=false,stale=false;
  function showCount(n){badge.textContent=String(n);badge.hidden=n===0;badge.title=n+' pending submissions';badge.setAttribute('aria-label',n+' pending submissions');}
  function ready(){const state=document.getElementById('db-status');return !document.hidden&&(!state||state.textContent.trim()==='ready')&&window.adminWriteback&&window.adminWriteback.isConfigured();}
  const read=status=>scholar?window.adminWriteback.readScholarSubmissions(status):window.adminWriteback.readGeographySubmissions(status);
- async function refreshBadge(){if(busy||badgeBusy||!ready()||!window.adminWriteback.reviewQueueCounts)return;badgeBusy=true;const generation=++badgeGeneration;try{const out=await queueCounts();if(generation===badgeGeneration)showCount(out[kind]||0);}catch(_){badge.title='Pending count could not be refreshed. Open this tab to retry.';}finally{badgeBusy=false;}}
+ async function refreshBadge(){if(busy||badgeBusy||!ready()||!window.adminWriteback.reviewQueueCounts)return;badgeBusy=true;const generation=++badgeGeneration;try{const out=await queueCounts();if(generation===badgeGeneration)showCount(out[kind]||0);}catch(_){badge.textContent='?';badge.hidden=false;badge.title='Pending count unavailable. Open this tab to retry.';}finally{badgeBusy=false;}}
  setTimeout(refreshBadge,1400);setInterval(refreshBadge,30000);window.addEventListener('focus',refreshBadge);document.addEventListener('visibilitychange',refreshBadge);
  const readyState=document.getElementById('db-status');if(readyState)new MutationObserver(refreshBadge).observe(readyState,{childList:true,characterData:true,subtree:true});
 
@@ -32,18 +32,21 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  button('Check all',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=true;});syncSelection();});
  button('Clear selection',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=false;});syncSelection();});
  const bulkApprove=button('Approve all checked',bulk,bulkResolve,'tonga-approve'),selectionCount=el('span','',bulk);
- function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||!n||(scholar&&!caps.selectionReview);}
- host.addEventListener('change',syncSelection);
+ function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||stale||!n||(scholar&&!caps.selectionReview);}
+ host.addEventListener('change',()=>{dirty=true;syncSelection();});
+ host.addEventListener('input',()=>{dirty=true;});
+ host.addEventListener('click',e=>{if(e.target.closest('.tonga-selection-controls,.tonga-bulk-controls'))dirty=true;});
  function syncCount(){count.textContent=cards.length+' submissions in this view';bulk.hidden=filter.value!=='Pending'||!cards.length;if(filter.value==='Pending'){badgeGeneration++;showCount(cards.length);}syncSelection();}
  function removeCard(c){c.card.remove();cards=cards.filter(x=>x!==c);syncCount();countRequest=null;}
  function updateCard(c,row){const saved=savedState().get(c.row['Submission ID']),before=c.card.nextSibling;removeCard(c);if(!filter.value||row.Status===filter.value){render(row,saved);const fresh=cards[cards.length-1];list.insertBefore(fresh.card,before);if(busy)fresh.card.querySelectorAll('button,input,textarea,select').forEach(x=>x.disabled=true);}syncCount();}
 
  const count=el('span','',toolbar);count.className='tonga-queue-count';
  const status=el('p','Open this tab to load submissions.',host);status.className='tonga-queue-status';status.setAttribute('role','status');
+ const freshness=el('p','Not yet refreshed from Master.',host);freshness.className='meta';freshness.setAttribute('role','status');
  const list=el('div',null,host);
  function message(text,error){status.textContent=text;status.classList.toggle('tonga-error',!!error);}
  function savedState(){const out=new Map();cards.forEach(c=>out.set(c.row['Submission ID'],{note:c.note?.value,selected:c.select?.checked,picks:c.picks.map(p=>[p.key,p.box.checked,p.disposition?.value,p.evidence?.value])}));return out;}
- async function load(after){if(busy)return;busy=true;refresh.disabled=true;filter.disabled=true;message('Loading…');const saved=savedState();try{
+ async function load(after){if(busy)return;busy=true;refresh.disabled=true;filter.disabled=true;message('Loading…');const controls=[...list.querySelectorAll('button,input,textarea,select')],disabled=controls.map(x=>x.disabled);controls.forEach(x=>x.disabled=true);const saved=savedState();countRequest=null;try{
    if(!window.adminWriteback||!window.adminWriteback.isConfigured())throw new Error('Configure the Tonga endpoint and shared secret in Data source & GitHub first.');
    const out=checked(await read(filter.value));
    if(scholar&&!caps.version){try{caps=checked(await window.adminWriteback.reviewCapabilities());}catch(_){caps={};}}
@@ -51,8 +54,8 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    list.replaceChildren();cards=[];(out.rows||[]).forEach(row=>render(row,saved.get(row['Submission ID'])));
    syncCount();
    if(!cards.length)el('p',scholar?'No scholar-profile submissions in this view.':'No submissions in this view.',list).className='meta';
-   message(after||'');loaded=true;
- }catch(e){message((after?after+' Queue display could not reload: ':'')+e.message,true);}finally{busy=false;refresh.disabled=false;filter.disabled=false;syncSelection();}}
+   message(after||'');loaded=true;dirty=false;stale=false;lastLoaded=Date.now();freshness.textContent='Last refreshed from Master: '+new Date(lastLoaded).toLocaleString()+'.';
+ }catch(e){stale=true;freshness.textContent=lastLoaded?'Refresh failed. Displayed submissions are from '+new Date(lastLoaded).toLocaleString()+' and may have changed.':'Refresh failed. No current queue data available.';badge.textContent='?';badge.hidden=false;badge.title='Queue refresh failed; pending count is unverified.';message((after?after+' Queue display could not reload: ':'')+e.message,true);}finally{controls.forEach((x,i)=>x.disabled=disabled[i]);busy=false;refresh.disabled=false;filter.disabled=false;syncSelection();}}
  function pick(parent,label,key,enabled,selected,c){const box=el('input',null,parent);box.type='checkbox';box.setAttribute('aria-label',label);box.disabled=!enabled;box.checked=!!selected;const p={box,key};c.picks.push(p);return p;}
  function render(row,saved){
   const pending=row.Status==='Pending',card=el('article',null,list),c={row,card,picks:[]};cards.push(c);
@@ -125,6 +128,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  }
  async function run(c,fn){
    if(busy)return;
+   if(stale){message('Refresh this queue successfully before saving a review. Your selections are retained.',true);return;}
    busy=true;
    const progress=c&&el('p','Saving and verifying review…',c.card);if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
    const controls=[...host.querySelectorAll('button,select,input,textarea')],disabled=controls.map(x=>x.disabled);
@@ -185,6 +189,15 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     return saved+' submission(s) processed. Unchecked work remains pending. '+(failures.length?'Failed and retained for retry: '+failures.join('; '):'')+' '+(remaining.length?'Still pending: '+remaining.join('; '):'')+' '+await refreshPublic();
    });
  }
- filter.onchange=()=>load();tab.addEventListener('click',()=>{if(!loaded)load();refreshBadge();});
+ function active(){return tab.classList.contains('active')||tab.getAttribute('aria-selected')==='true';}
+ function autoRefresh(){
+  if(!ready()||!active()||busy)return;
+  if(dirty||host.contains(document.activeElement)){if(lastLoaded&&Date.now()-lastLoaded>=30000)freshness.textContent='Review in progress. Refresh queue to check other reviewers’ decisions; your selections and notes will be retained.';return;}
+  if(!loaded||Date.now()-lastLoaded>=30000)load();
+ }
+ filter.onchange=()=>load();tab.addEventListener('click',()=>{if(!busy)load();refreshBadge();});
+ setInterval(autoRefresh,30000);window.addEventListener('focus',autoRefresh);document.addEventListener('visibilitychange',autoRefresh);
+ if(readyState)new MutationObserver(autoRefresh).observe(readyState,{childList:true,characterData:true,subtree:true});
+ setTimeout(autoRefresh,1500);
 });
 })();

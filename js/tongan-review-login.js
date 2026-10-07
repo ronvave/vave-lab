@@ -16,7 +16,7 @@ $('logout').onclick=logout;
 async function call(action,params={}){
  checkExpiry();if(!token){renew();throw new Error('Sign in again above, then retry. Your review is preserved.');}
  const requestToken=token;
- const send=async(name,values={})=>{const response=await fetch(ENDPOINT,{method:'POST',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...values,action:name,idToken:requestToken})});return response.json();};
+ const send=async(name,values={})=>{const response=await fetch(ENDPOINT,{method:'POST',cache:'no-store',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...values,action:name,idToken:requestToken})});return response.json();};
  let out=await send(action,params);
  if(out.status==='unauthorized'&&token===requestToken&&action!=='reviewCapabilities'&&Date.now()<expiresAt){
   // A redirected/transient response must not discard a still-valid session.
@@ -80,7 +80,7 @@ async function signedIn(result){
   clearTimeout(expiryTimer);clearTimeout(renewTimer);expiryTimer=setTimeout(expire,Math.max(0,expiresAt-Date.now()));
   renewTimer=setTimeout(()=>renew('Your Google sign-in will expire soon. Sign in here to renew it without losing your review.'),Math.max(0,expiresAt-Date.now()-120000));
   if(!document.getElementById('queue-script')){
-   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=review-resume-names-v2';
+   const script=document.createElement('script');script.id='queue-script';script.src='js/tongan-submissions-admin.js?v=queue-refresh-20261007';
    script.onload=()=>document.querySelector('[data-tab="scholar-submissions"]').click();document.body.append(script);
   } // Reauthentication keeps the existing queue DOM, notes and selections intact.
  }catch(e){token='';message(e.message||'Sign-in failed. Try again.');}

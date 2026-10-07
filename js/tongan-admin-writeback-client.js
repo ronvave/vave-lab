@@ -42,19 +42,7 @@
     if (!getSecret())   throw new Error('Master write-back shared secret is not set (Data source tab \u2192 Master write-back endpoint).');
   }
 
-  async function callGet(action) {
-    requireConfigured();
-    var url = getEndpoint() +
-      (getEndpoint().indexOf('?') === -1 ? '?' : '&') +
-      'action=' + encodeURIComponent(action) +
-      '&secret=' + encodeURIComponent(getSecret()) +
-      '&clientTs=' + Date.now();
-    var res = await fetch(url, { method: 'GET', redirect: 'follow' });
-    var body;
-    try { body = await res.json(); }
-    catch (_) { body = { status: 'error', error: 'non-JSON response (HTTP ' + res.status + ')' }; }
-    return body;
-  }
+  async function callGet(action) { return callPost({action: action}); }
 
   async function callPost(payload) {
     requireConfigured();
@@ -68,6 +56,8 @@
     });
     var res = await fetch(url, {
       method: 'POST',
+      cache: 'no-store',
+      credentials: 'omit',
       signal: AbortSignal.timeout(90000),
       redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -75,7 +65,7 @@
     });
     var out;
     try { out = await res.json(); }
-    catch (_) { out = { status: 'error', error: 'non-JSON response (HTTP ' + res.status + ')' }; }
+    catch (_) { out = { status: 'error', error: 'Tonga review service returned HTTP ' + res.status + ' instead of review data. Refresh again; if this persists, check the deployed Web app URL using Data source & GitHub → Test connection. No fresh queue data was received.' }; }
     return out;
   }
 
@@ -86,19 +76,9 @@
     catch (err) { return {status:'error',error:'Save acknowledgement was lost. Your selection is retained. Retry safely or refresh this queue to check the recorded outcome.'}; }
   }
 
-  // Extra GET with named params.
+  // Authenticated reads use the same uncached POST transport as reviewer login.
   async function callGetWithParams(action, params) {
-    requireConfigured();
-    var qs = 'action=' + encodeURIComponent(action) +
-             '&secret=' + encodeURIComponent(getSecret()) +
-             '&clientTs=' + Date.now();
-    Object.keys(params || {}).forEach(function (k) {
-      qs += '&' + encodeURIComponent(k) + '=' + encodeURIComponent(params[k]);
-    });
-    var url = getEndpoint() + (getEndpoint().indexOf('?') === -1 ? '?' : '&') + qs;
-    var res = await fetch(url, { method: 'GET', redirect: 'follow' });
-    try { return await res.json(); }
-    catch (_) { return { status: 'error', error: 'non-JSON response (HTTP ' + res.status + ')' }; }
+    return callPost(Object.assign({}, params, {action: action}));
   }
 
   // Convenience wrappers.
