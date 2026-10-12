@@ -642,3 +642,10 @@ Validation: new two-queue refresh/transport regression covers HTTP 404, reopen, 
 
 ## Vanuatu Admin connection repair — 2026-10-11 HST
 Dedicated reader validation succeeded (run 38215824669 attempt 2). Owner deployed Vanuatu Admin v2; GET service metadata verified and an unauthenticated POST rejected. Restored existing endpoint/secret controls; prefilled deployed endpoint; private JPEG enrichment uploads and authenticated saves prepared for publication. Owner secret remains entered directly by owner, never collected in chat. Backend/export/model checks pass; iTaukei preservation gate confirms 67 photos, 83 summaries and 151 mobility records. Real authenticated browser save remains pending owner connection and VANUATU_WRITE_ENABLED activation. No real profile changed by this repair.
+
+
+## 2026-10-11 HST — Vanuatu Admin profile opening latency
+
+Profile clicks now render from the loaded scholar list immediately; they no longer await a full Apps Script read. Connected-session reads reuse native data without the former one-minute expiry and do not wait behind forced refreshes. Cold position/degree requests still share one authenticated fetch; late responses are discarded when the user switches or closes profiles. Successful connection reads update Save permission controls without replacing user drafts. Writes and connection tests still force fresh reads, retaining conflict/version checks. No credentials, data approval rules or UI pathways changed.
+
+Validation: `node tests/vanuatu-admin-read-performance.test.cjs` passes shared cold requests, repeated cached profile reads, browsing during pending forced refresh, fresh save conflict checks and connection invalidation. JavaScript syntax passes. iTaukei preservation gate passes with 67 photos, 83 summaries and 151 mobility rows. Cold Apps Script background reads remain subject to server latency; profile rendering no longer depends on them. Cache-bust hashes updated for both edited scripts.

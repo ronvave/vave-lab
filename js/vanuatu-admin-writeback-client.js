@@ -1,15 +1,17 @@
 /* Preserve the reference Admin's preview/read/write interface while routing
  * only to the authenticated Vanuatu service and stable Vanuatu entity IDs. */
 (function(w){'use strict';const B=w.VanuatuBundle;let endpoint=localStorage.getItem('vanuatu.admin.endpoint')||'https://script.google.com/macros/s/AKfycbwVPbJqKkMh6GXjftGz6OhPn0fHR-KxIYPWhAAwThmC0Nt2gJP7y5HsNOGiweSIqaYv/exec',secret=sessionStorage.getItem('vanuatu.admin.secret')||'';
-let refreshPending=null,refreshedAt=0;
-const reset=()=>{refreshedAt=0;B.disconnectAdmin();};
+let refreshPending=null;
+const reset=()=>{B.disconnectAdmin();};
 w.VanuatuAdminTransport={call:async(method,payload)=>{if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)||!secret)throw Error('Save the Vanuatu endpoint and owner secret in Data source, then test the connection.');const r=await fetch(endpoint,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({method,payload,secret,clientTs:Date.now()})});if(!r.ok)throw Error('Vanuatu service returned HTTP '+r.status);const result=await r.json();if(!result.ok)throw Error(result.error||'Vanuatu save failed.');return result.result;}};
 const rowKeys=new Map();
 const keys={Scholars:'Scholar ID',Positions:'Position ID','Graduate Degrees':'Degree ID'};
 const all=table=>B.current()?.tables[table]||[];
 const configured=()=>!!B.native()||!!(endpoint&&secret)||B.isPreview();
 const requireOwner=()=>{if(B.isPreview()||B.native()?.role!=='owner')throw Error('An authorized Vanuatu owner account is required to save changes.');};
-async function refresh(force=false){if(B.isPreview())return;if(refreshPending)return refreshPending;if(!force&&B.native()&&Date.now()-refreshedAt<60000)return;refreshPending=B.nativeState().then(result=>{refreshedAt=Date.now();return result;}).finally(()=>{refreshPending=null;});return refreshPending;}
+// Browsing uses the connected session snapshot, even while a forced refresh is
+// running. Writes and connection tests still require a fresh server read.
+async function refresh(force=false){if(B.isPreview())return;if(!force&&B.native())return;if(refreshPending)return refreshPending;refreshPending=B.nativeState().then(result=>{w.dispatchEvent(new Event('vanuatu:admin-connected'));return result;}).finally(()=>{refreshPending=null;});return refreshPending;}
 function find(c){const table=c.worksheet;if(!keys[table])throw Error('Unsupported Vanuatu table.');const r=table==='Scholars'?all(table).find(r=>r['Scholar ID']===c.scholarId):all(table).find(r=>r[keys[table]]===rowKeys.get(table+':'+c.scholarId+':'+c.rowNumber));if(!r||r['Scholar ID']!==c.scholarId)throw Error('Record is missing or changed. Reload before editing.');return r;}
 async function write(changes,opts={}){requireOwner();await refresh(true);const results=changes.map(c=>{try{const r=find(c),currentValue=String(r[c.field]??''),intendedValue=String(c.newValue??''),sensitive=/Status|Approved|Year of Death|Scholar Name/.test(c.field);return {status:currentValue===intendedValue?'already_satisfied':currentValue!==String(c.oldValue??'')||sensitive?'needs_confirmation':'ok',worksheet:c.worksheet,field:c.field,currentValue,intendedValue,reason:sensitive?'Confirm this identity/status change.':''};}catch(e){return {status:'rejected',reason:e.message};}});
  if(opts.dryRun)return {status:'ok',results};

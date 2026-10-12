@@ -1,0 +1,24 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+let native=null,calls=0,resolveRead;
+const record={'Scholar ID':'VAN-S0009','Scholar Name':'Morsen Mosses',_version:'v1'};
+const snapshot={role:'owner',tables:{Scholars:[record],Positions:[],'Graduate Degrees':[]}};
+const B={native:()=>native,current:()=>native,isPreview:()=>false,disconnectAdmin:()=>{native=null;},nativeState:()=>{calls++;return new Promise(resolve=>{resolveRead=()=>{native=snapshot;resolve(snapshot);};});}};
+const storage={getItem:()=>'',setItem(){},removeItem(){}};
+const w={VanuatuBundle:B,VANUATU_CONFIG:{},dispatchEvent(){}};
+vm.runInNewContext(fs.readFileSync('js/vanuatu-admin-writeback-client.js','utf8'),{window:w,localStorage:storage,sessionStorage:storage,Event:class{},crypto:{randomUUID:()=> 'test'},Date});
+(async()=>{
+ const api=w.adminWriteback;
+ const first=api.readScholar('VAN-S0009'),degrees=api.readRows('Graduate Degrees','VAN-S0009');
+ assert.equal(calls,1,'cold reads share one request');resolveRead();await Promise.all([first,degrees]);
+ for(let i=0;i<10;i++)await api.readScholar('VAN-S0009');
+ assert.equal(calls,1,'opening profiles reuses the loaded session');
+ const forced=api.ping();assert.equal(calls,2);
+ const cached=await api.readScholar('VAN-S0009');
+ assert.equal(cached.fields['Scholar Name'],'Morsen Mosses','browsing does not wait for a pending server refresh');
+ resolveRead();await forced;
+ const check=api.write([{worksheet:'Scholars',scholarId:'VAN-S0009',field:'Current Institution',oldValue:'old',newValue:'new'}],{dryRun:true});
+ assert.equal(calls,3,'save preflight forces a fresh read');resolveRead();
+ assert.equal((await check).results[0].status,'needs_confirmation','stale writes retain conflict protection');
+ api.clear();const reconnect=api.readScholar('VAN-S0009');assert.equal(calls,4,'clearing connection invalidates the cache');resolveRead();await reconnect;
+ console.log('PASS: single cold read, cached browsing, no pending-read blocking, fresh save conflict checks, connection invalidation');
+})().catch(e=>{console.error(e);process.exitCode=1;});

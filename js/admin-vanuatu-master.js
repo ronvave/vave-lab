@@ -477,12 +477,12 @@
   // ------------------------- edit modal -------------------------
   var editLoadGeneration = 0;
   async function openEditModal (sid) {
-    var generation = ++editLoadGeneration;
-    if (window.adminWriteback && adminWriteback.isConfigured()) {
-      toast("Loading current Master fields…");
-      if (!await refreshMasterForScholar(sid)) { toast("Could not load current Master fields. Please try opening the scholar again.", "error"); return; }
-      if (generation !== editLoadGeneration) return;
-    }
+    ++editLoadGeneration;
+    // Open from the loaded list immediately. Never wait for a full Apps Script
+    // read before showing a profile; saves perform fresh conflict/version checks.
+    var cached = window.VanuatuBundle && window.VanuatuBundle.native();
+    var cachedScholar = cached && cached.tables.Scholars.find(function (r) { return r['Scholar ID'] === sid; });
+    if (cachedScholar && state.scholarById[sid]) Object.assign(state.scholarById[sid], cachedScholar);
     var s = state.scholarById[sid];
     if (!s) { toast('Scholar not found: ' + sid, 'error'); return; }
     state.editingSid = sid;
@@ -650,6 +650,7 @@
   // sub-form per row. Each field carries data-ws / data-field / data-row /
   // data-loaded so the save flow can build changes[] uniformly.
   async function loadPositionsForModal (sid) {
+    var loadGeneration = editLoadGeneration;
     var container = $('#positions-container');
     var status = $('#positions-status');
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
@@ -658,10 +659,12 @@
     }
     try {
       var res = await adminWriteback.readRows('Positions', sid);
+      if (state.editingSid !== sid || editLoadGeneration !== loadGeneration) return;
       if (res.status !== 'ok') { status.textContent = 'Failed to load Positions: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
       state.positionRows = res.rows || [];
       renderPositionsRows(sid, state.positionRows, container);
     } catch (e) {
+      if (state.editingSid !== sid || editLoadGeneration !== loadGeneration) return;
       status.textContent = 'Failed to load Positions: ' + esc(e.message || e);
     }
   }
@@ -689,6 +692,7 @@
   }
 
   async function loadGradDegreesForModal (sid) {
+    var loadGeneration = editLoadGeneration;
     var container = $('#graddegrees-container');
     var status = $('#graddegrees-status');
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
@@ -697,10 +701,12 @@
     }
     try {
       var res = await adminWriteback.readRows('Graduate Degrees', sid);
+      if (state.editingSid !== sid || editLoadGeneration !== loadGeneration) return;
       if (res.status !== 'ok') { status.textContent = 'Failed to load Graduate Degrees: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
       state.gradDegreeRows = res.rows || [];
       renderGradDegreesRows(sid, state.gradDegreeRows, container);
     } catch (e) {
+      if (state.editingSid !== sid || editLoadGeneration !== loadGeneration) return;
       status.textContent = 'Failed to load Graduate Degrees: ' + esc(e.message || e);
     }
   }
