@@ -4,7 +4,8 @@ const el=(tag,text)=>{const n=document.createElement(tag);if(text!=null)n.textCo
 const preview=()=>{B.preview();w.dispatchEvent(new Event('vanuatu:admin-unlocked'));};
 function councils(side){const sel=document.getElementById('me-clan-'+side),prov=document.getElementById('me-div-'+side+'-derived').value;if(sel&&sel.dataset.province!==prov){const value=sel.dataset.loaded||sel.value;sel.dataset.province=prov;sel.replaceChildren(new Option('(unset)',''),...(G.councils[prov]||[]).map(c=>new Option(c,c)));if(value&&!Array.from(sel.options).some(o=>o.value===value))sel.add(new Option(value+' (recorded)',value));sel.value=value;}}
 function protect(){const modal=document.getElementById('edit-modal');if(!modal?.classList.contains('is-visible'))return;
- document.getElementById('pf-photo-file').disabled=B.isPreview()||B.native()?.role!=='owner';
+ // Choosing a local image does not save it; owner authorization is enforced on Save.
+ document.getElementById('pf-photo-file').disabled=B.isPreview();
  const readonly=B.isPreview()||B.native()?.role!=='owner',save=document.getElementById('modal-save');save.disabled=readonly;save.textContent=readonly?(B.isPreview()?'Read-only preview':'Connect owner service in Data source'):'Save & push';
  for(const side of ['paternal','maternal'])councils(side);
 }

@@ -6,7 +6,7 @@ w.VanuatuAdminTransport={call:async(method,payload)=>{if(!/^https:\/\/script\.go
 const rowKeys=new Map();
 const keys={Scholars:'Scholar ID',Positions:'Position ID','Graduate Degrees':'Degree ID'};
 const all=table=>B.current()?.tables[table]||[];
-const configured=()=>!!B.native()||B.isPreview();
+const configured=()=>!!B.native()||!!(endpoint&&secret)||B.isPreview();
 const requireOwner=()=>{if(B.isPreview()||B.native()?.role!=='owner')throw Error('An authorized Vanuatu owner account is required to save changes.');};
 async function refresh(){if(B.isPreview())return;await B.nativeState();}
 function find(c){const table=c.worksheet;if(!keys[table])throw Error('Unsupported Vanuatu table.');const r=table==='Scholars'?all(table).find(r=>r['Scholar ID']===c.scholarId):all(table).find(r=>r[keys[table]]===rowKeys.get(table+':'+c.scholarId+':'+c.rowNumber));if(!r||r['Scholar ID']!==c.scholarId)throw Error('Record is missing or changed. Reload before editing.');return r;}
