@@ -7599,7 +7599,7 @@
         names.forEach(name => counts.set(name, (counts.get(name) || 0) + 1));
       });
       islandBar.querySelector('[data-count-islands-total]').textContent = String(recorded);
-      const chip = (name, province) => `<span class="dsf-chip dsf-chip--island" data-island-chip="${escapeAttr(name)}" style="--conf-color:${G.colors[province] || G.colors.Unclassified}"><span class="dsf-chip__dot" style="background:${G.colors[province] || G.colors.Unclassified}"></span>${escapeHtml(name)}: ${counts.get(name) || 0}</span>`;
+      const chip = (name, province) => `<span class="dsf-chip dsf-chip--island" data-island-chip="${escapeAttr(name)}" data-island-province="${escapeAttr(province || 'Unclassified')}" style="--conf-color:${G.colors[province] || G.colors.Unclassified}"><span class="dsf-chip__dot" style="background:${G.colors[province] || G.colors.Unclassified}"></span>${escapeHtml(name)}: ${counts.get(name) || 0}</span>`;
       let html = G.provinces.map(province => G.inhabitedIslands[province].map(name => chip(name, province)).join('')).join('');
       // Preserve recorded names not yet in the registry; never silently drop them.
       const known = new Set(Object.values(G.inhabitedIslands).flat());

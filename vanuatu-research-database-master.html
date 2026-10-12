@@ -3792,9 +3792,22 @@
     }
     [data-scholar-summary] [data-conf-chip]:not([data-conf-chip="Unclassified"]),
     [data-scholar-island-summary] .dsf-chip--island {
-      background: color-mix(in srgb, var(--conf-color) 20%, white);
+      background: var(--province-pill-fill, #e5e7eb);
       color: color-mix(in srgb, var(--conf-color) 75%, black);
     }
+    /* Panel F warm accents: island fills inherit their province palette. */
+    [data-scholar-summary] [data-conf-chip="Torba"],
+    [data-scholar-island-summary] [data-island-province="Torba"] { --province-pill-fill: #D5DFEB; }
+    [data-scholar-summary] [data-conf-chip="Sanma"],
+    [data-scholar-island-summary] [data-island-province="Sanma"] { --province-pill-fill: #BEDDD7; }
+    [data-scholar-summary] [data-conf-chip="Penama"],
+    [data-scholar-island-summary] [data-island-province="Penama"] { --province-pill-fill: #F6CE53; }
+    [data-scholar-summary] [data-conf-chip="Malampa"],
+    [data-scholar-island-summary] [data-island-province="Malampa"] { --province-pill-fill: #F49B80; }
+    [data-scholar-summary] [data-conf-chip="Shefa"],
+    [data-scholar-island-summary] [data-island-province="Shefa"] { --province-pill-fill: #DACDE6; }
+    [data-scholar-summary] [data-conf-chip="Tafea"],
+    [data-scholar-island-summary] [data-island-province="Tafea"] { --province-pill-fill: #A8D87E; }
     .dsf-chip__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
     /* Total pill — black fill, white text so it stands out from the coloured breakdown chips. */
     .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
@@ -5396,7 +5409,7 @@
 <script src="js/vanuatu-countries.js?v=bdac3577" defer></script>
 <script src="js/vanuatu-country-inputs.js?v=1ea21541" defer></script>
 <script src="js/vanuatu-scholar-portal.js?v=c6304649" defer></script>
-<script src="js/vanuatu-database-master.js?v=3e266b23" defer></script>
+<script src="js/vanuatu-database-master.js?v=d6fe14ec" defer></script>
 <script src="js/vanuatu-short-disciplines.js?v=e9b8cfb1" defer></script>
 <script src="js/vanuatu-panel-overrides.js?v=9037f935" defer></script>
 <script>
