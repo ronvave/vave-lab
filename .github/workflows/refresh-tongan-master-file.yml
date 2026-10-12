@@ -252,3 +252,5 @@ jobs:
           done
           echo "Failed to push after 3 attempts"
           exit 1
+
+# Refresh after ResearchSpace publication import, 2026-10-12.
