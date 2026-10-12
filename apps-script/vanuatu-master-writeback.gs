@@ -1,8 +1,8 @@
-/** Vanuatu-only native Google Admin service. No browser password/PAT/HMAC.
- * Enable the advanced Sheets service. Deploy with Google sign-in required.
- * Role checks occur on EVERY call and blank active-user identity is denied.
- * Read docs/VANUATU-DEPLOYMENT.md before deploying or enabling writes.
+/** Vanuatu Admin service: native Google calls and authenticated POST requests
+ * from the existing GitHub Pages Admin. Install the Sheets API service.
+ * Owner: ronvave@hawaii.edu. Viewer passwords do not authorize writes.
  */
+var vanHttpActor_ = null;
 var VAN_SHEET_='1jfS6Yqyy559kLdoeKW4F4t8RhyBooXpCiwOMukxpPW0';
 var VAN_PROVINCES_=['Torba','Sanma','Penama','Malampa','Shefa','Tafea'];
 var VAN_KEYS_={'Scholars':'Scholar ID','Graduate Degrees':'Degree ID','Positions':'Position ID','Publications':'Publication ID','Authorship':'Authorship ID','Research Geography':'Geography Record ID','Review Queue':'Candidate ID','Scholar Profile Submissions':'Submission ID','Publication Geography Submissions':'Submission ID','Change Log':'Change ID','Public Export Config':'Field'};
@@ -14,6 +14,7 @@ var VAN_FIELDS_={
 var VAN_REVIEW_FIELDS_=['Salutation','Family Name','Given Names','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community'];
 var VAN_ENUMS_={'Gender':['Female','Male','Non-binary','Another identity','Unknown / verify'],'Vital Status':['Alive','Deceased','Unknown / not checked'],'Identity Verification Status':['Verified','Probable','Unresolved','Excluded'],'Degree Level':["Master's",'PhD / Doctorate'],'Completion Status':['Completed','Ongoing','In progress','Withdrawn','Unknown / verify'],'Verification Status':['Verified','Probable','Unresolved','Excluded']};
 function vanActor_(ownerOnly){
+ if(vanHttpActor_)return vanHttpActor_;
  var email=String(Session.getActiveUser().getEmail()||'').toLowerCase().trim();
  if(!email)throw Error('Google identity unavailable. Sign in to the configured native Vanuatu deployment; anonymous and unsupported deployment modes are denied.');
  var roster=JSON.parse(PropertiesService.getScriptProperties().getProperty('VANUATU_ROLES')||'{}'),role=roster[email];
@@ -33,10 +34,7 @@ function vanData_(name){
  return {sheet:sheet,headers:headers,records:records,key:key};
 }
 function vanRecord_(d,id){var matches=d.records.filter(function(r){return r.value[d.key]===id;});if(matches.length!==1)throw Error('Entity ID is missing or ambiguous: '+id);return matches[0];}
-function doGet(){
- try{vanActor_(false);return HtmlService.createHtmlOutputFromFile('vanuatu-admin-app').setTitle('Vanuatu Scholar Database · Admin');}
- catch(e){return HtmlService.createHtmlOutput('<h1>Vanuatu Admin access unavailable</h1><p>Use an explicitly authorized Google account and the configured deployment. Anonymous requests are denied.</p>');}
-}
+function doGet(){return vanJson_({service:'Vanuatu Admin',version:2,authentication:'Owner credential required for all data operations.'});}
 function getVanuatuAdminState(){
  var actor=vanActor_(false),tables={};
  ['Scholars','Graduate Degrees','Positions','Publications','Authorship','Review Queue','Scholar Profile Submissions','Publication Geography Submissions','Change Log'].forEach(function(name){
@@ -47,7 +45,7 @@ function getVanuatuAdminState(){
    delete r['Submitter Email'];delete r['Attachments JSON'];r._version=version;return r;
   });
  });
- return {country:'Vanuatu',role:actor.role,actor:actor.email,tables:tables,enrichment:actor.role==='owner'?vanEnrichment_():{}};
+ return {country:'Vanuatu',writeEnabled:PropertiesService.getScriptProperties().getProperty('VANUATU_WRITE_ENABLED')==='true',role:actor.role,actor:actor.email,tables:tables,enrichment:actor.role==='owner'?vanEnrichment_():{}};
 }
 function vanWriteEnabled_(){if(PropertiesService.getScriptProperties().getProperty('VANUATU_WRITE_ENABLED')!=='true')throw Error('Vanuatu writes are disabled. Owner activation is required.');}
 function vanCell_(v){return {userEnteredValue:typeof v==='boolean'?{boolValue:v}:{stringValue:String(v==null?'':v)}};}
@@ -104,10 +102,10 @@ function saveVanuatuEnrichment(payload){
  try{vanRecord_(vanData_('Scholars'),payload.scholarId);var id=PropertiesService.getScriptProperties().getProperty('VANUATU_ENRICHMENT_FILE_ID');if(!id)throw Error('Private Vanuatu enrichment file is not configured.');var file=DriveApp.getFileById(id),doc=JSON.parse(file.getBlob().getDataAsString());
   if(!/^[\w-]{16,80}$/.test(payload.operationId||''))throw Error('Operation ID is required.');doc.operations=doc.operations||{};var operation=doc.operations[payload.operationId];if(operation){if(operation.digest!==vanDigest_(payload))throw Error('Operation ID reused with another request.');return operation.result;}
   doc.scholars=doc.scholars||{};var old=doc.scholars[payload.scholarId]||{};if((Object.keys(old).length?vanDigest_(old):'')!==payload.expectedVersion)throw Error('Enrichment changed. Reload before saving.');
-  if(payload.photo&&!/^https:\/\/[^\s]+$/.test(payload.photo))throw Error('Photo URL must be HTTPS.');if(String(payload.summary||'').length>12000)throw Error('Summary is too long.');if(!String(payload.reason||'').trim())throw Error('Evidence/reason is required.');
+  if(payload.photo)vanValidatePhoto_(payload.photo);if(String(payload.summary||'').length>12000)throw Error('Summary is too long.');if(!String(payload.reason||'').trim())throw Error('Evidence/reason is required.');
   ['institutionUrl','departmentUrl'].forEach(function(k){if(payload[k]&&!/^https:\/\/[^\s]+$/.test(payload[k]))throw Error(k+' must use HTTPS.');});
   if(payload.keywords&&(!Array.isArray(payload.keywords)||payload.keywords.length>50||payload.keywords.some(function(v){return typeof v!=='string'||v.length>200;})))throw Error('Invalid keywords.');
-  if(payload.sources&&(!Array.isArray(payload.sources)||payload.sources.length>50||payload.sources.some(function(v){return typeof v!=='string'||!/^https?:\/\/[^\s]+$/.test(v);})))throw Error('Sources must be HTTP(S) URLs.');
+  if(payload.sources&&(!Array.isArray(payload.sources)||payload.sources.length>50||payload.sources.some(function(v){return !(typeof v==='string'&&/^https?:\/\/[^\s]+$/.test(v)||v&&typeof v==='object'&&typeof v.url==='string'&&/^https?:\/\/[^\s]+$/.test(v.url)&&String(v.title||'').length<=300);})))throw Error('Sources must be HTTP(S) URLs.');
   if(String(payload.sector||'').length>200)throw Error('Sector is too long.');
   // Merge freshest document, retaining every other scholar and supplementary field.
   doc.scholars[payload.scholarId]=Object.assign({},old,{photo:String(payload.photo||''),summary:String(payload.summary||''),keywords:payload.keywords||[],sources:payload.sources||[],sector:String(payload.sector||''),institutionUrl:String(payload.institutionUrl||''),departmentUrl:String(payload.departmentUrl||''),approved:true,updatedAt:new Date().toISOString(),updatedBy:actor.email});doc.revision=Utilities.getUuid();
@@ -116,4 +114,58 @@ function saveVanuatuEnrichment(payload){
   try{Sheets.Spreadsheets.batchUpdate({requests:[vanAudit_(actor,'Admin enrichment',payload.scholarId,'Approved photo/summary',old.summary||'',payload.summary||'',payload.reason)]},VAN_SHEET_);}catch(e){result={status:'sidecar-saved-audit-pending',message:'Sidecar saved; audit write failed. Owner reconciliation required before publication.'};doc.operations[payload.operationId].result=result;file.setContent(JSON.stringify(doc));}
   return result;
  }finally{lock.releaseLock();}
+}
+
+/** HTTP bridge for the existing GitHub Pages Admin layout. The owner secret is
+ * kept in Script Properties and entered only in the Admin Data source form.
+ * Viewing passwords never authorize a write. Credentials are POSTed, not URLs.
+ */
+function doPost(e) {
+  try {
+    var text=String(e&&e.postData&&e.postData.contents||'');
+    if(text.length>900000)throw Error('Request too large.');
+    var request=JSON.parse(text),props=PropertiesService.getScriptProperties();
+    var expected=props.getProperty('SHARED_SECRET')||'',received=String(request.secret||'');
+    var diff=expected.length^received.length;
+    for(var i=0;i<expected.length;i++)diff|=expected.charCodeAt(i)^(received.charCodeAt(i)||0);
+    if(expected.length<32||diff||!Number.isFinite(request.clientTs)||Math.abs(Date.now()-request.clientTs)>300000)throw Error('Owner authentication failed.');
+    vanHttpActor_={email:'ronvave@hawaii.edu',role:'owner'};
+    var routes={getVanuatuAdminState:getVanuatuAdminState,saveVanuatuMaster:saveVanuatuMaster,saveVanuatuEnrichment:saveVanuatuEnrichment,reviewVanuatuProposal:reviewVanuatuProposal,refreshVanuatuSnapshot:refreshVanuatuSnapshot};
+    if(!Object.prototype.hasOwnProperty.call(routes,request.method))throw Error('Unsupported Admin operation.');
+    return vanJson_({ok:true,result:routes[request.method](request.payload)});
+  }catch(error){return vanJson_({ok:false,error:String(error.message||error)});}
+  finally{vanHttpActor_=null;}
+}
+function vanJson_(value){return ContentService.createTextOutput(JSON.stringify(value)).setMimeType(ContentService.MimeType.JSON);}
+function vanValidatePhoto_(photo){
+  if(/^https:\/\/[^\s]+$/.test(photo))return photo;
+  if(typeof photo!=='string'||photo.length>700000||!/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo))throw Error('Photo must be an HTTPS URL or uploaded JPEG (maximum 500 KB).');
+  var bytes=Utilities.base64Decode(photo.split(',')[1]);
+  if(bytes.length>512000||bytes.length<4||(bytes[0]&255)!==255||(bytes[1]&255)!==216||(bytes[bytes.length-2]&255)!==255||(bytes[bytes.length-1]&255)!==217)throw Error('Invalid JPEG photo.');
+  return photo;
+}
+function refreshVanuatuSnapshot(){
+  vanActor_(true);vanWriteEnabled_();
+  if(typeof dispatchMasterRefreshFromServer_!=='function')throw Error('Vanuatu refresh helper is missing.');
+  var result=dispatchMasterRefreshFromServer_();
+  if(!result.ok)throw Error(result.message);
+  return {status:'refresh-dispatched',message:'Vanuatu snapshot refresh queued. Check GitHub Actions for completion.'};
+}
+/** Run manually as the owner after adding the Sheets API service. Does not
+ * publish data, install triggers, grant sharing access, or enable writes.
+ */
+function setupVanuatuAdmin(){
+  var email=String(Session.getActiveUser().getEmail()||'').toLowerCase();
+  if(email!=='ronvave@hawaii.edu')throw Error('Run setup using ronvave@hawaii.edu.');
+  var props=PropertiesService.getScriptProperties();
+  vanBook_();
+  props.setProperty('VANUATU_ROLES',JSON.stringify({'ronvave@hawaii.edu':'owner'}));
+  if(!props.getProperty('SHARED_SECRET'))props.setProperty('SHARED_SECRET',Utilities.getUuid().replace(/-/g,'')+Utilities.getUuid().replace(/-/g,''));
+  if(!props.getProperty('VANUATU_WRITE_ENABLED'))props.setProperty('VANUATU_WRITE_ENABLED','false');
+  if(!props.getProperty('VANUATU_ENRICHMENT_FILE_ID')){
+    var file=DriveApp.createFile('Vanuatu Admin enrichment.json',JSON.stringify({version:1,scholars:{}}),MimeType.PLAIN_TEXT);
+    props.setProperty('VANUATU_ENRICHMENT_FILE_ID',file.getId());
+  }
+  Logger.log('Setup saved. Writes remain at their existing setting. Credentials are in Script Properties, not this log.');
+  Logger.log('Enrichment file ID: '+props.getProperty('VANUATU_ENRICHMENT_FILE_ID'));
 }

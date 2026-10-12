@@ -1,0 +1,17 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const props={SHARED_SECRET:'a'.repeat(64),VANUATU_WRITE_ENABLED:'true',VANUATU_ENRICHMENT_FILE_ID:'private-sidecar'};
+let doc={scholars:{'VAN-S0002':{summary:'Keep this other scholar',approved:true}}},writes=0;
+const c={console,Date,Number,Session:{getActiveUser:()=>({getEmail:()=>''})},ContentService:{MimeType:{JSON:'json'},createTextOutput:text=>({setMimeType:()=>JSON.parse(text)})},PropertiesService:{getScriptProperties:()=>({getProperty:k=>props[k]||null})},Utilities:{base64Decode:s=>[...Buffer.from(s,'base64')],base64EncodeWebSafe:b=>Buffer.from(b).toString('base64url'),computeDigest:(_,s)=>crypto.createHash('sha256').update(s).digest(),DigestAlgorithm:{SHA_256:1},getUuid:()=>crypto.randomUUID()},LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){}})},DriveApp:{getFileById:()=>({getBlob:()=>({getDataAsString:()=>JSON.stringify(doc)}),setContent:s=>{doc=JSON.parse(s);writes++;}})},Sheets:{Spreadsheets:{batchUpdate(){}}}};
+vm.createContext(c);vm.runInContext(fs.readFileSync('apps-script/vanuatu-master-writeback.gs','utf8'),c);
+c.vanData_=()=>({records:[{value:{'Scholar ID':'VAN-S0001'}}],key:'Scholar ID'});c.vanAudit_=()=>({});
+const post=(method,payload,secret=props.SHARED_SECRET,clientTs=Date.now())=>c.doPost({postData:{contents:JSON.stringify({method,payload,secret,clientTs})}});
+const payload={scholarId:'VAN-S0001',expectedVersion:'',photo:'data:image/jpeg;base64,/9j/2Q==',summary:'Saved summary',sources:[{title:'University',url:'https://example.edu/profile'}],keywords:['Example'],reason:'Owner profile update',operationId:'test-operation-12345678'};
+assert.equal(post('saveVanuatuEnrichment',payload,'bad').ok,false);assert.equal(writes,0);
+assert.equal(post('saveVanuatuEnrichment',payload,props.SHARED_SECRET,1).ok,false);assert.equal(writes,0);
+assert.equal(post('setupVanuatuAdmin',{}).ok,false);assert.equal(c.vanHttpActor_,null);
+assert.equal(post('saveVanuatuEnrichment',payload).ok,true);assert.equal(doc.scholars['VAN-S0002'].summary,'Keep this other scholar');assert.equal(doc.scholars['VAN-S0001'].photo,payload.photo);assert.equal(c.vanHttpActor_,null);
+const saved=writes;assert.equal(post('saveVanuatuEnrichment',payload).ok,true);assert.equal(writes,saved);
+assert.equal(post('saveVanuatuEnrichment',{...payload,operationId:'test-operation-23456789'}).ok,false);assert.equal(writes,saved);
+props.VANUATU_WRITE_ENABLED='false';assert.equal(post('saveVanuatuEnrichment',payload).ok,false);assert.equal(writes,saved);
+assert.throws(()=>c.vanValidatePhoto_('data:image/svg+xml;base64,AAAA'),/Photo/);assert.throws(()=>c.vanValidatePhoto_('data:image/jpeg;base64,aGVsbG8='),/Invalid/);
+console.log('PASS Vanuatu HTTP authentication, expiration, route allowlist, owner-only enrichment, other-scholar preservation, replay, conflict, kill switch and JPEG validation.');

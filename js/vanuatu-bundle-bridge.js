@@ -27,7 +27,7 @@ async function load(pw){
 }
 function inherit(){try{if(w.parent!==w&&w.parent.location.origin===location.origin&&w.parent.VanuatuBundle?.current())use(w.parent.VanuatuBundle.current());}catch{}}
 function preview(){password='';return use(w.VANUATU_PREVIEW);}
-function rpc(name,payload){return new Promise((resolve,reject)=>{if(!w.google?.script?.run)return reject(Error('Open the Vanuatu Admin deployment to edit the Master file.'));w.google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(Error(e.message||'Vanuatu Admin request failed.')))[name](payload);});}
+function rpc(name,payload){return new Promise((resolve,reject)=>{if(!w.google?.script?.run){if(w.VanuatuAdminTransport)return w.VanuatuAdminTransport.call(name,payload).then(resolve,reject);return reject(Error('Configure the Vanuatu connection in Data source.'));}w.google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(Error(e.message||'Vanuatu Admin request failed.')))[name](payload);});}
 async function nativeState(){native=await rpc('getVanuatuAdminState');use({country:'Vanuatu',schemaVersion:1,generation:'native-admin',tables:native.tables,fields:Object.fromEntries(Object.entries(native.tables).map(([k,r])=>[k,[...new Set(r.flatMap(x=>Object.keys(x)))]])),enrichment:native.enrichment||{}});return native;}
 async function fetchJson(path){inherit();path=path.split('?')[0];if(path==='data/vanuatu-provinces.geojson'){const r=await fetch(path);if(!r.ok)throw Error('Vanuatu province boundaries unavailable.');const geo=await r.json();geo.features.forEach(f=>{f.properties.name=G.province(f.properties.shapeName);f.properties.confederacy=f.properties.name;f.properties.islandDivision=f.properties.name;});return geo;}
  if(!bundle)throw Error('Unlock the Vanuatu data first.');
@@ -56,6 +56,6 @@ async function fetchJson(path){inherit();path=path.split('?')[0];if(path==='data
  if(/\.json$/.test(path)&&/^data\/vanuatu-/.test(path)&&password){const r=await fetch(path+'.enc',{cache:'no-store'});if(r.ok)return decrypt(await r.arrayBuffer(),password);}
  throw Error('Vanuatu resource is not available: '+path);
 }
-w.VanuatuBundle={load,use,preview,clear:()=>{bundle=null;password='';native=null;},current:()=>bundle,isPreview:()=>!!bundle?.preview,rows,adapt,rpc,nativeState,native:()=>native,fetchJson};
+w.VanuatuBundle={disconnectAdmin:()=>{native=null;},load,use,preview,clear:()=>{bundle=null;password='';native=null;},current:()=>bundle,isPreview:()=>!!bundle?.preview,rows,adapt,rpc,nativeState,native:()=>native,fetchJson};
 w.VanuatuAdapter=w.VanuatuBundle;
 })(window);

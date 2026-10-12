@@ -588,7 +588,7 @@
     // Photo
     var photoPath = enr.photo || '';
     $('#pf-photo').value = photoPath;
-    setPhotoPreview(photoPath ? photoPath + '?t=' + Date.now() : null);
+    setPhotoPreview(photoPath ? (photoPath.startsWith('data:')?photoPath:photoPath + '?t=' + Date.now()) : null);
 
     // Insights JSON
     var insText = '';
@@ -1200,7 +1200,7 @@
         // Auto-fill path
         var sid = state.editingSid || '';
         if (sid) {
-          $('#pf-photo').value = 'img/scholars/' + sid + '.jpg';
+          $('#pf-photo').value = dataUrl;
         }
         var kb = Math.round((dataUrl.length * 0.75) / 1024);
         $('#pf-photo-hint').textContent = 'Resized to 400×400 JPEG (~' + kb + ' KB). Push on save.';
@@ -1530,7 +1530,7 @@
         const changed=Object.entries(changes).some(([k,v])=>JSON.stringify(v)!==JSON.stringify(old[k]??(Array.isArray(v)?[]:'')));
         if(changed)await window.VanuatuBundle.rpc('saveVanuatuEnrichment',{scholarId:sid,expectedVersion:old._version||'',...changes,reason:'Explicitly saved in Vanuatu owner Admin',operationId:crypto.randomUUID()});
         await window.VanuatuBundle.nativeState();await loadEverything();renderKpi();renderScholars();
-        if(!opts?.keepModalOpen)closeEditModal();toast('Saved to Vanuatu Master / enrichment. Public snapshot refresh is still required.','ok');
+        if(!opts?.keepModalOpen)closeEditModal();let message='Saved to Vanuatu Master / enrichment.';try{await window.VanuatuBundle.rpc('refreshVanuatuSnapshot');message+=' Dashboard refresh queued.';}catch(e){message+=' Dashboard refresh failed: '+e.message;}toast(message,'ok',9000);
       } catch(e){toast('Master edits may already be saved; supplementary save: '+e.message,'error');}
       return;
     }

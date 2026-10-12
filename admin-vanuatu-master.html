@@ -407,7 +407,7 @@
     <div class="tab-panel" id="tab-data-source">
       <div class="card">
         <h2>GitHub authentication</h2>
-        <p class="meta">Vanuatu edits use the authenticated owner deployment. GitHub token uploads are disabled in this interface.</p>
+        <p class="meta">Profile photos and summaries save through the Vanuatu owner service. The GitHub Actions token stays in Apps Script.</p>
         <div class="flex-row">
           <input type="password" id="gh-token" placeholder="ghp_… or github_pat_…" style="flex:1; padding: 9px 12px; font: inherit; border: 1px solid var(--border); border-radius: 6px;" />
           <button class="btn btn-primary" id="save-gh-token">Save token</button>
@@ -415,20 +415,20 @@
           <span class="status-pill" id="gh-token-status" style="background: var(--cream); color: var(--muted);">unchecked</span>
         </div>
         <div class="hint" style="margin-top: 8px; color: var(--muted); font-size: 0.85rem;">
-          The Vanuatu owner deployment uses Google sign-in. No GitHub token is required here.
+          Configure the owner connection below. No GitHub token is required in this browser.
         </div>
       </div>
 
       <div class="card">
         <h2>Master write-back endpoint</h2>
-        <p class="meta">Master edits use Google sign-in and explicit owner permissions in the Vanuatu deployment. No browser shared secret is used. See <a href="docs/VANUATU-BUILD-STATUS.md">deployment instructions</a>.</p>
+        <p class="meta">Enter your Vanuatu Web app URL and owner secret, then Save endpoint and Test connection. The secret is kept for this browser session. Dashboard viewing passwords do not authorize edits.</p>
         <div class="form-row">
           <label for="writeback-endpoint">Endpoint URL</label>
           <input id="writeback-endpoint" type="url" placeholder="https://script.google.com/macros/s/AKfyc.../exec" style="width: 100%; max-width: 700px;">
         </div>
         <div class="form-row">
           <label for="writeback-secret">Shared secret</label>
-          <input id="writeback-secret" type="password" placeholder="paste the 64-char hex string from generateSecret()" style="width: 100%; max-width: 700px;" autocomplete="off">
+          <input id="writeback-secret" type="password" placeholder="paste SHARED_SECRET from Apps Script properties" style="width: 100%; max-width: 700px;" autocomplete="off">
         </div>
         <div class="flex-row" style="margin-top:10px">
           <button class="btn btn-primary" id="writeback-save">Save endpoint</button>
@@ -731,15 +731,15 @@
 
 <!-- scripts -->
 <script src="js/vanuatu-geography.js?v=7310d9f6" defer></script><script src="js/vanuatu-model.js?v=b8079a2c" defer></script><script src="js/vanuatu-config.js?v=dc4e4775" defer></script><script src="js/vanuatu-preview-data.js?v=ba76ab44" defer></script><script src="js/vanuatu-dashboard-model.js?v=0009ecec" defer></script>
-<script src="js/vanuatu-bundle-bridge.js?v=252d29c3" defer></script><script src="js/vanuatu-demo-gate.js?v=78647c42" defer></script>
+<script src="js/vanuatu-bundle-bridge.js?v=68757f8e" defer></script><script src="js/vanuatu-demo-gate.js?v=78647c42" defer></script>
 
 <script src="js/vanuatu-database-adapter.js?v=183ddef8" defer></script>
 <script src="js/vanuatu-admin-insights-migration.js?v=78050838" defer></script>
-<script src="js/vanuatu-admin-writeback-client.js?v=3043608c" defer></script>
+<script src="js/vanuatu-admin-writeback-client.js?v=7e3966e3" defer></script>
 <script src="js/vanuatu-change-log.js?v=abe77536" defer></script>
-<script src="js/admin-vanuatu-master.js?v=aa5cb83f" defer></script>
+<script src="js/admin-vanuatu-master.js?v=272ce90e" defer></script>
 
 <script src="js/vanuatu-countries.js?v=bdac3577" defer></script>
 
-<script src="js/vanuatu-admin-runtime.js?v=0862baef" defer></script></body>
+<script src="js/vanuatu-admin-runtime.js?v=29a5d661" defer></script></body>
 </html>
