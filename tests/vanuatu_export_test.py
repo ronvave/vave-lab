@@ -26,6 +26,29 @@ def fixture():
 
 
 class ExportTests(unittest.TestCase):
+    def test_dedicated_vanuatu_reader_only(self):
+        dedicated={'type':'service_account','client_email':'vanuatu-dashboard-reader@example-project.iam.gserviceaccount.com'}
+        with patch.dict(os.environ, {'VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON':json.dumps(dedicated)}, clear=True):
+            self.assertEqual(T.vanuatu_service_account_info(),dedicated)
+        with patch.dict(os.environ, {'GOOGLE_SERVICE_ACCOUNT_JSON':json.dumps(dedicated)}, clear=True):
+            with self.assertRaisesRegex(ValueError,'missing'):
+                T.vanuatu_service_account_info()
+        wrong={**dedicated,'client_email':'itaukei-dashboard-reader@example-project.iam.gserviceaccount.com'}
+        with patch.dict(os.environ, {'VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON':json.dumps(wrong)}, clear=True):
+            with self.assertRaisesRegex(ValueError,'dedicated'):
+                T.vanuatu_service_account_info()
+
+    def test_uploaded_photo_and_labelled_sources(self):
+        s=fixture()
+        s['Public Export Config'] += [['Admin enrichment','photo','Yes'],['Admin enrichment','sources','Yes']]
+        photo='data:image/jpeg;base64,/9j/2Q=='
+        enrichment={'scholars':{'VAN-S0001':{'approved':True,'photo':photo,'sources':[{'title':'University','url':'https://example.edu','private':'must not export'}]}}}
+        b=T.transform(s,enrichment)
+        self.assertEqual(b['enrichment']['VAN-S0001']['photo'],photo)
+        self.assertNotIn('private',b['enrichment']['VAN-S0001']['sources'][0])
+        self.assertEqual(T.approved_photo('data:image/svg+xml;base64,AAAA'),'')
+        self.assertEqual(T.approved_photo('data:image/jpeg;base64,aGVsbG8='),'')
+
     def test_minimal_exact_allowlist(self):
         b=T.transform(fixture());self.assertEqual(b['tables']['Scholars'],[{'Scholar ID':'VAN-S0001','Scholar Name':'Fictional Scholar'}]);self.assertEqual(b['tables']['Graduate Degrees'],[]);self.assertEqual(b['theses'],[{'Thesis / Dissertation Title':'Example thesis'}]);self.assertNotIn('PRIVATE',json.dumps(b))
     def test_prepared_null_rows_not_records(self):

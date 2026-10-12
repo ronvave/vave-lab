@@ -5,6 +5,8 @@ ancestry, coordinates, thesis publications or Master's-to-PhD pair relation.
 """
 from __future__ import annotations
 import argparse
+import base64
+import binascii
 import hashlib
 import json
 import os
@@ -14,6 +16,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlparse
 import vanuatu_master_file_config as C
+
+
+def approved_photo(value):
+    if not isinstance(value, str):
+        return ''
+    if value.startswith('https://') and not re.search(r'\s', value):
+        return value
+    prefix = 'data:image/jpeg;base64,'
+    if not value.startswith(prefix) or len(value) > 700000:
+        return ''
+    try:
+        image = base64.b64decode(value[len(prefix):], validate=True)
+    except (ValueError, binascii.Error):
+        return ''
+    return value if 4 <= len(image) <= 512000 and image.startswith(b'\xff\xd8') and image.endswith(b'\xff\xd9') else ''
 
 
 def yes(value):
@@ -164,8 +181,8 @@ def transform(source, enrichment=None):
             continue
         out = {}
         for field in allowed['Admin enrichment']:
-            if field=='photo' and str(r.get(field,'')).startswith('https://'):
-                out[field]=r[field]
+            if field=='photo' and approved_photo(r.get(field,'')):
+                out[field]=approved_photo(r[field])
             elif field=='summary':
                 out[field]=str(r.get(field,''))[:12000]
             elif field=='keywords' and isinstance(r.get(field),list):
@@ -175,7 +192,7 @@ def transform(source, enrichment=None):
             elif field in ('institutionUrl','departmentUrl') and str(r.get(field,'')).startswith('https://'):
                 out[field]=r[field]
             elif field=='sources' and isinstance(r.get(field),list):
-                out[field]=[u for u in r[field] if isinstance(u,str) and u.startswith(('http://','https://'))]
+                out[field]=[({'title':str(u.get('title',''))[:300],'url':u['url']} if isinstance(u,dict) else u) for u in r[field][:50] if (isinstance(u,str) and u.startswith(('http://','https://'))) or (isinstance(u,dict) and isinstance(u.get('url'),str) and u['url'].startswith(('http://','https://')) and len(str(u.get('title',''))) <= 300)]
         if out:
             public_enrichment[sid]=out
     content = {'country':'Vanuatu','schemaVersion':1,'fields':{t:sorted(allowed[t]) for t in allowed},'tables':tables,'theses':theses,'enrichment':public_enrichment,'notices':['Only individually approved fields are exported. Restricted views display unavailable, not zero.']}
@@ -184,10 +201,24 @@ def transform(source, enrichment=None):
     return content
 
 
+def vanuatu_service_account_info():
+    raw = os.environ.get('VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON', '')
+    if not raw:
+        raise ValueError('VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON is missing; configure the dedicated Vanuatu reader.')
+    try:
+        info = json.loads(raw)
+    except (TypeError, ValueError):
+        raise ValueError('VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON must contain a service account JSON key.') from None
+    email = str(info.get('client_email', '')) if isinstance(info, dict) else ''
+    if not isinstance(info, dict) or info.get('type') != 'service_account' or not re.fullmatch(r'vanuatu-dashboard-reader@[a-z0-9-]+\.iam\.gserviceaccount\.com', email):
+        raise ValueError('Vanuatu refresh requires the dedicated vanuatu-dashboard-reader service account.')
+    return info
+
+
 def fetch_live():
     from google.oauth2.service_account import Credentials
     from googleapiclient.discovery import build
-    info = json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_JSON'])
+    info = vanuatu_service_account_info()
     credentials = Credentials.from_service_account_info(info, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
     api = build('sheets','v4',credentials=credentials,cache_discovery=False)
     metadata = api.spreadsheets().get(spreadsheetId=C.SPREADSHEET_ID,fields='properties(title),sheets(properties(title,gridProperties))').execute()
@@ -217,7 +248,7 @@ def fetch_enrichment():
         return {}
     from google.oauth2.service_account import Credentials
     from googleapiclient.discovery import build
-    info=json.loads(os.environ['GOOGLE_SERVICE_ACCOUNT_JSON'])
+    info=vanuatu_service_account_info()
     credentials=Credentials.from_service_account_info(info,scopes=['https://www.googleapis.com/auth/drive.readonly'])
     drive=build('drive','v3',credentials=credentials,cache_discovery=False)
     data=drive.files().get_media(fileId=file_id).execute()

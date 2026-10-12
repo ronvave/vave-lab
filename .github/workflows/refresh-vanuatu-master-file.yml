@@ -36,7 +36,7 @@ jobs:
           node tests/vanuatu-backend.test.cjs
       - name: Read, validate and sanitize Vanuatu source
         env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON }}
           VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
           VAVELAB_VANUATU_COLLABORATOR_PASSCODE: ${{ secrets.VAVELAB_VANUATU_COLLABORATOR_PASSCODE }}
           VANUATU_ENRICHMENT_FILE_ID: ${{ secrets.VANUATU_ENRICHMENT_FILE_ID }}
