@@ -1,6 +1,10 @@
 name: Refresh Vanuatu Master File snapshot
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/refresh-vanuatu-master-file.yml'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -8,8 +12,8 @@ on:
         type: boolean
         default: true
 
-# Deliberately manual until Vanuatu secrets, source ACL and export policy are
-# activated by the owner. Do not copy another country's passcode or credentials.
+# Manual refreshes and changes to this workflow refresh the approved Vanuatu source.
+# Existing Vanuatu credentials and field approval rules remain authoritative.
 permissions:
   contents: write
 concurrency:
@@ -40,7 +44,7 @@ jobs:
           VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
           VAVELAB_VANUATU_COLLABORATOR_PASSCODE: ${{ secrets.VAVELAB_VANUATU_COLLABORATOR_PASSCODE }}
           VANUATU_ENRICHMENT_FILE_ID: ${{ secrets.VANUATU_ENRICHMENT_FILE_ID }}
-          VAN_DRY_RUN: ${{ inputs.dry_run }}
+          VAN_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || false }}
         run: |
           set -euo pipefail
           if [ "$VAN_DRY_RUN" = "true" ]; then
@@ -49,7 +53,7 @@ jobs:
             python3 scripts/vanuatu_master_file_transformer.py --out-dir=data
           fi
       - name: Commit only the validated Vanuatu snapshot
-        if: inputs.dry_run == false
+        if: github.event_name == 'push' || inputs.dry_run == false
         run: |
           set -euo pipefail
           git config user.name 'Vave Lab Vanuatu snapshot'
@@ -62,3 +66,5 @@ jobs:
           git commit -m 'data: refresh validated Vanuatu Master snapshot'
           git pull --rebase origin main
           git push origin HEAD:main
+
+# Refresh after ResearchSpace publication import, 2026-10-12.
