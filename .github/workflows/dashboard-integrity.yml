@@ -23,6 +23,11 @@ jobs:
       - name: Check completed-degree discipline aggregation
         run: python3 -m unittest discover -s scripts/tests -p 'test*short_disciplines.py'
 
+      - name: Check Pacific publication counting rules
+        run: |
+          node tests/itaukei-publication-types.test.cjs
+          node tests/tongan-publication-types.test.cjs
+
       - name: Check iTaukei Admin card data and mobility joins
         run: node tests/itaukei-card-mobility.test.cjs
 
