@@ -1,0 +1,29 @@
+name: Apply NZ repository reconciliation
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/apply-nz-reconciliation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nz-reconciliation
+  cancel-in-progress: false
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install google-api-python-client google-auth cryptography
+      - name: Apply and verify Fiji source reconciliation
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+          RECONCILIATION_BUNDLE: data/reconciliation/fiji-nz-20261012.enc.b64
+        run: python3 scripts/apply_nz_reconciliation.py
