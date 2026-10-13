@@ -34,7 +34,7 @@ import argparse
 import json
 import os
 import subprocess
-from master_short_disciplines import build_short_disciplines
+from master_short_disciplines import build_fiji_short_disciplines
 import sys
 import time
 from datetime import datetime, timezone
@@ -719,7 +719,14 @@ def run(
     log(f"  → {len(researcher_authorship)} researcher authorship links")
 
     log("Fetching Graduate Degrees...")
-    grad_degrees_all = extract_grad_degrees(fetch_fn("Graduate Degrees"))
+    grad_degree_rows = fetch_fn("Graduate Degrees")
+    grad_degrees_all = extract_grad_degrees(grad_degree_rows)
+    # Broad discipline is needed only for the B4 source-formula recovery;
+    # keep raw fields out of the public degree export.
+    _, discipline_degrees = rows_to_dicts(
+        grad_degree_rows, SHEETS["Graduate Degrees"]["header_row"],
+        SHEETS["Graduate Degrees"]["first_data"]
+    )
     grad_degrees = [g for g in grad_degrees_all if g.get("Scholar ID") not in part_itaukei_ids]
     log(f"  → {len(grad_degrees)} degree episodes (pre-filter {len(grad_degrees_all)})")
 
@@ -810,8 +817,8 @@ def run(
     )
     # Mirror source set counting before display deduplication; preserve the
     # existing dashboard Part-iTaukei exclusions on every surface.
-    aggregates["shortDisciplines"] = build_short_disciplines(
-        [g for g in grad_degrees_all if g.get("Scholar ID") not in part_itaukei_ids], scholars
+    aggregates["shortDisciplines"] = build_fiji_short_disciplines(
+        [g for g in discipline_degrees if g.get("Scholar ID") not in part_itaukei_ids], scholars
     )
     t = aggregates["totals"]
     log(f"  → scholars={t['scholars']} pubs={t['publications_total']} "

@@ -1,5 +1,39 @@
 # Master Build and Change-Control Record
 
+## 2026-10-12 — Fiji B4 blocked discipline formula recovery
+
+Rendered the owner-provided live demo after JavaScript/data hydration. B4 is
+the Graduate research disciplines table (publication geography was moved to
+B5 on 2026-09-22). It showed only #REF! and Economics, counting 2 of 372
+completed-degree scholars. Native CellData identifies the source failure:
+Graduate Degrees!F5's ARRAYFORMULA cannot expand because F592 contains a
+literal Economics value in the newly reconciled DEG-NZR-20261012-0226 row.
+The exporter accepted the formula error as a discipline and excluded the
+blank spill results. No layout/CSS change could restore those records.
+
+Fiji's B4 exporter now preserves recorded canonical categories and recovers
+missing/error/noncanonical entries from Field / Discipline and Broad discipline,
+with the exact classification order of the existing F5 formula. Unknowns remain
+blank. Raw columns are used only for this summary, never added to the public
+degree allowlist. Counting still uses distinct Scholar IDs before degree display
+deduplication and retains the existing Part-iTaukei exclusions. Other-country
+classification is unchanged. The source worksheet and every recorded degree,
+publication and geotag are untouched. Only shortDisciplines was replaced inside
+the encrypted aggregates payload; every other decrypted aggregate property was
+compared and remains identical. The UI caption describes this recovery and its
+unclassified exclusions; refreshed its script cache hash.
+
+Current source reconciliation: eight categories; 369 classified of 372 completed
+degree scholars, 195 male / 174 female, 342 completed Master's of 346, 134
+completed PhD. Counts are computed, not UI constants. Browser-tested both B4
+views at desktop width and B5 region (Asia), country (Fiji), authorship (iTaukei
+led), fullscreen, reset and B4 independence. Python source-rule/spill regression,
+Fiji B4 DOM tests, dashboard integrity, both publication eligibility suites and
+both card/mobility preservation suites pass. Fiji preservation: 67 photos,
+83 saved summaries and 152 complete mobility rows / 80 universities. Corrected
+the work-country test's CRLF extraction on Windows; no production work-country
+code changed. Deployment and live verification follow this release.
+
 ## 2026-10-03 — Vanuatu full Tonga-template correction
 
 Replaced the compact Vanuatu dashboard and Admin with the full Tongan panel

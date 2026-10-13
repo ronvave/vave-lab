@@ -2,7 +2,7 @@
 const fs = require('node:fs');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
-const source = fs.readFileSync('js/itaukei-database-master.js', 'utf8');
+const source = fs.readFileSync('js/itaukei-database-master.js', 'utf8').replace(/\r\n/g, '\n');
 const helpers = source.slice(source.indexOf('  const WORK_COUNTRY_RULES = ['), source.indexOf('  function buildConfProvTree()'));
 const filterStart = source.indexOf('    if (state.scholarWorkCountry) {', source.indexOf('// Share the menu'));
 const filterCode = source.slice(filterStart, source.indexOf('\n\n    // Recompute', filterStart));
