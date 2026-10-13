@@ -65,13 +65,13 @@ HEADLINE_PUBLICATION_TYPES = [
     "PhD Thesis",
     "Book Chapter",
     "Book",
+    "Report",
 ]
 
 # Full publication-type universe — anything not in HEADLINE_PUBLICATION_TYPES
 # is excluded from the "publication count" totals but may still be shown in
 # panels that opt-in (like the full type breakdown table).
 OTHER_PUBLICATION_TYPES_SEEN = [
-    "Report",
     "Conference paper",
     "Unpublished report",
     "Other",
