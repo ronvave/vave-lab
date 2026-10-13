@@ -1,4 +1,4 @@
-name: Apply NZ repository reconciliation
+name: Verify NZ repository reconciliation
 on:
   push:
     branches: [main]
@@ -21,9 +21,10 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install google-api-python-client google-auth cryptography
-      - name: Apply and verify Fiji source reconciliation
+      - name: Verify completed Fiji source reconciliation
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+          RECONCILIATION_VERIFY_ONLY: 'true'
           RECONCILIATION_BUNDLE: data/reconciliation/fiji-nz-20261012.enc.b64
         run: python3 scripts/apply_nz_reconciliation.py
