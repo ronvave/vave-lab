@@ -675,16 +675,21 @@
   async function loadPositionsForModal (sid) {
     var container = $('#positions-container');
     var status = $('#positions-status');
+    var generation = editLoadGeneration;
+    container.replaceChildren();
+    status.textContent = 'Loading…';
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
       status.textContent = 'Write-back endpoint not configured — Positions edit disabled.';
       return;
     }
     try {
       var res = await adminWriteback.readRows('Positions', sid);
+      if (generation !== editLoadGeneration || state.editingSid !== sid) return;
       if (res.status !== 'ok') { status.textContent = 'Failed to load Positions: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
       state.positionRows = res.rows || [];
       renderPositionsRows(sid, state.positionRows, container);
     } catch (e) {
+      if (generation !== editLoadGeneration || state.editingSid !== sid) return;
       status.textContent = 'Failed to load Positions: ' + esc(e.message || e);
     }
   }
@@ -729,16 +734,21 @@
   async function loadGradDegreesForModal (sid) {
     var container = $('#graddegrees-container');
     var status = $('#graddegrees-status');
+    var generation = editLoadGeneration;
+    container.replaceChildren();
+    status.textContent = 'Loading…';
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
       status.textContent = 'Write-back endpoint not configured — Graduate Degrees edit disabled.';
       return;
     }
     try {
       var res = await adminWriteback.readRows('Graduate Degrees', sid);
+      if (generation !== editLoadGeneration || state.editingSid !== sid) return;
       if (res.status !== 'ok') { status.textContent = 'Failed to load Graduate Degrees: ' + esc(res.status + ': ' + (res.reason || res.error || '')); return; }
       state.gradDegreeRows = res.rows || [];
       renderGradDegreesRows(sid, state.gradDegreeRows, container);
     } catch (e) {
+      if (generation !== editLoadGeneration || state.editingSid !== sid) return;
       status.textContent = 'Failed to load Graduate Degrees: ' + esc(e.message || e);
     }
   }
@@ -791,16 +801,21 @@
   // Collect all master-editable inputs (me-* on Scholars + row-inputs on
   // Positions/Graduate Degrees) into a changes[] batch. Compares live value
   // to the data-loaded snapshot; only changed fields are included.
+  // Compare against the value the browser actually displayed, while retaining
+  // the untouched Master cell as oldValue for the server's conflict check.
+  function masterInputChanged(el) {
+    var baseline = el.cloneNode(true);
+    baseline.value = el.getAttribute('data-loaded') || '';
+    return String(el.value || '').trim() !== String(baseline.value || '').trim();
+  }
+
   function collectMasterChanges (sid) {
     var out = [];
     // Scholars-tab me-* inputs.
     $$('#edit-modal [id^="me-"][data-ws][data-field]').forEach(function (el) {
       var loaded = el.getAttribute('data-loaded') || '';
       var current = (el.value == null ? '' : String(el.value));
-      // Trim edges for comparison to match server's normalizeForCompare_.
-      var loadedT = loaded.replace(/^\s+|\s+$/g, '');
-      var currentT = current.replace(/^\s+|\s+$/g, '');
-      if (loadedT === currentT) return;
+      if (!masterInputChanged(el)) return;
       out.push({
         worksheet: el.getAttribute('data-ws'),
         scholarId: sid,
@@ -813,9 +828,7 @@
     $$('#edit-modal .me-row-input[data-ws][data-field][data-row]').forEach(function (el) {
       var loaded = el.getAttribute('data-loaded') || '';
       var current = (el.value == null ? '' : String(el.value));
-      var loadedT = loaded.replace(/^\s+|\s+$/g, '');
-      var currentT = current.replace(/^\s+|\s+$/g, '');
-      if (loadedT === currentT) return;
+      if (!masterInputChanged(el)) return;
       out.push({
         worksheet: el.getAttribute('data-ws'),
         scholarId: sid,
@@ -1346,7 +1359,7 @@
     // bare-vs-URL both collapse to the same canonical string), and the value
     // sent to the Master is always the canonical URL.
     var orcidInput = document.getElementById('me-orcid');
-    if (orcidInput) {
+    if (orcidInput && masterInputChanged(orcidInput)) {
       var norm = normalizeAdminOrcidInput(orcidInput.value);
       if (!norm.ok) {
         toast(norm.error, 'error', 9000);
@@ -1365,7 +1378,7 @@
       return;
     }
     if (!window.adminWriteback || !adminWriteback.isConfigured()) {
-      toast('Master edits require the write-back endpoint (Data source tab).', 'error', 8000);
+      toast('Master fields changed: ' + masterChanges.map(function(c){ return c.field; }).join(', ') + '. Configure write-back in Data source & GitHub, or reopen this scholar and edit only insights/photo/Admin-owned fields.', 'error', 12000);
       return;
     }
     // Step 1: dry-run classify. Server compares loaded / currentMaster /
