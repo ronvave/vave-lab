@@ -64,7 +64,7 @@
     "Conference Paper":      'conferencePaper',
     "Unpublished report":    'preprint',
     "Unpublished":           'preprint',
-    "Book Review":           'journalArticle',
+    "Book Review":           'document',
     "Others":                'document',
     "Other":                 'document'
   };
@@ -1367,7 +1367,7 @@
     // Master-native `Publication Type` column, without needing the fully
     // wired item object.
     //
-    // Normalisation: the Master sheet uses "Master's Thesis" (with a
+    // Eligibility follows Ron's six-category rule (2026-10-03): journals, books, chapters, Masters, PhDs and reports.\n    // Normalisation: the Master sheet uses "Master's Thesis" (with a
     // curly or straight apostrophe) and "Other Thesis", not "Masters
     // Thesis" or "Thesis (Masters)". Earlier versions of this function
     // only recognised the apostrophe-less spelling and every Master's
@@ -1394,7 +1394,7 @@
     if (t === 'preprint' ||
         t === 'unpublished' || t === 'unpublished report')          return 'preprint';
     if (t === 'conference paper')                                   return 'conferencePaper';
-    if (t === 'book review')                                        return 'journalArticle';
+    if (t === 'book review')                                        return 'document';
     return 'document';
   }
 
@@ -1420,7 +1420,9 @@
     (master.authorship || []).forEach(function (row) {
       var sid = row['Scholar ID'];
       var pid = row['Publication ID / BibTeX Key'];
-      if (!sid || !pid) return;
+      if (!sid || !pid || !pubsById[pid]) return;
+      var countedType = _visualPubType(pubsById[pid]);
+      if (['journalArticle', 'book', 'bookSection', 'thesisMasters', 'thesisPhd', 'report'].indexOf(countedType) === -1) return;
       var bucket = idx[sid];
       if (!bucket) {
         bucket = idx[sid] = {
@@ -1431,7 +1433,7 @@
       }
       bucket.totalSet.add(pid);
       var isFirst = row['Is First Author?'] === true ||
-                    String(row['Is First Author?']).toLowerCase() === 'true' ||
+                    /^(true|yes)$/i.test(String(row['Is First Author?'])) ||
                     row._is_lead === true ||
                     Number(row['Author Position'] || 0) === 1;
       if (isFirst) bucket.firstSet.add(pid);
@@ -1445,26 +1447,9 @@
     return idx;
   }
 
-  // Compute per-scholar publication totals from Master Authorship (linked by
-  // Scholar ID) and Publications (for the Publication Type).
-  //
-  // options.excludePreprints (default false): when true, preprints are removed
-  //   from `total`, `firstAuthored`, and `types.preprint` (which becomes 0).
-  //   Used by the V2 dashboard, which globally excludes preprints from every
-  //   displayed metric (2026-08-24 Ron directive). The Master file itself is
-  //   untouched — the Publications and Authorship worksheets keep every
-  //   preprint row intact; this is a display/calculation subtraction only.
-  //   The admin panel and any tooling that wants raw counts leaves this
-  //   option unset (default false) and still sees preprints.
-  //
-  // options.excludeDocuments (default false): when true, items classified as
-  //   'document' (Master 'Publication Type' = 'Others' / 'Other' or any
-  //   unrecognised value that fell through TYPE_MAP) are removed from
-  //   `total`, `firstAuthored`, and `types.document` (which becomes 0).
-  //   Used by the V2 dashboard (2026-08-24 Ron directive): documents lack
-  //   enough metadata to be credibly counted as a publication. When a
-  //   Master row is later reclassified to a known Publication Type, it
-  //   automatically re-enters the count. Master data is untouched.
+  // Canonical, deduplicated six-category totals for dashboard and shared profiles.
+  // Legacy exclusion options remain accepted for API compatibility; ineligible
+  // types are excluded when building the index, so every caller uses one scope.
   function computePublicationTotals(master, scholarId, options) {
     var opts = options || {};
     var excludePreprints = opts.excludePreprints === true;
