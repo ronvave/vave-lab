@@ -32,10 +32,12 @@ def main():
             chunks.append(current); current=[]; size=0
         current.append(request); size+=length
     if current: chunks.append(current)
+    verify_only=os.environ.get("RECONCILIATION_VERIFY_ONLY","").lower()=="true"
+    if verify_only: chunks=[]
     for index,chunk in enumerate(chunks,1):
         api.batchUpdate(spreadsheetId=sid,body={"requests":chunk}).execute(num_retries=5)
         print(f"Applied batch {index}/{len(chunks)} ({len(chunk)} requests).",flush=True)
-    if doc.get("dashboard"):
+    if doc.get("dashboard") and not verify_only:
         d=doc["dashboard"]; values=read("Dashboard!A49:I62")
         requests=[]
         if not any(r and r[0]=="Report" for r in values):
