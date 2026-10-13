@@ -47,6 +47,11 @@ jobs:
           PUSH_BASE: ${{ github.event_name == 'push' && github.event.before || '' }}
         run: python3 scripts/validate_dashboard_integrity.py --revision HEAD --base "$PUSH_BASE"
 
+      - name: Check Pacific publication counting rules
+        run: |
+          node tests/itaukei-publication-types.test.cjs
+          node tests/tongan-publication-types.test.cjs
+
       - name: Check iTaukei Admin card data and mobility joins
         run: node tests/itaukei-card-mobility.test.cjs
 
