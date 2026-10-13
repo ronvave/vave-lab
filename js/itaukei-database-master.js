@@ -437,10 +437,7 @@
     // item filter.
     if (snap && Array.isArray(snap.items)) {
       const beforeCount = snap.items.length;
-      snap.items = snap.items.filter(it => it
-        && it.itemType !== 'conferencePaper'
-        && it.itemType !== 'preprint'
-        && it.itemType !== 'document');
+      snap.items = snap.items.filter(it => it && TYPE_ORDER.indexOf(visualType(it)) !== -1);
       state.hiddenConferencePapers = beforeCount - snap.items.length;
 
       // Client-side year backfill. The Python snapshot builder used to reject
