@@ -1,5 +1,5 @@
 """Completed-degree discipline counts for the confirmed Tonga Master cohort."""
-from master_short_disciplines import build_short_disciplines
+from master_short_disciplines import build_short_disciplines, fiji_short_discipline
 import re
 
 
@@ -22,7 +22,16 @@ def build_tongan_short_disciplines(degrees, scholars):
             if sid:
                 orphans.add(sid)
             continue
-        eligible.append({**degree, 'Scholar ID': sid, 'Degree Stage': stage})
+        eligible.append({
+            **degree,
+            'Scholar ID': sid,
+            'Degree Stage': stage,
+            # B4 must not depend on the Sheet's Short Discipline formula
+            # being intact. Mirror Fiji's proven fallback classifier:
+            # preserve canonical values, otherwise derive from
+            # Field / Discipline + Broad discipline.
+            'Short Discipline': fiji_short_discipline(degree),
+        })
     model = build_short_disciplines(eligible, list(roster.values()))
     model['excludedOrphanScholars'] = len(orphans)
     model['unclassifiedScholars'] = model['allCompleted'] - model['overall']['total']
