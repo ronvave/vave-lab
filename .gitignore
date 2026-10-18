@@ -137,3 +137,4 @@ data/samoa-revoked-demos.json
 
 # Samoa deploy-time secret notes must NEVER be committed
 SECRETS-NOT-COMMITTED.md
+data/regional-scholars.json

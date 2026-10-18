@@ -1,0 +1,650 @@
+/* Regional Pacific Scholars Dashboard (pacific-scholars.html)
+ * Authored for Vave Lab, 2026.
+ *
+ * Data flow: data/regional-scholars.json.enc (IVAV v1: magic|salt16|iv12|AES-GCM)
+ * is fetched, decrypted locally with a PBKDF2-SHA256 (200k) key derived from
+ * the passcode, and rendered. The bundle holds aggregates plus a minimal
+ * scholar search index (name, country, degree levels, field, university).
+ * No spreadsheet IDs, tokens, contact details, geography, genealogy or notes.
+ */
+(function () {
+  'use strict';
+
+  const ENC_URL = 'data/regional-scholars.json.enc';
+  const BASEMAP_URL = 'data/regional-basemap.json';
+  const CREDITS_URL = 'img/regional/credits.json';
+  const SESSION_KEY = 'ps-regional-pass';
+
+  const COLORS = {
+    FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8',
+    KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a',
+  };
+  const SHORT = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Is.', VUT: 'Vanuatu', WSM: 'Samoa', FSM: 'FSM', KIR: 'Kiribati', MHL: 'Marshall Is.', TUV: 'Tuvalu', COK: 'Cook Is.', PLW: 'Palau' };
+  const CARD_SUB = { FJI: '(iTaukei)' };
+  const METRICS = {
+    scholars: { key: 'scholars', label: 'Scholars', unit: 'Indigenous scholars', def: 'Scholars = unique Indigenous scholar people on each country\u2019s included roster.' },
+    phd: { key: 'phd', label: 'PhDs', unit: 'completed PhDs / doctorates', def: 'PhDs = completed PhD and doctorate degree records held by those scholars.' },
+    masters: { key: 'masters', label: "Master's", unit: "completed Master's degrees", def: "Master's = completed Master's degree records held by those scholars." },
+  };
+  const DEST_ORDER = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia', 'Other', 'Unknown'];
+  const DEST_COLOR = { Pacific: '#3fd0d8', Australia: '#f3c45a', 'New Zealand': '#7ee08a', 'North America': '#f39a4a', Europe: '#c58cf5', Asia: '#ff6f91', Other: '#9fb3c8', Unknown: '#5e7690' };
+  const DISC_COLOR = ['#6fb04a', '#f0a42b', '#1f9ec9', '#e4553f', '#3b5fbf', '#8e5bc7', '#18a39a', '#c6c33a'];
+  const ICONS = {
+    person: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z"/></svg>',
+    people: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="8" r="3"/><path d="M1.5 20c0-3.6 2.9-6.5 6.5-6.5s6.5 2.9 6.5 6.5zM12 20c.3-2.4 1.5-4.4 3.4-5.6.2 0 .4-.1.6-.1 3.6 0 6.5 2.9 6.5 5.7z"/></svg>',
+    cap: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3L1 9l11 6 9-4.9V17h2V9z"/><path d="M5 13.2V17c2 2 12 2 14 0v-3.8L12 17z"/></svg>',
+    globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 5c3-1 6-1 9 1v14c-3-2-6-2-9-1z"/><path d="M21 5c-3-1-6-1-9 1v14c3-2 6-2 9-1z"/></svg>',
+    doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>',
+  };
+
+  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', mapView: null };
+  let D = null, BM = null, CREDITS = null, byCode = {};
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+  const fmt = n => (n == null || Number.isNaN(n) ? '—' : Number(n).toLocaleString('en-US'));
+  const pct = (a, b) => (b ? Math.round((a / b) * 1000) / 10 : 0);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const svgEl = (tag, attrs = {}) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+  const nameOf = code => (byCode[code] ? byCode[code].name : code);
+  const countries = () => (D ? D.countries : []);
+
+  // ================= DECRYPTION =================
+  async function deriveKey(pass, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(pass), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+  }
+  async function decryptBundle(pass) {
+    const res = await fetch(ENC_URL, { cache: 'no-store' });
+    if (!res.ok) throw new Error('missing');
+    const buf = new Uint8Array(await res.arrayBuffer());
+    if (String.fromCharCode(...buf.slice(0, 4)) !== 'IVAV') throw new Error('format');
+    const key = await deriveKey(pass, buf.slice(4, 20));
+    const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: buf.slice(20, 32) }, key, buf.slice(32));
+    return JSON.parse(new TextDecoder().decode(plain));
+  }
+  function initGate() {
+    const gate = $('#ps-gate'), form = $('#ps-gate-form'), err = $('#ps-gate-err'), input = $('#ps-pass');
+    const tryPass = async (pass, silent) => {
+      try {
+        const data = await decryptBundle(pass);
+        sessionStorage.setItem(SESSION_KEY, pass);
+        gate.hidden = true;
+        document.body.style.overflow = '';
+        await boot(data);
+        return true;
+      } catch (e) {
+        if (!silent) err.textContent = e.message === 'missing' ? 'The encrypted regional data file is not available yet.' : 'That passcode did not unlock the data. Please try again.';
+        return false;
+      }
+    };
+    form.addEventListener('submit', async ev => {
+      ev.preventDefault();
+      err.textContent = 'Decrypting…';
+      if (await tryPass(input.value, false)) input.value = '';
+    });
+    document.body.style.overflow = 'hidden';
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved) tryPass(saved, true).then(ok => { if (!ok) { sessionStorage.removeItem(SESSION_KEY); input.focus(); } });
+    else input.focus();
+  }
+
+  // ================= BOOT =================
+  async function boot(data) {
+    D = data;
+    byCode = Object.fromEntries(D.countries.map(c => [c.code, c]));
+    const [bm, cr] = await Promise.all([
+      fetch(BASEMAP_URL).then(r => r.json()).catch(() => null),
+      fetch(CREDITS_URL).then(r => r.json()).catch(() => null),
+    ]);
+    BM = bm; CREDITS = cr;
+    readUrl();
+    renderFresh();
+    renderKpis();
+    setupMetric();
+    setupMap();
+    setupBars();
+    setupDisc();
+    setupDest();
+    setupFind();
+    setupDialogs();
+    renderCredits();
+    renderAll(true);
+  }
+
+  function readUrl() {
+    const p = new URLSearchParams(location.search);
+    if (METRICS[p.get('metric')]) state.metric = p.get('metric');
+    if (byCode[p.get('country')]) state.sel = p.get('country');
+  }
+  function writeUrl() {
+    const p = new URLSearchParams(location.search);
+    state.metric === 'scholars' ? p.delete('metric') : p.set('metric', state.metric);
+    state.sel ? p.set('country', state.sel) : p.delete('country');
+    const qs = p.toString();
+    history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
+  }
+
+  function renderFresh() {
+    const g = new Date(D.generated);
+    const latest = D.sources.filter(s => s.modified).map(s => new Date(s.modified)).sort((a, b) => b - a)[0];
+    const opts = { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' };
+    $('#ps-fresh').textContent = `Built ${g.toLocaleString(undefined, opts)} from ${D.sources.filter(s => s.file).length} country Master files` + (latest ? ` · latest Master edit ${latest.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}` : '');
+  }
+
+  function totals(list = countries()) {
+    return list.reduce((a, c) => { a.scholars += c.scholars; a.masters += c.masters; a.phd += c.phd; a.profDoc += c.profDoc; a.pubsIndexed += c.pubsIndexed; a.pubsIndigenous += c.pubsIndigenous; return a; }, { scholars: 0, masters: 0, phd: 0, profDoc: 0, pubsIndexed: 0, pubsIndigenous: 0 });
+  }
+
+  function renderKpis() {
+    const t = totals();
+    const connected = D.sources.filter(s => s.file).length;
+    const items = [
+      [ICONS.globe, fmt(connected), connected === D.sources.length ? 'Countries' : `of ${D.sources.length} countries connected`],
+      [ICONS.people, fmt(t.scholars), 'Indigenous scholars'],
+      [ICONS.cap, fmt(t.masters), "Completed Master's"],
+      [ICONS.cap, fmt(t.phd), 'Completed PhDs'],
+      [ICONS.doc, fmt(D.regional.uniqueIndigenousPubs), 'Indigenous-linked publications'],
+    ];
+    $('#ps-kpis').innerHTML = items.map(([i, v, l]) => `<div class="ps-kpi">${i}<div><dt class="ps-sr">${esc(l)}</dt><dd style="margin:0"><div class="ps-kpi__v">${v}</div><div class="ps-kpi__l">${esc(l)}</div></dd></div></div>`).join('');
+  }
+
+  // ================= METRIC TOGGLE =================
+  function setupMetric() {
+    const btns = $$('#ps-metric button');
+    const set = m => { state.metric = m; btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
+    btns.forEach((b, i) => {
+      b.addEventListener('click', () => set(b.dataset.metric));
+      b.addEventListener('keydown', e => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+        e.preventDefault();
+        const n = e.key === 'Home' ? 0 : e.key === 'End' ? btns.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length;
+        btns[n].focus(); set(btns[n].dataset.metric);
+      });
+    });
+    btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === state.metric)); b.tabIndex = b.dataset.metric === state.metric ? 0 : -1; });
+    $('#ps-chip-clear').addEventListener('click', () => select(null));
+  }
+
+  function select(code) {
+    state.sel = state.sel === code ? null : code;
+    if (state.sel && D.disciplineCountries.includes(state.sel)) state.disc = state.sel;
+    state.destHome = state.sel || '';
+    writeUrl();
+    renderAll();
+  }
+
+  function sorted() {
+    const k = METRICS[state.metric].key;
+    return countries().slice().sort((a, b) => (b[k] ?? -1) - (a[k] ?? -1) || a.name.localeCompare(b.name));
+  }
+
+  function renderAll(first) {
+    const m = METRICS[state.metric];
+    $('#ps-metric-def').textContent = m.def;
+    const chip = $('#ps-chip');
+    chip.classList.toggle('is-on', !!state.sel);
+    $('#ps-chip-text').textContent = state.sel ? `Filtered to ${nameOf(state.sel)}` : '';
+    renderStrip(first);
+    renderMap();
+    renderBars();
+    renderDegrees();
+    renderOutputs();
+    renderDisc();
+    renderGender();
+    renderDest();
+  }
+
+  // ================= COUNTRY STRIP =================
+  function renderStrip(first) {
+    const ol = $('#ps-strip');
+    const m = METRICS[state.metric];
+    const prev = new Map($$('.ps-card', ol).map(el => [el.dataset.code, el.getBoundingClientRect()]));
+    const list = sorted();
+    ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
+    const html = list.map((c, i) => {
+      const v = c[m.key];
+      const sub = state.metric === 'scholars' ? `${fmt(c.masters)} M | ${fmt(c.phd)} PhD` : `${fmt(c.scholars)} scholars`;
+      const icon = state.metric === 'scholars' ? ICONS.people : ICONS.cap;
+      const btn = c.dashboard
+        ? `<a class="ps-card__btn" href="${esc(c.dashboard)}" aria-label="View ${esc(c.name)} dashboard (separate passcode)">View Dashboard →</a>`
+        : `<span class="ps-card__btn ps-card__btn--off">${c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No dashboard yet'}</span>`;
+      const valText = v == null ? 'Not available' : fmt(v);
+      return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
+        <div class="ps-card__name">${esc(c.code === 'FSM' ? 'FSM' : c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
+        <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="150" loading="${i < 6 ? 'eager' : 'lazy'}" />
+        <div class="ps-card__body">
+          <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
+            ${icon}<span><span class="ps-card__v">${valText}</span><br><span class="ps-card__l">${esc(m.label)}</span></span>
+          </button>
+          <div class="ps-card__sub">${sub}</div>
+          ${btn}
+        </div></li>`;
+    }).join('');
+    ol.innerHTML = html;
+    $$('.ps-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-card').dataset.code)));
+    // FLIP re-sort animation
+    if (!first && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      $$('.ps-card', ol).forEach(el => {
+        const p = prev.get(el.dataset.code); if (!p) return;
+        const n = el.getBoundingClientRect(); const dx = p.left - n.left;
+        if (!dx) return;
+        el.style.transition = 'none'; el.style.transform = `translateX(${dx}px)`;
+        requestAnimationFrame(() => { el.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; });
+      });
+    }
+  }
+
+  // ================= MAP =================
+  const LABEL_POS = { FJI: [0, 1], TON: [1, 0], SLB: [-1, 0], WSM: [1, 0], VUT: [-1, 0], TUV: [1, 0], KIR: [1, 0], PLW: [1, 0], COK: [0, -1], MHL: [1, 0], FSM: [0, -1] };
+  let mapSvg, mapG, mk = {};
+  function setupMap() {
+    const host = $('#ps-map');
+    if (!BM) { host.insertAdjacentHTML('beforeend', '<div class="ps-empty" style="margin:20px">Basemap could not be loaded. Use the table view.</div>'); return; }
+    const P = BM.pacific;
+    mapSvg = svgEl('svg', { viewBox: `0.0 0.0 ${P.w.toFixed(1)} ${P.h.toFixed(1)}`, role: 'group', 'aria-label': 'Map of Pacific countries with proportional markers' });
+    mapG = svgEl('g');
+    mapG.appendChild(svgEl('path', { d: P.grat, class: 'ps-grat' }));
+    P.shapes.forEach(s => { const p = svgEl('path', { d: s.d, class: 'ps-land' + (s.f ? ' ps-land--focus' : '') }); p.appendChild(svgEl('title')).textContent = s.n; mapG.appendChild(p); });
+    P.labels.forEach(([n, [x, y]]) => { const t = svgEl('text', { x, y, class: 'ps-landlabel', 'text-anchor': 'middle' }); t.textContent = n; mapG.appendChild(t); });
+    const mg = svgEl('g');
+    countries().forEach(c => {
+      const pos = P.markers[c.code]; if (!pos) return;
+      const g = svgEl('g', { class: 'ps-mk', tabindex: '0', role: 'button', 'data-code': c.code });
+      const glow = svgEl('circle', { cx: pos[0], cy: pos[1], r: 0, class: 'ps-mk__glow', fill: COLORS[c.code] });
+      const dot = svgEl('circle', { cx: pos[0], cy: pos[1], r: 0, class: 'ps-mk__dot', fill: COLORS[c.code], 'fill-opacity': '.85' });
+      const label = svgEl('text', { fill: '#fff' });
+      g.append(glow, dot, label);
+      g.addEventListener('click', () => select(c.code));
+      g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(c.code); } });
+      g.addEventListener('pointerenter', e => showTip(e, mapTip(c)));
+      g.addEventListener('pointermove', e => moveTip(e));
+      g.addEventListener('pointerleave', hideTip);
+      g.addEventListener('focus', () => { const r = dot.getBoundingClientRect(); showTip({ clientX: r.right, clientY: r.top }, mapTip(c)); });
+      g.addEventListener('blur', hideTip);
+      mk[c.code] = { g, dot, glow, label, pos };
+      mg.appendChild(g);
+    });
+    mapG.appendChild(mg);
+    mapSvg.appendChild(mapG);
+    host.prepend(mapSvg);
+    if ('ResizeObserver' in window) new ResizeObserver(() => renderMap()).observe(host);
+    state.mapView = [0, 0, P.w, P.h];
+    // zoom & pan
+    $$('[data-zoom]', host).forEach(b => b.addEventListener('click', () => zoom(b.dataset.zoom)));
+    let drag = null;
+    mapSvg.addEventListener('pointerdown', e => { if (e.target.closest('.ps-mk')) return; drag = { x: e.clientX, y: e.clientY, v: state.mapView.slice() }; mapSvg.setPointerCapture(e.pointerId); });
+    mapSvg.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const k = Math.max(drag.v[2] / mapSvg.clientWidth, drag.v[3] / mapSvg.clientHeight);
+      setView([drag.v[0] - (e.clientX - drag.x) * k, drag.v[1] - (e.clientY - drag.y) * k, drag.v[2], drag.v[3]]);
+    });
+    const end = () => { drag = null; };
+    mapSvg.addEventListener('pointerup', end); mapSvg.addEventListener('pointercancel', end);
+    mapSvg.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoom(e.deltaY < 0 ? 'in' : 'out'); }, { passive: false });
+    $('#ps-map-table-btn').addEventListener('click', e => {
+      const t = $('#ps-map-table'); t.hidden = !t.hidden; e.currentTarget.setAttribute('aria-expanded', String(!t.hidden)); e.currentTarget.textContent = t.hidden ? 'Table view' : 'Hide table';
+    });
+  }
+  function setView(v) {
+    const P = BM.pacific;
+    v[2] = Math.max(P.w / 6, Math.min(P.w, v[2])); v[3] = v[2] * P.h / P.w;
+    v[0] = Math.max(0, Math.min(P.w - v[2], v[0])); v[1] = Math.max(0, Math.min(P.h - v[3], v[1]));
+    state.mapView = v; mapSvg.setAttribute('viewBox', v.map(n => n.toFixed(1)).join(' '));
+    const k = P.w / v[2];
+    Object.values(mk).forEach(m => { m.label.style.fontSize = (15 / Math.sqrt(k)) + 'px'; });
+    renderMap();
+  }
+  function zoom(dir) {
+    const P = BM.pacific; const v = state.mapView;
+    if (dir === 'reset') return setView([0, 0, P.w, P.h]);
+    const f = dir === 'in' ? 0.7 : 1 / 0.7;
+    const cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2; const w = v[2] * f;
+    setView([cx - w / 2, cy - (w * P.h / P.w) / 2, w, w * P.h / P.w]);
+  }
+  function mapTip(c) {
+    const link = c.dashboard ? 'Country dashboard available (separate passcode)' : (c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No country dashboard yet');
+    return `<b>${esc(c.name)}</b>${fmt(c.scholars)} Indigenous scholars<br>${fmt(c.masters)} completed Master's · ${fmt(c.phd)} completed PhDs${c.profDoc ? ` (incl. ${c.profDoc} professional doctorate${c.profDoc > 1 ? 's' : ''})` : ''}<br>${fmt(c.pubsIndigenous)} Indigenous-linked publications<br><span style="color:#4a5d78">${link}. Click to filter.</span>`;
+  }
+  function niceSteps(max) {
+    if (!max) return [];
+    const e = Math.pow(10, Math.floor(Math.log10(max)));
+    const top = [5, 2, 1].map(f => f * e).find(v => v <= max) || e;
+    return [top, Math.max(1, Math.round(top / 4)), Math.max(1, Math.round(top / 20))].filter((v, i, a) => a.indexOf(v) === i);
+  }
+  function renderMap() {
+    const m = METRICS[state.metric];
+    const list = countries();
+    const max = Math.max(...list.map(c => c[m.key] || 0));
+    const k = BM ? BM.pacific.w / state.mapView[2] : 1;
+    const R = 62 / Math.sqrt(k);
+    const rad = v => (v > 0 ? Math.max(6 / Math.sqrt(k), Math.sqrt(v / max) * R) : 4 / Math.sqrt(k));
+    list.forEach(c => {
+      const o = mk[c.code]; if (!o) return;
+      const v = c[m.key]; const r = rad(v || 0);
+      o.dot.style.r = r; o.glow.style.r = r * 1.45;
+      o.dot.setAttribute('fill-opacity', v ? '.85' : '0');
+      const [lx, ly] = LABEL_POS[c.code] || [1, 0];
+      const off = r + 8 / Math.sqrt(k);
+      o.label.setAttribute('x', o.pos[0] + lx * off);
+      o.label.setAttribute('y', o.pos[1] + ly * off + (ly === 0 ? 8 / Math.sqrt(k) : ly > 0 ? 20 / Math.sqrt(k) : -6 / Math.sqrt(k)));
+      o.label.setAttribute('text-anchor', lx > 0 ? 'start' : lx < 0 ? 'end' : 'middle');
+      o.label.setAttribute('fill', COLORS[c.code]);
+      o.label.style.filter = 'brightness(1.35)';
+      o.label.textContent = `${SHORT[c.code]} ${fmt(v)}`;
+      o.g.setAttribute('aria-label', `${c.name}: ${fmt(v)} ${m.unit}. ${state.sel === c.code ? 'Selected.' : ''} Activate to ${state.sel === c.code ? 'clear' : 'filter'}.`);
+      o.g.setAttribute('aria-pressed', String(state.sel === c.code));
+      o.g.classList.toggle('is-selected', state.sel === c.code);
+      o.g.classList.toggle('is-dim', !!state.sel && state.sel !== c.code);
+    });
+    // legend
+    const steps = niceSteps(max);
+    const legend = $('#ps-map-legend');
+    if (legend) legend.innerHTML = `<h4>${esc(m.label === 'Scholars' ? 'Indigenous scholars (people)' : m.label === 'PhDs' ? 'Completed PhDs (degrees)' : "Completed Master's (degrees)")}</h4><ul>${steps.map(v => { const sc = mapSvg ? Math.min(mapSvg.clientWidth / state.mapView[2], mapSvg.clientHeight / state.mapView[3]) * Math.sqrt(BM.pacific.w / state.mapView[2]) : .6; const d = Math.max(6, Math.sqrt(v / max) * 62 * 2 * sc); return `<li><i style="width:${d.toFixed(1)}px;height:${d.toFixed(1)}px"></i>${fmt(v)}</li>`; }).join('')}</ul><div style="margin-top:4px;color:var(--ps-text-muted)">Colour = country</div>`;
+    $('#ps-map-sub').textContent = `Marker size shows ${m.unit} per country. Select a marker to filter.`;
+    // accessible table
+    const rows = sorted();
+    const t = $('#ps-map-table');
+    t.innerHTML = `<table class="ps-table"><caption>Countries sorted by ${esc(m.unit)} (descending)</caption><thead><tr><th scope="col">Country</th><th scope="col">Scholars (people)</th><th scope="col">Completed Master's</th><th scope="col">Completed PhDs</th><th scope="col">Dashboard</th></tr></thead><tbody>${rows.map(c => `<tr><th scope="row"><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.name)}</button></th><td>${fmt(c.scholars)}</td><td>${fmt(c.masters)}</td><td>${fmt(c.phd)}</td><td>${c.dashboard ? `<a href="${esc(c.dashboard)}">Open</a>` : (c.dashboardStatus === 'development' ? 'In development' : '—')}</td></tr>`).join('')}</tbody></table>`;
+    $$('[data-sel]', t).forEach(b => b.addEventListener('click', () => select(b.dataset.sel)));
+  }
+
+  // ================= TOOLTIP =================
+  const tip = () => $('#ps-tip');
+  function showTip(e, html) { const t = tip(); t.innerHTML = html; t.classList.add('is-on'); moveTip(e); }
+  function moveTip(e) { const t = tip(); const w = t.offsetWidth, h = t.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; t.style.left = x + 'px'; t.style.top = y + 'px'; }
+  function hideTip() { tip().classList.remove('is-on'); }
+
+  // ================= DEGREES PANEL =================
+  function renderDegrees() {
+    const scope = state.sel ? [byCode[state.sel]] : countries();
+    const t = totals(scope);
+    const all = t.masters + t.phd;
+    const C = 2 * Math.PI * 52;
+    const mFrac = all ? t.masters / all : 0;
+    const where = state.sel ? nameOf(state.sel) : `${scope.length} countries`;
+    $('#ps-deg-sub').textContent = `Completed degrees held by Indigenous scholars — ${where}.`;
+    $('#ps-deg').innerHTML = `
+      <div class="ps-ring" role="img" aria-label="${fmt(all)} completed degrees: ${fmt(t.masters)} Master's and ${fmt(t.phd)} PhDs">
+        <svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" fill="none" stroke="#0b2a4f" stroke-width="12"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#2aa7e6" stroke-width="12" stroke-dasharray="${(C * mFrac).toFixed(1)} ${C.toFixed(1)}"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="#123f86" stroke-width="12" stroke-dasharray="${(C * (1 - mFrac)).toFixed(1)} ${C.toFixed(1)}" stroke-dashoffset="${(-C * mFrac).toFixed(1)}"/></svg>
+        <div class="ps-ring__c"><div class="ps-ring__v">${fmt(all)}</div><div class="ps-ring__l">Completed postgraduate degrees</div></div>
+      </div>
+      <div class="ps-degcards">
+        <div class="ps-degcard">${ICONS.cap}<div><div class="ps-degcard__v">${fmt(t.masters)}</div><div class="ps-degcard__l">Completed Master's (${pct(t.masters, all)}%)</div></div></div>
+        <div class="ps-degcard ps-degcard--phd">${ICONS.cap}<div><div class="ps-degcard__v">${fmt(t.phd)}</div><div class="ps-degcard__l">Completed PhDs / doctorates (${pct(t.phd, all)}%)${t.profDoc ? `<br>incl. ${t.profDoc} professional doctorate${t.profDoc > 1 ? 's' : ''}` : ''}</div></div></div>
+      </div>
+      <div class="ps-callout"><h3>Growing Pacific Knowledge Leadership</h3>
+        <p>${fmt(t.scholars)} Indigenous scholars ${state.sel ? 'from ' + esc(nameOf(state.sel)) : 'across these databases'} hold ${fmt(all)} completed Master's and PhD degrees. Degrees are counted separately from people: a scholar with both counts once as a person and in both degree totals.</p></div>`;
+  }
+
+  // ================= OUTPUTS =================
+  function renderOutputs() {
+    const c = state.sel ? byCode[state.sel] : null;
+    const years = c ? c.pubYears : D.regional.indigenousPubYears;
+    const head = c ? c.pubsIndigenous : D.regional.uniqueIndigenousPubs;
+    const yrs = []; for (let y = 2015; y <= 2026; y++) yrs.push(y);
+    const vals = yrs.map(y => years[String(y)] || 0);
+    const totalYears = Object.values(years).reduce((a, b) => a + b, 0);
+    const future = Object.entries(years).filter(([y]) => +y > 2026).reduce((a, [, v]) => a + v, 0);
+    const before = Object.entries(years).filter(([y]) => +y < 2015).reduce((a, [, v]) => a + v, 0);
+    const noYear = head - totalYears;
+    const max = Math.max(1, ...vals);
+    const W = 340, H = 150, pad = 18, bw = (W - 10) / yrs.length;
+    const bars = yrs.map((y, i) => {
+      const h = (vals[i] / max) * (H - 32); const x = 5 + i * bw; const yy = H - pad - h;
+      const partial = y === 2026;
+      return `<g><rect class="ps-bar" x="${(x + 3).toFixed(1)}" y="${yy.toFixed(1)}" width="${(bw - 6).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${partial ? 'url(#ps-hatch)' : `hsl(${200 - i * 3} 70% ${58 - i * 3}%)`}"><title>${y}: ${fmt(vals[i])} Indigenous-linked publications${partial ? ' (partial year)' : ''}</title></rect>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${(yy - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0c2140">${vals[i]}</text>
+      <text x="${(x + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#4a5d78">${y}</text></g>`;
+    }).join('');
+    $('#ps-out').innerHTML = `
+      <div class="ps-out__head">${ICONS.book}<div><div class="ps-out__v">${fmt(head)}</div><div class="ps-out__l">Indigenous-linked publications${c ? ' — ' + esc(c.name) : ' (regionally deduplicated)'}</div></div></div>
+      <div class="ps-out__meta">
+        <div><b>${fmt(c ? c.pubsIndexed : D.regional.uniquePubs)}</b>${c ? 'country-indexed records (headline types)' : 'unique country-indexed records, deduplicated'}</div>
+        <div><b>${fmt(c ? c.pubsIndigenous : totals().pubsIndigenous)}</b>${c ? 'with an authorship link to an included scholar' : 'Indigenous-linked, summed before deduplication'}</div>
+      </div>
+      <div class="ps-chart" role="img" aria-label="Indigenous-linked publications per year, 2015 to 2026: ${yrs.map((y, i) => y + ' ' + vals[i]).join(', ')}">
+        <svg viewBox="0 0 ${W} ${H}"><defs><pattern id="ps-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#9cc3e6"/><line x1="0" y1="0" x2="0" y2="5" stroke="#1d4f8a" stroke-width="2"/></pattern></defs>${bars}</svg>
+      </div>
+      <p class="ps-note">2026 is a partial year (hatched). ${fmt(before)} dated before 2015 not shown${noYear > 0 ? `; ${fmt(noYear)} have no year` : ''}${future ? `; <strong>${fmt(future)} dated after 2026 flagged as probable data-entry errors</strong>` : ''}.</p>`;
+  }
+
+  // ================= BARS =================
+  function setupBars() {
+    $$('[data-barview]').forEach(b => b.addEventListener('click', () => { state.barView = b.dataset.barview; $$('[data-barview]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderBars(); }));
+    $('#ps-bars-csv').addEventListener('click', exportCsv);
+  }
+  function renderBars() {
+    const m = METRICS[state.metric];
+    const list = sorted();
+    const stack = state.barView === 'stack';
+    const vals = list.map(c => (stack ? c.masters + c.phd : c[m.key] || 0));
+    const max = Math.max(1, ...vals);
+    const nice = (() => { const e = Math.pow(10, Math.floor(Math.log10(max))); return [1, 2, 2.5, 5, 10].map(f => f * e).find(v => v >= max); })();
+    const W = 440, H = 240, L = 34, B = 40, T = 16, Rt = 4;
+    const cw = (W - L - Rt) / list.length, bw = Math.min(28, cw * 0.66);
+    const y = v => T + (H - T - B) * (1 - v / nice);
+    let g = '';
+    for (let i = 0; i <= 4; i++) { const v = nice * i / 4; g += `<line x1="${L}" x2="${W - Rt}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" stroke="#dfe6ef"/><text x="${L - 6}" y="${(y(v) + 3).toFixed(1)}" text-anchor="end" font-size="10" fill="#4a5d78">${fmt(Math.round(v))}</text>`; }
+    list.forEach((c, i) => {
+      const x = L + i * cw + (cw - bw) / 2;
+      const col = COLORS[c.code];
+      const dim = state.sel && state.sel !== c.code ? ' opacity=".35"' : '';
+      if (stack) {
+        const hm = (H - T - B) * c.masters / nice, hp = (H - T - B) * c.phd / nice;
+        g += `<g data-code="${c.code}" class="ps-bargrp" tabindex="0" role="button" aria-label="${esc(c.name)}: ${fmt(c.masters)} completed Master's, ${fmt(c.phd)} completed PhDs"${dim}>
+          <rect class="ps-bar" x="${x.toFixed(1)}" y="${(H - B - hm).toFixed(1)}" width="${bw.toFixed(1)}" height="${hm.toFixed(1)}" fill="${col}" fill-opacity=".5"/>
+          <rect class="ps-bar" x="${x.toFixed(1)}" y="${(H - B - hm - hp).toFixed(1)}" width="${bw.toFixed(1)}" height="${hp.toFixed(1)}" fill="${col}" rx="2"/>
+          <text x="${(x + bw / 2).toFixed(1)}" y="${(H - B - hm - hp - 4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0c2140">${fmt(c.masters + c.phd)}</text></g>`;
+      } else {
+        const v = c[m.key] || 0; const h = (H - T - B) * v / nice;
+        g += `<g data-code="${c.code}" class="ps-bargrp" tabindex="0" role="button" aria-label="${esc(c.name)}: ${fmt(v)} ${esc(m.unit)}"${dim}>
+          <rect class="ps-bar" x="${x.toFixed(1)}" y="${(H - B - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" fill="${col}" rx="3"/>
+          <text x="${(x + bw / 2).toFixed(1)}" y="${(H - B - h - 4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0c2140">${fmt(v)}</text></g>`;
+      }
+      const lab = SHORT[c.code].split(' ');
+      g += `<text x="${(L + i * cw + cw / 2).toFixed(1)}" y="${H - B + 13}" text-anchor="middle" font-size="9.5" fill="#0c2140">${esc(lab[0])}</text>${lab[1] ? `<text x="${(L + i * cw + cw / 2).toFixed(1)}" y="${H - B + 24}" text-anchor="middle" font-size="9.5" fill="#0c2140">${esc(lab[1])}</text>` : ''}`;
+    });
+    const legend = stack ? `<g transform="translate(${W - 190},2)"><rect width="10" height="10" fill="#2f86d6" fill-opacity=".5"/><text x="14" y="9" font-size="10" fill="#0c2140">Master's (lighter)</text><rect x="104" width="10" height="10" fill="#2f86d6"/><text x="118" y="9" font-size="10" fill="#0c2140">PhD (darker)</text></g>` : '';
+    const host = $('#ps-bars');
+    host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="false">${g}${legend}</svg>`;
+    host.setAttribute('aria-label', stack ? "Completed Master's and PhDs by country, stacked" : `${m.unit} by country, descending`);
+    $('#ps-bars-sub').textContent = stack ? "Secondary view: completed Master's and PhD degrees stacked. Country order still follows the selected metric." : `Showing ${m.unit}, sorted descending. ${m.key === 'scholars' ? 'People, not degrees.' : 'Degree records, not people.'}`;
+    $$('.ps-bargrp', host).forEach(el => {
+      const c = byCode[el.dataset.code];
+      el.style.cursor = 'pointer';
+      el.addEventListener('click', () => select(c.code));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(c.code); } });
+      el.addEventListener('pointerenter', e => showTip(e, mapTip(c)));
+      el.addEventListener('pointermove', moveTip);
+      el.addEventListener('pointerleave', hideTip);
+    });
+  }
+  function exportCsv() {
+    const rows = [['Country', 'Scholars (unique people)', "Completed Master's", 'Completed PhDs/doctorates', 'of which professional doctorates', 'Country-indexed publications', 'Indigenous-linked publications', 'Master file last modified', 'Bundle generated']];
+    sorted().forEach(c => { const s = D.sources.find(x => x.code === c.code) || {}; rows.push([c.name, c.scholars, c.masters, c.phd, c.profDoc, c.pubsIndexed, c.pubsIndigenous, s.modified || '', D.generated]); });
+    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = `regional-graduate-degrees-${state.metric}.csv`; document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  // ================= DISCIPLINES =================
+  function setupDisc() {
+    $$('[data-disc]').forEach(b => b.addEventListener('click', () => { state.disc = b.dataset.disc; renderDisc(); }));
+    $('#ps-disc-level').addEventListener('change', e => { state.discLevel = e.target.value; renderDisc(); });
+  }
+  function renderDisc() {
+    $$('[data-disc]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.disc === state.disc)));
+    const codes = state.disc === 'ALL' ? D.disciplineCountries : [state.disc];
+    const cats = D.disciplineCategories.concat(['Unknown / unmapped']);
+    const counts = Object.fromEntries(cats.map(k => [k, 0]));
+    codes.forEach(code => { const d = byCode[code] && byCode[code].disciplines; if (!d) return; ['M', 'P'].forEach(l => { if (state.discLevel !== 'all' && state.discLevel !== l) return; for (const k in d[l] || {}) counts[k] = (counts[k] || 0) + d[l][k]; }); });
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const order = D.disciplineCategories.slice().sort((a, b) => counts[b] - counts[a]);
+    const colorOf = k => DISC_COLOR[D.disciplineCategories.indexOf(k)] || '#b9c6d4';
+    let a0 = -Math.PI / 2; const R = 60, r = 36, cx = 75, cy = 75;
+    const arcs = order.concat(['Unknown / unmapped']).filter(k => counts[k] > 0).map(k => {
+      const a1 = a0 + 2 * Math.PI * counts[k] / total; const large = a1 - a0 > Math.PI ? 1 : 0;
+      const p = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)} ${(cy + rad * Math.sin(a)).toFixed(2)}`;
+      const d = counts[k] === total ? `M ${p(R, 0)} A ${R} ${R} 0 1 1 ${p(R, Math.PI)} A ${R} ${R} 0 1 1 ${p(R, 0)} M ${p(r, 0)} A ${r} ${r} 0 1 0 ${p(r, Math.PI)} A ${r} ${r} 0 1 0 ${p(r, 0)}` : `M ${p(R, a0)} A ${R} ${R} 0 ${large} 1 ${p(R, a1)} L ${p(r, a1)} A ${r} ${r} 0 ${large} 0 ${p(r, a0)} Z`;
+      a0 = a1;
+      return `<path d="${d}" fill="${k.startsWith('Unknown') ? '#b9c6d4' : colorOf(k)}" stroke="#f6f8fb" stroke-width="1.5"><title>${esc(k)}: ${fmt(counts[k])} (${pct(counts[k], total)}%)</title></path>`;
+    }).join('');
+    const scopeLabel = state.disc === 'ALL' ? 'Fiji, Tonga & Vanuatu' : nameOf(state.disc);
+    const lvl = state.discLevel === 'M' ? "completed Master's" : state.discLevel === 'P' ? 'completed PhDs' : 'completed degrees';
+    $('#ps-disc').innerHTML = total ? `
+      <div class="ps-donut" role="img" aria-label="Fields of research for ${esc(scopeLabel)}: ${order.map(k => `${k} ${counts[k]}`).join(', ')}; unknown or unmapped ${counts['Unknown / unmapped']}">
+        <svg viewBox="0 0 150 150">${arcs}</svg>
+        <div class="ps-donut__c"><div class="ps-donut__v">${fmt(total)}</div><div class="ps-donut__l">${esc(lvl)}</div></div>
+      </div>
+      <ul class="ps-legend">${order.map(k => `<li><i style="background:${colorOf(k)}"></i><span>${esc(k)}</span><span class="n">${fmt(counts[k])}</span><span class="p">${pct(counts[k], total)}%</span></li>`).join('')}
+        <li class="is-unknown"><i style="background:#b9c6d4"></i><span>Unknown / unmapped</span><span class="n">${fmt(counts['Unknown / unmapped'])}</span><span class="p">${pct(counts['Unknown / unmapped'], total)}%</span></li></ul>`
+      : '<div class="ps-empty">No completed degrees with discipline data for this selection.</div>';
+    if (state.sel && !D.disciplineCountries.includes(state.sel)) $('#ps-disc').insertAdjacentHTML('afterbegin', `<div class="ps-empty" style="grid-column:1/-1;margin-bottom:8px">${esc(nameOf(state.sel))} is not included: discipline data are approved for Fiji, Tonga and Vanuatu only.</div>`);
+  }
+
+  // ================= GENDER =================
+  function figure(color, female) {
+    return female
+      ? `<svg viewBox="0 0 18 34" aria-hidden="true"><circle cx="9" cy="4" r="3.6" fill="${color}"/><path d="M9 8.5c-3 0-4 2-4.6 4.5L2.6 22h3.6l.4 11h4.8l.4-11h3.6L13.6 13C13 10.5 12 8.5 9 8.5z" fill="${color}"/></svg>`
+      : `<svg viewBox="0 0 18 34" aria-hidden="true"><circle cx="9" cy="4" r="3.6" fill="${color}"/><path d="M4 9h10c1.2 0 2 .8 2 2v10h-2.4v12H10.2V22H7.8v11H4.4V21H2V11c0-1.2.8-2 2-2z" fill="${color}"/></svg>`;
+  }
+  function renderGender() {
+    const scope = state.sel ? [byCode[state.sel]] : countries();
+    const sum = key => scope.reduce((a, c) => { a.female += c[key].female; a.male += c[key].male; a.unknown += c[key].unknown; return a; }, { female: 0, male: 0, unknown: 0 });
+    const card = (title, g, what) => {
+      const n = g.female + g.male + g.unknown;
+      return `<div class="ps-gcard"><h3>${esc(title)}</h3><div class="d">n = ${fmt(n)} ${esc(what)}</div>
+        <div class="ps-grow"><div class="ps-g">${figure('#e0464f', true)}<div><b>${pct(g.female, n)}%</b><span>Female (${fmt(g.female)})</span></div></div>
+        <div class="ps-g">${figure('#1f5fae', false)}<div><b>${pct(g.male, n)}%</b><span>Male (${fmt(g.male)})</span></div></div></div>
+        <div class="ps-gunk">Not recorded: ${pct(g.unknown, n)}% (${fmt(g.unknown)})</div></div>`;
+    };
+    $('#ps-gender-sub').textContent = `Gender as recorded in each Master file — ${state.sel ? nameOf(state.sel) : 'all countries'}. Percentages use the full denominator, including not recorded.`;
+    $('#ps-gender').innerHTML = card('Indigenous scholars', sum('gender'), 'people') + card('Publishing scholars', sum('pubGender'), 'people with ≥1 linked publication');
+  }
+
+  // ================= DESTINATIONS =================
+  function setupDest() {
+    const home = $('#ps-dest-home');
+    home.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+    const decs = new Set(); countries().forEach(c => c.destinations.forEach(d => decs.add(d.dec)));
+    $('#ps-dest-dec').innerHTML = '<option value="">All years</option>' + [...decs].filter(Boolean).sort().map(d => `<option value="${d}">${d}s</option>`).join('') + (decs.has(0) ? '<option value="0">Year not recorded</option>' : '');
+    home.addEventListener('change', e => { state.destHome = e.target.value; if (state.destHome !== (state.sel || '')) { state.sel = state.destHome || null; writeUrl(); renderAll(); } else renderDest(); });
+    $('#ps-dest-level').addEventListener('change', e => { state.destLevel = e.target.value; renderDest(); });
+    $('#ps-dest-dec').addEventListener('change', e => { state.destDec = e.target.value; renderDest(); });
+  }
+  function renderDest() {
+    state.destHome = state.sel || state.destHome || '';
+    if (state.sel === null && $('#ps-dest-home').value !== '' && !state.destHome) $('#ps-dest-home').value = '';
+    $('#ps-dest-home').value = state.destHome;
+    const scope = state.destHome ? [byCode[state.destHome]] : countries();
+    const cnt = Object.fromEntries(DEST_ORDER.map(k => [k, 0]));
+    scope.forEach(c => c.destinations.forEach(d => {
+      if (state.destLevel !== 'all' && d.l !== state.destLevel) return;
+      if (state.destDec !== '' && String(d.dec) !== state.destDec) return;
+      cnt[d.r] = (cnt[d.r] || 0) + d.n;
+    }));
+    const total = Object.values(cnt).reduce((a, b) => a + b, 0);
+    const unresolvedCampus = scope.reduce((a, c) => a + (((c.destinationCountries || {}).Pacific || {})['(country unresolved)'] || 0), 0);
+    const host = $('#ps-world');
+    if (!BM) { host.innerHTML = '<div class="ps-empty">World basemap unavailable.</div>'; }
+    else {
+      const Wd = BM.world; const o = Wd.dest.origin;
+      const maxv = Math.max(1, ...DEST_ORDER.filter(k => Wd.dest[k]).map(k => cnt[k]));
+      const arcs = DEST_ORDER.filter(k => Wd.dest[k] && k !== 'Pacific' && cnt[k] > 0).map(k => {
+        const [x, y] = Wd.dest[k]; const mx = (o[0] + x) / 2, my = Math.min(o[1], y) - Math.abs(x - o[0]) * 0.28 - 30;
+        return `<path class="ps-arc" d="M${o[0]} ${o[1]} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x} ${y}" stroke="${DEST_COLOR[k]}" stroke-width="${(1.5 + 7 * cnt[k] / maxv).toFixed(1)}" stroke-opacity=".9"/>`;
+      }).join('');
+      const nodes = DEST_ORDER.filter(k => Wd.dest[k]).map(k => {
+        const [x, y] = Wd.dest[k]; const p = pct(cnt[k], total);
+        const dx = k === 'New Zealand' ? 18 : k === 'Australia' ? -18 : 0, anchor = k === 'Australia' ? 'end' : k === 'New Zealand' ? 'start' : 'middle';
+        const dy = k === 'Pacific' ? -20 : k === 'Australia' || k === 'New Zealand' ? 10 : -20;
+        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${k === 'Pacific' ? 12 : 10}" fill="${DEST_COLOR[k]}" stroke="#fff" stroke-width="2"/><text x="${x + dx}" y="${y + dy}" text-anchor="${anchor}">${esc(k)} ${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
+      }).join('');
+      host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${pct(cnt[k], total)}%`).join(', ')}"><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${arcs}<circle cx="${o[0]}" cy="${o[1]}" r="5" fill="#fff"/>${nodes}</svg>`;
+    }
+    $('#ps-dlist').innerHTML = total ? DEST_ORDER.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${pct(cnt[k], total)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
+    $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''} <button class="ps-prov" type="button" data-prov="dest">Data provenance</button>`;
+    $('#ps-dest-note [data-prov]').addEventListener('click', () => openProv('dest'));
+  }
+
+  // ================= FIND A SCHOLAR =================
+  let INDEX = [];
+  function setupFind() {
+    INDEX = [];
+    countries().forEach(c => (c.index || []).forEach(r => INDEX.push({ ...r, cn: c.name, dash: c.dashboard, hay: [r.n, r.k, c.name, ...(r.f || []), ...(r.s || []), ...(r.u || []), r.d.includes('P') ? 'phd doctorate doctoral' : '', r.d.includes('M') ? "master's masters" : ''].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() })));
+    $('#ps-f-country').innerHTML = '<option value="">All Countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+    $('#ps-f-field').innerHTML = '<option value="">All Fields</option>' + D.disciplineCategories.map(k => `<option>${esc(k)}</option>`).join('');
+    $('#ps-find').addEventListener('submit', e => { e.preventDefault(); runSearch(false); });
+    $('#ps-q').addEventListener('input', debounce(() => runSearch(false), 180));
+    ['#ps-f-country', '#ps-f-field', '#ps-f-level'].forEach(s => $(s).addEventListener('change', () => runSearch(false)));
+    $('#ps-f-reset').addEventListener('click', () => { $('#ps-q').value = ''; $('#ps-f-country').value = ''; $('#ps-f-field').value = ''; $('#ps-f-level').value = ''; $('#ps-results').innerHTML = ''; $('#ps-q').focus(); });
+    $('#ps-f-az').addEventListener('click', () => runSearch(true));
+  }
+  function debounce(fn, ms) { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; }
+  function runSearch(az) {
+    const q = $('#ps-q').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    const country = $('#ps-f-country').value, field = $('#ps-f-field').value, level = $('#ps-f-level').value;
+    if (!az && !q && !country && !field && !level) { $('#ps-results').innerHTML = ''; return; }
+    const terms = q.split(/\s+/).filter(Boolean);
+    let res = INDEX.filter(r => (!country || r.c === country) && (!field || (r.s || []).includes(field)) && (!level || r.d.includes(level)) && terms.every(t => r.hay.includes(t)));
+    res.sort((a, b) => a.n.localeCompare(b.n));
+    const LIMIT = 150;
+    const fieldNote = field ? '<div class="ps-results__count">Field filter uses the eight short-discipline categories, available for Fiji, Tonga and Vanuatu only.</div>' : '';
+    $('#ps-results').innerHTML = res.length ? `<div class="ps-results__count">${fmt(res.length)} scholar${res.length > 1 ? 's' : ''} found${res.length > LIMIT ? ` · showing first ${LIMIT}; refine your search` : ''}</div>${fieldNote}<ol>${res.slice(0, LIMIT).map(r => {
+      const deg = [r.d.includes('M') ? "Master's" : '', r.d.includes('P') ? 'PhD' : ''].filter(Boolean).join(' · ') || 'No completed degree recorded';
+      const meta = [deg, (r.s && r.s.length ? r.s : r.f || []).slice(0, 2).join('; '), (r.u || []).slice(0, 2).join('; ')].filter(Boolean).join(' — ');
+      const link = r.dash ? `<a href="${esc(r.dash)}?scholar=${encodeURIComponent(r.k)}">Open in ${esc(r.cn)} dashboard →</a> <span class="na">(country passcode required)</span>` : '<span class="na">Country profile page not yet available</span>';
+      return `<li><span class="ps-dot" style="background:${COLORS[r.c]}"></span><b>${esc(r.n)}</b> <span class="na">· ${esc(r.cn)}</span><span class="m">${esc(meta)}</span>${link}</li>`;
+    }).join('')}</ol>` : `<div class="ps-empty" style="margin-top:8px">No scholars match these filters. Try a shorter name, a different spelling, or clear the filters.</div>${fieldNote}`;
+  }
+
+  // ================= DIALOGS =================
+  function setupDialogs() {
+    const dlg = $('#ps-dialog');
+    $('#ps-dialog-close').addEventListener('click', () => dlg.close());
+    dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+    $$('[data-dialog]').forEach(b => b.addEventListener('click', () => openDialog(b.dataset.dialog)));
+    $$('[data-prov]').forEach(b => b.addEventListener('click', () => openProv(b.dataset.prov)));
+  }
+  function show(title, html) { $('#ps-dialog-title').textContent = title; $('#ps-dialog-body').innerHTML = html; $('#ps-dialog').showModal(); }
+  function sourceTable() {
+    return `<table class="ps-table"><caption>Source-of-truth inventory (read-only access via Google Sheets API at build time)</caption><thead><tr><th>Country</th><th>Authoritative Master file</th><th>Access</th><th>Master last modified</th><th>Dashboard</th></tr></thead><tbody>${D.sources.map(s => { const c = byCode[s.code] || {}; return `<tr><td>${esc(s.name)}</td><td>${esc(s.file || '—')}</td><td>${esc(s.status)}</td><td>${s.modified ? new Date(s.modified).toLocaleString() : '—'}</td><td>${c.dashboard ? 'Live (gated)' : c.dashboardStatus === 'development' ? 'In development' : 'None'}</td></tr>`; }).join('')}</tbody></table>`;
+  }
+  function reconTable() {
+    const d = (a, b) => { if (b == null) return ''; const x = a - b; return x === 0 ? '0' : `<span class="${x > 0 ? 'diff-up' : 'diff-down'}">${x > 0 ? '+' : ''}${x}</span>`; };
+    let tm = 0, tp = 0, om = 0, op = 0;
+    const rows = countries().map(c => { const o = c.oct5 || {}; tm += c.masters; tp += c.phd; om += o.masters || 0; op += o.phd || 0; return `<tr><td>${esc(c.name)}</td><td>${fmt(o.masters)}</td><td>${fmt(c.masters)}</td><td>${d(c.masters, o.masters)}</td><td>${fmt(o.phd)}</td><td>${fmt(c.phd)}</td><td>${d(c.phd, o.phd)}</td><td>${fmt(o.indig)}</td><td>${fmt(c.pubsIndigenous)}</td></tr>`; }).join('');
+    return `<table class="ps-table"><caption>Live Master-file figures vs the 5 October 2026 (9 am HST) checkpoint</caption><thead><tr><th>Country</th><th>Oct 5 Master's</th><th>Live</th><th>Δ</th><th>Oct 5 PhD</th><th>Live</th><th>Δ</th><th>Oct 5 pubs by/with Indigenous</th><th>Live Indigenous-linked</th></tr></thead><tbody>${rows}<tr><th>Total</th><th>${fmt(om)}</th><th>${fmt(tm)}</th><th>${d(tm, om)}</th><th>${fmt(op)}</th><th>${fmt(tp)}</th><th>${d(tp, op)}</th><th></th><th></th></tr></tbody></table>
+      <p>The October 5 table header states “542 Masters and 278 PhDs across 11 countries”, but its own rows sum to 910 Master's and 461 PhDs (542 + 278 equals Fiji + Tonga only). Publication columns on October 5 counted all item types; this dashboard uses each country's headline publication categories, so the publication columns are not directly comparable.</p>`;
+  }
+  function openDialog(which) {
+    if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>`);
+    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p>`);
+    if (which === 'coverage') show('Data Coverage & Notes', `${sourceTable()}<h3>Reconciliation with 5 October 2026</h3>${reconTable()}<h3>Curation stage</h3><p>Tuvalu, Kiribati, Palau, Cook Islands, Marshall Islands, Federated States of Micronesia and Samoa are at an early curation stage. Their publication tables were re-initialised after 5 October and authorship links are still sparse, so Indigenous-linked publication counts are provisional. Gender is not yet recorded for many Samoa and Marshall Islands scholars.</p>`);
+  }
+  function openProv(which) {
+    const base = `<p>Source: ${D.sources.filter(s => s.file).length} country Master files (Google Sheets, read-only), bundle generated ${esc(new Date(D.generated).toLocaleString())} by <code>scripts/build_regional_scholars.py</code>.</p>`;
+    const map = {
+      map: ['Map — provenance', base + '<p>Scholars sheet (included roster) and Graduate Degrees sheet. Marker locations are national capitals (positions only). Basemap: Natural Earth via world-atlas (public domain), 1:10m for Pacific Island countries.</p>'],
+      degrees: ['Regional Postgraduate Degrees — provenance', base + '<p>Graduate Degrees: Degree Stage/Level + Completion Status, linked to included Scholar IDs. Duplicate Degree IDs are counted once.</p>'],
+      outputs: ['Research Outputs — provenance', base + '<p>Publications sheet (Year, Publication Type, DOI, Title) and Authorship sheet (Scholar ID ↔ Publication ID). Year series counts regionally deduplicated Indigenous-linked records by publication year.</p>'],
+      bars: ['Graduate Degrees by Country — provenance', base + '<p>Same counts as the country strip and the map. CSV export includes each Master file\u2019s last-modified time.</p>'],
+      disc: ['Fields of Research — provenance', base + '<p>Graduate Degrees: Field / Discipline and Broad discipline, classified into the eight short-discipline categories. Completed degree records, not people.</p>'],
+      gender: ['Gender — provenance', base + '<p>Scholars sheet Gender field, normalised (Female / Fefine / Fafine; Male / Tangata / Tāne). Blank or other values are reported as not recorded. Publishing scholars = included scholars with at least one Authorship link to a headline-category publication.</p>'],
+      dest: ['Where Our Scholars Study — provenance', base + '<p>Graduate Degrees: University Country / Country and canonical university name. Completion decade from the completion/finish year.</p>'],
+    };
+    const [t, h] = map[which] || ['Provenance', base];
+    show(t, h);
+  }
+
+  function renderCredits() {
+    if (!CREDITS) return;
+    const items = Object.entries(CREDITS).map(([k, c]) => `${esc(k === 'hero' ? 'Header' : k === 'impact' ? 'Impact & gender panels' : nameOf(k))}: <a href="${esc(c.page)}" rel="noopener">${esc(c.title.replace(/\.(jpe?g|png)$/i, ''))}</a> by ${esc(c.artist)}, <a href="${esc(c.licenseUrl)}" rel="noopener license">${esc(c.license)}</a>`);
+    $('#ps-credits').innerHTML = `Photographs via Wikimedia Commons, cropped and resized: ${items.join(' · ')}. Map data: Natural Earth (public domain).`;
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGate); else initGate();
+})();
