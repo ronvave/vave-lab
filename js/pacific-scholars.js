@@ -237,7 +237,7 @@
   // Badge anchors are measured in image pixels at the end of each label (side 'r') or
   // before its flag (side 'l'); badges live in the same coordinate space so they zoom with the image.
   const MAP_IMG = { src: 'img/regional/pacific-map.webp', w: 2400, h: 1891 };
-  const MAP_ANCHOR = {"PLW": [454, 478, 'r'], "FSM": [774, 320, 'r'], "MHL": [1433, 422, 'r'], "KIR": [1783, 596, 'r'], "SLB": [1127, 776, 'r'], "TUV": [1606, 800, 'r'], "WSM": [1717, 907, 'r'], "FJI": [1357, 967, 'r'], "TON": [1567, 1221, 'r'], "COK": [2138, 1253, 'r'], "VUT": [749, 1023, 'l']};
+  const MAP_ANCHOR = {"PLW": [454, 478, 'r'], "FSM": [774, 320, 'r'], "MHL": [1433, 422, 'r'], "KIR": [1783, 596, 'r'], "SLB": [1127, 776, 'r'], "TUV": [1606, 800, 'r'], "WSM": [1844, 907, 'r'], "FJI": [1358, 967, 'r'], "TON": [1567, 1221, 'r'], "COK": [2138, 1253, 'r'], "VUT": [749, 1023, 'l']};
   let mapSvg, mk = {};
   function setupMap() {
     const host = $('#ps-map');
