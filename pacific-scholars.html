@@ -35,14 +35,18 @@
   <header class="ps-hero" id="ps-top">
     <img class="ps-hero__img" src="img/regional/hero.webp" alt="" width="1920" height="640" fetchpriority="high" />
     <div class="ps-hero__inner">
-      <div>
-        <h1 class="ps-hero__title">Regional Pacific Scholars Dashboard</h1>
-        <p class="ps-hero__tag">Our People<span aria-hidden="true">|</span>Our Knowledge<span aria-hidden="true">|</span>A Stronger Pacific</p>
-        <p class="ps-hero__lede">Mapping and celebrating Indigenous Pacific scholars, their research, and impact across our region.</p>
-        <div class="ps-hero__status" id="ps-status">
-          <span class="ps-pill"><span class="ps-pill__dot" aria-hidden="true"></span><span id="ps-fresh">Loading data…</span></span>
-          <span class="ps-pill ps-pill--warn">Pre-launch · early curation stage for several countries</span>
+      <div class="ps-hero__brand">
+        <img class="ps-hero__logo ps-hero__logo--seal" src="img/regional/uh-manoa-seal.png" alt="University of Hawaiʻi seal" width="280" height="281" />
+        <div class="ps-hero__text">
+          <h1 class="ps-hero__title">Regional Pacific Scholars Dashboard</h1>
+          <p class="ps-hero__tag">Our People<span aria-hidden="true">|</span>Our Knowledge<span aria-hidden="true">|</span>A Stronger Pacific</p>
+          <p class="ps-hero__lede">Mapping and celebrating Indigenous Pacific scholars, their research, and impact across our region.</p>
+          <div class="ps-hero__status" id="ps-status">
+            <span class="ps-pill"><span class="ps-pill__dot" aria-hidden="true"></span><span id="ps-fresh">Loading data…</span></span>
+            <span class="ps-pill ps-pill--warn">Pre-launch · early curation stage for several countries</span>
+          </div>
         </div>
+        <img class="ps-hero__logo ps-hero__logo--cpis" src="img/regional/cpis-logo.png" alt="Center for Pacific Islands Studies" width="720" height="335" />
       </div>
       <dl class="ps-kpis" id="ps-kpis" aria-label="Regional headline figures"></dl>
     </div>
@@ -51,7 +55,7 @@
   <main id="ps-main" class="ps-wrap" tabindex="-1">
     <div class="ps-toolbar">
       <div role="group" aria-labelledby="ps-metric-label" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
-        <span class="ps-toolbar__label" id="ps-metric-label">Show countries by</span>
+        <span class="ps-toolbar__label" id="ps-metric-label">Order countries below by <span class="ps-toolbar__hl">Total number of</span></span>
         <div class="ps-seg" id="ps-metric" role="radiogroup" aria-label="Metric for country strip, map and chart">
           <button type="button" role="radio" data-metric="scholars" aria-checked="true">Scholars</button>
           <button type="button" role="radio" data-metric="phd" aria-checked="false">PhDs</button>

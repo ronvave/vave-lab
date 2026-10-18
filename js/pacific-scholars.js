@@ -19,9 +19,9 @@
     KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a',
   };
   const SHORT = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Is.', VUT: 'Vanuatu', WSM: 'Samoa', FSM: 'FSM', KIR: 'Kiribati', MHL: 'Marshall Is.', TUV: 'Tuvalu', COK: 'Cook Is.', PLW: 'Palau' };
-  const CARD_SUB = { FJI: '(iTaukei)' };
+  const CARD_SUB = {};
   const METRICS = {
-    scholars: { key: 'scholars', label: 'Scholars', unit: 'Indigenous scholars', def: 'Scholars = unique Indigenous scholar people on each country\u2019s included roster.' },
+    scholars: { key: 'scholars', label: 'Scholars', unit: 'Indigenous scholars', def: 'Scholars = unique Indigenous scholar on each country\u2019s included roster.' },
     phd: { key: 'phd', label: 'PhDs', unit: 'completed PhDs / doctorates', def: 'PhDs = completed PhD and doctorate degree records held by those scholars.' },
     masters: { key: 'masters', label: "Master's", unit: "completed Master's degrees", def: "Master's = completed Master's degree records held by those scholars." },
   };
@@ -141,9 +141,9 @@
       [ICONS.people, fmt(t.scholars), 'Indigenous scholars'],
       [ICONS.cap, fmt(t.masters), "Completed Master's"],
       [ICONS.cap, fmt(t.phd), 'Completed PhDs'],
-      [ICONS.doc, fmt(D.regional.uniqueIndigenousPubs), 'Indigenous-linked publications'],
+      [ICONS.doc, fmt(D.regional.uniqueIndigenousPubs), 'Indigenous\u2011linked publications'],
     ];
-    $('#ps-kpis').innerHTML = items.map(([i, v, l]) => `<div class="ps-kpi">${i}<div><dt class="ps-sr">${esc(l)}</dt><dd style="margin:0"><div class="ps-kpi__v">${v}</div><div class="ps-kpi__l">${esc(l)}</div></dd></div></div>`).join('');
+    $('#ps-kpis').innerHTML = items.map(([i, v, l]) => `<div class="ps-kpi">${i}<dt class="ps-sr">${esc(l)}</dt><dd class="ps-kpi__dd"><span class="ps-kpi__v">${v}</span><span class="ps-kpi__l">${esc(l)}</span></dd></div>`).join('');
   }
 
   // ================= METRIC TOGGLE =================
@@ -201,10 +201,11 @@
     ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
     const html = list.map((c, i) => {
       const v = c[m.key];
-      const sub = state.metric === 'scholars' ? `${fmt(c.masters)} M | ${fmt(c.phd)} PhD` : `${fmt(c.scholars)} scholars`;
+      const LINES = { scholars: `${fmt(c.scholars)} Scholars`, masters: `${fmt(c.masters)} Masters`, phd: `${fmt(c.phd)} PhD` };
+      const sub = ['scholars', 'masters', 'phd'].filter(k => k !== state.metric).map(k => `<span>${LINES[k]}</span>`).join('');
       const icon = state.metric === 'scholars' ? ICONS.people : ICONS.cap;
       const btn = c.dashboard
-        ? `<a class="ps-card__btn" href="${esc(c.dashboard)}" aria-label="View ${esc(c.name)} dashboard (separate passcode)">View Dashboard →</a>`
+        ? `<a class="ps-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View Dashboard<span aria-hidden="true">→</span></a>`
         : `<span class="ps-card__btn ps-card__btn--off">${c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No dashboard yet'}</span>`;
       const valText = v == null ? 'Not available' : fmt(v);
       return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
@@ -212,7 +213,7 @@
         <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="150" loading="${i < 6 ? 'eager' : 'lazy'}" />
         <div class="ps-card__body">
           <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
-            ${icon}<span><span class="ps-card__v">${valText}</span><br><span class="ps-card__l">${esc(m.label)}</span></span>
+            ${icon}<span class="ps-card__vl"><span class="ps-card__v">${valText}</span><span class="ps-card__l">${esc(m.label)}</span></span>
           </button>
           <div class="ps-card__sub">${sub}</div>
           ${btn}
