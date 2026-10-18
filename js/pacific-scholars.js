@@ -13,7 +13,6 @@
   const ENC_URL = 'data/regional-scholars.json.enc';
   const BASEMAP_URL = 'data/regional-basemap.json';
   const CREDITS_URL = 'img/regional/credits.json';
-  const SESSION_KEY = 'ps-regional-pass';
 
   const COLORS = {
     FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8',
@@ -69,7 +68,6 @@
     const tryPass = async (pass, silent) => {
       try {
         const data = await decryptBundle(pass);
-        sessionStorage.setItem(SESSION_KEY, pass);
         gate.hidden = true;
         document.body.style.overflow = '';
         await boot(data);
@@ -85,9 +83,7 @@
       if (await tryPass(input.value, false)) input.value = '';
     });
     document.body.style.overflow = 'hidden';
-    const saved = sessionStorage.getItem(SESSION_KEY);
-    if (saved) tryPass(saved, true).then(ok => { if (!ok) { sessionStorage.removeItem(SESSION_KEY); input.focus(); } });
-    else input.focus();
+    input.focus(); // passcode is held in memory only; never persisted
   }
 
   // ================= BOOT =================
