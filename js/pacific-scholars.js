@@ -389,7 +389,8 @@
   // ================= BARS =================
   function setupBars() {
     $$('[data-barview]').forEach(b => b.addEventListener('click', () => { state.barView = b.dataset.barview; $$('[data-barview]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderBars(); }));
-    $('#ps-bars-csv').addEventListener('click', exportCsv);
+    let wasNarrow = null;
+    new ResizeObserver(() => { const n = ($('#ps-bars').clientWidth || 600) < 520; if (wasNarrow !== null && n !== wasNarrow) renderBars(); wasNarrow = n; }).observe($('#ps-bars'));
   }
   function renderBars() {
     const m = METRICS[state.metric];
@@ -398,7 +399,8 @@
     const vals = list.map(c => (stack ? c.masters + c.phd : c[m.key] || 0));
     const max = Math.max(1, ...vals);
     const nice = (() => { const e = Math.pow(10, Math.floor(Math.log10(max))); return [1, 2, 2.5, 5, 10].map(f => f * e).find(v => v >= max); })();
-    const W = 440, H = 240, L = 34, B = 40, T = 16, Rt = 4;
+    const narrow = ($('#ps-bars').clientWidth || 600) < 520;
+    const W = narrow ? 400 : 520, H = narrow ? 270 : 240, L = 34, B = narrow ? 64 : 40, T = 16, Rt = 4;
     const cw = (W - L - Rt) / list.length, bw = Math.min(28, cw * 0.66);
     const y = v => T + (H - T - B) * (1 - v / nice);
     let g = '';
@@ -420,6 +422,7 @@
           <text x="${(x + bw / 2).toFixed(1)}" y="${(H - B - h - 4).toFixed(1)}" text-anchor="middle" font-size="10" font-weight="700" fill="#0c2140">${fmt(v)}</text></g>`;
       }
       const lab = SHORT[c.code].split(' ');
+      if (narrow) { const lx = (L + i * cw + cw / 2).toFixed(1), ly = H - B + 12; g += `<text x="${lx}" y="${ly}" text-anchor="end" font-size="11.5" fill="#0c2140" transform="rotate(-45 ${lx} ${ly})">${esc(SHORT[c.code])}</text>`; return; }
       g += `<text x="${(L + i * cw + cw / 2).toFixed(1)}" y="${H - B + 13}" text-anchor="middle" font-size="9.5" fill="#0c2140">${esc(lab[0])}</text>${lab[1] ? `<text x="${(L + i * cw + cw / 2).toFixed(1)}" y="${H - B + 24}" text-anchor="middle" font-size="9.5" fill="#0c2140">${esc(lab[1])}</text>` : ''}`;
     });
     const legend = stack ? `<g transform="translate(${W - 190},2)"><rect width="10" height="10" fill="#2f86d6" fill-opacity=".5"/><text x="14" y="9" font-size="10" fill="#0c2140">Master's (lighter)</text><rect x="104" width="10" height="10" fill="#2f86d6"/><text x="118" y="9" font-size="10" fill="#0c2140">PhD (darker)</text></g>` : '';
@@ -458,7 +461,7 @@
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     const order = D.disciplineCategories.slice().sort((a, b) => counts[b] - counts[a]);
     const colorOf = k => DISC_COLOR[D.disciplineCategories.indexOf(k)] || '#b9c6d4';
-    let a0 = -Math.PI / 2; const R = 60, r = 36, cx = 75, cy = 75;
+    let a0 = -Math.PI / 2; const R = 72, r = 45, cx = 75, cy = 75;
     const arcs = order.concat(['Unknown / unmapped']).filter(k => counts[k] > 0).map(k => {
       const a1 = a0 + 2 * Math.PI * counts[k] / total; const large = a1 - a0 > Math.PI ? 1 : 0;
       const p = (rad, a) => `${(cx + rad * Math.cos(a)).toFixed(2)} ${(cy + rad * Math.sin(a)).toFixed(2)}`;
@@ -651,8 +654,7 @@
       host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${pct(cnt[k], total)}%`).join(', ')}"><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${arcs}<circle cx="${o[0]}" cy="${o[1]}" r="5" fill="#fff"/>${nodes}</svg>`;
     }
     $('#ps-dlist').innerHTML = total ? DEST_ORDER.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${pct(cnt[k], total)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
-    $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''} <button class="ps-prov" type="button" data-prov="dest">Data provenance</button>`;
-    $('#ps-dest-note [data-prov]').addEventListener('click', () => openProv('dest'));
+    $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
   }
 
   // ================= FIND A SCHOLAR =================
