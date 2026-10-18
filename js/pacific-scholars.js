@@ -233,40 +233,39 @@
   }
 
   // ================= MAP =================
-  const LABEL_POS = { FJI: [0, 1], TON: [1, 0], SLB: [-1, 0], WSM: [1, 0], VUT: [-1, 0], TUV: [1, 0], KIR: [1, 0], PLW: [1, 0], COK: [0, -1], MHL: [1, 0], FSM: [0, -1] };
-  let mapSvg, mapG, mk = {};
+  // Map image: img/regional/pacific-map.webp (2400 x 1891 px, flags and labels baked in).
+  // Badge anchors are measured in image pixels at the end of each label (side 'r') or
+  // before its flag (side 'l'); badges live in the same coordinate space so they zoom with the image.
+  const MAP_IMG = { src: 'img/regional/pacific-map.webp', w: 2400, h: 1891 };
+  const MAP_ANCHOR = {"PLW": [216, 383, 'r'], "FSM": [682, 371, 'r'], "MHL": [1332, 271, 'r'], "KIR": [1795, 564, 'r'], "SLB": [1145, 711, 'r'], "TUV": [1562, 834, 'r'], "WSM": [1778, 937, 'r'], "FJI": [1363, 951, 'r'], "VUT": [802, 1027, 'l'], "COK": [1992, 1094, 'r'], "TON": [1258, 1217, 'l']};
+  let mapSvg, mk = {};
   function setupMap() {
     const host = $('#ps-map');
-    if (!BM) { host.insertAdjacentHTML('beforeend', '<div class="ps-empty" style="margin:20px">Basemap could not be loaded. Use the table view.</div>'); return; }
-    const P = BM.pacific;
-    mapSvg = svgEl('svg', { viewBox: `0.0 0.0 ${P.w.toFixed(1)} ${P.h.toFixed(1)}`, role: 'group', 'aria-label': 'Map of Pacific countries with proportional markers' });
-    mapG = svgEl('g');
-    mapG.appendChild(svgEl('path', { d: P.grat, class: 'ps-grat' }));
-    P.shapes.forEach(s => { const p = svgEl('path', { d: s.d, class: 'ps-land' + (s.f ? ' ps-land--focus' : '') }); p.appendChild(svgEl('title')).textContent = s.n; mapG.appendChild(p); });
-    P.labels.forEach(([n, [x, y]]) => { const t = svgEl('text', { x, y, class: 'ps-landlabel', 'text-anchor': 'middle' }); t.textContent = n; mapG.appendChild(t); });
+    const W = MAP_IMG.w, H = MAP_IMG.h;
+    mapSvg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'group', 'aria-label': 'Map of the Pacific with the number of Indigenous scholars beside each country' });
+    const img = svgEl('image', { href: MAP_IMG.src, x: 0, y: 0, width: W, height: H, preserveAspectRatio: 'xMidYMid meet' });
+    img.setAttribute('aria-hidden', 'true');
+    mapSvg.appendChild(img);
     const mg = svgEl('g');
     countries().forEach(c => {
-      const pos = P.markers[c.code]; if (!pos) return;
+      const a = MAP_ANCHOR[c.code]; if (!a) return;
       const g = svgEl('g', { class: 'ps-mk', tabindex: '0', role: 'button', 'data-code': c.code });
-      const glow = svgEl('circle', { cx: pos[0], cy: pos[1], r: 0, class: 'ps-mk__glow', fill: COLORS[c.code] });
-      const dot = svgEl('circle', { cx: pos[0], cy: pos[1], r: 0, class: 'ps-mk__dot', fill: COLORS[c.code], 'fill-opacity': '.85' });
-      const label = svgEl('text', { fill: '#fff' });
-      g.append(glow, dot, label);
+      const pill = svgEl('rect', { class: 'ps-mk__pill', rx: 27, ry: 27, height: 58, stroke: COLORS[c.code] });
+      const label = svgEl('text', { class: 'ps-mk__n', 'dominant-baseline': 'central' });
+      g.append(pill, label);
       g.addEventListener('click', () => select(c.code));
       g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(c.code); } });
       g.addEventListener('pointerenter', e => showTip(e, mapTip(c)));
       g.addEventListener('pointermove', e => moveTip(e));
       g.addEventListener('pointerleave', hideTip);
-      g.addEventListener('focus', () => { const r = dot.getBoundingClientRect(); showTip({ clientX: r.right, clientY: r.top }, mapTip(c)); });
+      g.addEventListener('focus', () => { const r = pill.getBoundingClientRect(); showTip({ clientX: r.right, clientY: r.top }, mapTip(c)); });
       g.addEventListener('blur', hideTip);
-      mk[c.code] = { g, dot, glow, label, pos };
+      mk[c.code] = { g, pill, label, a };
       mg.appendChild(g);
     });
-    mapG.appendChild(mg);
-    mapSvg.appendChild(mapG);
+    mapSvg.appendChild(mg);
     host.prepend(mapSvg);
-    if ('ResizeObserver' in window) new ResizeObserver(() => renderMap()).observe(host);
-    state.mapView = [0, 0, P.w, P.h];
+    setView([0, 0, W, H]);
     // zoom & pan
     $$('[data-zoom]', host).forEach(b => b.addEventListener('click', () => zoom(b.dataset.zoom)));
     let drag = null;
@@ -284,61 +283,37 @@
     });
   }
   function setView(v) {
-    const P = BM.pacific;
-    v[2] = Math.max(P.w / 6, Math.min(P.w, v[2])); v[3] = v[2] * P.h / P.w;
-    v[0] = Math.max(0, Math.min(P.w - v[2], v[0])); v[1] = Math.max(0, Math.min(P.h - v[3], v[1]));
+    const W = MAP_IMG.w, H = MAP_IMG.h;
+    v[2] = Math.max(W / 6, Math.min(W, v[2])); v[3] = v[2] * H / W;
+    v[0] = Math.max(0, Math.min(W - v[2], v[0])); v[1] = Math.max(0, Math.min(H - v[3], v[1]));
     state.mapView = v; mapSvg.setAttribute('viewBox', v.map(n => n.toFixed(1)).join(' '));
-    const k = P.w / v[2];
-    Object.values(mk).forEach(m => { m.label.style.fontSize = (15 / Math.sqrt(k)) + 'px'; });
-    renderMap();
   }
   function zoom(dir) {
-    const P = BM.pacific; const v = state.mapView;
-    if (dir === 'reset') return setView([0, 0, P.w, P.h]);
+    const W = MAP_IMG.w, H = MAP_IMG.h; const v = state.mapView;
+    if (dir === 'reset') return setView([0, 0, W, H]);
     const f = dir === 'in' ? 0.7 : 1 / 0.7;
     const cx = v[0] + v[2] / 2, cy = v[1] + v[3] / 2; const w = v[2] * f;
-    setView([cx - w / 2, cy - (w * P.h / P.w) / 2, w, w * P.h / P.w]);
+    setView([cx - w / 2, cy - (w * H / W) / 2, w, w * H / W]);
   }
   function mapTip(c) {
     const link = c.dashboard ? 'Country dashboard available (separate passcode)' : (c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No country dashboard yet');
     return `<b>${esc(c.name)}</b>${fmt(c.scholars)} Indigenous scholars<br>${fmt(c.masters)} completed Master's · ${fmt(c.phd)} completed PhDs${c.profDoc ? ` (incl. ${c.profDoc} professional doctorate${c.profDoc > 1 ? 's' : ''})` : ''}<br>${fmt(c.pubsIndigenous)} Indigenous-linked publications<br><span style="color:#4a5d78">${link}. Click to filter.</span>`;
   }
-  function niceSteps(max) {
-    if (!max) return [];
-    const e = Math.pow(10, Math.floor(Math.log10(max)));
-    const top = [5, 2, 1].map(f => f * e).find(v => v <= max) || e;
-    return [top, Math.max(1, Math.round(top / 4)), Math.max(1, Math.round(top / 20))].filter((v, i, a) => a.indexOf(v) === i);
-  }
   function renderMap() {
     const m = METRICS[state.metric];
-    const list = countries();
-    const max = Math.max(...list.map(c => c[m.key] || 0));
-    const k = BM ? BM.pacific.w / state.mapView[2] : 1;
-    const R = 62 / Math.sqrt(k);
-    const rad = v => (v > 0 ? Math.max(6 / Math.sqrt(k), Math.sqrt(v / max) * R) : 4 / Math.sqrt(k));
-    list.forEach(c => {
+    countries().forEach(c => {
       const o = mk[c.code]; if (!o) return;
-      const v = c[m.key]; const r = rad(v || 0);
-      o.dot.style.r = r; o.glow.style.r = r * 1.45;
-      o.dot.setAttribute('fill-opacity', v ? '.85' : '0');
-      const [lx, ly] = LABEL_POS[c.code] || [1, 0];
-      const off = r + 8 / Math.sqrt(k);
-      o.label.setAttribute('x', o.pos[0] + lx * off);
-      o.label.setAttribute('y', o.pos[1] + ly * off + (ly === 0 ? 8 / Math.sqrt(k) : ly > 0 ? 20 / Math.sqrt(k) : -6 / Math.sqrt(k)));
-      o.label.setAttribute('text-anchor', lx > 0 ? 'start' : lx < 0 ? 'end' : 'middle');
-      o.label.setAttribute('fill', COLORS[c.code]);
-      o.label.style.filter = 'brightness(1.35)';
-      o.label.textContent = `${SHORT[c.code]} ${fmt(v)}`;
-      o.g.setAttribute('aria-label', `${c.name}: ${fmt(v)} ${m.unit}. ${state.sel === c.code ? 'Selected.' : ''} Activate to ${state.sel === c.code ? 'clear' : 'filter'}.`);
+      const txt = fmt(c.scholars);
+      o.label.textContent = txt;
+      const w = 28 * txt.length + 34, x = o.a[2] === 'l' ? o.a[0] - 12 - w : o.a[0] + 12;
+      o.pill.setAttribute('x', x); o.pill.setAttribute('y', o.a[1] - 29); o.pill.setAttribute('width', w);
+      o.label.setAttribute('x', x + w / 2); o.label.setAttribute('y', o.a[1] + 2); o.label.setAttribute('text-anchor', 'middle');
+      o.g.setAttribute('aria-label', `${c.name}: ${txt} Indigenous scholars. ${state.sel === c.code ? 'Selected.' : ''} Activate to ${state.sel === c.code ? 'clear' : 'filter'}.`);
       o.g.setAttribute('aria-pressed', String(state.sel === c.code));
       o.g.classList.toggle('is-selected', state.sel === c.code);
       o.g.classList.toggle('is-dim', !!state.sel && state.sel !== c.code);
     });
-    // legend
-    const steps = niceSteps(max);
-    const legend = $('#ps-map-legend');
-    if (legend) legend.innerHTML = `<h4>${esc(m.label === 'Scholars' ? 'Indigenous scholars (people)' : m.label === 'PhDs' ? 'Completed PhDs (degrees)' : "Completed Master's (degrees)")}</h4><ul>${steps.map(v => { const sc = mapSvg ? Math.min(mapSvg.clientWidth / state.mapView[2], mapSvg.clientHeight / state.mapView[3]) * Math.sqrt(BM.pacific.w / state.mapView[2]) : .6; const d = Math.max(6, Math.sqrt(v / max) * 62 * 2 * sc); return `<li><i style="width:${d.toFixed(1)}px;height:${d.toFixed(1)}px"></i>${fmt(v)}</li>`; }).join('')}</ul><div style="margin-top:4px;color:var(--ps-text-muted)">Colour = country</div>`;
-    $('#ps-map-sub').textContent = `Marker size shows ${m.unit} per country. Select a marker to filter.`;
+    $('#ps-map-sub').textContent = 'Number of Indigenous scholars beside each country. Select a number to filter.';
     // accessible table
     const rows = sorted();
     const t = $('#ps-map-table');
