@@ -156,7 +156,7 @@ a { color: var(--ps-teal-300); }
 .ps-map > svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
 .ps-mk { cursor: pointer; }
 .ps-mk__pill { fill: rgba(3, 19, 39, .9); stroke-width: 5; filter: drop-shadow(0 2px 6px rgba(0,0,0,.45)); transition: fill .2s ease; }
-.ps-mk__n { fill: #fff; font-family: var(--ps-sans); font-weight: 700; font-size: 46px; pointer-events: none; font-variant-numeric: tabular-nums; }
+.ps-mk__n { fill: #fff; font-family: var(--ps-sans); font-weight: 700; font-size: 51px; pointer-events: none; font-variant-numeric: tabular-nums; }
 .ps-mk:hover .ps-mk__pill { fill: rgba(20, 52, 92, .96); }
 .ps-mk:focus { outline: none; }
 .ps-mk:focus-visible .ps-mk__pill, .ps-mk.is-selected .ps-mk__pill { stroke: var(--ps-gold-400) !important; stroke-width: 7; fill: rgba(40, 30, 5, .92); }

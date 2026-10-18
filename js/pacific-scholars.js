@@ -237,7 +237,7 @@
   // Badge anchors are measured in image pixels at the end of each label (side 'r') or
   // before its flag (side 'l'); badges live in the same coordinate space so they zoom with the image.
   const MAP_IMG = { src: 'img/regional/pacific-map.webp', w: 2400, h: 1891 };
-  const MAP_ANCHOR = {"PLW": [216, 383, 'r'], "FSM": [682, 371, 'r'], "MHL": [1332, 271, 'r'], "KIR": [1795, 564, 'r'], "SLB": [1145, 711, 'r'], "TUV": [1562, 834, 'r'], "WSM": [1778, 937, 'r'], "FJI": [1363, 951, 'r'], "VUT": [802, 1027, 'l'], "COK": [1992, 1094, 'r'], "TON": [1258, 1217, 'l']};
+  const MAP_ANCHOR = {"PLW": [454, 478, 'r'], "FSM": [774, 320, 'r'], "MHL": [1433, 422, 'r'], "KIR": [1783, 596, 'r'], "SLB": [1127, 776, 'r'], "TUV": [1606, 800, 'r'], "WSM": [1717, 907, 'r'], "FJI": [1357, 967, 'r'], "TON": [1567, 1221, 'r'], "COK": [2138, 1253, 'r'], "VUT": [749, 1023, 'l']};
   let mapSvg, mk = {};
   function setupMap() {
     const host = $('#ps-map');
@@ -250,7 +250,7 @@
     countries().forEach(c => {
       const a = MAP_ANCHOR[c.code]; if (!a) return;
       const g = svgEl('g', { class: 'ps-mk', tabindex: '0', role: 'button', 'data-code': c.code });
-      const pill = svgEl('rect', { class: 'ps-mk__pill', rx: 27, ry: 27, height: 58, stroke: COLORS[c.code] });
+      const pill = svgEl('rect', { class: 'ps-mk__pill', rx: 31, ry: 31, height: 64, stroke: COLORS[c.code] });
       const label = svgEl('text', { class: 'ps-mk__n', 'dominant-baseline': 'central' });
       g.append(pill, label);
       g.addEventListener('click', () => select(c.code));
@@ -305,8 +305,8 @@
       const o = mk[c.code]; if (!o) return;
       const txt = fmt(c.scholars);
       o.label.textContent = txt;
-      const w = 28 * txt.length + 34, x = o.a[2] === 'l' ? o.a[0] - 12 - w : o.a[0] + 12;
-      o.pill.setAttribute('x', x); o.pill.setAttribute('y', o.a[1] - 29); o.pill.setAttribute('width', w);
+      const w = 31 * txt.length + 36, x = o.a[2] === 'l' ? o.a[0] - 14 - w : o.a[0] + 14;
+      o.pill.setAttribute('x', x); o.pill.setAttribute('y', o.a[1] - 32); o.pill.setAttribute('width', w);
       o.label.setAttribute('x', x + w / 2); o.label.setAttribute('y', o.a[1] + 2); o.label.setAttribute('text-anchor', 'middle');
       o.g.setAttribute('aria-label', `${c.name}: ${txt} Indigenous scholars. ${state.sel === c.code ? 'Selected.' : ''} Activate to ${state.sel === c.code ? 'clear' : 'filter'}.`);
       o.g.setAttribute('aria-pressed', String(state.sel === c.code));
