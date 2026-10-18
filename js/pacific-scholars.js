@@ -104,6 +104,7 @@
     setupDisc();
     setupDest();
     setupFind();
+    setupFirsts();
     setupDialogs();
     renderCredits();
     renderAll(true);
@@ -190,6 +191,7 @@
     renderDisc();
     renderGender();
     renderDest();
+    renderFirsts();
   }
 
   // ================= COUNTRY STRIP =================
@@ -497,6 +499,117 @@
     $('#ps-gender').innerHTML = card('Indigenous scholars', sum('gender'), 'people') + card('Publishing scholars', sum('pubGender'), 'people with ≥1 linked publication');
   }
 
+  // ================= PACIFIC FIRSTS TIMELINE =================
+  const FT = { stage: 'both', gender: 'both', Y0: 1950, R: 16, GAP: 6 };
+  const FT_LBL = { masters: "Master's", phd: 'PhD' };
+  function setupFirsts() {
+    const panel = $('#ps-firsts-panel');
+    if (!Array.isArray(D.firsts) || !D.firsts.length) { panel.hidden = true; return; }
+    panel.hidden = false;
+    const wire = (sel, attr, key) => {
+      const btns = [...document.querySelectorAll(`${sel} button`)];
+      btns.forEach(b => b.addEventListener('click', () => {
+        FT[key] = b.dataset[attr];
+        btns.forEach(x => x.setAttribute('aria-checked', String(x === b)));
+        renderFirsts();
+      }));
+    };
+    wire('#ps-ft-stage', 'ftstage', 'stage');
+    wire('#ps-ft-gender', 'ftgender', 'gender');
+    let w = 0;
+    new ResizeObserver(() => { const nw = $('#ps-ft-chart').clientWidth; if (nw !== w) { w = nw; renderFirsts(); } }).observe($('#ps-ft-chart'));
+    const missing = countries().filter(c => ['male', 'female'].some(g => !D.firsts.some(m => m.code === c.code && m.gender === g)));
+    $('#ps-ft-missing').textContent = missing.map(c => {
+      const gs = ['male', 'female'].filter(g => !D.firsts.some(m => m.code === c.code && m.gender === g));
+      return `${c.name}: ${gs.join(' and ')} firsts are not shown because Gender is not recorded for ${fmt(c.gender.unknown)} of its ${fmt(c.scholars)} scholars.`;
+    }).join(' ');
+  }
+  function ftLayout(items, xOf, rowH) {
+    const byYear = {};
+    items.forEach(m => (byYear[m.year] = byYear[m.year] || []).push(m));
+    Object.values(byYear).forEach(g => g.forEach((m, i) => { m._x = xOf(m.year) + (i - (g.length - 1) / 2) * 5; }));
+    const placed = [], R = FT.R;
+    for (const m of [...items].sort((a, b) => a._x - b._x)) {
+      let best = null;
+      for (let row = 0; row < 20; row++) {
+        let ok = true, cross = 0;
+        for (const p of placed) {
+          const dx = Math.abs(p._x - m._x), dr = Math.abs(p._row - row) * rowH;
+          if (Math.hypot(dx, dr) < 2 * R + FT.GAP) { ok = false; break; } // flags never overlap
+          if (dx < R + 2) cross++;                                        // a dashed line would pass behind a flag
+        }
+        if (!ok) continue;
+        const score = cross * 10 + row;
+        if (!best || score < best.score) best = { row, score };
+        if (cross === 0) break;
+      }
+      m._row = best ? best.row : 0; placed.push(m);
+    }
+    return placed.length ? Math.max(...placed.map(p => p._row)) + 1 : 0;
+  }
+  function renderFirsts() {
+    const panel = $('#ps-firsts-panel');
+    if (!panel || panel.hidden) return;
+    const chart = $('#ps-ft-chart'), svg = $('#ps-ft-svg'), tip = $('#ps-ft-tip');
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = (n, a, p) => { const e = document.createElementNS(NS, n); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+    const cs = getComputedStyle(panel), COL = { male: cs.getPropertyValue('--ft-male').trim() || '#19c3d6', female: cs.getPropertyValue('--ft-female').trim() || '#ff3fa4' };
+    const R = FT.R, ROWH = 2 * R + 10, Y1 = new Date().getFullYear(), Y0 = FT.Y0;
+    const W = chart.clientWidth || 880, padL = 18, padR = 18, top = 30;
+    const xOf = y => padL + (y - Y0) / (Y1 - Y0) * (W - padL - padR);
+    const items = D.firsts.filter(m => (FT.stage === 'both' || m.stage === FT.stage) && (FT.gender === 'both' || m.gender === FT.gender) && (!state.sel || m.code === state.sel)).map(m => ({ ...m }));
+    const rows = ftLayout(items, xOf, ROWH);
+    const plotH = Math.max(rows * ROWH + 30, 150), axisY = top + plotH, H = axisY + 34;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`); svg.setAttribute('height', H); svg.textContent = '';
+    tip.classList.remove('show'); chart.classList.remove('ps-ft-dim');
+    for (let d = Y0, i = 0; d < Y1; d += 10, i++) {
+      const x0 = xOf(d), x1 = xOf(Math.min(d + 10, Y1));
+      el('rect', { x: x0, y: top - 22, width: x1 - x0, height: plotH + 22, fill: i % 2 ? 'rgba(127,227,230,0.11)' : 'rgba(3,19,39,0.35)' }, svg);
+      if (x1 - x0 > 30) el('text', { x: (x0 + x1) / 2, y: top - 8, 'text-anchor': 'middle', fill: '#a9c0d8', 'font-size': 12.5, 'font-weight': 600 }, svg).textContent = d + 's';
+    }
+    el('line', { x1: padL, x2: W - padR, y1: axisY, y2: axisY, stroke: '#a9c0d8', 'stroke-width': 1.2 }, svg);
+    for (let y = Y0; y <= Y1; y += 5) {
+      const major = y % 10 === 0;
+      el('line', { x1: xOf(y), x2: xOf(y), y1: axisY, y2: axisY + (major ? 6 : 3), stroke: '#a9c0d8' }, svg);
+      if (major) el('text', { x: xOf(y), y: axisY + 20, 'text-anchor': 'middle', fill: '#eaf3fb', 'font-size': 13 }, svg).textContent = y;
+    }
+    if (!items.length) {
+      el('text', { x: W / 2, y: top + plotH / 2, 'text-anchor': 'middle', fill: '#a9c0d8', 'font-size': 14 }, svg).textContent = 'No firsts recorded for this selection.';
+    }
+    const gl = el('g', {}, svg), gf = el('g', {}, svg);
+    const show = (m, g, cy) => {
+      chart.classList.add('ps-ft-dim'); g.classList.add('is-on'); m._line.classList.add('is-on');
+      tip.style.setProperty('--c', m.gender === 'male' ? '#0d8a99' : '#c4127a');
+      tip.innerHTML = `<div class="ps-ft-tip__h"><img src="img/regional/flags/${esc(m.code.toLowerCase())}.png" alt="">${esc(m.country)}</div>
+        <div class="ps-ft-tip__y"><strong>${m.year}:</strong> First ${esc(m.gender)} ${FT_LBL[m.stage]}</div>
+        <div class="ps-ft-tip__p">${esc(m.person)}</div><div class="ps-ft-tip__u">${esc(m.uni)}${m.uc ? ` (${esc(m.uc)})` : ''}</div>
+        ${m.also && m.also.length ? `<div class="ps-ft-tip__also">Also ${m.year}: ${m.also.map(a => `${esc(a.person)}, ${esc(a.uni)}${a.uc ? ` (${esc(a.uc)})` : ''}`).join('; ')}</div>` : ''}`;
+      tip.classList.add('show');
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      const left = Math.min(Math.max(m._x - tw / 2, 4), W - tw - 4);
+      let ty = cy - R - 12 - th; if (ty < 0) ty = cy + R + 12;
+      tip.style.left = left + 'px'; tip.style.top = ty + 'px';
+    };
+    const hide = (m, g) => { chart.classList.remove('ps-ft-dim'); g.classList.remove('is-on'); m._line.classList.remove('is-on'); tip.classList.remove('show'); };
+    items.forEach((m, i) => {
+      const cy = axisY - 22 - m._row * ROWH, c = COL[m.gender];
+      m._line = el('line', { class: 'ps-ft-line', x1: m._x, x2: m._x, y1: axisY, y2: cy + R, stroke: c }, gl);
+      el('circle', { cx: m._x, cy: axisY, r: 2.4, fill: c }, gl);
+      const g = el('g', { class: 'ps-ft-flag', tabindex: 0, role: 'button', 'aria-label': `${m.year}: first ${m.gender} ${FT_LBL[m.stage]}, ${m.country}, ${m.person}, ${m.uni}` }, gf);
+      const id = 'ps-ft-clip' + i, cp = el('clipPath', { id }, g);
+      el('circle', { cx: m._x, cy, r: R - 1 }, cp);
+      el('image', { href: `img/regional/flags/${m.code.toLowerCase()}.png`, x: m._x - R, y: cy - R, width: 2 * R, height: 2 * R, 'clip-path': `url(#${id})`, preserveAspectRatio: 'xMidYMid slice' }, g);
+      el('circle', { cx: m._x, cy, r: R, fill: 'none', stroke: c, 'stroke-width': 3 }, g);
+      if (m.stage === 'phd') el('circle', { cx: m._x, cy, r: R + 3.6, fill: 'none', stroke: c, 'stroke-width': 1.6 }, g);
+      el('circle', { class: 'ps-ft-focus', cx: m._x, cy, r: R + 6, fill: 'none', stroke: 'none' }, g);
+      const on = () => show(m, g, cy), off = () => hide(m, g);
+      g.addEventListener('mouseenter', on); g.addEventListener('mouseleave', off);
+      g.addEventListener('focus', on); g.addEventListener('blur', off); g.addEventListener('click', on);
+    });
+    const nC = new Set(items.map(m => m.code)).size;
+    $('#ps-ft-count').textContent = `${items.length} first${items.length === 1 ? '' : 's'} shown across ${nC} countr${nC === 1 ? 'y' : 'ies'}${state.sel ? ` (filtered to ${nameOf(state.sel)})` : ''}.`;
+  }
+
   // ================= DESTINATIONS =================
   function setupDest() {
     const home = $('#ps-dest-home');
@@ -606,6 +719,7 @@
       bars: ['Graduate Degrees by Country — provenance', base + '<p>Same counts as the country strip and the map. CSV export includes each Master file\u2019s last-modified time.</p>'],
       disc: ['Fields of Research — provenance', base + '<p>Graduate Degrees: Field / Discipline and Broad discipline, classified into the eight short-discipline categories. Completed degree records, not people.</p>'],
       gender: ['Gender — provenance', base + '<p>Scholars sheet Gender field, normalised (Female / Fefine / Fafine; Male / Tangata / Tāne). Blank or other values are reported as not recorded. Publishing scholars = included scholars with at least one Authorship link to a headline-category publication.</p>'],
+      firsts: ['Pacific Firsts — provenance', base + '<p>Graduate Degrees: completed Master\u2019s and PhD / doctorate records (professional doctorates excluded) held by included scholars, dated by the completion-year column (Finish / Completion Year; Completion Year; Graduation Year or End Year where that is the country\u2019s column). Gender from the Scholars sheet, never inferred. Display name = title + first given name + family name; university = canonical name and its recorded country. The earliest year per country, degree and gender is shown; ties are listed together.</p>'],
       dest: ['Where Our Scholars Study — provenance', base + '<p>Graduate Degrees: University Country / Country and canonical university name. Completion decade from the completion/finish year.</p>'],
     };
     const [t, h] = map[which] || ['Provenance', base];

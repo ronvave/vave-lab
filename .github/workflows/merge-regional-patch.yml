@@ -1,0 +1,48 @@
+name: Merge regional dashboard data patch
+
+# Manual only. Adds an encrypted data patch (data/regional-patch.enc, key in the
+# REGIONAL_PATCH_KEY secret) into data/regional-scholars.json.enc using the
+# REGIONAL_PASSCODE secret, deletes the patch, commits to main, then starts the
+# validated Pages deploy. No passcode or plaintext appears in logs or the repo.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: rotate-regional-passcode
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography
+      - name: Merge patch into encrypted bundle
+        id: merge
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+          REGIONAL_PATCH_KEY: ${{ secrets.REGIONAL_PATCH_KEY }}
+        run: |
+          out=$(python3 scripts/merge_regional_patch.py)
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Commit and deploy
+        if: steps.merge.outputs.result == 'merged'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data/regional-scholars.json.enc data/regional-patch.enc
+          git commit -m "Regional dashboard: merge encrypted data patch"
+          git push origin HEAD:main
+          gh workflow run deploy-pages-validated.yml --ref main

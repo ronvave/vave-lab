@@ -149,6 +149,38 @@
         <p class="ps-note">Fiji, Tonga and Vanuatu only, using the eight short-discipline categories from their Master files. Completed-degree records, not people. <button class="ps-prov" type="button" data-prov="disc">Data provenance</button></p>
       </section>
 
+      <!-- PACIFIC FIRSTS -->
+      <section class="ps-panel ps-col-firsts" id="ps-firsts-panel" aria-labelledby="ps-firsts-title" hidden>
+        <div class="ps-head ps-ft-head">
+          <div>
+            <h2 class="ps-h2" id="ps-firsts-title">Pacific Firsts: Earliest Master's and PhD Graduates</h2>
+            <p class="ps-sub" id="ps-firsts-sub">The first recorded male and female Master's and PhD graduate for each country. Hover over or tab to a flag for details.</p>
+          </div>
+          <div class="ps-ft-tools">
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Degrees shown on the Pacific Firsts timeline" id="ps-ft-stage">
+              <button type="button" role="radio" aria-checked="true" data-ftstage="both">Master's and PhD</button>
+              <button type="button" role="radio" aria-checked="false" data-ftstage="masters">Master's only</button>
+              <button type="button" role="radio" aria-checked="false" data-ftstage="phd">PhD only</button>
+            </div>
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown on the Pacific Firsts timeline" id="ps-ft-gender">
+              <button type="button" role="radio" aria-checked="true" data-ftgender="both">Both</button>
+              <button type="button" role="radio" aria-checked="false" data-ftgender="male">Male</button>
+              <button type="button" role="radio" aria-checked="false" data-ftgender="female">Female</button>
+            </div>
+          </div>
+        </div>
+        <div class="ps-ft-legend" aria-hidden="true">
+          <span><i class="ps-ft-key ps-ft-key--m"></i>First male</span>
+          <span><i class="ps-ft-key ps-ft-key--f"></i>First female</span>
+          <span><i class="ps-ft-key ps-ft-key--ms"></i>Master's (single ring)</span>
+          <span><i class="ps-ft-key ps-ft-key--phd"></i>PhD (double ring)</span>
+        </div>
+        <div class="ps-ft-scroll"><div class="ps-ft-chart" id="ps-ft-chart"><svg id="ps-ft-svg" role="img" aria-labelledby="ps-firsts-title ps-ft-count"></svg><div class="ps-ft-tip" id="ps-ft-tip" role="tooltip"></div></div></div>
+        <p class="ps-note ps-ft-swipe">Swipe sideways to see the full timeline.</p>
+        <p class="ps-note" id="ps-ft-count"></p>
+        <p class="ps-note">Earliest completion year among completed Master's and PhD records in each country's Master file (Graduate Degrees), using each country dashboard's own rule; professional doctorates are not counted as PhDs. When two scholars share the earliest year, the hover card lists both. <span id="ps-ft-missing"></span> <button class="ps-prov" type="button" data-prov="firsts">Data provenance</button></p>
+      </section>
+
       <!-- GENDER -->
       <section class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
         <h2 class="ps-h2" id="ps-gender-title">Gender Representation</h2>

@@ -361,6 +361,47 @@ def build_country(code, name, dump):
     )
 
 
+CC2 = {'New Zealand': 'NZ', 'Australia': 'AU', 'United Kingdom': 'UK', 'United States': 'US', 'Canada': 'CA',
+       'Fiji': 'FJ', 'France': 'FR', 'Malta': 'MT', 'Papua New Guinea': 'PG'}
+
+
+def firsts(code, name, dump):
+    """Earliest completed Master's and PhD per gender (Pacific Firsts timeline).
+
+    Mirrors the country dashboards' Panel D rule: completed Master's / PhD
+    records (professional doctorates excluded) dated by the completion-year
+    column, gender from the Scholars sheet (never inferred). Ties on the
+    earliest year are kept as `also`. Display name = first given + family.
+    """
+    scholars, _ = roster(code, dump)
+    S = {norm(r['Scholar ID']): r for r in scholars}
+    cand = defaultdict(list)
+    for r in table(dump, 'Graduate Degrees', 'Degree ID'):
+        sid = norm(r.get('Scholar ID'))
+        if sid not in S or not completed(r) or level(r) not in ('M', 'P'):
+            continue
+        y = year_of(first(r, 'Finish / Completion Year', 'Completion Year', 'Graduation Year', 'End Year'))
+        g = gender(S[sid].get('Gender'))
+        if not y or g == 'unknown':
+            continue
+        s = S[sid]
+        given, fam = first(s, 'Given Names'), first(s, 'Family Name')
+        person = f"{given.split()[0]} {fam}" if given and fam else first(s, 'Scholar Name', 'Display Name')
+        _, ctry, uni = destination(r)
+        ctry = ctry or first(r, 'University Country', 'Country')
+        cand[(level(r), g)].append(dict(year=y, person=person, uni=uni, uc=CC2.get(ctry, ctry)))
+    out = []
+    for (lv, g), L in cand.items():
+        L.sort(key=lambda x: (x['year'], x['person']))
+        tied = [x for x in L if x['year'] == L[0]['year']]
+        stage = 'masters' if lv == 'M' else 'phd'
+        title = 'Dr' if stage == 'phd' else ('Mr' if g == 'male' else 'Ms')
+        fmt_p = lambda x: dict(person=f"{title} {x['person']}", uni=x['uni'], uc=x['uc'])
+        out.append(dict(code=code, country=name, stage=stage, gender=g, year=tied[0]['year'],
+                        **fmt_p(tied[0]), also=[fmt_p(x) for x in tied[1:]]))
+    return out
+
+
 def _sa_clients():
     """Service-account clients for CI (read-only scopes)."""
     import os
@@ -420,13 +461,15 @@ def main():
     if a.pull:
         pull(d)
     meta = json.load(open(d / 'meta.json'))
-    countries, sources = [], []
+    countries, sources, first_list = [], [], []
     for code, name, sid, url, status in COUNTRIES:
         fp = d / f'{code}.json'
         if not fp.exists():
             sources.append(dict(code=code, name=name, status='Not yet connected'))
             continue
-        c = build_country(code, name, json.load(open(fp)))
+        dump = json.load(open(fp))
+        c = build_country(code, name, dump)
+        first_list.extend(firsts(code, name, dump))
         c.update(dashboard=url, dashboardStatus=status, oct5=OCT5.get(code))
         countries.append(c)
         sources.append(dict(code=code, name=name, file=meta[code]['name'],
@@ -449,6 +492,7 @@ def main():
         countries=countries,
         regional=dict(uniquePubs=len(allkeys), uniqueIndigenousPubs=len(indkeys),
                       indigenousPubYears={str(k): v for k, v in sorted(years.items())}),
+        firsts=sorted(first_list, key=lambda m: (m['year'], m['code'], m['stage'], m['gender'])),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')
