@@ -5,15 +5,13 @@
 #ps-dir *{box-sizing:border-box}
 #ps-dir .dir__intro{margin:2px 0 0;color:var(--ps-ink-muted);font-size:.95rem;max-width:820px}
 #ps-dir .dir__kpis{color:var(--ps-ink-muted)}
-#ps-dir .dec{display:inline-block;margin-left:6px;font-family:var(--ps-sans);font-size:.72rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:#334155;background:#e2e8f0;border-radius:6px;padding:2px 7px;vertical-align:4px}
-#ps-dir .more{display:flex;justify-content:center;margin-top:16px}
 #ps-dir .db-scholar-card__flag.no-flag{display:none}
 #ps-dir .db-scholar-card{content-visibility:auto;contain-intrinsic-size:auto 360px}
 #ps-dir .db-scholar-card.is-target{outline:3px solid #0891b2;outline-offset:2px}
 #ps-dir .dir__kpis{display:flex;flex-wrap:wrap;gap:6px 22px;margin:14px 0 4px;font-size:.88rem;color:var(--color-text-muted)}
 #ps-dir .dir__kpis b{font-family:var(--ps-sans);font-weight:700;font-variant-numeric:lining-nums tabular-nums;font-size:1.35rem;color:#062f35;margin-right:5px;font-variant-numeric:tabular-nums}
-#ps-dir .filters{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin:18px 0 10px}
-#ps-dir .filters label{display:flex;flex-direction:column;gap:4px;font-size:.74rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)}
+#ps-dir .filters{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:10px;margin:18px 0 10px}
+#ps-dir .filters label,#ps-dir .filters .flabel{display:flex;flex-direction:column;gap:4px;font-size:.74rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--color-text-muted)}
 #ps-dir .db-filter{padding:8px 10px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-surface);font:inherit;font-size:.9rem;text-transform:none;letter-spacing:0;font-weight:500;color:var(--color-text);cursor:pointer;width:100%}
 #ps-dir .db-filter:hover{border-color:var(--color-primary)}
 #ps-dir .db-filter:focus-visible,#ps-dir .db-search:focus-visible{outline:2px solid var(--color-primary);outline-offset:1px}
@@ -31,7 +29,7 @@
 #ps-dir .db-filter-chip button{background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;width:18px;height:18px;border-radius:50%;font-size:.95rem;line-height:1;padding:0}
 #ps-dir .resultbar{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:16px 0 0;font-size:.86rem;color:var(--color-text-muted)}
 #ps-dir .db-scholars-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin-top:12px;align-items:start}
-@media (max-width:900px){#ps-dir .db-scholars-grid{grid-template-columns:minmax(0,1fr)}#ps-dir .filters{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:900px){#ps-dir .db-scholars-grid{grid-template-columns:minmax(0,1fr)}#ps-dir .filters{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media (max-width:560px){#ps-dir .filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
 #ps-dir .empty{grid-column:1/-1;text-align:center;color:var(--color-text-muted);padding:30px;border:1px dashed var(--color-border);border-radius:14px}
 /* ---- country scholar card (copied from the country dashboards) ---- */
@@ -95,7 +93,6 @@
 #ps-dir .legend b{display:block;color:#062f35;margin-bottom:2px}
 @media (max-width:900px){#ps-dir .legend{grid-template-columns:1fr 1fr}}
 @media (max-width:520px){#ps-dir .legend{grid-template-columns:1fr}}
-#ps-dir .more[hidden]{display:none}
 #ps-dir .db-scholar-card{min-width:0}
 #ps-dir .db-scholar-card__info h3,#ps-dir .db-scholar-card__institution,#ps-dir .db-scholar-card__title,#ps-dir .db-scholar-card__updated{overflow-wrap:anywhere}
 #ps-dir .db-scholar-card__photo{position:relative;background:#e2e8f0}
@@ -105,3 +102,71 @@
 #ps-dir .db-scholar-card__title a{color:#0b4f8a;text-decoration:underline;text-underline-offset:2px}
 #ps-dir .db-scholar-card__title a:hover{color:#063a66}
 #ps-dir .db-scholar-card a:focus-visible{outline:2px solid #0891b2;outline-offset:2px;border-radius:3px}
+
+/* Memorial strip under a deceased scholar's photo (copied from the Fiji card). */
+#ps-dir .db-scholar-card__photo-col--is-deceased .db-scholar-card__photo{border-color:#2c2c2a;box-shadow:0 0 0 1px #2c2c2a,0 4px 10px rgba(6,47,53,.12)}
+#ps-dir .db-scholar-card__memorial{width:110px;margin-top:-10px;padding:4px 6px;background:#2c2c2a;color:#fff;font-size:.68rem;font-weight:600;letter-spacing:.04em;line-height:1.2;text-align:center;border-radius:0 0 4px 4px;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+@media (max-width:520px){#ps-dir .db-scholar-card__memorial{width:92px}}
+
+/* "Explain their research (AI generated)" (copied from the Fiji card). */
+#ps-dir .db-scholar-card__insight-wrap{padding:0 22px}
+#ps-dir .db-scholar-card__insight-btn{appearance:none;width:100%;margin:14px 0 0;padding:10px 14px;background:var(--color-surface);border:1px solid var(--color-border);border-radius:10px;cursor:pointer;font:500 .9rem var(--ps-sans);color:var(--color-text);display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s,border-color .15s}
+#ps-dir .db-scholar-card__insight-btn:hover{background:rgba(14,116,144,.05);border-color:rgba(14,116,144,.25)}
+#ps-dir .db-scholar-card__insight-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+#ps-dir .db-scholar-card__insight-btn[aria-expanded="true"]{background:rgba(14,116,144,.08);border-color:rgba(14,116,144,.25)}
+#ps-dir .db-scholar-card__insight-btn-tag{color:var(--color-text-muted);font-weight:400}
+#ps-dir .db-scholar-card__insight-btn-chev{color:var(--color-text-muted);transition:transform .2s ease;margin-left:4px}
+#ps-dir .db-scholar-card__insight-btn[aria-expanded="true"] .db-scholar-card__insight-btn-chev{transform:rotate(180deg)}
+#ps-dir .db-scholar-card__insight{margin:10px 0 0;padding:12px 14px 14px;background:rgba(14,116,144,.04);border:1px solid var(--color-border);border-radius:10px}
+#ps-dir .db-scholar-card__insight[hidden]{display:none}
+#ps-dir .db-scholar-card__insight-heading{font-weight:700;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);margin-bottom:6px}
+#ps-dir .db-scholar-card__insight-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:6px}
+#ps-dir .db-scholar-card__insight-tag{display:inline-block;padding:4px 10px;border-radius:999px;font:500 .82rem var(--ps-sans);border:1px solid transparent;white-space:nowrap;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+#ps-dir .db-scholar-card__insight-tag:hover{filter:brightness(.96);text-decoration:underline}
+#ps-dir .db-scholar-card__insight-tag:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="0"]{background:#d1fae5;color:#065f46;border-color:#a7f3d0}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="1"]{background:#fed7aa;color:#7c2d12;border-color:#fdba74}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="2"]{background:#ede9fe;color:#4c1d95;border-color:#c4b5fd}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="3"]{background:#dbeafe;color:#1e3a8a;border-color:#93c5fd}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="4"]{background:#fecdd3;color:#7f1d1d;border-color:#fda4af}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="5"]{background:#fef3c7;color:#78350f;border-color:#fde68a}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="6"]{background:#cffafe;color:#164e63;border-color:#7dd3fc}
+#ps-dir .db-scholar-card__insight-tag[data-tag-color="7"]{background:#e0e7ff;color:#312e81;border-color:#a5b4fc}
+#ps-dir .db-scholar-card__insight-caption{font-size:.78rem;color:var(--color-text-muted);line-height:1.4}
+#ps-dir .db-scholar-card__insight-summary{margin:0;font:400 .9rem/1.55 var(--ps-sans);color:var(--color-text);overflow-wrap:anywhere}
+#ps-dir .db-scholar-card__insight-summary a{color:var(--color-primary);text-decoration:underline}
+#ps-dir .db-scholar-card__insight-summary--empty{font-style:italic;color:var(--color-text-muted)}
+#ps-dir .db-scholar-card__insight-section+.db-scholar-card__insight-section{margin-top:12px;padding-top:10px;border-top:1px dashed var(--color-border)}
+@media (max-width:520px){#ps-dir .db-scholar-card__insight-wrap{padding:0 14px}}
+
+/* Page-number pager (same as the Fiji dashboard). */
+#ps-dir .db-pager{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:18px;flex-wrap:wrap}
+#ps-dir .db-pager:empty{display:none}
+#ps-dir .db-pager button{background:transparent;border:1px solid var(--color-border);border-radius:8px;padding:5px 11px;font:inherit;font-size:.85rem;font-weight:600;color:var(--color-text);cursor:pointer;transition:background .12s,color .12s,border-color .12s;min-width:36px}
+#ps-dir .db-pager button:hover:not(:disabled){background:var(--color-primary-highlight);border-color:var(--color-primary);color:var(--color-primary)}
+#ps-dir .db-pager button.is-active{background:var(--color-primary);color:#fff;border-color:var(--color-primary)}
+#ps-dir .db-pager button:disabled{opacity:.4;cursor:not-allowed}
+#ps-dir .db-pager__gap{color:var(--color-text-muted);padding:0 2px}
+#ps-dir .db-pager__info{color:var(--color-text-muted);font-size:.82rem;margin:0 8px}
+
+/* Region -> Country fly-out menus (Work region, Study region). */
+#ps-dir .cmenu{position:relative}
+#ps-dir .cmenu__btn{width:100%;display:flex;align-items:center;justify-content:space-between;gap:6px;text-align:left;cursor:pointer}
+#ps-dir .cmenu__val{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#ps-dir .cmenu__chev{color:var(--color-text-muted);font-size:.8em}
+#ps-dir .cmenu.is-set .cmenu__btn{border-color:var(--color-primary);color:var(--color-primary);font-weight:600}
+#ps-dir .cmenu__pop,#ps-dir .cmenu__sub{background:#fff;border:1px solid var(--color-border);border-radius:10px;box-shadow:0 12px 28px rgba(6,47,53,.18);padding:6px;min-width:220px;text-transform:none;letter-spacing:0;font-weight:400;font-size:.9rem}
+#ps-dir .cmenu__pop{position:absolute;top:calc(100% + 4px);left:0;z-index:40}
+#ps-dir .cmenu__pop[hidden],#ps-dir .cmenu__sub[hidden]{display:none}
+#ps-dir .cmenu__row{position:relative}
+#ps-dir .cmenu__sub{position:absolute;top:-7px;left:calc(100% + 9px);z-index:41;max-height:min(70vh,440px);overflow:auto}
+#ps-dir .cmenu__sub.to-left{left:auto;right:calc(100% + 9px)}
+#ps-dir .cmenu__sub.inline{position:static;box-shadow:none;border:0;border-left:3px solid var(--color-primary-highlight);border-radius:0;margin:2px 0 4px 10px;min-width:0;max-height:none;padding:2px 0 2px 6px}
+#ps-dir .cmenu__item{display:flex;align-items:center;gap:8px;width:100%;padding:7px 10px;border:0;background:transparent;border-radius:6px;font:inherit;color:var(--color-text);text-align:left;cursor:pointer}
+#ps-dir .cmenu__item:hover,#ps-dir .cmenu__item:focus-visible,#ps-dir .cmenu__row.is-open>.cmenu__reg{background:var(--color-primary-highlight);color:var(--color-primary);outline:none}
+#ps-dir .cmenu__item.is-current{font-weight:700;color:var(--color-primary)}
+#ps-dir .cmenu__item--all{border-bottom:1px solid var(--color-border);border-radius:6px 6px 0 0;margin-bottom:2px}
+#ps-dir .cmenu__n{margin-left:auto;color:var(--color-text-muted);font-size:.8rem;font-variant-numeric:tabular-nums}
+#ps-dir .cmenu__arrow{color:var(--color-text-muted);font-size:1.05rem;line-height:1}
+#ps-dir .cmenu__reg>span:first-child{white-space:nowrap}
+@media (max-width:640px){#ps-dir .cmenu__pop{min-width:0;width:min(300px,calc(100vw - 40px));max-height:70vh;overflow:auto}}

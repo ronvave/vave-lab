@@ -107,6 +107,11 @@ def deceased(r):
     return fold(first(r, 'Alive / Deceased', 'Alive/Deceased', 'Vital Status', 'Living Status')) == 'deceased'
 
 
+def year4(v):
+    v = norm(v)
+    return int(v) if re.fullmatch(r'\d{4}', v) and 1800 <= int(v) <= 2100 else None
+
+
 def tidy_place(v):
     return re.sub(r'\s*;\s*', ' / ', ok(v))
 
@@ -240,9 +245,19 @@ def build_directory(dumps, country_meta):
                 role = ''
             dept = ok(first(r, 'Current Department / Unit', 'Department', 'Current Department'))
             wc, iso = work_country(first(r, 'Institution Country', 'Current Country'))
+            wr = b.destination({'University Country': wc})[0] if wc else ''
+            wr = '' if wr in ('Unknown', 'Other') else wr
+            # Memorial years (deceased scholars only), same 4-digit rule as the
+            # country cards (master-file-adapter parseYearOrNull_).
+            yb = yd = None
+            if deceased(r):
+                yb = year4(first(r, 'Year of Birth', 'Birth Year'))
+                yd = year4(first(r, 'Year of Death', 'Death Year'))
             degs = deg_by.get(sid, [])
             lv = sorted({'P' if x in ('P', 'PD') else 'M' for x, _ in degs})
-            regions = sorted({b.destination(x)[0] for _, x in degs} - {'Unknown', 'Other'})
+            dests = [b.destination(x) for _, x in degs]
+            regions = sorted({d[0] for d in dests} - {'Unknown', 'Other'})
+            study_c = sorted({f'{d[0]}|{d[1]}' for d in dests if d[0] not in ('Unknown', 'Other') and d[1]})
             disc = sorted({b.short_discipline(code, x) for _, x in degs} - {''}) if code in b.DISCIPLINE_COUNTRIES else []
             field = ok(first(r, 'Primary Discipline / Field', 'Primary Discipline'))
             if len(field) > 80:
@@ -271,7 +286,7 @@ def build_directory(dumps, country_meta):
                 continue
             opt = dict(sal=sal, g={'female': 'F', 'male': 'M'}.get(g, ''), dec=1 if deceased(r) else 0,
                        geo=line, loc=loc, role=role, inst=inst, dept=dept, wc=wc, iso=iso, d=lv, r=regions,
-                       s=disc, fld=field, sec=sector, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
+                       s=disc, fld=field, sec=sector, wr=wr, sc=study_c, yb=yb, yd=yd, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
                        p=ps, fa=len(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
             rec.update({k: v for k, v in opt.items() if v not in ('', [], 0, None)})
             rec['_k'] = fold(fam) + ' ' + fold(rec['n'])

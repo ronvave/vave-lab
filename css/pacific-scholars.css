@@ -21,8 +21,9 @@
   --ps-radius: 14px;
   --ps-radius-sm: 9px;
   --ps-shadow: 0 10px 30px rgba(1, 10, 25, 0.45);
-  --ps-serif: 'Cormorant Garamond', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
-  --ps-sans: 'DM Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  /* Arial across the whole page, as on the Fiji dashboard. */
+  --ps-serif: Arial, Helvetica, 'Helvetica Neue', sans-serif;
+  --ps-sans: Arial, Helvetica, 'Helvetica Neue', sans-serif;
   --ps-gap: 14px;
 }
 
