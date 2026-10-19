@@ -103,6 +103,25 @@ def salutation(r):
     return v if 0 < len(v) <= 24 and fold(v) not in BAD else ''
 
 
+LEAD_TITLE = re.compile(r"^((?:(?:prof\.?|professor|dr\.?|doctor|associate|assoc\.?|assistant|emeritus|emerita|revd\.?|rev\.?|reverend)\s+)+)(?=\S)", re.I)
+
+
+TITLE_CANON = {'prof': 'prof', 'professor': 'prof', 'dr': 'dr', 'doctor': 'dr', 'assoc': 'assoc',
+               'associate': 'assoc', 'assistant': 'asst', 'rev': 'rev', 'revd': 'rev', 'reverend': 'rev'}
+
+
+def title_set(text):
+    return {TITLE_CANON[w] for w in re.findall(r"[a-z]+", fold(text)) if w in TITLE_CANON}
+
+
+def split_lead_title(name):
+    m = LEAD_TITLE.match(name or '')
+    if not m:
+        return '', name
+    rest = name[m.end():].strip()
+    return (m.group(1).strip(), rest) if rest else ('', name)
+
+
 def deceased(r):
     return fold(first(r, 'Alive / Deceased', 'Alive/Deceased', 'Vital Status', 'Living Status')) == 'deceased'
 
@@ -277,8 +296,23 @@ def build_directory(dumps, country_meta):
             iu, du = (iu if HTTPS.match(iu) else ''), (du if HTTPS.match(du) else '')
             ps = sorted(auth.get(sid, set()))
             rec = dict(id=sid, c=code, n=display_name(code, r))
-            sal = salutation(r)
-            if sal:
+            # Title shown once, before the name: a leading academic / clerical
+            # title inside the Master name ("Professor X", "Revd Dr X") is
+            # moved out of the name, the Master salutation wins when present,
+            # and a stand-alone "Professor" is shown as "Prof" like other cards.
+            # Titles later in a name (e.g. Samoan matai title + Dr) are kept.
+            lead, rec['n'] = split_lead_title(rec['n'])
+            sal = salutation(r) or lead
+            sal = re.sub(r'(?i)^professor$', 'Prof', sal.strip())
+            # Samoan names often carry the title after the matai title
+            # ("Folasāitu Professor Julia Ioane"): keep that order, show
+            # "Professor" as "Prof", and drop a salutation it would repeat.
+            mid = title_set(rec['n'])
+            if mid:
+                rec['n'] = re.sub(r'(?<!Associate )(?<!Assistant )\bProfessor\b', 'Prof', rec['n'])
+                if sal and title_set(sal) <= mid:
+                    sal = ''
+            if sal:   # drop salutation parts already in the name ("Sir", "Adi", matai titles)
                 name_words = {fold(w) for w in rec['n'].split()[:3]}
                 sal = ' / '.join(t for t in re.split(r'\s*/\s*', sal) if fold(t) not in name_words)
             fam = ok(r.get('Family Name')) or ok(r.get('Preferred Family Name')) or rec['n'].split()[-1]
