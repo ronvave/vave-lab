@@ -10,13 +10,14 @@ are encrypted with each country's own passcode secret:
   VUT  data/vanuatu-master-bundle.json.enc       VAVELAB_VANUATU_PASSCODE  .enrichment
 
 Only three fields leave each file, and only for scholars already in the regional
-directory: photo (a repo path under img/scholars/ that exists, or an https URL),
+directory: photo (a repo path under img/scholars/ that exists, an https URL, or
+for Vanuatu only an embedded JPEG that passes the Vanuatu dashboard's own check),
 institutionUrl and departmentUrl (https URLs). They are written to the
 `cardExtras` key of data/regional-scholars.json.enc (re-encrypted with
 REGIONAL_PASSCODE, fresh salt and IV). Logs show counts only; never values.
 Prints 'updated', 'unchanged' or 'skipped'.
 """
-import base64, gzip, json, os, re, sys
+import base64, binascii, gzip, json, os, re, sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -44,8 +45,23 @@ def decrypt(path, pw):
     return json.loads(AESGCM(derive_key(pw, salt)).decrypt(iv, ct, None))
 
 
-def clean_photo(v):
+def embedded_jpeg(v):
+    """Same rule as vanuatu_master_file_transformer.approved_photo: a base64
+    JPEG data URL of at most 512 KB that decodes to a complete JPEG."""
+    prefix = 'data:image/jpeg;base64,'
+    if not v.startswith(prefix) or len(v) > 700000:
+        return ''
+    try:
+        image = base64.b64decode(v[len(prefix):], validate=True)
+    except (ValueError, binascii.Error):
+        return ''
+    return v if 4 <= len(image) <= 512000 and image.startswith(b'\xff\xd8') and image.endswith(b'\xff\xd9') else ''
+
+
+def clean_photo(v, allow_embedded=False):
     v = str(v or '').strip()
+    if allow_embedded and v.startswith('data:'):
+        return embedded_jpeg(v)
     m = PHOTO_PATH.match(v)
     if m:
         return m.group(1) if (ROOT / m.group(1)).is_file() else ''
@@ -83,7 +99,7 @@ def main():
             if sid not in ids or not isinstance(r, dict):
                 continue
             out = {}
-            ph = clean_photo(r.get('photo'))
+            ph = clean_photo(r.get('photo'), allow_embedded=(code == 'VUT'))
             if r.get('photo') and not ph:
                 n['rejected'] += 1
             if ph: out['ph'] = ph; n['photo'] += 1
