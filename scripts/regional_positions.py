@@ -7,7 +7,8 @@ on the included roster, and classifies every row on two axes:
   * academic rank (from the recorded/verbatim title first, then the
     standardized rank; Lecturer and Assistant Professor kept separate).
 Output is per scholar: display name, gender, and which roles were ever / are
-currently held. Counting happens client-side (unique scholars per role).
+currently held, plus the institution country for each role (Mock-up B).
+Counting happens client-side (unique scholars per role).
 """
 import re
 
@@ -88,6 +89,11 @@ def _disp(n):
     return re.sub(r'(^|\s)(Dr|Prof)\.?\s+', r'\1', n).strip()
 
 
+def _host(h):
+    h = (re.split(r'\s*/\s*', (h or '').strip())[0] or 'Not recorded')
+    return h.replace('Pacific regional', 'Regional / multi-country').replace('International', 'Regional / multi-country')
+
+
 def build_positions(dumps):
     """dumps: {code: sheet dump incl. Scholars, Positions, Institutions}."""
     scholars, cov_pos, cov_sch = {}, {}, {}
@@ -103,8 +109,11 @@ def build_positions(dumps):
                 continue
             s = scholars.setdefault((code, p['sid']), dict(c=code, n=_disp(p['name']), g=p['gender'][0], r={}))
             for k in roles:
-                e = s['r'].setdefault(k, dict(cur=False))
+                e = s['r'].setdefault(k, dict(cur=False, h=[]))
                 e['cur'] = e['cur'] or p['current']
+                h = _host(p['host'])
+                if h not in e['h']:
+                    e['h'].append(h)
     return dict(lead=[[k, l] for k, l, _ in LEAD], rank=[[k, l] for k, l, _ in RANK],
                 coverage=dict(positions=cov_pos, withPositions=cov_sch),
                 scholars=sorted(scholars.values(), key=lambda s: (s['c'], s['n'])))

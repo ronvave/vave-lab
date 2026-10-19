@@ -124,6 +124,17 @@ Two full-width panels below Pacific Firsts, built from each country Master file'
   each leadership role, with a country dropdown that follows the dashboard's selected
   country.
 
+- **Where Positions Are Held** (half width, left) — home country × institution country
+  matrix (top 9 institution countries + Other) with a position-group dropdown (all
+  positions, any leadership role, VC/PVC/Dean, Professors and Associate Professors,
+  Lecturers and Senior Lecturers). Gold outline = positions at home; hover/tap/focus a
+  cell for names. Added 18 Oct 2026; uses the per-role `h` (institution countries) field.
+- **Highest Academic Rank Reached** (half width, right) — each scholar counted once at
+  their most senior rank, with a Share / Number toggle.
+
+Both half-width panels stack full width below 1100 px. All four panels highlight the
+country selected on the cards.
+
 Classification rules:
 - Leadership (Chancellor/Pro-Chancellor, PVC/DVC, VC/President, Dean,
   Associate/Deputy Dean, Head of School/Department, Director of a university centre or

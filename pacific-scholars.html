@@ -214,6 +214,36 @@
         <p class="ps-note">Leadership roles at universities and other higher-education institutions, including acting appointments. A scholar who held several roles appears in each.</p>
       </section>
 
+      <!-- WHERE POSITIONS ARE HELD -->
+      <section class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-where-title">Where Positions Are Held</h2>
+            <p class="ps-sub">Scholars' home country (rows) by the country of the institution (columns). Gold outline = positions at home. Hover over or tap a cell to see who.</p>
+          </div>
+          <select class="ps-select" id="ps-where-role" aria-label="Position group shown in the matrix"></select>
+        </div>
+        <div class="ps-pos-scroll"><table class="ps-hm" id="ps-where-table"></table></div>
+        <p class="ps-note">Unique scholars per cell; a scholar with roles in two countries appears in both.</p>
+      </section>
+
+      <!-- HIGHEST ACADEMIC RANK -->
+      <section class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-rank-title">Highest Academic Rank Reached</h2>
+            <p class="ps-sub">Each scholar counted once, at the most senior academic rank on record.</p>
+          </div>
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Bar scale" id="ps-rank-scale">
+            <button type="button" role="radio" aria-checked="true" data-v="pct">Share</button>
+            <button type="button" role="radio" aria-checked="false" data-v="n">Number</button>
+          </div>
+        </div>
+        <div id="ps-rank-bars"></div>
+        <div class="ps-ld-legend" id="ps-rank-legend"></div>
+        <p class="ps-note">Countries with positions recorded. Hover over or tap a segment for the count.</p>
+      </section>
+
       <!-- GENDER -->
       <section class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
         <h2 class="ps-h2" id="ps-gender-title">Gender Representation</h2>

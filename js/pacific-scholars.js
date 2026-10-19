@@ -616,12 +616,15 @@
   }
 
   // ================= UNIVERSITY POSITIONS (table + leadership by gender) =================
+  let posTouch = false;
   const POS = { held: 'ever', gen: 'b', leadC: '*', lastSel: null };
   const posHas = c => D.positions && D.positions.coverage.positions[c] > 0;
   function setupPositions() {
     const P = D.positions;
     if (!P || !Array.isArray(P.scholars) || !P.scholars.length) return;
     $('#ps-pos-panel').hidden = false; $('#ps-lead-panel').hidden = false;
+    $('#ps-where-panel').hidden = false; $('#ps-rank-panel').hidden = false;
+    setupWhereRank();
     const seg = (sel, key) => { const bs = [...document.querySelectorAll(`${sel} button`)]; bs.forEach(b => b.addEventListener('click', () => { POS[key] = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); renderPosTable(); })); };
     seg('#ps-pos-held', 'held'); seg('#ps-pos-gen', 'gen');
     const sel = $('#ps-lead-country');
@@ -643,15 +646,107 @@
     };
     const t = $('#ps-pos-table');
     t.addEventListener('mousemove', e => { const td = e.target.closest('td[data-k]'); td ? show(td, e.clientX, e.clientY) : hide(); });
-    t.addEventListener('mouseleave', hide);
+    t.addEventListener('mouseleave', () => { if (!posTouch) hide(); });
+    addEventListener('pointerdown', e => { posTouch = e.pointerType === 'touch'; }, true);
+    document.addEventListener('click', e => { if (posTouch && !e.target.closest('#ps-pos-table td[data-k], #ps-where-table td[data-h], #ps-rank-bars span[data-k]')) hide(); });
     t.addEventListener('click', e => { const td = e.target.closest('td[data-k]'); if (td) show(td); });
     t.addEventListener('focusin', e => { const td = e.target.closest('td[data-k]'); if (td) show(td); });
     t.addEventListener('focusout', hide);
-    addEventListener('scroll', () => { const f = document.activeElement; if (f && f.matches && f.matches('#ps-pos-table td[data-k]')) show(f); else hide(); }, { passive: true });
+    addEventListener('scroll', () => { const f = document.activeElement; if (f && f.matches && f.matches('#ps-pos-table td[data-k]')) show(f); else if (!posTipBound.some(([sel]) => f && f.matches && f.matches(sel))) hide(); }, { passive: true });
     const nPos = Object.values(P.coverage.positions).reduce((a, b) => a + b, 0);
     const nWith = Object.values(P.coverage.withPositions).reduce((a, b) => a + b, 0);
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
     $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters. Striped columns: that country's Positions sheet has no records yet${empty.length ? ` (${empty.join(', ')})` : ''}. Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+  }
+
+  // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
+  const WR = { scale: 'pct' };
+  const HOMEN = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Islands', WSM: 'Samoa', VUT: 'Vanuatu', TUV: 'Tuvalu', KIR: 'Kiribati', PLW: 'Palau', COK: 'Cook Islands', MHL: 'Marshall Islands', FSM: 'Federated States of Micronesia' };
+  const RANKC = { prof: '#0a2d52', assoc: '#145a8a', senlec: '#1f86b8', asst: '#19b5c4', lec: '#5fd0d6', asstlec: '#9fe2e3', rf: '#e0a52a', adj: '#b3bfcc' };
+  const RANKDARK = new Set(['lec', 'asstlec', 'adj']);
+  let posGroups = [];
+  function posTipAt(html, el, x, y) {
+    const tip = $('#ps-pos-tip'); tip.innerHTML = html; tip.classList.add('show');
+    const r = el.getBoundingClientRect(), px = x ?? r.right, py = y ?? r.bottom;
+    tip.style.left = Math.max(8, Math.min(px + 12, innerWidth - tip.offsetWidth - 8)) + 'px';
+    tip.style.top = Math.max(8, Math.min(py + 12, innerHeight - tip.offsetHeight - 8)) + 'px';
+  }
+  const posTipHide = () => $('#ps-pos-tip').classList.remove('show');
+  function nameList(L) {
+    const n = L.map(s => esc(s.n)).sort((a, b) => a.localeCompare(b));
+    return `<ul>${n.slice(0, 12).map(x => `<li>${x}</li>`).join('')}${n.length > 12 ? `<li>and ${n.length - 12} more</li>` : ''}</ul>`;
+  }
+  const posTipBound = [];
+  function bindTip(root, sel, html) {
+    posTipBound.push([`#${root.id} ${sel}`, html]);
+    root.addEventListener('mousemove', e => { const el = e.target.closest(sel); if (el) posTipAt(html(el), el, e.clientX, e.clientY); else posTipHide(); });
+    root.addEventListener('mouseleave', () => { if (!posTouch) posTipHide(); });
+    root.addEventListener('click', e => { const el = e.target.closest(sel); if (el) posTipAt(html(el), el); });
+    root.addEventListener('focusin', e => { const el = e.target.closest(sel); if (el) posTipAt(html(el), el); });
+    root.addEventListener('focusout', posTipHide);
+  }
+  function setupWhereRank() {
+    const P = D.positions, LK = P.lead.map(x => x[0]);
+    posGroups = [['all', 'All university positions', null], ['lead', 'Any leadership role', LK], ['exec', 'Vice-Chancellor, PVC/DVC or Dean', ['vc', 'pvc', 'dean']], ['profs', 'Professors and Associate Professors', ['prof', 'assoc']], ['lects', 'Lecturers and Senior Lecturers', ['lec', 'senlec']]];
+    const sel = $('#ps-where-role');
+    sel.innerHTML = posGroups.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
+    sel.addEventListener('change', renderWhere);
+    const bs = [...document.querySelectorAll('#ps-rank-scale button')];
+    bs.forEach(b => b.addEventListener('click', () => { WR.scale = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); renderRank(); }));
+    bindTip($('#ps-where-table'), 'td[data-h]', td => {
+      const L = whereList(td.dataset.c, td.dataset.h);
+      return `<b>${esc(nameOf(td.dataset.c))}</b> scholars · ${esc(td.dataset.h)}<br>${L.length} scholar${L.length > 1 ? 's' : ''} (${esc(sel.selectedOptions[0].textContent)})${nameList(L)}`;
+    });
+    let rankRz; addEventListener('resize', () => { clearTimeout(rankRz); rankRz = setTimeout(renderRank, 150); });
+    bindTip($('#ps-rank-bars'), 'span[data-k]', sp => {
+      const L = P.scholars.filter(s => s.c === sp.dataset.c && posTop(s) === sp.dataset.k), all = P.scholars.filter(s => s.c === sp.dataset.c && posTop(s)).length;
+      return `<b>${esc(P.rank.find(r => r[0] === sp.dataset.k)[1])}</b> · ${esc(nameOf(sp.dataset.c))}<br>${L.length} of ${all} scholars (${Math.round(100 * L.length / all)}%)`;
+    });
+    addEventListener('scroll', () => { const f = document.activeElement; const b = posTipBound.find(([sel]) => f && f.matches && f.matches(sel)); if (b) posTipAt(b[1](f), f); }, { passive: true });
+  }
+  function posTop(s) { const R = D.positions.rank; for (const [k] of R) if (s.r[k]) return k; return null; }
+  function whereKeys() { return (posGroups.find(g => g[0] === $('#ps-where-role').value) || posGroups[0])[2]; }
+  function whereHosts(s, keys) { const hs = new Set(); Object.entries(s.r).forEach(([k, e]) => { if (!keys || keys.includes(k)) (e.h || []).forEach(h => hs.add(h)); }); return hs; }
+  let whereOther = [];
+  function whereList(c, h) {
+    const keys = whereKeys();
+    return D.positions.scholars.filter(s => s.c === c && (h === 'Other' ? whereOther.some(x => whereHosts(s, keys).has(x)) : whereHosts(s, keys).has(h)));
+  }
+  function renderWhere() {
+    if (!D.positions || $('#ps-where-panel').hidden) return;
+    const keys = whereKeys(), M = {}, tot = {};
+    for (const s of D.positions.scholars) whereHosts(s, keys).forEach(h => { (M[s.c] = M[s.c] || {})[h] = ((M[s.c] || {})[h] || 0) + 1; tot[h] = (tot[h] || 0) + 1; });
+    const hosts = Object.keys(tot).sort((a, b) => tot[b] - tot[a] || a.localeCompare(b));
+    const top = hosts.slice(0, 9); whereOther = hosts.slice(9);
+    const cols = whereOther.length ? [...top, 'Other'] : top;
+    const homes = countries().map(c => c.code).filter(posHas);
+    const val = (c, h) => h === 'Other' ? whereList(c, 'Other').length : ((M[c] || {})[h] || 0);
+    const mx = Math.max(1, ...homes.flatMap(c => cols.map(h => val(c, h))));
+    let html = '<thead><tr><th scope="col"><span class="ps-sr">Home country</span></th>' + cols.map(h => `<th scope="col"><span>${esc(h)}</span></th>`).join('') + '</tr></thead><tbody>';
+    for (const c of homes) {
+      html += `<tr class="${state.sel === c ? 'sel' : ''}"><th class="home" scope="row"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}</th>` + cols.map(h => {
+        const v = val(c, h), a = v / mx;
+        const bg = v ? `rgba(127,227,230,${(0.15 + 0.75 * a).toFixed(2)})` : 'rgba(255,255,255,.04)';
+        const attrs = v ? ` data-c="${c}" data-h="${esc(h)}" tabindex="0" aria-label="${esc(nameOf(c))} scholars in ${esc(h)}: ${v}"` : '';
+        return `<td class="${HOMEN[c] === h ? 'self' : ''}" style="background:${bg};color:${a > .45 ? '#04121f' : '#eaf3fb'}"${attrs}>${v || ''}</td>`;
+      }).join('') + '</tr>';
+    }
+    $('#ps-where-table').innerHTML = html + '</tbody>';
+    posTipHide();
+  }
+  function renderRank() {
+    if (!D.positions || $('#ps-rank-panel').hidden) return;
+    const P = D.positions;
+    const rows = countries().map(c => c.code).filter(posHas).map(c => { const L = P.scholars.filter(s => s.c === c && posTop(s)); const cnt = {}; L.forEach(s => { const k = posTop(s); cnt[k] = (cnt[k] || 0) + 1; }); return { c, n: L.length, cnt }; }).filter(r => r.n);
+    const mx = Math.max(1, ...rows.map(r => r.n));
+    $('#ps-rank-bars').innerHTML = rows.map(r => {
+      const w = WR.scale === 'pct' ? 100 : 100 * r.n / mx;
+      const segs = P.rank.map(([k, l]) => { const v = r.cnt[k] || 0; if (!v) return ''; const p = 100 * v / r.n; return `<span data-c="${r.c}" data-k="${k}" tabindex="0" style="flex:0 0 ${p}%;background:${RANKC[k] || '#7d8da1'};${RANKDARK.has(k) ? 'color:#0a2d52' : ''}" aria-label="${esc(l)}: ${v} (${Math.round(p)}%)">${p >= 9 ? (WR.scale === 'pct' ? Math.round(p) + '%' : v) : ''}</span>`; }).join('');
+      return `<div class="ps-ld-row${state.sel === r.c ? ' sel' : ''}"><div class="nm"><img src="img/regional/flags/${r.c.toLowerCase()}.png" alt="">${esc(nameOf(r.c))}</div><div><div class="ps-ld-bar" style="width:${w}%">${segs}</div></div><div class="ps-ld-n">n=${r.n}</div></div>`;
+    }).join('');
+    $('#ps-rank-bars').querySelectorAll('span[data-k]').forEach(sp => { if (sp.textContent && sp.scrollWidth > sp.clientWidth + 1) sp.textContent = ''; });
+    $('#ps-rank-legend').innerHTML = P.rank.map(([k, l]) => `<span><i style="background:${RANKC[k] || '#7d8da1'}"></i>${esc(l)}</span>`).join('');
+    posTipHide();
   }
   function posPick(s) { return POS.gen === 'b' || s.g === POS.gen; }
   function posHeld(s, k) { return s.r[k] && (POS.held === 'ever' || s.r[k].cur); }
@@ -663,7 +758,7 @@
       POS.leadC = state.sel && posHas(state.sel) ? state.sel : '*';
       $('#ps-lead-country').value = POS.leadC;
     }
-    renderPosTable(); renderLead();
+    renderPosTable(); renderLead(); renderWhere(); renderRank();
   }
   function renderPosTable() {
     const P = D.positions, C = countries().map(c => c.code);
