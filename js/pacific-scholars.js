@@ -110,6 +110,7 @@
     renderCredits();
     renderAll(true);
     if (window.PSDirectory) window.PSDirectory.init(D);
+    if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
   function readUrl() {

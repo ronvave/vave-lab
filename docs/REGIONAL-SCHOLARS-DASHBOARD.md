@@ -165,4 +165,29 @@ Every panel carries a code badge (top right) and the sticky menu bar under the h
 - **Panel A · Overview:** A1 Pacific Scholars Across Our Ocean, A2 Regional Postgraduate Degrees, A3 Research Outputs, A4 Graduate Degrees by Country, A5 Fields of Research
 - **Panel B · Firsts & university careers:** B1 Pacific Firsts, B2 University Positions by Country, B3 Women and Men in University Leadership, B4 Where Positions Are Held, B5 Highest Academic Rank Reached
 - **Panel C · People & pathways:** C1 Gender Representation, C2 Where Our Scholars Study, C3 From Learning to Impact
-- **D** Find a Pacific Scholar (pill "Find a Scholar"), **E** Regional Scholar Directory (pill "Directory")
+- **D** Find a Pacific Scholar (pill "Find a Scholar"), **E** Regional Scholar Directory (pill "Directory"), **F** Publications (pill "Publications"), **G** Collaborators (pill "Collaborators")
+
+## 11. Panel F Publications (added 2026-10-19)
+
+`js/pacific-scholars-publications.js` with styles in `css/pacific-scholars-pubs-collab.css`. Same layout as the Fiji dashboard's publications list. It reads the directory section of the encrypted bundle; the directory module calls `PSPublications.init` after decoding, so nothing extra is published.
+
+- Lists every publication linked to a directory scholar (4,063 on 2026-10-19), merged across countries by DOI, otherwise by title and year. This count includes theses, reports and other outputs, so it is larger than the 3,348 headline figure, which counts only each country dashboard's main publication types. The panel says so in its introduction.
+- Circle flag(s) from `img/regional/flags/` show the country of the linked scholar(s); a publication shared by scholars from two countries shows both flags.
+- "Indigenous first author" comes from the per-scholar `f` list (first-authored publication indices), which `scripts/regional_directory.py` writes beside the existing `fa` count.
+- Filters: search (title, authors, journal, publisher, scholar name), type, country, discipline (Fiji, Tonga and Vanuatu only), decade and authorship. Sorted newest first, 25 per page. Scholar names open that scholar's directory card (`#dir=ID`).
+- Seven records with damaged citation fields are still listed, but an author field that holds a DOI or an internal key is not shown. There is no .bib export, to match the earlier removal of the directory's merged .bib.
+
+## 12. Panel G Collaborators (added 2026-10-19)
+
+`js/pacific-scholars-collaborators.js` reads `data/regional-collaborators.json`. Photos and logos in `img/regional/collab/` are cropped from the V2 partnership map. The map reuses A1's base image; up to two key collaborators per country appear as photos beside the country, with a "+N" circle when there are more. Selecting them, or a card's "Show N more collaborators" button, expands that country's card to list everyone.
+
+To add a collaborator:
+
+1. Put a square photo (about 240 × 240) in `img/regional/collab/`. This step is optional; without a photo the card shows initials.
+2. Open `data/regional-collaborators.json` and add a line to that country's `people` list, for example `{ "name": "Jane Doe", "title": "Dr", "role": "Senior Lecturer", "inst": "NUS", "photo": "img/regional/collab/jane-doe.webp" }`.
+3. Add `"key": true` to show the person on the map; only the first two key people per country are shown there. Add `"vc": true` for the green Vice Chancellor ring.
+4. A new institution goes under `institutions` (name, optional logo). Put its code in the country's `logos` list to show the logo on the card.
+5. Never add email addresses, phone numbers or other contact details.
+
+A country added to the list without a set map position gets a default spot; check the map and adjust `SPOT` in the script if its photos cover a label.
+

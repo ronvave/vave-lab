@@ -321,7 +321,7 @@ def build_directory(dumps, country_meta):
             opt = dict(sal=sal, g={'female': 'F', 'male': 'M'}.get(g, ''), dec=1 if deceased(r) else 0,
                        geo=line, loc=loc, role=role, inst=inst, dept=dept, wc=wc, iso=iso, d=lv, r=regions,
                        s=disc, fld=field, sec=sector, wr=wr, sc=study_c, yb=yb, yd=yd, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
-                       p=ps, fa=len(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
+                       p=ps, fa=len(fa.get(sid, set()) & set(ps)), f=sorted(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
             rec.update({k: v for k, v in opt.items() if v not in ('', [], 0, None)})
             rec['_k'] = fold(fam) + ' ' + fold(rec['n'])
             scholars.append(rec)
@@ -333,6 +333,8 @@ def build_directory(dumps, country_meta):
     for sc in scholars:
         if 'p' in sc:
             sc['p'] = [remap[i] for i in sc['p']]
+        if 'f' in sc:  # first-authored publications (Panel F badge)
+            sc['f'] = [remap[i] for i in sc['f']]
     meta = {code: dict(included=counts[(code, 'included')], notApproved=counts[(code, 'not approved')]) for code in dumps}
     order = [c[0] for c in country_meta]
     scholars.sort(key=lambda s: (order.index(s['c']), s.pop('_k')))

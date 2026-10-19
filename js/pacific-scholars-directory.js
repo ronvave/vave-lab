@@ -366,6 +366,8 @@
       S.sort((a, b) => (b.p || []).length - (a.p || []).length || (b.fa || 0) - (a.fa || 0) || a._o - b._o);
       C = Object.fromEntries((D.countries || []).map(c => [c.code, c]));
       window.PSDirectoryDisciplines = D.disciplineCategories || [];
+      // Panel F (Publications) lists the same linked publications.
+      if (window.PSPublications) { try { window.PSPublications.init({ S, P, C, order, TYPE }); } catch (e) { console.error(e); } }
       panel.hidden = false;
       setup();
       const id = readHash();

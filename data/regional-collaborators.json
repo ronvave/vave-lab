@@ -1,0 +1,46 @@
+{
+  "_howto": [
+    "Panel G (Collaborators) of pacific-scholars.html reads this file.",
+    "Countries appear in the order listed. Add people to a country's 'people' list; the first two with \"key\": true are shown with photos on the map and on the country card, and everyone else appears when the card is expanded.",
+    "photo: optional path under img/regional/collab/ (square image, about 240 x 240). Without a photo the card shows initials.",
+    "vc: true gives the green Vice Chancellor ring, as on the partnership graphic.",
+    "Names, titles and institutions only: never add email addresses, phone numbers or other contact details."
+  ],
+  "source": "Pacific Scholar Database partnership map (V2), Center for Pacific Islands Studies, UH Mānoa",
+  "institutions": {
+    "FNU": { "name": "Fiji National University", "logo": "img/regional/collab/fnu.webp" },
+    "BYUH": { "name": "Brigham Young University–Hawaii", "logo": "img/regional/collab/byuh.webp" },
+    "SINU": { "name": "Solomon Islands National University", "logo": "img/regional/collab/sinu.webp" },
+    "NUS": { "name": "National University of Samoa", "logo": "img/regional/collab/nus.webp" },
+    "NUV": { "name": "National University of Vanuatu", "logo": "img/regional/collab/nuv.webp" },
+    "UHM": { "name": "University of Hawaiʻi at Mānoa" }
+  },
+  "countries": [
+    { "code": "FJI", "logos": ["FNU"], "people": [
+      { "name": "Unaisi Nabobo-Baba", "title": "Prof", "role": "Vice Chancellor", "inst": "FNU", "vc": true, "key": true, "photo": "img/regional/collab/unaisi-nabobo-baba.webp" },
+      { "name": "Ron Vave", "title": "Prof", "role": "Assistant Professor, Center for Pacific Islands Studies", "inst": "UHM", "key": true, "photo": "img/regional/collab/ron-vave.webp" }
+    ] },
+    { "code": "TON", "logos": ["BYUH"], "people": [
+      { "name": "Tēvita Ka'ili", "title": "Prof", "inst": "BYUH", "key": true, "photo": "img/regional/collab/tevita-kaili.webp" },
+      { "name": "'Inoke Hafoka", "title": "Prof", "inst": "BYUH", "key": true, "photo": "img/regional/collab/inoke-hafoka.webp" },
+      { "name": "Ashton Finau", "role": "Master's student", "inst": "UHM" }
+    ] },
+    { "code": "SLB", "logos": ["SINU"], "people": [
+      { "name": "Transform Aqorau", "title": "Prof", "role": "Vice Chancellor", "inst": "SINU", "vc": true, "key": true, "photo": "img/regional/collab/transform-aqorau.webp" },
+      { "name": "Tarcisius Kabutaulaka", "title": "Prof", "inst": "UHM", "key": true, "photo": "img/regional/collab/tarcisius-kabutaulaka.webp" },
+      { "name": "Rita Sahu", "title": "Ms", "inst": "SINU" }
+    ] },
+    { "code": "WSM", "logos": ["NUS"], "people": [
+      { "name": "Tuifuisa'a Patila Amosa", "title": "Prof", "role": "Vice Chancellor", "inst": "NUS", "vc": true, "key": true, "photo": "img/regional/collab/tuifuisaa-patila-amosa.webp" }
+    ] },
+    { "code": "VUT", "logos": ["NUV"], "people": [
+      { "name": "Jean-Pierre Nirua", "role": "Vice Chancellor", "inst": "NUV", "vc": true, "key": true, "photo": "img/regional/collab/jean-pierre-nirua.webp" }
+    ] },
+    { "code": "TUV", "people": [] },
+    { "code": "KIR", "people": [] },
+    { "code": "PLW", "people": [] },
+    { "code": "COK", "people": [] },
+    { "code": "MHL", "people": [] },
+    { "code": "FSM", "people": [] }
+  ]
+}
