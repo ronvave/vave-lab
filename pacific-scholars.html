@@ -15,6 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="css/pacific-scholars.css?v=9756d57b" />
+  <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=6c9821cb" />
 </head>
 <body class="ps-body">
   <a class="ps-skip" href="#ps-main">Skip to dashboard</a>
@@ -308,6 +309,39 @@
         </form>
         <div class="ps-results" id="ps-results" aria-live="polite"></div>
       </section>
+
+      <!-- REGIONAL SCHOLAR DIRECTORY (bottom of page; data in the encrypted bundle) -->
+      <section class="ps-panel ps-panel--paper ps-col-full" id="ps-dir-panel" aria-labelledby="ps-dir-title" hidden>
+        <h2 class="ps-h2" id="ps-dir-title">Regional Scholar Directory</h2>
+        <div id="ps-dir">
+          <p class="dir__intro">One search across every country database, with the same filters for every country. Each card's header band shows the scholar's country and links back to that country's dashboard; the country Master file remains the authoritative record.</p>
+          <div class="dir__kpis" id="psd-kpis"></div>
+          <div class="filters">
+            <label>Country<select class="db-filter" id="psd-f-country"></select></label>
+            <label>Discipline<select class="db-filter" id="psd-f-disc" title="Discipline categories are mapped for Fiji, Tonga and Vanuatu only"></select></label>
+            <label>Degree<select class="db-filter" id="psd-f-degree"><option value="">All degrees</option><option value="P">PhD or doctorate</option><option value="M">Master's</option></select></label>
+            <label>Gender<select class="db-filter" id="psd-f-gender"><option value="">All</option><option value="F">Female</option><option value="M">Male</option></select></label>
+            <label>Study region<select class="db-filter" id="psd-f-region"></select></label>
+            <label>Sector<select class="db-filter" id="psd-f-sector" title="From the current workplace name: universities, colleges, polytechnics and wānanga count as tertiary"></select></label>
+          </div>
+          <div class="searchrow">
+            <input class="db-search" id="psd-q" type="search" placeholder="Search names, workplaces, places, fields or publication titles" aria-label="Search the directory" autocomplete="off" />
+            <button class="btn is-hidden" id="psd-clear" type="button">Clear filters</button>
+            <button class="btn btn--primary" id="psd-bib" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>Export merged .bib</button>
+          </div>
+          <div class="chips" id="psd-chips"></div>
+          <div class="resultbar"><span id="psd-count" aria-live="polite"></span><span>Sorted by country, then family name</span></div>
+          <div class="db-scholars-grid" id="psd-grid"></div>
+          <div class="more" id="psd-more" hidden><button class="btn" type="button" id="psd-more-btn">Show more</button></div>
+          <section class="lkey" aria-labelledby="psd-lkey-t"><h3 id="psd-lkey-t">Local label key</h3><p>The chip at the end of the home village line appears only for Fiji, Tonga, Solomon Islands and Vanuatu, using the same wording and colours as their live country dashboards.</p><div class="lkey-grid" id="psd-lkey"></div><p id="psd-lkey-none" style="margin:12px 0 0"></p></section>
+          <div class="legend">
+            <div><b>Who is included</b>Scholars marked "Public Display Approved" in their Master file. Fiji, Tonga, Solomon Islands and Samoa have no consent field, so their included rosters appear as on their country dashboards.</div>
+            <div><b>Merged .bib export</b>Downloads the linked publications of every matching scholar as one file, with co-authored duplicates removed by DOI.</div>
+            <div><b>Linked to country records</b>Corrections are made in each country's own dashboard and Master file; this directory only reads them.</div>
+          </div>
+          <div class="toast" id="psd-toast" role="status" aria-live="polite"></div>
+        </div>
+      </section>
     </div>
   </main>
 
@@ -330,7 +364,8 @@
   </dialog>
   <div class="ps-tip" id="ps-tip" role="status" aria-hidden="true"></div>
 
-  <script src="js/pacific-scholars.js?v=6d722f26" defer></script>
+  <script src="js/pacific-scholars-directory.js?v=048f0088" defer></script>
+  <script src="js/pacific-scholars.js?v=56c3f621" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
 </html>

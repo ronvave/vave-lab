@@ -451,6 +451,15 @@ def pull(dump_dir: Path):
     json.dump(meta, open(dump_dir / 'meta.json', 'w'), indent=1)
 
 
+def directory_section(dumps):
+    """Regional scholar directory, gzip + base64 inside the encrypted bundle."""
+    import base64, gzip
+    from regional_directory import build_directory
+    d = build_directory(dumps, COUNTRIES)
+    raw = json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
+    return dict(gz=base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode(), n=len(d['scholars']))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dump-dir', default='/tmp/regional-masters')
@@ -496,6 +505,7 @@ def main():
                       indigenousPubYears={str(k): v for k, v in sorted(years.items())}),
         firsts=sorted(first_list, key=lambda m: (m['year'], m['code'], m['stage'], m['gender'])),
         positions=build_positions(dumps),
+        directory=directory_section(dumps),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')

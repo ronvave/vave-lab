@@ -109,6 +109,7 @@
     setupDialogs();
     renderCredits();
     renderAll(true);
+    if (window.PSDirectory) window.PSDirectory.init(D);
   }
 
   function readUrl() {

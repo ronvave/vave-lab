@@ -1,0 +1,241 @@
+/* Regional Scholar Directory — bottom panel of pacific-scholars.html.
+ *
+ * Reads D.directory from the decrypted regional bundle (gzip + base64 inside the
+ * encrypted file). Nothing here is fetched from a Master file or stored outside
+ * the browser's memory. Cards reuse the country dashboards' scholar-card design.
+ * Card fields are limited to what the regional build exports (see
+ * scripts/regional_directory.py): no share tokens, notes or contact details.
+ */
+(() => {
+  'use strict';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const fold = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f\u02bb\u2018\u2019'`]/g, '').toLowerCase();
+  const PAGE = 24;
+
+  const BAND = {
+    FJI: { label: 'Fijian Scholar', from: '#4ECDE6', to: '#0891b2', ink: '#111' },
+    TON: { label: 'Tongan Scholar', from: '#FF5A6E', to: '#c93e50', ink: '#111' },
+    SLB: { label: 'Solomon Islands Scholar', from: '#2b86c5', to: '#145a8a', ink: '#fff' },
+    WSM: { label: 'Samoan Scholar', from: '#3b5fc0', to: '#22397a', ink: '#fff' },
+    VUT: { label: 'Ni-Vanuatu Scholar', from: '#2f9e5c', to: '#1d6b3c', ink: '#fff' },
+    TUV: { label: 'Tuvaluan Scholar', from: '#FFD84A', to: '#f7b500', ink: '#111' },
+    KIR: { label: 'I-Kiribati Scholar', from: '#F2994A', to: '#c9701f', ink: '#111' },
+    PLW: { label: 'Palauan Scholar', from: '#56CCF2', to: '#1f8fbf', ink: '#111' },
+    COK: { label: 'Cook Islands Scholar', from: '#1e3a8a', to: '#172554', ink: '#fff' },
+    MHL: { label: 'Marshallese Scholar', from: '#B48CE6', to: '#7c4dbd', ink: '#fff' },
+    FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' }
+  };
+  const TYPE = {
+    journalArticle: { color: '#8a6408', bg: '#f8efd6', border: '#e6c98a', s: 'Journal article', p: 'Journal articles', bib: 'article' },
+    bookSection: { color: '#9b5a60', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter', p: 'Book chapters', bib: 'incollection' },
+    book: { color: '#7a1419', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book', p: 'Books', bib: 'book' },
+    thesisPhd: { color: '#1d6f1d', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis', p: 'PhD theses', bib: 'phdthesis' },
+    thesisMasters: { color: '#3f7a3f', bg: '#eef7ee', border: '#c9e2c9', s: "Master's thesis", p: "Master's theses", bib: 'mastersthesis' },
+    report: { color: '#1e40af', bg: '#e6ecf7', border: '#a8b8dc', s: 'Report', p: 'Reports', bib: 'techreport' },
+    other: { color: '#475569', bg: '#f1f5f9', border: '#cbd5e1', s: 'Other output', p: 'Other outputs', bib: 'misc' }
+  };
+  // Local labels: Fiji, Tonga, Solomon Islands and Vanuatu only, with the live
+  // country dashboards' wording and colours.
+  const PAL = ['#FF5A6E', '#4ECDE6', '#FFD84A', '#6FCF97', '#B48CE6', '#F2994A', '#56CCF2', '#BB6BD9', '#219653'];
+  const DARK = ['#c93e50', '#0891b2', '#f7b500', '#2f9e5c', '#7c4dbd', '#c9701f', '#1f8fbf', '#8e3fae', '#15703c'];
+  const g = i => [PAL[i], DARK[i]];
+  const LOCAL = {
+    FJI: { src: 'iTaukei dashboard', field: 'Paternal Province → confederacy', fmt: v => `${v} Confederacy`, ink: '#111', map: { Burebasaga: ['#FF5A6E', '#c93e50'], Kubuna: ['#4ECDE6', '#0891b2'], Tovata: ['#FFD84A', '#f7b500'] } },
+    TON: { src: 'Tonga dashboard', field: 'Paternal island division', fmt: v => v, ink: '#111', map: { Tongatapu: ['#FF5A6E', '#c93e50'], "Vava'u": ['#4ECDE6', '#0891b2'], "Ha'apai": ['#FFD84A', '#f7b500'], "'Eua": ['#6FCF97', '#2f9e5c'], 'Ongo Niua': ['#B48CE6', '#7c4dbd'] } },
+    SLB: { src: 'Solomon Islands dashboard', field: 'Paternal Province', fmt: v => `${v} Province`, ink: '#111', map: { Central: g(0), Choiseul: g(1), Guadalcanal: g(2), Isabel: g(3), 'Makira-Ulawa': g(4), Malaita: g(5), 'Rennell-Bellona': g(6), Temotu: g(7), Western: g(8) } },
+    VUT: { src: 'Vanuatu dashboard', field: 'Paternal Province', fmt: v => v, ink: '#fff', map: { Torba: ['#496a9c', '#496a9c'], Sanma: ['#007d83', '#007d83'], Penama: ['#80703a', '#80703a'], Malampa: ['#a0543c', '#a0543c'], Shefa: ['#87639d', '#87639d'], Tafea: ['#486c49', '#486c49'] } }
+  };
+  const REGIONS = ['Pacific', 'New Zealand', 'Australia', 'North America', 'Europe', 'Asia'];
+  const SECTORS = ['University or tertiary', 'Other workplace', 'Not recorded'];
+  const ORCID = '<svg viewBox="0 0 256 256" aria-hidden="true"><circle cx="128" cy="128" r="128" fill="#A6CE39"/><path fill="#fff" d="M86.3 186.2H70.9V79.1h15.4v107.1zM108.9 79.1h41.6c39.6 0 57 28.3 57 53.6 0 27.5-21.5 53.6-56.8 53.6h-41.8V79.1zm15.4 93.3h24.5c34.9 0 42.9-26.5 42.9-39.7C191.7 111.5 178 92 148 92h-23.7v80.4zM88.7 56.8a10.1 10.1 0 1 1-20.2 0 10.1 10.1 0 0 1 20.2 0z"/></svg>';
+  const GS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
+  const SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
+
+  let root, S = [], P = [], C = {}, order = [], shown = [], limit = PAGE;
+  const F = { country: '', disc: '', degree: '', gender: '', region: '', sector: '', q: '', only: '' };
+  const LABEL = { country: 'Country', disc: 'Discipline', degree: 'Degree', gender: 'Gender', region: 'Study region', sector: 'Sector', q: 'Search', only: 'Shared scholar' };
+  const IDS = { country: 'f-country', disc: 'f-disc', degree: 'f-degree', gender: 'f-gender', region: 'f-region', sector: 'f-sector', q: 'q' };
+  const q = id => root.querySelector('#psd-' + id);
+
+  async function unpack(dir) {
+    if (!dir) return null;
+    if (!dir.gz) return dir;
+    if (typeof DecompressionStream === 'undefined') throw new Error('This browser cannot open the directory data. Please update your browser.');
+    const bin = Uint8Array.from(atob(dir.gz), c => c.charCodeAt(0));
+    const stream = new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'));
+    return JSON.parse(await new Response(stream).text());
+  }
+
+  function localChip(s) {
+    const L = LOCAL[s.c]; if (!L || !s.loc) return '';
+    const col = L.map[s.loc]; if (!col) return '';
+    return `<span class="lchip" style="background:linear-gradient(135deg,${col[0]},${col[1]});color:${L.ink}" title="Same label as the ${esc(L.src)} (from ${esc(L.field)})">${esc(L.fmt(s.loc))}</span>`;
+  }
+  const degLabel = s => (s.d || []).includes('P') ? ((s.d || []).includes('M') ? "Master's and PhD" : 'PhD') : ((s.d || []).includes('M') ? "Master's" : '');
+  function hay(s) {
+    if (s._h) return s._h;
+    const L = LOCAL[s.c];
+    const parts = [s.sal, s.n, C[s.c].name, s.inst, s.dept, s.role, s.geo, L && s.loc ? L.fmt(s.loc) : '', s.fld, ...(s.s || []), ...(s.p || []).map(i => P[i].ti)];
+    return (s._h = fold(parts.filter(Boolean).join(' ')));
+  }
+  function match(s) {
+    if (F.only) return s.id === F.only;
+    if (F.country && s.c !== F.country) return false;
+    if (F.disc && !(s.s || []).includes(F.disc)) return false;
+    if (F.degree && !(s.d || []).includes(F.degree)) return false;
+    if (F.gender && s.g !== F.gender) return false;
+    if (F.region && !(s.r || []).includes(F.region)) return false;
+    if (F.sector && s.sec !== F.sector) return false;
+    if (F.q) { const h = hay(s); if (!fold(F.q).split(/\s+/).filter(Boolean).every(w => h.includes(w.replace(/"/g, '')))) return false; }
+    return true;
+  }
+
+  function card(s) {
+    const cc = C[s.c], band = BAND[s.c] || BAND.FSM;
+    const words = s.n.split(/\s+/).filter(w => /^\p{L}/u.test(w));
+    const initials = (words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
+    const dash = cc.dashboard ? `<a href="${esc(cc.dashboard)}" target="_blank" rel="noopener">View on ${esc(cc.name)} dashboard \u2197</a>`
+      : `<span class="muted">${cc.dashboardStatus === 'development' ? `${esc(cc.name)} dashboard in development` : `No ${esc(cc.name)} dashboard yet`}</span>`;
+    const types = {}; (s.p || []).forEach(i => { const t = TYPE[P[i].t] ? P[i].t : 'other'; types[t] = (types[t] || 0) + 1; });
+    const chips = Object.entries(TYPE).filter(([k]) => types[k]).map(([k, t]) => `<span class="tchip" style="background:${t.bg};border-color:${t.border};color:${t.color}"><span class="n">${types[k]}</span> ${types[k] === 1 ? t.s : t.p}</span>`).join('');
+    const name = `${s.sal ? s.sal + ' ' : ''}${s.n}`;
+    const chip = localChip(s);
+    const metaLine = (s.geo || chip) ? `<div class="db-scholar-card__meta">${esc(s.geo || '')}${chip ? (s.geo ? ' ' : '') + chip : ''}</div>` : '';
+    const degLine = [degLabel(s), s.fld || (s.s || []).join(', ')].filter(Boolean).join(' \u00b7 ');
+    return `<article class="db-scholar-card" style="--conf-from:${band.from};--conf-to:${band.to};--conf-ink:${band.ink}" data-id="${esc(s.id)}">
+      <div class="db-scholar-card__banner"><span class="db-scholar-card__conf-label"><img class="band-flag" src="img/regional/flags/${s.c.toLowerCase()}.png" alt="">${esc(band.label)}</span></div>
+      ${s.iso ? `<img class="db-scholar-card__flag" src="https://flagcdn.com/${esc(s.iso)}.svg" alt="Works in ${esc(s.wc)}" title="Works in ${esc(s.wc)}" loading="lazy" width="49" height="34">` : ''}
+      ${s.orcid ? `<a class="db-scholar-card__orcid" href="https://orcid.org/${esc(s.orcid)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(s.n)}\u2019s ORCID profile" aria-label="Open ${esc(s.n)}\u2019s ORCID profile">${ORCID}</a>` : `<span class="db-scholar-card__orcid is-missing" role="img" aria-label="ORCID profile not yet linked" title="ORCID profile not yet linked">${ORCID}</span>`}
+      ${s.gs ? `<a class="db-scholar-card__gs" href="${esc(s.gs)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(s.n)}\u2019s Google Scholar profile" aria-label="Open ${esc(s.n)}\u2019s Google Scholar profile">${GS}</a>` : `<span class="db-scholar-card__gs is-missing" role="img" aria-label="Google Scholar profile not yet linked" title="Google Scholar profile not yet linked">${GS}</span>`}
+      <div class="db-scholar-card__body">
+        <div class="db-scholar-card__photo-col">
+          <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div></div>
+          <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this card">${SHARE}Share</button>
+        </div>
+        <div class="db-scholar-card__info">
+          <h3>${esc(name)}${s.dec ? '<span class="dec">In memoriam</span>' : ''}</h3>
+          ${metaLine}
+          ${s.inst ? `<div class="db-scholar-card__institution">${esc(s.inst)}</div>` : ''}
+          ${s.dept ? `<div class="db-scholar-card__department">${esc(s.dept)}</div>` : ''}
+          ${s.role ? `<div class="db-scholar-card__title">${esc(s.role)}</div>` : ''}
+          ${degLine ? `<div class="db-scholar-card__updated">${esc(degLine)}</div>` : ''}
+        </div>
+      </div>
+      <div class="db-scholar-card__stats"><div class="stat"><b>${(s.p || []).length}</b><span>Publications</span></div><div class="stat"><b class="accent">${s.fa || 0}</b><span>First-authored</span></div></div>
+      ${chips ? `<div class="db-scholar-card__types">${chips}</div>` : ''}
+      <div class="card-foot">${dash}</div>
+    </article>`;
+  }
+
+  function render(keepLimit) {
+    if (!keepLimit) limit = PAGE;
+    shown = S.filter(match);
+    const grid = q('grid');
+    grid.innerHTML = shown.length ? shown.slice(0, limit).map(card).join('') : '<div class="empty">No scholars match these filters. Try removing one.</div>';
+    const active = Object.entries(F).filter(([, v]) => v);
+    q('chips').innerHTML = active.map(([k, v]) => `<span class="db-filter-chip"><span>${LABEL[k]}:</span>${esc(k === 'country' ? C[v].name : k === 'degree' ? (v === 'P' ? 'PhD or doctorate' : "Master's") : k === 'gender' ? (v === 'F' ? 'Female' : 'Male') : k === 'only' ? (S.find(s => s.id === v) || {}).n || '' : v)}<button type="button" data-rm="${k}" aria-label="Remove ${LABEL[k]} filter">\u00d7</button></span>`).join('');
+    q('clear').classList.toggle('is-hidden', !active.length);
+    q('count').textContent = `Showing ${Math.min(limit, shown.length).toLocaleString()} of ${shown.length.toLocaleString()} matching scholars \u00b7 ${S.length.toLocaleString()} in the directory`;
+    const left = shown.length - limit;
+    q('more').hidden = left <= 0;
+    q('more-btn').textContent = `Show ${Math.min(PAGE, left)} more (${left.toLocaleString()} not shown)`;
+    const n = new Set(shown.flatMap(s => (s.p || []).filter(i => !P[i].x))).size;
+    q('bib').disabled = !n;
+    q('bib').title = n ? `Download ${n.toLocaleString()} unique publications for the ${shown.length.toLocaleString()} matching scholars, duplicates removed by DOI` : 'No linked publications for these scholars';
+  }
+
+  const toast = msg => { const t = q('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 3600); };
+
+  function bibEsc(v) { return String(v ?? '').replace(/[{}\\]/g, '').replace(/\s+/g, ' ').trim(); }
+  function bibAuthors(p) {
+    let a = bibEsc(p.a);
+    if (!a) return '';
+    if (a.includes(';')) a = a.split(/\s*;\s*/).filter(Boolean).join(' and ');
+    return p.more ? `${a} and others` : a;
+  }
+  function exportBib() {
+    const ids = new Set(); let links = 0; const skipped = new Set();
+    for (const s of shown) for (const i of s.p || []) { if (P[i].x) { skipped.add(i); continue; } links++; ids.add(i); }
+    const used = new Set();
+    const out = [...ids].sort((a, b) => (P[a].y || 0) - (P[b].y || 0) || a - b).map(i => {
+      const p = P[i], t = TYPE[p.t] ? p.t : 'other', bt = TYPE[t].bib;
+      const key = (fold((p.a || 'anon').split(/[ ,;]/)[0]).replace(/[^a-z]/g, '') || 'anon') + (p.y || '') + (fold(p.ti).replace(/[^a-z ]/g, '').split(' ').find(w => w.length > 3) || 'x');
+      let k = key, n = 1; while (used.has(k)) k = key + String.fromCharCode(96 + (++n)); used.add(k);
+      const f = [['title', `{${bibEsc(p.ti)}}`], ['author', bibAuthors(p)], ['year', p.y || '']];
+      if (p.j) f.push([bt === 'article' ? 'journal' : bt === 'incollection' ? 'booktitle' : bt === 'misc' ? 'howpublished' : (bt.endsWith('thesis') ? 'school' : bt === 'techreport' ? 'institution' : 'publisher'), bibEsc(p.j)]);
+      if (p.pb && !(bt.endsWith('thesis') && p.j)) f.push([bt.endsWith('thesis') ? 'school' : bt === 'techreport' ? 'institution' : 'publisher', bibEsc(p.pb)]);
+      if (p.doi) f.push(['doi', bibEsc(p.doi)]);
+      if (p.u) f.push(['url', bibEsc(p.u)]);
+      const seenF = new Set();
+      return `@${bt}{${k},\n` + f.filter(([n, v]) => v && !seenF.has(n) && seenF.add(n)).map(([n, v]) => `  ${n} = {${String(v).replace(/^\{(.*)\}$/, '$1')}}`).join(',\n') + '\n}';
+    });
+    const dup = links - ids.size;
+    const head = `% Regional Pacific Scholars directory export\n% ${new Date().toISOString().slice(0, 10)} \u00b7 ${shown.length} scholars \u00b7 ${ids.size} unique records \u00b7 ${dup} duplicate${dup === 1 ? '' : 's'} removed (same DOI; title and year when no DOI)\n% Source: country Master files (read-only). Some records list only the lead author ("and others").\n${skipped.size ? `% ${skipped.size} linked record${skipped.size === 1 ? ' was' : 's were'} left out because the Master-file row has shifted columns (title, author or year in the wrong field).\n` : ''}\n`;
+    const blob = new Blob([head + out.join('\n\n') + '\n'], { type: 'application/x-bibtex' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pacific-scholars-directory.bib'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast(`Exported ${ids.size.toLocaleString()} unique publications \u00b7 ${dup.toLocaleString()} duplicate${dup === 1 ? '' : 's'} removed by DOI`);
+  }
+
+  function readHash() {
+    const m = /(?:^|[#&])dir=([A-Z]{3}-S\d+)/i.exec(location.hash);
+    return m && S.some(s => s.id === m[1].toUpperCase()) ? m[1].toUpperCase() : '';
+  }
+  function clearHash() {
+    if (/dir=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search);
+  }
+
+  function setup() {
+    const countries = order.filter(c => C[c]);
+    const n = c => S.filter(s => s.c === c).length;
+    q('kpis').innerHTML = `<span><b>${S.length.toLocaleString()}</b>scholars in the directory</span><span><b>${countries.length}</b>country databases</span><span><b>${countries.filter(c => C[c].dashboard).length}</b>with a live country dashboard</span>`;
+    q('f-country').innerHTML = '<option value="">All countries</option>' + countries.map(c => `<option value="${c}">${esc(C[c].name)} (${n(c)})</option>`).join('');
+    q('f-disc').innerHTML = '<option value="">All disciplines</option>' + (window.PSDirectoryDisciplines || []).map(d => `<option>${esc(d)}</option>`).join('');
+    q('f-region').innerHTML = '<option value="">All regions</option>' + REGIONS.map(d => `<option>${esc(d)}</option>`).join('');
+    q('f-sector').innerHTML = '<option value="">All sectors</option>' + SECTORS.map(d => `<option>${esc(d)}</option>`).join('');
+    for (const [k, id] of Object.entries(IDS)) q(id).addEventListener(k === 'q' ? 'input' : 'change', e => { F[k] = e.target.value.trim(); F.only = ''; clearHash(); render(); });
+    q('clear').addEventListener('click', () => { for (const [k, id] of Object.entries(IDS)) { F[k] = ''; q(id).value = ''; } F.only = ''; clearHash(); render(); });
+    q('chips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; const k = b.dataset.rm; F[k] = ''; if (IDS[k]) q(IDS[k]).value = ''; if (k === 'only') clearHash(); render(); });
+    q('more-btn').addEventListener('click', () => { const first = limit; limit += PAGE; render(true); const el = q('grid').children[first]; el && el.querySelector('.db-scholar-card__share') && el.querySelector('.db-scholar-card__share').focus({ preventScroll: true }); });
+    q('bib').addEventListener('click', exportBib);
+    q('grid').addEventListener('click', async e => {
+      const sh = e.target.closest('[data-share]'); if (!sh) return;
+      const s = S.find(x => x.id === sh.dataset.share);
+      const url = `${location.origin}${location.pathname}#dir=${s.id}`;
+      try { await navigator.clipboard.writeText(url); toast(`Link to ${s.n}\u2019s card copied. It opens after the regional passcode.`); }
+      catch { window.prompt('Copy this link to the card (opens after the regional passcode):', url); }
+    });
+    q('lkey').innerHTML = Object.entries(LOCAL).map(([c, L]) => `<div class="lk"><div class="lk-h"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(C[c] ? C[c].name : c)}<span>Same as the ${esc(L.src)}</span></div><div class="lk-f">Field: ${esc(L.field)}</div><div class="lk-c">${Object.entries(L.map).map(([k, [f, t]]) => `<span class="lchip" style="background:linear-gradient(135deg,${f},${t});color:${L.ink}">${esc(L.fmt(k))}</span>`).join('')}</div></div>`).join('');
+    q('lkey-none').textContent = `No local label shown: ${countries.filter(c => !LOCAL[c]).map(c => C[c].name).join(', ')}.`;
+    addEventListener('hashchange', () => { const id = readHash(); if (id) { F.only = id; render(); focusTarget(); } });
+  }
+  function focusTarget() {
+    const el = q('grid').querySelector('.db-scholar-card');
+    if (!el) return;
+    el.classList.add('is-target');
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function init(D) {
+    root = document.getElementById('ps-dir');
+    const panel = document.getElementById('ps-dir-panel');
+    if (!root || !panel || !D || !D.directory) return;
+    try {
+      const dir = await unpack(D.directory);
+      S = dir.scholars || []; P = dir.pubs || [];
+      order = (D.countries || []).map(c => c.code);
+      C = Object.fromEntries((D.countries || []).map(c => [c.code, c]));
+      window.PSDirectoryDisciplines = D.disciplineCategories || [];
+      panel.hidden = false;
+      setup();
+      const id = readHash();
+      if (id) F.only = id;
+      render();
+      if (id) focusTarget();
+    } catch (err) {
+      panel.hidden = false;
+      root.innerHTML = `<p class="dir__intro">${esc(err.message || 'The directory could not be opened.')}</p>`;
+    }
+  }
+  window.PSDirectory = { init };
+})();
