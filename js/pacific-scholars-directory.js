@@ -224,6 +224,10 @@
       const dir = await unpack(D.directory);
       S = dir.scholars || []; P = dir.pubs || [];
       order = (D.countries || []).map(c => c.code);
+      // Most publications first; ties by first-authored count, then country order
+      // and family name (the build's order).
+      S.forEach((s, i) => { s._o = i; });
+      S.sort((a, b) => (b.p || []).length - (a.p || []).length || (b.fa || 0) - (a.fa || 0) || a._o - b._o);
       C = Object.fromEntries((D.countries || []).map(c => [c.code, c]));
       window.PSDirectoryDisciplines = D.disciplineCategories || [];
       panel.hidden = false;
