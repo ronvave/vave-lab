@@ -105,6 +105,7 @@
     setupDest();
     setupFind();
     setupFirsts();
+    setupPositions();
     setupDialogs();
     renderCredits();
     renderAll(true);
@@ -192,6 +193,7 @@
     renderGender();
     renderDest();
     renderFirsts();
+    renderPositions();
   }
 
   // ================= COUNTRY STRIP =================
@@ -611,6 +613,87 @@
     });
     const nC = new Set(items.map(m => m.code)).size;
     $('#ps-ft-count').textContent = `${items.length} first${items.length === 1 ? '' : 's'} shown across ${nC} countr${nC === 1 ? 'y' : 'ies'}${state.sel ? ` (filtered to ${nameOf(state.sel)})` : ''}.`;
+  }
+
+  // ================= UNIVERSITY POSITIONS (table + leadership by gender) =================
+  const POS = { held: 'ever', gen: 'b', leadC: '*', lastSel: null };
+  const posHas = c => D.positions && D.positions.coverage.positions[c] > 0;
+  function setupPositions() {
+    const P = D.positions;
+    if (!P || !Array.isArray(P.scholars) || !P.scholars.length) return;
+    $('#ps-pos-panel').hidden = false; $('#ps-lead-panel').hidden = false;
+    const seg = (sel, key) => { const bs = [...document.querySelectorAll(`${sel} button`)]; bs.forEach(b => b.addEventListener('click', () => { POS[key] = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); renderPosTable(); })); };
+    seg('#ps-pos-held', 'held'); seg('#ps-pos-gen', 'gen');
+    const sel = $('#ps-lead-country');
+    sel.innerHTML = '<option value="*">All countries</option>' + countries().filter(c => posHas(c.code)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+    sel.addEventListener('change', () => { POS.leadC = sel.value; renderLead(); });
+    const tip = $('#ps-pos-tip');
+    const hide = () => tip.classList.remove('show');
+    const show = (td, x, y) => {
+      const k = td.dataset.k, c = td.dataset.c, L = posCell(k, c);
+      if (!L.length) return hide();
+      const role = [...P.lead, ...P.rank].find(r => r[0] === k)[1];
+      const names = L.map(s => esc(s.n) + (c === '*' ? ` <span style="opacity:.7">(${esc(SHORT[s.c] || s.c)})</span>` : '')).sort((a, b) => a.localeCompare(b));
+      tip.innerHTML = `<b>${esc(role)}</b> · ${c === '*' ? 'Region' : esc(nameOf(c))}<br>${L.length} scholar${L.length > 1 ? 's' : ''}${POS.held === 'cur' ? ' (current)' : ''}<ul>${names.slice(0, 12).map(n => `<li>${n}</li>`).join('')}${names.length > 12 ? `<li>and ${names.length - 12} more</li>` : ''}</ul>`;
+      tip.classList.add('show');
+      const r = td.getBoundingClientRect();
+      const px = x ?? r.right, py = y ?? r.bottom;
+      tip.style.left = Math.max(8, Math.min(px + 12, innerWidth - tip.offsetWidth - 8)) + 'px';
+      tip.style.top = Math.max(8, Math.min(py + 12, innerHeight - tip.offsetHeight - 8)) + 'px';
+    };
+    const t = $('#ps-pos-table');
+    t.addEventListener('mousemove', e => { const td = e.target.closest('td[data-k]'); td ? show(td, e.clientX, e.clientY) : hide(); });
+    t.addEventListener('mouseleave', hide);
+    t.addEventListener('click', e => { const td = e.target.closest('td[data-k]'); if (td) show(td); });
+    t.addEventListener('focusin', e => { const td = e.target.closest('td[data-k]'); if (td) show(td); });
+    t.addEventListener('focusout', hide);
+    addEventListener('scroll', () => { const f = document.activeElement; if (f && f.matches && f.matches('#ps-pos-table td[data-k]')) show(f); else hide(); }, { passive: true });
+    const nPos = Object.values(P.coverage.positions).reduce((a, b) => a + b, 0);
+    const nWith = Object.values(P.coverage.withPositions).reduce((a, b) => a + b, 0);
+    const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters. Striped columns: that country's Positions sheet has no records yet${empty.length ? ` (${empty.join(', ')})` : ''}. Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+  }
+  function posPick(s) { return POS.gen === 'b' || s.g === POS.gen; }
+  function posHeld(s, k) { return s.r[k] && (POS.held === 'ever' || s.r[k].cur); }
+  function posCell(k, c) { return D.positions.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && posHeld(s, k)); }
+  function renderPositions() {
+    if (!D.positions || $('#ps-pos-panel').hidden) return;
+    if (state.sel !== POS.lastSel) {
+      POS.lastSel = state.sel;
+      POS.leadC = state.sel && posHas(state.sel) ? state.sel : '*';
+      $('#ps-lead-country').value = POS.leadC;
+    }
+    renderPosTable(); renderLead();
+  }
+  function renderPosTable() {
+    const P = D.positions, C = countries().map(c => c.code);
+    let h = '<thead><tr><th class="role" scope="col">Position</th>' + C.map(c => `<th scope="col" class="${posHas(c) ? '' : 'nodata'}${state.sel === c ? ' sel' : ''}"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(SHORT[c] || c)}</th>`).join('') + '<th scope="col" class="tot">Region</th></tr></thead><tbody>';
+    for (const [grp, list] of [['University leadership', P.lead], ['Academic rank', P.rank]]) {
+      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><span>${grp}</span></th></tr>`;
+      for (const [k, l] of list) {
+        const tot = posCell(k, '*').length;
+        h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
+          if (!posHas(c)) return '<td class="c nd"><span class="ps-sr">no records</span>·</td>';
+          const n = posCell(k, c).length;
+          return `<td class="c${n ? '' : ' z'}${state.sel === c ? ' selcol' : ''}" data-k="${k}" data-c="${c}"${n ? ' tabindex="0"' : ''}>${n || '–'}</td>`;
+        }).join('') + `<td class="tot" data-k="${k}" data-c="*"${tot ? ' tabindex="0"' : ''}>${tot}</td></tr>`;
+      }
+    }
+    const any = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
+    h += '</tbody><tfoot><tr><th class="role" scope="row">Scholars with any of these</th>' + C.map(c => `<td>${posHas(c) ? any(c) : '·'}</td>`).join('') + `<td class="tot">${any('*')}</td></tr>`;
+    h += '<tr><th class="role" scope="row">Roster size</th>' + C.map(c => `<td>${fmt(byCode[c].scholars)}</td>`).join('') + `<td class="tot">${fmt(countries().reduce((a, c) => a + c.scholars, 0))}</td></tr></tfoot>`;
+    const t = $('#ps-pos-table'); t.innerHTML = h;
+    const cells = [...t.querySelectorAll('td.c[data-k]')], mx = Math.max(1, ...cells.map(td => +td.textContent || 0));
+    cells.forEach(td => { const v = +td.textContent || 0; if (v) td.style.background = `rgba(25,181,196,${(0.12 + 0.6 * v / mx).toFixed(2)})`; });
+    $('#ps-pos-tip').classList.remove('show');
+  }
+  function renderLead() {
+    const P = D.positions, cc = POS.leadC;
+    const L = P.scholars.filter(s => cc === '*' || s.c === cc);
+    const rows = P.lead.map(([k, l]) => { const g = { f: 0, m: 0, u: 0 }; L.forEach(s => { if (s.r[k]) g[s.g] = (g[s.g] || 0) + 1; }); return { l, g, n: g.f + g.m + g.u }; });
+    const mx = Math.max(1, ...rows.map(r => r.n));
+    $('#ps-lead-bars').innerHTML = rows.some(r => r.n) ? rows.map(r => `<div class="ps-gd-row"><div class="ps-gd-l">${esc(r.l)}</div><div class="ps-gd-bar" style="width:${r.n ? Math.max(4, 100 * r.n / mx) : 0}%" role="img" aria-label="${esc(r.l)}: ${r.g.f} female, ${r.g.m} male${r.g.u ? `, ${r.g.u} not recorded` : ''}">${['f', 'm', 'u'].map(k => r.g[k] ? `<span class="ps-gd-${k}" style="flex:${r.g[k]}">${r.g[k]}</span>` : '').join('')}</div><div class="ps-gd-n">${r.n ? `${r.n} · ${Math.round(100 * r.g.f / r.n)}% F` : '0'}</div></div>`).join('')
+      : '<p class="ps-gd-empty">No university leadership roles recorded for this country yet.</p>';
   }
 
   // ================= DESTINATIONS =================

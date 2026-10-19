@@ -107,3 +107,32 @@ REGIONAL_PASSCODE=… python3 scripts/encrypt_regional.py
 Full-width panel below "Graduate Degrees by Country" and "Fields of Research". It shows, per country, the earliest completed Master's and PhD by gender (male / female), using the same rule as the country dashboards' Panel D: completed Master's / PhD records (professional doctorates excluded) dated by the completion-year column, gender from the Scholars sheet (never inferred), display name = title + first given name + family name. Ties on the earliest year are kept and listed in the hover card. Flags are circles cropped from the regional basemap (`img/regional/flags/`); ring colour = gender (turquoise male, pink female), single ring = Master's, double ring = PhD. Toggles: degree (Master's and PhD / Master's only / PhD only) and gender (Both / Male / Female). The panel follows the country selection and stays hidden if the bundle has no `firsts` section.
 
 `scripts/build_regional_scholars.py` computes `firsts` on every full rebuild. To add derived sections to the live encrypted bundle without knowing the passcode, encrypt a JSON patch (whitelisted keys only) to `data/regional-patch.enc` with a one-time key stored as the `REGIONAL_PATCH_KEY` secret, then run the manual **Merge regional dashboard data patch** workflow; it merges, re-encrypts with `REGIONAL_PASSCODE`, deletes the patch, and redeploys. Delete the `REGIONAL_PATCH_KEY` secret afterwards.
+
+## 8. University positions panels
+
+Two full-width panels below Pacific Firsts, built from each country Master file's
+**Positions** sheet (plus **Institutions** for the institution type). Logic lives in
+`scripts/regional_positions.py` and runs as part of `build_regional_scholars.py`
+(output key `positions` inside the encrypted bundle; names never leave the bundle).
+
+- **University Positions by Country** — canonical roles × 11 countries + region.
+  Toggles: Ever held / Currently held; Both / Male / Female. Hover, tap or focus a
+  number to list the scholars. Countries whose Positions sheet is still an empty
+  template show striped "no records" columns (as of 18 Oct 2026: Tuvalu, Kiribati,
+  Palau, Cook Islands, Marshall Islands, FSM).
+- **Women and Men in University Leadership** — female / male / not-recorded counts for
+  each leadership role, with a country dropdown that follows the dashboard's selected
+  country.
+
+Classification rules:
+- Leadership (Chancellor/Pro-Chancellor, PVC/DVC, VC/President, Dean,
+  Associate/Deputy Dean, Head of School/Department, Director of a university centre or
+  institute) counts only at universities and other higher-education institutions and
+  includes acting appointments; one row may carry several roles.
+- Academic rank uses the recorded title first, then the standardized rank; Lecturer
+  and Assistant Professor stay separate.
+- Every count is unique scholars on the included roster.
+
+First load (18 Oct 2026) used the one-time encrypted patch workflow
+(`merge-regional-patch.yml`, allowed keys `firsts`, `positions`); later refreshes
+rebuild `positions` automatically.

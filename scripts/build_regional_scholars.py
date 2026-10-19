@@ -421,7 +421,7 @@ def pull_sa(dump_dir: Path, sheets, drive):
     meta = {}
     for code, name, sid, *_ in COUNTRIES:
         titles = [s['properties']['title'] for s in sheets.spreadsheets().get(spreadsheetId=sid, fields='sheets.properties.title').execute()['sheets']]
-        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship') or t.startswith('Part-')]
+        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions') or t.startswith('Part-')]
         vr = sheets.spreadsheets().values().batchGet(spreadsheetId=sid, ranges=want).execute()['valueRanges']
         json.dump({'titles': titles, 'data': {t: v.get('values', []) for t, v in zip(want, vr)}}, open(dump_dir / f'{code}.json', 'w'))
         meta[code] = drive.files().get(fileId=sid, fields='modifiedTime,name', supportsAllDrives=True).execute()
@@ -439,7 +439,7 @@ def pull(dump_dir: Path):
         info = json.loads(subprocess.run(['gws', 'sheets', 'spreadsheets', 'get', '--params', json.dumps(
             {'spreadsheetId': sid, 'fields': 'sheets.properties.title'})], capture_output=True, text=True, check=True).stdout)
         titles = [s['properties']['title'] for s in info['sheets']]
-        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship') or t.startswith('Part-')]
+        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions') or t.startswith('Part-')]
         vr = json.loads(subprocess.run(['gws', 'sheets', 'spreadsheets', 'values', 'batchGet', '--params', json.dumps(
             {'spreadsheetId': sid, 'ranges': want})], capture_output=True, text=True, check=True).stdout)['valueRanges']
         f = json.loads(subprocess.run(['gws', 'drive', 'files', 'get', '--params', json.dumps(
@@ -461,13 +461,15 @@ def main():
     if a.pull:
         pull(d)
     meta = json.load(open(d / 'meta.json'))
-    countries, sources, first_list = [], [], []
+    countries, sources, first_list, dumps = [], [], [], {}
+    from regional_positions import build_positions
     for code, name, sid, url, status in COUNTRIES:
         fp = d / f'{code}.json'
         if not fp.exists():
             sources.append(dict(code=code, name=name, status='Not yet connected'))
             continue
         dump = json.load(open(fp))
+        dumps[code] = dump
         c = build_country(code, name, dump)
         first_list.extend(firsts(code, name, dump))
         c.update(dashboard=url, dashboardStatus=status, oct5=OCT5.get(code))
@@ -493,6 +495,7 @@ def main():
         regional=dict(uniquePubs=len(allkeys), uniqueIndigenousPubs=len(indkeys),
                       indigenousPubYears={str(k): v for k, v in sorted(years.items())}),
         firsts=sorted(first_list, key=lambda m: (m['year'], m['code'], m['stage'], m['gender'])),
+        positions=build_positions(dumps),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')

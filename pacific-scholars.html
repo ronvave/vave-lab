@@ -177,6 +177,43 @@
         <p class="ps-note">Earliest completion year among completed Master's and PhD records in each country's Master file (Graduate Degrees), using each country dashboard's own rule; professional doctorates are not counted as PhDs. When two scholars share the earliest year, the hover card lists both. <span id="ps-ft-missing"></span></p>
       </section>
 
+      <!-- UNIVERSITY POSITIONS -->
+      <section class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-pos-title">University Positions by Country</h2>
+            <p class="ps-sub">Number of Indigenous scholars per country who have held each canonical university position. Each scholar is counted once per position. Hover over or tap a number to see who.</p>
+          </div>
+          <div class="ps-pos-tools">
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Positions ever or currently held" id="ps-pos-held">
+              <button type="button" role="radio" aria-checked="true" data-v="ever">Ever held</button>
+              <button type="button" role="radio" aria-checked="false" data-v="cur">Currently held</button>
+            </div>
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the positions table" id="ps-pos-gen">
+              <button type="button" role="radio" aria-checked="true" data-v="b">Both</button>
+              <button type="button" role="radio" aria-checked="false" data-v="m">Male</button>
+              <button type="button" role="radio" aria-checked="false" data-v="f">Female</button>
+            </div>
+          </div>
+        </div>
+        <div class="ps-pos-scroll"><table class="ps-pt" id="ps-pos-table"></table></div>
+        <p class="ps-note" id="ps-pos-note"></p>
+      </section>
+
+      <!-- LEADERSHIP BY GENDER -->
+      <section class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-lead-title">Women and Men in University Leadership</h2>
+            <p class="ps-sub">Unique scholars who have held each leadership role, by gender recorded in the Master files.</p>
+          </div>
+          <select class="ps-select" id="ps-lead-country" aria-label="Country shown in the leadership chart"></select>
+        </div>
+        <div id="ps-lead-bars"></div>
+        <div class="ps-gd-legend" aria-hidden="true"><span><i class="ps-gd-f"></i>Female</span><span><i class="ps-gd-m"></i>Male</span><span><i class="ps-gd-u"></i>Not recorded</span></div>
+        <p class="ps-note">Leadership roles at universities and other higher-education institutions, including acting appointments. A scholar who held several roles appears in each.</p>
+      </section>
+
       <!-- GENDER -->
       <section class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
         <h2 class="ps-h2" id="ps-gender-title">Gender Representation</h2>
@@ -264,5 +301,6 @@
   <div class="ps-tip" id="ps-tip" role="status" aria-hidden="true"></div>
 
   <script src="js/pacific-scholars.js?v=2efeef6a" defer></script>
+<div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
 </html>
