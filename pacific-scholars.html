@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=b7fc4c5f" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=c6727832" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
 </head>
 <body class="ps-body">
@@ -51,6 +51,8 @@
     </div>
   </header>
 
+  <nav class="ps-pmenu" id="ps-pmenu" aria-label="Dashboard panels"><div class="ps-pmenu__pills" id="ps-pmenu-pills"></div><div class="ps-pmenu__drop" id="ps-pmenu-drop" hidden></div></nav>
+
   <main id="ps-main" class="ps-wrap" tabindex="-1">
     <div class="ps-toolbar">
       <div role="group" aria-labelledby="ps-metric-label" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
@@ -75,7 +77,8 @@
 
     <div class="ps-grid">
       <!-- MAP -->
-      <section class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
+      <section data-panel="A1" data-panel-title="Pacific Scholars Across Our Ocean" class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
+        <span class="ps-num" aria-hidden="true">A1</span>
         <div class="ps-head">
           <div>
             <h2 class="ps-h2" id="ps-map-title">Pacific Scholars Across Our Ocean</h2>
@@ -95,20 +98,23 @@
       </section>
 
       <!-- REGIONAL DEGREES -->
-      <section class="ps-panel ps-panel--tapa ps-col-deg" aria-labelledby="ps-deg-title">
+      <section data-panel="A2" data-panel-title="Regional Postgraduate Degrees" class="ps-panel ps-panel--tapa ps-col-deg" aria-labelledby="ps-deg-title">
+        <span class="ps-num" aria-hidden="true">A2</span>
         <h2 class="ps-h2" id="ps-deg-title">Regional Postgraduate Degrees</h2>
         <p class="ps-sub" id="ps-deg-sub">Completed degrees held by Indigenous scholars.</p>
         <div class="ps-deg" id="ps-deg"></div>
       </section>
 
       <!-- RESEARCH OUTPUTS -->
-      <section class="ps-panel ps-panel--paper ps-col-out" aria-labelledby="ps-out-title">
+      <section data-panel="A3" data-panel-title="Research Outputs" class="ps-panel ps-panel--paper ps-col-out" aria-labelledby="ps-out-title">
+        <span class="ps-num" aria-hidden="true">A3</span>
         <h2 class="ps-h2" id="ps-out-title">Research Outputs</h2>
         <div id="ps-out"></div>
       </section>
 
       <!-- GRADUATE DEGREES BY COUNTRY -->
-      <section class="ps-panel ps-panel--paper ps-col-bars" aria-labelledby="ps-bars-title">
+      <section data-panel="A4" data-panel-title="Graduate Degrees by Country" class="ps-panel ps-panel--paper ps-col-bars" aria-labelledby="ps-bars-title">
+        <span class="ps-num" aria-hidden="true">A4</span>
         <div class="ps-head">
           <h2 class="ps-h2" id="ps-bars-title">Graduate Degrees by Country</h2>
           <div class="ps-bars__tools">
@@ -123,7 +129,8 @@
       </section>
 
       <!-- FIELDS OF RESEARCH -->
-      <section class="ps-panel ps-panel--paper ps-col-disc" aria-labelledby="ps-disc-title">
+      <section data-panel="A5" data-panel-title="Fields of Research" class="ps-panel ps-panel--paper ps-col-disc" aria-labelledby="ps-disc-title">
+        <span class="ps-num" aria-hidden="true">A5</span>
         <div class="ps-head">
           <h2 class="ps-h2" id="ps-disc-title">Fields of Research</h2>
         </div>
@@ -145,7 +152,8 @@
       </section>
 
       <!-- PACIFIC FIRSTS -->
-      <section class="ps-panel ps-col-firsts" id="ps-firsts-panel" aria-labelledby="ps-firsts-title" hidden>
+      <section data-panel="B1" data-panel-title="Pacific Firsts" class="ps-panel ps-col-firsts" id="ps-firsts-panel" aria-labelledby="ps-firsts-title" hidden>
+        <span class="ps-num" aria-hidden="true">B1</span>
         <div class="ps-head ps-ft-head">
           <div>
             <h2 class="ps-h2" id="ps-firsts-title">Pacific Firsts: Earliest Master's and PhD Graduates</h2>
@@ -177,7 +185,8 @@
       </section>
 
       <!-- UNIVERSITY POSITIONS -->
-      <section class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+      <section data-panel="B2" data-panel-title="University Positions by Country" class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+        <span class="ps-num" aria-hidden="true">B2</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-pos-title">University Positions by Country</h2>
@@ -200,7 +209,8 @@
       </section>
 
       <!-- LEADERSHIP BY GENDER -->
-      <section class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
+      <section data-panel="B3" data-panel-title="Women and Men in University Leadership" class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
+        <span class="ps-num" aria-hidden="true">B3</span>
         <div class="ps-head">
           <div>
             <h2 class="ps-h2" id="ps-lead-title">Women and Men in University Leadership</h2>
@@ -214,7 +224,8 @@
       </section>
 
       <!-- WHERE POSITIONS ARE HELD -->
-      <section class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
+      <section data-panel="B4" data-panel-title="Where Positions Are Held" class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
+        <span class="ps-num" aria-hidden="true">B4</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-where-title">Where Positions Are Held</h2>
@@ -227,7 +238,8 @@
       </section>
 
       <!-- HIGHEST ACADEMIC RANK -->
-      <section class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
+      <section data-panel="B5" data-panel-title="Highest Academic Rank Reached" class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
+        <span class="ps-num" aria-hidden="true">B5</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-rank-title">Highest Academic Rank Reached</h2>
@@ -244,14 +256,16 @@
       </section>
 
       <!-- GENDER -->
-      <section class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
+      <section data-panel="C1" data-panel-title="Gender Representation" class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
+        <span class="ps-num" aria-hidden="true">C1</span>
         <h2 class="ps-h2" id="ps-gender-title">Gender Representation</h2>
         <p class="ps-sub" id="ps-gender-sub">Gender as recorded in each country Master file.</p>
         <div class="ps-gender" id="ps-gender"></div>
       </section>
 
       <!-- DESTINATIONS -->
-      <section class="ps-panel ps-panel--tapa ps-col-dest" aria-labelledby="ps-dest-title">
+      <section data-panel="C2" data-panel-title="Where Our Scholars Study" class="ps-panel ps-panel--tapa ps-col-dest" aria-labelledby="ps-dest-title">
+        <span class="ps-num" aria-hidden="true">C2</span>
         <h2 class="ps-h2" id="ps-dest-title">Where Our Scholars Study</h2>
         <div class="ps-filters">
           <select class="ps-select" id="ps-dest-home" aria-label="Home country"></select>
@@ -268,7 +282,8 @@
       </section>
 
       <!-- LEARNING TO IMPACT -->
-      <section class="ps-panel ps-panel--impact ps-col-impact" aria-labelledby="ps-impact-title">
+      <section data-panel="C3" data-panel-title="From Learning to Impact" class="ps-panel ps-panel--impact ps-col-impact" aria-labelledby="ps-impact-title">
+        <span class="ps-num" aria-hidden="true">C3</span>
         <span class="ps-badge">Conceptual pathway</span>
         <h2 class="ps-h2" id="ps-impact-title">From Learning to Impact</h2>
         <ol class="ps-steps">
@@ -282,7 +297,8 @@
       </section>
 
       <!-- FIND A SCHOLAR -->
-      <section class="ps-panel ps-panel--find ps-col-find" aria-labelledby="ps-find-title">
+      <section data-panel="D" data-panel-title="Find a Pacific Scholar" class="ps-panel ps-panel--find ps-col-find" aria-labelledby="ps-find-title">
+        <span class="ps-num" aria-hidden="true">D</span>
         <h2 class="ps-h2" id="ps-find-title">Find a Pacific Scholar</h2>
         <form class="ps-find__form" id="ps-find" role="search">
           <label class="ps-sr" for="ps-q">Search by name, country, field, university or keyword</label>
@@ -309,7 +325,8 @@
       </section>
 
       <!-- REGIONAL SCHOLAR DIRECTORY (bottom of page; data in the encrypted bundle) -->
-      <section class="ps-panel ps-panel--paper ps-col-full" id="ps-dir-panel" aria-labelledby="ps-dir-title" hidden>
+      <section data-panel="E" data-panel-title="Regional Scholar Directory" class="ps-panel ps-panel--paper ps-col-full" id="ps-dir-panel" aria-labelledby="ps-dir-title" hidden>
+        <span class="ps-num" aria-hidden="true">E</span>
         <h2 class="ps-h2" id="ps-dir-title">Regional Scholar Directory</h2>
         <div id="ps-dir">
           <p class="dir__intro">One search across every country database, with the same filters for every country. Each card's header band shows the scholar's country and links back to that country's dashboard; the country Master file remains the authoritative record.</p>
@@ -364,6 +381,7 @@
 
   <script src="js/pacific-scholars-directory.js?v=cc85b1fb" defer></script>
   <script src="js/pacific-scholars.js?v=56c3f621" defer></script>
+  <script src="js/pacific-scholars-panel-menu.js?v=63232b74" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
 </html>

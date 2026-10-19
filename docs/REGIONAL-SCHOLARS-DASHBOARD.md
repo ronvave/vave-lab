@@ -157,3 +157,12 @@ rebuild `positions` automatically.
 - **Controls:** country, discipline (Fiji, Tonga, Vanuatu mappings only), degree, gender, Work region and Study region (fly-out menus: region first, then a sideways sub-menu of countries with counts and "All of <region>"; Work region also has "Not recorded"; sub-menus flip left near the screen edge and open inline below 640 px; Esc and arrow keys work), sector (University or tertiary when the workplace name is a university, college, polytechnic or wānanga; Other workplace; Not recorded), search (names, workplaces, places, fields, keywords, publication titles), removable filter chips, Clear filters, page-number pager (24 per page, Fiji layout), Share (copies `pacific-scholars.html#dir=<Scholar ID>`; opens after the passcode). The merged .bib export and Update info button were removed (user decisions).
 - **Font:** the whole regional page uses Arial (`--ps-sans` and `--ps-serif` in `css/pacific-scholars.css`), as on the Fiji dashboard; Google Fonts are no longer loaded.
 - **Publishing:** add `directory` to an encrypted patch (`merge_regional_patch.py` ALLOWED includes it) and run the merge workflow, as for `firsts` and `positions`.
+
+## 10. Panel codes and panel menu (added 2026-10-19)
+
+Every panel carries a code badge (top right) and the sticky menu bar under the headline figures jumps to it (`js/pacific-scholars-panel-menu.js`, same idea as the country dashboards' panel menu). Panels still hidden for lack of data are left out until they appear.
+
+- **Panel A · Overview:** A1 Pacific Scholars Across Our Ocean, A2 Regional Postgraduate Degrees, A3 Research Outputs, A4 Graduate Degrees by Country, A5 Fields of Research
+- **Panel B · Firsts & university careers:** B1 Pacific Firsts, B2 University Positions by Country, B3 Women and Men in University Leadership, B4 Where Positions Are Held, B5 Highest Academic Rank Reached
+- **Panel C · People & pathways:** C1 Gender Representation, C2 Where Our Scholars Study, C3 From Learning to Impact
+- **D** Find a Pacific Scholar (pill "Find a Scholar"), **E** Regional Scholar Directory (pill "Directory")
