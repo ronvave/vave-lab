@@ -147,3 +147,11 @@ Classification rules:
 First load (18 Oct 2026) used the one-time encrypted patch workflow
 (`merge-regional-patch.yml`, allowed keys `firsts`, `positions`); later refreshes
 rebuild `positions` automatically.
+
+## 9. Regional Scholar Directory (bottom panel, added 2026-10-19)
+
+- **Where:** full-width panel `#ps-dir-panel`, last in the page grid after "Find a Pacific Scholar". Code: `js/pacific-scholars-directory.js`, `css/pacific-scholars-directory.css` (every rule scoped to `#ps-dir`). Data: `directory` key of the encrypted bundle, gzip + base64, built by `scripts/regional_directory.py`.
+- **Who appears:** each country's included roster (same rules as the other panels). Where a Master file has `Public Display Approved`, only rows marked TRUE (blank or shifted values are left out). Fiji, Tonga, Solomon Islands and Samoa have no consent column, so their included rosters appear.
+- **Card fields:** display name, salutation (honorifics already in the name are dropped), paternal home village / island line, local label (Fiji confederacy, Tonga island division, Solomon Islands and Vanuatu province only; the line drops the province or division the chip already shows, except Fiji), current role, workplace, department, work-country flag, completed degrees and field, validated ORCID iD and Google Scholar URL, linked publications by type and first-authored count. Never exported: share tokens, notes, evidence, maternal geography, clans, birth years, contact details, photos, AI insights.
+- **Controls:** country, discipline (Fiji, Tonga, Vanuatu mappings only), degree, gender, study region, sector (University or tertiary when the workplace name is a university, college, polytechnic or wānanga; Other workplace; Not recorded), search (names, workplaces, places, fields, publication titles), removable filter chips, Clear filters, Show more (24 per page), Share (copies `pacific-scholars.html#dir=<Scholar ID>`; opens after the passcode), merged .bib export (dedupe by DOI, else title + year; Master rows with shifted columns are left out and counted in the file header). No Update info button (user decision).
+- **Publishing:** add `directory` to an encrypted patch (`merge_regional_patch.py` ALLOWED includes it) and run the merge workflow, as for `firsts` and `positions`.
