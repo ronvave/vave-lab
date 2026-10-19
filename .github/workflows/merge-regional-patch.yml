@@ -3,7 +3,10 @@ name: Merge regional dashboard data patch
 # Manual only. Adds an encrypted data patch (data/regional-patch.enc, key in the
 # REGIONAL_PATCH_KEY secret) into data/regional-scholars.json.enc using the
 # REGIONAL_PASSCODE secret, deletes the patch, commits to main, then starts the
-# validated Pages deploy. No passcode or plaintext appears in logs or the repo.
+# validated Pages deploy. It also copies scholar photos and institution /
+# department links from the country dashboards' encrypted enrichment files into
+# the bundle (scripts/regional_card_extras.py). No passcode or plaintext appears
+# in logs or the repo.
 on:
   workflow_dispatch:
 
@@ -35,14 +38,27 @@ jobs:
           out=$(python3 scripts/merge_regional_patch.py)
           echo "$out"
           echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Copy photos and links from the country dashboards
+        id: extras
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+          VAVELAB_TONGAN_PASSCODE: ${{ secrets.VAVELAB_TONGAN_PASSCODE }}
+          VAVELAB_SOLOMON_PASSCODE: ${{ secrets.VAVELAB_SOLOMON_PASSCODE }}
+          VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
+        run: |
+          out=$(python3 scripts/regional_card_extras.py)
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
       - name: Commit and deploy
-        if: steps.merge.outputs.result == 'merged'
+        if: steps.merge.outputs.result == 'merged' || steps.extras.outputs.result == 'updated'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A data/regional-scholars.json.enc data/regional-patch.enc
-          git commit -m "Regional dashboard: merge encrypted data patch"
+          git add -- data/regional-scholars.json.enc
+          git rm -q --cached --ignore-unmatch data/regional-patch.enc
+          git commit -m "Regional dashboard: merge encrypted data patch and card photos/links"
           git push origin HEAD:main
           gh workflow run deploy-pages-validated.yml --ref main

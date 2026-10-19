@@ -51,7 +51,7 @@
   const GS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3L1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z"/></svg>';
   const SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
 
-  let root, S = [], P = [], C = {}, order = [], shown = [], limit = PAGE;
+  let root, S = [], P = [], X = {}, C = {}, order = [], shown = [], limit = PAGE;
   const F = { country: '', disc: '', degree: '', gender: '', region: '', sector: '', q: '', only: '' };
   const LABEL = { country: 'Country', disc: 'Discipline', degree: 'Degree', gender: 'Gender', region: 'Study region', sector: 'Sector', q: 'Search', only: 'Shared scholar' };
   const IDS = { country: 'f-country', disc: 'f-disc', degree: 'f-degree', gender: 'f-gender', region: 'f-region', sector: 'f-sector', q: 'q' };
@@ -99,6 +99,10 @@
     const types = {}; (s.p || []).forEach(i => { const t = TYPE[P[i].t] ? P[i].t : 'other'; types[t] = (types[t] || 0) + 1; });
     const chips = Object.entries(TYPE).filter(([k]) => types[k]).map(([k, t]) => `<span class="tchip" style="background:${t.bg};border-color:${t.border};color:${t.color}"><span class="n">${types[k]}</span> ${types[k] === 1 ? t.s : t.p}</span>`).join('');
     const name = `${s.sal ? s.sal + ' ' : ''}${s.n}`;
+    // Photo and links: Master file first, then the country dashboard's admin
+    // enrichment (cardExtras), as on the country cards.
+    const ex = X[s.id] || {};
+    const ph = s.ph || ex.ph || '', iu = s.iu || ex.iu || '', du = s.du || ex.du || '';
     const chip = localChip(s);
     const metaLine = (s.geo || chip) ? `<div class="db-scholar-card__meta">${esc(s.geo || '')}${chip ? (s.geo ? ' ' : '') + chip : ''}</div>` : '';
     const degLine = [degLabel(s), s.fld || (s.s || []).join(', ')].filter(Boolean).join(' \u00b7 ');
@@ -109,15 +113,15 @@
       ${s.gs ? `<a class="db-scholar-card__gs" href="${esc(s.gs)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(s.n)}\u2019s Google Scholar profile" aria-label="Open ${esc(s.n)}\u2019s Google Scholar profile">${GS}</a>` : `<span class="db-scholar-card__gs is-missing" role="img" aria-label="Google Scholar profile not yet linked" title="Google Scholar profile not yet linked">${GS}</span>`}
       <div class="db-scholar-card__body">
         <div class="db-scholar-card__photo-col">
-          <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div></div>
+          <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div>${ph ? `<img src="${esc(ph)}" alt="Photo of ${esc(s.n)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>
           <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this card">${SHARE}Share</button>
         </div>
         <div class="db-scholar-card__info">
           <h3>${esc(name)}${s.dec ? '<span class="dec">In memoriam</span>' : ''}</h3>
           ${metaLine}
-          ${s.inst ? `<div class="db-scholar-card__institution">${esc(s.inst)}</div>` : ''}
-          ${s.dept ? `<div class="db-scholar-card__department">${esc(s.dept)}</div>` : ''}
-          ${s.role ? `<div class="db-scholar-card__title">${esc(s.role)}</div>` : ''}
+          ${s.inst ? `<div class="db-scholar-card__institution">${iu ? `<a href="${esc(iu)}" target="_blank" rel="noopener noreferrer" title="Open the ${esc(s.inst)} website">${esc(s.inst)}</a>` : esc(s.inst)}</div>` : ''}
+          ${s.dept ? `<div class="db-scholar-card__department">${du ? `<a href="${esc(du)}" target="_blank" rel="noopener noreferrer" title="Open the ${esc(s.dept)} page">${esc(s.dept)}</a>` : esc(s.dept)}</div>` : ''}
+          ${s.role ? `<div class="db-scholar-card__title">${s.pu ? `<a href="${esc(s.pu)}" target="_blank" rel="noopener noreferrer" title="Open ${esc(s.n)}\u2019s profile">${esc(s.role)}</a>` : esc(s.role)}</div>` : (s.pu ? `<div class="db-scholar-card__title"><a href="${esc(s.pu)}" target="_blank" rel="noopener noreferrer">View profile</a></div>` : '')}
           ${degLine ? `<div class="db-scholar-card__updated">${esc(degLine)}</div>` : ''}
         </div>
       </div>
@@ -198,6 +202,7 @@
     q('chips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; const k = b.dataset.rm; F[k] = ''; if (IDS[k]) q(IDS[k]).value = ''; if (k === 'only') clearHash(); render(); });
     q('more-btn').addEventListener('click', () => { const first = limit; limit += PAGE; render(true); const el = q('grid').children[first]; el && el.querySelector('.db-scholar-card__share') && el.querySelector('.db-scholar-card__share').focus({ preventScroll: true }); });
     q('bib').addEventListener('click', exportBib);
+    q('grid').addEventListener('error', e => { if (e.target.tagName === 'IMG' && e.target.closest('.db-scholar-card__photo')) e.target.remove(); }, true);
     q('grid').addEventListener('click', async e => {
       const sh = e.target.closest('[data-share]'); if (!sh) return;
       const s = S.find(x => x.id === sh.dataset.share);
@@ -222,7 +227,7 @@
     if (!root || !panel || !D || !D.directory) return;
     try {
       const dir = await unpack(D.directory);
-      S = dir.scholars || []; P = dir.pubs || [];
+      S = dir.scholars || []; P = dir.pubs || []; X = D.cardExtras || {};
       order = (D.countries || []).map(c => c.code);
       // Most publications first; ties by first-authored count, then country order
       // and family name (the build's order).

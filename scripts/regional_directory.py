@@ -13,8 +13,11 @@ Who appears (decision 2026-10-19):
 What a card carries: display name, salutation, country, gender (for the filter),
 paternal home village / island (and the Fiji / Tonga / Solomon Islands / Vanuatu
 local label), current role, workplace and its country, completed degrees, study
-regions, workplace sector, validated ORCID / Google Scholar links and linked
-publications. Never included: share tokens, contact details, notes, evidence,
+regions, workplace sector, validated ORCID / Google Scholar links, the same
+profile / photo / institution / department URLs the country cards use from the
+Master file (https only) and linked publications. Photos and links that live in
+the country dashboards' encrypted enrichment files are added in CI by
+regional_card_extras.py (key `cardExtras`). Never included: share tokens, contact details, notes, evidence,
 maternal geography, clans, birth years, spreadsheet IDs.
 """
 from __future__ import annotations
@@ -67,6 +70,7 @@ PUBTYPE = {
 }
 TYPE_WORDS = {'journal article', 'book chapter', 'book', 'report', 'thesis', 'phd thesis', 'master s thesis',
               'conference paper', 'article', 'misc', 'other', 'book section', 'incollection'}
+HTTPS = re.compile(r'^https://[^\s"\'<>]{4,580}$', re.I)
 ORCID_RE = re.compile(r'(\d{4}-\d{4}-\d{4}-\d{3}[\dX])')
 
 
@@ -248,6 +252,14 @@ def build_directory(dumps, country_meta):
             gs = first(r, 'Google Scholar URL', 'Google Scholar')
             gs = gs if re.match(r'https?://scholar\.google\.[a-z.]+/citations\?', gs) else ''
             g = b.gender(r.get('Gender'))
+            # Same Master columns the country cards link from (https only).
+            pu = first(r, 'Personal/Official Profile URL') if code == 'SLB' else (
+                first(r, 'Official Profile URL') if code == 'WSM' else first(r, 'Current Profile URL'))
+            pu = pu if HTTPS.match(pu) else ''
+            ph = first(r, 'Photo URL')
+            ph = ph if HTTPS.match(ph) else ''
+            iu, du = first(r, 'Institution URL'), first(r, 'Department URL')
+            iu, du = (iu if HTTPS.match(iu) else ''), (du if HTTPS.match(du) else '')
             ps = sorted(auth.get(sid, set()))
             rec = dict(id=sid, c=code, n=display_name(code, r))
             sal = salutation(r)
@@ -260,7 +272,7 @@ def build_directory(dumps, country_meta):
             opt = dict(sal=sal, g={'female': 'F', 'male': 'M'}.get(g, ''), dec=1 if deceased(r) else 0,
                        geo=line, loc=loc, role=role, inst=inst, dept=dept, wc=wc, iso=iso, d=lv, r=regions,
                        s=disc, fld=field, sec=sector, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
-                       p=ps, fa=len(fa.get(sid, set()) & set(ps)))
+                       p=ps, fa=len(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
             rec.update({k: v for k, v in opt.items() if v not in ('', [], 0, None)})
             rec['_k'] = fold(fam) + ' ' + fold(rec['n'])
             scholars.append(rec)
