@@ -567,11 +567,13 @@ a { color: var(--ps-teal-300); }
 .ps-pmenu__drop a { display: block; padding: 9px 12px; border-radius: 8px; color: var(--ps-ink); text-decoration: none; font-size: 0.92rem; }
 .ps-pmenu__drop a:hover { background: #e6f4f5; }
 .ps-pmenu__drop a[aria-current] { background: #dff2f3; font-weight: 700; color: #0b5560; }
-.ps-num { position: absolute; top: 14px; right: 14px; z-index: 2; min-width: 34px; height: 24px; padding: 0 9px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #0b6b75; color: #fff; font: 700 0.78rem/1 var(--ps-sans); letter-spacing: .02em; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); pointer-events: none; }
-.ps-panel > .ps-head, .ps-panel > .ps-h2 { padding-right: 46px; }
+/* Same size as the A4 toggle pill (34px tall). */
+.ps-num { position: absolute; top: 14px; right: 12px; z-index: 2; min-width: 46px; height: 34px; padding: 0 12px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; background: #0b6b75; color: #fff; font: 700 0.95rem/1 var(--ps-sans); letter-spacing: .02em; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); pointer-events: none; }
+.ps-panel > .ps-head, .ps-panel > .ps-h2 { padding-right: 46px; min-height: 34px; }
 section[data-panel] { scroll-margin-top: 70px; }
 @media (max-width: 720px) {
   .ps-pmenu__pills { justify-content: flex-start; padding: 8px 12px; }
   .ps-pmenu__pill { padding: 6px 13px; font-size: 0.85rem; }
-  .ps-num { top: 10px; right: 10px; }
+  .ps-num { top: 10px; right: 8px; height: 40px; min-width: 46px; padding: 0 11px; }
+  .ps-panel > .ps-head, .ps-panel > .ps-h2 { min-height: 40px; }
 }
