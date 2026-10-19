@@ -54,22 +54,25 @@ a { color: var(--ps-teal-300); }
 .ps-hero {
   position: relative;
   overflow: hidden;
-  min-height: 230px;
+  /* Height follows the screen width so the sky, mountains, sea and canoe of
+     the photo stay in view from laptops to large monitors. */
+  min-height: max(230px, calc(100vw / 3.3));
+  display: flex;
   padding: 26px 18px 22px;
   background: var(--ps-navy-900);
   isolation: isolate;
 }
 .ps-hero__img {
   position: absolute; inset: 0; z-index: -2;
-  width: 100%; height: 100%; object-fit: cover; object-position: center 55%;
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 18%;
 }
 .ps-hero::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
   background:
     radial-gradient(ellipse 46% 62% at 50% 34%, rgba(3, 19, 39, 0.5) 0%, rgba(3, 19, 39, 0.18) 100%),
-    linear-gradient(180deg, rgba(3, 19, 39, 0.12) 0%, rgba(3, 19, 39, 0.12) 50%, rgba(3, 19, 39, 0.8) 100%);
+    linear-gradient(180deg, rgba(3, 19, 39, 0.1) 0%, rgba(3, 19, 39, 0.05) 60%, rgba(3, 19, 39, 0.7) 100%);
 }
-.ps-hero__inner { max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; container-type: inline-size;
+.ps-hero__inner { width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; container-type: inline-size;
   /* Width available to the one-line header text (between the two logos). */
   --ps-hero-w: calc(100cqi - 2 * clamp(170px, 19vw, 290px) - 64px); }
 .ps-hero__brand { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px; }
@@ -85,7 +88,7 @@ a { color: var(--ps-teal-300); }
 .ps-hero__lede { margin: 0; color: #d7e6f3; font-size: min(1.05rem, calc(var(--ps-hero-w) / 44.6)); line-height: 1.35; white-space: nowrap; text-shadow: 0 1px 8px rgba(0,0,0,.45); }
 .ps-hero__credit { margin-top: 7px; display: flex; justify-content: center; }
 .ps-hero__credit .ps-pill { font-size: 0.82rem; }
-.ps-hero__status { margin-top: 7px; display: flex; flex-wrap: wrap; gap: 5px 8px; align-items: center; font-size: 0.8rem; color: var(--ps-text-muted); }
+.ps-hero__status { margin-top: 7px; display: flex; flex-direction: column; flex-wrap: wrap; gap: 5px 8px; align-items: center; font-size: 0.8rem; color: var(--ps-text-muted); }
 .ps-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--ps-line); background: rgba(5, 28, 54, 0.6); color: var(--ps-text); font-size: 0.78rem; }
 .ps-pill--warn { border-color: rgba(243, 196, 90, 0.55); color: #fde7b0; }
 .ps-pill__dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ps-teal-400); box-shadow: 0 0 8px var(--ps-teal-400); }
@@ -143,8 +146,9 @@ a { color: var(--ps-teal-300); }
 .ps-panel--paper { background: var(--ps-paper); color: var(--ps-ink); border-color: #e6ecf3; }
 .ps-panel--paper .ps-h2 { color: var(--ps-ink); }
 .ps-panel--paper .ps-note { color: var(--ps-ink-muted); }
-.ps-panel--tapa { isolation: isolate; }
-.ps-panel--tapa::after { content: ''; position: absolute; z-index: -1; right: 0; top: 0; width: min(50%, 480px); height: 100px; opacity: .5; pointer-events: none; background: url('../img/regional/tapa-band.webp') right center / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); mask-composite: intersect; }
+.ps-panel { isolation: isolate; }
+/* Polynesian tapa band behind every panel heading (dark and light panels). */
+.ps-panel::after { content: ''; position: absolute; z-index: -1; right: 0; top: 0; width: min(50%, 480px); height: 100px; opacity: .5; pointer-events: none; background: url('../img/regional/tapa-band.webp') right center / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); mask-composite: intersect; }
 .ps-h2 { font-family: var(--ps-serif); font-weight: 700; font-size: 1.55rem; line-height: 1.1; margin: 0 0 4px; color: #fff; }
 .ps-h3 { font-family: var(--ps-serif); font-weight: 700; font-size: 1.2rem; margin: 0 0 6px; }
 .ps-sub { margin: 0 0 10px; font-size: 0.86rem; color: var(--ps-text-muted); }
@@ -341,7 +345,7 @@ a { color: var(--ps-teal-300); }
 .diff-down { color: #b42318; font-weight: 600; }
 
 /* ============ GATE ============ */
-.ps-gate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/hero-canoe.webp') center / cover; }
+.ps-gate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/hero-sail.webp') center / cover; }
 .ps-gate[hidden] { display: none; }
 .ps-gate__card { width: min(440px, 100%); background: rgba(5, 28, 54, .94); border: 1px solid var(--ps-line); border-radius: 16px; padding: 26px 24px; box-shadow: var(--ps-shadow); }
 .ps-gate__card h1 { font-family: var(--ps-serif); font-size: 1.9rem; margin: 0 0 6px; color: #fff; line-height: 1.05; }
@@ -425,6 +429,7 @@ a { color: var(--ps-teal-300); }
   .ps-hero__logo--cpis { grid-area: cpis; width: 150px; }
   .ps-hero__text { grid-area: text; grid-column: 1 / -1; }
   /* Phones: the long lede would be unreadably small on one line, so it wraps. */
+  .ps-hero__img { object-position: 72% 30%; }
   .ps-hero__lede { white-space: normal; font-size: 0.95rem; max-width: 34em; }
   .ps-kpi__dd { gap: 7px; }
   .ps-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
