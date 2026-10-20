@@ -515,9 +515,13 @@
     try { return (window.PSDirectory && window.PSDirectory.scholarPhoto(code, person)) || ''; }
     catch (e) { return ''; }
   }
-  function ftPhotoHtml(code, person, cls) {
-    const src = ftPhoto(code, person);
-    return src ? `<img class="${cls}" src="${esc(src)}" alt="" width="84" height="104">` : '';
+  const FT_PLACE = { male: 'img/regional/firsts/placeholder-male.webp', female: 'img/regional/firsts/placeholder-female.webp' };
+  function ftPhotoHtml(code, person, cls, gender) {
+    const real = ftPhoto(code, person);
+    const src = real || FT_PLACE[gender] || '';
+    if (!src) return '';
+    const mini = cls.indexOf('mini') !== -1;
+    return `<img class="${cls}" src="${esc(src)}" alt="" width="${mini ? 22 : 84}" height="${mini ? 22 : 104}"${real ? ` data-fallback="${esc(FT_PLACE[gender] || '')}"` : ''}>`;
   }
   const FT_LBL = { masters: "Master's", phd: 'PhD' };
   function setupFirsts() {
@@ -601,14 +605,14 @@
     const show = (m, g, cy) => {
       chart.classList.add('ps-ft-dim'); g.classList.add('is-on'); m._line.classList.add('is-on');
       tip.style.setProperty('--c', m.gender === 'male' ? '#0d8a99' : '#c4127a');
-      const photo = ftPhotoHtml(m.code, m.person, 'ps-ft-tip__photo');
-      const also = m.also && m.also.length ? `<div class="ps-ft-tip__also">Also ${m.year}: ${m.also.map(a => `${ftPhotoHtml(m.code, a.person, 'ps-ft-tip__mini')}${esc(a.person)}, ${esc(a.uni)}${a.uc ? ` (${esc(a.uc)})` : ''}`).join('; ')}</div>` : '';
+      const photo = ftPhotoHtml(m.code, m.person, 'ps-ft-tip__photo', m.gender);
+      const also = m.also && m.also.length ? `<div class="ps-ft-tip__also">Also ${m.year}: ${m.also.map(a => `${ftPhotoHtml(m.code, a.person, 'ps-ft-tip__mini', m.gender)}${esc(a.person)}, ${esc(a.uni)}${a.uc ? ` (${esc(a.uc)})` : ''}`).join('; ')}</div>` : '';
       tip.classList.toggle('has-photo', !!photo);
       tip.innerHTML = `<div class="ps-ft-tip__main">${photo}<div><div class="ps-ft-tip__h"><img src="img/regional/flags/${esc(m.code.toLowerCase())}.png" alt="">${esc(m.country)}</div>
         <div class="ps-ft-tip__y"><strong>${m.year}:</strong> First ${esc(m.gender)} ${FT_LBL[m.stage]}</div>
         <div class="ps-ft-tip__p">${esc(m.person)}</div><div class="ps-ft-tip__u">${esc(m.uni)}${m.uc ? ` (${esc(m.uc)})` : ''}</div></div></div>
         ${also}`;
-      tip.querySelectorAll('img[src]').forEach(img => img.addEventListener('error', () => { img.remove(); if (!tip.querySelector('.ps-ft-tip__photo')) tip.classList.remove('has-photo'); }));
+      tip.querySelectorAll('img[data-fallback]').forEach(img => img.addEventListener('error', () => { if (img.dataset.fallback && !img.src.endsWith(img.dataset.fallback)) img.src = img.dataset.fallback; }));
       tip.classList.add('show');
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       const left = Math.min(Math.max(m._x - tw / 2, 4), W - tw - 4);

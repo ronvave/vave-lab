@@ -1,13 +1,29 @@
 {
  "_howto": [
   "Panel B1 (Pacific Firsts) shows a photo in the flag popup.",
-  "Scholars from Fiji, Tonga, Solomon Islands and Vanuatu use the photo on their country profile automatically.",
-  "For a country without a dashboard, add a square or portrait photo under img/regional/firsts/, then add a line under photos.",
-  "The key is the country code, a pipe, then the name as shown on the popup without Dr/Mr/Ms, in lowercase, without glottal stops. Example: WSM|fanaafi le tagaloa",
-  "One photo covers both the Master's and PhD popups for the same person."
+  "A supplied photo here wins. Fiji, Tonga, Solomon Islands and Vanuatu otherwise use the country profile photo.",
+  "If neither exists, the popup uses the male or female placeholder.",
+  "Key: country code, a pipe, then the popup name without Dr/Mr/Ms, lowercase, glottal stops removed, hyphens kept. Example: COK|yvonne underhill-sem"
  ],
  "photos": {
-  "WSM|fanaafi le tagaloa": "img/regional/firsts/fanaafi-le-tagaloa.webp"
+  "WSM|fanaafi le tagaloa": "img/regional/firsts/fanaafi-le-tagaloa.webp",
+  "COK|jon jonassen": "img/regional/firsts/jon-jonassen.webp",
+  "COK|yvonne underhill-sem": "img/regional/firsts/yvonne-underhill-sem.webp",
+  "COK|thomas davis": "img/regional/firsts/thomas-davis.webp",
+  "COK|marjorie crocombe": "img/regional/firsts/marjorie-crocombe.webp",
+  "PLW|kiblas soaladaob": "img/regional/firsts/kiblas-soaladaob.webp",
+  "PLW|klouldil singeo": "img/regional/firsts/klouldil-singeo.webp",
+  "PLW|yimnang golbuu": "img/regional/firsts/yimnang-golbuu.webp",
+  "PLW|patrick tellei": "img/regional/firsts/patrick-tellei.webp",
+  "KIR|teweiariki teaero": "img/regional/firsts/teweiariki-teaero.webp",
+  "KIR|bwarenaba kautu": "img/regional/firsts/bwarenaba-kautu.webp",
+  "KIR|teresia teaiwa": "img/regional/firsts/teresia-teaiwa.webp",
+  "KIR|katerina teaiwa": "img/regional/firsts/katerina-teaiwa.webp",
+  "FSM|gardenia aisek": "img/regional/firsts/gardenia-aisek.webp",
+  "FSM|jacob nena": "img/regional/firsts/jacob-nena.webp",
+  "FSM|vicente diaz": "img/regional/firsts/vicente-diaz.webp",
+  "FSM|margarita cholymay": "img/regional/firsts/margarita-cholymay.webp",
+  "MHL|hilda heine": "img/regional/firsts/hilda-heine.webp"
  },
  "byId": {
   "ITK-S0210": "img/scholars/ITK-S0210.jpg",
