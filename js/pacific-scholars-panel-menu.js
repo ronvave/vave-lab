@@ -11,7 +11,7 @@
   const drop = document.getElementById('ps-pmenu-drop');
   const GROUPS = {
     A: 'Overview', B: 'Firsts & university careers', C: 'People & pathways',
-    D: 'Find a Scholar', E: 'Directory', F: 'Publications', G: 'Collaborators'
+    E: 'Directory', F: 'Publications', G: 'Collaborators'
   };
   const panels = [...document.querySelectorAll('section[data-panel]')];
   const groupOf = el => el.dataset.panel[0];

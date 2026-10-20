@@ -103,7 +103,6 @@
     setupBars();
     setupDisc();
     setupDest();
-    setupFind();
     setupFirsts();
     setupPositions();
     setupDialogs();
@@ -857,37 +856,6 @@
     }
     $('#ps-dlist').innerHTML = total ? DEST_ORDER.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${pct(cnt[k], total)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
     $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
-  }
-
-  // ================= FIND A SCHOLAR =================
-  let INDEX = [];
-  function setupFind() {
-    INDEX = [];
-    countries().forEach(c => (c.index || []).forEach(r => INDEX.push({ ...r, cn: c.name, dash: c.dashboard, hay: [r.n, r.k, c.name, ...(r.f || []), ...(r.s || []), ...(r.u || []), r.d.includes('P') ? 'phd doctorate doctoral' : '', r.d.includes('M') ? "master's masters" : ''].join(' ').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() })));
-    $('#ps-f-country').innerHTML = '<option value="">All Countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
-    $('#ps-f-field').innerHTML = '<option value="">All Fields</option>' + D.disciplineCategories.map(k => `<option>${esc(k)}</option>`).join('');
-    $('#ps-find').addEventListener('submit', e => { e.preventDefault(); runSearch(false); });
-    $('#ps-q').addEventListener('input', debounce(() => runSearch(false), 180));
-    ['#ps-f-country', '#ps-f-field', '#ps-f-level'].forEach(s => $(s).addEventListener('change', () => runSearch(false)));
-    $('#ps-f-reset').addEventListener('click', () => { $('#ps-q').value = ''; $('#ps-f-country').value = ''; $('#ps-f-field').value = ''; $('#ps-f-level').value = ''; $('#ps-results').innerHTML = ''; $('#ps-q').focus(); });
-    $('#ps-f-az').addEventListener('click', () => runSearch(true));
-  }
-  function debounce(fn, ms) { let t; return () => { clearTimeout(t); t = setTimeout(fn, ms); }; }
-  function runSearch(az) {
-    const q = $('#ps-q').value.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const country = $('#ps-f-country').value, field = $('#ps-f-field').value, level = $('#ps-f-level').value;
-    if (!az && !q && !country && !field && !level) { $('#ps-results').innerHTML = ''; return; }
-    const terms = q.split(/\s+/).filter(Boolean);
-    let res = INDEX.filter(r => (!country || r.c === country) && (!field || (r.s || []).includes(field)) && (!level || r.d.includes(level)) && terms.every(t => r.hay.includes(t)));
-    res.sort((a, b) => a.n.localeCompare(b.n));
-    const LIMIT = 150;
-    const fieldNote = field ? '<div class="ps-results__count">Field filter uses the eight short-discipline categories, available for Fiji, Tonga and Vanuatu only.</div>' : '';
-    $('#ps-results').innerHTML = res.length ? `<div class="ps-results__count">${fmt(res.length)} scholar${res.length > 1 ? 's' : ''} found${res.length > LIMIT ? ` · showing first ${LIMIT}; refine your search` : ''}</div>${fieldNote}<ol>${res.slice(0, LIMIT).map(r => {
-      const deg = [r.d.includes('M') ? "Master's" : '', r.d.includes('P') ? 'PhD' : ''].filter(Boolean).join(' · ') || 'No completed degree recorded';
-      const meta = [deg, (r.s && r.s.length ? r.s : r.f || []).slice(0, 2).join('; '), (r.u || []).slice(0, 2).join('; ')].filter(Boolean).join(' — ');
-      const link = r.dash ? `<a href="${esc(r.dash)}?scholar=${encodeURIComponent(r.k)}">Open in ${esc(r.cn)} dashboard →</a> <span class="na">(country passcode required)</span>` : '<span class="na">Country profile page not yet available</span>';
-      return `<li><span class="ps-dot" style="background:${COLORS[r.c]}"></span><b>${esc(r.n)}</b> <span class="na">· ${esc(r.cn)}</span><span class="m">${esc(meta)}</span>${link}</li>`;
-    }).join('')}</ol>` : `<div class="ps-empty" style="margin-top:8px">No scholars match these filters. Try a shorter name, a different spelling, or clear the filters.</div>${fieldNote}`;
   }
 
   // ================= DIALOGS =================
