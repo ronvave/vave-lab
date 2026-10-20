@@ -36,7 +36,7 @@
     Australia: [455, 368, 'end'],
     'New Zealand': [620, 400, 'start']
   };
-  const DEST_COLOR = { Pacific: '#3dce6e', Australia: '#f39a4a', 'New Zealand': '#3fd0d8', 'North America': '#f3c45a', Europe: '#b388ff', Asia: '#ff6f91', Other: '#9fb3c8', Unknown: '#5e7690' };
+  const DEST_COLOR = { Pacific: '#3dce6e', Australia: '#f0a020', 'New Zealand': '#1ec4f0', 'North America': '#f0b42a', Europe: '#a44cf0', Asia: '#f06080', Other: '#9fb3c8', Unknown: '#5e7690' };
   const DISC_COLOR = ['#6fb04a', '#f0a42b', '#1f9ec9', '#e4553f', '#3b5fbf', '#8e5bc7', '#18a39a', '#c6c33a'];
   const ICONS = {
     person: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z"/></svg>',
@@ -854,17 +854,24 @@
       const shown = DEST_ORDER.filter(k => BUBBLE_AT[k] && cnt[k] > 0);
       const maxv = Math.max(1, ...shown.map(k => cnt[k]));
       const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
+      const mix = (c, t, toward) => {
+        const ch = (h, i) => parseInt(h.slice(1 + i * 2, 3 + i * 2), 16);
+        const out = [0, 1, 2].map(i => Math.round(ch(c, i) + (ch(toward, i) - ch(c, i)) * t));
+        return '#' + out.map(v => v.toString(16).padStart(2, '0')).join('');
+      };
       const grads = shown.map(k => {
         const c = DEST_COLOR[k], id = 'ps-bub-' + k.replace(/\s/g, '');
-        return `<radialGradient id="${id}" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fff"/><stop offset="18%" stop-color="${c}"/><stop offset="58%" stop-color="${c}"/><stop offset="100%" stop-color="#062033"/></radialGradient>`;
+        return `<radialGradient id="${id}" cx="32%" cy="28%" r="74%"><stop offset="0%" stop-color="${mix(c, .7, '#ffffff')}"/><stop offset="18%" stop-color="${mix(c, .22, '#ffffff')}"/><stop offset="55%" stop-color="${c}"/><stop offset="100%" stop-color="${mix(c, .42, '#0a2744')}"/></radialGradient><radialGradient id="${id}-glow" cx="50%" cy="50%" r="50%"><stop offset="68%" stop-color="${c}" stop-opacity="0"/><stop offset="80%" stop-color="${c}" stop-opacity=".7"/><stop offset="100%" stop-color="${c}" stop-opacity="0"/></radialGradient>`;
       }).join('');
       const bubbles = shown.map(k => {
         const [x, y, side] = BUBBLE_AT[k];
-        const r = 28 + 58 * Math.sqrt(cnt[k] / maxv);
+        const r = 14 + 24 * Math.sqrt(cnt[k] / maxv);
         const id = 'ps-bub-' + k.replace(/\s/g, '');
         const p = share0(k);
-        const lx = side === 'end' ? x - r - 14 : x + r + 14;
-        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${(r + 10).toFixed(1)}" fill="${DEST_COLOR[k]}" opacity=".28"/><circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="url(#${id})"/><text class="ps-dnode__name" x="${lx.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="${side}">${esc(k)}</text><text class="ps-dnode__pct" x="${lx.toFixed(1)}" y="${(y + 24).toFixed(1)}" text-anchor="${side}" fill="${DEST_COLOR[k]}">${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
+        const lx = side === 'end' ? x - r - 12 : x + r + 12;
+        const a1 = -2.55, a2 = -0.5, rr = r * 0.76;
+        const x1 = x + rr * Math.cos(a1), y1 = y + rr * Math.sin(a1), x2 = x + rr * Math.cos(a2), y2 = y + rr * Math.sin(a2);
+        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${(r * 1.38).toFixed(1)}" fill="url(#${id}-glow)"/><circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="url(#${id})"/><path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A ${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="${Math.max(1.8, r * 0.16).toFixed(1)}" stroke-linecap="round"/><text class="ps-dnode__name" x="${lx.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="${side}">${esc(k)}</text><text class="ps-dnode__pct" x="${lx.toFixed(1)}" y="${(y + 22).toFixed(1)}" text-anchor="${side}" fill="${DEST_COLOR[k]}">${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
       }).join('');
       host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${share0(k)}%`).join(', ')}"><defs>${grads}</defs><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${bubbles}</svg>`;
     }
