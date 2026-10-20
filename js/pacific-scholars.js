@@ -26,7 +26,17 @@
     masters: { key: 'masters', label: "Master's", unit: "completed Master's degrees", def: "Master's = completed Master's degree records held by those scholars." },
   };
   const DEST_ORDER = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia', 'Other', 'Unknown'];
-  const DEST_COLOR = { Pacific: '#3fd0d8', Australia: '#f3c45a', 'New Zealand': '#7ee08a', 'North America': '#f39a4a', Europe: '#c58cf5', Asia: '#ff6f91', Other: '#9fb3c8', Unknown: '#5e7690' };
+  // Centres sit on the basemap region points, except New Zealand, which sits
+  // just east of the islands so its bubble does not cover Australia.
+  const BUBBLE_AT = {
+    Europe: [137, 112, 'start'],
+    Asia: [411, 168, 'end'],
+    Pacific: [530, 255, 'start'],
+    'North America': [744, 130, 'end'],
+    Australia: [455, 368, 'end'],
+    'New Zealand': [620, 400, 'start']
+  };
+  const DEST_COLOR = { Pacific: '#3dce6e', Australia: '#f39a4a', 'New Zealand': '#3fd0d8', 'North America': '#f3c45a', Europe: '#b388ff', Asia: '#ff6f91', Other: '#9fb3c8', Unknown: '#5e7690' };
   const DISC_COLOR = ['#6fb04a', '#f0a42b', '#1f9ec9', '#e4553f', '#3b5fbf', '#8e5bc7', '#18a39a', '#c6c33a'];
   const ICONS = {
     person: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="7" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8z"/></svg>',
@@ -840,21 +850,27 @@
     const host = $('#ps-world');
     if (!BM) { host.innerHTML = '<div class="ps-empty">World basemap unavailable.</div>'; }
     else {
-      const Wd = BM.world; const o = Wd.dest.origin;
-      const maxv = Math.max(1, ...DEST_ORDER.filter(k => Wd.dest[k]).map(k => cnt[k]));
-      const arcs = DEST_ORDER.filter(k => Wd.dest[k] && k !== 'Pacific' && cnt[k] > 0).map(k => {
-        const [x, y] = Wd.dest[k]; const mx = (o[0] + x) / 2, my = Math.min(o[1], y) - Math.abs(x - o[0]) * 0.28 - 30;
-        return `<path class="ps-arc" d="M${o[0]} ${o[1]} Q${mx.toFixed(1)} ${my.toFixed(1)} ${x} ${y}" stroke="${DEST_COLOR[k]}" stroke-width="${(1.5 + 7 * cnt[k] / maxv).toFixed(1)}" stroke-opacity=".9"/>`;
+      const Wd = BM.world;
+      const shown = DEST_ORDER.filter(k => BUBBLE_AT[k] && cnt[k] > 0);
+      const maxv = Math.max(1, ...shown.map(k => cnt[k]));
+      const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
+      const grads = shown.map(k => {
+        const c = DEST_COLOR[k], id = 'ps-bub-' + k.replace(/\s/g, '');
+        return `<radialGradient id="${id}" cx="35%" cy="30%" r="70%"><stop offset="0%" stop-color="#fff"/><stop offset="18%" stop-color="${c}"/><stop offset="58%" stop-color="${c}"/><stop offset="100%" stop-color="#062033"/></radialGradient>`;
       }).join('');
-      const nodes = DEST_ORDER.filter(k => Wd.dest[k]).map(k => {
-        const [x, y] = Wd.dest[k]; const p = pct(cnt[k], total);
-        const dx = k === 'New Zealand' ? 18 : k === 'Australia' ? -18 : 0, anchor = k === 'Australia' ? 'end' : k === 'New Zealand' ? 'start' : 'middle';
-        const dy = k === 'Pacific' ? -20 : k === 'Australia' || k === 'New Zealand' ? 10 : -20;
-        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${k === 'Pacific' ? 12 : 10}" fill="${DEST_COLOR[k]}" stroke="#fff" stroke-width="2"/><text x="${x + dx}" y="${y + dy}" text-anchor="${anchor}">${esc(k)} ${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
+      const bubbles = shown.map(k => {
+        const [x, y, side] = BUBBLE_AT[k];
+        const r = 28 + 58 * Math.sqrt(cnt[k] / maxv);
+        const id = 'ps-bub-' + k.replace(/\s/g, '');
+        const p = share0(k);
+        const lx = side === 'end' ? x - r - 14 : x + r + 14;
+        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${(r + 10).toFixed(1)}" fill="${DEST_COLOR[k]}" opacity=".28"/><circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="url(#${id})"/><text class="ps-dnode__name" x="${lx.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="${side}">${esc(k)}</text><text class="ps-dnode__pct" x="${lx.toFixed(1)}" y="${(y + 24).toFixed(1)}" text-anchor="${side}" fill="${DEST_COLOR[k]}">${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
       }).join('');
-      host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${pct(cnt[k], total)}%`).join(', ')}"><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${arcs}<circle cx="${o[0]}" cy="${o[1]}" r="5" fill="#fff"/>${nodes}</svg>`;
+      host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${share0(k)}%`).join(', ')}"><defs>${grads}</defs><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${bubbles}</svg>`;
     }
-    $('#ps-dlist').innerHTML = total ? DEST_ORDER.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${pct(cnt[k], total)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
+    const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
+    const ranked = DEST_ORDER.filter(k => cnt[k] > 0).sort((a, b) => cnt[b] - cnt[a] || DEST_ORDER.indexOf(a) - DEST_ORDER.indexOf(b));
+    $('#ps-dlist').innerHTML = total ? ranked.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${share0(k)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
     $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
   }
 

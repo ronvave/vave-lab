@@ -272,8 +272,9 @@ a { color: var(--ps-teal-300); }
 .ps-world { position: relative; border-radius: 10px; overflow: hidden; background: radial-gradient(ellipse at 50% 50%, #0d3a66, #041a33); border: 1px solid rgba(127,227,230,.12); }
 .ps-world svg { display: block; width: 100%; height: auto; }
 .ps-wland { fill: #12446f; stroke: #24608f; stroke-width: .4; }
-.ps-arc { fill: none; stroke-linecap: round; filter: drop-shadow(0 0 3px rgba(127,227,230,.8)); }
-.ps-dnode text { font-family: var(--ps-sans); font-size: 34px; font-weight: 700; fill: #fff; paint-order: stroke; stroke: rgba(3,19,39,.9); stroke-width: 6px; }
+.ps-dnode__name, .ps-dnode__pct { font-family: var(--ps-sans); font-weight: 700; }
+.ps-dnode__name { font-size: 26px; fill: #fff; paint-order: stroke; stroke: rgba(3, 19, 39, .8); stroke-width: 4px; }
+.ps-dnode__pct { font-size: 28px; }
 .ps-dlist { list-style: none; margin: 8px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 3px 10px; font-size: 0.74rem; }
 .ps-dlist li { display: flex; justify-content: space-between; gap: 6px; border-bottom: 1px dotted var(--ps-line); padding: 2px 0; }
 .ps-dlist i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
