@@ -543,9 +543,7 @@ a { color: var(--ps-teal-300); }
 .ps-hm.ps-hm--share th.ps-hm-n, .ps-hm.ps-hm--share td.ps-hm-n { width: 8%; }
 .ps-hm.ps-hm--share thead th { height: auto; padding-bottom: 8px; }
 .ps-hm.ps-hm--share thead th span { writing-mode: horizontal-tb; transform: none; white-space: normal; display: block; text-align: center; line-height: 1.15; }
-.ps-hm.ps-hm--share td { width: auto; height: 48px; line-height: 1.05; }
-.ps-hm.ps-hm--share td b { display: block; font-size: .84rem; }
-.ps-hm.ps-hm--share td small { display: block; font-weight: 500; font-size: .68rem; opacity: .9; }
+.ps-hm.ps-hm--share td { width: auto; height: 42px; font-size: .84rem; white-space: nowrap; }
 .ps-hm.ps-hm--share td.ps-hm-n { background: transparent; color: var(--ps-text); }
 .ps-hm.ps-hm--share tr.ps-hm-all th { font-style: italic; }
 .ps-hm-key { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0 0; padding: 0; font-size: .74rem; color: var(--ps-text); }

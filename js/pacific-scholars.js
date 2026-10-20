@@ -852,8 +852,8 @@
     const cell = (n, t, who, region) => {
       const p = t ? Math.round(n / t * 100) : 0;
       const [bg, color] = band(p);
-      const shown = n ? `${p}%` : '—';
-      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)"><b>${shown}</b>${n ? `<small>${fmt(n)}</small>` : ''}</td>`;
+      const shown = n ? `${p}% (${fmt(n)})` : '—';
+      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)">${shown}</td>`;
     };
     const row = (name, bag, total, extra) => `<tr class="${extra || ''}"><th class="home" scope="row">${name}</th>${cols.map(k => cell(bag[k], total, name.replace(/<[^>]+>/g, ''), k)).join('')}<td class="ps-hm-n">${fmt(total)}</td></tr>`;
     const allN = homes.reduce((a, c) => a + Object.values(cnt[c]).reduce((x, y) => x + y, 0), 0);
