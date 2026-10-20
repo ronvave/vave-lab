@@ -163,7 +163,7 @@ rebuild `positions` automatically.
 Every panel carries a code badge (top right) and the sticky menu bar under the headline figures jumps to it (`js/pacific-scholars-panel-menu.js`, same idea as the country dashboards' panel menu). Panels still hidden for lack of data are left out until they appear.
 
 - **Panel A · Overview:** A1 Pacific Scholars Across Our Ocean, A2 Regional Postgraduate Degrees, A3 Research Outputs, A4 Graduate Degrees by Country, A5 Fields of Research
-- **Panel B · Firsts & university careers:** B1 Pacific Firsts, B2 University Positions by Country, B3 Women and Men in University Leadership, B4 Where Positions Are Held, B5 Highest Academic Rank Reached
+- **Panel B · Firsts & university careers:** B1 Pacific Firsts, B2 Workplaces by Home Country, B3 University Positions by Country, B4 Women and Men in University Leadership, B5 Where Positions Are Held, B6 Highest Academic Rank Reached
 - **Panel C · People & pathways:** C1 Where Our Scholars Study or Work (wide map; Study counts completed degrees, Work counts each directory scholar once at the current workplace), C2 Gender Representation, C3 From Learning to Impact
 - **E** Regional Scholar Directory (pill "Directory"), **F** Publications (pill "Publications"), **G** Collaborators (pill "Collaborators")
 

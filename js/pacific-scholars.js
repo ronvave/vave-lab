@@ -118,7 +118,7 @@
     setupDialogs();
     renderCredits();
     renderAll(true);
-    if (window.PSDirectory) window.PSDirectory.init(D).then(() => renderDest()).catch(() => {});
+    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); }).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
@@ -205,6 +205,7 @@
     renderDest();
     renderFirsts();
     renderPositions();
+    renderWorkHeat();
   }
 
   // ================= COUNTRY STRIP =================
@@ -825,6 +826,45 @@
   }
 
   // ================= DESTINATIONS =================
+  function renderWorkHeat() {
+    const panel = $('#ps-work-heat');
+    const host = $('#ps-work-heat-table');
+    if (!panel || !host) return;
+    const people = window.PSDirectory && window.PSDirectory.scholars ? window.PSDirectory.scholars() : null;
+    if (!people || !people.length) { panel.hidden = true; return; }
+    const cols = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia', 'Unknown'];
+    const label = k => k === 'Unknown' ? 'Not recorded' : k;
+    const homes = countries().map(c => c.code);
+    const cnt = Object.fromEntries(homes.map(c => [c, Object.fromEntries(cols.map(k => [k, 0]))]));
+    const all = Object.fromEntries(cols.map(k => [k, 0]));
+    people.forEach(s => {
+      if (!cnt[s.c]) return;
+      const r = s.wr && cnt[s.c][s.wr] !== undefined ? s.wr : 'Unknown';
+      cnt[s.c][r] += 1;
+      all[r] += 1;
+    });
+    const cell = (n, t, who, region) => {
+      if (!n) return '<td></td>';
+      const raw = t ? n / t : 0;
+      const p = Math.round(raw * 100);
+      const bg = `rgba(127,227,230,${(0.12 + 0.82 * raw).toFixed(2)})`;
+      const color = raw > 0.42 ? '#04121f' : '#eaf3fb';
+      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)"><b>${p}%</b><small>${fmt(n)}</small></td>`;
+    };
+    const row = (name, bag, total, extra) => `<tr class="${extra || ''}"><th class="home" scope="row">${name}</th>${cols.map(k => cell(bag[k], total, name.replace(/<[^>]+>/g, ''), k)).join('')}<td class="ps-hm-n">${fmt(total)}</td></tr>`;
+    const allN = homes.reduce((a, c) => a + Object.values(cnt[c]).reduce((x, y) => x + y, 0), 0);
+    let html = `<thead><tr><th scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(label(k))}</span></th>`).join('')}<th scope="col"><span>Scholars</span></th></tr></thead><tbody>`;
+    html += row('All countries', all, allN, 'ps-hm-all');
+    homes.forEach(c => {
+      const n = Object.values(cnt[c]).reduce((a, b) => a + b, 0);
+      if (!n) return;
+      const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}`;
+      html += row(name, cnt[c], n, state.sel === c ? 'sel' : '');
+    });
+    host.innerHTML = html + '</tbody>';
+    panel.hidden = false;
+  }
+
   function setupDest() {
     const home = $('#ps-dest-home');
     home.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
@@ -930,7 +970,7 @@
   }
   function openDialog(which) {
     if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>`);
-    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work counts each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded.</p>`);
+    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work and Panel B2 count each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded. Panel B2 colours each cell by that home country's share.</p>`);
     if (which === 'coverage') show('Data Coverage & Notes', `${sourceTable()}<h3>Reconciliation with 5 October 2026</h3>${reconTable()}<h3>Curation stage</h3><p>Tuvalu, Kiribati, Palau, Cook Islands, Marshall Islands, Federated States of Micronesia and Samoa are at an early curation stage. Their publication tables were re-initialised after 5 October and authorship links are still sparse, so Indigenous-linked publication counts are provisional. Gender is not yet recorded for many Samoa and Marshall Islands scholars.</p>`);
   }
   function openProv(which) {

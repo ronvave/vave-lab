@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=7b86d0f3" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=f13daf5c" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=fba6d806" />
 </head>
@@ -185,9 +185,19 @@
         <p class="ps-note">Earliest completion year among completed Master's and PhD records in each country's Master file (Graduate Degrees), using each country dashboard's own rule; professional doctorates are not counted as PhDs. When two scholars share the earliest year, the hover card lists both. <span id="ps-ft-missing"></span></p>
       </section>
 
-      <!-- UNIVERSITY POSITIONS -->
-      <section data-panel="B2" data-panel-title="University Positions by Country" class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+      <!-- WORKPLACES BY HOME COUNTRY -->
+      <section data-panel="B2" data-panel-title="Workplaces by Home Country" class="ps-panel ps-col-full" id="ps-work-heat" aria-labelledby="ps-work-heat-title" hidden>
         <span class="ps-num" aria-hidden="true">B2</span>
+        <h2 class="ps-h2" id="ps-work-heat-title">Workplaces by Home Country</h2>
+        <p class="ps-sub">Each directory scholar counted once, at their current workplace. Colour is that country's share.</p>
+        <div class="ps-pos-scroll"><table class="ps-hm ps-hm--share" id="ps-work-heat-table"></table></div>
+        <div class="ps-hm-scale" aria-hidden="true"><span>0%</span><i></i><span>100% of that country's scholars</span></div>
+        <p class="ps-note">Same workplace count as Panel C1 Work. Not recorded means the workplace country is missing or not mapped. A share under 0.5% is shown as 0%.</p>
+      </section>
+
+      <!-- UNIVERSITY POSITIONS -->
+      <section data-panel="B3" data-panel-title="University Positions by Country" class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+        <span class="ps-num" aria-hidden="true">B3</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-pos-title">University Positions by Country</h2>
@@ -210,8 +220,8 @@
       </section>
 
       <!-- LEADERSHIP BY GENDER -->
-      <section data-panel="B3" data-panel-title="Women and Men in University Leadership" class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
-        <span class="ps-num" aria-hidden="true">B3</span>
+      <section data-panel="B4" data-panel-title="Women and Men in University Leadership" class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
+        <span class="ps-num" aria-hidden="true">B4</span>
         <div class="ps-head">
           <div>
             <h2 class="ps-h2" id="ps-lead-title">Women and Men in University Leadership</h2>
@@ -225,8 +235,8 @@
       </section>
 
       <!-- WHERE POSITIONS ARE HELD -->
-      <section data-panel="B4" data-panel-title="Where Positions Are Held" class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
-        <span class="ps-num" aria-hidden="true">B4</span>
+      <section data-panel="B5" data-panel-title="Where Positions Are Held" class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
+        <span class="ps-num" aria-hidden="true">B5</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-where-title">Where Positions Are Held</h2>
@@ -239,8 +249,8 @@
       </section>
 
       <!-- HIGHEST ACADEMIC RANK -->
-      <section data-panel="B5" data-panel-title="Highest Academic Rank Reached" class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
-        <span class="ps-num" aria-hidden="true">B5</span>
+      <section data-panel="B6" data-panel-title="Highest Academic Rank Reached" class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
+        <span class="ps-num" aria-hidden="true">B6</span>
         <div class="ps-head ps-pos-head">
           <div>
             <h2 class="ps-h2" id="ps-rank-title">Highest Academic Rank Reached</h2>
@@ -400,7 +410,7 @@
   <script src="js/pacific-scholars-publications.js?v=0af9e8d3" defer></script>
   <script src="js/pacific-scholars-collaborators.js?v=6a95e475" defer></script>
   <script src="js/pacific-scholars-directory.js?v=0d331747" defer></script>
-  <script src="js/pacific-scholars.js?v=654edae3" defer></script>
+  <script src="js/pacific-scholars.js?v=92d7b900" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=8addd3fb" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
