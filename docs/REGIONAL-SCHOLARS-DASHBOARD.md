@@ -164,7 +164,7 @@ Every panel carries a code badge (top right) and the sticky menu bar under the h
 
 - **Panel A · Overview:** A1 Pacific Scholars Across Our Ocean, A2 Regional Postgraduate Degrees, A3 Research Outputs, A4 Graduate Degrees by Country, A5 Fields of Research
 - **Panel B · Firsts & university careers:** B1 Pacific Firsts, B2 University Positions by Country, B3 Women and Men in University Leadership, B4 Where Positions Are Held, B5 Highest Academic Rank Reached
-- **Panel C · People & pathways:** C1 Where Our Scholars Study (wide map), C2 Gender Representation, C3 From Learning to Impact
+- **Panel C · People & pathways:** C1 Where Our Scholars Study or Work (wide map; Study counts completed degrees, Work counts each directory scholar once at the current workplace), C2 Gender Representation, C3 From Learning to Impact
 - **E** Regional Scholar Directory (pill "Directory"), **F** Publications (pill "Publications"), **G** Collaborators (pill "Collaborators")
 
 ## 11. Panel F Publications (added 2026-10-19)

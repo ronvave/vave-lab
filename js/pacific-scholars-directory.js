@@ -455,5 +455,5 @@
     if (file) return file;
     return s.ph || '';
   }
-  window.PSDirectory = { init, scholarPhoto };
+  window.PSDirectory = { init, scholarPhoto, scholars: () => S };
 })();

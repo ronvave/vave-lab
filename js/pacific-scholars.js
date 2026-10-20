@@ -47,7 +47,7 @@
     doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>',
   };
 
-  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', mapView: null };
+  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', destMode: 'study', mapView: null };
   let D = null, BM = null, CREDITS = null, byCode = {};
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -118,7 +118,7 @@
     setupDialogs();
     renderCredits();
     renderAll(true);
-    if (window.PSDirectory) window.PSDirectory.init(D);
+    if (window.PSDirectory) window.PSDirectory.init(D).then(() => renderDest()).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
@@ -833,25 +833,49 @@
     home.addEventListener('change', e => { state.destHome = e.target.value; if (state.destHome !== (state.sel || '')) { state.sel = state.destHome || null; writeUrl(); renderAll(); } else renderDest(); });
     $('#ps-dest-level').addEventListener('change', e => { state.destLevel = e.target.value; renderDest(); });
     $('#ps-dest-dec').addEventListener('change', e => { state.destDec = e.target.value; renderDest(); });
+    $('#ps-dest-mode').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      state.destMode = b.dataset.v;
+      $('#ps-dest-mode').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+      renderDest();
+    });
   }
   function renderDest() {
     state.destHome = state.sel || state.destHome || '';
     if (state.sel === null && $('#ps-dest-home').value !== '' && !state.destHome) $('#ps-dest-home').value = '';
     $('#ps-dest-home').value = state.destHome;
-    const scope = state.destHome ? [byCode[state.destHome]] : countries();
+    const work = state.destMode === 'work';
+    $('#ps-dest-level').hidden = work;
+    $('#ps-dest-dec').hidden = work;
+    const title = work ? 'Where Our Scholars Work' : 'Where Our Scholars Study';
+    $('#ps-dest-title').textContent = title;
+    const panel = document.querySelector('section[data-panel="C1"]');
+    if (panel) panel.dataset.panelTitle = title;
+    const regionName = k => (work && k === 'Unknown') ? 'Not recorded' : k;
+    const scope = state.destHome ? [byCode[state.destHome]].filter(Boolean) : countries();
     const cnt = Object.fromEntries(DEST_ORDER.map(k => [k, 0]));
-    scope.forEach(c => c.destinations.forEach(d => {
-      if (state.destLevel !== 'all' && d.l !== state.destLevel) return;
-      if (state.destDec !== '' && String(d.dec) !== state.destDec) return;
-      cnt[d.r] = (cnt[d.r] || 0) + d.n;
-    }));
+    const people = work && window.PSDirectory && window.PSDirectory.scholars ? window.PSDirectory.scholars() : null;
+    if (work && people) {
+      people.forEach(s => {
+        if (state.destHome && s.c !== state.destHome) return;
+        const r = s.wr && cnt[s.wr] !== undefined ? s.wr : 'Unknown';
+        cnt[r] += 1;
+      });
+    } else if (!work) {
+      scope.forEach(c => c.destinations.forEach(d => {
+        if (state.destLevel !== 'all' && d.l !== state.destLevel) return;
+        if (state.destDec !== '' && String(d.dec) !== state.destDec) return;
+        cnt[d.r] = (cnt[d.r] || 0) + d.n;
+      }));
+    }
     const total = Object.values(cnt).reduce((a, b) => a + b, 0);
-    const unresolvedCampus = scope.reduce((a, c) => a + (((c.destinationCountries || {}).Pacific || {})['(country unresolved)'] || 0), 0);
+    const unresolvedCampus = work ? 0 : scope.reduce((a, c) => a + (((c.destinationCountries || {}).Pacific || {})['(country unresolved)'] || 0), 0);
     const host = $('#ps-world');
     if (!BM) { host.innerHTML = '<div class="ps-empty">World basemap unavailable.</div>'; }
     else {
       const Wd = BM.world;
-      const shown = DEST_ORDER.filter(k => BUBBLE_AT[k] && cnt[k] > 0);
+      const shown = DEST_ORDER.filter(k => BUBBLE_AT[k] && cnt[k] > 0 && Math.round(cnt[k] / Math.max(total, 1) * 100) > 0);
       const maxv = Math.max(1, ...shown.map(k => cnt[k]));
       const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
       const mix = (c, t, toward) => {
@@ -871,14 +895,18 @@
         const lx = side === 'end' ? x - r - 12 : x + r + 12;
         const a1 = -2.55, a2 = -0.5, rr = r * 0.76;
         const x1 = x + rr * Math.cos(a1), y1 = y + rr * Math.sin(a1), x2 = x + rr * Math.cos(a2), y2 = y + rr * Math.sin(a2);
-        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${(r * 1.38).toFixed(1)}" fill="url(#${id}-glow)"/><circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="url(#${id})"/><path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A ${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="${Math.max(1.8, r * 0.16).toFixed(1)}" stroke-linecap="round"/><text class="ps-dnode__name" x="${lx.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="${side}">${esc(k)}</text><text class="ps-dnode__pct" x="${lx.toFixed(1)}" y="${(y + 22).toFixed(1)}" text-anchor="${side}" fill="${DEST_COLOR[k]}">${p}%</text><title>${esc(k)}: ${fmt(cnt[k])} of ${fmt(total)} completed degrees (${p}%)</title></g>`;
+        const unit = work ? 'directory scholars' : 'completed degrees';
+        return `<g class="ps-dnode"><circle cx="${x}" cy="${y}" r="${(r * 1.38).toFixed(1)}" fill="url(#${id}-glow)"/><circle cx="${x}" cy="${y}" r="${r.toFixed(1)}" fill="url(#${id})"/><path d="M${x1.toFixed(1)} ${y1.toFixed(1)} A ${rr.toFixed(1)} ${rr.toFixed(1)} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" fill="none" stroke="#fff" stroke-opacity=".92" stroke-width="${Math.max(1.8, r * 0.16).toFixed(1)}" stroke-linecap="round"/><text class="ps-dnode__name" x="${lx.toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="${side}">${esc(regionName(k))}</text><text class="ps-dnode__pct" x="${lx.toFixed(1)}" y="${(y + 22).toFixed(1)}" text-anchor="${side}" fill="${DEST_COLOR[k]}">${p}%</text><title>${esc(regionName(k))}: ${fmt(cnt[k])} of ${fmt(total)} ${unit} (${p}%)</title></g>`;
       }).join('');
-      host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="Study destinations: ${DEST_ORDER.map(k => `${k} ${share0(k)}%`).join(', ')}"><defs>${grads}</defs><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${bubbles}</svg>`;
+      host.innerHTML = `<svg viewBox="0 0 ${Wd.w} ${Wd.h}" role="img" aria-label="${work ? 'Workplaces' : 'Study destinations'}: ${DEST_ORDER.map(k => `${regionName(k)} ${share0(k)}%`).join(', ')}"><defs>${grads}</defs><path d="${Wd.sphere}" fill="#082c52"/>${Wd.shapes.map(s => `<path class="ps-wland" d="${s.d}"/>`).join('')}${bubbles}</svg>`;
     }
     const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
     const ranked = DEST_ORDER.filter(k => cnt[k] > 0).sort((a, b) => cnt[b] - cnt[a] || DEST_ORDER.indexOf(a) - DEST_ORDER.indexOf(b));
-    $('#ps-dlist').innerHTML = total ? ranked.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(k)}</span><b>${share0(k)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : '<li>No completed degrees match these filters.</li>';
-    $('#ps-dest-note').innerHTML = `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
+    const empty = work ? (people ? 'No directory scholars match these filters.' : 'Workplace records are still loading.') : 'No completed degrees match these filters.';
+    $('#ps-dlist').innerHTML = total ? ranked.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(regionName(k))}</span><b>${share0(k)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : `<li>${empty}</li>`;
+    $('#ps-dest-note').innerHTML = work
+      ? `Directory scholars (n = ${fmt(total)}), counted once at their current workplace. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi. Not recorded means the workplace country is missing or not mapped to a region. This is the approved directory, so it is not the same total as the study degrees.`
+      : `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
   }
 
   // ================= DIALOGS =================
@@ -902,7 +930,7 @@
   }
   function openDialog(which) {
     if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>`);
-    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p>`);
+    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work counts each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded.</p>`);
     if (which === 'coverage') show('Data Coverage & Notes', `${sourceTable()}<h3>Reconciliation with 5 October 2026</h3>${reconTable()}<h3>Curation stage</h3><p>Tuvalu, Kiribati, Palau, Cook Islands, Marshall Islands, Federated States of Micronesia and Samoa are at an early curation stage. Their publication tables were re-initialised after 5 October and authorship links are still sparse, so Indigenous-linked publication counts are provisional. Gender is not yet recorded for many Samoa and Marshall Islands scholars.</p>`);
   }
   function openProv(which) {
