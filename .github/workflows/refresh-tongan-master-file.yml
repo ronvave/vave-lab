@@ -1,5 +1,5 @@
 name: Refresh Tongan Master File snapshot
-# Manual refresh trigger: 2026-10-14 Seuula Johansson-Fua USP reconciliation
+# Manual refresh trigger: 2026-10-19 Inez Faingaa-Manu Sione publication reconciliation
 
 # Sister workflow to refresh-master-file.yml (iTaukei). Runs every 2 hours
 # (offset 5 minutes after the iTaukei run to reduce commit-race odds on
