@@ -166,9 +166,9 @@ a { color: var(--ps-teal-300); }
 .ps-col-out { grid-column: span 10; }
 .ps-col-bars { grid-column: span 12; }
 .ps-col-disc { grid-column: span 12; }
-/* C1 fills its own column and the old C2 column. C2 sits where C3 was, and C3 sits where Find a Scholar was. */
-.ps-col-gender { grid-column: span 12; }
-.ps-col-dest { grid-column: span 6; }
+/* C1 is the study map, filling the wide column. C2 is gender, in the narrower column. */
+.ps-col-dest { grid-column: span 12; }
+.ps-col-gender { grid-column: span 6; }
 .ps-col-impact { grid-column: span 6; }
 .ps-col-firsts { grid-column: 1 / -1; }
 .ps-col-full { grid-column: 1 / -1; }
@@ -365,8 +365,8 @@ a { color: var(--ps-teal-300); }
   .ps-col-out { grid-column: span 11; }
   .ps-col-bars { grid-column: span 13; }
   .ps-col-disc { grid-column: span 11; }
-  .ps-col-gender { grid-column: span 12; }
-  .ps-col-dest, .ps-col-impact { grid-column: span 6; }
+  .ps-col-dest { grid-column: span 12; }
+  .ps-col-gender, .ps-col-impact { grid-column: span 6; }
   .ps-deg { grid-template-columns: 130px 1fr; }
   .ps-deg .ps-callout { grid-column: 1 / -1; }
   .ps-ring { width: 130px; height: 130px; }
@@ -380,8 +380,8 @@ a { color: var(--ps-teal-300); }
   .ps-col-map { grid-column: span 24; grid-row: auto; }
   .ps-map { flex: none; aspect-ratio: 2400 / 1891; max-height: 82vh; min-height: 0; }
   .ps-col-deg, .ps-col-out, .ps-col-bars, .ps-col-disc { grid-column: span 12; }
-  .ps-col-gender { grid-column: span 24; }
-  .ps-col-dest, .ps-col-impact { grid-column: span 12; }
+  .ps-col-dest { grid-column: span 24; }
+  .ps-col-gender, .ps-col-impact { grid-column: span 12; }
 }
 @media (max-width: 720px) {
   .ps-wrap { padding: 0 12px; }
