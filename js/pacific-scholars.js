@@ -113,6 +113,11 @@
     setupBars();
     setupDisc();
     setupDest();
+    const heatCountry = $('#ps-work-heat-country');
+    if (heatCountry) {
+      heatCountry.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+      heatCountry.addEventListener('change', renderWorkHeat);
+    }
     setupFirsts();
     setupPositions();
     setupDialogs();
@@ -843,19 +848,20 @@
       cnt[s.c][r] += 1;
       all[r] += 1;
     });
+    const band = p => p <= 5 ? ['#540B0E', '#fff'] : p <= 20 ? ['#9E2A2B', '#fff'] : p <= 40 ? ['#E09F3E', '#1a1206'] : p <= 60 ? ['#A7C957', '#1a1206'] : ['#386641', '#fff'];
     const cell = (n, t, who, region) => {
-      if (!n) return '<td></td>';
-      const raw = t ? n / t : 0;
-      const p = Math.round(raw * 100);
-      const bg = `rgba(127,227,230,${(0.12 + 0.82 * raw).toFixed(2)})`;
-      const color = raw > 0.42 ? '#04121f' : '#eaf3fb';
-      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)"><b>${p}%</b><small>${fmt(n)}</small></td>`;
+      const p = t ? Math.round(n / t * 100) : 0;
+      const [bg, color] = band(p);
+      const shown = n ? `${p}%` : '—';
+      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)"><b>${shown}</b>${n ? `<small>${fmt(n)}</small>` : ''}</td>`;
     };
     const row = (name, bag, total, extra) => `<tr class="${extra || ''}"><th class="home" scope="row">${name}</th>${cols.map(k => cell(bag[k], total, name.replace(/<[^>]+>/g, ''), k)).join('')}<td class="ps-hm-n">${fmt(total)}</td></tr>`;
     const allN = homes.reduce((a, c) => a + Object.values(cnt[c]).reduce((x, y) => x + y, 0), 0);
-    let html = `<thead><tr><th scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(label(k))}</span></th>`).join('')}<th scope="col"><span>Scholars</span></th></tr></thead><tbody>`;
-    html += row('All countries', all, allN, 'ps-hm-all');
+    let html = `<thead><tr><th class="home" scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(label(k))}</span></th>`).join('')}<th class="ps-hm-n" scope="col"><span>Scholars</span></th></tr></thead><tbody>`;
+    const pick = ($('#ps-work-heat-country') || {}).value || '';
+    if (!pick) html += row('All countries', all, allN, 'ps-hm-all');
     homes.forEach(c => {
+      if (pick && c !== pick) return;
       const n = Object.values(cnt[c]).reduce((a, b) => a + b, 0);
       if (!n) return;
       const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}`;

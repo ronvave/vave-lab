@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=f13daf5c" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=4903807a" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=fba6d806" />
 </head>
@@ -188,10 +188,21 @@
       <!-- WORKPLACES BY HOME COUNTRY -->
       <section data-panel="B2" data-panel-title="Workplaces by Home Country" class="ps-panel ps-col-full" id="ps-work-heat" aria-labelledby="ps-work-heat-title" hidden>
         <span class="ps-num" aria-hidden="true">B2</span>
-        <h2 class="ps-h2" id="ps-work-heat-title">Workplaces by Home Country</h2>
-        <p class="ps-sub">Each directory scholar counted once, at their current workplace. Colour is that country's share.</p>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-work-heat-title">Workplaces by Home Country</h2>
+            <p class="ps-sub">Each directory scholar counted once, at their current workplace. Colour is that country's share.</p>
+          </div>
+          <select class="ps-select" id="ps-work-heat-country" aria-label="Home country shown in the workplace heatmap"></select>
+        </div>
         <div class="ps-pos-scroll"><table class="ps-hm ps-hm--share" id="ps-work-heat-table"></table></div>
-        <div class="ps-hm-scale" aria-hidden="true"><span>0%</span><i></i><span>100% of that country's scholars</span></div>
+        <ul class="ps-hm-key" aria-label="Heatmap colours">
+          <li><i style="background:#540B0E"></i>Little to none, 0–5%</li>
+          <li><i style="background:#9E2A2B"></i>Low, 6–20%</li>
+          <li><i style="background:#E09F3E"></i>Moderate, 21–40%</li>
+          <li><i style="background:#A7C957"></i>High, 41–60%</li>
+          <li><i style="background:#386641"></i>Highest, 61% or more</li>
+        </ul>
         <p class="ps-note">Same workplace count as Panel C1 Work. Not recorded means the workplace country is missing or not mapped. A share under 0.5% is shown as 0%.</p>
       </section>
 
@@ -410,7 +421,7 @@
   <script src="js/pacific-scholars-publications.js?v=0af9e8d3" defer></script>
   <script src="js/pacific-scholars-collaborators.js?v=6a95e475" defer></script>
   <script src="js/pacific-scholars-directory.js?v=0d331747" defer></script>
-  <script src="js/pacific-scholars.js?v=92d7b900" defer></script>
+  <script src="js/pacific-scholars.js?v=381c2d9c" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=8addd3fb" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>

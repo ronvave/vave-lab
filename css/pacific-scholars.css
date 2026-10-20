@@ -537,13 +537,18 @@ a { color: var(--ps-teal-300); }
 .ps-hm th.home { text-align: left; white-space: nowrap; padding-right: 6px; }
 .ps-hm th.home img { width: 20px; height: 20px; border-radius: 50%; vertical-align: -5px; margin-right: 6px; }
 .ps-hm tr.sel th.home { color: #7fe3e6; }
-.ps-hm--share td { height: 44px; width: auto; line-height: 1.05; background: rgba(127, 227, 230, .08); }
-.ps-hm--share td b { display: block; font-size: .78rem; }
-.ps-hm--share td small { display: block; font-weight: 500; font-size: .62rem; opacity: .85; }
-.ps-hm--share td.ps-hm-n { background: transparent; color: var(--ps-text); }
-.ps-hm--share tr.ps-hm-all th { font-style: italic; }
-.ps-hm-scale { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: .72rem; color: var(--ps-text-muted); }
-.ps-hm-scale i { width: 120px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgba(127, 227, 230, .12), rgba(127, 227, 230, .94)); }
+.ps-hm.ps-hm--share { table-layout: fixed; width: 100%; min-width: 760px; }
+.ps-hm.ps-hm--share th.home { width: 24%; }
+.ps-hm.ps-hm--share th.ps-hm-n, .ps-hm.ps-hm--share td.ps-hm-n { width: 8%; }
+.ps-hm.ps-hm--share thead th { height: auto; padding-bottom: 8px; }
+.ps-hm.ps-hm--share thead th span { writing-mode: horizontal-tb; transform: none; white-space: normal; display: block; text-align: center; line-height: 1.15; }
+.ps-hm.ps-hm--share td { width: auto; height: 48px; line-height: 1.05; }
+.ps-hm.ps-hm--share td b { display: block; font-size: .84rem; }
+.ps-hm.ps-hm--share td small { display: block; font-weight: 500; font-size: .68rem; opacity: .9; }
+.ps-hm.ps-hm--share td.ps-hm-n { background: transparent; color: var(--ps-text); }
+.ps-hm.ps-hm--share tr.ps-hm-all th { font-style: italic; }
+.ps-hm-key { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 10px 0 0; padding: 0; font-size: .74rem; color: var(--ps-text); }
+.ps-hm-key i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; }
 .ps-hm td { width: 46px; height: 38px; text-align: center; border-radius: 6px; font-weight: 700; font-variant-numeric: tabular-nums; outline: none; }
 .ps-hm td[data-h] { cursor: pointer; }
 .ps-hm td.self { box-shadow: inset 0 0 0 2px var(--ps-gold-400); }
