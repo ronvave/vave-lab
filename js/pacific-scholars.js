@@ -113,11 +113,7 @@
     setupBars();
     setupDisc();
     setupDest();
-    const heatCountry = $('#ps-work-heat-country');
-    if (heatCountry) {
-      heatCountry.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.code === 'FSM' ? 'FSM' : c.name)}</option>`).join('');
-      heatCountry.addEventListener('change', renderWorkHeat);
-    }
+    setupWorkHeat();
     setupFirsts();
     setupPositions();
     setupDialogs();
@@ -831,43 +827,116 @@
   }
 
   // ================= DESTINATIONS =================
+  function setupWorkHeat() {
+    const box = $('#ps-work-heat-country');
+    if (!box || box.dataset.ready) return;
+    box.dataset.ready = '1';
+    const pop = box.querySelector('.ps-hm-countries__pop');
+    const btn = box.querySelector('.ps-hm-countries__btn');
+    const val = box.querySelector('.ps-hm-countries__val');
+    const homeLabel = c => c.code === 'FSM' ? 'FSM' : c.name;
+    pop.innerHTML = '<button type="button" class="ps-hm-uncheck" data-uncheck>Uncheck all</button><label><input type="checkbox" data-all checked> All home countries</label>' + countries().map(c => `<label><input type="checkbox" data-code="${c.code}" data-label="${esc(homeLabel(c))}" checked> ${esc(homeLabel(c))}</label>`).join('');
+    const boxes = () => [...pop.querySelectorAll('input[data-code]')];
+    const syncLabel = () => {
+      const on = boxes().filter(b => b.checked);
+      pop.querySelector('input[data-all]').checked = on.length === boxes().length;
+      val.textContent = on.length === boxes().length ? 'All home countries' : on.length === 0 ? 'No home countries' : on.length <= 2 ? on.map(b => b.dataset.label).join(', ') : on.length + ' home countries';
+    };
+    pop.addEventListener('change', e => {
+      if (e.target.dataset.all !== undefined) boxes().forEach(b => { b.checked = e.target.checked; });
+      syncLabel();
+      renderWorkHeat();
+    });
+    pop.addEventListener('click', e => {
+      if (!e.target.closest('[data-uncheck]')) return;
+      boxes().forEach(b => { b.checked = false; });
+      pop.querySelector('input[data-all]').checked = false;
+      syncLabel();
+      renderWorkHeat();
+    });
+    $('#ps-work-heat-reset').addEventListener('click', () => {
+      boxes().forEach(b => { b.checked = true; });
+      syncLabel();
+      $('#ps-work-heat-unknown').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.v === 'exclude')));
+      $('#ps-work-heat-gender').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.v === 'all')));
+      renderWorkHeat();
+    });
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const open = pop.hidden;
+      pop.hidden = !open;
+      btn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', e => { if (!box.contains(e.target)) { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); } });
+    ['ps-work-heat-unknown', 'ps-work-heat-gender'].forEach(id => {
+      $('#' + id).addEventListener('click', e => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        $('#' + id).querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+        renderWorkHeat();
+      });
+    });
+  }
+
   function renderWorkHeat() {
     const panel = $('#ps-work-heat');
     const host = $('#ps-work-heat-table');
     if (!panel || !host) return;
     const people = window.PSDirectory && window.PSDirectory.scholars ? window.PSDirectory.scholars() : null;
     if (!people || !people.length) { panel.hidden = true; return; }
-    const cols = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia', 'Unknown'];
-    const label = k => k === 'Unknown' ? 'Not recorded' : k;
-    const homes = countries().map(c => c.code);
-    const cnt = Object.fromEntries(homes.map(c => [c, Object.fromEntries(cols.map(k => [k, 0]))]));
-    const all = Object.fromEntries(cols.map(k => [k, 0]));
+    const regions = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia'];
+    const exclude = ($('#ps-work-heat-unknown button[aria-checked="true"]') || {}).dataset.v !== 'include';
+    const gender = ($('#ps-work-heat-gender button[aria-checked="true"]') || {}).dataset.v || 'all';
+    const boxes = [...document.querySelectorAll('#ps-work-heat-country input[data-code]')];
+    const picked = boxes.filter(b => b.checked).map(b => b.dataset.code);
+    const allOn = !boxes.length || picked.length === boxes.length;
+    const homes = countries().map(c => c.code).filter(c => allOn || picked.includes(c));
+    const blank = () => Object.fromEntries([...regions, 'Unknown'].map(k => [k, 0]));
+    const cnt = Object.fromEntries(countries().map(c => [c.code, blank()]));
     people.forEach(s => {
-      if (!cnt[s.c]) return;
+      if (!cnt[s.c] || (gender !== 'all' && s.g !== gender)) return;
       const r = s.wr && cnt[s.c][s.wr] !== undefined ? s.wr : 'Unknown';
       cnt[s.c][r] += 1;
-      all[r] += 1;
     });
+    const sum = codes => codes.reduce((bag, c) => {
+      Object.keys(bag).forEach(k => { bag[k] += cnt[c][k]; });
+      return bag;
+    }, blank());
     const band = p => p <= 5 ? ['#8E534C', '#fff'] : p <= 20 ? ['#B44E4A', '#fff'] : p <= 40 ? ['#E8B56A', '#1a1206'] : p <= 60 ? ['#C5D588', '#1a1206'] : ['#7A9A72', '#1a1206'];
-    const cell = (n, t, who, region) => {
+    const knownOf = bag => regions.reduce((a, k) => a + bag[k], 0);
+    const shareCell = (n, t, who, region) => {
       const p = t ? Math.round(n / t * 100) : 0;
-      const [bg, color] = band(p);
-      const shown = n ? `${p}% (${fmt(n)})` : '—';
-      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} work in ${esc(label(region))} (${p}%)">${shown}</td>`;
+      const [bg, color] = band(n ? p : 0);
+      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} with a workplace in this share (${p}%)">${n ? `${p}% (${fmt(n)})` : '—'}</td>`;
     };
-    const row = (name, bag, total, extra) => `<tr class="${extra || ''}"><th class="home" scope="row">${name}</th>${cols.map(k => cell(bag[k], total, name.replace(/<[^>]+>/g, ''), k)).join('')}<td class="ps-hm-n">${fmt(total)}</td></tr>`;
-    const allN = homes.reduce((a, c) => a + Object.values(cnt[c]).reduce((x, y) => x + y, 0), 0);
-    let html = `<thead><tr><th class="home" scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(label(k))}</span></th>`).join('')}<th class="ps-hm-n" scope="col"><span>Scholars</span></th></tr></thead><tbody>`;
-    const pick = ($('#ps-work-heat-country') || {}).value || '';
-    if (!pick) html += row('All countries', all, allN, 'ps-hm-all');
-    homes.forEach(c => {
-      if (pick && c !== pick) return;
-      const n = Object.values(cnt[c]).reduce((a, b) => a + b, 0);
-      if (!n) return;
-      const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(c === 'FSM' ? 'FSM' : nameOf(c))}`;
-      html += row(name, cnt[c], n, state.sel === c ? 'sel' : '');
-    });
+    const missCell = (n, who) => `<td style="background:#424242;color:#fff" title="${esc(who)}: ${fmt(n)} with no recorded workplace, excluded from the share">${n ? fmt(n) : '—'}</td>`;
+    const row = (name, bag, extra) => {
+      const known = knownOf(bag);
+      const total = known + bag.Unknown;
+      const base = exclude ? known : total;
+      const who = name.replace(/<[^>]+>/g, '');
+      const miss = exclude ? missCell(bag.Unknown, who) : shareCell(bag.Unknown, base, who, 'Not recorded');
+      return `<tr class="${extra || ''}"><th class="home" scope="row">${name}</th>${regions.map(k => shareCell(bag[k], base, who, k)).join('')}<td class="ps-hm-n" title="${fmt(base)} scholars used for the share">${fmt(base)}</td>${miss}</tr>`;
+    };
+    let html = `<thead><tr><th class="home" scope="col"><span class="ps-sr">Home country</span></th>${regions.map(k => `<th scope="col"><span>${esc(k)}</span></th>`).join('')}<th class="ps-hm-n" scope="col"><span>Scholars</span></th><th scope="col"><span>Not recorded</span></th></tr></thead><tbody>`;
+    if (!homes.length) html += '<tr><td colspan="9">Choose at least one home country.</td></tr>';
+    else {
+      if (allOn) html += row('All countries', sum(homes), 'ps-hm-all');
+      homes.forEach(c => {
+        const n = knownOf(cnt[c]) + cnt[c].Unknown;
+        if (!n) return;
+        const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(c === 'FSM' ? 'FSM' : nameOf(c))}`;
+        html += row(name, cnt[c], state.sel === c ? 'sel' : '');
+      });
+    }
     host.innerHTML = html + '</tbody>';
+    const missKey = $('#ps-work-heat-miss');
+    if (missKey) missKey.hidden = !exclude;
+    const note = $('#ps-work-heat-note');
+    if (note) note.textContent = exclude
+      ? 'Shares are of directory scholars with a known workplace. Not recorded is the last column and is not part of the share. Scholars is that known total.'
+      : 'Shares include scholars whose workplace country is missing or not mapped. Scholars is the full total, and Not recorded is part of the share.';
     panel.hidden = false;
   }
 
@@ -976,7 +1045,7 @@
   }
   function openDialog(which) {
     if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>`);
-    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work and Panel B2 count each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded. Panel B2 colours each cell by that home country's share.</p>`);
+    if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work and Panel B2 count each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded. Panel B2's default share excludes those scholars; Scholars is then the known-workplace total, and Not recorded is a separate grey column.</p>`);
     if (which === 'coverage') show('Data Coverage & Notes', `${sourceTable()}<h3>Reconciliation with 5 October 2026</h3>${reconTable()}<h3>Curation stage</h3><p>Tuvalu, Kiribati, Palau, Cook Islands, Marshall Islands, Federated States of Micronesia and Samoa are at an early curation stage. Their publication tables were re-initialised after 5 October and authorship links are still sparse, so Indigenous-linked publication counts are provisional. Gender is not yet recorded for many Samoa and Marshall Islands scholars.</p>`);
   }
   function openProv(which) {

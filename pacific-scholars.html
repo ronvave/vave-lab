@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=7677753b" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=09f1454d" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=fba6d806" />
 </head>
@@ -191,9 +191,24 @@
         <div class="ps-head">
           <div>
             <h2 class="ps-h2" id="ps-work-heat-title">Workplaces by Home Country</h2>
-            <p class="ps-sub">Each directory scholar counted once, at their current workplace. Colour is that country's share.</p>
+            <p class="ps-sub">Rows are each scholar's home country. Columns are where they work.</p>
           </div>
-          <select class="ps-select" id="ps-work-heat-country" aria-label="Home country shown in the workplace heatmap"></select>
+        </div>
+        <div class="ps-hm-tools">
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Whether scholars without a recorded workplace are in the share" id="ps-work-heat-unknown">
+            <button type="button" role="radio" aria-checked="true" data-v="exclude">Exclude not recorded</button>
+            <button type="button" role="radio" aria-checked="false" data-v="include">Include not recorded</button>
+          </div>
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the workplace heatmap" id="ps-work-heat-gender">
+            <button type="button" role="radio" aria-checked="true" data-v="all">All</button>
+            <button type="button" role="radio" aria-checked="false" data-v="M">Male</button>
+            <button type="button" role="radio" aria-checked="false" data-v="F">Female</button>
+          </div>
+          <button type="button" class="ps-hm-reset" id="ps-work-heat-reset">Reset</button>
+          <div class="ps-hm-countries" id="ps-work-heat-country">
+            <button type="button" class="ps-hm-countries__btn" aria-haspopup="true" aria-expanded="false" aria-label="Home countries shown in the workplace heatmap"><span class="ps-hm-countries__val">All home countries</span></button>
+            <div class="ps-hm-countries__pop" hidden></div>
+          </div>
         </div>
         <div class="ps-pos-scroll"><table class="ps-hm ps-hm--share" id="ps-work-heat-table"></table></div>
         <ul class="ps-hm-key" aria-label="Heatmap colours">
@@ -202,8 +217,9 @@
           <li><i style="background:#E8B56A"></i>Moderate, 21–40%</li>
           <li><i style="background:#C5D588"></i>High, 41–60%</li>
           <li><i style="background:#7A9A72"></i>Highest, 61% or more</li>
+          <li id="ps-work-heat-miss"><i style="background:#424242"></i>Not recorded, not in the share</li>
         </ul>
-        <p class="ps-note">Same workplace count as Panel C1 Work. Not recorded means the workplace country is missing or not mapped. A share under 0.5% is shown as 0%.</p>
+        <p class="ps-note" id="ps-work-heat-note">Shares are of directory scholars with a known workplace. Not recorded is the last column and is not part of the share. Scholars is that known total.</p>
       </section>
 
       <!-- UNIVERSITY POSITIONS -->
@@ -421,7 +437,7 @@
   <script src="js/pacific-scholars-publications.js?v=0af9e8d3" defer></script>
   <script src="js/pacific-scholars-collaborators.js?v=6a95e475" defer></script>
   <script src="js/pacific-scholars-directory.js?v=0d331747" defer></script>
-  <script src="js/pacific-scholars.js?v=5774ce19" defer></script>
+  <script src="js/pacific-scholars.js?v=ae563893" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=8addd3fb" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
