@@ -431,5 +431,29 @@
       root.innerHTML = `<p class="dir__intro">${esc(err.message || 'The directory could not be opened.')}</p>`;
     }
   }
-  window.PSDirectory = { init };
+  // Panel B1 uses the same profile photo as the country card, for the four
+  // live dashboards only. A unique name match is required so a shared family
+  // name never shows the wrong person.
+  const DASH_PHOTO = new Set(['FJI', 'TON', 'SLB', 'VUT']);
+  const bare = person => fold(person).replace(/^(dr|mr|ms|prof|sir)\s+/, '');
+  function scholarPhoto(code, person) {
+    if (!DASH_PHOTO.has(code)) return '';
+    const want = bare(person).split(/\s+/).filter(Boolean);
+    if (want.length < 2) return '';
+    const given = want[0], fam = want.slice(1);
+    const hits = S.filter(s => {
+      if (s.c !== code) return false;
+      const toks = fold(s.n).split(/[^a-z0-9]+/).filter(Boolean);
+      if (!toks.includes(given) || toks.length < fam.length) return false;
+      return fam.every((t, i) => toks[toks.length - fam.length + i] === t);
+    });
+    if (hits.length !== 1) return '';
+    const s = hits[0];
+    const ex = X[s.id] && X[s.id].ph;
+    if (ex) return ex;
+    const file = window.PSFirstsById && window.PSFirstsById[s.id];
+    if (file) return file;
+    return s.ph || '';
+  }
+  window.PSDirectory = { init, scholarPhoto };
 })();

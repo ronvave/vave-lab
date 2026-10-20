@@ -507,7 +507,18 @@
   }
 
   // ================= PACIFIC FIRSTS TIMELINE =================
-  const FT = { stage: 'both', gender: 'both', Y0: 1950, R: 16, GAP: 6 };
+  const FT = { stage: 'both', gender: 'both', Y0: 1950, R: 16, GAP: 6, photos: {}, byId: {} };
+  const ftBare = person => String(person || '').normalize('NFD').replace(/[\u0300-\u036f\u02bb\u2018\u2019'`]/g, '').toLowerCase().replace(/^(dr|mr|ms|prof|sir)\s+/, '').replace(/\s+/g, ' ').trim();
+  function ftPhoto(code, person) {
+    const supplied = FT.photos[code + '|' + ftBare(person)];
+    if (supplied) return supplied;
+    try { return (window.PSDirectory && window.PSDirectory.scholarPhoto(code, person)) || ''; }
+    catch (e) { return ''; }
+  }
+  function ftPhotoHtml(code, person, cls) {
+    const src = ftPhoto(code, person);
+    return src ? `<img class="${cls}" src="${esc(src)}" alt="" width="84" height="104">` : '';
+  }
   const FT_LBL = { masters: "Master's", phd: 'PhD' };
   function setupFirsts() {
     const panel = $('#ps-firsts-panel');
@@ -523,6 +534,9 @@
     };
     wire('#ps-ft-stage', 'ftstage', 'stage');
     wire('#ps-ft-gender', 'ftgender', 'gender');
+    fetch('data/regional-firsts-photos.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : {}).then(d => {
+      FT.photos = d.photos || {}; window.PSFirstsById = d.byId || {};
+    }).catch(() => {});
     let w = 0;
     new ResizeObserver(() => { const nw = $('#ps-ft-chart').clientWidth; if (nw !== w) { w = nw; renderFirsts(); } }).observe($('#ps-ft-chart'));
     const missing = countries().filter(c => ['male', 'female'].some(g => !D.firsts.some(m => m.code === c.code && m.gender === g)));
@@ -587,10 +601,14 @@
     const show = (m, g, cy) => {
       chart.classList.add('ps-ft-dim'); g.classList.add('is-on'); m._line.classList.add('is-on');
       tip.style.setProperty('--c', m.gender === 'male' ? '#0d8a99' : '#c4127a');
-      tip.innerHTML = `<div class="ps-ft-tip__h"><img src="img/regional/flags/${esc(m.code.toLowerCase())}.png" alt="">${esc(m.country)}</div>
+      const photo = ftPhotoHtml(m.code, m.person, 'ps-ft-tip__photo');
+      const also = m.also && m.also.length ? `<div class="ps-ft-tip__also">Also ${m.year}: ${m.also.map(a => `${ftPhotoHtml(m.code, a.person, 'ps-ft-tip__mini')}${esc(a.person)}, ${esc(a.uni)}${a.uc ? ` (${esc(a.uc)})` : ''}`).join('; ')}</div>` : '';
+      tip.classList.toggle('has-photo', !!photo);
+      tip.innerHTML = `<div class="ps-ft-tip__main">${photo}<div><div class="ps-ft-tip__h"><img src="img/regional/flags/${esc(m.code.toLowerCase())}.png" alt="">${esc(m.country)}</div>
         <div class="ps-ft-tip__y"><strong>${m.year}:</strong> First ${esc(m.gender)} ${FT_LBL[m.stage]}</div>
-        <div class="ps-ft-tip__p">${esc(m.person)}</div><div class="ps-ft-tip__u">${esc(m.uni)}${m.uc ? ` (${esc(m.uc)})` : ''}</div>
-        ${m.also && m.also.length ? `<div class="ps-ft-tip__also">Also ${m.year}: ${m.also.map(a => `${esc(a.person)}, ${esc(a.uni)}${a.uc ? ` (${esc(a.uc)})` : ''}`).join('; ')}</div>` : ''}`;
+        <div class="ps-ft-tip__p">${esc(m.person)}</div><div class="ps-ft-tip__u">${esc(m.uni)}${m.uc ? ` (${esc(m.uc)})` : ''}</div></div></div>
+        ${also}`;
+      tip.querySelectorAll('img[src]').forEach(img => img.addEventListener('error', () => { img.remove(); if (!tip.querySelector('.ps-ft-tip__photo')) tip.classList.remove('has-photo'); }));
       tip.classList.add('show');
       const tw = tip.offsetWidth, th = tip.offsetHeight;
       const left = Math.min(Math.max(m._x - tw / 2, 4), W - tw - 4);
