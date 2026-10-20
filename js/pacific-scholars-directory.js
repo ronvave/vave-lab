@@ -5,6 +5,9 @@
  * the browser's memory. Cards reuse the country dashboards' scholar-card design.
  * Card fields are limited to what the regional build exports (see
  * scripts/regional_directory.py): no share tokens, notes or contact details.
+ * Share looks up the country dashboard's existing public profile link when
+ * the button is clicked. Those tokens stay in the files the country pages
+ * already publish; they are not copied into the regional bundle.
  */
 (() => {
   'use strict';
@@ -25,6 +28,43 @@
     MHL: { label: 'Marshallese Scholar', from: '#B48CE6', to: '#7c4dbd', ink: '#fff' },
     FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' }
   };
+  // Live country profile pages. Fiji, Tonga and Solomon Islands use the same
+  // secure link their own Share button copies. Vanuatu uses its scholar id,
+  // as its own Share button does. explain=1 opens the research explanation.
+  const PROFILE = {
+    FJI: { page: 's.html', name: 'Fiji' },
+    TON: { page: 's-tonga.html', file: 'data/tongan-share-tokens.json', name: 'Tonga' },
+    SLB: { page: 's-solomon.html', file: 'data/solomon-share-tokens.json', name: 'Solomon Islands' },
+    VUT: { page: 's-vanuatu.html', idParam: 'scholar', name: 'Vanuatu' }
+  };
+  const tokenMaps = {};
+  const regionalCardUrl = s => `${location.origin}${location.pathname}#dir=${s.id}`;
+  async function tokenMap(code) {
+    if (tokenMaps[code]) return tokenMaps[code];
+    if (code === 'FJI') {
+      const parts = await Promise.all([0, 1, 2, 3, 4].map(i => fetch('data/share-public/' + i + '.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { m: {} })));
+      tokenMaps.FJI = Object.assign({}, ...parts.map(p => p.m || {}));
+      return tokenMaps.FJI;
+    }
+    const r = await fetch(PROFILE[code].file, { cache: 'no-cache' });
+    if (!r.ok) throw new Error('missing');
+    tokenMaps[code] = (await r.json()).m || {};
+    return tokenMaps[code];
+  }
+  async function profileUrl(s) {
+    const cfg = PROFILE[s.c];
+    if (!cfg) return '';
+    const u = new URL(cfg.page, location.href);
+    u.searchParams.set('explain', '1');
+    if (cfg.idParam) { u.searchParams.set(cfg.idParam, s.id); return u.href; }
+    let map;
+    try { map = await tokenMap(s.c); } catch (e) { return ''; }
+    const token = map[s.id];
+    if (!/^[0-9a-f]{40}$/i.test(token || '')) return '';
+    u.searchParams.set('k', token);
+    return u.href;
+  }
+
   const TYPE = {
     journalArticle: { color: '#8a6408', bg: '#f8efd6', border: '#e6c98a', s: 'Journal article', p: 'Journal articles', bib: 'article' },
     bookSection: { color: '#9b5a60', bg: '#f7e8ea', border: '#e1a8ae', s: 'Book chapter', p: 'Book chapters', bib: 'incollection' },
@@ -180,7 +220,7 @@
         <div class="db-scholar-card__photo-col${s.dec ? ' db-scholar-card__photo-col--is-deceased' : ''}">
           <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div>${ph ? `<img src="${esc(ph)}" alt="Photo of ${esc(s.n)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>
           ${memorial ? `<div class="db-scholar-card__memorial" aria-label="Memorial: ${esc(memorial)}">${esc(memorial)}</div>` : ''}
-          <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this card">${SHARE}Share</button>
+          <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this scholar's country profile">${SHARE}Share</button>
         </div>
         <div class="db-scholar-card__info">
           <h3>${esc(name)}</h3>
@@ -335,11 +375,23 @@
       const ib = e.target.closest('[data-insight-btn]');
       if (ib) { const open = ib.getAttribute('aria-expanded') === 'true'; ib.setAttribute('aria-expanded', open ? 'false' : 'true'); document.getElementById(ib.getAttribute('aria-controls')).hidden = open; return; }
       const kwt = e.target.closest('[data-kw]'); if (kwt) { searchKw(kwt.dataset.kw); return; }
-      const sh = e.target.closest('[data-share]'); if (!sh) return;
-      const s = S.find(x => x.id === sh.dataset.share);
-      const url = `${location.origin}${location.pathname}#dir=${s.id}`;
-      try { await navigator.clipboard.writeText(url); toast(`Link to ${s.n}\u2019s card copied. It opens after the regional passcode.`); }
-      catch { window.prompt('Copy this link to the card (opens after the regional passcode):', url); }
+      const sh = e.target.closest('[data-share]'); if (!sh || sh.disabled) return;
+      const s = S.find(x => x.id === sh.dataset.share); if (!s) return;
+      sh.disabled = true;
+      let url = '', msg = '';
+      try {
+        url = await profileUrl(s);
+        const country = (PROFILE[s.c] && PROFILE[s.c].name) || (C[s.c] && C[s.c].name) || s.c;
+        if (url) msg = `Link to ${s.n}\u2019s ${country} profile copied. It opens their country profile, with Explain their research already open when an explanation is recorded.`;
+        else {
+          url = regionalCardUrl(s);
+          msg = PROFILE[s.c]
+            ? `${country} profile link is not ready yet. Link to the regional card copied. It opens after the regional passcode.`
+            : `No country profile page yet for ${country}. Link to the regional card copied. It opens after the regional passcode.`;
+        }
+        try { await navigator.clipboard.writeText(url); toast(msg); }
+        catch { window.prompt('Copy this link:', url); }
+      } finally { sh.disabled = false; }
     });
     q('lkey').innerHTML = Object.entries(LOCAL).map(([c, L]) => `<div class="lk"><div class="lk-h"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(C[c] ? C[c].name : c)}<span>Same as the ${esc(L.src)}</span></div><div class="lk-f">Field: ${esc(L.field)}</div><div class="lk-c">${Object.entries(L.map).map(([k, [f, t]]) => `<span class="lchip" style="background:linear-gradient(135deg,${f},${t});color:${L.ink}">${esc(L.fmt(k))}</span>`).join('')}</div></div>`).join('');
     q('lkey-none').textContent = `No local label shown: ${countries.filter(c => !LOCAL[c]).map(c => C[c].name).join(', ')}.`;
