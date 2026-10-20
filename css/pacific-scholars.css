@@ -538,7 +538,8 @@ a { color: var(--ps-teal-300); }
 .ps-hm th.home img { width: 20px; height: 20px; border-radius: 50%; vertical-align: -5px; margin-right: 6px; }
 .ps-hm tr.sel th.home { color: #7fe3e6; }
 .ps-hm.ps-hm--share { table-layout: fixed; width: 100%; min-width: 760px; }
-.ps-hm.ps-hm--share th.home { width: 24%; }
+.ps-hm.ps-hm--share th.home { width: 24%; font-size: 1rem; }
+.ps-hm.ps-hm--share th.home img { width: 28px; height: 28px; vertical-align: -8px; }
 .ps-hm.ps-hm--share th.ps-hm-n, .ps-hm.ps-hm--share td.ps-hm-n { width: 8%; }
 .ps-hm.ps-hm--share thead th { height: auto; padding-bottom: 8px; }
 .ps-hm.ps-hm--share thead th span { writing-mode: horizontal-tb; transform: none; white-space: normal; display: block; text-align: center; line-height: 1.15; }

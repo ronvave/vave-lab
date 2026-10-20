@@ -115,7 +115,7 @@
     setupDest();
     const heatCountry = $('#ps-work-heat-country');
     if (heatCountry) {
-      heatCountry.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+      heatCountry.innerHTML = '<option value="">All home countries</option>' + countries().slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => `<option value="${c.code}">${esc(c.code === 'FSM' ? 'FSM' : c.name)}</option>`).join('');
       heatCountry.addEventListener('change', renderWorkHeat);
     }
     setupFirsts();
@@ -848,7 +848,7 @@
       cnt[s.c][r] += 1;
       all[r] += 1;
     });
-    const band = p => p <= 5 ? ['#540B0E', '#fff'] : p <= 20 ? ['#9E2A2B', '#fff'] : p <= 40 ? ['#E09F3E', '#1a1206'] : p <= 60 ? ['#A7C957', '#1a1206'] : ['#386641', '#fff'];
+    const band = p => p <= 5 ? ['#8E534C', '#fff'] : p <= 20 ? ['#B44E4A', '#fff'] : p <= 40 ? ['#E8B56A', '#1a1206'] : p <= 60 ? ['#C5D588', '#1a1206'] : ['#7A9A72', '#1a1206'];
     const cell = (n, t, who, region) => {
       const p = t ? Math.round(n / t * 100) : 0;
       const [bg, color] = band(p);
@@ -864,7 +864,7 @@
       if (pick && c !== pick) return;
       const n = Object.values(cnt[c]).reduce((a, b) => a + b, 0);
       if (!n) return;
-      const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}`;
+      const name = `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(c === 'FSM' ? 'FSM' : nameOf(c))}`;
       html += row(name, cnt[c], n, state.sel === c ? 'sel' : '');
     });
     host.innerHTML = html + '</tbody>';
