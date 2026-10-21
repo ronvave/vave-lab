@@ -17,6 +17,7 @@ data/itaukei-master-authorship.json
 data/itaukei-master-grad-degrees.json
 data/itaukei-master-mobility.json
 data/itaukei-master-geography.json
+data/itaukei-master-positions.json
 data/itaukei-master-aggregates.json
 data/itaukei-master-worldpoints.json
 data/itaukei-master-researcher-authorship.json
@@ -45,6 +46,7 @@ data/tongan-master-researcher-authorship.json
 data/tongan-master-grad-degrees.json
 data/tongan-master-mobility.json
 data/tongan-master-geography.json
+data/tongan-master-positions.json
 data/tongan-master-aggregates.json
 data/tongan-master-worldpoints.json
 data/tongan-last-master-sync.json

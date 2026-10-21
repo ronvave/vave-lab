@@ -114,6 +114,7 @@ jobs:
             data/tongan-master-grad-degrees.json \
             data/tongan-master-mobility.json \
             data/tongan-master-geography.json \
+            data/tongan-master-positions.json \
             data/tongan-master-geography-coordinates.json \
             data/tongan-master-worldpoints.json \
             data/tongan-body-composition-master.json; do
@@ -182,6 +183,7 @@ jobs:
             tongan-master-grad-degrees.json
             tongan-master-mobility.json
             tongan-master-geography.json
+            tongan-master-positions.json
             tongan-master-geography-coordinates.json
             tongan-master-aggregates.json
             tongan-master-worldpoints.json

@@ -90,6 +90,7 @@ jobs:
             data/itaukei-master-grad-degrees.json \
             data/itaukei-master-mobility.json \
             data/itaukei-master-geography.json \
+            data/itaukei-master-positions.json \
             data/body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
@@ -167,6 +168,7 @@ jobs:
             itaukei-master-grad-degrees.json
             itaukei-master-mobility.json
             itaukei-master-geography.json
+            itaukei-master-positions.json
             itaukei-master-aggregates.json
             body-composition-master.json
           )

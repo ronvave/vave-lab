@@ -48,6 +48,8 @@ import tempfile
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+import country_positions  # noqa: E402  (University positions snapshot)
 from typing import Any
 
 from tongan_master_file_config import (
@@ -940,6 +942,13 @@ def run(
     })
     log(f"  → {len(coordinate_countries)} coordinate countries: {', '.join(coordinate_countries)}")
 
+    log("Fetching Positions...")
+    _, _position_dicts = rows_to_dicts(fetch_fn("Positions"), 4, 5)
+    positions_payload = country_positions.build(
+        _position_dicts, scholars, source="Tongan Scholars Master File", generator="scripts/tongan_master_file_transformer.py",
+    )
+    log(f"  → {len(positions_payload['rows'])} position rows for {len(positions_payload['scholars'])} scholars")
+
     # Public identity follows Scholar ID; never rewrite publication citation authors.
     public_names = {s['Scholar ID']: s['Scholar Name'] for s in scholars}
     for table in [authorship, researcher_authorship, grad_degrees, mobility]:
@@ -994,6 +1003,7 @@ def run(
         geography_coordinates,
     )
     _write_json(out_dir / "tongan-master-aggregates.json", aggregates)
+    _write_json(out_dir / "tongan-master-positions.json", positions_payload)
 
     # ----------------------------------------------------------------
     # Panel C1 body-composition (gendered per-type breakdown)

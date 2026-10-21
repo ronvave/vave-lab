@@ -60,6 +60,7 @@ TARGETS = [
     "itaukei-master-grad-degrees.json",
     "itaukei-master-mobility.json",
     "itaukei-master-geography.json",
+    "itaukei-master-positions.json",
     "itaukei-master-aggregates.json",
     "last-master-sync.json",
 ]

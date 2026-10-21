@@ -39,6 +39,8 @@ import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+
+import country_positions  # noqa: E402  (University positions snapshot)
 from typing import Any
 
 from master_file_config import (
@@ -810,6 +812,13 @@ def run(
     ]
     log(f"  → {len(geography)} geography records (pre-filter {len(geography_all)})")
 
+    log("Fetching Positions...")
+    _, _position_dicts = rows_to_dicts(fetch_fn("Positions"), 4, 5)
+    positions_payload = country_positions.build(
+        _position_dicts, scholars, source="iTaukei_Master_file", generator="scripts/master_file_transformer.py",
+    )
+    log(f"  → {len(positions_payload['rows'])} position rows for {len(positions_payload['scholars'])} scholars")
+
     log("Computing aggregates...")
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
@@ -841,6 +850,7 @@ def run(
     _write_json(out_dir / "itaukei-master-mobility.json", mobility)
     _write_json(out_dir / "itaukei-master-geography.json", geography)
     _write_json(out_dir / "itaukei-master-aggregates.json", aggregates)
+    _write_json(out_dir / "itaukei-master-positions.json", positions_payload)
 
     # ----------------------------------------------------------------
     # Panel C1 body-composition (gendered per-type breakdown)
