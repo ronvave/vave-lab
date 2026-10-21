@@ -794,3 +794,14 @@ section[data-panel] { scroll-margin-top: 70px; }
   .psu-table--detail .psu-deg { white-space: nowrap; font-size: .66rem; padding: 2px 6px; }
 }
 @media (max-width: 420px) { .ps-grow { gap: 5%; } .ps-g b { font-size: clamp(1.2rem, 9vw, 1.8rem); } .ps-g svg { width: 24px; } }
+/* C1 Work: teal ramp legend and count style matching the Study matrix */
+.ps-hm-key i.ps-hm-key__ramp { width: 64px; background: linear-gradient(90deg, rgba(127,227,230,.12), rgba(127,227,230,.92)); }
+.ps-hm.ps-hm--share td small { font-weight: 500; font-size: .85em; opacity: .85; }
+/* B2 Where positions are held: no wasted gap; larger flags and country names */
+#ps-where-table { table-layout: fixed; }
+#ps-where-table tr > :first-child { width: 190px; }
+#ps-where-table th.home { font-size: 1rem; padding-right: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#ps-where-table th.home img { width: 28px; height: 28px; vertical-align: -8px; margin-right: 8px; }
+#ps-where-table td { width: auto; height: 44px; font-size: .95rem; }
+#ps-where-table thead th { font-size: .85rem; }
+@media (max-width: 720px) { #ps-where-table { min-width: 720px; } #ps-where-table tr > :first-child { width: 150px; } #ps-where-table th.home { font-size: .88rem; white-space: normal; line-height: 1.15; } #ps-where-table th.home img { width: 22px; height: 22px; vertical-align: -6px; margin-right: 6px; } }

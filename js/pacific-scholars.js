@@ -1077,12 +1077,14 @@
       Object.keys(bag).forEach(k => { bag[k] += cnt[c][k]; });
       return bag;
     }, blank());
-    const band = p => p <= 5 ? ['#8E534C', '#fff'] : p <= 20 ? ['#B44E4A', '#fff'] : p <= 40 ? ['#E8B56A', '#1a1206'] : p <= 60 ? ['#C5D588', '#1a1206'] : ['#7A9A72', '#1a1206'];
     const knownOf = bag => regions.reduce((a, k) => a + bag[k], 0);
     const shareCell = (n, t, who, region) => {
       const p = t ? Math.round(n / t * 100) : 0;
-      const [bg, color] = band(n ? p : 0);
-      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} with a workplace in this share (${p}%)">${n ? `${p}% (${fmt(n)})` : '—'}</td>`;
+      // Same teal ramp as the C1 Study matrix: stronger teal = larger share of the row.
+      const a = t ? n / t : 0;
+      const bg = n ? `rgba(127,227,230,${(0.12 + 0.8 * a).toFixed(2)})` : 'rgba(255,255,255,.04)';
+      const color = a > .45 ? '#04121f' : '#eaf3fb';
+      return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} with a workplace in this share (${p}%)">${n ? `${p}% <small>(${fmt(n)})</small>` : '—'}</td>`;
     };
     const missCell = (n, who) => `<td style="background:#424242;color:#fff" title="${esc(who)}: ${fmt(n)} with no recorded workplace, excluded from the share">${n ? fmt(n) : '—'}</td>`;
     const row = (name, bag, extra) => {
