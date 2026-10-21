@@ -810,3 +810,5 @@ section[data-panel] { scroll-margin-top: 70px; }
 /* B1 list: Dashboard link on the same line as the country name */
 .ps-ftl__cc { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
 .ps-ftl__cc .ps-ftl__dash { line-height: 1; }
+/* A1 country cards: badge sits inline at the end of the toolbar */
+.ps-num.ps-num--inline { position: static; flex: 0 0 auto; }

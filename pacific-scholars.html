@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=b024372c" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=8e02c35a" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=3baa3877" />
 </head>
@@ -55,6 +55,8 @@
   <nav class="ps-pmenu" id="ps-pmenu" aria-label="Dashboard panels"><div class="ps-pmenu__pills" id="ps-pmenu-pills"></div><div class="ps-pmenu__drop" id="ps-pmenu-drop" hidden></div></nav>
 
   <main id="ps-main" class="ps-wrap" tabindex="-1">
+    <!-- A1 · COUNTRY CARDS: metric toggle + country strip -->
+    <section data-panel="A1" data-panel-title="Country Cards" class="ps-a1" aria-labelledby="ps-strip-title">
     <div class="ps-toolbar">
       <div role="group" aria-labelledby="ps-metric-label" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
         <span class="ps-toolbar__label" id="ps-metric-label">Order countries below by <span class="ps-toolbar__hl">Total number of</span></span>
@@ -67,19 +69,21 @@
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span class="ps-filterchip" id="ps-chip" aria-live="polite"><span id="ps-chip-text"></span><button type="button" id="ps-chip-clear">Clear filter</button></span>
         <span class="ps-toolbar__label" id="ps-metric-def" aria-live="polite"></span>
+        <span class="ps-num ps-num--inline" aria-hidden="true">A1</span>
       </div>
     </div>
 
-    <section aria-labelledby="ps-strip-title" class="ps-strip-wrap">
+    <div class="ps-strip-wrap">
       <h2 class="ps-sr" id="ps-strip-title">Countries, sorted by selected metric</h2>
       <ol class="ps-strip" id="ps-strip"></ol>
       <p class="ps-strip-hint" id="ps-strip-hint">Select a country to filter the dashboard. Scroll or swipe sideways for more countries.</p>
+    </div>
     </section>
 
     <div class="ps-grid">
-      <!-- A1 · SCHOLARS BY COUNTRY: Map / Chart / Table (was A1 + A4) -->
-      <section data-panel="A1" data-panel-title="Pacific Scholars Across Our Ocean" class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
-        <span class="ps-num" aria-hidden="true">A1</span>
+      <!-- A2 · SCHOLARS BY COUNTRY: Map / Chart / Table (was A1 + A4) -->
+      <section data-panel="A2" data-panel-title="Pacific Scholars Across Our Ocean" class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
+        <span class="ps-num" aria-hidden="true">A2</span>
         <div class="ps-head">
           <div>
             <h2 class="ps-h2" id="ps-map-title">Pacific Scholars Across Our Ocean</h2>
@@ -87,7 +91,7 @@
           </div>
         </div>
         <div class="ps-viewbar">
-          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="A1 view" data-views="a1">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="A2 view" data-views="a1">
             <button type="button" role="tab" data-view="map" aria-selected="true">Map</button>
             <button type="button" role="tab" data-view="chart" aria-selected="false">Chart</button>
             <button type="button" role="tab" data-view="table" aria-selected="false">Table</button>
@@ -118,12 +122,12 @@
         </div>
       </section>
 
-      <!-- A2 · DEGREES AND RESEARCH OUTPUTS (was A2 + A3) -->
-      <section data-panel="A2" data-panel-title="Degrees and Research Outputs" class="ps-panel ps-panel--tapa ps-col-deg" aria-labelledby="ps-deg-title">
-        <span class="ps-num" aria-hidden="true">A2</span>
+      <!-- A3 · DEGREES AND RESEARCH OUTPUTS (was A2 + A3) -->
+      <section data-panel="A3" data-panel-title="Degrees and Research Outputs" class="ps-panel ps-panel--tapa ps-col-deg" aria-labelledby="ps-deg-title">
+        <span class="ps-num" aria-hidden="true">A3</span>
         <h2 class="ps-h2" id="ps-deg-title">Degrees and Research Outputs</h2>
         <div class="ps-viewbar">
-          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="A2 view" data-views="a2">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="A3 view" data-views="a2">
             <button type="button" role="tab" data-view="deg" aria-selected="true">Degrees</button>
             <button type="button" role="tab" data-view="out" aria-selected="false">Publications over time</button>
           </div>
@@ -143,9 +147,9 @@
         </div>
       </section>
 
-      <!-- A3 · FIELDS OF RESEARCH (was A5) -->
-      <section data-panel="A3" data-panel-title="Fields of Research" class="ps-panel ps-panel--paper ps-col-disc" aria-labelledby="ps-disc-title">
-        <span class="ps-num" aria-hidden="true">A3</span>
+      <!-- A4 · FIELDS OF RESEARCH (was A5) -->
+      <section data-panel="A4" data-panel-title="Fields of Research" class="ps-panel ps-panel--paper ps-col-disc" aria-labelledby="ps-disc-title">
+        <span class="ps-num" aria-hidden="true">A4</span>
         <div class="ps-head">
           <h2 class="ps-h2" id="ps-disc-title">Fields of Research</h2>
         </div>
@@ -454,7 +458,7 @@
         <span class="ps-num" aria-hidden="true">E</span>
         <h2 class="ps-h2" id="ps-pubs-title">Publications</h2>
         <div id="ps-pubs">
-          <p class="pub-intro">Every publication linked to a scholar in the Regional Scholar Directory, combined across all countries and listed once even when scholars from more than one country share it. The circle flag shows the country of the linked scholar; hover over it for their name. This count includes theses, reports and other outputs, so it is larger than the headline figure, which counts only the main publication types used by each country dashboard. Panel A2 (Publications over time) charts this same list by year. Forthcoming and in-press items are marked and grouped at the end.</p>
+          <p class="pub-intro">Every publication linked to a scholar in the Regional Scholar Directory, combined across all countries and listed once even when scholars from more than one country share it. The circle flag shows the country of the linked scholar; hover over it for their name. This count includes theses, reports and other outputs, so it is larger than the headline figure, which counts only the main publication types used by each country dashboard. Panel A3 (Publications over time) charts this same list by year. Forthcoming and in-press items are marked and grouped at the end.</p>
           <h3 class="pub-count" id="psp-count" aria-live="polite"></h3>
           <div class="pub-filters">
             <input class="pub-search" id="psp-q" type="search" placeholder="Search title, author, journal or scholar" aria-label="Search publications" autocomplete="off" />
