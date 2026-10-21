@@ -8765,6 +8765,7 @@
     card.className = 'db-scholar-card'
       + (active ? ' is-active' : '')
       + (isNeutral ? ' db-scholar-card--neutral' : '');
+    if (r.scholarId) card.dataset.scholarId = String(r.scholarId).toUpperCase();
     card.title = `Click to filter items to ${r.name}’s papers`;
     card.style.setProperty('--conf-from', gradient.from);
     card.style.setProperty('--conf-to', gradient.to);

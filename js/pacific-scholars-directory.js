@@ -28,40 +28,22 @@
     MHL: { label: 'Marshallese Scholar', from: '#B48CE6', to: '#7c4dbd', ink: '#fff' },
     FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' }
   };
-  // Live country profile pages. Fiji, Tonga and Solomon Islands use the same
-  // secure link their own Share button copies. Vanuatu uses its scholar id,
-  // as its own Share button does. explain=1 opens the research explanation.
+  // Country names for the Share toast. The copied link is the public country
+  // dashboard, not the update form (s.html and the other profile pages).
   const PROFILE = {
-    FJI: { page: 's.html', name: 'Fiji' },
-    TON: { page: 's-tonga.html', file: 'data/tongan-share-tokens.json', name: 'Tonga' },
-    SLB: { page: 's-solomon.html', file: 'data/solomon-share-tokens.json', name: 'Solomon Islands' },
-    VUT: { page: 's-vanuatu.html', idParam: 'scholar', name: 'Vanuatu' }
+    FJI: { name: 'Fiji' },
+    TON: { name: 'Tonga' },
+    SLB: { name: 'Solomon Islands' },
+    VUT: { name: 'Vanuatu' }
   };
-  const tokenMaps = {};
   const regionalCardUrl = s => `${location.origin}${location.pathname}#dir=${s.id}`;
-  async function tokenMap(code) {
-    if (tokenMaps[code]) return tokenMaps[code];
-    if (code === 'FJI') {
-      const parts = await Promise.all([0, 1, 2, 3, 4].map(i => fetch('data/share-public/' + i + '.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : { m: {} })));
-      tokenMaps.FJI = Object.assign({}, ...parts.map(p => p.m || {}));
-      return tokenMaps.FJI;
-    }
-    const r = await fetch(PROFILE[code].file, { cache: 'no-cache' });
-    if (!r.ok) throw new Error('missing');
-    tokenMaps[code] = (await r.json()).m || {};
-    return tokenMaps[code];
-  }
-  async function profileUrl(s) {
-    const cfg = PROFILE[s.c];
-    if (!cfg) return '';
-    const u = new URL(cfg.page, location.href);
+  function profileUrl(s) {
+    const dash = C[s.c] && C[s.c].dashboard;
+    if (!dash) return '';
+    const u = new URL(dash, location.href);
+    u.searchParams.set('scholar', s.id);
     u.searchParams.set('explain', '1');
-    if (cfg.idParam) { u.searchParams.set(cfg.idParam, s.id); return u.href; }
-    let map;
-    try { map = await tokenMap(s.c); } catch (e) { return ''; }
-    const token = map[s.id];
-    if (!/^[0-9a-f]{40}$/i.test(token || '')) return '';
-    u.searchParams.set('k', token);
+    if (s.n) u.searchParams.set('name', s.n);
     return u.href;
   }
 
@@ -382,7 +364,7 @@
       try {
         url = await profileUrl(s);
         const country = (PROFILE[s.c] && PROFILE[s.c].name) || (C[s.c] && C[s.c].name) || s.c;
-        if (url) msg = `Link to ${s.n}\u2019s ${country} profile copied. It opens their country profile, with Explain their research already open when an explanation is recorded.`;
+        if (url) msg = `Link to ${s.n}\u2019s ${country} dashboard profile copied. It opens that profile on the country dashboard, with Explain their research already open when an explanation is recorded.`;
         else {
           url = regionalCardUrl(s);
           msg = PROFILE[s.c]
