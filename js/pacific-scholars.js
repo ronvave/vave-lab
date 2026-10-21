@@ -288,7 +288,6 @@
             ${icon}<span class="ps-card__vl"><span class="ps-card__v">${valText}</span><span class="ps-card__l">${esc(m.label)}</span></span>
           </button>
           <div class="ps-card__sub">${sub}</div>
-          ${coverageNote(c)}
           ${btn}
         </div></li>`;
     }).join('');
@@ -304,16 +303,6 @@
         requestAnimationFrame(() => { el.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; });
       });
     }
-  }
-
-  // Short coverage gaps under each card, so missing records never read as zero.
-  function coverageNote(c) {
-    const gaps = [];
-    if (D.positions && !(D.positions.coverage.positions[c.code] > 0)) gaps.push('Positions not yet recorded');
-    const gu = c.gender ? c.gender.unknown : 0;
-    if (c.scholars && gu / c.scholars >= 0.2) gaps.push(`Gender not recorded for ${Math.round(100 * gu / c.scholars)}%`);
-    if (c.scholars && c.pubsIndigenous / c.scholars < 0.5) gaps.push('Publication links still sparse');
-    return gaps.length ? `<div class="ps-card__cov" title="${esc(gaps.join('. '))}. Missing records are not zero."><span aria-hidden="true">ⓘ</span> ${esc(gaps.join(' · '))}</div>` : '';
   }
 
   // ================= MAP =================
