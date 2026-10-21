@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from encrypt_data import MAGIC, derive_key  # noqa: E402
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
-ALLOWED = {'firsts', 'positions', 'directory'}
+ALLOWED = {'firsts', 'positions', 'directory', 'studyMap'}
 ROOT = Path(__file__).resolve().parent.parent
 enc, patch = ROOT / 'data' / 'regional-scholars.json.enc', ROOT / 'data' / 'regional-patch.enc'
 if not patch.exists():

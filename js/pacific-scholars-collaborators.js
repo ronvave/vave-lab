@@ -1,4 +1,4 @@
-/* Panel G: Collaborators, for the Regional Pacific Scholars Dashboard.
+/* Panel F: Collaborators, for the Regional Pacific Scholars Dashboard.
    Map (same base image and anchors as panel A1) with up to two key
    collaborator photos beside each country, plus one card per country that
    expands to show every collaborator. People are listed in

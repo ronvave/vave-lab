@@ -1,0 +1,83 @@
+/* Panels F (Publications) and G (Collaborators) of pacific-scholars.html.
+   Every rule is scoped to #ps-pubs-panel or #ps-collab-panel so no other
+   panel is affected. */
+
+/* ---------- F: Publications (layout of the Fiji dashboard's list) ---------- */
+#ps-pubs { color: #1e2028; font-size: 15px; line-height: 1.45; }
+#ps-pubs .pub-intro { margin: 2px 0 0; color: var(--ps-ink-muted); font-size: .95rem; max-width: 880px; }
+#ps-pubs .pub-count { margin: 16px 0 10px; font: 700 .9rem/1.2 var(--ps-sans); letter-spacing: .06em; text-transform: uppercase; color: #3c4a5e; scroll-margin-top: 90px; }
+#ps-pubs .pub-filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+#ps-pubs .pub-search { flex: 2 1 260px; min-width: 0; padding: 9px 12px; border: 1px solid #ccc9c4; border-radius: 8px; background: #fff; font: inherit; font-size: .92rem; color: #1e2028; }
+#ps-pubs .pub-filter { flex: 1 1 150px; min-width: 0; padding: 9px 10px; border: 1px solid #ccc9c4; border-radius: 8px; background: #fff; font: inherit; font-size: .9rem; color: #1e2028; cursor: pointer; }
+#ps-pubs .pub-filter:hover, #ps-pubs .pub-search:hover { border-color: #005f6b; }
+#ps-pubs .pub-filter:focus-visible, #ps-pubs .pub-search:focus-visible, #ps-pubs .pub-clear:focus-visible { outline: 2px solid #005f6b; outline-offset: 1px; }
+#ps-pubs .pub-clear { padding: 9px 14px; border-radius: 8px; border: 1px solid #ccc9c4; background: #fff; font: inherit; font-size: .9rem; font-weight: 600; color: #1e2028; cursor: pointer; }
+#ps-pubs .pub-clear:hover { border-color: #005f6b; color: #005f6b; }
+#ps-pubs .pub-clear[hidden] { display: none; }
+#ps-pubs .pub-list { display: flex; flex-direction: column; gap: 10px; }
+#ps-pubs .pub { background: #f8f7f4; border: 1px solid #ddd9d2; border-left: 4px solid var(--pub-c); border-radius: 8px; padding: 12px 14px 12px 12px; }
+#ps-pubs .pub__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+#ps-pubs .pub__badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+#ps-pubs .pub-flag { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff, 0 1px 4px rgba(6, 47, 53, .3); flex: none; }
+#ps-pubs .pub-badge { display: inline-block; padding: 3px 9px; border-radius: 999px; color: #fff; font-size: .74rem; font-weight: 700; line-height: 1.3; }
+#ps-pubs .pub-badge--doi { background: #0c1c2e; }
+#ps-pubs .pub-badge--fa { background: #2f5e2f; }
+#ps-pubs .pub-link { flex: none; padding: 3px 10px; border-radius: 999px; background: #cfe7ea; color: #0b4f58; font-size: .78rem; font-weight: 700; text-decoration: none; white-space: nowrap; }
+#ps-pubs .pub-link:hover, #ps-pubs .pub-link:focus-visible { background: #005f6b; color: #fff; }
+#ps-pubs .pub__title { margin: 8px 0 4px; font: 700 1rem/1.35 var(--ps-sans); color: #14161c; overflow-wrap: anywhere; }
+#ps-pubs .pub__authors { font-size: .88rem; color: #2c2f38; overflow-wrap: anywhere; }
+#ps-pubs .pub__meta { margin-top: 4px; font-size: .88rem; color: #5f6169; overflow-wrap: anywhere; }
+#ps-pubs .pub__sch { margin-top: 6px; font-size: .82rem; color: #5f6169; }
+#ps-pubs .pub__sch a { color: #005f6b; font-weight: 600; }
+#ps-pubs .pub-empty { padding: 26px; text-align: center; border: 1px dashed #c4d0de; border-radius: 10px; color: var(--ps-ink-muted); }
+#ps-pubs .db-pager { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
+#ps-pubs .db-pager:empty { display: none; }
+#ps-pubs .db-pager button { background: transparent; border: 1px solid #ccc9c4; border-radius: 8px; padding: 5px 11px; font: inherit; font-size: .85rem; font-weight: 600; color: #1e2028; cursor: pointer; min-width: 36px; }
+#ps-pubs .db-pager button:hover:not(:disabled) { background: #e3f0f1; border-color: #005f6b; color: #005f6b; }
+#ps-pubs .db-pager button.is-active { background: #005f6b; color: #fff; border-color: #005f6b; }
+#ps-pubs .db-pager button:disabled { opacity: .4; cursor: not-allowed; }
+#ps-pubs .db-pager__gap { color: #5f6169; padding: 0 2px; }
+#ps-pubs .db-pager__info { color: #5f6169; font-size: .82rem; margin: 0 8px; }
+
+/* ---------- G: Collaborators ---------- */
+#ps-collab-panel .pc-map { position: relative; margin-top: 6px; border-radius: 10px; overflow: hidden; background: #0c2342; border: 1px solid rgba(127, 227, 230, .12); aspect-ratio: 2400 / 1891; width: min(100%, calc(86vh * 2400 / 1891)); margin-inline: auto; touch-action: none; }
+#ps-collab-panel .pc-map > svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+#ps-collab-panel .pc-mk { cursor: pointer; outline: none; }
+#ps-collab-panel .pc-mk__bg { fill: #0f3c6b; }
+#ps-collab-panel .pc-mk__ring { fill: none; stroke: #fff; stroke-width: 7; }
+#ps-collab-panel .pc-mk__ring.is-vc { stroke: #3ddc3d; stroke-width: 10; }
+#ps-collab-panel .pc-mk__ini { fill: #fff; font: 700 40px var(--ps-sans); }
+#ps-collab-panel .pc-mk__more { fill: #f3c45a; stroke: #fff; stroke-width: 5; }
+#ps-collab-panel .pc-mk__moretxt { fill: #0c2140; font: 700 40px var(--ps-sans); }
+#ps-collab-panel .pc-mk:hover .pc-mk__ring, #ps-collab-panel .pc-mk:focus-visible .pc-mk__ring { stroke: #f3c45a; stroke-width: 10; }
+#ps-collab-panel .pc-legend { justify-content: center; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 10px 0 0; font-size: .84rem; color: var(--ps-text-muted); }
+#ps-collab-panel .pc-legend__vc { width: 16px; height: 16px; border-radius: 50%; border: 3px solid #3ddc3d; background: #0f3c6b; }
+#ps-collab-panel .pc-legend__more { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 10px; border-radius: 50%; background: #f3c45a; color: #0c2140; font-size: .7rem; font-weight: 700; border: 2px solid #fff; }
+#ps-collab-panel .pc-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; margin-top: 14px; align-items: start; }
+#ps-collab-panel .pc-card { background: rgba(3, 19, 39, .55); border: 1px solid var(--ps-line); border-radius: 12px; padding: 12px 14px; scroll-margin-top: 90px; transition: box-shadow .2s, border-color .2s; }
+#ps-collab-panel .pc-card.is-target { border-color: #f3c45a; box-shadow: 0 0 0 2px rgba(243, 196, 90, .45); }
+#ps-collab-panel .pc-card.is-empty { opacity: .78; }
+#ps-collab-panel .pc-card__head { display: flex; align-items: center; gap: 10px; }
+#ps-collab-panel .pc-flag { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px #fff; flex: none; }
+#ps-collab-panel .pc-card__t { flex: 1 1 auto; min-width: 0; }
+#ps-collab-panel .pc-card__t h3 { margin: 0; font: 700 1rem/1.25 var(--ps-sans); color: var(--ps-text); }
+#ps-collab-panel .pc-n { color: var(--ps-teal-300); }
+#ps-collab-panel .pc-count { font-size: .8rem; color: var(--ps-text-muted); }
+#ps-collab-panel .pc-logos { display: flex; gap: 6px; flex: none; }
+#ps-collab-panel .pc-logo { height: 38px; max-width: 120px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px; }
+#ps-collab-panel .pc-people { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+#ps-collab-panel .pc-more[hidden] { display: none; }
+#ps-collab-panel .pc-person { display: flex; align-items: center; gap: 12px; }
+#ps-collab-panel .pc-ph { width: 56px; height: 56px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: #145a96; border: 3px solid #fff; }
+#ps-collab-panel .pc-ph.is-vc { border-color: #3ddc3d; }
+#ps-collab-panel .pc-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
+#ps-collab-panel .pc-ph b { color: #fff; font-size: 1.05rem; }
+#ps-collab-panel .pc-name { font-weight: 700; color: var(--ps-text); }
+#ps-collab-panel .pc-role { font-size: .84rem; color: var(--ps-text-muted); }
+#ps-collab-panel .pc-toggle { margin-top: 12px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--ps-teal-400); background: transparent; color: var(--ps-teal-300); font: 700 .84rem var(--ps-sans); cursor: pointer; }
+#ps-collab-panel .pc-toggle:hover, #ps-collab-panel .pc-toggle:focus-visible { background: var(--ps-teal-400); color: #04223a; outline: none; }
+@media (max-width: 720px) {
+  #ps-collab-panel .pc-cards { grid-template-columns: minmax(0, 1fr); }
+  #ps-collab-panel .pc-legend { justify-content: flex-start; }
+  #ps-pubs .pub-filter { flex: 1 1 calc(50% - 8px); }
+}

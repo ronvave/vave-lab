@@ -1,0 +1,858 @@
+{
+ "about": "Map locations for universities not covered by the repository location files or the Master Institutions sheets. Looked up in OpenStreetMap (Nominatim, ODbL) on 21 October 2026. Public place data only. Where OpenStreetMap had no campus entry, the city is used (query shown).",
+ "locations": {
+  "aix marseille university": {
+   "name": "Aix-Marseille University",
+   "country": "France",
+   "lat": 43.3056,
+   "lng": 5.3786,
+   "place": "Aix-Marseille Université - Campus de Saint-Charles, 3, Place Victor Hugo, Saint-Lazare, Marseille 3e Arrondissement, Mar"
+  },
+  "anhui normal university": {
+   "name": "Anhui Normal University",
+   "country": "China",
+   "lat": 31.3361,
+   "lng": 118.3694,
+   "place": "安徽师范大学赭山校区, 黄山西路, 赭山街道, 镜湖区, 芜湖市, 安徽省, 241003, 中国"
+  },
+  "antioch university": {
+   "name": "Antioch University",
+   "country": "United States",
+   "lat": 47.6159,
+   "lng": -122.3463,
+   "place": "Antioch University - Seattle, 2400, 3rd Avenue, Belltown, Seattle, King County, Washington, 98121, United States",
+   "query": "Antioch University Seattle"
+  },
+  "arizona state university": {
+   "name": "Arizona State University",
+   "country": "United States",
+   "lat": 33.4213,
+   "lng": -111.9332,
+   "place": "Arizona State University, 1151, South Forest Avenue, Tempe, Maricopa County, Arizona, 85281, United States"
+  },
+  "asian institute of technology": {
+   "name": "Asian Institute of Technology",
+   "country": "Thailand",
+   "lat": 14.0803,
+   "lng": 100.6114,
+   "place": "สถาบันเทคโนโลยีแห่งเอเชีย, D Street, ตำบลคลองหนึ่ง, เทศบาลเมืองท่าโขลง, อำเภอคลองหลวง, จังหวัดปทุมธานี, 12121, ประเทศไทย"
+  },
+  "atlantic international university": {
+   "name": "Atlantic International University",
+   "country": "United States",
+   "lat": 25.8972,
+   "lng": -80.1667,
+   "place": "Atlantic International University, Northeast 16th Avenue, North Miami, Miami-Dade County, Florida, 33161, United States"
+  },
+  "australian catholic university": {
+   "name": "Australian Catholic University",
+   "country": "Australia",
+   "lat": -33.8375,
+   "lng": 151.2033,
+   "place": "Australian Catholic University, Berry Street, Victoria Cross, Lower North Shore, Sydney, New South Wales, 2060, Australi"
+  },
+  "bond university": {
+   "name": "Bond University",
+   "country": "Australia",
+   "lat": -27.4604,
+   "lng": 153.0241,
+   "place": "Bond University, Boundary Street, Spring Hill, Brisbane, Queensland, 4000, Australia"
+  },
+  "boston university": {
+   "name": "Boston University",
+   "country": "United States",
+   "lat": 42.3504,
+   "lng": -71.1032,
+   "place": "Boston University, Storrow Drive, Fenway-Kenmore, Boston, Suffolk County, Massachusetts, 02215, United States"
+  },
+  "california state university fullerton": {
+   "name": "California State University, Fullerton",
+   "country": "United States",
+   "lat": 33.8831,
+   "lng": -117.8852,
+   "place": "California State University Fullerton, 800, North State College Boulevard, Fullerton, Orange County, California, 92831, "
+  },
+  "california state university sacramento": {
+   "name": "California State University, Sacramento",
+   "country": "United States",
+   "lat": 38.5665,
+   "lng": -121.4284,
+   "place": "California State University Drive, Sacramento, Sacramento County, California, 95819, United States"
+  },
+  "chaminade university of honolulu": {
+   "name": "Chaminade University of Honolulu",
+   "country": "United States",
+   "lat": 21.2903,
+   "lng": -157.8073,
+   "place": "Chaminade University, 3140, Waialae Avenue, Kapahulu, East Honolulu, Honolulu, Honolulu County, Hawaii, 96816, United St"
+  },
+  "charles darwin university": {
+   "name": "Charles Darwin University",
+   "country": "Australia",
+   "lat": -12.3714,
+   "lng": 130.8685,
+   "place": "Charles Darwin University, Technology Place, Brinkin, Darwin, Northern Territory, 0810, Australia"
+  },
+  "charles sturt university": {
+   "name": "Charles Sturt University",
+   "country": "Australia",
+   "lat": -35.0636,
+   "lng": 147.3552,
+   "place": "Charles Sturt University, Wagga Wagga, New South Wales, 2678, Australia"
+  },
+  "cummings graduate institute for behavioral health studies": {
+   "name": "Cummings Graduate Institute for Behavioral Health Studies",
+   "country": "United States",
+   "lat": 33.4255,
+   "lng": -111.94,
+   "place": "Tempe, Maricopa County, Arizona, United States",
+   "query": "Tempe, Arizona"
+  },
+  "curtin university": {
+   "name": "Curtin University",
+   "country": "Australia",
+   "lat": -32.0058,
+   "lng": 115.8975,
+   "place": "Curtin University, Brand Drive, Bentley, Perth, Western Australia, 6102, Australia"
+  },
+  "dallas theological seminary": {
+   "name": "Dallas Theological Seminary",
+   "country": "United States",
+   "lat": 32.7953,
+   "lng": -96.7803,
+   "place": "Dallas Theological Seminary, 3909, Swiss Avenue, Old East Dallas, Dallas, Dallas County, Texas, 75204, United States"
+  },
+  "ecole nationale superieure agronomique de rennes": {
+   "name": "École nationale supérieure agronomique de Rennes",
+   "country": "France",
+   "lat": 48.1113,
+   "lng": -1.68,
+   "place": "Rennes, Ille-et-Vilaine, Bretagne, France métropolitaine, France",
+   "query": "Rennes, France"
+  },
+  "eden theological seminary": {
+   "name": "Eden Theological Seminary",
+   "country": "United States",
+   "lat": 38.5934,
+   "lng": -90.3447,
+   "place": "Eden Theological Seminary, Lake Avenue, Webster Groves, Saint Louis County, Missouri, 63119, United States"
+  },
+  "edith cowan university": {
+   "name": "Edith Cowan University",
+   "country": "Australia",
+   "lat": -31.7528,
+   "lng": 115.7723,
+   "place": "Edith Cowan University (Joondalup Campus), 270, Joondalup Drive, Joondalup, Western Australia, 6027, Australia",
+   "query": "Edith Cowan University, Joondalup"
+  },
+  "flinders university": {
+   "name": "Flinders University",
+   "country": "Australia",
+   "lat": -35.0249,
+   "lng": 138.5734,
+   "place": "Flinders University, Sturt Road, Bedford Park, Adelaide, South Australia, 5042, Australia"
+  },
+  "florida institute of technology": {
+   "name": "Florida Institute of Technology",
+   "country": "United States",
+   "lat": 28.0643,
+   "lng": -80.623,
+   "place": "Florida Institute of Technology, West Yale Avenue, Melbourne, Brevard County, Florida, 32901, United States"
+  },
+  "gazi university": {
+   "name": "Gazi University",
+   "country": "Türkiye",
+   "lat": 39.9313,
+   "lng": 32.8461,
+   "place": "Gazi Üniversitesi Maltepe Yerleşkesi, Celal Bayar Bulvarı, Eti Mahallesi, Ankara, Çankaya, Ankara, İç Anadolu Bölgesi, 0"
+  },
+  "golden gate university": {
+   "name": "Golden Gate University",
+   "country": "United States",
+   "lat": 37.7892,
+   "lng": -122.3989,
+   "place": "Golden Gate University, Shaw Alley, South of Market, Financial District, San Francisco, California, 94105, United States"
+  },
+  "graduate center city university of new york": {
+   "name": "The Graduate Center, City University of New York",
+   "country": "United States",
+   "lat": 40.758,
+   "lng": -73.9855,
+   "place": "Manhattan, New York County, New York, United States",
+   "query": "Manhattan, New York"
+  },
+  "harvard graduate school of education": {
+   "name": "Harvard Graduate School of Education",
+   "country": "United States",
+   "lat": 42.3754,
+   "lng": -71.1219,
+   "place": "Harvard Graduate School of Education, 13, Appian Way, Old Cambridge, West Cambridge, Cambridge, Middlesex County, Massac"
+  },
+  "harvard kennedy school harvard university": {
+   "name": "Harvard Kennedy School, Harvard University",
+   "country": "United States",
+   "lat": 42.3715,
+   "lng": -71.1221,
+   "place": "John F Kennedy School of Government, Eliot Street, Old Cambridge, West Cambridge, Cambridge, Middlesex County, Massachus",
+   "query": "John F. Kennedy School of Government"
+  },
+  "harvard t h chan school of public health": {
+   "name": "Harvard T.H. Chan School of Public Health",
+   "country": "United States",
+   "lat": 42.3365,
+   "lng": -71.1017,
+   "place": "Longwood Avenue, Longwood, Boston, Suffolk County, Massachusetts, 02120, United States",
+   "query": "Longwood Avenue, Boston"
+  },
+  "i shou university": {
+   "name": "I-Shou University",
+   "country": "Taiwan",
+   "lat": 22.7254,
+   "lng": 120.4072,
+   "place": "義守大學站, 學城路一段, 三和里, 大樹區, 高雄市, 840, 臺灣"
+  },
+  "ibaraki university": {
+   "name": "Ibaraki University",
+   "country": "Japan",
+   "lat": 36.4008,
+   "lng": 140.4431,
+   "place": "茨城大学, 国道118号, 袴塚二丁目, 曙町, 水戸市, 茨城県, 310-0055, 日本"
+  },
+  "imo international maritime law institute imli": {
+   "name": "IMO International Maritime Law Institute (IMLI)",
+   "country": "Malta",
+   "lat": 35.9021,
+   "lng": 14.4835,
+   "place": "L-Università ta' Malta, Triq San Ġwann tal-Għorgħar, L-Imsida, Reġjun tal-Lvant, MSD 2080, Malta",
+   "query": "University of Malta, Msida"
+  },
+  "institute of science tokyo": {
+   "name": "Institute of Science Tokyo",
+   "country": "Japan",
+   "lat": 35.7015,
+   "lng": 139.7642,
+   "place": "東京科学大学 湯島キャンパス, 本郷通り, 湯島一丁目, 湯島, 文京区, 東京都, 113-0034, 日本"
+  },
+  "international christian university": {
+   "name": "International Christian University",
+   "country": "Japan",
+   "lat": 35.6871,
+   "lng": 139.5297,
+   "place": "国際基督教大学, 学園通り, 大沢三丁目, 大沢, 三鷹市, 東京都, 181-8555, 日本"
+  },
+  "ipb university": {
+   "name": "IPB University",
+   "country": "Indonesia",
+   "lat": -6.5553,
+   "lng": 106.725,
+   "place": "Institut Pertanian Bogor, Jalan Dramaga - Bubulak, Babakan Raya, Babakan, Dramaga, Kab Bogor, Jawa Barat, 16680, Indones"
+  },
+  "johnson and wales university": {
+   "name": "Johnson & Wales University",
+   "country": "United States",
+   "lat": 41.7882,
+   "lng": -71.3904,
+   "place": "Johnson and Wales University Providence Harborside Campus, Shipyard, Providence, Providence County, Rhode Island, 02905,"
+  },
+  "keele university": {
+   "name": "Keele University",
+   "country": "United Kingdom",
+   "lat": 53.0017,
+   "lng": -2.2707,
+   "place": "Keele University, Keele Road, Keele, Newcastle-under-Lyme, Staffordshire, England, ST5 5BG, United Kingdom"
+  },
+  "mcgill university": {
+   "name": "McGill University",
+   "country": "Canada",
+   "lat": 45.4318,
+   "lng": -73.9453,
+   "place": "Université McGill, 21111, Rue Lakeshore, Sainte-Anne-de-Bellevue, Agglomération de Montréal, Montréal (région administra"
+  },
+  "missouri state university": {
+   "name": "Missouri State University",
+   "country": "United States",
+   "lat": 37.2017,
+   "lng": -93.2808,
+   "place": "Missouri State University, 901, South National Avenue, Phelps Grove/University Heights, Springfield, Greene County, Miss"
+  },
+  "multnomah university": {
+   "name": "Multnomah University",
+   "country": "United States",
+   "lat": 45.5278,
+   "lng": -122.5755,
+   "place": "Multnomah Biblical Seminary, 8435, Northeast Glisan Street, Montavilla, Portland, Multnomah County, Oregon, 97220, Unite"
+  },
+  "national university california": {
+   "name": "National University (California)",
+   "country": "United States",
+   "lat": 32.9103,
+   "lng": -117.2429,
+   "place": "National University, 11255, North Torrey Pines Road, Rheba, San Diego, San Diego County, California, 92037, United State"
+  },
+  "national university of samoa": {
+   "name": "National University of Samoa",
+   "country": "Samoa",
+   "lat": -13.8508,
+   "lng": -171.7502,
+   "place": "National University of Samoa, Vaivase Road, Vaivase Tai, Tuamasaga, Sāmoa"
+  },
+  "national yang ming chiao tung university": {
+   "name": "National Yang Ming Chiao Tung University",
+   "country": "Taiwan",
+   "lat": 24.7868,
+   "lng": 120.9972,
+   "place": "國立陽明交通大學, 1001, 大學路, 光明里, 東區, 新竹市, 30010, 臺灣"
+  },
+  "northeastern university": {
+   "name": "Northeastern University",
+   "country": "United States",
+   "lat": 42.3351,
+   "lng": -71.0893,
+   "place": "Northeastern University, 360, Huntington Avenue, Fenway-Kenmore, Boston, Suffolk County, Massachusetts, 02115, United St"
+  },
+  "notre dame of maryland university": {
+   "name": "Notre Dame of Maryland University",
+   "country": "United States",
+   "lat": 39.3514,
+   "lng": -76.6194,
+   "place": "Notre Dame of Maryland University, 4701, North Charles Street, Loyola/Notre Dame, Greater Roland Park, Baltimore, Maryla"
+  },
+  "obihiro university of agriculture and veterinary medicine": {
+   "name": "Obihiro University of Agriculture and Veterinary Medicine",
+   "country": "Japan",
+   "lat": 42.8719,
+   "lng": 143.1742,
+   "place": "帯広畜産大学, 八千代帯広線, 南の森西四丁目, 空港南町南十線西, 帯広市, 十勝総合振興局, 北海道, 北海道地方, 080-8639, 日本"
+  },
+  "okayama university": {
+   "name": "Okayama University",
+   "country": "Japan",
+   "lat": 34.6889,
+   "lng": 133.922,
+   "place": "岡山大学 津島キャンパス, 津高法界院停車場線, 大和町二丁目, 広瀬町, 北区, 岡山市, 岡山県, 700-0803, 日本"
+  },
+  "oregon state university": {
+   "name": "Oregon State University",
+   "country": "United States",
+   "lat": 44.5631,
+   "lng": -123.2839,
+   "place": "Oregon State University, 1500, Southwest Jefferson Way, Corvallis, Benton County, Oregon, 97331, United States"
+  },
+  "otago polytechnic": {
+   "name": "Otago Polytechnic",
+   "country": "New Zealand",
+   "lat": -45.8684,
+   "lng": 170.5195,
+   "place": "Otago Polytechnic, Leith Street, North Dunedin, Dunedin, Dunedin City, Otago, 9016, New Zealand / Aotearoa"
+  },
+  "purdue university": {
+   "name": "Purdue University",
+   "country": "United States",
+   "lat": 40.43,
+   "lng": -86.9264,
+   "place": "Purdue University, 610, West Lafayette, Tippecanoe County, Indiana, 47907, United States"
+  },
+  "queen mary university of london": {
+   "name": "Queen Mary University of London",
+   "country": "United Kingdom",
+   "lat": 51.5247,
+   "lng": -0.0393,
+   "place": "Queen Mary University of London, 327, Mile End Road, Mile End, London Borough of Tower Hamlets, Greater London, England,"
+  },
+  "ritsumeikan asia pacific university": {
+   "name": "Ritsumeikan Asia Pacific University",
+   "country": "Japan",
+   "lat": 33.3359,
+   "lng": 131.4688,
+   "place": "立命館アジア太平洋大学, 1, 別府市, 大分県, 874-8577, 日本",
+   "query": "立命館アジア太平洋大学"
+  },
+  "ritsumeikan university": {
+   "name": "Ritsumeikan University",
+   "country": "Japan",
+   "lat": 35.0344,
+   "lng": 135.7266,
+   "place": "立命館大学前(くるっとパーク), 木辻通, 平野上柳町, 馬喰町, 北区, 京都市, 京都府, 603-8577, 日本"
+  },
+  "san diego state university": {
+   "name": "San Diego State University",
+   "country": "United States",
+   "lat": 32.7762,
+   "lng": -117.0733,
+   "place": "San Diego State University, 1, Campanile Mall, Montezuma Mesa, San Diego, San Diego County, California, 92182, United St"
+  },
+  "san francisco state university": {
+   "name": "San Francisco State University",
+   "country": "United States",
+   "lat": 37.7245,
+   "lng": -122.48,
+   "place": "San Francisco State University, 1600, Holloway Avenue, San Francisco, California, 94132, United States"
+  },
+  "school of theology at claremont": {
+   "name": "School of Theology at Claremont",
+   "country": "United States",
+   "lat": 34.0967,
+   "lng": -117.7198,
+   "place": "Claremont, Los Angeles County, California, 91711, United States",
+   "query": "Claremont, California"
+  },
+  "seoul national university": {
+   "name": "Seoul National University",
+   "country": "South Korea",
+   "lat": 37.4668,
+   "lng": 126.9478,
+   "place": "서울대학교, 신림로, 대학동, 관악구, 서울특별시, 08825, 대한민국"
+  },
+  "solomon islands national university": {
+   "name": "Solomon Islands National University",
+   "country": "Solomon Islands",
+   "lat": -9.4329,
+   "lng": 159.989,
+   "place": "Solomon Islands National University, Kukum Campus Road, Panatina, Honiara, Solomon Islands"
+  },
+  "southern cross university": {
+   "name": "Southern Cross University",
+   "country": "Australia",
+   "lat": -28.8182,
+   "lng": 153.3006,
+   "place": "Southern Cross University, Ballina Road, East Lismore, Lismore, New South Wales, 2480, Australia",
+   "query": "Southern Cross University, Lismore"
+  },
+  "southern utah university": {
+   "name": "Southern Utah University",
+   "country": "United States",
+   "lat": 37.6749,
+   "lng": -113.0731,
+   "place": "Southern Utah University, 351, 300 West, Cedar City, Iron County, Utah, 84720, United States"
+  },
+  "stanford university": {
+   "name": "Stanford University",
+   "country": "United States",
+   "lat": 37.4313,
+   "lng": -122.1694,
+   "place": "Stanford University, 450, Jane Stanford Way, Stanford, Santa Clara County, California, 94305, United States"
+  },
+  "swinburne university of technology": {
+   "name": "Swinburne University of Technology",
+   "country": "Australia",
+   "lat": -37.8215,
+   "lng": 145.0388,
+   "place": "Swinburne University of Technology (Hawthorn Campus), Kent Street, Glenferrie, Hawthorn, Melbourne, Victoria, 3122, Aust"
+  },
+  "tainan theological college and seminary": {
+   "name": "Tainan Theological College and Seminary",
+   "country": "Taiwan",
+   "lat": 22.9905,
+   "lng": 120.2141,
+   "place": "台南神學院, 117, 東門路一段, 東門里, 東區, 臺南市, 701, 臺灣",
+   "query": "台南神學院"
+  },
+  "te wananga o aotearoa": {
+   "name": "Te Wānanga o Aotearoa",
+   "country": "New Zealand",
+   "lat": -36.8597,
+   "lng": 174.6306,
+   "place": "Te Wānanga o Aotearoa, Lincoln Road, Lincoln, Te Atatū South, Henderson-Massey, Auckland, 0610, New Zealand / Aotearoa"
+  },
+  "texas a and m university corpus christi": {
+   "name": "Texas A&M University-Corpus Christi",
+   "country": "United States",
+   "lat": 27.7128,
+   "lng": -97.3234,
+   "place": "Texas A&M University-Corpus Christi, Wavecrest Drive, Corpus Christi, Nueces County, Texas, 78412, United States"
+  },
+  "texas tech university": {
+   "name": "Texas Tech University",
+   "country": "United States",
+   "lat": 33.5938,
+   "lng": -101.8996,
+   "place": "Texas Tech University, 2500, Broadway, Lubbock, Lubbock County, Texas, 79409, United States"
+  },
+  "thomas jefferson school of law": {
+   "name": "Thomas Jefferson School of Law",
+   "country": "United States",
+   "lat": 32.7102,
+   "lng": -117.1542,
+   "place": "Thomas Jefferson School of Law, Park Boulevard, East Village, Downtown San Diego, San Diego, San Diego County, Californi"
+  },
+  "trinity theological college": {
+   "name": "Trinity Theological College",
+   "country": "Singapore",
+   "lat": 1.3616,
+   "lng": 103.769,
+   "place": "Trinity Theological College, 490, Upper Bukit Timah Road, Nature Reserve, Upper Bukit Timah, Bukit Panjang, West Region,"
+  },
+  "union presbyterian seminary": {
+   "name": "Union Presbyterian Seminary",
+   "country": "United States",
+   "lat": 37.5789,
+   "lng": -77.4483,
+   "place": "Union Theological Seminary and Presbyterian School, 3401, Brook Road, Northside, Richmond, Virginia, 23227, United State"
+  },
+  "universite de la nouvelle caledonie": {
+   "name": "Université de la Nouvelle-Calédonie",
+   "country": "New Caledonia",
+   "lat": -22.2634,
+   "lng": 166.4026,
+   "place": "Université de la Nouvelle-Calédonie, BP R4, Avenue James Cook, Nouville, Secteur Ouest, Nouméa, Province Sud, Nouvelle-C"
+  },
+  "universite de la polynesie francaise": {
+   "name": "Université de la Polynésie française",
+   "country": "French Polynesia",
+   "lat": -17.577,
+   "lng": -149.6087,
+   "place": "Université de la Polynésie française, BP 6570, UPF, Ariipeu, Outumaoro, Faʻaʻā, Îles du Vent, Polynésie Française, 98702"
+  },
+  "universite laval": {
+   "name": "Université Laval",
+   "country": "Canada",
+   "lat": 46.7812,
+   "lng": -71.2741,
+   "place": "Université Laval, 2325, Rue de l'Université, Cité-Universitaire, Sainte-Foy–Sillery–Cap-Rouge, Québec, Agglomération de "
+  },
+  "universite toulouse 1 capitole": {
+   "name": "Université Toulouse 1 Capitole",
+   "country": "France",
+   "lat": 43.6073,
+   "lng": 1.4394,
+   "place": "université toulouse 1 capitole, Rue des Salenques, Saint-Sernin, Arnaud Bernard, Capitole / Arnaud Bernard / Carmes, Tou"
+  },
+  "university of alabama": {
+   "name": "University of Alabama",
+   "country": "United States",
+   "lat": 33.2121,
+   "lng": -87.5397,
+   "place": "University of Alabama, University Boulevard East, Patton Place, Beverley Heights, Tuscaloosa, Tuscaloosa County, Alabama"
+  },
+  "university of bergen": {
+   "name": "University of Bergen",
+   "country": "Norway",
+   "lat": 60.3809,
+   "lng": 5.3313,
+   "place": "Universitet i Bergen, Lungegårdskaien, Nygård, Skuteviken, Bergenhus, Bergen, Vestland, 5008, Norge"
+  },
+  "university of bordeaux": {
+   "name": "University of Bordeaux",
+   "country": "France",
+   "lat": 44.8083,
+   "lng": -0.5948,
+   "place": "Université de Bordeaux - Campus Peixotto, Rue Pierre Noailles, Thouars, Talence, Bordeaux, Gironde, Nouvelle-Aquitaine, ",
+   "query": "Université de Bordeaux, Talence"
+  },
+  "university of california berkeley": {
+   "name": "University of California, Berkeley",
+   "country": "United States",
+   "lat": 37.8708,
+   "lng": -122.2657,
+   "place": "University of California, The Crescent, Downtown Berkeley, Berkeley, Alameda County, California, 94704, United States"
+  },
+  "university of california davis": {
+   "name": "University of California, Davis",
+   "country": "United States",
+   "lat": 38.5338,
+   "lng": -121.7908,
+   "place": "University of California, Davis, 1, Sheep Pen Alley, Davis, Yolo County, California, 95616, United States"
+  },
+  "university of california san diego": {
+   "name": "University of California, San Diego",
+   "country": "United States",
+   "lat": 32.8792,
+   "lng": -117.2311,
+   "place": "University of California, San Diego, 9500, Gilman Drive, Torrey Pines, San Diego, San Diego County, California, 92093, U"
+  },
+  "university of california santa barbara": {
+   "name": "University of California, Santa Barbara",
+   "country": "United States",
+   "lat": 34.4146,
+   "lng": -119.8458,
+   "place": "University of California, Santa Barbara, 552, Library Plaza, Isla Vista, Santa Barbara County, California, 93106, United"
+  },
+  "university of california santa cruz": {
+   "name": "University of California, Santa Cruz",
+   "country": "United States",
+   "lat": 37.0001,
+   "lng": -122.0622,
+   "place": "University of California, Santa Cruz, Hagar Court, Faculty Housing, The Village, Santa Cruz, Santa Cruz County, Californ"
+  },
+  "university of central england in birmingham": {
+   "name": "University of Central England in Birmingham",
+   "country": "United Kingdom",
+   "lat": 52.4823,
+   "lng": -1.8888,
+   "place": "BCU International College, 15, Bartholomew Row, Digbeth, Birmingham, West Midlands, England, B5 5JU, United Kingdom",
+   "query": "Birmingham City University"
+  },
+  "university of colorado health sciences center": {
+   "name": "University of Colorado Health Sciences Center",
+   "country": "United States",
+   "lat": 39.7449,
+   "lng": -104.8427,
+   "place": "Building 400, 12469, East 17th Place, Aurora, Adams County, Colorado, 80045, United States",
+   "query": "Anschutz Medical Campus, Aurora, Colorado"
+  },
+  "university of galway": {
+   "name": "University of Galway",
+   "country": "Ireland",
+   "lat": 53.2936,
+   "lng": -9.0751,
+   "place": "Ollscoil na Gaillimhe - University of Galway, University Road, Nun's Island, Cathair na Gaillimhe, County Galway, Connac"
+  },
+  "university of guam": {
+   "name": "University of Guam",
+   "country": "Guam",
+   "lat": 13.4324,
+   "lng": 144.8029,
+   "place": "University of Guam, University Drive, Mangilao Municipality, Guam, 96923, United States"
+  },
+  "university of hawaii at hilo": {
+   "name": "University of Hawaiʻi at Hilo",
+   "country": "United States",
+   "lat": 19.7074,
+   "lng": -155.0816,
+   "place": "Hilo, Hawaiʻi County, Hawaii, 96720, United States",
+   "query": "Hilo, Hawaii"
+  },
+  "university of idaho": {
+   "name": "University of Idaho",
+   "country": "United States",
+   "lat": 46.7238,
+   "lng": -117.0207,
+   "place": "University of Idaho, 875, Perimeter Drive, Moscow, Latah County, Idaho, 83844, United States"
+  },
+  "university of kwazulu natal": {
+   "name": "University of KwaZulu-Natal",
+   "country": "South Africa",
+   "lat": -29.8678,
+   "lng": 30.9797,
+   "place": "University of KwaZulu-Natal, 75th Anniversary Road, eThekwini Ward 101, Durban, eThekwini Metropolitan Municipality, Kwa"
+  },
+  "university of leeds": {
+   "name": "University of Leeds",
+   "country": "United Kingdom",
+   "lat": 53.8066,
+   "lng": -1.5558,
+   "place": "University of Leeds, Blandford Grove, Bagby Fields, Arena Quarter, Woodhouse, Leeds, West Yorkshire, England, LS2 9AN, U"
+  },
+  "university of leicester": {
+   "name": "University of Leicester",
+   "country": "United Kingdom",
+   "lat": 52.6087,
+   "lng": -1.1148,
+   "place": "University of Leicester, Church Lane, Knighton, Leicester, City of Leicester, England, LE2 3WT, United Kingdom"
+  },
+  "university of liverpool": {
+   "name": "University of Liverpool",
+   "country": "United Kingdom",
+   "lat": 53.4072,
+   "lng": -2.9658,
+   "place": "University of Liverpool, Dover Street, Islington, Knowledge Quarter, Edge Hill, Liverpool, Liverpool City Region, Englan"
+  },
+  "university of notre dame": {
+   "name": "University of Notre Dame",
+   "country": "United States",
+   "lat": 41.7046,
+   "lng": -86.2382,
+   "place": "University of Notre Dame du Lac, The Avenue, Notre Dame, Saint Joseph County, Indiana, 46556, United States"
+  },
+  "university of oregon": {
+   "name": "University of Oregon",
+   "country": "United States",
+   "lat": 44.0444,
+   "lng": -123.0718,
+   "place": "University of Oregon, 1585, East 13th Avenue, College Hill, Eugene, Lane County, Oregon, 97403, United States"
+  },
+  "university of oxford": {
+   "name": "University of Oxford",
+   "country": "United Kingdom",
+   "lat": 51.7525,
+   "lng": -1.2143,
+   "place": "Old Road Campus, University of Oxford, Old Road, Headington, Oxford, Oxfordshire, England, OX3 7GB, United Kingdom"
+  },
+  "university of papua new guinea": {
+   "name": "University of Papua New Guinea",
+   "country": "Papua New Guinea",
+   "lat": -9.41,
+   "lng": 147.1734,
+   "place": "University of Papua New Guinea, Waigani Campus, Nature Park Pathway, Waigani, Port Moresby, National Capital District, S",
+   "query": "University of Papua New Guinea, Waigani"
+  },
+  "university of plymouth": {
+   "name": "University of Plymouth",
+   "country": "United Kingdom",
+   "lat": 50.3757,
+   "lng": -4.1394,
+   "place": "University of Plymouth, Gilwell Street, Greenbank, Plymouth, England, PL4 8BU, United Kingdom"
+  },
+  "university of regina": {
+   "name": "University of Regina",
+   "country": "Canada",
+   "lat": 50.4152,
+   "lng": -104.589,
+   "place": "University of Regina, Regina, Saskatchewan, Canada"
+  },
+  "university of rochester": {
+   "name": "University of Rochester",
+   "country": "United States",
+   "lat": 43.1299,
+   "lng": -77.6288,
+   "place": "University of Rochester River Campus, Forest Lane, City of Rochester, Monroe County, New York, 14642, United States"
+  },
+  "university of roehampton": {
+   "name": "University of Roehampton",
+   "country": "United Kingdom",
+   "lat": 51.4485,
+   "lng": -0.244,
+   "place": "Roehampton University, Woodmill Close, Roehampton, London Borough of Wandsworth, Greater London, England, SW15 5EZ, Unit"
+  },
+  "university of san diego": {
+   "name": "University of San Diego",
+   "country": "United States",
+   "lat": 32.7726,
+   "lng": -117.1891,
+   "place": "University of San Diego, 5998, Alcala Park Way, Friars Village, Silver Terrace, Morena, San Diego, San Diego County, Cal"
+  },
+  "university of san francisco": {
+   "name": "University of San Francisco",
+   "country": "United States",
+   "lat": 37.7794,
+   "lng": -122.4514,
+   "place": "University of San Francisco, 2130, Fulton Street, North of Panhandle, Haight-Ashbury, San Francisco, California, 94117, "
+  },
+  "university of saskatchewan": {
+   "name": "University of Saskatchewan",
+   "country": "Canada",
+   "lat": 52.1344,
+   "lng": -106.6278,
+   "place": "University of Saskatchewan, Circle Drive, College Park, Lakewood Sector, Saskatoon, Saskatchewan, S7H 3E8, Canada"
+  },
+  "university of south carolina": {
+   "name": "University of South Carolina",
+   "country": "United States",
+   "lat": 33.9929,
+   "lng": -81.0269,
+   "place": "University of South Carolina, Granby Park, The Vista, Columbia, Richland County, South Carolina, 29201, United States"
+  },
+  "university of southern california": {
+   "name": "University of Southern California",
+   "country": "United States",
+   "lat": 34.0219,
+   "lng": -118.2859,
+   "place": "University of Southern California, West Jefferson Boulevard, University Park, Exposition Park, Los Angeles, Los Angeles "
+  },
+  "university of southern queensland": {
+   "name": "University of Southern Queensland",
+   "country": "Australia",
+   "lat": -27.6067,
+   "lng": 151.9294,
+   "place": "University of Southern Queensland, West Street, Darling Heights, Kearneys Spring, Toowoomba, Queensland, 4350, Australia"
+  },
+  "university of tasmania": {
+   "name": "University of Tasmania",
+   "country": "Australia",
+   "lat": -42.9068,
+   "lng": 147.3218,
+   "place": "University of Tasmania, Straight Bar, Dynnyrne, Hobart, Tasmania, 7005, Australia"
+  },
+  "university of toronto": {
+   "name": "University of Toronto",
+   "country": "Canada",
+   "lat": 43.6635,
+   "lng": -79.3968,
+   "place": "University of Toronto St. George, McCaul Street, Kensington-Chinatown, Downtown, Toronto, Ontario, M5T 3K2, Canada"
+  },
+  "university of toyama": {
+   "name": "University of Toyama",
+   "country": "Japan",
+   "lat": 36.6946,
+   "lng": 137.1866,
+   "place": "富山大学（工学部・都市デザイン学部）, 中央サイクリングロード, 下野, 富山市, 富山県, 930-0871, 日本"
+  },
+  "university of wales cardiff": {
+   "name": "University of Wales, Cardiff",
+   "country": "United Kingdom",
+   "lat": 51.5067,
+   "lng": -3.1895,
+   "place": "Cardiff University, Lady Mary Road, Penylan, Cardiff, Cymru / Wales, CF23 5PD, United Kingdom",
+   "query": "Cardiff University"
+  },
+  "university of west indies cave hill campus": {
+   "name": "The University of the West Indies, Cave Hill Campus",
+   "country": "Barbados",
+   "lat": 13.1356,
+   "lng": -59.6311,
+   "place": "University of the West Indies (UWI) - Cave Hill Campus, Cave Hill Campus, Saint Michael, BB23026, Barbados",
+   "query": "University of the West Indies Cave Hill"
+  },
+  "university of west indies st augustine": {
+   "name": "University of the West Indies, St. Augustine",
+   "country": "Trinidad and Tobago",
+   "lat": 10.6492,
+   "lng": -61.3988,
+   "place": "University of the West Indies, Warner Street, Saint Augustine, Tunapuna, Tunapuna-Piarco, 310401, Trinidad and Tobago"
+  },
+  "university of westminster": {
+   "name": "University of Westminster",
+   "country": "United Kingdom",
+   "lat": 51.5209,
+   "lng": -0.1401,
+   "place": "University of Westminster, 115, New Cavendish Street, East Marylebone, Marylebone, City of Westminster, Greater London, "
+  },
+  "university of wisconsingreen bay": {
+   "name": "University of Wisconsin–Green Bay",
+   "country": "United States",
+   "lat": 44.5265,
+   "lng": -87.9073,
+   "place": "University of Wisconsin Green Bay, 2420, Nicolet Drive, Green Bay, Brown County, Wisconsin, 54311, United States"
+  },
+  "utah state university": {
+   "name": "Utah State University",
+   "country": "United States",
+   "lat": 41.7527,
+   "lng": -111.8087,
+   "place": "Utah State University, Canyon Road, The Island, Logan, Cache County, Utah, 84322, United States"
+  },
+  "walden university": {
+   "name": "Walden University",
+   "country": "United States",
+   "lat": 44.9773,
+   "lng": -93.2655,
+   "place": "Minneapolis, Hennepin County, Minnesota, United States",
+   "query": "Minneapolis, Minnesota"
+  },
+  "washington state university": {
+   "name": "Washington State University",
+   "country": "United States",
+   "lat": 46.7338,
+   "lng": -117.1498,
+   "place": "Washington State University, 150, East Spring Street, Ward 3, Pullman, Whitman County, Washington, 99164, United States"
+  },
+  "webster university": {
+   "name": "Webster University",
+   "country": "United States",
+   "lat": 38.5888,
+   "lng": -90.3444,
+   "place": "Webster University, 470, East Lockwood Avenue, Webster Groves, Saint Louis County, Missouri, 63119, United States"
+  },
+  "weltec and whitireia": {
+   "name": "WelTec and Whitireia",
+   "country": "New Zealand",
+   "lat": -41.2244,
+   "lng": 174.8854,
+   "place": "Whitireia and WelTec - Petone Campus, 21, Kensington Avenue, Petone, Lower Hutt, Lower Hutt City, Wellington, 5012, New "
+  },
+  "westminster university": {
+   "name": "Westminster University",
+   "country": "United States",
+   "lat": 40.7313,
+   "lng": -111.8555,
+   "place": "Westminster University, 1840, 1300 East, Sugar House, Salt Lake City, Salt Lake County, Utah, 84105, United States"
+  },
+  "yonsei university": {
+   "name": "Yonsei University",
+   "country": "South Korea",
+   "lat": 37.5604,
+   "lng": 126.9352,
+   "place": "연대앞, 성산로, 신촌동, 서대문구, 서울특별시, 03788, 대한민국"
+  }
+ }
+}

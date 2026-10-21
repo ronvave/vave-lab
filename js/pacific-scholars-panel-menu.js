@@ -1,6 +1,6 @@
 /* Panel menu for the Regional Pacific Scholars Dashboard.
    Same idea as the country dashboards' panel menu (js/itaukei-panel-menu.js):
-   every panel carries a code badge (A1, A2 … E) and the bar under the
+   every panel carries a code badge (A1, A2 … F) and the bar under the
    headline figures jumps to any panel. Panels that are still hidden (no data
    for them yet) are left out of the menu until they appear. */
 (function () {
@@ -11,7 +11,7 @@
   const drop = document.getElementById('ps-pmenu-drop');
   const GROUPS = {
     A: 'Overview', B: 'Firsts & university careers', C: 'People & pathways',
-    E: 'Directory', F: 'Publications', G: 'Collaborators'
+    D: 'Directory', E: 'Publications', F: 'Collaborators'
   };
   const panels = [...document.querySelectorAll('section[data-panel]')];
   const groupOf = el => el.dataset.panel[0];

@@ -75,9 +75,11 @@
   const SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>';
 
   let root, S = [], P = [], X = {}, C = {}, order = [], shown = [], page = 1;
-  const F = { country: '', disc: '', degree: '', gender: '', work: '', region: '', sector: '', q: '', only: '' };
-  const LABEL = { country: 'Country', disc: 'Discipline', degree: 'Degree', gender: 'Gender', work: 'Work region', region: 'Study region', sector: 'Sector', q: 'Search', only: 'Shared scholar' };
-  const IDS = { country: 'f-country', disc: 'f-disc', degree: 'f-degree', gender: 'f-gender', sector: 'f-sector', q: 'q' };
+  const F = { country: '', disc: '', degree: '', gender: '', work: '', region: '', sector: '', expl: '', q: '', only: '' };
+  let SORT = 'pubs';
+  const SORT_LABEL = { pubs: 'Sorted by publications, most first', fa: 'Sorted by first-authored publications, most first', name: 'Sorted by name, A to Z', country: 'Sorted by country, then publications' };
+  const LABEL = { country: 'Country', disc: 'Discipline', degree: 'Degree', gender: 'Gender', work: 'Work region', region: 'Study region', sector: 'Sector', expl: 'Research explanation', q: 'Search', only: 'Shared scholar' };
+  const IDS = { country: 'f-country', disc: 'f-disc', degree: 'f-degree', gender: 'f-gender', sector: 'f-sector', expl: 'f-expl', q: 'q' };
   const MENUS = { work: 'm-work', region: 'm-region' };   // Region -> Country fly-out menus
   const NONE = '__none';
   const q = id => root.querySelector('#psd-' + id);
@@ -115,6 +117,7 @@
     }
     if (F.region && !(F.region.includes('|') ? (s.sc || []).includes(F.region) : (s.r || []).includes(F.region))) return false;
     if (F.sector && s.sec !== F.sector) return false;
+    if (F.expl) { const has = !!(X[s.id] && String(X[s.id].sm || '').trim()); if ((F.expl === 'yes') !== has) return false; }
     if (F.q) { const h = hay(s); if (!fold(F.q).split(/\s+/).filter(Boolean).every(w => h.includes(w.replace(/"/g, '')))) return false; }
     return true;
   }
@@ -223,12 +226,21 @@
   function render(keepPage) {
     if (!keepPage) page = 1;
     shown = S.filter(match);
+    if (SORT !== 'pubs') {
+      const fam = x => fold(String(x.n || '').split(/\s+/).pop());
+      const ord = c => order.indexOf(c);
+      const cmp = SORT === 'fa' ? (a, b) => (b.fa || 0) - (a.fa || 0) || (b.p || []).length - (a.p || []).length || a._o - b._o
+        : SORT === 'name' ? (a, b) => fold(a.n).localeCompare(fold(b.n)) || a._o - b._o
+        : (a, b) => ord(a.c) - ord(b.c) || a._o - b._o;
+      shown = shown.slice().sort(cmp);
+    }
+    const sl = q('sortlabel'); if (sl) sl.textContent = SORT_LABEL[SORT];
     const pages = Math.max(1, Math.ceil(shown.length / PAGE));
     page = Math.min(Math.max(1, page), pages);
     const grid = q('grid');
     grid.innerHTML = shown.length ? shown.slice((page - 1) * PAGE, page * PAGE).map(card).join('') : '<div class="empty">No scholars match these filters. Try removing one.</div>';
     const active = Object.entries(F).filter(([, v]) => v);
-    q('chips').innerHTML = active.map(([k, v]) => `<span class="db-filter-chip"><span>${LABEL[k]}:</span>${esc(k === 'country' ? C[v].name : k === 'degree' ? (v === 'P' ? 'PhD or doctorate' : "Master's") : k === 'gender' ? (v === 'F' ? 'Female' : 'Male') : k === 'only' ? (S.find(s => s.id === v) || {}).n || '' : (k === 'work' || k === 'region') ? regionLabel(v) : v)}<button type="button" data-rm="${k}" aria-label="Remove ${LABEL[k]} filter">\u00d7</button></span>`).join('');
+    q('chips').innerHTML = active.map(([k, v]) => `<span class="db-filter-chip"><span>${LABEL[k]}:</span>${esc(k === 'country' ? C[v].name : k === 'degree' ? (v === 'P' ? 'PhD or doctorate' : "Master's") : k === 'gender' ? (v === 'F' ? 'Female' : 'Male') : k === 'expl' ? (v === 'yes' ? 'Recorded' : 'Not yet recorded') : k === 'only' ? (S.find(s => s.id === v) || {}).n || '' : (k === 'work' || k === 'region') ? regionLabel(v) : v)}<button type="button" data-rm="${k}" aria-label="Remove ${LABEL[k]} filter">\u00d7</button></span>`).join('');
     q('clear').classList.toggle('is-hidden', !active.length);
     const from = shown.length ? (page - 1) * PAGE + 1 : 0, to = Math.min(page * PAGE, shown.length);
     q('count').textContent = `Showing ${from.toLocaleString()}\u2013${to.toLocaleString()} of ${shown.length.toLocaleString()} matching scholars \u00b7 ${S.length.toLocaleString()} in the directory`;
@@ -341,6 +353,9 @@
     for (const k of Object.keys(MENUS)) buildMenu(k);
     document.addEventListener('click', e => { if (!e.target.closest('#ps-dir .cmenu')) root.querySelectorAll('.cmenu').forEach(m => m._close && m._close()); });
     q('f-sector').innerHTML = '<option value="">All sectors</option>' + SECTORS.map(d => `<option>${esc(d)}</option>`).join('');
+    const withEx = S.filter(s => X[s.id] && String(X[s.id].sm || '').trim()).length;
+    if (q('f-expl')) q('f-expl').innerHTML = `<option value="">All scholars</option><option value="yes">Explanation recorded (${withEx.toLocaleString()})</option><option value="no">Not yet recorded (${(S.length - withEx).toLocaleString()})</option>`;
+    if (q('sort')) q('sort').addEventListener('change', e => { SORT = e.target.value; render(); });
     for (const [k, id] of Object.entries(IDS)) q(id).addEventListener(k === 'q' ? 'input' : 'change', e => { F[k] = e.target.value.trim(); F.only = ''; clearHash(); render(); });
     q('clear').addEventListener('click', () => { for (const [k, id] of Object.entries(IDS)) { F[k] = ''; q(id).value = ''; } F.work = F.region = ''; F.only = ''; clearHash(); render(); });
     q('chips').addEventListener('click', e => { const b = e.target.closest('[data-rm]'); if (!b) return; const k = b.dataset.rm; F[k] = ''; if (IDS[k]) q(IDS[k]).value = ''; if (k === 'only') clearHash(); render(); });
@@ -400,7 +415,7 @@
       S.sort((a, b) => (b.p || []).length - (a.p || []).length || (b.fa || 0) - (a.fa || 0) || a._o - b._o);
       C = Object.fromEntries((D.countries || []).map(c => [c.code, c]));
       window.PSDirectoryDisciplines = D.disciplineCategories || [];
-      // Panel F (Publications) lists the same linked publications.
+      // Panel E (Publications) lists the same linked publications.
       if (window.PSPublications) { try { window.PSPublications.init({ S, P, C, order, TYPE }); } catch (e) { console.error(e); } }
       panel.hidden = false;
       setup();
@@ -437,5 +452,18 @@
     if (file) return file;
     return s.ph || '';
   }
-  window.PSDirectory = { init, scholarPhoto, scholars: () => S };
+  // Panel B1 list: link a first to the directory card only on a unique name match.
+  function findId(code, person) {
+    const want = bare(person).split(/\s+/).filter(Boolean);
+    if (want.length < 2) return '';
+    const given = want[0], fam = want.slice(1);
+    const hits = S.filter(s => {
+      if (s.c !== code) return false;
+      const toks = fold(s.n).split(/[^a-z0-9]+/).filter(Boolean);
+      if (!toks.includes(given) || toks.length < fam.length) return false;
+      return fam.every((t, i) => toks[toks.length - fam.length + i] === t);
+    });
+    return hits.length === 1 ? hits[0].id : '';
+  }
+  window.PSDirectory = { init, scholarPhoto, findId, scholars: () => S };
 })();

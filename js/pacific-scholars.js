@@ -52,7 +52,7 @@
     doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>',
   };
 
-  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', destMode: 'study', mapView: null };
+  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', destMode: 'study', mapView: null, discG: 'all', discScale: 'pct', gView: 'people', out: { type: '', fa: '', range: 'recent' } };
   let D = null, BM = null, CREDITS = null, byCode = {};
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -111,6 +111,7 @@
     ]);
     BM = bm; CREDITS = cr;
     readUrl();
+    setupViews();
     renderFresh();
     renderKpis();
     setupMetric();
@@ -122,9 +123,12 @@
     setupFirsts();
     setupPositions();
     setupDialogs();
+    setupGender();
+    setupOutputs();
     renderCredits();
+    if (window.PSUniversities) { try { window.PSUniversities.init(D, { nameOf, select: setSel }); } catch (e) { console.error(e); } }
     renderAll(true);
-    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); }).catch(() => {});
+    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); window.PSUniversities && window.PSUniversities.refresh(); }).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
@@ -182,6 +186,7 @@
     $('#ps-chip-clear').addEventListener('click', () => select(null));
   }
 
+  function setSel(code) { code = code || null; if (state.sel === code) return; state.sel = null; select(code); }
   function select(code) {
     state.sel = state.sel === code ? null : code;
     if (state.sel && D.disciplineCountries.includes(state.sel)) state.disc = state.sel;
@@ -212,6 +217,51 @@
     renderFirsts();
     renderPositions();
     renderWorkHeat();
+    renderStudyMatrix();
+    if (window.PSUniversities) window.PSUniversities.setHome(state.sel || '');
+  }
+
+  // ================= VIEW SWITCHER =================
+  // Tabs: [data-views="key"] > button[data-view]; dropdowns: select[data-views-select="key"].
+  // Panes: [data-pane="key:view key2:view2"] (shown when any token is active).
+  // Controls that belong to one view: [data-pane-of="key:view ..."].
+  const VIEW = {};
+  const VIEW_HOOK = {
+    a1: v => { if (v === 'chart') renderBars(); renderMap(); },
+    a2: v => { if (v === 'out') renderOutputs(); },
+    b1: () => renderFirsts(),
+    b2: () => { renderWhere(); renderRank(); },
+    c1: v => { if (v === 'uni') { window.PSUniversities && window.PSUniversities.show(); } else { state.destMode = v; renderDest(); renderStudyMatrix(); renderWorkHeat(); } },
+    c1d: () => { renderStudyMatrix(); renderWorkHeat(); },
+  };
+  function setupViews() {
+    $$('[data-views]').forEach(tl => {
+      const k = tl.dataset.views, bs = $$('button[data-view]', tl);
+      VIEW[k] = (bs.find(b => b.getAttribute('aria-selected') === 'true') || bs[0]).dataset.view;
+      bs.forEach((b, i) => {
+        b.addEventListener('click', () => setViewKey(k, b.dataset.view));
+        b.addEventListener('keydown', e => {
+          if (!['ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+          e.preventDefault();
+          const nx = bs[(i + (e.key === 'ArrowRight' ? 1 : bs.length - 1)) % bs.length];
+          nx.focus(); setViewKey(k, nx.dataset.view);
+        });
+      });
+    });
+    $$('[data-views-select]').forEach(sel => { const k = sel.dataset.viewsSelect; VIEW[k] = sel.value; sel.addEventListener('change', () => setViewKey(k, sel.value)); });
+    applyViews();
+  }
+  const viewOn = attr => String(attr || '').split(/\s+/).filter(Boolean).some(t => { const [k, v] = t.split(':'); return VIEW[k] === v; });
+  function applyViews() {
+    $$('[data-pane]').forEach(el => { el.hidden = !viewOn(el.dataset.pane); });
+    $$('[data-pane-of]').forEach(el => { el.hidden = !viewOn(el.dataset.paneOf); });
+    $$('[data-views]').forEach(tl => $$('button[data-view]', tl).forEach(b => { const on = VIEW[tl.dataset.views] === b.dataset.view; b.setAttribute('aria-selected', String(on)); b.tabIndex = on ? 0 : -1; }));
+    $$('[data-views-select]').forEach(sel => { sel.value = VIEW[sel.dataset.viewsSelect]; });
+  }
+  function setViewKey(k, v) {
+    VIEW[k] = v; applyViews(); hideTip();
+    const tip = $('#ps-pos-tip'); tip && tip.classList.remove('show');
+    if (D && VIEW_HOOK[k]) VIEW_HOOK[k](v);
   }
 
   // ================= COUNTRY STRIP =================
@@ -231,13 +281,14 @@
         : `<span class="ps-card__btn ps-card__btn--off">${c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No dashboard yet'}</span>`;
       const valText = v == null ? 'Not available' : fmt(v);
       return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
-        <div class="ps-card__name${CARD_LONG[c.code] ? ' ps-card__name--long' : ''}" style="--img:url('img/regional/${c.code.toLowerCase()}.webp')">${esc(CARD_NAME[c.code] || c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
+        <div class="ps-card__name${CARD_LONG[c.code] ? ' ps-card__name--long' : ''}" style="--img:url('${new URL('img/regional/' + c.code.toLowerCase() + '.webp', document.baseURI).href}')">${esc(CARD_NAME[c.code] || c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
         <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="142" style="object-position:${CARD_FOCUS[c.code] || 'center'}" loading="${i < 6 ? 'eager' : 'lazy'}" />
         <div class="ps-card__body">
           <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
             ${icon}<span class="ps-card__vl"><span class="ps-card__v">${valText}</span><span class="ps-card__l">${esc(m.label)}</span></span>
           </button>
           <div class="ps-card__sub">${sub}</div>
+          ${coverageNote(c)}
           ${btn}
         </div></li>`;
     }).join('');
@@ -253,6 +304,16 @@
         requestAnimationFrame(() => { el.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; });
       });
     }
+  }
+
+  // Short coverage gaps under each card, so missing records never read as zero.
+  function coverageNote(c) {
+    const gaps = [];
+    if (D.positions && !(D.positions.coverage.positions[c.code] > 0)) gaps.push('Positions not yet recorded');
+    const gu = c.gender ? c.gender.unknown : 0;
+    if (c.scholars && gu / c.scholars >= 0.2) gaps.push(`Gender not recorded for ${Math.round(100 * gu / c.scholars)}%`);
+    if (c.scholars && c.pubsIndigenous / c.scholars < 0.5) gaps.push('Publication links still sparse');
+    return gaps.length ? `<div class="ps-card__cov" title="${esc(gaps.join('. '))}. Missing records are not zero."><span aria-hidden="true">ⓘ</span> ${esc(gaps.join(' · '))}</div>` : '';
   }
 
   // ================= MAP =================
@@ -301,9 +362,7 @@
     const end = () => { drag = null; };
     mapSvg.addEventListener('pointerup', end); mapSvg.addEventListener('pointercancel', end);
     mapSvg.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoom(e.deltaY < 0 ? 'in' : 'out'); }, { passive: false });
-    $('#ps-map-table-btn').addEventListener('click', e => {
-      const t = $('#ps-map-table'); t.hidden = !t.hidden; e.currentTarget.setAttribute('aria-expanded', String(!t.hidden)); e.currentTarget.textContent = t.hidden ? 'Table view' : 'Hide table';
-    });
+    $('#ps-bars-csv').addEventListener('click', exportCsv);
   }
   function setView(v) {
     const W = MAP_IMG.w, H = MAP_IMG.h;
@@ -336,7 +395,7 @@
       o.g.classList.toggle('is-selected', state.sel === c.code);
       o.g.classList.toggle('is-dim', !!state.sel && state.sel !== c.code);
     });
-    $('#ps-map-sub').textContent = 'Number of Indigenous scholars beside each country. Select a number to filter.';
+    $('#ps-map-sub').textContent = VIEW.a1 === 'table' ? 'Every country in one table, sorted by the selected metric.' : VIEW.a1 === 'chart' ? 'Each country compared on the selected metric. Select a bar to filter.' : 'Number of Indigenous scholars beside each country. Select a number to filter.';
     // accessible table
     const rows = sorted();
     const t = $('#ps-map-table');
@@ -374,43 +433,68 @@
         <p>${fmt(t.scholars)} Indigenous scholars ${state.sel ? 'from ' + esc(nameOf(state.sel)) : 'across these databases'} hold ${fmt(all)} completed Master's and PhD degrees. Degrees are counted separately from people: a scholar with both counts once as a person and in both degree totals.</p></div>`;
   }
 
-  // ================= OUTPUTS =================
+  // ================= OUTPUTS (A2: Publications over time) =================
+  // Uses the same linked-publication list as Panel E, so the two always agree.
+  function setupOutputs() {
+    const csel = $('#ps-out-country');
+    csel.innerHTML = '<option value="">All countries</option>' + countries().map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+    csel.addEventListener('change', () => setSel(csel.value));
+    $('#ps-out-type').addEventListener('change', e => { state.out.type = e.target.value; renderOutputs(); });
+    $('#ps-out-fa').addEventListener('change', e => { state.out.fa = e.target.value; renderOutputs(); });
+    $('#ps-out-range').addEventListener('change', e => { state.out.range = e.target.value; renderOutputs(); });
+    document.addEventListener('ps:pubs-ready', () => {
+      const P = window.PSPublications, T = P.TYPE(), items = P.items();
+      const order = ['journalArticle', 'book', 'bookSection', 'thesisPhd', 'thesisMasters', 'report', 'other'];
+      $('#ps-out-type').innerHTML = '<option value="">All types</option>' + order.filter(k => T[k] && items.some(it => it.type === k)).map(k => `<option value="${k}">${esc(T[k].p)}</option>`).join('');
+      renderOutputs();
+    });
+  }
   function renderOutputs() {
+    const host = $('#ps-out'); if (!host) return;
+    $('#ps-out-country').value = state.sel || '';
+    const P = window.PSPublications;
+    if (!P || !P.isReady || !P.isReady()) { host.innerHTML = '<div class="ps-empty">Publications are loading…</div>'; return; }
     const c = state.sel ? byCode[state.sel] : null;
-    const years = c ? c.pubYears : D.regional.indigenousPubYears;
-    const head = c ? c.pubsIndigenous : D.regional.uniqueIndigenousPubs;
-    const yrs = []; for (let y = 2015; y <= 2026; y++) yrs.push(y);
-    const vals = yrs.map(y => years[String(y)] || 0);
-    const totalYears = Object.values(years).reduce((a, b) => a + b, 0);
-    const future = Object.entries(years).filter(([y]) => +y > 2026).reduce((a, [, v]) => a + v, 0);
-    const before = Object.entries(years).filter(([y]) => +y < 2015).reduce((a, [, v]) => a + v, 0);
-    const noYear = head - totalYears;
-    const max = Math.max(1, ...vals);
-    const W = 340, H = 150, pad = 18, bw = (W - 10) / yrs.length;
-    const bars = yrs.map((y, i) => {
-      const h = (vals[i] / max) * (H - 32); const x = 5 + i * bw; const yy = H - pad - h;
-      const partial = y === 2026;
-      return `<g><rect class="ps-bar" x="${(x + 3).toFixed(1)}" y="${yy.toFixed(1)}" width="${(bw - 6).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${partial ? 'url(#ps-hatch)' : `hsl(${200 - i * 3} 70% ${58 - i * 3}%)`}"><title>${y}: ${fmt(vals[i])} Indigenous-linked publications${partial ? ' (partial year)' : ''}</title></rect>
-      <text x="${(x + bw / 2).toFixed(1)}" y="${(yy - 4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="700" fill="#0c2140">${vals[i]}</text>
-      <text x="${(x + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="9" fill="#4a5d78">${y}</text></g>`;
+    const NOW = new Date().getFullYear();
+    const items = P.items().filter(it => (!state.out.type || it.type === state.out.type) && (!state.out.fa || (state.out.fa === 'first' ? it.first : !it.first)) && (!c || it.cs.includes(c.code)));
+    const dated = items.filter(it => it.yr && !it.forth), forth = items.filter(it => it.forth).length, noYear = items.filter(it => !it.yr && !it.forth).length;
+    const recent = state.out.range === 'recent';
+    let bins = [];
+    if (recent) { for (let y = NOW - 11; y <= NOW; y++) bins.push({ a: y, b: y, l: String(y) }); }
+    else {
+      const y0 = dated.length ? Math.floor(Math.min(...dated.map(it => it.yr)) / 5) * 5 : NOW - 20;
+      for (let y = y0; y <= NOW; y += 5) bins.push({ a: y, b: Math.min(y + 4, NOW), l: `${y}` });
+    }
+    bins.forEach(b => { b.n = dated.filter(it => it.yr >= b.a && it.yr <= b.b).length; });
+    const before = recent ? dated.filter(it => it.yr < NOW - 11).length : 0;
+    if (forth) bins.push({ l: 'Forth.', n: forth, forth: true });
+    const max = Math.max(1, ...bins.map(b => b.n));
+    const W = 360, H = 160, pad = 18, bw = (W - 10) / bins.length;
+    const bars = bins.map((b, i) => {
+      const h = (b.n / max) * (H - 34), x = 5 + i * bw, yy = H - pad - h;
+      const partial = !b.forth && b.b === NOW;
+      const fill = b.forth ? '#e0a52a' : partial ? 'url(#ps-hatch)' : `hsl(${200 - i * 2} 62% ${46 - Math.min(i, 14)}%)`;
+      const label = b.forth ? 'Forthcoming or in press' : (b.a === b.b ? String(b.a) : `${b.a}–${b.b}`);
+      return `<g><rect x="${(x + 2).toFixed(1)}" y="${yy.toFixed(1)}" width="${Math.max(1, bw - 4).toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${fill}"><title>${label}: ${fmt(b.n)} linked publication${b.n === 1 ? '' : 's'}${partial ? ' (year to date)' : ''}</title></rect>
+        ${b.n ? `<text x="${(x + bw / 2).toFixed(1)}" y="${(yy - 4).toFixed(1)}" text-anchor="middle" font-size="${bins.length > 14 ? 7.5 : 9.5}" font-weight="700" fill="#0c2140">${fmt(b.n)}</text>` : ''}
+        <text x="${(x + bw / 2).toFixed(1)}" y="${H - 4}" text-anchor="middle" font-size="${bins.length > 14 ? 7 : 8.5}" fill="#4a5d78">${recent && !b.forth ? "'" + String(b.a).slice(2) : b.l}</text></g>`;
     }).join('');
-    $('#ps-out').innerHTML = `
-      <div class="ps-out__head">${ICONS.book}<div><div class="ps-out__v">${fmt(head)}</div><div class="ps-out__l">Indigenous-linked publications${c ? ' — ' + esc(c.name) : ' (regionally deduplicated)'}</div></div></div>
-      <div class="ps-out__meta">
-        <div><b>${fmt(c ? c.pubsIndexed : D.regional.uniquePubs)}</b>${c ? 'country-indexed records (headline types)' : 'unique country-indexed records, deduplicated'}</div>
-        <div><b>${fmt(c ? c.pubsIndigenous : totals().pubsIndigenous)}</b>${c ? 'with an authorship link to an included scholar' : 'Indigenous-linked, summed before deduplication'}</div>
-      </div>
-      <div class="ps-chart" role="img" aria-label="Indigenous-linked publications per year, 2015 to 2026: ${yrs.map((y, i) => y + ' ' + vals[i]).join(', ')}">
+    const headline = c ? c.pubsIndigenous : D.regional.uniqueIndigenousPubs;
+    const tl = state.out.type ? (P.TYPE()[state.out.type] || {}).p : '';
+    host.innerHTML = `
+      <div class="ps-out__head">${ICONS.book}<div><div class="ps-out__v">${fmt(items.length)}</div><div class="ps-out__l">${tl ? esc(tl) + ' · ' : ''}publications linked to directory scholars${c ? ' from ' + esc(c.name) : ''}${state.out.fa === 'first' ? ', Indigenous first author' : state.out.fa === 'co' ? ', co-authored or other' : ''}</div></div></div>
+      <div class="ps-chart" role="img" aria-label="Linked publications by ${recent ? 'year' : 'five-year group'}: ${bins.map(b => (b.forth ? 'forthcoming' : b.l) + ' ' + b.n).join(', ')}">
         <svg viewBox="0 0 ${W} ${H}"><defs><pattern id="ps-hatch" width="5" height="5" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="5" height="5" fill="#9cc3e6"/><line x1="0" y1="0" x2="0" y2="5" stroke="#1d4f8a" stroke-width="2"/></pattern></defs>${bars}</svg>
       </div>
-      <p class="ps-note">2026 is a partial year (hatched). ${fmt(before)} dated before 2015 not shown${noYear > 0 ? `; ${fmt(noYear)} have no year` : ''}${future ? `; <strong>${fmt(future)} dated after 2026 flagged as probable data-entry errors</strong>` : ''}.</p>`;
+      <p class="ps-note">${recent ? `${NOW} is year to date (hatched). ${fmt(before)} dated before ${NOW - 11} are not shown; switch to All years to see them.` : `Five-year groups, labelled by their first year; ${NOW} is year to date.`}${forth ? ` ${fmt(forth)} forthcoming or in press (gold).` : ''}${noYear ? ` ${fmt(noYear)} have no year.` : ''} Same list as <a href="#ps-pubs-panel">Panel E</a>, which includes theses, reports and other types. Headline figure for comparison: ${fmt(headline)} Indigenous-linked publications in the main types${c ? '' : ', regionally deduplicated'}.</p>`;
   }
 
   // ================= BARS =================
   function setupBars() {
     $$('[data-barview]').forEach(b => b.addEventListener('click', () => { state.barView = b.dataset.barview; $$('[data-barview]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderBars(); }));
     let wasNarrow = null;
-    new ResizeObserver(() => { const n = ($('#ps-bars').clientWidth || 600) < 520; if (wasNarrow !== null && n !== wasNarrow) renderBars(); wasNarrow = n; }).observe($('#ps-bars'));
+    let lastW = 0;
+    new ResizeObserver(() => { const cw = $('#ps-bars').clientWidth; const n = (cw || 600) < 520; if ((wasNarrow !== null && n !== wasNarrow) || (cw && Math.abs(cw - lastW) > 4)) { lastW = cw; renderBars(); } wasNarrow = n; }).observe($('#ps-bars'));
   }
   function renderBars() {
     const m = METRICS[state.metric];
@@ -420,7 +504,13 @@
     const max = Math.max(1, ...vals);
     const nice = (() => { const e = Math.pow(10, Math.floor(Math.log10(max))); return [1, 2, 2.5, 5, 10].map(f => f * e).find(v => v >= max); })();
     const narrow = ($('#ps-bars').clientWidth || 600) < 520;
-    const W = narrow ? 400 : 520, H = narrow ? 270 : 240, L = 34, B = narrow ? 64 : 40, T = 16, Rt = 4;
+    // Desktop: fill the panel height set by the panels beside it, so the chart has no empty band below.
+    let fillH = 400;
+    if (!narrow) {
+      const el = $('#ps-bars'), sec = el.closest('section'), cw = el.clientWidth;
+      if (cw && sec) { const room = sec.getBoundingClientRect().bottom - el.getBoundingClientRect().top - 34; fillH = Math.max(400, Math.min(720, Math.round(520 * room / cw))); }
+    }
+    const W = narrow ? 400 : 520, H = narrow ? 300 : fillH, L = 34, B = narrow ? 64 : 40, T = 16, Rt = 4;
     const cw = (W - L - Rt) / list.length, bw = Math.min(28, cw * 0.66);
     const y = v => T + (H - T - B) * (1 - v / nice);
     let g = '';
@@ -464,20 +554,39 @@
     const rows = [['Country', 'Scholars (unique people)', "Completed Master's", 'Completed PhDs/doctorates', 'of which professional doctorates', 'Country-indexed publications', 'Indigenous-linked publications', 'Master file last modified', 'Bundle generated']];
     sorted().forEach(c => { const s = D.sources.find(x => x.code === c.code) || {}; rows.push([c.name, c.scholars, c.masters, c.phd, c.profDoc, c.pubsIndexed, c.pubsIndigenous, s.modified || '', D.generated]); });
     const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = `regional-graduate-degrees-${state.metric}.csv`; document.body.appendChild(a); a.click(); a.remove();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = `regional-scholars-by-country.csv`; document.body.appendChild(a); a.click(); a.remove();
   }
 
   // ================= DISCIPLINES =================
   function setupDisc() {
     $$('[data-disc]').forEach(b => b.addEventListener('click', () => { state.disc = b.dataset.disc; renderDisc(); }));
     $('#ps-disc-level').addEventListener('change', e => { state.discLevel = e.target.value; renderDisc(); });
+    $$('[data-dg]').forEach(b => b.addEventListener('click', () => { state.discG = b.dataset.dg; renderDisc(); }));
+    $$('[data-ds]').forEach(b => b.addEventListener('click', () => { state.discScale = b.dataset.ds; renderDisc(); }));
   }
-  function renderDisc() {
-    $$('[data-disc]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.disc === state.disc)));
+  // Discipline counts for one gender (or all) from the encrypted study map aggregates.
+  function discCounts(g) {
     const codes = state.disc === 'ALL' ? D.disciplineCountries : [state.disc];
     const cats = D.disciplineCategories.concat(['Unknown / unmapped']);
     const counts = Object.fromEntries(cats.map(k => [k, 0]));
-    codes.forEach(code => { const d = byCode[code] && byCode[code].disciplines; if (!d) return; ['M', 'P'].forEach(l => { if (state.discLevel !== 'all' && state.discLevel !== l) return; for (const k in d[l] || {}) counts[k] = (counts[k] || 0) + d[l][k]; }); });
+    const DG = (D.studyMap && D.studyMap.discGender) || {};
+    codes.forEach(code => {
+      ['M', 'P'].forEach(l => {
+        if (state.discLevel !== 'all' && state.discLevel !== l) return;
+        if (g === 'all') { const d = byCode[code] && byCode[code].disciplines; for (const k in (d && d[l]) || {}) counts[k] = (counts[k] || 0) + d[l][k]; }
+        else { const d = ((DG[code] || {})[l] || {})[g] || {}; for (const k in d) counts[k] = (counts[k] || 0) + d[k]; }
+      });
+    });
+    return counts;
+  }
+  function renderDisc() {
+    $$('[data-disc]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.disc === state.disc)));
+    $$('[data-dg]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.dg === state.discG)));
+    $$('[data-ds]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.ds === state.discScale)));
+    $('#ps-disc-scale').hidden = state.discG !== 'compare';
+    const hasG = !!(D.studyMap && D.studyMap.discGender);
+    if (state.discG === 'compare') return renderDiscCompare();
+    const counts = discCounts(hasG ? state.discG : 'all');
     const total = Object.values(counts).reduce((a, b) => a + b, 0);
     const order = D.disciplineCategories.slice().sort((a, b) => counts[b] - counts[a]);
     const colorOf = k => DISC_COLOR[D.disciplineCategories.indexOf(k)] || '#b9c6d4';
@@ -490,7 +599,7 @@
       return `<path d="${d}" fill="${k.startsWith('Unknown') ? '#b9c6d4' : colorOf(k)}" stroke="#f6f8fb" stroke-width="1.5"><title>${esc(k)}: ${fmt(counts[k])} (${pct(counts[k], total)}%)</title></path>`;
     }).join('');
     const scopeLabel = state.disc === 'ALL' ? 'Fiji, Tonga & Vanuatu' : nameOf(state.disc);
-    const lvl = state.discLevel === 'M' ? "completed Master's" : state.discLevel === 'P' ? 'completed PhDs' : 'completed degrees';
+    const lvl = (state.discLevel === 'M' ? "completed Master's" : state.discLevel === 'P' ? 'completed PhDs' : 'completed degrees') + (state.discG === 'female' ? ' (women)' : state.discG === 'male' ? ' (men)' : '');
     $('#ps-disc').innerHTML = total ? `
       <div class="ps-donut" role="img" aria-label="Fields of research for ${esc(scopeLabel)}: ${order.map(k => `${k} ${counts[k]}`).join(', ')}; unknown or unmapped ${counts['Unknown / unmapped']}">
         <svg viewBox="0 0 150 150">${arcs}</svg>
@@ -499,7 +608,26 @@
       <ul class="ps-legend">${order.map(k => `<li><i style="background:${colorOf(k)}"></i><span>${esc(k)}</span><span class="n">${fmt(counts[k])}</span><span class="p">${pct(counts[k], total)}%</span></li>`).join('')}
         <li class="is-unknown"><i style="background:#b9c6d4"></i><span>Unknown / unmapped</span><span class="n">${fmt(counts['Unknown / unmapped'])}</span><span class="p">${pct(counts['Unknown / unmapped'], total)}%</span></li></ul>`
       : '<div class="ps-empty">No completed degrees with discipline data for this selection.</div>';
+    discSelNote();
+  }
+  function discSelNote() {
     if (state.sel && !D.disciplineCountries.includes(state.sel)) $('#ps-disc').insertAdjacentHTML('afterbegin', `<div class="ps-empty" style="grid-column:1/-1;margin-bottom:8px">${esc(nameOf(state.sel))} is not included: discipline data are approved for Fiji, Tonga and Vanuatu only.</div>`);
+  }
+  function renderDiscCompare() {
+    const F = discCounts('female'), M = discCounts('male');
+    const tf = Object.values(F).reduce((a, b) => a + b, 0), tm = Object.values(M).reduce((a, b) => a + b, 0);
+    const share = state.discScale === 'pct';
+    const cats = D.disciplineCategories.slice().sort((a, b) => (F[b] + M[b]) - (F[a] + M[a])).concat(['Unknown / unmapped']);
+    const v = (n, t) => share ? (t ? 100 * n / t : 0) : n;
+    const max = Math.max(1, ...cats.flatMap(k => [v(F[k], tf), v(M[k], tm)]));
+    const lab = (n, t) => share ? `${pct(n, t)}%` : fmt(n);
+    $('#ps-disc').innerHTML = (tf + tm) ? `<div class="ps-dcmp" role="table" aria-label="Fields of research, women compared with men">
+      <div class="ps-dcmp__key" aria-hidden="true"><span><i class="ps-gd-f"></i>Women (n = ${fmt(tf)})</span><span><i class="ps-gd-m"></i>Men (n = ${fmt(tm)})</span></div>
+      ${cats.map(k => `<div class="ps-dcmp__row" role="row"><div class="ps-dcmp__l" role="rowheader">${esc(k)}</div><div class="ps-dcmp__bars" role="cell">
+        <div class="ps-dcmp__bar"><span class="ps-gd-f" style="width:${(100 * v(F[k], tf) / max).toFixed(1)}%"></span><b>${lab(F[k], tf)}</b></div>
+        <div class="ps-dcmp__bar"><span class="ps-gd-m" style="width:${(100 * v(M[k], tm) / max).toFixed(1)}%"></span><b>${lab(M[k], tm)}</b></div></div></div>`).join('')}
+      </div>` : '<div class="ps-empty">No completed degrees with discipline and gender data for this selection.</div>';
+    discSelNote();
   }
 
   // ================= GENDER =================
@@ -508,18 +636,43 @@
       ? `<svg viewBox="0 0 18 34" aria-hidden="true"><circle cx="9" cy="4" r="3.6" fill="${color}"/><path d="M9 8.5c-3 0-4 2-4.6 4.5L2.6 22h3.6l.4 11h4.8l.4-11h3.6L13.6 13C13 10.5 12 8.5 9 8.5z" fill="${color}"/></svg>`
       : `<svg viewBox="0 0 18 34" aria-hidden="true"><circle cx="9" cy="4" r="3.6" fill="${color}"/><path d="M4 9h10c1.2 0 2 .8 2 2v10h-2.4v12H10.2V22H7.8v11H4.4V21H2V11c0-1.2.8-2 2-2z" fill="${color}"/></svg>`;
   }
+  const G_VIEW = {
+    people: ['Indigenous scholars', 'people', c => c.gender],
+    M: ["Completed Master's", "Master's degrees", c => degG(c.code, 'M')],
+    P: ['Completed PhDs / doctorates', 'PhD and doctorate degrees', c => degG(c.code, 'P')],
+    pub: ['Publishing scholars', 'people with ≥1 linked publication', c => c.pubGender],
+  };
+  function degG(code, L) { const g = (((D.studyMap || {}).degGender || {})[code] || {})[L]; return g || null; }
+  function setupGender() {
+    const sel = $('#ps-gender-country');
+    sel.innerHTML = '<option value="">All countries</option>' + countries().map(c => `<option value="${c.code}">${esc(c.name)}</option>`).join('');
+    sel.addEventListener('change', () => setSel(sel.value));
+    const bs = $$('#ps-gender-view button');
+    if (!(D.studyMap && D.studyMap.degGender)) bs.filter(b => b.dataset.v === 'M' || b.dataset.v === 'P').forEach(b => b.remove());
+    $$('#ps-gender-view button').forEach(b => b.addEventListener('click', () => { state.gView = b.dataset.v; renderGender(); }));
+    $('#ps-gender-list').addEventListener('click', e => { const b = e.target.closest('[data-gsel]'); if (b) setSel(b.dataset.gsel); });
+  }
   function renderGender() {
+    $('#ps-gender-country').value = state.sel || '';
+    $$('#ps-gender-view button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === state.gView)));
+    const [title, what, get] = G_VIEW[state.gView] || G_VIEW.people;
     const scope = state.sel ? [byCode[state.sel]] : countries();
-    const sum = key => scope.reduce((a, c) => { a.female += c[key].female; a.male += c[key].male; a.unknown += c[key].unknown; return a; }, { female: 0, male: 0, unknown: 0 });
-    const card = (title, g, what) => {
-      const n = g.female + g.male + g.unknown;
-      return `<div class="ps-gcard"><h3>${esc(title)}</h3><div class="d">n = ${fmt(n)} ${esc(what)}</div>
+    const sum = list => list.reduce((a, c) => { const g = get(c); if (g) { a.female += g.female; a.male += g.male; a.unknown += g.unknown; } return a; }, { female: 0, male: 0, unknown: 0 });
+    const g = sum(scope), n = g.female + g.male + g.unknown;
+    $('#ps-gender-sub').textContent = `Gender as recorded in each Master file — ${state.sel ? nameOf(state.sel) : 'all countries'}. Percentages use the full denominator, including not recorded.`;
+    $('#ps-gender').innerHTML = `<div class="ps-gcard"><h3>${esc(title)}</h3><div class="d">n = ${fmt(n)} ${esc(what)}</div>
         <div class="ps-grow"><div class="ps-g">${figure('#e0464f', true)}<div><b>${pct(g.female, n)}%</b><span>Female (${fmt(g.female)})</span></div></div>
         <div class="ps-g">${figure('#1f5fae', false)}<div><b>${pct(g.male, n)}%</b><span>Male (${fmt(g.male)})</span></div></div></div>
         <div class="ps-gunk">Not recorded: ${pct(g.unknown, n)}% (${fmt(g.unknown)})</div></div>`;
-    };
-    $('#ps-gender-sub').textContent = `Gender as recorded in each Master file — ${state.sel ? nameOf(state.sel) : 'all countries'}. Percentages use the full denominator, including not recorded.`;
-    $('#ps-gender').innerHTML = card('Indigenous scholars', sum('gender'), 'people') + card('Publishing scholars', sum('pubGender'), 'people with ≥1 linked publication');
+    $('#ps-gender-list-h').textContent = `Women's share by country · ${title}`;
+    const rows = countries().map(c => { const x = get(c) || { female: 0, male: 0, unknown: 0 }; const k = x.female + x.male, all = k + x.unknown; return { c, f: x.female, k, all, u: x.unknown }; }).filter(r => r.all);
+    const key = r => (r.k && r.u / r.all <= 0.5) ? r.f / r.k : -1;
+    rows.sort((a, b) => key(b) - key(a) || a.c.name.localeCompare(b.c.name));
+    $('#ps-gender-list').innerHTML = rows.map(r => {
+      const mostly = r.u / r.all > 0.5, p = r.k ? Math.round(100 * r.f / r.k) : 0;
+      return `<li class="${state.sel === r.c.code ? 'sel' : ''}"><button type="button" data-gsel="${r.c.code}" aria-pressed="${state.sel === r.c.code}" title="${esc(r.c.name)}: ${fmt(r.f)} women of ${fmt(r.k)} with gender recorded${r.u ? `; ${fmt(r.u)} not recorded` : ''}"><img src="img/regional/flags/${r.c.code.toLowerCase()}.png" alt="">${esc(SHORT[r.c.code] || r.c.name)}</button>
+        ${mostly ? `<span class="ps-gshare__na">Mostly not recorded (${fmt(r.u)} of ${fmt(r.all)})</span>` : `<span class="ps-gshare__bar"><i style="width:${p}%"></i></span><b>${p}%</b>`}</li>`;
+    }).join('');
   }
 
   // ================= PACIFIC FIRSTS TIMELINE =================
@@ -651,8 +804,23 @@
       g.addEventListener('mouseenter', on); g.addEventListener('mouseleave', off);
       g.addEventListener('focus', on); g.addEventListener('blur', off); g.addEventListener('click', on);
     });
+    renderFirstsList(items);
     const nC = new Set(items.map(m => m.code)).size;
     $('#ps-ft-count').textContent = `${items.length} first${items.length === 1 ? '' : 's'} shown across ${nC} countr${nC === 1 ? 'y' : 'ies'}${state.sel ? ` (filtered to ${nameOf(state.sel)})` : ''}.`;
+  }
+
+  function renderFirstsList(items) {
+    const t = $('#ps-ft-list'); if (!t) return;
+    const rows = [];
+    items.forEach(m => { rows.push({ m, person: m.person, uni: m.uni, uc: m.uc }); (m.also || []).forEach(a => rows.push({ m, person: a.person, uni: a.uni, uc: a.uc })); });
+    rows.sort((a, b) => a.m.year - b.m.year || a.m.country.localeCompare(b.m.country));
+    const find = (code, person) => { try { return (window.PSDirectory && window.PSDirectory.findId && window.PSDirectory.findId(code, person)) || ''; } catch (e) { return ''; } };
+    t.innerHTML = `<thead><tr><th scope="col">Year</th><th scope="col">Country</th><th scope="col">First</th><th scope="col">Scholar</th><th scope="col">University</th></tr></thead><tbody>${rows.length ? rows.map(r => {
+      const id = find(r.m.code, r.person), c = byCode[r.m.code] || {};
+      const name = id ? `<a href="#dir=${esc(id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(r.person)}</a>` : esc(r.person);
+      return `<tr class="ps-ftl--${r.m.gender}"><td class="y">${r.m.year}</td><td><span class="ps-ftl__c"><img src="img/regional/flags/${r.m.code.toLowerCase()}.png" alt="">${esc(r.m.country)}</span>${c.dashboard ? ` <a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</td><td><span class="ps-ftl__tag">${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td>${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</td><td>${esc(r.uni)}${r.uc ? ` <span class="ps-ftl__uc">(${esc(r.uc)})</span>` : ''}</td></tr>`;
+    }).join('') : '<tr><td colspan="5">No firsts recorded for this selection.</td></tr>'}</tbody>`;
+    t.querySelectorAll('img[data-fallback]').forEach(img => img.addEventListener('error', () => { if (img.dataset.fallback && !img.src.endsWith(img.dataset.fallback)) img.src = img.dataset.fallback; }));
   }
 
   // ================= UNIVERSITY POSITIONS (table + leadership by gender) =================
@@ -662,8 +830,7 @@
   function setupPositions() {
     const P = D.positions;
     if (!P || !Array.isArray(P.scholars) || !P.scholars.length) return;
-    $('#ps-pos-panel').hidden = false; $('#ps-lead-panel').hidden = false;
-    $('#ps-where-panel').hidden = false; $('#ps-rank-panel').hidden = false;
+    $('#ps-careers-panel').hidden = false;
     setupWhereRank();
     const seg = (sel, key) => { const bs = [...document.querySelectorAll(`${sel} button`)]; bs.forEach(b => b.addEventListener('click', () => { POS[key] = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); renderPosTable(); })); };
     seg('#ps-pos-held', 'held'); seg('#ps-pos-gen', 'gen');
@@ -753,7 +920,7 @@
     return D.positions.scholars.filter(s => s.c === c && (h === 'Other' ? whereOther.some(x => whereHosts(s, keys).has(x)) : whereHosts(s, keys).has(h)));
   }
   function renderWhere() {
-    if (!D.positions || $('#ps-where-panel').hidden) return;
+    if (!D.positions || $('#ps-careers-panel').hidden) return;
     const keys = whereKeys(), M = {}, tot = {};
     for (const s of D.positions.scholars) whereHosts(s, keys).forEach(h => { (M[s.c] = M[s.c] || {})[h] = ((M[s.c] || {})[h] || 0) + 1; tot[h] = (tot[h] || 0) + 1; });
     const hosts = Object.keys(tot).sort((a, b) => tot[b] - tot[a] || a.localeCompare(b));
@@ -775,15 +942,17 @@
     posTipHide();
   }
   function renderRank() {
-    if (!D.positions || $('#ps-rank-panel').hidden) return;
+    if (!D.positions || $('#ps-careers-panel').hidden) return;
     const P = D.positions;
     const rows = countries().map(c => c.code).filter(posHas).map(c => { const L = P.scholars.filter(s => s.c === c && posTop(s)); const cnt = {}; L.forEach(s => { const k = posTop(s); cnt[k] = (cnt[k] || 0) + 1; }); return { c, n: L.length, cnt }; }).filter(r => r.n);
     const mx = Math.max(1, ...rows.map(r => r.n));
     $('#ps-rank-bars').innerHTML = rows.map(r => {
       const w = WR.scale === 'pct' ? 100 : 100 * r.n / mx;
       const segs = P.rank.map(([k, l]) => { const v = r.cnt[k] || 0; if (!v) return ''; const p = 100 * v / r.n; return `<span data-c="${r.c}" data-k="${k}" tabindex="0" style="flex:0 0 ${p}%;background:${RANKC[k] || '#7d8da1'};${RANKDARK.has(k) ? 'color:#0a2d52' : ''}" aria-label="${esc(l)}: ${v} (${Math.round(p)}%)">${p >= 9 ? (WR.scale === 'pct' ? Math.round(p) + '%' : v) : ''}</span>`; }).join('');
-      return `<div class="ps-ld-row${state.sel === r.c ? ' sel' : ''}"><div class="nm"><img src="img/regional/flags/${r.c.toLowerCase()}.png" alt="">${esc(nameOf(r.c))}</div><div><div class="ps-ld-bar" style="width:${w}%">${segs}</div></div><div class="ps-ld-n">n=${r.n}</div></div>`;
+      return `<div class="ps-ld-row${state.sel === r.c ? ' sel' : ''}"><div class="nm"><img src="img/regional/flags/${r.c.toLowerCase()}.png" alt="">${esc(nameOf(r.c))}</div><div><div class="ps-ld-bar" style="width:${w}%">${segs}</div></div><div class="ps-ld-n${r.n < 10 ? ' is-small' : ''}"${r.n < 10 ? ' title="Fewer than 10 scholars: shares can swing widely"' : ''}>n=${r.n}${r.n < 10 ? '*' : ''}</div></div>`;
     }).join('');
+    const small = rows.filter(r => r.n < 10).map(r => nameOf(r.c));
+    $('#ps-rank-note').textContent = 'Countries with positions recorded. Hover over or tap a segment for the count.' + (small.length ? ` * Fewer than 10 scholars with a recorded rank (${small.join(', ')}): read these shares with care.` : '');
     $('#ps-rank-bars').querySelectorAll('span[data-k]').forEach(sp => { if (sp.textContent && sp.scrollWidth > sp.clientWidth + 1) sp.textContent = ''; });
     $('#ps-rank-legend').innerHTML = P.rank.map(([k, l]) => `<span><i style="background:${RANKC[k] || '#7d8da1'}"></i>${esc(l)}</span>`).join('');
     posTipHide();
@@ -792,7 +961,7 @@
   function posHeld(s, k) { return s.r[k] && (POS.held === 'ever' || s.r[k].cur); }
   function posCell(k, c) { return D.positions.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && posHeld(s, k)); }
   function renderPositions() {
-    if (!D.positions || $('#ps-pos-panel').hidden) return;
+    if (!D.positions || $('#ps-careers-panel').hidden) return;
     if (state.sel !== POS.lastSel) {
       POS.lastSel = state.sel;
       POS.leadC = state.sel && posHas(state.sel) ? state.sel : '*';
@@ -889,7 +1058,7 @@
     const host = $('#ps-work-heat-table');
     if (!panel || !host) return;
     const people = window.PSDirectory && window.PSDirectory.scholars ? window.PSDirectory.scholars() : null;
-    if (!people || !people.length) { panel.hidden = true; return; }
+    if (!people || !people.length) { host.innerHTML = '<tbody><tr><td class="ps-hm-wait">Workplace records load with the Regional Scholar Directory…</td></tr></tbody>'; return; }
     const regions = ['Pacific', 'Australia', 'New Zealand', 'North America', 'Europe', 'Asia'];
     const exclude = ($('#ps-work-heat-unknown button[aria-checked="true"]') || {}).dataset.v !== 'include';
     const gender = ($('#ps-work-heat-gender button[aria-checked="true"]') || {}).dataset.v || 'all';
@@ -942,7 +1111,6 @@
     if (note) note.textContent = exclude
       ? 'Shares are of directory scholars with a known workplace. Not recorded is the last column and is not part of the share. Scholars is that known total.'
       : 'Shares include scholars whose workplace country is missing or not mapped. Scholars is the full total, and Not recorded is part of the share.';
-    panel.hidden = false;
   }
 
   function setupDest() {
@@ -951,15 +1119,8 @@
     const decs = new Set(); countries().forEach(c => c.destinations.forEach(d => decs.add(d.dec)));
     $('#ps-dest-dec').innerHTML = '<option value="">All years</option>' + [...decs].filter(Boolean).sort().map(d => `<option value="${d}">${d}s</option>`).join('') + (decs.has(0) ? '<option value="0">Year not recorded</option>' : '');
     home.addEventListener('change', e => { state.destHome = e.target.value; if (state.destHome !== (state.sel || '')) { state.sel = state.destHome || null; writeUrl(); renderAll(); } else renderDest(); });
-    $('#ps-dest-level').addEventListener('change', e => { state.destLevel = e.target.value; renderDest(); });
-    $('#ps-dest-dec').addEventListener('change', e => { state.destDec = e.target.value; renderDest(); });
-    $('#ps-dest-mode').addEventListener('click', e => {
-      const b = e.target.closest('button');
-      if (!b) return;
-      state.destMode = b.dataset.v;
-      $('#ps-dest-mode').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
-      renderDest();
-    });
+    $('#ps-dest-level').addEventListener('change', e => { state.destLevel = e.target.value; renderDest(); renderStudyMatrix(); });
+    $('#ps-dest-dec').addEventListener('change', e => { state.destDec = e.target.value; renderDest(); renderStudyMatrix(); });
   }
   function renderDest() {
     state.destHome = state.sel || state.destHome || '';
@@ -968,10 +1129,6 @@
     const work = state.destMode === 'work';
     $('#ps-dest-level').hidden = work;
     $('#ps-dest-dec').hidden = work;
-    const title = work ? 'Where Our Scholars Work' : 'Where Our Scholars Study';
-    $('#ps-dest-title').textContent = title;
-    const panel = document.querySelector('section[data-panel="C1"]');
-    if (panel) panel.dataset.panelTitle = title;
     const regionName = k => (work && k === 'Unknown') ? 'Not recorded' : k;
     const scope = state.destHome ? [byCode[state.destHome]].filter(Boolean) : countries();
     const cnt = Object.fromEntries(DEST_ORDER.map(k => [k, 0]));
@@ -1029,6 +1186,20 @@
       : `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
   }
 
+  // Study matrix: home country (rows) by study region (columns), completed degrees.
+  function renderStudyMatrix() {
+    const t = $('#ps-study-matrix'); if (!t || VIEW.c1 !== 'study' || VIEW.c1d !== 'matrix') return;
+    const cols = DEST_ORDER.filter(k => countries().some(c => c.destinations.some(d => d.r === k)));
+    const cnt = code => { const o = Object.fromEntries(cols.map(k => [k, 0])); byCode[code].destinations.forEach(d => { if (state.destLevel !== 'all' && d.l !== state.destLevel) return; if (state.destDec !== '' && String(d.dec) !== state.destDec) return; if (o[d.r] !== undefined) o[d.r] += d.n; }); return o; };
+    const rows = countries().map(c => ({ c, o: cnt(c.code) })).map(r => ({ ...r, n: cols.reduce((a, k) => a + r.o[k], 0) })).filter(r => r.n);
+    const all = Object.fromEntries(cols.map(k => [k, rows.reduce((a, r) => a + r.o[k], 0)])), nAll = rows.reduce((a, r) => a + r.n, 0);
+    const lab = k => k === 'Unknown' ? 'Not recorded' : k;
+    const cell = (v, n, who, k) => { const p = n ? Math.round(100 * v / n) : 0; const a = n ? v / n : 0; return `<td style="background:${v ? `rgba(127,227,230,${(0.12 + 0.8 * a).toFixed(2)})` : 'rgba(255,255,255,.04)'};color:${a > .45 ? '#04121f' : '#eaf3fb'}" title="${esc(who)}: ${fmt(v)} of ${fmt(n)} degrees in ${esc(lab(k))} (${p}%)">${v ? `${p}% <small>(${fmt(v)})</small>` : '—'}</td>`; };
+    t.innerHTML = `<thead><tr><th class="home" scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(lab(k))}</span></th>`).join('')}<th scope="col" class="ps-hm-n"><span>Degrees</span></th></tr></thead><tbody>
+      <tr class="ps-hm-all"><th class="home" scope="row">All countries</th>${cols.map(k => cell(all[k], nAll, 'All countries', k)).join('')}<td class="ps-hm-n">${fmt(nAll)}</td></tr>
+      ${rows.map(r => `<tr class="${state.sel === r.c.code ? 'sel' : ''}"><th class="home" scope="row"><img src="img/regional/flags/${r.c.code.toLowerCase()}.png" alt="">${esc(r.c.code === 'FSM' ? 'FSM' : r.c.name)}</th>${cols.map(k => cell(r.o[k], r.n, r.c.name, k)).join('')}<td class="ps-hm-n">${fmt(r.n)}</td></tr>`).join('')}</tbody>`;
+  }
+
   // ================= DIALOGS =================
   function setupDialogs() {
     const dlg = $('#ps-dialog');
@@ -1049,7 +1220,19 @@
       <p>The October 5 table header states “542 Masters and 278 PhDs across 11 countries”, but its own rows sum to 910 Master's and 461 PhDs (542 + 278 equals Fiji + Tonga only). Publication columns on October 5 counted all item types; this dashboard uses each country's headline publication categories, so the publication columns are not directly comparable.</p>`;
   }
   function openDialog(which) {
-    if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>`);
+    if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>
+      <h3>From learning to impact</h3><ol class="ps-steps ps-steps--dlg"><li>Postgraduate study</li><li>Research &amp; publication</li><li>Community &amp; policy impact</li><li>Stronger Pacific futures</li></ol>
+      <p class="ps-quote">“Pacific knowledge for a resilient, healthy and prosperous ocean region.”</p><p>An illustrative pathway, not a measured outcome. This dashboard does not quantify impact.</p>`);
+    if (which === 'cite') {
+      const when = new Date(D.generated);
+      const cite = `Vave, R. (${when.getFullYear()}). Regional Pacific Scholars Dashboard [Data dashboard, pre-launch; data built ${when.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}]. Vave Lab, Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa. ${location.origin}${location.pathname}`;
+      show('Cite this Dashboard', `<p>Please cite the dashboard and the date of the data you used:</p><blockquote class="ps-cite" id="ps-cite-text">${esc(cite)}</blockquote><p><button type="button" class="ps-iconbtn ps-iconbtn--text" id="ps-cite-copy">Copy citation</button> <span id="ps-cite-msg" role="status"></span></p><p>Figures come from each country's Master file and can change after every refresh. Each country dashboard remains the authoritative record for its scholars.</p>`);
+      $('#ps-cite-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(cite); $('#ps-cite-msg').textContent = 'Copied.'; } catch (e) { window.prompt('Copy this citation:', cite); } });
+    }
+    if (which === 'correct') {
+      const live = countries().filter(c => c.dashboard);
+      show('Suggest a Correction', `<p>This regional page only reads the country Master files, so corrections are made at the source and appear here after the next refresh.</p><ol><li><strong>For your own record</strong>, use your country dashboard's profile review (opened from your profile there).</li><li><strong>For another scholar's record, a missing publication or a wrong university</strong>, contact the curator of that country's database through the Vave Lab website.</li></ol><p>Country dashboards (each has its own passcode):</p><ul>${live.map(c => `<li><a href="${esc(c.dashboard)}" target="_blank" rel="noopener">${esc(c.name)} dashboard ↗</a></li>`).join('')}</ul><p>Countries without a live dashboard yet: ${esc(countries().filter(c => !c.dashboard).map(c => c.name).join(', '))}. Please write through the <a href="index.html" target="_blank" rel="noopener">Vave Lab website</a>.</p>`);
+    }
     if (which === 'method') show('Methodology', `<h3>People and degrees</h3><ul><li><strong>Scholars</strong> — unique Scholar IDs on each country's included roster: Fiji excludes the Part-iTaukei roster; Tonga excludes retained profiles flagged “excluded from Indigenous Tongan counts”; Solomon Islands and Samoa require Inclusion Status = Included; the other countries require Identity Verification Status = Verified.</li><li><strong>Master's / PhDs</strong> — Graduate Degrees records whose stage is Master's or PhD/doctorate and whose completion status begins with “Completed” (or “Awarded”), held by an included scholar. Professional doctorates are counted with PhDs and reported separately. A person with both degrees counts once as a scholar and in both degree totals.</li><li>Regional scholar totals sum country rosters; a person recorded in two country databases has not yet been reconciled across countries.</li></ul><h3>Publications</h3><ul><li><strong>Country-indexed records</strong> — non-duplicate, non-excluded Publications rows in each country's headline categories (Journal Article, Master's Thesis, PhD Thesis, Book Chapter, Book; Fiji also includes Report, matching its six-category Master dashboard). Samoa uses V2 Inclusion Flag = Included.</li><li><strong>Indigenous-linked</strong> — records with an Authorship link to an included scholar.</li><li><strong>Regionally deduplicated</strong> — de-duplicated across countries by DOI, else normalised title + year.</li></ul><h3>Fields of Research</h3><p>Fiji, Tonga and Vanuatu only. Fiji and Tonga use the repository classifier (master_short_disciplines.py) that mirrors the Graduate Degrees Short Discipline formula; Vanuatu uses its own documented crosswalk (vanuatu-dashboard-model.js). The eight categories are: ${D.disciplineCategories.map(esc).join('; ')}. Unmapped records are reported as Unknown / unmapped.</p><h3>Study destinations</h3><p>Awarding institution's recorded country. Pacific = Pacific Island countries and territories (including Guam and New Caledonia), excluding Australia and New Zealand. USP records without a verified campus are counted as Pacific with country unresolved. Unknown locations are shown separately.</p><h3>Workplaces</h3><p>Panel C1 Work and Panel B2 count each directory scholar once, at the current workplace country. It is not the same population as the study-degree counts. A missing or unmapped workplace country is shown as Not recorded. Panel B2's default share excludes those scholars; Scholars is then the known-workplace total, and Not recorded is a separate grey column.</p>`);
     if (which === 'coverage') show('Data Coverage & Notes', `${sourceTable()}<h3>Reconciliation with 5 October 2026</h3>${reconTable()}<h3>Curation stage</h3><p>Tuvalu, Kiribati, Palau, Cook Islands, Marshall Islands, Federated States of Micronesia and Samoa are at an early curation stage. Their publication tables were re-initialised after 5 October and authorship links are still sparse, so Indigenous-linked publication counts are provisional. Gender is not yet recorded for many Samoa and Marshall Islands scholars.</p>`);
   }

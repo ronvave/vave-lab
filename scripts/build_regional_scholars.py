@@ -472,6 +472,7 @@ def main():
     meta = json.load(open(d / 'meta.json'))
     countries, sources, first_list, dumps = [], [], [], {}
     from regional_positions import build_positions
+    from regional_universities import build_study_map
     for code, name, sid, url, status in COUNTRIES:
         fp = d / f'{code}.json'
         if not fp.exists():
@@ -506,6 +507,7 @@ def main():
         firsts=sorted(first_list, key=lambda m: (m['year'], m['code'], m['stage'], m['gender'])),
         positions=build_positions(dumps),
         directory=directory_section(dumps),
+        studyMap=build_study_map(dumps, COUNTRIES),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')

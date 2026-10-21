@@ -1,0 +1,445 @@
+<!-- Vave Lab Regional Pacific Scholars Dashboard — Authored by Ron Vave, 2026 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backup (21 Oct 2026) · Regional Pacific Scholars Dashboard — Vave Lab | UH Mānoa</title>
+  <meta name="description" content="Pre-launch regional dashboard of Indigenous Pacific scholars across eleven Pacific Island country databases." />
+  <!-- Pre-launch: keep out of search indexes until publication is authorised. -->
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/pacific-scholars-backup-20261021.css?v=e55eb455" />
+  <link rel="stylesheet" href="css/pacific-scholars-directory-backup-20261021.css?v=e9d19e51" />
+  <link rel="stylesheet" href="css/pacific-scholars-pubs-collab-backup-20261021.css?v=fba6d806" />
+</head>
+<body class="ps-body">
+  <div style="position:fixed;left:10px;bottom:10px;z-index:80;font:600 12px Arial,sans-serif;background:#fff3cd;color:#5c4400;border:1px solid #e0c36a;border-radius:999px;padding:6px 12px;box-shadow:0 2px 8px rgba(0,0,0,.25)">Backup copy of 21 October 2026 · <a href="pacific-scholars.html" style="color:#0a2d52">Open the current dashboard</a></div>
+  <a class="ps-skip" href="#ps-main">Skip to dashboard</a>
+
+  <!-- Access gate: the dashboard data are AES-GCM encrypted at rest and only
+       decrypted in the browser after the correct passcode is entered. -->
+  <div class="ps-gate" id="ps-gate" role="dialog" aria-modal="true" aria-labelledby="ps-gate-title">
+    <form class="ps-gate__card" id="ps-gate-form" autocomplete="off">
+      <h1 id="ps-gate-title">Regional Pacific Scholars Dashboard</h1>
+      <p>Pre-launch project material. Enter the project passcode to decrypt the regional summary on this device. Nothing is sent to a server.</p>
+      <label for="ps-pass">Passcode</label>
+      <input id="ps-pass" name="passcode" type="password" required autocomplete="current-password" />
+      <button class="ps-btn" type="submit">Unlock dashboard</button>
+      <div class="ps-gate__err" id="ps-gate-err" role="alert" aria-live="assertive"></div>
+    </form>
+  </div>
+
+  <header class="ps-hero" id="ps-top">
+    <img class="ps-hero__img" src="img/regional/hero-sail.webp" alt="" width="1672" height="941" fetchpriority="high" />
+    <div class="ps-hero__inner">
+      <div class="ps-hero__brand">
+        <img class="ps-hero__logo ps-hero__logo--seal" src="img/regional/uh-manoa-seal.png" alt="University of Hawaiʻi seal" width="280" height="281" />
+        <div class="ps-hero__text">
+          <h1 class="ps-hero__title">Regional Pacific Scholars Dashboard</h1>
+          <p class="ps-hero__tag">Our People<span aria-hidden="true">|</span>Our Knowledge<span aria-hidden="true">|</span>A Stronger Pacific</p>
+          <p class="ps-hero__lede">Mapping and celebrating Indigenous Pacific scholars, their research, and impact across our region.</p>
+          <div class="ps-hero__credit"><span class="ps-pill ps-pill--warn">Created and curated by University of Hawaii's Assistant Professor Ron Vave</span></div>
+          <div class="ps-hero__status" id="ps-status">
+            <span class="ps-pill"><span class="ps-pill__dot" aria-hidden="true"></span><span id="ps-fresh">Loading data…</span></span>
+            <span class="ps-pill ps-pill--warn">Pre-launch · early curation stage for several countries</span>
+          </div>
+        </div>
+        <img class="ps-hero__logo ps-hero__logo--cpis" src="img/regional/cpis-logo.png" alt="Center for Pacific Islands Studies" width="720" height="335" />
+      </div>
+      <dl class="ps-kpis" id="ps-kpis" aria-label="Regional headline figures"></dl>
+    </div>
+  </header>
+
+  <nav class="ps-pmenu" id="ps-pmenu" aria-label="Dashboard panels"><div class="ps-pmenu__pills" id="ps-pmenu-pills"></div><div class="ps-pmenu__drop" id="ps-pmenu-drop" hidden></div></nav>
+
+  <main id="ps-main" class="ps-wrap" tabindex="-1">
+    <div class="ps-toolbar">
+      <div role="group" aria-labelledby="ps-metric-label" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+        <span class="ps-toolbar__label" id="ps-metric-label">Order countries below by <span class="ps-toolbar__hl">Total number of</span></span>
+        <div class="ps-seg" id="ps-metric" role="radiogroup" aria-label="Metric for country strip, map and chart">
+          <button type="button" role="radio" data-metric="scholars" aria-checked="true">Scholars</button>
+          <button type="button" role="radio" data-metric="phd" aria-checked="false">PhDs</button>
+          <button type="button" role="radio" data-metric="masters" aria-checked="false">Master's</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span class="ps-filterchip" id="ps-chip" aria-live="polite"><span id="ps-chip-text"></span><button type="button" id="ps-chip-clear">Clear filter</button></span>
+        <span class="ps-toolbar__label" id="ps-metric-def" aria-live="polite"></span>
+      </div>
+    </div>
+
+    <section aria-labelledby="ps-strip-title" class="ps-strip-wrap">
+      <h2 class="ps-sr" id="ps-strip-title">Countries, sorted by selected metric</h2>
+      <ol class="ps-strip" id="ps-strip"></ol>
+      <p class="ps-strip-hint" id="ps-strip-hint">Select a country to filter the dashboard. Scroll or swipe sideways for more countries.</p>
+    </section>
+
+    <div class="ps-grid">
+      <!-- MAP -->
+      <section data-panel="A1" data-panel-title="Pacific Scholars Across Our Ocean" class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
+        <span class="ps-num" aria-hidden="true">A1</span>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-map-title">Pacific Scholars Across Our Ocean</h2>
+            <p class="ps-sub" id="ps-map-sub">Number of Indigenous scholars beside each country. Select a number to filter.</p>
+          </div>
+          <button class="ps-iconbtn" type="button" id="ps-map-table-btn" aria-expanded="false" aria-controls="ps-map-table">Table view</button>
+        </div>
+        <div class="ps-map" id="ps-map">
+          <div class="ps-map__ctrl">
+            <button class="ps-iconbtn" type="button" data-zoom="in" aria-label="Zoom in">+</button>
+            <button class="ps-iconbtn" type="button" data-zoom="out" aria-label="Zoom out">−</button>
+            <button class="ps-iconbtn" type="button" data-zoom="reset" aria-label="Reset map view">⟲</button>
+          </div>
+        </div>
+        <div class="ps-maptable" id="ps-map-table" hidden></div>
+        <p class="ps-note">Numbers are Indigenous scholars (people) from each country’s Master file. Places without a number are shown for context and are not yet in the regional database.</p>
+      </section>
+
+      <!-- REGIONAL DEGREES -->
+      <section data-panel="A2" data-panel-title="Regional Postgraduate Degrees" class="ps-panel ps-panel--tapa ps-col-deg" aria-labelledby="ps-deg-title">
+        <span class="ps-num" aria-hidden="true">A2</span>
+        <h2 class="ps-h2" id="ps-deg-title">Regional Postgraduate Degrees</h2>
+        <p class="ps-sub" id="ps-deg-sub">Completed degrees held by Indigenous scholars.</p>
+        <div class="ps-deg" id="ps-deg"></div>
+      </section>
+
+      <!-- RESEARCH OUTPUTS -->
+      <section data-panel="A3" data-panel-title="Research Outputs" class="ps-panel ps-panel--paper ps-col-out" aria-labelledby="ps-out-title">
+        <span class="ps-num" aria-hidden="true">A3</span>
+        <h2 class="ps-h2" id="ps-out-title">Research Outputs</h2>
+        <div id="ps-out"></div>
+      </section>
+
+      <!-- GRADUATE DEGREES BY COUNTRY -->
+      <section data-panel="A4" data-panel-title="Graduate Degrees by Country" class="ps-panel ps-panel--paper ps-col-bars" aria-labelledby="ps-bars-title">
+        <span class="ps-num" aria-hidden="true">A4</span>
+        <div class="ps-head">
+          <h2 class="ps-h2" id="ps-bars-title">Graduate Degrees by Country</h2>
+          <div class="ps-bars__tools">
+            <div class="ps-seg ps-seg--light ps-seg--sm" role="group" aria-label="Chart view">
+              <button type="button" data-barview="metric" aria-pressed="true">Selected metric</button>
+              <button type="button" data-barview="stack" aria-pressed="false">Master's + PhD</button>
+            </div>
+          </div>
+        </div>
+        <p class="ps-sub" id="ps-bars-sub"></p>
+        <div class="ps-chart" id="ps-bars" role="img"></div>
+      </section>
+
+      <!-- FIELDS OF RESEARCH -->
+      <section data-panel="A5" data-panel-title="Fields of Research" class="ps-panel ps-panel--paper ps-col-disc" aria-labelledby="ps-disc-title">
+        <span class="ps-num" aria-hidden="true">A5</span>
+        <div class="ps-head">
+          <h2 class="ps-h2" id="ps-disc-title">Fields of Research</h2>
+        </div>
+        <div class="ps-filters">
+          <div class="ps-seg ps-seg--light ps-seg--sm" role="group" aria-label="Fields of Research country" id="ps-disc-country">
+            <button type="button" data-disc="ALL" aria-pressed="true">All three</button>
+            <button type="button" data-disc="FJI" aria-pressed="false">Fiji</button>
+            <button type="button" data-disc="TON" aria-pressed="false">Tonga</button>
+            <button type="button" data-disc="VUT" aria-pressed="false">Vanuatu</button>
+          </div>
+          <select class="ps-select ps-select--light" id="ps-disc-level" aria-label="Degree level for Fields of Research">
+            <option value="all">Master's + PhD</option>
+            <option value="M">Master's only</option>
+            <option value="P">PhD / doctorate only</option>
+          </select>
+        </div>
+        <div class="ps-disc" id="ps-disc"></div>
+        <p class="ps-note">Fiji, Tonga and Vanuatu only, using the eight short-discipline categories from their Master files. Completed-degree records, not people.</p>
+      </section>
+
+      <!-- PACIFIC FIRSTS -->
+      <section data-panel="B1" data-panel-title="Pacific Firsts" class="ps-panel ps-col-firsts" id="ps-firsts-panel" aria-labelledby="ps-firsts-title" hidden>
+        <span class="ps-num" aria-hidden="true">B1</span>
+        <div class="ps-head ps-ft-head">
+          <div>
+            <h2 class="ps-h2" id="ps-firsts-title">Pacific Firsts: Earliest Master's and PhD Graduates</h2>
+            <p class="ps-sub" id="ps-firsts-sub">The first recorded male and female Master's and PhD graduate for each country. Hover over or tab to a flag for details.</p>
+          </div>
+          <div class="ps-ft-tools">
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Degrees shown on the Pacific Firsts timeline" id="ps-ft-stage">
+              <button type="button" role="radio" aria-checked="true" data-ftstage="both">Master's and PhD</button>
+              <button type="button" role="radio" aria-checked="false" data-ftstage="masters">Master's only</button>
+              <button type="button" role="radio" aria-checked="false" data-ftstage="phd">PhD only</button>
+            </div>
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown on the Pacific Firsts timeline" id="ps-ft-gender">
+              <button type="button" role="radio" aria-checked="true" data-ftgender="both">Both</button>
+              <button type="button" role="radio" aria-checked="false" data-ftgender="male">Male</button>
+              <button type="button" role="radio" aria-checked="false" data-ftgender="female">Female</button>
+            </div>
+          </div>
+        </div>
+        <div class="ps-ft-legend" aria-hidden="true">
+          <span><i class="ps-ft-key ps-ft-key--m"></i>First male</span>
+          <span><i class="ps-ft-key ps-ft-key--f"></i>First female</span>
+          <span><i class="ps-ft-key ps-ft-key--ms"></i>Master's (single ring)</span>
+          <span><i class="ps-ft-key ps-ft-key--phd"></i>PhD (double ring)</span>
+        </div>
+        <div class="ps-ft-scroll"><div class="ps-ft-chart" id="ps-ft-chart"><svg id="ps-ft-svg" role="img" aria-labelledby="ps-firsts-title ps-ft-count"></svg><div class="ps-ft-tip" id="ps-ft-tip" role="tooltip"></div></div></div>
+        <p class="ps-note ps-ft-swipe">Swipe sideways to see the full timeline.</p>
+        <p class="ps-note" id="ps-ft-count"></p>
+        <p class="ps-note">Earliest completion year among completed Master's and PhD records in each country's Master file (Graduate Degrees), using each country dashboard's own rule; professional doctorates are not counted as PhDs. When two scholars share the earliest year, the hover card lists both. <span id="ps-ft-missing"></span></p>
+      </section>
+
+      <!-- WORKPLACES BY HOME COUNTRY -->
+      <section data-panel="B2" data-panel-title="Workplaces by Home Country" class="ps-panel ps-col-full" id="ps-work-heat" aria-labelledby="ps-work-heat-title" hidden>
+        <span class="ps-num" aria-hidden="true">B2</span>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-work-heat-title">Workplaces by Home Country</h2>
+            <p class="ps-sub">Rows are each scholar's home country. Columns are where they work.</p>
+          </div>
+        </div>
+        <div class="ps-hm-tools">
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Whether scholars without a recorded workplace are in the share" id="ps-work-heat-unknown">
+            <button type="button" role="radio" aria-checked="true" data-v="exclude">Exclude not recorded</button>
+            <button type="button" role="radio" aria-checked="false" data-v="include">Include not recorded</button>
+          </div>
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the workplace heatmap" id="ps-work-heat-gender">
+            <button type="button" role="radio" aria-checked="true" data-v="all">All</button>
+            <button type="button" role="radio" aria-checked="false" data-v="M">Male</button>
+            <button type="button" role="radio" aria-checked="false" data-v="F">Female</button>
+          </div>
+          <button type="button" class="ps-hm-reset" id="ps-work-heat-reset">Reset</button>
+          <div class="ps-hm-countries" id="ps-work-heat-country">
+            <button type="button" class="ps-hm-countries__btn" aria-haspopup="true" aria-expanded="false" aria-label="Home countries shown in the workplace heatmap"><span class="ps-hm-countries__val">All home countries</span></button>
+            <div class="ps-hm-countries__pop" hidden></div>
+          </div>
+        </div>
+        <div class="ps-pos-scroll"><table class="ps-hm ps-hm--share" id="ps-work-heat-table"></table></div>
+        <ul class="ps-hm-key" aria-label="Heatmap colours">
+          <li><i style="background:#8E534C"></i>Little to none, 0–5%</li>
+          <li><i style="background:#B44E4A"></i>Low, 6–20%</li>
+          <li><i style="background:#E8B56A"></i>Moderate, 21–40%</li>
+          <li><i style="background:#C5D588"></i>High, 41–60%</li>
+          <li><i style="background:#7A9A72"></i>Highest, 61% or more</li>
+          <li id="ps-work-heat-miss"><i style="background:#424242"></i>Not recorded, not in the share</li>
+        </ul>
+        <p class="ps-note" id="ps-work-heat-note">Shares are of directory scholars with a known workplace. Not recorded is the last column and is not part of the share. Scholars is that known total.</p>
+      </section>
+
+      <!-- UNIVERSITY POSITIONS -->
+      <section data-panel="B3" data-panel-title="University Positions by Country" class="ps-panel ps-panel--paper ps-col-full" id="ps-pos-panel" aria-labelledby="ps-pos-title" hidden>
+        <span class="ps-num" aria-hidden="true">B3</span>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-pos-title">University Positions by Country</h2>
+            <p class="ps-sub">Number of Indigenous scholars per country who have held each canonical university position. Each scholar is counted once per position. Hover over or tap a number to see who.</p>
+          </div>
+          <div class="ps-pos-tools">
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Positions ever or currently held" id="ps-pos-held">
+              <button type="button" role="radio" aria-checked="true" data-v="ever">Ever held</button>
+              <button type="button" role="radio" aria-checked="false" data-v="cur">Currently held</button>
+            </div>
+            <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the positions table" id="ps-pos-gen">
+              <button type="button" role="radio" aria-checked="true" data-v="b">Both</button>
+              <button type="button" role="radio" aria-checked="false" data-v="m">Male</button>
+              <button type="button" role="radio" aria-checked="false" data-v="f">Female</button>
+            </div>
+          </div>
+        </div>
+        <div class="ps-pos-scroll"><table class="ps-pt" id="ps-pos-table"></table></div>
+        <p class="ps-note" id="ps-pos-note"></p>
+      </section>
+
+      <!-- LEADERSHIP BY GENDER -->
+      <section data-panel="B4" data-panel-title="Women and Men in University Leadership" class="ps-panel ps-col-full" id="ps-lead-panel" aria-labelledby="ps-lead-title" hidden>
+        <span class="ps-num" aria-hidden="true">B4</span>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-lead-title">Women and Men in University Leadership</h2>
+            <p class="ps-sub">Unique scholars who have held each leadership role, by gender recorded in the Master files.</p>
+          </div>
+          <select class="ps-select" id="ps-lead-country" aria-label="Country shown in the leadership chart"></select>
+        </div>
+        <div id="ps-lead-bars"></div>
+        <div class="ps-gd-legend" aria-hidden="true"><span><i class="ps-gd-f"></i>Female</span><span><i class="ps-gd-m"></i>Male</span><span><i class="ps-gd-u"></i>Not recorded</span></div>
+        <p class="ps-note">Leadership roles at universities and other higher-education institutions, including acting appointments. A scholar who held several roles appears in each.</p>
+      </section>
+
+      <!-- WHERE POSITIONS ARE HELD -->
+      <section data-panel="B5" data-panel-title="Where Positions Are Held" class="ps-panel ps-panel--tapa ps-col-half" id="ps-where-panel" aria-labelledby="ps-where-title" hidden>
+        <span class="ps-num" aria-hidden="true">B5</span>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-where-title">Where Positions Are Held</h2>
+            <p class="ps-sub">Scholars' home country (rows) by the country of the institution (columns). Gold outline = positions at home. Hover over or tap a cell to see who.</p>
+          </div>
+          <select class="ps-select" id="ps-where-role" aria-label="Position group shown in the matrix"></select>
+        </div>
+        <div class="ps-pos-scroll"><table class="ps-hm" id="ps-where-table"></table></div>
+        <p class="ps-note">Unique scholars per cell; a scholar with roles in two countries appears in both.</p>
+      </section>
+
+      <!-- HIGHEST ACADEMIC RANK -->
+      <section data-panel="B6" data-panel-title="Highest Academic Rank Reached" class="ps-panel ps-panel--paper ps-col-half" id="ps-rank-panel" aria-labelledby="ps-rank-title" hidden>
+        <span class="ps-num" aria-hidden="true">B6</span>
+        <div class="ps-head ps-pos-head">
+          <div>
+            <h2 class="ps-h2" id="ps-rank-title">Highest Academic Rank Reached</h2>
+            <p class="ps-sub">Each scholar counted once, at the most senior academic rank on record.</p>
+          </div>
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Bar scale" id="ps-rank-scale">
+            <button type="button" role="radio" aria-checked="true" data-v="pct">Share</button>
+            <button type="button" role="radio" aria-checked="false" data-v="n">Number</button>
+          </div>
+        </div>
+        <div id="ps-rank-bars"></div>
+        <div class="ps-ld-legend" id="ps-rank-legend"></div>
+        <p class="ps-note">Countries with positions recorded. Hover over or tap a segment for the count.</p>
+      </section>
+
+      <!-- DESTINATIONS (wide map; was C2) -->
+      <section data-panel="C1" data-panel-title="Where Our Scholars Study" class="ps-panel ps-panel--tapa ps-col-dest" aria-labelledby="ps-dest-title">
+        <span class="ps-num" aria-hidden="true">C1</span>
+        <h2 class="ps-h2" id="ps-dest-title">Where Our Scholars Study</h2>
+        <div class="ps-filters">
+          <div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Study or work" id="ps-dest-mode">
+            <button type="button" role="radio" aria-checked="true" data-v="study">Study</button>
+            <button type="button" role="radio" aria-checked="false" data-v="work">Work</button>
+          </div>
+          <select class="ps-select" id="ps-dest-home" aria-label="Home country"></select>
+          <select class="ps-select" id="ps-dest-level" aria-label="Degree level">
+            <option value="all">Master's + PhD</option>
+            <option value="M">Master's</option>
+            <option value="P">PhD / doctorate</option>
+          </select>
+          <select class="ps-select" id="ps-dest-dec" aria-label="Completion decade"></select>
+        </div>
+        <div class="ps-world" id="ps-world"></div>
+        <ul class="ps-dlist" id="ps-dlist"></ul>
+        <p class="ps-note" id="ps-dest-note"></p>
+      </section>
+
+      <!-- GENDER (was C1) -->
+      <section data-panel="C2" data-panel-title="Gender Representation" class="ps-panel ps-panel--gender ps-col-gender" aria-labelledby="ps-gender-title">
+        <span class="ps-num" aria-hidden="true">C2</span>
+        <h2 class="ps-h2" id="ps-gender-title">Gender Representation</h2>
+        <p class="ps-sub" id="ps-gender-sub">Gender as recorded in each country Master file.</p>
+        <div class="ps-gender" id="ps-gender"></div>
+      </section>
+
+      <!-- LEARNING TO IMPACT -->
+      <section data-panel="C3" data-panel-title="From Learning to Impact" class="ps-panel ps-panel--impact ps-col-impact" aria-labelledby="ps-impact-title">
+        <span class="ps-num" aria-hidden="true">C3</span>
+        <span class="ps-badge">Conceptual pathway</span>
+        <h2 class="ps-h2" id="ps-impact-title">From Learning to Impact</h2>
+        <ol class="ps-steps">
+          <li><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M10 18l10-5 10 5-10 5z"/><path d="M14 20v5c3 2 9 2 12 0v-5"/></svg>Postgraduate study</li>
+          <li><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M13 12h10l4 4v12H13z"/><path d="M16 19h8M16 23h8"/></svg>Research &amp; publication</li>
+          <li><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="20" cy="20" r="17"/><circle cx="20" cy="15" r="3"/><circle cx="13" cy="21" r="2.5"/><circle cx="27" cy="21" r="2.5"/><path d="M14 29c1-4 3-6 6-6s5 2 6 6"/></svg>Community &amp; policy impact</li>
+          <li><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="20" cy="20" r="17"/><path d="M20 30V14"/><path d="M20 20c-4 0-7-3-7-7 4 0 7 3 7 7zM20 17c4 0 7-3 7-7-4 0-7 3-7 7z"/></svg>Stronger Pacific futures</li>
+        </ol>
+        <p class="ps-quote">“Pacific knowledge for a resilient, healthy and prosperous ocean region.”</p>
+        <p class="ps-note">An illustrative pathway, not a measured outcome. This dashboard does not quantify impact.</p>
+      </section>
+
+      <!-- REGIONAL SCHOLAR DIRECTORY (bottom of page; data in the encrypted bundle) -->
+      <section data-panel="E" data-panel-title="Regional Scholar Directory" class="ps-panel ps-panel--paper ps-col-full" id="ps-dir-panel" aria-labelledby="ps-dir-title" hidden>
+        <span class="ps-num" aria-hidden="true">E</span>
+        <h2 class="ps-h2" id="ps-dir-title">Regional Scholar Directory</h2>
+        <div id="ps-dir">
+          <p class="dir__intro">One search across every country database, with the same filters for every country. Each card's header band shows the scholar's country and links back to that country's dashboard; the country Master file remains the authoritative record.</p>
+          <div class="dir__kpis" id="psd-kpis"></div>
+          <div class="filters">
+            <label>Country<select class="db-filter" id="psd-f-country"></select></label>
+            <label>Discipline<select class="db-filter" id="psd-f-disc" title="Discipline categories are mapped for Fiji, Tonga and Vanuatu only"></select></label>
+            <label>Degree<select class="db-filter" id="psd-f-degree"><option value="">All degrees</option><option value="P">PhD or doctorate</option><option value="M">Master's</option></select></label>
+            <label>Gender<select class="db-filter" id="psd-f-gender"><option value="">All</option><option value="F">Female</option><option value="M">Male</option></select></label>
+            <div class="flabel"><span id="psd-l-work">Work region</span><div class="cmenu" id="psd-m-work" role="group" aria-labelledby="psd-l-work" title="Region, then country, of the current workplace"></div></div>
+            <div class="flabel"><span id="psd-l-region">Study region</span><div class="cmenu" id="psd-m-region" role="group" aria-labelledby="psd-l-region" title="Region, then country, where a graduate degree was earned"></div></div>
+            <label>Sector<select class="db-filter" id="psd-f-sector" title="From the current workplace name: universities, colleges, polytechnics and wānanga count as tertiary"></select></label>
+          </div>
+          <div class="searchrow">
+            <input class="db-search" id="psd-q" type="search" placeholder="Search names, workplaces, places, fields, keywords or publication titles" aria-label="Search the directory" autocomplete="off" />
+            <button class="btn is-hidden" id="psd-clear" type="button">Clear filters</button>
+          </div>
+          <div class="chips" id="psd-chips"></div>
+          <div class="resultbar" id="psd-resultbar"><span id="psd-count" aria-live="polite"></span><span>Sorted by publications, most first</span></div>
+          <div class="db-scholars-grid" id="psd-grid"></div>
+          <nav class="db-pager" id="psd-pager" aria-label="Scholar card pages"></nav>
+          <section class="lkey" aria-labelledby="psd-lkey-t"><h3 id="psd-lkey-t">Local label key</h3><p>The chip at the end of the home village line appears only for Fiji, Tonga, Solomon Islands and Vanuatu, using the same wording and colours as their live country dashboards.</p><div class="lkey-grid" id="psd-lkey"></div><p id="psd-lkey-none" style="margin:12px 0 0"></p></section>
+          <div class="legend">
+            <div><b>Who is included</b>Scholars marked "Public Display Approved" in their Master file. Fiji, Tonga, Solomon Islands and Samoa have no consent field, so their included rosters appear as on their country dashboards.</div>
+            <div><b>Explain their research</b>Keywords and plain-English summaries are the same AI-generated text shown on each country dashboard's card, based on the scholar's indexed publications.</div>
+            <div><b>Linked to country records</b>Corrections are made in each country's own dashboard and Master file; this directory only reads them.</div>
+          </div>
+          <div class="toast" id="psd-toast" role="status" aria-live="polite"></div>
+        </div>
+      </section>
+
+      <!-- PUBLICATIONS (all countries; data in the encrypted bundle via the directory) -->
+      <section data-panel="F" data-panel-title="Publications" class="ps-panel ps-panel--paper ps-col-full" id="ps-pubs-panel" aria-labelledby="ps-pubs-title" hidden>
+        <span class="ps-num" aria-hidden="true">F</span>
+        <h2 class="ps-h2" id="ps-pubs-title">Publications</h2>
+        <div id="ps-pubs">
+          <p class="pub-intro">Every publication linked to a scholar in the Regional Scholar Directory, combined across all countries and listed once even when scholars from more than one country share it. The circle flag shows the country of the linked scholar; hover over it for their name. This count includes theses, reports and other outputs, so it is larger than the headline figure, which counts only the main publication types used by each country dashboard.</p>
+          <h3 class="pub-count" id="psp-count" aria-live="polite"></h3>
+          <div class="pub-filters">
+            <input class="pub-search" id="psp-q" type="search" placeholder="Search title, author, journal or scholar" aria-label="Search publications" autocomplete="off" />
+            <select class="pub-filter" id="psp-f-type" aria-label="Publication type"></select>
+            <select class="pub-filter" id="psp-f-country" aria-label="Country of the linked scholar"></select>
+            <select class="pub-filter" id="psp-f-disc" aria-label="Discipline" title="Discipline categories are mapped for Fiji, Tonga and Vanuatu only"></select>
+            <select class="pub-filter" id="psp-f-decade" aria-label="Decade"></select>
+            <select class="pub-filter" id="psp-f-fa" aria-label="Authorship"><option value="">All authorship</option><option value="first">Indigenous first author</option><option value="co">Co-authored or other</option></select>
+            <button class="pub-clear" id="psp-clear" type="button" hidden>Clear filters</button>
+          </div>
+          <div class="pub-list" id="psp-list"></div>
+          <nav class="db-pager" id="psp-pager" aria-label="Publication pages"></nav>
+        </div>
+      </section>
+
+      <!-- COLLABORATORS (data/regional-collaborators.json) -->
+      <section data-panel="G" data-panel-title="Collaborators" class="ps-panel ps-col-full" id="ps-collab-panel" aria-labelledby="ps-collab-title" hidden>
+        <span class="ps-num" aria-hidden="true">G</span>
+        <div class="ps-head">
+          <div>
+            <h2 class="ps-h2" id="ps-collab-title">Collaborators</h2>
+            <p class="ps-sub">Project undertaken in partnership with collaborators including Vice Chancellors of National Universities. Select the photos beside a country to see everyone.</p>
+          </div>
+        </div>
+        <div class="pc-map" id="pc-map">
+          <div class="ps-map__ctrl">
+            <button class="ps-iconbtn" type="button" data-pczoom="in" aria-label="Zoom in">+</button>
+            <button class="ps-iconbtn" type="button" data-pczoom="out" aria-label="Zoom out">−</button>
+            <button class="ps-iconbtn" type="button" data-pczoom="reset" aria-label="Reset map view">⟲</button>
+          </div>
+        </div>
+        <p class="pc-legend"><span class="pc-legend__vc" aria-hidden="true"></span>Green ring: Vice Chancellor <span class="pc-legend__more" aria-hidden="true">+1</span>More collaborators, shown when the country card is expanded</p>
+        <div class="pc-cards" id="pc-cards"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="ps-footer">
+    <div class="ps-footer__inner">
+      <div class="ps-footer__links">
+        <button type="button" data-dialog="about"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>About this Dashboard</button>
+        <button type="button" data-dialog="method"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg>Methodology</button>
+        <button type="button" data-dialog="coverage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/></svg>Data Coverage &amp; Notes</button>
+      </div>
+      <div class="ps-footer__motto">Different Islands. Shared Knowledge. Stronger Together.</div>
+      <div class="ps-footer__meta"><a href="index.html">Vave Lab</a><span>Center for Pacific Islands Studies, UH Mānoa</span><span id="ps-version">Version 1.0 (pre-launch)</span></div>
+    </div>
+    <div class="ps-credits" id="ps-credits"></div>
+  </footer>
+
+  <dialog class="ps-dialog" id="ps-dialog" aria-labelledby="ps-dialog-title">
+    <div class="ps-dialog__head"><h2 id="ps-dialog-title"></h2><button class="ps-dialog__close" type="button" id="ps-dialog-close" aria-label="Close">×</button></div>
+    <div class="ps-dialog__body" id="ps-dialog-body"></div>
+  </dialog>
+  <div class="ps-tip" id="ps-tip" role="status" aria-hidden="true"></div>
+
+  <script src="js/pacific-scholars-publications-backup-20261021.js?v=0af9e8d3" defer></script>
+  <script src="js/pacific-scholars-collaborators-backup-20261021.js?v=6a95e475" defer></script>
+  <script src="js/pacific-scholars-directory-backup-20261021.js?v=75902fb8" defer></script>
+  <script src="js/pacific-scholars-backup-20261021.js?v=e2679f28" defer></script>
+  <script src="js/pacific-scholars-panel-menu-backup-20261021.js?v=8addd3fb" defer></script>
+<div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
+</body>
+</html>

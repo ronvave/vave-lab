@@ -81,3 +81,7 @@
   #ps-collab-panel .pc-legend { justify-content: flex-start; }
   #ps-pubs .pub-filter { flex: 1 1 calc(50% - 8px); }
 }
+
+/* Forthcoming items (Panel E) */
+#ps-pubs .pub-badge--forth { background: #b5781a; }
+#ps-pubs .pub-group { margin: 18px 0 8px; padding-top: 12px; border-top: 2px solid #e0a52a; font-size: 1rem; color: #7a4f0e; }
