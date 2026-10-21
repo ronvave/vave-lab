@@ -20,6 +20,11 @@
   };
   const SHORT = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Is.', VUT: 'Vanuatu', WSM: 'Samoa', FSM: 'FSM', KIR: 'Kiribati', MHL: 'Marshall Is.', TUV: 'Tuvalu', COK: 'Cook Is.', PLW: 'Palau' };
   const CARD_SUB = {};
+  // Card titles. Long names get a smaller size so every title stays on one line.
+  const CARD_NAME = { FSM: 'FSM' };
+  const CARD_LONG = { SLB: 1, MHL: 1 };
+  // Crop point for each card photo (x y), matched to the approved mock-up.
+  const CARD_FOCUS = { FJI: '40% 50%', TON: '50% 45%', VUT: '45% 55%', SLB: '45% 60%', WSM: '50% 22%', COK: '45% 25%', MHL: '30% 50%', FSM: '55% 45%', TUV: '50% 50%', KIR: '25% 35%', PLW: '50% 60%' };
   const METRICS = {
     scholars: { key: 'scholars', label: 'Scholars', unit: 'Indigenous scholars', def: 'Scholars = unique Indigenous scholar on each country\u2019s included roster.' },
     phd: { key: 'phd', label: 'PhDs', unit: 'completed PhDs / doctorates', def: 'PhDs = completed PhD and doctorate degree records held by those scholars.' },
@@ -226,8 +231,8 @@
         : `<span class="ps-card__btn ps-card__btn--off">${c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No dashboard yet'}</span>`;
       const valText = v == null ? 'Not available' : fmt(v);
       return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
-        <div class="ps-card__name">${esc(c.code === 'FSM' ? 'FSM' : c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
-        <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="150" loading="${i < 6 ? 'eager' : 'lazy'}" />
+        <div class="ps-card__name${CARD_LONG[c.code] ? ' ps-card__name--long' : ''}" style="--img:url('img/regional/${c.code.toLowerCase()}.webp')">${esc(CARD_NAME[c.code] || c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
+        <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="142" style="object-position:${CARD_FOCUS[c.code] || 'center'}" loading="${i < 6 ? 'eager' : 'lazy'}" />
         <div class="ps-card__body">
           <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
             ${icon}<span class="ps-card__vl"><span class="ps-card__v">${valText}</span><span class="ps-card__l">${esc(m.label)}</span></span>
