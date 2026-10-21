@@ -128,6 +128,7 @@ a { color: var(--ps-teal-300); }
 .ps-card__name { position: relative; z-index: 2; text-align: center; padding: 6px 4px 5px; font-weight: 700; font-size: 0.98rem; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.7); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: linear-gradient(180deg, color-mix(in srgb, var(--c) 92%, transparent) 0%, color-mix(in srgb, var(--c) 55%, transparent) 100%), var(--img) center top / cover no-repeat; line-height: 1.15; }
 .ps-card__name--long { font-size: min(0.98rem, calc((100cqw - 14px) / 8.1)); line-height: calc(0.98rem * 1.15); }
 .ps-card__photo { height: 72px; width: 100%; object-fit: cover; display: block; background: #0b3157; }
+.ps-card__flag { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover; background: #0b3157; border-top: 1px solid rgba(255,255,255,.35); border-bottom: 1px solid rgba(255,255,255,.35); }
 .ps-card__body { background: var(--c); color: #fff; padding: 9px 8px 9px; display: flex; flex-direction: column; align-items: stretch; gap: 7px; flex: 1; text-align: center; }
 .ps-card__sel { all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center; justify-content: center; border-radius: 6px; }
 .ps-card__vl { display: flex; flex-direction: column; align-items: center; }
@@ -812,3 +813,8 @@ section[data-panel] { scroll-margin-top: 70px; }
 .ps-ftl__cc .ps-ftl__dash { line-height: 1; }
 /* A1 country cards: badge sits inline at the end of the toolbar */
 .ps-num.ps-num--inline { position: static; flex: 0 0 auto; }
+.ps-a1 { position: relative; }
+@media (max-width: 720px) {
+  .ps-num.ps-num--inline { position: absolute; top: 10px; right: 0; }
+  .ps-a1 .ps-toolbar { padding-right: 56px; }
+}

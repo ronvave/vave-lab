@@ -282,6 +282,7 @@
       const valText = v == null ? 'Not available' : fmt(v);
       return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
         <div class="ps-card__name${CARD_LONG[c.code] ? ' ps-card__name--long' : ''}" style="--img:url('${new URL('img/regional/' + c.code.toLowerCase() + '.webp', document.baseURI).href}')">${esc(CARD_NAME[c.code] || c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
+        <img class="ps-card__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="240" height="120" loading="${i < 6 ? 'eager' : 'lazy'}" />
         <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="142" style="object-position:${CARD_FOCUS[c.code] || 'center'}" loading="${i < 6 ? 'eager' : 'lazy'}" />
         <div class="ps-card__body">
           <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
