@@ -805,3 +805,8 @@ section[data-panel] { scroll-margin-top: 70px; }
 #ps-where-table td { width: auto; height: 44px; font-size: .95rem; }
 #ps-where-table thead th { font-size: .85rem; }
 @media (max-width: 720px) { #ps-where-table { min-width: 720px; } #ps-where-table tr > :first-child { width: 150px; } #ps-where-table th.home { font-size: .88rem; white-space: normal; line-height: 1.15; } #ps-where-table th.home img { width: 22px; height: 22px; vertical-align: -6px; margin-right: 6px; } }
+/* B1: dynamic count sits above the timeline/list, gold, same size as the panel description */
+.ps-sub.ps-ft-count { color: var(--ps-gold-400); font-weight: 600; margin: 4px 0 8px; }
+/* B1 list: Dashboard link on the same line as the country name */
+.ps-ftl__cc { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; }
+.ps-ftl__cc .ps-ftl__dash { line-height: 1; }
