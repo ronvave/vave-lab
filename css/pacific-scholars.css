@@ -665,7 +665,7 @@ section[data-panel] { scroll-margin-top: 70px; }
 .ps-ftl__c { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; }
 .ps-ftl__c img { width: 22px; height: 22px; border-radius: 50%; }
 .ps-ftl__dash { font-size: .72rem; }
-.ps-ftl__uc { color: var(--ps-text-muted); }
+.ps-ftl__uc { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 999px; font-size: .7rem; font-weight: 700; letter-spacing: .03em; line-height: 1.5; vertical-align: 1px; }
 .ps-ftl__tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; color: #04121f; background: var(--ft-male); }
 .ps-ftl--female .ps-ftl__tag { background: var(--ft-female); }
 .ps-ftl .ps-ft-tip__mini { width: 26px; height: 26px; margin-right: 8px; vertical-align: -8px; }

@@ -809,6 +809,14 @@
     $('#ps-ft-count').textContent = `${items.length} first${items.length === 1 ? '' : 's'} shown across ${nC} countr${nC === 1 ? 'y' : 'ies'}${state.sel ? ` (filtered to ${nameOf(state.sel)})` : ''}.`;
   }
 
+  // University-country pills in the B1 list: one fixed colour per country code.
+  const UC_PILL = { US: ['#F2B233', '#1a1206', 'United States'], NZ: ['#2BB3D9', '#04121f', 'New Zealand'], AU: ['#F07A3A', '#1a0b04', 'Australia'], UK: ['#9B7BEA', '#fff', 'United Kingdom'], FJ: ['#3BB273', '#04140b', 'Fiji'], CA: ['#E5484D', '#fff', 'Canada'], PG: ['#C9A227', '#1a1206', 'Papua New Guinea'], MT: ['#8FA3BF', '#0b1626', 'Malta'], FR: ['#4F6BED', '#fff', 'France'] };
+  function ucPill(code) {
+    const k = String(code).toUpperCase();
+    let [bg, fg, label] = UC_PILL[k] || [];
+    if (!bg) { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) % 360; bg = `hsl(${h},55%,62%)`; fg = '#0b1626'; label = k; }
+    return `<span class="ps-ftl__uc" style="background:${bg};color:${fg}" title="${esc(label)}">${esc(k)}</span>`;
+  }
   function renderFirstsList(items) {
     const t = $('#ps-ft-list'); if (!t) return;
     const rows = [];
@@ -818,7 +826,7 @@
     t.innerHTML = `<thead><tr><th scope="col">Year</th><th scope="col">Country</th><th scope="col">First</th><th scope="col">Scholar</th><th scope="col">University</th></tr></thead><tbody>${rows.length ? rows.map(r => {
       const id = find(r.m.code, r.person), c = byCode[r.m.code] || {};
       const name = id ? `<a href="#dir=${esc(id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(r.person)}</a>` : esc(r.person);
-      return `<tr class="ps-ftl--${r.m.gender}"><td class="y">${r.m.year}</td><td><span class="ps-ftl__c"><img src="img/regional/flags/${r.m.code.toLowerCase()}.png" alt="">${esc(r.m.country)}</span>${c.dashboard ? ` <a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</td><td><span class="ps-ftl__tag">${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td>${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</td><td>${esc(r.uni)}${r.uc ? ` <span class="ps-ftl__uc">(${esc(r.uc)})</span>` : ''}</td></tr>`;
+      return `<tr class="ps-ftl--${r.m.gender}"><td class="y">${r.m.year}</td><td><span class="ps-ftl__c"><img src="img/regional/flags/${r.m.code.toLowerCase()}.png" alt="">${esc(r.m.country)}</span>${c.dashboard ? ` <a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</td><td><span class="ps-ftl__tag">${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td>${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</td><td>${esc(r.uni)}${r.uc ? ` ${ucPill(r.uc)}` : ''}</td></tr>`;
     }).join('') : '<tr><td colspan="5">No firsts recorded for this selection.</td></tr>'}</tbody>`;
     t.querySelectorAll('img[data-fallback]').forEach(img => img.addEventListener('error', () => { if (img.dataset.fallback && !img.src.endsWith(img.dataset.fallback)) img.src = img.dataset.fallback; }));
   }
