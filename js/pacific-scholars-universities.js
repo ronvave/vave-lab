@@ -68,7 +68,7 @@
     $('psu-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fitTo(a => qMatch(a.u)); } });
     $('psu-reset').addEventListener('click', reset);
     $('psu-full').addEventListener('click', toggleFull);
-    document.addEventListener('fullscreenchange', () => { const on = document.fullscreenElement === $('psu'); $('psu').classList.toggle('is-full', on); $('psu-full').setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen map'); setTimeout(() => map && map.invalidateSize(), 120); });
+    document.addEventListener('fullscreenchange', () => { const on = document.fullscreenElement === $('psu'); $('psu').classList.toggle('is-full', on); $('psu-full').setAttribute('aria-label', on ? 'Exit full screen' : 'Full screen map'); fullChanged(); });
     document.querySelectorAll('#psu-sum-by button').forEach(b => b.addEventListener('click', () => { st.sumBy = b.dataset.v; document.querySelectorAll('#psu-sum-by button').forEach(x => x.setAttribute('aria-checked', String(x === b))); renderSummary(agg()); }));
     $('psu-sum').addEventListener('click', e => {
       const r = e.target.closest('[data-act]'); if (!r) return;
@@ -112,8 +112,21 @@
   function home(anim) {
     const pts = SM.unis.filter(u => u.lat != null).map(u => [u.lat, lngP(u.lng)]);
     if (!pts.length) return;
-    const b = L.latLngBounds(pts).pad(0.04);
-    anim ? map.flyToBounds(b, { duration: 0.6 }) : map.fitBounds(b);
+    const full = $('psu').classList.contains('is-full');
+    // Full screen: fit tightly to the universities (finer zoom steps, small edge margin).
+    map.options.zoomSnap = full ? 0.1 : 0.5;
+    const b = L.latLngBounds(pts).pad(full ? 0 : 0.04);
+    const o = full ? { padding: [44, 44] } : {};
+    anim ? map.flyToBounds(b, Object.assign({ duration: 0.6 }, o)) : map.fitBounds(b, o);
+  }
+  // Entering or leaving full screen: resize, then re-fit the default view unless
+  // the user has picked a region, country or search (then keep their view).
+  function fullChanged() {
+    setTimeout(() => {
+      if (!map) return;
+      map.invalidateSize();
+      if (!st.region && !st.country && !st.q) home(false);
+    }, 120);
   }
 
   function setHome(code) { if (st.home === (code || '')) return; st.home = code || ''; if ($('psu-home')) $('psu-home').value = st.home; if (shown) render(); }
@@ -215,7 +228,7 @@
     btn.addEventListener('click', e => { e.stopPropagation(); if (pop.hidden) { st.fly = { r: st.region, c: st.country }; drawFly(); pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); } else close(); });
     document.addEventListener('click', e => { if (!$('psu-fly').contains(e.target)) close(); });
     document.addEventListener('keydown', e => { if (e.key === 'Escape' && !pop.hidden) { close(); btn.focus(); } });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.hidden && !document.fullscreenElement && $('psu').classList.contains('is-full')) { $('psu').classList.remove('is-full'); setTimeout(() => map && map.invalidateSize(), 120); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && pop.hidden && !document.fullscreenElement && $('psu').classList.contains('is-full')) { $('psu').classList.remove('is-full'); fullChanged(); } });
     const hoverable = () => matchMedia('(hover:hover)').matches && innerWidth >= 700;
     pop.addEventListener('mouseover', e => {
       if (!hoverable()) return;
@@ -260,8 +273,8 @@
   function toggleFull() {
     const el = $('psu');
     if (document.fullscreenElement) { document.exitFullscreen(); return; }
-    if (el.requestFullscreen) el.requestFullscreen().catch(() => { el.classList.toggle('is-full'); setTimeout(() => map && map.invalidateSize(), 120); });
-    else { el.classList.toggle('is-full'); setTimeout(() => map && map.invalidateSize(), 120); }
+    if (el.requestFullscreen) el.requestFullscreen().catch(() => { el.classList.toggle('is-full'); fullChanged(); });
+    else { el.classList.toggle('is-full'); fullChanged(); }
   }
 
   window.PSUniversities = { init, show, setHome, refresh };
