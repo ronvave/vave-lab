@@ -810,7 +810,7 @@
   }
 
   // University-country pills in the B1 list: one fixed colour per country code.
-  const UC_PILL = { US: ['#F2B233', '#1a1206', 'United States'], NZ: ['#2BB3D9', '#04121f', 'New Zealand'], AU: ['#F07A3A', '#1a0b04', 'Australia'], UK: ['#9B7BEA', '#fff', 'United Kingdom'], FJ: ['#3BB273', '#04140b', 'Fiji'], CA: ['#E5484D', '#fff', 'Canada'], PG: ['#C9A227', '#1a1206', 'Papua New Guinea'], MT: ['#8FA3BF', '#0b1626', 'Malta'], FR: ['#4F6BED', '#fff', 'France'] };
+  const UC_PILL = { US: ['#F2B233', '#1a1206', 'United States'], NZ: ['#2BB3D9', '#04121f', 'New Zealand'], AU: ['#F07A3A', '#1a0b04', 'Australia'], UK: ['#9B7BEA', '#fff', 'United Kingdom'], FJ: ['#3BB273', '#04140b', 'Fiji'], CA: ['#E5484D', '#fff', 'Canada'], PG: ['#8B5A3C', '#fff', 'Papua New Guinea'], MT: ['#8FA3BF', '#0b1626', 'Malta'], FR: ['#4F6BED', '#fff', 'France'] };
   function ucPill(code) {
     const k = String(code).toUpperCase();
     let [bg, fg, label] = UC_PILL[k] || [];
