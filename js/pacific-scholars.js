@@ -823,7 +823,8 @@
   // ================= UNIVERSITY POSITIONS (table + leadership by gender) =================
   let posTouch = false;
   const POS = { held: 'ever', gen: 'b', leadC: '*', lastSel: null };
-  const posHas = c => D.positions && D.positions.coverage.positions[c] > 0;
+  const posHas = c => D.positions && (D.positions.coverage.positions[c] > 0 || ((D.positions.coverage.profile || {})[c] || 0) > 0);
+  const posProfileOnly = c => D.positions && !(D.positions.coverage.positions[c] > 0) && ((D.positions.coverage.profile || {})[c] || 0) > 0;
   function setupPositions() {
     const P = D.positions;
     if (!P || !Array.isArray(P.scholars) || !P.scholars.length) return;
@@ -860,7 +861,9 @@
     const nPos = Object.values(P.coverage.positions).reduce((a, b) => a + b, 0);
     const nWith = Object.values(P.coverage.withPositions).reduce((a, b) => a + b, 0);
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
-    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters. Striped columns: that country's Positions sheet has no records yet${empty.length ? ` (${empty.join(', ')})` : ''}. Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+    const profOnly = countries().filter(c => posProfileOnly(c.code)).map(c => c.name);
+    const nProf = Object.values(P.coverage.profile || {}).reduce((a, b) => a + b, 0);
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
   }
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
