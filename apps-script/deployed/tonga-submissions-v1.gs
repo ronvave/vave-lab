@@ -352,6 +352,7 @@ function doPost(e) {
     if (TONGA_READ_ACTIONS.indexOf(requested)>=0) return tongaReadAction_(body);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
+    if (TONGA_AUTO_EMAIL_ACTIONS.indexOf(action)>=0) tongaAutoEmailKeyFiles_(body);
     if (action === 'refreshAttachmentProposals') return tongaRefreshAnalysis_(body);
     if (action === 'analyseScholarAttachment') return tongaAnalyseAttachment_(body);
     if (action === 'seedFormProposals') return tongaV5SeedForm_(body);
@@ -834,9 +835,6 @@ function handlePublicScholarProfileSubmission_(body) {
   var attachments;
   try { attachments = saveScholarSubmissionFiles_(ss, sid, submissionId, body.files || []); }
   catch (err2) { return jsonOut_({ status:'bad_request', reason:String(err2.message || err2) }, 400); }
-  // Email the headshot, CV and reference file to the Owner for separate processing.
-  // A mail failure never blocks the submission; the Admin "Finish" button retries it.
-  try{if(tongaKeyFiles_(attachments).length){tongaEmailKeyFiles_({'Submission ID':submissionId,'Scholar ID':sid,'Scholar Name':String(body.scholarName||''),'Submitter Name':name,'Relationship':rel,'Submitted At':Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss')},attachments);var st=JSON.parse(structuredJson);st.ownerEmailedAt=tongaNow_();structuredJson=JSON.stringify(st);}}catch(mailErr){}
   var row = [submissionId, Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss'), 'Pending', sid,
     String(body.scholarName || '').slice(0,240), name.slice(0,160), email.slice(0,240), rel.slice(0,100),
     String(body.profileUrl || '').slice(0,700), fieldsJson, structuredJson, JSON.stringify(attachments), '', '', '', ''];
@@ -980,7 +978,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.2';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.3';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1289,7 +1287,23 @@ function tongaCloseItems_(body){TONGA_READ_TABLES=null;return tongaWithSubmissio
 /* Key attachments: headshot, CV and reference file (BibTeX, RIS, EndNote, publication list).
  * Theses and other uploads are kept for download but are not needed for review. */
 function tongaKeyFiles_(files){return (Array.isArray(files)?files:[]).filter(function(f){return f&&f.fileId&&(/^(headshot|cv|publications?|references?|bibliography)$/i.test(String(f.field||''))||/\.(bib|ris|enw|nbib)$/i.test(String(f.name||'')));});}
-function tongaOwnerEmail_(){return PropertiesService.getScriptProperties().getProperty('OWNER_NOTIFY_EMAIL')||Session.getEffectiveUser().getEmail();}
+// Key files go to this address. The OWNER_NOTIFY_EMAIL Script Property can override it.
+var TONGA_OWNER_NOTIFY_EMAIL='ronvave@hawaii.edu';
+function tongaOwnerEmail_(){return PropertiesService.getScriptProperties().getProperty('OWNER_NOTIFY_EMAIL')||TONGA_OWNER_NOTIFY_EMAIL;}
+/* Any review action on a scholar submission (approve, resume, record an attachment outcome,
+ * approve/decline proposals, close, finish, reject) first emails its headshot, CV and reference
+ * file to the Owner, once per submission. If the email fails nothing is saved, so files are never missed. */
+var TONGA_AUTO_EMAIL_ACTIONS=['reviewScholarSelection','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','finishScholarSubmission','approveScholarProfileSubmission','resolveScholarProfileSubmission','approveAttachmentProposals'];
+function tongaAutoEmailKeyFiles_(body){
+  var id=String(body.submissionId||'');if(!/^SPS-/.test(id))return;
+  var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);
+  try{var ss=geoSs_(),o=findScholarSubmission_(ss,id);if(!o)return;
+    var st=parseJsonObject_(o['Structured Submission JSON']);if(st.ownerEmailedAt)return;
+    var files=parseJsonObject_(o['Attachments JSON']);if(!tongaKeyFiles_(files).length)return;
+    try{tongaEmailKeyFiles_(o,files);}catch(e){throw new Error('Could not email the headshot, CV or reference file to the Owner, so nothing was saved ('+String(e.message||e).slice(0,160)+'). In Apps Script, run authorizeTongaEmail once, then try again.');}
+    st.ownerEmailedAt=tongaNow_();o._sheet.getRange(o._row,11).setValue(JSON.stringify(st));
+  }finally{lock.releaseLock();}
+}
 /** Emails the key files privately to the Owner. Large files are sent as private Drive links. */
 function tongaEmailKeyFiles_(o,files){
   var key=tongaKeyFiles_(files),to=tongaOwnerEmail_();if(!key.length)return {sent:false,count:0};if(!to)throw new Error('Owner email address unavailable');
@@ -1321,8 +1335,18 @@ function tongaFinishSubmission_(body){TONGA_READ_TABLES=null;return tongaWithSub
   tongaSavePlan_(o,plan);
   var finished=tongaFinishPlan_({reviewNotes:body.reviewNotes||note},ss,o);finished.row=tongaReviewRow_(ss,o);finished.emailed=emailed||!!st.ownerEmailedAt;finished.declined=declined;return jsonOut_(finished);
 });}
+/** Owner: optional one-off. Emails key files for submissions already marked Reviewed before automatic
+ *  email existed (each submission once). Rejected submissions are skipped. */
+function emailTongaFilesAlreadyReviewed(){
+  var ss=geoSs_(),sh=ensureScholarSubmissionSheet_(ss),last=sh.getLastRow(),sent=0;if(last<5)return 0;
+  sh.getRange(5,1,last-4,1).getDisplayValues().forEach(function(r){var id=r[0];if(!/^SPS-/.test(id))return;
+    var o=findScholarSubmission_(ss,id);if(!o||o.Status!=='Reviewed')return;var st=parseJsonObject_(o['Structured Submission JSON']);if(st.ownerEmailedAt)return;
+    var files=parseJsonObject_(o['Attachments JSON']);if(!tongaKeyFiles_(files).length)return;
+    tongaEmailKeyFiles_(o,files);st.ownerEmailedAt=tongaNow_();o._sheet.getRange(o._row,11).setValue(JSON.stringify(st));sent++;});
+  Logger.log(sent+' submission email(s) sent.');return sent;
+}
 /** Owner: run once from the Apps Script editor to allow this project to send email. Sends a short test email to you. */
-function authorizeTongaEmail(){MailApp.sendEmail(tongaOwnerEmail_(),'Tonga Scholar Database: email enabled','Submission files (headshot, CV, reference file) will now be emailed to this address.');DriveApp.getRootFolder();Logger.log('Email permission granted; test email sent.');}
+function authorizeTongaEmail(){MailApp.sendEmail(tongaOwnerEmail_(),'Tonga Scholar Database: email enabled','Headshots, CVs and reference files will be emailed to this address automatically whenever a scholar update submission is reviewed in the Tonga Admin.');DriveApp.getRootFolder();Logger.log('Email permission granted; test email sent.');}
 function tongaRejectRemaining_(o){
   var plan=tongaReviewPlan_(o);
   if(!plan){var fields=parseJsonObject_(o['Submitted Fields JSON']),files=parseJsonObject_(o['Attachments JSON']);plan={version:2,reviewer:ACTOR_LABEL,items:Object.keys(fields).map(function(k){return {kind:'text',key:k,state:'rejected'};})};

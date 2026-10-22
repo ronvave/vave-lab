@@ -42,9 +42,9 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  button('Check all',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=true;});syncSelection();});
  button('Clear selection',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=false;});syncSelection();});
  const bulkApprove=button('Approve all checked',bulk,bulkResolve,'tonga-approve');
- const bulkFinish=scholar?button('Finish all checked (email files to me, close)',bulk,bulkFinishRun,'tonga-approve'):null;
+ const bulkFinish=scholar?button('Finish all checked',bulk,bulkFinishRun,'tonga-approve'):null;
  const selectionCount=el('span','',bulk);
- function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||stale||!n||(scholar&&!caps.selectionReview);if(bulkFinish){bulkFinish.disabled=busy||stale||!n||!caps.finishSubmission;bulkFinish.title=caps.finishSubmission?'Emails each submission’s headshot, CV and reference file to the Owner, then closes everything left without changing the Master.':'Needs Tonga backend 5.2';}}
+ function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||stale||!n||(scholar&&!caps.selectionReview);if(bulkFinish){bulkFinish.disabled=busy||stale||!n||!caps.finishSubmission;bulkFinish.title=caps.finishSubmission?'Closes everything left in each checked submission without changing the Master and moves it to Reviewed.':'Needs the updated Tonga backend';}}
  host.addEventListener('change',()=>{dirty=true;syncSelection();});
  host.addEventListener('input',()=>{dirty=true;});
  host.addEventListener('click',e=>{if(e.target.closest('.tonga-selection-controls,.tonga-bulk-controls'))dirty=true;});
@@ -112,10 +112,9 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     changes.forEach(change=>{const tr=el('tr',null,body),item=plan?.items.find(i=>i.kind==='text'&&i.key===change.key),clears=change.newValue==null||change.newValue==='',p=pick(el('td',null,tr),'Use '+change.label,change.key,pending&&change.writable&&(!item||item.state==='deferred'||item.state==='applied'),item?(item.state==='pending'||item.state==='applied')&&(!clears||item.confirmClear):change.writable&&!clears,c);p.change=change;
       el('td',change.label+(change.writable?'':' — '+change.reason)+(item?' — '+(item.state==='applied'?'recorded as applied, but Master still differs; approve again':item.state):'')+(item?.heldReason?' ('+item.heldReason+')':''),tr);el('td',(change.currentDisplayValue??change.currentValue)==null||(change.currentDisplayValue??change.currentValue)===''?'(empty)':(change.currentDisplayValue??change.currentValue),tr);el('td',clears?'(clear this field — unticked by default; tick only to erase the Master value)':change.newValue,tr);
     });
-  }else el('p',(row.recordedFields||[]).length?'The submitted values below are already in the Master. No further text update is needed.':'No remaining text changes. Review attachments or recorded outcomes below.',disclosure).className='tonga-positive';
-  if(row.recordedFields?.length){const recorded=el('details',null,card);recorded.open=true;el('summary','Submitted values already in Master ('+row.recordedFields.length+')',recorded);const table=el('table',null,recorded);table.className='tonga-recorded-fields';const head=el('tr',null,el('thead',null,table));['Status','Field','Current Master value','Submitted value'].forEach(t=>el('th',t,head));const body=el('tbody',null,table);row.recordedFields.forEach(c=>{const tr=el('tr',null,body);['Already in Master',c.label,c.currentDisplayValue??c.currentValue,c.newValue].forEach(t=>el('td',t===''?'(empty)':t,tr));});
-   if(pending&&!changes.length&&!parse(row['Attachments JSON'],[]).length&&!plan?.items.some(i=>['pending','deferred'].includes(i.state)))button('Complete review — already recorded',card,async()=>{if(busy||!ask('Complete this review? All submitted values are already in Master; no Master values will be changed.'))return;await run(c,()=>saveScholar(c));});
-  }
+  }else el('p',(row.recordedFields||[]).length?'Everything else in this submission is already in the Master.':'No remaining text changes. Review attachments or recorded outcomes below.',disclosure).className='tonga-positive';
+  // Values already in the Master are not shown again.
+  if(pending&&!changes.length&&!parse(row['Attachments JSON'],[]).length&&!plan?.items.some(i=>['pending','deferred'].includes(i.state)))button('Complete review — already recorded',card,async()=>{if(busy||!ask('Complete this review? All submitted values are already in Master; no Master values will be changed.'))return;await run(c,()=>saveScholar(c));});
   const structured=parse(row['Structured Submission JSON'],{});
   if(Array.isArray(structured.degrees)&&structured.degrees.length){
    const section=el('section',null,card);section.className='tonga-additional-degree-review';el('h4','Additional degree details — review each degree separately',section);
@@ -168,8 +167,8 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   const say=(t,err)=>{out.textContent=t;out.classList.toggle('tonga-error',!!err);};
   if(!caps.closeItems){el('p','Closing items needs Tonga backend 5.1. Paste and deploy the updated Apps Script first.',box).className='tonga-error';picks.forEach(p=>p.cb.disabled=true);tools.querySelectorAll('button').forEach(b=>b.disabled=true);return;}
   if(caps.finishSubmission){const fin=el('div',null,box);fin.className='tonga-finish';
-   el('p','Quickest: Finish emails this submission’s headshot, CV and reference file to you (once), closes everything listed here without changing the Master, and moves it to Reviewed. Files stay available under Download original.',fin);
-   const fb=button('Finish: email files to me and close',fin,()=>run(c,async()=>{const t=await finishOne(c,note.value.trim());if(c.card.isConnected)notices.set(c.row['Submission ID'],t);return t;},out),'tonga-approve');fb.className='tonga-approve tonga-finish-button';
+   el('p','Quickest: Finish closes everything listed here without changing the Master and moves this submission to Reviewed. Files stay available under Download original.',fin);
+   const fb=button('Finish this submission',fin,()=>run(c,async()=>{const t=await finishOne(c,note.value.trim());if(c.card.isConnected)notices.set(c.row['Submission ID'],t);return t;},out),'tonga-approve');fb.className='tonga-approve tonga-finish-button';
    el('p','Or close only some items:',box).className='meta';}
   const nl=el('label','Reason for closing (optional; kept in the review record)',box);const note=el('input',null,nl);note.type='text';note.setAttribute('aria-label','Reason for closing items for '+c.row['Submission ID']);note.placeholder='e.g. Institution URL entered in Scholar profiles editor';
   const go=button('Close ticked items without Master change',box,()=>{
@@ -193,13 +192,13 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  async function finishOne(c,note){
   const id=c.row['Submission ID'],out=checked(await window.adminWriteback.finishScholarSubmission(id,note||'',c.note?.value||''));
   const row=out.row;if(row&&row.Status!=='Pending')removeCard(c);else if(row)c._updatedRow=row;
-  return (c.row['Scholar Name']||id)+': '+(row&&row.Status!=='Pending'?'finished':'still pending ('+(remainingText(row)||'check card')+')')+(out.emailed?' · files emailed to you':'');
+  return (c.row['Scholar Name']||id)+': '+(row&&row.Status!=='Pending'?'finished':'still pending ('+(remainingText(row)||'check card')+')')+'';
  }
  async function bulkFinishRun(){
   const selected=cards.filter(c=>c.select?.checked);if(!selected.length||!caps.finishSubmission)return;
   await run(null,async()=>{const done=[],failed=[];
    for(const [i,c] of selected.entries()){message('Finishing '+(i+1)+' of '+selected.length+'…');try{done.push(await finishOne(c));}catch(e){failed.push((c.row['Scholar Name']||c.row['Submission ID'])+': '+e.message);}}
-   return done.length+' finished. '+(failed.length?'Not finished: '+failed.join(' | '):'')+' '+(done.length?'Headshots, CVs and reference files were emailed to you.':'');
+   return done.length+' finished. '+(failed.length?'Not finished: '+failed.join(' | '):'');
   });
  }
  async function run(c,fn,inline){

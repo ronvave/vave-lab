@@ -19,5 +19,6 @@ console.log('tongan-review-v51 ok');
  assert.ok(src2.includes("action === 'finishScholarSubmission'")&&/'finishScholarSubmission'/.test(src2.match(/var TONGA_REVIEW_ACTIONS = \[[^\]]+\]/)[0]));
  const k=c.tongaKeyFiles_([{fileId:'1',field:'headshot',name:'a.jpg'},{fileId:'2',field:'cv',name:'b.pdf'},{fileId:'3',field:'publications',name:'c.bib'},{fileId:'4',field:'phd_thesis',name:'d.pdf'},{fileId:'5',field:'attachment',name:'e.ris'}]);
  assert.strictEqual(k.map(f=>f.fileId).join(','),'1,2,3,5','key files: headshot, CV, reference files only');
- const ui2=fs.readFileSync('js/tongan-submissions-admin.js','utf8');assert.ok(ui2.includes('Finish all checked')&&ui2.includes('function ask('));
+ const ui2=fs.readFileSync('js/tongan-submissions-admin.js','utf8');assert.ok(ui2.includes('Finish all checked')&&ui2.includes('function ask(')&&!ui2.includes('Submitted values already in Master'));
+ assert.ok(src2.includes("TONGA_OWNER_NOTIFY_EMAIL='ronvave@hawaii.edu'")&&src2.includes('if (TONGA_AUTO_EMAIL_ACTIONS.indexOf(action)>=0) tongaAutoEmailKeyFiles_(body);'));
  console.log('tongan-review-v52 ok');}
