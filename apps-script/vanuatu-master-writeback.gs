@@ -39,10 +39,10 @@ function vanDigest_(r){return Utilities.base64EncodeWebSafe(Utilities.computeDig
 function vanData_(name){
  if(!VAN_KEYS_[name])throw Error('Table is not an authorized Vanuatu entity.');
  var sheet=vanBook_().getSheetByName(name);if(!sheet)throw Error('Missing Vanuatu table: '+name);
- var width=sheet.getLastColumn(),legacy=VAN_LEGACY_[name]||{},headers=sheet.getRange(4,1,1,width).getDisplayValues()[0].map(function(h){return legacy[h]||h;}),seen={};
+ var width=sheet.getLastColumn(),last=sheet.getLastRow(),legacy=VAN_LEGACY_[name]||{},grid=sheet.getRange(4,1,Math.max(1,last-3),width).getDisplayValues(),headers=grid[0].map(function(h){return legacy[h]||h;}),seen={};
  headers.forEach(function(h){if(h&&seen[h])throw Error('Duplicate header: '+h);seen[h]=true;});
  var key=VAN_KEYS_[name],index=headers.indexOf(key);if(index<0)throw Error('Missing entity key header: '+key);
- var rows=sheet.getLastRow()>4?sheet.getRange(5,1,sheet.getLastRow()-4,width).getDisplayValues():[],ids={};
+ var rows=last>4?grid.slice(1):[],ids={};
  var records=[];rows.forEach(function(row,i){if(!row[index])return;var id=row[index];if(ids[id]&&name!=='Public Export Config')throw Error('Duplicate entity key: '+id);ids[id]=true;var r={};headers.forEach(function(h,j){if(h)r[h]=row[j];});records.push({value:r,row:i+5});});
  return {sheet:sheet,headers:headers,records:records,key:key};
 }
@@ -52,7 +52,10 @@ function getVanuatuAdminState(){
  var actor=vanActor_(false),tables={};
  ['Scholars','Graduate Degrees','Positions','Publications','Authorship','Review Queue','Scholar Profile Submissions','Publication Geography Submissions','Change Log'].forEach(function(name){
   if(actor.role!=='owner'&&['Graduate Degrees','Positions','Publications','Authorship','Change Log'].indexOf(name)>=0){tables[name]=[];return;}
-  var d=vanData_(name);tables[name]=d.records.map(function(entry){var r=Object.assign({},entry.value),version=vanDigest_(entry.value);delete r['Scholar Share Token'];
+  var d=vanData_(name);
+  // The Admin only displays the newest 100 Change Log entries and never edits them: send the newest 200 non-journal rows, without fingerprints.
+  if(name==='Change Log'){tables[name]=d.records.map(function(e){return e.value;}).filter(function(r){return r['Entity Type']!=='Operation journal';}).slice(-200);return;}
+  tables[name]=d.records.map(function(entry){var r=Object.assign({},entry.value),version=vanDigest_(entry.value);delete r['Scholar Share Token'];
    if(actor.role!=='owner'&&name==='Scholars'){var allowed=['Scholar ID','Scholar Name'];Object.keys(r).forEach(function(k){if(allowed.indexOf(k)<0)delete r[k];});}
    // Attachments and submitter contact are never enumerated by this UI.
    delete r['Submitter Email'];delete r['Attachments JSON'];r._version=version;return r;
