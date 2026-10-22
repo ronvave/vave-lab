@@ -63,6 +63,13 @@
     const order = (D.countries || []).map(c => c.code).filter(c => homes.includes(c));
     $('psu-home').innerHTML = '<option value="">All home countries</option>' + order.map(c => `<option value="${c}">${esc(cname(c))}</option>`).join('');
     $('psu-home').addEventListener('change', e => { st.home = e.target.value; H.select && H.select(st.home || null); render(); });
+    // Home-country flag chips (drive the same selection as the hidden menu above).
+    const chip = (c, label, flag) => `<button type="button" class="psu-chip" data-home="${c}" aria-pressed="false">${flag ? `<img src="img/regional/flags/${c.toLowerCase()}.png" alt="" width="20" height="20" loading="lazy">` : ''}<span>${esc(label)}</span></button>`;
+    $('psu-chips').innerHTML = chip('', 'All countries', false) + order.map(c => chip(c, c === 'FSM' ? 'FSM' : cname(c), true)).join('');
+    $('psu-chips').addEventListener('click', e => {
+      const b = e.target.closest('button[data-home]'); if (!b) return;
+      st.home = b.dataset.home; $('psu-home').value = st.home; H.select && H.select(st.home || null); render();
+    });
     $('psu-level').addEventListener('change', e => { st.level = e.target.value; render(); });
     $('psu-search').addEventListener('input', e => { st.q = e.target.value.trim(); render(); });
     $('psu-search').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); fitTo(a => qMatch(a.u)); } });
@@ -133,7 +140,11 @@
   function refresh() { if (shown) renderDetail(); }
 
   // ---------- render ----------
+  function syncChips() {
+    document.querySelectorAll('#psu-chips button[data-home]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.home === (st.home || ''))));
+  }
   function render() {
+    syncChips();
     if (!SM) return;
     const G = agg();
     renderKpis(G); renderMarkers(G); renderSummary(G); renderDetail(); renderFlyBtn();
