@@ -57,7 +57,7 @@ def positions(code, dump, posdump):
         iname = first(r, 'Institution') or I.get('name') or ''
         if not iname and iid and not iid.startswith(code[:3]): iname = iid
         host = first(r, 'Country', 'Institution Country') or I.get('country', '')
-        verb = first(r, 'Academic / Professional Title (verbatim)', 'Title', 'Title / Role'); std = first(r, 'Standardized Academic Rank'); ltit = first(r, 'Leadership Title (verbatim)')
+        verb = first(r, 'Academic / Professional Title (verbatim)', 'Title', 'Title / Role', 'Title (verbatim)'); std = first(r, 'Standardized Academic Rank'); ltit = first(r, 'Leadership Title (verbatim)')
         title = ' ; '.join(x for x in [verb, std, ltit] if x)
         cur = (first(r, 'Role Status', 'Current Flag', 'Current?') or '').lower()
         current = cur in ('true', 'yes', 'current', 'y') or cur.startswith('current')
