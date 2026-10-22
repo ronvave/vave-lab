@@ -16,7 +16,8 @@ $('logout').onclick=logout;
 async function call(action,params={}){
  checkExpiry();if(!token){renew();throw new Error('Sign in again above, then retry. Your review is preserved.');}
  const requestToken=token;
- const send=async(name,values={})=>{const response=await fetch(ENDPOINT,{method:'POST',cache:'no-store',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...values,action:name,idToken:requestToken})});return response.json();};
+ const sendOnce=async(name,values={})=>{const response=await fetch(ENDPOINT,{method:'POST',cache:'no-store',signal:AbortSignal.timeout(90000),credentials:'omit',redirect:'follow',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...values,action:name,idToken:requestToken})});try{return await response.json();}catch(_){return {status:'error',_transport:true,error:'Tonga review service returned HTTP '+response.status+' instead of review data. Refresh again; no fresh data was received.'};}};
+ const send=async(name,values={})=>{const safe=/^(read|reviewQueueCounts$|reviewCapabilities$)/.test(name);let out;for(let i=0;i<(safe?3:1);i++){if(i)await new Promise(r=>setTimeout(r,1200*i));out=await sendOnce(name,values);if(!out||!out._transport)break;}if(out&&out._transport)delete out._transport;return out;};
  let out=await send(action,params);
  if(out.status==='unauthorized'&&token===requestToken&&action!=='reviewCapabilities'&&Date.now()<expiresAt){
   // A redirected/transient response must not discard a still-valid session.

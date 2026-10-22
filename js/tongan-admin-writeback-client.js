@@ -44,7 +44,20 @@
 
   async function callGet(action) { return callPost({action: action}); }
 
+  // Read-only actions are safe to repeat. Google's result hand-off (script.googleusercontent.com)
+  // occasionally answers 404 even though the script ran; retry those reads up to twice.
+  var SAFE_READS = ['readScholarProfileSubmissions','readPublicationGeographySubmissions','reviewQueueCounts','reviewCapabilities','readAttachmentAnalysis','readScholarSubmissionAttachment','readChangeLog','ping','describe'];
   async function callPost(payload) {
+    var safe = payload && SAFE_READS.indexOf(payload.action) >= 0, out;
+    for (var attempt = 0; attempt < (safe ? 3 : 1); attempt++) {
+      if (attempt) await new Promise(function (r) { var t = typeof setTimeout === 'function' ? setTimeout : null; if (t) t(r, 1200 * attempt); else r(); });
+      out = await callPostOnce(payload);
+      if (!out || !out._transport) break;
+    }
+    if (out && out._transport) delete out._transport;
+    return out;
+  }
+  async function callPostOnce(payload) {
     requireConfigured();
     var url = getEndpoint();
     // Apps Script Content-Type quirk: to avoid the CORS preflight (which the
@@ -65,7 +78,7 @@
     });
     var out;
     try { out = await res.json(); }
-    catch (_) { out = { status: 'error', error: 'Tonga review service returned HTTP ' + res.status + ' instead of review data. Refresh again; if this persists, check the deployed Web app URL using Data source & GitHub → Test connection. No fresh queue data was received.' }; }
+    catch (_) { out = { status: 'error', _transport: true, error: 'Tonga review service returned HTTP ' + res.status + ' instead of review data. Refresh again; if this persists, check the deployed Web app URL using Data source & GitHub → Test connection. No fresh queue data was received.' }; }
     return out;
   }
 
