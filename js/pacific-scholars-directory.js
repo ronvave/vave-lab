@@ -5,9 +5,9 @@
  * the browser's memory. Cards reuse the country dashboards' scholar-card design.
  * Card fields are limited to what the regional build exports (see
  * scripts/regional_directory.py): no share tokens, notes or contact details.
- * Share looks up the country dashboard's existing public profile link when
- * the button is clicked. Those tokens stay in the files the country pages
- * already publish; they are not copied into the regional bundle.
+ * Share copies a link back to the scholar's card on this regional dashboard.
+ * "View on <country> dashboard" opens the scholar's profile on the country
+ * dashboard. No share tokens are copied into the regional bundle.
  */
 (() => {
   'use strict';
@@ -28,15 +28,9 @@
     MHL: { label: 'Marshallese Scholar', from: '#B48CE6', to: '#7c4dbd', ink: '#fff' },
     FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' }
   };
-  // Country names for the Share toast. The copied link is the public country
-  // dashboard, not the update form (s.html and the other profile pages).
-  const PROFILE = {
-    FJI: { name: 'Fiji' },
-    TON: { name: 'Tonga' },
-    SLB: { name: 'Solomon Islands' },
-    VUT: { name: 'Vanuatu' }
-  };
-  const regionalCardUrl = s => `${location.origin}${location.pathname}#dir=${s.id}`;
+  // Share copies this link: the scholar's card on the regional dashboard, with
+  // Explain their research opened (after the regional passcode).
+  const regionalCardUrl = s => `${location.origin}${location.pathname}#dir=${s.id}&explain=1`;
   function profileUrl(s) {
     const dash = C[s.c] && C[s.c].dashboard;
     if (!dash) return '';
@@ -180,7 +174,8 @@
     const cc = C[s.c], band = BAND[s.c] || BAND.FSM;
     const words = s.n.split(/\s+/).filter(w => /^\p{L}/u.test(w));
     const initials = (words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] || '?').slice(0, 2)).toUpperCase();
-    const dash = cc.dashboard ? `<a href="${esc(cc.dashboard)}" target="_blank" rel="noopener">View on ${esc(cc.name)} dashboard \u2197</a>`
+    // Opens this scholar's profile on the country dashboard, with Explain their research open when recorded.
+    const dash = cc.dashboard ? `<a href="${esc(profileUrl(s))}" target="_blank" rel="noopener" title="Open ${esc(s.n)}\u2019s profile on the ${esc(cc.name)} dashboard">View on ${esc(cc.name)} dashboard \u2197</a>`
       : `<span class="muted">${cc.dashboardStatus === 'development' ? `${esc(cc.name)} dashboard in development` : `No ${esc(cc.name)} dashboard yet`}</span>`;
     const types = {}; (s.p || []).forEach(i => { const t = TYPE[P[i].t] ? P[i].t : 'other'; types[t] = (types[t] || 0) + 1; });
     const chips = Object.entries(TYPE).filter(([k]) => types[k]).map(([k, t]) => `<span class="tchip" style="background:${t.bg};border-color:${t.border};color:${t.color}"><span class="n">${types[k]}</span> ${types[k] === 1 ? t.s : t.p}</span>`).join('');
@@ -205,7 +200,7 @@
         <div class="db-scholar-card__photo-col${s.dec ? ' db-scholar-card__photo-col--is-deceased' : ''}">
           <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div>${ph ? `<img src="${esc(ph)}" alt="Photo of ${esc(s.n)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>
           ${memorial ? `<div class="db-scholar-card__memorial" aria-label="Memorial: ${esc(memorial)}">${esc(memorial)}</div>` : ''}
-          <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this scholar's country profile">${SHARE}Share</button>
+          <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this scholar's card on the regional dashboard" aria-label="Copy a link to this scholar's card on the regional dashboard">${SHARE}<span>Share</span></button>
         </div>
         <div class="db-scholar-card__info">
           <h3>${esc(name)}</h3>
@@ -374,21 +369,17 @@
       const kwt = e.target.closest('[data-kw]'); if (kwt) { searchKw(kwt.dataset.kw); return; }
       const sh = e.target.closest('[data-share]'); if (!sh || sh.disabled) return;
       const s = S.find(x => x.id === sh.dataset.share); if (!s) return;
-      sh.disabled = true;
-      let url = '', msg = '';
-      try {
-        url = await profileUrl(s);
-        const country = (PROFILE[s.c] && PROFILE[s.c].name) || (C[s.c] && C[s.c].name) || s.c;
-        if (url) msg = `Link to ${s.n}\u2019s ${country} dashboard profile copied. It opens that profile on the country dashboard, with Explain their research already open when an explanation is recorded.`;
-        else {
-          url = regionalCardUrl(s);
-          msg = PROFILE[s.c]
-            ? `${country} profile link is not ready yet. Link to the regional card copied. It opens after the regional passcode.`
-            : `No country profile page yet for ${country}. Link to the regional card copied. It opens after the regional passcode.`;
-        }
-        try { await navigator.clipboard.writeText(url); toast(msg); }
-        catch { window.prompt('Copy this link:', url); }
-      } finally { sh.disabled = false; }
+      const url = regionalCardUrl(s);
+      let ok = false;
+      try { await navigator.clipboard.writeText(url); ok = true; } catch (_) {
+        const f = document.createElement('textarea'); f.value = url; f.setAttribute('readonly', ''); f.style.position = 'fixed'; f.style.opacity = '0';
+        document.body.appendChild(f); f.select(); try { ok = document.execCommand('copy'); } catch (_) { ok = false; } f.remove();
+      }
+      if (!ok) { window.prompt('Copy this link:', url); return; }
+      // Same feedback as the country dashboard cards: green "Copied", then back to the red Share button.
+      clearTimeout(sh._copyT);
+      sh.classList.add('is-copied'); sh.innerHTML = `${SHARE}<span>Copied</span>`; sh.setAttribute('aria-label', 'Link copied to clipboard');
+      sh._copyT = setTimeout(() => { sh.classList.remove('is-copied'); sh.innerHTML = `${SHARE}<span>Share</span>`; sh.setAttribute('aria-label', "Copy a link to this scholar's card on the regional dashboard"); }, 1600);
     });
     q('lkey').innerHTML = Object.entries(LOCAL).map(([c, L]) => `<div class="lk"><div class="lk-h"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(C[c] ? C[c].name : c)}<span>Same as the ${esc(L.src)}</span></div><div class="lk-f">Field: ${esc(L.field)}</div><div class="lk-c">${Object.entries(L.map).map(([k, [f, t]]) => `<span class="lchip" style="background:linear-gradient(135deg,${f},${t});color:${L.ink}">${esc(L.fmt(k))}</span>`).join('')}</div></div>`).join('');
     q('lkey-none').textContent = `No local label shown: ${countries.filter(c => !LOCAL[c]).map(c => C[c].name).join(', ')}.`;
@@ -398,6 +389,10 @@
     const el = q('grid').querySelector('.db-scholar-card');
     if (!el) return;
     el.classList.add('is-target');
+    if (/(?:^|[#&])explain=1(?:&|$)/.test(location.hash)) {
+      const ib = el.querySelector('[data-insight-btn]');
+      if (ib && ib.getAttribute('aria-expanded') !== 'true') { ib.setAttribute('aria-expanded', 'true'); const pnl = document.getElementById(ib.getAttribute('aria-controls')); if (pnl) pnl.hidden = false; }
+    }
     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 

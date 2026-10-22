@@ -170,3 +170,6 @@
 #ps-dir .cmenu__arrow{color:var(--color-text-muted);font-size:1.05rem;line-height:1}
 #ps-dir .cmenu__reg>span:first-child{white-space:nowrap}
 @media (max-width:640px){#ps-dir .cmenu__pop{min-width:0;width:min(300px,calc(100vw - 40px));max-height:70vh;overflow:auto}}
+
+/* Share: green "Copied" flash, as on the country dashboard cards */
+#ps-dir .db-scholar-card__share.is-copied,#ps-dir .db-scholar-card__share.is-copied:hover{background:#16834a}
