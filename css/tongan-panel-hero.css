@@ -99,3 +99,22 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .db-about.tph-panel:not([open]) { padding-bottom: 0; }
 .db-about.tph-panel { overflow: hidden; }
 .db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
+
+/* Woven mat background on every panel body, softened with a light veil so
+   text and charts in front of it stay crisp. */
+.tph-panel {
+  background:
+    linear-gradient(rgba(251,248,242,.64), rgba(251,248,242,.64)),
+    url("../img/tonga/mat-background.webp") center top / 1400px auto repeat !important;
+}
+/* Former grey inner areas let the mat through, with a slightly stronger veil. */
+.tph-panel .db-world-panel-wide,
+.tph-panel .db-map-legend-panel,
+.tph-panel .short-disciplines-toggle,
+.tph-panel .db-insight,
+.tph-panel .db-b2-blurb {
+  background: rgba(255,255,255,.5) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.tph-panel .db-item { background: rgba(255,255,255,.72) !important; }
+.tph-panel .db-search { background: #fff !important; }
