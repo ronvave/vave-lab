@@ -867,7 +867,7 @@
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
     const profOnly = countries().filter(c => posProfileOnly(c.code)).map(c => c.name);
     const nProf = Object.values(P.coverage.profile || {}).reduce((a, b) => a + b, 0);
-    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets; colours run from navy (small share) to yellow (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets; colours run from cream (small share) to dark brown (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
   }
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
@@ -988,7 +988,7 @@
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
           if (!posHas(c)) return '<td class="c nd"><span class="ps-sr">no records</span>·</td>';
           const n = posCell(k, c).length;
-          const b = anyN[c], a = b ? n / b : 0, rc = reefCell(a);
+          const b = anyN[c], a = b ? n / b : 0, rc = tapaCell(a);
           return `<td class="c${n ? '' : ' z'}${state.sel === c ? ' selcol' : ''}" data-k="${k}" data-c="${c}"${n ? ` tabindex="0" style="background:${rc.bg};color:${rc.fg}" aria-label="${esc(l)}, ${esc(nameOf(c))}: ${n} of ${b} (${Math.round(100 * a)}%)"` : ''}>${n ? `${Math.round(100 * a)}% <small>(${fmt(n)})</small>` : '–'}</td>`;
         }).join('') + `<td class="tot" data-k="${k}" data-c="*"${tot ? ' tabindex="0"' : ''}>${tot ? `${anyN['*'] ? Math.round(100 * tot / anyN['*']) : 0}% <small>(${fmt(tot)})</small>` : '0'}</td></tr>`;
       }
@@ -1156,10 +1156,14 @@
   }
   // Reef scale (deep water to lagoon to sunlit shallows) for the C1 Study and Work matrices; t = share of the row, 0 to 1.
   const REEF = [[22, 48, 79], [31, 95, 139], [21, 158, 138], [108, 206, 89], [244, 227, 74]];
-  function reefCell(t) {
+  // Tapa and ochre scale for heatmaps on a white background: cream (small share) to bark brown (large share).
+  const TAPA = [[244, 220, 170], [211, 141, 62], [156, 81, 43], [94, 51, 34], [42, 29, 22]];
+  function tapaCell(t) { return rampCell(TAPA, t); }
+  function reefCell(t) { return rampCell(REEF, t); }
+  function rampCell(R, t) {
     t = Math.max(0, Math.min(1, t)); const u = 0.08 + 0.92 * Math.pow(Math.min(t, 0.85) / 0.85, 0.6);
-    const n = REEF.length - 1, i = Math.min(Math.floor(u * n), n - 1), f = u * n - i;
-    const c = REEF[i].map((v, j) => Math.round(v + (REEF[i + 1][j] - v) * f));
+    const n = R.length - 1, i = Math.min(Math.floor(u * n), n - 1), f = u * n - i;
+    const c = R[i].map((v, j) => Math.round(v + (R[i + 1][j] - v) * f));
     const lin = x => Math.pow(x / 255, 2.2), lum = 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
     return { bg: `rgb(${c.join(',')})`, fg: lum > 0.28 ? '#0b1626' : '#f3f6fa' };
   }
