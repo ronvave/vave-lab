@@ -1,0 +1,9 @@
+/* Country flags beside country names in Tonga Panels B2 and B5 */
+.tcf-flag {
+  display: inline-block; flex: 0 0 auto; width: 30px; height: 20px;
+  margin-right: 10px; vertical-align: middle; object-fit: cover;
+  border-radius: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,.12), 0 1px 3px rgba(0,0,0,.18);
+  background: #eef2f5;
+}
+.tcf-flag--none { box-shadow: none; background: transparent; }
+.db-world-country-row__name .tcf-flag { position: relative; top: -1px; }
