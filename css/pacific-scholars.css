@@ -840,3 +840,10 @@ section[data-panel] { scroll-margin-top: 70px; }
 .psu-chip[aria-pressed='true'] { background: linear-gradient(180deg, var(--ps-teal-400), var(--ps-teal-500)); color: var(--ps-navy-950); border-color: transparent; box-shadow: 0 2px 10px rgba(25, 181, 196, 0.35); }
 .psu-chip:focus-visible { outline: 2px solid var(--ps-teal-400); outline-offset: 2px; }
 @media (max-width: 720px) { .psu-chips { gap: 5px; } .psu-chip { font-size: 0.76rem; padding: 3px 9px 3px 4px; } .psu-chip img { width: 18px; height: 18px; } }
+
+/* B2: Reef shares with counts in brackets */
+#ps-where-table td small, .ps-pt td small { font-weight: 500; font-size: .82em; opacity: .85; }
+#ps-where-table td { white-space: nowrap; font-size: .9rem; }
+#ps-where-table td.ps-hm-n { background: none; color: var(--ps-text); }
+.ps-pt td.c:not(.z) { white-space: nowrap; border-radius: 4px; }
+@media (max-width: 720px) { #ps-where-table { min-width: 1080px; } #ps-where-table td { font-size: .82rem; } .ps-pt { min-width: 1060px; } }

@@ -867,7 +867,7 @@
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
     const profOnly = countries().filter(c => posProfileOnly(c.code)).map(c => c.name);
     const nProf = Object.values(P.coverage.profile || {}).reduce((a, b) => a + b, 0);
-    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets; colours run from navy (small share) to yellow (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
   }
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
@@ -932,15 +932,17 @@
     const cols = whereOther.length ? [...top, 'Other'] : top;
     const homes = countries().map(c => c.code).filter(posHas);
     const val = (c, h) => h === 'Other' ? whereList(c, 'Other').length : ((M[c] || {})[h] || 0);
-    const mx = Math.max(1, ...homes.flatMap(c => cols.map(h => val(c, h))));
-    let html = '<thead><tr><th scope="col"><span class="ps-sr">Home country</span></th>' + cols.map(h => `<th scope="col"><span>${esc(h)}</span></th>`).join('') + '</tr></thead><tbody>';
+    // Row base: unique scholars from this home country with at least one position in the chosen group.
+    const base = c => D.positions.scholars.filter(s => s.c === c && whereHosts(s, keys).size).length;
+    let html = '<thead><tr><th scope="col"><span class="ps-sr">Home country</span></th>' + cols.map(h => `<th scope="col"><span>${esc(h)}</span></th>`).join('') + '<th scope="col" class="ps-hm-n"><span>Scholars</span></th></tr></thead><tbody>';
     for (const c of homes) {
+      const n = base(c);
       html += `<tr class="${state.sel === c ? 'sel' : ''}"><th class="home" scope="row"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}</th>` + cols.map(h => {
-        const v = val(c, h), a = v / mx;
-        const bg = v ? `rgba(127,227,230,${(0.15 + 0.75 * a).toFixed(2)})` : 'rgba(255,255,255,.04)';
-        const attrs = v ? ` data-c="${c}" data-h="${esc(h)}" tabindex="0" aria-label="${esc(nameOf(c))} scholars in ${esc(h)}: ${v}"` : '';
-        return `<td class="${HOMEN[c] === h ? 'self' : ''}" style="background:${bg};color:${a > .45 ? '#04121f' : '#eaf3fb'}"${attrs}>${v || ''}</td>`;
-      }).join('') + '</tr>';
+        const v = val(c, h), a = n ? v / n : 0, p = Math.round(100 * a), rc = reefCell(a);
+        const bg = v ? rc.bg : 'rgba(255,255,255,.04)';
+        const attrs = v ? ` data-c="${c}" data-h="${esc(h)}" tabindex="0" aria-label="${esc(nameOf(c))} scholars in ${esc(h)}: ${v} of ${n} (${p}%)"` : '';
+        return `<td class="${HOMEN[c] === h ? 'self' : ''}" style="background:${bg};color:${v ? rc.fg : '#eaf3fb'}"${attrs}>${v ? `${p}% <small>(${fmt(v)})</small>` : ''}</td>`;
+      }).join('') + `<td class="ps-hm-n" title="${fmt(n)} scholars with a position in this group">${fmt(n)}</td></tr>`;
     }
     $('#ps-where-table').innerHTML = html + '</tbody>';
     posTipHide();
@@ -976,6 +978,9 @@
   function renderPosTable() {
     const P = D.positions, C = countries().map(c => c.code);
     let h = '<thead><tr><th class="role" scope="col">Position</th>' + C.map(c => `<th scope="col" class="${posHas(c) ? '' : 'nodata'}${state.sel === c ? ' sel' : ''}"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(SHORT[c] || c)}</th>`).join('') + '<th scope="col" class="tot">Region</th></tr></thead><tbody>';
+    // Column base for the shares: scholars in that column with any of these positions (same as the first footer row).
+    const anyOf = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
+    const anyN = Object.fromEntries(['*', ...C].map(c => [c, posHas(c) || c === '*' ? anyOf(c) : 0]));
     for (const [grp, list] of [['University leadership', P.lead], ['Academic rank', P.rank]]) {
       h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><span>${grp}</span></th></tr>`;
       for (const [k, l] of list) {
@@ -983,16 +988,15 @@
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
           if (!posHas(c)) return '<td class="c nd"><span class="ps-sr">no records</span>·</td>';
           const n = posCell(k, c).length;
-          return `<td class="c${n ? '' : ' z'}${state.sel === c ? ' selcol' : ''}" data-k="${k}" data-c="${c}"${n ? ' tabindex="0"' : ''}>${n || '–'}</td>`;
-        }).join('') + `<td class="tot" data-k="${k}" data-c="*"${tot ? ' tabindex="0"' : ''}>${tot}</td></tr>`;
+          const b = anyN[c], a = b ? n / b : 0, rc = reefCell(a);
+          return `<td class="c${n ? '' : ' z'}${state.sel === c ? ' selcol' : ''}" data-k="${k}" data-c="${c}"${n ? ` tabindex="0" style="background:${rc.bg};color:${rc.fg}" aria-label="${esc(l)}, ${esc(nameOf(c))}: ${n} of ${b} (${Math.round(100 * a)}%)"` : ''}>${n ? `${Math.round(100 * a)}% <small>(${fmt(n)})</small>` : '–'}</td>`;
+        }).join('') + `<td class="tot" data-k="${k}" data-c="*"${tot ? ' tabindex="0"' : ''}>${tot ? `${anyN['*'] ? Math.round(100 * tot / anyN['*']) : 0}% <small>(${fmt(tot)})</small>` : '0'}</td></tr>`;
       }
     }
-    const any = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
+    const any = c => anyN[c];
     h += '</tbody><tfoot><tr><th class="role" scope="row">Scholars with any of these</th>' + C.map(c => `<td>${posHas(c) ? any(c) : '·'}</td>`).join('') + `<td class="tot">${any('*')}</td></tr>`;
     h += '<tr><th class="role" scope="row">Roster size</th>' + C.map(c => `<td>${fmt(byCode[c].scholars)}</td>`).join('') + `<td class="tot">${fmt(countries().reduce((a, c) => a + c.scholars, 0))}</td></tr></tfoot>`;
     const t = $('#ps-pos-table'); t.innerHTML = h;
-    const cells = [...t.querySelectorAll('td.c[data-k]')], mx = Math.max(1, ...cells.map(td => +td.textContent || 0));
-    cells.forEach(td => { const v = +td.textContent || 0; if (v) td.style.background = `rgba(25,181,196,${(0.12 + 0.6 * v / mx).toFixed(2)})`; });
     $('#ps-pos-tip').classList.remove('show');
   }
   function renderLead() {
