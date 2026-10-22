@@ -178,7 +178,7 @@
   }
   function log (msg, kind) {
     var box = $('#action-log');
-    if (!box) return;
+    if (!box) { if (window.console) console[kind === 'error' ? 'warn' : 'info']('[Tonga admin] ' + msg); return; }
     var t = new Date().toLocaleTimeString('en-GB');
     var cls = kind === 'error' ? 'log-error' : (kind === 'ok' ? 'log-ok' : '');
     var line = document.createElement('div');
@@ -2297,11 +2297,11 @@
       if (anyPushed && dispatched) {
         doneMsg = 'done — cache-busters refreshed, live in ~30–90 s; workflow dispatched.';
       } else if (anyPushed && !dispatched) {
-        doneMsg = 'done — cache-busters refreshed, live in ~30–90 s. (Workflow dispatch failed — see Action log.)';
+        doneMsg = 'done — cache-busters refreshed, live in ~30–90 s. (Workflow dispatch failed — see the browser console.)';
       } else if (!anyPushed && dispatched) {
         doneMsg = 'done — HTML already fresh; workflow dispatched for data refresh.';
       } else {
-        doneMsg = 'done — HTML already fresh. (Workflow dispatch failed — see Action log.)';
+        doneMsg = 'done — HTML already fresh. (Workflow dispatch failed — see the browser console.)';
       }
       setForceStatus_(doneMsg);
       toast(anyPushed

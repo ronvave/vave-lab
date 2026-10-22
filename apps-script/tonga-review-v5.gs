@@ -55,6 +55,17 @@ function tongaV5Validate_(kind,rec){
   else{if(!String(rec.institution||'').trim()||!String(rec.title||'').trim())throw Error('Institution and title required');if(rec.country&&!tongaV5Country_(rec.country))throw Error('Choose a country from the list');}
 }
 
+/** Signs that CV text was split badly. Returns a list of plain-language problems. */
+function tongaV5CvQuality_(kind,values){
+  var out=[],fields=kind==='degree'?['O_Uni name','Degree / Qualification']:['Institution','Academic / Professional Title (verbatim)','Department / Unit'];
+  fields.forEach(function(f){var v=String(values[f]||'').trim();if(!v)return;
+    if(v.length>(f==='Institution'||f==='O_Uni name'?100:160))out.push(f+' is unusually long');
+    else if(/^[a-z]/.test(v))out.push(f+' starts mid-sentence');
+    else if(/(^|\s)(I|my|we|our)(\s|$)/.test(v))out.push(f+' reads like a sentence');
+    else if(v.length>3&&v===v.toUpperCase()&&/[A-Z]{4}/.test(v))out.push(f+' is in capitals');
+    if(/^(university|college|institute|school|department)$/i.test(v))out.push(f+' is only a generic word');});
+  return out;
+}
 /** Build a degree or position proposal against the live Master. */
 function tongaV5RowItem_(ss,o,kind,rec,extra){
   var sheet=kind==='degree'?'Graduate Degrees':'Positions',idField=kind==='degree'?'Degree ID':'Position ID';
@@ -83,6 +94,9 @@ function tongaV5RowItem_(ss,o,kind,rec,extra){
   if(!reason&&match)reason='Fills empty Master fields in '+match[idField]+(differences.length?'; other differing values are listed but not changed.':'.');
   if(!reason)reason=(rec.forceNew?'New row (reviewer chose to add a separate row). ':'New '+sheet+' row. ')+'Check every value against the source before approving.';
   var item={kind:kind,record:rec,label:label,values:values,match:match?{id:match[idField],row:match._row}:null,updates:updates,differences:differences,state:state,reason:reason,source:rec.source||'',evidence:rec.evidence||''};
+  // CV text is parsed heuristically. Every CV-derived row starts unticked, and rows whose
+  // text looks like a sentence, a fragment or SHOUTED capitals are flagged for checking.
+  if(/^CV page/i.test(rec.source||'')){item.defaultUnchecked=true;var q=tongaV5CvQuality_(kind,values);if(q.length&&item.state==='pending'){item.state='needs_review';item.reason='CV text needs checking before approval: '+q.join('; ')+'. Edit the proposal or decline it.';}}
   if(extra)Object.keys(extra).forEach(function(k){item[k]=extra[k];});
   return item;
 }

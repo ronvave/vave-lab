@@ -54,7 +54,9 @@ function tongaAnalysisCv_(ss,o,proposal){
  if(proposal.key==='institution')proposal.value=String(proposal.value).split(/\s{2,}/)[0].trim();
  var fields={};fields[proposal.key]=proposal.value;var fake={};Object.keys(o).forEach(function(k){fake[k]=o[k];});fake['Submitted Fields JSON']=JSON.stringify(fields);
  var changes=buildScholarSubmissionChanges_(ss,fake),c=changes.filter(function(x){return x.key===proposal.key;})[0];
- return {kind:'profile',key:proposal.key,value:proposal.value,source:proposal.source,evidence:proposal.evidence,label:c?c.label:proposal.key,change:c||null,state:c?(c.writable&&!String(c.currentValue||'').trim()?'pending':'needs_review'):'existing',reason:c?c.reason||'Verify the extracted value against the source page':'Already matches the Master'};
+ var v=String(proposal.value||'').trim(),overwrite=!!(c&&String(c.currentValue||'').trim()),odd=/^(university|college|institute|school|department)$/i.test(v)||(v.length>3&&v===v.toUpperCase()&&/[A-Z]{4}/.test(v))||/^[a-z]/.test(v);
+ // A CV value never replaces an existing Master value by default: it starts unticked and must be checked.
+ return {kind:'profile',key:proposal.key,value:proposal.value,source:proposal.source,evidence:proposal.evidence,label:c?c.label:proposal.key,change:c||null,defaultUnchecked:overwrite||odd,state:c?(c.writable&&!overwrite&&!odd?'pending':'needs_review'):'existing',reason:c?(c.reason||(overwrite?'Would replace the current Master value ('+String(c.currentValue).slice(0,120)+'). Approve only if the CV is clearly newer and correct':odd?'CV text looks incomplete or is in capitals; edit before approving':'Verify the extracted value against the source page')):'Already matches the Master'};
 }
 function tongaAnalyseAttachment_(body){return tongaWithSubmission_(body,function(ss,o){
  var f=tongaAnalysisFiles_(o).filter(function(x){return x.fileId===body.fileId;})[0];if(!f)throw Error('Attachment not in submission');

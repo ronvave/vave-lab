@@ -51,3 +51,9 @@
 .tonga-analysis-item pre{white-space:pre-wrap;font-size:.8rem;background:#f6f8f8;padding:8px;border-radius:4px;max-height:220px;overflow:auto}
 .tonga-proposal-form textarea{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px;font:inherit}
 .tonga-geo-select{border:1px solid #d7dfdf;border-radius:6px;padding:10px 14px;margin:10px 0;display:flex;flex-wrap:wrap;gap:8px 18px}.tonga-geo-select legend{font-weight:600;color:#06464c;padding:0 4px}.tonga-geo-select label{display:flex;align-items:center;gap:6px;font-size:.88rem}.tonga-geo-select .meta{flex-basis:100%;margin:2px 0 0}
+
+/* Why a scholar submission is still Pending */
+.tonga-remaining{margin:14px 0;padding:12px 14px;border:1px solid #d9a441;border-left:5px solid #b7791f;border-radius:6px;background:#fff8ea}
+.tonga-remaining>summary{font-weight:700;cursor:pointer;color:#7a4b00}
+.tonga-remaining-item{display:block;margin:6px 0;line-height:1.4}
+.tonga-remaining input[type=text]{display:block;width:100%;max-width:640px;margin:4px 0 10px;padding:6px 8px;font:inherit}

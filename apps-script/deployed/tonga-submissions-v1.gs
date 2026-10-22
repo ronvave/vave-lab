@@ -170,7 +170,7 @@ function doGet(e) {
 
 function tongaReadAction_(params) {
   var action=params.action||'ping';
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,queueCounts:true,degreeRows:true,positionRows:true,formProposals:true,cvStructured:true,crossrefLookup:true,serverOcr:typeof Drive!=='undefined'&&!!Drive.Files,geographySelection:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,closeItems:true,queueCounts:true,degreeRows:true,positionRows:true,formProposals:true,cvStructured:true,crossrefLookup:true,serverOcr:typeof Drive!=='undefined'&&!!Drive.Files,geographySelection:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
     if (action === 'readAttachmentAnalysis') return tongaReadAnalysis_(params);
     if (action === 'reviewQueueCounts') return tongaQueueCounts_();
     if (action === 'describe') {
@@ -362,6 +362,7 @@ function doPost(e) {
     if (action === 'beginScholarReview') return tongaBeginReview_(body);
     if (action === 'recordScholarAttachmentReview') return tongaRecordAttachment_(body);
     if (action === 'finishScholarReview') return tongaFinishReview_(body);
+    if (action === 'closeScholarReviewItems') return tongaCloseItems_(body);
     if (action === 'banScholarSubmitter') return tongaBanSubmitter_(body);
     if (action === 'approveScholarProfileSubmission') return tongaApproveScholar_(body);
     if (action === 'resolveScholarProfileSubmission') return tongaResolveScholar_(body);
@@ -549,7 +550,7 @@ function applyOneChange_(ss, c, dryRun) {
     sheet.getRange(wsCfg.headerRow,col).setValue(field);
     sheet.getRange(wsCfg.headerRow,col).setNote('Approved public display name. Original Given Names, Family Name and Scholar Name remain the canonical record.');
   }
-  sheet.getRange(rowInfo.row, col).setValue(newValue);
+  sheet.getRange(rowInfo.row, col).setValue(tongaLiteral_(newValue));
   appendChangeLog_(ss, ws, sid, field, currentStr, newValue);
   return {
     status: 'ok',
@@ -975,13 +976,14 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.1';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
 function geoSs_(){return SpreadsheetApp.openById(SPREADSHEET_ID_HINT);}
 function tongaPublicEnabled_(){return PropertiesService.getScriptProperties().getProperty('TONGA_PUBLIC_SUBMISSIONS_ENABLED')==='true';}
-function tongaLiteral_(v){return typeof v==='string' && /^[=+@-]/.test(v) ? "'"+v : v;}
+// A leading ' is Sheets' text marker and would be swallowed ('Eua -> Eua), so it is doubled too.
+function tongaLiteral_(v){return typeof v==='string' && /^[=+@'-]/.test(v) ? "'"+v : v;}
 var TONGA_READ_TABLES=null; // Request-local only; enabled for read routes, never writes.
 function tongaTable_(ss,name){
   if(TONGA_READ_TABLES&&TONGA_READ_TABLES[name])return TONGA_READ_TABLES[name];
@@ -1172,10 +1174,13 @@ function tongaWithSubmission_(body,fn){
   }finally{lock.releaseLock();}
 }
 function tongaBeginReview_(body){return tongaWithSubmission_(body,function(ss,o){return jsonOut_({status:'ok',plan:tongaBeginPlan_(body,ss,o)});});}
-function tongaBeginPlan_(body,ss,o){
+function tongaBeginPlan_(body,ss,o,allowEmpty){
   var old=tongaReviewPlan_(o);
   var proposed=buildScholarSubmissionChanges_(ss,o),selected=body.selectedChanges||[],fileIds=body.selectedFiles||[];
   if(!Array.isArray(selected)||!Array.isArray(fileIds))throw new Error('Invalid review selection');
+  // An item recorded as applied that Master still does not match (e.g. a leading ' was
+  // swallowed by Sheets) is reopened so it can be ticked and written again.
+  if(old)old.items.forEach(function(i){if(i.kind==='text'&&i.state==='applied'&&proposed.some(function(p){return p.key===i.key&&p.writable;})){i.state='deferred';i.selected=false;i.heldReason='Recorded as applied, but Master does not match the submitted value';}});
   var keys={};selected.forEach(function(x){if(keys[x.key])throw new Error('Duplicate selection');keys[x.key]=x;
     var previous=old&&old.items.find(function(i){return i.kind==='text'&&i.key===x.key;});
     if(previous&&previous.state!=='deferred')return;
@@ -1186,7 +1191,7 @@ function tongaBeginPlan_(body,ss,o){
   var files=parseJsonObject_(o['Attachments JSON']);if(!Array.isArray(files))files=[];
   fileIds.forEach(function(id){if(!files.some(function(f){return f.fileId===id;}))throw new Error('Attachment not in submission');});
   var plan={version:3,reviewer:ACTOR_LABEL,startedAt:tongaNow_(),note:String(body.reviewNotes||'').slice(0,1500),items:[]};
-  proposed.forEach(function(c){plan.items.push({kind:'text',key:c.key,label:c.label,selected:!!keys[c.key],state:keys[c.key]?'pending':'deferred',change:c});});
+  proposed.forEach(function(c){plan.items.push({kind:'text',key:c.key,label:c.label,selected:!!keys[c.key],state:keys[c.key]?'pending':'deferred',confirmClear:!!(keys[c.key]&&keys[c.key].confirmClear===true),change:c});});
   files.forEach(function(f){plan.items.push({kind:'file',key:f.fileId,field:f.field,name:f.name,selected:fileIds.indexOf(f.fileId)>=0,state:fileIds.indexOf(f.fileId)>=0?'pending':'deferred'});});
   if(old){
     // Preserve durable successes and unfinished selected work. Only newly selected
@@ -1195,34 +1200,42 @@ function tongaBeginPlan_(body,ss,o){
       if(item.state!=='deferred'||!fresh||!fresh.selected){var i=plan.items.findIndex(function(x){return x.kind===item.kind&&x.key===item.key;});if(i>=0)plan.items[i]=item;else plan.items.push(item);}
     });
   }
-  if(!old&&!plan.items.some(function(x){return x.state==='pending';}))throw new Error('Select at least one pending item');
+  if(!old&&!allowEmpty&&!plan.items.some(function(x){return x.state==='pending';}))throw new Error('Select at least one pending item');
   tongaSavePlan_(o,plan);return plan;
 }
 function tongaApplyPlan_(ss,o,plan){
-  var pending=plan.items.filter(function(x){return x.kind==='text'&&x.state==='pending';}),results=[];
-  // Check all pending fields before applying any; re-resolve degree rows each time.
+  var pending=plan.items.filter(function(x){return x.kind==='text'&&x.state==='pending';}),results=[],held=[];
+  // Check every pending field first; re-resolve each Master target now. A stored
+  // plan can predate a field-mapping fix (e.g. Master's university once pointed at
+  // the computed C_Uni name column), so the fresh target always wins. A field that
+  // cannot be written is held back (deferred) without blocking the other fields.
   var current=buildScholarSubmissionChanges_(ss,o);
+  function hold(item,why){item.state='deferred';item.selected=false;item.heldReason=why;item.reviewedAt=tongaNow_();held.push({key:item.key,label:item.label,reason:why});}
   pending.forEach(function(item){
     var c=item.change,p=current.filter(function(x){return x.key===item.key;})[0];
-    if(p&&(!p.writable||normalizeForCompare_(p.currentValue)!==normalizeForCompare_(c.currentValue)))throw new Error('Master conflict for '+item.label+'; pending review retained');
-    // If a previous write succeeded but acknowledgement failed, applyOneChange_
-    // recognizes the desired value. For degree rows still require a unique row.
-    var target=p||c;
-    if(c.worksheet==='Graduate Degrees'&&!p){
+    if(normalizeForCompare_(c.newValue)===''&&!item.confirmClear&&normalizeForCompare_(p?p.currentValue:c.currentValue)!==''){hold(item,'Blank submitted value: tick it again to confirm clearing the Master value');return;}
+    if(p&&!p.writable){hold(item,p.reason||'Not writable in Master');return;}
+    if(p&&normalizeForCompare_(p.currentValue)!==normalizeForCompare_(c.currentValue)){hold(item,'Master changed since this review began; check the current value and tick it again');return;}
+    var target={worksheet:(p||c).worksheet,field:(p||c).field,rowNumber:(p||c).rowNumber};
+    if(target.worksheet==='Graduate Degrees'&&!p){
       var t=tongaTable_(ss,'Graduate Degrees'),si=t.headers.indexOf('Scholar ID'),di=t.headers.indexOf('Degree Stage');
-      var stage=scholarSubmissionFieldSpecs_().filter(function(x){return x.key===item.key;})[0].stage;
+      var spec=scholarSubmissionFieldSpecs_().filter(function(x){return x.key===item.key;})[0],stage=spec&&spec.stage;
       var rows=t.rows.map(function(r,i){return {r:r,n:i+5};}).filter(function(x){return x.r[si]===o['Scholar ID']&&(stage==='master'?/master/i:/(phd|doctor)/i).test(x.r[di]);});
-      if(rows.length!==1)throw new Error('Ambiguous degree row; pending review retained');target.rowNumber=rows[0].n;
+      if(rows.length!==1||!spec){hold(item,'Ambiguous degree row');return;}target.rowNumber=rows[0].n;target.field=spec.field;
     }
-    item._write={worksheet:c.worksheet,scholarId:o['Scholar ID'],rowNumber:target.rowNumber,field:c.field,oldValue:c.currentValue,newValue:c.newValue};
-    var test=applyOneChange_(ss,item._write,true);if(['ok','already_satisfied'].indexOf(test.status)<0)throw new Error('Field validation failed: '+item.label+' ('+test.status+')');
+    item._write={worksheet:target.worksheet,scholarId:o['Scholar ID'],rowNumber:target.rowNumber,field:target.field,oldValue:p?p.currentValue:c.currentValue,newValue:c.newValue};
+    var test=applyOneChange_(ss,item._write,true);
+    if(['ok','already_satisfied'].indexOf(test.status)<0){delete item._write;hold(item,'Field validation failed ('+test.status+(test.reason?': '+test.reason:'')+')');}
   });
   pending.forEach(function(item){
+    if(!item._write)return;
     var result=applyOneChange_(ss,item._write,false);delete item._write;
     results.push({key:item.key,status:result.status});
-    if(['ok','already_satisfied'].indexOf(result.status)>=0){item.state='applied';item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();tongaSavePlan_(o,plan);}
+    if(['ok','already_satisfied'].indexOf(result.status)>=0){item.state='applied';item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();}
+    else hold(item,'Write failed ('+result.status+')');
   });
-  return jsonOut_({status:results.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;})?'partial':'ok',results:results,plan:plan,remainingReview:true});
+  tongaSavePlan_(o,plan);
+  return jsonOut_({status:results.some(function(r){return ['ok','already_satisfied'].indexOf(r.status)<0;})?'partial':'ok',results:results,held:held,plan:plan,remainingReview:true});
 }
 function tongaRecordAttachment_(body){return tongaWithSubmission_(body,function(ss,o){
   var plan=tongaReviewPlan_(o);if(!plan)throw new Error('Begin review first');
@@ -1252,6 +1265,23 @@ function tongaFinishPlan_(body,ss,o){
   appendChangeLog_(ss,SCHOLAR_SUBMISSION_SHEET,o['Scholar ID'],o['Submission ID'],'Pending','Reviewed');
   o._sheet.getRange(o._row,3).setValue('Reviewed');o.Status='Reviewed';return {status:'ok',remainingReview:false,plan:plan};
 }
+/** Closes chosen pending/deferred items without changing Master (e.g. sidecar URLs applied in the
+ *  scholar editor, a CV kept on file, a degree handled through row proposals). A note is required and
+ *  kept in the review record. Completes the submission when nothing else remains. */
+function tongaCloseItems_(body){TONGA_READ_TABLES=null;return tongaWithSubmission_(body,function(ss,o){
+  var note=String(body.note||'').trim();if(note.length<5)throw new Error('Add a short note (at least 5 characters) saying why these items need no Master change');
+  var list=body.items;if(!Array.isArray(list)||!list.length)throw new Error('Choose at least one item to close');
+  var plan=tongaReviewPlan_(o)||tongaBeginPlan_({selectedChanges:[],selectedFiles:[],reviewNotes:body.reviewNotes},ss,o,true);
+  var analysis=typeof tongaAnalysisLoad_==='function'?tongaAnalysisLoad_(o):null,closed=0;
+  list.forEach(function(k){
+    var it=plan.items.filter(function(x){return x.kind===k.kind&&x.key===k.key;})[0];if(!it)throw new Error('Item is not part of this review: '+k.key);
+    if(['pending','deferred'].indexOf(it.state)<0)return;
+    if(it.kind==='file'&&analysis&&analysis.items.some(function(x){return x.fileId===it.key&&['pending','needs_review'].indexOf(x.state)>=0;}))throw new Error('Approve or decline the remaining proposals from '+(it.name||'this file')+' first');
+    it.state='closed_no_change';it.closeNote=note.slice(0,500);it.reviewedBy=ACTOR_LABEL;it.reviewedAt=tongaNow_();closed++;
+  });
+  tongaSavePlan_(o,plan);
+  var finished=tongaFinishPlan_({reviewNotes:body.reviewNotes||plan.note},ss,o);finished.closed=closed;finished.row=tongaReviewRow_(ss,o);return jsonOut_(finished);
+});}
 function tongaRejectRemaining_(o){
   var plan=tongaReviewPlan_(o);
   if(!plan){var fields=parseJsonObject_(o['Submitted Fields JSON']),files=parseJsonObject_(o['Attachments JSON']);plan={version:2,reviewer:ACTOR_LABEL,items:Object.keys(fields).map(function(k){return {kind:'text',key:k,state:'rejected'};})};
@@ -1292,7 +1322,7 @@ function backupTongaReviewDataV2(){
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
 var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
+var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the

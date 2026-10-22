@@ -130,6 +130,7 @@
     beginScholarReview: function (submissionId, selectedChanges, selectedFiles, reviewNotes) { return reviewPost({action:'beginScholarReview',submissionId:submissionId,selectedChanges:selectedChanges,selectedFiles:selectedFiles,reviewNotes:reviewNotes}); },
     recordAttachmentReview: function (submissionId, fileId, disposition, evidence) { return reviewPost({action:'recordScholarAttachmentReview',submissionId:submissionId,fileId:fileId,disposition:disposition,evidence:evidence}); },
     finishScholarReview: function (submissionId, reviewNotes) { return reviewPost({action:'finishScholarReview',submissionId:submissionId,reviewNotes:reviewNotes}); },
+    closeScholarReviewItems: function (submissionId, items, note, reviewNotes) { return reviewPost({action:'closeScholarReviewItems',submissionId:submissionId,items:items,note:note,reviewNotes:reviewNotes}); },
     banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
     readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
     readGeographySubmissions: function (status) { return callGetWithParams('readPublicationGeographySubmissions', {status: status || ''}); },

@@ -228,7 +228,7 @@
   .btn-primary:disabled { background: var(--muted-2); border-color: var(--muted-2); cursor: not-allowed; }
   .divider { height: 1px; background: var(--border); margin: 14px 0; }
 </style>
-<link rel="stylesheet" href="css/tongan-submissions.css?v=aacdf93d">
+<link rel="stylesheet" href="css/tongan-submissions.css?v=d4fe4f91">
 <script src="js/tongan-attachment-review.js?v=ae619b49" defer></script>
 </head>
 <body>
@@ -279,7 +279,6 @@
       <button class="tab-btn" data-tab="scholar-submissions">Scholar Update Submissions</button>
       <button class="tab-btn" data-tab="geography-submissions">Publication Geography Submissions</button>
       <button class="tab-btn" data-tab="changelog">Master change log</button>
-      <button class="tab-btn" data-tab="log">Action log</button>
     </div>
 
     <div class="tab-panel" id="tab-scholar-submissions"><div class="card" data-tonga-queue="scholar"><h2>Scholar Update Submissions</h2></div></div>
@@ -494,13 +493,6 @@
       </div>
     </div>
 
-    <div class="tab-panel" id="tab-log">
-      <div class="card">
-        <h2>Action log</h2>
-        <p class="meta">Last 200 admin operations in this browser session.</p>
-        <div id="action-log"></div>
-      </div>
-    </div>
   </main>
 </section>
 
@@ -708,7 +700,7 @@
               <li><span class="mono">scholar_id</span>, <span class="mono">name</span> (paste envelope) are accepted quietly — used for the Admin log but not persisted onto the record.</li>
               <li><span class="mono">summary_format</span> / <span class="mono">summary-format</span> → <span class="mono">summaryFormat</span></li>
               <li>Outer name wrapper (e.g. <span class="mono">{ "Veitayaki, Joeli": { … } }</span> from Claude / V1-style pastes) is <strong>auto-unwrapped</strong>; the wrapper string is preserved as <span class="mono">canonicalName</span>.</li>
-              <li>Unknown top-level keys (e.g. <span class="mono">scholar</span>, <span class="mono">notes</span>) are dropped with a warning in the Action log — never persisted.</li>
+              <li>Unknown top-level keys (e.g. <span class="mono">scholar</span>, <span class="mono">notes</span>) are dropped with a warning message — never persisted.</li>
               <li><span class="mono">summaryFormat</span> auto-detects <span class="mono">html</span> vs <span class="mono">plain</span> from the content when omitted.</li>
               <li>Inline links inside <span class="mono">summaryHtml</span>: only <span class="mono">&lt;a href="http(s)://…"&gt;</span>, <span class="mono">&lt;em&gt;</span>, <span class="mono">&lt;strong&gt;</span> are rendered on the public card. Everything else is escape-encoded for safety.</li>
               <li>Sources accept either full objects <span class="mono">{title, url}</span> or bare URL strings.</li>
@@ -755,11 +747,11 @@
 <script src="js/tongan-clans.js?v=9de7085a" defer></script>
 <script src="js/tongan-database-adapter.js?v=03a55c56" defer></script>
 <script src="js/tongan-admin-insights-migration.js?v=c2bcb539" defer></script>
-<script src="js/tongan-admin-writeback-client.js?v=fbc3c1a6" defer></script>
+<script src="js/tongan-admin-writeback-client.js?v=d40210cd" defer></script>
 <script src="js/tongan-change-log.js?v=fb8ad602" defer></script>
-<script src="js/admin-tongan-master.js?v=6eb683bf" defer></script>
+<script src="js/admin-tongan-master.js?v=2c514246" defer></script>
 
 <script src="js/tonga-countries.js?v=ff034128" defer></script>
-<script src="js/tongan-submissions-admin.js?v=e6b6b1c2" defer></script>
+<script src="js/tongan-submissions-admin.js?v=380af3a6" defer></script>
 </body>
 </html>
