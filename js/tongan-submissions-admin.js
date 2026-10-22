@@ -9,7 +9,16 @@ function link(text,url,parent){try{const u=new URL(url);if(!['https:','http:','m
 function locationText(l){return l.national?'Tonga — general / national study':[l.division,l.island,l.district,l.village].filter(Boolean).join(' · ')||'Tonga';}
 function chips(parent,title,values){const group=el('div',null,parent);el('strong',title,group);const wrap=el('div',null,group);if(!values.length)el('span','—',wrap).className='meta';values.forEach(v=>el('span',v,wrap).className='tonga-location-chip');}
 function countries(s){return String(s||'').split(';').map(x=>x.trim()).filter(Boolean);}
-async function refreshPublic(){return 'Master saved. Public profiles update after the next successful scheduled data refresh.';}
+let lastDispatch=0;
+async function refreshPublic(){
+ const admin=window.TongaSubmissionAdmin;
+ if(admin&&typeof admin.refresh==='function'){
+  if(Date.now()-lastDispatch<120000)return 'Master saved. A public refresh was started in the last 2 minutes and will include this change.';
+  try{const ok=await admin.refresh({silent:true});if(ok){lastDispatch=Date.now();return 'Master saved. Public refresh started; dashboards and profiles update in about 5 minutes.';}}catch(_){}
+  return 'Master saved. Public profiles update after the next scheduled data refresh (about every 2 hours). To publish sooner, save a GitHub token in Data source & GitHub.';
+ }
+ return 'Master saved. Public profiles update after the next successful scheduled data refresh.';
+}
 let countRequest=null,countAt=0;
 async function queueCounts(){if(!countRequest||Date.now()-countAt>30000){countAt=Date.now();countRequest=window.adminWriteback.reviewQueueCounts().then(checked).catch(e=>{countRequest=null;throw e;});}return countRequest;}
 document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
@@ -20,7 +29,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  function showCount(n){badge.textContent=String(n);badge.hidden=n===0;badge.title=n+' pending submissions';badge.setAttribute('aria-label',n+' pending submissions');}
  function ready(){const state=document.getElementById('db-status');return !document.hidden&&(!state||state.textContent.trim()==='ready')&&window.adminWriteback&&window.adminWriteback.isConfigured();}
  const read=status=>scholar?window.adminWriteback.readScholarSubmissions(status):window.adminWriteback.readGeographySubmissions(status);
- async function refreshBadge(){if(busy||badgeBusy||!ready()||!window.adminWriteback.reviewQueueCounts)return;badgeBusy=true;const generation=++badgeGeneration;try{const out=await queueCounts();if(generation===badgeGeneration)showCount(out[kind]||0);}catch(_){badge.textContent='?';badge.hidden=false;badge.title='Pending count unavailable. Open this tab to retry.';}finally{badgeBusy=false;}}
+ async function refreshBadge(){if(busy||badgeBusy||!ready()||!window.adminWriteback.reviewQueueCounts)return;badgeBusy=true;const generation=++badgeGeneration;try{const out=await queueCounts();if(generation===badgeGeneration)showCount(out[kind]||0);}catch(_){if(/^\d+$/.test(badge.textContent)){badge.title='Last known count: '+badge.textContent+'. The latest count check failed; it will retry.';}else{badge.textContent='?';badge.hidden=false;badge.title='Pending count unavailable. Open this tab to retry.';}}finally{badgeBusy=false;}}
  setTimeout(refreshBadge,1400);setInterval(refreshBadge,30000);window.addEventListener('focus',refreshBadge);document.addEventListener('visibilitychange',refreshBadge);
  const readyState=document.getElementById('db-status');if(readyState)new MutationObserver(refreshBadge).observe(readyState,{childList:true,characterData:true,subtree:true});
 
@@ -45,11 +54,11 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  const freshness=el('p','Not yet refreshed from Master.',host);freshness.className='meta';freshness.setAttribute('role','status');
  const list=el('div',null,host);
  function message(text,error){status.textContent=text;status.classList.toggle('tonga-error',!!error);}
- function savedState(){const out=new Map();cards.forEach(c=>out.set(c.row['Submission ID'],{note:c.note?.value,selected:c.select?.checked,picks:c.picks.map(p=>[p.key,p.box.checked,p.disposition?.value,p.evidence?.value])}));return out;}
+ function savedState(){const out=new Map();cards.forEach(c=>out.set(c.row['Submission ID'],{geoKeys:c.geoPicks?c.geoPicks.filter(x=>x.checked).map(x=>x.value):undefined,note:c.note?.value,selected:c.select?.checked,picks:c.picks.map(p=>[p.key,p.box.checked,p.disposition?.value,p.evidence?.value])}));return out;}
  async function load(after){if(busy)return;busy=true;refresh.disabled=true;filter.disabled=true;message('Loading…');const controls=[...list.querySelectorAll('button,input,textarea,select')],disabled=controls.map(x=>x.disabled);controls.forEach(x=>x.disabled=true);const saved=savedState();countRequest=null;try{
    if(!window.adminWriteback||!window.adminWriteback.isConfigured())throw new Error('Configure the Tonga endpoint and shared secret in Data source & GitHub first.');
    const out=checked(await read(filter.value));
-   if(scholar&&!caps.version){try{caps=checked(await window.adminWriteback.reviewCapabilities());}catch(_){caps={};}}
+   if(!caps.version){try{caps=checked(await window.adminWriteback.reviewCapabilities());}catch(_){caps={};}}
    if(filter.value==='Pending'){badgeGeneration++;showCount((out.rows||[]).length);}else refreshBadge();
    list.replaceChildren();cards=[];(out.rows||[]).forEach(row=>render(row,saved.get(row['Submission ID'])));
    syncCount();
@@ -74,6 +83,11 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     if(!Array.isArray(row.currentTongaLocations))el('p',row.currentGeographyError||'Current locations unavailable until the Tonga backend is updated. No locations have been inferred.',grid).className='tonga-error';
     chips(grid,'Proposed Tonga locations',parse(row['Proposed Tonga Locations JSON'],[]).map(locationText));chips(grid,'Proposed Pacific countries',countries(row['Proposed Pacific Countries']));chips(grid,'Proposed other countries',countries(row['Proposed Other Countries']));
     if(row.countryValidationError)el('p',row.countryValidationError+' Reject this suggestion or request a corrected submission.',card).className='tonga-error';
+    if(pending&&caps.geographySelection&&!row.countryValidationError){
+     const opts=[];parse(row['Proposed Tonga Locations JSON'],[]).forEach((l,i)=>opts.push(['tonga:'+i,'Tonga: '+locationText(l)]));
+     const seenC=new Set();[...countries(row['Proposed Pacific Countries']),...countries(row['Proposed Other Countries'])].forEach(x=>{const r=window.TongaCountries?.resolve(x);const name=r?r.name:x;if(name==='Tonga'||seenC.has(name))return;seenC.add(name);opts.push(['country:'+name,name]);});
+     if(opts.length){const box=el('fieldset',null,card);box.className='tonga-geo-select';el('legend','Choose which proposed locations to add',box);const savedKeys=saved?.geoKeys;c.geoPicks=opts.map(([key,text])=>{const l=el('label',null,box),cb=el('input',null,l);cb.type='checkbox';cb.value=key;cb.checked=savedKeys?savedKeys.includes(key):true;l.append(' '+text);return cb;});el('p','Unchecked locations are not added. Rows already in Research Geography are never duplicated.',box).className='meta';}
+    }
   }
   if(!pending){el('p',[row.Resolution,row['Review Notes'],row['Reviewed By'],row['Reviewed At']].filter(Boolean).join(' · '),card);return;}
   const label=el('label','Optional review note',card);label.className='tonga-note-label';c.note=el('textarea',null,label);c.note.value=saved?.note||row.reviewPlan?.note||'';c.note.setAttribute('aria-label','Review note for '+row['Submission ID']);
@@ -102,7 +116,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   const structured=parse(row['Structured Submission JSON'],{});
   if(Array.isArray(structured.degrees)&&structured.degrees.length){
    const section=el('section',null,card);section.className='tonga-additional-degree-review';el('h4','Additional degree details — review each degree separately',section);
-   el('p','Add new degrees as separate Graduate Degrees rows. For corrections, use the listed Degree ID. Do not overwrite another degree. The degree-details attachment stays pending until its review/import outcome is recorded below.',section);
+   el('p',caps.degreeRows?'Use “Load proposals from the form” in the Proposed Master rows section below to add each new degree as its own Graduate Degrees row, or to fill empty fields in the listed Degree ID. Existing values are never overwritten.':'Add new degrees as separate Graduate Degrees rows. For corrections, use the listed Degree ID. Do not overwrite another degree. The degree-details attachment stays pending until its review/import outcome is recorded below.',section);
    structured.degrees.forEach(g=>{const block=el('div',null,section);el('strong',(g.operation==='add'?'New ':'Update ')+(g.level==='phd'?'PhD':'Masters')+' #'+g.number+(g.degreeId?' · '+g.degreeId:''),block);const values=g.values||{};for(const [key,label] of [['university','University'],['country','Country'],['year','Year completed'],['thesis_url','Thesis / degree URL']]){const line=el('p',null,block);line.append(label+': ');if(key==='thesis_url'&&values[key])link(values[key],values[key],line);else line.append(String(values[key]||'(empty)'));}el('p','Thesis upload field: '+g.uploadField,block);});
   }
   if(structured.notes)el('p','Submitter notes: '+structured.notes,card);
@@ -169,9 +183,11 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    if(out.row){if(out.row.Status!=='Pending')removeCard(c);else c._updatedRow=out.row;}
    return (out.remainingReview?'Selected work saved; remaining items stay Pending. ':'Approved and saved. ')+await refreshPublic()+(notes.length?' Attachment work remains: '+notes.join('; '):'');
  }
+ function geoKeys(c){if(!c.geoPicks)return undefined;const keys=c.geoPicks.filter(x=>x.checked).map(x=>x.value);if(!keys.length)throw new Error('Select at least one proposed location, or reject this suggestion.');return keys;}
  async function resolveOne(c,decision){
+   if(decision==='approve'&&c.geoPicks&&!c.geoPicks.some(x=>x.checked)){message('Select at least one proposed location, or reject this suggestion.',true);return;}
    if(busy||!confirm(decision==='approve'?'Approve this suggestion and append new non-duplicate geography? Existing geography will be preserved.':'Reject '+(scholar?'all remaining items in this submission':'this suggestion')+'? Nothing new will be added; earlier approved work is preserved.'))return;
-   await run(c,async()=>{checked(await(scholar?window.adminWriteback.resolveScholarSubmission(c.row['Submission ID'],'reject',c.note.value):window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],decision,c.note.value)));removeCard(c);return (decision==='approve'?'Geography approved. '+await refreshPublic():'Rejected — saved and verified.');});
+   await run(c,async()=>{checked(await(scholar?window.adminWriteback.resolveScholarSubmission(c.row['Submission ID'],'reject',c.note.value):window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],decision,c.note.value,decision==='approve'?geoKeys(c):undefined)));removeCard(c);return (decision==='approve'?'Geography approved. '+await refreshPublic():'Rejected — saved and verified.');});
  }
  async function banSubmitter(c){const reason=prompt('Reason for blocking this submitter in Tonga:');if(!reason?.trim()||!confirm('Block future Tonga submissions from '+c.row['Submitter Email']+'? Reason: '+reason))return;await run(c,async()=>{checked(await window.adminWriteback.banScholarSubmitter(c.row['Submission ID'],reason));return 'Submitter blocked for Tonga. The submission remains available for review.';});}
  async function bulkResolve(){
@@ -183,7 +199,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    await run(null,async()=>{let saved=0;const failures=[],remaining=[];
     for(const [i,c] of selected.entries()){
      message('Saving '+(i+1)+' of '+selected.length+'…');
-     try{if(scholar){const result=await saveScholar(c);if(c._updatedRow?.Status==='Pending')remaining.push(c.row['Submission ID']+': '+result);}else{if(c.row.countryValidationError)throw new Error(c.row.countryValidationError);checked(await window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],'approve',c.note.value));removeCard(c);}saved++;}
+     try{if(scholar){const result=await saveScholar(c);if(c._updatedRow?.Status==='Pending')remaining.push(c.row['Submission ID']+': '+result);}else{if(c.row.countryValidationError)throw new Error(c.row.countryValidationError);checked(await window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],'approve',c.note.value,geoKeys(c)));removeCard(c);}saved++;}
      catch(e){failures.push(c.row['Submission ID']+': '+e.message);}
     }
     return saved+' submission(s) processed. Unchecked work remains pending. '+(failures.length?'Failed and retained for retry: '+failures.join('; '):'')+' '+(remaining.length?'Still pending: '+remaining.join('; '):'')+' '+await refreshPublic();

@@ -46,3 +46,8 @@
 .tonga-review .tonga-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
 
 .tonga-review .tonga-recorded-fields th:first-child{width:18%}
+.tonga-analysis-group{border-left:4px solid #0e7490;padding:4px 0 4px 14px;margin:18px 0}.tonga-analysis-group>h5{margin:0 0 6px;font-size:.95rem;color:#06464c;text-transform:none}
+.tonga-analysis-item details table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:6px}.tonga-analysis-item details td{border-top:1px solid #e3e8e8;padding:4px 6px;vertical-align:top}
+.tonga-analysis-item pre{white-space:pre-wrap;font-size:.8rem;background:#f6f8f8;padding:8px;border-radius:4px;max-height:220px;overflow:auto}
+.tonga-proposal-form textarea{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px;font:inherit}
+.tonga-geo-select{border:1px solid #d7dfdf;border-radius:6px;padding:10px 14px;margin:10px 0;display:flex;flex-wrap:wrap;gap:8px 18px}.tonga-geo-select legend{font-weight:600;color:#06464c;padding:0 4px}.tonga-geo-select label{display:flex;align-items:center;gap:6px;font-size:.88rem}.tonga-geo-select .meta{flex-basis:100%;margin:2px 0 0}

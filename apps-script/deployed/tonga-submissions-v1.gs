@@ -170,7 +170,7 @@ function doGet(e) {
 
 function tongaReadAction_(params) {
   var action=params.action||'ping';
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,queueCounts:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,queueCounts:true,degreeRows:true,positionRows:true,formProposals:true,cvStructured:true,crossrefLookup:true,serverOcr:typeof Drive!=='undefined'&&!!Drive.Files,geographySelection:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
     if (action === 'readAttachmentAnalysis') return tongaReadAnalysis_(params);
     if (action === 'reviewQueueCounts') return tongaQueueCounts_();
     if (action === 'describe') {
@@ -354,6 +354,8 @@ function doPost(e) {
     var action = body.action || 'write';
     if (action === 'refreshAttachmentProposals') return tongaRefreshAnalysis_(body);
     if (action === 'analyseScholarAttachment') return tongaAnalyseAttachment_(body);
+    if (action === 'seedFormProposals') return tongaV5SeedForm_(body);
+    if (action === 'crossrefAttachmentProposal') return tongaV5CrossrefItem_(body);
     if (action === 'editAttachmentProposal') return tongaEditAnalysis_(body);
     if (action === 'approveAttachmentProposals') return tongaApproveAnalysis_(body);
     if (action === 'reviewScholarSelection') return tongaReviewSelection_(body);
@@ -905,13 +907,13 @@ function scholarSubmissionFieldSpecs_() {
     {key:'profile_url',label:'Current profile URL',ws:'Scholars',field:'Current Profile URL'},
     {key:'google_scholar_url',label:'Google Scholar URL',ws:'Scholars',field:'Google Scholar URL'},
     {key:'orcid_url',label:'ORCID / Researcher ID',ws:'Scholars',field:'ORCID / Researcher ID'},
-    {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'C_Uni name',stage:'master'},
+    {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'O_Uni name',stage:'master'},
     {key:'masters_country',label:'Master\'s country',ws:'Graduate Degrees',field:'Country',stage:'master'},
-    {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'master'},
+    {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Year / Status',stage:'master'},
     {key:'masters_thesis_url',label:'Master\'s thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'master'},
-    {key:'phd_university',label:'PhD university',ws:'Graduate Degrees',field:'C_Uni name',stage:'phd'},
+    {key:'phd_university',label:'PhD university',ws:'Graduate Degrees',field:'O_Uni name',stage:'phd'},
     {key:'phd_country',label:'PhD country',ws:'Graduate Degrees',field:'Country',stage:'phd'},
-    {key:'phd_year',label:'PhD completion year',ws:'Graduate Degrees',field:'Finish / Completion Year',stage:'phd'},
+    {key:'phd_year',label:'PhD completion year',ws:'Graduate Degrees',field:'Year / Status',stage:'phd'},
     {key:'phd_thesis_url',label:'PhD thesis / degree URL',ws:'Graduate Degrees',field:'Thesis / Repository URL',stage:'phd'}
   ];
 }
@@ -944,7 +946,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
       var degree=gradRows[spec.stage];
       if(degreeCounts[spec.stage]>1){writable=false;reason='Multiple degree rows: use the scholar editor to choose the correct degree';}
       else if(!degree){writable=false;reason='No existing '+spec.stage+' degree row in Master';}
-      else {var dcol=degree.headers.indexOf(spec.field)+1;if(!dcol){writable=false;reason='Master field not found';}else{rowNumber=degree.row;current=normalizeForRead_(degree.values[dcol-1]);}}
+      else {var dcol=degree.headers.indexOf(spec.field)+1;if(!dcol){writable=false;reason='Master field not found';}else{rowNumber=degree.row;current=normalizeForRead_(degree.values[dcol-1]);if(gradSheet.getRange(degree.row,dcol).getFormula()){writable=false;reason='Computed field; update its source field in Master';}}}
     }
     // Public forms display Master sentinel values such as "Unclassified" as
     // an empty control. Treat those as equivalent, particularly for legacy
@@ -973,7 +975,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-4';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1062,23 +1064,25 @@ function handleReadPublicationGeographySubmissions_(params){
   out.push(o);});
   return jsonOut_({status:'ok',rows:out.reverse()});
 }
-function tongaAddGeo_(ss,o){
+function tongaAddGeo_(ss,o,selectedKeys){
+  if(selectedKeys!=null&&(!Array.isArray(selectedKeys)||!selectedKeys.length||selectedKeys.length>80||selectedKeys.some(function(k){return typeof k!=='string'||k.length>200;})))throw new Error('Select at least one proposed location');
   if(!tongaLinkedPublication_(ss,o['Scholar ID'],o['Publication Key']))throw new Error('Publication linkage changed; review again');
   var t=tongaTable_(ss,'Research Geography');
   var required=['Geography Record ID','Publication ID / BibTeX Key','Scholar ID (optional)','Geography Type','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)','Coding Basis / Evidence','Source URL / Note','Verification','Last Checked'];
   required.forEach(function(h){if(t.headers.indexOf(h)<0)throw new Error('Research Geography header missing: '+h);});
   var loc=tongaLocations_(JSON.parse(o['Proposed Tonga Locations JSON']||'[]')),candidates=[];
   tongaValidateLocationLinks_(ss,loc);
-  loc.forEach(function(l){candidates.push({country:'Tonga',division:l.division,district:l.district,island:l.island,village:l.village,type:l.national?'National / general study':'Study location'});});
-  [o['Proposed Pacific Countries'],o['Proposed Other Countries']].forEach(function(s){tongaList_(String(s||'').split(';').filter(function(x){return x.trim();})).forEach(function(c){candidates.push({country:c,division:'',district:'',island:'',village:'',type:'Country / study location'});});});
+  loc.forEach(function(l,i){candidates.push({key:'tonga:'+i,country:'Tonga',division:l.division,district:l.district,island:l.island,village:l.village,type:l.national?'National / general study':'Study location'});});
+  [o['Proposed Pacific Countries'],o['Proposed Other Countries']].forEach(function(s){tongaList_(String(s||'').split(';').filter(function(x){return x.trim();})).forEach(function(c){candidates.push({key:'country:'+c,country:c,division:'',district:'',island:'',village:'',type:'Country / study location'});});});
   var keys=['Publication ID / BibTeX Key','Country','District','Village / Town / Site','Specific Island','Island Division (auto from District)'];
   function signature(r){return keys.map(function(h){return String(r[t.headers.indexOf(h)]||'').trim().toLowerCase();}).join('|');}
   var seen={};t.rows.forEach(function(r){seen[signature(r)]=true;});
+  if(selectedKeys){var known=candidates.map(function(c){return c.key;});selectedKeys.forEach(function(k){if(known.indexOf(k)<0)throw new Error('Selected location is not part of this suggestion; refresh the queue');});candidates=candidates.filter(function(c){return selectedKeys.indexOf(c.key)>=0;});}
   var added=0;
   candidates.forEach(function(c){
     var r=t.headers.map(function(){return '';});function set(h,v){r[t.headers.indexOf(h)]=v;}
     set('Geography Record ID','GEO-'+Utilities.getUuid());set('Publication ID / BibTeX Key',o['Publication Key']);set('Scholar ID (optional)',o['Scholar ID']);set('Geography Type',c.type);set('Country',c.country);set('District',c.district);set('Village / Town / Site',c.village);set('Specific Island',c.island);set('Island Division (auto from District)',c.division);
-    set('Coding Basis / Evidence','Admin-reviewed scholar submission '+o['Submission ID']);set('Source URL / Note',o['Profile URL']);set('Verification','Verified — Admin approved scholar submission');set('Last Checked',Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd'));
+    set('Coding Basis / Evidence','Admin-reviewed scholar submission '+o['Submission ID']+(o['Relationship']?' (submitted by: '+String(o['Relationship']).slice(0,60)+')':''));set('Source URL / Note',o['Profile URL']);set('Verification','Verified — Admin approved scholar submission');set('Last Checked',Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd'));
     var sig=signature(r);if(seen[sig])return;
     var row=t.sheet.getLastRow()+1;
     // Never overwrite an existing derived formula, including a prefilled target row.
@@ -1093,8 +1097,8 @@ function handleResolvePublicationGeographySubmission_(body){
   try{
     var ss=geoSs_(),o=tongaQueueObject_(tongaEnsureGeoQueue_(ss),GEO_SUBMISSION_HEADERS,String(body.submissionId||''));
     if(!o)return jsonOut_({status:'not_found'});if(o.Status!=='Pending')return jsonOut_({status:o.Status===(body.decision==='approve'?'Approved':'Rejected')?'ok':'already_resolved',decision:o.Status,alreadyRecorded:true});
-    var n=body.decision==='approve'?tongaAddGeo_(ss,o):0,status=body.decision==='approve'?'Approved':'Rejected';
-    var resolution=status==='Approved'?n+' new geography rows added; existing geography preserved.':'Rejected; no Master changes.';
+    var n=body.decision==='approve'?tongaAddGeo_(ss,o,body.selectedKeys):0,status=body.decision==='approve'?'Approved':'Rejected';
+    var resolution=status==='Approved'?n+' new geography rows added; existing geography preserved.'+(Array.isArray(body.selectedKeys)?' Reviewer selected '+body.selectedKeys.length+' proposed location(s); unselected locations were not added.':''):'Rejected; no Master changes.';
     o._sheet.getRange(o._row,16,1,4).setValues([[tongaLiteral_(String(body.reviewNotes||'').slice(0,1500)),ACTOR_LABEL,tongaNow_(),resolution]]);
     appendChangeLog_(ss,GEO_SUBMISSION_SHEET,o['Scholar ID'],o['Submission ID'],'Pending',status);
     o._sheet.getRange(o._row,3).setValue(status);return jsonOut_({status:'ok',decision:body.decision,added:n});
@@ -1288,7 +1292,7 @@ function backupTongaReviewDataV2(){
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
 var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the

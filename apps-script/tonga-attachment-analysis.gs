@@ -69,14 +69,18 @@ function tongaAnalyseAttachment_(body){return tongaWithSubmission_(body,function
    if(seen[key]||earlier){item.state='duplicate';item.reason='Duplicate of another uploaded record; import only once.';}seen[key]=true;a.items.push(item);
   });
  }else if(/\.pdf$/i.test(f.name)&&f.field==='cv'){
-  var pages=body.pages;if(!Array.isArray(pages)||!pages.length||pages.length>100)throw Error('PDF page text is required (maximum 100 pages)');
+  var serverOcr=body.useServerOcr===true,pages=serverOcr?tongaV5OcrPages_(f.fileId):body.pages;if(!Array.isArray(pages)||!pages.length||pages.length>100)throw Error('PDF page text is required (maximum 100 pages)');
   if(JSON.stringify(pages).length>500000)throw Error('CV text exceeds analysis limit');
   pages=pages.map(function(p,i){if(p.page!==i+1||typeof p.text!=='string')throw Error('Invalid PDF page sequence');return {page:p.page,text:p.text};});
-  if(body.fingerprint!==summary.fingerprint)throw Error('Attachment changed. Download and analyse it again.');
+  if(!serverOcr&&body.fingerprint!==summary.fingerprint)throw Error('Attachment changed. Download and analyse it again.');if(serverOcr)summary.ocr=true;
   var result=TongaAttachmentParser.cv(pages);summary.pages=pages.length;summary.sections=result.sections;
   summary.warnings.push('PDF extraction may omit text or mix columns. Verify proposals against the original. Names, private contact details and personal activities are not proposed for publication.');
   if(pages.some(function(p){return p.text.trim().length<30;}))summary.warnings.push('Some pages contain little readable text. Scanned pages need manual review; OCR is not performed.');
-  result.proposals.forEach(function(p){a.items.push(tongaAnalysisCv_(ss,o,p));});
+  var now=(result.positions||[]).filter(function(p){return p.current;})[0],profile=result.proposals.filter(function(p){return !/_year$/.test(p.key)&&!(now&&['title','institution','department'].indexOf(p.key)>=0);});
+  if(now){[['title',now.title],['institution',now.institution],['department',now.department]].forEach(function(kv){if(kv[1])profile.push({key:kv[0],value:kv[1],source:now.source,evidence:now.evidence});});}
+  profile.forEach(function(p){a.items.push(tongaAnalysisCv_(ss,o,p));});
+  tongaV5CvItems_(ss,o,result,a).forEach(function(item){a.items.push(item);});
+  summary.found={degrees:(result.degrees||[]).length,positions:(result.positions||[]).length,publications:(result.publications||[]).length};
  }else{summary.status='manual';summary.warnings.push('This attachment format needs manual review. Automatic analysis supports CV PDFs and BibTeX, RIS or EndNote text exports.');}
  for(var i=start;i<a.items.length;i++){a.items[i].id=f.fileId+':'+(i-start+1);a.items[i].fileId=f.fileId;a.items[i].fileName=f.name;}
  a.files.push(summary);
@@ -97,9 +101,17 @@ function tongaEditAnalysis_(body){return tongaWithSubmission_(body,function(ss,o
   var proposal=tongaAnalysisCv_(ss,o,{key:body.key,value:value,source:'CV page '+page.page,evidence:page.excerpt});
   if(item){if(item.kind!=='profile'||item.fileId!==file.fileId)throw Error('Proposal does not belong to this CV');Object.keys(proposal).forEach(function(k){item[k]=proposal[k];});}
   else {item=proposal;item.id=file.fileId+':manual:'+Utilities.getUuid();item.fileId=file.fileId;item.fileName=file.name;a.items.push(item);}
+ }else if(body.kind==='degree'||body.kind==='position'){
+  if(!item||item.kind!==body.kind||item.action==='close')throw Error('Proposal not found');
+  var keys=body.kind==='degree'?['level','degreeName','field','university','city','country','year','startYear','completion','thesisTitle','thesisUrl']:['title','institution','department','country','startYear','endYear','current','rank','leadershipTitle','sourceUrl'];
+  var rec=JSON.parse(JSON.stringify(item.record));keys.forEach(function(k){if(body.record&&body.record[k]!==undefined){rec[k]=k==='current'?body.record[k]===true:String(body.record[k]).trim();}});
+  if(body.newRow===true){delete rec.targetId;rec.forceNew=true;}else{delete rec.forceNew;if(body.targetId)rec.targetId=String(body.targetId);}
+  tongaV5Validate_(body.kind,rec);var fresh=tongaV5RowItem_(ss,o,body.kind,rec);
+  Object.keys(fresh).forEach(function(k){item[k]=fresh[k];});
  }else{
   if(!item||item.kind!=='publication')throw Error('Publication proposal not found');
-  var r=JSON.parse(JSON.stringify(item.record));['title','year','doi','url','venue','publisher'].forEach(function(k){if(body.record&&typeof body.record[k]==='string'){if(body.record[k].length>1000)throw Error('Value too long');r[k]=body.record[k].trim();}});
+  var r=JSON.parse(JSON.stringify(item.record));['title','year','doi','url','venue','publisher','publicationType'].forEach(function(k){if(body.record&&typeof body.record[k]==='string'){if(body.record[k].length>1000)throw Error('Value too long');r[k]=body.record[k].trim();}});
+  if(body.record&&Array.isArray(body.record.authors)){if(body.record.authors.length>100||body.record.authors.some(function(x){return typeof x!=='string'||x.length>200;}))throw Error('Invalid author list');r.authors=body.record.authors.map(function(x){return x.trim();}).filter(Boolean);}
   r.doi=TongaAttachmentParser.doi(r.doi);var fresh=tongaAnalysisPublication_(r,tongaAnalysisModel_(ss,o),o);
   var position=Number(body.authorPosition);if(!Number.isInteger(position)||position<1||position>r.authors.length)throw Error('Select this scholar’s author position from the source authors');
   fresh.authorPosition=position;Object.keys(fresh).forEach(function(k){item[k]=fresh[k];});
@@ -147,7 +159,7 @@ function tongaApproveAnalysis_(body){return tongaWithSubmission_(body,function(s
  body.itemIds.forEach(function(id){var item=a.items.find(function(x){return x.id===id;});if(!item)throw Error('Unknown proposal');if(item.state==='applied'||item.state==='dismissed')return;
   if(['pending','needs_review'].indexOf(item.state)<0)throw Error('Item cannot be approved');
   try{
-   if(!checkedFiles[item.fileId]&&body.decision==='approve'){var source=a.files.find(function(f){return f.fileId===item.fileId;});if(!source||!tongaAnalysisFiles_(o).some(function(f){return f.fileId===item.fileId;}))throw Error('Source attachment not found');var hash=Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,DriveApp.getFileById(item.fileId).getBlob().getBytes()));if(hash!==source.fingerprint)throw Error('Original attachment changed; manual review required');checkedFiles[item.fileId]=true;}
+   if(item.fileId!=='form'&&!checkedFiles[item.fileId]&&body.decision==='approve'){var source=a.files.find(function(f){return f.fileId===item.fileId;});if(!source||!tongaAnalysisFiles_(o).some(function(f){return f.fileId===item.fileId;}))throw Error('Source attachment not found');var hash=Utilities.base64Encode(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256,DriveApp.getFileById(item.fileId).getBlob().getBytes()));if(hash!==source.fingerprint)throw Error('Original attachment changed; manual review required');checkedFiles[item.fileId]=true;}
    if(body.decision==='dismiss'){item.state='dismissed';item.reviewNote=String(body.note||'Not accepted by reviewer').slice(0,1000);}
    else{
     if(item.kind==='profile'){
@@ -156,7 +168,8 @@ function tongaApproveAnalysis_(body){return tongaWithSubmission_(body,function(s
       if(!refreshed.change||!refreshed.change.writable||!item.change||normalizeForCompare_(refreshed.change.currentValue)!==normalizeForCompare_(item.change.currentValue))throw Error('Master changed or field needs manual review; edit/refresh proposal');
       var c=refreshed.change,result=applyOneChange_(ss,{worksheet:c.worksheet,scholarId:o['Scholar ID'],rowNumber:c.rowNumber,field:c.field,oldValue:item.change.currentValue,newValue:item.value},false);if(['ok','already_satisfied'].indexOf(result.status)<0)throw Error('Write validation failed: '+result.status);
      }
-    }else {item.resultPublicationId=tongaAnalysisPublicationWrite_(ss,o,item);}
+    }else if(item.kind==='degree'||item.kind==='position'){item.result=tongaV5ApplyRow_(ss,o,item);}
+    else {item.resultPublicationId=tongaAnalysisPublicationWrite_(ss,o,item);}
     item.state='applied';
    }
    item.reviewedBy=ACTOR_LABEL;item.reviewedAt=tongaNow_();delete item.error;tongaAnalysisSave_(o,a);results.push({id:id,status:'ok'});
@@ -166,6 +179,6 @@ function tongaApproveAnalysis_(body){return tongaWithSubmission_(body,function(s
 
 function tongaRefreshAnalysis_(body){return tongaWithSubmission_(body,function(ss,o){
  var a=tongaAnalysisLoad_(o);if(!a)throw Error('Analyse attachments first');if(a.revision!==body.revision)throw Error('Analysis changed; reload first');var model=tongaAnalysisModel_(ss,o);
- a.items.forEach(function(item){if(['applied','dismissed','duplicate'].indexOf(item.state)>=0)return;var fresh=item.kind==='publication'?tongaAnalysisPublication_(item.record,model,o):tongaAnalysisCv_(ss,o,{key:item.key,value:item.value,source:item.source,evidence:item.evidence});Object.keys(fresh).forEach(function(k){item[k]=fresh[k];});delete item.error;});
+ a.items.forEach(function(item){if(['applied','dismissed','duplicate'].indexOf(item.state)>=0)return;if((item.kind==='degree'||item.kind==='position')&&item.action==='close')return;var fresh=item.kind==='publication'?tongaAnalysisPublication_(item.record,model,o):item.kind==='degree'||item.kind==='position'?tongaV5RowItem_(ss,o,item.kind,item.record):tongaAnalysisCv_(ss,o,{key:item.key,value:item.value,source:item.source,evidence:item.evidence});if(item.kind==='publication')fresh.fromCv=item.fromCv;Object.keys(fresh).forEach(function(k){item[k]=fresh[k];});delete item.error;});
  return jsonOut_({status:'ok',analysis:tongaAnalysisSave_(o,a)});
 });}
