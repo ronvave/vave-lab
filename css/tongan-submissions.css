@@ -57,3 +57,6 @@
 .tonga-remaining>summary{font-weight:700;cursor:pointer;color:#7a4b00}
 .tonga-remaining-item{display:block;margin:6px 0;line-height:1.4}
 .tonga-remaining input[type=text]{display:block;width:100%;max-width:640px;margin:4px 0 10px;padding:6px 8px;font:inherit}
+.tonga-finish{margin:10px 0 12px;padding:10px 12px;background:#eef7f1;border:1px solid #9fcdb0;border-radius:6px}
+.tonga-finish p{margin:0 0 8px}
+.tonga-finish-button{font-weight:700}

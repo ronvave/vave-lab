@@ -170,7 +170,7 @@ function doGet(e) {
 
 function tongaReadAction_(params) {
   var action=params.action||'ping';
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,closeItems:true,queueCounts:true,degreeRows:true,positionRows:true,formProposals:true,cvStructured:true,crossrefLookup:true,serverOcr:typeof Drive!=='undefined'&&!!Drive.Files,geographySelection:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Tonga',version:TONGA_SUBMISSIONS_VERSION,attachmentAnalysis:true,combinedReview:true,selectionReview:true,closeItems:true,finishSubmission:true,queueCounts:true,degreeRows:true,positionRows:true,formProposals:true,cvStructured:true,crossrefLookup:true,serverOcr:typeof Drive!=='undefined'&&!!Drive.Files,geographySelection:true,banSubmitter:TONGA_REQUEST_ROLE==='owner',currentGeography:true,role:TONGA_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:TONGA_REQUEST_ROLE==='owner'});
     if (action === 'readAttachmentAnalysis') return tongaReadAnalysis_(params);
     if (action === 'reviewQueueCounts') return tongaQueueCounts_();
     if (action === 'describe') {
@@ -363,6 +363,7 @@ function doPost(e) {
     if (action === 'recordScholarAttachmentReview') return tongaRecordAttachment_(body);
     if (action === 'finishScholarReview') return tongaFinishReview_(body);
     if (action === 'closeScholarReviewItems') return tongaCloseItems_(body);
+    if (action === 'finishScholarSubmission') return tongaFinishSubmission_(body);
     if (action === 'banScholarSubmitter') return tongaBanSubmitter_(body);
     if (action === 'approveScholarProfileSubmission') return tongaApproveScholar_(body);
     if (action === 'resolveScholarProfileSubmission') return tongaResolveScholar_(body);
@@ -825,7 +826,7 @@ function handlePublicScholarProfileSubmission_(body) {
   try {
     fieldsJson = safeSubmissionObject_(body.fields, 45000);
     var publicStructured=JSON.parse(safeSubmissionObject_(body.structuredSubmission, 45000));
-    delete publicStructured.adminReviewV2;delete publicStructured.adminReviewV2Signature;
+    delete publicStructured.adminReviewV2;delete publicStructured.adminReviewV2Signature;delete publicStructured.ownerEmailedAt;
     structuredJson=JSON.stringify(publicStructured);
   } catch (err) { return jsonOut_({ status:'bad_request', reason:String(err.message || err) }, 400); }
   if (!body.fields || Array.isArray(body.fields)) return jsonOut_({status:'bad_request',reason:'fields-object-required'});
@@ -833,6 +834,9 @@ function handlePublicScholarProfileSubmission_(body) {
   var attachments;
   try { attachments = saveScholarSubmissionFiles_(ss, sid, submissionId, body.files || []); }
   catch (err2) { return jsonOut_({ status:'bad_request', reason:String(err2.message || err2) }, 400); }
+  // Email the headshot, CV and reference file to the Owner for separate processing.
+  // A mail failure never blocks the submission; the Admin "Finish" button retries it.
+  try{if(tongaKeyFiles_(attachments).length){tongaEmailKeyFiles_({'Submission ID':submissionId,'Scholar ID':sid,'Scholar Name':String(body.scholarName||''),'Submitter Name':name,'Relationship':rel,'Submitted At':Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss')},attachments);var st=JSON.parse(structuredJson);st.ownerEmailedAt=tongaNow_();structuredJson=JSON.stringify(st);}}catch(mailErr){}
   var row = [submissionId, Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss'), 'Pending', sid,
     String(body.scholarName || '').slice(0,240), name.slice(0,160), email.slice(0,240), rel.slice(0,100),
     String(body.profileUrl || '').slice(0,700), fieldsJson, structuredJson, JSON.stringify(attachments), '', '', '', ''];
@@ -976,7 +980,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.1';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.2';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1282,6 +1286,43 @@ function tongaCloseItems_(body){TONGA_READ_TABLES=null;return tongaWithSubmissio
   tongaSavePlan_(o,plan);
   var finished=tongaFinishPlan_({reviewNotes:body.reviewNotes||plan.note},ss,o);finished.closed=closed;finished.row=tongaReviewRow_(ss,o);return jsonOut_(finished);
 });}
+/* Key attachments: headshot, CV and reference file (BibTeX, RIS, EndNote, publication list).
+ * Theses and other uploads are kept for download but are not needed for review. */
+function tongaKeyFiles_(files){return (Array.isArray(files)?files:[]).filter(function(f){return f&&f.fileId&&(/^(headshot|cv|publications?|references?|bibliography)$/i.test(String(f.field||''))||/\.(bib|ris|enw|nbib)$/i.test(String(f.name||'')));});}
+function tongaOwnerEmail_(){return PropertiesService.getScriptProperties().getProperty('OWNER_NOTIFY_EMAIL')||Session.getEffectiveUser().getEmail();}
+/** Emails the key files privately to the Owner. Large files are sent as private Drive links. */
+function tongaEmailKeyFiles_(o,files){
+  var key=tongaKeyFiles_(files),to=tongaOwnerEmail_();if(!key.length)return {sent:false,count:0};if(!to)throw new Error('Owner email address unavailable');
+  var blobs=[],links=[],total=0;
+  key.forEach(function(f){var file=DriveApp.getFileById(f.fileId),size=file.getSize();if(total+size<=20*1024*1024){blobs.push(file.getBlob().setName(f.name||file.getName()));total+=size;}else links.push((f.name||file.getName())+': '+file.getUrl());});
+  var label=function(f){return /headshot/i.test(f.field)?'Headshot':/^cv$/i.test(f.field)?'CV':'Reference file';};
+  var body=['Tonga Scholar Database: files from a scholar update submission.','',
+    'Scholar: '+(o['Scholar Name']||'')+' ('+(o['Scholar ID']||'')+')','Submission: '+(o['Submission ID']||'')+(o['Submitted At']?' · '+o['Submitted At']:''),
+    'Submitted by: '+(o['Submitter Name']||'')+(o.Relationship?' ('+o.Relationship+')':''),'',
+    'Files:'].concat(key.map(function(f){return ' - '+label(f)+': '+(f.name||'');})).concat(links.length?['','Too large to attach (private Drive links):'].concat(links):[]).concat(['','Admin: https://ronvave.github.io/vave-lab/admin-tongan-master.html']).join('\n');
+  MailApp.sendEmail({to:to,subject:'Tonga scholar update files: '+(o['Scholar Name']||o['Scholar ID'])+' ('+o['Submission ID']+')',body:body,attachments:blobs,name:'Tonga Scholar Database'});
+  return {sent:true,count:key.length};
+}
+/** One-step finish: email key files to the Owner (once), decline unreviewed attachment proposals,
+ *  close every remaining item without a Master change, and move the submission to Reviewed. */
+function tongaFinishSubmission_(body){TONGA_READ_TABLES=null;return tongaWithSubmission_(body,function(ss,o){
+  var files=parseJsonObject_(o['Attachments JSON']);if(!Array.isArray(files))files=[];
+  var plan=tongaReviewPlan_(o)||tongaBeginPlan_({selectedChanges:[],selectedFiles:[],reviewNotes:body.reviewNotes},ss,o,true);
+  var st=parseJsonObject_(o['Structured Submission JSON']),key=tongaKeyFiles_(files),emailed=false;
+  if(key.length&&!st.ownerEmailedAt){try{tongaEmailKeyFiles_(o,files);}catch(e){throw new Error('Email to Owner failed, nothing was closed: '+String(e.message||e).slice(0,200)+'. In Apps Script, run authorizeTongaEmail once to allow sending email.');}
+    st.ownerEmailedAt=tongaNow_();o['Structured Submission JSON']=JSON.stringify(st);emailed=true;}
+  var note=String(body.note||'').trim().slice(0,500)||'Finished by reviewer';
+  var a=typeof tongaAnalysisLoad_==='function'?tongaAnalysisLoad_(o):null,declined=0;
+  if(a){a.items.forEach(function(x){if(['pending','needs_review'].indexOf(x.state)>=0){x.state='dismissed';x.reviewNote='Not imported here; key files emailed to the Owner for separate processing';x.reviewedBy=ACTOR_LABEL;x.reviewedAt=tongaNow_();declined++;}});if(declined)tongaAnalysisSave_(o,a);}
+  var keyIds={};key.forEach(function(f){keyIds[f.fileId]=true;});
+  files.forEach(function(f){if(!plan.items.some(function(x){return x.kind==='file'&&x.key===f.fileId;}))plan.items.push({kind:'file',key:f.fileId,field:f.field,name:f.name,selected:false,state:'deferred'});});
+  plan.items.forEach(function(x){if(x.state!=='pending'&&x.state!=='deferred')return;
+    x.state=x.kind==='file'?(keyIds[x.key]?'emailed_to_owner':'not_needed'):'closed_no_change';x.closeNote=note;x.reviewedBy=ACTOR_LABEL;x.reviewedAt=tongaNow_();});
+  tongaSavePlan_(o,plan);
+  var finished=tongaFinishPlan_({reviewNotes:body.reviewNotes||note},ss,o);finished.row=tongaReviewRow_(ss,o);finished.emailed=emailed||!!st.ownerEmailedAt;finished.declined=declined;return jsonOut_(finished);
+});}
+/** Owner: run once from the Apps Script editor to allow this project to send email. Sends a short test email to you. */
+function authorizeTongaEmail(){MailApp.sendEmail(tongaOwnerEmail_(),'Tonga Scholar Database: email enabled','Submission files (headshot, CV, reference file) will now be emailed to this address.');DriveApp.getRootFolder();Logger.log('Email permission granted; test email sent.');}
 function tongaRejectRemaining_(o){
   var plan=tongaReviewPlan_(o);
   if(!plan){var fields=parseJsonObject_(o['Submitted Fields JSON']),files=parseJsonObject_(o['Attachments JSON']);plan={version:2,reviewer:ACTOR_LABEL,items:Object.keys(fields).map(function(k){return {kind:'text',key:k,state:'rejected'};})};
@@ -1322,7 +1363,7 @@ function backupTongaReviewDataV2(){
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
 var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
+var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','finishScholarSubmission','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the

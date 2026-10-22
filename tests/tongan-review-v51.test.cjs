@@ -15,3 +15,9 @@ assert.ok(/closeItems:true/.test(src));
 const ui=fs.readFileSync('js/tongan-submissions-admin.js','utf8');
 assert.ok(ui.includes('Why this is still Pending')&&ui.includes('confirmClear')&&ui.includes('thesis PDF, not needed')&&ui.includes("'Closed by reviewer'"));
 console.log('tongan-review-v51 ok');
+{const src2=fs.readFileSync('apps-script/deployed/tonga-submissions-v1.gs','utf8');
+ assert.ok(src2.includes("action === 'finishScholarSubmission'")&&/'finishScholarSubmission'/.test(src2.match(/var TONGA_REVIEW_ACTIONS = \[[^\]]+\]/)[0]));
+ const k=c.tongaKeyFiles_([{fileId:'1',field:'headshot',name:'a.jpg'},{fileId:'2',field:'cv',name:'b.pdf'},{fileId:'3',field:'publications',name:'c.bib'},{fileId:'4',field:'phd_thesis',name:'d.pdf'},{fileId:'5',field:'attachment',name:'e.ris'}]);
+ assert.strictEqual(k.map(f=>f.fileId).join(','),'1,2,3,5','key files: headshot, CV, reference files only');
+ const ui2=fs.readFileSync('js/tongan-submissions-admin.js','utf8');assert.ok(ui2.includes('Finish all checked')&&ui2.includes('function ask('));
+ console.log('tongan-review-v52 ok');}

@@ -4,6 +4,7 @@
 function el(tag,text,parent){const n=document.createElement(tag);if(text!=null)n.textContent=text;if(parent)parent.append(n);return n;}
 function parse(s,f){try{return JSON.parse(s);}catch(_){return f;}}
 function checked(r){if(!r||r.status!=='ok')throw new Error(r&&(r.error||r.reason||r.status)||'No server response');return r;}
+function ask(text){const t=Date.now(),r=window.confirm(text);if(!r&&Date.now()-t<80){const m=document.querySelector('.tonga-queue-status');if(m){m.textContent='Your browser blocked the confirmation pop-up, so nothing was saved. Reload the page (Ctrl+Shift+R) and try again.';m.classList.add('tonga-error');}}return r;}
 function button(label,parent,fn,cls){const b=el('button',label,parent);b.type='button';if(cls)b.className=cls;b.onclick=fn;return b;}
 function link(text,url,parent){try{const u=new URL(url);if(!['https:','http:','mailto:'].includes(u.protocol))return;const a=el('a',text,parent);a.href=u.href;if(u.protocol!=='mailto:'){a.target='_blank';a.rel='noopener noreferrer';}return a;}catch(_){}}
 function locationText(l){return l.national?'Tonga — general / national study':[l.division,l.island,l.district,l.village].filter(Boolean).join(' · ')||'Tonga';}
@@ -40,8 +41,10 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  const bulk=el('span',null,toolbar);bulk.className='tonga-bulk-controls';bulk.hidden=true;
  button('Check all',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=true;});syncSelection();});
  button('Clear selection',bulk,()=>{cards.forEach(c=>{if(c.select)c.select.checked=false;});syncSelection();});
- const bulkApprove=button('Approve all checked',bulk,bulkResolve,'tonga-approve'),selectionCount=el('span','',bulk);
- function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||stale||!n||(scholar&&!caps.selectionReview);}
+ const bulkApprove=button('Approve all checked',bulk,bulkResolve,'tonga-approve');
+ const bulkFinish=scholar?button('Finish all checked (email files to me, close)',bulk,bulkFinishRun,'tonga-approve'):null;
+ const selectionCount=el('span','',bulk);
+ function syncSelection(){const n=cards.filter(c=>c.select?.checked).length;selectionCount.textContent=n+' selected in this view';bulkApprove.disabled=busy||stale||!n||(scholar&&!caps.selectionReview);if(bulkFinish){bulkFinish.disabled=busy||stale||!n||!caps.finishSubmission;bulkFinish.title=caps.finishSubmission?'Emails each submission’s headshot, CV and reference file to the Owner, then closes everything left without changing the Master.':'Needs Tonga backend 5.2';}}
  host.addEventListener('change',()=>{dirty=true;syncSelection();});
  host.addEventListener('input',()=>{dirty=true;});
  host.addEventListener('click',e=>{if(e.target.closest('.tonga-selection-controls,.tonga-bulk-controls'))dirty=true;});
@@ -111,7 +114,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     });
   }else el('p',(row.recordedFields||[]).length?'The submitted values below are already in the Master. No further text update is needed.':'No remaining text changes. Review attachments or recorded outcomes below.',disclosure).className='tonga-positive';
   if(row.recordedFields?.length){const recorded=el('details',null,card);recorded.open=true;el('summary','Submitted values already in Master ('+row.recordedFields.length+')',recorded);const table=el('table',null,recorded);table.className='tonga-recorded-fields';const head=el('tr',null,el('thead',null,table));['Status','Field','Current Master value','Submitted value'].forEach(t=>el('th',t,head));const body=el('tbody',null,table);row.recordedFields.forEach(c=>{const tr=el('tr',null,body);['Already in Master',c.label,c.currentDisplayValue??c.currentValue,c.newValue].forEach(t=>el('td',t===''?'(empty)':t,tr));});
-   if(pending&&!changes.length&&!parse(row['Attachments JSON'],[]).length&&!plan?.items.some(i=>['pending','deferred'].includes(i.state)))button('Complete review — already recorded',card,async()=>{if(busy||!confirm('Complete this review? All submitted values are already in Master; no Master values will be changed.'))return;await run(c,()=>saveScholar(c));});
+   if(pending&&!changes.length&&!parse(row['Attachments JSON'],[]).length&&!plan?.items.some(i=>['pending','deferred'].includes(i.state)))button('Complete review — already recorded',card,async()=>{if(busy||!ask('Complete this review? All submitted values are already in Master; no Master values will be changed.'))return;await run(c,()=>saveScholar(c));});
   }
   const structured=parse(row['Structured Submission JSON'],{});
   if(Array.isArray(structured.degrees)&&structured.degrees.length){
@@ -164,6 +167,10 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
   button('Check all',tools,()=>picks.forEach(p=>{if(!p.cb.disabled)p.cb.checked=true;}));button('Clear all',tools,()=>picks.forEach(p=>{if(!p.cb.disabled)p.cb.checked=false;}));
   const say=(t,err)=>{out.textContent=t;out.classList.toggle('tonga-error',!!err);};
   if(!caps.closeItems){el('p','Closing items needs Tonga backend 5.1. Paste and deploy the updated Apps Script first.',box).className='tonga-error';picks.forEach(p=>p.cb.disabled=true);tools.querySelectorAll('button').forEach(b=>b.disabled=true);return;}
+  if(caps.finishSubmission){const fin=el('div',null,box);fin.className='tonga-finish';
+   el('p','Quickest: Finish emails this submission’s headshot, CV and reference file to you (once), closes everything listed here without changing the Master, and moves it to Reviewed. Files stay available under Download original.',fin);
+   const fb=button('Finish: email files to me and close',fin,()=>run(c,async()=>{const t=await finishOne(c,note.value.trim());if(c.card.isConnected)notices.set(c.row['Submission ID'],t);return t;},out),'tonga-approve');fb.className='tonga-approve tonga-finish-button';
+   el('p','Or close only some items:',box).className='meta';}
   const nl=el('label','Reason for closing (optional; kept in the review record)',box);const note=el('input',null,nl);note.type='text';note.setAttribute('aria-label','Reason for closing items for '+c.row['Submission ID']);note.placeholder='e.g. Institution URL entered in Scholar profiles editor';
   const go=button('Close ticked items without Master change',box,()=>{
    const chosen=picks.filter(p=>p.cb.checked);if(!chosen.length){say('Tick at least one item above first.',true);return;}
@@ -173,7 +180,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
     // A file with unreviewed proposals (e.g. a parsed CV) cannot close until those proposals are decided.
     if(fileIds.length){let a=null;try{a=checked(await window.adminWriteback.readAttachmentAnalysis(id)).analysis;}catch(_){}
      const open=a?a.items.filter(i=>fileIds.includes(i.fileId)&&['pending','needs_review'].includes(i.state)):[];
-     if(open.length){if(!confirm(open.length+' proposal(s) read from the ticked file(s) have not been reviewed yet (see the Attachment proposals panel below). Closing will decline them, so nothing from them is added to the Master. Continue?'))throw new Error('Nothing closed. Review the proposals in the Attachment proposals panel first, or untick those files.');
+     if(open.length){if(!ask(open.length+' proposal(s) read from the ticked file(s) have not been reviewed yet (see the Attachment proposals panel below). Closing will decline them, so nothing from them is added to the Master. Continue?'))throw new Error('Nothing closed. Review the proposals in the Attachment proposals panel first, or untick those files.');
       for(let k=0;k<open.length;k+=5){a=checked(await window.adminWriteback.approveAttachmentProposals({submissionId:id,revision:a.revision,itemIds:open.slice(k,k+5).map(i=>i.id),decision:'dismiss',note:'Declined when the attachment was closed: '+reason})).analysis;}}}
     const outc=checked(await window.adminWriteback.closeScholarReviewItems(id,chosen.map(p=>({kind:p.x.i.kind,key:p.x.i.key})),reason,c.note?.value||''));
     const row=outc.row||(checked(await window.adminWriteback.readScholarSubmission(id)).rows||[]).find(r=>r['Submission ID']===id);
@@ -182,6 +189,18 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    },out);
   });go.className='tonga-approve';
   const out=el('p',notices.get(c.row['Submission ID'])||'',box);out.className='tonga-queue-status tonga-positive';out.setAttribute('role','status');notices.delete(c.row['Submission ID']);
+ }
+ async function finishOne(c,note){
+  const id=c.row['Submission ID'],out=checked(await window.adminWriteback.finishScholarSubmission(id,note||'',c.note?.value||''));
+  const row=out.row;if(row&&row.Status!=='Pending')removeCard(c);else if(row)c._updatedRow=row;
+  return (c.row['Scholar Name']||id)+': '+(row&&row.Status!=='Pending'?'finished':'still pending ('+(remainingText(row)||'check card')+')')+(out.emailed?' · files emailed to you':'');
+ }
+ async function bulkFinishRun(){
+  const selected=cards.filter(c=>c.select?.checked);if(!selected.length||!caps.finishSubmission)return;
+  await run(null,async()=>{const done=[],failed=[];
+   for(const [i,c] of selected.entries()){message('Finishing '+(i+1)+' of '+selected.length+'…');try{done.push(await finishOne(c));}catch(e){failed.push((c.row['Scholar Name']||c.row['Submission ID'])+': '+e.message);}}
+   return done.length+' finished. '+(failed.length?'Not finished: '+failed.join(' | '):'')+' '+(done.length?'Headshots, CVs and reference files were emailed to you.':'');
+  });
  }
  async function run(c,fn,inline){
    if(busy)return;
@@ -203,7 +222,7 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    if(!caps.selectionReview){message('Deploy the complete Tonga backend v4 before approving scholar updates.',true);return;}
    const chosen=c.picks.filter(p=>p.box.checked);
    if(!chosen.length&&!c.row.reviewPlan?.items.some(x=>x.state==='pending')){message('Check at least one change or attachment.');return;}
-   if(!confirm('Approve '+chosen.filter(p=>p.change).length+' checked text revision(s) and review '+chosen.filter(p=>p.file).length+' checked attachment(s)? Unchecked items remain pending.'))return;
+   if(!ask('Approve '+chosen.filter(p=>p.change).length+' checked text revision(s) and review '+chosen.filter(p=>p.file).length+' checked attachment(s)? Unchecked items remain pending.'))return;
    await run(c,()=>saveScholar(c));
  }
  async function saveScholar(c){
@@ -230,16 +249,16 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
  function geoKeys(c){if(!c.geoPicks)return undefined;const keys=c.geoPicks.filter(x=>x.checked).map(x=>x.value);if(!keys.length)throw new Error('Select at least one proposed location, or reject this suggestion.');return keys;}
  async function resolveOne(c,decision){
    if(decision==='approve'&&c.geoPicks&&!c.geoPicks.some(x=>x.checked)){message('Select at least one proposed location, or reject this suggestion.',true);return;}
-   if(busy||!confirm(decision==='approve'?'Approve this suggestion and append new non-duplicate geography? Existing geography will be preserved.':'Reject '+(scholar?'all remaining items in this submission':'this suggestion')+'? Nothing new will be added; earlier approved work is preserved.'))return;
+   if(busy||!ask(decision==='approve'?'Approve this suggestion and append new non-duplicate geography? Existing geography will be preserved.':'Reject '+(scholar?'all remaining items in this submission':'this suggestion')+'? Nothing new will be added; earlier approved work is preserved.'))return;
    await run(c,async()=>{checked(await(scholar?window.adminWriteback.resolveScholarSubmission(c.row['Submission ID'],'reject',c.note.value):window.adminWriteback.resolveGeographySubmission(c.row['Submission ID'],decision,c.note.value,decision==='approve'?geoKeys(c):undefined)));removeCard(c);return (decision==='approve'?'Geography approved. '+await refreshPublic():'Rejected — saved and verified.');});
  }
- async function banSubmitter(c){const reason=prompt('Reason for blocking this submitter in Tonga:');if(!reason?.trim()||!confirm('Block future Tonga submissions from '+c.row['Submitter Email']+'? Reason: '+reason))return;await run(c,async()=>{checked(await window.adminWriteback.banScholarSubmitter(c.row['Submission ID'],reason));return 'Submitter blocked for Tonga. The submission remains available for review.';});}
+ async function banSubmitter(c){const reason=prompt('Reason for blocking this submitter in Tonga:');if(!reason?.trim()||!ask('Block future Tonga submissions from '+c.row['Submitter Email']+'? Reason: '+reason))return;await run(c,async()=>{checked(await window.adminWriteback.banScholarSubmitter(c.row['Submission ID'],reason));return 'Submitter blocked for Tonga. The submission remains available for review.';});}
  async function bulkResolve(){
    if(busy||filter.value!=='Pending'||(scholar&&!caps.selectionReview))return;
    const selected=cards.filter(c=>c.select?.checked);
    if(!selected.length)return;
    const changes=selected.reduce((n,c)=>n+c.picks.filter(p=>p.box.checked).length,0);
-   if(!confirm('Approve '+selected.length+' checked submission(s) in this view'+(scholar?' containing '+changes+' selected item(s)':'')+'? Unchecked submissions and fields remain pending.'))return;
+   if(!ask('Approve '+selected.length+' checked submission(s) in this view'+(scholar?' containing '+changes+' selected item(s)':'')+'? Unchecked submissions and fields remain pending.'))return;
    await run(null,async()=>{let saved=0;const failures=[],remaining=[];
     for(const [i,c] of selected.entries()){
      message('Saving '+(i+1)+' of '+selected.length+'…');

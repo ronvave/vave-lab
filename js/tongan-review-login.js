@@ -51,6 +51,7 @@ window.adminWriteback={
  approveScholarSubmission:(submissionId,selectedChanges,reviewNotes)=>call('approveScholarProfileSubmission',{submissionId,selectedChanges,reviewNotes}),
  recordAttachmentReview:(submissionId,fileId,disposition,evidence)=>call('recordScholarAttachmentReview',{submissionId,fileId,disposition,evidence}),
  finishScholarReview:(submissionId,reviewNotes)=>call('finishScholarReview',{submissionId,reviewNotes}),
+ finishScholarSubmission:(submissionId,note,reviewNotes)=>call('finishScholarSubmission',{submissionId,note,reviewNotes}),
  closeScholarReviewItems:(submissionId,items,note,reviewNotes)=>call('closeScholarReviewItems',{submissionId,items,note,reviewNotes}),
  resolveScholarSubmission:(submissionId,decision,reviewNotes)=>call('resolveScholarProfileSubmission',{submissionId,decision,reviewNotes}),
  resolveGeographySubmission:(submissionId,decision,reviewNotes)=>call('resolvePublicationGeographySubmission',{submissionId,decision,reviewNotes}),
