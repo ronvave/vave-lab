@@ -1032,7 +1032,8 @@
     $('#ps-work-heat-reset').addEventListener('click', () => {
       boxes().forEach(b => { b.checked = true; });
       syncLabel();
-      $('#ps-work-heat-unknown').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.v === 'exclude')));
+      setWorkUnknown('exclude');
+      renderDest();
       $('#ps-work-heat-gender').querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.v === 'all')));
       renderWorkHeat();
     });
@@ -1049,8 +1050,17 @@
         const b = e.target.closest('button');
         if (!b) return;
         $('#' + id).querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+        if (id === 'ps-work-heat-unknown') { setWorkUnknown(b.dataset.v); renderDest(); }
         renderWorkHeat();
       });
+    });
+  }
+
+  // One "Not recorded" choice shared by the C1 Work map and Work matrix.
+  function setWorkUnknown(v) {
+    ['ps-dest-unknown', 'ps-work-heat-unknown'].forEach(id => {
+      const g = $('#' + id);
+      if (g) g.querySelectorAll('button').forEach(x => x.setAttribute('aria-checked', String(x.dataset.v === v)));
     });
   }
 
@@ -1124,6 +1134,13 @@
     home.addEventListener('change', e => { state.destHome = e.target.value; if (state.destHome !== (state.sel || '')) { state.sel = state.destHome || null; writeUrl(); renderAll(); } else renderDest(); });
     $('#ps-dest-level').addEventListener('change', e => { state.destLevel = e.target.value; renderDest(); renderStudyMatrix(); });
     $('#ps-dest-dec').addEventListener('change', e => { state.destDec = e.target.value; renderDest(); renderStudyMatrix(); });
+    $('#ps-dest-unknown').addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      setWorkUnknown(b.dataset.v);
+      renderDest();
+      renderWorkHeat();
+    });
   }
   function renderDest() {
     state.destHome = state.sel || state.destHome || '';
@@ -1132,6 +1149,8 @@
     const work = state.destMode === 'work';
     $('#ps-dest-level').hidden = work;
     $('#ps-dest-dec').hidden = work;
+    $('#ps-dest-unknown').hidden = !work;
+    const excludeMissing = work && ($('#ps-dest-unknown button[aria-checked="true"]') || {}).dataset.v !== 'include';
     const regionName = k => (work && k === 'Unknown') ? 'Not recorded' : k;
     const scope = state.destHome ? [byCode[state.destHome]].filter(Boolean) : countries();
     const cnt = Object.fromEntries(DEST_ORDER.map(k => [k, 0]));
@@ -1149,6 +1168,8 @@
         cnt[d.r] = (cnt[d.r] || 0) + d.n;
       }));
     }
+    const missing = work ? cnt.Unknown || 0 : 0;
+    if (excludeMissing) cnt.Unknown = 0;
     const total = Object.values(cnt).reduce((a, b) => a + b, 0);
     const unresolvedCampus = work ? 0 : scope.reduce((a, c) => a + (((c.destinationCountries || {}).Pacific || {})['(country unresolved)'] || 0), 0);
     const host = $('#ps-world');
@@ -1183,9 +1204,10 @@
     const share0 = k => total ? Math.round(cnt[k] / total * 100) : 0;
     const ranked = DEST_ORDER.filter(k => cnt[k] > 0).sort((a, b) => cnt[b] - cnt[a] || DEST_ORDER.indexOf(a) - DEST_ORDER.indexOf(b));
     const empty = work ? (people ? 'No directory scholars match these filters.' : 'Workplace records are still loading.') : 'No completed degrees match these filters.';
-    $('#ps-dlist').innerHTML = total ? ranked.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(regionName(k))}</span><b>${share0(k)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') : `<li>${empty}</li>`;
+    const missRow = excludeMissing && missing ? `<li class="ps-dlist__miss"><span><i style="background:${DEST_COLOR.Unknown || '#6b7785'}"></i>Not recorded</span><b><span style="font-weight:400;color:var(--ps-text-muted)">${fmt(missing)}, not in the share</span></b></li>` : '';
+    $('#ps-dlist').innerHTML = total ? ranked.map(k => `<li><span><i style="background:${DEST_COLOR[k]}"></i>${esc(regionName(k))}</span><b>${share0(k)}% <span style="font-weight:400;color:var(--ps-text-muted)">(${fmt(cnt[k])})</span></b></li>`).join('') + missRow : (missRow ? `<li>No directory scholars with a recorded workplace match these filters.</li>${missRow}` : `<li>${empty}</li>`);
     $('#ps-dest-note').innerHTML = work
-      ? `Directory scholars (n = ${fmt(total)}), counted once at their current workplace. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi. Not recorded means the workplace country is missing or not mapped to a region. This is the approved directory, so it is not the same total as the study degrees.`
+      ? `${excludeMissing ? `Directory scholars with a recorded workplace (n = ${fmt(total)} of ${fmt(total + missing)}), counted once at their current workplace. Shares leave out the ${fmt(missing)} whose workplace is not recorded.` : `Directory scholars (n = ${fmt(total)}), counted once at their current workplace.`} Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi. Not recorded means the workplace country is missing or not mapped to a region. This is the approved directory, so it is not the same total as the study degrees.`
       : `Completed degree records (n = ${fmt(total)}), by the awarding institution's country. Pacific = Pacific Island countries and territories; Australia and New Zealand are separate. United States includes Hawaiʻi; Guam is counted as Pacific.${unresolvedCampus ? ` ${fmt(unresolvedCampus)} USP degree${unresolvedCampus > 1 ? 's have' : ' has'} an unverified campus (counted as Pacific, country unresolved).` : ''}`;
   }
 
