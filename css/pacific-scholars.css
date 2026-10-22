@@ -819,3 +819,14 @@ section[data-panel] { scroll-margin-top: 70px; }
   .ps-a1 .ps-toolbar { padding-right: 56px; }
 }
 .ps-dlist .ps-dlist__miss { grid-column: 1 / -1; }
+
+/* C1 section tabs: Regional overview | Country & university breakdown */
+.ps-tabs { display: flex; gap: 4px; margin: 2px 0 12px; padding-right: 58px; border-bottom: 1px solid var(--ps-line); }
+.ps-tabs button { border: 0; background: transparent; color: var(--ps-text-muted); font: inherit; font-weight: 700; font-size: 0.92rem; padding: 8px 14px 9px; margin-bottom: -1px; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; cursor: pointer; transition: color .2s, background .2s, border-color .2s; }
+.ps-tabs button:hover { color: var(--ps-text); background: rgba(63, 208, 216, 0.08); }
+.ps-tabs button[aria-selected='true'] { color: var(--ps-text); border-bottom-color: var(--ps-teal-400); background: rgba(63, 208, 216, 0.10); }
+.ps-tabs button:focus-visible { outline: 2px solid var(--ps-teal-400); outline-offset: 2px; }
+.ps-viewbar[hidden] { display: none !important; }
+.psu-title { font-family: inherit; font-size: 1.02rem; margin: 0 0 10px; }
+.ps-tabs__short { display: none; }
+@media (max-width: 720px) { .ps-tabs { padding-right: 0; } .ps-tabs button { flex: 1; font-size: 0.9rem; padding: 9px 6px 10px; } .ps-tabs__long { display: none; } .ps-tabs__short { display: inline; } }

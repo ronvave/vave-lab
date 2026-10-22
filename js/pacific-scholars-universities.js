@@ -57,7 +57,7 @@
   // ---------- setup ----------
   function init(data, helpers) {
     D = data; H = helpers || {}; SM = D && D.studyMap;
-    const tab = document.querySelector('[data-views="c1"] [data-view="uni"]');
+    const tab = document.querySelector('[data-views="c1top"]');
     if (!SM || !SM.unis || !SM.degs) { if (tab) tab.remove(); return; }
     const homes = [...new Set(SM.degs.map(d => d[1]))];
     const order = (D.countries || []).map(c => c.code).filter(c => homes.includes(c));

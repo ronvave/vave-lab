@@ -231,7 +231,8 @@
     a2: v => { if (v === 'out') renderOutputs(); },
     b1: () => renderFirsts(),
     b2: () => { renderWhere(); renderRank(); },
-    c1: v => { if (v === 'uni') { window.PSUniversities && window.PSUniversities.show(); } else { state.destMode = v; renderDest(); renderStudyMatrix(); renderWorkHeat(); } },
+    c1top: v => setViewKey('c1', v === 'uni' ? 'uni' : (state.c1Agg || 'study')),
+    c1: v => { if (v !== 'uni') state.c1Agg = v; if (v === 'uni') { window.PSUniversities && window.PSUniversities.show(); } else { state.destMode = v; renderDest(); renderStudyMatrix(); renderWorkHeat(); } },
     c1d: () => { renderStudyMatrix(); renderWorkHeat(); },
   };
   function setupViews() {
@@ -259,7 +260,9 @@
     $$('[data-views-select]').forEach(sel => { sel.value = VIEW[sel.dataset.viewsSelect]; });
   }
   function setViewKey(k, v) {
-    VIEW[k] = v; applyViews(); hideTip();
+    VIEW[k] = v;
+    if (k === 'c1') VIEW.c1top = v === 'uni' ? 'uni' : 'agg';
+    applyViews(); hideTip();
     const tip = $('#ps-pos-tip'); tip && tip.classList.remove('show');
     if (D && VIEW_HOOK[k]) VIEW_HOOK[k](v);
   }

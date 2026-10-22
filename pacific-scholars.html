@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=4902f773" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=3c368f75" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9d19e51" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=3baa3877" />
 </head>
@@ -296,11 +296,14 @@
       <section data-panel="C1" data-panel-title="Where Our Scholars Study and Work" class="ps-panel ps-panel--tapa ps-col-dest" aria-labelledby="ps-dest-title">
         <span class="ps-num" aria-hidden="true">C1</span>
         <h2 class="ps-h2" id="ps-dest-title">Where Our Scholars Study and Work</h2>
-        <div class="ps-viewbar">
-          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="C1 view" data-views="c1">
+        <div class="ps-tabs" role="tablist" aria-label="C1 section" data-views="c1top">
+          <button type="button" role="tab" data-view="agg" aria-selected="true" aria-label="Regional overview"><span class="ps-tabs__long">Regional overview</span><span class="ps-tabs__short">Overview</span></button>
+          <button type="button" role="tab" data-view="uni" aria-selected="false" aria-label="Country and university breakdown"><span class="ps-tabs__long">Country &amp; university breakdown</span><span class="ps-tabs__short">Breakdown</span></button>
+        </div>
+        <div class="ps-viewbar" data-pane-of="c1:study c1:work">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="Study or work" data-views="c1">
             <button type="button" role="tab" data-view="study" aria-selected="true">Study</button>
             <button type="button" role="tab" data-view="work" aria-selected="false">Work</button>
-            <button type="button" role="tab" data-view="uni" aria-selected="false">Universities</button>
           </div>
           <div class="ps-seg ps-seg--sm" role="tablist" aria-label="Study or work display" data-views="c1d" data-pane-of="c1:study c1:work">
             <button type="button" role="tab" data-view="map" aria-selected="true">Map</button>
@@ -361,6 +364,7 @@
         </div>
 
         <div data-pane="c1:uni" class="ps-pane" hidden>
+          <h3 class="ps-h3 psu-title">Breakdown of Country and University of Study by Pacific Island Country</h3>
           <div class="psu" id="psu">
             <div class="psu-kpis" id="psu-kpis"></div>
             <div class="psu-tools">
@@ -525,8 +529,8 @@
   <script src="js/pacific-scholars-publications.js?v=10fd81c0" defer></script>
   <script src="js/pacific-scholars-collaborators.js?v=1fd809dd" defer></script>
   <script src="js/pacific-scholars-directory.js?v=90063072" defer></script>
-  <script src="js/pacific-scholars-universities.js?v=ee4634a4" defer></script>
-  <script src="js/pacific-scholars.js?v=4c53129d" defer></script>
+  <script src="js/pacific-scholars-universities.js?v=f5991ec8" defer></script>
+  <script src="js/pacific-scholars.js?v=74553e84" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=489b25ea" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 </body>
