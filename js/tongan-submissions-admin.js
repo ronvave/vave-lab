@@ -152,29 +152,42 @@ document.querySelectorAll('[data-tonga-queue]').forEach(host=>{
    return {i,label:i.label||i.key,why};});
  }
  function remainingText(row){const items=remainingItems(row);if(!items.length)return '';const files=items.filter(x=>x.i.kind==='file').length,text=items.length-files;return [files&&files+' attachment'+(files>1?'s':'')+' need an outcome',text&&text+' field'+(text>1?'s':'')+' not written to Master'].filter(Boolean).join(' and ');}
+ const isThesis=x=>/thesis/i.test(String(x.i.field||'')+' '+x.label);
+ const notices=new Map();
  function renderRemaining(c){
   const items=remainingItems(c.row);if(!items.length)return;
   const box=el('details',null,c.card);box.className='tonga-remaining';box.open=true;
   el('summary','Why this is still Pending ('+items.length+' item'+(items.length>1?'s':'')+')',box);
-  el('p','A submission leaves the Pending queue only when every item has an outcome. Fix an item above, or tick items here that need no Master change (for example a URL you entered in the Scholar profiles editor, a CV kept on file, or a degree handled through the row proposals) and close them with a short note.',box).className='meta';
-  const picks=items.map(x=>{const l=el('label',null,box);l.className='tonga-remaining-item';const cb=el('input',null,l);cb.type='checkbox';cb.setAttribute('aria-label','Close '+x.label+' without a Master change');l.append(' ');el('strong',x.label,l);l.append(' — '+x.why);return {cb,x};});
-  if(!caps.closeItems){el('p','Closing items needs Tonga backend 5.1. Paste and deploy the updated Apps Script first.',box).className='tonga-error';picks.forEach(p=>p.cb.disabled=true);return;}
-  const nl=el('label','Reason for closing (kept in the review record)',box);const note=el('input',null,nl);note.type='text';note.setAttribute('aria-label','Reason for closing items for '+c.row['Submission ID']);note.placeholder='e.g. Institution URL entered in Scholar profiles editor';
+  el('p','A submission leaves the Pending queue only when every item has an outcome. Fix an item above, or tick items here that need no Master change and close them. Thesis PDFs are not needed and are ticked for you.',box).className='meta';
+  const tools=el('div',null,box);tools.className='tonga-selection-controls';
+  const picks=items.map(x=>{const thesis=x.i.kind==='file'&&isThesis(x);const l=el('label',null,box);l.className='tonga-remaining-item';const cb=el('input',null,l);cb.type='checkbox';cb.checked=thesis;cb.setAttribute('aria-label','Close '+x.label+' without a Master change');l.append(' ');el('strong',x.label,l);l.append(' — '+(thesis?'thesis PDF, not needed':x.why));return {cb,x};});
+  button('Check all',tools,()=>picks.forEach(p=>{if(!p.cb.disabled)p.cb.checked=true;}));button('Clear all',tools,()=>picks.forEach(p=>{if(!p.cb.disabled)p.cb.checked=false;}));
+  const say=(t,err)=>{out.textContent=t;out.classList.toggle('tonga-error',!!err);};
+  if(!caps.closeItems){el('p','Closing items needs Tonga backend 5.1. Paste and deploy the updated Apps Script first.',box).className='tonga-error';picks.forEach(p=>p.cb.disabled=true);tools.querySelectorAll('button').forEach(b=>b.disabled=true);return;}
+  const nl=el('label','Reason for closing (optional; kept in the review record)',box);const note=el('input',null,nl);note.type='text';note.setAttribute('aria-label','Reason for closing items for '+c.row['Submission ID']);note.placeholder='e.g. Institution URL entered in Scholar profiles editor';
   const go=button('Close ticked items without Master change',box,()=>{
-   const chosen=picks.filter(p=>p.cb.checked);if(!chosen.length){message('Tick at least one item in “Why this is still Pending”.',true);return;}
-   if(note.value.trim().length<5){message('Add a short reason (at least 5 characters) before closing items.',true);note.focus();return;}
-   if(!confirm('Close '+chosen.length+' item(s) for '+(c.row['Scholar Name']||c.row['Scholar ID'])+' without changing the Master? If nothing else remains, the submission moves to Reviewed.'))return;
-   run(c,async()=>{const id=c.row['Submission ID'];const out=checked(await window.adminWriteback.closeScholarReviewItems(id,chosen.map(p=>({kind:p.x.i.kind,key:p.x.i.key})),note.value.trim(),c.note?.value||''));
-    const row=out.row||(checked(await window.adminWriteback.readScholarSubmission(id)).rows||[]).find(r=>r['Submission ID']===id);
-    if(row&&row.Status!=='Pending'){removeCard(c);return 'Closed '+chosen.length+' item(s). Submission complete and moved to Reviewed.';}
-    if(row)c._updatedRow=row;return 'Closed '+chosen.length+' item(s). Still pending because '+(remainingText(row)||'other items need a decision')+'.';});
+   const chosen=picks.filter(p=>p.cb.checked);if(!chosen.length){say('Tick at least one item above first.',true);return;}
+   const typed=note.value.trim(),reason=typed.length>=5?typed:'Closed by reviewer'+(typed?': '+typed:'');
+   run(c,async()=>{
+    const id=c.row['Submission ID'],fileIds=chosen.filter(p=>p.x.i.kind==='file').map(p=>p.x.i.key);
+    // A file with unreviewed proposals (e.g. a parsed CV) cannot close until those proposals are decided.
+    if(fileIds.length){let a=null;try{a=checked(await window.adminWriteback.readAttachmentAnalysis(id)).analysis;}catch(_){}
+     const open=a?a.items.filter(i=>fileIds.includes(i.fileId)&&['pending','needs_review'].includes(i.state)):[];
+     if(open.length){if(!confirm(open.length+' proposal(s) read from the ticked file(s) have not been reviewed yet (see the Attachment proposals panel below). Closing will decline them, so nothing from them is added to the Master. Continue?'))throw new Error('Nothing closed. Review the proposals in the Attachment proposals panel first, or untick those files.');
+      for(let k=0;k<open.length;k+=5){a=checked(await window.adminWriteback.approveAttachmentProposals({submissionId:id,revision:a.revision,itemIds:open.slice(k,k+5).map(i=>i.id),decision:'dismiss',note:'Declined when the attachment was closed: '+reason})).analysis;}}}
+    const outc=checked(await window.adminWriteback.closeScholarReviewItems(id,chosen.map(p=>({kind:p.x.i.kind,key:p.x.i.key})),reason,c.note?.value||''));
+    const row=outc.row||(checked(await window.adminWriteback.readScholarSubmission(id)).rows||[]).find(r=>r['Submission ID']===id);
+    if(row&&row.Status!=='Pending'){removeCard(c);return (c.row['Scholar Name']||id)+': closed '+chosen.length+' item(s). Submission complete and moved to Reviewed.';}
+    const t='Closed '+chosen.length+' item(s). Still pending because '+(remainingText(row)||'other items need a decision')+'.';if(row){c._updatedRow=row;notices.set(id,t);}return t;
+   },out);
   });go.className='tonga-approve';
+  const out=el('p',notices.get(c.row['Submission ID'])||'',box);out.className='tonga-queue-status tonga-positive';out.setAttribute('role','status');notices.delete(c.row['Submission ID']);
  }
- async function run(c,fn){
+ async function run(c,fn,inline){
    if(busy)return;
-   if(stale){message('Refresh this queue successfully before saving a review. Your selections are retained.',true);return;}
+   if(stale){message('Refresh this queue successfully before saving a review. Your selections are retained.',true);if(inline){inline.textContent='Click Refresh queue at the top first; the queue data is out of date. Your ticks are kept.';inline.classList.add('tonga-error');}return;}
    busy=true;
-   const progress=c&&el('p','Saving and verifying review…',c.card);if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
+   const progress=inline||(c&&el('p','Saving and verifying review…',c.card));if(inline){inline.textContent='Saving…';inline.classList.remove('tonga-error');}if(progress){progress.className='tonga-queue-status';progress.setAttribute('role','status');}
    const controls=[...host.querySelectorAll('button,select,input,textarea')],disabled=controls.map(x=>x.disabled);
    controls.forEach(x=>x.disabled=true);
    try{const text=await fn();message(text);if(progress?.isConnected)progress.textContent=text;}

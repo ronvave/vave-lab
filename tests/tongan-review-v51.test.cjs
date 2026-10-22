@@ -13,5 +13,5 @@ assert.ok(src.includes("action === 'closeScholarReviewItems'"));
 assert.ok(src.includes('setValue(tongaLiteral_(newValue))'));
 assert.ok(/closeItems:true/.test(src));
 const ui=fs.readFileSync('js/tongan-submissions-admin.js','utf8');
-assert.ok(ui.includes('Why this is still Pending')&&ui.includes('confirmClear'));
+assert.ok(ui.includes('Why this is still Pending')&&ui.includes('confirmClear')&&ui.includes('thesis PDF, not needed')&&ui.includes("'Closed by reviewer'"));
 console.log('tongan-review-v51 ok');
