@@ -16,8 +16,8 @@
   var ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
   function fit(hero) {
     var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
-    var w = art.getBoundingClientRect().width || hero.offsetHeight * 2.04;
-    var pr = Math.round(w * 0.55) + 24;
+    // The island fills about the right quarter of the picture (5.6 : 1).
+    var pr = Math.round(hero.offsetHeight * 1.45) + 40;
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
   }
   function addArt(hero) {
