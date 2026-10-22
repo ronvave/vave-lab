@@ -233,7 +233,7 @@
     b2: () => { renderWhere(); renderRank(); },
     c1top: v => setViewKey('c1', v === 'uni' ? 'uni' : (state.c1Agg || 'study')),
     c1: v => { if (v !== 'uni') state.c1Agg = v; if (v === 'uni') { window.PSUniversities && window.PSUniversities.show(); } else { state.destMode = v; renderDest(); renderStudyMatrix(); renderWorkHeat(); } },
-    c1d: () => { renderStudyMatrix(); renderWorkHeat(); },
+    c1d: () => { syncDestFilters(); renderStudyMatrix(); renderWorkHeat(); },
   };
   function setupViews() {
     $$('[data-views]').forEach(tl => {
@@ -1094,10 +1094,10 @@
     const knownOf = bag => regions.reduce((a, k) => a + bag[k], 0);
     const shareCell = (n, t, who, region) => {
       const p = t ? Math.round(n / t * 100) : 0;
-      // Same teal ramp as the C1 Study matrix: stronger teal = larger share of the row.
-      const a = t ? n / t : 0;
-      const bg = n ? `rgba(127,227,230,${(0.12 + 0.8 * a).toFixed(2)})` : 'rgba(255,255,255,.04)';
-      const color = a > .45 ? '#04121f' : '#eaf3fb';
+      // Same Reef scale as the C1 Study matrix: brighter = larger share of the row.
+      const a = t ? n / t : 0, rc = reefCell(a);
+      const bg = n ? rc.bg : 'rgba(255,255,255,.04)';
+      const color = n ? rc.fg : '#eaf3fb';
       return `<td style="background:${bg};color:${color}" title="${esc(who)}: ${fmt(n)} of ${fmt(t)} with a workplace in this share (${p}%)">${n ? `${p}% <small>(${fmt(n)})</small>` : '—'}</td>`;
     };
     const missCell = (n, who) => `<td style="background:#424242;color:#fff" title="${esc(who)}: ${fmt(n)} with no recorded workplace, excluded from the share">${n ? fmt(n) : '—'}</td>`;
@@ -1145,7 +1145,22 @@
       renderWorkHeat();
     });
   }
+  // The Work matrix has its own home-country menu and Exclude/Include toggle, so hide the map's copies there.
+  function syncDestFilters() {
+    const bar = $('.ps-filters[data-pane-of="c1:study c1:work"]');
+    if (bar) bar.hidden = state.destMode === 'work' && VIEW.c1d === 'matrix';
+  }
+  // Reef scale (deep water to lagoon to sunlit shallows) for the C1 Study and Work matrices; t = share of the row, 0 to 1.
+  const REEF = [[22, 48, 79], [31, 95, 139], [21, 158, 138], [108, 206, 89], [244, 227, 74]];
+  function reefCell(t) {
+    t = Math.max(0, Math.min(1, t)); const u = 0.08 + 0.92 * Math.pow(Math.min(t, 0.85) / 0.85, 0.6);
+    const n = REEF.length - 1, i = Math.min(Math.floor(u * n), n - 1), f = u * n - i;
+    const c = REEF[i].map((v, j) => Math.round(v + (REEF[i + 1][j] - v) * f));
+    const lin = x => Math.pow(x / 255, 2.2), lum = 0.2126 * lin(c[0]) + 0.7152 * lin(c[1]) + 0.0722 * lin(c[2]);
+    return { bg: `rgb(${c.join(',')})`, fg: lum > 0.28 ? '#0b1626' : '#f3f6fa' };
+  }
   function renderDest() {
+    syncDestFilters();
     state.destHome = state.sel || state.destHome || '';
     if (state.sel === null && $('#ps-dest-home').value !== '' && !state.destHome) $('#ps-dest-home').value = '';
     $('#ps-dest-home').value = state.destHome;
@@ -1222,7 +1237,7 @@
     const rows = countries().map(c => ({ c, o: cnt(c.code) })).map(r => ({ ...r, n: cols.reduce((a, k) => a + r.o[k], 0) })).filter(r => r.n);
     const all = Object.fromEntries(cols.map(k => [k, rows.reduce((a, r) => a + r.o[k], 0)])), nAll = rows.reduce((a, r) => a + r.n, 0);
     const lab = k => k === 'Unknown' ? 'Not recorded' : k;
-    const cell = (v, n, who, k) => { const p = n ? Math.round(100 * v / n) : 0; const a = n ? v / n : 0; return `<td style="background:${v ? `rgba(127,227,230,${(0.12 + 0.8 * a).toFixed(2)})` : 'rgba(255,255,255,.04)'};color:${a > .45 ? '#04121f' : '#eaf3fb'}" title="${esc(who)}: ${fmt(v)} of ${fmt(n)} degrees in ${esc(lab(k))} (${p}%)">${v ? `${p}% <small>(${fmt(v)})</small>` : '—'}</td>`; };
+    const cell = (v, n, who, k) => { const p = n ? Math.round(100 * v / n) : 0; const a = n ? v / n : 0, rc = reefCell(a); return `<td style="background:${v ? rc.bg : 'rgba(255,255,255,.04)'};color:${v ? rc.fg : '#eaf3fb'}" title="${esc(who)}: ${fmt(v)} of ${fmt(n)} degrees in ${esc(lab(k))} (${p}%)">${v ? `${p}% <small>(${fmt(v)})</small>` : '—'}</td>`; };
     t.innerHTML = `<thead><tr><th class="home" scope="col"><span class="ps-sr">Home country</span></th>${cols.map(k => `<th scope="col"><span>${esc(lab(k))}</span></th>`).join('')}<th scope="col" class="ps-hm-n"><span>Degrees</span></th></tr></thead><tbody>
       <tr class="ps-hm-all"><th class="home" scope="row">All countries</th>${cols.map(k => cell(all[k], nAll, 'All countries', k)).join('')}<td class="ps-hm-n">${fmt(nAll)}</td></tr>
       ${rows.map(r => `<tr class="${state.sel === r.c.code ? 'sel' : ''}"><th class="home" scope="row"><img src="img/regional/flags/${r.c.code.toLowerCase()}.png" alt="">${esc(r.c.code === 'FSM' ? 'FSM' : r.c.name)}</th>${cols.map(k => cell(r.o[k], r.n, r.c.name, k)).join('')}<td class="ps-hm-n">${fmt(r.n)}</td></tr>`).join('')}</tbody>`;
