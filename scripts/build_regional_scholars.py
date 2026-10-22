@@ -471,7 +471,7 @@ def main():
         pull(d)
     meta = json.load(open(d / 'meta.json'))
     countries, sources, first_list, dumps = [], [], [], {}
-    from regional_positions import build_positions
+    from regional_positions import build_positions, card_positions
     from regional_universities import build_study_map
     for code, name, sid, url, status in COUNTRIES:
         fp = d / f'{code}.json'
@@ -506,6 +506,7 @@ def main():
                       indigenousPubYears={str(k): v for k, v in sorted(years.items())}),
         firsts=sorted(first_list, key=lambda m: (m['year'], m['code'], m['stage'], m['gender'])),
         positions=build_positions(dumps),
+        posCards=card_positions(dumps),
         directory=directory_section(dumps),
         studyMap=build_study_map(dumps, COUNTRIES),
     )

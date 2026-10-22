@@ -142,6 +142,30 @@
     }
     return out.replace(/<a [^>]*>(?![\s\S]*?<\/a>)/g, m => m + '</a>');
   }
+  // Positions panel, as on the Fiji and Tonga dashboard cards: Positions sheet rows only
+  // (title, leadership title, department, institution, country, years; current first).
+  let POS = {};
+  const posYears = r => r.s && r.e ? (r.s === r.e ? r.s : `${r.s}\u2013${r.e}`) : r.s ? (r.cur ? `since ${r.s}` : `from ${r.s}`) : r.e ? `until ${r.e}` : '';
+  function positionsBlock(s) {
+    const rows = (POS[s.id] || []).map((r, i) => [r, i]).sort((a, b) => (a[0].cur !== b[0].cur ? (a[0].cur ? -1 : 1) : ((parseInt(b[0].s, 10) || 0) - (parseInt(a[0].s, 10) || 0)) || a[1] - b[1])).map(x => x[0]);
+    if (!rows.length) return '';
+    const id = String(s.id).replace(/[^A-Za-z0-9_-]/g, '_'), nCur = rows.filter(r => r.cur).length;
+    const items = rows.map(r => {
+      const sub = [r.d, r.i, r.c, posYears(r)].filter(Boolean).map(esc).join(' \u00b7 ');
+      return `<li class="psd-pos__item"><span class="psd-pos__pill ${r.cur ? 'is-cur">Current' : 'is-past">Past'}</span><div class="psd-pos__text"><div class="psd-pos__title">${esc(r.t)}${r.l ? `; ${esc(r.l)}` : ''}</div>${sub ? `<div class="psd-pos__sub">${sub}</div>` : ''}</div></li>`;
+    }).join('');
+    return `<div class="db-scholar-card__insight-wrap psd-pos">
+      <button type="button" class="db-scholar-card__insight-btn psd-pos__btn" data-insight-btn aria-expanded="false" aria-controls="psd-pos-${id}">
+        <span class="db-scholar-card__insight-btn-label">Positions</span>
+        <span class="db-scholar-card__insight-btn-tag">(${rows.length}${nCur ? `, ${nCur} current` : ''})</span>
+        <span class="db-scholar-card__insight-btn-chev" aria-hidden="true">\u25be</span>
+      </button>
+      <div class="db-scholar-card__insight psd-pos__panel" id="psd-pos-${id}" hidden>
+        <div class="db-scholar-card__insight-heading">Positions recorded in the Master file</div>
+        <ul class="psd-pos__list">${items}</ul>
+      </div>
+    </div>`;
+  }
   function insightBlock(s, ex) {
     const kw = ex.kw || [], sm = ex.sm || '';
     const id = esc(s.id);
@@ -212,6 +236,7 @@
         </div>
       </div>
       ${insightBlock(s, ex)}
+      ${positionsBlock(s)}
       <div class="db-scholar-card__stats"><div class="stat"><b>${(s.p || []).length}</b><span>Publications</span></div><div class="stat"><b class="accent">${s.fa || 0}</b><span>First-authored</span></div></div>
       ${chips ? `<div class="db-scholar-card__types">${chips}</div>` : ''}
       <div class="card-foot">${dash}</div>
@@ -402,7 +427,7 @@
     if (!root || !panel || !D || !D.directory) return;
     try {
       const dir = await unpack(D.directory);
-      S = dir.scholars || []; P = dir.pubs || []; X = D.cardExtras || {};
+      S = dir.scholars || []; P = dir.pubs || []; X = D.cardExtras || {}; POS = D.posCards || {};
       order = (D.countries || []).map(c => c.code);
       // Most publications first; ties by first-authored count, then country order
       // and family name (the build's order).

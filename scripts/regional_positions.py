@@ -63,7 +63,8 @@ def positions(code, dump, posdump):
         current = cur in ('true', 'yes', 'current', 'y') or cur.startswith('current')
         itype = I.get('type', '')
         he = bool(HE.search(iname)) or bool(re.search(r'universit|college|polytechnic|seminary|theolog|academ', itype, re.I))
-        out.append(dict(code=code, sid=sid, name=b.norm(S[sid].get('Scholar Name') or S[sid].get('Display Name')), gender=b.gender(S[sid].get('Gender')), title=title, verb=verb, std=std, ltit=ltit, inst=iname, host=host, current=current, he=he, status=cur))
+        out.append(dict(code=code, sid=sid, name=b.norm(S[sid].get('Scholar Name') or S[sid].get('Display Name')), gender=b.gender(S[sid].get('Gender')), title=title, verb=verb, std=std, ltit=ltit, inst=iname, host=host, current=current, he=he, status=cur,
+                        dept=first(r, 'Department / Unit') or '', start=first(r, 'Start Year') or '', end=first(r, 'End Year') or ''))
     return out
 
 
@@ -162,3 +163,33 @@ def build_positions(dumps):
     return dict(lead=[[k, l] for k, l, _ in LEAD], rank=[[k, l] for k, l, _ in RANK],
                 coverage=dict(positions=cov_pos, withPositions=cov_sch, profile=cov_prof),
                 scholars=sorted(scholars.values(), key=lambda s: (s['c'], s['n'])))
+
+
+def _yr(v):
+    v = re.sub(r'\.0$', '', b.norm(v) or '')
+    return v if re.fullmatch(r'\d{4}', v) else ''
+
+
+def card_positions(dumps):
+    """Positions sheet rows per scholar for the regional directory cards, using the same
+    allow-listed fields the country dashboard cards publish (scripts/country_positions.py):
+    title, leadership title, department, institution, country, current/past, start and end year.
+    Never included: Evidence / Notes, Source URL, Last Verified. Keyed by Scholar ID."""
+    out = {}
+    for code, *_ in b.COUNTRIES:
+        d = dumps.get(code)
+        if not (d and d['data'].get('Positions')):
+            continue
+        for p in positions(code, d, d):
+            verb, std, ltit = p['verb'] or '', p['std'] or '', p['ltit'] or ''
+            row = dict(t=verb or std or ltit, cur=bool(p['current']))
+            if ltit and ltit != row['t'] and ltit.lower() not in verb.lower():
+                row['l'] = ltit
+            for k, v in (('d', p.get('dept')), ('i', p['inst']), ('c', (p['host'] or '').strip())):
+                if v: row[k] = v
+            s, e = _yr(p.get('start')), _yr(p.get('end'))
+            if s: row['s'] = s
+            if e: row['e'] = e
+            if row['t'] or row.get('i'):
+                out.setdefault(p['sid'], []).append(row)
+    return out

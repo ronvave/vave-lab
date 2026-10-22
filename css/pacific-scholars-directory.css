@@ -173,3 +173,14 @@
 
 /* Share: green "Copied" flash, as on the country dashboard cards */
 #ps-dir .db-scholar-card__share.is-copied,#ps-dir .db-scholar-card__share.is-copied:hover{background:#16834a}
+
+/* Positions panel on directory cards (same layout as the Fiji and Tonga dashboard cards) */
+#ps-dir .psd-pos .psd-pos__btn { margin-top: 10px; }
+#ps-dir .psd-pos__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+#ps-dir .psd-pos__item { display: flex; gap: 8px; align-items: flex-start; }
+#ps-dir .psd-pos__text { min-width: 0; }
+#ps-dir .psd-pos__title { font-weight: 600; font-size: 0.88rem; line-height: 1.3; color: #1f2a37; }
+#ps-dir .psd-pos__sub { font-size: 0.8rem; line-height: 1.35; color: #5b6673; margin-top: 1px; }
+#ps-dir .psd-pos__pill { flex: 0 0 auto; margin-top: 1px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; line-height: 1.4; min-width: 64px; text-align: center; box-sizing: border-box; }
+#ps-dir .psd-pos__pill.is-cur { background: #0e7c86; color: #fff; }
+#ps-dir .psd-pos__pill.is-past { background: #eceef0; color: #5b6673; border: 1px solid #d5d9de; }
