@@ -444,7 +444,7 @@
         var countryMenu=buildCheckMenu(d,'Pacific Island country',PACIFIC_COUNTRIES.map(function(c){return{value:c,label:c};}),new Set(savedCountries.filter(function(c){return PACIFIC_COUNTRIES.indexOf(c)>=0;})),function(){markDirty();});countryMenu.details.dataset.kind='country';row.appendChild(countryMenu.details);
         var otherCountries=buildM49CountryEditor(d,function(){markDirty();},savedCountries.filter(function(c){return c!=='Fiji'&&PACIFIC_COUNTRIES.indexOf(c)<0;}));row.appendChild(otherCountries.root);
         var status=d.createElement('div');status.className='scholar-geo-editor__status';status.textContent=existing.size?'Existing province tag(s) are pre-selected. Change them only if needed.':'No province tag is currently shown for this publication.';wrap.appendChild(status);
-        function markDirty(){var provinces=provinceMenu.values();var countries=countryMenu.values();var other=otherCountries.values();if(other===null){status.textContent='Please choose only countries or areas from the UN M49 list.';return;}dirty.set(item.key,{item_key:item._masterPublicationId||item.key,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
+        function markDirty(){if(!item._masterPublicationId){status.textContent='This record is not yet linked to a Master publication, so its geography cannot be submitted.';return;}var provinces=provinceMenu.values();var countries=countryMenu.values();var other=otherCountries.values();if(other===null){status.textContent='Please choose only countries or areas from the UN M49 list.';return;}dirty.set(item.key,{item_key:item._masterPublicationId,title:item.title||'',year:item.year||'',existing_provinces:Array.from(existing),provinces:provinces,pacific_countries:countries,other_countries:other});status.textContent='Geographic suggestion changed — it will be included when you submit below.';updateDirtyCounter(d,dirty.size);}return wrap;
       }
 
       var M49_COUNTRY_CACHE=null;
@@ -460,7 +460,7 @@
         var count=d.createElement('input');count.type='number';count.min='0';count.max='20';count.step='1';count.value=String((initialCountries||[]).length);count.setAttribute('value',count.value);count.className='scholar-geo-other__count';root.appendChild(count);
         var fields=d.createElement('div');fields.className='scholar-geo-other__fields';root.appendChild(fields);
         var error=d.createElement('div');error.className='scholar-geo-other__error';error.textContent='Please choose a country or area from the UN M49 list.';root.appendChild(error);
-        var names=[];var canon=new Map();var listId='m49-'+Math.random().toString(36).slice(2);
+        var names=[];var canon=new Map();var saved=new Map();(initialCountries||[]).forEach(function(c){c=String(c||'').trim();if(c)saved.set(c.toLowerCase(),c);});var listId='m49-'+Math.random().toString(36).slice(2);
         var dl=d.createElement('datalist');dl.id=listId;root.appendChild(dl);
         loadM49Countries().then(function(arr){names=arr;arr.forEach(function(n){canon.set(n.toLowerCase(),n);var o=d.createElement('option');o.value=n;dl.appendChild(o);});}).catch(function(e){console.error(e);error.textContent='The UN M49 country list could not be loaded. Please reload the page.';root.classList.add('has-error');});
         function render(){
@@ -473,8 +473,8 @@
         function values(){
           var vals=Array.prototype.slice.call(fields.querySelectorAll('input')).map(function(x){return String(x.value||'').trim();}).filter(Boolean);
           if(!vals.length){root.classList.remove('has-error');return [];}
-          if(!names.length){root.classList.add('has-error');return null;}
-          var out=[];for(var i=0;i<vals.length;i++){var canonical=canon.get(vals[i].toLowerCase());if(!canonical){root.classList.add('has-error');return null;}if(out.indexOf(canonical)<0)out.push(canonical);}
+          if(!names.length&&vals.some(function(v){return !saved.has(v.toLowerCase());})){root.classList.add('has-error');return null;}
+          var out=[];for(var i=0;i<vals.length;i++){var canonical=canon.get(vals[i].toLowerCase())||saved.get(vals[i].toLowerCase());if(!canonical){root.classList.add('has-error');return null;}if(out.indexOf(canonical)<0)out.push(canonical);}
           root.classList.remove('has-error');return out;
         }
         function validateAndChange(){var v=values();if(v!==null)onChange();}

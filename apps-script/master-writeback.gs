@@ -1024,6 +1024,33 @@ function validScholarShareToken_(ss,sid,token){
   for(var i=0;i<ids.length;i++){ if(String(ids[i][0]).toUpperCase()===String(sid).toUpperCase()){ return String(sh.getRange(i+5,tokCol).getDisplayValue()).toLowerCase()===String(token).toLowerCase(); }}
   return false;
 }
+// Resolve a submitted publication key to its Master Publication ID.
+// Older scholar profile pages sent the dashboard's internal 8-character key
+// (a hash of 'pub:' + Publication ID) instead of the ID itself, and those keys
+// were written straight into Research Geography column B, where they matched
+// no publication. Accepts the real ID, the internal key, or a unique
+// title + year match; returns '' when the publication cannot be identified.
+function geoPubHash_(s){var h=5381;s=String(s==null?'':s);for(var i=0;i<s.length;i++){h=((h<<5)+h)+s.charCodeAt(i);h|=0;}var o=Math.abs(h).toString(36).toUpperCase();while(o.length<8)o='0'+o;return o.slice(0,8);}
+function makeGeoPubResolver_(ss){
+  var sh=ss.getSheetByName('Publications'), ids={}, byHash={}, byTitle={};
+  var norm=function(x){return String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();};
+  if(sh && sh.getLastRow()>=5){
+    var hdr=sh.getRange(4,1,1,sh.getLastColumn()).getDisplayValues()[0].map(function(h){return String(h).trim();});
+    var idC=hdr.indexOf('Publication ID / BibTeX Key'), tC=hdr.indexOf('Title'), yC=hdr.indexOf('Year');
+    if(idC>=0){ sh.getRange(5,1,sh.getLastRow()-4,hdr.length).getDisplayValues().forEach(function(r){
+      var id=String(r[idC]||'').trim(); if(!id) return; ids[id]=true;
+      var hk=geoPubHash_('pub:'+id); byHash[hk]=(hk in byHash && byHash[hk]!==id)?'':id;
+      if(tC>=0){ var tk=norm(r[tC])+'||'+(yC>=0?String(r[yC]||'').trim():''); byTitle[tk]=(tk in byTitle && byTitle[tk]!==id)?'':id; }
+    }); }
+  }
+  return function(key,title,year){
+    key=String(key||'').trim();
+    if(key && ids[key]) return key;
+    if(/^[0-9A-Z]{8}$/.test(key) && byHash[key]) return byHash[key];
+    var tk=norm(title)+'||'+String(year||'').trim();
+    return (norm(title) && byTitle[tk]) || '';
+  };
+}
 function handlePublicPublicationGeographySubmission_(body){
   var ss=geoSs_(), sid=String(body.scholarId||'').toUpperCase(), token=String(body.shareToken||'').trim();
   if(!validScholarShareToken_(ss,sid,token)) return jsonOut_({status:'unauthorized',reason:'invalid-scholar-share-token'},401);
@@ -1032,7 +1059,7 @@ function handlePublicPublicationGeographySubmission_(body){
   var changes=Array.isArray(body.changes)?body.changes:[]; if(!changes.length || changes.length>100) return jsonOut_({status:'bad_request',reason:'changes-required-or-too-many'},400);
   var sh=ss.getSheetByName(GEO_SUBMISSION_SHEET); if(!sh) return jsonOut_({status:'error',reason:'submission-sheet-missing'},500);
   var now=new Date(), ts=Utilities.formatDate(now,TIMEZONE,'yyyy-MM-dd HH:mm:ss'), scholarName=String(body.scholarName||'').slice(0,240), profileUrl=String(body.profileUrl||'').slice(0,700);
-  var rows=[]; changes.forEach(function(c){ var key=String(c.item_key||'').trim().slice(0,300); if(!key)return; var sub='PGS-'+Utilities.formatDate(now,TIMEZONE,'yyyyMMddHHmmss')+'-'+Utilities.getUuid().slice(0,8); rows.push([sub,ts,'Pending',sid,scholarName,name.slice(0,160),email.slice(0,240),rel.slice(0,100),profileUrl,key,String(c.title||'').slice(0,700),String(c.year||'').slice(0,20),cleanGeoList_(c.existing_provinces).join('; '),cleanGeoList_(c.provinces).join('; '),cleanGeoList_(c.pacific_countries).join('; '),cleanGeoList_(c.other_countries).join('; '),'','','','']); });
+  var resolvePub=makeGeoPubResolver_(ss); var rows=[]; changes.forEach(function(c){ var key=String(c.item_key||'').trim().slice(0,300); if(!key)return; key=resolvePub(key,c.title,c.year)||key; var sub='PGS-'+Utilities.formatDate(now,TIMEZONE,'yyyyMMddHHmmss')+'-'+Utilities.getUuid().slice(0,8); rows.push([sub,ts,'Pending',sid,scholarName,name.slice(0,160),email.slice(0,240),rel.slice(0,100),profileUrl,key,String(c.title||'').slice(0,700),String(c.year||'').slice(0,20),cleanGeoList_(c.existing_provinces).join('; '),cleanGeoList_(c.provinces).join('; '),cleanGeoList_(c.pacific_countries).join('; '),cleanGeoList_(c.other_countries).join('; '),'','','','']); });
   if(!rows.length) return jsonOut_({status:'bad_request',reason:'no-valid-publications'},400);
   var lock=LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS); try{ sh.getRange(sh.getLastRow()+1,1,rows.length,GEO_SUBMISSION_HEADERS.length).setValues(rows); } finally {lock.releaseLock();}
   return jsonOut_({status:'ok',queued:rows.length});
@@ -1056,5 +1083,6 @@ function handleResolvePublicationGeographySubmission_(body){
   var id=String(body.submissionId||'').trim(), decision=String(body.decision||'').toLowerCase(); if(!id || ['approve','reject'].indexOf(decision)<0)return jsonOut_({status:'bad_request',reason:'invalid-resolution'},400);
   var ss=geoSs_(),sh=ss.getSheetByName(GEO_SUBMISSION_SHEET),last=sh.getLastRow(),found=0,rowObj=null; if(last<5)return jsonOut_({status:'not_found'},404); var vals=sh.getRange(5,1,last-4,GEO_SUBMISSION_HEADERS.length).getDisplayValues();
   for(var i=0;i<vals.length;i++){if(vals[i][0]===id){found=i+5;rowObj={};GEO_SUBMISSION_HEADERS.forEach(function(h,j){rowObj[h]=vals[i][j]||''});break;}} if(!found)return jsonOut_({status:'not_found'},404); if(rowObj.Status!=='Pending')return jsonOut_({status:'bad_request',reason:'already-resolved'},409);
+  if(decision==='approve'){var submittedKey=rowObj['Publication Key'];var pid=makeGeoPubResolver_(ss)(submittedKey,rowObj['Publication Title'],rowObj.Year);if(!pid)return jsonOut_({status:'bad_request',reason:'This publication was not found in the Master Publications sheet (key '+submittedKey+'). Check the publication, then approve again.'},409);if(pid!==submittedKey){sh.getRange(found,10).setValue(pid);rowObj['Publication Key']=pid;}}
   var lock=LockService.getScriptLock();lock.waitLock(LOCK_WAIT_MS);try{var added=decision==='approve'?addApprovedGeoRows_(ss,rowObj):0;var now=Utilities.formatDate(new Date(),TIMEZONE,'yyyy-MM-dd HH:mm:ss'),notes=String(body.reviewNotes||'').slice(0,1500),reviewer=String(body.reviewedBy||ACTOR_LABEL).slice(0,160);sh.getRange(found,3).setValue(decision==='approve'?'Approved':'Rejected');sh.getRange(found,17,1,4).setValues([[notes,reviewer,now,decision==='approve'?('Approved; '+added+' new Research Geography row(s) added. Existing geography preserved.'):'Rejected; no Research Geography changes made.']]);appendChangeLog_(ss,'Publication Geography Submissions',rowObj['Scholar ID'],id,'Pending',decision==='approve'?'Approved':'Rejected');return jsonOut_({status:'ok',decision:decision,added:added});}finally{lock.releaseLock();}
 }
