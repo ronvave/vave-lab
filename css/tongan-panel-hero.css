@@ -3,42 +3,49 @@
    Built by js/tongan-panel-hero.js; nothing here changes panel content. */
 .tph-hero {
   position: relative; display: flex; align-items: center; gap: 18px;
-  min-height: 104px; box-sizing: border-box;
-  padding: 18px 84px 18px 22px;
+  min-height: 112px; box-sizing: border-box; overflow: hidden;
+  padding: 18px 300px 18px 22px; /* right padding is recalculated in JS to clear the island picture */
   color: #fff;
-  background:
-    linear-gradient(90deg, rgba(6,28,66,.97) 0%, rgba(9,44,92,.93) 45%, rgba(9,44,92,.62) 66%, rgba(9,44,92,.1) 84%, rgba(0,0,0,0) 100%),
-    url("../img/tonga/panel-header-sunset.webp") right 42% / cover no-repeat,
-    #0a2c5c;
+  /* Deep ocean blue on the left, lightening through the middle into the picture. */
+  background: linear-gradient(90deg, #0b3a60 0%, #12547f 30%, #1f6e98 58%, #2f86ad 80%, #3a93b8 100%);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Island, sunset and sea: always the full picture, sized to the header height. */
+.tph-art {
+  position: absolute; top: 0; right: 0; bottom: 0; height: 100%;
+  aspect-ratio: 1120 / 550; pointer-events: none; z-index: 0;
+  background: url("../img/tonga/panel-header-island.webp") center / cover no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.55) 22%, #000 48%);
+}
+.tph-hero > :not(.tph-art) { position: relative; z-index: 1; }
+.tph-hero > .db-panel__label { position: absolute; z-index: 3; }
 .tph-flag {
-  flex: 0 0 auto; width: 62px; height: 62px; border-radius: 50%;
-  border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%;
+  border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.28);
   background: #fff; object-fit: cover;
 }
-.tph-text { min-width: 0; flex: 1 1 auto; max-width: 66%; }
-.tph-hero .tph-text > :first-child { white-space: normal; }
+.tph-text { min-width: 0; flex: 1 1 auto; }
 .tph-hero .tph-title,
 .tph-hero .db-section__label,
 .tph-hero .db-panel__title,
 .tph-hero .db-leaderboard__title,
 .tph-hero h2, .tph-hero h3 {
-  margin: 0 0 6px !important; padding: 0 !important;
+  margin: 0 0 8px !important; padding: 0 !important;
   font-family: Arial, Helvetica, sans-serif !important;
-  font-size: 1.55rem !important; line-height: 1.15 !important; font-weight: 800 !important;
-  letter-spacing: .02em !important; text-transform: uppercase !important;
-  color: #fff !important; text-shadow: 0 2px 6px rgba(0,0,0,.45);
+  font-size: 1.6rem !important; line-height: 1.15 !important; font-weight: 700 !important;
+  letter-spacing: .025em !important; text-transform: uppercase !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.25);
   border: 0 !important; background: none !important; max-width: none !important; width: auto !important; text-wrap: wrap !important;
 }
 .tph-hero .db-section__hint,
 .tph-hero .db-panel__hint,
 .tph-hero .db-leaderboard__hint,
 .tph-hero p {
-  margin: 0 !important; max-width: 78ch;
+  margin: 0 !important; max-width: none !important;
   font-family: Arial, Helvetica, sans-serif !important;
-  font-size: .95rem !important; line-height: 1.45 !important;
-  color: rgba(255,255,255,.95) !important; text-shadow: 0 1px 3px rgba(0,0,0,.5);
+  font-size: .95rem !important; line-height: 1.5 !important; font-weight: 400 !important;
+  color: rgba(255,255,255,.96) !important; text-shadow: 0 1px 2px rgba(0,0,0,.25);
 }
 .tph-hero .tph-text > :last-child { margin-bottom: 0 !important; }
 /* Panel code badge sits on the image, top-right. */
@@ -53,7 +60,7 @@ summary.tph-hero .db-panel__label {
 summary.tph-hero { cursor: pointer; min-height: 84px; list-style: none; }
 summary.tph-hero::-webkit-details-marker { display: none; }
 summary.tph-hero { display: flex !important; }
-summary.tph-hero::before { order: 5; flex: 0 0 auto; margin-left: auto; width: 30px !important; height: 30px !important; background: rgba(255,255,255,.92) !important; color: #0a2c5c !important; font-size: 1.25rem !important; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+summary.tph-hero::before { order: 5; flex: 0 0 auto; margin-left: auto; position: relative; z-index: 1; width: 30px !important; height: 30px !important; background: rgba(255,255,255,.92) !important; color: #0a2c5c !important; font-size: 1.25rem !important; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
 summary.tph-hero .tph-text { max-width: none; }
 summary.tph-hero .tph-title { font-size: 1.3rem !important; margin: 0 !important; }
 /* Chips/indicators that live inside a title keep their own colours. */
@@ -84,8 +91,8 @@ summary.tph-hero .tph-title { font-size: 1.3rem !important; margin: 0 !important
 .tph-panel .db-kpis--b2 .db-kpi__icon svg { width: 26px; height: 26px; color: #fff; stroke: #fff; }
 .tph-panel .db-kpis--b2 .db-kpi__num { color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 1.75rem; font-weight: 800; line-height: 1.05; }
 .tph-panel .db-kpis--b2 .db-kpi__body { min-width: 0; }
-.tph-panel .db-kpis--b2 .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 600; margin-top: 2px; white-space: nowrap; }
-summary.tph-hero { padding: 14px 64px 14px 22px !important; }
+.tph-panel .db-kpis--b2 .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 500; margin-top: 2px; white-space: nowrap; }
+summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important; padding-left: 22px !important; }
 .db-about.tph-panel:not([open]) { padding-bottom: 0; }
 .db-about.tph-panel { overflow: hidden; }
 .db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }

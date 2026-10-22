@@ -11,6 +11,19 @@
     i.className = 'tph-flag'; i.src = FLAG; i.alt = ''; i.setAttribute('aria-hidden', 'true');
     return i;
   }
+  // Island picture on the right, sized to the header height so the whole
+  // island, sunset and sea always show; text is kept clear of its solid part.
+  var ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
+  function fit(hero) {
+    var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
+    var w = art.getBoundingClientRect().width || hero.offsetHeight * 2.04;
+    var pr = Math.round(w * 0.55) + 24;
+    hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
+  }
+  function addArt(hero) {
+    var a = document.createElement('span'); a.className = 'tph-art'; a.setAttribute('aria-hidden', 'true');
+    hero.insertBefore(a, hero.firstChild); fit(hero); if (ro) ro.observe(hero);
+  }
   function nextEl(n) { n = n && n.nextElementSibling; return n; }
   function bleed(panel, hero) {
     var cs = getComputedStyle(panel);
@@ -26,7 +39,7 @@
       [].slice.call(s.childNodes).forEach(function (n) { if (!(n.nodeType === 1 && n.classList.contains('db-panel__label'))) t.appendChild(n); });
       var txt = document.createElement('div'); txt.className = 'tph-text'; txt.appendChild(t);
       s.insertBefore(txt, s.firstChild); s.insertBefore(flag(), txt);
-      s.classList.add('tph-hero'); panel.classList.add('tph-panel'); bleed(panel, s); s.style.marginBottom = '0';
+      s.classList.add('tph-hero'); panel.classList.add('tph-panel'); bleed(panel, s); s.style.marginBottom = '0'; addArt(s);
       return;
     }
     var title = panel.querySelector(TITLE); if (!title) return;
@@ -41,7 +54,7 @@
     if (badge && badge.nextSibling) panel.insertBefore(hero, badge.nextSibling); else panel.insertBefore(hero, panel.firstChild);
     text.appendChild(title); if (hint) text.appendChild(hint);
     if (oldHead && !oldHead.children.length) oldHead.remove();
-    panel.classList.add('tph-panel'); bleed(panel, hero);
+    panel.classList.add('tph-panel'); bleed(panel, hero); addArt(hero);
     // Controls that other scripts insert next to the title or hint (for
     // example the B3 "Study pathways / University positions" toggle) belong
     // under the header, not inside it.
@@ -49,7 +62,7 @@
     var evict = function () {
       var after = hero;
       [].slice.call(text.children).forEach(function (c) {
-        if (keep.indexOf(c) === -1) { after.parentNode.insertBefore(c, after.nextSibling); after = c; }
+        if (keep.indexOf(c) === -1 && !c.classList.contains('tph-art')) { after.parentNode.insertBefore(c, after.nextSibling); after = c; }
       });
     };
     evict();
