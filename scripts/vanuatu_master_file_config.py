@@ -32,7 +32,7 @@ COUNTRY_ALIASES = {'Nauru':'Naoero','Naoero':'Naoero','USA':'United States','Uni
 # so the dashboard bundle and Public Export Config decisions are unchanged.
 # Applied only when the new header is present; old headers still work.
 LEGACY_HEADERS = {
- 'Scholars': {'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID'},
+ 'Scholars': {'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID','Living Status':'Vital Status'},
  'Publications': {'Open Access URL':'Open Access URL / PDF','Keywords':'Author Keywords'},
  'Authorship': {'Reconciliation Notes':'Evidence / Notes'},
  'Research Geography': {'Village / Site':'Village / Community'},

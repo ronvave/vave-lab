@@ -674,17 +674,22 @@
       container.innerHTML = '<div class="meta" style="color:var(--muted);">No Positions rows on the Master sheet for this scholar. Positions can only be added by editing the sheet directly (write-back is per-existing-row for now).</div>';
       return;
     }
-    var fields = [{'name': 'Title / Role', 'label': 'Title / Role'}, {'name': 'Institution', 'label': 'Institution'}, {'name': 'Department / Unit', 'label': 'Department / Unit'}, {'name': 'Institution Country', 'label': 'Institution Country'}, {'name': 'Start Year', 'label': 'Start Year'}, {'name': 'End Year', 'label': 'End Year'}, {'name': 'Current?', 'label': 'Current?'}, {'name': 'Leadership Category', 'label': 'Leadership Category'}, {'name': 'Leadership Level', 'label': 'Leadership Level'}, {'name': 'Profile URL', 'label': 'Profile URL'}, {'name': 'Evidence', 'label': 'Evidence'}, {'name': 'Source URL', 'label': 'Source URL'}, {'name': 'Verification Status', 'label': 'Verification Status'}, {'name': 'Public Display Approved', 'label': 'Public Display Approved'}, {'name': 'Record Notes', 'label': 'Record Notes'}];
+    var fields = [{'name': 'Title / Role', 'label': 'Title / Role'}, {'name': 'Institution', 'label': 'Institution'}, {'name': 'Department / Unit', 'label': 'Department / Unit'}, {'name': 'Institution Country', 'label': 'Institution Country'}, {'name': 'Start Year', 'label': 'Start Year'}, {'name': 'End Year', 'label': 'End Year'}, {'name': 'Current?', 'label': 'Role Status', 'options': ['', 'Current', 'Former', 'Unresolved']}, {'name': 'Leadership Category', 'label': 'Leadership Category'}, {'name': 'Leadership Level', 'label': 'Leadership Level'}, {'name': 'Profile URL', 'label': 'Profile URL'}, {'name': 'Evidence', 'label': 'Evidence'}, {'name': 'Source URL', 'label': 'Source URL'}, {'name': 'Verification Status', 'label': 'Verification Status'}, {'name': 'Public Display Approved', 'label': 'Public Display Approved'}, {'name': 'Record Notes', 'label': 'Record Notes'}];
     var html = '';
     rows.forEach(function (r, idx) {
       html += '<div class="row-block" style="border:1px solid var(--cream); border-radius:8px; padding:12px; margin-bottom:12px;">';
-      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(r.fields['Role Status'] || 'no status') + '</div>';
+      html += '<div class="mono" style="color:var(--muted); font-size:0.8rem; margin-bottom:8px;">Row ' + r.rowNumber + ' · ' + esc(r.fields['Current?'] || r.fields['Role Status'] || 'no status') + '</div>';
       html += '<div class="form-grid">';
       fields.forEach(function (f) {
         var val = r.fields[f.name] == null ? '' : String(r.fields[f.name]);
         var type = f.type || 'text';
         var attrs = 'class="me-row-input" data-ws="Positions" data-field="' + esc(f.name) + '" data-row="' + r.rowNumber + '" data-loaded="' + esc(val) + '"';
-        html += '<div class="form-group"><label>' + esc(f.label) + '</label><input type="' + type + '" ' + attrs + ' value="' + esc(val) + '" /></div>';
+        if (f.options) {
+          var opts = f.options.slice(); if (val && opts.indexOf(val) < 0) opts.push(val);
+          html += '<div class="form-group"><label>' + esc(f.label) + '</label><select ' + attrs + '>' + opts.map(function (o) { return '<option value="' + esc(o) + '"' + (o === val ? ' selected' : '') + '>' + esc(o || '(unset)') + '</option>'; }).join('') + '</select></div>';
+        } else {
+          html += '<div class="form-group"><label>' + esc(f.label) + '</label><input type="' + type + '" ' + attrs + ' value="' + esc(val) + '" /></div>';
+        }
       });
       html += '</div></div>';
     });
@@ -2429,7 +2434,7 @@
     if (state.gapFilterReason) rows = rows.filter(function (r) { return r.reason === state.gapFilterReason; });
     if (state.gapFilterStatus) rows = rows.filter(function (r) {
       var s = (r.aliveDeceased || '').toLowerCase();
-      if (state.gapFilterStatus === 'Alive')    return s.indexOf('alive')    !== -1 || (s !== '' && s.indexOf('deceased') === -1);
+      if (state.gapFilterStatus === 'Living')   return s.indexOf('living') !== -1 || s.indexOf('alive') !== -1 || (s !== '' && s.indexOf('deceased') === -1 && s.indexOf('unknown') === -1);
       if (state.gapFilterStatus === 'Deceased') return s.indexOf('deceased') !== -1;
       return true;
     });

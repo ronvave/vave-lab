@@ -10,14 +10,15 @@ var VAN_KEYS_={'Scholars':'Scholar ID','Graduate Degrees':'Degree ID','Positions
 // names; records keep their established keys so Admin screens, privacy deletions and
 // field validation are unchanged. Physical column positions are read from row 4 as before.
 var VAN_LEGACY_={
- 'Scholars':{'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID'},
+ 'Scholars':{'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID','Living Status':'Vital Status'},
  'Publications':{'Open Access URL':'Open Access URL / PDF','Keywords':'Author Keywords'},
  'Authorship':{'Reconciliation Notes':'Evidence / Notes'},
- 'Positions':{'Title (verbatim)':'Title / Role','Employment Type':'Employment / Appointment Type','Last Verified':'Last Checked'},
+ 'Positions':{'Title (verbatim)':'Title / Role','Employment Type':'Employment / Appointment Type','Last Verified':'Last Checked','Role Status':'Current?'},
  'Research Geography':{'Village / Site':'Village / Community'},
  'Review Queue':{'Submitted At':'Submitted / Found At'},
  'Scholar Profile Submissions':{'Submitter Email (private)':'Submitter Email'},
- 'Publication Geography Submissions':{'Submitter Email (private)':'Submitter Email'}
+ 'Publication Geography Submissions':{'Submitter Email (private)':'Submitter Email'},
+ 'Change Log':{'Changed At (UTC)':'Changed At'}
 };
 var VAN_FIELDS_={
  'Scholars':['Scholar Name','Salutation','Family Name','Given Names','Gender','Year of Birth','Vital Status','Year of Death','Identity Verification Status','Identity Evidence','Identity Source URL','Identity Last Checked','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Public Display Approved','Review Status','Record Notes'],
@@ -25,7 +26,7 @@ var VAN_FIELDS_={
  'Positions':['Title / Role','Institution','Department / Unit','Institution Country','Start Year','End Year','Current?','Leadership Category','Leadership Level','Profile URL','Evidence','Source URL','Verification Status','Public Display Approved','Record Notes']
 };
 var VAN_REVIEW_FIELDS_=['Salutation','Family Name','Given Names','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community'];
-var VAN_ENUMS_={'Gender':['Female','Male','Non-binary','Another identity','Unknown / verify'],'Vital Status':['Alive','Deceased','Unknown / not checked'],'Identity Verification Status':['Verified','Probable','Unresolved','Excluded'],'Degree Level':["Master's",'PhD / Doctorate'],'Completion Status':['Completed','Ongoing','In progress','Withdrawn','Unknown / verify'],'Verification Status':['Verified','Probable','Unresolved','Excluded']};
+var VAN_ENUMS_={'Gender':['Female','Male','Non-binary','Another identity','Unknown / verify'],'Vital Status':['Living','Deceased','Unknown'],'Current?':['Current','Former','Unresolved'],'Identity Verification Status':['Verified','Probable','Unresolved','Excluded'],'Degree Level':["Master's",'PhD / Doctorate'],'Completion Status':['Completed','Ongoing','In progress','Withdrawn','Unknown / verify'],'Verification Status':['Verified','Probable','Unresolved','Excluded']};
 function vanActor_(ownerOnly){
  if(vanHttpActor_)return vanHttpActor_;
  var email=String(Session.getActiveUser().getEmail()||'').toLowerCase().trim();
@@ -63,11 +64,13 @@ function getVanuatuAdminState(){
  });
  return {country:'Vanuatu',writeEnabled:PropertiesService.getScriptProperties().getProperty('VANUATU_WRITE_ENABLED')==='true',role:actor.role,actor:actor.email,tables:tables,enrichment:actor.role==='owner'?vanEnrichment_():{}};
 }
+// Change Log times use the reference-schema format, e.g. 2026-10-22 04:50 UTC.
+function vanUtcNow_(){return Utilities.formatDate(new Date(),'UTC','yyyy-MM-dd HH:mm')+' UTC';}
 function vanWriteEnabled_(){if(PropertiesService.getScriptProperties().getProperty('VANUATU_WRITE_ENABLED')!=='true')throw Error('Vanuatu writes are disabled. Owner activation is required.');}
 function vanCell_(v){return {userEnteredValue:typeof v==='boolean'?{boolValue:v}:{stringValue:String(v==null?'':v)}};}
 function vanUpdate_(d,row,field,value){var col=d.headers.indexOf(field);if(col<0)throw Error('Missing field header: '+field);if(d.sheet.getRange(row,col+1).getFormula())throw Error('Computed field is protected: '+field);return {updateCells:{range:{sheetId:d.sheet.getSheetId(),startRowIndex:row-1,endRowIndex:row,startColumnIndex:col,endColumnIndex:col+1},rows:[{values:[vanCell_(value)]}],fields:'userEnteredValue'}};}
 function vanAudit_(actor,entity,id,field,before,after,reason){
- var d=vanData_('Change Log'),row={'Change ID':'VAN-CHG-'+Utilities.getUuid(),'Changed At':new Date().toISOString(),'Changed By':actor.email,'Entity Type':entity,'Entity ID':id,'Field / Action':field,'Old Value':String(before==null?'':before),'New Value':String(after==null?'':after),'Source / Reason':reason,'Approval / Notes':'Vanuatu native Admin'};
+ var d=vanData_('Change Log'),row={'Change ID':'VAN-CHG-'+Utilities.getUuid(),'Changed At':vanUtcNow_(),'Changed By':actor.email,'Entity Type':entity,'Entity ID':id,'Field / Action':field,'Old Value':String(before==null?'':before),'New Value':String(after==null?'':after),'Source / Reason':reason,'Approval / Notes':'Vanuatu native Admin'};
  return {appendCells:{sheetId:d.sheet.getSheetId(),rows:[{values:d.headers.map(function(h){return vanCell_(row[h]||'');})}],fields:'userEnteredValue'}};
 }
 function vanValidate_(table,field,value){
@@ -77,7 +80,7 @@ function vanValidate_(table,field,value){
  if(/Province$/.test(field)&&v&&VAN_PROVINCES_.indexOf(v)<0)throw Error('Invalid province.');
  if(/Year/.test(field)&&v&&!/^\d{4}$/.test(v))throw Error('Year must be blank or four digits.');
  if(/URL|Handle/.test(field)&&v&&!/^https?:\/\/[^\s]+$/i.test(v))throw Error('URL must use http(s).');
- if(['Public Display Approved','Current?'].indexOf(field)>=0){if(!/^(true|false)$/i.test(v))throw Error('Approval flag must be true or false.');return /^true$/i.test(v);}
+ if(['Public Display Approved'].indexOf(field)>=0){if(!/^(true|false)$/i.test(v))throw Error('Approval flag must be true or false.');return /^true$/i.test(v);}
  return v;
 }
 function vanGeographyCheck_(record){
@@ -90,13 +93,13 @@ function vanReplay_(operationId,payload){
  if(!/^[\w-]{16,80}$/.test(operationId||''))throw Error('A valid operation ID is required.');var rows=vanJournalSheet_(),id='VAN-OP-'+operationId,found=rows.filter(function(r){return r.value['Change ID']===id;});
  if(found.length){var r=found[0].value;if(r['Old Value']!==vanDigest_(payload))throw Error('Operation ID reused with a different request.');return JSON.parse(r['New Value']);}return null;
 }
-function vanJournalRequest_(actor,op,payload,result){var d=vanData_('Change Log'),r={'Change ID':'VAN-OP-'+op,'Changed At':new Date().toISOString(),'Changed By':actor.email,'Entity Type':'Operation journal','Entity ID':op,'Field / Action':'Completed operation','Old Value':vanDigest_(payload),'New Value':JSON.stringify(result),'Source / Reason':'Idempotent native Vanuatu write','Approval / Notes':'Private; never export'};return {appendCells:{sheetId:d.sheet.getSheetId(),rows:[{values:d.headers.map(function(h){return vanCell_(r[h]||'');})}],fields:'userEnteredValue'}};}
+function vanJournalRequest_(actor,op,payload,result){var d=vanData_('Change Log'),r={'Change ID':'VAN-OP-'+op,'Changed At':vanUtcNow_(),'Changed By':actor.email,'Entity Type':'Operation journal','Entity ID':op,'Field / Action':'Completed operation','Old Value':vanDigest_(payload),'New Value':JSON.stringify(result),'Source / Reason':'Idempotent native Vanuatu write','Approval / Notes':'Private; never export'};return {appendCells:{sheetId:d.sheet.getSheetId(),rows:[{values:d.headers.map(function(h){return vanCell_(r[h]||'');})}],fields:'userEnteredValue'}};}
 function saveVanuatuMaster(payload){
  var actor=vanActor_(true);vanWriteEnabled_();var lock=LockService.getScriptLock();lock.waitLock(30000);
  try{var prior=vanReplay_(payload.operationId,payload);if(prior)return prior;var d=vanData_(payload.table),r=vanRecord_(d,payload.id);if(vanDigest_(r.value)!==payload.expectedVersion)throw Error('Conflict: this record changed. Reload before editing.');
   var reason=String(payload.reason||'').trim();if(!reason)throw Error('Evidence/reason is required.');var keys=Object.keys(payload.changes||{});if(!keys.length||keys.length>40)throw Error('Invalid change set.');var merged=Object.assign({},r.value),requests=[];
   keys.forEach(function(field){if(/Status|Approved|Year of Death|Scholar Name/.test(field)&&payload.confirmedStatus!==true)throw Error('Explicit status/name confirmation required.');var value=vanValidate_(payload.table,field,payload.changes[field]);merged[field]=value;requests.push(vanUpdate_(d,r.row,field,value));requests.push(vanAudit_(actor,payload.table,payload.id,field,r.value[field],value,reason));});
-  if(payload.table==='Scholars'){vanGeographyCheck_(merged);if(merged['Vital Status']==='Alive'&&String(merged['Year of Death']||''))throw Error('An alive scholar cannot have a year of death.');if(merged['Identity Verification Status']==='Verified'&&(!merged['Identity Evidence']||!merged['Identity Source URL']))throw Error('Verified identity requires person-specific evidence and a source URL.');}
+  if(payload.table==='Scholars'){vanGeographyCheck_(merged);if(merged['Vital Status']==='Living'&&String(merged['Year of Death']||''))throw Error('A living scholar cannot have a year of death.');if(merged['Identity Verification Status']==='Verified'&&(!merged['Identity Evidence']||!merged['Identity Source URL']))throw Error('Verified identity requires person-specific evidence and a source URL.');}
   var result={status:'saved-to-master',message:'Saved to Vanuatu Master. Public snapshot refresh is still required.'};requests.push(vanJournalRequest_(actor,payload.operationId,payload,result));Sheets.Spreadsheets.batchUpdate({requests:requests},VAN_SHEET_);return result;
  }finally{lock.releaseLock();}
 }
