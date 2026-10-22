@@ -7,7 +7,7 @@
   padding: 18px 300px 18px 22px; /* right padding is recalculated in JS to clear the island picture */
   color: #fff;
   /* Deep ocean blue on the left, lightening through the middle into the picture. */
-  background: linear-gradient(90deg, #0b4470 0%, #145d89 35%, #2a7aa3 60%, #4a93b6 85%, #5b9fbe 100%);
+  background: linear-gradient(90deg, #0a3f68 0%, #11557f 35%, #1d6890 60%, #2a7398 85%, #2f7899 100%);
   font-family: Arial, Helvetica, sans-serif;
 }
 /* Island, sunset and sea: softened photo on the right that fades in
@@ -15,9 +15,9 @@
    height, so the whole island, sun and water always show. */
 .tph-art {
   position: absolute; top: 0; right: 0; bottom: 0; width: 64%;
-  pointer-events: none; z-index: 0; opacity: .82;
+  pointer-events: none; z-index: 0; opacity: 1;
   background: url("../img/tonga/panel-header-sea.webp") right center / auto 100% no-repeat;
-  filter: saturate(.8) brightness(1.03);
+  filter: none;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 25%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.85) 75%, #000 100%);
           mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 25%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.85) 75%, #000 100%);
 }
