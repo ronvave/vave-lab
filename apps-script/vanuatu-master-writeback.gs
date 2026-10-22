@@ -6,6 +6,19 @@ var vanHttpActor_ = null;
 var VAN_SHEET_='1jfS6Yqyy559kLdoeKW4F4t8RhyBooXpCiwOMukxpPW0';
 var VAN_PROVINCES_=['Torba','Sanma','Penama','Malampa','Shefa','Tafea'];
 var VAN_KEYS_={'Scholars':'Scholar ID','Graduate Degrees':'Degree ID','Positions':'Position ID','Publications':'Publication ID','Authorship':'Authorship ID','Research Geography':'Geography Record ID','Review Queue':'Candidate ID','Scholar Profile Submissions':'Submission ID','Publication Geography Submissions':'Submission ID','Change Log':'Change ID','Public Export Config':'Field'};
+// Schema alignment (Phase 2, 2026-10-21): Master headers use the shared reference-schema
+// names; records keep their established keys so Admin screens, privacy deletions and
+// field validation are unchanged. Physical column positions are read from row 4 as before.
+var VAN_LEGACY_={
+ 'Scholars':{'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID'},
+ 'Publications':{'Open Access URL':'Open Access URL / PDF','Keywords':'Author Keywords'},
+ 'Authorship':{'Reconciliation Notes':'Evidence / Notes'},
+ 'Positions':{'Title (verbatim)':'Title / Role','Employment Type':'Employment / Appointment Type','Last Verified':'Last Checked'},
+ 'Research Geography':{'Village / Site':'Village / Community'},
+ 'Review Queue':{'Submitted At':'Submitted / Found At'},
+ 'Scholar Profile Submissions':{'Submitter Email (private)':'Submitter Email'},
+ 'Publication Geography Submissions':{'Submitter Email (private)':'Submitter Email'}
+};
 var VAN_FIELDS_={
  'Scholars':['Scholar Name','Salutation','Family Name','Given Names','Gender','Year of Birth','Vital Status','Year of Death','Identity Verification Status','Identity Evidence','Identity Source URL','Identity Last Checked','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Public Display Approved','Review Status','Record Notes'],
  'Graduate Degrees':['Degree Level','Degree Name','Field / Discipline','Broad Discipline','Original University Name (O_Uni)','Canonical University Name (C_Uni)','University Country','Start Year','Completion Year','Completion Status','Thesis / Dissertation Title','Thesis URL / Handle','Repository URL','Supervisor(s)','Evidence','Source URL','Verification Status','Public Display Approved','Record Notes'],
@@ -26,7 +39,7 @@ function vanDigest_(r){return Utilities.base64EncodeWebSafe(Utilities.computeDig
 function vanData_(name){
  if(!VAN_KEYS_[name])throw Error('Table is not an authorized Vanuatu entity.');
  var sheet=vanBook_().getSheetByName(name);if(!sheet)throw Error('Missing Vanuatu table: '+name);
- var width=sheet.getLastColumn(),headers=sheet.getRange(4,1,1,width).getDisplayValues()[0],seen={};
+ var width=sheet.getLastColumn(),legacy=VAN_LEGACY_[name]||{},headers=sheet.getRange(4,1,1,width).getDisplayValues()[0].map(function(h){return legacy[h]||h;}),seen={};
  headers.forEach(function(h){if(h&&seen[h])throw Error('Duplicate header: '+h);seen[h]=true;});
  var key=VAN_KEYS_[name],index=headers.indexOf(key);if(index<0)throw Error('Missing entity key header: '+key);
  var rows=sheet.getLastRow()>4?sheet.getRange(5,1,sheet.getLastRow()-4,width).getDisplayValues():[],ids={};

@@ -37,10 +37,11 @@ def yes(value):
     return value is True or str(value).strip().lower() in ('true','yes','1')
 
 
-def rows(values, required=()):
+def rows(values, required=(), table=None):
     if len(values) < 4:
         raise ValueError('Missing row-4 schema; preserving previous snapshot')
-    headers = [str(v).strip() for v in values[3]]
+    legacy = getattr(C, 'LEGACY_HEADERS', {}).get(table, {})
+    headers = [legacy.get(str(v).strip(), str(v).strip()) for v in values[3]]
     nonblank = [h for h in headers if h]
     if len(set(nonblank)) != len(nonblank):
         raise ValueError('Duplicate row-4 header')
@@ -69,6 +70,7 @@ def allowed_fields(config):
     decisions = {}
     for r in config:
         table, field = r.get('Table',''), r.get('Field','')
+        field = getattr(C, 'LEGACY_HEADERS', {}).get(table, {}).get(field, field)
         if table not in allow or field not in C.FIELDS[table] or field in C.FORBIDDEN:
             continue
         approval = yes(r.get('Publicly Exportable'))
@@ -106,7 +108,7 @@ def sanitize(table, record, allowed):
 
 
 def transform(source, enrichment=None):
-    raw = {name:keyed(name, rows(source[name], C.REQUIRED[name])) for name in C.KEYS}
+    raw = {name:keyed(name, rows(source[name], C.REQUIRED[name], name)) for name in C.KEYS}
     config = rows(source['Public Export Config'], ['Table','Field','Publicly Exportable'])
     allowed = allowed_fields(config)
     if not {'Scholar ID','Scholar Name'} <= allowed['Scholars']:

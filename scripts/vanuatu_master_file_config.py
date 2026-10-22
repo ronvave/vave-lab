@@ -27,4 +27,14 @@ FORBIDDEN = {'Identity Evidence','Identity Source URL','Record Notes','Community
 STATUSES = {'Verified','Probable','Unresolved','Excluded','Pending','Rejected','Unknown / verify','Not checked'}
 PROVINCES = {'Torba','Sanma','Penama','Malampa','Shefa','Tafea'}
 COUNTRY_ALIASES = {'Nauru':'Naoero','Naoero':'Naoero','USA':'United States','United States of America':'United States','UK':'United Kingdom'}
+# Schema-alignment compatibility (Phase 2, 2026-10-21): Master headers now use the
+# shared reference-schema names. Records keep their established internal/public keys
+# so the dashboard bundle and Public Export Config decisions are unchanged.
+# Applied only when the new header is present; old headers still work.
+LEGACY_HEADERS = {
+ 'Scholars': {'Lineage / Provenance Notes':'Community / Ancestral Notes','Current Leadership Category':'Leadership Category','Current Leadership Level':'Leadership Level','ORCID':'ORCID / Researcher ID'},
+ 'Publications': {'Open Access URL':'Open Access URL / PDF','Keywords':'Author Keywords'},
+ 'Authorship': {'Reconciliation Notes':'Evidence / Notes'},
+ 'Research Geography': {'Village / Site':'Village / Community'},
+}
 OUTPUT_NAME = 'vanuatu-master-bundle.json.enc'
