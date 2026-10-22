@@ -1,0 +1,91 @@
+/* Tonga dashboard: image header on every panel (title + description over a
+   sunset beach photo) and the B2 summary cards in the brighter tile style.
+   Built by js/tongan-panel-hero.js; nothing here changes panel content. */
+.tph-hero {
+  position: relative; display: flex; align-items: center; gap: 18px;
+  min-height: 104px; box-sizing: border-box;
+  padding: 18px 84px 18px 22px;
+  color: #fff;
+  background:
+    linear-gradient(90deg, rgba(6,28,66,.97) 0%, rgba(9,44,92,.93) 45%, rgba(9,44,92,.62) 66%, rgba(9,44,92,.1) 84%, rgba(0,0,0,0) 100%),
+    url("../img/tonga/panel-header-sunset.webp") right 42% / cover no-repeat,
+    #0a2c5c;
+  font-family: Arial, Helvetica, sans-serif;
+}
+.tph-flag {
+  flex: 0 0 auto; width: 62px; height: 62px; border-radius: 50%;
+  border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.35);
+  background: #fff; object-fit: cover;
+}
+.tph-text { min-width: 0; flex: 1 1 auto; max-width: 66%; }
+.tph-hero .tph-text > :first-child { white-space: normal; }
+.tph-hero .tph-title,
+.tph-hero .db-section__label,
+.tph-hero .db-panel__title,
+.tph-hero .db-leaderboard__title,
+.tph-hero h2, .tph-hero h3 {
+  margin: 0 0 6px !important; padding: 0 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 1.55rem !important; line-height: 1.15 !important; font-weight: 800 !important;
+  letter-spacing: .02em !important; text-transform: uppercase !important;
+  color: #fff !important; text-shadow: 0 2px 6px rgba(0,0,0,.45);
+  border: 0 !important; background: none !important; max-width: none !important; width: auto !important; text-wrap: wrap !important;
+}
+.tph-hero .db-section__hint,
+.tph-hero .db-panel__hint,
+.tph-hero .db-leaderboard__hint,
+.tph-hero p {
+  margin: 0 !important; max-width: 78ch;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: .95rem !important; line-height: 1.45 !important;
+  color: rgba(255,255,255,.95) !important; text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.tph-hero .tph-text > :last-child { margin-bottom: 0 !important; }
+/* Panel code badge sits on the image, top-right. */
+.tph-panel > .db-panel__label,
+.tph-hero > .db-panel__label,
+summary.tph-hero .db-panel__label {
+  z-index: 3; background: #0e7c86; color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35); border: 2px solid rgba(255,255,255,.85);
+  height: 30px; min-width: 40px; font-size: 1rem;
+}
+/* A3: the clickable "About this database" bar becomes the header. */
+summary.tph-hero { cursor: pointer; min-height: 84px; list-style: none; }
+summary.tph-hero::-webkit-details-marker { display: none; }
+summary.tph-hero { display: flex !important; }
+summary.tph-hero::before { order: 5; flex: 0 0 auto; margin-left: auto; width: 30px !important; height: 30px !important; background: rgba(255,255,255,.92) !important; color: #0a2c5c !important; font-size: 1.25rem !important; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+summary.tph-hero .tph-text { max-width: none; }
+summary.tph-hero .tph-title { font-size: 1.3rem !important; margin: 0 !important; }
+/* Chips/indicators that live inside a title keep their own colours. */
+.tph-hero .db-world-selection-chip, .tph-hero .db-filtered-indicator { text-shadow: none; font-size: .8rem; vertical-align: middle; text-transform: none; letter-spacing: 0; }
+
+/* B2 summary cards in the brighter glossy style */
+.tph-panel .db-kpis--b2 { gap: 14px; }
+.tph-panel .db-kpis--b2 .db-kpi {
+  position: relative; overflow: hidden; border: 0; border-radius: 12px;
+  min-height: 78px; padding: 12px 12px; gap: 10px; align-items: center; min-width: 0;
+  color: #fff; box-shadow: 0 4px 12px rgba(10,30,60,.18);
+}
+.tph-panel .db-kpis--b2 .db-kpi::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%);
+}
+.tph-panel .db-kpis--b2 .db-kpi--teal   { background: linear-gradient(135deg, #14a3a3 0%, #0b7479 100%); }
+.tph-panel .db-kpis--b2 .db-kpi--amber  { background: linear-gradient(135deg, #e07a1f 0%, #b85412 100%); }
+.tph-panel .db-kpis--b2 .db-kpi--rust   { background: linear-gradient(135deg, #d0393a 0%, #a01f24 100%); }
+.tph-panel .db-kpis--b2 .db-kpi--olive  { background: linear-gradient(135deg, #6f8f45 0%, #4c6a2c 100%); }
+.tph-panel .db-kpis--b2 .db-kpi--blue   { background: linear-gradient(135deg, #1f6fd0 0%, #0f4a9e 100%); }
+.tph-panel .db-kpis--b2 .db-kpi--purple { background: linear-gradient(135deg, #7656d6 0%, #4f33a8 100%); }
+.tph-panel .db-kpis--b2 .db-kpi__icon {
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45);
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+}
+.tph-panel .db-kpis--b2 .db-kpi__icon svg { width: 26px; height: 26px; color: #fff; stroke: #fff; }
+.tph-panel .db-kpis--b2 .db-kpi__num { color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 1.75rem; font-weight: 800; line-height: 1.05; }
+.tph-panel .db-kpis--b2 .db-kpi__body { min-width: 0; }
+.tph-panel .db-kpis--b2 .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 600; margin-top: 2px; white-space: nowrap; }
+summary.tph-hero { padding: 14px 64px 14px 22px !important; }
+.db-about.tph-panel:not([open]) { padding-bottom: 0; }
+.db-about.tph-panel { overflow: hidden; }
+.db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
