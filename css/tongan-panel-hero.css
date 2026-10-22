@@ -118,3 +118,7 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 }
 .tph-panel .db-item { background: rgba(255,255,255,.72) !important; }
 .tph-panel .db-search { background: #fff !important; }
+
+/* Grey text inside panels shown in black (marked by js/tongan-text-contrast.js). */
+.tph-panel .tct-dark { color: #111 !important; }
+.tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
