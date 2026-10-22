@@ -847,3 +847,8 @@ section[data-panel] { scroll-margin-top: 70px; }
 #ps-where-table td.ps-hm-n { background: none; color: var(--ps-text); }
 .ps-pt td.c:not(.z) { white-space: nowrap; border-radius: 4px; }
 @media (max-width: 720px) { #ps-where-table { min-width: 1080px; } #ps-where-table td { font-size: .82rem; } .ps-pt { min-width: 1060px; } }
+
+/* A2 chart series toggle: white "Number of" label before the buttons */
+.ps-a2-series { display: flex; align-items: center; gap: 8px; }
+.ps-a2-series[hidden] { display: none !important; }
+.ps-a2-numof { color: #fff; font-weight: 700; font-size: 0.82rem; }

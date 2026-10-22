@@ -52,7 +52,7 @@
     doc: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>',
   };
 
-  const state = { metric: 'scholars', sel: null, barView: 'metric', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', destMode: 'study', mapView: null, discG: 'all', discScale: 'pct', gView: 'people', out: { type: '', fa: '', range: 'recent' } };
+  const state = { metric: 'scholars', sel: null, barView: 'scholars', disc: 'ALL', discLevel: 'all', destHome: '', destLevel: 'all', destDec: '', destMode: 'study', mapView: null, discG: 'all', discScale: 'pct', gView: 'people', out: { type: '', fa: '', range: 'recent' } };
   let D = null, BM = null, CREDITS = null, byCode = {};
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -172,7 +172,7 @@
   // ================= METRIC TOGGLE =================
   function setupMetric() {
     const btns = $$('#ps-metric button');
-    const set = m => { state.metric = m; btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
+    const set = m => { state.metric = m; syncBarView(m); btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
     btns.forEach((b, i) => {
       b.addEventListener('click', () => set(b.dataset.metric));
       b.addEventListener('keydown', e => {
@@ -388,7 +388,7 @@
       o.g.classList.toggle('is-selected', state.sel === c.code);
       o.g.classList.toggle('is-dim', !!state.sel && state.sel !== c.code);
     });
-    $('#ps-map-sub').textContent = VIEW.a1 === 'table' ? 'Every country in one table, sorted by the selected metric.' : VIEW.a1 === 'chart' ? 'Each country compared on the selected metric. Select a bar to filter.' : 'Number of Indigenous scholars beside each country. Select a number to filter.';
+    $('#ps-map-sub').textContent = VIEW.a1 === 'table' ? 'Every country in one table, sorted by the selected metric.' : VIEW.a1 === 'chart' ? 'Each country compared on the number chosen below. Select a bar to filter.' : 'Number of Indigenous scholars beside each country. Select a number to filter.';
     // accessible table
     const rows = sorted();
     const t = $('#ps-map-table');
@@ -484,15 +484,23 @@
 
   // ================= BARS =================
   function setupBars() {
-    $$('[data-barview]').forEach(b => b.addEventListener('click', () => { state.barView = b.dataset.barview; $$('[data-barview]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderBars(); }));
+    syncBarView(state.metric);
+    $$('[data-barview]').forEach(b => b.addEventListener('click', () => { syncBarView(b.dataset.barview); renderBars(); }));
     let wasNarrow = null;
     let lastW = 0;
     new ResizeObserver(() => { const cw = $('#ps-bars').clientWidth; const n = (cw || 600) < 520; if ((wasNarrow !== null && n !== wasNarrow) || (cw && Math.abs(cw - lastW) > 4)) { lastW = cw; renderBars(); } wasNarrow = n; }).observe($('#ps-bars'));
   }
+  // A2 chart series: Scholars, Master's + PhD (stacked), Masters or PhD. Follows the
+  // A1 metric when that changes; choosing a series here changes only this chart.
+  function syncBarView(v) {
+    state.barView = v === 'stack' || METRICS[v] ? v : 'scholars';
+    $$('[data-barview]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.barview === state.barView)));
+  }
   function renderBars() {
-    const m = METRICS[state.metric];
-    const list = sorted();
     const stack = state.barView === 'stack';
+    const m = METRICS[stack ? 'scholars' : state.barView] || METRICS.scholars;
+    const sortVal = c => (stack ? (c.masters == null && c.phd == null ? null : (c.masters || 0) + (c.phd || 0)) : c[m.key]);
+    const list = countries().slice().sort((a, b) => (sortVal(b) ?? -1) - (sortVal(a) ?? -1) || a.name.localeCompare(b.name));
     const vals = list.map(c => (stack ? c.masters + c.phd : c[m.key] || 0));
     const max = Math.max(1, ...vals);
     const nice = (() => { const e = Math.pow(10, Math.floor(Math.log10(max))); return [1, 2, 2.5, 5, 10].map(f => f * e).find(v => v >= max); })();
@@ -532,7 +540,7 @@
     const host = $('#ps-bars');
     host.innerHTML = `<svg viewBox="0 0 ${W} ${H}" aria-hidden="false">${g}${legend}</svg>`;
     host.setAttribute('aria-label', stack ? "Completed Master's and PhDs by country, stacked" : `${m.unit} by country, descending`);
-    $('#ps-bars-sub').textContent = stack ? "Secondary view: completed Master's and PhD degrees stacked. Country order still follows the selected metric." : `Showing ${m.unit}, sorted descending. ${m.key === 'scholars' ? 'People, not degrees.' : 'Degree records, not people.'}`;
+    $('#ps-bars-sub').textContent = stack ? "Showing completed Master's and PhD degrees stacked, sorted by their total. Degree records, not people." : `Showing ${m.unit}, sorted descending. ${m.key === 'scholars' ? 'People, not degrees.' : 'Degree records, not people.'}`;
     $$('.ps-bargrp', host).forEach(el => {
       const c = byCode[el.dataset.code];
       el.style.cursor = 'pointer';

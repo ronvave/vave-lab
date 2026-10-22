@@ -97,9 +97,14 @@
             <button type="button" role="tab" data-view="chart" aria-selected="false">Chart</button>
             <button type="button" role="tab" data-view="table" aria-selected="false">Table</button>
           </div>
-          <div class="ps-seg ps-seg--sm" role="group" aria-label="Chart view" data-pane-of="a1:chart" hidden>
-            <button type="button" data-barview="metric" aria-pressed="true">Selected metric</button>
-            <button type="button" data-barview="stack" aria-pressed="false">Master's + PhD</button>
+          <div class="ps-a2-series" role="group" aria-labelledby="ps-bars-numof" data-pane-of="a1:chart" hidden>
+            <span class="ps-a2-numof" id="ps-bars-numof">Number of</span>
+            <div class="ps-seg ps-seg--sm" role="group" aria-label="Chart series">
+              <button type="button" data-barview="scholars" aria-pressed="true">Scholars</button>
+              <button type="button" data-barview="stack" aria-pressed="false">Master's + PhD</button>
+              <button type="button" data-barview="masters" aria-pressed="false">Masters</button>
+              <button type="button" data-barview="phd" aria-pressed="false">PhD</button>
+            </div>
           </div>
           <button class="ps-iconbtn ps-iconbtn--text" type="button" id="ps-bars-csv" data-pane-of="a1:table" hidden>Download CSV</button>
         </div>
