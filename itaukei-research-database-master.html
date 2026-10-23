@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>iTaukei Scholarly Research Database — Prof. Ron Vave | UH Mānoa</title>
+  <title>Fiji Scholar Dashboard — Prof. Ron Vave | UH Mānoa</title>
   <meta name="description" content="A curated database of scholarly research by and about iTaukei (Indigenous Fijian) postgraduates and researchers — across 14 provinces of Fiji, 60+ universities, and 13 countries. Maintained by Professor Ron Vave, UH Mānoa." />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -22,7 +22,11 @@
     /* Tighten the first section's top padding — the site-wide default leaves
        a large gap between the site banner and the intro paragraph on this page. */
     main > .section:first-of-type { padding-block-start: var(--space-4); }
-    .db-lede { max-width: 780px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.6; }
+    .db-lede { max-width: none; color: #111; font-size: 1.05rem; line-height: 1.6; }
+    .db-lede a { color: #0b6b7a; font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: rgba(11,107,122,.45); }
+    .db-lede a:hover, .db-lede a:focus-visible { color: #064f5c; text-decoration-color: currentColor; background: rgba(11,107,122,.08); border-radius: 3px; }
+    [data-theme="dark"] .db-lede { color: #f3f4f6; }
+    [data-theme="dark"] .db-lede a { color: #5fd3e0; text-decoration-color: rgba(95,211,224,.5); }
 
     /* Sync freshness badge */
     .db-sync-row {
@@ -3998,8 +4002,8 @@
 <section class="page-banner" aria-label="Page header">
   <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
     <div>
-      <p class="page-banner__eyebrow">Public Resource · Curated by Prof. Ron Vave</p>
-      <h1 class="page-banner__title">iTaukei Scholarly Research Database</h1>
+      <p class="page-banner__eyebrow">Public Resource · Curated by Assistant Professor Ron Vave</p>
+      <h1 class="page-banner__title">Fiji Scholar Dashboard</h1>
     </div>
     <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
   </div>
@@ -4076,7 +4080,7 @@
 
     <div class="db-hero reveal">
       <p class="db-lede">
-        This database has been curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Professor Ron Vave</a>, an <em>iTaukei</em> (Indigenous Fijian) faculty member at the University of Hawaiʻi at Mānoa, in an effort to highlight and elevate the scholarly research and contributions of iTaukei postgraduates and researchers &mdash; in Fiji and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our iTaukei researchers and their publications, the hope is that it will help with networking and collaboration &mdash; and perhaps mentorship for up-and-coming iTaukei students thinking of pursuing postgraduate studies, academia, or research more broadly.
+        Curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Assistant Professor Ron Vave</a>, an iTaukei (Indigenous Fijian) faculty member at the University of Hawaiʻi at Mānoa, the Fijian Scholars Database &amp; Dashboard was initially developed to highlight the scholarly research and contributions of iTaukei postgraduates and researchers in Fiji and around the world. Its scope has since evolved to embrace a more inclusive, two-tier approach: the first priority remains documenting Indigenous Fijian scholars, followed by the gradual inclusion of all Fijian scholars, regardless of ethnicity. Developed as a personal passion project, it is a growing resource, with records added over time. Beyond raising the visibility of Fijian scholars and their publications, it aims to strengthen connections, encourage collaboration, and create opportunities for mentorship&mdash;particularly for emerging students considering postgraduate study, academia, or careers in research.
       </p>
 
       <!-- Compact live-status pill row -->

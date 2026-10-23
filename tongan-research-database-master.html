@@ -7,7 +7,7 @@
 <link rel="stylesheet" href="css/tongan-scholar-portal.css?v=e8661980">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tongan Scholar Database — Assistant Professor Ron Vave | UH Mānoa</title>
+  <title>Tongan Scholar Dashboard — Assistant Professor Ron Vave | UH Mānoa</title>
   <meta name="description" content="A curated database of scholarly research by and about Tongan and part-Tongan postgraduates and researchers — across the 5 Island Divisions and 23 districts of Tonga, universities worldwide, and multiple countries. Maintained by Assistant Professor Ron Vave, UH Mānoa." />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -25,7 +25,11 @@
     /* Tighten the first section's top padding — the site-wide default leaves
        a large gap between the site banner and the intro paragraph on this page. */
     main > .section:first-of-type { padding-block-start: var(--space-4); }
-    .db-lede { max-width: 780px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.6; }
+    .db-lede { max-width: none; color: #111; font-size: 1.05rem; line-height: 1.6; }
+    .db-lede a { color: #0b6b7a; font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: rgba(11,107,122,.45); }
+    .db-lede a:hover, .db-lede a:focus-visible { color: #064f5c; text-decoration-color: currentColor; background: rgba(11,107,122,.08); border-radius: 3px; }
+    [data-theme="dark"] .db-lede { color: #f3f4f6; }
+    [data-theme="dark"] .db-lede a { color: #5fd3e0; text-decoration-color: rgba(95,211,224,.5); }
 
     /* Sync freshness badge */
     .db-sync-row {
@@ -4021,7 +4025,7 @@
   <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
     <div>
       <p class="page-banner__eyebrow">Public Resource · Curated by Assistant Professor Ron Vave</p>
-      <h1 class="page-banner__title">Tongan Scholar Database</h1>
+      <h1 class="page-banner__title">Tongan Scholar Dashboard</h1>
     </div>
     <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
   </div>
@@ -4098,7 +4102,7 @@
 
     <div class="db-hero reveal">
       <p class="db-lede">
-        This database is a sister project to the iTaukei Scholarly Research Database, curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa, in collaboration with <a href="https://about.byuh.edu/directory/tevita-kaili" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Professor Tevita Kaili</a> and <a href="https://about.byuh.edu/directory/inoke-hafoka" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Associate Professor Inoke Hafoka</a> of Brigham Young University–Hawaii. The project seeks to highlight and elevate the scholarly research and contributions of Tongan and part-Tongan postgraduates and researchers &mdash; in Tonga and around the world. It is not comprehensive and is being expanded over time as a passion project. Beyond elevating Tongan researchers and their publications, the hope is that it will support networking and collaboration &mdash; and perhaps mentorship for up-and-coming Tongan students considering postgraduate study, academia, or research more broadly.
+        The Tongan Scholars Database &amp; Dashboard is a sister project to the Fijian Scholars Database &amp; Dashboard, curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa, in collaboration with <a href="https://about.byuh.edu/directory/tevita-kaili" target="_blank" rel="noopener">Professor Tevita Kaʻili</a> and <a href="https://about.byuh.edu/directory/inoke-hafoka" target="_blank" rel="noopener">Associate Professor Inoke Hafoka</a> of Brigham Young University–Hawaiʻi. It highlights the scholarly research and contributions of Tongan and part-Tongan postgraduates and researchers in Tonga and around the world. Developed as a shared passion project, it is a growing resource rather than a comprehensive collection, with records added over time. Beyond raising the visibility of Tongan scholars and their publications, it aims to strengthen connections, encourage collaboration, and create opportunities for mentorship&mdash;particularly for emerging Tongan students considering postgraduate study, academia, or careers in research.
       </p>
 
       <!-- Compact live-status pill row -->
