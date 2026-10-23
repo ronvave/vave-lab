@@ -96,3 +96,7 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 .tonga-portal .tonga-portal-intro .direct-review-callout,.tonga-portal .tonga-portal-intro .direct-review-callout :is(strong,b){color:#4b3a00!important}
 .tonga-portal .tonga-portal-intro .direct-review-badge{color:#9a6500!important}
 .tonga-portal .tonga-portal-intro strong.scholar-geotag-highlight{color:#111!important}
+/* Shared profile link: grey-ish text set to black (light theme only). */
+html:not([data-theme="dark"]) .tonga-portal{--color-text:#111;--color-text-muted:#111;--color-text-faint:#111}
+html:not([data-theme="dark"]) .tonga-portal :is(.db-scholar-card__updated em,.sct-sub,.sct-meta,.db-item__meta em){color:#111!important}
+html:not([data-theme="dark"]) .tonga-portal :is(.tonga-summary-heading,.tonga-geography-list :is(legend,label,p:not([class]),label span,button:not([type="submit"])),.tonga-geo-submit :is(h3,p,legend,label,.tonga-geo-dirty-count)){color:#111!important}
