@@ -51,6 +51,14 @@
    "lng": 151.2033,
    "place": "Australian Catholic University, Berry Street, Victoria Cross, Lower North Shore, Sydney, New South Wales, 2060, Australi"
   },
+  "baylor university": {
+   "name": "Baylor University",
+   "country": "United States",
+   "lat": 31.5504,
+   "lng": -97.1103,
+   "place": "Baylor University, 1301, South University Parks Drive, Waco, McLennan County, Texas, 76706, United States",
+   "query": "Baylor University, Waco"
+  },
   "bond university": {
    "name": "Bond University",
    "country": "Australia",
@@ -99,6 +107,13 @@
    "lat": -35.0636,
    "lng": 147.3552,
    "place": "Charles Sturt University, Wagga Wagga, New South Wales, 2678, Australia"
+  },
+  "claremont graduate university": {
+   "name": "Claremont Graduate University",
+   "country": "United States",
+   "lat": 34.1104,
+   "lng": -117.7176,
+   "place": "Claremont Graduate University, North College Avenue, Claremont, Los Angeles County, California, 91711, United States"
   },
   "cummings graduate institute for behavioral health studies": {
    "name": "Cummings Graduate Institute for Behavioral Health Studies",
@@ -267,6 +282,14 @@
    "lat": 45.4318,
    "lng": -73.9453,
    "place": "Université McGill, 21111, Rue Lakeshore, Sainte-Anne-de-Bellevue, Agglomération de Montréal, Montréal (région administra"
+  },
+  "mills college": {
+   "name": "Mills College",
+   "country": "United States",
+   "lat": 37.7799,
+   "lng": -122.1835,
+   "place": "Mills College at Northeastern University, 5000, MacArthur Boulevard, Seminary Park, Oakland, Alameda County, California, United States",
+   "query": "Mills College, Oakland"
   },
   "missouri state university": {
    "name": "Missouri State University",
