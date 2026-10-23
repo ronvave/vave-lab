@@ -87,3 +87,12 @@ dialog.tonga-form::backdrop{background:rgba(6,47,53,.55)}
 /* Repeatable postgraduate degrees retain the existing fieldset layout. */
 .tonga-degree-group{display:grid;gap:12px;min-width:0}
 .tonga-form .tonga-add-degree{justify-self:start;background:#eef6f6;color:#075565;border:1px solid #8ab3b9;font-weight:600}
+
+/* Shared profile link: pre-launch box and publications heading on a light (30%) Tongan mat,
+   with black text and dark-teal bold phrases and links, matching the Fiji shared link. */
+.tonga-portal .tonga-portal-intro{background:linear-gradient(rgba(251,248,242,.70),rgba(251,248,242,.70)),url("../img/tonga/mat-background.webp") center top / 1400px auto repeat!important}
+.tonga-portal .tonga-portal-intro,.tonga-portal .tonga-portal-intro p,.tonga-portal .tonga-portal-intro h2,.tonga-portal .tonga-portal-intro h3{color:#111!important}
+.tonga-portal .tonga-portal-intro :is(strong,b,a[href]){color:#0b4f5c!important}
+.tonga-portal .tonga-portal-intro .direct-review-callout,.tonga-portal .tonga-portal-intro .direct-review-callout :is(strong,b){color:#4b3a00!important}
+.tonga-portal .tonga-portal-intro .direct-review-badge{color:#9a6500!important}
+.tonga-portal .tonga-portal-intro strong.scholar-geotag-highlight{color:#111!important}
