@@ -16,8 +16,9 @@
   var ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
   function fit(hero) {
     var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
-    // The island fills about the right quarter of the picture (5.6 : 1).
-    var pr = Math.round(hero.offsetHeight * 1.45) + 40;
+    // The canoe spans from about 17% of the picture to its right edge (2.06 : 1),
+    // so text stops just before the sail.
+    var pr = Math.round(hero.offsetHeight * 1.71) + 24;
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
   }
   function addArt(hero) {

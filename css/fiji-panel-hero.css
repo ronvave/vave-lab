@@ -1,5 +1,5 @@
 /* Fiji dashboard: image header on every panel (title + description over the
-   Fiji coat of arms above turquoise water), glossy tally cards and a faded
+   a traditional Fijian canoe on turquoise water), glossy tally cards and a faded
    tapa background. Ported from css/tongan-panel-hero.css and built by
    js/fiji-panel-hero.js; nothing here changes panel content. */
 .tph-hero {
@@ -127,14 +127,15 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .tct-dark { color: #111 !important; }
 .tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
 
-/* Every panel: Fiji coat of arms over turquoise waters. Sized to the header
-   height so the whole crest is visible; fades in from the left. */
+/* Every panel: traditional Fijian outrigger canoe on open turquoise water.
+   Sized to the header height so the whole canoe shows, just left of the
+   panel badge; the picture fades in briefly at its left edge. */
 .tph-hero > .tph-art {
-  width: auto; left: auto; aspect-ratio: 1500 / 389;
-  background-image: url("../img/fiji/panel-header-crest.webp");
+  width: auto; left: auto; aspect-ratio: 1495 / 724;
+  background-image: url("../img/fiji/panel-header-canoe.webp");
   background-size: 100% 100%; background-position: right center;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
-          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 8%, #000 15%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 8%, #000 15%);
 }
 /* Panel D has seven cards in one row: slightly smaller so labels fit. */
 .tph-panel .db-panel-d-kpis { gap: 10px; }
