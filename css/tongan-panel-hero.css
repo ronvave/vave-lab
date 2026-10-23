@@ -143,3 +143,5 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .db-panel-d-kpis .db-kpi__icon svg { width: 22px; height: 22px; }
 .tph-panel .db-panel-d-kpis .db-kpi__num { font-size: 1.5rem; }
 .tph-panel .db-panel-d-kpis .db-kpi__label { font-size: .85rem; }
+/* Panel D chart: plain white background in the panel, matching the expanded view. */
+.tph-panel [data-panel-d-chart]:not(.is-fullscreen) { background: #fff !important; border-radius: 10px; }

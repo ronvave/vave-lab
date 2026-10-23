@@ -6371,7 +6371,7 @@
       const x = PAD_LEFT + (startYear - yMin) * bandW;
       const width = (endYear - startYear) * bandW;
       svg.appendChild(panelDSvg('rect', { x, y: PAD_TOP, width, height: plotH, fill: decadeIndex % 2 === 0 ? '#ffffff' : 'rgba(120,90,60,0.06)' }));
-      svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${decade}s`));
+      svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#9ca3af' }, `${decade}s`));
     }
 
     // Left y-axis: vertical line + ticks at 5 evenly-spaced values (0, 20, 40, 60, 80, 100 for niceMax=100).
@@ -6396,13 +6396,13 @@
       // Outward tick mark on the left axis
       svg.appendChild(panelDSvg('line', { x1: PAD_LEFT - 4, x2: PAD_LEFT, y1: y, y2: y, stroke: '#6b7280', 'stroke-width': '1' }));
       // Numeric label
-      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 7, y: y + 3.5, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
+      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 7, y: y + 3.5, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
     }
     // Left y-axis title (rotated, like the mockup)
     svg.appendChild(panelDSvg('text', {
       x: PAD_LEFT - 42, y: PAD_TOP + plotH / 2,
       transform: `rotate(-90 ${PAD_LEFT - 42} ${PAD_TOP + plotH / 2})`,
-      'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '11', fill: '#6b7280'
+      'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280'
     }, 'Number of publications'));
 
     for (let year = yMin; year <= yMax; year++) {
@@ -6466,9 +6466,9 @@
     [0, 25, 50, 75, 100].forEach(percent => {
       const y = PAD_TOP + plotH * (1 - percent / 100);
       svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 4, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-      svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
+      svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '12', fill: '#9ca3af' }, `${percent}%`));
     });
-    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Women authorship (5-yr rolling)'));
+    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, 'Women authorship (5-yr rolling)'));
     let rollingRun = [];
     const drawRollingRun = () => {
       // Rolling women-authorship line drawn dashed, matching the mockup.
