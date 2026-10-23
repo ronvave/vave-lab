@@ -123,9 +123,10 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .tct-dark { color: #111 !important; }
 .tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
 
-/* Panel B2 only: Tongan emblem over tropical waters. The picture is sized to
-   the header height (whole emblem visible) and fades in from the left. */
-[data-panel="B2"] .tph-art {
+/* Every panel: Tongan coat of arms over tropical waters (replaces the island
+   sunset picture above). Sized to the header height so the whole emblem is
+   visible; fades in from the left. */
+.tph-hero > .tph-art {
   width: auto; left: auto; aspect-ratio: 1500 / 389;
   background-image: url("../img/tonga/panel-header-b2-emblem.webp");
   background-size: 100% 100%; background-position: right center;
