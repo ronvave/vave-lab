@@ -129,13 +129,14 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 
 /* Every panel: traditional Fijian outrigger canoe on open turquoise water.
    Sized to the header height so the whole canoe shows, just left of the
-   panel badge; the picture fades in briefly at its left edge. */
+   panel badge; the open sea and sky fade in gradually across about half
+   of the header, reaching full strength just before the canoe. */
 .tph-hero > .tph-art {
-  width: auto; left: auto; aspect-ratio: 1495 / 724;
+  width: auto; left: auto; aspect-ratio: 3475 / 724;
   background-image: url("../img/fiji/panel-header-canoe.webp");
   background-size: 100% 100%; background-position: right center;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 8%, #000 15%);
-          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.6) 8%, #000 15%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
 }
 /* Panel D has seven cards in one row: slightly smaller so labels fit. */
 .tph-panel .db-panel-d-kpis { gap: 10px; }
