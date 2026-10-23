@@ -69,32 +69,35 @@ summary.tph-hero .tph-title { font-size: 1.3rem !important; margin: 0 !important
 /* Chips/indicators that live inside a title keep their own colours. */
 .tph-hero .db-world-selection-chip, .tph-hero .db-filtered-indicator { text-shadow: none; font-size: .8rem; vertical-align: middle; text-transform: none; letter-spacing: 0; }
 
-/* B2 summary cards in the brighter glossy style */
-.tph-panel .db-kpis--b2 { gap: 14px; }
-.tph-panel .db-kpis--b2 .db-kpi {
+/* Summary (tally) cards on every panel (A1, A2, B2, D) in the B2 glossy style */
+.tph-panel .db-kpis { gap: 14px; }
+.tph-panel .db-kpis .db-kpi {
   position: relative; overflow: hidden; border: 0; border-radius: 12px;
   min-height: 78px; padding: 12px 12px; gap: 10px; align-items: center; min-width: 0;
   color: #fff; box-shadow: 0 4px 12px rgba(10,30,60,.18);
 }
-.tph-panel .db-kpis--b2 .db-kpi::after {
+.tph-panel .db-kpis .db-kpi::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%);
 }
-.tph-panel .db-kpis--b2 .db-kpi--teal   { background: linear-gradient(135deg, #14a3a3 0%, #0b7479 100%); }
-.tph-panel .db-kpis--b2 .db-kpi--amber  { background: linear-gradient(135deg, #e07a1f 0%, #b85412 100%); }
-.tph-panel .db-kpis--b2 .db-kpi--rust   { background: linear-gradient(135deg, #d0393a 0%, #a01f24 100%); }
-.tph-panel .db-kpis--b2 .db-kpi--olive  { background: linear-gradient(135deg, #6f8f45 0%, #4c6a2c 100%); }
-.tph-panel .db-kpis--b2 .db-kpi--blue   { background: linear-gradient(135deg, #1f6fd0 0%, #0f4a9e 100%); }
-.tph-panel .db-kpis--b2 .db-kpi--purple { background: linear-gradient(135deg, #7656d6 0%, #4f33a8 100%); }
-.tph-panel .db-kpis--b2 .db-kpi__icon {
+.tph-panel .db-kpis .db-kpi--teal   { background: linear-gradient(135deg, #14a3a3 0%, #0b7479 100%); }
+.tph-panel .db-kpis .db-kpi--amber  { background: linear-gradient(135deg, #e07a1f 0%, #b85412 100%); }
+.tph-panel .db-kpis .db-kpi--rust   { background: linear-gradient(135deg, #d0393a 0%, #a01f24 100%); }
+.tph-panel .db-kpis .db-kpi--olive  { background: linear-gradient(135deg, #6f8f45 0%, #4c6a2c 100%); }
+.tph-panel .db-kpis .db-kpi--blue   { background: linear-gradient(135deg, #1f6fd0 0%, #0f4a9e 100%); }
+.tph-panel .db-kpis .db-kpi--purple { background: linear-gradient(135deg, #7656d6 0%, #4f33a8 100%); }
+.tph-panel .db-kpis .db-kpi--pink   { background: linear-gradient(135deg, #d2457f 0%, #9e2759 100%); }
+.tph-panel .db-kpis .db-kpi__icon {
   flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
   background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45);
   display: inline-flex; align-items: center; justify-content: center; color: #fff;
 }
-.tph-panel .db-kpis--b2 .db-kpi__icon svg { width: 26px; height: 26px; color: #fff; stroke: #fff; }
-.tph-panel .db-kpis--b2 .db-kpi__num { color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 1.75rem; font-weight: 800; line-height: 1.05; }
-.tph-panel .db-kpis--b2 .db-kpi__body { min-width: 0; }
-.tph-panel .db-kpis--b2 .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 500; margin-top: 2px; white-space: nowrap; }
+.tph-panel .db-kpis .db-kpi__icon svg { width: 26px; height: 26px; color: #fff; stroke: #fff; }
+.tph-panel .db-kpis .db-kpi__num { color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 1.75rem; font-weight: 800; line-height: 1.05; }
+.tph-panel .db-kpis .db-kpi__body { min-width: 0; }
+.tph-panel .db-kpis .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 500; margin-top: 2px; white-space: normal; line-height: 1.2; }
+.tph-panel .db-kpis--b2 .db-kpi__label { white-space: nowrap; }
+.tph-panel .db-kpis .db-kpi__sub { color: rgba(255,255,255,.85); }
 summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important; padding-left: 22px !important; }
 .db-about.tph-panel:not([open]) { padding-bottom: 0; }
 .db-about.tph-panel { overflow: hidden; }
@@ -133,3 +136,10 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
           mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
 }
+/* Panel D has seven cards in one row: slightly smaller so labels fit. */
+.tph-panel .db-panel-d-kpis { gap: 10px; }
+.tph-panel .db-panel-d-kpis .db-kpi { padding: 10px 10px; gap: 8px; }
+.tph-panel .db-panel-d-kpis .db-kpi__icon { width: 38px; height: 38px; }
+.tph-panel .db-panel-d-kpis .db-kpi__icon svg { width: 22px; height: 22px; }
+.tph-panel .db-panel-d-kpis .db-kpi__num { font-size: 1.5rem; }
+.tph-panel .db-panel-d-kpis .db-kpi__label { font-size: .85rem; }
