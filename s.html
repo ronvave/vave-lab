@@ -258,6 +258,18 @@
           .scholar-geo-submit__state{font-size:.8rem;color:#6b7280}.scholar-geo-submit__state.is-ok{color:#15803d;font-weight:600}.scholar-geo-submit__state.is-error{color:#b91c1c;font-weight:600}
           @media(max-width:900px){.scholar-direct-main .db-kpi--solid{grid-template-columns:50px minmax(0,1fr)!important;min-height:98px!important;padding:12px 13px!important;column-gap:12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon{width:50px!important;height:50px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon svg{width:28px!important;height:28px!important}.scholar-direct-main .db-kpi--solid .db-kpi__icon::after{right:-12px!important}.scholar-direct-main .db-kpi--solid .db-kpi__body{grid-template-columns:minmax(72px,auto) minmax(0,1fr)!important;gap:7px!important;padding-left:7px!important}.scholar-direct-main .db-kpi--solid .db-kpi__num{font-size:29px!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:13px!important;line-height:1.16!important}}
           @media(max-width:700px){.scholar-direct-about,.scholar-pubs-review__head{padding:14px 15px}.scholar-geo-submit__grid{grid-template-columns:1fr}.scholar-direct-main .db-kpis{grid-template-columns:1fr!important}.scholar-direct-main .db-kpi--solid .db-kpi__label{font-size:16px!important}.scholar-pubs-review__list>.db-item{grid-template-columns:1fr!important;gap:12px!important;padding:14px!important}.scholar-pubs-review__list>.db-item>*:not(.scholar-geo-toolbar),.scholar-geo-toolbar{grid-column:1!important;grid-row:auto!important;width:100%!important;max-width:none!important}}
+          /* Image headers in "Current database totals": same look as the main Fiji dashboard. */
+          .scholar-direct-stats .tph-hero{margin:-14px -16px 14px!important;border-radius:14px 14px 0 0!important;padding:18px 230px 18px 22px!important;min-height:112px!important}
+          .scholar-direct-stats .tph-hero .db-section__label,.scholar-direct-stats .tph-hero .tph-title{font-size:1.6rem!important;line-height:1.15!important;color:#fff!important;margin:0 0 8px!important}
+          .scholar-direct-stats .tph-hero .db-section__hint,.scholar-direct-stats .tph-hero .scholar-summary-description,.scholar-direct-stats .tph-hero p{font-family:Arial,Helvetica,sans-serif!important;font-size:.95rem!important;line-height:1.5!important;color:rgba(255,255,255,.96)!important;text-shadow:0 1px 2px rgba(0,0,0,.25)!important;margin:0!important}
+          .scholar-direct-stats .tph-hero .db-section__label::after{display:none!important}
+          .scholar-direct-b2.tph-panel{padding:14px 16px!important;overflow:hidden}
+          /* Pre-launch profile box and publications heading: black text on the faded Fiji tapa. */
+          .scholar-direct-intro,.scholar-pubs-review__head{background:linear-gradient(rgba(255,253,249,.55),rgba(255,253,249,.55)),url("img/fiji/tapa-background.webp") center top / 1200px auto repeat!important}
+          .scholar-direct-intro,.scholar-direct-intro p,.scholar-pubs-review__head,.scholar-pubs-review__head p,.scholar-pubs-review__head h2{color:#111!important}
+          .scholar-direct-intro p strong,.scholar-direct-intro a{color:#0b4f5c!important}
+          .scholar-direct-intro .direct-review-callout,.scholar-direct-intro .direct-review-callout strong{color:#4b3a00!important}
+          .scholar-direct-intro .direct-review-badge{color:#9a6500!important}
         `;
         d.head.appendChild(style);
       }
@@ -290,6 +302,19 @@
               } else if (title === 'itaukei scholarship' && hint) {
                 hint.classList.add('scholar-summary-description');
               }
+            });
+            Array.prototype.slice.call(main.querySelectorAll('.scholar-direct-b2')).forEach(function (wrap) {
+              if (wrap.querySelector(':scope > .tph-hero')) return;
+              var h = wrap.querySelector(':scope > h3'), p = wrap.querySelector(':scope > p');
+              if (!h) return;
+              var hero = d.createElement('div'); hero.className = 'tph-hero';
+              var art = d.createElement('span'); art.className = 'tph-art'; art.setAttribute('aria-hidden', 'true');
+              var flag = d.createElement('img'); flag.className = 'tph-flag'; flag.src = 'img/regional/flags/fji.png'; flag.alt = ''; flag.setAttribute('aria-hidden', 'true');
+              var text = d.createElement('div'); text.className = 'tph-text';
+              h.classList.add('tph-title'); h.textContent = h.textContent.replace(/\s*\u00d7\s*$/, '');
+              text.appendChild(h); if (p) text.appendChild(p);
+              hero.appendChild(art); hero.appendChild(flag); hero.appendChild(text);
+              wrap.insertBefore(hero, wrap.firstChild); wrap.classList.add('tph-panel');
             });
             Array.prototype.slice.call(main.querySelectorAll('.db-kpi__label')).forEach(function (el) {
               var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim();
