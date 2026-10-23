@@ -6404,7 +6404,7 @@
     if (note) {
       const headlineTotal = filteredItems.filter(it => headlineTypes.has(visualType(it))).length;
       const linkedTotal = linkedScholarIds.size || panelDData.linkedScholarFallback || 0;
-      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Tongan scholars. Fefine share is a 5-year rolling average of lead-author gender.`;
+      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Tongan scholars.`;
     }
 
     if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
@@ -6437,7 +6437,7 @@
     const W = 900, H = 340;
     // Padding widened on left (numeric labels + rotated axis title) and right
     // (secondary %-axis + rotated "Fefine authorship" title).
-    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_TOP = 42, PAD_BOTTOM = 46;
+    const PAD_LEFT = 62, PAD_RIGHT = 22, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
     // dataMin/dataMax define the domain the timeline can span. We widen the
@@ -6544,69 +6544,8 @@
       });
     }
 
-    // Authorship-based 5-year rolling women share uses lead Scholar IDs from
-    // the Master publications table and honors both the active Panel D author
-    // mode AND the current source-type checkboxes — so unchecking types
-    // (e.g. leaving only Master's + PhD) recomputes the line against just
-    // those items, matching what the bars actually show.
-    const activeTypeSet = state.histTypeSet;
-    const genderCountsByYear = new Map();
-    filteredItems.forEach(item => {
-      const year = Number(item.year);
-      if (!Number.isInteger(year)) return;
-      // Only include items whose visual type is currently checked.
-      if (!activeTypeSet.has(visualType(item))) return;
-      const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
-      const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
-      if (gender !== 'Fefine' && gender !== 'Tangata') return;
-      const bucket = genderCountsByYear.get(year) || { Fefine: 0, Tangata: 0 };
-      bucket[gender] += 1;
-      genderCountsByYear.set(year, bucket);
-    });
-    const rollingWomen = new Map();
-    for (let year = dataMin; year <= dataMax; year++) {
-      let female = 0, male = 0;
-      for (let rollingYear = year - 4; rollingYear <= year; rollingYear++) {
-        const bucket = genderCountsByYear.get(rollingYear);
-        if (!bucket) continue;
-        female += bucket.Fefine;
-        male += bucket.Tangata;
-      }
-      if (female + male >= 3) rollingWomen.set(year, female / (female + male));
-    }
-    // Secondary (right) y-axis for the 5-year rolling women-authorship share.
-    // Ticks at 0/25/50/75/100% (was 0/50/100) matching the reference mockup.
-    const axisX = W - PAD_RIGHT + 4;
-    svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX, y1: PAD_TOP, y2: yZero, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-    [0, 25, 50, 75, 100].forEach(percent => {
-      const y = PAD_TOP + plotH * (1 - percent / 100);
-      svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 4, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-      svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '12', fill: '#9ca3af' }, `${percent}%`));
-    });
-    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, 'Fefine authorship (5-yr rolling)'));
-    let rollingRun = [];
-    const drawRollingRun = () => {
-      // Rolling women-authorship line drawn dashed, matching the mockup.
-      // Slight transparency (opacity 0.55) so it visually recedes behind the
-      // milestone callout text when the line crosses through a label region
-      // (e.g. the 1994 milestone sits directly on the rising curve). SVG
-      // z-order already puts milestones on top since they're appended after,
-      // but individual letter gaps let the dashed line show through —
-      // reducing opacity keeps the line readable without competing for
-      // attention with the label text.
-      // Dotted (1 3) rather than dashed so the 5-year rolling women-authorship
-      // line reads visually as a subtle trend indicator, not as a data series.
-      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '1 3', 'stroke-linecap': 'round', opacity: '0.7' }));
-      rollingRun = [];
-    };
-    for (let year = yMin; year <= yMax; year++) {
-      const share = rollingWomen.get(year);
-      if (share == null) { drawRollingRun(); continue; }
-      const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
-      const y = PAD_TOP + plotH * (1 - share);
-      rollingRun.push(`${x},${y}`);
-    }
-    drawRollingRun();
+    // The 5-year rolling women-authorship line, its right-hand % axis and
+    // axis title were removed from Panel D (requested 2026-10-23).
 
     // Milestone callouts — floating inline in the low-bar whitespace, styled
     // after the mockup. Each callout is a 3-line block anchored to a small
