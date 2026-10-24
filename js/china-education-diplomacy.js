@@ -361,18 +361,42 @@
   function renderBars() {
     hbars($('#ce-a2-bars'), sorted().map(c => ({ label: c.country, v: c[state.metric], c: COLORS[c.code], code: c.code, sel: state.sel === c.code, dim: state.sel && state.sel !== c.code })), { click: true });
   }
+  const ICON = {
+    rel: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
+    cap: '<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 2.5 9 2.5 12 0v-5"/><path d="M22 10v6"/>',
+    doc: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/>',
+    coin: '<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v5c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 10v5c0 1.7 3.6 3 8 3s8-1.3 8-3v-5"/><path d="M4 15v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4"/>',
+    users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/>',
+    layers: '<path d="m12 2 10 5-10 5L2 7l10-5Z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/>',
+    Melanesia: '<path d="m3 20 6-10 4 6 2-3 6 7H3Z"/><circle cx="17" cy="6" r="2"/>',
+    Micronesia: '<path d="M12 22v-9"/><path d="M12 13c-1-4-5-6-9-5 3 0 6 2 9 5Z"/><path d="M12 13c1-4 5-6 9-5-3 0-6 2-9 5Z"/><path d="M12 13c-2-3-2-7 0-10 2 3 2 7 0 10Z"/><path d="M5 22h14"/>',
+    Polynesia: '<path d="M2 18c2 0 2-1.5 4-1.5S8 18 10 18s2-1.5 4-1.5 2 1.5 4 1.5 2-1.5 4-1.5"/><path d="M12 14V3l6 9h-6"/><path d="M12 6 7 12h5"/>'
+  };
+  const ico = (k, cls = 'ce-rt__ic') => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[k]}</svg>`;
+  const RIDGE = '<svg class="ce-rt__ridge" viewBox="0 0 400 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 40 L40 30 L70 34 L110 18 L140 26 L175 8 L205 22 L240 14 L275 28 L310 20 L350 32 L400 30 L400 40 Z"/></svg>';
+  let tableSort = 0; // 0 = M49 order, 1 = A–Z, 2 = Z–A
   function renderTable() {
     const groups = ['Melanesia', 'Micronesia', 'Polynesia'];
-    let h = '<table class="ps-table"><caption>Countries grouped by UN M49 subregion · cut-off 24 Oct 2026</caption><thead><tr><th scope="col">Country</th><th scope="col">Relations at cut-off</th><th scope="col">PRC scholars</th><th scope="col">Verified completions</th><th scope="col">Confirmed PRC funding</th><th scope="col">Candidates (not counted)</th><th scope="col">Taiwan episodes (separate)</th></tr></thead><tbody>';
-    groups.forEach(g => {
-      const rows = C.filter(c => c.m49_subregion === g);
-      h += `<tr class="ce-grp"><th colspan="7" scope="rowgroup">${g}</th></tr>`;
-      h += rows.map(c => `<tr${state.sel === c.code ? ' class="is-sel"' : ''}><th scope="row"><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></th><td>${c.relations_at_cutoff === 'PRC' ? 'PRC' : 'Taiwan'}</td><td>${c.people}</td><td>${c.completed}</td><td>${c.confirmed}</td><td>${c.candidates}</td><td>${c.taiwan}</td></tr>`).join('');
+    const cols = [['people', 'cap', 'PRC<br>scholars'], ['completed', 'doc', 'Verified<br>completions'], ['confirmed', 'coin', 'Confirmed<br>PRC funding'], ['candidates', 'users', 'Candidates<br>(not counted)'], ['taiwan', 'layers', 'Taiwan episodes<br>(separate)']];
+    const sum = (rows, k) => rows.reduce((a, c) => a + c[k], 0);
+    const sortLbl = ['M49 order', 'A to Z', 'Z to A'][tableSort];
+    let h = `<table class="ce-rt"><caption>Countries grouped by UN M49 subregion · cut-off 24 Oct 2026</caption>
+      <colgroup><col class="ce-rt__c1" /><col span="6" /></colgroup>
+      <thead><tr><th scope="col" class="ce-rt__country"${tableSort ? ` aria-sort="${tableSort === 1 ? 'ascending' : 'descending'}"` : ''}><button type="button" class="ce-rt__sort" data-sort title="Sort countries within each subregion (now: ${sortLbl})">Country <span aria-hidden="true">${['⇅', '▲', '▼'][tableSort]}</span></button></th>
+      <th scope="col">${ico('rel')}Relations<br>at cut-off</th>${cols.map(c => `<th scope="col">${ico(c[1])}${c[2]}</th>`).join('')}</tr></thead>`;
+    groups.forEach((g, gi) => {
+      let rows = C.filter(c => c.m49_subregion === g);
+      if (tableSort) rows = rows.slice().sort((x, y) => x.country.localeCompare(y.country) * (tableSort === 1 ? 1 : -1));
+      h += `<tbody class="ce-rt__g ce-rt__g--${g.toLowerCase()}">
+        <tr class="ce-rt__gh"><th colspan="7" scope="rowgroup"><span class="ce-rt__gi">${ico(g, 'ce-rt__gsvg')}</span><span class="ce-rt__gn">${g}</span>${RIDGE}<span class="ce-rt__pill">${rows.length} countries</span></th></tr>
+        ${rows.map(c => `<tr${state.sel === c.code ? ' class="is-sel"' : ''}><th scope="row"><span class="ce-rt__cn"><img class="ce-rt__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="30" height="20" /><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></span></th><td>${c.relations_at_cutoff === 'PRC' ? 'PRC' : 'Taiwan'}</td>${cols.map(k => `<td>${c[k[0]]}</td>`).join('')}</tr>`).join('')}
+        <tr class="ce-rt__sub"><th scope="row">${g} total</th><td></td>${cols.map(k => `<td>${sum(rows, k[0])}</td>`).join('')}</tr></tbody>`;
+      h += '<tbody class="ce-rt__gap" aria-hidden="true"><tr><td colspan="7"></td></tr></tbody>';
     });
-    const t = k => C.reduce((a, c) => a + c[k], 0);
-    h += `<tr class="ce-tot"><th scope="row">Total</th><td></td><td>${t('people')}</td><td>${t('completed')}</td><td>${t('confirmed')}</td><td>${t('candidates')}</td><td>${t('taiwan')}</td></tr></tbody></table>`;
+    h += `<tfoot><tr class="ce-rt__all"><th scope="row">TOTAL (all countries)</th><td></td>${cols.map(k => `<td>${sum(C, k[0])}</td>`).join('')}</tr></tfoot></table>`;
     const el = $('#ps-map-table'); el.innerHTML = h;
     $$('[data-sel]', el).forEach(b => b.addEventListener('click', () => select(b.dataset.sel)));
+    $('[data-sort]', el).addEventListener('click', () => { tableSort = (tableSort + 1) % 3; renderTable(); $('[data-sort]', el).focus(); });
   }
 
   // ================= A3 COMPLETION =================
