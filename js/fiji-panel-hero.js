@@ -3,7 +3,7 @@
    so every script that updates a title or hint keeps working. */
 (function () {
   'use strict';
-  var FLAG = 'img/regional/flags/fji.png';
+  var FLAG = 'img/fiji/flag-fingerprint.webp';
   var TITLE = '.db-section__label, .db-panel__title, .db-leaderboard__title, .db-items-header > h3';
   var HINT = '.db-section__hint, .db-panel__hint, .db-leaderboard__hint';
   function flag() {
