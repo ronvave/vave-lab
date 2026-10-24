@@ -1,0 +1,309 @@
+<!-- Vave Lab · China Education Diplomacy and Pacific Scholars Dashboard — Authored by Ron Vave, 2026 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>China Education Diplomacy · Pacific Scholars Dashboard — Vave Lab | UH Mānoa</title>
+  <meta name="description" content="Pre-launch evidence dashboard of mainland-PRC postgraduate study by scholars from eleven Pacific Island countries." />
+  <!-- Pre-launch: keep out of search indexes until publication is authorised. -->
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=58364b61" />
+  <link rel="stylesheet" href="css/china-education-diplomacy.css?v=d41b734d" />
+</head>
+<body class="ps-body ce-body">
+  <a class="ps-skip" href="#ps-main">Skip to dashboard</a>
+
+  <!-- Access gate: the dashboard data are AES-GCM encrypted at rest and only
+       decrypted in the browser after the correct passcode is entered. -->
+  <div class="ps-gate" id="ps-gate" role="dialog" aria-modal="true" aria-labelledby="ps-gate-title">
+    <form class="ps-gate__card" id="ps-gate-form" autocomplete="off">
+      <h1 id="ps-gate-title">China Education Diplomacy · Pacific Scholars</h1>
+      <p>Pre-launch research material. Enter the project passcode to decrypt the dashboard on this device. Nothing is sent to a server.</p>
+      <label for="ps-pass">Passcode</label>
+      <input id="ps-pass" name="passcode" type="password" required autocomplete="current-password" />
+      <button class="ps-btn" type="submit">Unlock dashboard</button>
+      <div class="ps-gate__err" id="ps-gate-err" role="alert" aria-live="assertive"></div>
+    </form>
+  </div>
+
+  <header class="ps-hero" id="ps-top">
+    <img class="ps-hero__img" src="img/regional/hero-sail.webp" alt="" width="1672" height="941" fetchpriority="high" />
+    <div class="ps-hero__inner">
+      <div class="ps-hero__brand">
+        <img class="ps-hero__logo ps-hero__logo--seal" src="img/regional/uh-manoa-seal.png" alt="University of Hawaiʻi seal" width="280" height="281" />
+        <div class="ps-hero__text">
+          <h1 class="ps-hero__title ce-hero__title">China Education Diplomacy · Pacific Scholars</h1>
+          <p class="ps-hero__tag">Study<span aria-hidden="true">|</span>Funding<span aria-hidden="true">|</span>Evidence</p>
+          <p class="ps-hero__lede">Mainland-PRC postgraduate study by scholars from eleven Pacific Island countries.</p>
+          <div class="ps-hero__credit"><span class="ps-pill ps-pill--warn">Created and curated by University of Hawaii's Assistant Professor Ron Vave</span></div>
+          <div class="ps-hero__status">
+            <span class="ps-pill ce-pill--cutoff" id="ce-cutoff"><strong>Research cut-off 24 October 2026</strong> · Report v1.1</span>
+            <span class="ps-pill"><span class="ps-pill__dot" aria-hidden="true"></span><span id="ps-fresh">Loading data…</span></span>
+            <span class="ps-pill ps-pill--warn">Pre-launch · read-only against the country Master files</span>
+          </div>
+        </div>
+        <img class="ps-hero__logo ps-hero__logo--cpis" src="img/regional/cpis-logo.png" alt="Center for Pacific Islands Studies" width="720" height="335" />
+      </div>
+      <dl class="ps-kpis ce-kpis" id="ps-kpis" aria-label="Headline figures"></dl>
+    </div>
+  </header>
+
+  <nav class="ps-pmenu" id="ps-pmenu" aria-label="Dashboard panels"><div class="ps-pmenu__pills" id="ps-pmenu-pills"></div><div class="ps-pmenu__drop" id="ps-pmenu-drop" hidden></div></nav>
+  <div class="ce-cutbar" role="note"><span><strong>Research cut-off 24 October 2026</strong> · Report v1.1 · Master snapshots 22–24 Oct 2026 (read-only)</span><span>Verified counts and official totals are separate series and are never added together · Taiwan is coded separately</span></div>
+
+  <main id="ps-main" class="ps-wrap" tabindex="-1">
+    <!-- A1 · COUNTRY CARDS -->
+    <section data-panel="A1" data-panel-title="Country Cards" class="ps-a1" aria-labelledby="ps-strip-title">
+      <div class="ps-toolbar">
+        <div role="group" aria-labelledby="ps-metric-label" style="display:flex;align-items:center;flex-wrap:wrap;gap:6px">
+          <span class="ps-toolbar__label" id="ps-metric-label">Order countries below by <span class="ps-toolbar__hl">Number of</span></span>
+          <div class="ps-seg" id="ps-metric" role="radiogroup" aria-label="Metric for country cards, map and chart">
+            <button type="button" role="radio" data-metric="people" aria-checked="true">PRC scholars</button>
+            <button type="button" role="radio" data-metric="completed" aria-checked="false">Verified completions</button>
+            <button type="button" role="radio" data-metric="candidates" aria-checked="false">Review-queue candidates</button>
+            <button type="button" role="radio" data-metric="taiwan" aria-checked="false">Taiwan episodes</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <span class="ps-filterchip" id="ps-chip" aria-live="polite"><span id="ps-chip-text"></span><button type="button" id="ps-chip-clear">Clear filter</button></span>
+          <span class="ps-num ps-num--inline" aria-hidden="true">A1</span>
+        </div>
+      </div>
+      <p class="ce-metricdef" id="ps-metric-def" aria-live="polite"></p>
+      <div class="ps-strip-wrap">
+        <h2 class="ps-sr" id="ps-strip-title">Countries, sorted by selected metric</h2>
+        <ol class="ps-strip" id="ps-strip"></ol>
+        <p class="ps-strip-hint">Select a country to filter the dashboard. Scroll or swipe sideways for more countries.</p>
+      </div>
+    </section>
+
+    <div class="ps-grid">
+      <!-- A2 · MAP / CHART / TABLE -->
+      <section data-panel="A2" data-panel-title="Where the Scholars Come From" class="ps-panel ps-col-map" aria-labelledby="ps-map-title">
+        <span class="ps-num" aria-hidden="true">A2</span>
+        <div class="ps-head"><div>
+          <h2 class="ps-h2" id="ps-map-title">Where the Scholars Come From</h2>
+          <p class="ps-sub" id="ps-map-sub"></p>
+        </div></div>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="A2 view" data-views="a2">
+            <button type="button" role="tab" data-view="map" aria-selected="true">Map</button>
+            <button type="button" role="tab" data-view="chart" aria-selected="false">Chart</button>
+            <button type="button" role="tab" data-view="table" aria-selected="false">Table</button>
+          </div>
+        </div>
+        <div data-pane="a2:map" class="ps-pane ps-pane--grow">
+          <div class="ps-map" id="ps-map">
+            <div class="ps-map__ctrl">
+              <button class="ps-iconbtn" type="button" data-zoom="in" aria-label="Zoom in">+</button>
+              <button class="ps-iconbtn" type="button" data-zoom="out" aria-label="Zoom out">−</button>
+              <button class="ps-iconbtn" type="button" data-zoom="reset" aria-label="Reset map view">⟲</button>
+            </div>
+          </div>
+          <p class="ps-note" id="ps-map-note"></p>
+        </div>
+        <div data-pane="a2:chart" class="ps-pane" hidden><div class="ce-hbars" id="ce-a2-bars"></div></div>
+        <div data-pane="a2:table" class="ps-pane" hidden><div class="ce-scroll" id="ps-map-table"></div></div>
+      </section>
+
+      <!-- A3 · COMPLETION -->
+      <section data-panel="A3" data-panel-title="Completion Status" class="ps-panel ps-col-deg" aria-labelledby="ce-a3-title">
+        <span class="ps-num" aria-hidden="true">A3</span>
+        <h2 class="ps-h2" id="ce-a3-title">Completion Status</h2>
+        <p class="ps-sub" id="ce-a3-sub"></p>
+        <div class="ce-a3" id="ce-a3"></div>
+        <p class="ps-note">A course participant is never counted as a degree graduate. “Verified” needs a conferral, commencement or thesis record; self-reported and unverified completions are shown separately.</p>
+      </section>
+
+      <!-- A4 · FIELDS OF STUDY -->
+      <section data-panel="A4" data-panel-title="Fields of Study" class="ps-panel ps-panel--paper ps-col-deg" aria-labelledby="ce-a4-title">
+        <span class="ps-num" aria-hidden="true">A4</span>
+        <h2 class="ps-h2" id="ce-a4-title">Fields of Study</h2>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--light ps-seg--sm" role="group" aria-label="Degree level" id="ce-a4-level">
+            <button type="button" data-lv="all" aria-pressed="true">All levels</button>
+            <button type="button" data-lv="Master's" aria-pressed="false">Master's</button>
+            <button type="button" data-lv="Doctorate" aria-pressed="false">Doctorate</button>
+          </div>
+        </div>
+        <p class="ps-sub" id="ce-a4-sub"></p>
+        <div class="ce-hbars ce-hbars--light" id="ce-a4"></div>
+        <p class="ps-note">Fields as recorded in the Master files, grouped into report discipline groups (ISCED-F 2013 crosswalk in the data package).</p>
+      </section>
+
+      <!-- B1 · TIMELINE -->
+      <section data-panel="B1" data-panel-title="Study Timeline" class="ps-panel ps-col-full" aria-labelledby="ce-b1-title">
+        <span class="ps-num" aria-hidden="true">B1</span>
+        <h2 class="ps-h2" id="ce-b1-title">Study Timeline</h2>
+        <p class="ps-sub" id="ce-b1-sub"></p>
+        <div class="ce-legend" id="ce-b1-legend"></div>
+        <div class="ce-tl" id="ce-b1"></div>
+        <p class="ps-note">Bars run from the recorded start year to the completion year. A dot alone means only one year is recorded. Years after 2013 are not, by themselves, evidence of Belt and Road funding.</p>
+      </section>
+
+      <!-- B2 · FUNDING -->
+      <section data-panel="B2" data-panel-title="Funding Evidence" class="ps-panel ps-col-half" aria-labelledby="ce-b2-title">
+        <span class="ps-num" aria-hidden="true">B2</span>
+        <h2 class="ps-h2" id="ce-b2-title">Funding Evidence</h2>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="B2 view" data-views="b2">
+            <button type="button" role="tab" data-view="people" aria-selected="true">By person</button>
+            <button type="button" role="tab" data-view="records" aria-selected="false">Funding records</button>
+          </div>
+        </div>
+        <div data-pane="b2:people" class="ps-pane">
+          <p class="ps-sub" id="ce-b2-sub"></p>
+          <div class="ce-stack" id="ce-b2-stack"></div>
+          <ul class="ce-stacklegend" id="ce-b2-legend"></ul>
+          <p class="ps-note">“Confirmed” needs recipient-specific evidence naming the person and a PRC funder. “Probable” means the scholarship is named but the funder appears only in a group statement or context. A scholarship is never read as a sign of political allegiance.</p>
+        </div>
+        <div data-pane="b2:records" class="ps-pane" hidden>
+          <div class="ce-filters">
+            <label>Record layer <select class="ps-select" id="ce-b2-layer"><option value="baseline">Verified series</option><option value="candidate">Candidates (not counted)</option><option value="">All</option></select></label>
+          </div>
+          <div class="ce-scroll" id="ce-b2-table"></div>
+        </div>
+      </section>
+
+      <!-- B3 · UNIVERSITIES & PROGRAMMES -->
+      <section data-panel="B3" data-panel-title="Host Universities and Programmes" class="ps-panel ps-col-half" aria-labelledby="ce-b3-title">
+        <span class="ps-num" aria-hidden="true">B3</span>
+        <h2 class="ps-h2" id="ce-b3-title">Host Universities and Programmes</h2>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="B3 view" data-views="b3">
+            <button type="button" role="tab" data-view="uni" aria-selected="true">Universities</button>
+            <button type="button" role="tab" data-view="prog" aria-selected="false">Scholarship programmes</button>
+          </div>
+        </div>
+        <div data-pane="b3:uni" class="ps-pane">
+          <p class="ps-sub" id="ce-b3-sub"></p>
+          <div class="ce-scroll" id="ce-b3-uni"></div>
+          <p class="ps-note">Proposed update PU-016 (not applied): “International Defence University of China” is probably the PLA National Defense University. The name is shown as recorded in the Master.</p>
+        </div>
+        <div data-pane="b3:prog" class="ps-pane" hidden><div class="ce-scroll" id="ce-b3-prog"></div></div>
+      </section>
+
+      <!-- C1 · CAREERS & OUTPUTS -->
+      <section data-panel="C1" data-panel-title="Careers and Research Outputs" class="ps-panel ps-panel--paper ps-col-full" aria-labelledby="ce-c1-title">
+        <span class="ps-num" aria-hidden="true">C1</span>
+        <h2 class="ps-h2" id="ce-c1-title">Careers and Research Outputs</h2>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--light ps-seg--sm" role="tablist" aria-label="C1 view" data-views="c1">
+            <button type="button" role="tab" data-view="careers" aria-selected="true">Careers after study</button>
+            <button type="button" role="tab" data-view="outputs" aria-selected="false">Theses and articles</button>
+          </div>
+        </div>
+        <div data-pane="c1:careers" class="ps-pane">
+          <p class="ps-sub" id="ce-c1-sub"></p>
+          <div class="ce-hbars ce-hbars--light" id="ce-c1-bars"></div>
+          <div class="ce-scroll" id="ce-c1-table"></div>
+          <p class="ps-note">Roles come from public sources and are not a measure of influence. No ranking or composite score is made.</p>
+        </div>
+        <div data-pane="c1:outputs" class="ps-pane" hidden><div class="ce-scroll" id="ce-c1-out"></div></div>
+      </section>
+
+      <!-- C2 · OFFICIAL TOTALS -->
+      <section data-panel="C2" data-panel-title="Official Reported Totals" class="ps-panel ps-col-full" aria-labelledby="ce-c2-title">
+        <span class="ps-num" aria-hidden="true">C2</span>
+        <h2 class="ps-h2" id="ce-c2-title">Official Reported Totals</h2>
+        <div class="ce-sepbanner" role="note"><strong>Separate series.</strong> Figures announced by governments and embassies. They are never added to, or compared as a share of, the verified scholar counts.</div>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="C2 view" data-views="c2">
+            <button type="button" role="tab" data-view="totals" aria-selected="true">Totals</button>
+            <button type="button" role="tab" data-view="chron" aria-selected="false">Policy chronology</button>
+            <button type="button" role="tab" data-view="ptn" aria-selected="false">Partnerships</button>
+          </div>
+        </div>
+        <div data-pane="c2:totals" class="ps-pane">
+          <div class="ce-filters">
+            <label>Scope <select class="ps-select" id="ce-c2-scope"></select></label>
+            <label>Measure <select class="ps-select" id="ce-c2-metric"></select></label>
+          </div>
+          <div class="ce-scroll ce-scroll--tall" id="ce-c2-table"></div>
+        </div>
+        <div data-pane="c2:chron" class="ps-pane" hidden><div class="ce-scroll ce-scroll--tall" id="ce-c2-chron"></div></div>
+        <div data-pane="c2:ptn" class="ps-pane" hidden><div class="ce-scroll ce-scroll--tall" id="ce-c2-ptn"></div></div>
+      </section>
+
+      <!-- C3 · TAIWAN COMPARATOR -->
+      <section data-panel="C3" data-panel-title="Taiwan Comparator" class="ps-panel ps-col-full ce-taiwan" aria-labelledby="ce-c3-title">
+        <span class="ps-num" aria-hidden="true">C3</span>
+        <h2 class="ps-h2" id="ce-c3-title">Taiwan Comparator</h2>
+        <div class="ce-sepbanner ce-sepbanner--tw" role="note"><strong>Coded separately.</strong> Taiwan-hosted study recorded in the Master files. It is never pooled with mainland-PRC study. Names are withheld here; record IDs link back to the Masters.</div>
+        <div class="ce-c3">
+          <div><p class="ps-sub" id="ce-c3-sub"></p><div class="ce-hbars" id="ce-c3-bars"></div></div>
+          <div class="ce-scroll" id="ce-c3-table"></div>
+        </div>
+      </section>
+
+      <!-- D · DIRECTORY -->
+      <section data-panel="D" data-panel-title="Scholar Directory" class="ps-panel ps-col-full ce-dir" aria-labelledby="ce-d-title">
+        <span class="ps-num" aria-hidden="true">D</span>
+        <h2 class="ps-h2" id="ce-d-title">Scholar Directory</h2>
+        <p class="ps-sub">One card per study episode, with its evidence. Candidates are shown only when chosen and are never counted.</p>
+        <div class="ce-filters ce-filters--dir">
+          <label class="ce-search">Search <input type="search" id="ce-d-q" placeholder="Name, university, field…" /></label>
+          <label>Records <select class="ps-select" id="ce-d-layer"><option value="base">Verified series (20)</option><option value="queue">Review-queue candidates</option><option value="all">Both</option></select></label>
+          <label>Country <select class="ps-select" id="ce-d-country"></select></label>
+          <label>Completion <select class="ps-select" id="ce-d-comp"></select></label>
+          <label>Degree <select class="ps-select" id="ce-d-deg"><option value="">All</option><option>Master's</option><option>Doctorate</option><option>Professional doctorate</option></select></label>
+          <button type="button" class="ps-btn ps-btn--ghost" id="ce-d-reset">Reset</button>
+        </div>
+        <p class="ce-count" id="ce-d-count" aria-live="polite"></p>
+        <ol class="ce-cards" id="ce-d-cards"></ol>
+      </section>
+
+      <!-- E · REVIEW QUEUE -->
+      <section data-panel="E" data-panel-title="Review Queue" class="ps-panel ps-panel--paper ps-col-full" aria-labelledby="ce-e-title">
+        <span class="ps-num" aria-hidden="true">E</span>
+        <h2 class="ps-h2" id="ce-e-title">Review Queue</h2>
+        <div class="ce-sepbanner ce-sepbanner--light" role="note"><strong>Proposed only.</strong> Nothing here is applied to the Master files or counted in the verified series. Candidates keep provisional IDs until you review them.</div>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--light ps-seg--sm" role="tablist" aria-label="E view" data-views="e">
+            <button type="button" role="tab" data-view="cand" aria-selected="true">Candidates</button>
+            <button type="button" role="tab" data-view="pu" aria-selected="false">Proposed Master updates</button>
+            <button type="button" role="tab" data-view="unres" aria-selected="false">Unresolved identities</button>
+          </div>
+        </div>
+        <div data-pane="e:cand" class="ps-pane"><div class="ce-scroll ce-scroll--tall" id="ce-e-cand"></div></div>
+        <div data-pane="e:pu" class="ps-pane" hidden><div class="ce-scroll ce-scroll--tall" id="ce-e-pu"></div></div>
+        <div data-pane="e:unres" class="ps-pane" hidden><div class="ce-scroll ce-scroll--tall" id="ce-e-unres"></div></div>
+      </section>
+
+      <!-- F · METHOD & AUDIT -->
+      <section data-panel="F" data-panel-title="Evidence Coverage and Audit" class="ps-panel ps-col-full" aria-labelledby="ce-f-title">
+        <span class="ps-num" aria-hidden="true">F</span>
+        <h2 class="ps-h2" id="ce-f-title">Evidence Coverage and Audit</h2>
+        <div class="ps-viewbar">
+          <div class="ps-seg ps-seg--sm" role="tablist" aria-label="F view" data-views="f">
+            <button type="button" role="tab" data-view="heat" aria-selected="true">Coverage grid</button>
+            <button type="button" role="tab" data-view="notes" aria-selected="false">Country notes</button>
+            <button type="button" role="tab" data-view="audit" aria-selected="false">Method and audit</button>
+          </div>
+        </div>
+        <div data-pane="f:heat" class="ps-pane">
+          <p class="ps-sub">Number of evidence items found for each country, by type. Rows follow UN M49 subregions. A blank cell means none was found by the cut-off, not that none exists.</p>
+          <div class="ce-heatwrap" id="ce-f-heat"></div>
+        </div>
+        <div data-pane="f:notes" class="ps-pane" hidden><div class="ce-notes" id="ce-f-notes"></div></div>
+        <div data-pane="f:audit" class="ps-pane" hidden><div class="ce-audit" id="ce-f-audit"></div></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="ps-footer">
+    <div class="ps-footer__inner">
+      <div class="ps-footer__links"><a href="pacific-scholars.html">Regional Pacific Scholars Dashboard</a></div>
+      <div class="ps-footer__motto">Different Islands. Shared Knowledge. Stronger Together.</div>
+      <div class="ps-footer__meta"><a href="index.html">Vave Lab</a><span>Center for Pacific Islands Studies, UH Mānoa</span><span>Version 1.1 (pre-launch) · cut-off 24 Oct 2026</span></div>
+    </div>
+  </footer>
+  <div class="ps-tip" id="ps-tip" role="status" aria-hidden="true"></div>
+
+  <script src="js/china-education-diplomacy.js?v=bc942e12" defer></script>
+</body>
+</html>
