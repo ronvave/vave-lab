@@ -32,7 +32,7 @@ jobs:
         env:
           REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
           CEDP_PATCH_KEY: ${{ secrets.CEDP_PATCH_KEY }}
-          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE }}
+          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE || secrets.CHINA_COLLAB_PASSCODE }}
         run: |
           out=$(python3 scripts/encrypt_cedp_patch.py)
           echo "$out"

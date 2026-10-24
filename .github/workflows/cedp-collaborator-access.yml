@@ -38,7 +38,7 @@ jobs:
         id: run
         env:
           REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
-          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE }}
+          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE || secrets.CHINA_COLLAB_PASSCODE }}
         run: |
           out=$(python3 scripts/encrypt_cedp_collab.py "${{ inputs.action }}")
           echo "$out"
