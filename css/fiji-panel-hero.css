@@ -26,7 +26,7 @@
 .tph-hero > .db-panel__label { position: absolute; z-index: 3; }
 .tph-flag {
   /* Fiji flag fingerprint emblem (oval, transparent outside the print). */
-  flex: 0 0 auto; width: auto; height: 78px; aspect-ratio: 147 / 200;
+  flex: 0 0 auto; width: auto; height: 78px; aspect-ratio: 142 / 200;
   border: 0; border-radius: 0; background: none; box-shadow: none; object-fit: contain;
   filter: drop-shadow(0 2px 5px rgba(0,0,0,.35));
 }
