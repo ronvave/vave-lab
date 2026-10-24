@@ -18,7 +18,7 @@
     var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
     // The whale's head starts about 1.4 header-heights from the right edge,
     // so text stops just before it.
-    var pr = Math.round(hero.offsetHeight * 1.4) + 20;
+    var pr = Math.round(hero.offsetHeight * 1.55) + 30;
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
   }
   function addArt(hero) {
