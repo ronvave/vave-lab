@@ -16,8 +16,9 @@
   var ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
   function fit(hero) {
     var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
-    // The island fills about the right quarter of the picture (5.6 : 1).
-    var pr = Math.round(hero.offsetHeight * 1.45) + 40;
+    // The whale's head starts about 1.4 header-heights from the right edge,
+    // so text stops just before it.
+    var pr = Math.round(hero.offsetHeight * 1.4) + 20;
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
   }
   function addArt(hero) {

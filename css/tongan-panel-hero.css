@@ -127,15 +127,15 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .tct-dark { color: #111 !important; }
 .tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
 
-/* Every panel: Tongan coat of arms over tropical waters (replaces the island
-   sunset picture above). Sized to the header height so the whole emblem is
-   visible; fades in from the left. */
+/* Every panel: humpback whale beneath a tropical horizon. Sized to the header
+   height; the whale runs under the panel badge with the small island just to
+   the left of it, and the open sea fades in gradually across the header. */
 .tph-hero > .tph-art {
-  width: auto; left: auto; aspect-ratio: 1500 / 389;
-  background-image: url("../img/tonga/panel-header-b2-emblem.webp");
+  width: auto; left: auto; aspect-ratio: 2665 / 724;
+  background-image: url("../img/tonga/panel-header-whale.webp");
   background-size: 100% 100%; background-position: right center;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
-          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 30%, rgba(0,0,0,.8) 55%, #000 70%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 34%, rgba(0,0,0,.7) 48%, #000 58%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 34%, rgba(0,0,0,.7) 48%, #000 58%);
 }
 /* Panel D has seven cards in one row: slightly smaller so labels fit. */
 .tph-panel .db-panel-d-kpis { gap: 10px; }
