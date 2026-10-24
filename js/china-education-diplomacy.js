@@ -427,7 +427,7 @@
         const bar = s && f && f > s ? `<span class="ce-tl__bar" style="left:${x(s)}%;width:${Math.min(x(f + 1), x(CUT)) - x(s)}%;background:${c}"></span>` : (s ? `<span class="ce-tl__dot" style="left:${x(s + 0.5)}%;background:${c}"></span>` : '');
         const open = e.completion === 'in_progress' || (!e.f && e.s) ? '<span class="ce-muted"> → open</span>' : '';
         return `<div class="ce-tl__row" tabindex="0" aria-label="${esc(e.name)}, ${esc(e.qualification)}, ${esc(e.university)}, ${e.s || '?'} to ${e.f || '?'}, ${esc(STATUS[e.completion].label)}">
-          <span class="ce-tl__name"><i style="background:${COLORS[e.iso3]}"></i>${esc(e.name)}<small>${esc(e.iso3)} · ${esc(e.degree_level)} · ${e.s || '?'}–${e.f || '?'}${open}</small></span>
+          <span class="ce-tl__name"><img class="ce-tl__flag" src="img/regional/flags/${e.iso3.toLowerCase()}.png" alt="${esc(nameOf(e.iso3))} flag" width="18" height="18" loading="lazy" />${esc(e.name)}<small>${esc(e.iso3)} · ${esc(e.degree_level)} · ${e.s || '?'}–${e.f || '?'}${open}</small></span>
           <span class="ce-tl__track"><span class="ce-tl__cut" style="left:${x(CUT)}%"></span>${bar}</span></div>`;
       }).join('');
   }
