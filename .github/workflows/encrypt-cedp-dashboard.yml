@@ -3,7 +3,8 @@ name: Encrypt China Education Diplomacy dashboard data
 # Manual only. Re-encrypts data/cedp-patch.enc (one-time key in the
 # CEDP_PATCH_KEY secret) under the REGIONAL_PASSCODE secret as
 # data/china-education-diplomacy.json.enc, deletes the patch, commits to main
-# and starts the validated Pages deploy. No passcode or plaintext is logged.
+# and starts the validated Pages deploy. If collaborator access is granted,
+# the collaborator copy is rebuilt from the same data. No passcode or plaintext is logged.
 on:
   workflow_dispatch:
 
@@ -31,9 +32,12 @@ jobs:
         env:
           REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
           CEDP_PATCH_KEY: ${{ secrets.CEDP_PATCH_KEY }}
+          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE }}
         run: |
           out=$(python3 scripts/encrypt_cedp_patch.py)
           echo "$out"
+          # Keep the collaborator copy (if granted) in step with the new data.
+          if [ "${out%% *}" = "encrypted" ]; then python3 scripts/encrypt_cedp_collab.py sync; fi
           echo "result=${out%% *}" >> "$GITHUB_OUTPUT"
       - name: Commit and deploy
         if: steps.enc.outputs.result == 'encrypted'
@@ -42,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- data/china-education-diplomacy.json.enc
+          git add -A -- data/china-education-diplomacy.json.enc data/china-education-diplomacy.collab.json.enc
           git rm -q --cached --ignore-unmatch data/cedp-patch.enc
           git commit -m "China Education Diplomacy dashboard: encrypt data under the Regional passcode"
           git push origin HEAD:main

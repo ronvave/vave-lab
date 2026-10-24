@@ -1,0 +1,56 @@
+name: China Education Diplomacy collaborator access
+
+# Manual only. "grant" (re)builds data/china-education-diplomacy.collab.json.enc
+# from the live data under the CEDP_COLLAB_PASSCODE secret; run it again after
+# changing that secret to rotate the collaborator passcode. "revoke" deletes the
+# file so the collaborator passcode stops working. Your own Regional passcode is
+# unaffected. No passcode or plaintext is logged.
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'grant (create or rotate) or revoke'
+        required: true
+        default: grant
+        type: choice
+        options: [grant, revoke]
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: rotate-regional-passcode
+  cancel-in-progress: false
+
+jobs:
+  access:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography
+      - name: Update collaborator file
+        id: run
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+          CEDP_COLLAB_PASSCODE: ${{ secrets.CEDP_COLLAB_PASSCODE }}
+        run: |
+          out=$(python3 scripts/encrypt_cedp_collab.py "${{ inputs.action }}")
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Commit and deploy
+        if: steps.run.outputs.result == 'granted' || steps.run.outputs.result == 'revoked'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- data/china-education-diplomacy.collab.json.enc
+          git commit -m "China Education Diplomacy dashboard: collaborator access ${{ steps.run.outputs.result }}"
+          git push origin HEAD:main
+          gh workflow run deploy-pages-validated.yml --ref main

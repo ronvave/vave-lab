@@ -19,6 +19,8 @@
   'use strict';
 
   const ENC_URL = 'data/china-education-diplomacy.json.enc';
+  // Optional second copy of the same data under the collaborator passcode.
+  const COLLAB_URL = 'data/china-education-diplomacy.collab.json.enc';
   const COLORS = {
     FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8',
     KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a',
@@ -78,7 +80,15 @@
     return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
   }
   async function decryptBundle(pass) {
-    const res = await fetch(ENC_URL, { cache: 'no-store' });
+    try { return await decryptFile(ENC_URL, pass); }
+    catch (first) {
+      if (first.message === 'fetch') throw first;
+      try { return await decryptFile(COLLAB_URL, pass); }
+      catch (x) { throw first; }
+    }
+  }
+  async function decryptFile(url, pass) {
+    const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) throw new Error('fetch');
     const buf = new Uint8Array(await res.arrayBuffer());
     const key = await deriveKey(pass, buf.slice(4, 20));
