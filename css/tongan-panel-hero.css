@@ -24,9 +24,10 @@
 .tph-hero > :not(.tph-art) { position: relative; z-index: 1; }
 .tph-hero > .db-panel__label { position: absolute; z-index: 3; }
 .tph-flag {
-  flex: 0 0 auto; width: 64px; height: 64px; border-radius: 50%;
-  border: 3px solid #fff; box-shadow: 0 3px 10px rgba(0,0,0,.28);
-  background: #fff; object-fit: cover;
+  /* Tonga flag fingerprint emblem (oval, transparent outside the print). */
+  flex: 0 0 auto; width: auto; height: 78px; aspect-ratio: 144 / 200;
+  border: 0; border-radius: 0; background: none; box-shadow: none; object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.35));
 }
 .tph-text { min-width: 0; flex: 1 1 auto; }
 .tph-hero .tph-title,
