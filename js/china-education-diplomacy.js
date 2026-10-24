@@ -100,7 +100,7 @@
 
   // ================= STATE / DERIVED =================
   const state = { metric: 'people', sel: null, a4: 'all', mapView: null };
-  const VIEW = { a2: 'map', b2: 'people', b3: 'uni', c1: 'careers', c2: 'totals', e: 'cand', f: 'heat' };
+  const VIEW = { a2: 'table', b2: 'people', b3: 'uni', c1: 'careers', c2: 'totals', e: 'cand', f: 'heat' };
   let D, S, C = [], byCode = {}, PEOPLE = {}, PRC, BASE, QUEUE, TW, DISC;
   const nameOf = c => (byCode[c] ? byCode[c].country : c);
   const inSel = r => !state.sel || r.iso3 === state.sel;
@@ -137,6 +137,8 @@
     check(BASE.filter(e => e.completion === 'completed_verified').length, S.completed_verified, 'completions');
     check(TW.length, S.taiwan_episodes, 'taiwan episodes');
   }
+  // Relations at cut-off: show what the crosswalk says (e.g. 'PRC (since Sep 2019; Taiwan before)' -> 'PRC · since 2019').
+  const relLabel = c => { const r = c.relations_at_cutoff || ''; if (/^Taiwan/.test(r)) return 'Taiwan'; const y = r.match(/since \w* ?(\d{4})/); return y ? `PRC · since ${y[1]}` : 'PRC'; };
   const sorted = () => C.slice().sort((a, b) => (b[state.metric] - a[state.metric]) || a.country.localeCompare(b.country));
 
   // ================= INIT =================
@@ -146,7 +148,7 @@
     if (p.get('country') && byCode[p.get('country')]) state.sel = p.get('country');
     if (METRICS[p.get('metric')]) state.metric = p.get('metric');
     $('#ps-fresh').textContent = `Built from ${D.master_inventory.length} country Master files · snapshots ${D.meta.snapshots}`;
-    renderKpis(); setupMenu(); setupViews(); setupMetric(); setupMap(); setupStatic(); setupDirectory();
+    renderKpis(); renderFindings(); setupMenu(); setupViews(); setupMetric(); setupMap(); setupStatic(); setupDirectory();
     $('#ps-chip-clear').addEventListener('click', () => select(null));
     renderAll(true);
   }
@@ -162,6 +164,18 @@
     const qs = sp.toString(); history.replaceState(null, '', location.pathname + (qs ? '?' + qs : '') + location.hash);
   }
   function select(code) { state.sel = code && state.sel !== code ? code : null; renderAll(); }
+
+  // ================= REPORT FINDINGS (v1.1, from the encrypted bundle) =================
+  function renderFindings() {
+    const F = D.findings || {};
+    $$('[data-find]').forEach(el => {
+      const v = F[el.dataset.find];
+      if (v == null) { (el.closest('.ce-find') || el).hidden = true; return; }
+      el.innerHTML = Array.isArray(v) ? v.map(x => `<li>${x}</li>`).join('') : v;
+    });
+    const rows = F.b4_rows || [];
+    $('#ce-b4-table').innerHTML = rows.length ? `<table class="ps-table ce-table"><thead><tr><th scope="col">Commitment (official)</th><th scope="col">Scope / date</th><th scope="col">Documented delivery in this study</th><th scope="col">Gap note</th></tr></thead><tbody>${rows.map(r => `<tr>${r.map(x => `<td class="ce-wrap">${x}</td>`).join('')}</tr>`).join('')}</tbody></table>` : '';
+  }
 
   // ================= KPIs =================
   function renderKpis() {
@@ -179,7 +193,7 @@
   // ================= PANEL MENU =================
   function setupMenu() {
     const nav = $('#ps-pmenu'), strip = $('#ps-pmenu-pills'), drop = $('#ps-pmenu-drop');
-    const GROUPS = { A: 'Overview', B: 'Study & funding', C: 'After study & context', D: 'Directory', E: 'Review queue', F: 'Coverage & audit' };
+    const GROUPS = { A: 'Overview', S: 'Summary', B: 'Study & funding', C: 'After study & context', D: 'Directory', E: 'Review queue', F: 'Coverage & audit' };
     const panels = $$('section[data-panel]');
     panels.forEach(el => { if (!el.id) el.id = 'panel-' + el.dataset.panel.toLowerCase(); });
     let opened = null;
@@ -257,7 +271,7 @@
             ${state.metric === 'completed' ? ICONS.cap : state.metric === 'candidates' ? ICONS.queue : ICONS.people}<span class="ps-card__vl"><span class="ps-card__v">${v}</span><span class="ps-card__l">${esc(m.label)}</span></span>
           </button>
           <div class="ps-card__sub">${sub}</div>
-          <div class="ce-card__rel">${esc(c.m49_subregion)} · relations: ${c.relations_at_cutoff === 'PRC' ? 'PRC' : 'Taiwan'}</div>
+          <div class="ce-card__rel">${esc(c.m49_subregion)} · relations: ${esc(relLabel(c))}</div>
           ${btn}
         </div></li>`;
     }).join('');
@@ -324,7 +338,7 @@
     setView([cx - w / 2, cy - (w * H / W) / 2, w, w * H / W]);
   }
   function mapTip(c) {
-    return `<b>${esc(c.country)}</b>${c.people} PRC scholars (verified series)<br>${c.completed} verified completions · ${c.confirmed} confirmed PRC funding<br>${c.candidates} review-queue candidates (not counted)<br>${c.taiwan} Taiwan episodes (separate series)<br><span style="color:#4a5d78">Relations at cut-off: ${c.relations_at_cutoff === 'PRC' ? 'PRC' : 'Taiwan'}. Click to filter.</span>`;
+    return `<b>${esc(c.country)}</b>${c.people} PRC scholars (verified series)<br>${c.completed} verified completions · ${c.confirmed} confirmed PRC funding<br>${c.candidates} review-queue candidates (not counted)<br>${c.taiwan} Taiwan episodes (separate series)<br><span style="color:#4a5d78">Relations at cut-off: ${esc(relLabel(c))}. Click to filter.</span>`;
   }
   function renderMapSub() {
     const m = METRICS[state.metric];
@@ -353,13 +367,13 @@
   function hbars(el, rows, opts = {}) {
     const max = Math.max(1, ...rows.map(r => r.v));
     el.innerHTML = rows.map(r => `<${opts.click ? 'button type="button"' : 'div'} class="ce-hbar${r.sel ? ' is-selected' : ''}${r.dim ? ' is-dim' : ''}" ${r.code ? `data-code="${r.code}"` : ''} ${opts.click ? `aria-label="${esc(r.label)}: ${r.v}"` : ''}>
-      <span class="ce-hbar__l">${esc(r.label)}</span>
+      <span class="ce-hbar__l">${opts.flags && r.code ? `<img class="ce-hbar__flag" src="img/regional/flags/${r.code.toLowerCase()}.png" alt="" width="20" height="20" />` : ''}${esc(r.label)}</span>
       <span class="ce-hbar__t"><span class="ce-hbar__f" style="width:${(r.v / max) * 100}%;background:${r.c || '#19b5c4'}"></span></span>
       <span class="ce-hbar__v">${r.v}${r.extra ? ` <small>${esc(r.extra)}</small>` : ''}</span></${opts.click ? 'button' : 'div'}>`).join('') || '<p class="ce-muted">No records match.</p>';
     if (opts.click) $$('[data-code]', el).forEach(b => b.addEventListener('click', () => select(b.dataset.code)));
   }
   function renderBars() {
-    hbars($('#ce-a2-bars'), sorted().map(c => ({ label: c.country, v: c[state.metric], c: COLORS[c.code], code: c.code, sel: state.sel === c.code, dim: state.sel && state.sel !== c.code })), { click: true });
+    hbars($('#ce-a2-bars'), sorted().map(c => ({ label: c.country, v: c[state.metric], c: COLORS[c.code], code: c.code, sel: state.sel === c.code, dim: state.sel && state.sel !== c.code })), { click: true, flags: true });
   }
   const ICON = {
     rel: '<path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/>',
@@ -389,7 +403,7 @@
       if (tableSort) rows = rows.slice().sort((x, y) => x.country.localeCompare(y.country) * (tableSort === 1 ? 1 : -1));
       h += `<tbody class="ce-rt__g ce-rt__g--${g.toLowerCase()}">
         <tr class="ce-rt__gh"><th colspan="7" scope="rowgroup"><span class="ce-rt__gi">${ico(g, 'ce-rt__gsvg')}</span><span class="ce-rt__gn">${g}</span>${RIDGE}<span class="ce-rt__pill">${rows.length} countries</span></th></tr>
-        ${rows.map(c => `<tr${state.sel === c.code ? ' class="is-sel"' : ''}><th scope="row"><span class="ce-rt__cn"><img class="ce-rt__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="30" height="20" /><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></span></th><td>${c.relations_at_cutoff === 'PRC' ? 'PRC' : 'Taiwan'}</td>${cols.map(k => `<td>${c[k[0]]}</td>`).join('')}</tr>`).join('')}
+        ${rows.map(c => `<tr${state.sel === c.code ? ' class="is-sel"' : ''}><th scope="row"><span class="ce-rt__cn"><img class="ce-rt__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="30" height="20" /><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></span></th><td>${esc(relLabel(c))}</td>${cols.map(k => `<td>${c[k[0]]}</td>`).join('')}</tr>`).join('')}
         <tr class="ce-rt__sub"><th scope="row">${g} total</th><td></td>${cols.map(k => `<td>${sum(rows, k[0])}</td>`).join('')}</tr></tbody>`;
       h += '<tbody class="ce-rt__gap" aria-hidden="true"><tr><td colspan="7"></td></tr></tbody>';
     });

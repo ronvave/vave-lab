@@ -197,7 +197,12 @@ button.ce-hbar:focus-visible { outline: 3px solid var(--ps-gold-400); }
 #ce-c1-table a, #ce-c1-out a { color: #0000FF; }
 
 /* A2 table: grouped subregion blocks (Melanesia green, Micronesia blue, Polynesia purple) */
-.ce-panel--island::before { content: ''; position: absolute; z-index: -1; right: 0; top: 0; width: min(55%, 560px); height: 190px; pointer-events: none; opacity: .75; background: url('../img/regional/tuv.webp') center 40% / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 45%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 45%, transparent 100%); mask-composite: intersect; }
+/* Island photo header on every panel (same treatment as the A2 mockup) */
+.ps-panel::before { content: ''; position: absolute; z-index: -1; right: 0; top: 0; width: min(55%, 560px); height: 190px; pointer-events: none; opacity: .75; background: url('../img/regional/tuv.webp') center 40% / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 45%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0%, #000 45%), linear-gradient(180deg, #000 45%, transparent 100%); mask-composite: intersect; }
+/* header photo: compact band on non-A2 panels so it stays clear of content */
+.ps-panel:not(.ps-col-map)::before { height: 120px; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 50%), linear-gradient(180deg, #000 25%, transparent 100%); mask-image: linear-gradient(90deg, transparent 0%, #000 50%), linear-gradient(180deg, #000 25%, transparent 100%); }
+.ps-col-half::before, .ps-col-deg::before { width: 45%; }
+.ps-panel--paper::before { opacity: .5; }
 #ps-map-table.ce-scroll { max-height: none; }
 .ce-rt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.86rem; color: #fff; }
 .ce-rt caption { caption-side: top; text-align: left; color: var(--ps-text-muted); font-size: 0.78rem; padding: 0 0 10px; }
@@ -237,3 +242,51 @@ button.ce-hbar:focus-visible { outline: 3px solid var(--ps-gold-400); }
 .ce-rt__all th, .ce-rt__all td { padding: 16px 10px; font-size: 1.12rem; font-weight: 800; background: transparent; border-top: 1px solid #3fd0d8; border-bottom: 1px solid #3fd0d8; }
 .ce-rt__all th { text-align: left; padding-left: 16px; border-left: 1px solid #3fd0d8; border-radius: 12px 0 0 12px; }
 .ce-rt__all td:last-child { border-right: 1px solid #3fd0d8; border-radius: 0 12px 12px 0; }
+
+/* A2 chart: circle flag before each country */
+.ce-hbar__l { display: inline-flex; align-items: center; gap: 8px; }
+.ce-hbar__flag { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; flex: none; box-shadow: 0 0 0 1px rgba(255,255,255,.3); }
+
+/* Report findings boxes (inside panels) */
+.ce-find { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: rgba(63, 208, 216, .07); border: 1px solid rgba(63, 208, 216, .28); border-left: 4px solid #3fd0d8; font-size: 0.84rem; line-height: 1.5; color: #dbe9f3; }
+.ce-find p { margin: 0 0 8px; } .ce-find p:last-child { margin-bottom: 0; }
+.ce-find__h { margin: 0 0 6px; font-size: 0.74rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #9fe3ee; }
+.ce-find__list { margin: 0; padding-left: 20px; font-size: 0.84rem; line-height: 1.5; color: #dbe9f3; } .ce-find__list li + li { margin-top: 4px; }
+ol.ce-find__list, .ce-find ol { padding-left: 22px; }
+.ce-find ul { margin: 0; padding-left: 20px; } .ce-find li + li { margin-top: 3px; }
+.ps-panel--paper .ce-find__list { color: #1d2b3e; }
+.ce-find a, .ce-es a, .ce-a5 a, .ce-a5__lead a, .ce-c4 a, #ce-b4-table a { color: #8fd8ff; text-decoration: underline; text-underline-offset: 2px; }
+.ps-panel--paper .ce-find { background: #eef6fb; border-color: #c9dfee; border-left-color: #0f6a8c; color: #1d2b3e; }
+.ps-panel--paper .ce-find__h { color: #0f6a8c; }
+.ps-panel--paper .ce-find a { color: #0000FF; }
+
+/* S · Executive summary tiles */
+.ce-es__grid { list-style: none; margin: 12px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.ce-es__item { display: flex; flex-direction: column; gap: 4px; padding: 14px 14px 12px; border-radius: 12px; background: linear-gradient(180deg, rgba(14, 70, 112, .78), rgba(6, 34, 64, .9)); border: 1px solid rgba(120, 190, 230, .28); border-top: 3px solid #3fd0d8; }
+.ce-es__item:nth-child(4), .ce-es__item:nth-child(5) { border-top-color: #f2c14e; }
+.ce-es__item:nth-child(7) { border-top-color: #c79bf2; }
+.ce-es__k { font-size: 0.72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #9fe3ee; }
+.ce-es__v { font-size: 1.7rem; font-weight: 800; line-height: 1.1; color: #fff; }
+.ce-es__item p { margin: 0; font-size: 0.8rem; line-height: 1.45; color: #d4e3ee; }
+
+/* A5 · subregion findings, colours match the A2 table */
+.ce-a5__lead { font-size: 0.86rem; line-height: 1.5; color: #dbe9f3; margin: 6px 0 12px; } .ce-a5__lead p { margin: 0; }
+.ce-a5 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.ce-a5__g { border-radius: 12px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--g) 70%, transparent); background: color-mix(in srgb, var(--g-dk) 90%, transparent); font-size: 0.83rem; line-height: 1.5; color: #e2edf5; }
+.ce-a5__g h3 { margin: 0; padding: 10px 14px; font-size: 1rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #fff; background: linear-gradient(90deg, var(--g), color-mix(in srgb, var(--g) 45%, var(--g-dk)) 75%, var(--g-dk)); }
+.ce-a5__g h3 small { display: block; font-size: 0.72rem; font-weight: 600; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.85); }
+.ce-a5__g > div { padding: 10px 14px 12px; } .ce-a5__g p { margin: 0 0 8px; } .ce-a5__g p:last-child { margin: 0; }
+.ce-a5__g--melanesia { --g: #4f8f3a; --g-dk: #183a24; }
+.ce-a5__g--micronesia { --g: #1f73c4; --g-dk: #0b2d55; }
+.ce-a5__g--polynesia { --g: #7a4bc0; --g-dk: #24204f; }
+
+/* B4 and C4 */
+#ce-b4-table.ce-scroll { max-height: none; }
+#ce-b4-table td { font-size: 0.78rem; vertical-align: top; }
+#ce-b4-table a { word-break: normal; overflow-wrap: anywhere; }
+#ce-b4-table table { min-width: 0; width: 100%; table-layout: fixed; }
+#ce-b4-table th:nth-child(1) { width: 30%; } #ce-b4-table th:nth-child(2) { width: 17%; } #ce-b4-table th:nth-child(3) { width: 27%; }
+#ce-b4-table th, #ce-b4-table td { padding: 8px 8px; }
+#ce-b4-table + .ce-find__h { margin-top: 18px; }
+.ce-c4 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; font-size: 0.86rem; line-height: 1.5; color: #dbe9f3; margin-top: 8px; } .ce-c4 p { margin: 0 0 8px; }
+@media (max-width: 1100px) { .ce-es__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ce-a5, .ce-c4 { grid-template-columns: 1fr; } }
