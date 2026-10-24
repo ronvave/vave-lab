@@ -125,6 +125,27 @@ def _host(h):
     return h.replace('Pacific regional', 'Regional / multi-country').replace('International', 'Regional / multi-country')
 
 
+# Three-letter country codes for the institution country shown in the B2 popup.
+ISO3 = {
+    'Fiji': 'FJI', 'New Zealand': 'NZL', 'United States': 'USA', 'Australia': 'AUS', 'Solomon Islands': 'SLB',
+    'Samoa': 'WSM', 'Vanuatu': 'VUT', 'Tonga': 'TON', 'Marshall Islands': 'MHL', 'Cook Islands': 'COK',
+    'Palau': 'PLW', 'Papua New Guinea': 'PNG', 'Canada': 'CAN', 'Federated States of Micronesia': 'FSM',
+    'Micronesia': 'FSM', 'Tuvalu': 'TUV', 'New Caledonia': 'NCL', 'United Kingdom': 'GBR', 'Japan': 'JPN',
+    'Germany': 'DEU', 'Kiribati': 'KIR', 'United Arab Emirates': 'ARE', 'Italy': 'ITA', 'Nauru': 'NRU',
+    'France': 'FRA', 'Indonesia': 'IDN', 'Cuba': 'CUB', 'Guam': 'GUM', 'Switzerland': 'CHE',
+    'Bangladesh': 'BGD', 'India': 'IND', 'Afghanistan': 'AFG', 'Jamaica': 'JAM', 'Belgium': 'BEL',
+    'Malaysia': 'MYS', 'China': 'CHN', 'Philippines': 'PHL', 'Singapore': 'SGP', 'Thailand': 'THA',
+    'South Korea': 'KOR', 'Taiwan': 'TWN', 'Netherlands': 'NLD', 'Sweden': 'SWE', 'Norway': 'NOR',
+    'Ireland': 'IRL', 'Spain': 'ESP', 'South Africa': 'ZAF', 'Hawaii': 'USA', 'Niue': 'NIU',
+    'Tokelau': 'TKL', 'French Polynesia': 'PYF', 'American Samoa': 'ASM', 'Timor-Leste': 'TLS',
+}
+
+
+def _iso3(h):
+    first_ = re.split(r'\s*[/;,]\s*', (h or '').strip())[0]
+    return ISO3.get(first_, '')
+
+
 def build_positions(dumps):
     """dumps: {code: sheet dump incl. Scholars, Positions, Institutions}."""
     scholars, cov_pos, cov_sch, cov_prof = {}, {}, {}, {}
@@ -159,6 +180,13 @@ def build_positions(dumps):
                     continue  # profile row adds no new host when the Positions sheet already has one
                 if h not in e['h']:
                     e['h'].append(h)
+                # Institution and its country for the popup: [name, ISO3, current]
+                iname = b.norm(p.get('inst') or '')
+                if iname:
+                    u = e.setdefault('u', [])
+                    hit = next((x for x in u if x[0] == iname), None)
+                    if hit: hit[2] = hit[2] or cur
+                    else: u.append([iname, _iso3(p['host']), cur])
         cov_prof[code] = len(n_prof)
     return dict(lead=[[k, l] for k, l, _ in LEAD], rank=[[k, l] for k, l, _ in RANK],
                 coverage=dict(positions=cov_pos, withPositions=cov_sch, profile=cov_prof),

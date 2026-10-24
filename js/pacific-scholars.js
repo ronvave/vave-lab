@@ -853,7 +853,12 @@
       const k = td.dataset.k, c = td.dataset.c, L = posCell(k, c);
       if (!L.length) return hide();
       const role = [...P.lead, ...P.rank].find(r => r[0] === k)[1];
-      const names = L.map(s => esc(s.n) + (c === '*' ? ` <span style="opacity:.7">(${esc(SHORT[s.c] || s.c)})</span>` : '')).sort((a, b) => a.localeCompare(b));
+      const uniOf = s => {
+        let U = (s.r[k] && s.r[k].u) || [];
+        if (POS.held === 'cur' && U.some(u => u[2])) U = U.filter(u => u[2]);
+        return U.length ? ` <span class="ps-pos-tip__sep">|</span> <span class="ps-pos-tip__uni">${U.map(u => esc(u[0]) + (u[1] ? ` (${esc(u[1])})` : '')).join('; ')}</span>` : '';
+      };
+      const names = L.slice().sort((a, b) => a.n.localeCompare(b.n)).map(s => esc(s.n) + (c === '*' ? ` <span style="opacity:.7">(${esc(SHORT[s.c] || s.c)})</span>` : '') + uniOf(s));
       tip.innerHTML = `<b>${esc(role)}</b> · ${c === '*' ? 'Region' : esc(nameOf(c))}<br>${L.length} scholar${L.length > 1 ? 's' : ''}${POS.held === 'cur' ? ' (current)' : ''}<ul>${names.slice(0, 12).map(n => `<li>${n}</li>`).join('')}${names.length > 12 ? `<li>and ${names.length - 12} more</li>` : ''}</ul>`;
       tip.classList.add('show');
       const r = td.getBoundingClientRect();
