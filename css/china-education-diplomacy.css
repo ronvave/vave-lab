@@ -290,3 +290,6 @@ ol.ce-find__list, .ce-find ol { padding-left: 22px; }
 #ce-b4-table + .ce-find__h { margin-top: 18px; }
 .ce-c4 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 18px; font-size: 0.86rem; line-height: 1.5; color: #dbe9f3; margin-top: 8px; } .ce-c4 p { margin: 0 0 8px; }
 @media (max-width: 1100px) { .ce-es__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .ce-a5, .ce-c4 { grid-template-columns: 1fr; } }
+
+/* CEDP-only passcode screen background (shared Regional gate keeps hero-sail) */
+.ps-gate { background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/cedp-hero.webp') center / cover; }
