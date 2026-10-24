@@ -568,11 +568,10 @@
       const f = fundOf(e);
       const jobs = D.employment.filter(r => r.person_id === e.person_id);
       const isQ = e.counted_in_baseline !== 'True';
-      const ini = e.name.split(/\s+/).filter(w => /^[A-Z]/.test(w)).slice(0, 2).map(w => w[0]).join('');
       return `<li class="ce-pcard${isQ ? ' ce-pcard--queue' : ''}" style="--c:${COLORS[e.iso3]}">
         <div class="ce-pcard__top">
-          <span class="ce-pcard__av" aria-hidden="true">${esc(ini)}</span>
-          <div class="ce-pcard__who"><b>${esc(e.name)}</b><span><img src="img/regional/flags/${e.iso3.toLowerCase()}.png" alt="" width="18" height="18" onerror="this.remove()" />${esc(nameOf(e.iso3))} · <code>${esc(e.person_id)}</code></span></div>
+          <img class="ce-pcard__av ce-pcard__av--flag" src="img/regional/flags/${e.iso3.toLowerCase()}.png" alt="${esc(nameOf(e.iso3))} flag" width="42" height="42" loading="lazy" />
+          <div class="ce-pcard__who"><b>${esc(e.name)}</b><span>${esc(nameOf(e.iso3))} · <code>${esc(e.person_id)}</code></span></div>
           ${isQ ? '<span class="ce-badge ce-badge--q" style="--b:#f3c45a">Not counted</span>' : ''}
         </div>
         <div class="ce-pcard__q">${esc(e.qualification)}</div>
