@@ -195,9 +195,10 @@
       [ICONS.people, S.people_baseline, 'PRC postgraduate scholars'],
       [ICONS.cap, S.completed_verified, 'Verified completions'],
       [ICONS.coin, `${fp.confirmed_recipient_specific}<small>/${S.people_baseline}</small>`, 'Confirmed PRC funding'],
+      [ICONS.people, S.taiwan_people, 'Taiwan postgraduate scholars', ' ce-kpi--tw'],
       [ICONS.queue, S.new_candidates + S.rq_existing, 'Candidates in review (not counted)'],
     ];
-    $('#ps-kpis').innerHTML = items.map(([i, v, l]) => `<div class="ps-kpi">${i}<dt class="ps-sr">${esc(l)}</dt><dd class="ps-kpi__dd"><span class="ps-kpi__v">${v}</span><span class="ps-kpi__l">${esc(l)}</span></dd></div>`).join('');
+    $('#ps-kpis').innerHTML = items.map(([i, v, l, cls = '']) => `<div class="ps-kpi${cls}">${i}<dt class="ps-sr">${esc(l)}</dt><dd class="ps-kpi__dd"><span class="ps-kpi__v">${v}</span><span class="ps-kpi__l">${esc(l)}</span></dd></div>`).join('');
   }
 
   // ================= PANEL MENU =================
@@ -403,21 +404,28 @@
     const groups = ['Melanesia', 'Micronesia', 'Polynesia'];
     const cols = [['people', 'cap', 'PRC<br>scholars'], ['completed', 'doc', 'Verified<br>completions'], ['confirmed', 'coin', 'Confirmed<br>PRC funding'], ['candidates', 'users', 'Candidates<br>(not counted)'], ['taiwan', 'layers', 'Taiwan episodes<br>(separate)']];
     const sum = (rows, k) => rows.reduce((a, c) => a + c[k], 0);
+    // Heatmap: shade each cell by its value relative to the largest country value in the same column.
+    const colMax = Object.fromEntries(cols.map(k => [k[0], Math.max(1, ...C.map(c => c[k[0]]))]));
+    const heat = (k, v) => { const tw = k === 'taiwan', r = v / colMax[k]; const cls = `ce-hm${tw ? ' ce-tw' : ''}${v && r > 0.55 ? ' ce-hm--hi' : ''}`;
+      return v ? `<td class="${cls}" style="--hm:${(14 + 72 * r).toFixed(0)}%">${v}</td>` : `<td class="${cls} ce-hm--0">0</td>`; };
+    const twCell = k => (k === 'taiwan' ? ' class="ce-tw"' : '');
+    const isTwRow = c => relLabel(c) === 'Taiwan';
     const sortLbl = ['M49 order', 'A to Z', 'Z to A'][tableSort];
     let h = `<table class="ce-rt"><caption>Countries grouped by UN M49 subregion · cut-off 24 Oct 2026</caption>
       <colgroup><col class="ce-rt__c1" /><col span="6" /></colgroup>
       <thead><tr><th scope="col" class="ce-rt__country"${tableSort ? ` aria-sort="${tableSort === 1 ? 'ascending' : 'descending'}"` : ''}><button type="button" class="ce-rt__sort" data-sort title="Sort countries within each subregion (now: ${sortLbl})">Country <span aria-hidden="true">${['⇅', '▲', '▼'][tableSort]}</span></button></th>
-      <th scope="col">${ico('rel')}Relations<br>at cut-off</th>${cols.map(c => `<th scope="col">${ico(c[1])}${c[2]}</th>`).join('')}</tr></thead>`;
+      <th scope="col">${ico('rel')}Relations<br>at cut-off</th>${cols.map(c => `<th scope="col"${twCell(c[0])}>${ico(c[1])}${c[2]}</th>`).join('')}</tr></thead>`;
     groups.forEach((g, gi) => {
       let rows = C.filter(c => c.m49_subregion === g);
       if (tableSort) rows = rows.slice().sort((x, y) => x.country.localeCompare(y.country) * (tableSort === 1 ? 1 : -1));
       h += `<tbody class="ce-rt__g ce-rt__g--${g.toLowerCase()}">
         <tr class="ce-rt__gh"><th colspan="7" scope="rowgroup"><span class="ce-rt__gi">${ico(g, 'ce-rt__gsvg')}</span><span class="ce-rt__gn">${g}</span>${RIDGE}<span class="ce-rt__pill">${rows.length} countries</span></th></tr>
-        ${rows.map(c => `<tr${state.sel === c.code ? ' class="is-sel"' : ''}><th scope="row"><span class="ce-rt__cn"><img class="ce-rt__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="30" height="20" /><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></span></th><td>${esc(relLabel(c))}</td>${cols.map(k => `<td>${c[k[0]]}</td>`).join('')}</tr>`).join('')}
-        <tr class="ce-rt__sub"><th scope="row">${g} total</th><td></td>${cols.map(k => `<td>${sum(rows, k[0])}</td>`).join('')}</tr></tbody>`;
+        ${rows.map(c => `<tr class="${[state.sel === c.code ? 'is-sel' : '', isTwRow(c) ? 'ce-rt__tw' : ''].join(' ').trim()}"><th scope="row"><span class="ce-rt__cn"><img class="ce-rt__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="30" height="20" /><button class="ps-prov" type="button" data-sel="${c.code}">${esc(c.country)}</button></span></th><td>${isTwRow(c) ? '<span class="ce-twtag">Taiwan</span>' : esc(relLabel(c))}</td>${cols.map(k => heat(k[0], c[k[0]])).join('')}</tr>`).join('')}
+        <tr class="ce-rt__sub"><th scope="row">${g} total</th><td></td>${cols.map(k => `<td${twCell(k[0])}>${sum(rows, k[0])}</td>`).join('')}</tr></tbody>`;
       h += '<tbody class="ce-rt__gap" aria-hidden="true"><tr><td colspan="7"></td></tr></tbody>';
     });
-    h += `<tfoot><tr class="ce-rt__all"><th scope="row">TOTAL (all countries)</th><td></td>${cols.map(k => `<td>${sum(C, k[0])}</td>`).join('')}</tr></tfoot></table>`;
+    h += `<tfoot><tr class="ce-rt__all"><th scope="row">TOTAL (all countries)</th><td></td>${cols.map(k => `<td${twCell(k[0])}>${sum(C, k[0])}</td>`).join('')}</tr></tfoot></table>
+      <div class="ce-hmkey"><p><span class="ce-hmkey__ramp" aria-hidden="true"></span><span class="ce-hmkey__ramp ce-hmkey__ramp--tw" aria-hidden="true"></span>Heatmap: stronger colour means a higher value, compared within each column (teal = PRC series, gold = Taiwan series). Zero cells are unshaded.</p><p><span class="ce-hmkey__tw" aria-hidden="true"></span>Gold outline: the Taiwan column and the countries that recognised Taiwan at the cut-off. Taiwan figures are never pooled with PRC figures.</p></div>`;
     const el = $('#ps-map-table'); el.innerHTML = h;
     $$('[data-sel]', el).forEach(b => b.addEventListener('click', () => select(b.dataset.sel)));
     $('[data-sort]', el).addEventListener('click', () => { tableSort = (tableSort + 1) % 3; renderTable(); $('[data-sort]', el).focus(); });
@@ -460,24 +468,38 @@
 
   // ================= B1 TIMELINE =================
   function renderB1() {
-    const eps = BASE.filter(inSel).map(e => ({ ...e, s: yr(e.start_year), f: yr(e.end_or_completion_year) }))
-      .sort((a, b) => ((a.s || a.f || 9999) - (b.s || b.f || 9999)) || a.name.localeCompare(b.name));
-    const Y0 = 2010, Y1 = 2027, span = Y1 - Y0;
+    const host = state.b1host || 'PRC', st = state.b1status || '';
+    const prep = list => list.filter(inSel).filter(e => !st || e.completion === st).map(e => ({ ...e, s: yr(e.start_year), f: yr(e.end_or_completion_year) }))
+      .sort((a, b) => ((a.s || a.f || 9999) - (b.s || b.f || 9999)) || (a.display_name || a.name).localeCompare(b.display_name || b.name));
+    const prc = host === 'Taiwan' ? [] : prep(BASE), tw = host === 'PRC' ? [] : prep(TW);
+    const Y0 = host === 'PRC' ? 2010 : 2005, Y1 = 2027, span = Y1 - Y0; // PRC-only view keeps its original 2010 axis
     const x = y => ((y - Y0) / span) * 100;
-    $('#ce-b1-sub').textContent = `${eps.length} episodes in the verified series${state.sel ? ' for ' + nameOf(state.sel) : ''}, ordered by start year.`;
-    $('#ce-b1-legend').innerHTML = Object.keys(STATUS).map(k => `<span><i style="background:${STATUS[k].c}"></i>${esc(STATUS[k].label)}</span>`).join('');
+    const where = state.sel ? ' for ' + nameOf(state.sel) : '';
+    const stl = st ? ` · ${STATUS[st].label}` : '';
+    const n = (k, a) => `${k} ${a}${k === 1 ? '' : 's'}`;
+    $('#ce-b1-sub').textContent = host === 'PRC' ? `${n(prc.length, 'episode')} in the PRC verified series${where}${stl}, ordered by start year.`
+      : host === 'Taiwan' ? `${n(tw.length, 'episode')} in the Taiwan comparator series${where}${stl}, ordered by year. Separate series, never pooled with PRC study.`
+      : `${n(prc.length, 'PRC episode')} and ${n(tw.length, 'Taiwan episode')}${where}${stl}, shown as two separate series. They are never pooled.`;
+    $('#ce-b1-legend').innerHTML = Object.keys(STATUS).map(k => `<span><i style="background:${STATUS[k].c}"></i>${esc(STATUS[k].label)}</span>`).join('') + (host !== 'PRC' ? '<span><i class="ce-legend__tw"></i>Taiwan-hosted (gold edge)</span>' : '');
     const ticks = []; for (let y = Y0; y <= Y1; y += 1) ticks.push(y);
-    $('#ce-b1').innerHTML = `<div class="ce-tl__axis"><span></span><div class="ce-tl__ticks">${ticks.map(y => `<span style="left:${x(y)}%" class="${y % 5 ? 'ce-minor' : ''}">${y % 5 ? '' : y}</span>`).join('')}<span class="ce-tl__cutlab" style="left:${x(2026 + 9.8 / 12)}%">cut-off</span></div></div>` +
-      eps.map(e => {
+    const CUT = 2026 + 9.8 / 12;
+    const row = e => {
+        const tw = e.host_jurisdiction === 'Taiwan', nm = e.display_name || e.name;
         const c = STATUS[e.completion].c;
-        const CUT = 2026 + 9.8 / 12;
         const s = e.s || e.f, f = e.f || (e.completion === 'in_progress' ? CUT - 1 : e.s);
         const bar = s && f && f > s ? `<span class="ce-tl__bar" style="left:${x(s)}%;width:${Math.min(x(f + 1), x(CUT)) - x(s)}%;background:${c}"></span>` : (s ? `<span class="ce-tl__dot" style="left:${x(s + 0.5)}%;background:${c}"></span>` : '');
         const open = e.completion === 'in_progress' || (!e.f && e.s) ? '<span class="ce-muted"> → open</span>' : '';
-        return `<div class="ce-tl__row" tabindex="0" aria-label="${esc(e.name)}, ${esc(e.qualification)}, ${esc(e.university)}, ${e.s || '?'} to ${e.f || '?'}, ${esc(STATUS[e.completion].label)}">
-          <span class="ce-tl__name"><img class="ce-tl__flag" src="img/regional/flags/${e.iso3.toLowerCase()}.png" alt="${esc(nameOf(e.iso3))} flag" width="18" height="18" loading="lazy" />${esc(e.name)}<small>${esc(e.iso3)} · ${esc(e.degree_level)} · ${e.s || '?'}–${e.f || '?'}${open}</small></span>
+        return `<div class="ce-tl__row${tw ? ' ce-tl__row--tw' : ''}" tabindex="0" aria-label="${esc(nm)}, ${tw ? 'Taiwan-hosted, ' : ''}${esc(e.qualification)}, ${esc(e.university)}, ${e.s || '?'} to ${e.f || '?'}, ${esc(STATUS[e.completion].label)}">
+          <span class="ce-tl__name"><img class="ce-tl__flag" src="img/regional/flags/${e.iso3.toLowerCase()}.png" alt="${esc(nameOf(e.iso3))} flag" width="18" height="18" loading="lazy" />${esc(nm)}<small>${esc(e.iso3)} · ${esc(e.degree_level)} · ${e.s || '?'}–${e.f || '?'}${open}${tw ? ' · <span class="ce-twtag ce-twtag--sm">Taiwan</span>' : ''}</small></span>
           <span class="ce-tl__track"><span class="ce-tl__cut" style="left:${x(CUT)}%"></span>${bar}</span></div>`;
-      }).join('');
+    };
+    const head = (t, k, cls) => `<div class="ce-tl__sec${cls}"><span>${t}</span><b>${n(k, 'episode')}</b></div>`;
+    const empty = '<p class="ce-empty">No episodes match these filters.</p>';
+    const block = (list, t, cls) => (host === 'Both' ? head(t, list.length, cls) : '') + (list.length ? list.map(row).join('') : (host === 'Both' ? '<p class="ce-empty ce-empty--sm">None for these filters.</p>' : empty));
+    $('#ce-b1').style.setProperty('--span', span);
+    $('#ce-b1').innerHTML = `<div class="ce-tl__axis"><span></span><div class="ce-tl__ticks">${ticks.map(y => `<span style="left:${x(y)}%" class="${y % 5 ? 'ce-minor' : ''}">${y % 5 ? '' : y}</span>`).join('')}<span class="ce-tl__cutlab" style="left:${x(2026 + 9.8 / 12)}%">cut-off</span></div></div>` +
+      (host !== 'Taiwan' ? block(prc, 'PRC-hosted · verified series', '') : '') +
+      (host !== 'PRC' ? block(tw, 'Taiwan-hosted · separate comparator series', ' ce-tl__sec--tw') : '');
   }
 
   // ================= B2 FUNDING =================
@@ -594,6 +616,9 @@
     $('#ce-f-audit').innerHTML = `<dl class="ce-dl">${audit.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl><h3 class="ps-h3">Research rules applied</h3><ul class="ce-rules">${rules.map(r => `<li>${esc(r)}</li>`).join('')}</ul>`;
 
     // A4 level + B2 layer
+    $$('#ce-b1-host button').forEach(b => b.addEventListener('click', () => { state.b1host = b.dataset.host; $$('#ce-b1-host button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderB1(); }));
+    $('#ce-b1-status').innerHTML = '<option value="">All completion statuses</option>' + Object.keys(STATUS).map(k => `<option value="${k}">${esc(STATUS[k].label)}</option>`).join('');
+    $('#ce-b1-status').addEventListener('change', e => { state.b1status = e.target.value; renderB1(); });
     $$('#ce-a4-level button').forEach(b => b.addEventListener('click', () => { state.a4 = b.dataset.lv; $$('#ce-a4-level button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); renderA4(); }));
     $('#ce-b2-layer').addEventListener('change', renderB2Table);
   }

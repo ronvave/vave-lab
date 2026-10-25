@@ -307,3 +307,47 @@ ol.ce-find__list, .ce-find ol { padding-left: 22px; }
 
 /* CEDP-only passcode screen background (shared Regional gate keeps hero-sail) */
 .ps-gate { background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/cedp-hero.webp') center / cover; }
+
+/* ===== Taiwan series accents (gold), KPI tile, A2 heatmap, B1 controls ===== */
+:root { --ce-tw: #f2c14e; }
+.ce-kpis { grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr) repeat(3, minmax(0, 1fr)) minmax(0, 1.12fr); }
+.ce-kpis .ps-kpi { padding: 14px 12px; gap: 9px; }
+.ce-kpis .ps-kpi__dd { gap: 8px; }
+.ce-kpis .ps-kpi__l { font-size: 0.9rem; max-width: 9.6em; }
+.ce-kpis .ps-kpi.ce-kpi--tw { background: linear-gradient(180deg, rgba(242, 193, 78, .20), rgba(242, 193, 78, .10)); box-shadow: inset 0 0 0 1px rgba(242, 193, 78, .55); }
+.ce-kpi--tw svg { color: var(--ce-tw); }
+.ce-kpi--tw .ps-kpi__l { color: #fde7b0; }
+/* heatmap cells */
+.ce-rt td.ce-hm { background: color-mix(in srgb, #3fd0d8 var(--hm), color-mix(in srgb, var(--g-dk) 88%, transparent)); font-weight: 700; }
+.ce-rt td.ce-hm.ce-tw { background: color-mix(in srgb, var(--ce-tw) var(--hm), color-mix(in srgb, var(--g-dk) 88%, transparent)); }
+.ce-rt td.ce-hm--0 { color: rgba(255, 255, 255, .42); font-weight: 500; }
+.ce-rt td.ce-hm--hi { color: #04162c; }
+/* Taiwan column: gold side borders through header, body, subtotals and total */
+.ce-rt th.ce-tw, .ce-rt td.ce-tw { border-left: 2px solid var(--ce-tw) !important; border-right: 2px solid var(--ce-tw) !important; }
+.ce-rt thead th.ce-tw { border-top: 2px solid var(--ce-tw); color: #fde7b0; }
+.ce-rt thead th.ce-tw .ce-rt__ic { color: var(--ce-tw); }
+.ce-rt__all td.ce-tw { border-bottom: 2px solid var(--ce-tw); color: #fde7b0; }
+/* Taiwan-recognising country rows: gold outline */
+.ce-rt tr.ce-rt__tw > * { box-shadow: inset 0 2px 0 var(--ce-tw), inset 0 -2px 0 var(--ce-tw); }
+.ce-rt tr.ce-rt__tw > :first-child { box-shadow: inset 2px 0 0 var(--ce-tw), inset 0 2px 0 var(--ce-tw), inset 0 -2px 0 var(--ce-tw); }
+.ce-rt tr.ce-rt__tw > :last-child { box-shadow: inset -2px 0 0 var(--ce-tw), inset 0 2px 0 var(--ce-tw), inset 0 -2px 0 var(--ce-tw); }
+.ce-twtag { display: inline-block; padding: 2px 9px; border-radius: 999px; background: rgba(242, 193, 78, .18); box-shadow: inset 0 0 0 1px var(--ce-tw); color: #fde7b0; font-weight: 700; font-size: 0.8rem; }
+.ce-twtag--sm { padding: 0 6px; font-size: 0.66rem; vertical-align: 1px; }
+.ce-hmkey { margin: 12px 2px 0; font-size: 0.76rem; color: var(--ps-text-muted); display: grid; gap: 6px; }
+.ce-hmkey p { margin: 0; display: flex; align-items: center; gap: 8px; }
+.ce-hmkey__ramp { flex: none; width: 54px; height: 10px; border-radius: 3px; background: linear-gradient(90deg, color-mix(in srgb, #3fd0d8 14%, #0b2d55), #3fd0d8); }
+.ce-hmkey__ramp--tw { background: linear-gradient(90deg, color-mix(in srgb, #f2c14e 14%, #0b2d55), #f2c14e); }
+.ce-hmkey__tw { flex: none; width: 54px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 2px var(--ce-tw); }
+.ce-rt td.ce-hm.ce-hm--0 { background: color-mix(in srgb, var(--g-dk) 88%, transparent); }
+/* B1 controls and Taiwan rows */
+.ce-b1bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 2px 0 8px; }
+.ce-b1bar .ps-select { font-size: 0.82rem; font-weight: 700; padding: 7px 30px 7px 11px; }
+#ce-b1-host button[data-host='Taiwan'][aria-pressed='true'] { background: linear-gradient(180deg, #f6cf6e, #e3ad33); }
+.ce-tl__track { background: repeating-linear-gradient(90deg, transparent 0 calc(100% / var(--span, 17) - 1px), rgba(127,227,230,.06) calc(100% / var(--span, 17) - 1px) calc(100% / var(--span, 17))); }
+.ce-tl__sec { display: flex; justify-content: space-between; align-items: center; margin: 10px 0 2px; padding: 7px 12px; border-radius: 8px; background: rgba(63, 208, 216, .10); box-shadow: inset 3px 0 0 #3fd0d8; font-size: 0.8rem; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: #cfe9f2; min-width: 760px; }
+.ce-tl__sec b { font-weight: 700; text-transform: none; letter-spacing: 0; color: var(--ps-text-muted); }
+.ce-tl__sec--tw { background: rgba(242, 193, 78, .12); box-shadow: inset 3px 0 0 var(--ce-tw); color: #fde7b0; }
+.ce-tl__row--tw { background: rgba(242, 193, 78, .05); box-shadow: inset 3px 0 0 var(--ce-tw); padding-left: 6px; }
+.ce-tl__row--tw:hover, .ce-tl__row--tw:focus-visible { background: rgba(242, 193, 78, .12); }
+.ce-legend__tw { background: transparent !important; box-shadow: inset 3px 0 0 var(--ce-tw), inset 0 0 0 1px rgba(242,193,78,.5); }
+.ce-empty--sm { font-size: 0.8rem; margin: 6px 0; }
