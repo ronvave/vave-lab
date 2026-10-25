@@ -810,26 +810,52 @@
     $('#ps-ft-count').textContent = `${items.length} first${items.length === 1 ? '' : 's'} shown across ${nC} countr${nC === 1 ? 'y' : 'ies'}${state.sel ? ` (filtered to ${nameOf(state.sel)})` : ''}.`;
   }
 
-  // University-country pills in the B1 list: one fixed colour per country code.
-  const UC_PILL = { US: ['#F2B233', '#1a1206', 'United States'], NZ: ['#2BB3D9', '#04121f', 'New Zealand'], AU: ['#F07A3A', '#1a0b04', 'Australia'], UK: ['#9B7BEA', '#fff', 'United Kingdom'], FJ: ['#3BB273', '#04140b', 'Fiji'], CA: ['#E5484D', '#fff', 'Canada'], PG: ['#8B5A3C', '#fff', 'Papua New Guinea'], MT: ['#8FA3BF', '#0b1626', 'Malta'], FR: ['#4F6BED', '#fff', 'France'] };
-  function ucPill(code) {
-    const k = String(code).toUpperCase();
-    let [bg, fg, label] = UC_PILL[k] || [];
-    if (!bg) { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) % 360; bg = `hsl(${h},55%,62%)`; fg = '#0b1626'; label = k; }
-    return `<span class="ps-ftl__uc" style="background:${bg};color:${fg}" title="${esc(label)}">${esc(k)}</span>`;
+  // University-country flags in the B1 list: a small rectangular flag (with the
+  // country name as its tooltip) replaces the old two-letter pill.
+  const UC_NAME = { US: 'United States', NZ: 'New Zealand', AU: 'Australia', UK: 'United Kingdom', GB: 'United Kingdom', FJ: 'Fiji', CA: 'Canada', PG: 'Papua New Guinea', MT: 'Malta', FR: 'France', JP: 'Japan', CN: 'China', PH: 'Philippines', IN: 'India', DE: 'Germany', NL: 'Netherlands', IE: 'Ireland', SB: 'Solomon Islands', TO: 'Tonga', WS: 'Samoa', VU: 'Vanuatu', KI: 'Kiribati', TV: 'Tuvalu', CK: 'Cook Islands', NU: 'Niue', PW: 'Palau', FM: 'Federated States of Micronesia', MH: 'Marshall Islands', NR: 'Nauru', TH: 'Thailand', MY: 'Malaysia', SG: 'Singapore', ID: 'Indonesia', KR: 'South Korea', TW: 'Taiwan', CH: 'Switzerland', SE: 'Sweden', NO: 'Norway', IT: 'Italy', ES: 'Spain', ZA: 'South Africa' };
+  const UC_LOCAL = new Set(['us', 'nz', 'au', 'gb', 'fj', 'ca', 'pg', 'mt', 'fr', 'jp', 'cn', 'ph', 'in', 'de', 'nl', 'ie', 'sb', 'to', 'ws', 'vu', 'ki', 'tv', 'ck', 'nu', 'pw', 'fm', 'mh', 'nr', 'th', 'my', 'sg', 'id', 'kr', 'tw', 'ch', 'se', 'no', 'it', 'es', 'za']);
+  function ucFlag(code) {
+    const k = String(code).toUpperCase(), iso = (k === 'UK' ? 'gb' : k.toLowerCase());
+    const label = UC_NAME[k] || k;
+    if (!/^[a-z]{2}$/.test(iso)) return `<span class="ps-ftl__ucx" title="${esc(label)}">${esc(k)}</span>`;
+    const src = UC_LOCAL.has(iso) ? `img/regional/flags-uni/${iso}.png` : `https://flagcdn.com/w80/${iso}.png`;
+    return `<img class="ps-ftl__uf" src="${src}" alt="${esc(label)}" title="${esc(label)}" width="26" height="17" loading="lazy" data-uc="${esc(k)}">`;
+  }
+  const FTL = { key: 'year', dir: 1, items: [] };
+  const FTL_COLS = [['year', 'Year'], ['country', 'Country'], ['first', 'First'], ['scholar', 'Scholar'], ['uni', 'University']];
+  const FTL_ICON = {
+    cap: '<svg class="ps-ftl__ico" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.91V17h2V9L12 3zm-6.82 9.62v3.87C6.94 18.06 9.3 19 12 19s5.06-.94 6.82-2.51v-3.87L12 16.34l-6.82-3.72z"/></svg>',
+    sort: '<svg class="ps-ftl__sort" viewBox="0 0 10 14" aria-hidden="true"><path class="up" d="M5 1 9 6H1z"/><path class="dn" d="M5 13 1 8h8z"/></svg>'
+  };
+  function ftlSortVal(r, key) {
+    if (key === 'year') return r.m.year;
+    if (key === 'country') return r.m.country;
+    if (key === 'first') return (r.m.stage === 'phd' ? 1 : 0) * 2 + (r.m.gender === 'female' ? 1 : 0);
+    if (key === 'scholar') return String(r.person).replace(/^(Sir|Dame|Dr|Prof|Professor|Mr|Mrs|Ms|Miss|Ratu|Adi|Rev)\.?\s+/gi, '').replace(/^(Sir|Ratu|Adi)\s+/i, '');
+    return r.uni || '';
   }
   function renderFirstsList(items) {
     const t = $('#ps-ft-list'); if (!t) return;
+    if (items) FTL.items = items; else items = FTL.items;
     const rows = [];
     items.forEach(m => { rows.push({ m, person: m.person, uni: m.uni, uc: m.uc }); (m.also || []).forEach(a => rows.push({ m, person: a.person, uni: a.uni, uc: a.uc })); });
-    rows.sort((a, b) => a.m.year - b.m.year || a.m.country.localeCompare(b.m.country));
+    const cmp = (a, b) => { const x = ftlSortVal(a, FTL.key), y = ftlSortVal(b, FTL.key); return typeof x === 'number' ? x - y : String(x).localeCompare(String(y)); };
+    rows.sort((a, b) => FTL.dir * cmp(a, b) || a.m.year - b.m.year || a.m.country.localeCompare(b.m.country));
     const find = (code, person) => { try { return (window.PSDirectory && window.PSDirectory.findId && window.PSDirectory.findId(code, person)) || ''; } catch (e) { return ''; } };
-    t.innerHTML = `<thead><tr><th scope="col">Year</th><th scope="col">Country</th><th scope="col">First</th><th scope="col">Scholar</th><th scope="col">University</th></tr></thead><tbody>${rows.length ? rows.map(r => {
+    const head = FTL_COLS.map(([k, l]) => { const on = FTL.key === k, srt = on ? (FTL.dir > 0 ? 'ascending' : 'descending') : 'none'; return `<th scope="col" aria-sort="${srt}"><button type="button" class="ps-ftl__th${on ? ` is-${srt}` : ''}" data-ftlsort="${k}" title="Sort by ${l.toLowerCase()}">${l}${FTL_ICON.sort}</button></th>`; }).join('');
+    t.innerHTML = `<thead><tr>${head}</tr></thead><tbody>${rows.length ? rows.map(r => {
       const id = find(r.m.code, r.person), c = byCode[r.m.code] || {};
       const name = id ? `<a href="#dir=${esc(id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(r.person)}</a>` : esc(r.person);
-      return `<tr class="ps-ftl--${r.m.gender}"><td class="y">${r.m.year}</td><td><div class="ps-ftl__cc"><span class="ps-ftl__c"><img src="img/regional/flags/${r.m.code.toLowerCase()}.png" alt="">${esc(r.m.country)}</span>${c.dashboard ? `<a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</div></td><td><span class="ps-ftl__tag">${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td>${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</td><td>${esc(r.uni)}${r.uc ? ` ${ucPill(r.uc)}` : ''}</td></tr>`;
+      return `<tr class="ps-ftl--${r.m.gender} ps-ftl--${r.m.stage}"><td class="y">${r.m.year}</td><td><div class="ps-ftl__cc"><span class="ps-ftl__c"><img src="img/regional/flags-rect/${r.m.code.toLowerCase()}.webp" alt="" width="30" height="20">${esc(r.m.country)}</span>${c.dashboard ? `<a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</div></td><td><span class="ps-ftl__tag">${FTL_ICON.cap}${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td><span class="ps-ftl__sch">${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</span></td><td><span class="ps-ftl__u"><span>${esc(r.uni)}</span>${r.uc ? ucFlag(r.uc) : ''}</span></td></tr>`;
     }).join('') : '<tr><td colspan="5">No firsts recorded for this selection.</td></tr>'}</tbody>`;
     t.querySelectorAll('img[data-fallback]').forEach(img => img.addEventListener('error', () => { if (img.dataset.fallback && !img.src.endsWith(img.dataset.fallback)) img.src = img.dataset.fallback; }));
+    t.querySelectorAll('img.ps-ftl__uf').forEach(img => img.addEventListener('error', () => { const s = document.createElement('span'); s.className = 'ps-ftl__ucx'; s.title = img.title; s.textContent = img.dataset.uc; img.replaceWith(s); }, { once: true }));
+    t.querySelectorAll('[data-ftlsort]').forEach(b => b.addEventListener('click', () => {
+      const k = b.dataset.ftlsort;
+      if (FTL.key === k) FTL.dir = -FTL.dir; else { FTL.key = k; FTL.dir = 1; }
+      renderFirstsList();
+      const nb = t.querySelector(`[data-ftlsort="${k}"]`); if (nb) nb.focus();
+    }));
   }
 
   // ================= UNIVERSITY POSITIONS (table + leadership by gender) =================
