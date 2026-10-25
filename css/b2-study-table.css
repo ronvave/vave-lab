@@ -1,20 +1,20 @@
 /* Panel B2 "Countries of graduate study" table — shared styles (Oct 2026).
    Used by the Fiji, Tonga, Solomon Islands and Vanuatu dashboards. */
 
-/* Toolbar: view toggle on the left, tally cards on the right */
+/* Toolbar: view toggle centred on top, tally cards centred beneath it */
 .b2t-toolbar {
-  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
-  gap: 12px 16px; margin: 4px 0 16px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 14px; margin: 4px 0 16px; text-align: center;
 }
 .b2t-toolbar > .db-panel-b2__tabs {
-  margin: 0; padding: 6px; align-self: center;
+  margin: 0; padding: 6px; align-self: center; max-width: 100%; box-sizing: border-box;
   background: #f6ead6; border: 1px solid rgba(133,79,11,0.16);
   box-shadow: 0 1px 2px rgba(61,28,0,0.06);
 }
 .b2t-toolbar .db-b2-tab { padding: 9px 15px; font-size: 0.93rem; color: #6a3a0b; font-weight: 700; }
 .b2t-toolbar .db-b2-tab.is-active { background: #8a5214; color: #fdf3e2; box-shadow: 0 2px 5px rgba(90,48,8,0.28); }
 
-.b2t-tallies { display: flex; flex-wrap: wrap; gap: 10px; flex: 1 1 auto; justify-content: flex-end; }
+.b2t-tallies { display: flex; flex-wrap: wrap; gap: 10px; width: 100%; justify-content: center; }
 .b2t-tally {
   display: flex; align-items: center; gap: 12px; flex: 0 1 auto;
   padding: 8px 18px 8px 14px;
@@ -24,7 +24,7 @@
 .b2t-tally__icon { color: #8a5214; display: inline-flex; padding-right: 12px; border-right: 1px solid rgba(133,79,11,0.22); }
 .b2t-tally--scholars .b2t-tally__icon { border-right: 0; padding-right: 0; }
 .b2t-tally__icon svg { width: 40px; height: 30px; }
-.b2t-tally__body { display: flex; flex-direction: column; line-height: 1.1; }
+.b2t-tally__body { display: flex; flex-direction: column; line-height: 1.1; text-align: left; }
 .b2t-tally__label { white-space: nowrap; font: 500 0.92rem 'Source Sans Pro', sans-serif; color: #1f3347; }
 .b2t-tally__num { font: 800 1.6rem 'Source Sans Pro', sans-serif; color: #12395b; font-variant-numeric: tabular-nums; }
 .b2t-tally--phd .b2t-tally__num { color: #a5560f; }
@@ -68,6 +68,15 @@
 .b2t .b2t__row:last-child { margin-bottom: 0; }
 .b2t .b2t__row:hover { background: #fff; }
 .b2t .b2t__name-cell { display: block; min-width: 0; padding-left: 8px; line-height: 1.35; }
+/* Hanging indent: the flag sits in its own 42px gutter (30px flag + 12px gap),
+   so when a long country name or its (#) count wraps, the next line starts
+   under the first letter of the name, not under the flag. */
+.b2t .db-world-country-row .b2t__name-cell { position: relative; padding-left: 50px; }
+.b2t .db-world-country-row .db-world-country-row__name .tcf-flag {
+  position: absolute; left: 8px; top: calc((1.35 * 1.12rem - 20px) / 2); margin-right: 0;
+}
+.b2t .db-world-country-row .b2t__name-cell > .db-world-country-row__uni-count { margin-left: 0; }
+.b2t .b2t__row--sub .db-world-country-row__name .tcf-flag { top: calc((1.35 * 1rem - 20px) / 2); }
 .b2t .db-world-country-row__name {
   display: inline; color: #0f4466; font-size: 1.12rem; font-weight: 700;
   text-decoration-color: rgba(15,68,102,0.35);
@@ -107,9 +116,6 @@
 .b2t .b2t__row--sub .b2t__num { font-size: 0.95rem; }
 .b2t .b2t__row--sub .b2t__total { font-size: 0.98rem; min-width: 60px; background: #e8f1f7; }
 
-@media (max-width: 980px) {
-  .b2t-tallies { justify-content: flex-start; }
-}
 @media (max-width: 860px) {
   .db-world-grid.b2t-host, .db-world-region-list.b2t-host { grid-template-columns: 1fr; }
 }

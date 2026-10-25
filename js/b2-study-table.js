@@ -137,6 +137,9 @@
     btn.setAttribute('aria-label', 'Filter panels below by ' + c.name);
     btn.addEventListener('click', function () { if (opts.onSelect) opts.onSelect(c.name); });
     wrap.appendChild(btn);
+    // A plain space (not a margin) separates name and (#), so a wrapped (#)
+    // starts exactly under the first letter of the country name.
+    wrap.appendChild(document.createTextNode(' '));
     var uniN = Array.isArray(c.unis) ? c.unis.length : num(c.uniCount);
     var uc = document.createElement('span');
     uc.className = 'db-world-country-row__uni-count';
