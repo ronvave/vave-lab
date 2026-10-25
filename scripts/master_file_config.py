@@ -123,6 +123,7 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Year of Birth",
     "Alive / Deceased",
     "Year of Death",
+    "Retired",
     "Paternal Confederacy",
     "Province Paternal",
     "District Paternal",

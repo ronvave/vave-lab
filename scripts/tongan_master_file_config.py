@@ -136,6 +136,7 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Year of Birth",
     "Alive / Deceased",
     "Year of Death",
+    "Retired",
     # Current Tonga hierarchy (Village/Town → District → Specific Island →
     # Island Division). Legacy names remain below so older exports continue
     # to pass the same public-field gate during a rolling deployment.

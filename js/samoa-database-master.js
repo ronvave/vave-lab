@@ -8608,6 +8608,7 @@
       <div class="${photoColClass}">
         ${photoInnerHtml}
         ${memorialHtml}
+        ${(r && r.retired === true && r.deceased !== true) ? '<span class="db-scholar-card__retired" title="This scholar is retired">Retired</span>' : ''}
         <button type="button" class="db-scholar-card__submit" data-submit-info
                 title="Suggest corrections or add missing info for this scholar (name, institution, links, photo, or a BibTeX/EndNote file of their publications). Submissions go to Vave Lab for review before publishing.">
           Update info
@@ -8729,6 +8730,7 @@
     setVal('db-sf-village',      profile.village || '');
     setVal('db-sf-paternal',     profile.paternalDistrict || '');
     setVal('db-sf-title',        profile.title || '');
+    { const rc = document.getElementById('db-sf-retired'); if (rc) rc.checked = profile.retired === true; }
     setVal('db-sf-institution',  profile.institution || '');
     setVal('db-sf-institution-url', profile.institutionUrl || '');
     setVal('db-sf-department',   profile.department || '');
@@ -8835,7 +8837,8 @@
           profileUrl:       form.querySelector('#db-sf-profile-url').value.trim(),
           googleScholarUrl: form.querySelector('#db-sf-scholar-url').value.trim(),
           orcidUrl:         form.querySelector('#db-sf-orcid-url').value.trim(),
-          photo:            form.querySelector('#db-sf-photo').value.trim()
+          photo:            form.querySelector('#db-sf-photo').value.trim(),
+          retired:          !!(form.querySelector('#db-sf-retired') || {}).checked
         },
         masters: {
           university: form.querySelector('#db-sf-masters-uni').value.trim(),

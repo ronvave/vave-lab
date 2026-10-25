@@ -236,6 +236,7 @@
       birthYear: row['Birth Year'] || '',
       livingStatus: row['Living Status'] || '',
       deathYear: row['Death Year'] || '',
+      retired: /^(true|yes|y|1|x|retired)$/i.test(String(row['Retired'] == null ? '' : row['Retired']).trim()),
       photoUrl: row['Photo URL'] || '',
       samoanStatus: row['Samoan Status'] || '',
       inclusionStatus: row['Inclusion Status'] || '',

@@ -52,6 +52,7 @@ var MAPPING = {
         // (normalized 2026-08-22): Alive, Deceased, Unknown. A sheet-level data
         // validation enforces the same enum.
         'Alive / Deceased':        { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        'Retired':                 { type: 'enum',   enum: ['TRUE','FALSE',''] },
         // Year of Death: four-digit year, blank for Alive or Unknown.
         // Sheet stores as text; server accepts 4-digit strings.
         'Year of Death':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
@@ -160,7 +161,7 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true});
     if (params.idToken || !tongaAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
     return tongaReadAction_(params);
   } catch (err) {
@@ -910,6 +911,7 @@ function scholarSubmissionFieldSpecs_() {
     {key:'profile_url',label:'Current profile URL',ws:'Scholars',field:'Current Profile URL'},
     {key:'google_scholar_url',label:'Google Scholar URL',ws:'Scholars',field:'Google Scholar URL'},
     {key:'orcid_url',label:'ORCID / Researcher ID',ws:'Scholars',field:'ORCID / Researcher ID'},
+    {key:'retired',label:'Retired',ws:'Scholars',field:'Retired',clean:function(v){return /^(yes|on|true|1)$/i.test(String(v||'').trim())?'TRUE':'FALSE';}},
     {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'O_Uni name',stage:'master'},
     {key:'masters_country',label:'Master\'s country',ws:'Graduate Degrees',field:'Country',stage:'master'},
     {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Year / Status',stage:'master'},
@@ -944,7 +946,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
     var current='',rowNumber=null,writable=true,reason='';
     if(spec.ws==='Scholars'){
       if(!scholarInfo.ok){writable=false;reason=scholarInfo.reason||'scholar-not-found';}
-      else {var col=scholarInfo.headers[spec.field];if(!col){if(!tongaPreferredNameField_(spec.ws,spec.field)){writable=false;reason='Master field not found';}}else current=normalizeForRead_(scholarValues[col-1]);}
+      else {var col=scholarInfo.headers[spec.field];if(!col){if(!tongaPreferredNameField_(spec.ws,spec.field)){writable=false;reason='Master field not found';}}else {current=normalizeForRead_(scholarValues[col-1]);if(spec.key==='retired')current=(current===true||/^true$/i.test(String(current)))?'TRUE':'FALSE';}}
     } else {
       var degree=gradRows[spec.stage];
       if(degreeCounts[spec.stage]>1){writable=false;reason='Multiple degree rows: use the scholar editor to choose the correct degree';}

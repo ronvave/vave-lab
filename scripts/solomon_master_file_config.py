@@ -138,6 +138,7 @@ SCHOLAR_PUBLIC_FIELDS = [
     "Birth Year",
     "Alive/Deceased",
     "Death Year",
+    "Retired",
     "Photo URL",
     "Solomon Islander Status",
     "Roster Tier",

@@ -1011,7 +1011,10 @@
                           : (Number.isFinite(adminExtras.yearOfBirth) ? adminExtras.yearOfBirth : null),
         yearOfDeath:      Number.isFinite(masterYoD) ? masterYoD
                           : (Number.isFinite(adminExtras.yearOfDeath) ? adminExtras.yearOfDeath : null),
-        deceased:         isDeceased
+        deceased:         isDeceased,
+        // Retired checkbox in the Master Scholars tab (2026-10-25). A
+        // deceased scholar shows the memorial band instead.
+        retired:          !isDeceased && /^(true|yes|y|1|x|retired)$/i.test(String(s['Retired'] == null ? '' : s['Retired']).trim())
       };
     });
     return {
