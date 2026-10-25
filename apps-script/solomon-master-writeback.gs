@@ -146,6 +146,7 @@ var MAPPING = {
         'Gender':                  { type: 'enum',   enum: ['Man','Woman','Self-described (see free text)','Not yet verified',''] },
         'Birth Year':              { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
         'Alive/Deceased':          { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        'Retired':                 { type: 'enum',   enum: ['TRUE','FALSE',''] },
         'Death Year':              { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
         'Photo URL':               { type: 'url',    maxLen: 500 },
         // Administrative geography -- genuine 3-tier model (Village/
@@ -307,7 +308,7 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', country:'Solomon Islands', version:SOLOMON_SUBMISSIONS_VERSION, spreadsheetId:SPREADSHEET_ID_HINT, publicSubmissionsEnabled:solomonPublicEnabled_(),googleClientId:PropertiesService.getScriptProperties().getProperty('SOLOMON_GOOGLE_CLIENT_ID')||''});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Solomon Islands', version:SOLOMON_SUBMISSIONS_VERSION, spreadsheetId:SPREADSHEET_ID_HINT, publicSubmissionsEnabled:solomonPublicEnabled_(),googleClientId:PropertiesService.getScriptProperties().getProperty('SOLOMON_GOOGLE_CLIENT_ID')||''});
     if (params.idToken || !solomonAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
     return solomonReadAction_(params);
   } catch (err) {
@@ -1020,6 +1021,7 @@ function scholarSubmissionFieldSpecs_() {
     {key:'profile_url',label:'Current profile URL',ws:'Scholars',field:'Personal/Official Profile URL'},
     {key:'google_scholar_url',label:'Google Scholar URL',ws:'Scholars',field:'Google Scholar'},
     {key:'orcid_url',label:'ORCID / Researcher ID',ws:'Scholars',field:'ORCID'},
+    {key:'retired',label:'Retired',ws:'Scholars',field:'Retired',clean:function(v){return /^(yes|on|true|1)$/i.test(String(v||'').trim())?'TRUE':'FALSE';}},
     {key:'masters_university',label:'Master\'s university',ws:'Graduate Degrees',field:'Institution ID',stage:'master'},
     {key:'masters_country',label:'Master\'s country',ws:'Graduate Degrees',field:'Country',stage:'master'},
     {key:'masters_year',label:'Master\'s completion year',ws:'Graduate Degrees',field:'Graduation Year',stage:'master'},
@@ -1050,7 +1052,7 @@ function buildScholarSubmissionChanges_(ss, submission) {
     if(spec.key==='institution'||/_university$/.test(spec.key)){try{proposed=solomonInstitutionId_(ss,proposed);}catch(e){writable=false;reason=e.message;}}
     if(spec.ws==='Scholars'){
       if(!scholarInfo.ok){writable=false;reason=scholarInfo.reason||'scholar-not-found';}
-      else {var col=scholarInfo.headers[spec.field];if(!col){writable=false;reason='Master field not found';}else current=normalizeForRead_(scholarSheet.getRange(scholarInfo.row,col).getValue());}
+      else {var col=scholarInfo.headers[spec.field];if(!col){writable=false;reason='Master field not found';}else current=normalizeForRead_(scholarSheet.getRange(scholarInfo.row,col).getValue());if(spec.key==='retired')current=(current===true||/^true$/i.test(String(current)))?'TRUE':'FALSE';}
     } else {
       var degree=gradRows[spec.stage];
       if(degreeCounts[spec.stage]>1){writable=false;reason='Multiple degree rows: use the scholar editor to choose the correct degree';}
