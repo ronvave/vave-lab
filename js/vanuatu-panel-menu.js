@@ -85,6 +85,10 @@
     const header = document.querySelector('.site-header');
     const top = Math.max(0,header ? header.getBoundingClientRect().bottom : 0);
     nav.style.top = top + 'px';
+    // Reserve the bar's height above the page banner so the bar never covers
+    // the dashboard title or the university logo (same as js/itaukei-panel-menu.js).
+    const banner = document.querySelector('.page-banner');
+    if (banner) banner.style.marginTop = Math.round(nav.getBoundingClientRect().height) + 'px';
     // Keep the dashboard navigator mounted from the beginning of the page.
     // This avoids any viewport-height/scroll-event threshold: it is already
     // available when the first downward scroll begins.

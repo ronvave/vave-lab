@@ -25,7 +25,11 @@
     /* Tighten the first section's top padding — the site-wide default leaves
        a large gap between the site banner and the intro paragraph on this page. */
     main > .section:first-of-type { padding-block-start: var(--space-4); }
-    .db-lede { max-width: 780px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.6; }
+    .db-lede { max-width: none; color: #111; font-size: 1.05rem; line-height: 1.6; }
+    .db-lede a { color: #0b6b7a; font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: rgba(11,107,122,.45); }
+    .db-lede a:hover, .db-lede a:focus-visible { color: #064f5c; text-decoration-color: currentColor; background: rgba(11,107,122,.08); border-radius: 3px; }
+    [data-theme="dark"] .db-lede { color: #f3f4f6; }
+    [data-theme="dark"] .db-lede a { color: #5fd3e0; text-decoration-color: rgba(95,211,224,.5); }
 
     /* Sync freshness badge */
     .db-sync-row {
@@ -3960,7 +3964,7 @@
 </style>
   <link rel="stylesheet" href="css/vanuatu-panel-menu.css?v=44020c99">
   <link rel="stylesheet" href="css/vanuatu-panel-bg.css?v=27e820ee">
-  <link rel="stylesheet" href="css/vanuatu-panel-hero.css?v=b7b85ff5">
+  <link rel="stylesheet" href="css/vanuatu-panel-hero.css?v=6f0d4060">
 <link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=ff16873e">
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-vut-32.png">
@@ -5544,8 +5548,9 @@
     }
   })();
 </script>
-<script src="js/vanuatu-panel-menu.js?v=a3fa08bb" defer></script>
+<script src="js/vanuatu-panel-menu.js?v=8b51245b" defer></script>
 <script src="js/vanuatu-panel-hero.js?v=bdb7cffa" defer></script>
+<script src="js/fiji-text-contrast.js?v=fe96fe34" defer></script>
 <script src="js/scholar-card-tabs.js?v=95cf329e" defer></script>
 </body>
 </html>

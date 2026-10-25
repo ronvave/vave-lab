@@ -132,3 +132,10 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel [data-panel-d-chart]:not(.is-fullscreen) { background: #fff !important; border-radius: 10px; }
 /* Solomon B2: "Completed degrees" is longer than Fiji's labels, so let it wrap. */
 .tph-panel .db-kpis--b2 .db-kpi__label { white-space: normal; }
+/* Grey text outside the panels (intro pills, sync notes, Cite / Contribute
+   cards) also shown in black. */
+:root:not([data-theme="dark"]) .db-pill--muted,
+:root:not([data-theme="dark"]) .db-sync-note, :root:not([data-theme="dark"]) .db-sync-note strong,
+:root:not([data-theme="dark"]) .db-updated,
+:root:not([data-theme="dark"]) .db-cite h3, :root:not([data-theme="dark"]) .db-cite p,
+:root:not([data-theme="dark"]) .db-contribute h3, :root:not([data-theme="dark"]) .db-contribute p { color: #111 !important; }
