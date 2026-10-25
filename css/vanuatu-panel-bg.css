@@ -7,7 +7,7 @@
 .has-panel-badge:not(:is(.db-panel[data-panel], .has-panel-badge) *) {
   background:
     linear-gradient(rgba(255,253,249,.85), rgba(255,253,249,.85)),
-    url("../img/vanuatu/mandala-background.webp") center top / 1400px auto repeat !important;
+    url("../img/vanuatu/textile-background.webp") center top / 1400px auto repeat !important;
 }
 /* Former grey inner areas let the pattern through, with a slightly stronger veil. */
 .db-panel[data-panel] .db-world-panel-wide,
