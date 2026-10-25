@@ -813,13 +813,21 @@
   // University-country flags in the B1 list: a small rectangular flag (with the
   // country name as its tooltip) replaces the old two-letter pill.
   const UC_NAME = { US: 'United States', NZ: 'New Zealand', AU: 'Australia', UK: 'United Kingdom', GB: 'United Kingdom', FJ: 'Fiji', CA: 'Canada', PG: 'Papua New Guinea', MT: 'Malta', FR: 'France', JP: 'Japan', CN: 'China', PH: 'Philippines', IN: 'India', DE: 'Germany', NL: 'Netherlands', IE: 'Ireland', SB: 'Solomon Islands', TO: 'Tonga', WS: 'Samoa', VU: 'Vanuatu', KI: 'Kiribati', TV: 'Tuvalu', CK: 'Cook Islands', NU: 'Niue', PW: 'Palau', FM: 'Federated States of Micronesia', MH: 'Marshall Islands', NR: 'Nauru', TH: 'Thailand', MY: 'Malaysia', SG: 'Singapore', ID: 'Indonesia', KR: 'South Korea', TW: 'Taiwan', CH: 'Switzerland', SE: 'Sweden', NO: 'Norway', IT: 'Italy', ES: 'Spain', ZA: 'South Africa' };
+  // University-country pills (restored next to the flag, as in the B1 mockup).
+  const UC_PILL = { US: ['#F6BB1F', '#1a1206'], NZ: ['#1E8AE0', '#fff'], AU: ['#F07A3A', '#1a0b04'], UK: ['#6A47C9', '#fff'], GB: ['#6A47C9', '#fff'], FJ: ['#3BB273', '#04140b'], CA: ['#E0393E', '#fff'], PG: ['#8B4A22', '#fff'], MT: ['#8FA3BF', '#0b1626'], FR: ['#4F6BED', '#fff'] };
+  function ucPill(code) {
+    const k = String(code).toUpperCase();
+    let [bg, fg] = UC_PILL[k] || [];
+    if (!bg) { let h = 0; for (const ch of k) h = (h * 31 + ch.charCodeAt(0)) % 360; bg = `hsl(${h},55%,62%)`; fg = '#0b1626'; }
+    return `<span class="ps-ftl__uc" style="background:${bg};color:${fg}" title="${esc(UC_NAME[k] || k)}">${esc(k)}</span>`;
+  }
   const UC_LOCAL = new Set(['us', 'nz', 'au', 'gb', 'fj', 'ca', 'pg', 'mt', 'fr', 'jp', 'cn', 'ph', 'in', 'de', 'nl', 'ie', 'sb', 'to', 'ws', 'vu', 'ki', 'tv', 'ck', 'nu', 'pw', 'fm', 'mh', 'nr', 'th', 'my', 'sg', 'id', 'kr', 'tw', 'ch', 'se', 'no', 'it', 'es', 'za']);
   function ucFlag(code) {
     const k = String(code).toUpperCase(), iso = (k === 'UK' ? 'gb' : k.toLowerCase());
     const label = UC_NAME[k] || k;
     if (!/^[a-z]{2}$/.test(iso)) return `<span class="ps-ftl__ucx" title="${esc(label)}">${esc(k)}</span>`;
     const src = UC_LOCAL.has(iso) ? `img/regional/flags-uni/${iso}.png` : `https://flagcdn.com/w80/${iso}.png`;
-    return `<img class="ps-ftl__uf" src="${src}" alt="${esc(label)}" title="${esc(label)}" width="26" height="17" loading="lazy" data-uc="${esc(k)}">`;
+    return `<img class="ps-ftl__uf" src="${src}" alt="${esc(label)}" title="${esc(label)}" width="40" height="27" loading="lazy" data-uc="${esc(k)}">`;
   }
   const FTL = { key: 'year', dir: 1, items: [] };
   const FTL_COLS = [['year', 'Year'], ['country', 'Country'], ['first', 'First'], ['scholar', 'Scholar'], ['uni', 'University']];
@@ -844,12 +852,12 @@
     const find = (code, person) => { try { return (window.PSDirectory && window.PSDirectory.findId && window.PSDirectory.findId(code, person)) || ''; } catch (e) { return ''; } };
     const head = FTL_COLS.map(([k, l]) => { const on = FTL.key === k, srt = on ? (FTL.dir > 0 ? 'ascending' : 'descending') : 'none'; return `<th scope="col" aria-sort="${srt}"><button type="button" class="ps-ftl__th${on ? ` is-${srt}` : ''}" data-ftlsort="${k}" title="Sort by ${l.toLowerCase()}">${l}${FTL_ICON.sort}</button></th>`; }).join('');
     t.innerHTML = `<thead><tr>${head}</tr></thead><tbody>${rows.length ? rows.map(r => {
-      const id = find(r.m.code, r.person), c = byCode[r.m.code] || {};
+      const id = find(r.m.code, r.person);
       const name = id ? `<a href="#dir=${esc(id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(r.person)}</a>` : esc(r.person);
-      return `<tr class="ps-ftl--${r.m.gender} ps-ftl--${r.m.stage}"><td class="y">${r.m.year}</td><td><div class="ps-ftl__cc"><span class="ps-ftl__c"><img src="img/regional/flags-rect/${r.m.code.toLowerCase()}.webp" alt="" width="30" height="20">${esc(r.m.country)}</span>${c.dashboard ? `<a class="ps-ftl__dash" href="${esc(c.dashboard)}" target="_blank" rel="noopener" title="Open the ${esc(r.m.country)} dashboard (separate passcode)">Dashboard ↗</a>` : ''}</div></td><td><span class="ps-ftl__tag">${FTL_ICON.cap}${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td><span class="ps-ftl__sch">${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</span></td><td><span class="ps-ftl__u"><span>${esc(r.uni)}</span>${r.uc ? ucFlag(r.uc) : ''}</span></td></tr>`;
+      return `<tr class="ps-ftl--${r.m.gender} ps-ftl--${r.m.stage}"><td class="y">${r.m.year}</td><td><div class="ps-ftl__cc"><span class="ps-ftl__c"><img src="img/regional/flags-rect/${r.m.code.toLowerCase()}.webp" alt="" width="40" height="27">${esc(r.m.country)}</span></div></td><td><span class="ps-ftl__tag">${FTL_ICON.cap}${esc(r.m.gender === 'male' ? 'Male' : 'Female')} ${FT_LBL[r.m.stage]}</span></td><td><span class="ps-ftl__sch">${ftPhotoHtml(r.m.code, r.person, 'ps-ft-tip__mini', r.m.gender)}${name}</span></td><td><span class="ps-ftl__u">${r.uc ? ucFlag(r.uc) : '<span class="ps-ftl__ufx"></span>'}<span>${esc(r.uni)}</span>${r.uc ? ucPill(r.uc) : ''}</span></td></tr>`;
     }).join('') : '<tr><td colspan="5">No firsts recorded for this selection.</td></tr>'}</tbody>`;
     t.querySelectorAll('img[data-fallback]').forEach(img => img.addEventListener('error', () => { if (img.dataset.fallback && !img.src.endsWith(img.dataset.fallback)) img.src = img.dataset.fallback; }));
-    t.querySelectorAll('img.ps-ftl__uf').forEach(img => img.addEventListener('error', () => { const s = document.createElement('span'); s.className = 'ps-ftl__ucx'; s.title = img.title; s.textContent = img.dataset.uc; img.replaceWith(s); }, { once: true }));
+    t.querySelectorAll('img.ps-ftl__uf').forEach(img => img.addEventListener('error', () => { const s = document.createElement('span'); s.className = 'ps-ftl__ufx'; img.replaceWith(s); }, { once: true }));
     t.querySelectorAll('[data-ftlsort]').forEach(b => b.addEventListener('click', () => {
       const k = b.dataset.ftlsort;
       if (FTL.key === k) FTL.dir = -FTL.dir; else { FTL.key = k; FTL.dir = 1; }
