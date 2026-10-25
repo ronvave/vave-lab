@@ -6,7 +6,7 @@
 .db-panel[data-panel]:not(:is(.db-panel[data-panel], .has-panel-badge) *),
 .has-panel-badge:not(:is(.db-panel[data-panel], .has-panel-badge) *) {
   background:
-    linear-gradient(rgba(255,253,249,.55), rgba(255,253,249,.55)),
+    linear-gradient(rgba(255,253,249,.85), rgba(255,253,249,.85)),
     url("../img/vanuatu/mandala-background.webp") center top / 1400px auto repeat !important;
 }
 /* Former grey inner areas let the pattern through, with a slightly stronger veil. */
@@ -15,10 +15,10 @@
 .db-panel[data-panel] .short-disciplines-toggle,
 .db-panel[data-panel] .db-insight,
 .db-panel[data-panel] .db-b2-blurb {
-  background: rgba(255,255,255,.5) !important;
+  background: rgba(255,255,255,.6) !important;
   -webkit-backdrop-filter: none; backdrop-filter: none;
 }
-.has-panel-badge .db-item { background: rgba(255,255,255,.72) !important; }
+.has-panel-badge .db-item { background: rgba(255,255,255,.8) !important; }
 .has-panel-badge .db-search { background: #fff !important; }
 
 /* Panel menu bar on top. */
