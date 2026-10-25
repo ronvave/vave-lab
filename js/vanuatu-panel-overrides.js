@@ -296,7 +296,7 @@
       if (hint) hint.after(p); else panel.appendChild(p);
     }
     if (!hasCoordinates) note('[data-panel="B2"]',
-      'University map coordinates have not yet been recorded in the Master file. Graduate counts and the country–university list remain available below.');
+      'University map coordinates have not yet been recorded in the Master file. Circles are placed at each university’s known location where it could be matched, otherwise at its country’s capital (marked “approximate” in the popup).');
     if (!(tables['Research Geography'] || []).length) {
       note('[data-panel="B5"]', 'Research locations have not yet been coded in the Master file. No location markers can be plotted yet; this does not mean there are no publications.');
       note('[data-panel="C2"]', 'Research provinces have not yet been coded in the Master file. Province counts are unavailable until study locations are verified.');

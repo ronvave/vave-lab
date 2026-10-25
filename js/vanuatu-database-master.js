@@ -495,6 +495,13 @@
     state.provinces = geo;
     state.universities = unis;
     state.lastSync = sync;
+    // Vanuatu's Master has no university coordinates yet: fill missing
+    // B2 world-point positions (Master Institutions → shared university list
+    // → country capital, flagged approximate) so the map can draw circles.
+    if (grad && window.VanuatuWorldCoords) {
+      try { await window.VanuatuWorldCoords.fill(grad); }
+      catch (e) { console.warn('B2: coordinate fill failed', e); }
+    }
     state.graduateStudies = grad;
     state.scholarInsights = (insightsDoc && insightsDoc.insights) || {};
     // Also expose Scholar-ID-keyed insights so any consumer (admin V2, future
@@ -2278,6 +2285,9 @@
         `<span class="db-popup-count">${total}</span>` +
         `<span class="db-popup-count-text">Vanuatu scholar${total === 1 ? '' : 's'} completed graduate work here</span>` +
       `</div>` +
+      (p.coordApprox
+        ? `<div class="db-popup-approx">Approximate location (${escapeHtml(p.country)} capital): university map position not yet recorded.</div>`
+        : '') +
       `<div class="db-popup-scholar-detail" data-popup-detail></div>` +
       `<div class="db-popup-scroll">` + sections.join('') + `</div>`
     );

@@ -29,7 +29,7 @@
     'Trinidad and Tobago': 'tt', 'Jamaica': 'jm', 'Mexico': 'mx', 'Brazil': 'br', 'Chile': 'cl',
     'South Africa': 'za', 'Israel': 'il', 'Cuba': 'cu', 'Russia': 'ru', 'Bangladesh': 'bd',
     'Pakistan': 'pk', 'Sri Lanka': 'lk', 'Egypt': 'eg', 'Turkey': 'tr', 'United Arab Emirates': 'ae',
-    'Guam': 'gu', 'Tahiti': 'pf', 'Naoero': 'nr', 'Naero': 'nr', 'Hawaii': 'us', 'Rotuma': 'fj', 'New Caledonia (France)': 'nc', 'Northern Mariana Islands': 'mp', 'Wallis and Futuna': 'wf', 'Tokelau': 'tk', 'Pitcairn Islands': 'pn',
+    'Guam': 'gu', 'Tahiti': 'pf', 'Türkiye': 'tr', 'Turkiye': 'tr', 'Naoero': 'nr', 'Naero': 'nr', 'Hawaii': 'us', 'Rotuma': 'fj', 'New Caledonia (France)': 'nc', 'Northern Mariana Islands': 'mp', 'Wallis and Futuna': 'wf', 'Tokelau': 'tk', 'Pitcairn Islands': 'pn',
     'Timor-Leste': 'tl', 'East Timor': 'tl', 'Peru': 'pe', 'Argentina': 'ar', 'Colombia': 'co', 'Ecuador': 'ec',
     'Kenya': 'ke', 'Tanzania': 'tz', 'Nigeria': 'ng', 'Ghana': 'gh', 'Madagascar': 'mg', 'Mauritius': 'mu',
     'Seychelles': 'sc', 'Maldives': 'mv', 'Nepal': 'np', 'Cambodia': 'kh', 'Laos': 'la', 'Myanmar': 'mm',
