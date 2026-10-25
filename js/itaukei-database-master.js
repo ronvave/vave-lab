@@ -2681,11 +2681,19 @@
       });
     }
   }
+  // Default university zoom is 8. When another rendered university sits
+  // within ~25 km (e.g. Peking, Tsinghua and BLCU in Haidian, Beijing), zoom
+  // to 12 so the circles separate and each one can be hovered on its own.
+  function _worldUniversityZoom(ll, uniName) {
+    const others = _renderedWorldLatLngs(p => p.university !== uniName);
+    const near = others.some(o => L.latLng(o[0], o[1]).distanceTo(L.latLng(ll[0], ll[1])) < 25000);
+    return near ? 12 : 8;
+  }
   function zoomToWorldUniversity(uniName) {
     if (!state.worldMap) return;
     const rendered = _renderedWorldLatLngs(p => p.university === uniName);
     if (rendered.length) {
-      state.worldMap.setView(rendered[0], 8, { animate: true });
+      state.worldMap.setView(rendered[0], _worldUniversityZoom(rendered[0], uniName), { animate: true });
       return;
     }
     const grad = state.graduateStudies || { worldPoints: [] };
@@ -3172,7 +3180,7 @@
       zoomSnap: 0.25,
       worldCopyJump: false,
       minZoom: 1,
-      maxZoom: 10,
+      maxZoom: 13,
       maxBounds: [[-85, -210], [85, 210]],
       maxBoundsViscosity: 0.85
     });
@@ -3200,7 +3208,11 @@
     // ways Ron didn't ask for).
     wmap.on('moveend', () => {
       if (state.worldMode === 'work') return; // workplace has its own stats path
-      applyOverlapSpider();
+      // Re-cluster only when the zoom changes. A pure pan (including the
+      // popup autoPan fired by hovering a stacked marker) leaves screen-space
+      // overlaps unchanged, and re-running here would collapse a cluster the
+      // user has just fanned out — e.g. Peking, Tsinghua and BLCU in Beijing.
+      if (wmap.getZoom() !== state.worldSpiderZoom) applyOverlapSpider();
       if (state.worldSearchScope) updateWorldMapStatsForScope();
     });
     // Render markers immediately if data has already arrived; otherwise the
@@ -4164,6 +4176,12 @@
         const el = evt.popup && evt.popup.getElement && evt.popup.getElement();
         wirePopupScholarHovers(el, p);
         wirePopupAutoClose(el, evt.popup, m);
+        _appendClusterSwitcher(el, m);
+        if (el && !el._spiderWired) {
+          el._spiderWired = true;
+          el.addEventListener('mouseenter', () => _cancelClusterCollapse(m._spiderCluster));
+          el.addEventListener('mouseleave', () => { if (m._spiderCluster) _scheduleClusterCollapse(m); });
+        }
         // Give autoPan a beat, then verify the popup is fully inside the map
         // viewport. If it isn't (common for Fiji's huge popups near the map
         // edges), pan the map manually so the popup sits comfortably.
@@ -4307,6 +4325,7 @@
     const m = state.worldMap;
     if (!m || !state.worldLayer) return;
     const layers = state.worldLayer.getLayers().filter(l => l && l._worldHome);
+    state.worldSpiderZoom = m.getZoom();
 
     // Collapse any currently-fanned cluster from the previous zoom level and
     // clear its cluster tag. New clusters will be assigned below.
@@ -4360,18 +4379,23 @@
         // (whether newly expanded or already open) collapse the siblings so
         // the hovered marker's popup owns the visual space.
         l.on('mouseover', () => {
-          if (l._collapseTimer) { clearTimeout(l._collapseTimer); l._collapseTimer = null; }
           const cluster = l._spiderCluster;
           if (!cluster) return;
+          // The pending collapse timer lives on whichever marker the cursor
+          // just left, so clear it on every member, not only this one.
+          _cancelClusterCollapse(cluster);
           if (!cluster.expanded) {
             // First hover on this cluster — fan the SIBLINGS out around
             // this marker so the user can see and pick any of them.
             _expandSpiderCluster(cluster, l);
           } else {
-            // Cluster is already fanned; the user landed on THIS marker,
-            // so pull the other siblings home and let this popup own the
-            // visual space. The current marker keeps its spider position.
-            _spiderCollapseOthers(l);
+            // Cluster is already fanned; the user landed on THIS marker.
+            // Keep every sibling at its fanned position so the user can move
+            // straight on to the next campus without re-triggering the fan.
+            // Close the other members' popups so only this one is shown.
+            cluster.markers.forEach(o => {
+              if (o !== l && o.isPopupOpen && o.isPopupOpen()) o.closePopup();
+            });
           }
         });
         // mouseout: schedule a collapse of the entire cluster back home.
@@ -4399,8 +4423,12 @@
     const spiderR = Math.max(maxR * 2.4, 32);
     const n = siblings.length;
     siblings.forEach((l, i) => {
-      // Distribute siblings starting at 12 o'clock, clockwise.
-      const angle = (-Math.PI / 2) + (i * 2 * Math.PI / n);
+      // Fan siblings across the lower half (3 o'clock → 6 → 9). The anchor's
+      // popup opens above it, so a sibling at 12 o'clock would sit hidden
+      // underneath the popup. Larger clusters fall back to a full circle.
+      const angle = n <= 5
+        ? (n === 1 ? Math.PI / 2 : (Math.PI / 12) + (i * (10 * Math.PI / 12) / (n - 1)))
+        : (-Math.PI / 2) + (i * 2 * Math.PI / n);
       const ll = m.layerPointToLatLng(L.point(
         anchorPt.x + spiderR * Math.cos(angle),
         anchorPt.y + spiderR * Math.sin(angle)
@@ -4436,6 +4464,57 @@
     });
   }
 
+  // Stacked markers (universities a few km apart, e.g. Peking, Tsinghua,
+  // BLCU and the International Defence University around Beijing) can be
+  // hidden behind the hovered marker's popup. List every other member of the
+  // overlap cluster inside the popup so each one is a single click away.
+  function _appendClusterSwitcher(el, m) {
+    if (!el || !m) return;
+    const host = el.querySelector('.leaflet-popup-content');
+    if (!host) return;
+    const prev = host.querySelector('.db-world-popup__nearby');
+    if (prev) prev.remove();
+    const c = m._spiderCluster;
+    // Only genuinely co-located campuses (within 50 km). At low zoom the
+    // overlap cluster can chain across a whole country, which is not what
+    // "this map location" means.
+    const home = L.latLng(m._worldHome[0], m._worldHome[1]);
+    const others = (c ? c.markers : [])
+      .filter(o => o !== m && o._worldPoint && o._worldHome &&
+        L.latLng(o._worldHome[0], o._worldHome[1]).distanceTo(home) < 50000)
+      .slice(0, 8);
+    if (!others.length) return;
+    const box = document.createElement('div');
+    box.className = 'db-world-popup__nearby';
+    box.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px dashed rgba(0,0,0,.18);font-size:12.5px;line-height:1.5;';
+    const lab = document.createElement('div');
+    lab.textContent = 'Also at this map location:';
+    lab.style.cssText = 'font-weight:600;color:#5a4a3a;margin-bottom:2px;';
+    box.appendChild(lab);
+    others.forEach(o => {
+      const pt = o._worldPoint;
+      const n = (pt.phdScholars || []).length + (pt.mastersScholars || []).length + (pt.unknownScholars || []).length;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'db-world-popup__nearby-link';
+      btn.textContent = pt.university + ' (' + n + ')';
+      btn.style.cssText = 'display:block;background:none;border:0;padding:1px 0;color:#1a6a8a;text-decoration:underline;cursor:pointer;font:inherit;text-align:left;';
+      btn.addEventListener('click', (ev) => {
+        ev.preventDefault(); ev.stopPropagation();
+        _cancelClusterCollapse(c);
+        try { m.closePopup(); } catch (_) {}
+        try { o.openPopup(); } catch (_) {}
+      });
+      box.appendChild(btn);
+    });
+    host.appendChild(box);
+  }
+
+  function _cancelClusterCollapse(c) {
+    if (!c) return;
+    c.markers.forEach(s => { if (s._collapseTimer) { clearTimeout(s._collapseTimer); s._collapseTimer = null; } });
+  }
+
   function _scheduleClusterCollapse(fromMarker) {
     // Give the mouse ~180ms to land on a sibling (or come back). If it
     // does, the sibling's mouseover clears this timer. If it doesn't,
@@ -4453,7 +4532,7 @@
       // interaction. Simpler heuristic: collapse unconditionally; a
       // pending re-hover will fire mouseover and re-expand.
       _collapseSpiderCluster(c);
-    }, 180);
+    }, 450);
   }
 
   // -------- Fullscreen dropdown UI helpers --------
