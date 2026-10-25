@@ -116,7 +116,7 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
    of the header, reaching full strength just before the canoe. */
 .tph-hero > .tph-art {
   width: auto; left: auto; aspect-ratio: 3475 / 724;
-  background-image: url("../img/fiji/panel-header-canoe.webp");
+  background-image: url("../img/solomon/panel-header-canoe.webp"); /* Solomon Islands canoe on the same Fiji sea */
   background-size: 100% 100%; background-position: right center;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
           mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
