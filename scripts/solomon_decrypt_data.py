@@ -58,6 +58,15 @@ TARGETS = [
     "solomon-master-aggregates.json",
     "solomon-master-worldpoints.json",
     "solomon-last-master-sync.json",
+    # Listed last so a decrypt problem with a newer file cannot block the
+    # bootstrap of the established snapshot files above.
+    "solomon-master-researcher-authorship.json",
+    "solomon-master-institutions.json",
+    "solomon-master-researchers.json",
+    "solomon-master-awards.json",
+    "solomon-master-funding.json",
+    "solomon-master-positions.json",
+    "solomon-body-composition-master.json",
 ]
 
 

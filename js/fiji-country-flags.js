@@ -20,8 +20,9 @@
     'Israel': 'il', 'Turkey': 'tr', 'United Arab Emirates': 'ae', 'Saudi Arabia': 'sa', 'Qatar': 'qa',
     'Singapore': 'sg', 'Malaysia': 'my', 'Indonesia': 'id', 'Thailand': 'th', 'Vietnam': 'vn', 'Viet Nam': 'vn',
     'Cambodia': 'kh', 'Bangladesh': 'bd', 'Pakistan': 'pk', 'Sri Lanka': 'lk', 'Nepal': 'np',
-    'South Korea': 'kr', 'Republic of Korea': 'kr', 'Korea': 'kr', 'Taiwan': 'tw', 'Hong Kong': 'hk',
+    'South Korea': 'kr', 'Republic of Korea': 'kr', 'Korea': 'kr', 'Taiwan': 'tw', 'Hong Kong': 'hk', 'Macao': 'mo', 'Macau': 'mo',
     'Timor-Leste': 'tl', 'East Timor': 'tl', 'Mongolia': 'mn',
+    'Trinidad and Tobago': 'tt', 'Trinidad & Tobago': 'tt', 'Jamaica': 'jm', 'Barbados': 'bb',
     'Mexico': 'mx', 'Brazil': 'br', 'Argentina': 'ar', 'Chile': 'cl', 'Peru': 'pe', 'Colombia': 'co',
     'South Africa': 'za', 'Kenya': 'ke', 'Nigeria': 'ng', 'Egypt': 'eg', 'Ghana': 'gh', 'Ethiopia': 'et'
   };

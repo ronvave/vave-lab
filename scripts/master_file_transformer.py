@@ -876,7 +876,13 @@ def run(
     # B2 ("iTaukei Graduates — Global Database") strictly from Master
     # Graduate Degrees. See scripts/master_b2_worldpoints.py for the
     # validation contract enforced there.
-    from master_b2_worldpoints import write_worldpoints
+    from master_b2_worldpoints import write_worldpoints, parse_lookup_coords
+    try:
+        lookup_coords = parse_lookup_coords(fetch_fn("Lookups!L4:P500"))
+        log(f"  → Lookups coordinates: {len(lookup_coords)} universities")
+    except Exception as exc:  # local dumps may not include Lookups
+        log(f"  → Lookups coordinates unavailable ({exc}); using world-universities only")
+        lookup_coords = {}
     log("Building Panel B2 world-points from Master Graduate Degrees...")
     excluded_md = out_dir.parent / "docs" / "b2_excluded_rows.md"
     excluded_md.parent.mkdir(exist_ok=True)
@@ -885,6 +891,7 @@ def run(
         repo=out_dir.parent,
         out_path=out_dir / "itaukei-master-worldpoints.json",
         excluded_md_path=excluded_md,
+        extra_coords=lookup_coords,
     )
     b2_totals = b2_payload["totals"]
     log(

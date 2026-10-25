@@ -63,6 +63,11 @@ TARGETS = [
     "itaukei-master-positions.json",
     "itaukei-master-aggregates.json",
     "last-master-sync.json",
+    # Listed last so a decrypt problem with a newer file cannot block the
+    # established snapshot files above.
+    "itaukei-master-researcher-authorship.json",
+    "itaukei-master-worldpoints.json",
+    "body-composition-master.json",
 ]
 
 

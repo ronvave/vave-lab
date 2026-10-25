@@ -361,6 +361,26 @@ COUNTRY_META: dict[str, tuple[str, str]] = {
 }
 
 
+def parse_lookup_coords(rows: list[list]) -> dict[str, dict[str, Any]]:
+    """Parse Master `Lookups!L4:P` rows (University, Country, Longitude,
+    Latitude, Status) into {name: {lat, lng, country}}. Rows without numeric
+    coordinates are skipped."""
+    out: dict[str, dict[str, Any]] = {}
+    for r in rows or []:
+        if len(r) < 4 or not str(r[0]).strip():
+            continue
+        try:
+            lng = float(str(r[2]).strip()); lat = float(str(r[3]).strip())
+        except ValueError:
+            continue
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            continue
+        name = re.sub(r"\s+", " ", str(r[0]).strip())
+        out[name] = {"lat": lat, "lng": lng,
+                     "country": str(r[1]).strip() or None, "city": None}
+    return out
+
+
 def load_uni_coords(repo: Path) -> dict[str, dict[str, Any]]:
     """Return {university_name: {lat, lng, country}} from
     data/world-universities.json (plaintext, before encryption)."""
@@ -400,6 +420,12 @@ _CAMPUS_OVERRIDES: dict[tuple[str, str], tuple[float, float, str]] = {
     ("University of the South Pacific", "Solomon Islands"): (
         -9.4457, 159.9583, "Honiara Campus, Honiara",
     ),
+    # UWI St Augustine Campus, Trinidad — the Master records these degrees
+    # under Trinidad and Tobago; the generic UWI point is the Mona campus
+    # in Jamaica. Coord: Wikipedia / UWI St Augustine, 10.6416, -61.3995.
+    ("University of the West Indies", "Trinidad and Tobago"): (
+        10.6416, -61.3995, "St Augustine Campus, Trinidad",
+    ),
     # USP Tonga Campus, Nuku'alofa.
     ("University of the South Pacific", "Tonga"): (
         -21.1394, -175.2018, "Nuku'alofa Campus, Nuku'alofa",
@@ -431,13 +457,21 @@ def lookup_uni_coords(
 # ---------------------------------------------------------------------------
 
 def build_worldpoints(
-    grad_degrees: list[dict], repo: Path
+    grad_degrees: list[dict], repo: Path,
+    extra_coords: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[dict, list[dict]]:
     """Aggregate Master Graduate Degrees into the Panel B2 worldPoints payload.
 
     Returns (payload_dict, excluded_rows).
     """
     coords_map = load_uni_coords(repo)
+    # Master Lookups coordinates fill any university that
+    # world-universities.json does not know, so new institutions entered in
+    # the Master appear on the B2 map without a separate manual sync.
+    # Existing world-universities coordinates are never overridden.
+    for _name, _c in (extra_coords or {}).items():
+        if _name not in coords_map:
+            coords_map[_name] = _c
     excluded: list[dict] = []
 
     # Bucket by (country, university).
@@ -584,8 +618,9 @@ def build_worldpoints(
 def write_worldpoints(
     grad_degrees: list[dict], repo: Path, out_path: Path,
     excluded_md_path: Path | None = None,
+    extra_coords: dict[str, dict[str, Any]] | None = None,
 ) -> dict:
-    payload, excluded = build_worldpoints(grad_degrees, repo)
+    payload, excluded = build_worldpoints(grad_degrees, repo, extra_coords)
     out_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
@@ -627,7 +662,11 @@ if __name__ == "__main__":
         from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         MAGIC = b"IVAV"
-        pw = "Arachnid1!"
+        import os
+        pw = os.environ.get("VAVELAB_PASSCODE", "")
+        if not pw:
+            print("set VAVELAB_PASSCODE to decrypt", file=sys.stderr)
+            sys.exit(2)
         enc = src.with_suffix(".json.enc")
         if not enc.exists():
             print(f"missing {src} and {enc}", file=sys.stderr)

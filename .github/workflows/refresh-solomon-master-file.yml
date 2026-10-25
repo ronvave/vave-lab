@@ -114,7 +114,8 @@ jobs:
             data/solomon-master-researchers.json \
             data/solomon-master-awards.json \
             data/solomon-master-funding.json \
-            data/solomon-master-positions.json; do
+            data/solomon-master-positions.json \
+            data/solomon-body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
 
@@ -175,6 +176,7 @@ jobs:
             solomon-master-awards.json
             solomon-master-funding.json
             solomon-master-positions.json
+            solomon-body-composition-master.json
           )
           python3 scripts/plaintext_changed.py \
             --prev-dir=/tmp/prev \
@@ -218,6 +220,7 @@ jobs:
           git config user.email "bot@vavelab.example"
           git add \
             data/solomon-master-*.json.enc \
+            data/solomon-body-composition-master.json.enc \
             data/solomon-last-master-sync.json.enc \
             data/solomon-share-tokens.json
           if git diff --cached --quiet; then

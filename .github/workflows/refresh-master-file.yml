@@ -87,6 +87,7 @@ jobs:
             data/itaukei-master-scholars.json \
             data/itaukei-master-publications.json \
             data/itaukei-master-authorship.json \
+            data/itaukei-master-researcher-authorship.json \
             data/itaukei-master-grad-degrees.json \
             data/itaukei-master-mobility.json \
             data/itaukei-master-geography.json \
