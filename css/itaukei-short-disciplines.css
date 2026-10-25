@@ -17,3 +17,55 @@
 .short-disciplines-caption{font-style:italic;line-height:1.5;margin:16px 0 8px}
 .short-disciplines-updated{font-size:.8rem;color:var(--color-text-muted,#596873)}
 @media(max-width:600px){.short-disciplines-table{font-size:.85rem}.short-disciplines-table th,.short-disciplines-table td{padding:8px 6px}.short-disciplines-table th:first-child{width:43%}}
+
+/* ---- Panel B4 visual refresh (Oct 2026) — paired with js/short-disciplines-style.js.
+   Shared by the Fiji, Tonga and Vanuatu dashboards. ---- */
+.short-disciplines-toggle{padding:5px;gap:4px;border-color:#c9d6d4;background:#f7faf9;box-shadow:0 1px 3px rgba(15,52,60,.08)}
+.short-disciplines-toggle button{font-size:1rem;font-weight:700;padding:9px 34px;color:#6b4a12}
+.short-disciplines-toggle button[aria-pressed="true"]{background:#0e5d60;color:#fff;box-shadow:0 2px 6px rgba(10,60,62,.3)}
+.short-disciplines-table.sd-styled{border-collapse:separate;border-spacing:0;font-size:1rem;border:1px solid #c6d3d1;border-radius:4px;overflow:hidden;background:rgba(255,255,255,.72)}
+.sd-styled caption{background:#123a57;font-size:1.05rem;padding:13px 12px;border-radius:4px 4px 0 0}
+.sd-styled th,.sd-styled td{border:0;border-bottom:1px solid #d9e2e0;border-left:1px solid #d9e2e0;padding:7px 14px}
+.sd-styled tr>:first-child{border-left:0}
+.sd-styled thead th{background:#14787a;color:#fff;font-weight:700;padding:10px 14px;border-bottom:0;border-left-color:rgba(255,255,255,.25)}
+.sd-styled thead th.sd-th--name{background:#14787a;text-align:left}
+.sd-styled thead th.sd-th--male,.sd-styled thead th.sd-th--masters{background:#2368b3}
+.sd-styled thead th.sd-th--female{background:#c4508a}
+.sd-styled thead th.sd-th--phd{background:#7a3fc8}
+.sd-styled thead th.sd-th--total{background:#6d7512}
+.sd-th__inner{display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.sd-th__icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:5px;background:#fff;color:#1d78d6}
+.sd-th--female .sd-th__icon{color:#e0558f}
+.sd-th--masters .sd-th__icon,.sd-th--phd .sd-th__icon{background:transparent;color:#fff;width:24px}
+.sd-th__icon svg{width:20px;height:20px}
+.sd-styled thead th{vertical-align:middle}
+.sd-th--masters .sd-th__icon svg,.sd-th--phd .sd-th__icon svg{width:22px;height:22px}
+.sd-styled tbody th{font-weight:500;color:#13304a}
+.sd-styled tbody tr:nth-child(odd)>:not(:last-child){background:rgba(255,255,255,.82)}
+.sd-styled tbody tr:nth-child(even)>:not(:last-child){background:rgba(232,240,238,.78)}
+.sd-name{display:flex;align-items:center;gap:12px}
+.sd-ico{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.sd-ico svg{width:17px;height:17px}
+.sd-ico--social{background:#2d7fe0}.sd-ico--life{background:#3d9a37}.sd-ico--health{background:#d8433f}
+.sd-ico--education{background:#c99417}.sd-ico--engineering{background:#8a55c6}.sd-ico--earth{background:#1f9aa6}
+.sd-ico--theology{background:#f0871f}.sd-ico--humanities{background:#8b5a3a}.sd-ico--other{background:#7b8a92}
+.sd-styled td.sd-cell{text-align:left}
+.sd-bar-cell{display:flex;align-items:center;gap:10px}
+.sd-num{flex:0 0 2.6ch;text-align:right;font-weight:700;color:#13304a}
+.sd-track{flex:1 1 auto;height:12px;border-radius:6px;background:#e3e9ec;overflow:hidden;min-width:60px}
+.sd-track i{display:block;height:100%;border-radius:6px;background:#3d8de6}
+.sd-cell--female .sd-track i{background:#f0659f}
+.sd-cell--masters .sd-track i{background:#3d8de6}
+.sd-cell--phd .sd-track i{background:#a265e0}
+.sd-styled tbody td.sd-total{font-size:1.2rem;font-weight:800}
+.sd-styled tr>:last-child{background:#6d7512}
+.sd-styled tbody tr:nth-child(even)>:last-child{box-shadow:inset 0 0 0 100vmax rgba(0,0,0,.035)}
+.sd-styled tfoot th,.sd-styled tfoot td{background:#e9efe6;color:#13304a;border-bottom:0;padding:9px 14px}
+.sd-styled tfoot th{font-weight:800;font-size:1.05rem}
+.sd-styled tfoot td.sd-cell .sd-num{font-size:1.1rem}
+.sd-styled tfoot .sd-track{height:14px}
+.sd-styled tfoot .sd-cell--male .sd-track i,.sd-styled tfoot .sd-cell--masters .sd-track i{background:#1b4f93}
+.sd-styled tfoot .sd-cell--female .sd-track i{background:#ec4f93}
+.sd-styled tfoot .sd-cell--phd .sd-track i{background:#8a3fd6}
+.sd-styled tfoot td.sd-total{background:#6d7512;color:#fff;font-size:1.3rem;font-weight:800}
+.sd-cap-lead{font-weight:800;color:#13304a}
