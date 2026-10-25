@@ -1654,11 +1654,11 @@
     if (emptyEl && !showCountry) emptyEl.style.display = 'none';
     if (titleEl) titleEl.textContent = showCountry
       ? 'Countries of Vanuatu graduate study'
-      : view === "area council" ? "Vanuatu graduates by area council" : "Vanuatu graduates by Province · Province";
+      : view === "area council" ? "Vanuatu graduates by area council" : "Vanuatu graduates by Province";
     if (explainEl) explainEl.textContent = showCountry
       ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
       : view === "area council" ? "Completed Masters and PhD degrees grouped by the scholar’s recorded paternal area council."
-      : "Masters and PhD theses grouped by the scholar’s home Province (Torba, Sanma, Penama, Malampa, Shefa, Tafea), then broken down by home Province in descending order by total.";
+      : "Masters and PhD theses grouped by the scholar’s home Province (Torba, Sanma, Penama, Malampa, Shefa, Tafea), in descending order by total.";
     if (!showCountry && confHost) { if (view === "area council") renderWorldPanelClanView(confHost); else renderWorldPanelConfederacyView(confHost); }
   }
 
