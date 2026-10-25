@@ -1,0 +1,132 @@
+/* Vanuatu dashboard (ported from css/fiji-panel-hero.css; same canoe header,
+   no tapa background): image header on every panel (title + description over the
+   a traditional Fijian canoe on turquoise water), glossy tally cards and a faded
+   tapa background. Ported from css/tongan-panel-hero.css and built by
+   js/vanuatu-panel-hero.js; nothing here changes panel content. */
+.tph-hero {
+  position: relative; display: flex; align-items: center; gap: 18px;
+  min-height: 112px; box-sizing: border-box; overflow: hidden;
+  padding: 18px 300px 18px 22px; /* right padding is recalculated in JS to clear the island picture */
+  color: #fff;
+  /* Deep ocean blue on the left, lightening through the middle into the picture. */
+  background: linear-gradient(90deg, #0a3f68 0%, #11557f 35%, #1d6890 60%, #2a7398 85%, #2f7899 100%);
+  font-family: Arial, Helvetica, sans-serif;
+}
+/* Island, sunset and sea: softened photo on the right that fades in
+   gradually from the middle of the header. The image is sized to the header
+   height, so the whole island, sun and water always show. */
+.tph-art {
+  position: absolute; top: 0; right: 0; bottom: 0; width: 64%;
+  pointer-events: none; z-index: 0; opacity: 1;
+  background: none right center / auto 100% no-repeat;
+  filter: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 25%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.85) 75%, #000 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.18) 25%, rgba(0,0,0,.5) 50%, rgba(0,0,0,.85) 75%, #000 100%);
+}
+.tph-hero > :not(.tph-art) { position: relative; z-index: 1; }
+.tph-hero > .db-panel__label { position: absolute; z-index: 3; }
+.tph-flag {
+  /* Vanuatu flag fingerprint emblem (oval, transparent outside the print). */
+  flex: 0 0 auto; width: auto; height: 78px; aspect-ratio: 166 / 240;
+  border: 0; border-radius: 0; background: none; box-shadow: none; object-fit: contain;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.35));
+}
+.tph-text { min-width: 0; flex: 1 1 auto; }
+.tph-hero .tph-title,
+.tph-hero .db-section__label,
+.tph-hero .db-panel__title,
+.tph-hero .db-leaderboard__title,
+.tph-hero h2, .tph-hero h3 {
+  margin: 0 0 8px !important; padding: 0 !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 1.6rem !important; line-height: 1.15 !important; font-weight: 700 !important;
+  letter-spacing: .025em !important; text-transform: uppercase !important;
+  color: #fff !important; text-shadow: 0 1px 3px rgba(0,0,0,.25);
+  border: 0 !important; background: none !important; max-width: none !important; width: auto !important; text-wrap: wrap !important;
+}
+.tph-hero .db-section__hint,
+.tph-hero .db-panel__hint,
+.tph-hero .db-leaderboard__hint,
+.tph-hero p {
+  margin: 0 !important; max-width: none !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: .95rem !important; line-height: 1.5 !important; font-weight: 400 !important;
+  color: rgba(255,255,255,.96) !important; text-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.tph-hero .tph-text > :last-child { margin-bottom: 0 !important; }
+/* Panel code badge sits on the image, top-right. */
+.tph-panel > .db-panel__label,
+.tph-hero > .db-panel__label,
+summary.tph-hero .db-panel__label {
+  z-index: 3; background: #0e7c86; color: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35); border: 2px solid rgba(255,255,255,.85);
+  height: 30px; min-width: 40px; font-size: 1rem;
+}
+/* A3: the clickable "About this database" bar becomes the header. */
+summary.tph-hero { cursor: pointer; min-height: 84px; list-style: none; }
+summary.tph-hero::-webkit-details-marker { display: none; }
+summary.tph-hero { display: flex !important; }
+summary.tph-hero::before { order: 5; flex: 0 0 auto; margin-left: auto; position: relative; z-index: 1; width: 30px !important; height: 30px !important; background: rgba(255,255,255,.92) !important; color: #0a2c5c !important; font-size: 1.25rem !important; box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+summary.tph-hero .tph-text { max-width: none; }
+summary.tph-hero .tph-title { font-size: 1.3rem !important; margin: 0 !important; }
+/* Chips/indicators that live inside a title keep their own colours. */
+.tph-hero .db-world-selection-chip, .tph-hero .db-filtered-indicator { text-shadow: none; font-size: .8rem; vertical-align: middle; text-transform: none; letter-spacing: 0; }
+
+/* Summary (tally) cards on every panel (A1, A2, B2, D) in the B2 glossy style */
+.tph-panel .db-kpis { gap: 14px; }
+.tph-panel .db-kpis .db-kpi {
+  position: relative; overflow: hidden; border: 0; border-radius: 12px;
+  min-height: 78px; padding: 12px 12px; gap: 10px; align-items: center; min-width: 0;
+  color: #fff; box-shadow: 0 4px 12px rgba(10,30,60,.18);
+}
+.tph-panel .db-kpis .db-kpi::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255,255,255,.16) 0%, rgba(255,255,255,0) 55%);
+}
+.tph-panel .db-kpis .db-kpi--teal   { background: linear-gradient(135deg, #14a3a3 0%, #0b7479 100%); }
+.tph-panel .db-kpis .db-kpi--amber  { background: linear-gradient(135deg, #e07a1f 0%, #b85412 100%); }
+.tph-panel .db-kpis .db-kpi--rust   { background: linear-gradient(135deg, #d0393a 0%, #a01f24 100%); }
+.tph-panel .db-kpis .db-kpi--olive  { background: linear-gradient(135deg, #6f8f45 0%, #4c6a2c 100%); }
+.tph-panel .db-kpis .db-kpi--blue   { background: linear-gradient(135deg, #1f6fd0 0%, #0f4a9e 100%); }
+.tph-panel .db-kpis .db-kpi--purple { background: linear-gradient(135deg, #7656d6 0%, #4f33a8 100%); }
+.tph-panel .db-kpis .db-kpi--pink   { background: linear-gradient(135deg, #d2457f 0%, #9e2759 100%); }
+.tph-panel .db-kpis .db-kpi__icon {
+  flex: 0 0 auto; width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(255,255,255,.18); border: 2px solid rgba(255,255,255,.45);
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+}
+.tph-panel .db-kpis .db-kpi__icon svg { width: 26px; height: 26px; color: #fff; stroke: #fff; }
+.tph-panel .db-kpis .db-kpi__num { color: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 1.75rem; font-weight: 800; line-height: 1.05; }
+.tph-panel .db-kpis .db-kpi__body { min-width: 0; }
+.tph-panel .db-kpis .db-kpi__label { color: rgba(255,255,255,.95); font-family: Arial, Helvetica, sans-serif; font-size: .95rem; font-weight: 500; margin-top: 2px; white-space: normal; line-height: 1.2; }
+.tph-panel .db-kpis--b2 .db-kpi__label { white-space: nowrap; }
+.tph-panel .db-kpis .db-kpi__sub { color: rgba(255,255,255,.85); }
+summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important; padding-left: 22px !important; }
+.db-about.tph-panel:not([open]) { padding-bottom: 0; }
+.db-about.tph-panel { overflow: hidden; }
+.db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
+
+/* Grey text inside panels shown in black (marked by js/fiji-text-contrast.js). */
+.tph-panel .tct-dark { color: #111 !important; }
+.tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
+
+/* Every panel: traditional Fijian outrigger canoe on open turquoise water.
+   Sized to the header height so the whole canoe shows, just left of the
+   panel badge; the open sea and sky fade in gradually across about half
+   of the header, reaching full strength just before the canoe. */
+.tph-hero > .tph-art {
+  width: auto; left: auto; aspect-ratio: 3475 / 724;
+  background-image: url("../img/fiji/panel-header-canoe.webp");
+  background-size: 100% 100%; background-position: right center;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
+}
+/* Panel D has seven cards in one row: slightly smaller so labels fit. */
+.tph-panel .db-panel-d-kpis { gap: 10px; }
+.tph-panel .db-panel-d-kpis .db-kpi { padding: 10px 10px; gap: 8px; }
+.tph-panel .db-panel-d-kpis .db-kpi__icon { width: 38px; height: 38px; }
+.tph-panel .db-panel-d-kpis .db-kpi__icon svg { width: 22px; height: 22px; }
+.tph-panel .db-panel-d-kpis .db-kpi__num { font-size: 1.5rem; }
+.tph-panel .db-panel-d-kpis .db-kpi__label { font-size: .85rem; }
+/* Panel D chart: plain white background in the panel, matching the expanded view. */
+.tph-panel [data-panel-d-chart]:not(.is-fullscreen) { background: #fff !important; border-radius: 10px; }
