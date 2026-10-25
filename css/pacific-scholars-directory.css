@@ -213,3 +213,19 @@
 #ps-dir .dir__bar .db-search:hover{border-color:#14508c}
 @media (max-width:900px){#ps-dir .filters2{grid-template-columns:1fr 1fr}#ps-dir .filters2 .fsearch{grid-column:1/-1}#ps-dir .dir__kpis{gap:10px 28px}}
 @media (max-width:560px){#ps-dir .dir__kpis{flex-direction:column;align-items:flex-start;padding:12px 16px}#ps-dir .dir__barbody{padding:12px}#ps-dir .filters2{grid-template-columns:1fr}}
+
+/* Panel D compact filter bar (mockup 2026-10-25): cream filter area, headings
+   kept only for screen readers, larger navy icons inside every control. */
+#ps-dir .dir__barbody{padding:12px 16px 14px;background:#f4ecda;border-top:1px solid #e3d7bd;border-radius:0 0 11px 11px}
+#ps-dir .dir__bar{background:#f4ecda;border-color:#e1d5bb}
+#ps-dir .dir__bar .flt{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+#ps-dir .dir__bar .filters{margin:0 0 10px;gap:10px 12px}
+#ps-dir .dir__bar .filters label,#ps-dir .dir__bar .filters .flabel,#ps-dir .filters2 label,#ps-dir .fsearch{gap:0}
+#ps-dir .filters2{gap:10px 12px;align-items:center}
+@media (min-width:901px){#ps-dir .filters2{grid-template-columns:minmax(0,3.05fr) minmax(0,1.2fr) minmax(0,1.2fr)}}
+#ps-dir .fwrap>.fi{left:12px;width:17px;height:17px;margin-top:-8.5px;color:#0f2f5a}
+#ps-dir .dir__bar .fwrap .db-filter{padding-left:37px;padding-right:30px}
+#ps-dir .fwrap>.fi{left:11px}
+#ps-dir .dir__bar .db-filter,#ps-dir .dir__bar .db-search{border-color:#dcd2bf;box-shadow:0 1px 2px rgba(60,40,10,.06)}
+#ps-dir .swrap .si{left:14px;width:19px;height:19px;margin-top:-9.5px;color:#1659b0}
+#ps-dir .dir__bar .db-search{padding-left:44px}
