@@ -124,10 +124,11 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 /* The photo itself, sized to the header height and anchored right, with its
    own fade so its left edge never shows on short headers. */
 .tph-hero > .tph-art::before {
-  content: ""; position: absolute; top: 0; bottom: 0; right: 0; aspect-ratio: 3266 / 981;
+  content: ""; position: absolute; top: 0; bottom: 0; right: 0; aspect-ratio: 5954 / 981;
   background: url("../img/vanuatu/panel-header-canoe.webp") right center / 100% 100% no-repeat;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
-          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
+  /* Long, gradual fade across the open sea to the left of the canoe. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.15) 16%, rgba(0,0,0,.38) 32%, rgba(0,0,0,.65) 46%, rgba(0,0,0,.88) 57%, #000 64%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.15) 16%, rgba(0,0,0,.38) 32%, rgba(0,0,0,.65) 46%, rgba(0,0,0,.88) 57%, #000 64%);
 }
 /* Panel D has seven cards in one row: slightly smaller so labels fit. */
 .tph-panel .db-panel-d-kpis { gap: 10px; }
