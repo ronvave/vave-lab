@@ -187,8 +187,8 @@
 /* Panel D filter bar: dark KPI band with icons, then a light filter area with
    icon labels, icon selects, a search box with a magnifier, and Research
    explanation + Sort beside the search. */
-#ps-dir .dir__bar{margin:16px 0 6px;border:1px solid #d5dee8;border-radius:12px;overflow:hidden;background:#f3f6f9;box-shadow:0 1px 3px rgba(6,30,60,.06)}
-#ps-dir .dir__kpis{display:flex;flex-wrap:wrap;align-items:center;gap:10px 48px;margin:0;padding:14px 22px;background:linear-gradient(90deg,#082a4f 0%,#082a4f 45%,rgba(8,42,79,.78) 75%,rgba(8,42,79,.55) 100%),url(../img/regional/tapa-band.webp) right center/cover no-repeat,#082a4f;color:#dbe7f3;font-size:.86rem}
+#ps-dir .dir__bar{position:relative;z-index:30;margin:16px 0 6px;border:1px solid #d5dee8;border-radius:12px;overflow:visible;background:#f3f6f9;box-shadow:0 1px 3px rgba(6,30,60,.06)}
+#ps-dir .dir__kpis{display:flex;flex-wrap:wrap;align-items:center;gap:10px 48px;margin:0;border-radius:11px 11px 0 0;padding:14px 22px;background:linear-gradient(90deg,#082a4f 0%,#082a4f 45%,rgba(8,42,79,.78) 75%,rgba(8,42,79,.55) 100%),url(../img/regional/tapa-band.webp) right center/cover no-repeat,#082a4f;color:#dbe7f3;font-size:.86rem}
 #ps-dir .dir__kpis span{display:inline-flex;align-items:center;gap:0}
 #ps-dir .dir__kpis b{font-size:1.6rem;color:#fff;margin:0 10px 0 0;line-height:1}
 #ps-dir .kpi-ico{width:30px;height:30px;color:#35d0e6;margin-right:14px;flex:none}
