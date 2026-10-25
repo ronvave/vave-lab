@@ -1,0 +1,19 @@
+/* Panel B5 "Global locations of research" country list — B2 table styling
+   (Oct 2026). Builds on css/b2-study-table.css (.b2t cards); used by the Fiji,
+   Tonga, Vanuatu (B5) and Solomon Islands (B4) dashboards. */
+.b5t-hidden { display: none !important; }
+.b3-country-list.b5t-host { margin-top: 6px; }
+.b3-country-list.b5t-host .b2t__head,
+.b3-country-list.b5t-host .b2t .b2t__row {
+  grid-template-columns: minmax(0, 1fr) 112px 84px 84px; column-gap: 0;
+}
+.b3-country-list.b5t-host .b2t__th { cursor: default; white-space: normal; text-align: center; line-height: 1.15; }
+.b3-country-list.b5t-host .b2t__th--name { text-align: left; }
+.b3-country-list.b5t-host .b2t .b2t__row { cursor: pointer; }
+.b3-country-list.b5t-host .db-world-country-row__name { cursor: pointer; }
+.b3-country-list.b5t-host .b2t__num {
+  justify-self: stretch; text-align: center; font: 500 1.02rem 'Source Sans Pro', sans-serif; color: #2b2b2b;
+}
+.b3-country-list.b5t-host .b2t__total {
+  justify-self: center; text-align: center; font: 800 1.08rem 'Source Sans Pro', sans-serif; color: #0f3d5e;
+}

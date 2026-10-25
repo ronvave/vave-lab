@@ -28,7 +28,13 @@
     'Vietnam': 'vn', 'South Korea': 'kr', 'Korea': 'kr', 'Taiwan': 'tw', 'Hong Kong': 'hk',
     'Trinidad and Tobago': 'tt', 'Jamaica': 'jm', 'Mexico': 'mx', 'Brazil': 'br', 'Chile': 'cl',
     'South Africa': 'za', 'Israel': 'il', 'Cuba': 'cu', 'Russia': 'ru', 'Bangladesh': 'bd',
-    'Pakistan': 'pk', 'Sri Lanka': 'lk', 'Egypt': 'eg', 'Turkey': 'tr', 'United Arab Emirates': 'ae'
+    'Pakistan': 'pk', 'Sri Lanka': 'lk', 'Egypt': 'eg', 'Turkey': 'tr', 'United Arab Emirates': 'ae',
+    'Guam': 'gu', 'Northern Mariana Islands': 'mp', 'Wallis and Futuna': 'wf', 'Tokelau': 'tk', 'Pitcairn Islands': 'pn',
+    'Timor-Leste': 'tl', 'East Timor': 'tl', 'Peru': 'pe', 'Argentina': 'ar', 'Colombia': 'co', 'Ecuador': 'ec',
+    'Kenya': 'ke', 'Tanzania': 'tz', 'Nigeria': 'ng', 'Ghana': 'gh', 'Madagascar': 'mg', 'Mauritius': 'mu',
+    'Seychelles': 'sc', 'Maldives': 'mv', 'Nepal': 'np', 'Cambodia': 'kh', 'Laos': 'la', 'Myanmar': 'mm',
+    'Greece': 'gr', 'Poland': 'pl', 'Iceland': 'is', 'Greenland': 'gl', 'Barbados': 'bb', 'Haiti': 'ht',
+    'Puerto Rico': 'pr', 'Belize': 'bz', 'Costa Rica': 'cr', 'Panama': 'pa', 'Bhutan': 'bt', 'Brunei': 'bn'
   };
   // Fallback only — each worldPoint's own `region` field wins.
   var REGION_FALLBACK = {
@@ -300,5 +306,5 @@
     fitToolbar(bar);
   }
 
-  window.B2StudyTable = { renderCountries: renderCountries, renderRegions: renderRegions, regionHost: regionHost, setTallies: setTallies };
+  window.B2StudyTable = { flag: function (name, iso) { return flagEl({ name: name, iso: iso }); }, renderCountries: renderCountries, renderRegions: renderRegions, regionHost: regionHost, setTallies: setTallies };
 })();
