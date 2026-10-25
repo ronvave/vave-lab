@@ -2601,7 +2601,9 @@
     // Reset the world map to the marker-bounds framing (auto-fit to all dots).
     if (state.worldMap) {
       const pts = ((state.graduateStudies && state.graduateStudies.worldPoints) || []);
-      const latlngs = pts.map(p => [p.lat, p.lng]);
+      const latlngs = pts
+        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .map(p => [p.lat, p.lng]);
       if (latlngs.length > 1) {
         state.worldMap.fitBounds(L.latLngBounds(latlngs), { padding: [40, 60], maxZoom: 3, animate: true });
       } else if (latlngs.length === 1) {
@@ -2651,7 +2653,8 @@
     if (!state.worldLayer || !state.worldLayer.getLayers) return [];
     return state.worldLayer.getLayers()
       .filter(l => l && l._worldPoint && l._worldHome && predicate(l._worldPoint))
-      .map(l => [l._worldHome[0], l._worldHome[1]]);
+      .map(l => [l._worldHome[0], l._worldHome[1]])
+      .filter(ll => Number.isFinite(ll[0]) && Number.isFinite(ll[1]));
   }
 
   function zoomToWorldCountry(name) {
@@ -2666,7 +2669,12 @@
         return candidates.reduce((best, x) =>
           Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
       };
-      latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+      // Skip study locations without map coordinates: Leaflet throws
+      // "Invalid LatLng object" on undefined lat/lng, which aborted the
+      // country click (and the downstream panel filtering) entirely.
+      latlngs = pts
+        .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+        .map(p => [p.lat, wrapToAnchor(p.lng)]);
     }
     if (!latlngs.length) return;
     if (latlngs.length === 1) {
@@ -2745,7 +2753,8 @@
       if (!q) return;
       const m = state.worldMap;
       const grad = state.graduateStudies || { worldPoints: [] };
-      const points = grad.worldPoints || [];
+      // Only points with map coordinates can be zoomed to.
+      const points = (grad.worldPoints || []).filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng));
       if (!m || !points.length) return;
 
       // --- Step 1: scholar-first index ---------------------------------
@@ -5064,7 +5073,9 @@
           return candidates.reduce((best, x) =>
             Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
         };
-        latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+        latlngs = pts
+          .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+          .map(p => [p.lat, wrapToAnchor(p.lng)]);
       }
       if (!latlngs.length) return;
       if (latlngs.length === 1) {
