@@ -241,6 +241,34 @@
 
   function fmt(n) { return Number.isFinite(Number(n)) ? Number(n).toLocaleString('en-US') : '—'; }
 
+  // Scale the toolbar (all sizes are em-based) so the toggle + tallies row
+  // fills the panel width on one line. Capped so it never gets oversized.
+  var MAX_SCALE = 1.4, MIN_SCALE = 0.7;
+  function fitToolbar(bar) {
+    var avail = bar.clientWidth;
+    if (!avail) return;
+    bar.classList.add('is-measuring');
+    bar.style.setProperty('--b2t-scale', '1');
+    var kids = Array.prototype.slice.call(bar.children);
+    var gap = parseFloat(getComputedStyle(bar).columnGap) || 0;
+    var natural = kids.reduce(function (w, k) { return w + k.getBoundingClientRect().width; }, 0) + gap * Math.max(0, kids.length - 1);
+    bar.classList.remove('is-measuring');
+    if (!natural) return;
+    var scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, (avail - 4) / natural));
+    bar.style.setProperty('--b2t-scale', scale.toFixed(3));
+  }
+  function watchToolbar(bar) {
+    var queued = false;
+    var run = function () {
+      if (queued) return; queued = true;
+      requestAnimationFrame(function () { queued = false; fitToolbar(bar); });
+    };
+    if (window.ResizeObserver) new ResizeObserver(run).observe(bar.parentNode || bar);
+    window.addEventListener('resize', run);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    run();
+  }
+
   function setTallies(listView, t) {
     if (!listView) return;
     var tabs = listView.querySelector('[data-world-list-tabs]');
@@ -263,11 +291,13 @@
         tallies.appendChild(card);
       });
       bar.appendChild(tallies);
+      watchToolbar(bar);
     }
     ['scholars', 'masters', 'phd'].forEach(function (k) {
       var el = bar.querySelector('[data-b2t-tally="' + k + '"]');
       if (el) el.textContent = fmt(t && t[k]);
     });
+    fitToolbar(bar);
   }
 
   window.B2StudyTable = { renderCountries: renderCountries, renderRegions: renderRegions, regionHost: regionHost, setTallies: setTallies };
