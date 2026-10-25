@@ -110,7 +110,7 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .tct-dark { color: #111 !important; }
 .tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
 
-/* Every panel: ni-Vanuatu children paddling a dugout canoe on a turquoise
+/* Every panel: traditional Vanuatu sailing canoe on a turquoise
    lagoon (photo widened with matching sea and sky so the canoe sits just left of the panel badge). Sized to the
    header height and anchored right; the sea fades in across the left part of
    the header, reaching full strength just before the canoe's bow. */
@@ -124,7 +124,7 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 /* The photo itself, sized to the header height and anchored right, with its
    own fade so its left edge never shows on short headers. */
 .tph-hero > .tph-art::before {
-  content: ""; position: absolute; top: 0; bottom: 0; right: 0; aspect-ratio: 2880 / 600;
+  content: ""; position: absolute; top: 0; bottom: 0; right: 0; aspect-ratio: 3266 / 981;
   background: url("../img/vanuatu/panel-header-canoe.webp") right center / 100% 100% no-repeat;
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
           mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
