@@ -1626,6 +1626,19 @@
       btn.setAttribute('aria-selected', on ? 'true' : 'false');
       btn.tabIndex = on ? 0 : -1;
     });
+    // By Region view (shared Panel B2 table, Oct 2026).
+    const regionHost = window.B2StudyTable ? window.B2StudyTable.regionHost(listView) : null;
+    if (regionHost) regionHost.style.display = view === 'region' ? '' : 'none';
+    if (view === 'region') {
+      ['[data-world-search-wrap]', '[data-world-country-list]', '[data-world-narrative]', '[data-world-confederacy-list]', '[data-world-empty]']
+        .forEach(sel => { const el = listView.querySelector(sel); if (el) el.style.display = 'none'; });
+      const titleR = listView.querySelector('[data-world-list-title]');
+      const explainR = listView.querySelector('[data-world-list-explain]');
+      if (titleR) titleR.textContent = 'Regions of Vanuatu graduate study';
+      if (explainR) explainR.textContent = 'Completed Masters and PhD degrees grouped by world region. Click a region to list its countries, then click a country to zoom the map and filter Panels F and G.';
+      if (regionHost) window.B2StudyTable.renderRegions(regionHost, state._b2Countries || [], state._b2Points || [], { selected: state.worldSelectedCountry, onSelect: name => selectWorldCountry(name) });
+      return;
+    }
     const searchWrap = listView.querySelector('[data-world-search-wrap]');
     const countryList = listView.querySelector('[data-world-country-list]');
     const emptyEl = listView.querySelector('[data-world-empty]');
@@ -1848,47 +1861,10 @@
     const emptyEl = document.querySelector('[data-world-empty]');
     if (emptyEl) emptyEl.style.display = (displayCountries.length === 0) ? '' : 'none';
 
-    displayCountries.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'db-world-country-row';
-      if (state.worldSelectedCountry === c.name) row.classList.add('is-filter-active');
-      // Country name is a real button so it stays keyboard-focusable and
-      // announces as interactive; the university count sits OUTSIDE the
-      // button so it isn't underlined and doesn't get read as part of the
-      // filter action's label.
-      const nameWrap = document.createElement('span');
-      nameWrap.className = 'db-world-country-row__name-wrap';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'db-world-country-row__name';
-      btn.textContent = c.name;
-      btn.setAttribute('aria-label', 'Filter panels below by ' + c.name);
-      btn.addEventListener('click', () => selectWorldCountry(c.name));
-      nameWrap.appendChild(btn);
-      // University count in parentheses next to the country name.
-      // Number of unique universities the pipeline has for this country
-      // (each entry in c.unis is one distinct university leaf under the
-      // Zotero Thesis root). Rendered on every draw so it stays in sync
-      // with the 3-hour Zotero refresh / force sync.
-      const uniN = Array.isArray(c.unis) ? c.unis.length : 0;
-      const uniCount = document.createElement('span');
-      uniCount.className = 'db-world-country-row__uni-count';
-      // Gap between the name and the paren is handled by CSS margin-left
-      // (see .db-world-country-row__uni-count) so it survives inline-flex
-      // whitespace collapsing.
-      uniCount.textContent = `(${uniN})`;
-      uniCount.setAttribute('aria-label', `${uniN} ${uniN === 1 ? 'university' : 'universities'}`);
-      nameWrap.appendChild(uniCount);
-      row.appendChild(nameWrap);
-      const counts = document.createElement('span');
-      counts.className = 'db-world-country-row__counts';
-      counts.innerHTML =
-        `<b>Masters</b> ${c.masters} ` +
-        `<span class="pipe"></span> <b>PhD</b> ${c.phd} ` +
-        `<span class="pipe"></span> <span class="db-world-total">Total ${c.total}</span>`;
-      row.appendChild(counts);
-      listHost.appendChild(row);
-    });
+    // Shared two-column sortable table (js/b2-study-table.js).
+    if (window.B2StudyTable) {
+      window.B2StudyTable.renderCountries(listHost, displayCountries, { selected: state.worldSelectedCountry, onSelect: name => selectWorldCountry(name) });
+    }
 
     // Global totals for both the summary sentence below the panel AND the
     // Panel B2 title suffix. Kept as one computation so the two never drift.
@@ -1954,6 +1930,14 @@
       const numEl = document.querySelector(`[data-b2-kpi="${key}"]`);
       if (numEl) numEl.textContent = String(value);
     });
+
+    // Panel B2 table tallies (same full-database figures as the KPI tiles).
+    state._b2Countries = countries;
+    state._b2Points = points;
+    if (window.B2StudyTable) {
+      const kp = Object.fromEntries(kpiPairs);
+      window.B2StudyTable.setTallies(listView, { scholars: kp.scholars, masters: kp.masters, phd: kp.phd });
+    }
 
     // Apply the active list view (country vs confederacy). This shows/hides
     // the country list + search vs the confederacy rollup, and re-renders the
