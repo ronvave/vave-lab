@@ -1,0 +1,33 @@
+/* Vanuatu dashboard — parchment Polynesian mandala background (Oct 2026).
+   Same treatment as the Fiji tapa (css/fiji-panel-hero.css) and Tonga mat
+   (css/tongan-panel-hero.css): the pattern sits under a soft light veil on
+   every top-level panel and on the sticky panel menu bar, so text and charts
+   in front of it stay crisp. */
+.db-panel[data-panel]:not(:is(.db-panel[data-panel], .has-panel-badge) *),
+.has-panel-badge:not(:is(.db-panel[data-panel], .has-panel-badge) *) {
+  background:
+    linear-gradient(rgba(255,253,249,.55), rgba(255,253,249,.55)),
+    url("../img/vanuatu/mandala-background.webp") center top / 1400px auto repeat !important;
+}
+/* Former grey inner areas let the pattern through, with a slightly stronger veil. */
+.db-panel[data-panel] .db-world-panel-wide,
+.db-panel[data-panel] .db-map-legend-panel,
+.db-panel[data-panel] .short-disciplines-toggle,
+.db-panel[data-panel] .db-insight,
+.db-panel[data-panel] .db-b2-blurb {
+  background: rgba(255,255,255,.5) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.has-panel-badge .db-item { background: rgba(255,255,255,.72) !important; }
+.has-panel-badge .db-search { background: #fff !important; }
+
+/* Panel menu bar on top. */
+body nav.db-panel-menu {
+  background:
+    linear-gradient(rgba(251,248,242,.64), rgba(251,248,242,.64)),
+    url("../img/vanuatu/mandala-background.webp") center / 1400px auto repeat !important;
+  border-top: 1px solid rgba(236,210,173,.55);
+  border-bottom: 1px solid rgba(236,210,173,.9) !important;
+  box-shadow: 0 5px 16px rgba(89,64,34,.11) !important;
+}
+[data-theme="dark"] body nav.db-panel-menu { background: rgba(65,49,37,.97) !important; border-color: rgba(236,210,173,.27) !important; }
