@@ -184,3 +184,30 @@
 #ps-dir .psd-pos__pill { flex: 0 0 auto; margin-top: 1px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; line-height: 1.4; min-width: 64px; text-align: center; box-sizing: border-box; }
 #ps-dir .psd-pos__pill.is-cur { background: #0e7c86; color: #fff; }
 #ps-dir .psd-pos__pill.is-past { background: #eceef0; color: #5b6673; border: 1px solid #d5d9de; }
+/* Panel D filter bar: dark KPI band with icons, then a light filter area with
+   icon labels, icon selects, a search box with a magnifier, and Research
+   explanation + Sort beside the search. */
+#ps-dir .dir__bar{margin:16px 0 6px;border:1px solid #d5dee8;border-radius:12px;overflow:hidden;background:#f3f6f9;box-shadow:0 1px 3px rgba(6,30,60,.06)}
+#ps-dir .dir__kpis{display:flex;flex-wrap:wrap;align-items:center;gap:10px 48px;margin:0;padding:14px 22px;background:linear-gradient(90deg,#082a4f 0%,#082a4f 45%,rgba(8,42,79,.78) 75%,rgba(8,42,79,.55) 100%),url(../img/regional/tapa-band.webp) right center/cover no-repeat,#082a4f;color:#dbe7f3;font-size:.86rem}
+#ps-dir .dir__kpis span{display:inline-flex;align-items:center;gap:0}
+#ps-dir .dir__kpis b{font-size:1.6rem;color:#fff;margin:0 10px 0 0;line-height:1}
+#ps-dir .kpi-ico{width:30px;height:30px;color:#35d0e6;margin-right:14px;flex:none}
+#ps-dir .dir__barbody{padding:14px 18px 16px}
+#ps-dir .dir__bar .filters{margin:0 0 14px;gap:14px 12px}
+#ps-dir .dir__bar .filters label,#ps-dir .dir__bar .filters .flabel,#ps-dir .filters2 label{display:flex;flex-direction:column;gap:7px;font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#123a63;min-width:0}
+#ps-dir .flt{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#ps-dir .fl-ico{width:15px;height:15px;color:#14508c;flex:none}
+#ps-dir .fwrap{position:relative;display:block}
+#ps-dir .fwrap>.fi{position:absolute;left:11px;top:50%;width:15px;height:15px;margin-top:-7.5px;color:#14508c;pointer-events:none;z-index:1}
+#ps-dir .dir__bar .db-filter{height:38px;padding:7px 30px 7px 12px;border:1px solid #c6d1dd;border-radius:8px;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%231e2a3a' stroke-width='1.8'/%3E%3C/svg%3E") right 11px center/11px 8px no-repeat;-webkit-appearance:none;appearance:none;color:#1e2a3a;font-size:.88rem;box-shadow:0 1px 2px rgba(6,30,60,.05)}
+#ps-dir .dir__bar .fwrap .db-filter{padding-left:34px}
+#ps-dir .dir__bar .cmenu__chev{display:none}
+#ps-dir .dir__bar .db-filter:hover{border-color:#14508c}
+#ps-dir .filters2{display:grid;grid-template-columns:minmax(0,2.55fr) minmax(0,1.1fr) minmax(0,.95fr);gap:12px 22px;align-items:end}
+#ps-dir .filters2 .searchrow{flex-wrap:nowrap}
+#ps-dir .swrap{position:relative;flex:1 1 auto;display:block;min-width:0}
+#ps-dir .swrap .si{position:absolute;left:16px;top:50%;width:20px;height:20px;margin-top:-10px;color:#1659b0;pointer-events:none}
+#ps-dir .dir__bar .db-search{width:100%;height:40px;padding:8px 14px 8px 50px;border:1px solid #c6d1dd;border-radius:8px;background:#fff;font-size:.92rem;box-shadow:0 1px 2px rgba(6,30,60,.05)}
+#ps-dir .dir__bar .db-search:hover{border-color:#14508c}
+@media (max-width:900px){#ps-dir .filters2{grid-template-columns:1fr 1fr}#ps-dir .filters2 .searchrow{grid-column:1/-1}#ps-dir .dir__kpis{gap:10px 28px}}
+@media (max-width:560px){#ps-dir .dir__kpis{flex-direction:column;align-items:flex-start;padding:12px 16px}#ps-dir .dir__barbody{padding:12px}#ps-dir .filters2{grid-template-columns:1fr}}
