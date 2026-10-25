@@ -9591,7 +9591,8 @@
       state.shown += state.pageSize;
       renderItems();
     });
-    $('[data-db-export="bib"]').addEventListener('click', exportBib);
+    const bibBtn = $('[data-db-export="bib"]');
+    if (bibBtn) bibBtn.addEventListener('click', exportBib);
     const clearBtn = $('[data-db-clear]');
     if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
   }
