@@ -110,16 +110,24 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .tph-panel .tct-dark { color: #111 !important; }
 .tph-panel svg .tct-dark, .tph-panel text.tct-dark, .tph-panel tspan.tct-dark { fill: #111 !important; }
 
-/* Every panel: traditional Fijian outrigger canoe on open turquoise water.
-   Sized to the header height so the whole canoe shows, just left of the
-   panel badge; the open sea and sky fade in gradually across about half
-   of the header, reaching full strength just before the canoe. */
+/* Every panel: ni-Vanuatu children paddling a dugout canoe on a turquoise
+   lagoon (photo widened with matching sea and sky so the canoe sits just left of the panel badge). Sized to the
+   header height and anchored right; the sea fades in across the left part of
+   the header, reaching full strength just before the canoe's bow. */
 .tph-hero > .tph-art {
-  width: auto; left: auto; aspect-ratio: 3475 / 724;
-  background-image: url("../img/fiji/panel-header-canoe.webp");
-  background-size: 100% 100%; background-position: right center;
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
-          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 18%, rgba(0,0,0,.35) 36%, rgba(0,0,0,.7) 52%, #000 64%);
+  left: 0; right: 0; width: auto; background-image: none;
+  /* Outer fade across the header width: the text side always stays dark blue,
+     whatever the header height. */
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 22%, rgba(0,0,0,.35) 38%, rgba(0,0,0,.7) 52%, #000 64%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.12) 22%, rgba(0,0,0,.35) 38%, rgba(0,0,0,.7) 52%, #000 64%);
+}
+/* The photo itself, sized to the header height and anchored right, with its
+   own fade so its left edge never shows on short headers. */
+.tph-hero > .tph-art::before {
+  content: ""; position: absolute; top: 0; bottom: 0; right: 0; aspect-ratio: 2880 / 600;
+  background: url("../img/vanuatu/panel-header-canoe.webp") right center / 100% 100% no-repeat;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
+          mask-image: linear-gradient(90deg, transparent 0%, rgba(0,0,0,.35) 12%, rgba(0,0,0,.75) 22%, #000 30%);
 }
 /* Panel D has seven cards in one row: slightly smaller so labels fit. */
 .tph-panel .db-panel-d-kpis { gap: 10px; }

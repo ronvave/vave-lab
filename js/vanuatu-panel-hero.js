@@ -16,9 +16,9 @@
   var ro = window.ResizeObserver ? new ResizeObserver(function (es) { es.forEach(function (e) { fit(e.target); }); }) : null;
   function fit(hero) {
     var art = hero.querySelector(':scope > .tph-art'); if (!art) return;
-    // The canoe spans from about 17% of the picture to its right edge (2.06 : 1),
-    // so text stops just before the sail.
-    var pr = Math.round(hero.offsetHeight * 1.71) + 24;
+    // Vanuatu canoe photo: text uses the left 57% of the header (the dark,
+    // faded side), so it never sits on the bright lagoon or the children.
+    var pr = Math.round(hero.offsetWidth * 0.43);
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
   }
   function addArt(hero) {
