@@ -155,7 +155,13 @@ def rows_to_dicts(
     data_rows = rows[first_data_row_1indexed - 1 :]
     dicts: list[dict[str, Any]] = []
     for row in data_rows:
-        if not row or all((c is None or str(c).strip() == "") for c in row):
+        # Unticked checkbox columns (e.g. Retired) leave FALSE in every
+        # blank row below the data; treat those as empty so they are not
+        # counted as records.
+        if not row or all(
+            (c is None or c is False or str(c).strip() in ("", "FALSE"))
+            for c in row
+        ):
             continue
         # Pad/truncate to header length
         padded = list(row) + [""] * (len(headers) - len(row))
