@@ -60,6 +60,17 @@
     dropdown.style.top = (viewportTop - bar.top) + 'px';
     dropdown.style.maxHeight = Math.max(100,window.innerHeight-viewportTop-12) + 'px';
   }
+  // "Top" pill: always first, returns to the top of the page without
+  // touching location.hash (which stores B2's filter state).
+  const topPill = document.createElement('a');
+  topPill.href = '#'; topPill.textContent = '\u2191 Top'; topPill.className = 'db-panel-menu__pill db-panel-menu__pill--top';
+  topPill.title = 'Back to top of page'; topPill.setAttribute('aria-label','Back to top of page');
+  topPill.addEventListener('click', e => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); close(false);
+    window.scrollTo({top:0,behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+  });
+  strip.appendChild(topPill);
   Object.entries(groups).forEach(([group, entries]) => {
     entries = entries.filter(([code]) => targets.has(code)); if (!entries.length) return;
     let pill;
