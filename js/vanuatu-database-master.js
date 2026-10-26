@@ -6268,6 +6268,9 @@
   // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
+  // Panel D firsts toolbar (js/panel-d-firsts.js) re-draws the chart after a
+  // Master's/PhD or gender toggle.
+  window.__panelDRerender = () => renderHistogram();
   function renderHistogram() {
     const items = state.snapshot.items;
     const authorsMode = state.histAuthors || 'both';
@@ -6463,7 +6466,7 @@
     // update automatically whenever the Master file refresh promotes a new
     // scholar into a milestone slot.
     const visibleMilestones = panelDData.milestones
-      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax)
+      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax && (typeof window.__panelDFirstsShow !== 'function' || window.__panelDFirstsShow(milestone)))
       .map(milestone => {
         const barTotal = (() => {
           const bucket = perYear.get(milestone.year);

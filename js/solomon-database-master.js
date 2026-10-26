@@ -6589,6 +6589,9 @@
     return {boxes,complete:boxes.length===milestones.length};
   }
 
+  // Panel D firsts toolbar (js/panel-d-firsts.js) re-draws the chart after a
+  // Master's/PhD or gender toggle.
+  window.__panelDRerender = () => renderHistogram();
   function renderHistogram() {
     const items = state.snapshot.items;
     const authorsMode = state.histAuthors || 'both';
@@ -6704,7 +6707,7 @@
     const yScale = value => plotH * (value / niceMax);
     const yZero = PAD_TOP + plotH;
     const plotRight = W - PAD_RIGHT;
-    const milestonesInView=panelDData.milestones.filter(m=>m.year>=yMin && m.year<=yMax);
+    const milestonesInView=panelDData.milestones.filter(m=>m.year>=yMin && m.year<=yMax && (typeof window.__panelDFirstsShow!=='function' || window.__panelDFirstsShow(m)));
     const milestoneBars=[];
     perYear.forEach((bucket,year)=>{
       if(year<yMin||year>yMax)return;

@@ -1,0 +1,57 @@
+/* Panel D firsts toolbar and list (js/panel-d-firsts.js), 2026-10-25.
+   Mirrors the Regional B1 toggles, in the light country-dashboard style. */
+[data-panel="D"] .pdf-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 4px 0 14px; }
+[data-panel="D"] .pdf-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 999px; background: #e8eef5; border: 1px solid #d3dde8; }
+[data-panel="D"] .pdf-seg button { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: #111; font: inherit; font-size: .8rem; font-weight: 700; padding: 6px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s; }
+[data-panel="D"] .pdf-seg button:hover { background: rgba(11, 79, 92, .10); }
+[data-panel="D"] .pdf-seg button[aria-checked="true"],
+[data-panel="D"] .pdf-seg button[aria-selected="true"] { background: #0b4f5c; color: #fff; box-shadow: 0 1px 4px rgba(11, 79, 92, .35); }
+[data-panel="D"] .pdf-seg button:focus-visible { outline: 2px solid #0b4f5c; outline-offset: 2px; }
+[data-panel="D"] .pdf-bi { width: 15px; height: 15px; flex: none; }
+[data-panel="D"] .pdf-bi--m { color: #1f6fb2; }
+[data-panel="D"] .pdf-bi--f { color: #d6338a; }
+[data-panel="D"] .pdf-seg button[aria-checked="true"] .pdf-bi--m { color: #9fd3ff; }
+[data-panel="D"] .pdf-seg button[aria-checked="true"] .pdf-bi--f { color: #ffb3dc; }
+[data-panel="D"] .pdf-sep { width: 1px; align-self: stretch; margin: 4px 2px; background: #c9d4df; }
+[data-panel="D"] .pdf-count { margin-left: auto; font-size: .84rem; font-weight: 700; color: #111; }
+[data-panel="D"] .pdf-hidden { display: none !important; }
+
+[data-panel="D"] .pdf-list { margin: 0 0 14px; }
+[data-panel="D"] .pdf-scroll { overflow-x: auto; border: 1px solid #d3dde8; border-radius: 12px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, .06); }
+[data-panel="D"] .pdf-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .86rem; color: #111; }
+[data-panel="D"] .pdf-table th,
+[data-panel="D"] .pdf-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e6ecf2; vertical-align: middle; }
+[data-panel="D"] .pdf-table thead th { padding: 0; background: #0b4f5c; border-bottom: 0; }
+[data-panel="D"] .pdf-table thead th:first-child { border-top-left-radius: 11px; }
+[data-panel="D"] .pdf-table thead th:last-child { border-top-right-radius: 11px; }
+[data-panel="D"] .pdf-th { display: inline-flex; align-items: center; gap: 7px; width: 100%; padding: 10px; border: 0; background: none; color: #fff; font: inherit; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; cursor: pointer; white-space: nowrap; text-align: left; }
+[data-panel="D"] .pdf-th:focus-visible { outline: 2px solid #fff; outline-offset: -3px; border-radius: 6px; }
+[data-panel="D"] .pdf-sort { width: 8px; height: 12px; flex: none; }
+[data-panel="D"] .pdf-sort path { fill: #fff; opacity: .45; }
+[data-panel="D"] .pdf-th.is-ascending .up,
+[data-panel="D"] .pdf-th.is-descending .dn { opacity: 1; }
+[data-panel="D"] .pdf-th.is-ascending .dn,
+[data-panel="D"] .pdf-th.is-descending .up { opacity: .2; }
+[data-panel="D"] .pdf-table tbody tr:nth-child(even) td { background: #f4f8fb; }
+[data-panel="D"] .pdf-table tbody tr:hover td { background: #e6f3f5; }
+[data-panel="D"] .pdf-table tbody tr:last-child td { border-bottom: 0; }
+[data-panel="D"] .pdf-table td.y { font-weight: 700; font-variant-numeric: tabular-nums; width: 4em; }
+[data-panel="D"] .pdf-sch { display: inline-flex; align-items: center; gap: 10px; }
+[data-panel="D"] .pdf-ph { width: 30px; height: 30px; border-radius: 50%; object-fit: cover; flex: none; box-shadow: 0 0 0 1.5px #c9d4df; }
+[data-panel="D"] .pdf-table a { color: #0b5cad; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+[data-panel="D"] .pdf-table a:hover { color: #073f78; }
+[data-panel="D"] .pdf-tag { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px 5px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; line-height: 1.2; white-space: nowrap; color: #04121f; background: #22cde0; }
+[data-panel="D"] .pdf--male.pdf--phd .pdf-tag { background: #1417e6; color: #fff; }
+[data-panel="D"] .pdf--female .pdf-tag { background: #ff6cb9; color: #1d0614; }
+[data-panel="D"] .pdf--female.pdf--phd .pdf-tag { background: #ff2a9a; color: #fff; }
+[data-panel="D"] .pdf-u { display: inline-flex; align-items: center; gap: 10px; }
+[data-panel="D"] .pdf-uf { width: 34px; height: 23px; border-radius: 3px; object-fit: cover; flex: none; box-shadow: 0 0 0 1px rgba(0, 0, 0, .15); }
+[data-panel="D"] .pdf-ufx { width: 34px; flex: none; }
+[data-panel="D"] .pdf-uc { display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; letter-spacing: .03em; line-height: 1.2; flex: none; }
+[data-panel="D"] .pdf-na { color: #111; font-style: italic; opacity: .75; }
+[data-panel="D"] .pdf-note { margin: 8px 2px 0; font-size: .8rem; line-height: 1.45; color: #111; }
+.db-scholar-card.pdf-flash { box-shadow: 0 0 0 3px #0b4f5c, 0 8px 24px rgba(11, 79, 92, .25) !important; transition: box-shadow .3s; }
+[data-panel="D"] .pdf-un { min-width: 120px; }
+[data-panel="D"] .pdf-table td:nth-child(2) { min-width: 165px; }
+[data-panel="D"] .pdf-table td.pdf-fld { min-width: 140px; max-width: 190px; }
+[data-panel="D"] .pdf-table td.pdf-geo { min-width: 80px; }
