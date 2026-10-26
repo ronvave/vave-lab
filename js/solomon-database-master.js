@@ -6150,6 +6150,8 @@
       if (!id || seenDegreeIds.has(id) || !scholarsById.has(String(row['Scholar ID'] || '').trim()) || !isCompleted(row) || !(isMasters(row) || isPhd(row))) return false;
       seenDegreeIds.add(id); return true;
     });
+    // Panel D list (js/panel-d-firsts.js) shows these same rows, so its count matches the KPI.
+    state.panelDCompletedRows = completedRows;
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
     // Solomon Islands' Gender enum is stored on the Master sheet (and written by the
     // Admin Panel / Apps Script) as the literal Solomon Islands terms 'Male' (male)

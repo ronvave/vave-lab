@@ -6074,6 +6074,8 @@
     const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
     const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
     const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
+    // Panel D list (js/panel-d-firsts.js) shows these same rows, so its count matches the KPI.
+    state.panelDCompletedRows = completedRows;
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
     const milestoneDefinitions = [
       { key: 'firstMaleMasters', label: "1st Male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },

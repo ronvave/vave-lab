@@ -6107,6 +6107,8 @@
     const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
     const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
     const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
+    // Panel D list (js/panel-d-firsts.js) shows these same rows, so its count matches the KPI.
+    state.panelDCompletedRows = completedRows;
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
     // Tonga's Gender enum is stored on the Master sheet (and written by the
     // Admin Panel / Apps Script) as the literal Tongan terms 'Tangata' (male)
