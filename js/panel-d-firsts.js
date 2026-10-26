@@ -27,8 +27,21 @@
   var okina = function (v) { return COUNTRY === 'to' ? v.replace(/['\u2018\u2019`](?=\w)/g, '\u02bb') : v; };
   function pm(pat, mat) { var p = first.apply(null, pat); if (p) return okina(p); var m = first.apply(null, mat); return m ? 'M: ' + okina(m) : ''; }
 
+  var FJ_PROVINCES = ['Ba', 'Bua', 'Cakaudrove', 'Kadavu', 'Lau', 'Lomaiviti', 'Macuata', 'Nadroga/Navosa', 'Naitasiri', 'Namosi', 'Ra', 'Rewa', 'Serua', 'Tailevu', 'Rotuma'];
+  var FJ_PROV_KEY = FJ_PROVINCES.map(function (v) { return v.toLowerCase().replace(/[^a-z]/g, ''); });
+  function fjProv(list) {
+    return list.map(function (v) {
+      var k = str(v).toLowerCase().replace(/[^a-z]/g, '');
+      if (k === 'nadroga' || k === 'navosa' || k === 'nadroganavosa') return 'Nadroga/Navosa';
+      var i = FJ_PROV_KEY.indexOf(k);
+      return i < 0 ? '' : FJ_PROVINCES[i];
+    });
+  }
+
   var COLS = {
-    fj: [['prov', 'Province', function (s, p) { return pm([s['Province Paternal'], s.effective_paternal_province, p.paternalProvince], [s['Province Maternal'], p.maternalProvince]); }],
+    // Only Fiji's 14 provinces and Rotuma count as a Province. Confederacy names
+    // (e.g. Tovata) or village names entered in a province field are skipped.
+    fj: [['prov', 'Province', function (s, p) { return pm(fjProv([s['Province Paternal'], s.effective_paternal_province, p.paternalProvince]), fjProv([s['Province Maternal'], p.maternalProvince])); }],
          ['conf', 'Confederacy', function (s, p) { return pm([s['Paternal Confederacy'], s.effective_confederacy, p.paternalConfederacy], [p.maternalConfederacy]); }]],
     to: [['clan', 'Clan', function (s, p) { return pm([s['Clan Paternal'], p.paternalClan, p.haaLineagePaternal], [s['Clan Maternal'], p.maternalClan, p.haaLineageMaternal]); }],
          ['isl', 'Island', function (s, p) { return pm([s['Specific Island Paternal'], p.paternalSpecificIsland, s['Island Paternal'], s['Paternal Island Division'], p.paternalIslandDivision], [s['Specific Island Maternal'], p.maternalSpecificIsland, s['Island Maternal'], s['Maternal Island Division'], p.maternalIslandDivision]); }]],
