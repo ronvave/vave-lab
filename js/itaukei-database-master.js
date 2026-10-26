@@ -8626,6 +8626,34 @@
     return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 
+
+  // Card click → filtered publications list. The card grid above the list
+  // re-renders after a filter change, so a single smooth scroll issued
+  // straight away lands on its stale target (a few cards further down).
+  // Wait two frames for the re-render, scroll, then check once when the
+  // scroll settles and correct if the list header is still off-target.
+  function scrollToFilteredItems_() {
+    const go = () => {
+      const el = $('.db-items');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      go();
+      let checked = false;
+      const check = () => {
+        if (checked) return;
+        checked = true;
+        window.removeEventListener('scrollend', check);
+        const el = $('.db-items');
+        if (!el) return;
+        const want = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+        if (Math.abs(el.getBoundingClientRect().top - want) > 40) go();
+      };
+      window.addEventListener('scrollend', check);
+      setTimeout(check, 1800);
+    }));
+  }
+
   function renderScholarCard(r) {
     const active = state.filter.scholar === r.name;
     const salutation = r.salutation || '';
@@ -8734,7 +8762,7 @@
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();
-      $('.db-items').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      scrollToFilteredItems_();
     });
 
     // Photo (as background image) or initials fallback. Wrapped in a
