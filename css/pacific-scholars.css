@@ -535,6 +535,14 @@ a { color: var(--ps-teal-300); }
 @media (max-width: 640px) { .ps-gd-row { grid-template-columns: 1fr 76px; } .ps-gd-row .ps-gd-l { grid-column: 1 / -1; margin-bottom: -4px; } }
 .ps-pt th.role { position: sticky; left: 0; z-index: 1; background: var(--ps-paper); }
 .ps-pt tr.grp th span { position: sticky; left: 10px; }
+.ps-pt tr.grp th:has(.ps-hm-ban) { background: transparent; padding: 7px 0 5px; }
+.ps-hm-ban { display: flex; align-items: center; gap: 12px; height: 46px; padding: 0 14px 0 8px; border-radius: 8px; color: #fff; background: #0d47b8 url("../img/regional/b2/banner-blue.webp") right 62% / cover no-repeat; box-shadow: 0 3px 8px rgba(6,30,70,.18); }
+.ps-hm-ban--green { background-color: #1d6b2e; background-image: url("../img/regional/b2/banner-green.webp"); }
+.ps-pt tr.grp .ps-hm-ban span { position: static; }
+.ps-hm-ban__ic { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #0d47b8; }
+.ps-hm-ban--green .ps-hm-ban__ic { color: #1d6b2e; }
+.ps-hm-ban__ic svg { width: 20px; height: 20px; fill: currentColor; }
+.ps-hm-ban__t { font-size: 1.12rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
 @media (max-width: 1000px) { .ps-pt th.role { box-shadow: 1px 0 0 var(--ps-paper-line); } }
 @media (max-width: 640px) { .ps-pt { min-width: 860px; } .ps-pt th.role { white-space: normal; min-width: 128px; max-width: 128px; font-size: .78rem; line-height: 1.2; } }
 

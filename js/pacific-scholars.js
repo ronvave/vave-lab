@@ -1197,7 +1197,7 @@
     const anyOf = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
     const anyN = Object.fromEntries(['*', ...C].map(c => [c, posHas(c) || c === '*' ? anyOf(c) : 0]));
     for (const [grp, list] of [['University leadership', P.lead], ['Academic rank', P.rank]]) {
-      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><span>${grp}</span></th></tr>`;
+      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><div class="ps-hm-ban ps-hm-ban--${list === P.lead ? 'blue' : 'green'}"><span class="ps-hm-ban__ic">${svgI(list === P.lead ? 'inst' : 'cap')}</span><span class="ps-hm-ban__t">${grp}</span></div></th></tr>`;
       for (const [k, l] of list) {
         const tot = posCell(k, '*').length;
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
