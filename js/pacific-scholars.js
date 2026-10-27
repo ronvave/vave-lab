@@ -1197,7 +1197,7 @@
     const anyOf = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
     const anyN = Object.fromEntries(['*', ...C].map(c => [c, posHas(c) || c === '*' ? anyOf(c) : 0]));
     for (const [grp, list] of [['University leadership', P.lead], ['Academic rank', P.rank]]) {
-      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><div class="ps-hm-ban ps-hm-ban--${list === P.lead ? 'blue' : 'green'}"><span class="ps-hm-ban__ic">${svgI(list === P.lead ? 'inst' : 'cap')}</span><span class="ps-hm-ban__t">${grp}</span></div></th></tr>`;
+      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><div class="ps-hm-ban ps-hm-ban--${list === P.lead ? 'blue' : 'green'}"><span class="ps-hm-ban__ic">${svgI(list === P.lead ? 'inst' : 'cap')}</span><span class="ps-hm-ban__t">${grp}</span><span class="ps-hm-ban__fl" aria-hidden="true">${C.map(c => `<img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20" data-c="${c}"${posHas(c) ? '' : ' class="nodata"'}>`).join('')}</span></div></th></tr>`;
       for (const [k, l] of list) {
         const tot = posCell(k, '*').length;
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
@@ -1215,7 +1215,18 @@
     h += '</tbody><tfoot><tr class="ps-pt-any"><th class="role" scope="row">Scholars with any of these</th>' + C.map(c => `<td>${posHas(c) ? pctOf(any(c), byCode[c].scholars) : '·'}</td>`).join('') + `<td class="tot">${pctOf(any('*'), rosterAll)}</td></tr>`;
     h += '<tr class="ps-pt-roster"><th class="role" scope="row">Roster size</th>' + C.map(c => `<td>${pctOf(byCode[c].scholars, rosterAll)}</td>`).join('') + `<td class="tot">${pctOf(rosterAll, rosterAll)}</td></tr></tfoot>`;
     const t = $('#ps-pos-table'); t.innerHTML = h;
+    placeBanFlags();
+    if (!t._banRO && window.ResizeObserver) { t._banRO = new ResizeObserver(placeBanFlags); t._banRO.observe(t); }
     $('#ps-pos-tip').classList.remove('show');
+  }
+  // Line the banner flags up with the country columns of the heatmap header.
+  function placeBanFlags() {
+    const t = $('#ps-pos-table'); if (!t || !t.offsetWidth) return;
+    const ths = {}; $$('thead th', t).forEach((th, i) => { const im = th.querySelector('img'); if (im) ths[im.getAttribute('src')] = th; });
+    $$('.ps-hm-ban', t).forEach(ban => {
+      const b0 = ban.getBoundingClientRect().left;
+      $$('.ps-hm-ban__fl img', ban).forEach(im => { const th = ths[im.getAttribute('src')]; if (!th) return; const r = th.getBoundingClientRect(); im.style.left = (r.left + r.width / 2 - b0 - 15) + 'px'; });
+    });
   }
   function renderLead() {
     const P = D.positions, cc = POS.leadC;
