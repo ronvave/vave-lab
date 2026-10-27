@@ -545,8 +545,15 @@ a { color: var(--ps-teal-300); }
 .ps-hm-ban { position: relative; }
 .ps-hm-ban__fl { position: absolute; inset: 0; pointer-events: none; }
 .ps-pt tr.grp .ps-hm-ban .ps-hm-ban__fl { position: absolute; inset: 0; }
-.ps-hm-ban__fl img { position: absolute; top: 13px; width: 30px; height: 20px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.9), 0 2px 4px rgba(0,0,0,.35); }
-.ps-hm-ban__fl img.nodata { filter: grayscale(1); opacity: .55; }
+.ps-hm-ban__f, .ps-pt tr.grp .ps-hm-ban .ps-hm-ban__f { position: absolute; top: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.ps-hm-ban__f img { width: 30px; height: 20px; object-fit: cover; border-radius: 3px; box-shadow: 0 0 0 1.5px rgba(255,255,255,.9), 0 2px 4px rgba(0,0,0,.35); }
+.ps-hm-ban__f b { font-size: .7rem; font-weight: 700; letter-spacing: 0; text-transform: none; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.55); white-space: nowrap; }
+.ps-hm-ban__f.nodata img { filter: grayscale(1); opacity: .55; } .ps-hm-ban__f.nodata b { opacity: .6; }
+.ps-hm-ban__f.sel img { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #19b5c4; }
+.ps-hm-ban__f--tot b { font-size: .78rem; }
+/* Column labels live in the banners; the header row stays for screen readers only. */
+.ps-pt thead tr { visibility: collapse; }
+.ps-hm-ban { height: 56px; }
 .ps-hm-ban__t { font-size: 1.12rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.3); }
 @media (max-width: 1000px) { .ps-pt th.role { box-shadow: 1px 0 0 var(--ps-paper-line); } }
 @media (max-width: 640px) { .ps-pt { min-width: 860px; } .ps-pt th.role { white-space: normal; min-width: 128px; max-width: 128px; font-size: .78rem; line-height: 1.2; } }

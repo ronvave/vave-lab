@@ -1197,7 +1197,7 @@
     const anyOf = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
     const anyN = Object.fromEntries(['*', ...C].map(c => [c, posHas(c) || c === '*' ? anyOf(c) : 0]));
     for (const [grp, list] of [['University leadership', P.lead], ['Academic rank', P.rank]]) {
-      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><div class="ps-hm-ban ps-hm-ban--${list === P.lead ? 'blue' : 'green'}"><span class="ps-hm-ban__ic">${svgI(list === P.lead ? 'inst' : 'cap')}</span><span class="ps-hm-ban__t">${grp}</span><span class="ps-hm-ban__fl" aria-hidden="true">${C.map(c => `<img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20" data-c="${c}"${posHas(c) ? '' : ' class="nodata"'}>`).join('')}</span></div></th></tr>`;
+      h += `<tr class="grp"><th colspan="${C.length + 2}" scope="rowgroup"><div class="ps-hm-ban ps-hm-ban--${list === P.lead ? 'blue' : 'green'}"><span class="ps-hm-ban__ic">${svgI(list === P.lead ? 'inst' : 'cap')}</span><span class="ps-hm-ban__t">${grp}</span><span class="ps-hm-ban__fl" aria-hidden="true">${C.map(c => `<span class="ps-hm-ban__f${posHas(c) ? '' : ' nodata'}${state.sel === c ? ' sel' : ''}" data-c="${c}"><img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20"><b>${esc(SHORT[c] || c)}</b></span>`).join('')}<span class="ps-hm-ban__f ps-hm-ban__f--tot" data-c="*"><b>Region</b></span></span></div></th></tr>`;
       for (const [k, l] of list) {
         const tot = posCell(k, '*').length;
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
@@ -1222,10 +1222,12 @@
   // Line the banner flags up with the country columns of the heatmap header.
   function placeBanFlags() {
     const t = $('#ps-pos-table'); if (!t || !t.offsetWidth) return;
-    const ths = {}; $$('thead th', t).forEach((th, i) => { const im = th.querySelector('img'); if (im) ths[im.getAttribute('src')] = th; });
+    // Measure a body row (the header row is collapsed): its cells after the role label line up with the country columns.
+    const row = t.querySelector('tbody tr:not(.grp)'); if (!row) return;
+    const cells = [...row.children].slice(1);
     $$('.ps-hm-ban', t).forEach(ban => {
       const b0 = ban.getBoundingClientRect().left;
-      $$('.ps-hm-ban__fl img', ban).forEach(im => { const th = ths[im.getAttribute('src')]; if (!th) return; const r = th.getBoundingClientRect(); im.style.left = (r.left + r.width / 2 - b0 - 15) + 'px'; });
+      $$('.ps-hm-ban__f', ban).forEach((f, i) => { const th = cells[i]; if (!th) return; const r = th.getBoundingClientRect(); f.style.left = (r.left - b0) + 'px'; f.style.width = r.width + 'px'; });
     });
   }
   function renderLead() {
