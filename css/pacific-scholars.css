@@ -496,7 +496,7 @@ a { color: var(--ps-teal-300); }
 .ps-pt { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .86rem; font-variant-numeric: tabular-nums; min-width: 980px; }
 .ps-pt th, .ps-pt td { padding: 7px 6px; text-align: center; border-bottom: 1px solid var(--ps-paper-line); }
 .ps-pt thead th { font-size: .74rem; font-weight: 700; color: var(--ps-ink); vertical-align: bottom; }
-.ps-pt thead th img { width: 26px; height: 26px; border-radius: 50%; display: block; margin: 0 auto 4px; box-shadow: 0 0 0 2px #fff, 0 0 0 3px #cfd9e5; }
+.ps-pt thead th img { width: 36px; height: 24px; object-fit: cover; border-radius: 3px; display: block; margin: 0 auto 4px; box-shadow: 0 0 0 1px #cfd9e5, 0 1px 2px rgba(10,45,82,.25); }
 .ps-pt thead th.nodata { color: #9aa8b8; }
 .ps-pt thead th.nodata img { filter: grayscale(1); opacity: .45; }
 .ps-pt thead th.sel { color: #0f6a8c; }
@@ -511,12 +511,17 @@ a { color: var(--ps-teal-300); }
 .ps-pt td[data-k]:not(.z):hover, .ps-pt td[data-k]:not(.z):focus-visible { box-shadow: inset 0 0 0 2px #19b5c4; }
 .ps-pt td.c.selcol { box-shadow: inset 2px 0 0 #19b5c4, inset -2px 0 0 #19b5c4; }
 .ps-pt tfoot td, .ps-pt tfoot th { font-size: .74rem; color: var(--ps-ink-muted); font-weight: 500; border-bottom: 0; }
+.ps-pt tfoot tr.ps-pt-any td, .ps-pt tfoot tr.ps-pt-any th { background: #32CD32; color: #0a2d52; font-weight: 600; }
+.ps-pt tfoot tr.ps-pt-roster td, .ps-pt tfoot tr.ps-pt-roster th { background: #00BFFF; color: #0a2d52; font-weight: 600; }
+.ps-pt tfoot tr.ps-pt-any td.tot, .ps-pt tfoot tr.ps-pt-roster td.tot { font-weight: 700; }
+.ps-pt tfoot tr.ps-pt-any td small, .ps-pt tfoot tr.ps-pt-roster td small { opacity: .8; }
 .ps-pos-tip { position: fixed; z-index: 60; pointer-events: none; max-width: 460px; background: #0a2240; color: #eaf3fb; border-radius: 10px; padding: 10px 12px; font-size: .8rem; line-height: 1.35; box-shadow: 0 12px 30px rgba(0,0,0,.45); opacity: 0; transition: opacity .1s; left: 0; top: 0; }
 .ps-pos-tip.show { opacity: 1; }
 .ps-pos-tip b { color: #7fe3e6; }
 .ps-pos-tip ul { margin: 6px 0 0; padding-left: 16px; }
 .ps-pos-tip__sep { color: #48CAE4; font-weight: 700; }
 .ps-pos-tip__uni { color: #FFEE32; }
+.ps-pos-tip__cc { color: #00FFFF; }
 .ps-gd-row { display: grid; grid-template-columns: 230px 1fr 90px; gap: 10px; align-items: center; margin: 9px 0; font-size: .86rem; }
 .ps-gd-bar { display: flex; height: 22px; border-radius: 5px; overflow: hidden; background: rgba(255,255,255,.06); min-width: 0; }
 .ps-gd-bar span { display: flex; align-items: center; justify-content: center; font-size: .72rem; font-weight: 700; color: #04121f; min-width: 0; overflow: hidden; }

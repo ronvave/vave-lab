@@ -890,7 +890,7 @@
       const uniOf = s => {
         let U = (s.r[k] && s.r[k].u) || [];
         if (POS.held === 'cur' && U.some(u => u[2])) U = U.filter(u => u[2]);
-        return U.length ? ` <span class="ps-pos-tip__sep">|</span> <span class="ps-pos-tip__uni">${U.map(u => esc(u[0]) + (u[1] ? ` (${esc(u[1])})` : '')).join('; ')}</span>` : '';
+        return U.length ? ` <span class="ps-pos-tip__sep">|</span> <span class="ps-pos-tip__uni">${U.map(u => esc(u[0]) + (u[1] ? ` <span class="ps-pos-tip__cc">(${esc(u[1])})</span>` : '')).join('; ')}</span>` : '';
       };
       const names = L.slice().sort((a, b) => a.n.localeCompare(b.n)).map(s => esc(s.n) + (c === '*' ? ` <span style="opacity:.7">(${esc(SHORT[s.c] || s.c)})</span>` : '') + uniOf(s));
       tip.innerHTML = `<b>${esc(role)}</b> · ${c === '*' ? 'Region' : esc(nameOf(c))}<br>${L.length} scholar${L.length > 1 ? 's' : ''}${POS.held === 'cur' ? ' (current)' : ''}<ul>${names.slice(0, 12).map(n => `<li>${n}</li>`).join('')}${names.length > 12 ? `<li>and ${names.length - 12} more</li>` : ''}</ul>`;
@@ -914,7 +914,7 @@
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
     const profOnly = countries().filter(c => posProfileOnly(c.code)).map(c => c.name);
     const nProf = Object.values(P.coverage.profile || {}).reduce((a, b) => a + b, 0);
-    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets; colours run from dusky rose (small share) to deep plum (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets (in the Region column, the share of all the region's \"Scholars with any of these\"). \"Scholars with any of these\" also shows its share of each roster, and \"Roster size\" shows each country's share of the regional roster. Colours run from dusky rose (small share) to deep plum (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
   }
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
@@ -1024,7 +1024,7 @@
   }
   function renderPosTable() {
     const P = D.positions, C = countries().map(c => c.code);
-    let h = '<thead><tr><th class="role" scope="col">Position</th>' + C.map(c => `<th scope="col" class="${posHas(c) ? '' : 'nodata'}${state.sel === c ? ' sel' : ''}"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(SHORT[c] || c)}</th>`).join('') + '<th scope="col" class="tot">Region</th></tr></thead><tbody>';
+    let h = '<thead><tr><th class="role" scope="col">Position</th>' + C.map(c => `<th scope="col" class="${posHas(c) ? '' : 'nodata'}${state.sel === c ? ' sel' : ''}"><img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="36" height="24">${esc(SHORT[c] || c)}</th>`).join('') + '<th scope="col" class="tot">Region</th></tr></thead><tbody>';
     // Column base for the shares: scholars in that column with any of these positions (same as the first footer row).
     const anyOf = c => P.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && Object.keys(s.r).some(k => posHeld(s, k))).length;
     const anyN = Object.fromEntries(['*', ...C].map(c => [c, posHas(c) || c === '*' ? anyOf(c) : 0]));
@@ -1041,8 +1041,11 @@
       }
     }
     const any = c => anyN[c];
-    h += '</tbody><tfoot><tr><th class="role" scope="row">Scholars with any of these</th>' + C.map(c => `<td>${posHas(c) ? any(c) : '·'}</td>`).join('') + `<td class="tot">${any('*')}</td></tr>`;
-    h += '<tr><th class="role" scope="row">Roster size</th>' + C.map(c => `<td>${fmt(byCode[c].scholars)}</td>`).join('') + `<td class="tot">${fmt(countries().reduce((a, c) => a + c.scholars, 0))}</td></tr></tfoot>`;
+    // Footer shares: "Scholars with any of these" as a share of that column's roster; "Roster size" as a share of the regional roster.
+    const rosterAll = countries().reduce((a, c) => a + c.scholars, 0);
+    const pctOf = (n, d) => d ? `${Math.round(100 * n / d)}% <small>(${fmt(n)})</small>` : fmt(n);
+    h += '</tbody><tfoot><tr class="ps-pt-any"><th class="role" scope="row">Scholars with any of these</th>' + C.map(c => `<td>${posHas(c) ? pctOf(any(c), byCode[c].scholars) : '·'}</td>`).join('') + `<td class="tot">${pctOf(any('*'), rosterAll)}</td></tr>`;
+    h += '<tr class="ps-pt-roster"><th class="role" scope="row">Roster size</th>' + C.map(c => `<td>${pctOf(byCode[c].scholars, rosterAll)}</td>`).join('') + `<td class="tot">${pctOf(rosterAll, rosterAll)}</td></tr></tfoot>`;
     const t = $('#ps-pos-table'); t.innerHTML = h;
     $('#ps-pos-tip').classList.remove('show');
   }
