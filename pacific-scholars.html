@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=4877e745" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=b2list01" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9c7b29a" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=3baa3877" />
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=ff16873e">
@@ -238,15 +238,45 @@
           </div>
           <label class="ps-viewsel"><span>View</span>
             <select class="ps-select" id="ps-careers-view" aria-label="University Careers view" data-views-select="b2">
-              <option value="pos">Positions by country</option>
+              <option value="list" selected>Scholar list</option>
+              <option value="pos">Positions by country (heatmap)</option>
+              <option value="work">Where they have worked: countries and universities</option>
               <option value="lead">Women and men in leadership</option>
-              <option value="where">Where positions are held</option>
+              <option value="where">Where positions are held (home × host)</option>
               <option value="rank">Highest academic rank reached</option>
             </select>
           </label>
         </div>
 
-        <div data-pane="b2:pos" class="ps-pane ps-pane--light" id="ps-pos-panel">
+        <div data-pane="b2:list" class="ps-pane ps-pane--light" id="ps-clist-panel">
+          <p class="ps-sub ps-cl-intro">Pacific scholars who have led universities and reached the top academic ranks, listed by name so their leadership and contributions are visible, and so the next generation can see who has gone before them.</p>
+          <div class="ps-cl-tiles" id="ps-cl-tiles"></div>
+          <div class="ps-cl-bar">
+            <label class="ps-cl-f"><span>Show</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Position category shown in the list" id="ps-cl-cat"><button type="button" role="radio" aria-checked="true" data-v="lead">University leadership</button><button type="button" role="radio" aria-checked="false" data-v="rank">Academic rank</button><button type="button" role="radio" aria-checked="false" data-v="both">Both</button></div></label>
+            <label class="ps-cl-f"><span>Home country</span><select class="ps-select" id="ps-cl-home" aria-label="Home country shown in the list"></select></label>
+            <label class="ps-cl-f"><span>Held</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Positions ever or currently held" id="ps-cl-held"><button type="button" role="radio" aria-checked="true" data-v="ever">Ever held</button><button type="button" role="radio" aria-checked="false" data-v="cur">Currently held</button></div></label>
+            <label class="ps-cl-f"><span>Gender</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the list" id="ps-cl-gen"><button type="button" role="radio" aria-checked="true" data-v="b">Both</button><button type="button" role="radio" aria-checked="false" data-v="m">Male</button><button type="button" role="radio" aria-checked="false" data-v="f">Female</button></div></label>
+            <label class="ps-cl-f"><span>Sort</span><select class="ps-select" id="ps-cl-sort" aria-label="Sort order of the list"><option value="cur">Current first, then home country</option><option value="recent">Most recent first</option><option value="name">Name (A–Z)</option><option value="country">Home country (A–Z)</option></select></label>
+            <button type="button" class="ps-cl-dl" id="ps-cl-csv">Download list (CSV)</button>
+          </div>
+          <div class="ps-cl-pos" id="ps-cl-pos" role="group" aria-label="Positions shown in the list"></div>
+          <div id="ps-cl-list"></div>
+          <p class="ps-note" id="ps-cl-note"></p>
+        </div>
+
+        <div data-pane="b2:work" class="ps-pane ps-pane--light" id="ps-cwork-panel" hidden>
+          <p class="ps-sub ps-cl-intro">The countries, and the universities in them, where Pacific scholars have held positions. Choose a country on the left to see its universities; click a university to see who.</p>
+          <div class="ps-cl-bar">
+            <label class="ps-cl-f"><span>Show</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Position category counted" id="ps-cw-cat"><button type="button" role="radio" aria-checked="true" data-v="both">Both</button><button type="button" role="radio" aria-checked="false" data-v="lead">University leadership</button><button type="button" role="radio" aria-checked="false" data-v="rank">Academic rank</button></div></label>
+            <label class="ps-cl-f"><span>Home country</span><select class="ps-select" id="ps-cw-home" aria-label="Home country of scholars counted"></select></label>
+            <label class="ps-cl-f"><span>Held</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Positions ever or currently held" id="ps-cw-held"><button type="button" role="radio" aria-checked="true" data-v="ever">Ever held</button><button type="button" role="radio" aria-checked="false" data-v="cur">Currently held</button></div></label>
+            <label class="ps-cl-f"><span>Gender</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender counted" id="ps-cw-gen"><button type="button" role="radio" aria-checked="true" data-v="b">Both</button><button type="button" role="radio" aria-checked="false" data-v="m">Male</button><button type="button" role="radio" aria-checked="false" data-v="f">Female</button></div></label>
+          </div>
+          <div class="ps-cw-grid"><div id="ps-cw-hosts"></div><div id="ps-cw-unis"></div></div>
+          <p class="ps-note">Counts are unique scholars: a scholar with several roles at one university is counted once there, and once in each country where they have held a position. The University of the South Pacific is counted by campus country. Scholars whose institution country is not recorded are listed separately, not counted as zero.</p>
+        </div>
+
+        <div data-pane="b2:pos" class="ps-pane ps-pane--light" id="ps-pos-panel" hidden>
           <div class="ps-pane__bar">
             <p class="ps-sub">Number of Indigenous scholars per country who have held each canonical university position. Each scholar is counted once per position. Hover over or tap a number to see who.</p>
             <div class="ps-pos-tools">
@@ -546,7 +576,7 @@
   <script src="js/pacific-scholars-collaborators.js?v=1fd809dd" defer></script>
   <script src="js/pacific-scholars-directory.js?v=3a48f1d5" defer></script>
   <script src="js/pacific-scholars-universities.js?v=4e9aefb1" defer></script>
-  <script src="js/pacific-scholars.js?v=27027029" defer></script>
+  <script src="js/pacific-scholars.js?v=b2list01" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=489b25ea" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 <script src="js/scholar-card-tabs.js?v=95cf329e" defer></script>

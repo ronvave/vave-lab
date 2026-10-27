@@ -128,7 +128,7 @@
     renderCredits();
     if (window.PSUniversities) { try { window.PSUniversities.init(D, { nameOf, select: setSel }); } catch (e) { console.error(e); } }
     renderAll(true);
-    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); window.PSUniversities && window.PSUniversities.refresh(); }).catch(() => {});
+    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); renderCList(); renderCWork(); window.PSUniversities && window.PSUniversities.refresh(); }).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
@@ -230,7 +230,7 @@
     a1: v => { if (v === 'chart') renderBars(); renderMap(); },
     a2: v => { if (v === 'out') renderOutputs(); },
     b1: () => renderFirsts(),
-    b2: () => { renderWhere(); renderRank(); },
+    b2: () => { renderWhere(); renderRank(); renderCList(); renderCWork(); },
     c1top: v => setViewKey('c1', v === 'uni' ? 'uni' : (state.c1Agg || 'study')),
     c1: v => { if (v !== 'uni') state.c1Agg = v; if (v === 'uni') { window.PSUniversities && window.PSUniversities.show(); } else { state.destMode = v; renderDest(); renderStudyMatrix(); renderWorkHeat(); } },
     c1d: () => { syncDestFilters(); renderStudyMatrix(); renderWorkHeat(); },
@@ -875,7 +875,7 @@
     const P = D.positions;
     if (!P || !Array.isArray(P.scholars) || !P.scholars.length) return;
     $('#ps-careers-panel').hidden = false;
-    setupWhereRank();
+    setupWhereRank(); setupCareerViews();
     const seg = (sel, key) => { const bs = [...document.querySelectorAll(`${sel} button`)]; bs.forEach(b => b.addEventListener('click', () => { POS[key] = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); renderPosTable(); })); };
     seg('#ps-pos-held', 'held'); seg('#ps-pos-gen', 'gen');
     const sel = $('#ps-lead-country');
@@ -1010,6 +1010,165 @@
     $('#ps-rank-legend').innerHTML = P.rank.map(([k, l]) => `<span><i style="background:${RANKC[k] || '#7d8da1'}"></i>${esc(l)}</span>`).join('');
     posTipHide();
   }
+  // ----- B2 "Scholar list" (default) and "Where they have worked" views -----
+  const ISO2 = { FJI: 'fj', NZL: 'nz', USA: 'us', WSM: 'ws', AUS: 'au', SLB: 'sb', TON: 'to', VUT: 'vu', PNG: 'pg', PLW: 'pw', CAN: 'ca', GBR: 'gb', MHL: 'mh', GUM: 'gu', COK: 'ck', FSM: 'fm', TUV: 'tv', KIR: 'ki', DEU: 'de', ITA: 'it', FRA: 'fr', JPN: 'jp', CHN: 'cn', PHL: 'ph', IND: 'in', NLD: 'nl', IRL: 'ie', NIU: 'nu', NRU: 'nr', THA: 'th', MYS: 'my', SGP: 'sg', IDN: 'id', KOR: 'kr', TWN: 'tw', CHE: 'ch', SWE: 'se', NOR: 'no', ESP: 'es', ZAF: 'za', MLT: 'mt' };
+  const HOST_NAME = { ...Object.fromEntries(Object.entries(ISO2).map(([k, v]) => [k, UC_NAME[v.toUpperCase()] || k])), GUM: 'Guam', GBR: 'United Kingdom' };
+  const hostName = c => HOMEN[c] || HOST_NAME[c] || c;
+  const CL = { cat: 'lead', pos: null, home: '*', held: 'ever', gen: 'b', sort: 'cur', open: new Set(), lastSel: null };
+  const CW = { cat: 'both', home: '*', held: 'ever', gen: 'b', host: null, uni: null, allHosts: false, allUnis: false };
+  const catKeys = cat => { const P = D.positions; return cat === 'lead' ? P.lead.map(x => x[0]) : cat === 'rank' ? P.rank.map(x => x[0]) : [...P.lead, ...P.rank].map(x => x[0]); };
+  const posLabel = k => ([...D.positions.lead, ...D.positions.rank].find(x => x[0] === k) || [k, k])[1];
+  function dirMap() {
+    const L = (window.PSDirectory && window.PSDirectory.scholars && window.PSDirectory.scholars()) || [];
+    return new Map(L.map(s => [s.id, s]));
+  }
+  // Institutions for one role, honouring Ever / Currently held (same rule as the B2 popup).
+  function roleUnis(e, held) { let U = e.u || []; if (held === 'cur' && U.some(u => u[2])) U = U.filter(u => u[2]); return U; }
+  // Years of service for one role: "Since 2025" (current), "2010–2012" (former); only what the Positions sheets record.
+  function roleYears(e, U) {
+    const st = U.map(u => u[3]).filter(Boolean).sort(), en = U.map(u => u[4]).filter(Boolean).sort();
+    if (e.cur) { const cs = U.filter(u => u[2]).map(u => u[3]).filter(Boolean).sort(); return cs.length ? `Since ${cs[0]}` : ''; }
+    if (st.length && en.length) return st[0] === en[en.length - 1] ? st[0] : `${st[0]}–${en[en.length - 1]}`;
+    if (st.length) return `From ${st[0]}`;
+    if (en.length) return `Until ${en[en.length - 1]}`;
+    return '';
+  }
+  const flagRect = c => `<img class="ps-cl-flag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20">`;
+  const hostFlag = c => ISO2[c] && UC_LOCAL.has(ISO2[c]) ? `<img class="ps-cl-hflag" src="img/regional/flags-uni/${ISO2[c]}.png" alt="" width="22" height="15">` : (HOMEN[c] ? `<img class="ps-cl-hflag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="22" height="15">` : '<span class="ps-cl-hflag ps-cl-hflag--none"></span>');
+  const clPick = s => (CL.home === '*' || s.c === CL.home) && (CL.gen === 'b' || s.g === CL.gen);
+  const clHeld = (s, k) => s.r[k] && (CL.held === 'ever' || s.r[k].cur);
+  function clRows(k) {
+    const L = D.positions.scholars.filter(s => clPick(s) && clHeld(s, k));
+    const by = { cur: (a, b) => (b.r[k].cur - a.r[k].cur) || a.c.localeCompare(b.c) || a.n.localeCompare(b.n), name: (a, b) => a.n.localeCompare(b.n), country: (a, b) => nameOf(a.c).localeCompare(nameOf(b.c)) || a.n.localeCompare(b.n),
+      recent: (a, b) => { const y = s => Math.max(0, ...(s.r[k].u || []).map(u => +(u[2] && s.r[k].cur ? 9999 : (u[4] || u[3] || 0)))); return y(b) - y(a) || a.n.localeCompare(b.n); } };
+    return L.sort(by[CL.sort] || by.cur);
+  }
+  function clRowHtml(s, k, DM) {
+    const e = s.r[k], U = roleUnis(e, CL.held), yrs = roleYears(e, U), d = DM.get(s.id);
+    const name = d ? `<a href="#dir=${esc(s.id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(s.n)}</a>` : esc(s.n);
+    const place = d && d.geo ? `<div class="ps-cl-place">${esc(d.geo)}</div>` : '';
+    const uni = U.length ? `<div class="ps-cl-uni">${U.map(u => `${esc(u[0])}${u[1] ? ` <b>(${esc(u[1])})</b>` : ''}`).join('; ')}</div>` : '<div class="ps-cl-uni ps-cl-uni--na">Institution not recorded</div>';
+    return `<li class="ps-cl-row">${flagRect(s.c)}<div class="ps-cl-who"><div class="ps-cl-nm">${name}${yrs ? `<span class="ps-cl-yrs">${esc(yrs)}</span>` : ''}</div>${place}${uni}</div><span class="ps-cl-pill ${e.cur ? 'cur' : 'for'}">${e.cur ? 'Current' : 'Former'}</span></li>`;
+  }
+  function setupCareerViews() {
+    const P = D.positions; if (!P) return;
+    const homes = countries().map(c => c.code).filter(posHas);
+    const opts = '<option value="*">All countries</option>' + homes.map(c => `<option value="${c}">${esc(nameOf(c))}</option>`).join('');
+    $('#ps-cl-home').innerHTML = opts; $('#ps-cw-home').innerHTML = opts;
+    const seg = (id, obj, key, after) => { const bs = [...document.querySelectorAll(`#${id} button`)]; bs.forEach(b => b.addEventListener('click', () => { obj[key] = b.dataset.v; bs.forEach(x => x.setAttribute('aria-checked', String(x === b))); after(); })); };
+    seg('ps-cl-cat', CL, 'cat', () => { CL.pos = null; CL.open.clear(); renderCList(); });
+    seg('ps-cl-held', CL, 'held', renderCList); seg('ps-cl-gen', CL, 'gen', renderCList);
+    seg('ps-cw-cat', CW, 'cat', () => { CW.uni = null; renderCWork(); }); seg('ps-cw-held', CW, 'held', () => { CW.uni = null; renderCWork(); }); seg('ps-cw-gen', CW, 'gen', () => { CW.uni = null; renderCWork(); });
+    $('#ps-cl-home').addEventListener('change', e => { CL.home = e.target.value; renderCList(); });
+    $('#ps-cl-sort').addEventListener('change', e => { CL.sort = e.target.value; renderCList(); });
+    $('#ps-cw-home').addEventListener('change', e => { CW.home = e.target.value; CW.uni = null; renderCWork(); });
+    $('#ps-cl-pos').addEventListener('click', e => {
+      const b = e.target.closest('button[data-k]'); if (!b) return;
+      const all = catKeys(CL.cat), cur = new Set(CL.pos || all);
+      if (b.dataset.k === '*') { CL.pos = null; } else { cur.has(b.dataset.k) ? cur.delete(b.dataset.k) : cur.add(b.dataset.k); CL.pos = cur.size ? all.filter(k => cur.has(k)) : null; }
+      renderCList();
+    });
+    $('#ps-cl-list').addEventListener('click', e => { const b = e.target.closest('button[data-more]'); if (!b) return; const k = b.dataset.more; CL.open.has(k) ? CL.open.delete(k) : CL.open.add(k); renderCList(); });
+    $('#ps-cl-csv').addEventListener('click', clCsv);
+    $('#ps-cw-hosts').addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) { CW.host = b.dataset.h; CW.uni = null; CW.allUnis = false; renderCWork(); } const m = e.target.closest('button[data-allhosts]'); if (m) { CW.allHosts = !CW.allHosts; renderCWork(); } });
+    $('#ps-cw-unis').addEventListener('click', e => { const r = e.target.closest('[data-u]'); if (r) { CW.uni = CW.uni === r.dataset.u ? null : r.dataset.u; renderCWork(); } const m = e.target.closest('button[data-allunis]'); if (m) { CW.allUnis = !CW.allUnis; renderCWork(); } });
+    $('#ps-cw-unis').addEventListener('keydown', e => { const r = e.target.closest('[data-u]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); r.click(); } });
+  }
+  function clTiles() {
+    const P = D.positions, LK = P.lead.map(x => x[0]);
+    const S = P.scholars.filter(s => CL.home === '*' || s.c === CL.home);
+    const who = CL.home === '*' ? 'Pacific scholars' : `scholars from ${nameOf(CL.home)}`;
+    const has = k => S.filter(s => s.r[k]);
+    const nC = L => new Set(L.map(s => s.c)).size;
+    const leaders = S.filter(s => LK.some(k => s.r[k])), women = leaders.filter(s => s.g === 'f').length, gk = leaders.filter(s => s.g === 'f' || s.g === 'm').length;
+    const hosts = new Set(S.flatMap(s => Object.values(s.r).flatMap(e => (e.u || []).map(u => u[1]).filter(Boolean))));
+    const ch = has('chancellor'), vc = has('vc'), pf = has('prof');
+    const from = L => CL.home === '*' ? `, from ${nC(L)} ${nC(L) === 1 ? 'country' : 'countries'}` : '';
+    const T = [
+      ['', fmt(leaders.length), `${who} have held a university leadership role`],
+      ['', fmt(ch.length), `Chancellors / Pro-Chancellors${from(ch)}`],
+      ['', fmt(vc.length), `Vice-Chancellors / Presidents (${vc.filter(s => s.r.vc.cur).length} serving now)`],
+      ['', fmt(pf.length), `Full Professors${from(pf)}`],
+      ['g', fmt(women), gk ? `of the ${fmt(leaders.length)} leaders are women (${Math.round(100 * women / leaders.length)}%)` : 'leaders are women (gender not recorded)'],
+      ['b', fmt(hosts.size), `countries where these scholars have held positions`]];
+    $('#ps-cl-tiles').innerHTML = T.map(([c, n, t]) => `<div class="ps-cl-tile ${c}"><div class="n">${n}</div><div class="t">${esc(t)}</div></div>`).join('');
+  }
+  function renderCList() {
+    if (!D.positions || $('#ps-careers-panel').hidden || $('#ps-clist-panel').hidden) return;
+    const all = catKeys(CL.cat), sel = new Set(CL.pos || all), DM = dirMap();
+    $('#ps-cl-home').value = CL.home; $('#ps-cl-sort').value = CL.sort;
+    $('#ps-cl-pos').innerHTML = `<button type="button" class="ps-cl-chip${CL.pos ? '' : ' on'}" data-k="*" aria-pressed="${!CL.pos}">All</button>` + all.map(k => `<button type="button" class="ps-cl-chip${CL.pos && sel.has(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${!!(CL.pos && sel.has(k))}">${esc(posLabel(k))}</button>`).join('');
+    clTiles();
+    const MAX = 12; let shown = 0;
+    const html = all.filter(k => sel.has(k)).map(k => {
+      const L = clRows(k); if (!L.length) return '';
+      shown += L.length;
+      const open = CL.open.has(k), list = open ? L : L.slice(0, MAX), nc = new Set(L.map(s => s.c)).size, ncur = L.filter(s => s.r[k].cur).length;
+      return `<section class="ps-cl-grp"><h3>${esc(posLabel(k))} <small>${fmt(L.length)} scholar${L.length > 1 ? 's' : ''} · ${nc} home ${nc > 1 ? 'countries' : 'country'} · ${ncur} current</small></h3><ul class="ps-cl-list">${list.map(s => clRowHtml(s, k, DM)).join('')}</ul>${L.length > MAX ? `<button type="button" class="ps-cl-more" data-more="${k}" aria-expanded="${open}">${open ? 'Show fewer ▴' : `Show all ${fmt(L.length)} ▸`}</button>` : ''}</section>`;
+    }).join('');
+    $('#ps-cl-list').innerHTML = html || '<p class="ps-empty">No scholars match these filters.</p>';
+    $('#ps-cl-csv').disabled = !shown;
+    $('#ps-cl-note').textContent = 'Each scholar appears once under every selected position they have held. Years come from the Positions sheets where recorded ("Since" for current roles); no years are shown where none are recorded, including titles taken from scholar profiles. Home place (village, island or province) is shown where it is published in the Regional Scholar Directory. Names open the scholar\'s directory card. Leadership roles count only at universities and other higher-education institutions, and include acting appointments.';
+  }
+  function clCsv() {
+    const all = catKeys(CL.cat), sel = new Set(CL.pos || all), DM = dirMap();
+    const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
+    const rows = [['Position', 'Scholar', 'Home country', 'Home place', 'Years', 'Status', 'University / institution', 'Institution country']];
+    all.filter(k => sel.has(k)).forEach(k => clRows(k).forEach(s => { const e = s.r[k], U = roleUnis(e, CL.held), d = DM.get(s.id); rows.push([posLabel(k), s.n, nameOf(s.c), (d && d.geo) || '', roleYears(e, U), e.cur ? 'Current' : 'Former', U.map(u => u[0]).join('; '), U.map(u => hostName(u[1])).join('; ')]); }));
+    const blob = new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `pacific-scholars-university-positions-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function cwData() {
+    const LK = new Set(D.positions.lead.map(x => x[0])), keys = new Set(catKeys(CW.cat));
+    const H = {}, notRec = new Set();
+    for (const s of D.positions.scholars) {
+      if (!((CW.home === '*' || s.c === CW.home) && (CW.gen === 'b' || s.g === CW.gen))) continue;
+      let any = false;
+      for (const [k, e] of Object.entries(s.r)) {
+        if (!keys.has(k) || !(CW.held === 'ever' || e.cur)) continue;
+        const U = roleUnis(e, CW.held).filter(u => u[1]);
+        if (!U.length) continue;
+        any = true;
+        for (const u of U) {
+          const h = H[u[1]] = H[u[1]] || { sch: new Set(), lead: new Set(), unis: {} };
+          h.sch.add(s.id); if (LK.has(k)) h.lead.add(s.id);
+          const X = h.unis[u[0]] = h.unis[u[0]] || { sch: new Set(), lead: new Set(), home: {}, roles: {}, people: new Map() };
+          if (!X.sch.has(s.id)) X.home[s.c] = (X.home[s.c] || 0) + 1;
+          X.sch.add(s.id); if (LK.has(k)) X.lead.add(s.id); X.roles[k] = (X.roles[k] || 0) + 1;
+          const pp = X.people.get(s.id) || { s, roles: [] }; pp.roles.push([k, e, [u]]); X.people.set(s.id, pp);
+        }
+      }
+      if (!any && Object.entries(s.r).some(([k, e]) => keys.has(k) && (CW.held === 'ever' || e.cur))) notRec.add(s.id);
+    }
+    return { H, notRec };
+  }
+  function renderCWork() {
+    if (!D.positions || $('#ps-careers-panel').hidden || $('#ps-cwork-panel').hidden) return;
+    $('#ps-cw-home').value = CW.home;
+    const { H, notRec } = cwData(), order = [...D.positions.lead, ...D.positions.rank].map(x => x[0]), LK = new Set(D.positions.lead.map(x => x[0]));
+    const hs = Object.entries(H).sort((a, b) => b[1].sch.size - a[1].sch.size || hostName(a[0]).localeCompare(hostName(b[0])));
+    if (!hs.length) { $('#ps-cw-hosts').innerHTML = '<p class="ps-empty">No positions match these filters.</p>'; $('#ps-cw-unis').innerHTML = ''; return; }
+    if (!CW.host || !H[CW.host]) CW.host = hs[0][0];
+    const mx = hs[0][1].sch.size, LIM = 16, list = CW.allHosts ? hs : hs.slice(0, LIM);
+    $('#ps-cw-hosts').innerHTML = `<div class="ps-cw-lbl">Countries where positions are held <span>(scholars · <i class="a"></i>any position <i class="l"></i>leadership)</span></div><div class="ps-cw-hl">` + list.map(([c, h]) => { const ni = Object.keys(h.unis).length; return `<button type="button" class="ps-cw-h${c === CW.host ? ' on' : ''}" data-h="${c}" aria-pressed="${c === CW.host}">${hostFlag(c)}<span class="ps-cw-hn"><b>${esc(hostName(c))}</b> <em>· ${ni} institution${ni > 1 ? 's' : ''}</em><span class="tr"><i style="width:${100 * h.sch.size / mx}%"></i></span><span class="tr l"><i style="width:${100 * h.lead.size / mx}%"></i></span></span><span class="ps-cw-n">${fmt(h.sch.size)}</span></button>`; }).join('') + '</div>' +
+      (hs.length > LIM ? `<button type="button" class="ps-cl-more" data-allhosts="1" aria-expanded="${CW.allHosts}">${CW.allHosts ? 'Show fewer ▴' : `Show all ${hs.length} countries ▸`}</button>` : '') +
+      (notRec.size ? `<p class="ps-cw-nr">Not recorded: ${fmt(notRec.size)} scholar${notRec.size > 1 ? 's' : ''} with no institution country (not ranked).</p>` : '');
+    const h = H[CW.host], us = Object.entries(h.unis).sort((a, b) => b[1].sch.size - a[1].sch.size || a[0].localeCompare(b[0]));
+    const ULIM = 10, ulist = CW.allUnis ? us : us.slice(0, ULIM);
+    const rows = ulist.map(([u, X]) => {
+      const open = CW.uni === u;
+      let tr = `<tr class="ps-cw-u${open ? ' open' : ''}" data-u="${esc(u)}" tabindex="0" aria-expanded="${open}"><td><b>${esc(u)}</b></td><td class="num">${fmt(X.sch.size)}</td><td class="num">${X.lead.size ? fmt(X.lead.size) : '–'}</td><td>${Object.entries(X.home).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="ps-cw-fl" title="${esc(nameOf(c))}: ${v}"><img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="${esc(nameOf(c))}" width="22" height="15">${v}</span>`).join('')}</td><td>${order.filter(k => X.roles[k]).slice(0, 5).map(k => `<span class="ps-cw-rk${LK.has(k) ? ' l' : ''}">${esc(posLabel(k))} ${X.roles[k]}</span>`).join('')}</td></tr>`;
+      if (open) {
+        const DM = dirMap();
+        const ppl = [...X.people.values()].sort((a, b) => a.s.n.localeCompare(b.s.n));
+        tr += `<tr class="ps-cw-people"><td colspan="5"><ul>${ppl.map(({ s, roles }) => { const d = DM.get(s.id); const nm = d ? `<a href="#dir=${esc(s.id)}">${esc(s.n)}</a>` : esc(s.n); return `<li>${flagRect(s.c)}<span>${nm}${d && d.geo ? ` <em>${esc(d.geo)}</em>` : ''}<br>${roles.sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([k, e, U]) => { const y = roleYears(e, U); return `${esc(posLabel(k))}${y ? ` (${esc(y)})` : ''}${e.cur ? ' · current' : ''}`; }).join('; ')}</span></li>`; }).join('')}</ul></td></tr>`;
+      }
+      return tr;
+    }).join('');
+    $('#ps-cw-unis').innerHTML = `<div class="ps-cw-lbl">${esc(hostName(CW.host))}: ${us.length} institution${us.length > 1 ? 's' : ''} · ${fmt(h.sch.size)} Pacific scholar${h.sch.size > 1 ? 's' : ''} · ${fmt(h.lead.size)} in leadership</div><table class="ps-cw-t"><thead><tr><th scope="col">University / institution</th><th scope="col">Scholars</th><th scope="col">Leaders</th><th scope="col">Home countries of scholars</th><th scope="col">Most senior roles held (count)</th></tr></thead><tbody>${rows}</tbody></table>` +
+      (us.length > ULIM ? `<button type="button" class="ps-cl-more" data-allunis="1" aria-expanded="${CW.allUnis}">${CW.allUnis ? 'Show fewer ▴' : `Show all ${us.length} institutions ▸`}</button>` : '') + '<p class="ps-cw-hint">Click a university to list its scholars.</p>';
+  }
   function posPick(s) { return POS.gen === 'b' || s.g === POS.gen; }
   function posHeld(s, k) { return s.r[k] && (POS.held === 'ever' || s.r[k].cur); }
   function posCell(k, c) { return D.positions.scholars.filter(s => (c === '*' || s.c === c) && posPick(s) && posHeld(s, k)); }
@@ -1020,7 +1179,8 @@
       POS.leadC = state.sel && posHas(state.sel) ? state.sel : '*';
       $('#ps-lead-country').value = POS.leadC;
     }
-    renderPosTable(); renderLead(); renderWhere(); renderRank();
+    if (state.sel !== CL.lastSel) { CL.lastSel = state.sel; CL.home = state.sel && posHas(state.sel) ? state.sel : '*'; CW.home = CL.home; CW.uni = null; }
+    renderPosTable(); renderLead(); renderWhere(); renderRank(); renderCList(); renderCWork();
   }
   function renderPosTable() {
     const P = D.positions, C = countries().map(c => c.code);

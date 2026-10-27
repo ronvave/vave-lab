@@ -166,7 +166,7 @@ def build_positions(dumps):
             if not roles:
                 continue
             if p.get('src') == 'profile': n_prof.add(p['sid'])
-            s = scholars.setdefault((code, p['sid']), dict(c=code, n=_disp(p['name']), g=p['gender'][0], r={}))
+            s = scholars.setdefault((code, p['sid']), dict(id=p['sid'], c=code, n=_disp(p['name']), g=p['gender'][0], r={}))
             for k in roles:
                 e = s['r'].setdefault(k, dict(cur=False, h=[]))
                 cur = p['current']
@@ -180,17 +180,35 @@ def build_positions(dumps):
                     continue  # profile row adds no new host when the Positions sheet already has one
                 if h not in e['h']:
                     e['h'].append(h)
-                # Institution and its country for the popup: [name, ISO3, current]
-                iname = b.norm(p.get('inst') or '')
+                # Institution and its country for the popup and lists: [name, ISO3, current, start, end]
+                # (start/end = earliest Start Year and latest End Year recorded for this role there; '' if none).
+                iname = _canon_inst(b.norm(p.get('inst') or ''))
                 if iname:
                     u = e.setdefault('u', [])
+                    sy, ey = _yr(p.get('start')), _yr(p.get('end'))
                     hit = next((x for x in u if x[0] == iname), None)
-                    if hit: hit[2] = hit[2] or cur
-                    else: u.append([iname, _iso3(p['host']), cur])
+                    if hit:
+                        hit[2] = hit[2] or cur
+                        if sy and (not hit[3] or sy < hit[3]): hit[3] = sy
+                        if ey and (not hit[4] or ey > hit[4]): hit[4] = ey
+                    else: u.append([iname, _iso3(p['host']), cur, sy, ey])
         cov_prof[code] = len(n_prof)
     return dict(lead=[[k, l] for k, l, _ in LEAD], rank=[[k, l] for k, l, _ in RANK],
                 coverage=dict(positions=cov_pos, withPositions=cov_sch, profile=cov_prof),
                 scholars=sorted(scholars.values(), key=lambda s: (s['c'], s['n'])))
+
+
+# Spelling variants of the same institution, merged so lists and the "Where they have worked" view count it once.
+INST_CANON = {
+    'the university of the south pacific': 'University of the South Pacific',
+    'victoria university of wellington': 'Te Herenga Waka—Victoria University of Wellington',
+    'the university of sydney': 'University of Sydney',
+    'university of canterbury (new zealand)': 'University of Canterbury',
+}
+
+
+def _canon_inst(name):
+    return INST_CANON.get(re.sub(r'\s+', ' ', name or '').strip().lower(), name)
 
 
 def _yr(v):
