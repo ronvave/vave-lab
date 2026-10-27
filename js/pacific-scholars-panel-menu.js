@@ -50,6 +50,17 @@
     drop.style.maxHeight = Math.max(120, innerHeight - b.bottom - 18) + 'px';
   }
 
+  // "Top" goes back to the top of the page (before Panel A).
+  const top = document.createElement('a');
+  top.href = '#'; top.className = 'ps-pmenu__pill ps-pmenu__pill--top'; top.textContent = '\u2191 Top';
+  top.setAttribute('aria-label', 'Back to the top of the page');
+  top.addEventListener('click', e => {
+    if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); close(false); lastJump = '';
+    window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  });
+  strip.appendChild(top);
+
   Object.keys(GROUPS).forEach(g => {
     const members = panels.filter(el => groupOf(el) === g);
     if (!members.length) return;
