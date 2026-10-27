@@ -916,7 +916,7 @@ section[data-panel] { scroll-margin-top: 70px; }
 #ps-where-table td.ps-hm-n { background: none; color: var(--ps-text); }
 .ps-pt td.c:not(.z) { white-space: nowrap; border-radius: 4px; }
 /* Sky-to-violet heatmap: soft grey for zero, cream Region column. */
-.ps-pt td.c.z { background: #eceef1; border-radius: 4px; color: #9aa6b4; }
+.ps-pt td.c.z { background: #f6f7f9; border-radius: 4px; color: #a3aebb; }
 .ps-pt tbody td.tot { background: #fdf3da; color: #0a2d52; }
 @media (max-width: 720px) { #ps-where-table { min-width: 1080px; } #ps-where-table td { font-size: .82rem; } .ps-pt { min-width: 1060px; } }
 

@@ -907,7 +907,7 @@
     const empty = countries().filter(c => !posHas(c.code)).map(c => c.name);
     const profOnly = countries().filter(c => posProfileOnly(c.code)).map(c => c.name);
     const nProf = Object.values(P.coverage.profile || {}).reduce((a, b) => a + b, 0);
-    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets (in the Region column, the share of all the region's \"Scholars with any of these\"). \"Scholars with any of these\" also shows its share of each roster, and \"Roster size\" shows each country's share of the regional roster. Colours run from light blue (small share) through lavender to deep purple (large share). Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
+    $('#ps-pos-note').textContent = `${fmt(nPos)} position records for ${fmt(nWith)} scholars on the included rosters, plus the current title on ${fmt(nProf)} scholar profiles (so a recent promotion shown on a profile is counted even if the Positions sheet is not yet updated).${profOnly.length ? ` ${profOnly.join(', ')}: no Positions sheet records yet, so counts come from profile titles only and are a minimum.` : ''}${empty.length ? ` Striped columns: no records yet (${empty.join(', ')}).` : ''} Each cell shows the share of that column's "Scholars with any of these", with the count in brackets (in the Region column, the share of all the region's \"Scholars with any of these\"). \"Scholars with any of these\" also shows its share of each roster, and \"Roster size\" shows each country's share of the regional roster. Colours by share: grey 1–3%, blue 4–7%, yellow 8–9%, orange 10–14%, rose 15–24%, maroon 25% and over. Region total counts unique scholars. Leadership roles count only at universities and other higher-education institutions, and include acting appointments. Academic ranks use the recorded title; "Assistant Professor" and "Lecturer" are kept separate.`;
   }
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
@@ -978,7 +978,7 @@
     for (const c of homes) {
       const n = base(c);
       html += `<tr class="${state.sel === c ? 'sel' : ''}"><th class="home" scope="row"><img src="img/regional/flags/${c.toLowerCase()}.png" alt="">${esc(nameOf(c))}</th>` + cols.map(h => {
-        const v = val(c, h), a = n ? v / n : 0, p = Math.round(100 * a), rc = skyCell(a);
+        const v = val(c, h), a = n ? v / n : 0, p = Math.round(100 * a), rc = bandCell(a);
         const bg = v ? rc.bg : 'rgba(255,255,255,.04)';
         const attrs = v ? ` data-c="${c}" data-h="${esc(h)}" tabindex="0" aria-label="${esc(nameOf(c))} scholars in ${esc(h)}: ${v} of ${n} (${p}%)"` : '';
         return `<td class="${HOMEN[c] === h ? 'self' : ''}" style="background:${bg};color:${v ? rc.fg : '#eaf3fb'}"${attrs}>${v ? `${p}% <small>(${fmt(v)})</small>` : ''}</td>`;
@@ -1203,7 +1203,7 @@
         h += `<tr><th class="role" scope="row">${esc(l)}</th>` + C.map(c => {
           if (!posHas(c)) return '<td class="c nd"><span class="ps-sr">no records</span>·</td>';
           const n = posCell(k, c).length;
-          const b = anyN[c], a = b ? n / b : 0, rc = skyCell(a);
+          const b = anyN[c], a = b ? n / b : 0, rc = bandCell(a);
           return `<td class="c${n ? '' : ' z'}${state.sel === c ? ' selcol' : ''}" data-k="${k}" data-c="${c}"${n ? ` tabindex="0" style="background:${rc.bg};color:${rc.fg}" aria-label="${esc(l)}, ${esc(nameOf(c))}: ${n} of ${b} (${Math.round(100 * a)}%)"` : ''}>${n ? `${Math.round(100 * a)}% <small>(${fmt(n)})</small>` : '–'}</td>`;
         }).join('') + `<td class="tot" data-k="${k}" data-c="*"${tot ? ' tabindex="0"' : ''}>${tot ? `${anyN['*'] ? Math.round(100 * tot / anyN['*']) : 0}% <small>(${fmt(tot)})</small>` : '0'}</td></tr>`;
       }
@@ -1393,6 +1393,9 @@
   // Sky-to-violet scale for the B2 Positions by country heatmap: light blue (small share) through lavender to deep purple (large share).
   const SKYV = [[214, 236, 251], [146, 192, 241], [176, 160, 238], [140, 84, 200], [100, 36, 130], [72, 18, 92]];
   function skyCell(t) { return rampCell(SKYV, t); }
+  // Banded colours for the B2 heatmaps, chosen by the displayed (rounded) percentage.
+  const BANDS = [[3, '#E2E5E9', '#0b1626'], [7, '#8CB9DC', '#0b1626'], [9, '#F4D35E', '#0b1626'], [14, '#E6A052', '#0b1626'], [24, '#C76C70', '#ffffff'], [Infinity, '#842D48', '#ffffff']];
+  function bandCell(t) { const p = Math.round(100 * Math.max(0, t)); const [, bg, fg] = BANDS.find(([m]) => p <= m); return { bg, fg }; }
   function reefCell(t) { return rampCell(REEF, t); }
   function rampCell(R, t) {
     t = Math.max(0, Math.min(1, t)); const u = 0.08 + 0.92 * Math.pow(Math.min(t, 0.85) / 0.85, 0.6);
