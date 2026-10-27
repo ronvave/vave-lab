@@ -912,8 +912,6 @@ section[data-panel] { scroll-margin-top: 70px; }
 .ps-cl-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px; padding: 9px 11px; background: #eef3f8; border: 1px solid #d6e0ea; border-radius: 9px; margin-bottom: 9px; }
 .ps-cl-f { display: flex; flex-direction: column; gap: 3px; }
 .ps-cl-f > span { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #4a5d73; }
-.ps-cl-dl { margin-left: auto; font: inherit; font-size: .8rem; font-weight: 700; padding: 7px 13px; border-radius: 7px; border: 0; background: #0a2d52; color: #fff; cursor: pointer; }
-.ps-cl-dl:hover { background: #134a80; } .ps-cl-dl:disabled { opacity: .45; cursor: default; }
 .ps-cl-pos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .ps-cl-chip { font: inherit; font-size: .76rem; padding: 4px 11px; border-radius: 999px; border: 1px solid #b9c8d8; background: #fff; color: #0a2d52; cursor: pointer; }
 .ps-cl-chip:hover { border-color: #0a2d52; }

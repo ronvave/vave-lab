@@ -106,7 +106,6 @@
               <button type="button" data-barview="phd" aria-pressed="false">PhD</button>
             </div>
           </div>
-          <button class="ps-iconbtn ps-iconbtn--text" type="button" id="ps-bars-csv" data-pane-of="a1:table" hidden>Download CSV</button>
         </div>
         <div data-pane="a1:map" class="ps-pane ps-pane--grow">
           <div class="ps-map" id="ps-map">
@@ -124,7 +123,7 @@
         </div>
         <div data-pane="a1:table" class="ps-pane" hidden>
           <div class="ps-maptable" id="ps-map-table"></div>
-          <p class="ps-note">Select a country name to filter the dashboard. The CSV includes each Master file's last edit time.</p>
+          <p class="ps-note">Select a country name to filter the dashboard.</p>
         </div>
       </section>
 
@@ -257,7 +256,6 @@
             <label class="ps-cl-f"><span>Held</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Positions ever or currently held" id="ps-cl-held"><button type="button" role="radio" aria-checked="true" data-v="ever">Ever held</button><button type="button" role="radio" aria-checked="false" data-v="cur">Currently held</button></div></label>
             <label class="ps-cl-f"><span>Gender</span><div class="ps-seg ps-seg--sm" role="radiogroup" aria-label="Gender shown in the list" id="ps-cl-gen"><button type="button" role="radio" aria-checked="true" data-v="b">Both</button><button type="button" role="radio" aria-checked="false" data-v="m">Male</button><button type="button" role="radio" aria-checked="false" data-v="f">Female</button></div></label>
             <label class="ps-cl-f"><span>Sort</span><select class="ps-select" id="ps-cl-sort" aria-label="Sort order of the list"><option value="cur">Current first, then home country</option><option value="recent">Most recent first</option><option value="name">Name (A–Z)</option><option value="country">Home country (A–Z)</option></select></label>
-            <button type="button" class="ps-cl-dl" id="ps-cl-csv">Download list (CSV)</button>
           </div>
           <div class="ps-cl-pos" id="ps-cl-pos" role="group" aria-label="Positions shown in the list"></div>
           <div id="ps-cl-list"></div>

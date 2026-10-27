@@ -355,7 +355,6 @@
     const end = () => { drag = null; };
     mapSvg.addEventListener('pointerup', end); mapSvg.addEventListener('pointercancel', end);
     mapSvg.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); zoom(e.deltaY < 0 ? 'in' : 'out'); }, { passive: false });
-    $('#ps-bars-csv').addEventListener('click', exportCsv);
   }
   function setView(v) {
     const W = MAP_IMG.w, H = MAP_IMG.h;
@@ -550,12 +549,6 @@
       el.addEventListener('pointermove', moveTip);
       el.addEventListener('pointerleave', hideTip);
     });
-  }
-  function exportCsv() {
-    const rows = [['Country', 'Scholars (unique people)', "Completed Master's", 'Completed PhDs/doctorates', 'of which professional doctorates', 'Country-indexed publications', 'Indigenous-linked publications', 'Master file last modified', 'Bundle generated']];
-    sorted().forEach(c => { const s = D.sources.find(x => x.code === c.code) || {}; rows.push([c.name, c.scholars, c.masters, c.phd, c.profDoc, c.pubsIndexed, c.pubsIndigenous, s.modified || '', D.generated]); });
-    const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
-    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv' })); a.download = `regional-scholars-by-country.csv`; document.body.appendChild(a); a.click(); a.remove();
   }
 
   // ================= DISCIPLINES =================
@@ -1081,7 +1074,6 @@
       renderCList();
     });
     $('#ps-cl-list').addEventListener('click', e => { const b = e.target.closest('button[data-more]'); if (!b) return; const k = b.dataset.more; CL.open.has(k) ? CL.open.delete(k) : CL.open.add(k); renderCList(); });
-    $('#ps-cl-csv').addEventListener('click', clCsv);
     $('#ps-cw-hosts').addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) { CW.host = b.dataset.h; CW.uni = null; CW.allUnis = false; renderCWork(); } const m = e.target.closest('button[data-allhosts]'); if (m) { CW.allHosts = !CW.allHosts; renderCWork(); } });
     $('#ps-cw-unis').addEventListener('click', e => { const r = e.target.closest('[data-u]'); if (r) { CW.uni = CW.uni === r.dataset.u ? null : r.dataset.u; renderCWork(); } const m = e.target.closest('button[data-allunis]'); if (m) { CW.allUnis = !CW.allUnis; renderCWork(); } });
     const flTip = (el, x, y) => {
@@ -1132,17 +1124,7 @@
       return `<section class="ps-cl-grp ps-cl-grp--${tone}"><div class="ps-cl-ban"><span class="ps-cl-ban__ic">${svgI(POS_ICO[k] || 'cap')}</span><div><h3>${esc(posLabel(k))}</h3><p>${fmt(L.length)} scholar${L.length > 1 ? 's' : ''} <i>·</i> ${nc} home ${nc > 1 ? 'countries' : 'country'} <i>·</i> ${ncur} current</p></div></div><ul class="ps-cl-list">${list.map(s => clRowHtml(s, k, DM)).join('')}</ul>${L.length > MAX ? `<button type="button" class="ps-cl-more" data-more="${k}" aria-expanded="${open}">${open ? 'Show fewer <span aria-hidden="true">↑</span>' : `Show all ${fmt(L.length)} <span aria-hidden="true">→</span>`}</button>` : ''}</section>`;
     }).join('');
     $('#ps-cl-list').innerHTML = html || '<p class="ps-empty">No scholars match these filters.</p>';
-    $('#ps-cl-csv').disabled = !shown;
     $('#ps-cl-note').textContent = 'Each scholar appears once under every selected position they have held. Years come from the Positions sheets where recorded ("Since" for current roles); no years are shown where none are recorded, including titles taken from scholar profiles. Home place (village, island or province) is shown where it is published in the Regional Scholar Directory. Names open the scholar\'s directory card. Leadership roles count only at universities and other higher-education institutions, and include acting appointments.';
-  }
-  function clCsv() {
-    const all = catKeys(CL.cat), sel = new Set(CL.pos || all), DM = dirMap();
-    const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""')}"`;
-    const rows = [['Position', 'Scholar', 'Home country', 'Home place', 'Years', 'Status', 'University / institution', 'Institution country']];
-    all.filter(k => sel.has(k)).forEach(k => clRows(k).forEach(s => { const e = s.r[k], U = roleUnis(e, CL.held), d = DM.get(s.id); rows.push([posLabel(k), s.n, nameOf(s.c), (d && d.geo) || '', roleYears(e, U), e.cur ? 'Current' : 'Former', U.map(u => u[0]).join('; '), U.map(u => hostName(u[1])).join('; ')]); }));
-    const blob = new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `pacific-scholars-university-positions-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
   }
   function cwData() {
     const LK = new Set(D.positions.lead.map(x => x[0])), keys = new Set(catKeys(CW.cat));
@@ -1529,7 +1511,7 @@
       map: ['Map — provenance', base + '<p>Scholars sheet (included roster) and Graduate Degrees sheet. Marker locations are national capitals (positions only). Basemap: Natural Earth via world-atlas (public domain), 1:10m for Pacific Island countries.</p>'],
       degrees: ['Regional Postgraduate Degrees — provenance', base + '<p>Graduate Degrees: Degree Stage/Level + Completion Status, linked to included Scholar IDs. Duplicate Degree IDs are counted once.</p>'],
       outputs: ['Research Outputs — provenance', base + '<p>Publications sheet (Year, Publication Type, DOI, Title) and Authorship sheet (Scholar ID ↔ Publication ID). Year series counts regionally deduplicated Indigenous-linked records by publication year.</p>'],
-      bars: ['Graduate Degrees by Country — provenance', base + '<p>Same counts as the country strip and the map. CSV export includes each Master file\u2019s last-modified time.</p>'],
+      bars: ['Graduate Degrees by Country — provenance', base + '<p>Same counts as the country strip and the map.</p>'],
       disc: ['Fields of Research — provenance', base + '<p>Graduate Degrees: Field / Discipline and Broad discipline, classified into the eight short-discipline categories. Completed degree records, not people.</p>'],
       gender: ['Gender — provenance', base + '<p>Scholars sheet Gender field, normalised (Female / Fefine / Fafine; Male / Tangata / Tāne). Blank or other values are reported as not recorded. Publishing scholars = included scholars with at least one Authorship link to a headline-category publication.</p>'],
       firsts: ['Pacific Firsts — provenance', base + '<p>Graduate Degrees: completed Master\u2019s and PhD / doctorate records (professional doctorates excluded) held by included scholars, dated by the completion-year column (Finish / Completion Year; Completion Year; Graduation Year or End Year where that is the country\u2019s column). Gender from the Scholars sheet, never inferred. Display name = title + first given name + family name; university = canonical name and its recorded country. The earliest year per country, degree and gender is shown; ties are listed together.</p>'],
