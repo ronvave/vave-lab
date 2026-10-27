@@ -198,12 +198,36 @@ def build_positions(dumps):
                 scholars=sorted(scholars.values(), key=lambda s: (s['c'], s['n'])))
 
 
-# Spelling variants of the same institution, merged so lists and the "Where they have worked" view count it once.
+# Institution names for B2 lists and the "Where they have worked" view. Spelling variants and sub-units are merged
+# under the parent, and former names are shown under the name people recognise now (directory cards keep the
+# name as recorded). Sources: Pasifika Communities University Act 2026 / pcu.ac.fj (formerly Pacific Theological
+# College); fnu.ac.fj history (FNU formed 2010 from FIT, Fiji School of Medicine, FCAE incl. the Nasinu teachers
+# college, Lautoka Teachers College, Fiji School of Nursing, Fiji College of Agriculture); maui.hawaii.edu (Maui
+# Community College renamed 2010); whitireiaweltec.ac.nz (Whitireia and WelTec).
 INST_CANON = {
     'the university of the south pacific': 'University of the South Pacific',
+    'university of the south pacific / tourism fiji': 'University of the South Pacific',
     'victoria university of wellington': 'Te Herenga Waka—Victoria University of Wellington',
     'the university of sydney': 'University of Sydney',
     'university of canterbury (new zealand)': 'University of Canterbury',
+    'pacific theological college': 'Pasifika Communities University',
+    'fiji institute of technology': 'Fiji National University',
+    'fiji school of medicine': 'Fiji National University',
+    'fiji college of advanced education': 'Fiji National University',
+    'fiji school of nursing': 'Fiji National University',
+    'fiji college of agriculture': 'Fiji National University',
+    'lautoka teachers college': 'Fiji National University',
+    'nasinu teachers training college / fiji ministry of education': 'Fiji National University',
+    'fiji national university / centre for customs and excise studies': 'Fiji National University',
+    'asia-pacific centre for the responsibility to protect, university of queensland': 'University of Queensland',
+    'nippon foundation ocean voices programme / university of edinburgh': 'University of Edinburgh',
+    'te puna vai mārama; auckland university of technology': 'Te Puna Vai Mārama Cook Islands Centre for Research',
+    'whitireia new zealand': 'Whitireia and WelTec',
+    'whitireia-weltec / te pūkenga': 'Whitireia and WelTec',
+    'college of st john the evangelist': "St John's Theological College",
+    'st johns theological college': "St John's Theological College",
+    'university of hawaiʻi – maui community college': 'University of Hawaiʻi Maui College',
+    'institution unresolved': '',   # placeholder, treated as not recorded
 }
 
 

@@ -1002,7 +1002,7 @@
     $('#ps-rank-bars').innerHTML = rows.map(r => {
       const w = WR.scale === 'pct' ? 100 : 100 * r.n / mx;
       const segs = P.rank.map(([k, l]) => { const v = r.cnt[k] || 0; if (!v) return ''; const p = 100 * v / r.n; return `<span data-c="${r.c}" data-k="${k}" tabindex="0" style="flex:0 0 ${p}%;background:${RANKC[k] || '#7d8da1'};${RANKDARK.has(k) ? 'color:#0a2d52' : ''}" aria-label="${esc(l)}: ${v} (${Math.round(p)}%)">${p >= 9 ? (WR.scale === 'pct' ? Math.round(p) + '%' : v) : ''}</span>`; }).join('');
-      return `<div class="ps-ld-row${state.sel === r.c ? ' sel' : ''}"><div class="nm"><img src="img/regional/flags/${r.c.toLowerCase()}.png" alt="">${esc(nameOf(r.c))}</div><div><div class="ps-ld-bar" style="width:${w}%">${segs}</div></div><div class="ps-ld-n${r.n < 10 ? ' is-small' : ''}"${r.n < 10 ? ' title="Fewer than 10 scholars: shares can swing widely"' : ''}>n=${r.n}${r.n < 10 ? '*' : ''}</div></div>`;
+      return `<div class="ps-ld-row${state.sel === r.c ? ' sel' : ''}"><div class="nm"><img class="rect" src="img/regional/flags-rect/${r.c.toLowerCase()}.webp" alt="" width="30" height="20">${esc(nameOf(r.c))}</div><div><div class="ps-ld-bar" style="width:${w}%">${segs}</div></div><div class="ps-ld-n${r.n < 10 ? ' is-small' : ''}"${r.n < 10 ? ' title="Fewer than 10 scholars: shares can swing widely"' : ''}>n=${r.n}${r.n < 10 ? '*' : ''}</div></div>`;
     }).join('');
     const small = rows.filter(r => r.n < 10).map(r => nameOf(r.c));
     $('#ps-rank-note').textContent = 'Countries with positions recorded. Hover over or tap a segment for the count.' + (small.length ? ` * Fewer than 10 scholars with a recorded rank (${small.join(', ')}): read these shares with care.` : '');
@@ -1033,8 +1033,20 @@
     if (en.length) return `Until ${en[en.length - 1]}`;
     return '';
   }
-  const flagRect = c => `<img class="ps-cl-flag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20">`;
-  const hostFlag = c => ISO2[c] && UC_LOCAL.has(ISO2[c]) ? `<img class="ps-cl-hflag" src="img/regional/flags-uni/${ISO2[c]}.png" alt="" width="22" height="15">` : (HOMEN[c] ? `<img class="ps-cl-hflag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="22" height="15">` : '<span class="ps-cl-hflag ps-cl-hflag--none"></span>');
+  const ICO = {
+    cap: 'M12 3L1 9l11 6 9-4.9V17h2V9L12 3zM5 13.2v3.8c0 1.7 3.1 3 7 3s7-1.3 7-3v-3.8l-7 3.8-7-3.8z',
+    inst: 'M12 2L2 7v2h20V7L12 2zM4 11v7h3v-7H4zm6.5 0v7h3v-7h-3zM17 11v7h3v-7h-3zM2 20v2h20v-2H2z',
+    podium: 'M12 1.5a3 3 0 110 6 3 3 0 010-6zM8.5 9h7l1.2 3.5H7.3L8.5 9zM4 13.5h16V16h-2.2l-1.3 6.5h-9L6.2 16H4v-2.5z',
+    group: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
+    woman: 'M12 1.5a2.6 2.6 0 110 5.2 2.6 2.6 0 010-5.2zM9.6 8h4.8l3.3 8.6h-3.2V22h-4.9v-5.4H6.3L9.6 8z',
+    globe: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z',
+    bulb: 'M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z',
+    book: 'M21 5c-1.11-.35-2.33-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z',
+  };
+  const svgI = (k, cls = '') => `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="${ICO[k]}"/></svg>`;
+  const POS_ICO = { chancellor: 'inst', pvc: 'podium', vc: 'podium', dean: 'group', adean: 'group', head: 'group', director: 'bulb', prof: 'cap', assoc: 'cap', senlec: 'book', asst: 'book', lec: 'book', asstlec: 'book', rf: 'bulb', adj: 'book' };
+  const flagRect = c => `<img class="ps-cl-flag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="${esc(nameOf(c))}" title="${esc(nameOf(c))}" width="42" height="28">`;
+  const hostFlag = c => HOMEN[c] ? `<img class="ps-cl-hflag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="30" height="20">` : (ISO2[c] && UC_LOCAL.has(ISO2[c]) ? `<img class="ps-cl-hflag" src="img/regional/flags-uni/${ISO2[c]}.png" alt="" width="30" height="20">` : '<span class="ps-cl-hflag ps-cl-hflag--none" title="Flag not available"></span>');
   const clPick = s => (CL.home === '*' || s.c === CL.home) && (CL.gen === 'b' || s.g === CL.gen);
   const clHeld = (s, k) => s.r[k] && (CL.held === 'ever' || s.r[k].cur);
   function clRows(k) {
@@ -1072,6 +1084,18 @@
     $('#ps-cl-csv').addEventListener('click', clCsv);
     $('#ps-cw-hosts').addEventListener('click', e => { const b = e.target.closest('button[data-h]'); if (b) { CW.host = b.dataset.h; CW.uni = null; CW.allUnis = false; renderCWork(); } const m = e.target.closest('button[data-allhosts]'); if (m) { CW.allHosts = !CW.allHosts; renderCWork(); } });
     $('#ps-cw-unis').addEventListener('click', e => { const r = e.target.closest('[data-u]'); if (r) { CW.uni = CW.uni === r.dataset.u ? null : r.dataset.u; renderCWork(); } const m = e.target.closest('button[data-allunis]'); if (m) { CW.allUnis = !CW.allUnis; renderCWork(); } });
+    const flTip = (el, x, y) => {
+      const tr = el.closest('tr[data-u]'); if (!tr || !CWLAST || !CW.host) return;
+      const X = (CWLAST.H[CW.host] || { unis: {} }).unis[tr.dataset.u]; if (!X) return;
+      const c = el.dataset.c, order = [...D.positions.lead, ...D.positions.rank].map(x => x[0]);
+      const L = [...X.people.values()].filter(p => p.s.c === c).sort((a, b) => a.s.n.localeCompare(b.s.n));
+      const li = L.map(({ s, roles }) => `<li>${esc(s.n)} <span class="ps-pos-tip__sep">|</span> <span class="ps-pos-tip__uni">${roles.slice().sort((a, b) => order.indexOf(a[0]) - order.indexOf(b[0])).map(([k, e, U]) => { const y = roleYears(e, U); return esc(posLabel(k)) + (y ? ` <span class="ps-pos-tip__cc">(${esc(y)})</span>` : '') + (e.cur ? ' · current' : ''); }).join('; ')}</span></li>`);
+      posTipAt(`<b>${esc(tr.dataset.u)}</b> · ${esc(nameOf(c))}<br>${L.length} scholar${L.length > 1 ? 's' : ''} from ${esc(nameOf(c))}${CW.held === 'cur' ? ' (current)' : ''}<ul>${li.slice(0, 14).join('')}${li.length > 14 ? `<li>and ${li.length - 14} more</li>` : ''}</ul>`, el, x, y);
+    };
+    $('#ps-cw-unis').addEventListener('mousemove', e => { const f = e.target.closest('.ps-cw-fl'); f ? flTip(f, e.clientX, e.clientY) : posTipHide(); });
+    $('#ps-cw-unis').addEventListener('mouseleave', posTipHide);
+    $('#ps-cw-unis').addEventListener('focusin', e => { const f = e.target.closest('.ps-cw-fl'); if (f) flTip(f); });
+    $('#ps-cw-unis').addEventListener('focusout', posTipHide);
     $('#ps-cw-unis').addEventListener('keydown', e => { const r = e.target.closest('[data-u]'); if (r && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); r.click(); } });
   }
   function clTiles() {
@@ -1085,13 +1109,13 @@
     const ch = has('chancellor'), vc = has('vc'), pf = has('prof');
     const from = L => CL.home === '*' ? `, from ${nC(L)} ${nC(L) === 1 ? 'country' : 'countries'}` : '';
     const T = [
-      ['', fmt(leaders.length), `${who} have held a university leadership role`],
-      ['', fmt(ch.length), `Chancellors / Pro-Chancellors${from(ch)}`],
-      ['', fmt(vc.length), `Vice-Chancellors / Presidents (${vc.filter(s => s.r.vc.cur).length} serving now)`],
-      ['', fmt(pf.length), `Full Professors${from(pf)}`],
-      ['g', fmt(women), gk ? `of the ${fmt(leaders.length)} leaders are women (${Math.round(100 * women / leaders.length)}%)` : 'leaders are women (gender not recorded)'],
-      ['b', fmt(hosts.size), `countries where these scholars have held positions`]];
-    $('#ps-cl-tiles').innerHTML = T.map(([c, n, t]) => `<div class="ps-cl-tile ${c}"><div class="n">${n}</div><div class="t">${esc(t)}</div></div>`).join('');
+      ['cap', '', fmt(leaders.length), `${who} have held a university leadership role`],
+      ['inst', '', fmt(ch.length), `Chancellors / Pro-Chancellors${from(ch)}`],
+      ['podium', '', fmt(vc.length), `Vice-Chancellors / Presidents (${vc.filter(s => s.r.vc.cur).length} serving now)`],
+      ['group', '', fmt(pf.length), `Full Professors${from(pf)}`],
+      ['woman', 'g', fmt(women), gk ? `of the ${fmt(leaders.length)} leaders are women (${Math.round(100 * women / leaders.length)}%)` : 'leaders are women (gender not recorded)'],
+      ['globe', '', fmt(hosts.size), `countries where these scholars have held positions`]];
+    $('#ps-cl-tiles').innerHTML = T.map(([ic, c, n, t]) => `<div class="ps-cl-tile ${c}">${svgI(ic, 'ic')}<div class="n">${n}</div><div class="t">${esc(t)}</div></div>`).join('');
   }
   function renderCList() {
     if (!D.positions || $('#ps-careers-panel').hidden || $('#ps-clist-panel').hidden) return;
@@ -1099,12 +1123,13 @@
     $('#ps-cl-home').value = CL.home; $('#ps-cl-sort').value = CL.sort;
     $('#ps-cl-pos').innerHTML = `<button type="button" class="ps-cl-chip${CL.pos ? '' : ' on'}" data-k="*" aria-pressed="${!CL.pos}">All</button>` + all.map(k => `<button type="button" class="ps-cl-chip${CL.pos && sel.has(k) ? ' on' : ''}" data-k="${k}" aria-pressed="${!!(CL.pos && sel.has(k))}">${esc(posLabel(k))}</button>`).join('');
     clTiles();
-    const MAX = 12; let shown = 0;
+    const MAX = 12; let shown = 0, gi = 0;
     const html = all.filter(k => sel.has(k)).map(k => {
       const L = clRows(k); if (!L.length) return '';
       shown += L.length;
       const open = CL.open.has(k), list = open ? L : L.slice(0, MAX), nc = new Set(L.map(s => s.c)).size, ncur = L.filter(s => s.r[k].cur).length;
-      return `<section class="ps-cl-grp"><h3>${esc(posLabel(k))} <small>${fmt(L.length)} scholar${L.length > 1 ? 's' : ''} · ${nc} home ${nc > 1 ? 'countries' : 'country'} · ${ncur} current</small></h3><ul class="ps-cl-list">${list.map(s => clRowHtml(s, k, DM)).join('')}</ul>${L.length > MAX ? `<button type="button" class="ps-cl-more" data-more="${k}" aria-expanded="${open}">${open ? 'Show fewer ▴' : `Show all ${fmt(L.length)} ▸`}</button>` : ''}</section>`;
+      const tone = (gi++ % 2) ? 'green' : 'blue';
+      return `<section class="ps-cl-grp ps-cl-grp--${tone}"><div class="ps-cl-ban"><span class="ps-cl-ban__ic">${svgI(POS_ICO[k] || 'cap')}</span><div><h3>${esc(posLabel(k))}</h3><p>${fmt(L.length)} scholar${L.length > 1 ? 's' : ''} <i>·</i> ${nc} home ${nc > 1 ? 'countries' : 'country'} <i>·</i> ${ncur} current</p></div></div><ul class="ps-cl-list">${list.map(s => clRowHtml(s, k, DM)).join('')}</ul>${L.length > MAX ? `<button type="button" class="ps-cl-more" data-more="${k}" aria-expanded="${open}">${open ? 'Show fewer <span aria-hidden="true">↑</span>' : `Show all ${fmt(L.length)} <span aria-hidden="true">→</span>`}</button>` : ''}</section>`;
     }).join('');
     $('#ps-cl-list').innerHTML = html || '<p class="ps-empty">No scholars match these filters.</p>';
     $('#ps-cl-csv').disabled = !shown;
@@ -1143,10 +1168,11 @@
     }
     return { H, notRec };
   }
+  let CWLAST = null;
   function renderCWork() {
     if (!D.positions || $('#ps-careers-panel').hidden || $('#ps-cwork-panel').hidden) return;
     $('#ps-cw-home').value = CW.home;
-    const { H, notRec } = cwData(), order = [...D.positions.lead, ...D.positions.rank].map(x => x[0]), LK = new Set(D.positions.lead.map(x => x[0]));
+    const { H, notRec } = CWLAST = cwData(), order = [...D.positions.lead, ...D.positions.rank].map(x => x[0]), LK = new Set(D.positions.lead.map(x => x[0]));
     const hs = Object.entries(H).sort((a, b) => b[1].sch.size - a[1].sch.size || hostName(a[0]).localeCompare(hostName(b[0])));
     if (!hs.length) { $('#ps-cw-hosts').innerHTML = '<p class="ps-empty">No positions match these filters.</p>'; $('#ps-cw-unis').innerHTML = ''; return; }
     if (!CW.host || !H[CW.host]) CW.host = hs[0][0];
@@ -1158,7 +1184,7 @@
     const ULIM = 10, ulist = CW.allUnis ? us : us.slice(0, ULIM);
     const rows = ulist.map(([u, X]) => {
       const open = CW.uni === u;
-      let tr = `<tr class="ps-cw-u${open ? ' open' : ''}" data-u="${esc(u)}" tabindex="0" aria-expanded="${open}"><td><b>${esc(u)}</b></td><td class="num">${fmt(X.sch.size)}</td><td class="num">${X.lead.size ? fmt(X.lead.size) : '–'}</td><td>${Object.entries(X.home).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="ps-cw-fl" title="${esc(nameOf(c))}: ${v}"><img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="${esc(nameOf(c))}" width="22" height="15">${v}</span>`).join('')}</td><td>${order.filter(k => X.roles[k]).slice(0, 5).map(k => `<span class="ps-cw-rk${LK.has(k) ? ' l' : ''}">${esc(posLabel(k))} ${X.roles[k]}</span>`).join('')}</td></tr>`;
+      let tr = `<tr class="ps-cw-u${open ? ' open' : ''}" data-u="${esc(u)}" tabindex="0" aria-expanded="${open}"><td><b>${esc(u)}</b></td><td class="num">${fmt(X.sch.size)}</td><td class="num">${X.lead.size ? fmt(X.lead.size) : '–'}</td><td>${Object.entries(X.home).sort((a, b) => b[1] - a[1]).map(([c, v]) => `<span class="ps-cw-fl" data-c="${c}" tabindex="0" aria-label="${esc(nameOf(c))}: ${v} scholar${v > 1 ? 's' : ''}. Hover or focus to list them"><img src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="33" height="22">${v}</span>`).join('')}</td><td>${order.filter(k => X.roles[k]).slice(0, 5).map(k => `<span class="ps-cw-rk${LK.has(k) ? ' l' : ''}">${esc(posLabel(k))} ${X.roles[k]}</span>`).join('')}</td></tr>`;
       if (open) {
         const DM = dirMap();
         const ppl = [...X.people.values()].sort((a, b) => a.s.n.localeCompare(b.s.n));
