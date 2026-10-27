@@ -611,6 +611,10 @@ a { color: var(--ps-teal-300); }
 /* ---- Panel menu + panel code badges (same idea as the country dashboards) ---- */
 .ps-pmenu { position: sticky; top: 0; z-index: 60; background: rgba(3, 19, 39, 0.94); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); border-bottom: 1px solid var(--ps-line); }
 .ps-pmenu.is-stuck { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35); }
+/* Panel menu on the faint beige tapa (lightened so the pills stay readable). */
+.ps-pmenu { background: linear-gradient(rgba(250, 247, 241, .5), rgba(250, 247, 241, .5)), url("../img/regional/tapa-beige.webp") center / 760px auto repeat, #efe6d6; border-bottom-color: #d8ccb6; }
+.ps-pmenu .ps-pmenu__pill { border-color: rgba(10, 45, 82, .25); box-shadow: 0 1px 3px rgba(10, 45, 82, .25); }
+.ps-pmenu .ps-pmenu__pill:hover:not(.is-current):not([aria-expanded='true']) { background: #134a80; border-color: #134a80; }
 .ps-pmenu__pills { max-width: 1440px; margin: 0 auto; padding: 10px 18px; display: flex; gap: 8px; justify-content: center; overflow-x: auto; scrollbar-width: none; }
 .ps-pmenu__pills::-webkit-scrollbar { display: none; }
 .ps-pmenu__pill { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; border: 1px solid var(--ps-line); background: rgba(10, 45, 82, 0.9); color: var(--ps-text); font: 600 0.9rem/1.2 var(--ps-sans); text-decoration: none; cursor: pointer; white-space: nowrap; transition: background .15s, color .15s, border-color .15s; }
