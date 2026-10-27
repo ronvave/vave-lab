@@ -161,6 +161,8 @@ def build_positions(dumps):
             if rk and p['current']: prof_rank[p['sid']] = rk
         n_prof = set()
         for p in rows + prof:
+            if _not_uni(p.get('inst')):
+                continue  # government bodies, commissions, associations and research institutes are not counted
             leads, rank = classify(p)
             roles = set(leads) | ({rank} if rank else set())
             if not roles:
@@ -229,6 +231,23 @@ INST_CANON = {
     'university of hawaiʻi – maui community college': 'University of Hawaiʻi Maui College',
     'institution unresolved': '',   # placeholder, treated as not recorded
 }
+
+
+# Positions at bodies that are not universities or other higher-education institutions are not counted in B2
+# (ministries, commissions, professional associations, stand-alone research institutes).
+NOT_UNI = {'fiji education commission', 'council of graduate schools', 'leibniz centre for tropical marine research',
+           'vavaʻu academy for critical inquiry and applied research',
+           'te puna vai mārama cook islands centre for research'}
+
+
+def _not_uni(name):
+    k = re.sub(r'\s+', ' ', b.norm(name or '') or '').strip().lower()
+    c = (INST_CANON.get(k) or '').lower()
+    if c in NOT_UNI:
+        return True
+    if k in INST_CANON:
+        return False  # mapped to a university (e.g. the Nasinu teachers college, now part of FNU)
+    return k in NOT_UNI or bool(re.search(r'\bministry\b|\bministries\b', k))
 
 
 def _canon_inst(name):
