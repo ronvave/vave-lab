@@ -2,7 +2,7 @@ name: Rebuild regional dashboard (check only)
 
 # CHECK-ONLY DRY RUN. Re-reads all 11 country Master files (read-only scopes,
 # service account with Viewer access), rebuilds the regional bundle in the
-# runner, encrypts it with REGIONAL_PASSCODE, adds photos/links from the
+# runner (Vanuatu dashboard service account, Viewer on all 11), encrypts it with REGIONAL_PASSCODE, adds photos/links from the
 # country bundles, and compares it with the live data/regional-scholars.json.enc.
 # It NEVER commits or deploys. Plaintext stays in the runner and is deleted;
 # logs and the run summary show counts only.
@@ -41,7 +41,7 @@ jobs:
           cp data/itaukei-master-worldpoints.json data/tongan-master-worldpoints.json /tmp/uni/
       - name: Read Masters and build
         env:
-          REGIONAL_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          REGIONAL_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.VANUATU_GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: python3 scripts/build_regional_scholars.py --pull --dump-dir "$RUNNER_TEMP/dumps" --out data/regional-scholars.json
       - name: Encrypt
         env:
