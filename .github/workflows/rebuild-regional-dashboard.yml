@@ -1,16 +1,27 @@
-name: Rebuild regional dashboard (check only)
+name: Rebuild regional dashboard
 
-# CHECK-ONLY DRY RUN. Re-reads all 11 country Master files (read-only scopes,
+# Every 2 hours (30 min after the country refreshes) and on demand. Re-reads all 11 country Master files (read-only scopes,
 # service account with Viewer access), rebuilds the regional bundle in the
 # runner (Vanuatu dashboard service account, Viewer on all 11), encrypts it with REGIONAL_PASSCODE, adds photos/links from the
 # country bundles, and compares it with the live data/regional-scholars.json.enc.
-# It NEVER commits or deploys. Plaintext stays in the runner and is deleted;
-# logs and the run summary show counts only.
+# Commits ONLY data/regional-scholars.json.enc, and only when the check result
+# is "changed" (data changed; Master modified times alone do not count).
+# "blocked" (a Master not read, a missing section, or a >10% drop) keeps the
+# live bundle. Plaintext stays in the runner and is deleted; logs and the run
+# summary show counts only. Manual runs can choose check only.
 on:
+  schedule:
+    - cron: "30 */2 * * *"   # every 2 hours, 30 min after the hour (UTC)
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: 'Check only (never commit)'
+        type: boolean
+        default: false
 
 permissions:
-  contents: read
+  contents: write
+  actions: write
 
 concurrency:
   group: rotate-regional-passcode
@@ -62,9 +73,31 @@ jobs:
         env:
           REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
         run: python3 scripts/regional_rebuild_check.py "$RUNNER_TEMP/live.enc" data/regional-scholars.json.enc
+      - name: Remove plaintext before committing
+        run: |
+          rm -rf "$RUNNER_TEMP/dumps" /tmp/uni data/regional-scholars.json
+          rm -f data/world-universities.json data/itaukei-master-worldpoints.json \
+                data/tongan-world-universities.json data/tongan-master-worldpoints.json
+      - name: Commit and deploy
+        if: steps.cmp.outputs.result == 'changed' && inputs.check_only != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- data/regional-scholars.json.enc
+          git commit -m "Regional dashboard: automatic rebuild from the Master files"
+          for i in 1 2 3 4; do git pull -q --rebase origin main && git push -q origin HEAD:main && break; sleep 5; done
+          gh workflow run deploy-pages-validated.yml --ref main
       - name: Remove plaintext
         if: always()
         run: |
           rm -rf "$RUNNER_TEMP/dumps" /tmp/uni data/regional-scholars.json
           rm -f data/world-universities.json data/itaukei-master-worldpoints.json \
                 data/tongan-world-universities.json data/tongan-master-worldpoints.json
+      - name: Flag a blocked rebuild
+        if: steps.cmp.outputs.result == 'blocked'
+        run: |
+          echo "::error::Rebuild blocked by the safety checks; the live bundle was kept. See the run summary."
+          exit 1
