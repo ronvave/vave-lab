@@ -177,10 +177,10 @@
     const t = totals();
     const connected = D.sources.filter(s => s.file).length;
     const items = [
-      ['phd', ICONS.cap, fmt(t.phd), 'completed PhDs'],
-      ['ma', ICONS.cap, fmt(t.masters), "completed Master's"],
+      ['nat', ICONS.globe, fmt(connected), connected === D.sources.length ? 'Countries' : `of ${D.sources.length} countries connected`],
       ['sch', ICONS.people, fmt(t.scholars), 'Indigenous scholars'],
-      ['nat', WAVES, fmt(connected), connected === D.sources.length ? 'nations \u00b7 one ocean' : `of ${D.sources.length} countries connected`],
+      ['ma', ICONS.cap, fmt(t.masters), "Completed Master's"],
+      ['phd', ICONS.cap, fmt(t.phd), 'Completed PhDs'],
       ['pub', ICONS.doc, fmt(D.regional.uniqueIndigenousPubs), 'Indigenous\u2011linked publications'],
     ];
     el.innerHTML = items.map(([k, i, v, l]) => `<div class="ps-sea__tile ps-sea__tile--${k}">${i}<dt class="ps-sr">${esc(l)}</dt><dd><span class="ps-sea__v">${v}</span><span class="ps-sea__l">${esc(l)}</span></dd></div>`).join('');

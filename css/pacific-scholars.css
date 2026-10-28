@@ -1112,3 +1112,18 @@ a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px
 .ps-a1img .ps-b-card__mini { font-size: .68rem; }
 .ps-a1b__def { margin-left: auto; font-size: .82rem; font-weight: 400; color: var(--ps-text-muted); }
 .ps-a1img .ps-a1b__title { font-family: var(--ps-serif); font-weight: 700; letter-spacing: 0; }
+/* Sea of Islands ribbon v2 (infographic style): sans title between rules, tiles in the original order, value above label */
+.ps-sea { padding: 6px 104px 10px; }
+.ps-sea__title { display: flex; align-items: center; justify-content: center; gap: 22px; font-family: Arial, Helvetica, sans-serif; font-weight: 900; letter-spacing: .03em; font-size: clamp(1.2rem, .85rem + .7vw, 1.6rem); color: #0e3a7a; margin-bottom: 6px; }
+.ps-sea__title::before, .ps-sea__title::after { content: ''; flex: 0 1 180px; height: 1.5px; background: #0e3a7a; opacity: .7; }
+.ps-sea__tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.ps-sea__tile { justify-content: flex-start; gap: 14px; padding: 10px 18px; border-radius: 8px; }
+.ps-sea__tile svg { width: 36px; height: 36px; }
+.ps-sea__tile dd { flex-direction: column; align-items: flex-start; gap: 3px; }
+.ps-sea__l { max-width: 11em; }
+.ps-sea__tile--nat { background: linear-gradient(135deg, #1b4a96, #0d2d6b); }
+.ps-sea__tile--nat svg { color: var(--ps-teal-300); }
+.ps-sea__tile--sch { background: linear-gradient(135deg, #24935a, #10704a); }
+.ps-sea__tile--ma { background: linear-gradient(135deg, #1f7ad6, #0f5cb0); }
+.ps-sea__tile--phd { background: linear-gradient(135deg, #e09a22, #b9780f); }
+.ps-sea__tile--pub { background: linear-gradient(135deg, #8a4fc4, #63339a); }
