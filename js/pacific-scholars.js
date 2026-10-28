@@ -287,7 +287,7 @@
 
   // ================= A1 COUNTRY CARDS =================
   const GREET = { TON: 'M\u0101l\u014d e lelei', FJI: 'Bula vinaka', WSM: 'Talofa lava', SLB: 'Halo olgeta', VUT: 'Halo', COK: 'Kia orana', FSM: 'Kaselehlie', KIR: 'Mauri', TUV: 'Talofa', MHL: 'Iakwe', PLW: 'Alii' };
-  const B_HEAD = { scholars: 'INDIGENOUS SCHOLARS BY COUNTRY', phd: 'COMPLETED PhDs BY COUNTRY', masters: "COMPLETED MASTER'S BY COUNTRY" };
+  const B_HEAD = { scholars: 'Indigenous Scholars by Country', phd: 'Completed PhDs by Country', masters: "Completed Master's by Country" };
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
   const B_NAME = { FSM: 'FSM' };
