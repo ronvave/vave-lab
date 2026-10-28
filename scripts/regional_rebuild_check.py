@@ -35,7 +35,41 @@ def strip(k, v):
     """A Master's 'last modified' time alone is not a data change (user decision 2026-10-28)."""
     if k == 'sources' and isinstance(v, list):
         return [{x: y for x, y in s.items() if x != 'modified'} for s in v]
+    if k == 'directory' and isinstance(v, dict) and 'gz' in v:
+        # compare the decoded directory, not gzip bytes (zlib builds differ)
+        import base64, gzip
+        return dict(v, gz=json.loads(gzip.decompress(base64.b64decode(v['gz']))))
     return v
+
+
+def detail(o, n, path='', out=None, depth=0):
+    """Counts-only description of where two structures differ (no values)."""
+    out = [] if out is None else out
+    if o == n or len(out) >= 25:
+        return out
+    if isinstance(o, dict) and isinstance(n, dict):
+        for k in sorted(set(o) | set(n), key=str):
+            if k not in o or k not in n:
+                out.append(f'{path}.{k}: only in {"new" if k in n else "live"}' if depth < 2 else f'{path}: keys differ')
+                if depth >= 2:
+                    break
+            elif depth < 3:
+                detail(o[k], n[k], f'{path}.{k}', out, depth + 1)
+            elif o[k] != n[k]:
+                out.append(f'{path}.{k}: differs')
+    elif isinstance(o, list) and isinstance(n, list):
+        diff = sum(1 for a, b in zip(o, n) if a != b)
+        fields = set()
+        for a, b in zip(o, n):
+            if a != b and isinstance(a, dict) and isinstance(b, dict):
+                fields |= {f for f in set(a) | set(b) if a.get(f) != b.get(f)}
+        same_set = sorted(map(json.dumps, o)) == sorted(map(json.dumps, n)) if len(o) == len(n) else False
+        out.append(f'{path}: {len(o)} → {len(n)} items, {diff} differ by position'
+                   + (' (same items, different order)' if same_set else '')
+                   + (f'; fields differing: {sorted(fields)}' if fields else ''))
+    else:
+        out.append(f'{path}: differs ({type(o).__name__} → {type(n).__name__})')
+    return out
 
 
 def size(v):
@@ -76,16 +110,20 @@ def main():
         lines.append(f'| {code} | ' + ' | '.join(cells) + ' |')
 
     lines += ['', '| Section | Live size | New size | Same? |', '|---|---|---|---|']
-    changed = False
+    changed, notes = False, []
     for k in sorted((set(old) | set(new)) - IGNORE):
         if k not in new:
             problems.append(f'section {k} missing from the new build')
-        same = strip(k, old.get(k)) == strip(k, new.get(k))
+        so, sn = strip(k, old.get(k)), strip(k, new.get(k))
+        same = so == sn
         changed |= not same
         lines.append(f'| {k} | {size(old.get(k))} | {size(new.get(k))} | {"yes" if same else "CHANGED"} |')
+        if not same:
+            notes.extend(detail(so, sn, k))
 
     result = 'blocked' if problems else ('changed' if changed else 'unchanged')
-    out = '\n'.join(lines + [''] + [f'- {p}' for p in problems] + ['', f'Result: **{result}**'])
+    out = '\n'.join(lines + ['', 'Where sections differ (counts and field names only):'] + [f'- {x}' for x in notes]
+                    + [''] + [f'- {p}' for p in problems] + ['', f'Result: **{result}**'])
     print(out)
     if os.environ.get('GITHUB_STEP_SUMMARY'):
         with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as fh:
