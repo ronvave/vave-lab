@@ -158,6 +158,7 @@
   }
 
   function renderKpis() {
+    if (!$('#ps-kpis')) return;
     const t = totals();
     const connected = D.sources.filter(s => s.file).length;
     const items = [
