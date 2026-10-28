@@ -271,7 +271,9 @@ def card_positions(dumps):
         if not (d and d['data'].get('Positions')):
             continue
         for p in positions(code, d, d):
-            if p.get('hide'):  # unticked on the scholar's Update info form
+            # Unticked on the scholar's Update info form (Fiji and Tonga only:
+            # other Masters use FALSE in this column for rows still shown).
+            if p.get('hide') and code in ('FJI', 'TON'):
                 continue
             verb, std, ltit = p['verb'] or '', p['std'] or '', p['ltit'] or ''
             row = dict(t=verb or std or ltit, cur=bool(p['current']))
