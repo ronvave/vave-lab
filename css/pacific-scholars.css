@@ -56,7 +56,7 @@ a { color: var(--ps-teal-300); }
   overflow: hidden;
   /* Height follows the screen width so the sky, mountains, sea and canoe of
      the photo stay in view from laptops to large monitors. */
-  min-height: max(230px, calc(100vw / 3.3));
+  min-height: max(230px, calc(100vw / 3.62));
   display: flex;
   padding: 26px 18px 22px;
   background: var(--ps-navy-900);
@@ -64,7 +64,7 @@ a { color: var(--ps-teal-300); }
 }
 .ps-hero__img {
   position: absolute; inset: 0; z-index: -2;
-  width: 100%; height: 100%; object-fit: cover; object-position: 50% 100%;
+  width: 100%; height: 100%; object-fit: cover; object-position: 50% 0%;
 }
 .ps-hero::before {
   content: ''; position: absolute; inset: 0; z-index: -1;
