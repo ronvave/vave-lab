@@ -187,9 +187,8 @@
   }
 
   // ================= METRIC TOGGLE =================
-  // A1 and A1b each have a toggle; both set the same metric so they stay in step.
   function setupMetric() {
-    const btns = $$('#ps-metric button, #ps-metric-b button, #ps-metric-c button');
+    const btns = $$('#ps-metric button');
     const set = m => { state.metric = m; syncBarView(m); btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
     btns.forEach(b => {
       const grp = $$('button', b.parentElement), i = grp.indexOf(b);
@@ -225,9 +224,7 @@
     const chip = $('#ps-chip');
     chip.classList.toggle('is-on', !!state.sel);
     $('#ps-chip-text').textContent = state.sel ? `Filtered to ${nameOf(state.sel)}` : '';
-    renderStrip(first);
-    renderStripB('#ps-strip-b', '#ps-a1b-title');
-    renderStripB('#ps-strip-c', '#ps-a1c-title', true);
+    renderCards('#ps-cards', '#ps-a1-title', true);
     renderMap();
     renderBars();
     renderDegrees();
@@ -288,13 +285,13 @@
     if (D && VIEW_HOOK[k]) VIEW_HOOK[k](v);
   }
 
-  // ================= COUNTRY CARDS, ALTERNATIVE STYLE (A1b) =================
+  // ================= A1 COUNTRY CARDS =================
   const GREET = { TON: 'M\u0101l\u014d e lelei', FJI: 'Bula vinaka', WSM: 'Talofa lava', SLB: 'Halo olgeta', VUT: 'Halo', COK: 'Kia orana', FSM: 'Kaselehlie', KIR: 'Mauri', TUV: 'Talofa', MHL: 'Iakwe', PLW: 'Alii' };
   const B_HEAD = { scholars: 'INDIGENOUS SCHOLARS BY COUNTRY', phd: 'COMPLETED PhDs BY COUNTRY', masters: "COMPLETED MASTER'S BY COUNTRY" };
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
   const B_NAME = { FSM: 'FSM' };
-  function renderStripB(olSel, titleSel, photo = false) {
+  function renderCards(olSel, titleSel, photo = false) {
     const ol = $(olSel); if (!ol) return;
     const m = METRICS[state.metric];
     $(titleSel).textContent = B_HEAD[state.metric];
@@ -327,48 +324,6 @@
       </li>`;
     }).join('');
     $$('.ps-b-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-b-card').dataset.code)));
-  }
-
-  // ================= COUNTRY STRIP =================
-  function renderStrip(first) {
-    const ol = $('#ps-strip');
-    const m = METRICS[state.metric];
-    const prev = new Map($$('.ps-card', ol).map(el => [el.dataset.code, el.getBoundingClientRect()]));
-    const list = sorted();
-    ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
-    const html = list.map((c, i) => {
-      const v = c[m.key];
-      const LINES = { scholars: `${fmt(c.scholars)} Scholars`, masters: `${fmt(c.masters)} Masters`, phd: `${fmt(c.phd)} PhD` };
-      const sub = ['scholars', 'masters', 'phd'].filter(k => k !== state.metric).map(k => `<span>${LINES[k]}</span>`).join('');
-      const icon = state.metric === 'scholars' ? ICONS.people : ICONS.cap;
-      const btn = c.dashboard
-        ? `<a class="ps-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View Dashboard<span aria-hidden="true">→</span></a>`
-        : `<span class="ps-card__btn ps-card__btn--off">${c.dashboardStatus === 'development' ? 'Dashboard in development' : 'No dashboard yet'}</span>`;
-      const valText = v == null ? 'Not available' : fmt(v);
-      return `<li class="ps-card${state.sel === c.code ? ' is-selected' : ''}${state.sel && state.sel !== c.code ? ' is-dim' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
-        <div class="ps-card__name${CARD_LONG[c.code] ? ' ps-card__name--long' : ''}" style="--img:url('${new URL('img/regional/' + c.code.toLowerCase() + '.webp', document.baseURI).href}')">${esc(CARD_NAME[c.code] || c.name)}${CARD_SUB[c.code] ? `<small>${CARD_SUB[c.code]}</small>` : ''}</div>
-        <img class="ps-card__flag" src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="240" height="120" loading="${i < 6 ? 'eager' : 'lazy'}" />
-        <img class="ps-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="142" style="object-position:${CARD_FOCUS[c.code] || 'center'}" loading="${i < 6 ? 'eager' : 'lazy'}" />
-        <div class="ps-card__body">
-          <button type="button" class="ps-card__sel" aria-pressed="${state.sel === c.code}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${state.sel === c.code ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
-            ${icon}<span class="ps-card__vl"><span class="ps-card__v">${valText}</span><span class="ps-card__l">${esc(m.label)}</span></span>
-          </button>
-          <div class="ps-card__sub">${sub}</div>
-          ${btn}
-        </div></li>`;
-    }).join('');
-    ol.innerHTML = html;
-    $$('.ps-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-card').dataset.code)));
-    // FLIP re-sort animation
-    if (!first && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      $$('.ps-card', ol).forEach(el => {
-        const p = prev.get(el.dataset.code); if (!p) return;
-        const n = el.getBoundingClientRect(); const dx = p.left - n.left;
-        if (!dx) return;
-        el.style.transition = 'none'; el.style.transform = `translateX(${dx}px)`;
-        requestAnimationFrame(() => { el.style.transition = 'transform .45s cubic-bezier(.2,.8,.2,1)'; el.style.transform = ''; });
-      });
-    }
   }
 
   // ================= MAP =================

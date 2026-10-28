@@ -1110,3 +1110,4 @@ a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px
 .ps-b-card__photo { display: block; width: 100%; height: 72px; object-fit: cover; margin-top: 8px; background: #0b3157; }
 .ps-a1img .ps-a1b__grid { padding: 4px; margin: 0 -4px; }
 .ps-a1img .ps-b-card__mini { font-size: .68rem; }
+.ps-a1b__def { margin-left: auto; font-size: .82rem; font-weight: 400; color: var(--ps-text-muted); }
