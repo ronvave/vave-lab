@@ -1,0 +1,70 @@
+name: Rebuild regional dashboard (check only)
+
+# CHECK-ONLY DRY RUN. Re-reads all 11 country Master files (read-only scopes,
+# service account with Viewer access), rebuilds the regional bundle in the
+# runner, encrypts it with REGIONAL_PASSCODE, adds photos/links from the
+# country bundles, and compares it with the live data/regional-scholars.json.enc.
+# It NEVER commits or deploys. Plaintext stays in the runner and is deleted;
+# logs and the run summary show counts only.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rotate-regional-passcode
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography google-auth google-api-python-client
+      - name: Keep a copy of the live bundle
+        run: cp data/regional-scholars.json.enc "$RUNNER_TEMP/live.enc"
+      - name: Decrypt university locations for the study map
+        env:
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+          VAVELAB_TONGAN_PASSCODE: ${{ secrets.VAVELAB_TONGAN_PASSCODE }}
+        run: |
+          set -euo pipefail
+          python3 scripts/decrypt_data.py world-universities.json itaukei-master-worldpoints.json >/dev/null
+          python3 scripts/tongan_decrypt_data.py tongan-world-universities.json tongan-master-worldpoints.json >/dev/null
+          mkdir -p /tmp/uni
+          cp data/itaukei-master-worldpoints.json data/tongan-master-worldpoints.json /tmp/uni/
+      - name: Read Masters and build
+        env:
+          REGIONAL_GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: python3 scripts/build_regional_scholars.py --pull --dump-dir "$RUNNER_TEMP/dumps" --out data/regional-scholars.json
+      - name: Encrypt
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+        run: |
+          python3 scripts/encrypt_regional.py
+          rm -f data/regional-scholars.json
+      - name: Add photos and links from the country dashboards
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+          VAVELAB_PASSCODE: ${{ secrets.VAVELAB_PASSCODE }}
+          VAVELAB_TONGAN_PASSCODE: ${{ secrets.VAVELAB_TONGAN_PASSCODE }}
+          VAVELAB_SOLOMON_PASSCODE: ${{ secrets.VAVELAB_SOLOMON_PASSCODE }}
+          VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
+        run: python3 scripts/regional_card_extras.py
+      - name: Compare with the live bundle (counts only)
+        id: cmp
+        env:
+          REGIONAL_PASSCODE: ${{ secrets.REGIONAL_PASSCODE }}
+        run: python3 scripts/regional_rebuild_check.py "$RUNNER_TEMP/live.enc" data/regional-scholars.json.enc
+      - name: Remove plaintext
+        if: always()
+        run: |
+          rm -rf "$RUNNER_TEMP/dumps" /tmp/uni data/regional-scholars.json
+          rm -f data/world-universities.json data/itaukei-master-worldpoints.json \
+                data/tongan-world-universities.json data/tongan-master-worldpoints.json
