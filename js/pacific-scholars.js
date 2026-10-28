@@ -189,7 +189,7 @@
   // ================= METRIC TOGGLE =================
   // A1 and A1b each have a toggle; both set the same metric so they stay in step.
   function setupMetric() {
-    const btns = $$('#ps-metric button, #ps-metric-b button');
+    const btns = $$('#ps-metric button, #ps-metric-b button, #ps-metric-c button');
     const set = m => { state.metric = m; syncBarView(m); btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
     btns.forEach(b => {
       const grp = $$('button', b.parentElement), i = grp.indexOf(b);
@@ -227,6 +227,7 @@
     $('#ps-chip-text').textContent = state.sel ? `Filtered to ${nameOf(state.sel)}` : '';
     renderStrip(first);
     renderStripB();
+    renderStripB('#ps-strip-c', '#ps-a1c-title', false);
     renderMap();
     renderBars();
     renderDegrees();
@@ -293,10 +294,10 @@
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
   const B_NAME = { FSM: 'FSM' };
-  function renderStripB() {
-    const ol = $('#ps-strip-b'); if (!ol) return;
+  function renderStripB(olSel = '#ps-strip-b', titleSel = '#ps-a1b-title', arrow = true) {
+    const ol = $(olSel); if (!ol) return;
     const m = METRICS[state.metric];
-    $('#ps-a1b-title').textContent = B_HEAD[state.metric];
+    $(titleSel).textContent = B_HEAD[state.metric];
     const list = sorted();
     const max = Math.max(1, ...list.map(c => c[m.key] || 0));
     ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
@@ -306,7 +307,7 @@
       const minis = ['phd', 'masters', 'scholars'].filter(k => k !== state.metric)
         .map((k, j) => `<span class="ps-b-card__mini ps-b-card__mini--${j ? 'b' : 'a'}"><b>${fmt(c[k])}</b>${B_MINI[k]}</span>`).join('');
       const btn = c.dashboard
-        ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard <span aria-hidden="true">\u2192</span></a>`
+        ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard${arrow ? ' <span aria-hidden="true">\u2192</span>' : ''}</a>`
         : c.dashboardStatus === 'development'
           ? '<span class="ps-b-card__btn ps-b-card__btn--dev">In development</span>'
           : '<span class="ps-b-card__btn ps-b-card__btn--none">No dashboard yet</span>';

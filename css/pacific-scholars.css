@@ -1021,16 +1021,17 @@ section[data-panel] { scroll-margin-top: 70px; }
 }
 
 /* ===== Replicate summary ribbon + A1b country cards ("Across our sea of islands" style) ===== */
-.ps-sea { position: relative; margin: 14px 0 6px; padding: 16px 118px 20px; border-radius: 14px; overflow: hidden;
+.ps-hero__ribbons { display: flex; flex-direction: column; gap: 10px; }
+.ps-sea { position: relative; margin: 0; padding: 6px 92px 8px; border-radius: var(--ps-radius); overflow: hidden;
   background: url('../img/regional/a1b/side-l.webp') left center / auto 100% no-repeat, url('../img/regional/a1b/side-r.webp') right center / auto 100% no-repeat, linear-gradient(#eef6fd, #e3f0fb);
-  border: 1px solid #cfe2f4; box-shadow: 0 6px 18px rgba(0,0,0,.25); }
-.ps-sea__title { margin: 0 0 12px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: 900; font-size: clamp(1.5rem, 1rem + 1.2vw, 2.15rem); letter-spacing: .04em; text-transform: uppercase; color: #0e2a6b; }
-.ps-sea__tiles { margin: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.ps-sea__tile { display: flex; align-items: center; gap: 10px; padding: 14px 14px; border-radius: 12px; color: #fff; box-shadow: 0 4px 10px rgba(14,42,107,.25), inset 0 1px 0 rgba(255,255,255,.25); min-width: 0; }
-.ps-sea__tile svg { flex: none; width: 40px; height: 40px; }
-.ps-sea__tile dd { margin: 0; display: flex; flex-direction: column; min-width: 0; }
-.ps-sea__v { font-family: Arial, Helvetica, sans-serif; font-weight: 900; font-size: clamp(1.9rem, 1.2rem + 1.4vw, 2.8rem); line-height: 1; font-variant-numeric: tabular-nums; }
-.ps-sea__l { font-size: .95rem; white-space: nowrap; font-weight: 700; line-height: 1.15; margin-top: 4px; }
+  border: 1px solid #cfe2f4; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+.ps-sea__title { margin: 0 0 6px; text-align: center; font-family: Arial, Helvetica, sans-serif; font-weight: 900; font-size: clamp(1.1rem, .8rem + .6vw, 1.45rem); letter-spacing: .05em; text-transform: uppercase; color: #0e2a6b; line-height: 1.1; }
+.ps-sea__tiles { margin: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.3fr); gap: 8px; }
+.ps-sea__tile { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 10px; border-radius: 9px; color: #fff; box-shadow: 0 3px 8px rgba(14,42,107,.25), inset 0 1px 0 rgba(255,255,255,.25); min-width: 0; }
+.ps-sea__tile svg { flex: none; width: 28px; height: 28px; }
+.ps-sea__tile dd { margin: 0; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.ps-sea__v { font-family: Arial, Helvetica, sans-serif; font-weight: 900; font-size: clamp(1.6rem, 1.1rem + 1vw, 2.1rem); line-height: 1; font-variant-numeric: tabular-nums; flex: none; }
+.ps-sea__l { font-size: clamp(0.8rem, 0.7rem + 0.25vw, 0.92rem); font-weight: 700; line-height: 1.15; min-width: 0; }
 .ps-sea__tile--phd { background: linear-gradient(135deg, #1b3f95, #0d2765); }
 .ps-sea__tile--ma { background: linear-gradient(135deg, #1f7ad6, #0f56ad); }
 .ps-sea__tile--sch { background: linear-gradient(135deg, #1fa152, #0d7536); }
@@ -1083,8 +1084,21 @@ a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px
 .ps-b-card__btn--dev { background: #7a3fd0; }
 .ps-b-card__btn--none { background: #858d99; }
 @media (max-width: 1200px) { .ps-a1b__grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } .ps-sea { padding: 14px 20px 18px; } }
-.ps-sea__tile--pub .ps-sea__l { white-space: normal; }
 /* A1b + replicate ribbon: serif headings (approved exception to Arial) */
 .ps-sea__title, .ps-a1b__title, .ps-b-card__name { font-family: Georgia, 'Times New Roman', serif; }
 .ps-sea__title, .ps-a1b__title { font-weight: 700; }
 .ps-b-card__name { font-weight: 700; }
+/* A1c: A1b cards on the dark page background, flags filling the band, thin black card outline */
+.ps-a1c { background: transparent; border: 0; box-shadow: none; padding: 6px 0 14px; color: #fff; }
+.ps-a1c .ps-a1b__title { color: #fff; }
+.ps-a1c .ps-a1b__rule { background: #fff; opacity: .45; }
+.ps-a1c .ps-a1b__legend, .ps-a1c .ps-a1b__order { color: #fff; }
+.ps-a1c .ps-a1b__hint { color: var(--ps-text-muted); }
+.ps-a1c .ps-a1b__dot--live { background: #fff; }
+.ps-a1c .ps-a1b__dot--dev { background: transparent; border-color: #fff; }
+.ps-a1c .ps-a1b__seg { background: rgba(255,255,255,.08); border-color: var(--ps-line); }
+.ps-a1c .ps-a1b__seg button { color: #fff; }
+.ps-a1c .ps-a1b__seg button[aria-checked="true"] { background: var(--ps-teal-300); color: #04162c; }
+.ps-a1c .ps-b-card { border: 1px solid #000; border-top: 6px solid var(--c); }
+.ps-a1c .ps-b-card__flagband { position: relative; display: block; padding: 0; aspect-ratio: 2 / 1; min-height: 0; overflow: hidden; }
+.ps-a1c .ps-b-card__flagband img { position: absolute; inset: 0; width: 100%; max-width: none; height: 100%; aspect-ratio: auto; object-fit: cover; border-radius: 0; box-shadow: none; }
