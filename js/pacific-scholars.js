@@ -299,6 +299,9 @@
     const list = sorted();
     const max = Math.max(1, ...list.map(c => c[m.key] || 0));
     ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
+    // Remember where each card sits so reordered cards can slide to their new place.
+    const before = {};
+    $$('.ps-b-card', ol).forEach(li => { before[li.dataset.code] = li.getBoundingClientRect(); });
     ol.innerHTML = list.map((c, i) => {
       const v = c[m.key];
       const valText = v == null ? 'Not available' : fmt(v);
@@ -325,6 +328,21 @@
       </li>`;
     }).join('');
     $$('.ps-b-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-b-card').dataset.code)));
+    shuffleCards(ol, before);
+  }
+
+  // Slide cards from their old positions to their new ones (FLIP); cards that stay put don't move.
+  function shuffleCards(ol, before) {
+    if (!Object.keys(before).length || !Element.prototype.animate) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    $$('.ps-b-card', ol).forEach(li => {
+      const o = before[li.dataset.code]; if (!o) return;
+      const n = li.getBoundingClientRect(), dx = o.left - n.left, dy = o.top - n.top;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+      li.style.zIndex = '2';
+      li.animate([{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+        { duration: 650, easing: 'cubic-bezier(.2,.8,.2,1)' }).onfinish = () => { li.style.zIndex = ''; };
+    });
   }
 
   // ================= MAP =================
