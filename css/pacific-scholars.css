@@ -56,7 +56,7 @@ a { color: var(--ps-teal-300); }
   overflow: hidden;
   /* Height follows the screen width so the sky, mountains, sea and canoe of
      the photo stay in view from laptops to large monitors. */
-  min-height: max(230px, calc(100vw / 3.3));
+  min-height: max(230px, calc(100vw / 2.7));
   display: flex;
   padding: 26px 18px 22px;
   background: var(--ps-navy-900);
@@ -348,7 +348,7 @@ a { color: var(--ps-teal-300); }
 .diff-down { color: #b42318; font-weight: 600; }
 
 /* ============ GATE ============ */
-.ps-gate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/hero-sail.webp') center / cover; }
+.ps-gate { position: fixed; inset: 0; z-index: 90; display: grid; place-items: center; padding: 20px; background: linear-gradient(180deg, rgba(3,19,39,.82), rgba(3,19,39,.96)), url('../img/regional/hero-voyagers.webp') center / cover; }
 .ps-gate[hidden] { display: none; }
 .ps-gate__card { width: min(440px, 100%); background: rgba(5, 28, 54, .94); border: 1px solid var(--ps-line); border-radius: 16px; padding: 26px 24px; box-shadow: var(--ps-shadow); }
 .ps-gate__card h1 { font-family: var(--ps-serif); font-size: 1.9rem; margin: 0 0 6px; color: #fff; line-height: 1.05; }
