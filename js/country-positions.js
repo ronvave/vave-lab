@@ -86,7 +86,9 @@
     if (card.hasAttribute('data-cpos')) return;
     var sid = (card.dataset.scholarId || '').toUpperCase();
     card.setAttribute('data-cpos', '');
-    var rows = sid && bySid[sid];
+    // Positions the scholar unticked on the Update info form stay in the
+    // snapshot (so the form can list them) but are not shown on the card.
+    var rows = sid && (bySid[sid] || []).filter(function (r) { return !r.hide; });
     if (!rows || !rows.length) return;
     var wrap = document.createElement('div');
     wrap.className = 'cpos-wrap';
@@ -238,6 +240,16 @@
       renderTable(view);
     });
   }
+
+  // Used by the Update info form: every position recorded for a scholar,
+  // including hidden ones, current first. Resolves to [] if unavailable.
+  window.countryPositions = {
+    forSid: function (sid) {
+      sid = String(sid || '').toUpperCase();
+      return load().then(function () { return sortRows(bySid[sid] || []); }, function () { return []; });
+    },
+    years: years
+  };
 
   // ---------------------------------------------------------------- boot
   function start() {

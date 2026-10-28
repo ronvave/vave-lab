@@ -9013,6 +9013,8 @@
     const submitBtn = document.querySelector('[data-submit-send]');
     if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Submit for review'; }
 
+    renderPositionDisplayBlock(modal, profile.scholarId);
+
     modal.classList.add('is-visible');
     document.body.style.overflow = 'hidden';
     // main.js adds the expanded geography and degree controls just after the
@@ -9023,6 +9025,39 @@
       form._scholarSubmissionBaseline = null;
       setTimeout(() => captureScholarSubmissionBaseline(form), 80);
     }
+  }
+
+  // "Positions shown on your profile": every position recorded for the
+  // scholar, ticked = shown on the card. Rebuilt on each open, placed after
+  // the Scholar profile fieldset. The boxes use the form's changed-fields-only
+  // logic, so only positions the person ticks or unticks are submitted.
+  function renderPositionDisplayBlock(modal, scholarId) {
+    const form = document.getElementById('db-submit-form');
+    if (!form) return;
+    const old = form.querySelector('.db-sf-positions-display');
+    if (old) old.remove();
+    const api = window.PositionDisplayField;
+    const sid = String(scholarId || '').toUpperCase();
+    if (!api || !sid) return;
+    const token = (modal._positionsToken = {});
+    api.forSid(sid).then(rows => {
+      if (modal._positionsToken !== token || !rows.length) return;
+      const fs = document.createElement('fieldset');
+      fs.className = 'db-sf-positions-display';
+      const lg = document.createElement('legend');
+      lg.textContent = 'Positions shown on your profile';
+      fs.appendChild(lg);
+      const items = api.render(fs, rows);
+      const legends = Array.from(form.querySelectorAll('fieldset > legend'));
+      const profileLegend = legends.find(l => /^\s*Scholar profile\s*$/i.test(l.textContent));
+      const anchor = profileLegend ? profileLegend.parentElement : null;
+      if (anchor) anchor.insertAdjacentElement('afterend', fs);
+      else form.querySelector('[data-submit-send]')?.closest('div')?.insertAdjacentElement('beforebegin', fs) || form.appendChild(fs);
+      // If the baseline was already captured, record these boxes' opening
+      // state so unchanged boxes are not submitted.
+      const base = form._scholarSubmissionBaseline;
+      if (base) items.forEach(x => { base[x.box.name] = x.initial ? 'Yes' : ''; });
+    });
   }
 
   function closeScholarSubmitModal() {

@@ -224,6 +224,7 @@
         <div class="db-scholar-card__photo-col${s.dec ? ' db-scholar-card__photo-col--is-deceased' : ''}">
           <div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${esc(initials)}</div>${ph ? `<img src="${esc(ph)}" alt="Photo of ${esc(s.n)}" loading="lazy" decoding="async" referrerpolicy="no-referrer">` : ''}</div>
           ${memorial ? `<div class="db-scholar-card__memorial" aria-label="Memorial: ${esc(memorial)}">${esc(memorial)}</div>` : ''}
+          ${s.ret && !s.dec ? '<span class="db-scholar-card__retired" title="This scholar is retired">Retired</span>' : ''}
           <button type="button" class="db-scholar-card__share" data-share="${esc(s.id)}" title="Copy a link to this scholar's card on the regional dashboard" aria-label="Copy a link to this scholar's card on the regional dashboard">${SHARE}<span>Share</span></button>
         </div>
         <div class="db-scholar-card__info">

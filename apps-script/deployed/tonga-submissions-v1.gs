@@ -119,7 +119,8 @@ var MAPPING = {
         'End Year':                                     { type: 'int',    min: 1900, max: 2100, nullable: true },
         'Source URL':                                   { type: 'url',    maxLen: 500 },
         'Evidence / Notes':                             { type: 'string', maxLen: 2000 },
-        'Last Verified':                                { type: 'string', maxLen: 60 }
+        'Last Verified':                                { type: 'string', maxLen: 60 },
+        'Public Display Approved':                      { type: 'enum',   enum: ['TRUE','FALSE',''] }
       }
     },
     'Graduate Degrees': {
@@ -161,7 +162,7 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true, positionDisplay:true});
     if (params.idToken || !tongaAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
     return tongaReadAction_(params);
   } catch (err) {
@@ -923,6 +924,46 @@ function scholarSubmissionFieldSpecs_() {
   ];
 }
 
+// Update info form: "Positions shown on your profile" (2026-10-28).
+// Each changed tick box arrives as position_show__<Position ID> = Yes (show) or
+// No / blank (hide). Proposes Positions!'Public Display Approved' = TRUE / FALSE
+// for that row. A blank cell already counts as shown, so ticking a blank row
+// proposes nothing.
+function positionDisplayChanges_(ss, sid, fields, includeRecorded) {
+  var keys = Object.keys(fields || {}).filter(function (k) { return /^position_show__/.test(k); });
+  if (!keys.length) return [];
+  var sh = ss.getSheetByName('Positions'), out = [];
+  var headers = sh ? sh.getRange(4, 1, 1, sh.getLastColumn()).getDisplayValues()[0].map(function (h) { return String(h || '').trim(); }) : [];
+  var idCol = headers.indexOf('Position ID'), sidCol = headers.indexOf('Scholar ID'), pdaCol = headers.indexOf('Public Display Approved');
+  var titleCol = headers.indexOf('Academic / Professional Title (verbatim)'), leadCol = headers.indexOf('Leadership Title (verbatim)'), instCol = headers.indexOf('Institution');
+  var last = sh ? sh.getLastRow() : 0, vals = (sh && last >= 5) ? sh.getRange(5, 1, last - 4, headers.length).getDisplayValues() : [];
+  keys.forEach(function (key) {
+    var pid = key.slice('position_show__'.length).trim(), show = /^(yes|on|true|1|show)$/i.test(String(fields[key] || '').trim());
+    var proposed = show ? 'TRUE' : 'FALSE', label = 'Show position on profile: ' + pid, current = '', rowNumber = null, writable = true, reason = '';
+    var idx = -1;
+    if (!sh || idCol < 0 || sidCol < 0) { writable = false; reason = 'Positions sheet not found'; }
+    else if (pdaCol < 0) { writable = false; reason = "Master field 'Public Display Approved' not found"; }
+    else {
+      for (var i = 0; i < vals.length; i++) { if (String(vals[i][idCol]).trim() === pid) { idx = i; break; } }
+      if (idx < 0) { writable = false; reason = 'Position not found in Master'; }
+      else if (String(vals[idx][sidCol]).trim() !== sid) { writable = false; reason = 'Position belongs to another scholar'; }
+      else {
+        var r = vals[idx], t = [r[titleCol] || r[leadCol] || '', r[instCol] || ''].filter(String).join(', ');
+        if (t) label = 'Show position on profile: ' + t + ' (' + pid + ')';
+        rowNumber = idx + 5; current = String(r[pdaCol] || '').trim().toUpperCase();
+        if (sh.getRange(rowNumber, pdaCol + 1).getFormula()) { writable = false; reason = 'Computed field; update its source field in Master'; }
+      }
+    }
+    // Blank and TRUE both mean shown.
+    var shownNow = !/^(FALSE|NO|N|0)$/.test(current), alreadyRecorded = shownNow === show;
+    if (alreadyRecorded && !includeRecorded) return;
+    out.push({ alreadyRecorded: alreadyRecorded, currentDisplayValue: current ? current + (shownNow ? ' (shown)' : ' (hidden)') : 'Blank (shown)',
+      key: key, label: label, worksheet: 'Positions', field: 'Public Display Approved', rowNumber: rowNumber,
+      currentValue: current, newValue: proposed, writable: writable, reason: reason });
+  });
+  return out;
+}
+
 function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
   var fields=parseJsonObject_(submission['Submitted Fields JSON']), structured=parseJsonObject_(submission['Structured Submission JSON']), changedOnly=structured.changedFieldsOnly===true, sid=String(submission['Scholar ID']||''), out=[];
   var st=tongaTable_(ss,'Scholars'), scholarSheet=st.sheet, scholarCfg=MAPPING.worksheets.Scholars;
@@ -966,6 +1007,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
     if(tongaPreferredNameField_(spec.ws,spec.field)&&!current){var canonical=spec.field==='Preferred Given Names'?'Given Names':'Family Name';displayCurrent=normalizeForRead_(scholarValues[scholarInfo.headers[canonical]-1]);}
     out.push({alreadyRecorded:alreadyRecorded,currentDisplayValue:displayCurrent,key:spec.key,label:spec.label,worksheet:spec.ws,field:spec.field,rowNumber:rowNumber,currentValue:current,newValue:proposed,writable:writable,reason:reason});
   });
+  positionDisplayChanges_(ss, sid, fields, includeRecorded).forEach(function (c) { out.push(c); });
   // These are deliberately retained as visible manual-review changes because
   // they live in the GitHub enrichment sidecar, not in a Master Sheet column.
   // Sidecar URLs cannot be compared with the Master sheet. New submissions
@@ -980,7 +1022,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.3';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.4';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];

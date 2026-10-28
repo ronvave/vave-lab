@@ -36,6 +36,14 @@ def _s(v) -> str:
     return re.sub(r"\s+", " ", str(v or "")).strip()
 
 
+def hidden(v) -> bool:
+    """Positions!'Public Display Approved' hides a position from scholar cards
+    only when it is explicitly FALSE / No. Blank means shown."""
+    if v is False:
+        return True
+    return _s(v).lower() in ("false", "no", "n", "0")
+
+
 def _gender(v) -> str:
     v = _s(v).lower()
     if v in ("female", "f", "woman", "women", "fefine", "marama"):  # Tongan: Fefine / Tangata
@@ -65,13 +73,18 @@ def build(position_dicts: list[dict], scholars: list[dict], source: str, generat
         current = status.startswith("current") or status in ("true", "yes", "y")
         he = bool(rp.HE.search(inst)) or bool(rp.HE.search(dept))
         leads, rank = rp.classify(dict(verb=verb, std=std, ltit=ltit, inst=inst, he=he))
-        rows.append(dict(
+        row = dict(
             id=pub["Position ID"], sid=sid,
             title=verb or std, lead=ltit if ltit and ltit.lower() not in verb.lower() else "",
             inst=inst, country=pub["Country"], dept=dept,
             cur=current, start=pub["Start Year"], end=pub["End Year"],
             roles=leads + ([rank] if rank else []),
-        ))
+        )
+        # Kept in the snapshot so the Update info form can list it, but not
+        # shown on the scholar card (the scholar unticked it).
+        if hidden(d.get("Public Display Approved")):
+            row["hide"] = True
+        rows.append(row)
     used = {r["sid"] for r in rows}
     return dict(
         _meta=dict(

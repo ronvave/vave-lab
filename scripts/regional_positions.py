@@ -64,7 +64,8 @@ def positions(code, dump, posdump):
         itype = I.get('type', '')
         he = bool(HE.search(iname)) or bool(re.search(r'universit|college|polytechnic|seminary|theolog|academ', itype, re.I))
         out.append(dict(code=code, sid=sid, name=b.norm(S[sid].get('Scholar Name') or S[sid].get('Display Name')), gender=b.gender(S[sid].get('Gender')), title=title, verb=verb, std=std, ltit=ltit, inst=iname, host=host, current=current, he=he, status=cur,
-                        dept=first(r, 'Department / Unit') or '', start=first(r, 'Start Year') or '', end=first(r, 'End Year') or ''))
+                        dept=first(r, 'Department / Unit') or '', start=first(r, 'Start Year') or '', end=first(r, 'End Year') or '',
+                        hide=str(r.get('Public Display Approved') if r.get('Public Display Approved') is not None else '').strip().lower() in ('false', 'no', 'n', '0')))
     return out
 
 
@@ -270,6 +271,8 @@ def card_positions(dumps):
         if not (d and d['data'].get('Positions')):
             continue
         for p in positions(code, d, d):
+            if p.get('hide'):  # unticked on the scholar's Update info form
+                continue
             verb, std, ltit = p['verb'] or '', p['std'] or '', p['ltit'] or ''
             row = dict(t=verb or std or ltit, cur=bool(p['current']))
             if ltit and ltit != row['t'] and ltit.lower() not in verb.lower():

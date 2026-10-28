@@ -126,6 +126,12 @@ def deceased(r):
     return fold(first(r, 'Alive / Deceased', 'Alive/Deceased', 'Vital Status', 'Living Status')) == 'deceased'
 
 
+def retired(r):
+    """Scholars!Retired ticked (TRUE). Deceased scholars show the memorial instead."""
+    v = r.get('Retired')
+    return v is True or fold(norm(v)) in ('true', 'yes', 'y', '1')
+
+
 def year4(v):
     v = norm(v)
     return int(v) if re.fullmatch(r'\d{4}', v) and 1800 <= int(v) <= 2100 else None
@@ -318,7 +324,7 @@ def build_directory(dumps, country_meta):
             fam = ok(r.get('Family Name')) or ok(r.get('Preferred Family Name')) or rec['n'].split()[-1]
             if not rec['n']:
                 continue
-            opt = dict(sal=sal, g={'female': 'F', 'male': 'M'}.get(g, ''), dec=1 if deceased(r) else 0,
+            opt = dict(sal=sal, g={'female': 'F', 'male': 'M'}.get(g, ''), dec=1 if deceased(r) else 0, ret=1 if retired(r) and not deceased(r) else 0,
                        geo=line, loc=loc, role=role, inst=inst, dept=dept, wc=wc, iso=iso, d=lv, r=regions,
                        s=disc, fld=field, sec=sector, wr=wr, sc=study_c, yb=yb, yd=yd, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
                        p=ps, fa=len(fa.get(sid, set()) & set(ps)), f=sorted(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
