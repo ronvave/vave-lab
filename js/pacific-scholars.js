@@ -226,8 +226,8 @@
     chip.classList.toggle('is-on', !!state.sel);
     $('#ps-chip-text').textContent = state.sel ? `Filtered to ${nameOf(state.sel)}` : '';
     renderStrip(first);
-    renderStripB();
-    renderStripB('#ps-strip-c', '#ps-a1c-title', false);
+    renderStripB('#ps-strip-b', '#ps-a1b-title');
+    renderStripB('#ps-strip-c', '#ps-a1c-title', true);
     renderMap();
     renderBars();
     renderDegrees();
@@ -294,7 +294,7 @@
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
   const B_NAME = { FSM: 'FSM' };
-  function renderStripB(olSel = '#ps-strip-b', titleSel = '#ps-a1b-title', arrow = true) {
+  function renderStripB(olSel, titleSel, photo = false) {
     const ol = $(olSel); if (!ol) return;
     const m = METRICS[state.metric];
     $(titleSel).textContent = B_HEAD[state.metric];
@@ -307,7 +307,7 @@
       const minis = ['phd', 'masters', 'scholars'].filter(k => k !== state.metric)
         .map((k, j) => `<span class="ps-b-card__mini ps-b-card__mini--${j ? 'b' : 'a'}"><b>${fmt(c[k])}</b>${B_MINI[k]}</span>`).join('');
       const btn = c.dashboard
-        ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard${arrow ? ' <span aria-hidden="true">\u2192</span>' : ''}</a>`
+        ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard</a>`
         : c.dashboardStatus === 'development'
           ? '<span class="ps-b-card__btn ps-b-card__btn--dev">In development</span>'
           : '<span class="ps-b-card__btn ps-b-card__btn--none">No dashboard yet</span>';
@@ -323,6 +323,7 @@
         </button>
         <div class="ps-b-card__minis">${minis}</div>
         ${btn}
+        ${photo ? `<img class="ps-b-card__photo" src="img/regional/${c.code.toLowerCase()}.webp" alt="" width="240" height="142" loading="lazy" style="object-position:${CARD_FOCUS[c.code] || 'center'}" />` : ''}
       </li>`;
     }).join('');
     $$('.ps-b-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-b-card').dataset.code)));

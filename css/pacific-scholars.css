@@ -1088,17 +1088,25 @@ a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px
 .ps-sea__title, .ps-a1b__title, .ps-b-card__name { font-family: Georgia, 'Times New Roman', serif; }
 .ps-sea__title, .ps-a1b__title { font-weight: 700; }
 .ps-b-card__name { font-weight: 700; }
-/* A1c: A1b cards on the dark page background, flags filling the band, thin black card outline */
-.ps-a1c { background: transparent; border: 0; box-shadow: none; padding: 6px 0 14px; color: #fff; }
-.ps-a1c .ps-a1b__title { color: #fff; }
-.ps-a1c .ps-a1b__rule { background: #fff; opacity: .45; }
-.ps-a1c .ps-a1b__legend, .ps-a1c .ps-a1b__order { color: #fff; }
-.ps-a1c .ps-a1b__hint { color: var(--ps-text-muted); }
-.ps-a1c .ps-a1b__dot--live { background: #fff; }
-.ps-a1c .ps-a1b__dot--dev { background: transparent; border-color: #fff; }
-.ps-a1c .ps-a1b__seg { background: rgba(255,255,255,.08); border-color: var(--ps-line); }
-.ps-a1c .ps-a1b__seg button { color: #fff; }
-.ps-a1c .ps-a1b__seg button[aria-checked="true"] { background: var(--ps-teal-300); color: #04162c; }
-.ps-a1c .ps-b-card { border: 1px solid #000; border-top: 6px solid var(--c); }
-.ps-a1c .ps-b-card__flagband { position: relative; display: block; padding: 0; aspect-ratio: 2 / 1; min-height: 0; overflow: hidden; }
-.ps-a1c .ps-b-card__flagband img { position: absolute; inset: 0; width: 100%; max-width: none; height: 100%; aspect-ratio: auto; object-fit: cover; border-radius: 0; box-shadow: none; }
+/* A1b/A1c dark variant: cards on the dark page background, flags filling the band, thin black card outline */
+.ps-a1dark { background: transparent; border: 0; box-shadow: none; padding: 6px 0 14px; color: #fff; }
+.ps-a1dark .ps-a1b__title { color: #fff; }
+.ps-a1dark .ps-a1b__rule { background: #fff; opacity: .45; }
+.ps-a1dark .ps-a1b__legend, .ps-a1dark .ps-a1b__order { color: #fff; }
+.ps-a1dark .ps-a1b__hint { color: var(--ps-text-muted); }
+.ps-a1dark .ps-a1b__dot--live { background: #fff; }
+.ps-a1dark .ps-a1b__dot--dev { background: transparent; border-color: #fff; }
+.ps-a1dark .ps-a1b__seg { background: rgba(255,255,255,.08); border-color: var(--ps-line); }
+.ps-a1dark .ps-a1b__seg button { color: #fff; }
+.ps-a1dark .ps-a1b__seg button[aria-checked="true"] { background: var(--ps-teal-300); color: #04162c; }
+.ps-a1dark .ps-b-card { border: 1px solid #000; border-top: 6px solid var(--c); }
+.ps-a1dark .ps-b-card__flagband { position: relative; display: block; padding: 0; aspect-ratio: 2 / 1; min-height: 0; overflow: hidden; }
+.ps-a1dark .ps-b-card__flagband img { position: absolute; inset: 0; width: 100%; max-width: none; height: 100%; aspect-ratio: auto; object-fit: cover; border-radius: 0; box-shadow: none; }
+/* A1c: A1b inside an A2-style panel (dark gradient + tapa band header), country photo below the button */
+.ps-a1img.ps-panel { padding: 16px 18px 18px; background: linear-gradient(180deg, rgba(10, 45, 82, 0.92), rgba(5, 28, 54, 0.96)); border: 1px solid var(--ps-line); box-shadow: var(--ps-shadow); margin: 6px 0 18px; }
+.ps-a1img.ps-panel::after { width: min(60%, 760px); height: 130px; }
+.ps-a1img .ps-a1b__title { font-size: 1.55rem; }
+.ps-a1img .ps-b-card__btn { margin-bottom: 0; }
+.ps-b-card__photo { display: block; width: 100%; height: 72px; object-fit: cover; margin-top: 8px; background: #0b3157; }
+.ps-a1img .ps-a1b__grid { padding: 4px; margin: 0 -4px; }
+.ps-a1img .ps-b-card__mini { font-size: .68rem; }
