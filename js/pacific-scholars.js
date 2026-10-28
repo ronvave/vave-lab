@@ -1582,5 +1582,16 @@
     $('#ps-credits').innerHTML = `Photographs via Wikimedia Commons, cropped and resized: ${items.join(' · ')}. Map data: Natural Earth (public domain).`;
   }
 
+  // Scale the header contents with the screen width (1 at 2560px and wider) so
+  // the canoes, sails and people stay clear of the text and the Sea of Islands
+  // bar on laptops. Below 1240px the stacked header layout is left unchanged.
+  function fitHero() {
+    const w = window.innerWidth;
+    const z = w > 1240 ? Math.min(1, w / 2560) : 1;
+    document.documentElement.style.setProperty('--ps-hz', z.toFixed(4));
+  }
+  fitHero();
+  window.addEventListener('resize', fitHero);
+
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGate); else initGate();
 })();

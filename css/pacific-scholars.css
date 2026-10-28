@@ -72,7 +72,9 @@ a { color: var(--ps-teal-300); }
     radial-gradient(ellipse 46% 62% at 50% 34%, rgba(3, 19, 39, 0.5) 0%, rgba(3, 19, 39, 0.18) 100%),
     linear-gradient(180deg, rgba(3, 19, 39, 0.1) 0%, rgba(3, 19, 39, 0.05) 60%, rgba(3, 19, 39, 0.7) 100%);
 }
-.ps-hero__inner { width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; container-type: inline-size;
+/* --ps-hz scales the header text and Sea of Islands bar with the screen width
+   (set in pacific-scholars.js) so laptops get the same composition as 2560px. */
+.ps-hero__inner { width: 100%; max-width: 1440px; margin: 0 auto; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; container-type: inline-size; zoom: var(--ps-hz, 1);
   /* Width available to the one-line header text (between the two logos). */
   --ps-hero-w: calc(100cqi - 2 * clamp(170px, 19vw, 290px) - 64px); }
 .ps-hero__brand { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 24px; }
