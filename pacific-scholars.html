@@ -11,7 +11,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin" />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Cpath d=%27M5 19c4-4 7 0 11-3s7-1 11 2%27 stroke=%27%233fd0d8%27 stroke-width=%273%27 fill=%27none%27/%3E%3C/svg%3E" />
-  <link rel="stylesheet" href="css/pacific-scholars.css?v=5e0cc994" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=d878d84b" />
   <link rel="stylesheet" href="css/pacific-scholars-directory.css?v=e9c7b29a" />
   <link rel="stylesheet" href="css/pacific-scholars-pubs-collab.css?v=3baa3877" />
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=ff16873e">
@@ -53,6 +53,12 @@
     </div>
   </header>
 
+  <!-- REPLICATE · summary ribbon in the "Across our sea of islands" style (compare with the ribbon above) -->
+  <div class="ps-wrap"><section class="ps-sea" aria-labelledby="ps-sea-title">
+    <h2 class="ps-sea__title" id="ps-sea-title">Across Our Sea of Islands</h2>
+    <dl class="ps-sea__tiles" id="ps-kpis-b" aria-label="Regional headline figures (alternative style)"></dl>
+  </section></div>
+
   <nav class="ps-pmenu" id="ps-pmenu" aria-label="Dashboard panels"><div class="ps-pmenu__pills" id="ps-pmenu-pills"></div><div class="ps-pmenu__drop" id="ps-pmenu-drop" hidden></div></nav>
 
   <main id="ps-main" class="ps-wrap" tabindex="-1">
@@ -79,6 +85,30 @@
       <ol class="ps-strip" id="ps-strip"></ol>
       <p class="ps-strip-hint" id="ps-strip-hint">Select a country to filter the dashboard. Scroll or swipe sideways for more countries.</p>
     </div>
+    </section>
+
+    <!-- A1b · COUNTRY CARDS (alternative style, for comparison with A1 above) -->
+    <section data-panel="A1b" data-panel-title="Country Cards (alternative style)" class="ps-a1b" aria-labelledby="ps-a1b-title">
+      <div class="ps-a1b__bar">
+        <h2 class="ps-a1b__title" id="ps-a1b-title">INDIGENOUS SCHOLARS BY COUNTRY</h2>
+        <span class="ps-a1b__rule" aria-hidden="true"></span>
+        <ul class="ps-a1b__legend" aria-label="Dashboard status key">
+          <li><span class="ps-a1b__dot ps-a1b__dot--live"></span>Live dashboard</li>
+          <li><span class="ps-a1b__dot ps-a1b__dot--dev"></span>In development</li>
+          <li><span class="ps-a1b__dot ps-a1b__dot--none"></span>No dashboard yet</li>
+        </ul>
+        <span class="ps-num ps-num--inline" aria-hidden="true">A1b</span>
+      </div>
+      <div class="ps-a1b__order">
+        <span class="ps-a1b__ol" id="ps-metric-b-label">Order countries by total number of</span>
+        <div class="ps-seg ps-a1b__seg" id="ps-metric-b" role="radiogroup" aria-labelledby="ps-metric-b-label">
+          <button type="button" role="radio" data-metric="scholars" aria-checked="true">Scholars</button>
+          <button type="button" role="radio" data-metric="phd" aria-checked="false">PhDs</button>
+          <button type="button" role="radio" data-metric="masters" aria-checked="false">Master's</button>
+        </div>
+        <span class="ps-a1b__hint">Select a card to filter the dashboard.</span>
+      </div>
+      <ol class="ps-a1b__grid" id="ps-strip-b"></ol>
     </section>
 
     <div class="ps-grid">
@@ -574,7 +604,7 @@
   <script src="js/pacific-scholars-collaborators.js?v=1fd809dd" defer></script>
   <script src="js/pacific-scholars-directory.js?v=3a48f1d5" defer></script>
   <script src="js/pacific-scholars-universities.js?v=4e9aefb1" defer></script>
-  <script src="js/pacific-scholars.js?v=216cd50b" defer></script>
+  <script src="js/pacific-scholars.js?v=75d2d03c" defer></script>
   <script src="js/pacific-scholars-panel-menu.js?v=6db67ffd" defer></script>
 <div class="ps-pos-tip" id="ps-pos-tip" role="tooltip"></div>
 <script src="js/scholar-card-tabs.js?v=95cf329e" defer></script>

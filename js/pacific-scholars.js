@@ -114,6 +114,7 @@
     setupViews();
     renderFresh();
     renderKpis();
+    renderKpisB();
     setupMetric();
     setupMap();
     setupBars();
@@ -169,17 +170,35 @@
     $('#ps-kpis').innerHTML = items.map(([i, v, l]) => `<div class="ps-kpi">${i}<dt class="ps-sr">${esc(l)}</dt><dd class="ps-kpi__dd"><span class="ps-kpi__v">${v}</span><span class="ps-kpi__l">${esc(l)}</span></dd></div>`).join('');
   }
 
+  // Replicate ribbon (alternative style): same figures as renderKpis, shown as large coloured tiles.
+  const WAVES = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>';
+  function renderKpisB() {
+    const el = $('#ps-kpis-b'); if (!el) return;
+    const t = totals();
+    const connected = D.sources.filter(s => s.file).length;
+    const items = [
+      ['phd', ICONS.cap, fmt(t.phd), 'completed PhDs'],
+      ['ma', ICONS.cap, fmt(t.masters), "completed Master's"],
+      ['sch', ICONS.people, fmt(t.scholars), 'Indigenous scholars'],
+      ['nat', WAVES, fmt(connected), connected === D.sources.length ? 'nations \u00b7 one ocean' : `of ${D.sources.length} countries connected`],
+      ['pub', ICONS.doc, fmt(D.regional.uniqueIndigenousPubs), 'Indigenous\u2011linked publications'],
+    ];
+    el.innerHTML = items.map(([k, i, v, l]) => `<div class="ps-sea__tile ps-sea__tile--${k}">${i}<dt class="ps-sr">${esc(l)}</dt><dd><span class="ps-sea__v">${v}</span><span class="ps-sea__l">${esc(l)}</span></dd></div>`).join('');
+  }
+
   // ================= METRIC TOGGLE =================
+  // A1 and A1b each have a toggle; both set the same metric so they stay in step.
   function setupMetric() {
-    const btns = $$('#ps-metric button');
+    const btns = $$('#ps-metric button, #ps-metric-b button');
     const set = m => { state.metric = m; syncBarView(m); btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === m)); b.tabIndex = b.dataset.metric === m ? 0 : -1; }); writeUrl(); renderAll(); };
-    btns.forEach((b, i) => {
+    btns.forEach(b => {
+      const grp = $$('button', b.parentElement), i = grp.indexOf(b);
       b.addEventListener('click', () => set(b.dataset.metric));
       b.addEventListener('keydown', e => {
         if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
         e.preventDefault();
-        const n = e.key === 'Home' ? 0 : e.key === 'End' ? btns.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : btns.length - 1)) % btns.length;
-        btns[n].focus(); set(btns[n].dataset.metric);
+        const n = e.key === 'Home' ? 0 : e.key === 'End' ? grp.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : grp.length - 1)) % grp.length;
+        grp[n].focus(); set(grp[n].dataset.metric);
       });
     });
     btns.forEach(b => { b.setAttribute('aria-checked', String(b.dataset.metric === state.metric)); b.tabIndex = b.dataset.metric === state.metric ? 0 : -1; });
@@ -207,6 +226,7 @@
     chip.classList.toggle('is-on', !!state.sel);
     $('#ps-chip-text').textContent = state.sel ? `Filtered to ${nameOf(state.sel)}` : '';
     renderStrip(first);
+    renderStripB();
     renderMap();
     renderBars();
     renderDegrees();
@@ -265,6 +285,46 @@
     applyViews(); hideTip();
     const tip = $('#ps-pos-tip'); tip && tip.classList.remove('show');
     if (D && VIEW_HOOK[k]) VIEW_HOOK[k](v);
+  }
+
+  // ================= COUNTRY CARDS, ALTERNATIVE STYLE (A1b) =================
+  const GREET = { TON: 'M\u0101l\u014d e lelei', FJI: 'Bula vinaka', WSM: 'Talofa lava', SLB: 'Halo olgeta', VUT: 'Halo', COK: 'Kia orana', FSM: 'Kaselehlie', KIR: 'Mauri', TUV: 'Talofa', MHL: 'Iakwe', PLW: 'Alii' };
+  const B_HEAD = { scholars: 'INDIGENOUS SCHOLARS BY COUNTRY', phd: 'COMPLETED PhDs BY COUNTRY', masters: "COMPLETED MASTER'S BY COUNTRY" };
+  const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
+  const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
+  const B_NAME = { FSM: 'FSM' };
+  function renderStripB() {
+    const ol = $('#ps-strip-b'); if (!ol) return;
+    const m = METRICS[state.metric];
+    $('#ps-a1b-title').textContent = B_HEAD[state.metric];
+    const list = sorted();
+    const max = Math.max(1, ...list.map(c => c[m.key] || 0));
+    ol.setAttribute('aria-label', `Countries in descending order of ${m.unit}`);
+    ol.innerHTML = list.map((c, i) => {
+      const v = c[m.key];
+      const valText = v == null ? 'Not available' : fmt(v);
+      const minis = ['phd', 'masters', 'scholars'].filter(k => k !== state.metric)
+        .map((k, j) => `<span class="ps-b-card__mini ps-b-card__mini--${j ? 'b' : 'a'}"><b>${fmt(c[k])}</b>${B_MINI[k]}</span>`).join('');
+      const btn = c.dashboard
+        ? `<a class="ps-b-card__btn" href="${esc(c.dashboard)}" target="_blank" rel="noopener" aria-label="View ${esc(c.name)} dashboard (opens in a new tab; separate passcode)">View dashboard <span aria-hidden="true">\u2192</span></a>`
+        : c.dashboardStatus === 'development'
+          ? '<span class="ps-b-card__btn ps-b-card__btn--dev">In development</span>'
+          : '<span class="ps-b-card__btn ps-b-card__btn--none">No dashboard yet</span>';
+      const on = state.sel === c.code;
+      return `<li class="ps-b-card${on ? ' is-selected' : ''}${state.sel && !on ? ' is-dim' : ''}${c.code === 'VUT' ? ' ps-b-card--darktext' : ''}" data-code="${c.code}" style="--c:${COLORS[c.code]}">
+        <button type="button" class="ps-b-card__sel" aria-pressed="${on}" aria-label="Rank ${i + 1}: ${esc(c.name)}, ${valText} ${esc(m.unit)}. ${on ? 'Selected; activate to clear filter' : 'Activate to filter dashboard'}">
+          <span class="ps-b-card__flagband"><img src="img/regional/flags-rect/${c.code.toLowerCase()}.webp" alt="" width="240" height="120" loading="lazy" /></span>
+          <span class="ps-b-card__name${CARD_LONG[c.code] ? ' ps-b-card__name--long' : ''}">${esc(B_NAME[c.code] || c.name)}</span>
+          <span class="ps-b-card__greet">${esc(GREET[c.code] || '')}</span>
+          <span class="ps-b-card__vrow">${state.metric === 'scholars' ? ICONS.people : ICONS.cap}<span class="ps-b-card__v">${valText}</span></span>
+          <span class="ps-b-card__l">${B_UNIT[state.metric]}</span>
+          <span class="ps-b-card__bar" aria-hidden="true"><i style="width:${v == null ? 0 : Math.max(3, Math.round(v / max * 100))}%"></i></span>
+        </button>
+        <div class="ps-b-card__minis">${minis}</div>
+        ${btn}
+      </li>`;
+    }).join('');
+    $$('.ps-b-card__sel', ol).forEach(b => b.addEventListener('click', () => select(b.closest('.ps-b-card').dataset.code)));
   }
 
   // ================= COUNTRY STRIP =================
