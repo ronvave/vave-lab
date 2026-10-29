@@ -220,6 +220,7 @@
     'data/tongan-master-mobility.json':     'data/tongan-master-mobility.json.enc',
     'data/tongan-master-geography.json':    'data/tongan-master-geography.json.enc',
     'data/tongan-master-positions.json':    'data/tongan-master-positions.json.enc',
+    'data/tongan-master-news.json':         'data/tongan-master-news.json.enc',
     'data/tongan-master-aggregates.json':   'data/tongan-master-aggregates.json.enc',
     // Master-derived Panel B2 world-points payload. Built by
     // scripts/master_b2_worldpoints.py from the authoritative Master

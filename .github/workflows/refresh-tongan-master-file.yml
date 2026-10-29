@@ -36,6 +36,7 @@ on:
       - "scripts/tongan_sync_share_tokens.py"
       - "scripts/tongan_master_file_config.py"
       - "scripts/tongan_master_file_transformer.py"
+      - "scripts/country_news.py"
       - "scripts/tongan_short_disciplines.py"
       - "scripts/master_short_disciplines.py"
       - "scripts/tongan_encrypt_data.py"
@@ -115,6 +116,7 @@ jobs:
             data/tongan-master-mobility.json \
             data/tongan-master-geography.json \
             data/tongan-master-positions.json \
+            data/tongan-master-news.json \
             data/tongan-master-geography-coordinates.json \
             data/tongan-master-worldpoints.json \
             data/tongan-body-composition-master.json; do
@@ -184,6 +186,7 @@ jobs:
             tongan-master-mobility.json
             tongan-master-geography.json
             tongan-master-positions.json
+            tongan-master-news.json
             tongan-master-geography-coordinates.json
             tongan-master-aggregates.json
             tongan-master-worldpoints.json

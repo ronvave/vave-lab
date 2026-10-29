@@ -50,6 +50,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import country_positions  # noqa: E402  (University positions snapshot)
+import country_news  # noqa: E402  (Panel A4 scholar news snapshot)
 from typing import Any
 
 from tongan_master_file_config import (
@@ -949,6 +950,18 @@ def run(
     )
     log(f"  → {len(positions_payload['rows'])} position rows for {len(positions_payload['scholars'])} scholars")
 
+    log("Fetching News...")
+    try:
+        _news_rows = fetch_fn("News")
+    except Exception as exc:  # optional tab: absent until first story is added
+        log(f"  → News tab unavailable ({str(exc)[:120]}); publishing an empty news list")
+        _news_rows = []
+    _, _news_dicts = rows_to_dicts(_news_rows, SHEETS["News"]["header_row"], SHEETS["News"]["first_data"])
+    news_payload = country_news.build(
+        _news_dicts, scholars, source="Tongan Scholars Master File", generator="scripts/tongan_master_file_transformer.py",
+    )
+    log(f"  → {len(news_payload['items'])} published news stories")
+
     # Public identity follows Scholar ID; never rewrite publication citation authors.
     public_names = {s['Scholar ID']: s['Scholar Name'] for s in scholars}
     for table in [authorship, researcher_authorship, grad_degrees, mobility]:
@@ -1004,6 +1017,7 @@ def run(
     )
     _write_json(out_dir / "tongan-master-aggregates.json", aggregates)
     _write_json(out_dir / "tongan-master-positions.json", positions_payload)
+    _write_json(out_dir / "tongan-master-news.json", news_payload)
 
     # ----------------------------------------------------------------
     # Panel C1 body-composition (gendered per-type breakdown)

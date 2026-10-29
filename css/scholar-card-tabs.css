@@ -24,6 +24,14 @@
 .sct-btn--positions .sct-title{color:#3b23a8}
 .sct-btn--positions .sct-sub{color:#5b4aa3}
 .sct-btn--positions .sct-chev svg{color:#4c2fbf}
+/* In the news: amber */
+:is(#ps-dir, body) .db-scholar-card__insight-btn.sct-btn--news{background:linear-gradient(90deg,#fffaf0 0%,#fdf0d8 100%);border-color:#f2cf8f}
+.sct-btn--news::after{background:radial-gradient(circle at 92% 115%,rgba(245,180,80,.30) 0 32%,transparent 33%)}
+:is(#ps-dir, body) .db-scholar-card__insight-btn.sct-btn--news[aria-expanded="true"]{background:linear-gradient(90deg,#fdf3e0 0%,#fae6c2 100%);border-color:#e8b45e}
+.sct-btn--news .sct-icon{color:#c26a00}
+.sct-btn--news .sct-title{color:#111}
+.sct-btn--news .sct-sub{color:#111}
+.sct-btn--news .sct-chev svg{color:#9a5200}
 /* Parts */
 .sct-icon{display:flex;align-items:center;justify-content:center;width:52px;height:52px}
 .sct-icon svg{width:40px;height:40px;display:block}

@@ -3945,6 +3945,7 @@
 </style>
   <link rel="stylesheet" href="css/tongan-panel-menu.css?v=44020c99">
   <link rel="stylesheet" href="css/country-positions.css?v=bb3440c0">
+  <link rel="stylesheet" href="css/country-news.css?v=1">
 <link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=ff16873e">
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-ton-32.png">
@@ -4203,6 +4204,24 @@
           </div>
           <p class="db-narrative__note">Figures are based on the current database snapshot and update as records are added or revised.</p>
         </div>
+      </section>
+
+      <!-- Panel A4 — Celebrating Tongan scholars. Curated news stories from the
+           Master's News tab (js/country-news.js). Hidden until a story loads. -->
+      <section class="nw has-panel-badge" data-news-panel aria-labelledby="db-section-news" hidden>
+        <span class="db-panel__label">A4</span>
+        <div class="nw__head">
+          <div>
+            <h2 class="nw__h" id="db-section-news">Celebrating Tongan scholars</h2>
+            <p class="nw__hint">News coverage of awards, appointments, graduations and milestones of scholars in this database. Stories rotate every 8 seconds.</p>
+          </div>
+          <div class="nw__ctrls" hidden>
+            <button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>
+            <button type="button" class="nw__pause" data-nw-pause aria-pressed="false">Pause</button>
+            <button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button>
+          </div>
+        </div>
+        <div data-news-body></div>
       </section>
 
     </div>
@@ -5573,6 +5592,7 @@
 </script>
 <script src="js/tongan-panel-menu.js?v=568dcc42" defer></script>
 <script src="js/country-positions.js?v=d168b713" data-src="data/tongan-master-positions.json" data-people="Tongan" defer></script>
+<script src="js/country-news.js?v=1" data-src="data/tongan-master-news.json" defer></script>
 <script src="js/position-display-field.js?v=fc3380d8" defer></script>
 <script src="js/scholar-card-tabs.js?v=95cf329e" defer></script>
 <script src="js/tongan-panel-hero.js?v=d77c13f7" defer></script>

@@ -1,0 +1,71 @@
+/* Panel A4 "Celebrating <people> scholars" + scholar-card "In the news".
+   All text is black (#111) by the dashboard's standing rule. */
+
+.nw { position: relative; margin: 26px 0 8px; border: 1px solid #d9dedd; border-radius: 14px; background: #fff;
+      padding: 22px 24px 20px; box-shadow: 0 1px 3px rgba(0,0,0,.04); color: #111; }
+.nw[hidden] { display: none !important; }
+.nw__head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 14px; padding-right: 30px; }
+.nw__h { font: 700 1.35rem/1.2 Arial, Helvetica, sans-serif; margin: 0; color: #111; }
+.nw__hint { font: 400 .88rem/1.4 Arial, Helvetica, sans-serif; margin: 4px 0 0; max-width: 640px; color: #111; }
+.nw__ctrls { display: flex; gap: 8px; align-items: center; flex: 0 0 auto; }
+.nw__ctrls[hidden] { display: none; }
+.nw__btn, .nw__pause { border: 1px solid #cfd6d5; background: #fff; color: #111; border-radius: 999px; height: 34px; cursor: pointer; font: 700 .82rem Arial, Helvetica, sans-serif; }
+.nw__btn { width: 34px; font-size: 16px; }
+.nw__pause { padding: 0 14px; }
+.nw__btn:hover, .nw__pause:hover { border-color: #0b7479; }
+.nw__btn:focus-visible, .nw__pause:focus-visible, .nw__li:focus-visible, .nw__a:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
+
+.nw__grid { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 20px; }
+.nw__feat { display: grid; grid-template-columns: 250px 1fr; border-radius: 12px; overflow: hidden; border: 1px solid #e3e7e6;
+            min-height: 236px; background: linear-gradient(135deg, #f3faf9, #fff); }
+.nw__img-wrap { position: relative; background: #0b7479; }
+.nw__img { position: absolute; inset: 0; display: grid; place-items: center; }
+.nw__img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.nw__img__ini { font: 700 3rem Georgia, serif; color: #fff; }
+.nw__credit { position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 8px; background: rgba(0,0,0,.55); color: #fff; font: 400 .7rem Arial, Helvetica, sans-serif; }
+.nw__body { padding: 20px 22px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.nw__chip { align-self: flex-start; font: 700 .72rem Arial, Helvetica, sans-serif; letter-spacing: .06em; text-transform: uppercase;
+            background: #fde8c8; border: 1px solid #f2c27a; padding: 4px 9px; border-radius: 999px; color: #111; }
+.nw__chip--Appointment { background: #dcefff; border-color: #9cc8ee; }
+.nw__chip--Milestone   { background: #e6f4e2; border-color: #a9d39d; }
+.nw__chip--Graduation  { background: #efe4fb; border-color: #c6a8ea; }
+.nw__chip--Publication, .nw__chip--Research { background: #e8f1f1; border-color: #a7c9c8; }
+.nw__title { font: 700 1.3rem/1.25 Georgia, serif; margin: 0; color: #111; }
+.nw__meta { font: 600 .85rem Arial, Helvetica, sans-serif; color: #111; }
+.nw__sum { font: 400 .95rem/1.5 Arial, Helvetica, sans-serif; margin: 0; color: #111; }
+.nw__also { font: 400 .8rem Arial, Helvetica, sans-serif; color: #111; }
+.nw__acts { margin-top: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.nw__a { white-space: nowrap; font: 700 .85rem Arial, Helvetica, sans-serif; text-decoration: none; border-radius: 8px;
+         padding: 8px 13px; border: 1px solid #0b7479; background: #fff; color: #111; cursor: pointer; }
+.nw__a--p { background: #0b7479; color: #fff; }
+.nw__a:hover { filter: brightness(.95); }
+
+.nw__list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; }
+.nw__li { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; text-align: left; border: 1px solid #e3e7e6;
+          border-radius: 10px; padding: 9px 10px; background: #fff; cursor: pointer; font: inherit; color: #111; }
+.nw__li.is-on { border-color: #0b7479; box-shadow: inset 4px 0 0 #0b7479; background: #f3faf9; }
+.nw__av { position: relative; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #0b7479; display: grid; place-items: center; }
+.nw__av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.nw__av__ini { font: 700 1rem Arial, Helvetica, sans-serif; color: #fff; }
+.nw__li-text { display: flex; flex-direction: column; min-width: 0; }
+.nw__lt { font: 700 .86rem/1.3 Arial, Helvetica, sans-serif; color: #111; }
+.nw__ls { font: 400 .78rem Arial, Helvetica, sans-serif; margin-top: 2px; color: #111; }
+.nw__dots { display: flex; gap: 6px; justify-content: center; margin-top: 12px; }
+.nw__dot { width: 9px; height: 9px; border-radius: 50%; background: #c7d0cf; transition: width .2s; }
+.nw__dot.is-on { background: #0b7479; width: 22px; border-radius: 5px; }
+.nw__foot { font: 400 .8rem Arial, Helvetica, sans-serif; margin: 4px 0 0; color: #111; }
+.nw__foot a { color: #111; }
+
+/* Scholar card highlight after "Open scholar card" */
+.db-scholar-card.nw-flash { outline: 3px solid #0b7479; outline-offset: 3px; transition: outline-color .3s; }
+
+/* ---------- Panel F card "In the news" ---------- */
+.cnews-wrap .cnews-btn { margin-top: 10px; }
+.cnews-list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.cnews-item { display: flex; gap: 8px; align-items: flex-start; }
+.cnews-item__text { min-width: 0; }
+.cnews-item__title { display: block; font-weight: 600; font-size: 0.88rem; line-height: 1.3; color: #111; text-decoration: underline; text-underline-offset: 2px; }
+.cnews-item__sub { font-size: 0.8rem; line-height: 1.35; color: #111; margin-top: 1px; }
+.cnews-pill { flex: 0 0 auto; margin-top: 1px; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase;
+              padding: 2px 7px; border-radius: 999px; line-height: 1.4; min-width: 64px; text-align: center; box-sizing: border-box;
+              background: #fde8c8; border: 1px solid #f2c27a; color: #111; }

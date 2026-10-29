@@ -100,6 +100,7 @@
     'data/tongan-master-mobility.json':     'data/tongan-master-mobility.json.enc',
     'data/tongan-master-geography.json':    'data/tongan-master-geography.json.enc',
     'data/tongan-master-positions.json':    'data/tongan-master-positions.json.enc',
+    'data/tongan-master-news.json':         'data/tongan-master-news.json.enc',
     'data/tongan-master-aggregates.json':   'data/tongan-master-aggregates.json.enc',
     'data/tongan-master-worldpoints.json':  'data/tongan-master-worldpoints.json.enc',
     'data/tongan-last-master-sync.json':    'data/tongan-last-master-sync.json.enc',
