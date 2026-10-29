@@ -40,19 +40,12 @@
 #ps-pubs .db-pager__info { color: #5f6169; font-size: .82rem; margin: 0 8px; }
 
 /* ---------- G: Collaborators ---------- */
-#ps-collab-panel .pc-map { position: relative; margin-top: 6px; border-radius: 10px; overflow: hidden; background: #0c2342; border: 1px solid rgba(127, 227, 230, .12); aspect-ratio: 2400 / 1891; width: min(100%, calc(86vh * 2400 / 1891)); margin-inline: auto; touch-action: none; }
+#ps-collab-panel .pc-map { position: relative; margin-top: 6px; border-radius: 10px; overflow: hidden; background: #0c2342; border: 1px solid rgba(127, 227, 230, .12); aspect-ratio: 4000 / 2251; width: min(100%, calc(86vh * 4000 / 2251)); margin-inline: auto; touch-action: none; }
 #ps-collab-panel .pc-map > svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
+#ps-collab-panel .pc-map .ps-map__ctrl { top: auto; bottom: 44px; }
 #ps-collab-panel .pc-mk { cursor: pointer; outline: none; }
-#ps-collab-panel .pc-mk__bg { fill: #0f3c6b; }
-#ps-collab-panel .pc-mk__ring { fill: none; stroke: #fff; stroke-width: 7; }
-#ps-collab-panel .pc-mk__ring.is-vc { stroke: #3ddc3d; stroke-width: 10; }
-#ps-collab-panel .pc-mk__ini { fill: #fff; font: 700 40px var(--ps-sans); }
-#ps-collab-panel .pc-mk__more { fill: #f3c45a; stroke: #fff; stroke-width: 5; }
-#ps-collab-panel .pc-mk__moretxt { fill: #0c2140; font: 700 40px var(--ps-sans); }
-#ps-collab-panel .pc-mk:hover .pc-mk__ring, #ps-collab-panel .pc-mk:focus-visible .pc-mk__ring { stroke: #f3c45a; stroke-width: 10; }
-#ps-collab-panel .pc-legend { justify-content: center; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 10px 0 0; font-size: .84rem; color: var(--ps-text-muted); }
-#ps-collab-panel .pc-legend__vc { width: 16px; height: 16px; border-radius: 50%; border: 3px solid #3ddc3d; background: #0f3c6b; }
-#ps-collab-panel .pc-legend__more { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 10px; border-radius: 50%; background: #f3c45a; color: #0c2140; font-size: .7rem; font-weight: 700; border: 2px solid #fff; }
+#ps-collab-panel .pc-hot { fill: rgba(243, 196, 90, 0); stroke: transparent; stroke-width: 6; transition: fill .15s, stroke .15s; }
+#ps-collab-panel .pc-mk:hover .pc-hot, #ps-collab-panel .pc-mk:focus-visible .pc-hot { fill: rgba(243, 196, 90, .12); stroke: #f3c45a; }
 /* Regional Collaborators board: banner with totals, then one card per country. */
 #ps-collab-panel .pc-board { margin-top: 18px; padding: 0 18px 18px; border-radius: 14px; border: 1px solid rgba(90, 170, 230, .28); background: linear-gradient(180deg, rgba(4, 22, 46, .1) 0, #04162e 210px), url('../img/regional/hero-crystal-bay.webp') center 18% / cover no-repeat, #04162e; }
 #ps-collab-panel .pc-banner { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 22px 6px 18px; }
@@ -80,7 +73,7 @@
 #ps-collab-panel .pc-person { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
 #ps-collab-panel .pc-person + .pc-person { border-top: 1px solid rgba(120, 190, 240, .16); }
 #ps-collab-panel .pc-person__t { flex: 1 1 auto; min-width: 0; }
-#ps-collab-panel .pc-ph { width: 60px; height: 60px; border-radius: 50%; overflow: hidden; flex: none; display: grid; place-items: center; background: #145a96; border: 3px solid #fff; }
+#ps-collab-panel .pc-ph { width: 60px; height: 60px; border-radius: 4px; overflow: hidden; flex: none; display: grid; place-items: center; background: #145a96; border: 3px solid #fff; }
 #ps-collab-panel .pc-ph.is-vc { border-color: #3ddc3d; }
 #ps-collab-panel .pc-ph img { width: 100%; height: 100%; object-fit: cover; display: block; }
 #ps-collab-panel .pc-ph b { color: #fff; font-size: 1.1rem; }
@@ -95,7 +88,6 @@
 @media (max-width: 720px) {
   #ps-collab-panel .pc-cards { grid-template-columns: minmax(0, 1fr); }
   #ps-collab-panel .pc-card { grid-column: auto !important; }
-  #ps-collab-panel .pc-legend { justify-content: flex-start; }
   #ps-pubs .pub-filter { flex: 1 1 calc(50% - 8px); }
 }
 

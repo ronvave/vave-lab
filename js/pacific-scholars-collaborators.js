@@ -1,18 +1,20 @@
 /* Panel F: Collaborators, for the Regional Pacific Scholars Dashboard.
-   Map (same base image and anchors as panel A1) with up to two key
-   collaborator photos beside each country, plus a Regional Collaborators board
+   Partnership map image (img/regional/collab-partnership-map.webp, photos
+   and logos baked in) with a clickable area for each country, plus a Regional Collaborators board
    with one card per country listing every collaborator. People are listed in
    data/regional-collaborators.json (names, titles and institutions only; no
    contact details). */
 (function () {
   'use strict';
   const DATA_URL = 'data/regional-collaborators.json';
-  const MAP = { src: 'img/regional/pacific-map.webp', w: 2400, h: 1891 };
-  // Top-left corner of each country's photo row, in map-image pixels, placed
-  // in open sea next to the baked-in label so nothing covers a flag or name.
-  const SPOT = { SLB: [990, 588], FJI: [1342, 1000], TON: [1330, 1285], WSM: [1862, 852], VUT: [920, 1082],
-    TUV: [1625, 840], KIR: [1800, 640], PLW: [470, 520], COK: [2150, 1300], MHL: [1450, 470], FSM: [790, 362] };
-  const R = 56, GAP = 8;
+  const MAP = { src: 'img/regional/collab-partnership-map.webp', w: 4000, h: 2251 };
+  // Clickable area around each country's label, flag, photos and logo on the
+  // partnership map (map-image pixels: x, y, width, height). The photos and
+  // logos are part of the image itself.
+  const k = 4000 / 1200;
+  const HOT = { PLW: [255, 150, 80, 72], FSM: [362, 146, 86, 90], SLB: [415, 228, 252, 100], MHL: [745, 128, 178, 68],
+    KIR: [928, 176, 90, 70], TUV: [738, 254, 86, 68], WSM: [916, 274, 246, 98], VUT: [403, 362, 124, 140],
+    FJI: [563, 388, 140, 114], TON: [698, 442, 192, 120], COK: [948, 440, 140, 66] };
   const NS = 'http://www.w3.org/2000/svg';
   const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const svgEl = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
@@ -82,30 +84,17 @@
 
   function map() {
     const host = document.getElementById('pc-map');
-    svg = svgEl('svg', { viewBox: `0 0 ${MAP.w} ${MAP.h}`, role: 'group', 'aria-label': 'Map of the Pacific with key collaborator photos beside each country' });
-    const defs = svgEl('defs', {}, svg);
+    svg = svgEl('svg', { viewBox: `0 0 ${MAP.w} ${MAP.h}`, role: 'group', 'aria-label': 'Pacific Scholar Country Databases partnership map with collaborator photos and university logos for each country' });
     svgEl('image', { href: MAP.src, x: 0, y: 0, width: MAP.w, height: MAP.h, 'aria-hidden': 'true' }, svg);
     const layer = svgEl('g', {}, svg);
     DATA.countries.forEach(c => {
-      const { key, more } = split(c);
-      const at = SPOT[c.code]; if (!at || !key.length) return;
-      const g = svgEl('g', { class: 'pc-mk', tabindex: '0', role: 'button', 'data-code': c.code,
-        'aria-label': `${NAMES[c.code] || c.code}: ${(c.people || []).map(full).join(', ')}. Show all collaborators.` }, layer);
-      svgEl('title', {}, g).textContent = `${NAMES[c.code] || c.code}: ${(c.people || []).map(full).join(', ')}`;
-      let x = at[0] + R; const y = at[1] + R;
-      key.forEach((p, i) => {
-        const id = `pc-clip-${c.code}-${i}`;
-        svgEl('circle', { cx: x, cy: y, r: R }, svgEl('clipPath', { id }, defs));
-        svgEl('circle', { cx: x, cy: y, r: R, class: 'pc-mk__bg' }, g);
-        if (p.photo) svgEl('image', { href: p.photo, x: x - R, y: y - R, width: 2 * R, height: 2 * R, 'clip-path': `url(#${id})`, preserveAspectRatio: 'xMidYMid slice' }, g);
-        else { const t = svgEl('text', { x, y, class: 'pc-mk__ini', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g); t.textContent = initials(p.name); }
-        svgEl('circle', { cx: x, cy: y, r: R - 3, class: 'pc-mk__ring' + (p.vc ? ' is-vc' : '') }, g);
-        x += 2 * R + GAP;
-      });
-      if (more.length) {
-        svgEl('circle', { cx: x - 4, cy: y, r: R - 6, class: 'pc-mk__more' }, g);
-        const t = svgEl('text', { x: x - 4, y, class: 'pc-mk__moretxt', 'text-anchor': 'middle', 'dominant-baseline': 'central' }, g); t.textContent = '+' + more.length;
-      }
+      const at = HOT[c.code]; if (!at) return;
+      const name = NAMES[c.code] || c.code;
+      const ppl = (c.people || []).map(full);
+      const label = ppl.length ? `${name}: ${ppl.join(', ')}. Show collaborators.` : `${name}: no collaborators listed yet. Show card.`;
+      const g = svgEl('g', { class: 'pc-mk', tabindex: '0', role: 'button', 'data-code': c.code, 'aria-label': label }, layer);
+      svgEl('title', {}, g).textContent = ppl.length ? `${name}: ${ppl.join(', ')}` : `${name}: no collaborators listed yet`;
+      svgEl('rect', { x: at[0] * k, y: at[1] * k, width: at[2] * k, height: at[3] * k, rx: 14, class: 'pc-hot' }, g);
       g.addEventListener('click', () => focusCountry(c.code));
       g.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); focusCountry(c.code); } });
     });
