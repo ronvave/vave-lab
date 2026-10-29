@@ -79,6 +79,7 @@
 #ps-collab-panel .pc-ph b { color: #fff; font-size: 1.1rem; }
 #ps-collab-panel .pc-name { font-weight: 700; font-size: .95rem; color: #fff; }
 #ps-collab-panel .pc-role, #ps-collab-panel .pc-inst { font-size: .82rem; line-height: 1.3; color: #c4d6e8; }
+#ps-collab-panel .pc-inst { color: #FFFF00; }
 #ps-collab-panel .pc-rowlogo { flex: none; width: 44px; height: 44px; object-fit: contain; background: #fff; border-radius: 6px; padding: 3px; }
 #ps-collab-panel .pc-rowlogo[src*="uh-manoa-seal"] { background: #0b2a52; border: 1px solid rgba(255, 255, 255, .45); padding: 2px; }
 #ps-collab-panel .pc-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 18px 14px; margin-top: 12px; text-align: center; }
