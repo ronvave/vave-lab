@@ -429,6 +429,11 @@
     try {
       const dir = await unpack(D.directory);
       S = dir.scholars || []; P = dir.pubs || []; X = D.cardExtras || {}; POS = D.posCards || {};
+      // Rule: like the country cards, only the six main publication types count.
+      // Other outputs (conference papers, misc, unpublished, etc.) are left out of
+      // card totals, first-authored counts, chips, sorting, search and Panel E.
+      const MAIN = i => P[i] && TYPE[P[i].t] && P[i].t !== 'other';
+      S.forEach(s => { s.p = (s.p || []).filter(MAIN); s.f = (s.f || []).filter(MAIN); s.fa = s.f.length; });
       order = (D.countries || []).map(c => c.code);
       // Most publications first; ties by first-authored count, then country order
       // and family name (the build's order).

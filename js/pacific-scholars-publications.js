@@ -45,6 +45,8 @@
         key: fold([p.ti, authors, journal, p.pb, sch.map(s => s.n).join(' ')].join(' '))
       };
     });
+    // Other outputs are excluded, matching the scholar cards and country dashboards.
+    items = items.filter(it => it.type !== 'other');
     items.sort((a, b) => (b.yr || 0) - (a.yr || 0) || fold(a.p.ti).localeCompare(fold(b.p.ti)));
   }
 

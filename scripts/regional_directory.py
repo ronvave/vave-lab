@@ -232,7 +232,7 @@ def build_directory(dumps, country_meta):
             bad = (fold(title) in TYPE_WORDS or re.match(r'^(doi:|title-year:|10\.\d{4})', title, re.I)
                    or re.match(r'^(doi:|title-year:)', authors, re.I)
                    or (norm(r.get('Year')) and not y))
-            key = ('doi:' + doi.lower()) if doi else ('t:' + fold(title)[:120] + '|' + str(y or ''))
+            key = ('doi:' + doi.lower()) if doi else ('t:' + fold(title) + '|' + str(y or ''))
             if key not in pub_index:
                 pub_index[key] = len(pubs)
                 pubs.append(dict(
