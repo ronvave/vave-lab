@@ -13,7 +13,7 @@
     "SINU": { "name": "Solomon Islands National University", "logo": "img/regional/collab/sinu.webp" },
     "NUS": { "name": "National University of Samoa", "logo": "img/regional/collab/nus.webp" },
     "NUV": { "name": "National University of Vanuatu", "logo": "img/regional/collab/nuv.webp" },
-    "UHM": { "name": "University of Hawaiʻi at Mānoa" }
+    "UHM": { "name": "University of Hawaiʻi at Mānoa", "logo": "img/regional/uh-manoa-seal.png" }
   },
   "countries": [
     { "code": "FJI", "logos": ["FNU"], "people": [

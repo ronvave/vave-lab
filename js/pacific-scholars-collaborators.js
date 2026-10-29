@@ -1,7 +1,7 @@
 /* Panel F: Collaborators, for the Regional Pacific Scholars Dashboard.
    Map (same base image and anchors as panel A1) with up to two key
-   collaborator photos beside each country, plus one card per country that
-   expands to show every collaborator. People are listed in
+   collaborator photos beside each country, plus a Regional Collaborators board
+   with one card per country listing every collaborator. People are listed in
    data/regional-collaborators.json (names, titles and institutions only; no
    contact details). */
 (function () {
@@ -33,43 +33,48 @@
     return `<span class="${cls}${p.vc ? ' is-vc' : ''}">${p.photo ? `<img src="${esc(p.photo)}" alt="" loading="lazy" width="120" height="120">` : `<b aria-hidden="true">${esc(initials(p.name))}</b>`}</span>`;
   }
   function personHtml(p) {
-    const line = [p.vc ? 'Vice Chancellor' : p.role, instName(p.inst)].filter(Boolean);
-    if (p.vc && p.role && p.role !== 'Vice Chancellor') line.splice(1, 0, p.role);
-    return `<li class="pc-person">${photoHtml(p, 'pc-ph')}<div><div class="pc-name">${esc(full(p))}</div>${line.length ? `<div class="pc-role">${esc(line.join(' \u00b7 '))}</div>` : ''}</div></li>`;
+    const role = [p.vc && !p.role ? 'Vice Chancellor' : p.role].filter(Boolean);
+    const inst = DATA.institutions[p.inst] || {};
+    const logo = inst.logo ? `<img class="pc-rowlogo" src="${esc(inst.logo)}" alt="" title="${esc(inst.name || '')}" loading="lazy">` : '';
+    return `<li class="pc-person">${photoHtml(p, 'pc-ph')}<div class="pc-person__t"><div class="pc-name">${esc(full(p))}</div>${role.length ? `<div class="pc-role">${esc(role[0])}</div>` : ''}${inst.name ? `<div class="pc-inst">${esc(inst.name)}</div>` : ''}</div>${logo}</li>`;
+  }
+  const PEOPLE_ICON = '<svg class="pc-empty__ic" viewBox="0 0 48 36" aria-hidden="true"><circle cx="17" cy="9" r="8"/><path d="M1 34c0-9 7-15 16-15s16 6 16 15z"/><circle cx="34" cy="11" r="6.5"/><path d="M35 21c7 0 12 5 12 13H36c0-5-1.5-9-4.5-12 1-.6 2.2-1 3.5-1z"/></svg>';
+
+  function stats() {
+    const ppl = DATA.countries.reduce((n, c) => n + (c.people || []).length, 0);
+    const withC = DATA.countries.filter(c => (c.people || []).length).length;
+    const without = DATA.countries.length - withC;
+    const box = (ic, n, l) => `<div class="pc-stat">${ic}<div><dt>${n}</dt><dd>${l}</dd></div></div>`;
+    const I = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
+    document.getElementById('pc-stats').innerHTML =
+      box(I('<circle cx="9" cy="8" r="3.4"/><path d="M2.5 19c0-3.7 2.9-6 6.5-6s6.5 2.3 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 13.2c2.8.2 5 2.3 5 5.8"/>'), ppl, `Collaborator${ppl === 1 ? '' : 's'}`) +
+      box(I('<circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/><circle cx="12" cy="12" r="2.2"/>'), withC, `Countr${withC === 1 ? 'y' : 'ies'} with collaborators`) +
+      box(I('<rect x="5" y="3" width="11" height="14" rx="1.5"/><path d="M8 7h5M8 10h5M8 13h3"/><path d="M19 8v11.5A1.5 1.5 0 0 1 17.5 21H9"/>'), without, `Countr${without === 1 ? 'y' : 'ies'} without collaborators`);
   }
 
   function cards() {
     const host = document.getElementById('pc-cards');
-    host.innerHTML = DATA.countries.map((c, n) => {
-      const { key, more } = split(c);
-      const total = (c.people || []).length;
+    const n = DATA.countries.length, rest = n % 4;
+    host.innerHTML = DATA.countries.map((c, i) => {
+      const ppl = c.people || [];
+      const total = ppl.length;
+      const code = c.code.toLowerCase();
+      const name = NAMES[c.code] || c.code;
+      const wide = rest && i >= n - rest ? ` style="grid-column: span ${12 / rest}"` : '';
       const logos = (c.logos || []).map(k => DATA.institutions[k] && DATA.institutions[k].logo ? `<img class="pc-logo" src="${esc(DATA.institutions[k].logo)}" alt="${esc(instName(k))}" title="${esc(instName(k))}" loading="lazy">` : '').join('');
-      return `<article class="pc-card${total ? '' : ' is-empty'}" id="pc-${c.code}" data-code="${c.code}">
-        <header class="pc-card__head">
-          <img class="pc-flag" src="img/regional/flags/${c.code.toLowerCase()}.png" alt="" width="34" height="34">
-          <div class="pc-card__t"><h3><span class="pc-n">[${n + 1}]</span> ${esc(NAMES[c.code] || c.code)}</h3><span class="pc-count">${total ? `${total} collaborator${total === 1 ? '' : 's'}` : 'No collaborators listed yet'}</span></div>
+      return `<article class="pc-card${total ? '' : ' is-empty'}" id="pc-${c.code}" data-code="${c.code}"${wide}>
+        <header class="pc-card__head"><span class="pc-card__bg" style="background-image: url('img/regional/${code}.webp')" aria-hidden="true"></span>
+          <img class="pc-flag" src="img/regional/flags-rect/${code}.webp" alt="" width="64" height="44">
+          <div class="pc-card__t"><h3>${esc(name)}</h3><span class="pc-count">${total ? `${total} collaborator${total === 1 ? '' : 's'}` : 'No collaborators listed yet'}</span></div>
           ${logos ? `<div class="pc-logos">${logos}</div>` : ''}
         </header>
-        ${total ? `<ul class="pc-people">${key.map(personHtml).join('')}</ul>` : ''}
-        ${more.length ? `<ul class="pc-people pc-more" id="pc-more-${c.code}" hidden>${more.map(personHtml).join('')}</ul>
-          <button class="pc-toggle" type="button" aria-expanded="false" aria-controls="pc-more-${c.code}" data-more="${more.length}">Show ${more.length} more collaborator${more.length === 1 ? '' : 's'}</button>` : ''}
+        ${total ? `<h4 class="pc-label">Collaborators</h4><ul class="pc-people">${ppl.map(personHtml).join('')}</ul>`
+          : `<div class="pc-empty">${PEOPLE_ICON}<strong>No collaborators listed yet</strong><span>This country currently has no collaborators recorded in the directory.</span></div>`}
       </article>`;
     }).join('');
-    host.addEventListener('click', e => {
-      const b = e.target.closest('.pc-toggle'); if (!b) return;
-      setOpen(b.closest('.pc-card'), b.getAttribute('aria-expanded') !== 'true');
-    });
-  }
-  function setOpen(card, open) {
-    const b = card.querySelector('.pc-toggle'); if (!b) return;
-    const n = +b.dataset.more;
-    card.querySelector('.pc-more').hidden = !open;
-    b.setAttribute('aria-expanded', String(open));
-    b.textContent = open ? 'Show fewer' : `Show ${n} more collaborator${n === 1 ? '' : 's'}`;
   }
   function focusCountry(code) {
     const card = document.getElementById('pc-' + code); if (!card) return;
-    setOpen(card, true);
     document.querySelectorAll('.pc-card.is-target').forEach(x => x.classList.remove('is-target'));
     card.classList.add('is-target');
     card.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'nearest' });
@@ -139,6 +144,7 @@
       DATA = await r.json();
     } catch (e) { return; }
     panel.hidden = false;
+    stats();
     cards();
     map();
   }
