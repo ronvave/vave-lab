@@ -38,7 +38,7 @@
     const role = [p.vc && !p.role ? 'Vice Chancellor' : p.role].filter(Boolean);
     const inst = DATA.institutions[p.inst] || {};
     const logo = inst.logo ? `<img class="pc-rowlogo" src="${esc(inst.logo)}" alt="" title="${esc(inst.name || '')}" loading="lazy">` : '';
-    return `<li class="pc-person">${photoHtml(p, 'pc-ph')}<div class="pc-person__t"><div class="pc-name">${esc(full(p))}</div>${role.length ? `<div class="pc-role">${esc(role[0])}</div>` : ''}${inst.name ? `<div class="pc-inst">${esc(inst.name)}</div>` : ''}</div>${logo}</li>`;
+    return `<li class="pc-person">${photoHtml(p, 'pc-ph')}<div class="pc-person__t"><div class="pc-name" data-name="${esc(p.name)}">${esc(full(p))}</div>${role.length ? `<div class="pc-role">${esc(role[0])}</div>` : ''}${inst.name ? `<div class="pc-inst">${esc(inst.name)}</div>` : ''}</div>${logo}</li>`;
   }
   const PEOPLE_ICON = '<svg class="pc-empty__ic" viewBox="0 0 48 36" aria-hidden="true"><circle cx="17" cy="9" r="8"/><path d="M1 34c0-9 7-15 16-15s16 6 16 15z"/><circle cx="34" cy="11" r="6.5"/><path d="M35 21c7 0 12 5 12 13H36c0-5-1.5-9-4.5-12 1-.6 2.2-1 3.5-1z"/></svg>';
 
@@ -75,6 +75,31 @@
       </article>`;
     }).join('');
   }
+  // Collaborator names link to their card in the Regional Scholar Directory
+  // (the directory listens for #dir=ID). Runs once both the directory and this
+  // panel are ready; people without a directory card keep a plain name.
+  let dirReady = false;
+  function linkNames() {
+    if (!dirReady || !DATA || !window.PSDirectory || !window.PSDirectory.findId) return;
+    const find = window.PSDirectory.findId;
+    document.querySelectorAll('#pc-cards .pc-card').forEach(card => {
+      const code = card.dataset.code;
+      card.querySelectorAll('.pc-name[data-name]').forEach(el => {
+        if (el.querySelector('a')) return;
+        const n = el.dataset.name;
+        let id = '';
+        try { id = find(code, n) || find(code, n.replace(/-/g, ' ')); } catch (e) { id = ''; }
+        if (!id) return;
+        const a = document.createElement('a');
+        a.href = '#dir=' + id; a.className = 'pc-name__a';
+        a.title = 'Open this scholar card in the Regional Scholar Directory';
+        a.textContent = el.textContent;
+        el.textContent = ''; el.appendChild(a);
+      });
+    });
+  }
+  function onDirectoryReady() { dirReady = true; linkNames(); }
+
   function focusCountry(code) {
     const card = document.getElementById('pc-' + code); if (!card) return;
     document.querySelectorAll('.pc-card.is-target').forEach(x => x.classList.remove('is-target'));
@@ -136,6 +161,12 @@
     stats();
     cards();
     map();
+    linkNames();
+    // Same name clicked again: the hash does not change, so re-announce it.
+    document.getElementById('pc-cards').addEventListener('click', e => {
+      const a = e.target.closest('a.pc-name__a'); if (!a) return;
+      if (location.hash === a.getAttribute('href')) { e.preventDefault(); dispatchEvent(new HashChangeEvent('hashchange')); }
+    });
   }
-  window.PSCollaborators = { init };
+  window.PSCollaborators = { init, onDirectoryReady };
 })();

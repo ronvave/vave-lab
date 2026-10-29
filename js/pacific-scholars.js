@@ -129,7 +129,7 @@
     renderCredits();
     if (window.PSUniversities) { try { window.PSUniversities.init(D, { nameOf, select: setSel }); } catch (e) { console.error(e); } }
     renderAll(true);
-    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); renderCList(); renderCWork(); window.PSUniversities && window.PSUniversities.refresh(); }).catch(() => {});
+    if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); renderCList(); renderCWork(); window.PSUniversities && window.PSUniversities.refresh(); window.PSCollaborators && window.PSCollaborators.onDirectoryReady && window.PSCollaborators.onDirectoryReady(); }).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
   }
 
