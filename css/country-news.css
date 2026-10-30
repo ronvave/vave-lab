@@ -135,3 +135,9 @@
 .nw-pt--thesis { background: #4CAF50; border-color: #4CAF50; color: #fff; }
 .nw-pt--report { background: #1e40af; border-color: #1e40af; color: #fff; }
 .nw__chip--News { background: #eef0f2; border-color: #c7cbd1; }
+
+/* Optional layout (data-foot-under): the note sits under the Pause row across
+   the main column, and the side list fills the full height of the row. */
+.nw--foot-under .nw__main .nw__foot { margin: 12px 0 0; font-size: .85rem; line-height: 1.45; }
+.nw--foot-under .nw__list { position: relative; min-height: 300px; }
+.nw--foot-under .nw__list-items { position: absolute; inset: 0; max-height: none; overflow-y: auto; }

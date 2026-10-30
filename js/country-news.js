@@ -27,6 +27,7 @@
   var SUBMIT = (me && me.dataset.submit) || '';   // review-queue endpoint for "Share a story"
   var PEOPLE = (me && me.dataset.people) || 'our';
   var PLACE = (me && me.dataset.place) || 'the country';
+  var FOOT_UNDER = !!(me && me.dataset.footUnder);  // note under the Pause row, list fills full height
   var EXAMPLE = (me && me.dataset.example) || 'Dr Suliana Mone';  // form placeholder name
   if (!SRC) return;
   var ROTATE_MS = 8000;
@@ -265,6 +266,10 @@
     var counts = {};
     N.items.forEach(function (it) { counts[typeOf(it)] = (counts[typeOf(it)] || 0) + 1; });
     var share = SUBMIT ? '<button type="button" class="nw__share" data-nw-share>Share a story</button>' : '';
+    var foot = '<p class="nw__foot">New theses and publications come from the database records. Shared stories are checked by a collaborator before they appear.' +
+      (SUBMIT ? ' Know of a news story, thesis defense, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
+      '</p>';
+    if (FOOT_UNDER) root.classList.add('nw--foot-under');
     root.querySelector('[data-news-body]').innerHTML =
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
@@ -278,10 +283,9 @@
       '<button type="button" class="nw__pause" data-nw-pause aria-pressed="false">Pause</button>' +
       '<button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button></div>' +
       '<div class="nw__dots" aria-hidden="true"></div></div>' +
+      (FOOT_UNDER ? foot : '') +
       '</div><div class="nw__list"><div class="nw__list-items"></div>' +
-      '<p class="nw__foot">New theses and publications come from the database records. Shared stories are checked by a collaborator before they appear.' +
-      (SUBMIT ? ' Know of a news story, thesis defense, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
-      '</p></div></div>';
+      (FOOT_UNDER ? '' : foot) + '</div></div>';
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
     ctrls.querySelector('[data-nw-next]').addEventListener('click', function () { show(A.i + 1); schedule(); });
