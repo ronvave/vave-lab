@@ -14,6 +14,7 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import country_news  # noqa: E402  (Panel A3 scholar news snapshot)
 
 from solomon_master_file_config import (
     ALL_SOLOMON_GEOGRAPHY_LABELS,
@@ -716,6 +717,38 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
     positions = extract_positions(fetch_fn("Positions"))
     log(f"  -> {len(awards)} awards, {len(funding)} funding records, {len(positions)} positions")
 
+    log("Fetching News...")
+    try:
+        _news_rows = fetch_fn("News")
+    except Exception as exc:  # tab not created yet: publish an empty list
+        log(f"  -> News tab unavailable ({str(exc)[:120]}); publishing an empty news list")
+        _news_rows = []
+    _, _news_dicts = rows_to_dicts(_news_rows, SHEETS["News"]["header_row"], SHEETS["News"]["first_data"])
+    def _news_name(s):
+        given, family = str(s.get("Given Names") or "").strip(), str(s.get("Family Name") or "").strip()
+        return f"{given} {family}" if given and family else str(s.get("Display Name") or "").strip()
+    _news_roster = [{"Scholar ID": s.get("Scholar ID"), "Scholar Name": _news_name(s)} for s in scholars]
+    # country_news expects the Fiji/Tonga column names; map the Solomon ones.
+    _canon_types = {t.lower(): t for t in HEADLINE_PUBLICATION_TYPES}
+    _news_pubs = [{
+        "Publication ID / BibTeX Key": p.get("Publication ID"),
+        "Publication Type": _canon_types.get(" ".join(str(p.get("Type") or "").lower().split()), str(p.get("Type") or "").strip()),
+        "Year": p.get("Year"), "Title": p.get("Title"), "DOI": p.get("DOI"), "URL": p.get("URL"),
+        "Bibliographic Lead Author": str(p.get("Authors as Published") or "").split(";")[0].strip(),
+        "Journal / Book Title": p.get("Journal/Publisher"),
+        "Publisher / Institution / School": p.get("Journal/Publisher"),
+    } for p in publications]
+    _news_auth = [{"Publication ID / BibTeX Key": a.get("Publication ID"), "Scholar ID": a.get("Scholar ID"),
+                   "Author Position": a.get("Author Position")} for a in authorship]
+    news_payload = country_news.build(
+        _news_dicts, _news_roster, source="Solomon_Islands_Master_file",
+        generator="scripts/solomon_master_file_transformer.py",
+        publications=_news_pubs, authorship=_news_auth,
+        # Panel G shows no conference papers, preprints or other outputs.
+        only_types=set(HEADLINE_PUBLICATION_TYPES),
+    )
+    log(f"  -> {len(news_payload['items'])} published news stories")
+
     log("Computing aggregates...")
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
@@ -747,6 +780,7 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
     _write_json(out_dir / "solomon-master-awards.json", awards)
     _write_json(out_dir / "solomon-master-funding.json", funding)
     _write_json(out_dir / "solomon-master-positions.json", positions)
+    _write_json(out_dir / "solomon-master-news.json", news_payload)
 
     log("Building Panel C1 body-composition payload...")
     body_comp = compute_body_composition_master(scholars, publications, authorship)

@@ -66,6 +66,7 @@ TARGETS = [
     "solomon-master-awards.json",
     "solomon-master-funding.json",
     "solomon-master-positions.json",
+    "solomon-master-news.json",
     "solomon-body-composition-master.json",
 ]
 

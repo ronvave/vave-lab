@@ -34,6 +34,7 @@ on:
       - ".github/workflows/refresh-solomon-master-file.yml"
       - "scripts/solomon_master_file_config.py"
       - "scripts/solomon_master_file_transformer.py"
+      - "scripts/country_news.py"
       - "scripts/solomon_encrypt_data.py"
       - "scripts/solomon_decrypt_data.py"
       - "scripts/solomon_sync_share_tokens.py"
@@ -115,6 +116,7 @@ jobs:
             data/solomon-master-awards.json \
             data/solomon-master-funding.json \
             data/solomon-master-positions.json \
+            data/solomon-master-news.json \
             data/solomon-body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
@@ -176,6 +178,7 @@ jobs:
             solomon-master-awards.json
             solomon-master-funding.json
             solomon-master-positions.json
+            solomon-master-news.json
             solomon-body-composition-master.json
           )
           python3 scripts/plaintext_changed.py \

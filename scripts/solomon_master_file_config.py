@@ -47,6 +47,7 @@ SHEETS = {
     "Province-Ward Lookup": {"header_row": 1, "first_data": 2},
     "Village Geography Lookup": {"header_row": 1, "first_data": 2},
     "Lookups": {"header_row": 1, "first_data": 2},
+    "News": {"header_row": 4, "first_data": 5},  # Panel A3 scholar news (title row 1, notes row 2)
     "Dashboard": {"header_row": None, "first_data": 1},  # freeform QA sheet
 }
 

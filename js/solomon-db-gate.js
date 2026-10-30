@@ -99,6 +99,7 @@
     'data/solomon-master-mobility.json':     'data/solomon-master-mobility.json.enc',
     'data/solomon-master-geography.json':    'data/solomon-master-geography.json.enc',
     'data/solomon-master-aggregates.json':   'data/solomon-master-aggregates.json.enc',
+    'data/solomon-master-news.json':        'data/solomon-master-news.json.enc',
     'data/solomon-master-worldpoints.json':  'data/solomon-master-worldpoints.json.enc',
     'data/solomon-last-master-sync.json':    'data/solomon-last-master-sync.json.enc',
     // Admin V2 supplementary layers (Scholar-ID keyed). Optional; adapter

@@ -149,6 +149,11 @@
     readScholar: readScholar,
     readRows:    readRows,
     readChangeLog: readChangeLog,
+    // Panel A3 "Share a story" queue (News Story Submissions tab).
+    readNewsSubmissions: function (status) { return callGetWithParams('readNewsSubmissions', { status: status || '' }); },
+    previewNewsLink: function (url, scholars) { return callGetWithParams('previewNewsLink', { url: url, scholars: String(scholars || '').slice(0, 300) }); },
+    resolveNewsSubmission: function (submissionId, decision, story, reviewNotes) { return callPost({ action: 'resolveNewsSubmission', submissionId: submissionId, decision: decision, story: story, reviewNotes: reviewNotes }); },
+    reviewQueueCounts: function () { return callGetWithParams('readNewsSubmissions', { status: 'Pending' }).then(function (r) { return r && r.status === 'ok' ? { status: 'ok', news: (r.rows || []).length } : r; }); },
     isConfigured: function () { return !!(getEndpoint() && getSecret()); }
   };
 })();

@@ -711,6 +711,8 @@ function doPost(e) {
   try {
     var requested = body.action || 'write';
     if(body.country&&body.country!=='Solomon Islands')throw new Error('Wrong country request');
+    // Panel A3 "Share a story": public, honeypot + daily limits, queued for review.
+    if (requested === 'submitNewsStory') return solNewsSubmit_(body);
     if (requested === 'submitScholarProfileUpdate' || requested === 'submitPublicationGeography') {
       if (!solomonPublicEnabled_()) return jsonOut_({status:'disabled',reason:'SOLOMON_PUBLIC_SUBMISSIONS_ENABLED is not true'});
       return requested === 'submitScholarProfileUpdate' ? handlePublicScholarProfileSubmission_(body) : handlePublicPublicationGeographySubmission_(body);
@@ -719,6 +721,7 @@ function doPost(e) {
     if (SOLOMON_READ_ACTIONS.indexOf(requested)>=0) return solomonReadAction_(body);
     if (!writeEnabled_()) return jsonOut_({ status: 'disabled', reason: 'WRITE_ENABLED=false' }, 423);
     var action = body.action || 'write';
+    if (action === 'resolveNewsSubmission') return solNewsResolve_(body);
     if (action === 'beginScholarReview') return solomonBeginReview_(body);
     if (action === 'recordScholarAttachmentReview') return solomonRecordAttachment_(body);
     if (action === 'finishScholarReview') return solomonFinishReview_(body);
@@ -1075,6 +1078,8 @@ function solomonReadAction_(params) {
     if (action === 'ping') {
       return jsonOut_({ status: 'ok', pong: true, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL, tz: TIMEZONE, spreadsheetId: SPREADSHEET_ID_HINT });
     }
+    if (action === 'readNewsSubmissions') return solNewsRead_(params);
+    if (action === 'previewNewsLink') return solNewsPreview_(params);
     if (action === 'readScholarProfileSubmissions') return handleReadScholarProfileSubmissions_(params);
     if (action === 'readScholarSubmissionAttachment') return handleReadScholarSubmissionAttachment_(params);
     if (action === 'readPublicationGeographySubmissions') return handleReadPublicationGeographySubmissions_(params);
@@ -1623,8 +1628,8 @@ function backupSolomonReviewDataV2(){
 // Google reviewer access. The private roster is never sent to the browser.
 // The existing secret remains an Owner-only recovery path. Never share it.
 var SOLOMON_REQUEST_ROLE = 'owner';
-var SOLOMON_READ_ACTIONS = ['reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var SOLOMON_REVIEW_ACTIONS = ['reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
+var SOLOMON_READ_ACTIONS = ['readNewsSubmissions','previewNewsLink','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
+var SOLOMON_REVIEW_ACTIONS = ['readNewsSubmissions','previewNewsLink','resolveNewsSubmission','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission'];
 function solomonAuthorize_(payload, action) {
   SOLOMON_REQUEST_ROLE=''; ACTOR_LABEL='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the
@@ -1761,3 +1766,237 @@ function initializeSolomonShareTokens(){
   Logger.log('Initialized '+added+' missing Solomon scholar links; existing tokens unchanged. Run Refresh from Sheet to publish.');
  }finally{lock.releaseLock();}
 }
+
+// ========================= PANEL A3 NEWS (Solomon Islands) ===========================
+// Public "Share a story" links (submitNewsStory, no secret, honeypot and daily
+// limits) queue in the "News Submissions" tab. Admin V2 reads them
+// (readNewsSubmissions, previewNewsLink) and approves or rejects
+// (resolveNewsSubmission, owner secret or reviewer Google sign-in + WRITE_ENABLED). Approving appends
+// one row to the Master "News" tab with Show on Dashboard = Yes.
+var SOLOMON_NEWS_VERSION = 'solomon-news-1.0';
+function solNewsLiteral_(v){return typeof v==='string' && /^[=+@'-]/.test(v) ? "'"+v : v;}
+var NEWS_SHEET = 'News';
+var NEWS_QUEUE_SHEET = 'News Submissions';
+var NEWS_QUEUE_HEADERS = ['Submission ID','Submitted At','Status','Article URL','Announcement Type','Scholar(s) Named','Submitter Name','Submitter Email','Submitter Note','Reviewed By','Reviewed At','Decision Notes','News ID'];
+var NEWS_TYPES = ['News','Defense','Thesis','Publication','Event'];
+// Webinars are listed under Events. New theses and publications may be about
+// Solomon Islands by an author outside the database (Scholar ID blank, name given).
+var NEWS_OPEN_TYPES = ['Thesis','Publication'];
+var NEWS_TIMED_TYPES = ['Defense','Event'];
+function solNewsType_(v) { var t = String(v || 'News'); if (t === 'Webinar') t = 'Event'; return NEWS_TYPES.indexOf(t) >= 0 ? t : 'News'; }
+// 'News' = general news with no more specific category (listed last on purpose).
+var NEWS_CATEGORIES = ['Award','Appointment','Graduation','Milestone','Publication','Research','News'];
+var NEWS_EMAIL_DAILY_LIMIT = 5;
+var NEWS_GLOBAL_DAILY_LIMIT = 40;
+
+function solNewsQueue_(ss) {
+  var sh = ss.getSheetByName(NEWS_QUEUE_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(NEWS_QUEUE_SHEET);
+    sh.getRange(1,1).setValue('News story links sent from Panel A3 "Share a story" on the Solomon Islands dashboard. Review in Admin (News Story Submissions). Approved links are added to the News tab.');
+  }
+  if (sh.getMaxColumns() < NEWS_QUEUE_HEADERS.length) sh.insertColumnsAfter(sh.getMaxColumns(), NEWS_QUEUE_HEADERS.length - sh.getMaxColumns());
+  var cur = sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).getDisplayValues()[0];
+  if (cur.some(function(x){return !!x;}) && cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) throw new Error('News Submissions headers differ');
+  if (cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) { sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).setValues([NEWS_QUEUE_HEADERS]); sh.setFrozenRows(4); }
+  return sh;
+}
+function solNewsUrl_(v) {
+  var s = solNewsClean_(String(v || '').trim());
+  if (s.length > 700 || !/^https?:\/\/[^\s\/$.?#][^\s]*$/i.test(s)) return '';
+  return s;
+}
+/* Drop tracking codes (fbclid, utm_*, gclid ...) that social apps add to links. */
+function solNewsClean_(u) {
+  var m = /^([^?#]*)(\?[^#]*)?(#.*)?$/.exec(u); if (!m || !m[2]) return u;
+  var keep = m[2].slice(1).split('&').filter(function(kv){
+    var k = kv.split('=')[0].toLowerCase();
+    return kv && !/^(fbclid|gclid|dclid|msclkid|igshid|mc_cid|mc_eid|yclid|_ga|mibextid|utm_[a-z_]+)$/.test(k);
+  });
+  return m[1] + (keep.length ? '?' + keep.join('&') : '') + (m[3] || '');
+}
+/* Publication date (YYYY-MM-DD) from a news page. Tries, in order: meta tags
+ * and JSON-LD; <time datetime>; a visible "Published 16 March 2026" line;
+ * the page's own publishedAt record (matched by its slug); a /2026/03/16/ path. */
+function solNewsDate_(html, url) {
+  var MON = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  function iso(t) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m ? m[0] : ''; }
+  function out(y, mo, d) { return (mo && d >= 1 && d <= 31) ? y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2) : ''; }
+  function words(t) {
+    var m = /\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})\b/.exec(t);
+    if (m) return out(m[3], MON[m[2].slice(0,3).toLowerCase()], +m[1]);
+    m = /\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b/.exec(t);
+    return m ? out(m[3], MON[m[1].slice(0,3).toLowerCase()], +m[2]) : '';
+  }
+  var v = iso(solNewsMeta_(html, ['article:published_time','datePublished','date','pubdate','publish-date','dc.date','parsely-pub-date']));
+  if (v) return v;
+  v = iso((/datePublished[\\"]*\s*:\s*[\\"]*([0-9T:.\-]+)/.exec(html) || [])[1]); if (v) return v;
+  v = iso((/<time[^>]+datetime=["']([^"']+)["']/i.exec(html) || [])[1]); if (v) return v;
+  var plain = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  var pm = /\b(?:Published|Posted)\b[:\s]*(?:on\s+)?(.{0,40})/i.exec(plain);
+  if (pm) { v = words(pm[1]); if (v) return v; }
+  var slug = (String(url).replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop() || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (slug) {
+    var sm = new RegExp('publishedAt[\\\\"]*:[\\\\"]*([0-9T:.\\-]+Z?)[\\\\"]*,[\\\\"]*slug[\\\\"]*:[\\\\"]*' + slug).exec(html);
+    if (sm) { v = iso(sm[1]); if (v) return v; }
+  }
+  var um = /\/(20\d{2})\/(\d{2})\/(\d{2})\//.exec(url);
+  return um ? um[1] + '-' + um[2] + '-' + um[3] : '';
+}
+function solNewsKey_(u) { return String(u||'').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/,'').replace(/[#?].*$/,'').replace(/\/+$/,''); }
+function solNewsKnownUrls_(ss) {
+  var keys = {};
+  [[NEWS_SHEET,'Article URL'],[NEWS_QUEUE_SHEET,'Article URL']].forEach(function(p){
+    var sh = ss.getSheetByName(p[0]); if (!sh || sh.getLastRow() < 5) return;
+    var h = sh.getRange(4,1,1,sh.getLastColumn()).getDisplayValues()[0], c = h.indexOf(p[1]); if (c < 0) return;
+    var st = h.indexOf('Status');
+    sh.getRange(5,1,sh.getLastRow()-4,sh.getLastColumn()).getDisplayValues().forEach(function(r){
+      if (r[c] && !(st >= 0 && r[st] === 'Rejected')) keys[solNewsKey_(r[c])] = true;
+    });
+  });
+  return keys;
+}
+function solNewsSubmit_(body) {
+  // Bots fill the hidden "website" field or post instantly; accept silently, store nothing.
+  if (String(body.website || '').trim() || Number(body.elapsedMs || 0) < 3000) return jsonOut_({status:'ok', queued:1});
+  var url = solNewsUrl_(body.articleUrl);
+  var type = solNewsType_(body.type);
+  var name = String(body.submitterName || '').trim(), email = normalizedSubmitterEmail_(body.submitterEmail);
+  if (!url) return jsonOut_({status:'bad_request', reason:'A full web link starting with https:// is required.'}, 400);
+  if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({status:'bad_request', reason:'Your name and a valid email are required.'}, 400);
+  var ss = geoSs_();
+  if (isScholarSubmitterBlocked_(ss, email)) return jsonOut_({status:'forbidden', reason:'Submissions from this email are blocked.'}, 403);
+  var cache = CacheService.getScriptCache(), day = Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd');
+  var ek = 'snews-e-' + day + '-' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email)).slice(0,22), gk = 'snews-g-' + day;
+  var en = Number(cache.get(ek) || 0), gn = Number(cache.get(gk) || 0);
+  if (en >= NEWS_EMAIL_DAILY_LIMIT || gn >= NEWS_GLOBAL_DAILY_LIMIT) return jsonOut_({status:'rate_limited', reason:'Thank you. We have received many links today; please try again tomorrow.'}, 429);
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try {
+    var sh = solNewsQueue_(ss);
+    if (solNewsKnownUrls_(ss)[solNewsKey_(url)]) return jsonOut_({status:'ok', queued:0, duplicate:true});
+    var now = new Date(), id = 'NWS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,6);
+    var row = [id, Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss'), 'Pending', url, type,
+      String(body.scholars || '').trim().slice(0,300), name.slice(0,160), email.slice(0,240), String(body.note || '').trim().slice(0,800)];
+    sh.getRange(Math.max(sh.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(solNewsLiteral_)]);
+    cache.put(ek, String(en+1), 21600); cache.put(gk, String(gn+1), 21600);
+    return jsonOut_({status:'ok', queued:1, submissionId:id});
+  } finally { lock.releaseLock(); }
+}
+function solNewsRows_(ss) {
+  var sh = solNewsQueue_(ss), last = sh.getLastRow();
+  if (last < 5) return [];
+  return sh.getRange(5,1,last-4,NEWS_QUEUE_HEADERS.length).getDisplayValues().map(function(r,i){
+    var o = {_row:i+5}; NEWS_QUEUE_HEADERS.forEach(function(h,j){ o[h] = r[j] || ''; }); return o;
+  }).filter(function(o){ return !!o['Submission ID']; });
+}
+function solNewsRead_(params) {
+  var ss = geoSs_(), want = String(params.status || '').trim();
+  var rows = solNewsRows_(ss).filter(function(o){ return !want || o.Status === want; });
+  rows.forEach(function(o){ delete o._row; });
+  rows.reverse();
+  return jsonOut_({status:'ok', rows:rows, types:NEWS_TYPES, categories:NEWS_CATEGORIES});
+}
+function solNewsScholars_(ss) {
+  // Solomon Scholars headers are on row 1 (data from row 2).
+  var sh = ss.getSheetByName('Scholars'); if (!sh) throw new Error('Scholars worksheet missing');
+  var n = sh.getLastColumn(), h = sh.getRange(1,1,1,n).getDisplayValues()[0];
+  var rows = sh.getLastRow() > 1 ? sh.getRange(2,1,sh.getLastRow()-1,n).getDisplayValues() : [];
+  var ci = h.indexOf('Scholar ID'), ni = h.indexOf('Display Name'), gi = h.indexOf('Given Names'), fi = h.indexOf('Family Name');
+  return rows.filter(function(r){ return r[ci]; }).map(function(r){
+    var given = gi >= 0 ? String(r[gi]||'').trim() : '', family = fi >= 0 ? String(r[fi]||'').trim() : '';
+    var name = given && family ? given + ' ' + family : String(ni >= 0 ? r[ni] : '').replace(/\s+/g,' ').trim();
+    return {id:String(r[ci]).toUpperCase(), name:name};
+  });
+}
+function solNewsFold_(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[‘’ʻʼ']/g,'').toLowerCase(); }
+function solNewsMeta_(html, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var m = new RegExp('<meta[^>]+(?:property|name)=["\']' + k + '["\'][^>]*content=["\']([^"\']*)["\']','i').exec(html) ||
+            new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']' + k + '["\']','i').exec(html);
+    if (m && m[1]) return m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/\s+/g,' ').trim();
+  }
+  return '';
+}
+/* Reviewer helper: read the linked page's title, image, outlet and date and
+ * suggest matching scholars. Suggestions only; the reviewer confirms each field. */
+function solNewsPreview_(params) {
+  var url = solNewsUrl_(params.url); if (!url) return jsonOut_({status:'bad_request', reason:'invalid-url'}, 400);
+  var ss = geoSs_(), out = {status:'ok', url:url, headline:'', image:'', outlet:'', date:'', description:'', candidates:[]};
+  var text = String(params.scholars || '');
+  try {
+    var r = UrlFetchApp.fetch(url, {muteHttpExceptions:true, followRedirects:true, headers:{'User-Agent':'Mozilla/5.0 (compatible; VaveLab news review)'}});
+    if (r.getResponseCode() === 200) {
+      var html = r.getContentText().slice(0, 600000);
+      out.headline = solNewsMeta_(html, ['og:title','twitter:title']) || ((/<title[^>]*>([^<]*)<\/title>/i.exec(html)||[])[1]||'').trim();
+      out.image = solNewsMeta_(html, ['og:image','twitter:image']);
+      out.outlet = solNewsMeta_(html, ['og:site_name']);
+      out.description = solNewsMeta_(html, ['og:description','description']).slice(0,400);
+      out.date = solNewsDate_(html, url);
+      text += ' ' + out.headline + ' ' + out.description + ' ' + html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<[^>]+>/g,' ').slice(0, 60000);
+    } else out.fetchNote = 'The page returned HTTP ' + r.getResponseCode() + '; enter the details by hand.';
+  } catch (e) { out.fetchNote = 'The page could not be read; enter the details by hand.'; }
+  if (out.image && !/^https?:\/\//i.test(out.image)) { try { out.image = url.replace(/^(https?:\/\/[^\/]+).*$/,'$1') + (out.image.charAt(0)==='/'?'':'/') + out.image; } catch (_) { out.image = ''; } }
+  var hay = solNewsFold_(text);
+  solNewsScholars_(ss).forEach(function(s){
+    var parts = solNewsFold_(s.name).replace(/^(dr|rev|prof|professor|mr|mrs|ms)\.?\s+/,'').split(/\s+/).filter(function(w){ return w.length > 2; });
+    if (parts.length < 2) return;
+    var family = parts[parts.length-1], given = parts[0];
+    if (hay.indexOf(given + ' ' + family) >= 0 || (hay.indexOf(family) >= 0 && hay.indexOf(given) >= 0 && hay.indexOf(family) - hay.indexOf(given) < 60 && hay.indexOf(family) > hay.indexOf(given)))
+      out.candidates.push(s);
+  });
+  out.candidates = out.candidates.slice(0, 8);
+  return jsonOut_(out);
+}
+function solNewsNextId_(sh, idCol) {
+  var max = 0, last = sh.getLastRow();
+  if (last >= 5) sh.getRange(5, idCol+1, last-4, 1).getDisplayValues().forEach(function(r){ var m = /^SOL-NEWS(\d+)$/.exec(r[0]); if (m) max = Math.max(max, +m[1]); });
+  return 'SOL-NEWS' + ('000' + (max+1)).slice(-4);
+}
+function solNewsResolve_(body) {
+  var id = String(body.submissionId || ''), decision = String(body.decision || '');
+  if (['approve','reject'].indexOf(decision) < 0) return jsonOut_({status:'bad_request', reason:'decision must be approve or reject'}, 400);
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try {
+        var ss = geoSs_(), qs = solNewsQueue_(ss), o = solNewsRows_(ss).filter(function(x){ return x['Submission ID'] === id; })[0];
+    if (!o) return jsonOut_({status:'bad_request', reason:'Submission not found'}, 404);
+    if (o.Status !== 'Pending') return jsonOut_({status:'already_resolved', row:o});
+    var note = String(body.reviewNotes || '').slice(0, 1500), when = solNewsNow_(), newsId = '';
+    if (decision === 'approve') {
+      var f = body.story || {};
+      var type = solNewsType_(f.type), shown = String(f.displayName || '').trim().slice(0,160);
+      var sid = String(f.scholarId || '').trim().toUpperCase(), scholar = sid ? solNewsScholars_(ss).filter(function(s){ return s.id === sid; })[0] : null;
+      if (sid && !scholar) return jsonOut_({status:'bad_request', reason:'Scholar ID ' + sid + ' is not in the database.'}, 400);
+      if (!scholar && !(NEWS_OPEN_TYPES.indexOf(type) >= 0 && shown)) return jsonOut_({status:'bad_request', reason: NEWS_OPEN_TYPES.indexOf(type) >= 0 ? 'Choose a scholar, or enter the author name(s) for a thesis or publication about Solomon Islands.' : 'Choose a scholar from the database.'}, 400);
+      var cat = type === 'News' ? (NEWS_CATEGORIES.indexOf(String(f.category)) >= 0 ? String(f.category) : '') : '';
+      var head = String(f.headline || '').trim().slice(0, 300), date = String(f.date || '').trim();
+      var url = solNewsUrl_(f.articleUrl || o['Article URL']), img = String(f.imageUrl || '').trim() ? solNewsUrl_(f.imageUrl) : '';
+      if (!head) return jsonOut_({status:'bad_request', reason:'Headline is required.'}, 400);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return jsonOut_({status:'bad_request', reason:'Date must be YYYY-MM-DD.'}, 400);
+      if (!url) return jsonOut_({status:'bad_request', reason:'Article link is not a valid web address.'}, 400);
+      if (type === 'News' && !cat) return jsonOut_({status:'bad_request', reason:'Choose a category for a news story.'}, 400);
+      if (String(f.imageUrl || '').trim() && !img) return jsonOut_({status:'bad_request', reason:'Image link is not a valid web address.'}, 400);
+      var ns = ss.getSheetByName(NEWS_SHEET); if (!ns) return jsonOut_({status:'error', error:'News worksheet missing'}, 500);
+      var h = ns.getRange(4,1,1,ns.getLastColumn()).getDisplayValues()[0];
+      if (h.indexOf('News ID') < 0 || h.indexOf('Article URL') < 0) return jsonOut_({status:'error', error:'News headers missing'}, 500);
+      newsId = solNewsNextId_(ns, h.indexOf('News ID'));
+      var who = ACTOR_LABEL.split(' (')[0];
+      var vals = {'News ID':newsId,'Scholar ID':sid,'Scholar Display Name':shown || scholar.name,
+        'Category':cat,'Headline':head,'Outlet':String(f.outlet || '').trim().slice(0,160),'Publication Date':date,'Article URL':url,
+        'Image URL':img,'Image Credit':String(f.imageCredit || '').trim().slice(0,200),'Summary':String(f.summary || '').trim().slice(0,600),
+        'Also Covered By':String(f.also || '').trim().slice(0,300),'Show on Dashboard':'Yes','Added By':who,'Added On':when.slice(0,10),
+        'Notes':('From ' + id + ', sent by ' + o['Submitter Name'] + (o['Submitter Note'] ? ': ' + o['Submitter Note'] : '') + (note ? ' | Review: ' + note : '')).slice(0,1500),
+        'Announcement Type':type,'Event Time':NEWS_TIMED_TYPES.indexOf(type) >= 0 ? String(f.eventTime || '').trim().slice(0,120) : '','Event Location':NEWS_TIMED_TYPES.indexOf(type) >= 0 ? String(f.eventLocation || '').trim().slice(0,200) : ''};
+      if (type !== 'News' && h.indexOf('Announcement Type') < 0) return jsonOut_({status:'error', error:'Add the Announcement Type column to the News tab first.'}, 500);
+      var row = h.map(function(name){ return Object.prototype.hasOwnProperty.call(vals, name) ? vals[name] : ''; });
+      ns.getRange(Math.max(ns.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(solNewsLiteral_)]);
+      appendChangeLog_(ss, NEWS_SHEET, sid || '(not in database)', 'News ID', '', newsId + ' · ' + type + ' · ' + head);
+    }
+    var base = o._row, c = NEWS_QUEUE_HEADERS.indexOf('Status') + 1;
+    qs.getRange(base, c).setValue(decision === 'approve' ? 'Approved' : 'Rejected');
+    qs.getRange(base, NEWS_QUEUE_HEADERS.indexOf('Reviewed By') + 1, 1, 4).setValues([[ACTOR_LABEL, when, note, newsId]].map(function(r){ return r.map(solNewsLiteral_); }));
+    o.Status = decision === 'approve' ? 'Approved' : 'Rejected'; o['Reviewed By'] = ACTOR_LABEL; o['Reviewed At'] = when; o['Decision Notes'] = note; o['News ID'] = newsId; delete o._row;
+    return jsonOut_({status:'ok', row:o, newsId:newsId});
+  } finally { lock.releaseLock(); }
+}
+function solNewsNow_() { return Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss'); }
