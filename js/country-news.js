@@ -20,6 +20,10 @@
   'use strict';
   var me = document.currentScript;
   var SRC = (me && me.dataset.src) || '';
+  // Scholar photos (same sources as the Panel F cards): Admin enrichment
+  // photo by Scholar ID, then the Master Scholars "Photo URL" column.
+  var PHOTOS = (me && me.dataset.photos) || SRC.replace('master-news', 'scholar-enrichment');
+  var ROSTER = (me && me.dataset.roster) || SRC.replace('master-news', 'master-scholars');
   var SUBMIT = (me && me.dataset.submit) || '';   // review-queue endpoint for "Share a story"
   var PEOPLE = (me && me.dataset.people) || 'our';
   var PLACE = (me && me.dataset.place) || 'the country';
@@ -47,6 +51,18 @@
       return w.length > 2 ? w[0] + ' ' + w[w.length - 1] : w.join(' ');
     }).join('');
   }
+  // Publication-type pill colours match Panel G.
+  function ptClass(sub) {
+    var t = String(sub || '').toLowerCase();
+    if (/chapter|section/.test(t)) return 'nw-pt--chapter';
+    if (/^book/.test(t)) return 'nw-pt--book';
+    if (/journal|article/.test(t)) return 'nw-pt--article';
+    if (/phd|doctor/.test(t)) return 'nw-pt--phd';
+    if (/master/.test(t)) return 'nw-pt--masters';
+    if (/thesis|dissertation/.test(t)) return 'nw-pt--thesis';
+    if (/report/.test(t)) return 'nw-pt--report';
+    return '';
+  }
   function inAll(it) { return !it.auto || it.inAll; }
   function initials(name) {
     // First and last name of the first person named, e.g. "SM" for
@@ -61,7 +77,30 @@
   function imgHtml(it, cls) {
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
-    return '<span class="' + cls + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
+    return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
+  }
+
+  // Stories without their own image show the scholar's profile photo.
+  function addPhotos(gate, doc) {
+    var need = doc.items.some(function (it) { return it.sid && !it.img; });
+    if (!need) return Promise.resolve();
+    var none = function () { return null; };
+    return Promise.all([
+      PHOTOS && PHOTOS !== SRC ? gate.fetchJson(PHOTOS).catch(none) : null,
+      ROSTER && ROSTER !== SRC ? gate.fetchJson(ROSTER).catch(none) : null
+    ]).then(function (r) {
+      var enr = (r[0] && r[0].scholars) || {}, photo = {};
+      (Array.isArray(r[1]) ? r[1] : []).forEach(function (s) {
+        var u = String(s && s['Photo URL'] || '').trim();
+        if (u && s['Scholar ID']) photo[String(s['Scholar ID']).toUpperCase()] = u;
+      });
+      doc.items.forEach(function (it) {
+        if (it.img || !it.sid) return;
+        var sid = String(it.sid).toUpperCase(), e = enr[sid] || enr[it.sid];
+        var u = photo[sid] || (e && e.photo) || '';
+        if (u) { it.img = u; it.portrait = true; }
+      });
+    }).catch(function () {});
   }
 
   function load() {
@@ -73,7 +112,7 @@
       if (!doc || !Array.isArray(doc.items)) throw new Error('bad news snapshot');
       N = doc; bySid = {};
       doc.items.forEach(function (it) { if (it.sid && !it.auto) (bySid[it.sid] = bySid[it.sid] || []).push(it); });
-      return N;
+      return addPhotos(gate, doc).then(function () { return N; });
     }).catch(function (e) { loading = null; throw e; });
     return loading;
   }
@@ -139,7 +178,7 @@
       '<div class="nw__body">' +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
-      (it.sub ? '<span class="nw__chip nw__chip--sub">' + esc(it.sub) + '</span>' : '') + '</span>' +
+      (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
       '<div class="nw__meta">' + meta.filter(Boolean).map(esc).join(' · ') + '</div>' +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
@@ -185,7 +224,7 @@
     return items.map(function (it, k) {
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
         '<span class="nw__li-text"><span class="nw__lt">' + (it.sub
-          ? esc(shortName(it.name)) + ' <span class="nw__lpill">' + esc(it.sub) + '</span>'
+          ? esc(shortName(it.name)) + ' <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
           : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
         '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
     }).join('');

@@ -44,7 +44,7 @@
 .nw__li { display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: center; text-align: left; border: 1px solid #e3e7e6;
           border-radius: 10px; padding: 9px 10px; background: #fff; cursor: pointer; font: inherit; color: #111; }
 .nw__li.is-on { border-color: #0b7479; box-shadow: inset 4px 0 0 #0b7479; background: #f3faf9; }
-.nw__av { position: relative; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #0b7479; display: grid; place-items: center; }
+.nw__av { position: relative; width: 46px; height: 46px; border-radius: 6px; overflow: hidden; background: #0b7479; display: grid; place-items: center; }
 .nw__av img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .nw__av__ini { font: 700 1rem Arial, Helvetica, sans-serif; color: #fff; }
 .nw__li-text { display: flex; flex-direction: column; min-width: 0; }
@@ -125,3 +125,12 @@
 .nw__list-items { max-height: 300px; overflow-y: auto; }
 .nw__chip--sub { background: #fff; border-color: #c9c9c9; color: #111; }
 .nw__lpill { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid #c9c9c9; border-radius: 999px; background: #fff; color: #111; font: 700 .68rem/1.5 Arial, Helvetica, sans-serif; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; white-space: nowrap; }
+.nw__img.is-portrait img, .nw__av.is-portrait img { object-position: center 20%; }
+/* Publication-type pills: same colours as the Panel G type pills. */
+.nw-pt--article { background: #B8860B; border-color: #B8860B; color: #fff; }
+.nw-pt--chapter { background: #C08388; border-color: #C08388; color: #fff; }
+.nw-pt--book { background: #7a1419; border-color: #7a1419; color: #fff; }
+.nw-pt--phd { background: #228B22; border-color: #228B22; color: #fff; }
+.nw-pt--masters { background: #5f9c5f; border-color: #5f9c5f; color: #fff; }
+.nw-pt--thesis { background: #4CAF50; border-color: #4CAF50; color: #fff; }
+.nw-pt--report { background: #1e40af; border-color: #1e40af; color: #fff; }
