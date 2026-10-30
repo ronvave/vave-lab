@@ -15,6 +15,8 @@ import re
 from datetime import datetime
 
 CATEGORIES = ["Award", "Appointment", "Graduation", "Milestone", "Publication", "Research"]
+# Panel A4 toggle groups. Rows without an Announcement Type are News.
+TYPES = ["News", "Defense", "Webinar", "Event"]
 
 
 def _s(v) -> str:
@@ -58,12 +60,18 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
             skipped.append(nid or head[:40])
             continue
         cat = _s(r.get("Category")).title()
+        typ = _s(r.get("Announcement Type")).title() or "News"
+        if typ not in TYPES:
+            typ = "News"
         items.append({
             "id": nid,
             "sid": sid,
             "name": _s(r.get("Scholar Display Name")) or roster[sid],
             "full": roster[sid],
-            "cat": cat if cat in CATEGORIES else "Milestone",
+            "type": typ,
+            "cat": (cat if cat in CATEGORIES else "Milestone") if typ == "News" else typ,
+            "when": _s(r.get("Event Time")) if typ != "News" else "",
+            "where": _s(r.get("Event Location")) if typ != "News" else "",
             "head": head,
             "outlet": _s(r.get("Outlet")),
             "date": date,

@@ -1,0 +1,19 @@
+/* Tonga Admin: News Story Submissions queue (js/tongan-news-admin.js). */
+.tnews-bar { display: flex; gap: 10px; margin: 6px 0 10px; }
+.tnews-list { display: grid; gap: 16px; }
+.tnews-card { border: 1px solid #d5dcdc; border-radius: 10px; padding: 16px 18px; background: #fbfcfc; color: #111; }
+.tnews-head { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.tnews-link { margin: 8px 0; overflow-wrap: anywhere; font-weight: 600; }
+.tnews-dl { display: grid; grid-template-columns: 150px 1fr; gap: 4px 12px; margin: 0 0 12px; font-size: .92rem; }
+.tnews-dl dt { font-weight: 700; } .tnews-dl dd { margin: 0; }
+.tnews-form { border-top: 1px dashed #c9d2d2; padding-top: 12px; }
+.tnews-fill { margin-right: 10px; }
+.tnews-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 16px; margin: 12px 0; }
+.tnews-f { display: grid; gap: 4px; font-size: .88rem; font-weight: 700; color: #111; }
+.tnews-f[hidden] { display: none; }
+.tnews-f--wide { grid-column: 1 / -1; }
+.tnews-f input, .tnews-f select, .tnews-f textarea { font: 400 .92rem system-ui, sans-serif; padding: 7px 9px; border: 1px solid #b9c4c3; border-radius: 6px; color: #111; }
+.tnews-f small { font-weight: 400; color: #111; }
+.tnews-thumb { display: block; max-width: 260px; max-height: 150px; border-radius: 6px; margin: 0 0 10px; object-fit: cover; }
+.tnews-acts { display: flex; gap: 10px; }
+.tnews-approve { background: #087c89 !important; color: #fff !important; border-color: #087c89 !important; }

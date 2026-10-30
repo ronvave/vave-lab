@@ -162,7 +162,7 @@ function doGet(e) {
   try {
     var params = (e && e.parameter) || {};
     var action = params.action || 'ping';
-    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true, positionDisplay:true});
+    if (action === 'submissionCapabilities') return jsonOut_({status:'ok', retired:true, country:'Tonga', version:TONGA_SUBMISSIONS_VERSION, publicSubmissionsEnabled:tongaPublicEnabled_(), preferredNames:true, positionDisplay:true, newsSubmissions:true});
     if (params.idToken || !tongaAuthorize_(params, action)) return jsonOut_({ status: 'unauthorized' }, 401);
     return tongaReadAction_(params);
   } catch (err) {
@@ -184,6 +184,8 @@ function tongaReadAction_(params) {
     if (action === 'readScholarProfileSubmissions') return handleReadScholarProfileSubmissions_(params);
     if (action === 'readScholarSubmissionAttachment') return handleReadScholarSubmissionAttachment_(params);
     if (action === 'readPublicationGeographySubmissions') return handleReadPublicationGeographySubmissions_(params);
+    if (action === 'readNewsSubmissions') return tongaNewsRead_(params);
+    if (action === 'previewNewsLink') return tongaNewsPreview_(params);
     if (action === 'readScholar') {
       return handleReadScholar_(params);
     }
@@ -346,6 +348,10 @@ function doPost(e) {
   }
   try {
     var requested = body.action || 'write';
+    if (requested === 'submitNewsStory') {
+      if (!tongaPublicEnabled_()) return jsonOut_({status:'disabled',reason:'TONGA_PUBLIC_SUBMISSIONS_ENABLED is not true'});
+      return tongaNewsSubmit_(body);
+    }
     if (requested === 'submitScholarProfileUpdate' || requested === 'submitPublicationGeography') {
       if (!tongaPublicEnabled_()) return jsonOut_({status:'disabled',reason:'TONGA_PUBLIC_SUBMISSIONS_ENABLED is not true'});
       return requested === 'submitScholarProfileUpdate' ? handlePublicScholarProfileSubmission_(body) : handlePublicPublicationGeographySubmission_(body);
@@ -371,6 +377,7 @@ function doPost(e) {
     if (action === 'approveScholarProfileSubmission') return tongaApproveScholar_(body);
     if (action === 'resolveScholarProfileSubmission') return tongaResolveScholar_(body);
     if (action === 'resolvePublicationGeographySubmission') return handleResolvePublicationGeographySubmission_(body);
+    if (action === 'resolveNewsSubmission') return tongaNewsResolve_(body);
     if (action === 'write') return handleWrite_(body);
     if (action === 'ping')  return jsonOut_({ status: 'ok', pong: true, writeEnabled: true });
     return jsonOut_({ status: 'bad_request', reason: 'unknown-action' }, 400);
@@ -1022,7 +1029,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.4';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.5';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1430,8 +1437,8 @@ function backupTongaReviewDataV2(){
 // The existing secret remains an Owner-only recovery path. Never share it.
 var TONGA_REQUEST_ROLE = 'owner';
 var TONGA_AUTH_ERROR='';
-var TONGA_READ_ACTIONS = ['readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
-var TONGA_REVIEW_ACTIONS = ['readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','finishScholarSubmission','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
+var TONGA_READ_ACTIONS = ['readNewsSubmissions','previewNewsLink','readAttachmentAnalysis','reviewQueueCounts','reviewCapabilities','ping','describe','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','readScholar','readRows','readChangeLog'];
+var TONGA_REVIEW_ACTIONS = ['readNewsSubmissions','previewNewsLink','resolveNewsSubmission','readChangeLog','refreshAttachmentProposals','readAttachmentAnalysis','analyseScholarAttachment','editAttachmentProposal','approveAttachmentProposals','reviewScholarSelection','reviewQueueCounts','reviewCapabilities','readScholarProfileSubmissions','readScholarSubmissionAttachment','readPublicationGeographySubmissions','beginScholarReview','recordScholarAttachmentReview','finishScholarReview','closeScholarReviewItems','finishScholarSubmission','approveScholarProfileSubmission','resolveScholarProfileSubmission','resolvePublicationGeographySubmission','seedFormProposals','crossrefAttachmentProposal'];
 function tongaAuthorize_(payload, action) {
   TONGA_REQUEST_ROLE=''; ACTOR_LABEL='';TONGA_AUTH_ERROR='';
   // Never accept a caller's claimed email, role or actor. Never fall back to the
@@ -1522,7 +1529,7 @@ function inspectTongaReviewAccess(){
 }
 function tongaQueueCounts_(){
  var ss=geoSs_(),out={status:'ok'};
- [['scholar',ensureScholarSubmissionSheet_(ss)],['geography',tongaEnsureGeoQueue_(ss)]].forEach(function(pair){var sh=pair[1],last=sh.getLastRow();out[pair[0]]=last<5?0:sh.getRange(5,3,last-4,1).getDisplayValues().filter(function(r){return r[0]==='Pending';}).length;});
+ [['scholar',ensureScholarSubmissionSheet_(ss)],['geography',tongaEnsureGeoQueue_(ss)],['news',tongaNewsQueue_(ss)]].forEach(function(pair){var sh=pair[1],last=sh.getLastRow();out[pair[0]]=last<5?0:sh.getRange(5,3,last-4,1).getDisplayValues().filter(function(r){return r[0]==='Pending';}).length;});
  return jsonOut_(out);
 }
 function tongaReviewSelection_(body){
@@ -1559,3 +1566,186 @@ Object.keys(aliases).forEach(function(a){byName[norm(a)]=byName[norm(aliases[a])
 return {rows:rows,resolve:function(v){return byName[norm(v)]||null;},suggest:function(v){var q=norm(v);return rows.filter(function(r){return norm(r.name).indexOf(q)>=0||Object.keys(aliases).some(function(a){return aliases[a]===r.name&&norm(a).indexOf(q)>=0;});});}};
 })();
 if(typeof module!=='undefined')module.exports=TongaCountries;
+
+// ------------------------- NEWS STORY SUBMISSIONS (v5.5) --------------------
+/* Panel A4 "Share a story" form. Anyone may send a link to a news story,
+ * thesis defense, webinar or event about a Tongan scholar. Links wait in the
+ * "News Submissions" queue; an Owner or Admin completes the details and
+ * approves, which appends one row to the News tab with Show on Dashboard = Yes.
+ * Nothing reaches the dashboard without that review. Guards: honeypot field,
+ * minimum fill time, per-email and daily limits, blocklist, duplicate links. */
+var NEWS_SHEET = 'News';
+var NEWS_QUEUE_SHEET = 'News Submissions';
+var NEWS_QUEUE_HEADERS = ['Submission ID','Submitted At','Status','Article URL','Announcement Type','Scholar(s) Named','Submitter Name','Submitter Email','Submitter Note','Reviewed By','Reviewed At','Decision Notes','News ID'];
+var NEWS_TYPES = ['News','Defense','Webinar','Event'];
+var NEWS_CATEGORIES = ['Award','Appointment','Graduation','Milestone','Publication','Research'];
+var NEWS_EMAIL_DAILY_LIMIT = 5;
+var NEWS_GLOBAL_DAILY_LIMIT = 40;
+
+function tongaNewsQueue_(ss) {
+  var sh = ss.getSheetByName(NEWS_QUEUE_SHEET);
+  if (!sh) {
+    sh = ss.insertSheet(NEWS_QUEUE_SHEET);
+    sh.getRange(1,1).setValue('News story links sent from Panel A4 "Share a story". Review in Admin (News Story Submissions). Approved links are added to the News tab.');
+  }
+  if (sh.getMaxColumns() < NEWS_QUEUE_HEADERS.length) sh.insertColumnsAfter(sh.getMaxColumns(), NEWS_QUEUE_HEADERS.length - sh.getMaxColumns());
+  var cur = sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).getDisplayValues()[0];
+  if (cur.some(function(x){return !!x;}) && cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) throw new Error('News Submissions headers differ');
+  if (cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) { sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).setValues([NEWS_QUEUE_HEADERS]); sh.setFrozenRows(4); }
+  return sh;
+}
+function tongaNewsUrl_(v) {
+  var s = String(v || '').trim();
+  if (s.length > 700 || !/^https?:\/\/[^\s\/$.?#][^\s]*$/i.test(s)) return '';
+  return s;
+}
+function tongaNewsKey_(u) { return String(u||'').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/,'').replace(/[#?].*$/,'').replace(/\/+$/,''); }
+function tongaNewsKnownUrls_(ss) {
+  var keys = {};
+  [[NEWS_SHEET,'Article URL'],[NEWS_QUEUE_SHEET,'Article URL']].forEach(function(p){
+    var sh = ss.getSheetByName(p[0]); if (!sh || sh.getLastRow() < 5) return;
+    var h = sh.getRange(4,1,1,sh.getLastColumn()).getDisplayValues()[0], c = h.indexOf(p[1]); if (c < 0) return;
+    var st = h.indexOf('Status');
+    sh.getRange(5,1,sh.getLastRow()-4,sh.getLastColumn()).getDisplayValues().forEach(function(r){
+      if (r[c] && !(st >= 0 && r[st] === 'Rejected')) keys[tongaNewsKey_(r[c])] = true;
+    });
+  });
+  return keys;
+}
+function tongaNewsSubmit_(body) {
+  // Bots fill the hidden "website" field or post instantly; accept silently, store nothing.
+  if (String(body.website || '').trim() || Number(body.elapsedMs || 0) < 3000) return jsonOut_({status:'ok', queued:1});
+  var url = tongaNewsUrl_(body.articleUrl);
+  var type = NEWS_TYPES.indexOf(String(body.type || 'News')) >= 0 ? String(body.type || 'News') : 'News';
+  var name = String(body.submitterName || '').trim(), email = normalizedSubmitterEmail_(body.submitterEmail);
+  if (!url) return jsonOut_({status:'bad_request', reason:'A full web link starting with https:// is required.'}, 400);
+  if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({status:'bad_request', reason:'Your name and a valid email are required.'}, 400);
+  var ss = geoSs_();
+  if (isScholarSubmitterBlocked_(ss, email)) return jsonOut_({status:'forbidden', reason:'Submissions from this email are blocked.'}, 403);
+  var cache = CacheService.getScriptCache(), day = Utilities.formatDate(new Date(), TIMEZONE, 'yyyyMMdd');
+  var ek = 'tnews-e-' + day + '-' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email)).slice(0,22), gk = 'tnews-g-' + day;
+  var en = Number(cache.get(ek) || 0), gn = Number(cache.get(gk) || 0);
+  if (en >= NEWS_EMAIL_DAILY_LIMIT || gn >= NEWS_GLOBAL_DAILY_LIMIT) return jsonOut_({status:'rate_limited', reason:'Thank you. We have received many links today; please try again tomorrow.'}, 429);
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try {
+    var sh = tongaNewsQueue_(ss);
+    if (tongaNewsKnownUrls_(ss)[tongaNewsKey_(url)]) return jsonOut_({status:'ok', queued:0, duplicate:true});
+    var now = new Date(), id = 'NWS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,6);
+    var row = [id, Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss'), 'Pending', url, type,
+      String(body.scholars || '').trim().slice(0,300), name.slice(0,160), email.slice(0,240), String(body.note || '').trim().slice(0,800)];
+    sh.getRange(Math.max(sh.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(tongaLiteral_)]);
+    cache.put(ek, String(en+1), 21600); cache.put(gk, String(gn+1), 21600);
+    return jsonOut_({status:'ok', queued:1, submissionId:id});
+  } finally { lock.releaseLock(); }
+}
+function tongaNewsRows_(ss) {
+  var sh = tongaNewsQueue_(ss), last = sh.getLastRow();
+  if (last < 5) return [];
+  return sh.getRange(5,1,last-4,NEWS_QUEUE_HEADERS.length).getDisplayValues().map(function(r,i){
+    var o = {_row:i+5}; NEWS_QUEUE_HEADERS.forEach(function(h,j){ o[h] = r[j] || ''; }); return o;
+  }).filter(function(o){ return !!o['Submission ID']; });
+}
+function tongaNewsRead_(params) {
+  var ss = geoSs_(), want = String(params.status || '').trim();
+  var rows = tongaNewsRows_(ss).filter(function(o){ return !want || o.Status === want; });
+  rows.forEach(function(o){ delete o._row; });
+  rows.reverse();
+  return jsonOut_({status:'ok', rows:rows, types:NEWS_TYPES, categories:NEWS_CATEGORIES});
+}
+function tongaNewsScholars_(ss) {
+  var t = tongaTable_(ss, 'Scholars'), ci = t.headers.indexOf('Scholar ID'), ni = t.headers.indexOf('Scholar Name');
+  return t.rows.filter(function(r){ return r[ci]; }).map(function(r){ return {id:String(r[ci]).toUpperCase(), name:String(r[ni]||'')}; });
+}
+function tongaNewsFold_(s) { return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[‘’ʻʼ']/g,'').toLowerCase(); }
+function tongaNewsMeta_(html, keys) {
+  for (var i = 0; i < keys.length; i++) {
+    var k = keys[i].replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    var m = new RegExp('<meta[^>]+(?:property|name)=["\']' + k + '["\'][^>]*content=["\']([^"\']*)["\']','i').exec(html) ||
+            new RegExp('<meta[^>]+content=["\']([^"\']*)["\'][^>]*(?:property|name)=["\']' + k + '["\']','i').exec(html);
+    if (m && m[1]) return m[1].replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#0?39;/g,"'").replace(/\s+/g,' ').trim();
+  }
+  return '';
+}
+/* Reviewer helper: read the linked page's title, image, outlet and date and
+ * suggest matching scholars. Suggestions only; the reviewer confirms each field. */
+function tongaNewsPreview_(params) {
+  var url = tongaNewsUrl_(params.url); if (!url) return jsonOut_({status:'bad_request', reason:'invalid-url'}, 400);
+  var ss = geoSs_(), out = {status:'ok', url:url, headline:'', image:'', outlet:'', date:'', description:'', candidates:[]};
+  var text = String(params.scholars || '');
+  try {
+    var r = UrlFetchApp.fetch(url, {muteHttpExceptions:true, followRedirects:true, headers:{'User-Agent':'Mozilla/5.0 (compatible; VaveLab news review)'}});
+    if (r.getResponseCode() === 200) {
+      var html = r.getContentText().slice(0, 600000);
+      out.headline = tongaNewsMeta_(html, ['og:title','twitter:title']) || ((/<title[^>]*>([^<]*)<\/title>/i.exec(html)||[])[1]||'').trim();
+      out.image = tongaNewsMeta_(html, ['og:image','twitter:image']);
+      out.outlet = tongaNewsMeta_(html, ['og:site_name']);
+      out.description = tongaNewsMeta_(html, ['og:description','description']).slice(0,400);
+      var d = tongaNewsMeta_(html, ['article:published_time','datePublished','date','pubdate']) || ((/"datePublished"\s*:\s*"([^"]+)"/.exec(html)||[])[1]||'');
+      var dm = /(\d{4})-(\d{2})-(\d{2})/.exec(d); out.date = dm ? dm[0] : '';
+      text += ' ' + out.headline + ' ' + out.description + ' ' + html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<[^>]+>/g,' ').slice(0, 60000);
+    } else out.fetchNote = 'The page returned HTTP ' + r.getResponseCode() + '; enter the details by hand.';
+  } catch (e) { out.fetchNote = 'The page could not be read; enter the details by hand.'; }
+  if (out.image && !/^https?:\/\//i.test(out.image)) { try { out.image = url.replace(/^(https?:\/\/[^\/]+).*$/,'$1') + (out.image.charAt(0)==='/'?'':'/') + out.image; } catch (_) { out.image = ''; } }
+  var hay = tongaNewsFold_(text);
+  tongaNewsScholars_(ss).forEach(function(s){
+    var parts = tongaNewsFold_(s.name).replace(/^(dr|rev|prof|professor|mr|mrs|ms)\.?\s+/,'').split(/\s+/).filter(function(w){ return w.length > 2; });
+    if (parts.length < 2) return;
+    var family = parts[parts.length-1], given = parts[0];
+    if (hay.indexOf(given + ' ' + family) >= 0 || (hay.indexOf(family) >= 0 && hay.indexOf(given) >= 0 && hay.indexOf(family) - hay.indexOf(given) < 60 && hay.indexOf(family) > hay.indexOf(given)))
+      out.candidates.push(s);
+  });
+  out.candidates = out.candidates.slice(0, 8);
+  return jsonOut_(out);
+}
+function tongaNewsNextId_(sh, idCol) {
+  var max = 0, last = sh.getLastRow();
+  if (last >= 5) sh.getRange(5, idCol+1, last-4, 1).getDisplayValues().forEach(function(r){ var m = /^TNG-NEWS(\d+)$/.exec(r[0]); if (m) max = Math.max(max, +m[1]); });
+  return 'TNG-NEWS' + ('000' + (max+1)).slice(-4);
+}
+function tongaNewsResolve_(body) {
+  var id = String(body.submissionId || ''), decision = String(body.decision || '');
+  if (['approve','reject'].indexOf(decision) < 0) return jsonOut_({status:'bad_request', reason:'decision must be approve or reject'}, 400);
+  var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
+  try {
+    TONGA_READ_TABLES = {};
+    var ss = geoSs_(), qs = tongaNewsQueue_(ss), o = tongaNewsRows_(ss).filter(function(x){ return x['Submission ID'] === id; })[0];
+    if (!o) return jsonOut_({status:'bad_request', reason:'Submission not found'}, 404);
+    if (o.Status !== 'Pending') return jsonOut_({status:'already_resolved', row:o});
+    var note = String(body.reviewNotes || '').slice(0, 1500), when = tongaNowStamp_(), newsId = '';
+    if (decision === 'approve') {
+      var f = body.story || {};
+      var sid = String(f.scholarId || '').trim().toUpperCase(), scholar = tongaNewsScholars_(ss).filter(function(s){ return s.id === sid; })[0];
+      if (!scholar) return jsonOut_({status:'bad_request', reason:'Choose a scholar from the database (Scholar ID ' + (sid || 'missing') + ' not found).'}, 400);
+      var type = NEWS_TYPES.indexOf(String(f.type)) >= 0 ? String(f.type) : 'News';
+      var cat = type === 'News' ? (NEWS_CATEGORIES.indexOf(String(f.category)) >= 0 ? String(f.category) : '') : '';
+      var head = String(f.headline || '').trim().slice(0, 300), date = String(f.date || '').trim();
+      var url = tongaNewsUrl_(f.articleUrl || o['Article URL']), img = String(f.imageUrl || '').trim() ? tongaNewsUrl_(f.imageUrl) : '';
+      if (!head) return jsonOut_({status:'bad_request', reason:'Headline is required.'}, 400);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return jsonOut_({status:'bad_request', reason:'Date must be YYYY-MM-DD.'}, 400);
+      if (!url) return jsonOut_({status:'bad_request', reason:'Article link is not a valid web address.'}, 400);
+      if (type === 'News' && !cat) return jsonOut_({status:'bad_request', reason:'Choose a category for a news story.'}, 400);
+      if (String(f.imageUrl || '').trim() && !img) return jsonOut_({status:'bad_request', reason:'Image link is not a valid web address.'}, 400);
+      var ns = ss.getSheetByName(NEWS_SHEET); if (!ns) return jsonOut_({status:'error', error:'News worksheet missing'}, 500);
+      var h = ns.getRange(4,1,1,ns.getLastColumn()).getDisplayValues()[0];
+      if (h.indexOf('News ID') < 0 || h.indexOf('Article URL') < 0) return jsonOut_({status:'error', error:'News headers missing'}, 500);
+      newsId = tongaNewsNextId_(ns, h.indexOf('News ID'));
+      var who = ACTOR_LABEL.split(' (')[0];
+      var vals = {'News ID':newsId,'Scholar ID':sid,'Scholar Display Name':String(f.displayName || '').trim().slice(0,160) || scholar.name,
+        'Category':cat,'Headline':head,'Outlet':String(f.outlet || '').trim().slice(0,160),'Publication Date':date,'Article URL':url,
+        'Image URL':img,'Image Credit':String(f.imageCredit || '').trim().slice(0,200),'Summary':String(f.summary || '').trim().slice(0,600),
+        'Also Covered By':String(f.also || '').trim().slice(0,300),'Show on Dashboard':'Yes','Added By':who,'Added On':when.slice(0,10),
+        'Notes':('From ' + id + ', sent by ' + o['Submitter Name'] + (o['Submitter Note'] ? ': ' + o['Submitter Note'] : '') + (note ? ' | Review: ' + note : '')).slice(0,1500),
+        'Announcement Type':type,'Event Time':type === 'News' ? '' : String(f.eventTime || '').trim().slice(0,120),'Event Location':type === 'News' ? '' : String(f.eventLocation || '').trim().slice(0,200)};
+      if (type !== 'News' && h.indexOf('Announcement Type') < 0) return jsonOut_({status:'error', error:'Add the Announcement Type column to the News tab first.'}, 500);
+      var row = h.map(function(name){ return Object.prototype.hasOwnProperty.call(vals, name) ? vals[name] : ''; });
+      ns.getRange(Math.max(ns.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(tongaLiteral_)]);
+      appendChangeLog_(ss, NEWS_SHEET, sid, 'News ID', '', newsId + ' · ' + type + ' · ' + head);
+    }
+    var base = o._row, c = NEWS_QUEUE_HEADERS.indexOf('Status') + 1;
+    qs.getRange(base, c).setValue(decision === 'approve' ? 'Approved' : 'Rejected');
+    qs.getRange(base, NEWS_QUEUE_HEADERS.indexOf('Reviewed By') + 1, 1, 4).setValues([[ACTOR_LABEL, when, note, newsId]].map(function(r){ return r.map(tongaLiteral_); }));
+    o.Status = decision === 'approve' ? 'Approved' : 'Rejected'; o['Reviewed By'] = ACTOR_LABEL; o['Reviewed At'] = when; o['Decision Notes'] = note; o['News ID'] = newsId; delete o._row;
+    return jsonOut_({status:'ok', row:o, newsId:newsId});
+  } finally { lock.releaseLock(); }
+}
+function tongaNowStamp_() { return Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd HH:mm:ss'); }
