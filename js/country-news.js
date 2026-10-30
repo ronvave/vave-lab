@@ -20,6 +20,7 @@
   var SRC = (me && me.dataset.src) || '';
   var SUBMIT = (me && me.dataset.submit) || '';   // review-queue endpoint for "Share a story"
   var PEOPLE = (me && me.dataset.people) || 'our';
+  var PLACE = (me && me.dataset.place) || 'the country';
   if (!SRC) return;
   var ROTATE_MS = 8000;
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -54,7 +55,7 @@
     loading = gate.fetchJson(SRC).then(function (doc) {
       if (!doc || !Array.isArray(doc.items)) throw new Error('bad news snapshot');
       N = doc; bySid = {};
-      doc.items.forEach(function (it) { (bySid[it.sid] = bySid[it.sid] || []).push(it); });
+      doc.items.forEach(function (it) { if (it.sid) (bySid[it.sid] = bySid[it.sid] || []).push(it); });
       return N;
     }).catch(function (e) { loading = null; throw e; });
     return loading;
@@ -89,26 +90,37 @@
     { key: 'all', label: 'All' },
     { key: 'News', label: 'News' },
     { key: 'Defense', label: 'Defenses', empty: 'No thesis defenses posted yet.' },
-    { key: 'Webinar', label: 'Webinars', empty: 'No webinars posted yet.' },
-    { key: 'Event', label: 'Events', empty: 'No events posted yet.' }
+    { key: 'Thesis', label: 'New theses', empty: 'No new theses posted yet.', note: 'New theses by ' + PEOPLE + ' scholars or about ' + PLACE + '.' },
+    { key: 'Publication', label: 'New publications', empty: 'No new publications posted yet.', note: 'New publications by ' + PEOPLE + ' scholars or about ' + PLACE + '.' },
+    { key: 'Event', label: 'Events', empty: 'No events posted yet.', note: 'Events include webinars, talks, workshops, conferences and launches.' }
   ];
+  var LABEL = { Thesis: 'New thesis', Publication: 'New publication' };
+  var TIMED = { Defense: 1, Event: 1 };
+  function label(it) { return LABEL[it.cat] || it.cat; }
   var A = { i: 0, timer: null, paused: false, root: null, type: 'all', list: [] };
 
-  function typeOf(it) { return it.type || 'News'; }
+  function typeOf(it) { var t = it.type || 'News'; return t === 'Webinar' ? 'Event' : t; }
   function today() {
     var d = new Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
   }
-  function isEvent(it) { return typeOf(it) !== 'News'; }
+  function isEvent(it) { return !!TIMED[typeOf(it)]; }
+  function goLabel(it) {
+    var t = typeOf(it);
+    if (TIMED[t]) return 'Event details';
+    if (t === 'Thesis') return 'View the thesis';
+    if (t === 'Publication') return 'View the publication';
+    return 'Read at ' + (it.outlet || 'source');
+  }
 
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
     var meta = ev ? [it.name, it.when || fmtDate(it.date), it.where] : [it.name, it.outlet, fmtDate(it.date)];
-    var go = ev ? 'Event details' : 'Read at ' + (it.outlet || 'source');
+    var go = goLabel(it);
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
       '<div class="nw__body">' +
-      '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(it.cat) + '</span>' +
+      '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
       '<div class="nw__meta">' + meta.filter(Boolean).map(esc).join(' · ') + '</div>' +
@@ -116,12 +128,13 @@
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
       '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(go) + '</a>' +
-      '<button type="button" class="nw__a" data-nw-open>Open scholar card</button>' +
+      (it.sid ? '<button type="button" class="nw__a" data-nw-open>Open scholar card</button>' : '') +
       '</div></div>';
   }
 
   function emptyFeature(t) {
     return '<div class="nw__empty"><p class="nw__empty-h">' + esc(t.empty || 'No stories yet.') + '</p>' +
+      (t.note ? '<p>' + esc(t.note) + '</p>' : '') +
       '<p>Know of one? Share the link and a collaborator will review it before it appears here.</p>' +
       '<button type="button" class="nw__a nw__a--p" data-nw-share>Share a story</button></div>';
   }
@@ -133,7 +146,8 @@
     var it = items[A.i];
     feat.classList.remove('is-empty');
     feat.innerHTML = feature(it);
-    feat.querySelector('[data-nw-open]').addEventListener('click', function () { openCard(it); });
+    var ob = feat.querySelector('[data-nw-open]');
+    if (ob) ob.addEventListener('click', function () { openCard(it); });
     root.querySelectorAll('.nw__li').forEach(function (b, k) {
       b.classList.toggle('is-on', k === A.i);
       b.setAttribute('aria-current', k === A.i ? 'true' : 'false');
@@ -151,7 +165,7 @@
   function listHtml(items) {
     return items.map(function (it, k) {
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
-        '<span class="nw__li-text"><span class="nw__lt">' + esc(it.name) + ' · ' + esc(it.cat) + '</span>' +
+        '<span class="nw__li-text"><span class="nw__lt">' + esc(it.name) + ' · ' + esc(label(it)) + '</span>' +
         '<span class="nw__ls">' + (isEvent(it) ? [it.when || fmtDate(it.date), it.where] : [it.outlet, fmtDate(it.date)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
     }).join('');
   }
@@ -205,7 +219,7 @@
       '<div class="nw__dots" aria-hidden="true"></div></div>' +
       '</div><div class="nw__list"><div class="nw__list-items"></div>' +
       '<p class="nw__foot">Every story is checked by a collaborator before it appears.' +
-      (SUBMIT ? ' Know of a news story, thesis defense, webinar or event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
+      (SUBMIT ? ' Know of a news story, thesis defense, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
       '</p></div></div>';
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
@@ -243,10 +257,10 @@
     d.innerHTML =
       '<form method="dialog" class="nw-form" novalidate>' +
       '<h2 id="nw-dlg-h">Share a story</h2>' +
-      '<p class="nw-form__intro">Send us a link to a news story, thesis defense, webinar or event about ' + esc(PEOPLE) + ' scholars. A collaborator checks each link before it appears in this panel.</p>' +
+      '<p class="nw-form__intro">Send us a link to a news story, thesis defense, new thesis, new publication or event. It should feature ' + esc(PEOPLE) + ' scholars, or for theses and publications, be by ' + esc(PEOPLE) + ' scholars or about ' + esc(PLACE) + '. A collaborator checks each link before it appears in this panel.</p>' +
       '<label><span>Link to the story or announcement <span class="nw-req">(required)</span></span><input name="articleUrl" type="url" required maxlength="700" placeholder="https://"></label>' +
-      '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Defense">Thesis defense</option><option value="Webinar">Webinar</option><option value="Event">Event</option></select></label>' +
-      '<label><span>Scholar(s) featured</span><input name="scholars" type="text" maxlength="300" placeholder="For example, Dr Suliana Mone"></label>' +
+      '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Defense">Thesis defense</option><option value="Thesis">New thesis</option><option value="Publication">New publication</option><option value="Event">Event (including webinars)</option></select></label>' +
+      '<label><span>Scholar(s) or author(s)</span><input name="scholars" type="text" maxlength="300" placeholder="For example, Dr Suliana Mone"></label>' +
       '<div class="nw-form__row"><label><span>Your name <span class="nw-req">(required)</span></span><input name="submitterName" type="text" required maxlength="160" autocomplete="name"></label>' +
       '<label><span>Your email <span class="nw-req">(required)</span></span><input name="submitterEmail" type="email" required maxlength="240" autocomplete="email"></label></div>' +
       '<label><span>Anything we should know?</span><textarea name="note" rows="3" maxlength="800" placeholder="Optional"></textarea></label>' +
@@ -308,9 +322,9 @@
   function cardHtml(sid, rows) {
     var id = 'cnews-' + sid.replace(/[^A-Za-z0-9_-]/g, '_');
     var items = rows.map(function (it) {
-      return '<li class="cnews-item"><span class="cnews-pill">' + esc(it.cat) + '</span>' +
+      return '<li class="cnews-item"><span class="cnews-pill">' + esc(label(it)) + '</span>' +
         '<div class="cnews-item__text"><a class="cnews-item__title" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.head) + '</a>' +
-        '<div class="cnews-item__sub">' + [it.outlet, fmtDate(it.date)].filter(Boolean).map(esc).join(' · ') + '</div></div></li>';
+        '<div class="cnews-item__sub">' + (isEvent(it) ? [it.when || fmtDate(it.date), it.where] : [it.outlet, fmtDate(it.date)]).filter(Boolean).map(esc).join(' · ') + '</div></div></li>';
     }).join('');
     return '<button type="button" class="db-scholar-card__insight-btn cnews-btn" aria-expanded="false" aria-controls="' + id + '">' +
       '<span class="db-scholar-card__insight-btn-label">In the news</span>' +

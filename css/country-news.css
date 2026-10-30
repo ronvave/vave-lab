@@ -92,7 +92,8 @@
 .nw__under .nw__dots { margin-top: 0; justify-content: flex-start; }
 .nw__chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .nw__chip--Defense { background: #ece4ff; border-color: #c2b0f2; }
-.nw__chip--Webinar { background: #dcefff; border-color: #9cc8ee; }
+.nw__chip--Thesis { background: #dcefff; border-color: #9cc8ee; }
+.nw__chip--Publication { background: #fde3ea; border-color: #eeb0c2; }
 .nw__chip--Event { background: #e2f4e4; border-color: #a5d6ab; }
 .nw__chip--soon { background: #111; border-color: #111; color: #fff; }
 .nw__feat.is-empty { display: block; min-height: 236px; background: rgba(255,255,255,.85); }

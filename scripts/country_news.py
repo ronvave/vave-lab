@@ -16,7 +16,13 @@ from datetime import datetime
 
 CATEGORIES = ["Award", "Appointment", "Graduation", "Milestone", "Publication", "Research"]
 # Panel A4 toggle groups. Rows without an Announcement Type are News.
-TYPES = ["News", "Defense", "Webinar", "Event"]
+TYPES = ["News", "Defense", "Thesis", "Publication", "Event"]
+# Older label kept readable: webinars are now listed under Events.
+TYPE_ALIASES = {"Webinar": "Event", "New Thesis": "Thesis", "New Publication": "Publication"}
+# New theses and publications may be about Tonga by an author outside the
+# database; those rows need a Scholar Display Name instead of a Scholar ID.
+OPEN_TYPES = ("Thesis", "Publication")
+TIMED_TYPES = ("Defense", "Event")
 
 
 def _s(v) -> str:
@@ -56,22 +62,28 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
         if not _yes(r.get("Show on Dashboard")):
             continue
         head, url, date = _s(r.get("Headline")), _url(r.get("Article URL")), _iso(r.get("Publication Date"))
-        if sid not in roster or not head or not url or not date:
-            skipped.append(nid or head[:40])
-            continue
         cat = _s(r.get("Category")).title()
         typ = _s(r.get("Announcement Type")).title() or "News"
+        typ = TYPE_ALIASES.get(typ, typ)
         if typ not in TYPES:
             typ = "News"
+        shown = _s(r.get("Scholar Display Name"))
+        on_roster = sid in roster
+        if not on_roster and not (typ in OPEN_TYPES and shown):
+            skipped.append(nid or head[:40])
+            continue
+        if not head or not url or not date:
+            skipped.append(nid or head[:40])
+            continue
         items.append({
             "id": nid,
-            "sid": sid,
-            "name": _s(r.get("Scholar Display Name")) or roster[sid],
-            "full": roster[sid],
+            "sid": sid if on_roster else "",
+            "name": shown or roster[sid],
+            "full": roster[sid] if on_roster else shown,
             "type": typ,
             "cat": (cat if cat in CATEGORIES else "Milestone") if typ == "News" else typ,
-            "when": _s(r.get("Event Time")) if typ != "News" else "",
-            "where": _s(r.get("Event Location")) if typ != "News" else "",
+            "when": _s(r.get("Event Time")) if typ in TIMED_TYPES else "",
+            "where": _s(r.get("Event Location")) if typ in TIMED_TYPES else "",
             "head": head,
             "outlet": _s(r.get("Outlet")),
             "date": date,

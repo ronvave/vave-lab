@@ -9,7 +9,9 @@
   var host = document.getElementById('news-queue');
   if (!host) return;
   var tab = document.querySelector('[data-tab="news-submissions"]');
-  var TYPES = [['News', 'News story'], ['Defense', 'Thesis defense'], ['Webinar', 'Webinar'], ['Event', 'Event']];
+  var TYPES = [['News', 'News story'], ['Defense', 'Thesis defense'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars)']];
+  var OPEN = { Thesis: 1, Publication: 1 }, TIMED = { Defense: 1, Event: 1 };
+  function typeKey(t) { return t === 'Webinar' ? 'Event' : (t || 'News'); }
   var CATS = ['Award', 'Appointment', 'Graduation', 'Milestone', 'Publication', 'Research'];
   var loaded = false, busy = false;
 
@@ -61,13 +63,13 @@
     var c = el('article', null, list, 'tnews-card');
     var head = el('div', null, c, 'tnews-head');
     el('span', row.Status, head, 'tonga-status-pill');
-    el('strong', (TYPES.filter(function (t) { return t[0] === row['Announcement Type']; })[0] || TYPES[0])[1], head);
+    el('strong', (TYPES.filter(function (t) { return t[0] === typeKey(row['Announcement Type']); })[0] || TYPES[0])[1], head);
     el('span', row['Submitted At'], head, 'meta');
     var u = safeUrl(row['Article URL']);
     var p = el('p', null, c, 'tnews-link');
     if (u) { var a = el('a', row['Article URL'], p); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; } else p.textContent = row['Article URL'];
     var dl = el('dl', null, c, 'tnews-dl');
-    [['Scholar(s) named', row['Scholar(s) Named'] || 'Not given'], ['Sent by', row['Submitter Name'] + ' · ' + row['Submitter Email']], ['Their note', row['Submitter Note'] || 'None']].forEach(function (kv) {
+    [['Scholar(s) or author(s)', row['Scholar(s) Named'] || 'Not given'], ['Sent by', row['Submitter Name'] + ' · ' + row['Submitter Email']], ['Their note', row['Submitter Note'] || 'None']].forEach(function (kv) {
       el('dt', kv[0], dl); el('dd', kv[1], dl);
     });
     if (row.Status !== 'Pending') {
@@ -80,10 +82,11 @@
     var grid = el('div', null, form, 'tnews-grid');
     var scholar = field(grid, 'Scholar', 'scholarSel', 'select', '', { options: [['', 'Choose after filling, or type an ID below']] });
     var sid = field(grid, 'Scholar ID', 'scholarId', 'text', '', { placeholder: 'TNG-S0000' });
-    var type = field(grid, 'Type', 'type', 'select', row['Announcement Type'] || 'News', { options: TYPES });
+    var type = field(grid, 'Type', 'type', 'select', typeKey(row['Announcement Type']), { options: TYPES });
+    var shown = field(grid, 'Name shown on the dashboard', 'displayName', 'text', '', { hint: 'Optional for database scholars. For a new thesis or publication about Tonga by someone outside the database, leave Scholar ID blank and enter the author name(s) here.' });
     var cat = field(grid, 'Category (news stories)', 'category', 'select', '', { options: [['', 'Choose']].concat(CATS.map(function (x) { return [x, x]; })) });
     var head2 = field(grid, 'Headline', 'headline', 'text', '', { wide: true });
-    var outlet = field(grid, 'Outlet', 'outlet', 'text', '');
+    var outlet = field(grid, 'Outlet (or university, journal or publisher)', 'outlet', 'text', '');
     var date = field(grid, 'Date (story date, or the event date)', 'date', 'date', '');
     var when = field(grid, 'Event time (shown as written)', 'eventTime', 'text', '', { placeholder: '20 Nov 2026, 12:00 pm NZDT' });
     var where = field(grid, 'Event location', 'eventLocation', 'text', '', { placeholder: 'Zoom, or a venue' });
@@ -94,9 +97,10 @@
     var notes = field(grid, 'Review note (private)', 'notes', 'text', '', { wide: true });
     var thumb = el('img', null, form, 'tnews-thumb'); thumb.alt = ''; thumb.hidden = true;
     function sync() {
-      var news = type.value === 'News';
+      var news = type.value === 'News', timed = !!TIMED[type.value];
       cat.closest('label').hidden = !news;
-      when.closest('label').hidden = news; where.closest('label').hidden = news;
+      when.closest('label').hidden = !timed; where.closest('label').hidden = !timed;
+      sid.placeholder = OPEN[type.value] ? 'TNG-S0000, or blank if the author is not in the database' : 'TNG-S0000';
     }
     type.addEventListener('change', sync); sync();
     scholar.addEventListener('change', function () { if (scholar.value) sid.value = scholar.value; });
@@ -123,16 +127,16 @@
     function decide(decision) {
       if (busy) return;
       var story = {
-        scholarId: sid.value.trim(), type: type.value, category: cat.value, headline: head2.value.trim(), outlet: outlet.value.trim(),
+        scholarId: sid.value.trim(), displayName: shown.value.trim(), type: type.value, category: cat.value, headline: head2.value.trim(), outlet: outlet.value.trim(),
         date: date.value, eventTime: when.value.trim(), eventLocation: where.value.trim(), imageUrl: img.value.trim(),
         imageCredit: credit.value.trim(), also: also.value.trim(), summary: sum.value.trim(), articleUrl: row['Article URL']
       };
       if (decision === 'approve') {
         var miss = [];
-        if (!story.scholarId) miss.push('scholar'); if (!story.headline) miss.push('headline'); if (!story.date) miss.push('date');
+        if (!story.scholarId && !(OPEN[story.type] && story.displayName)) miss.push(OPEN[story.type] ? 'scholar, or the author name(s)' : 'scholar'); if (!story.headline) miss.push('headline'); if (!story.date) miss.push('date');
         if (story.type === 'News' && !story.category) miss.push('category');
         if (miss.length) { msg.textContent = 'Add the ' + miss.join(', ') + ' first.'; msg.classList.add('tonga-error'); return; }
-        if (!window.confirm('Add this ' + (story.type === 'News' ? 'story' : story.type.toLowerCase()) + ' to the News tab with Show on Dashboard = Yes?')) return;
+        if (!window.confirm('Add this ' + (TYPES.filter(function (t) { return t[0] === story.type; })[0] || TYPES[0])[1].toLowerCase() + ' to the News tab with Show on Dashboard = Yes?')) return;
       } else if (!window.confirm('Reject this link? It will not appear on the dashboard.')) return;
       busy = true; approve.disabled = reject.disabled = true; msg.className = 'tonga-queue-status'; msg.textContent = 'Saving…';
       Promise.resolve().then(function () { return api().resolveNewsSubmission(row['Submission ID'], decision, story, notes.value.trim()); }).then(function (r) {
