@@ -123,3 +123,5 @@
 .nw__list-items { display: flex; flex-direction: column; gap: 8px; }
 .nw__list { max-height: none; }
 .nw__list-items { max-height: 300px; overflow-y: auto; }
+.nw__chip--sub { background: #fff; border-color: #c9c9c9; color: #111; }
+.nw__lpill { display: inline-block; margin-left: 6px; padding: 1px 8px; border: 1px solid #c9c9c9; border-radius: 999px; background: #fff; color: #111; font: 700 .68rem/1.5 Arial, Helvetica, sans-serif; letter-spacing: .04em; text-transform: uppercase; vertical-align: 1px; white-space: nowrap; }

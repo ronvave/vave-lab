@@ -6,7 +6,9 @@
  *      rotates every 8 seconds, beside a clickable list of stories;
  *   2. adds an "In the news" toggle to every Panel F scholar card that has
  *      published stories.
- * Stories are curated by hand in the Master's News tab. The panel stays
+ * Stories are curated by hand in the Master's News tab; recent theses and
+ * publications are added automatically from the Publications records
+ * (the All view shows only the newest few of those). The panel stays
  * hidden until the gate has unlocked at least one story.
  *
  * Configured from its own <script> tag:
@@ -36,9 +38,24 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
     return m ? (+m[3]) + ' ' + MONTHS[+m[2] - 1] + ' ' + m[1] : '';
   }
+  function dateLabel(it) { return it.dlabel || fmtDate(it.date); }
+  // Side list: first and last name of each person, e.g. "Suliana Mone".
+  function shortName(name) {
+    return String(name || '').split(/(, | and )/).map(function (part) {
+      if (part === ', ' || part === ' and ' || part === 'others') return part;
+      var w = part.replace(/\([^)]*\)/g, ' ').trim().split(/\s+/).filter(Boolean);
+      return w.length > 2 ? w[0] + ' ' + w[w.length - 1] : w.join(' ');
+    }).join('');
+  }
+  function inAll(it) { return !it.auto || it.inAll; }
   function initials(name) {
-    return String(name || '').replace(/^(Dr|Rev Dr|Rev|Prof|Professor|Mr|Mrs|Ms)\s+/i, '')
-      .split(/\s+/).filter(Boolean).slice(0, 2).map(function (w) { return w[0]; }).join('').toUpperCase();
+    // First and last name of the first person named, e.g. "SM" for
+    // "Suliana Alouaivaha Mone"; okina and apostrophes are skipped.
+    var w = String(name || '').split(/,| and /)[0].replace(/\([^)]*\)/g, ' ')
+      .replace(/^\s*(Dr|Rev Dr|Rev|Prof|Professor|Mr|Mrs|Ms)\s+/i, '')
+      .split(/\s+/).map(function (x) { return x.replace(/^[^A-Za-zÀ-ž]+/, ''); }).filter(Boolean);
+    if (w.length > 2) w = [w[0], w[w.length - 1]];
+    return w.map(function (x) { return x[0]; }).join('').toUpperCase();
   }
   // Outlet image when it loads; initials otherwise.
   function imgHtml(it, cls) {
@@ -55,7 +72,7 @@
     loading = gate.fetchJson(SRC).then(function (doc) {
       if (!doc || !Array.isArray(doc.items)) throw new Error('bad news snapshot');
       N = doc; bySid = {};
-      doc.items.forEach(function (it) { if (it.sid) (bySid[it.sid] = bySid[it.sid] || []).push(it); });
+      doc.items.forEach(function (it) { if (it.sid && !it.auto) (bySid[it.sid] = bySid[it.sid] || []).push(it); });
       return N;
     }).catch(function (e) { loading = null; throw e; });
     return loading;
@@ -90,8 +107,8 @@
     { key: 'all', label: 'All' },
     { key: 'News', label: 'News' },
     { key: 'Defense', label: 'Defenses', empty: 'No thesis defenses posted yet.' },
-    { key: 'Thesis', label: 'New theses', empty: 'No new theses posted yet.', note: 'New theses by ' + PEOPLE + ' scholars or about ' + PLACE + '.' },
-    { key: 'Publication', label: 'New publications', empty: 'No new publications posted yet.', note: 'New publications by ' + PEOPLE + ' scholars or about ' + PLACE + '.' },
+    { key: 'Thesis', label: 'New theses', empty: 'No new theses posted yet.', note: 'New theses by ' + PEOPLE + ' scholars or about ' + PLACE + '.', auto: 'Theses added to the Publications records appear here automatically.' },
+    { key: 'Publication', label: 'New publications', empty: 'No new publications posted yet.', note: 'New publications by ' + PEOPLE + ' scholars or about ' + PLACE + '.', auto: 'Publications by database scholars appear here automatically.' },
     { key: 'Event', label: 'Events', empty: 'No events posted yet.', note: 'Events include webinars, talks, workshops, conferences and launches.' }
   ];
   var LABEL = { Thesis: 'New thesis', Publication: 'New publication' };
@@ -116,12 +133,13 @@
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
-    var meta = ev ? [it.name, it.when || fmtDate(it.date), it.where] : [it.name, it.outlet, fmtDate(it.date)];
+    var meta = ev ? [it.name, it.when || dateLabel(it), it.where] : [it.name, it.outlet, dateLabel(it)];
     var go = goLabel(it);
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
       '<div class="nw__body">' +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
-      (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') + '</span>' +
+      (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
+      (it.sub ? '<span class="nw__chip nw__chip--sub">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
       '<div class="nw__meta">' + meta.filter(Boolean).map(esc).join(' · ') + '</div>' +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
@@ -135,6 +153,7 @@
   function emptyFeature(t) {
     return '<div class="nw__empty"><p class="nw__empty-h">' + esc(t.empty || 'No stories yet.') + '</p>' +
       (t.note ? '<p>' + esc(t.note) + '</p>' : '') +
+      (t.auto ? '<p>' + esc(t.auto) + '</p>' : '') +
       '<p>Know of one? Share the link and a collaborator will review it before it appears here.</p>' +
       '<button type="button" class="nw__a nw__a--p" data-nw-share>Share a story</button></div>';
   }
@@ -165,15 +184,17 @@
   function listHtml(items) {
     return items.map(function (it, k) {
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
-        '<span class="nw__li-text"><span class="nw__lt">' + esc(it.name) + ' · ' + esc(label(it)) + '</span>' +
-        '<span class="nw__ls">' + (isEvent(it) ? [it.when || fmtDate(it.date), it.where] : [it.outlet, fmtDate(it.date)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
+        '<span class="nw__li-text"><span class="nw__lt">' + (it.sub
+          ? esc(shortName(it.name)) + ' <span class="nw__lpill">' + esc(it.sub) + '</span>'
+          : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
+        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
     }).join('');
   }
 
   function setType(key) {
     var root = A.root, t = TYPES.filter(function (x) { return x.key === key; })[0] || TYPES[0];
     A.type = t.key;
-    A.list = t.key === 'all' ? N.items.slice() : N.items.filter(function (it) { return typeOf(it) === t.key; });
+    A.list = t.key === 'all' ? N.items.filter(inAll) : N.items.filter(function (it) { return typeOf(it) === t.key; });
     root.querySelectorAll('[data-nw-type]').forEach(function (b) {
       var on = b.dataset.nwType === t.key;
       b.classList.toggle('is-on', on);
@@ -184,7 +205,7 @@
     root.querySelectorAll('.nw__li').forEach(function (b) {
       b.addEventListener('click', function () { show(+b.dataset.k); schedule(); });
     });
-    root.querySelector('.nw__dots').innerHTML = many ? A.list.map(function () { return '<span class="nw__dot"></span>'; }).join('') : '';
+    root.querySelector('.nw__dots').innerHTML = many && A.list.length <= 15 ? A.list.map(function () { return '<span class="nw__dot"></span>'; }).join('') : '';
     root.querySelector('.nw__ctrls').hidden = !many;
     var feat = root.querySelector('.nw__feat');
     if (A.list.length) { show(0); }
@@ -207,7 +228,7 @@
     root.querySelector('[data-news-body]').innerHTML =
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
-        var n = t.key === 'all' ? N.items.length : (counts[t.key] || 0);
+        var n = t.key === 'all' ? N.items.filter(inAll).length : (counts[t.key] || 0);
         return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + esc(t.label) +
           '<span class="nw__n">' + n + '</span></button>';
       }).join('') + '</div>' + share + '</div>' +
@@ -218,7 +239,7 @@
       '<button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button></div>' +
       '<div class="nw__dots" aria-hidden="true"></div></div>' +
       '</div><div class="nw__list"><div class="nw__list-items"></div>' +
-      '<p class="nw__foot">Every story is checked by a collaborator before it appears.' +
+      '<p class="nw__foot">New theses and publications come from the database records. Shared stories are checked by a collaborator before they appear.' +
       (SUBMIT ? ' Know of a news story, thesis defense, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
       '</p></div></div>';
     var ctrls = root.querySelector('.nw__ctrls');
@@ -324,7 +345,7 @@
     var items = rows.map(function (it) {
       return '<li class="cnews-item"><span class="cnews-pill">' + esc(label(it)) + '</span>' +
         '<div class="cnews-item__text"><a class="cnews-item__title" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(it.head) + '</a>' +
-        '<div class="cnews-item__sub">' + (isEvent(it) ? [it.when || fmtDate(it.date), it.where] : [it.outlet, fmtDate(it.date)]).filter(Boolean).map(esc).join(' · ') + '</div></div></li>';
+        '<div class="cnews-item__sub">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</div></div></li>';
     }).join('');
     return '<button type="button" class="db-scholar-card__insight-btn cnews-btn" aria-expanded="false" aria-controls="' + id + '">' +
       '<span class="db-scholar-card__insight-btn-label">In the news</span>' +
