@@ -3,11 +3,11 @@
   'use strict';
   if (window.self !== window.top || new URLSearchParams(location.search).has('p') || new URLSearchParams(location.search).has('share')) return;
   const groups = {
-    A: [['A1','Database overview'],['A2','Tongan scholarship'],['A3','About & methodology']],
+    A: [['A1','Database overview'],['A2','Tongan scholarship'],['A3','Celebrating Tongan scholars']],
     B: [['B1','Research across Tonga'],['B2','Where scholars studied'],['B3','Master’s–PhD pathways'],['B4','Graduate research disciplines'],['B5','Research around the world']],
     C: [['C1','Publications by gender'],['C2','Research by study district'],['C3','Research by scholar’s home district']],
     D: [['D','Publications over time']], E: [['E','Rankings by islands']],
-    F: [['F','Scholar profiles']], G: [['G','Browse publications']]
+    F: [['F','Scholar profiles']], G: [['G','Browse publications']], H: [['H','About & methodology']]
   };
   const targets = new Map();
   document.querySelectorAll('.db-panel__label').forEach(label => {
@@ -75,7 +75,7 @@
     entries = entries.filter(([code]) => targets.has(code)); if (!entries.length) return;
     let pill;
     if (entries.length === 1) {
-      pill = link(entries[0][0], ({D:'Timeline',E:'Islands',F:'Profiles',G:'Publications'})[group] || 'Panel ' + group); pill.title = entries[0][1];
+      pill = link(entries[0][0], ({D:'Timeline',E:'Islands',F:'Profiles',G:'Publications',H:'About'})[group] || 'Panel ' + group); pill.title = entries[0][1];
       pill.setAttribute('aria-label','Panel ' + group + ': ' + entries[0][1]);
     } else {
       pill = document.createElement('button'); pill.type = 'button'; pill.textContent = 'Panel ' + group + ' ▾';

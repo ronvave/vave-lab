@@ -134,7 +134,7 @@
     closeScholarReviewItems: function (submissionId, items, note, reviewNotes) { return reviewPost({action:'closeScholarReviewItems',submissionId:submissionId,items:items,note:note,reviewNotes:reviewNotes}); },
     banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
     readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
-    // News Story Submissions (Panel A4 "Share a story" links).
+    // News Story Submissions (Panel A3 "Share a story" links).
     readNewsSubmissions: function (status) { return callGetWithParams('readNewsSubmissions', {status: status || ''}); },
     previewNewsLink: function (url, scholars) { return callPost({action:'previewNewsLink', url:url, scholars:scholars}); },
     resolveNewsSubmission: function (submissionId, decision, story, reviewNotes) { return reviewPost({action:'resolveNewsSubmission', submissionId:submissionId, decision:decision, story:story, reviewNotes:reviewNotes}); },

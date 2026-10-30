@@ -1,5 +1,5 @@
 /* Tonga Admin: "News Story Submissions" queue.
- * Links sent from dashboard Panel A4 ("Share a story") wait here. An Owner or
+ * Links sent from dashboard Panel A3 ("Share a story") wait here. An Owner or
  * Admin opens the link, completes the story details and approves; the backend
  * then appends one row to the Master's News tab with Show on Dashboard = Yes.
  * Rejecting keeps the link out of the panel. Calls go through the signed-in

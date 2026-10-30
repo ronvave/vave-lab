@@ -1,8 +1,8 @@
-/* Panel A4 "Celebrating <people> scholars" + scholar-card "In the news".
+/* Panel A3 "Celebrating <people> scholars" + scholar-card "In the news".
  *
  * Reads the encrypted News snapshot written by the Master-file refresh
  * (scripts/country_news.py) through the page's passcode gate, then:
- *   1. fills the A4 panel ([data-news-panel]) with a featured story that
+ *   1. fills the A3 panel ([data-news-panel]) with a featured story that
  *      rotates every 8 seconds, beside a clickable list of stories;
  *   2. adds an "In the news" toggle to every Panel F scholar card that has
  *      published stories.
@@ -139,7 +139,7 @@
     }
   }
 
-  // ------------------------------------------------------------ A4 panel
+  // ------------------------------------------------------------ A3 panel
   // Toggle groups. "All" plus one button per announcement type; a type with
   // no stories yet still shows, with an invitation to share one.
   var TYPES = [
