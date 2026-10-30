@@ -2,7 +2,6 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Tongan Scholar Submission Review</title>
 <link rel="stylesheet" href="css/tongan-submissions.css?v=944235a6">
 <link rel="stylesheet" href="css/tongan-change-log.css?v=5154c1cc">
-<link rel="stylesheet" href="css/tongan-news-admin.css?v=9741d72d">
 <style>
 :root{--teal-dark:#06343a;--teal:#087c89;--muted:#657780;--border:#ddd;--danger:#b42318}*{box-sizing:border-box}body{margin:0;background:#f8f6ef;color:var(--teal-dark);font:16px/1.5 system-ui,sans-serif}header{background:var(--teal-dark);color:white;padding:18px 5%;display:flex;justify-content:space-between;gap:20px;align-items:center}h1{font-size:1.3rem;margin:0}main{max-width:1240px;margin:28px auto;padding:0 20px}section{background:white;border:1px solid var(--border);border-radius:10px;padding:22px;margin-bottom:20px}button,select,input,textarea{font:inherit}button{cursor:pointer;padding:8px 14px;border:1px solid #aaa;border-radius:5px;background:white;color:var(--teal-dark)}button:disabled{cursor:default;opacity:.6}nav{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}nav button[aria-selected=true]{border-bottom:3px solid var(--teal);font-weight:bold}a{color:var(--teal)}header a{color:white}.meta{font-size:.9rem;color:var(--muted)}[hidden]{display:none!important}#sign-in{max-width:560px;margin:60px auto}#auth-message{min-height:2em}#identity{font-size:.85rem}#owner-link{display:inline-block;margin-top:15px}#logout{white-space:nowrap}
 </style>
@@ -12,15 +11,14 @@
 <script src="js/tongan-attachment-review.js?v=ae619b49" defer></script>
 <script src="js/tongan-change-log.js?v=fb8ad602" defer></script>
 <script src="js/tongan-review-change-log.js?v=f66494ae" defer></script>
-<script src="js/tongan-news-admin.js?v=5c9163a5" defer></script>
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-ton-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicons/flag-ton-64.png">
 </head><body>
 <header><h1>Tongan Scholar Submission Review</h1><div><span id="identity"></span> <button id="logout" hidden>Log out</button></div></header>
 <main><section id="sign-in"><h2>Admin sign-in</h2><p>Use your authorized Google account to review scholar updates and publication geography suggestions.</p><div id="google-button"></div><p id="auth-message" role="status">Loading Google sign-in…</p><a href="admin-tongan-master.html">Owner panel</a></section>
-<div id="review-app" hidden><p id="review-notice" class="meta">Approved Master changes appear after the next scheduled dashboard refresh. Submitted profile photos remain pending for the Owner to publish.</p><nav aria-label="Submission queues"><button data-tab="scholar-submissions" aria-selected="true">Scholar Update Submissions</button><button data-tab="geography-submissions" aria-selected="false">Publication Geography Submissions</button><button data-tab="news-submissions" aria-selected="false">News Story Submissions</button><button data-tab="tab-changelog" aria-selected="false">Master change log</button></nav>
+<div id="review-app" hidden><p id="review-notice" class="meta">Approved Master changes appear after the next scheduled dashboard refresh. Submitted profile photos remain pending for the Owner to publish.</p><nav aria-label="Submission queues"><button data-tab="scholar-submissions" aria-selected="true">Scholar Update Submissions</button><button data-tab="geography-submissions" aria-selected="false">Publication Geography Submissions</button><button data-tab="tab-changelog" aria-selected="false">Master change log</button></nav>
 <section id="scholar-submissions"><h2>Scholar Update Submissions</h2><div data-tonga-queue="scholar"></div></section>
 <section id="geography-submissions" hidden><h2>Publication Geography Submissions</h2><div data-tonga-queue="geography"></div></section>
-<section id="news-submissions" hidden><h2>News Story Submissions</h2><p class="meta">Links sent from the dashboard's "Share a story" button (Panel A4). Approving adds the story to the Master News tab with Show on Dashboard = Yes; it appears after the next Tonga refresh.</p><div id="news-queue"></div></section><section id="tab-changelog" hidden><h2>Master change log</h2><p class="meta">Read-only history of recorded edits and review decisions.</p><button id="review-log-refresh">Refresh log</button><p id="review-log-status" role="status">Open this tab to load the change log.</p><div id="review-log-entries"></div></section>
+<section id="tab-changelog" hidden><h2>Master change log</h2><p class="meta">Read-only history of recorded edits and review decisions.</p><button id="review-log-refresh">Refresh log</button><p id="review-log-status" role="status">Open this tab to load the change log.</p><div id="review-log-entries"></div></section>
 <a id="owner-link" href="admin-tongan-master.html" hidden>Open Owner panel for photos and database settings</a>
 <span id="db-status" hidden>signed out</span></div></main></body></html>

@@ -46,7 +46,7 @@
 
   // Read-only actions are safe to repeat. Google's result hand-off (script.googleusercontent.com)
   // occasionally answers 404 even though the script ran; retry those reads up to twice.
-  var SAFE_READS = ['readScholarProfileSubmissions','readPublicationGeographySubmissions','reviewQueueCounts','reviewCapabilities','readAttachmentAnalysis','readScholarSubmissionAttachment','readChangeLog','ping','describe'];
+  var SAFE_READS = ['readNewsSubmissions','previewNewsLink','readScholarProfileSubmissions','readPublicationGeographySubmissions','reviewQueueCounts','reviewCapabilities','readAttachmentAnalysis','readScholarSubmissionAttachment','readChangeLog','ping','describe'];
   async function callPost(payload) {
     var safe = payload && SAFE_READS.indexOf(payload.action) >= 0, out;
     for (var attempt = 0; attempt < (safe ? 3 : 1); attempt++) {
@@ -134,6 +134,10 @@
     closeScholarReviewItems: function (submissionId, items, note, reviewNotes) { return reviewPost({action:'closeScholarReviewItems',submissionId:submissionId,items:items,note:note,reviewNotes:reviewNotes}); },
     banScholarSubmitter: function (submissionId, reason) { return callPost({action:'banScholarSubmitter',submissionId:submissionId,reason:reason,confirmed:true}); },
     readScholarSubmissions: function (status) { return callGetWithParams('readScholarProfileSubmissions', {status: status || ''}); },
+    // News Story Submissions (Panel A4 "Share a story" links).
+    readNewsSubmissions: function (status) { return callGetWithParams('readNewsSubmissions', {status: status || ''}); },
+    previewNewsLink: function (url, scholars) { return callPost({action:'previewNewsLink', url:url, scholars:scholars}); },
+    resolveNewsSubmission: function (submissionId, decision, story, reviewNotes) { return reviewPost({action:'resolveNewsSubmission', submissionId:submissionId, decision:decision, story:story, reviewNotes:reviewNotes}); },
     readGeographySubmissions: function (status) { return callGetWithParams('readPublicationGeographySubmissions', {status: status || ''}); },
     readSubmissionAttachment: function (submissionId, fileId) { return callGetWithParams('readScholarSubmissionAttachment', {submissionId: submissionId, fileId: fileId}); },
     approveScholarSubmission: function (submissionId, selectedChanges, reviewNotes) { return reviewPost({action:'approveScholarProfileSubmission', submissionId:submissionId, selectedChanges:selectedChanges, reviewNotes:reviewNotes}); },

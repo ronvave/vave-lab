@@ -228,6 +228,7 @@
   .divider { height: 1px; background: var(--border); margin: 14px 0; }
 </style>
 <link rel="stylesheet" href="css/tongan-submissions.css?v=944235a6">
+<link rel="stylesheet" href="css/tongan-news-admin.css?v=9741d72d">
 <script src="js/tongan-attachment-review.js?v=ae619b49" defer></script>
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-ton-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicons/flag-ton-64.png">
@@ -279,11 +280,13 @@
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
       <button class="tab-btn" data-tab="scholar-submissions">Scholar Update Submissions</button>
       <button class="tab-btn" data-tab="geography-submissions">Publication Geography Submissions</button>
+      <button class="tab-btn" data-tab="news-submissions">News Story Submissions</button>
       <button class="tab-btn" data-tab="changelog">Master change log</button>
     </div>
 
     <div class="tab-panel" id="tab-scholar-submissions"><div class="card" data-tonga-queue="scholar"><h2>Scholar Update Submissions</h2></div></div>
     <div class="tab-panel" id="tab-geography-submissions"><div class="card" data-tonga-queue="geography"><h2>Publication Geography Submissions</h2></div></div>
+    <div class="tab-panel" id="tab-news-submissions"><div class="card"><h2>News Story Submissions</h2><p class="meta">Links sent from the dashboard's "Share a story" button (Panel A4). Approving adds the story to the Master News tab with Show on Dashboard = Yes; it appears after the next Tonga refresh.</p><div id="news-queue"></div></div></div>
     <!-- ========= SCHOLARS TAB ========= -->
     <div class="tab-panel active" id="tab-scholars">
       <div class="card">
@@ -754,5 +757,6 @@
 
 <script src="js/tonga-countries.js?v=ff034128" defer></script>
 <script src="js/tongan-submissions-admin.js?v=0a5c908d" defer></script>
+<script src="js/tongan-news-admin.js?v=5c9163a5" defer></script>
 </body>
 </html>
