@@ -1,5 +1,5 @@
 /* Solomon dashboard (ported from css/fiji-panel-hero.css; same canoe header,
-   no tapa background): image header on every panel (title + description over the
+   faded beadwork panel background): image header on every panel (title + description over the
    a traditional Fijian canoe on turquoise water), glossy tally cards and a faded
    tapa background. Ported from css/tongan-panel-hero.css and built by
    js/solomon-panel-hero.js; nothing here changes panel content. */
@@ -105,6 +105,26 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .db-about.tph-panel:not([open]) { padding-bottom: 0; }
 .db-about.tph-panel { overflow: hidden; }
 .db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
+
+/* Faded Solomon Islands beadwork background on every panel body, softened
+   with a light veil so text and charts in front of it stay crisp. The
+   beadwork is bolder than the Fiji tapa, so the veil is stronger. */
+.tph-panel {
+  background:
+    linear-gradient(rgba(255,253,249,.9), rgba(255,253,249,.9)),
+    url("../img/solomon/beadwork-background.webp") center top / 1200px auto repeat !important;
+}
+/* Former grey inner areas let the beadwork through, with a slightly stronger veil. */
+.tph-panel .db-world-panel-wide,
+.tph-panel .db-map-legend-panel,
+.tph-panel .short-disciplines-toggle,
+.tph-panel .db-insight,
+.tph-panel .db-b2-blurb {
+  background: rgba(255,255,255,.5) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.tph-panel .db-item { background: rgba(255,255,255,.72) !important; }
+.tph-panel .db-search { background: #fff !important; }
 
 /* Grey text inside panels shown in black (marked by js/fiji-text-contrast.js). */
 .tph-panel .tct-dark { color: #111 !important; }
