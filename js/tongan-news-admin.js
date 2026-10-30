@@ -12,7 +12,7 @@
   var TYPES = [['News', 'News story'], ['Defense', 'Thesis defense'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars)']];
   var OPEN = { Thesis: 1, Publication: 1 }, TIMED = { Defense: 1, Event: 1 };
   function typeKey(t) { return t === 'Webinar' ? 'Event' : (t || 'News'); }
-  var CATS = ['Award', 'Appointment', 'Graduation', 'Milestone', 'Publication', 'Research'];
+  var CATS = ['Award', 'Appointment', 'Graduation', 'Milestone', 'Publication', 'Research', 'News']; // News = general news, last on purpose
   var loaded = false, busy = false;
 
   function el(tag, text, parent, cls) {

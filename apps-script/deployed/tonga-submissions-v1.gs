@@ -1029,7 +1029,7 @@ function buildScholarSubmissionChanges_(ss, submission, includeRecorded) {
 }
 
 
-var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.6';
+var TONGA_SUBMISSIONS_VERSION = 'tonga-submissions-5.7';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Tonga Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution'];
 var TONGA_DIVISIONS = ['Tongatapu',"Ha'apai","Vava'u","'Eua",'Niuas'];
@@ -1583,7 +1583,8 @@ var NEWS_TYPES = ['News','Defense','Thesis','Publication','Event'];
 var NEWS_OPEN_TYPES = ['Thesis','Publication'];
 var NEWS_TIMED_TYPES = ['Defense','Event'];
 function tongaNewsType_(v) { var t = String(v || 'News'); if (t === 'Webinar') t = 'Event'; return NEWS_TYPES.indexOf(t) >= 0 ? t : 'News'; }
-var NEWS_CATEGORIES = ['Award','Appointment','Graduation','Milestone','Publication','Research'];
+// 'News' = general news with no more specific category (listed last on purpose).
+var NEWS_CATEGORIES = ['Award','Appointment','Graduation','Milestone','Publication','Research','News'];
 var NEWS_EMAIL_DAILY_LIMIT = 5;
 var NEWS_GLOBAL_DAILY_LIMIT = 40;
 
@@ -1600,9 +1601,46 @@ function tongaNewsQueue_(ss) {
   return sh;
 }
 function tongaNewsUrl_(v) {
-  var s = String(v || '').trim();
+  var s = tongaNewsClean_(String(v || '').trim());
   if (s.length > 700 || !/^https?:\/\/[^\s\/$.?#][^\s]*$/i.test(s)) return '';
   return s;
+}
+/* Drop tracking codes (fbclid, utm_*, gclid ...) that social apps add to links. */
+function tongaNewsClean_(u) {
+  var m = /^([^?#]*)(\?[^#]*)?(#.*)?$/.exec(u); if (!m || !m[2]) return u;
+  var keep = m[2].slice(1).split('&').filter(function(kv){
+    var k = kv.split('=')[0].toLowerCase();
+    return kv && !/^(fbclid|gclid|dclid|msclkid|igshid|mc_cid|mc_eid|yclid|_ga|mibextid|utm_[a-z_]+)$/.test(k);
+  });
+  return m[1] + (keep.length ? '?' + keep.join('&') : '') + (m[3] || '');
+}
+/* Publication date (YYYY-MM-DD) from a news page. Tries, in order: meta tags
+ * and JSON-LD; <time datetime>; a visible "Published 16 March 2026" line;
+ * the page's own publishedAt record (matched by its slug); a /2026/03/16/ path. */
+function tongaNewsDate_(html, url) {
+  var MON = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+  function iso(t) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(t || ''); return m ? m[0] : ''; }
+  function out(y, mo, d) { return (mo && d >= 1 && d <= 31) ? y + '-' + ('0' + mo).slice(-2) + '-' + ('0' + d).slice(-2) : ''; }
+  function words(t) {
+    var m = /\b(\d{1,2})(?:st|nd|rd|th)?\s+([A-Za-z]{3,9})\.?,?\s+(\d{4})\b/.exec(t);
+    if (m) return out(m[3], MON[m[2].slice(0,3).toLowerCase()], +m[1]);
+    m = /\b([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})\b/.exec(t);
+    return m ? out(m[3], MON[m[1].slice(0,3).toLowerCase()], +m[2]) : '';
+  }
+  var v = iso(tongaNewsMeta_(html, ['article:published_time','datePublished','date','pubdate','publish-date','dc.date','parsely-pub-date']));
+  if (v) return v;
+  v = iso((/datePublished[\\"]*\s*:\s*[\\"]*([0-9T:.\-]+)/.exec(html) || [])[1]); if (v) return v;
+  v = iso((/<time[^>]+datetime=["']([^"']+)["']/i.exec(html) || [])[1]); if (v) return v;
+  var plain = html.replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ');
+  var pm = /\b(?:Published|Posted)\b[:\s]*(?:on\s+)?(.{0,40})/i.exec(plain);
+  if (pm) { v = words(pm[1]); if (v) return v; }
+  var slug = (String(url).replace(/[?#].*$/, '').replace(/\/+$/, '').split('/').pop() || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (slug) {
+    var sm = new RegExp('publishedAt[\\\\"]*:[\\\\"]*([0-9T:.\\-]+Z?)[\\\\"]*,[\\\\"]*slug[\\\\"]*:[\\\\"]*' + slug).exec(html);
+    if (sm) { v = iso(sm[1]); if (v) return v; }
+  }
+  var um = /\/(20\d{2})\/(\d{2})\/(\d{2})\//.exec(url);
+  return um ? um[1] + '-' + um[2] + '-' + um[3] : '';
 }
 function tongaNewsKey_(u) { return String(u||'').trim().toLowerCase().replace(/^https?:\/\/(www\.)?/,'').replace(/[#?].*$/,'').replace(/\/+$/,''); }
 function tongaNewsKnownUrls_(ss) {
@@ -1685,8 +1723,7 @@ function tongaNewsPreview_(params) {
       out.image = tongaNewsMeta_(html, ['og:image','twitter:image']);
       out.outlet = tongaNewsMeta_(html, ['og:site_name']);
       out.description = tongaNewsMeta_(html, ['og:description','description']).slice(0,400);
-      var d = tongaNewsMeta_(html, ['article:published_time','datePublished','date','pubdate']) || ((/"datePublished"\s*:\s*"([^"]+)"/.exec(html)||[])[1]||'');
-      var dm = /(\d{4})-(\d{2})-(\d{2})/.exec(d); out.date = dm ? dm[0] : '';
+      out.date = tongaNewsDate_(html, url);
       text += ' ' + out.headline + ' ' + out.description + ' ' + html.replace(/<script[\s\S]*?<\/script>/gi,' ').replace(/<[^>]+>/g,' ').slice(0, 60000);
     } else out.fetchNote = 'The page returned HTTP ' + r.getResponseCode() + '; enter the details by hand.';
   } catch (e) { out.fetchNote = 'The page could not be read; enter the details by hand.'; }

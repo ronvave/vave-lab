@@ -21,7 +21,7 @@ import html
 import re
 from datetime import datetime
 
-CATEGORIES = ["Award", "Appointment", "Graduation", "Milestone", "Publication", "Research"]
+CATEGORIES = ["Award", "Appointment", "Graduation", "Milestone", "Publication", "Research", "News"]  # News = general news
 # Panel A4 toggle groups. Rows without an Announcement Type are News.
 TYPES = ["News", "Defense", "Thesis", "Publication", "Event"]
 # Older label kept readable: webinars are now listed under Events.
