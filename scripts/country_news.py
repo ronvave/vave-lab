@@ -77,7 +77,7 @@ def _bib_name(v) -> str:
     return s
 
 
-def auto_items(publications, authorship, roster, today=None) -> list[dict]:
+def auto_items(publications, authorship, roster, today=None, only_types=None) -> list[dict]:
     """Recent Panel G works with a database scholar among the authors.
 
     "Recent" is this year or later; from January to March the previous year is
@@ -101,6 +101,8 @@ def auto_items(publications, authorship, roster, today=None) -> list[dict]:
         key = _s(p.get("Publication ID / BibTeX Key"))
         year, ptype, title = _year(p.get("Year")), _s(p.get("Publication Type")), _s(p.get("Title"))
         if not key or not title or year is None or year < since or ptype in NOT_PUBLISHED:
+            continue
+        if only_types is not None and ptype not in only_types:  # e.g. Fiji shows Panel G's six types only
             continue
         sids = []
         for _, sid in sorted(authors.get(key, [])):
@@ -140,7 +142,8 @@ def auto_items(publications, authorship, roster, today=None) -> list[dict]:
 
 
 def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str,
-          publications: list[dict] | None = None, authorship: list[dict] | None = None, today=None) -> dict:
+          publications: list[dict] | None = None, authorship: list[dict] | None = None, today=None,
+          only_types=None) -> dict:
     roster = {
         _s(s.get("Scholar ID")).upper(): _s(s.get("Scholar Name") or s.get("Display Name"))
         for s in scholars
@@ -186,7 +189,7 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
         })
     items.sort(key=lambda x: (x["date"], x["id"]), reverse=True)
     seen = {re.sub(r"^https?://(www\.)?|/+$", "", i["url"].lower()) for i in items}
-    auto = [a for a in auto_items(publications, authorship, roster, today)
+    auto = [a for a in auto_items(publications, authorship, roster, today, only_types)
             if re.sub(r"^https?://(www\.)?|/+$", "", a["url"].lower()) not in seen]
     shown = {k: 0 for k in AUTO_IN_ALL}
     for a in auto:

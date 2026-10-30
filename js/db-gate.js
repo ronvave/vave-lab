@@ -79,6 +79,7 @@
     'data/itaukei-master-mobility.json':     'data/itaukei-master-mobility.json.enc',
     'data/itaukei-master-geography.json':    'data/itaukei-master-geography.json.enc',
     'data/itaukei-master-positions.json':    'data/itaukei-master-positions.json.enc',
+    'data/itaukei-master-news.json':         'data/itaukei-master-news.json.enc',
     'data/itaukei-master-aggregates.json':   'data/itaukei-master-aggregates.json.enc',
     'data/last-master-sync.json':            'data/last-master-sync.json.enc',
     // Admin V2 supplementary layers (Scholar-ID keyed). Optional; adapter

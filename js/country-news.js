@@ -27,6 +27,7 @@
   var SUBMIT = (me && me.dataset.submit) || '';   // review-queue endpoint for "Share a story"
   var PEOPLE = (me && me.dataset.people) || 'our';
   var PLACE = (me && me.dataset.place) || 'the country';
+  var EXAMPLE = (me && me.dataset.example) || 'Dr Suliana Mone';  // form placeholder name
   if (!SRC) return;
   var ROTATE_MS = 8000;
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -320,7 +321,7 @@
       '<p class="nw-form__intro">Send us a link to a news story, thesis defense, new thesis, new publication or event. It should feature ' + esc(PEOPLE) + ' scholars, or for theses and publications, be by ' + esc(PEOPLE) + ' scholars or about ' + esc(PLACE) + '. A collaborator checks each link before it appears in this panel.</p>' +
       '<label><span>Link to the story or announcement <span class="nw-req">(required)</span></span><input name="articleUrl" type="url" required maxlength="700" placeholder="https://"></label>' +
       '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Defense">Thesis defense</option><option value="Thesis">New thesis</option><option value="Publication">New publication</option><option value="Event">Event (including webinars)</option></select></label>' +
-      '<label><span>Scholar(s) or author(s)</span><input name="scholars" type="text" maxlength="300" placeholder="For example, Dr Suliana Mone"></label>' +
+      '<label><span>Scholar(s) or author(s)</span><input name="scholars" type="text" maxlength="300" placeholder="For example, ' + EXAMPLE + '"></label>' +
       '<div class="nw-form__row"><label><span>Your name <span class="nw-req">(required)</span></span><input name="submitterName" type="text" required maxlength="160" autocomplete="name"></label>' +
       '<label><span>Your email <span class="nw-req">(required)</span></span><input name="submitterEmail" type="email" required maxlength="240" autocomplete="email"></label></div>' +
       '<label><span>Anything we should know?</span><textarea name="note" rows="3" maxlength="800" placeholder="Optional"></textarea></label>' +

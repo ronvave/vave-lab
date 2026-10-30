@@ -52,6 +52,7 @@ SHEETS = {
     "Researcher Authorship": {"header_row": 4, "first_data": 5},
     "Research Geography": {"header_row": 4, "first_data": 5},
     "Institutions": {"header_row": 4, "first_data": 5},
+    "News": {"header_row": 4, "first_data": 5},  # Panel A3 scholar news
     "Dashboard": {"header_row": None, "first_data": 4},  # freeform QA sheet
 }
 

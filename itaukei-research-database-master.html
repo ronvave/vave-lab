@@ -2222,6 +2222,7 @@
       border-radius: var(--radius-md); font-size: 0.85rem; line-height: 1.5;
       color: var(--color-text); white-space: pre-wrap; margin-top: var(--space-2);
     }
+    .db-cite--in-about { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; margin-top: var(--space-4); }
     .db-updated {
       font-size: 0.82rem; color: var(--color-text-muted);
       margin-top: var(--space-4); text-align: center;
@@ -3923,6 +3924,7 @@
 </style>
 <link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
 <link rel="stylesheet" href="css/itaukei-panel-menu.css?v=44020c99">
+  <link rel="stylesheet" href="css/country-news.css?v=384a2d5f">
   <link rel="stylesheet" href="css/fiji-panel-hero.css?v=36363c67">
   <link rel="stylesheet" href="css/fiji-country-flags.css?v=18bc14f8">
 <link rel="stylesheet" href="css/country-positions.css?v=bb3440c0">
@@ -4183,49 +4185,19 @@
         </div>
       </section>
 
+      <!-- Panel A3 — Celebrating iTaukei scholars. Curated news stories from the
+           Master's News tab (js/country-news.js). Hidden until a story loads. -->
+      <section class="nw has-panel-badge" data-news-panel aria-labelledby="db-section-news" hidden>
+        <span class="db-panel__label">A3</span>
+        <header class="db-section__head nw__head">
+          <h2 class="db-section__label nw__h" id="db-section-news">Celebrating iTaukei scholars</h2>
+          <p class="db-section__hint nw__hint">News, thesis defenses, new theses and publications, and events featuring iTaukei scholars or Fiji. Stories rotate every 8 seconds.</p>
+        </header>
+        <div data-news-body></div>
+      </section>
+
     </div>
 
-    <!-- About / inclusion criteria -->
-    <details class="db-about reveal has-panel-badge">
-      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">A3</span></summary>
-      <div class="db-about__body">
-        <div class="db-about-grid">
-          <div>
-            <h4>What's included</h4>
-            <p>Scholarly publications where Fiji or Fijians are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
-            <ul>
-              <li>Peer-reviewed journal articles, book chapters, and books</li>
-              <li>Master's, PhD, and equivalent higher-degree theses</li>
-              <li>Technical reports and conference papers from recognised institutions</li>
-              <li>Preprints archived on established repositories</li>
-            </ul>
-            <p>Special emphasis on work authored or co-authored by <em>iTaukei</em> (Indigenous Fijian) scholars, regardless of subject discipline.</p>
-
-            <h4>How tags are assigned</h4>
-            <ul>
-              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
-              <li><strong>Paternal province</strong> &mdash; applied only to iTaukei first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
-              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
-            </ul>
-          </div>
-          <div>
-            <h4>Update cadence</h4>
-            <p>The iTaukei/Fiji Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
-
-            <h4>Known gaps &amp; caveats</h4>
-            <ul>
-              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
-              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
-              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
-              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
-            </ul>
-
-            <h4>Feedback</h4>
-            <p>Corrections, additions, and suggestions are welcome &mdash; email <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> or use the <em>Contribute</em> panel below.</p>
-          </div>
-        </div>
-      </div>
-    </details>
 
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
@@ -5083,19 +5055,53 @@
       <button type="button" class="db-load-more" data-db-load-more style="display:none;">Show 25 more</button>
     </div>
 
-    <!-- Cite + contribute -->
-    <div class="db-context">
-      <div class="db-cite reveal">
-        <h3>Cite this database</h3>
-        <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). iTaukei Academic Research: A curated database of scholarly publications on Fiji and Fijians. Master-file database. Retrieved from https://ronvave.github.io/vave-lab/itaukei-research-database-master.html</code>
+    <!-- Panel H — About / inclusion criteria (end of page) -->
+    <details class="db-about reveal has-panel-badge">
+      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">H</span></summary>
+      <div class="db-about__body">
+        <div class="db-about-grid">
+          <div>
+            <h4>What's included</h4>
+            <p>Scholarly publications where Fiji or Fijians are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
+            <ul>
+              <li>Peer-reviewed journal articles, book chapters, and books</li>
+              <li>Master's, PhD, and equivalent higher-degree theses</li>
+              <li>Technical reports and conference papers from recognised institutions</li>
+              <li>Preprints archived on established repositories</li>
+            </ul>
+            <p>Special emphasis on work authored or co-authored by <em>iTaukei</em> (Indigenous Fijian) scholars, regardless of subject discipline.</p>
+
+            <h4>How tags are assigned</h4>
+            <ul>
+              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
+              <li><strong>Paternal province</strong> &mdash; applied only to iTaukei first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
+              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Update cadence</h4>
+            <p>The iTaukei/Fiji Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
+
+            <h4>Known gaps &amp; caveats</h4>
+            <ul>
+              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
+              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
+              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
+              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
+            </ul>
+
+            <h4>Feedback</h4>
+            <p>Corrections, additions, and suggestions are welcome.</p>
+            <p><a href="mailto:ronvave@hawaii.edu?subject=iTaukei%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20iTaukei)%3A%20%0A" class="btn btn--primary" style="display:inline-block;color:#fff;text-decoration:none;">Email a suggestion</a></p>
+          </div>
+        </div>
+        <div class="db-cite db-cite--in-about">
+          <h4>Cite this database</h4>
+          <p>If you use this database in your research or teaching, please cite it as:</p>
+          <code>Vave, R. (2026). iTaukei Scholar Dashboard: A curated database of scholarly publications on Fiji and by iTaukei. Retrieved from https://ronvave.github.io/vave-lab/itaukei-research-database-master.html</code>
+        </div>
       </div>
-      <div class="db-contribute reveal">
-        <h3>Contribute · Suggest an item</h3>
-        <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by an iTaukei scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
-        <a href="mailto:ronvave@hawaii.edu?subject=iTaukei%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20province%20of%201st%20author%20(if%20iTaukei)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
-      </div>
-    </div>
+    </details>
 
     <p class="db-updated" data-db-updated></p>
 
@@ -5385,7 +5391,7 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/demo-gate.js?v=ed837090" defer></script>
+<script src="js/demo-gate.js?v=8d4ba4a8" defer></script>
 <script src="js/master-file-adapter.js?v=0fad26cf" defer></script>
 <link rel="stylesheet" href="css/b2-study-table.css?v=3735df41">
 <script src="js/b2-study-table.js?v=9a3c151c" defer></script>
@@ -5513,7 +5519,8 @@
     }
   })();
 </script>
-<script src="js/itaukei-panel-menu.js?v=c58f7ec2" defer></script>
+<script src="js/itaukei-panel-menu.js?v=96a825b4" defer></script>
+<script src="js/country-news.js?v=9b040f1e" data-src="data/itaukei-master-news.json" data-photos="data/scholar-enrichment.json" data-people="iTaukei" data-place="Fiji" data-example="Dr Joeli Veitayaki" data-submit="https://script.google.com/macros/s/AKfycbxL44nM_4zHrZKuvLYWgO1B5rRQiqeSwg9s5iA7sxobe7uCl02en4ZQSx24oU3r5cNv/exec" defer></script>
 <script src="js/country-positions.js?v=d168b713" data-src="data/itaukei-master-positions.json" data-people="iTaukei" defer></script>
 <script src="js/position-display-field.js?v=fc3380d8" defer></script>
 <script src="js/scholar-card-tabs.js?v=efda3195" defer></script>

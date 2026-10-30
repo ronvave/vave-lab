@@ -20,6 +20,7 @@ on:
       - "scripts/master_short_disciplines.py"
       - "scripts/master_file_config.py"
       - "scripts/master_file_transformer.py"
+      - "scripts/country_news.py"
       - "scripts/sync_scholar_share_tokens.py"
   schedule:
     - cron: "0 */2 * * *"   # every 2 hours, on the hour (UTC)
@@ -92,6 +93,7 @@ jobs:
             data/itaukei-master-mobility.json \
             data/itaukei-master-geography.json \
             data/itaukei-master-positions.json \
+            data/itaukei-master-news.json \
             data/itaukei-master-worldpoints.json \
             data/body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
@@ -171,6 +173,7 @@ jobs:
             itaukei-master-mobility.json
             itaukei-master-geography.json
             itaukei-master-positions.json
+            itaukei-master-news.json
             itaukei-master-worldpoints.json
             itaukei-master-aggregates.json
             body-composition-master.json

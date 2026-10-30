@@ -228,6 +228,17 @@
 </style>
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-fji-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicons/flag-fji-64.png">
+  <link rel="stylesheet" href="css/tongan-news-admin.css?v=9741d72d">
+  <style>
+  /* News Story Submissions queue: shared status styles (as on the Tonga Admin page). */
+  #tab-news-submissions .tonga-positive{color:#166534;font-size:.85rem}
+  #tab-news-submissions .tonga-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}
+  #tab-news-submissions .tonga-queue-status:empty{display:none}
+  #tab-news-submissions .tonga-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+  #tab-news-submissions .tonga-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+  .tab-btn .tonga-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}
+  .tab-btn .tonga-submission-badge[hidden]{display:none}
+  </style>
 </head>
 <body>
 
@@ -275,7 +286,10 @@
       <button class="tab-btn" data-tab="data-source">Data source &amp; GitHub</button>
       <button class="tab-btn" data-tab="changelog">Master change log</button>
       <button class="tab-btn" data-tab="log">Action log</button>
+      <button class="tab-btn" data-tab="news-submissions">News Story Submissions</button>
     </div>
+
+    <div class="tab-panel" id="tab-news-submissions"><div class="card"><h2>News Story Submissions</h2><p class="meta">Links sent from the dashboard's "Share a story" button (Panel A3). Approving adds the story to the Master News tab with Show on Dashboard = Yes; it appears after the next Fiji refresh.</p><div id="news-queue" data-place="Fiji" data-id-example="ITK-S0000"></div></div></div>
 
     <!-- ========= SCHOLARS TAB ========= -->
     <div class="tab-panel active" id="tab-scholars">
@@ -738,10 +752,11 @@
 <div class="toast" id="toast"></div>
 
 <!-- scripts -->
-<script src="js/db-gate.js?v=f0410799" defer></script>
+<script src="js/db-gate.js?v=04da91bb" defer></script>
 <script src="js/master-file-adapter.js?v=0fad26cf" defer></script>
 <script src="js/admin-insights-migration.js?v=6e8c88fd" defer></script>
-<script src="js/admin-writeback-client.js?v=780950d5" defer></script>
+<script src="js/admin-writeback-client.js?v=8bd02a5c" defer></script>
+<script src="js/tongan-news-admin.js?v=845b1306" defer></script>
 <script src="js/admin-master.js?v=fc5beb21" defer></script>
 <script src="js/publication-geography-admin.js?v=8a680170" defer></script>
 <script src="js/scholar-profile-submissions-admin.js?v=68957c0d" defer></script>

@@ -41,6 +41,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import country_positions  # noqa: E402  (University positions snapshot)
+import country_news  # noqa: E402  (Panel A3 scholar news snapshot)
 from typing import Any
 
 from master_file_config import (
@@ -825,6 +826,29 @@ def run(
     )
     log(f"  → {len(positions_payload['rows'])} position rows for {len(positions_payload['scholars'])} scholars")
 
+    log("Fetching News...")
+    try:
+        _news_rows = fetch_fn("News")
+    except Exception as exc:  # tab not created yet: publish an empty list
+        log(f"  → News tab unavailable ({str(exc)[:120]}); publishing an empty news list")
+        _news_rows = []
+    _, _news_dicts = rows_to_dicts(_news_rows, SHEETS["News"]["header_row"], SHEETS["News"]["first_data"])
+    # Fiji Scholar Name is "Family, Given"; the panel shows "Given Family".
+    def _news_name(s):
+        given, family = str(s.get("Given Names") or "").strip(), str(s.get("Family Name") or "").strip()
+        if given and family:
+            return f"{given} {family}"
+        name = str(s.get("Scholar Name") or "").strip()
+        return " ".join(reversed([p.strip() for p in name.split(",", 1)])) if "," in name else name
+    _news_roster = [{"Scholar ID": s.get("Scholar ID"), "Scholar Name": _news_name(s)} for s in scholars]
+    news_payload = country_news.build(
+        _news_dicts, _news_roster, source="iTaukei_Master_file", generator="scripts/master_file_transformer.py",
+        publications=publications, authorship=authorship,
+        # Panel G shows only these six types (no conference papers, preprints or other).
+        only_types=set(HEADLINE_PUBLICATION_TYPES),
+    )
+    log(f"  → {len(news_payload['items'])} published news stories")
+
     log("Computing aggregates...")
     aggregates = compute_aggregates(
         scholars, publications, authorship, grad_degrees, mobility,
@@ -857,6 +881,7 @@ def run(
     _write_json(out_dir / "itaukei-master-geography.json", geography)
     _write_json(out_dir / "itaukei-master-aggregates.json", aggregates)
     _write_json(out_dir / "itaukei-master-positions.json", positions_payload)
+    _write_json(out_dir / "itaukei-master-news.json", news_payload)
 
     # ----------------------------------------------------------------
     # Panel C1 body-composition (gendered per-type breakdown)

@@ -61,6 +61,7 @@ TARGETS = [
     "itaukei-master-mobility.json",
     "itaukei-master-geography.json",
     "itaukei-master-positions.json",
+    "itaukei-master-news.json",
     "itaukei-master-aggregates.json",
     "last-master-sync.json",
     # Listed last so a decrypt problem with a newer file cannot block the
