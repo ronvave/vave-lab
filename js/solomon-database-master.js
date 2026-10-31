@@ -9705,7 +9705,9 @@
   state.worldSelectedCountry = null;
   state.worldSelectedUniversity = null;
   state.worldSearchTerm = '';
-  state.b2View = 'solomon-islands-focused';
+  // C3 opens on Solomon Islands + International while Research Geography is
+  // still being recorded for most publications (2026-10-30).
+  state.b2View = 'all-locations';
   state.b2TypeSet = new Set(TYPE_ORDER);
   state.b2AuthorshipMode = 'counts';
   state.b2AuthorshipSort = 'total';
