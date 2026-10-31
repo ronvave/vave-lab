@@ -191,17 +191,46 @@
       return '<span class="pn-flagtag' + (k === 0 ? ' is-lead' : '') + '">' + flag(c) + esc(SHORT[c] || NAMES[c] || c) + '</span>';
     }).join('') + '</span>';
   }
+  // One row per scholar: home-country flag + their institution (country name
+  // if the directory has no institution). Same flag + institution shown once.
+  function instRows(it) {
+    var ppl = Array.isArray(it.ppl) && it.ppl.length ? it.ppl : it.c.map(function (c) { return [c, it.sid, it.name]; });
+    var seen = {}, rows = [];
+    ppl.forEach(function (p) {
+      var key = p[1] || p[2];
+      if (seen[key]) return; seen[key] = 1;
+      var sc = DIR[p[1]] || {};
+      rows.push([p[0], p[2], sc.inst || NAMES[p[0]] || p[0]]);
+    });
+    var more = rows.length > 4 ? rows.length - 4 : 0;
+    return '<span class="pn-insts">' + rows.slice(0, 4).map(function (r, k) {
+      return '<span class="pn-inst' + (k === 0 ? ' is-lead' : '') + '">' + flag(r[0], 'pn-flag pn-flag--m') +
+        '<span><b class="pn-inst__name">' + esc(r[1]) + '</b>, ' + esc(r[2]) + '</span></span>';
+    }).join('') + (more ? '<span class="pn-inst pn-inst--more">and ' + more + ' more</span>' : '') + '</span>';
+  }
+  // Scholar names in bold, each followed by their current position in bold italics.
+  function peopleLine(it) {
+    var ppl = Array.isArray(it.ppl) && it.ppl.length ? it.ppl : null;
+    if (!ppl) return '<b>' + esc(it.name) + '</b>';
+    var shown = ppl.slice(0, 3).map(function (p) {
+      var role = (DIR[p[1]] || {}).role;
+      return '<span class="pn-person"><b>' + esc(p[2]) + '</b>' + (role ? ', <b><i>' + esc(role) + '</i></b>' : '') + '</span>';
+    });
+    var rest = ppl.length - shown.length;
+    return shown.join('') + (rest > 0 ? '<span class="pn-person">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
+  }
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
     var pub = typeOf(it) === 'Publication';
-    var meta = ev ? [it.name, it.when || dateLabel(it), it.where] : [it.name, it.outlet, dateLabel(it)];
+    var meta = ev ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)];
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
-      '<div class="nw__body">' + flagRow(it) +
+      '<div class="nw__body">' + instRows(it) +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
+      '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>' +
       '<div class="nw__meta">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
@@ -368,6 +397,10 @@
     }).sort(function (a, b) { return b.total - a.total || ORDER.indexOf(a.c) - ORDER.indexOf(b.c); });
     var max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([1]));
     var keys = ['News', 'Thesis', 'Publication', 'Event'];
+    var cname = function (c) { return c === 'FSM' ? 'FSM' : NAMES[c]; };
+    // Column totals count each story once, even when it has scholars from two countries.
+    var tot = { News: 0, Thesis: 0, Publication: 0, Event: 0 }, totAll = 0;
+    N.items.forEach(function (it) { if (it.c.some(function (c) { return ORDER.indexOf(c) >= 0; })) { tot[typeOf(it)] = (tot[typeOf(it)] || 0) + 1; totAll++; } });
     var lbl = { News: 'News', Thesis: 'New theses', Publication: 'New publications', Event: 'Events' };
     var legend = A.root.querySelector('.pn-legend');
     if (legend) legend.hidden = A.scale === 'heat';
@@ -388,7 +421,7 @@
         keys.map(function (k) { return '<span class="pn-hm__colh" role="columnheader"><i style="background:' + TYPE_COLOR[k] + '"></i>' + lbl[k] + '</span>'; }).join('') +
         '<span class="pn-hm__colh pn-hm__colh--tot" role="columnheader">Total</span></div>' +
         rows.map(function (r) {
-          return '<div class="pn-hm__row' + (A.on[r.c] ? '' : ' is-off') + '" role="row"><span class="pn-row__lab" role="rowheader"><span>' + esc(NAMES[r.c]) + '</span>' + flag(r.c, 'pn-flag pn-flag--m') + '</span>' +
+          return '<div class="pn-hm__row' + (A.on[r.c] ? '' : ' is-off') + '" role="row"><span class="pn-row__lab" role="rowheader"><span>' + esc(cname(r.c)) + '</span>' + flag(r.c, 'pn-flag pn-flag--l') + '</span>' +
             keys.map(function (k) {
               var v = r.n[k];
               return v ? '<button type="button" class="pn-hm__cell pn-seg" role="cell" data-c="' + r.c + '" data-t="' + k + '" style="' + shade(v) + '" title="' + esc(NAMES[r.c] + ': ' + v + ' ' + lbl[k].toLowerCase()) + '" aria-label="' + esc(NAMES[r.c] + ', ' + lbl[k] + ', ' + v) + '">' + v + '</button>'
@@ -396,6 +429,9 @@
             }).join('') +
             '<span class="pn-hm__tot" role="cell">' + r.total + '</span></div>';
         }).join('') +
+        '<div class="pn-hm__row pn-hm__row--tot" role="row"><span class="pn-row__lab" role="rowheader"><span>Total</span></span>' +
+        keys.map(function (k) { return '<span class="pn-hm__cell pn-hm__cell--tot" role="cell">' + tot[k] + '</span>'; }).join('') +
+        '<span class="pn-hm__tot" role="cell">' + totAll + '</span></div>' +
         '<div class="pn-hm__key"><span>Fewer</span><span class="pn-hm__ramp"></span><span>More stories</span></div></div>';
     } else
     box.innerHTML = rows.map(function (r) {
@@ -408,9 +444,16 @@
           '<span>' + txt + '</span></button>';
       }).join('');
       return '<div class="pn-row' + (A.on[r.c] ? '' : ' is-off') + '"><span class="pn-row__lab">' +
-        '<span>' + esc(NAMES[r.c]) + '</span>' + flag(r.c, 'pn-flag pn-flag--m') + '</span><span class="pn-row__bar">' + (segs || '<span class="pn-row__none">No stories yet</span>') + '</span>' +
+        '<span>' + esc(cname(r.c)) + '</span>' + flag(r.c, 'pn-flag pn-flag--l') + '</span><span class="pn-row__bar">' + (segs || '<span class="pn-row__none">No stories yet</span>') + '</span>' +
         '<span class="pn-row__n">' + r.total + '</span></div>';
-    }).join('');
+    }).join('') +
+      // Totals row: one bar for all stories, split by type (its own full width).
+      '<div class="pn-row pn-row--tot"><span class="pn-row__lab"><span>Total</span></span><span class="pn-row__bar">' +
+      keys.map(function (k) {
+        var v = tot[k]; if (!v) return '';
+        var w = 100 * v / (totAll || 1), txt = A.scale === 'share' ? Math.round(w) + '%' : v;
+        return '<span class="pn-seg pn-seg--tot" style="width:' + w.toFixed(2) + '%;background:' + TYPE_COLOR[k] + (k === 'News' ? ';color:#111' : '') + '" title="' + esc('All countries: ' + v + ' ' + lbl[k].toLowerCase()) + '"><span>' + txt + '</span></span>';
+      }).join('') + '</span><span class="pn-row__n">' + totAll + '</span></div>';
     box.querySelectorAll('.pn-seg').forEach(function (b) {
       b.addEventListener('click', function () {
         A.on = {}; A.on[b.dataset.c] = true; A.shared = false; A.type = b.dataset.t; A.sub = '';
@@ -463,9 +506,9 @@
       '<button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button></div>' +
       '<div class="nw__dots" aria-hidden="true"></div></div>' + foot +
       '</div></div><div class="nw__list"><h3 class="pn-list__h">Latest from Pasifika scholars</h3><div class="nw__list-items"></div></div></div>' +
-      '<div class="pn-chart"><div class="pn-chart__head"><div><h3 class="pn-chart__h">' + ico('chart') + 'Stories by country</h3>' +
-      '<p class="pn-chart__sub">News stories, new theses and publications, and events since ' + since + '. A story with scholars from two countries counts for both. Select a bar segment to see those stories.</p></div>' +
-      '<span class="pn-seg2" role="group" aria-label="Bar scale"><button type="button" data-pn-scale="count" aria-pressed="true">Counts</button><button type="button" data-pn-scale="share" aria-pressed="false">Share of each country</button><button type="button" data-pn-scale="heat" aria-pressed="false">Heatmap</button></span></div>' +
+      '<div class="pn-chart"><div class="pn-chart__head"><div><h3 class="pn-chart__h">' + ico('chart') + 'Stories by country for ' + new Date().getFullYear() + '</h3>' +
+      '<p class="pn-chart__sub">News stories, new theses and publications, and events since ' + since + '. A story with scholars from two countries counts for both; the Total row counts each story once. Select a bar segment to see those stories.</p></div>' +
+      '<span class="pn-seg2" role="group" aria-label="Bar scale"><button type="button" data-pn-scale="count" aria-pressed="true">Bar chart</button><button type="button" data-pn-scale="share" aria-pressed="false">Share of each country</button><button type="button" data-pn-scale="heat" aria-pressed="false">Heatmap</button></span></div>' +
       '<div class="pn-legend">' + ['News', 'Thesis', 'Publication', 'Event'].map(function (k) {
         return '<span><i style="background:' + TYPE_COLOR[k] + '"></i>' + ({ News: 'News', Thesis: 'New theses', Publication: 'New publications', Event: 'Events' })[k] + '</span>';
       }).join('') + '</div>' +
