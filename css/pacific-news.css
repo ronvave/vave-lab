@@ -186,7 +186,7 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 .pn-seg--tot { cursor: default; font-weight: 800; }
 .pn-hm__cell--tot { background: #0d2b55; color: #fff; font-weight: 800; }
 .pn-person { display: block; }
-.pn-person > b:first-child { color: #03045E; }
+.pn-person > b:first-child { color: #0000CD; }
 .pn-person b i, .pn-person i { color: #7B3F00; }
 .pn-inst { font-weight: 400; }
-.pn-inst__name { color: #03045E; font-weight: 700; }
+.pn-inst__name { color: #0000CD; font-weight: 700; }
