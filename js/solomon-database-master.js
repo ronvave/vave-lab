@@ -9796,6 +9796,8 @@
   function c3IsSolomonIslandsFocused_(it) {
     const districts = state.provincesByItem.get(it.key);
     if (districts && districts.size > 0) return true;
+    // Honiara City studies are Solomon Islands-focused but have no province bar.
+    if (it && it._masterSolomonHoniara) return true;
     const nonDistrictKey = state.nonProvincialFijiKey;
     return !!(nonDistrictKey && (it.collections || []).includes(nonDistrictKey));
   }
@@ -10516,6 +10518,16 @@
 
     const auth = ctx.auth;
     const scopeWord = ctx.includeAll ? 'across all locations' : 'in Solomon Islands-focused research';
+
+    // No confirmed province has any papers yet: say so plainly rather than
+    // naming a "leading" province with 0 papers.
+    if (!confirmed.some(r => (r.total || 0) > 0)) {
+      const pending = rows.filter(r => !r.isConfirmed).reduce((n, r) => n + (r.total || 0), 0);
+      el.innerHTML = pending
+        ? `None of the <strong>${pending}</strong> publication${pending === 1 ? '' : 's'} ${scopeWord} in this view has an author with a recorded home province yet, so they are shown under <strong>Province not yet confirmed</strong>.`
+        : `No publications ${scopeWord} match this view yet.`;
+      return;
+    }
 
     const fmt = (n) => `<strong>${n}</strong>`;
     const prov = (name) => `<strong>${escapeHtml(name)}</strong>`;

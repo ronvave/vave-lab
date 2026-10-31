@@ -803,6 +803,7 @@
       var seenDivisionForPub = new Set();
       var seenIslandForPub = new Set();
       var seenSiteForPub = new Set();
+      var solomonHoniaraForPub = false;
       geoRowsForPub.forEach(function (g) {
         var verif = String(g['Verification'] || '').trim();
         var verifOk = /^verified/i.test(verif) || verif.toLowerCase() === 'strong';
@@ -817,9 +818,43 @@
           geographyType: String(g['Geography Type'] || '').trim(),
           verification: verif
         });
+        // Panels C2/C3 province buckets. The Solomon Master records provinces
+        // as written ("Guadalcanal Province", "Western Province; Central
+        // Province", "National — nine provinces"), and multi-country rows
+        // list one province per country in the same order as the countries.
+        var rowCountries = String(g['Country'] || '').split(';').map(function (c) { return b4NormCountry(c.trim()); }).filter(Boolean);
+        var solIdx = rowCountries.indexOf('Solomon Islands');
+        if (solIdx !== -1) {
+          var provParts = String(g['Province/City Area (auto from District)'] || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean);
+          if (rowCountries.length > 1) provParts = (provParts.length === rowCountries.length) ? [provParts[solIdx]] : [];
+          var namedHere = [], honiaraOnly = provParts.length > 0;
+          provParts.forEach(function (part) {
+            var key = part.replace(/\s+province$/i, '').trim().toLowerCase();
+            var hit = PROVINCES.filter(function (n) { return n.toLowerCase() === key; })[0];
+            if (hit) namedHere.push(hit);
+            if (key !== 'honiara city' && key !== 'honiara') honiaraOnly = false;
+          });
+          if (namedHere.length) {
+            namedHere.forEach(function (n) {
+              if (seenProvForPub.has(n)) return;
+              seenProvForPub.add(n);
+              provincesInPub.push(n);
+              collections.push(provLocKeyByName[n]);
+            });
+          } else if (honiaraOnly) {
+            // Honiara City is its own reporting area (never folded into
+            // Guadalcanal) and has no bar of its own in C2/C3.
+            solomonHoniaraForPub = true;
+          } else if (!seenProvForPub.has(PROVINCE_UNSPEC)) {
+            // National, multi-province or country-level evidence with no single province.
+            seenProvForPub.add(PROVINCE_UNSPEC);
+            provincesInPub.push(PROVINCE_UNSPEC);
+            collections.push(provLocKeyByName[PROVINCE_UNSPEC]);
+            collections.push(COL_NONPROV_FIJI);
+          }
+        }
         if (rowCountry !== 'Solomon Islands') return;
         var division = String(g['Province/City Area (auto from District)'] || '').trim();
-        var prov = division;
         var island = String(g['Specific Island'] || '').trim();
         var site = String(g['Village / Town / Site'] || '').trim();
         
@@ -833,23 +868,6 @@
         if (site && !seenSiteForPub.has(site)) {
           seenSiteForPub.add(site); researchSitesInPub.push(site);
         }
-        if (!prov) return;
-        if (seenProvForPub.has(prov)) return;
-        seenProvForPub.add(prov);
-        if (PROVINCES.indexOf(prov) !== -1) {
-          // Named province
-          provincesInPub.push(prov);
-          collections.push(provLocKeyByName[prov]);
-        } else if (prov === PROVINCE_UNSPEC) {
-          provincesInPub.push(PROVINCE_UNSPEC);
-          collections.push(provLocKeyByName[PROVINCE_UNSPEC]);
-          collections.push(COL_NONPROV_FIJI);
-        } else if (prov === PROVINCE_UNSURE || prov === 'Unclassified') {
-          provincesInPub.push(PROVINCE_UNSURE);
-          collections.push(provLocKeyByName[PROVINCE_UNSURE]);
-        }
-        // Any other value (e.g. an ad-hoc note) is ignored; the province
-        // must match a known bucket to affect Panel C2.
       });
 
       // Panel B4 — tag a publication into each DISTINCT verified research
@@ -951,6 +969,7 @@
         _masterPublicationType: p['Publication Type'],
         _masterProvinces:   provincesInPub,
         _masterIslandDivisions: islandDivisionsInPub,
+        _masterSolomonHoniara: solomonHoniaraForPub,
         _masterSpecificIslands: specificIslandsInPub,
         _masterResearchSites: researchSitesInPub,
         // Verified evidence rows are retained so B4 can switch from one
