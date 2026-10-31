@@ -11,6 +11,7 @@
  * Configured from its own <script> tag:
  *   data-src     snapshot URL (plaintext name; the gate maps it to .enc)
  *   data-people  e.g. "iTaukei" or "Tongan"
+ *   data-b3      "off" to add the scholar card tab only (no Panel B3 toggle)
  * Nothing is shown until the gate has unlocked the data. Scholars with no
  * Positions records are not counted (missing coverage is not zero).
  */
@@ -19,6 +20,7 @@
   var me = document.currentScript;
   var SRC = (me && me.dataset.src) || '';
   var PEOPLE = (me && me.dataset.people) || '';
+  var B3_OFF = !!(me && me.dataset.b3 === 'off');
   if (!SRC) return;
 
   var P = null;          // snapshot
@@ -66,7 +68,7 @@
   function cardHtml(sid, rows) {
     var id = 'cpos-' + sid.replace(/[^A-Za-z0-9_-]/g, '_');
     var items = sortRows(rows).map(function (r) {
-      var title = esc(r.title) + (r.lead ? '; ' + esc(r.lead) : '');
+      var title = [r.title, r.lead].filter(Boolean).map(esc).join('; ');
       var sub = [r.dept, r.inst, r.country, years(r)].filter(Boolean).map(esc).join(' · ');
       return '<li class="cpos-item"><span class="cpos-pill ' + (r.cur ? 'is-cur">Current' : 'is-past">Past') + '</span>' +
         '<div class="cpos-item__text"><div class="cpos-item__title">' + title + '</div>' +
@@ -255,7 +257,7 @@
   function start() {
     load().then(function () {
       decorateAll();
-      buildB3();
+      if (!B3_OFF) buildB3();
     }).catch(function () { /* gate locked or file not yet published: show nothing */ });
   }
 

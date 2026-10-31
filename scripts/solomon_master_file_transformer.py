@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 import country_news  # noqa: E402  (Panel A3 scholar news snapshot)
+import country_positions  # noqa: E402  (scholar card Positions snapshot)
 
 from solomon_master_file_config import (
     ALL_SOLOMON_GEOGRAPHY_LABELS,
@@ -714,8 +715,38 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
     log("Fetching Awards, Funding, Positions...")
     awards = extract_awards(fetch_fn("Awards & Honours"))
     funding = extract_funding(fetch_fn("Scholarships & Funding"))
-    positions = extract_positions(fetch_fn("Positions"))
-    log(f"  -> {len(awards)} awards, {len(funding)} funding records, {len(positions)} positions")
+    _position_rows = fetch_fn("Positions")
+    positions = extract_positions(_position_rows)
+    # Scholar card "Positions" tab (same snapshot format as Fiji and Tonga).
+    # country_positions expects the Fiji/Tonga column names; map the Solomon ones.
+    _, _pos_dicts = rows_to_dicts(
+        _position_rows, SHEETS["Positions"]["header_row"], SHEETS["Positions"]["first_data"]
+    )
+    _inst_names = {str(i.get("Institution ID") or "").strip(): str(i.get("Canonical Name") or "").strip()
+                   for i in institutions}
+    def _pos_year(v):
+        v = str(v or "").strip()
+        return v if re.fullmatch(r"\d{4}", v) else ""
+    _card_pos = [{
+        "Position ID": d.get("Position ID"),
+        "Scholar ID": d.get("Scholar ID"),
+        "Institution": str(d.get("Institution") or "").strip()
+                       or _inst_names.get(str(d.get("Institution ID") or "").strip(), ""),
+        "Country": d.get("Country"),
+        "Department / Unit": d.get("Department"),
+        "Academic / Professional Title (verbatim)": d.get("Title"),
+        "Standardized Academic Rank": d.get("Standardized Academic Rank"),
+        "Leadership Title (verbatim)": d.get("Leadership Title (verbatim)"),
+        "Role Status": "Current" if str(d.get("Current Flag") or "").strip().lower() in ("true", "yes", "y") else "Past",
+        "Start Year": _pos_year(d.get("Start Year")),
+        "End Year": _pos_year(d.get("End Year")),
+        "Public Display Approved": d.get("Public Display Approved"),
+    } for d in _pos_dicts]
+    positions = country_positions.build(
+        _card_pos, scholars, source="Solomon_Islands_Master_file",
+        generator="scripts/solomon_master_file_transformer.py",
+    )
+    log(f"  -> {len(awards)} awards, {len(funding)} funding records, {len(positions['rows'])} positions for {len(positions['scholars'])} scholars")
 
     log("Fetching News...")
     try:
