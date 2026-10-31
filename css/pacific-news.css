@@ -185,8 +185,23 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 .pn-row--tot .pn-row__n, .pn-hm__row--tot .pn-hm__tot { font-weight: 800; font-size: 1.02rem; }
 .pn-seg--tot { cursor: default; font-weight: 800; }
 .pn-hm__cell--tot { background: #0d2b55; color: #fff; font-weight: 800; }
-.pn-person { display: block; }
-.pn-person > b:first-child { color: #0000CD; }
+.pn-person { display: flex; align-items: flex-start; gap: 8px; margin: 3px 0; }
+.pn-person > .pn-flag { flex: none; margin-top: 1px; }
+.pn-person--more { padding-left: 34px; }
+.pn-person__name { color: #0000CD; }
+.pn-person__inst { color: #111; font-style: normal; }
+.pn .nw__lt .pn-lname { color: #0000CD; }
+/* No-photo placeholder: teal textile with large serif initials */
+.pn .nw__img:not(.is-split), .pn .nw__img.is-split .nw-face {
+  background: linear-gradient(160deg, rgba(10,95,104,.15) 0%, rgba(6,72,82,.55) 55%, rgba(4,52,62,.8) 100%), #0b7479 url("../img/regional/pasifika-textile-teal.webp") left top / 420px auto repeat; }
+.pn .nw__img:not(.is-split) .nw__img__ini { font: 700 4.2rem/1 Georgia, 'Times New Roman', serif; letter-spacing: .02em; text-shadow: 0 2px 6px rgba(0,0,0,.35); position: relative; }
+.pn .nw__img.is-split .nw-face .nw__img__ini { font: 700 clamp(1.4rem, 3.2vw, 2.6rem)/1 Georgia, 'Times New Roman', serif; text-shadow: 0 2px 5px rgba(0,0,0,.35); position: relative; z-index: 0; }
+.pn .nw__img.is-split .nw-face img { z-index: 1; }
+/* Plumeria accent in the bottom-left of each initials tile (hidden under real photos) */
+.pn .nw__img:not(.is-split):not(:has(img))::after, .pn .nw__img.is-split .nw-face:not(:has(img))::after {
+  content: ""; position: absolute; left: 0; bottom: 0; width: 58%; aspect-ratio: 170 / 134; pointer-events: none;
+  background: url("../img/regional/plumeria-accent.svg") left bottom / contain no-repeat; }
+.pn .nw__img.is-split .nw-face:not(:has(img))::after { width: 88%; max-width: 170px; }
 .pn-person b i, .pn-person i { color: #7B3F00; }
 .pn-inst { font-weight: 400; }
 .pn-inst__name { color: #0000CD; font-weight: 700; }

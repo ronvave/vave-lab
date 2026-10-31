@@ -97,11 +97,12 @@
       });
       var u = faces[0].img || '';
       if (u) { it.img = u; it.portrait = true; }
-      if (faces.length > 1 && faces.some(function (x) { return x.img; })) { it.faces = faces; it.portrait = true; }
+      if (faces.length > 1) { it.faces = faces; it.portrait = true; }
     });
   }
   function imgHtml(it, cls) {
-    if (it.faces && it.faces.length > 1) return splitHtml(it, cls);
+    // The small list thumbnails keep single initials when nobody has a photo.
+    if (it.faces && it.faces.length > 1 && (cls !== 'nw__av' || it.faces.some(function (x) { return x.img; }))) return splitHtml(it, cls);
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.full || it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
     return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
@@ -208,16 +209,24 @@
         '<span><b class="pn-inst__name">' + esc(r[1]) + '</b>, ' + esc(r[2]) + '</span></span>';
     }).join('') + (more ? '<span class="pn-inst pn-inst--more">and ' + more + ' more</span>' : '') + '</span>';
   }
-  // Scholar names in bold, each followed by their current position in bold italics.
+  // One line per scholar under the title: home-country flag, name (bold blue),
+  // position (bold italic brown), institution (bold black). Same person once.
   function peopleLine(it) {
-    var ppl = Array.isArray(it.ppl) && it.ppl.length ? it.ppl : null;
-    if (!ppl) return '<b>' + esc(it.name) + '</b>';
-    var shown = ppl.slice(0, 3).map(function (p) {
-      var role = (DIR[p[1]] || {}).role;
-      return '<span class="pn-person"><b>' + esc(p[2]) + '</b>' + (role ? ', <b><i>' + esc(role) + '</i></b>' : '') + '</span>';
+    var ppl = Array.isArray(it.ppl) && it.ppl.length ? it.ppl : it.c.slice(0, 1).map(function (c) { return [c, it.sid, it.name]; });
+    var seen = {}, rows = [];
+    ppl.forEach(function (p) {
+      var key = p[1] || p[2];
+      if (seen[key]) return; seen[key] = 1;
+      rows.push(p);
     });
-    var rest = ppl.length - shown.length;
-    return shown.join('') + (rest > 0 ? '<span class="pn-person">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
+    var shown = rows.slice(0, 3).map(function (p) {
+      var sc = DIR[p[1]] || {}, inst = sc.inst || NAMES[p[0]] || p[0];
+      return '<span class="pn-person">' + flag(p[0], 'pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(p[2]) + '</b>' +
+        (sc.role ? ', <b><i>' + esc(sc.role) + '</i></b>' : '') +
+        (inst ? ', <b class="pn-person__inst">' + esc(inst) + '</b>' : '') + '</span></span>';
+    });
+    var rest = rows.length - shown.length;
+    return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
   }
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
@@ -225,7 +234,7 @@
     var pub = typeOf(it) === 'Publication';
     var meta = ev ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)];
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
-      '<div class="nw__body">' + instRows(it) +
+      '<div class="nw__body">' +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
@@ -300,8 +309,8 @@
       var flags = '<span class="pn-lflags">' + it.c.map(function (c) { return flag(c, 'pn-flag pn-flag--s'); }).join('') + '</span>';
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
         '<span class="nw__li-text"><span class="nw__lt">' + flags + (it.sub
-          ? esc(shortName(it.name)) + ' <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
-          : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
+          ? '<span class="pn-lname">' + esc(shortName(it.name)) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
+          : '<span class="pn-lname">' + esc(it.name) + '</span> · ' + esc(label(it))) + '</span>' +
         '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (typeOf(it) === 'Publication' ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
