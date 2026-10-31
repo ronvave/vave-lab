@@ -29,6 +29,8 @@
   var PLACE = (me && me.dataset.place) || 'the country';
   var FOOT_UNDER = !!(me && me.dataset.footUnder);  // note under the Pause row, list fills full height
   var EXAMPLE = (me && me.dataset.example) || 'Dr Suliana Mone';  // form placeholder name
+  // Home-country flag shown before each scholar's name (img/regional/flags-square/<code>.svg).
+  var FLAG = (me && me.dataset.flag) || '';
   // Stories by 2+ database scholars show every scholar's photo side by side
   // (up to 4 tiles; the last tile notes how many more). Opt-in per page.
   var SPLIT = !!(me && me.dataset.splitPhotos);
@@ -81,7 +83,8 @@
   }
   // Outlet image when it loads; initials otherwise.
   function imgHtml(it, cls) {
-    if (it.faces && it.faces.length > 1) return splitHtml(it, cls);
+    // The small list thumbnails keep single initials when nobody has a photo.
+    if (it.faces && it.faces.length > 1 && (cls !== 'nw__av' || it.faces.some(function (x) { return x.img; }))) return splitHtml(it, cls);
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
     return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
@@ -134,7 +137,7 @@
         var faces = it.sids.map(function (id) {
           return { img: photoOf(id), name: names[String(id).toUpperCase()] || '' };
         });
-        if (faces.some(function (x) { return x.img; })) { it.faces = faces; it.portrait = true; }
+        it.faces = faces; it.portrait = true;
       });
     }).catch(function () {});
   }
@@ -175,6 +178,66 @@
     }
   }
 
+  // ------------------------------------------------------------ look helpers
+  // Small inline icons (decorative; buttons keep their text labels).
+  function ico(name) {
+    var P = {
+      News: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zm13 4h3v8a2 2 0 0 1-2 2h-1M7 8h7M7 11h7M7 14h4"/>',
+      Thesis: '<path d="M2 9l10-5 10 5-10 5L2 9zm4 2.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8M21 9v6"/>',
+      Publication: '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H11v17H5.5A1.5 1.5 0 0 1 4 18.5v-14zM20 4.5A1.5 1.5 0 0 0 18.5 3H13v17h5.5a1.5 1.5 0 0 0 1.5-1.5v-14z"/>',
+      Event: '<path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h2M14 14h2M8 17h2"/>',
+      ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+      card: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14 10h4M14 13h4"/>',
+      chev: '<path d="M9 5l7 7-7 7"/>',
+      pause: '<path d="M9 5v14M15 5v14"/>',
+      play: '<path d="M8 5l11 7-11 7z"/>',
+      inst: '<path d="M3 9.5L12 4l9 5.5M4.5 10v8M9.5 10v8M14.5 10v8M19.5 10v8M3 20h18"/>'
+    };
+    return '<svg class="pn-ico pn-ico--' + name + '" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (P[name] || '') + '</svg>';
+  }
+  function flag(cls) {
+    if (!FLAG) return '';
+    return '<img class="' + (cls || 'pn-flag') + '" src="img/regional/flags-square/' + esc(FLAG) + '.svg" alt="" width="18" height="18">';
+  }
+  // Scholar position and institution, from the same records as the Panel F cards.
+  var PROF = null;
+  function profiles() {
+    if (PROF) return PROF;
+    var st = window.__vavelabDbState, m = st && st.scholarProfilesByName;
+    if (!m) return null;
+    var vals = typeof m.values === 'function' ? Array.from(m.values()) : Object.keys(m).map(function (k) { return m[k]; });
+    if (!vals.length) return null;
+    PROF = {};
+    vals.forEach(function (v) { if (v && v.scholarId) PROF[String(v.scholarId).toUpperCase()] = v; });
+    return PROF;
+  }
+  function profName(pr) {
+    return pr ? String((pr.first || '') + ' ' + (pr.last || '')).replace(/\s+/g, ' ').trim() : '';
+  }
+  // One line per scholar under the title: flag, name (blue), position (brown
+  // italic), institution badge. Same person once; up to 3 then "and N others".
+  function peopleLine(it) {
+    var P = profiles() || {};
+    var ids = Array.isArray(it.sids) && it.sids.length ? it.sids : (it.sid ? [it.sid] : []);
+    var seen = {}, rows = [];
+    ids.forEach(function (id) {
+      var k = String(id).toUpperCase();
+      if (seen[k]) return; seen[k] = 1;
+      rows.push(P[k] || null);
+    });
+    if (!rows.length) rows = [null];
+    var shown = rows.slice(0, 3).map(function (pr, k) {
+      var nm = profName(pr) || (k === 0 ? (it.full || it.name) : '');
+      if (!nm) return '';
+      var role = pr && pr.title, inst = pr && pr.institution;
+      return '<span class="pn-person">' + flag('pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(nm) + '</b>' +
+        (role ? ', <b><i>' + esc(role) + '</i></b>' : '') +
+        (inst ? ' <b class="pn-person__inst">' + ico('inst') + esc(inst) + '</b>' : '') + '</span></span>';
+    });
+    var rest = rows.length - shown.length;
+    return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
+  }
+
   // ------------------------------------------------------------ A3 panel
   // Toggle groups. "All" plus one button per announcement type; a type with
   // no stories yet still shows, with an invitation to share one.
@@ -207,7 +270,8 @@
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
-    var meta = ev ? [it.name, it.when || dateLabel(it), it.where] : [it.name, it.outlet, dateLabel(it)];
+    var pub = typeOf(it) === 'Publication';
+    var meta = ev ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)];
     var go = goLabel(it);
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
       '<div class="nw__body">' +
@@ -215,12 +279,13 @@
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
-      '<div class="nw__meta">' + meta.filter(Boolean).map(esc).join(' · ') + '</div>' +
+      '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>' +
+      '<div class="nw__meta">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
-      '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(go) + '</a>' +
-      (it.sid ? '<button type="button" class="nw__a" data-nw-open>Open scholar card</button>' : '') +
+      '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + ico(typeOf(it) === 'Publication' || typeOf(it) === 'Thesis' ? 'Publication' : 'News') + esc(go) + ico('ext') + '</a>' +
+      (it.sid ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
       '</div></div>';
   }
 
@@ -246,6 +311,10 @@
       b.setAttribute('aria-current', k === A.i ? 'true' : 'false');
     });
     root.querySelectorAll('.nw__dot').forEach(function (d, k) { d.classList.toggle('is-on', k === A.i); });
+    var on = root.querySelector('.nw__li.is-on'), box = root.querySelector('.nw__list-items');
+    if (on && box && (on.offsetTop < box.scrollTop || on.offsetTop + on.offsetHeight > box.scrollTop + box.clientHeight)) {
+      box.scrollTop = on.offsetTop - 8;
+    }
   }
 
   function schedule() {
@@ -257,11 +326,12 @@
 
   function listHtml(items) {
     return items.map(function (it, k) {
+      var pub = typeOf(it) === 'Publication';
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
-        '<span class="nw__li-text"><span class="nw__lt">' + (it.sub
-          ? esc(shortName(it.name)) + ' <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
-          : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
-        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
+        '<span class="nw__li-text"><span class="nw__lt">' + (FLAG ? '<span class="pn-lflags">' + flag('pn-flag pn-flag--s') + '</span>' : '') + (it.sub
+          ? '<span class="pn-lname">' + esc(shortName(it.name)) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
+          : '<span class="pn-lname">' + esc(it.name) + '</span> · ' + esc(label(it))) + '</span>' +
+        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (pub ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
 
@@ -303,21 +373,22 @@
       (SUBMIT ? ' Know of a news story, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
       '</p>';
     if (FOOT_UNDER) root.classList.add('nw--foot-under');
+    root.classList.add('cn');
     root.querySelector('[data-news-body]').innerHTML =
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
         var n = t.key === 'all' ? N.items.filter(inAll).length : (counts[t.key] || 0);
-        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + esc(t.label) +
+        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) +
           '<span class="nw__n">' + n + '</span></button>';
       }).join('') + '</div>' + share + '</div>' +
-      '<div class="nw__grid"><div class="nw__main"><div class="nw__feat" aria-live="polite"></div>' +
+      '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
       '<button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>' +
-      '<button type="button" class="nw__pause" data-nw-pause aria-pressed="false">Pause</button>' +
+      '<button type="button" class="nw__pause" data-nw-pause aria-pressed="false" aria-label="Pause">' + ico('pause') + '</button>' +
       '<button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button></div>' +
       '<div class="nw__dots" aria-hidden="true"></div></div>' +
       (FOOT_UNDER ? foot : '') +
-      '</div><div class="nw__list"><div class="nw__list-items"></div>' +
+      '</div></div><div class="nw__list"><h3 class="pn-list__h">Latest from ' + esc(PEOPLE) + ' scholars</h3><div class="nw__list-items"></div>' +
       (FOOT_UNDER ? '' : foot) + '</div></div>';
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
@@ -325,7 +396,8 @@
     var pause = ctrls.querySelector('[data-nw-pause]');
     pause.addEventListener('click', function () {
       A.paused = !A.paused;
-      pause.textContent = A.paused ? 'Play' : 'Pause';
+      pause.innerHTML = ico(A.paused ? 'play' : 'pause');
+      pause.setAttribute('aria-label', A.paused ? 'Play' : 'Pause');
       pause.setAttribute('aria-pressed', A.paused ? 'true' : 'false');
       schedule();
     });
@@ -341,6 +413,14 @@
     grid.addEventListener('focusout', function (e) { if (!grid.contains(e.relatedTarget)) schedule(); });
     root.hidden = false;
     setType('all');
+    // Positions and institutions come with the Panel F records; redraw once they are ready.
+    if (!profiles()) {
+      var tries = 0;
+      (function wait() {
+        if (profiles()) { if (A.list.length) show(A.i); return; }
+        if (++tries < 40) setTimeout(wait, 500);
+      })();
+    }
   }
 
   // ------------------------------------------------------------ share form
