@@ -369,6 +369,35 @@
     var max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([1]));
     var keys = ['News', 'Thesis', 'Publication', 'Event'];
     var lbl = { News: 'News', Thesis: 'New theses', Publication: 'New publications', Event: 'Events' };
+    var legend = A.root.querySelector('.pn-legend');
+    if (legend) legend.hidden = A.scale === 'heat';
+    box.classList.toggle('is-heat', A.scale === 'heat');
+    var csub = A.root.querySelector('.pn-chart__sub');
+    if (csub) csub.textContent = csub.textContent.replace(/Select a (bar segment|cell)/, A.scale === 'heat' ? 'Select a cell' : 'Select a bar segment');
+    if (A.scale === 'heat') {
+      // Heatmap: one row per country, one column per story type. Shade uses a
+      // square-root scale so small counts stay visible next to Fiji's 75.
+      var cmax = Math.max.apply(null, rows.map(function (r) { return Math.max(r.n.News, r.n.Thesis, r.n.Publication, r.n.Event); }).concat([1]));
+      var shade = function (v) {
+        if (!v) return 'background:#f4f1ea;color:#111';
+        var t = Math.sqrt(v / cmax), l = 92 - t * 66;
+        return 'background:hsl(184,62%,' + l.toFixed(1) + '%);color:' + (l < 42 ? '#fff' : '#111');
+      };
+      box.innerHTML = '<div class="pn-hm" role="table" aria-label="Stories by country and type">' +
+        '<div class="pn-hm__row pn-hm__row--head" role="row"><span role="columnheader"></span>' +
+        keys.map(function (k) { return '<span class="pn-hm__colh" role="columnheader"><i style="background:' + TYPE_COLOR[k] + '"></i>' + lbl[k] + '</span>'; }).join('') +
+        '<span class="pn-hm__colh pn-hm__colh--tot" role="columnheader">Total</span></div>' +
+        rows.map(function (r) {
+          return '<div class="pn-hm__row' + (A.on[r.c] ? '' : ' is-off') + '" role="row"><span class="pn-row__lab" role="rowheader"><span>' + esc(NAMES[r.c]) + '</span>' + flag(r.c, 'pn-flag pn-flag--m') + '</span>' +
+            keys.map(function (k) {
+              var v = r.n[k];
+              return v ? '<button type="button" class="pn-hm__cell pn-seg" role="cell" data-c="' + r.c + '" data-t="' + k + '" style="' + shade(v) + '" title="' + esc(NAMES[r.c] + ': ' + v + ' ' + lbl[k].toLowerCase()) + '" aria-label="' + esc(NAMES[r.c] + ', ' + lbl[k] + ', ' + v) + '">' + v + '</button>'
+                : '<span class="pn-hm__cell is-zero" role="cell" style="' + shade(0) + '">0</span>';
+            }).join('') +
+            '<span class="pn-hm__tot" role="cell">' + r.total + '</span></div>';
+        }).join('') +
+        '<div class="pn-hm__key"><span>Fewer</span><span class="pn-hm__ramp"></span><span>More stories</span></div></div>';
+    } else
     box.innerHTML = rows.map(function (r) {
       var segs = keys.map(function (k) {
         var v = r.n[k]; if (!v) return '';
@@ -436,7 +465,7 @@
       '</div></div><div class="nw__list"><h3 class="pn-list__h">Latest from Pasifika scholars</h3><div class="nw__list-items"></div></div></div>' +
       '<div class="pn-chart"><div class="pn-chart__head"><div><h3 class="pn-chart__h">' + ico('chart') + 'Stories by country</h3>' +
       '<p class="pn-chart__sub">News stories, new theses and publications, and events since ' + since + '. A story with scholars from two countries counts for both. Select a bar segment to see those stories.</p></div>' +
-      '<span class="pn-seg2" role="group" aria-label="Bar scale"><button type="button" data-pn-scale="count" aria-pressed="true">Counts</button><button type="button" data-pn-scale="share" aria-pressed="false">Share of each country</button></span></div>' +
+      '<span class="pn-seg2" role="group" aria-label="Bar scale"><button type="button" data-pn-scale="count" aria-pressed="true">Counts</button><button type="button" data-pn-scale="share" aria-pressed="false">Share of each country</button><button type="button" data-pn-scale="heat" aria-pressed="false">Heatmap</button></span></div>' +
       '<div class="pn-legend">' + ['News', 'Thesis', 'Publication', 'Event'].map(function (k) {
         return '<span><i style="background:' + TYPE_COLOR[k] + '"></i>' + ({ News: 'News', Thesis: 'New theses', Publication: 'New publications', Event: 'Events' })[k] + '</span>';
       }).join('') + '</div>' +

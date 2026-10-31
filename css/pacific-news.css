@@ -145,3 +145,22 @@
 .pn-outlet { font-style: italic; }
 /* Legend starts above the left edge of the bars (label column 250px + 10px gap) */
 .pn-legend { padding-left: 260px; }
+
+/* Heatmap view of Stories by country */
+.pn-legend[hidden] { display: none; }
+.pn-hm { display: grid; gap: 4px; }
+.pn-hm__row { display: grid; grid-template-columns: 250px repeat(4, minmax(0, 1fr)) 70px; gap: 4px 6px; align-items: center; }
+.pn-hm__row--head { margin: 6px 0 2px; }
+.pn-hm__colh { display: flex; align-items: center; justify-content: center; gap: 6px; font: 700 .82rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-hm__colh i { width: 12px; height: 12px; border-radius: 50%; }
+.pn-hm__colh--tot { justify-content: flex-end; }
+.pn-hm__cell { height: 28px; border: 0; border-radius: 5px; display: flex; align-items: center; justify-content: center; font: 700 .82rem Arial, Helvetica, sans-serif; }
+button.pn-hm__cell { cursor: pointer; }
+button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
+.pn-hm__cell.is-zero { color: #111; font-weight: 400; }
+.pn-hm__tot { text-align: right; font: 700 .9rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-hm__row.is-off .pn-hm__cell { background: #f4f1ea !important; color: #111 !important; font-weight: 400; }
+.pn-hm__row.is-off .pn-row__lab { font-weight: 400; }
+.pn-hm__row.is-off .pn-flag { filter: grayscale(1); opacity: .6; }
+.pn-hm__key { display: flex; align-items: center; gap: 8px; margin: 8px 0 0 256px; font: 400 .8rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-hm__ramp { width: 180px; height: 10px; border-radius: 5px; background: linear-gradient(90deg, hsl(184,62%,92%), hsl(184,62%,59%), hsl(184,62%,26%)); }
