@@ -18,6 +18,18 @@
  */
 (function () {
   'use strict';
+  // Wide outlet photos in the featured box: mark them so a panel can show the
+  // whole photo instead of a centre crop (used by Tonga via .nw--fit-wide).
+  document.addEventListener('load', function (e) {
+    var im = e.target;
+    if (!im || im.tagName !== 'IMG') return;
+    var box = im.parentNode;
+    if (!box || !box.classList || !box.classList.contains('nw__img') || box.classList.contains('is-split')) return;
+    if (im.naturalWidth > im.naturalHeight * 1.1) {
+      box.classList.add('is-wide');
+      box.style.setProperty('--nw-wide-bg', 'url("' + String(im.currentSrc || im.src).replace(/"/g, '%22') + '")');
+    }
+  }, true);
   var me = document.currentScript;
   var SRC = (me && me.dataset.src) || '';
   // Scholar photos (same sources as the Panel F cards): Admin enrichment

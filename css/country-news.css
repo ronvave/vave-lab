@@ -277,3 +277,9 @@
 .ev-qrbox svg, .ev-qrbox img { width: 150px; height: 150px; display: block; background: #fff; }
 .ev-qrbox span { font-weight: 700; }
 .ev-form .nw-form__row { align-items: start; }
+
+/* Tonga and Fiji: wide news photos in the featured box show in full over a soft,
+   blurred fill of the same photo, so people at the edges are not cut off. */
+.nw--fit-wide .nw__img.is-wide { overflow: hidden; }
+.nw--fit-wide .nw__img.is-wide::before { content: ""; position: absolute; inset: -24px; background: var(--nw-wide-bg) center / cover no-repeat; filter: blur(16px) brightness(.8); }
+.nw--fit-wide .nw__img.is-wide img { object-fit: contain; z-index: 1; }
