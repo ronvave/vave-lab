@@ -135,7 +135,8 @@
       chev: '<path d="M9 5l7 7-7 7"/>',
       chart: '<path d="M5 20V12M10 20V7M15 20V10M20 20V4"/>',
       pause: '<path d="M9 5v14M15 5v14"/>',
-      play: '<path d="M8 5l11 7-11 7z"/>'
+      play: '<path d="M8 5l11 7-11 7z"/>',
+      inst: '<path d="M3 9.5L12 4l9 5.5M4.5 10v8M9.5 10v8M14.5 10v8M19.5 10v8M3 20h18"/>'
     };
     return '<svg class="pn-ico pn-ico--' + name + '" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (P[name] || '') + '</svg>';
   }
@@ -223,7 +224,7 @@
       var sc = DIR[p[1]] || {}, inst = sc.inst || NAMES[p[0]] || p[0];
       return '<span class="pn-person">' + flag(p[0], 'pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(p[2]) + '</b>' +
         (sc.role ? ', <b><i>' + esc(sc.role) + '</i></b>' : '') +
-        (inst ? ', <b class="pn-person__inst">' + esc(inst) + '</b>' : '') + '</span></span>';
+        (inst ? ' <b class="pn-person__inst">' + ico('inst') + esc(inst) + '</b>' : '') + '</span></span>';
     });
     var rest = rows.length - shown.length;
     return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');

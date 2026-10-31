@@ -189,7 +189,8 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 .pn-person > .pn-flag { flex: none; margin-top: 1px; }
 .pn-person--more { padding-left: 34px; }
 .pn-person__name { color: #0000CD; }
-.pn-person__inst { color: #111; font-style: normal; }
+.pn-person__inst { display: inline-flex; align-items: center; gap: 7px; margin: 1px 0; padding: 3px 11px 3px 9px; border-radius: 6px; background: #0b7479; color: #fff; font: 700 .86rem/1.35 Arial, Helvetica, sans-serif; font-style: normal; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.pn-person__inst .pn-ico { width: 15px; height: 15px; flex: none; }
 .pn .nw__lt .pn-lname { color: #0000CD; }
 /* No-photo placeholder: teal textile with large serif initials */
 .pn .nw__img:not(.is-split), .pn .nw__img.is-split .nw-face {
@@ -199,9 +200,9 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 .pn .nw__img.is-split .nw-face img { z-index: 1; }
 /* Plumeria accent in the bottom-left of each initials tile (hidden under real photos) */
 .pn .nw__img:not(.is-split):not(:has(img))::after, .pn .nw__img.is-split .nw-face:not(:has(img))::after {
-  content: ""; position: absolute; left: 0; bottom: 0; width: 58%; aspect-ratio: 170 / 134; pointer-events: none;
-  background: url("../img/regional/plumeria-accent.svg") left bottom / contain no-repeat; }
-.pn .nw__img.is-split .nw-face:not(:has(img))::after { width: 88%; max-width: 170px; }
+  content: ""; position: absolute; left: 0; bottom: 0; width: 42%; aspect-ratio: 446 / 480; pointer-events: none;
+  background: url("../img/regional/plumeria-cluster.webp") left bottom / contain no-repeat; }
+.pn .nw__img.is-split .nw-face:not(:has(img))::after { width: 80%; max-width: 160px; }
 .pn-person b i, .pn-person i { color: #7B3F00; }
 .pn-inst { font-weight: 400; }
 .pn-inst__name { color: #0000CD; font-weight: 700; }
