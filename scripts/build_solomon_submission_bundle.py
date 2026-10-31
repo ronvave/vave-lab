@@ -7,5 +7,7 @@ target.write_text(
     + (root / "apps-script/vendor/solomon-jwt.gs").read_text()
     + "\n"
     + (root / "apps-script/solomon-master-writeback.gs").read_text()
+    + "\n"
+    + (root / "apps-script/news-events.gs").read_text()
 )
 print(target.relative_to(root))

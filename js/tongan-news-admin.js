@@ -1,4 +1,4 @@
-/* Admin V2: "News Story Submissions" queue (Tonga and Fiji).
+/* Admin V2: "News Story Submissions" queue (Tonga, Fiji and Solomon Islands).
  * Country wording comes from #news-queue data attributes (data-place,
  * data-id-example); without them the Tonga wording is used.
  * Links sent from dashboard Panel A3 ("Share a story") wait here. An Owner or
@@ -25,6 +25,42 @@
     if (cls) n.className = cls;
     if (parent) parent.appendChild(n);
     return n;
+  }
+  // Event submissions ("Share an event" form) carry row.event, plus private
+  // flyer and QR previews (row.flyerPreview, row.qrPreview) while pending.
+  function evWhen(ev) {
+    if (ev.allDay) return ev.start + (ev.end ? ' to ' + ev.end : '') + ' (all day, ' + ev.tz + ')';
+    return ev.start + ', ' + ev.stime + (ev.etime ? '\u2013' + ev.etime : '') + (ev.end ? ' (ends ' + ev.end + ')' : '') + ' ' + ev.tz;
+  }
+  function evWhere(ev) {
+    var p = [];
+    if (ev.format !== 'Online') p.push([ev.venue, ev.room, ev.city, ev.country].filter(Boolean).join(', '));
+    if (ev.format !== 'In person') p.push((ev.format === 'Hybrid' ? 'and online via ' : 'Online via ') + (ev.platform || 'video link'));
+    return p.join(' ');
+  }
+  var EXTRA = { talk: 'Talk title', candidate: 'Candidate', degree: 'Degree', thesis: 'Thesis title', uni: 'University', chair: 'Chair', 'public': 'Open to the public', site: 'Event website', abstract: 'Abstract deadline', 'for': 'Who it is for', cap: 'Places', work: 'Work launched', publisher: 'Publisher', protocol: 'Protocol', hours: 'Opening hours', honour: 'Honour' };
+  function evDetails(c, row) {
+    var ev = row.event, box = el('div', null, c, 'tnews-ev');
+    el('h4', 'Event details from the form', box);
+    var dl = el('dl', null, box, 'tnews-dl');
+    var co = ev.contact || {};
+    [['Event', ev.etype + ' · ' + ev.title], ['Their role', ev.role], ['When', evWhen(ev) + (ev.series ? ' · ' + ev.series : '')], ['Where', evWhere(ev)],
+      ['Format and access', [ev.format, ev.access, ev.cost, ev.lang].filter(Boolean).join(' · ')],
+      ['Join link', ev.join ? ev.join + (ev.mid ? ' · ID ' + ev.mid : '') + (ev.pass ? ' · passcode ' + ev.pass : '') : ''],
+      ['Livestream', ev.live || ''], ['Recording planned', ev.format !== 'In person' ? (ev.rec ? 'Yes' : 'No') : ''],
+      ['Registration', ev.reg ? ev.reg + (ev.regBy ? ' · by ' + ev.regBy : '') : ''],
+      ['Hosts', ev.hosts], ['Sponsors', ev.sponsors], ['Accessibility', ev.a11y], ['Description', ev.desc]]
+      .concat(Object.keys(EXTRA).filter(function (k) { return ev.extra && ev.extra[k]; }).map(function (k) { return [EXTRA[k], ev.extra[k]]; }))
+      .concat([['Contact', co.name ? [co.name, co.role, co.email, co.phone].filter(Boolean).join(' · ') + (co.show ? ' (agreed to show it)' : ' (private, not shown)') : ''],
+        ['How they are involved', ev.involved === 'Seen' ? 'Saw it advertised' : ev.involved]])
+      .forEach(function (kv) { if (kv[1]) { el('dt', kv[0], dl); el('dd', kv[1], dl); } });
+    if (row.flyerPreview || row.qrPreview) {
+      var pics = el('div', null, box, 'tnews-ev-pics');
+      [[row.flyerPreview, 'Flyer (private until approved)'], [row.qrPreview, 'Their QR code image']].forEach(function (x) {
+        if (!x[0] || !/^data:image\/(png|jpeg);base64,/.test(x[0])) return;
+        var f = el('figure', null, pics), im = el('img', null, f); im.src = x[0]; im.alt = x[1]; el('figcaption', x[1], f);
+      });
+    } else if (row['Flyer File ID']) el('p', 'A flyer was uploaded (a PDF or a file too large to preview). Open the Event Flyers folder in Drive to see it.', box, 'meta');
   }
   function safeUrl(u) { try { var x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ''; } catch (_) { return ''; } }
   function api() {
@@ -71,11 +107,13 @@
     el('span', row['Submitted At'], head, 'meta');
     var u = safeUrl(row['Article URL']);
     var p = el('p', null, c, 'tnews-link');
-    if (u) { var a = el('a', row['Article URL'], p); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; } else p.textContent = row['Article URL'];
+    if (u) { var a = el('a', row['Article URL'], p); a.href = u; a.target = '_blank'; a.rel = 'noopener noreferrer'; } else p.textContent = row['Article URL'] || (row.event ? 'No web page given. This event was sent with the event form.' : '');
     var dl = el('dl', null, c, 'tnews-dl');
     [['Scholar(s) or author(s)', row['Scholar(s) Named'] || 'Not given'], ['Sent by', row['Submitter Name'] + ' · ' + row['Submitter Email']], ['Their note', row['Submitter Note'] || 'None']].forEach(function (kv) {
       el('dt', kv[0], dl); el('dd', kv[1], dl);
     });
+    var ev = row.event && row.event.title ? row.event : null;
+    if (ev) evDetails(c, row);
     if (row.Status !== 'Pending') {
       el('p', row.Status + ' by ' + (row['Reviewed By'] || '').split(' (')[0] + ' on ' + row['Reviewed At'] + (row['News ID'] ? ' · added as ' + row['News ID'] : '') + (row['Decision Notes'] ? ' · ' + row['Decision Notes'] : ''), c, 'meta');
       return;
@@ -83,6 +121,7 @@
     var form = el('div', null, c, 'tnews-form');
     var fill = el('button', 'Fill details from the link', form, 'tnews-fill'); fill.type = 'button';
     var fillMsg = el('span', 'Reads the page title, picture, outlet and date and suggests matching scholars. Check every field.', form, 'meta tnews-fill-msg');
+    if (!u) { fill.hidden = true; fillMsg.textContent = 'The fields below are filled from the event form. Choose the scholar and check every field.'; }
     var grid = el('div', null, form, 'tnews-grid');
     var scholar = field(grid, 'Scholar', 'scholarSel', 'select', '', { options: [['', 'Choose after filling, or type an ID below']] });
     var sid = field(grid, 'Scholar ID', 'scholarId', 'text', '', { placeholder: IDX });
@@ -98,6 +137,16 @@
     var credit = field(grid, 'Image credit', 'imageCredit', 'text', '');
     var also = field(grid, 'Also covered by', 'also', 'text', '');
     var sum = field(grid, 'Summary (one or two sentences in your own words)', 'summary', 'textarea', '', { wide: true });
+    var evStatus = null, evRec = null, useFlyer = null, useQr = null;
+    if (ev) {
+      evStatus = field(grid, 'Event status', 'eventStatus', 'select', '', { options: [['', 'Going ahead'], ['Postponed', 'Postponed'], ['Cancelled', 'Cancelled']], hint: 'You can change this later in the News tab (Event Status column).' });
+      evRec = field(grid, 'Recording link (after the event)', 'recordingUrl', 'url', '', { hint: 'Optional. You can add it later in the News tab (Recording URL column).' });
+      if (row['Flyer File ID']) { useFlyer = el('input', null, el('label', null, grid, 'tnews-f tnews-check')); useFlyer.type = 'checkbox'; useFlyer.checked = true; useFlyer.parentNode.appendChild(document.createTextNode(' Show the flyer on the dashboard (makes only this file viewable by link)')); }
+      if (row['QR Image File ID']) { useQr = el('input', null, el('label', null, grid, 'tnews-f tnews-check')); useQr.type = 'checkbox'; useQr.checked = true; useQr.parentNode.appendChild(document.createTextNode(' Use their QR code image')); }
+      head2.value = ev.title || ''; date.value = ev.start || ''; when.value = evWhen(ev); where.value = evWhere(ev);
+      sum.value = ev.desc || ''; outlet.value = ev.hosts || '';
+      if (row['Flyer File ID']) img.closest('label').querySelector('small').textContent = 'Leave blank to use the flyer as the picture.';
+    }
     var notes = field(grid, 'Review note (private)', 'notes', 'text', '', { wide: true });
     var thumb = el('img', null, form, 'tnews-thumb'); thumb.alt = ''; thumb.hidden = true;
     function sync() {
@@ -135,10 +184,15 @@
         date: date.value, eventTime: when.value.trim(), eventLocation: where.value.trim(), imageUrl: img.value.trim(),
         imageCredit: credit.value.trim(), also: also.value.trim(), summary: sum.value.trim(), articleUrl: row['Article URL']
       };
+      if (ev) {
+        story.eventStatus = evStatus.value; story.recordingUrl = evRec.value.trim();
+        story.useFlyer = useFlyer ? useFlyer.checked : false; story.useQr = useQr ? useQr.checked : false;
+      }
       if (decision === 'approve') {
         var miss = [];
         if (!story.scholarId && !(OPEN[story.type] && story.displayName)) miss.push(OPEN[story.type] ? 'scholar, or the author name(s)' : 'scholar'); if (!story.headline) miss.push('headline'); if (!story.date) miss.push('date');
         if (story.type === 'News' && !story.category) miss.push('category');
+        if (ev && story.recordingUrl && !safeUrl(story.recordingUrl)) miss.push('full recording link (starting with https://)');
         if (miss.length) { msg.textContent = 'Add the ' + miss.join(', ') + ' first.'; msg.classList.add('tonga-error'); return; }
         if (!window.confirm('Add this ' + (TYPES.filter(function (t) { return t[0] === story.type; })[0] || TYPES[0])[1].toLowerCase() + ' to the News tab with Show on Dashboard = Yes?')) return;
       } else if (!window.confirm('Reject this link? It will not appear on the dashboard.')) return;

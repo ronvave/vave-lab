@@ -365,7 +365,7 @@
     if (live && ev.live) acts.push('<a class="nw__a" href="' + esc(ev.live) + '" target="_blank" rel="noopener">' + I.rec + 'Watch live' + I.ext + '</a>');
     if (st === 'Past' && ev.recUrl) acts.push('<a class="nw__a nw__a--p" href="' + esc(ev.recUrl) + '" target="_blank" rel="noopener">' + I.rec + 'Watch the recording' + I.ext + '</a>');
     if (live) acts.push('<button type="button" class="nw__a" data-ev-ics>' + I.cal + 'Add to calendar</button>');
-    if (it.flyer) acts.push('<a class="nw__a" href="' + esc(it.flyer) + '" target="_blank" rel="noopener">' + I.flyer + 'View flyer</a>');
+    if (it.flyer) acts.push('<a class="nw__a" href="' + esc(it.flyerLink || it.flyer) + '" target="_blank" rel="noopener">' + I.flyer + 'View flyer</a>');
     if (live && (ev.qrImg || qrTarget(ev))) acts.push('<button type="button" class="nw__a" data-ev-qr aria-expanded="false">' + I.qr + 'QR code</button>');
     if (it.url) acts.push('<a class="nw__a" href="' + esc(it.url) + '" target="_blank" rel="noopener">Event page' + I.ext + '</a>');
     if (it.sid) acts.push('<button type="button" class="nw__a" data-nw-open>' + h.ico('card') + 'Open scholar card</button>');

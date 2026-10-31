@@ -18,6 +18,7 @@ and scripts/plaintext_changed.py skips the re-encrypt.
 from __future__ import annotations
 
 import html
+import json
 import re
 from datetime import datetime
 
@@ -54,6 +55,60 @@ def _iso(v) -> str:
 def _url(v) -> str:
     s = _s(v)
     return s if s.startswith(("https://", "http://")) else ""
+
+
+# Event details from the "Share an event" form (News tab "Event Details",
+# JSON). Only these keys reach the dashboard; the private "how are you
+# involved" answer never does, and the contact only when the submitter agreed.
+EV_KEYS = ("etype", "title", "desc", "role", "start", "stime", "end", "etime", "allDay", "tz", "series",
+           "format", "access", "cost", "lang", "a11y", "hosts", "sponsors", "venue", "room", "city",
+           "country", "platform", "join", "mid", "pass", "live", "rec", "reg", "regBy", "qrImg")
+EV_EXTRA = ("talk", "candidate", "degree", "thesis", "uni", "chair", "public", "site", "abstract", "for",
+            "cap", "work", "publisher", "protocol", "hours", "honour")
+EV_URLS = ("join", "live", "reg", "qrImg")
+
+
+def _drive_id(v) -> str:
+    m = re.search(r"(?:/d/|[?&]id=)([A-Za-z0-9_-]{20,})", _s(v))
+    return m.group(1) if m else ""
+
+
+def _event(r: dict):
+    """(ev, flyer image, flyer link) from a News row, or (None, '', '')."""
+    raw = str(r.get("Event Details") or "").strip()
+    if not raw:
+        return None, "", ""
+    try:
+        src = json.loads(raw)
+    except ValueError:
+        return None, "", ""
+    if not isinstance(src, dict):
+        return None, "", ""
+    ev = {}
+    for k in EV_KEYS:
+        v = src.get(k)
+        if isinstance(v, bool):
+            ev[k] = v
+        elif v not in (None, ""):
+            ev[k] = _url(v) if k in EV_URLS else _s(v)
+    ev = {k: v for k, v in ev.items() if v != ""}
+    if not re.match(r"^\d{4}-\d{2}-\d{2}$", ev.get("start", "")) or not ev.get("tz"):
+        return None, "", ""
+    ex = src.get("extra") if isinstance(src.get("extra"), dict) else {}
+    ev["extra"] = {k: v for k in EV_EXTRA for v in [_url(ex.get(k)) if k == "site" else _s(ex.get(k))] if v}
+    c = src.get("contact") if isinstance(src.get("contact"), dict) else {}
+    if _s(c.get("name")):
+        ev["contact"] = {k: _s(c.get(k)) for k in ("name", "role", "email", "phone") if _s(c.get(k))}
+    st = _s(r.get("Event Status")).title()
+    if st in ("Postponed", "Cancelled"):
+        ev["status"] = st
+    rec = _url(r.get("Recording URL"))
+    if rec:
+        ev["recUrl"] = rec
+    fid = _drive_id(r.get("Flyer URL"))
+    if fid:
+        return ev, f"https://drive.google.com/thumbnail?id={fid}&sz=w1600", f"https://drive.google.com/file/d/{fid}/view"
+    return ev, "", ""
 
 
 THESIS_TYPES = {"PhD Thesis", "Master's Thesis", "Other Thesis"}
@@ -168,7 +223,11 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
         if not on_roster and not (typ in OPEN_TYPES and shown):
             skipped.append(nid or head[:40])
             continue
-        if not head or not url or not date:
+        ev, flyer, flyer_link = _event(r) if typ == "Event" else (None, "", "")
+        if ev and not date:
+            date = ev["start"]
+        # Events from the "Share an event" form may have no web page.
+        if not head or not (url or ev) or not date:
             skipped.append(nid or head[:40])
             continue
         items.append({
@@ -190,8 +249,13 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
             "sum": _s(r.get("Summary")),
             "also": _s(r.get("Also Covered By")),
         })
+        if ev:
+            items[-1]["ev"] = ev
+            if flyer:
+                items[-1].update(flyer=flyer, flyerLink=flyer_link)
+                items[-1]["img"] = items[-1]["img"] or flyer
     items.sort(key=lambda x: (x["date"], x["id"]), reverse=True)
-    seen = {re.sub(r"^https?://(www\.)?|/+$", "", i["url"].lower()) for i in items}
+    seen = {re.sub(r"^https?://(www\.)?|/+$", "", i["url"].lower()) for i in items if i["url"]}
     auto = [a for a in auto_items(publications, authorship, roster, today, only_types)
             if re.sub(r"^https?://(www\.)?|/+$", "", a["url"].lower()) not in seen]
     shown = {k: 0 for k in AUTO_IN_ALL}

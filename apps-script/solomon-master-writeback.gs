@@ -823,7 +823,7 @@ function inspectConfig() {
 
 function solomonReadAction_(params) {
   var action=params.action||'ping';
-    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Solomon Islands',version:SOLOMON_SUBMISSIONS_VERSION,combinedReview:true,banSubmitter:SOLOMON_REQUEST_ROLE==='owner',currentGeography:true,role:SOLOMON_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:SOLOMON_REQUEST_ROLE==='owner'});
+    if (action === 'reviewCapabilities') return jsonOut_({status:'ok',country:'Solomon Islands',version:SOLOMON_SUBMISSIONS_VERSION,news:SOLOMON_NEWS_VERSION,events:typeof VL_EVENT_VERSION!=='undefined'?VL_EVENT_VERSION:'',combinedReview:true,banSubmitter:SOLOMON_REQUEST_ROLE==='owner',currentGeography:true,role:SOLOMON_REQUEST_ROLE,actor:ACTOR_LABEL,photoPublishing:SOLOMON_REQUEST_ROLE==='owner'});
     if (action === 'describe') {
       return jsonOut_({ status: 'ok', mapping: MAPPING, writeEnabled: writeEnabled_(), actor: ACTOR_LABEL });
     }
@@ -1088,7 +1088,7 @@ function buildScholarSubmissionChanges_(ss, submission) {
 }
 
 
-var SOLOMON_SUBMISSIONS_VERSION = 'solomon-submissions-1';
+var SOLOMON_SUBMISSIONS_VERSION = 'solomon-submissions-2';
 var GEO_SUBMISSION_SHEET = 'Publication Geography Submissions';
 var GEO_SUBMISSION_HEADERS = ['Submission ID','Submitted At','Status','Scholar ID','Scholar Name','Submitter Name','Submitter Email','Relationship','Profile URL','Publication Key','Publication Title','Year','Proposed Solomon Islands Locations JSON','Proposed Pacific Countries','Proposed Other Countries','Review Notes','Reviewed By','Reviewed At','Resolution','Request ID'];
 var SOLOMON_PROVINCES = ['Central','Choiseul','Guadalcanal','Isabel','Makira-Ulawa','Malaita','Rennell-Bellona','Temotu','Western'];
@@ -1525,11 +1525,12 @@ function initializeSolomonShareTokens(){
 // (readNewsSubmissions, previewNewsLink) and approves or rejects
 // (resolveNewsSubmission, owner secret or reviewer Google sign-in + WRITE_ENABLED). Approving appends
 // one row to the Master "News" tab with Show on Dashboard = Yes.
-var SOLOMON_NEWS_VERSION = 'solomon-news-1.0';
+var SOLOMON_NEWS_VERSION = 'solomon-news-1.1';
 function solNewsLiteral_(v){return typeof v==='string' && /^[=+@'-]/.test(v) ? "'"+v : v;}
 var NEWS_SHEET = 'News';
 var NEWS_QUEUE_SHEET = 'News Submissions';
-var NEWS_QUEUE_HEADERS = ['Submission ID','Submitted At','Status','Article URL','Announcement Type','Scholar(s) Named','Submitter Name','Submitter Email','Submitter Note','Reviewed By','Reviewed At','Decision Notes','News ID'];
+var NEWS_QUEUE_HEADERS = ['Submission ID','Submitted At','Status','Article URL','Announcement Type','Scholar(s) Named','Submitter Name','Submitter Email','Submitter Note','Reviewed By','Reviewed At','Decision Notes','News ID',
+  'Event Details','Flyer File ID','QR Image File ID']; // event columns (see news-events.gs)
 var NEWS_TYPES = ['News','Defense','Thesis','Publication','Event'];
 // Webinars are listed under Events. New theses and publications may be about
 // Solomon Islands by an author outside the database (Scholar ID blank, name given).
@@ -1549,7 +1550,7 @@ function solNewsQueue_(ss) {
   }
   if (sh.getMaxColumns() < NEWS_QUEUE_HEADERS.length) sh.insertColumnsAfter(sh.getMaxColumns(), NEWS_QUEUE_HEADERS.length - sh.getMaxColumns());
   var cur = sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).getDisplayValues()[0];
-  if (cur.some(function(x){return !!x;}) && cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) throw new Error('News Submissions headers differ');
+  if (!vlEvHeadersOk_(cur, NEWS_QUEUE_HEADERS)) throw new Error('News Submissions headers differ');
   if (cur.join('|') !== NEWS_QUEUE_HEADERS.join('|')) { sh.getRange(4,1,1,NEWS_QUEUE_HEADERS.length).setValues([NEWS_QUEUE_HEADERS]); sh.setFrozenRows(4); }
   return sh;
 }
@@ -1614,7 +1615,10 @@ function solNewsSubmit_(body) {
   var url = solNewsUrl_(body.articleUrl);
   var type = solNewsType_(body.type);
   var name = String(body.submitterName || '').trim(), email = normalizedSubmitterEmail_(body.submitterEmail);
-  if (!url) return jsonOut_({status:'bad_request', reason:'A full web link starting with https:// is required.'}, 400);
+  // Events: the details come in body.event and a web link is optional.
+  var evr = type === 'Event' && body.event ? vlEvClean_(body.event) : null;
+  if (evr && evr.err) return jsonOut_({status:'bad_request', reason:evr.err}, 400);
+  if (!url && (String(body.articleUrl || '').trim() || !evr)) return jsonOut_({status:'bad_request', reason:'A full web link starting with https:// is required.'}, 400);
   if (!name || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return jsonOut_({status:'bad_request', reason:'Your name and a valid email are required.'}, 400);
   var ss = geoSs_();
   if (isScholarSubmitterBlocked_(ss, email)) return jsonOut_({status:'forbidden', reason:'Submissions from this email are blocked.'}, 403);
@@ -1622,13 +1626,16 @@ function solNewsSubmit_(body) {
   var ek = 'snews-e-' + day + '-' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, email)).slice(0,22), gk = 'snews-g-' + day;
   var en = Number(cache.get(ek) || 0), gn = Number(cache.get(gk) || 0);
   if (en >= NEWS_EMAIL_DAILY_LIMIT || gn >= NEWS_GLOBAL_DAILY_LIMIT) return jsonOut_({status:'rate_limited', reason:'Thank you. We have received many links today; please try again tomorrow.'}, 429);
+  var now = new Date(), id = 'NWS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,6);
+  if (url && solNewsKnownUrls_(ss)[solNewsKey_(url)]) return jsonOut_({status:'ok', queued:0, duplicate:true});
+  var files = evr ? vlEvSaveFiles_(ss, 'Solomon Islands', id, body) : {flyerId:'', qrId:''};
+  if (files.err) return jsonOut_({status:'bad_request', reason:files.err}, 400);
   var lock = LockService.getScriptLock(); lock.waitLock(LOCK_WAIT_MS);
   try {
     var sh = solNewsQueue_(ss);
-    if (solNewsKnownUrls_(ss)[solNewsKey_(url)]) return jsonOut_({status:'ok', queued:0, duplicate:true});
-    var now = new Date(), id = 'NWS-' + Utilities.formatDate(now, TIMEZONE, 'yyyyMMddHHmmss') + '-' + Utilities.getUuid().slice(0,6);
     var row = [id, Utilities.formatDate(now, TIMEZONE, 'yyyy-MM-dd HH:mm:ss'), 'Pending', url, type,
-      String(body.scholars || '').trim().slice(0,300), name.slice(0,160), email.slice(0,240), String(body.note || '').trim().slice(0,800)];
+      String(body.scholars || '').trim().slice(0,300), name.slice(0,160), email.slice(0,240), String(body.note || '').trim().slice(0,800),
+      '', '', '', '', evr ? JSON.stringify(evr.ev) : '', files.flyerId, files.qrId];
     sh.getRange(Math.max(sh.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(solNewsLiteral_)]);
     cache.put(ek, String(en+1), 21600); cache.put(gk, String(gn+1), 21600);
     return jsonOut_({status:'ok', queued:1, submissionId:id});
@@ -1644,9 +1651,9 @@ function solNewsRows_(ss) {
 function solNewsRead_(params) {
   var ss = geoSs_(), want = String(params.status || '').trim();
   var rows = solNewsRows_(ss).filter(function(o){ return !want || o.Status === want; });
-  rows.forEach(function(o){ delete o._row; });
+  rows.forEach(function(o){ delete o._row; vlEvDecorateRow_(o); });
   rows.reverse();
-  return jsonOut_({status:'ok', rows:rows, types:NEWS_TYPES, categories:NEWS_CATEGORIES});
+  return jsonOut_({status:'ok', rows:rows, types:NEWS_TYPES, categories:NEWS_CATEGORIES, eventStatuses:VL_EVENT_STATUS});
 }
 function solNewsScholars_(ss) {
   // Solomon Scholars headers are on row 1 (data from row 2).
@@ -1721,16 +1728,21 @@ function solNewsResolve_(body) {
       if (sid && !scholar) return jsonOut_({status:'bad_request', reason:'Scholar ID ' + sid + ' is not in the database.'}, 400);
       if (!scholar && !(NEWS_OPEN_TYPES.indexOf(type) >= 0 && shown)) return jsonOut_({status:'bad_request', reason: NEWS_OPEN_TYPES.indexOf(type) >= 0 ? 'Choose a scholar, or enter the author name(s) for a thesis or publication about Solomon Islands.' : 'Choose a scholar from the database.'}, 400);
       var cat = type === 'News' ? (NEWS_CATEGORIES.indexOf(String(f.category)) >= 0 ? String(f.category) : '') : '';
-      var head = String(f.headline || '').trim().slice(0, 300), date = String(f.date || '').trim();
-      var url = solNewsUrl_(f.articleUrl || o['Article URL']), img = String(f.imageUrl || '').trim() ? solNewsUrl_(f.imageUrl) : '';
+      var evo = type === 'Event' && o['Event Details'] ? vlEvApprove_(f, o) : null;
+      if (evo && evo.err) return jsonOut_({status:'bad_request', reason:evo.err}, 400);
+      var evx = evo && evo.ev ? evo.ev : null;
+      var head = String(f.headline || (evx ? evx.title : '')).trim().slice(0, 300), date = String(f.date || (evx ? evx.start : '')).trim();
+      var rawUrl = String(f.articleUrl || o['Article URL'] || '').trim();
+      var url = solNewsUrl_(rawUrl), img = String(f.imageUrl || '').trim() ? solNewsUrl_(f.imageUrl) : '';
       if (!head) return jsonOut_({status:'bad_request', reason:'Headline is required.'}, 400);
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return jsonOut_({status:'bad_request', reason:'Date must be YYYY-MM-DD.'}, 400);
-      if (!url) return jsonOut_({status:'bad_request', reason:'Article link is not a valid web address.'}, 400);
+      if (!url && (rawUrl || !evx)) return jsonOut_({status:'bad_request', reason:'Article link is not a valid web address.'}, 400);
       if (type === 'News' && !cat) return jsonOut_({status:'bad_request', reason:'Choose a category for a news story.'}, 400);
       if (String(f.imageUrl || '').trim() && !img) return jsonOut_({status:'bad_request', reason:'Image link is not a valid web address.'}, 400);
       var ns = ss.getSheetByName(NEWS_SHEET); if (!ns) return jsonOut_({status:'error', error:'News worksheet missing'}, 500);
       var h = ns.getRange(4,1,1,ns.getLastColumn()).getDisplayValues()[0];
       if (h.indexOf('News ID') < 0 || h.indexOf('Article URL') < 0) return jsonOut_({status:'error', error:'News headers missing'}, 500);
+      if (evx) h = vlEvEnsureNewsCols_(ns, 4);
       newsId = solNewsNextId_(ns, h.indexOf('News ID'));
       var who = ACTOR_LABEL.split(' (')[0];
       var vals = {'News ID':newsId,'Scholar ID':sid,'Scholar Display Name':shown || scholar.name,
@@ -1739,6 +1751,11 @@ function solNewsResolve_(body) {
         'Also Covered By':String(f.also || '').trim().slice(0,300),'Show on Dashboard':'Yes','Added By':who,'Added On':when.slice(0,10),
         'Notes':('From ' + id + ', sent by ' + o['Submitter Name'] + (o['Submitter Note'] ? ': ' + o['Submitter Note'] : '') + (note ? ' | Review: ' + note : '')).slice(0,1500),
         'Announcement Type':type,'Event Time':NEWS_TIMED_TYPES.indexOf(type) >= 0 ? String(f.eventTime || '').trim().slice(0,120) : '','Event Location':NEWS_TIMED_TYPES.indexOf(type) >= 0 ? String(f.eventLocation || '').trim().slice(0,200) : ''};
+      if (evx) {
+        Object.keys(evo.vals).forEach(function(k){ vals[k] = evo.vals[k]; });
+        if (!vals['Event Time']) vals['Event Time'] = vlEvWhenText_(evx).slice(0,120);
+        if (!vals['Event Location']) vals['Event Location'] = vlEvWhereText_(evx).slice(0,200);
+      }
       if (type !== 'News' && h.indexOf('Announcement Type') < 0) return jsonOut_({status:'error', error:'Add the Announcement Type column to the News tab first.'}, 500);
       var row = h.map(function(name){ return Object.prototype.hasOwnProperty.call(vals, name) ? vals[name] : ''; });
       ns.getRange(Math.max(ns.getLastRow(),4)+1, 1, 1, row.length).setValues([row.map(solNewsLiteral_)]);
