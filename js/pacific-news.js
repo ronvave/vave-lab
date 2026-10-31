@@ -120,6 +120,24 @@
   }
 
   // ------------------------------------------------------------ filters
+  // Small inline icons (decorative; buttons keep their text labels).
+  function ico(name) {
+    var P = {
+      News: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2V5zm13 4h3v8a2 2 0 0 1-2 2h-1M7 8h7M7 11h7M7 14h4"/>',
+      Thesis: '<path d="M2 9l10-5 10 5-10 5L2 9zm4 2.2V16c0 1.4 2.7 3 6 3s6-1.6 6-3v-4.8M21 9v6"/>',
+      Publication: '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H11v17H5.5A1.5 1.5 0 0 1 4 18.5v-14zM20 4.5A1.5 1.5 0 0 0 18.5 3H13v17h5.5a1.5 1.5 0 0 0 1.5-1.5v-14z"/>',
+      Event: '<path d="M4 6h16v14H4zM4 10h16M8 3v5M16 3v5M8 14h2M14 14h2M8 17h2"/>',
+      check: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/>',
+      clear: '<path d="M6 6l12 12M18 6L6 18"/>',
+      ext: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+      card: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="11" r="2.2"/><path d="M5.8 16c.6-1.6 1.8-2.4 3.2-2.4s2.6.8 3.2 2.4M14 10h4M14 13h4"/>',
+      chev: '<path d="M9 5l7 7-7 7"/>',
+      chart: '<path d="M5 20V12M10 20V7M15 20V10M20 20V4"/>',
+      pause: '<path d="M9 5v14M15 5v14"/>',
+      play: '<path d="M8 5l11 7-11 7z"/>'
+    };
+    return '<svg class="pn-ico pn-ico--' + name + '" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + (P[name] || '') + '</svg>';
+  }
   var TYPES = [
     { key: 'all', label: 'All' },
     { key: 'News', label: 'News' },
@@ -185,8 +203,8 @@
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
-      '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + esc(goLabel(it)) + '</a>' +
-      (it.sid ? '<button type="button" class="nw__a" data-nw-open>Open scholar card</button>' : '') +
+      '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + ico(typeOf(it) === 'Publication' || typeOf(it) === 'Thesis' ? 'Publication' : 'News') + esc(goLabel(it)) + ico('ext') + '</a>' +
+      (it.sid ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
       '</div></div>';
   }
   function emptyFeature(t) {
@@ -252,7 +270,7 @@
         '<span class="nw__li-text"><span class="nw__lt">' + flags + (it.sub
           ? esc(shortName(it.name)) + ' <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
           : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
-        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span></button>';
+        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
 
@@ -379,23 +397,24 @@
         return '<button type="button" class="pn-c" role="checkbox" aria-checked="true" data-pn-c="' + c + '"><span class="pn-c__box" aria-hidden="true"></span>' +
           flag(c, 'pn-flag pn-flag--m') + '<span>' + esc(SHORT[c] || NAMES[c]) + '</span></button>';
       }).join('') +
-      '<button type="button" class="pn-act" data-pn-all>Check all</button><button type="button" class="pn-act" data-pn-none>Clear all</button></div>' +
+      '</div>' +
       '<div class="pn-mode"><span class="pn-mode__lab">Show</span><span class="pn-seg2" role="group" aria-label="How to combine countries">' +
       '<button type="button" data-pn-mode="any" aria-pressed="true">Any checked country</button>' +
       '<button type="button" data-pn-mode="shared" aria-pressed="false">Shared only</button></span>' +
-      '<span class="pn-mode__hint"></span></div></div>' +
+      '<span class="pn-mode__hint"></span>' +
+      '<span class="pn-acts"><button type="button" class="pn-act" data-pn-all>' + ico('check') + 'Check all</button><button type="button" class="pn-act" data-pn-none>' + ico('clear') + 'Clear all</button></span></div></div>' +
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
-        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + esc(t.label) + '<span class="nw__n">0</span></button>';
+        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) + '<span class="nw__n">0</span></button>';
       }).join('') + '</div>' + share + '</div>' +
-      '<div class="nw__grid"><div class="nw__main"><div class="nw__feat" aria-live="polite"></div>' +
+      '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
       '<button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>' +
-      '<button type="button" class="nw__pause" data-nw-pause aria-pressed="false">Pause</button>' +
+      '<button type="button" class="nw__pause" data-nw-pause aria-pressed="false" aria-label="Pause">' + ico('pause') + '</button>' +
       '<button type="button" class="nw__btn" data-nw-next aria-label="Next story">&rsaquo;</button></div>' +
       '<div class="nw__dots" aria-hidden="true"></div></div>' + foot +
-      '</div><div class="nw__list"><div class="nw__list-items"></div></div></div>' +
-      '<div class="pn-chart"><div class="pn-chart__head"><div><h3 class="pn-chart__h">Stories by country</h3>' +
+      '</div></div><div class="nw__list"><h3 class="pn-list__h">Latest from Pasifika scholars</h3><div class="nw__list-items"></div></div></div>' +
+      '<div class="pn-chart"><div class="pn-chart__head"><div><h3 class="pn-chart__h">' + ico('chart') + 'Stories by country</h3>' +
       '<p class="pn-chart__sub">News stories, new theses and publications, and events since ' + since + '. A story with scholars from two countries counts for both. Select a bar segment to see those stories.</p></div>' +
       '<span class="pn-seg2" role="group" aria-label="Bar scale"><button type="button" data-pn-scale="count" aria-pressed="true">Counts</button><button type="button" data-pn-scale="share" aria-pressed="false">Share of each country</button></span></div>' +
       '<div class="pn-legend">' + ['News', 'Thesis', 'Publication', 'Event'].map(function (k) {
@@ -421,7 +440,8 @@
     var pause = ctrls.querySelector('[data-nw-pause]');
     pause.addEventListener('click', function () {
       A.paused = !A.paused;
-      pause.textContent = A.paused ? 'Play' : 'Pause';
+      pause.innerHTML = ico(A.paused ? 'play' : 'pause');
+      pause.setAttribute('aria-label', A.paused ? 'Play' : 'Pause');
       pause.setAttribute('aria-pressed', A.paused ? 'true' : 'false');
       schedule();
     });
