@@ -149,6 +149,8 @@
     if (!gate || typeof gate.fetchJson !== 'function') return Promise.reject(new Error('no gate'));
     loading = gate.fetchJson(SRC).then(function (doc) {
       if (!doc || !Array.isArray(doc.items)) throw new Error('bad news snapshot');
+      // Local preview only: sample events injected by the preview harness.
+      if (typeof window.__VL_EVENT_SAMPLES === 'function') doc.items = window.__VL_EVENT_SAMPLES(doc.items, 'country').concat(doc.items);
       N = doc; bySid = {};
       doc.items.forEach(function (it) { if (it.sid && !it.auto) (bySid[it.sid] = bySid[it.sid] || []).push(it); });
       return addPhotos(gate, doc).then(function () { return N; });
@@ -277,8 +279,11 @@
     News: { field: 'cat', all: 'News: all types', aria: 'News type', label: function (c) { return SUB_LABEL[c] || c; },
       rank: function (c) { var k = Object.keys(SUB_LABEL).indexOf(c); return k < 0 ? 99 : k; } },
     Thesis: { field: 'sub', all: 'New theses: all types', aria: 'Thesis type', label: plural, rank: ptRank },
-    Publication: { field: 'sub', all: 'New publications: all types', aria: 'Publication type', label: plural, rank: ptRank }
+    Publication: { field: 'sub', all: 'New publications: all types', aria: 'Publication type', label: plural, rank: ptRank },
+    Event: { tags: function (it) { return window.VLEvent ? window.VLEvent.tags(it) : []; }, all: 'Events: all', aria: 'Event type',
+      label: function (c) { return window.VLEvent ? window.VLEvent.tagLabel(c) : c; }, rank: function (c) { return window.VLEvent ? window.VLEvent.tagRank(c) : 0; } }
   };
+  function subTags(sk, it) { return sk.tags ? sk.tags(it) : (it[sk.field] ? [it[sk.field]] : []); }
   var A = { i: 0, timer: null, paused: false, root: null, type: 'all', list: [], sub: '' };
 
   function typeOf(it) { var t = it.type || 'News'; return (t === 'Webinar' || t === 'Defense') ? 'Event' : t; }
@@ -296,6 +301,7 @@
   }
 
   function feature(it) {
+    if (it.ev && window.VLEvent) return window.VLEvent.feature(it, { ico: ico, imgHtml: imgHtml, peopleLine: peopleLine });
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
     var pub = typeOf(it) === 'Publication';
@@ -321,8 +327,10 @@
     return '<div class="nw__empty"><p class="nw__empty-h">' + esc(t.empty || 'No stories yet.') + '</p>' +
       (t.note ? '<p>' + esc(t.note) + '</p>' : '') +
       (t.auto ? '<p>' + esc(t.auto) + '</p>' : '') +
-      '<p>Know of one? Share the link and a collaborator will review it before it appears here.</p>' +
-      '<button type="button" class="nw__a nw__a--p" data-nw-share>Share a story</button></div>';
+      (t.key === 'Event' ? '<p>Know of one? Share the details, flyer or link, and a collaborator will review it before it appears here.</p>' +
+        '<button type="button" class="nw__a nw__a--p" data-nw-share>Share an event</button></div>'
+      : '<p>Know of one? Share the link and a collaborator will review it before it appears here.</p>' +
+      '<button type="button" class="nw__a nw__a--p" data-nw-share>Share a story</button></div>');
   }
 
   function show(i) {
@@ -332,6 +340,7 @@
     var it = items[A.i];
     feat.classList.remove('is-empty');
     feat.innerHTML = feature(it);
+    if (it.ev && window.VLEvent) window.VLEvent.wireFeature(feat, it);
     var ob = feat.querySelector('[data-nw-open]');
     if (ob) ob.addEventListener('click', function () { openCard(it); });
     root.querySelectorAll('.nw__li').forEach(function (b, k) {
@@ -358,8 +367,8 @@
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
         '<span class="nw__li-text"><span class="nw__lt">' + (FLAG ? '<span class="pn-lflags">' + flag('pn-flag pn-flag--s') + '</span>' : '') + (it.sub
           ? '<span class="pn-lname">' + esc(shortName(it.name)) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
-          : '<span class="pn-lname">' + esc(it.name) + '</span> · ' + esc(label(it))) + '</span>' +
-        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (pub ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
+          : '<span class="pn-lname">' + esc(it.name) + '</span> · ' + esc(it.ev && window.VLEvent ? window.VLEvent.listLabel(it) : label(it))) + '</span>' +
+        '<span class="nw__ls">' + (it.ev && window.VLEvent ? [esc(window.VLEvent.listMeta(it))] : isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (pub ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
 
@@ -382,13 +391,14 @@
     if (sk) {
       var subSel = root.querySelector('.pn-sub[data-pn-sub-for="' + t.key + '"] select');
       var sc = {};
-      A.list.forEach(function (it) { var v = it[sk.field] || ''; if (v) sc[v] = (sc[v] || 0) + 1; });
+      if (t.key === 'Event' && window.VLEvent) A.list = window.VLEvent.sort(A.list);
+      A.list.forEach(function (it) { subTags(sk, it).forEach(function (v) { sc[v] = (sc[v] || 0) + 1; }); });
       if (A.sub && !sc[A.sub]) A.sub = '';
       var cats = Object.keys(sc).sort(function (x, y) { return sk.rank(x) - sk.rank(y) || sc[y] - sc[x] || (x < y ? -1 : 1); });
       subSel.innerHTML = '<option value="">' + esc(sk.all) + ' (' + A.list.length + ')</option>' + cats.map(function (c) {
         return '<option value="' + esc(c) + '"' + (c === A.sub ? ' selected' : '') + '>' + esc(sk.label(c)) + ' (' + sc[c] + ')</option>';
       }).join('');
-      if (A.sub) A.list = A.list.filter(function (it) { return it[sk.field] === A.sub; });
+      if (A.sub) A.list = A.list.filter(function (it) { return subTags(sk, it).indexOf(A.sub) >= 0; });
     }
     var many = A.list.length > 1;
     root.querySelector('.nw__list-items').innerHTML = listHtml(A.list);
@@ -486,9 +496,10 @@
       '<form method="dialog" class="nw-form" novalidate>' +
       '<h2 id="nw-dlg-h">Share a story</h2>' +
       '<p class="nw-form__intro">Send us a link to a news story, new thesis, new publication or event, including thesis defenses. It should feature ' + esc(PEOPLE) + ' scholars, or for theses and publications, be by ' + esc(PEOPLE) + ' scholars or about ' + esc(PLACE) + '. A collaborator checks each link before it appears in this panel.</p>' +
-      '<label><span>Link to the story or announcement <span class="nw-req">(required)</span></span><input name="articleUrl" type="url" required maxlength="700" placeholder="https://"></label>' +
       '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Thesis">New thesis</option><option value="Publication">New publication</option><option value="Event">Event (including webinars and thesis defenses)</option></select></label>' +
+      '<label><span data-link-label>Link to the story or announcement <span class="nw-req">(required)</span></span><input name="articleUrl" type="url" maxlength="700" placeholder="https://"></label>' +
       '<label><span>Scholar(s) or author(s)</span><input name="scholars" type="text" maxlength="300" placeholder="For example, ' + EXAMPLE + '"></label>' +
+      (window.VLEvent ? window.VLEvent.formHtml() : '') +
       '<div class="nw-form__row"><label><span>Your name <span class="nw-req">(required)</span></span><input name="submitterName" type="text" required maxlength="160" autocomplete="name"></label>' +
       '<label><span>Your email <span class="nw-req">(required)</span></span><input name="submitterEmail" type="email" required maxlength="240" autocomplete="email"></label></div>' +
       '<label><span>Anything we should know?</span><textarea name="note" rows="3" maxlength="800" placeholder="Optional"></textarea></label>' +
@@ -499,14 +510,17 @@
       '</form>';
     document.body.appendChild(d);
     var form = d.querySelector('form'), msg = d.querySelector('.nw-form__msg'), send = form.querySelector('[type=submit]');
+    d._syncEv = window.VLEvent ? window.VLEvent.wire(form) : function () {};
     d.querySelector('[data-nw-cancel]').addEventListener('click', function () { d.close(); });
     d.addEventListener('click', function (e) { if (e.target === d) d.close(); });
     form.addEventListener('submit', function (e) {
       e.preventDefault();
       if (send.dataset.done) { d.close(); return; }
       msg.className = 'nw-form__msg';
-      var url = form.articleUrl.value.trim();
-      if (!/^https?:\/\/\S+\.\S+/i.test(url)) { msg.textContent = 'Please paste the full web link, starting with https://'; msg.classList.add('is-err'); form.articleUrl.focus(); return; }
+      var url = form.articleUrl.value.trim(), isEv = form.type.value === 'Event' && window.VLEvent;
+      if ((!isEv || url) && !/^https?:\/\/\S+\.\S+/i.test(url)) { msg.textContent = 'Please paste the full web link, starting with https://'; msg.classList.add('is-err'); form.articleUrl.focus(); return; }
+      var evErr = isEv && window.VLEvent.validate(form);
+      if (evErr) { msg.textContent = evErr[1]; msg.classList.add('is-err'); var fe = form.querySelector('[name="' + evErr[0] + '"]'); if (fe) fe.focus(); return; }
       if (!form.submitterName.value.trim()) { msg.textContent = 'Please add your name.'; msg.classList.add('is-err'); form.submitterName.focus(); return; }
       if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.submitterEmail.value.trim())) { msg.textContent = 'Please add a valid email.'; msg.classList.add('is-err'); form.submitterEmail.focus(); return; }
       send.disabled = true; msg.textContent = 'Sending…';
@@ -515,13 +529,18 @@
         submitterName: form.submitterName.value.trim(), submitterEmail: form.submitterEmail.value.trim(),
         note: form.note.value.trim(), website: form.website.value, elapsedMs: Date.now() - (F.opened || Date.now())
       };
-      fetch(SUBMIT, { method: 'POST', credentials: 'omit', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) })
+      (isEv ? window.VLEvent.collect(form) : Promise.resolve(null))
+        .then(function (ex) {
+          if (ex) { body.event = ex.event; body.flyer = ex.flyer; body.qrImage = ex.qrImage; }
+          return fetch(SUBMIT, { method: 'POST', credentials: 'omit', redirect: 'follow', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) });
+        })
         .then(function (r) { return r.json(); })
         .then(function (r) {
           if (!r || r.status !== 'ok') throw new Error((r && r.reason) || 'not-sent');
-          msg.textContent = r.duplicate ? 'Thank you. We already have this link, so there is nothing more to do.' : 'Thank you. Your link has been sent for review.';
+          msg.textContent = r.duplicate ? 'Thank you. We already have this link, so there is nothing more to do.' : isEv ? 'Thank you. Your event has been sent for review.' : 'Thank you. Your link has been sent for review.';
           msg.classList.add('is-ok');
           ['articleUrl', 'scholars', 'note'].forEach(function (n) { form[n].value = ''; });
+          if (isEv) { form.querySelectorAll('.ev-form input:not([type=radio]):not([type=checkbox]), .ev-form textarea').forEach(function (e) { e.value = ''; }); window.VLEvent.reset(form); }
           send.textContent = 'Close'; send.dataset.done = '1';
         })
         .catch(function (err) {
@@ -539,11 +558,14 @@
     var form = F.dlg.querySelector('form'), send = form.querySelector('[type=submit]');
     delete send.dataset.done; send.textContent = 'Send link';
     var msg = F.dlg.querySelector('.nw-form__msg'); msg.textContent = ''; msg.className = 'nw-form__msg';
+    // The form opens on the type being viewed (Events tab -> Event).
+    if (A.type && A.type !== 'all') form.type.value = A.type;
+    if (F.dlg._syncEv) F.dlg._syncEv();
     F.opened = Date.now();
     clearInterval(A.timer);
     if (typeof F.dlg.showModal === 'function') F.dlg.showModal(); else F.dlg.setAttribute('open', '');
     F.dlg.addEventListener('close', schedule, { once: true });
-    form.articleUrl.focus();
+    (form.type.value === 'Event' ? form.querySelector('[name=evTitle]') || form.articleUrl : form.articleUrl).focus();
   }
 
   // ------------------------------------------------------------ cards
