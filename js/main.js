@@ -146,11 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .scholar-direct-intro{max-width:980px;margin:0 auto 22px;padding:18px 20px;border:1px solid rgba(14,116,144,.20);border-radius:14px;background:rgba(14,116,144,.055);font-family:"DM Sans",sans-serif;color:#374151;line-height:1.58;font-size:.94rem}
       .scholar-direct-intro p{margin:0 0 10px}.scholar-direct-intro p:last-child{margin-bottom:0}.scholar-direct-intro strong{color:#0e5f6b}
       .scholar-direct-prelaunch{display:inline-block;margin-bottom:9px;padding:4px 9px;border-radius:999px;background:#fff3cd;border:1px solid #f2d27b;color:#7a4b00;font-weight:700;font-size:.78rem;letter-spacing:.02em;text-transform:uppercase}
-      .scholar-direct-stats{max-width:1020px;margin:0 auto 24px}.scholar-direct-stats__heading{font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:700;color:#163f46;margin:0 0 10px}
-      .scholar-direct-stats .db-section{margin:0 0 12px!important;padding:14px 16px!important}.scholar-direct-stats .db-section__head{margin-bottom:9px!important}.scholar-direct-stats .db-section__label{font-size:1.05rem!important}.scholar-direct-stats .db-section__hint{font-size:.78rem!important}
-      .scholar-direct-stats .db-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}.scholar-direct-stats .db-kpi{padding:10px!important;min-height:74px}.scholar-direct-stats .db-kpi__num{font-size:1.25rem!important}.scholar-direct-stats .db-kpi__label{font-size:.67rem!important}.scholar-direct-stats .db-kpi__icon{width:34px!important;height:34px!important}
+      .scholar-direct-stats{max-width:1072px;margin:0 auto 24px}.scholar-direct-stats__heading{font-family:"DM Sans",sans-serif;font-size:1rem;font-weight:700;color:#163f46;margin:0 0 10px}
+      .scholar-direct-stats .db-section{margin:0 0 12px!important;padding:16px 20px!important}.scholar-direct-stats .db-section__head{margin-bottom:9px!important}.scholar-direct-stats .db-section__label{font-size:1.05rem!important}.scholar-direct-stats .db-section__hint{font-size:.78rem!important}
+      .scholar-direct-stats .db-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px!important}
       .scholar-direct-b2{margin:0 0 12px;padding:14px 16px;background:var(--color-surface,#fff);border:1px solid var(--color-border,#d9dfdf);border-radius:14px}.scholar-direct-b2 h3{margin:0 0 4px;font-family:"DM Sans",sans-serif;font-size:1rem;text-transform:uppercase;letter-spacing:.03em}.scholar-direct-b2 p{margin:0 0 10px;color:#6b7280;font-size:.78rem;line-height:1.45}.scholar-direct-b2 .db-kpis{margin-top:0}
-      @media(max-width:720px){.scholar-direct-stats .db-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.scholar-direct-main{width:min(100% - 18px,1080px)}.scholar-direct-intro{padding:15px}}
+      @media(max-width:720px){.scholar-direct-main{width:min(100% - 18px,1080px)}.scholar-direct-intro{padding:15px}}
       .scholar-direct-invalid{max-width:680px;margin:72px auto;padding:28px;text-align:center;font-family:"DM Sans",sans-serif;color:#374151}
 
       /* Update-info enhancements */

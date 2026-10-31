@@ -46,3 +46,7 @@ dialog.solomon-form::backdrop{background:rgba(6,47,53,.55)}
 .solomon-submission-confirmation button{flex-shrink:0;padding:8px 12px;border:1px solid #166534;border-radius:6px;background:white;color:#14532d;font:inherit;cursor:pointer}
 .solomon-submission-confirmation button:focus-visible{outline:3px solid #0e7490;outline-offset:2px}
 @media(max-width:480px){.solomon-submission-confirmation{align-items:flex-start;flex-direction:column;gap:10px;bottom:12px;padding:14px}}
+/* Summary tiles use the dashboard panel look (glossy colours, six across). */
+.solomon-summary .db-kpis{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:14px!important;}
+/* Summary panels match the dashboard panel width so the tiles are the same size. */
+.solomon-summary{margin-left:calc(50% - 536px)!important;margin-right:calc(50% - 536px)!important;padding:16px 20px!important;}
