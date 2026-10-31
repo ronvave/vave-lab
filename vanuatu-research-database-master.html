@@ -3964,6 +3964,7 @@
 </style>
   <link rel="stylesheet" href="css/vanuatu-panel-menu.css?v=44020c99">
   <link rel="stylesheet" href="css/vanuatu-panel-bg.css?v=27e820ee">
+  <link rel="stylesheet" href="css/country-news.css?v=309bba34">
   <link rel="stylesheet" href="css/vanuatu-panel-hero.css?v=0eb34e9a">
 <link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=fbfbfa72">
@@ -4224,50 +4225,20 @@
         </div>
       </section>
 
+      <!-- Panel A3 — Celebrating ni-Vanuatu scholars. New theses and publications
+           from the Master records, plus any curated stories (js/country-news.js).
+           Hidden until a story loads. -->
+      <section class="nw has-panel-badge" data-news-panel aria-labelledby="db-section-news" hidden>
+        <span class="db-panel__label">A3</span>
+        <header class="db-section__head nw__head">
+          <h2 class="db-section__label nw__h" id="db-section-news">Celebrating ni-Vanuatu scholars</h2>
+          <p class="db-section__hint nw__hint">News, new theses and publications, and events featuring ni-Vanuatu scholars or Vanuatu. Stories rotate every 8 seconds.</p>
+        </header>
+        <div data-news-body></div>
+      </section>
+
     </div>
 
-    <!-- About / inclusion criteria -->
-    <details class="db-about reveal has-panel-badge">
-      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">A3</span></summary>
-      <div class="db-about__body">
-        <p><strong>Counting note:</strong> Indigenous Vanuatu scholar and graduate-degree totals follow this database’s Vanuatu-paternal criterion. Some retained scholar profiles are excluded from these totals; their profiles, qualifications and publications remain available.</p>
-        <div class="db-about-grid">
-          <div>
-            <h4>What's included</h4>
-            <p>Scholarly publications where Vanuatu or Vanuatus are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
-            <ul>
-              <li>Peer-reviewed journal articles, book chapters, and books</li>
-              <li>Master's, PhD, and equivalent higher-degree theses</li>
-              <li>Technical reports and conference papers from recognised institutions</li>
-              <li>Preprints archived on established repositories</li>
-            </ul>
-            <p>Special emphasis on work authored or co-authored by <em>Vanuatu</em> scholars, regardless of subject discipline.</p>
-
-            <h4>How tags are assigned</h4>
-            <ul>
-              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
-              <li><strong>Paternal province</strong> &mdash; applied only to Vanuatu first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
-              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
-            </ul>
-          </div>
-          <div>
-            <h4>Update cadence</h4>
-            <p>The Vanuatu Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
-
-            <h4>Known gaps &amp; caveats</h4>
-            <ul>
-              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
-              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
-              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
-              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
-            </ul>
-
-            <h4>Feedback</h4>
-            <p>Corrections, additions, and suggestions are welcome &mdash; email <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> or use the <em>Contribute</em> panel below.</p>
-          </div>
-        </div>
-      </div>
-    </details>
 
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
@@ -5106,6 +5077,49 @@
       <button type="button" class="db-load-more" data-db-load-more style="display:none;">Show 25 more</button>
     </div>
 
+    <!-- Panel H — About / inclusion criteria (end of page) -->
+    <details class="db-about reveal has-panel-badge">
+      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">H</span></summary>
+      <div class="db-about__body">
+        <p><strong>Counting note:</strong> Indigenous Vanuatu scholar and graduate-degree totals follow this database’s Vanuatu-paternal criterion. Some retained scholar profiles are excluded from these totals; their profiles, qualifications and publications remain available.</p>
+        <div class="db-about-grid">
+          <div>
+            <h4>What's included</h4>
+            <p>Scholarly publications where Vanuatu or Vanuatus are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
+            <ul>
+              <li>Peer-reviewed journal articles, book chapters, and books</li>
+              <li>Master's, PhD, and equivalent higher-degree theses</li>
+              <li>Technical reports and conference papers from recognised institutions</li>
+              <li>Preprints archived on established repositories</li>
+            </ul>
+            <p>Special emphasis on work authored or co-authored by <em>Vanuatu</em> scholars, regardless of subject discipline.</p>
+
+            <h4>How tags are assigned</h4>
+            <ul>
+              <li><strong>Province researched</strong> &mdash; assigned to the province(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-province studies are tagged to each relevant province.</li>
+              <li><strong>Paternal province</strong> &mdash; applied only to Vanuatu first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
+              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Update cadence</h4>
+            <p>The Vanuatu Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
+
+            <h4>Known gaps &amp; caveats</h4>
+            <ul>
+              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
+              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
+              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
+              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
+            </ul>
+
+            <h4>Feedback</h4>
+            <p>Corrections, additions, and suggestions are welcome &mdash; email <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> or use the <em>Contribute</em> panel below.</p>
+          </div>
+        </div>
+      </div>
+    </details>
+
     <!-- Cite + contribute -->
     <div class="db-context">
       <div class="db-cite reveal">
@@ -5414,7 +5428,7 @@
 <script src="js/vanuatu-config.js?v=dc4e4775" defer></script>
 <script src="js/vanuatu-preview-data.js?v=ba76ab44" defer></script>
 <script src="js/vanuatu-dashboard-model.js?v=0009ecec" defer></script>
-<script src="js/vanuatu-bundle-bridge.js?v=68757f8e" defer></script>
+<script src="js/vanuatu-bundle-bridge.js?v=0da08d5a" defer></script>
 <script src="js/vanuatu-demo-gate.js?v=78647c42" defer></script>
 
 <script src="js/vanuatu-database-adapter.js?v=6996ef65" defer></script>
@@ -5551,7 +5565,9 @@
     }
   })();
 </script>
-<script src="js/vanuatu-panel-menu.js?v=e5b2f6c5" defer></script>
+<script src="js/vanuatu-panel-menu.js?v=63efc973" defer></script>
+<script src="js/news-event.js?v=bffe319a" defer></script>
+<script src="js/country-news.js?v=6e5f0635" data-src="data/vanuatu-master-news.json" data-flag="vut" data-split-photos="1" data-photos="data/vanuatu-scholar-enrichment.json" data-roster="data/vanuatu-master-scholars.json" data-people="ni-Vanuatu" data-place="Vanuatu" data-foot-under="1" defer></script>
 <script src="js/vanuatu-panel-hero.js?v=41c7dfed" defer></script>
 <script src="js/fiji-text-contrast.js?v=fe96fe34" defer></script>
 <script src="js/scholar-card-tabs.js?v=efda3195" defer></script>

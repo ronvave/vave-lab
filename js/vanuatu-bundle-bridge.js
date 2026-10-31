@@ -29,9 +29,41 @@ function inherit(){try{if(w.parent!==w&&w.parent.location.origin===location.orig
 function preview(){password='';return use(w.VANUATU_PREVIEW);}
 function rpc(name,payload){return new Promise((resolve,reject)=>{if(!w.google?.script?.run){if(w.VanuatuAdminTransport)return w.VanuatuAdminTransport.call(name,payload).then(resolve,reject);return reject(Error('Configure the Vanuatu connection in Data source.'));}w.google.script.run.withSuccessHandler(resolve).withFailureHandler(e=>reject(Error(e.message||'Vanuatu Admin request failed.')))[name](payload);});}
 async function nativeState(){native=await rpc('getVanuatuAdminState');use({country:'Vanuatu',schemaVersion:1,generation:'native-admin',tables:native.tables,fields:Object.fromEntries(Object.entries(native.tables).map(([k,r])=>[k,[...new Set(r.flatMap(x=>Object.keys(x)))]])),enrichment:native.enrichment||{}});return native;}
+// Panel A3 (js/country-news.js): recent works from the released Publications
+// and Authorship records, matching scripts/country_news.py auto_items(). Only the
+// six Panel G types; works need a public scholar author, or be a thesis.
+function newsDoc(){
+ const t=bundle?.tables||{},now=new Date(),since=now.getFullYear()-(now.getMonth()<3?1:0);
+ const TYPES=['Journal Article','Book','Book Chapter','Report',"Master's Thesis",'PhD Thesis'],IN_ALL={Publication:5,Thesis:3};
+ const roster={};(t.Scholars||[]).forEach(s=>{const id=str(s['Scholar ID']).toUpperCase();if(id)roster[id]=str(s['Scholar Name']);});
+ const authors={};(t.Authorship||[]).forEach(a=>{const k=str(a['Publication ID']),id=str(a['Scholar ID']).toUpperCase();if(k&&roster[id]){const pos=parseInt(a['Author Position'],10);(authors[k]=authors[k]||[]).push([isNaN(pos)?99:pos,id]);}});
+ const bib=v=>{v=str(v);const m=v.split(',');return m.length===2&&m[0].trim()&&m[1].trim()?m[1].trim()+' '+m[0].trim():v;};
+ const out=[],seen=new Set();
+ (t.Publications||[]).forEach((p,order)=>{
+  const key=str(p['Publication ID']),title=str(p.Title),type=str(p['Publication Type']),year=parseInt(String(p.Year||'').slice(0,4),10);
+  if(!key||!title||isNaN(year)||year<since||!TYPES.includes(type))return;
+  const sids=[];(authors[key]||[]).sort((a,b)=>a[0]-b[0]).forEach(([,id])=>{if(!sids.includes(id))sids.push(id);});
+  const thesis=/Thesis$/.test(type),lead=bib(str(p['Authors — Full Ordered List']).split(';')[0]);
+  if(!sids.length&&!(thesis&&lead))return;
+  const tk=title.toLowerCase().replace(/[^a-z0-9]/g,'').slice(0,80);if(seen.has(tk))return;seen.add(tk);
+  const doi=str(p.DOI),url=doi?'https://doi.org/'+doi.replace(/^https?:\/\/(dx\.)?doi\.org\//,''):(/^https?:\/\//.test(str(p['Primary URL']))?str(p['Primary URL']):'');
+  if(!url)return;
+  const kind=thesis?'Thesis':'Publication',names=sids.length?sids.map(id=>roster[id]):[lead];
+  const shown=names.length===1?names[0]:names.length===2?names.join(' and '):names[0]+', '+names[1]+' and others';
+  out.push({id:'PUB-'+key,sid:sids[0]||'',sids,name:shown,full:names[0],type:kind,cat:kind,sub:type,when:'',where:'',head:title,
+   outlet:str(thesis?p['Publisher / Institution']:p['Container / Journal']),date:year+'-12-31',dlabel:String(year),url,img:'',credit:'',sum:'',also:'',auto:true,_o:order});
+ });
+ out.sort((a,b)=>(b.date.localeCompare(a.date))||((b.sid?1:0)-(a.sid?1:0))||(b._o-a._o));
+ const n={Publication:0,Thesis:0};out.forEach(x=>{delete x._o;x.inAll=++n[x.type]<=IN_ALL[x.type];});
+ // Curated stories, once the Master has a reviewed News tab, arrive pre-built in bundle.news.
+ const stories=Array.isArray(bundle?.news)?bundle.news:[];
+ const urls=new Set(stories.map(i=>str(i.url).toLowerCase().replace(/^https?:\/\/(www\.)?|\/+$/g,'')).filter(Boolean));
+ return {source:'Vanuatu Master bundle',items:stories.concat(out.filter(x=>!urls.has(x.url.toLowerCase().replace(/^https?:\/\/(www\.)?|\/+$/g,'')))),skipped:[]};
+}
 async function fetchJson(path){inherit();path=path.split('?')[0];if(path==='data/vanuatu-provinces.geojson'){const r=await fetch(path);if(!r.ok)throw Error('Vanuatu province boundaries unavailable.');const geo=await r.json();geo.features.forEach(f=>{f.properties.name=G.province(f.properties.shapeName);f.properties.confederacy=f.properties.name;f.properties.islandDivision=f.properties.name;});return geo;}
  if(!bundle)throw Error('Unlock the Vanuatu data first.');
  const map={'scholars':'Scholars','publications':'Publications','authorship':'Authorship','grad-degrees':'Graduate Degrees','geography':'Research Geography'};const suffix=path.replace(/^data\/vanuatu-master-/,'').replace(/\.json$/,'');if(map[suffix])return rows(map[suffix]);
+ if(/master-news/.test(path))return newsDoc();
  if(/master-mobility/.test(path))return w.VanuatuDashboardModel.pathways(M.build(bundle)).rows;
  if(/last-master-sync/.test(path))return {finishedAt:bundle.generatedAt||null,preview:!!bundle.preview};
  if(/master-aggregates/.test(path)){

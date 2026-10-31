@@ -369,7 +369,7 @@
     return '<div class="nw__empty"><p class="nw__empty-h">' + esc(t.empty || 'No stories yet.') + '</p>' +
       (t.note ? '<p>' + esc(t.note) + '</p>' : '') +
       (t.auto ? '<p>' + esc(t.auto) + '</p>' : '') +
-      (t.key === 'Event' ? '<p>Know of one? Share the details, flyer or link, and a collaborator will review it before it appears here.</p>' +
+      (!SUBMIT ? '</div>' : t.key === 'Event' ? '<p>Know of one? Share the details, flyer or link, and a collaborator will review it before it appears here.</p>' +
         '<button type="button" class="nw__a nw__a--p" data-nw-share>Share an event</button></div>'
       : '<p>Know of one? Share the link and a collaborator will review it before it appears here.</p>' +
       '<button type="button" class="nw__a nw__a--p" data-nw-share>Share a story</button></div>');
@@ -468,7 +468,7 @@
     var counts = {};
     N.items.forEach(function (it) { counts[typeOf(it)] = (counts[typeOf(it)] || 0) + 1; });
     var share = SUBMIT ? '<button type="button" class="nw__share" data-nw-share>Share a story</button>' : '';
-    var foot = '<p class="nw__foot">New theses and publications come from the database records. Shared stories are checked by a collaborator before they appear.' +
+    var foot = '<p class="nw__foot">New theses and publications come from the database records.' + (SUBMIT ? ' Shared stories are checked by a collaborator before they appear.' : '') +
       (SUBMIT ? ' Know of a news story, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
       '</p>';
     if (FOOT_UNDER) root.classList.add('nw--foot-under');
