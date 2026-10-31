@@ -264,7 +264,22 @@
   var LABEL = { Thesis: 'New thesis', Publication: 'New publication', Defense: 'Thesis defense' };
   var TIMED = { Defense: 1, Event: 1 };
   function label(it) { return LABEL[it.cat] || it.cat; }
-  var A = { i: 0, timer: null, paused: false, root: null, type: 'all', list: [] };
+  // News, New theses and New publications: the selected button turns into a
+  // dropdown of its sub-types (same as the Regional A2 panel).
+  var SUB_LABEL = { Appointment: 'Appointments', Award: 'Awards', Graduation: 'Graduations', Milestone: 'Milestones', Research: 'Research', News: 'Other news' };
+  function plural(v) {
+    v = String(v).split(' ').map(function (w, i) { return i && /^[A-Z][a-z]+$/.test(w) ? w.toLowerCase() : w; }).join(' ');
+    return /thesis$/i.test(v) ? v.replace(/thesis$/i, 'theses') : (/s$/i.test(v) ? v : v + 's');
+  }
+  var PT_RANK = { 'nw-pt--phd': 0, 'nw-pt--masters': 1, 'nw-pt--article': 0, 'nw-pt--book': 1, 'nw-pt--chapter': 2 };
+  function ptRank(v) { var r = PT_RANK[ptClass(v)]; return r === undefined ? 9 : r; }
+  var SUBS = {
+    News: { field: 'cat', all: 'News: all types', aria: 'News type', label: function (c) { return SUB_LABEL[c] || c; },
+      rank: function (c) { var k = Object.keys(SUB_LABEL).indexOf(c); return k < 0 ? 99 : k; } },
+    Thesis: { field: 'sub', all: 'New theses: all types', aria: 'Thesis type', label: plural, rank: ptRank },
+    Publication: { field: 'sub', all: 'New publications: all types', aria: 'Publication type', label: plural, rank: ptRank }
+  };
+  var A = { i: 0, timer: null, paused: false, root: null, type: 'all', list: [], sub: '' };
 
   function typeOf(it) { var t = it.type || 'News'; return (t === 'Webinar' || t === 'Defense') ? 'Event' : t; }
   function today() {
@@ -348,15 +363,33 @@
     }).join('');
   }
 
-  function setType(key) {
+  function setType(key, sub) {
     var root = A.root, t = TYPES.filter(function (x) { return x.key === key; })[0] || TYPES[0];
     A.type = t.key;
+    A.sub = sub || '';
     A.list = t.key === 'all' ? N.items.filter(inAll) : N.items.filter(function (it) { return typeOf(it) === t.key; });
     root.querySelectorAll('[data-nw-type]').forEach(function (b) {
       var on = b.dataset.nwType === t.key;
       b.classList.toggle('is-on', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    var sk = SUBS[t.key];
+    root.querySelectorAll('.pn-sub').forEach(function (w) {
+      var on = !!sk && w.dataset.pnSubFor === t.key;
+      w.hidden = !on;
+      root.querySelector('[data-nw-type="' + w.dataset.pnSubFor + '"]').hidden = on;
+    });
+    if (sk) {
+      var subSel = root.querySelector('.pn-sub[data-pn-sub-for="' + t.key + '"] select');
+      var sc = {};
+      A.list.forEach(function (it) { var v = it[sk.field] || ''; if (v) sc[v] = (sc[v] || 0) + 1; });
+      if (A.sub && !sc[A.sub]) A.sub = '';
+      var cats = Object.keys(sc).sort(function (x, y) { return sk.rank(x) - sk.rank(y) || sc[y] - sc[x] || (x < y ? -1 : 1); });
+      subSel.innerHTML = '<option value="">' + esc(sk.all) + ' (' + A.list.length + ')</option>' + cats.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === A.sub ? ' selected' : '') + '>' + esc(sk.label(c)) + ' (' + sc[c] + ')</option>';
+      }).join('');
+      if (A.sub) A.list = A.list.filter(function (it) { return it[sk.field] === A.sub; });
+    }
     var many = A.list.length > 1;
     root.querySelector('.nw__list-items').innerHTML = listHtml(A.list);
     root.querySelectorAll('.nw__li').forEach(function (b) {
@@ -392,7 +425,8 @@
       TYPES.map(function (t) {
         var n = t.key === 'all' ? N.items.filter(inAll).length : (counts[t.key] || 0);
         return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) +
-          '<span class="nw__n">' + n + '</span></button>';
+          '<span class="nw__n">' + n + '</span></button>' +
+          (SUBS[t.key] && n ? '<label class="pn-sub" data-pn-sub-for="' + t.key + '" hidden>' + ico(t.key) + '<select data-pn-sub aria-label="' + esc(SUBS[t.key].aria) + '"></select></label>' : '');
       }).join('') + '</div>' + share + '</div>' +
       '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
@@ -416,6 +450,9 @@
     });
     root.querySelectorAll('[data-nw-type]').forEach(function (b) {
       b.addEventListener('click', function () { setType(b.dataset.nwType); });
+    });
+    root.querySelectorAll('[data-pn-sub]').forEach(function (sel) {
+      sel.addEventListener('change', function (e) { setType(A.type, e.target.value); });
     });
     root.querySelectorAll('.nw__bar [data-nw-share], .nw__foot [data-nw-share]').forEach(function (b) { b.addEventListener('click', openForm); });
     // Hovering or focusing the story holds it; leaving resumes the cycle.

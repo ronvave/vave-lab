@@ -216,3 +216,12 @@
   content: ""; position: absolute; left: 0; bottom: 0; width: 42%; aspect-ratio: 446 / 480; pointer-events: none;
   background: url("../img/regional/plumeria-cluster.webp") left bottom / contain no-repeat; }
 .nw.cn .nw__img.is-split .nw-face:not(:has(img))::after { width: 80%; max-width: 160px; }
+
+/* News, New theses and New publications: the selected button becomes its sub-type dropdown (as Regional A2) */
+.nw.cn .pn-sub { position: relative; display: inline-flex; align-items: center; background: #0b7479; border-radius: 999px; color: #fff; }
+.nw.cn .pn-sub[hidden], .nw.cn .nw__type[hidden] { display: none; }
+.nw.cn .pn-sub .pn-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #fff; pointer-events: none; }
+.nw.cn .pn-sub::after { content: ""; position: absolute; right: 15px; top: 50%; width: 7px; height: 7px; margin-top: -6px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); pointer-events: none; }
+.nw.cn .pn-sub select { appearance: none; -webkit-appearance: none; padding: 7px 38px 7px 40px; border: 0; border-radius: 999px; background: transparent; color: #fff; font: 700 .85rem Arial, Helvetica, sans-serif; cursor: pointer; }
+.nw.cn .pn-sub select option { color: #111; background: #fff; }
+.nw.cn .pn-sub select:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
