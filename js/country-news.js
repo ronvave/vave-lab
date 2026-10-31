@@ -241,6 +241,36 @@
   function profName(pr) {
     return pr ? String((pr.first || '') + ' ' + (pr.last || '')).replace(/\s+/g, ' ').trim() : '';
   }
+  // Title or salutation from the scholar record (Dr, Prof, Rev Dr ...).
+  // Honours such as MNZM go after the name instead of before it.
+  var POSTNOM = /^(MNZM|ONZM|CNZM|KNZM|DNZM|MBE|OBE|CBE|KBE|DBE)$/;
+  function salParts(pr) {
+    var w = String((pr && pr.salutation) || '').replace(/\s*\/\s*/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+    return { pre: w.filter(function (x) { return !POSTNOM.test(x); }).join(' '), post: w.filter(function (x) { return POSTNOM.test(x); }).join(' ') };
+  }
+  function withSal(pr, nm) {
+    if (!nm) return nm;
+    var s = salParts(pr);
+    return (s.pre && nm.indexOf(s.pre + ' ') !== 0 ? s.pre + ' ' : '') + nm + (s.post ? ' ' + s.post : '');
+  }
+  // Story-list name ("Ruth Faleolo and Inez Sione") with each scholar's title added.
+  function listName(it, nm) {
+    var P = profiles() || {};
+    var ids = Array.isArray(it.sids) && it.sids.length ? it.sids : (it.sid ? [it.sid] : []);
+    var prs = ids.map(function (id) { return P[String(id).toUpperCase()]; }).filter(Boolean);
+    if (!prs.length) return nm;
+    var norm = function (x) { return String(x || '').normalize('NFD').replace(/[^A-Za-z ]/g, '').toLowerCase().trim(); };
+    return String(nm || '').split(/(, | and )/).map(function (part) {
+      if (part === ', ' || part === ' and ' || /^\d+ others?$/.test(part) || part === 'others') return part;
+      var pn = norm(part), hit = null;
+      prs.forEach(function (pr) {
+        if (hit) return;
+        var last = norm(pr.last).split(' ').pop(), first = norm(pr.first).split(' ')[0];
+        if (last && pn.indexOf(last) >= 0 && (!first || pn.indexOf(first) >= 0)) hit = pr;
+      });
+      return hit ? withSal(hit, part) : part;
+    }).join('');
+  }
   // One line per scholar under the title: flag, name (blue), position (brown
   // italic), institution badge. Same person once; up to 3 then "and N others".
   function peopleLine(it) {
@@ -254,7 +284,7 @@
     });
     if (!rows.length) rows = [null];
     var shown = rows.slice(0, 3).map(function (pr, k) {
-      var nm = profName(pr) || (k === 0 ? (it.full || it.name) : '');
+      var nm = pr ? withSal(pr, profName(pr)) : (k === 0 ? (it.full || it.name) : '');
       if (!nm) return '';
       var role = pr && pr.title, inst = pr && pr.institution;
       return '<span class="pn-person">' + flag('pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(nm) + '</b>' +
@@ -378,8 +408,8 @@
       var pub = typeOf(it) === 'Publication';
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
         '<span class="nw__li-text"><span class="nw__lt">' + (FLAG ? '<span class="pn-lflags">' + flag('pn-flag pn-flag--s') + '</span>' : '') + (it.sub
-          ? '<span class="pn-lname">' + esc(shortName(it.name)) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
-          : '<span class="pn-lname">' + esc(it.name) + '</span> · ' + esc(it.ev && window.VLEvent ? window.VLEvent.listLabel(it) : label(it))) + '</span>' +
+          ? '<span class="pn-lname">' + esc(listName(it, shortName(it.name))) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
+          : '<span class="pn-lname">' + esc(listName(it, it.name)) + '</span> · ' + esc(it.ev && window.VLEvent ? window.VLEvent.listLabel(it) : label(it))) + '</span>' +
         '<span class="nw__ls">' + (it.ev && window.VLEvent ? [esc(window.VLEvent.listMeta(it))] : isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (pub ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
