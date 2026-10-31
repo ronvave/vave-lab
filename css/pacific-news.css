@@ -3,10 +3,13 @@
 
 .ps-pnews { position: relative; margin: 22px 0 0; padding: 0; overflow: hidden; background: #fbf8f2; color: #111; border: 1px solid #e3ddd0; border-radius: 16px; }
 .ps-pnews[hidden] { display: none !important; }
-.ps-pnews__head { position: relative; padding: 22px 120px 22px 26px; min-height: 104px;
-  background: linear-gradient(90deg, rgba(6,38,64,.94) 0%, rgba(6,38,64,.78) 45%, rgba(6,38,64,.15) 100%), url("../img/regional/hero-voyagers.webp") center 55% / cover no-repeat; }
-.ps-pnews__head .ps-h2 { margin: 0; color: #fff; font: 700 1.6rem/1.2 Arial, Helvetica, sans-serif; letter-spacing: .02em; text-transform: uppercase; }
-.ps-pnews__head p { margin: 6px 0 0; max-width: 760px; color: #fff; font: 400 .95rem/1.45 Arial, Helvetica, sans-serif; }
+.ps-pnews::after { display: none; }
+/* Header matches the other A panels: navy gradient, tapa band top right, serif title, round number badge. */
+.ps-pnews__head { position: relative; isolation: isolate; overflow: hidden; padding: 16px 80px 14px 18px; background: linear-gradient(180deg, rgba(10, 45, 82, 0.97), rgba(5, 28, 54, 0.99)); }
+.ps-pnews__head::after { content: ''; position: absolute; z-index: -1; right: 0; top: 0; width: min(60%, 760px); height: 130px; opacity: .5; pointer-events: none; background: url('../img/regional/tapa-band.webp') right center / cover no-repeat; -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); -webkit-mask-composite: source-in; mask-image: linear-gradient(90deg, transparent 0%, #000 75%), linear-gradient(180deg, #000 50%, transparent 100%); mask-composite: intersect; }
+.ps-pnews__head .ps-h2 { margin: 0 0 4px; }
+.ps-pnews__head .ps-sub { margin: 0; max-width: 820px; }
+.ps-pnews > .ps-num { z-index: 3; }
 .ps-pnews__body { padding: 18px 24px 22px; }
 .ps-pnews .nw.pn { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
 
