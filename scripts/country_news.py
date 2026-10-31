@@ -128,7 +128,7 @@ def auto_items(publications, authorship, roster, today=None, only_types=None) ->
         shown = names[0] if len(names) == 1 else (" and ".join(names) if len(names) == 2 else names[0] + ", " + names[1] + " and others")
         venue = _s(p.get("Publisher / Institution / School")) if kind == "Thesis" else _s(p.get("Journal / Book Title"))
         out.append({
-            "id": "PUB-" + key, "sid": sids[0] if sids else "", "name": shown, "full": names[0],
+            "id": "PUB-" + key, "sid": sids[0] if sids else "", "sids": sids, "name": shown, "full": names[0],
             "type": kind, "cat": kind, "sub": ptype, "when": "", "where": "",
             "head": title, "outlet": venue, "date": f"{year}-12-31", "dlabel": str(year),
             "url": url, "img": "", "credit": "", "sum": "", "also": "", "auto": True,
@@ -152,7 +152,9 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
     items, skipped = [], []
     for r in rows:
         nid = _s(r.get("News ID"))
-        sid = _s(r.get("Scholar ID")).upper()
+        # One or more Scholar IDs ("ITK-S0001; ITK-S0002"); the first leads.
+        all_sids = [x for x in re.split(r"[;,\s]+", _s(r.get("Scholar ID")).upper()) if x]
+        sid = all_sids[0] if all_sids else ""
         if not _yes(r.get("Show on Dashboard")):
             continue
         head, url, date = _s(r.get("Headline")), _url(r.get("Article URL")), _iso(r.get("Publication Date"))
@@ -172,6 +174,7 @@ def build(rows: list[dict], scholars: list[dict], *, source: str, generator: str
         items.append({
             "id": nid,
             "sid": sid if on_roster else "",
+            "sids": [x for x in all_sids if x in roster] if on_roster else [],
             "name": shown or roster[sid],
             "full": roster[sid] if on_roster else shown,
             "type": typ,

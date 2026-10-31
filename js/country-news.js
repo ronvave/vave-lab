@@ -29,6 +29,10 @@
   var PLACE = (me && me.dataset.place) || 'the country';
   var FOOT_UNDER = !!(me && me.dataset.footUnder);  // note under the Pause row, list fills full height
   var EXAMPLE = (me && me.dataset.example) || 'Dr Suliana Mone';  // form placeholder name
+  // Stories by 2+ database scholars show every scholar's photo side by side
+  // (up to 4 tiles; the last tile notes how many more). Opt-in per page.
+  var SPLIT = !!(me && me.dataset.splitPhotos);
+  var MAX_FACES = 4;
   if (!SRC) return;
   var ROTATE_MS = 8000;
   var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -77,9 +81,25 @@
   }
   // Outlet image when it loads; initials otherwise.
   function imgHtml(it, cls) {
+    if (it.faces && it.faces.length > 1) return splitHtml(it, cls);
     var ini = '<span class="' + cls + '__ini">' + esc(initials(it.name)) + '</span>';
     if (!it.img) return '<span class="' + cls + ' is-ini">' + ini + '</span>';
     return '<span class="' + cls + (it.portrait ? ' is-portrait' : '') + '">' + ini + '<img src="' + esc(it.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()"></span>';
+  }
+
+  // One tile per scholar: photo when it loads, initials otherwise.
+  function splitHtml(it, cls) {
+    var f = it.faces;
+    // More scholars than tiles: those with photos take the tiles first.
+    if (f.length > MAX_FACES) f = f.filter(function (x) { return x.img; }).concat(f.filter(function (x) { return !x.img; }));
+    var shown = f.slice(0, MAX_FACES), more = f.length - shown.length;
+    return '<span class="' + cls + ' is-portrait is-split nw-split--' + shown.length + '">' +
+      shown.map(function (x, i) {
+        var extra = (more > 0 && i === shown.length - 1) ? '<span class="nw-face__more">+' + more + '</span>' : '';
+        return '<span class="nw-face"><span class="' + cls + '__ini">' + esc(initials(x.name)) + '</span>' +
+          (x.img ? '<img src="' + esc(x.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '') +
+          extra + '</span>';
+      }).join('') + '</span>';
   }
 
   // Stories without their own image show the scholar's profile photo.
@@ -91,16 +111,30 @@
       PHOTOS && PHOTOS !== SRC ? gate.fetchJson(PHOTOS).catch(none) : null,
       ROSTER && ROSTER !== SRC ? gate.fetchJson(ROSTER).catch(none) : null
     ]).then(function (r) {
-      var enr = (r[0] && r[0].scholars) || {}, photo = {};
+      var enr = (r[0] && r[0].scholars) || {}, photo = {}, names = {};
       (Array.isArray(r[1]) ? r[1] : []).forEach(function (s) {
-        var u = String(s && s['Photo URL'] || '').trim();
-        if (u && s['Scholar ID']) photo[String(s['Scholar ID']).toUpperCase()] = u;
+        var id = String(s && s['Scholar ID'] || '').toUpperCase();
+        if (!id) return;
+        var u = String(s['Photo URL'] || '').trim();
+        if (u) photo[id] = u;
+        // Roster names are "Family, Given"; tiles use "Given Family" initials.
+        var nm = String(s['Scholar Name'] || s['Display Name'] || '');
+        var m = /^([^,]+),\s*(.+)$/.exec(nm);
+        names[id] = m ? m[2] + ' ' + m[1] : nm;
       });
+      function photoOf(id) {
+        var sid = String(id).toUpperCase(), e = enr[sid] || enr[id];
+        return photo[sid] || (e && e.photo) || '';
+      }
       doc.items.forEach(function (it) {
         if (it.img || !it.sid) return;
-        var sid = String(it.sid).toUpperCase(), e = enr[sid] || enr[it.sid];
-        var u = photo[sid] || (e && e.photo) || '';
+        var u = photoOf(it.sid);
         if (u) { it.img = u; it.portrait = true; }
+        if (!SPLIT || !Array.isArray(it.sids) || it.sids.length < 2) return;
+        var faces = it.sids.map(function (id) {
+          return { img: photoOf(id), name: names[String(id).toUpperCase()] || '' };
+        });
+        if (faces.some(function (x) { return x.img; })) { it.faces = faces; it.portrait = true; }
       });
     }).catch(function () {});
   }
