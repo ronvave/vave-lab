@@ -285,3 +285,5 @@
 .nw--fit-wide .nw__img.is-wide img { object-fit: contain; z-index: 1; }
 /* Fiji: the space around a wide photo shows a light terracotta tapa instead of the blurred fill. */
 .nw--tapa-fill .nw__img.is-wide::before { inset: 0; background: #fffcf7 url("../img/fiji/a3-tapa-light.webp") center / 420px auto repeat; filter: none; }
+/* Tonga: the space around a wide photo shows a light fine mat instead of the blurred fill. */
+.nw--mat-fill .nw__img.is-wide::before { inset: 0; background: #f6eedf url("../img/tonga/a3-fine-mat.webp") center / cover no-repeat; filter: none; }
