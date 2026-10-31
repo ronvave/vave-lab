@@ -388,8 +388,9 @@
       w.hidden = !on;
       root.querySelector('[data-nw-type="' + w.dataset.pnSubFor + '"]').hidden = on;
     });
-    if (sk) {
-      var subSel = root.querySelector('.pn-sub[data-pn-sub-for="' + t.key + '"] select');
+    var subSel = sk && root.querySelector('.pn-sub[data-pn-sub-for="' + t.key + '"] select');
+    // No dropdown is built for a type with no items (for example, no events yet).
+    if (sk && subSel) {
       var sc = {};
       if (t.key === 'Event' && window.VLEvent) A.list = window.VLEvent.sort(A.list);
       A.list.forEach(function (it) { subTags(sk, it).forEach(function (v) { sc[v] = (sc[v] || 0) + 1; }); });
