@@ -131,6 +131,7 @@
     renderAll(true);
     if (window.PSDirectory) window.PSDirectory.init(D).then(() => { renderDest(); renderWorkHeat(); renderFirsts(); renderCList(); renderCWork(); window.PSUniversities && window.PSUniversities.refresh(); window.PSCollaborators && window.PSCollaborators.onDirectoryReady && window.PSCollaborators.onDirectoryReady(); }).catch(() => {});
     if (window.PSCollaborators) window.PSCollaborators.init(D);
+    if (window.PSNews) { try { window.PSNews.init(D); } catch (e) { console.error(e); } }
   }
 
   function readUrl() {

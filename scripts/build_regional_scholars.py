@@ -421,7 +421,7 @@ def pull_sa(dump_dir: Path, sheets, drive):
     meta = {}
     for code, name, sid, *_ in COUNTRIES:
         titles = [s['properties']['title'] for s in sheets.spreadsheets().get(spreadsheetId=sid, fields='sheets.properties.title').execute()['sheets']]
-        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions') or t.startswith('Part-')]
+        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions', 'News') or t.startswith('Part-')]
         vr = sheets.spreadsheets().values().batchGet(spreadsheetId=sid, ranges=want).execute()['valueRanges']
         json.dump({'titles': titles, 'data': {t: v.get('values', []) for t, v in zip(want, vr)}}, open(dump_dir / f'{code}.json', 'w'))
         meta[code] = drive.files().get(fileId=sid, fields='modifiedTime,name', supportsAllDrives=True).execute()
@@ -439,7 +439,7 @@ def pull(dump_dir: Path):
         info = json.loads(subprocess.run(['gws', 'sheets', 'spreadsheets', 'get', '--params', json.dumps(
             {'spreadsheetId': sid, 'fields': 'sheets.properties.title'})], capture_output=True, text=True, check=True).stdout)
         titles = [s['properties']['title'] for s in info['sheets']]
-        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions') or t.startswith('Part-')]
+        want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions', 'News') or t.startswith('Part-')]
         vr = json.loads(subprocess.run(['gws', 'sheets', 'spreadsheets', 'values', 'batchGet', '--params', json.dumps(
             {'spreadsheetId': sid, 'ranges': want})], capture_output=True, text=True, check=True).stdout)['valueRanges']
         f = json.loads(subprocess.run(['gws', 'drive', 'files', 'get', '--params', json.dumps(
@@ -458,6 +458,12 @@ def directory_section(dumps):
     d = build_directory(dumps, COUNTRIES)
     raw = json.dumps(d, ensure_ascii=False, separators=(',', ':')).encode()
     return dict(gz=base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode(), n=len(d['scholars']))
+
+
+def news_section(dumps):
+    """Panel A2 "Celebrating Pasifika scholars" stories (all 11 countries)."""
+    import regional_news
+    return regional_news.build(dumps, COUNTRIES, sys.modules[__name__])
 
 
 def main():
@@ -509,6 +515,7 @@ def main():
         posCards=card_positions(dumps),
         directory=directory_section(dumps),
         studyMap=build_study_map(dumps, COUNTRIES),
+        news=news_section(dumps),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')

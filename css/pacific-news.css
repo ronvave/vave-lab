@@ -1,0 +1,74 @@
+/* Regional Panel A2 "Celebrating Pasifika scholars" (js/pacific-news.js).
+   Story layout reuses css/country-news.css; text is black (#111). */
+
+.ps-pnews { position: relative; margin: 22px 0 0; padding: 0; overflow: hidden; background: #fbf8f2; color: #111; border: 1px solid #e3ddd0; border-radius: 16px; }
+.ps-pnews[hidden] { display: none !important; }
+.ps-pnews__head { position: relative; padding: 22px 120px 22px 26px; min-height: 104px;
+  background: linear-gradient(90deg, rgba(6,38,64,.94) 0%, rgba(6,38,64,.78) 45%, rgba(6,38,64,.15) 100%), url("../img/regional/hero-voyagers.webp") center 55% / cover no-repeat; }
+.ps-pnews__head .ps-h2 { margin: 0; color: #fff; font: 700 1.6rem/1.2 Arial, Helvetica, sans-serif; letter-spacing: .02em; text-transform: uppercase; }
+.ps-pnews__head p { margin: 6px 0 0; max-width: 760px; color: #fff; font: 400 .95rem/1.45 Arial, Helvetica, sans-serif; }
+.ps-pnews__body { padding: 18px 24px 22px; }
+.ps-pnews .nw.pn { margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+
+/* Flags */
+.pn-flag { display: inline-block; width: 18px; height: 18px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(0,0,0,.18); vertical-align: -4px; }
+.pn-flag--m { width: 20px; height: 20px; }
+.pn-flag--s { width: 15px; height: 15px; vertical-align: -3px; }
+.pn-flags { display: flex; flex-wrap: wrap; gap: 6px; }
+.pn-flagtag { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px 2px 3px; border: 1px solid #d6d0c4; border-radius: 6px; background: #fff;
+  font: 700 .76rem/1.6 Arial, Helvetica, sans-serif; color: #111; }
+.pn-flagtag.is-lead { border-color: #0b7479; }
+.pn-lflags { display: inline-flex; gap: 3px; margin-right: 6px; }
+
+/* Country checklist */
+.pn-filter { display: grid; gap: 10px; margin: 0 0 16px; padding: 12px 14px; background: #fff; border: 1px solid #e3ddd0; border-radius: 12px; }
+.pn-countries { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.pn-c { display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px 5px 7px; border: 1px solid #cfd6d5; border-radius: 999px; background: #fff; cursor: pointer;
+  font: 700 .82rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-c__box { width: 15px; height: 15px; border: 2px solid #7d8a89; border-radius: 3px; background: #fff; display: grid; place-items: center; }
+.pn-c.is-on { border-color: #0b7479; background: #eef7f6; }
+.pn-c.is-on .pn-c__box { border-color: #0b7479; background: #0b7479; }
+.pn-c.is-on .pn-c__box::after { content: ""; width: 7px; height: 4px; border: solid #fff; border-width: 0 0 2px 2px; transform: rotate(-45deg) translate(1px, -1px); }
+.pn-c:not(.is-on) .pn-flag { filter: grayscale(1); opacity: .55; }
+.pn-act { padding: 6px 13px; border: 1px solid #0b7479; border-radius: 999px; background: #fff; color: #111; cursor: pointer; font: 700 .8rem Arial, Helvetica, sans-serif; }
+.pn-act[data-pn-all] { margin-left: 6px; background: #0b7479; color: #fff; }
+.pn-c:focus-visible, .pn-act:focus-visible, .pn-seg2 button:focus-visible, .pn-seg:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
+.pn-mode { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font: 400 .84rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-mode__lab { font-weight: 700; }
+.pn-mode.is-off .pn-seg2 { opacity: .5; }
+.pn-seg2 { display: inline-flex; padding: 3px; gap: 3px; border: 1px solid #cfd6d5; border-radius: 999px; background: #fff; }
+.pn-seg2 button { border: 0; background: transparent; padding: 5px 12px; border-radius: 999px; cursor: pointer; font: 700 .8rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-seg2 button.is-on { background: #0b7479; color: #fff; }
+.pn-seg2 button:disabled { cursor: default; }
+
+/* Stacked bar chart */
+.pn-chart { margin-top: 22px; padding: 16px 18px; background: #fff; border: 1px solid #e3ddd0; border-radius: 12px; }
+.pn-chart__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.pn-chart__h { margin: 0; font: 700 1.05rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-chart__sub { margin: 4px 0 0; max-width: 720px; font: 400 .84rem/1.4 Arial, Helvetica, sans-serif; color: #111; }
+.pn-legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 12px 0 8px; font: 700 .8rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.pn-rows { display: grid; gap: 6px; }
+.pn-row { display: grid; grid-template-columns: 250px 1fr 44px; align-items: center; gap: 10px; }
+.pn-row.is-off .pn-row__bar { opacity: .3; }
+.pn-row.is-off .pn-row__lab { font-weight: 400; }
+.pn-row.is-off .pn-flag { filter: grayscale(1); opacity: .6; }
+.pn-row__lab { display: flex; align-items: center; gap: 8px; font: 700 .84rem Arial, Helvetica, sans-serif; color: #111; white-space: nowrap; }
+.pn-row__bar { display: flex; height: 24px; background: #f1efe9; border-radius: 4px; overflow: hidden; }
+.pn-seg { display: flex; align-items: center; justify-content: center; min-width: 0; height: 100%; padding: 0; border: 0; cursor: pointer; color: #fff;
+  font: 700 .74rem Arial, Helvetica, sans-serif; overflow: hidden; }
+.pn-seg span { padding: 0 4px; white-space: nowrap; }
+.pn-seg:hover { filter: brightness(1.12); }
+.pn-row__none { align-self: center; padding-left: 8px; font: 400 .78rem Arial, Helvetica, sans-serif; color: #111; }
+.pn-row__n { font: 700 .86rem Arial, Helvetica, sans-serif; color: #111; text-align: right; }
+
+/* Share form country checklist */
+.pn-fcs { margin: 0; padding: 0; border: 0; display: grid; gap: 6px; }
+.pn-fcs legend { padding: 0; font-weight: 700; font-size: .86rem; }
+.pn-fcs__hint { margin: 0; font-size: .8rem; }
+.pn-fcs__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+.nw-form .pn-fc { display: flex; align-items: center; gap: 7px; font-weight: 400; font-size: .86rem; cursor: pointer; }
+.nw-form .pn-fc input { width: auto; padding: 0; margin: 0; }
+
+/* Directory card highlight after "Open scholar card" */
+#ps-dir .db-scholar-card.nw-flash { outline: 3px solid #0b7479; outline-offset: 3px; }
