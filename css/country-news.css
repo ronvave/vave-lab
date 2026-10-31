@@ -204,8 +204,8 @@
 .nw.cn .pn-person--more { padding-left: 28px; }
 .nw.cn .pn-person__name { color: #0000CD; }
 .nw.cn .pn-person b i, .nw.cn .pn-person i { color: #7B3F00; }
-.nw.cn .pn-person__inst { display: inline-flex; align-items: center; gap: 7px; margin: 1px 0; padding: 3px 11px 3px 9px; border-radius: 6px; background: #0b7479; color: #fff; font: 700 .86rem/1.35 Arial, Helvetica, sans-serif; font-style: normal; vertical-align: middle; box-shadow: 0 1px 2px rgba(0,0,0,.18); }
-.nw.cn .pn-person__inst .pn-ico { width: 15px; height: 15px; flex: none; }
+.nw.cn .pn-person__inst { color: #ac1917; font-weight: 700; font-style: normal; }
+.nw.cn .pn-person__cc { color: #704776; font-weight: 700; font-style: normal; }
 /* No-photo tiles: teal textile, large serif initials, plumeria in the lower left */
 .nw.cn .nw__img:not(.is-split), .nw.cn .nw__img.is-split .nw-face {
   background: linear-gradient(160deg, rgba(10,95,104,.15) 0%, rgba(6,72,82,.55) 55%, rgba(4,52,62,.8) 100%), #0b7479 url("../img/regional/pasifika-textile-teal.webp") left top / 420px auto repeat; }

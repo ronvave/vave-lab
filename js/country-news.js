@@ -211,6 +211,19 @@
     vals.forEach(function (v) { if (v && v.scholarId) PROF[String(v.scholarId).toUpperCase()] = v; });
     return PROF;
   }
+  // 3-letter country code for the institution, from the Panel F record's
+  // institution country. Unknown or non-country values show no code.
+  var ISO3 = { 'fiji': 'FJI', 'new zealand': 'NZL', 'aotearoa new zealand': 'NZL', 'australia': 'AUS', 'united states': 'USA', 'united states of america': 'USA', 'usa': 'USA',
+    'tonga': 'TON', 'solomon islands': 'SLB', 'samoa': 'WSM', 'vanuatu': 'VUT', 'papua new guinea': 'PNG', 'kiribati': 'KIR', 'tuvalu': 'TUV', 'nauru': 'NRU',
+    'cook islands': 'COK', 'niue': 'NIU', 'marshall islands': 'MHL', 'federated states of micronesia': 'FSM', 'palau': 'PLW', 'guam': 'GUM', 'new caledonia': 'NCL',
+    'french polynesia': 'PYF', 'american samoa': 'ASM', 'united kingdom': 'GBR', 'uk': 'GBR', 'england': 'GBR', 'scotland': 'GBR', 'ireland': 'IRL', 'canada': 'CAN',
+    'japan': 'JPN', 'china': 'CHN', 'taiwan': 'TWN', 'south korea': 'KOR', 'korea': 'KOR', 'india': 'IND', 'malaysia': 'MYS', 'singapore': 'SGP', 'indonesia': 'IDN',
+    'philippines': 'PHL', 'thailand': 'THA', 'united arab emirates': 'ARE', 'switzerland': 'CHE', 'italy': 'ITA', 'germany': 'DEU', 'france': 'FRA', 'netherlands': 'NLD',
+    'norway': 'NOR', 'sweden': 'SWE', 'denmark': 'DNK', 'spain': 'ESP', 'belgium': 'BEL', 'austria': 'AUT', 'cuba': 'CUB', 'south africa': 'ZAF', 'kenya': 'KEN', 'brazil': 'BRA' };
+  function cc(pr) {
+    var c = pr && String(pr.institutionCountry || '').split('/')[0].trim().toLowerCase();
+    return (c && ISO3[c]) || '';
+  }
   function profName(pr) {
     return pr ? String((pr.first || '') + ' ' + (pr.last || '')).replace(/\s+/g, ' ').trim() : '';
   }
@@ -232,7 +245,7 @@
       var role = pr && pr.title, inst = pr && pr.institution;
       return '<span class="pn-person">' + flag('pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(nm) + '</b>' +
         (role ? ', <b><i>' + esc(role) + '</i></b>' : '') +
-        (inst ? ' <b class="pn-person__inst">' + ico('inst') + esc(inst) + '</b>' : '') + '</span></span>';
+        (inst ? (role ? ', ' : ' ') + '<b class="pn-person__inst">' + esc(inst) + '</b>' + (cc(pr) ? ' <b class="pn-person__cc">(' + cc(pr) + ')</b>' : '') : '') + '</span></span>';
     });
     var rest = rows.length - shown.length;
     return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
