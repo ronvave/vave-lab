@@ -147,17 +147,16 @@
   var TYPES = [
     { key: 'all', label: 'All' },
     { key: 'News', label: 'News' },
-    { key: 'Defense', label: 'Defenses', empty: 'No thesis defenses posted yet.' },
     { key: 'Thesis', label: 'New theses', empty: 'No new theses posted yet.', note: 'New theses by ' + PEOPLE + ' scholars or about ' + PLACE + '.', auto: 'Theses added to the Publications records appear here automatically.' },
     { key: 'Publication', label: 'New publications', empty: 'No new publications posted yet.', note: 'New publications by ' + PEOPLE + ' scholars or about ' + PLACE + '.', auto: 'Publications by database scholars appear here automatically.' },
-    { key: 'Event', label: 'Events', empty: 'No events posted yet.', note: 'Events include webinars, talks, workshops, conferences and launches.' }
+    { key: 'Event', label: 'Events', empty: 'No events posted yet.', note: 'Events include webinars, talks, workshops, conferences, launches and thesis defenses.' }
   ];
-  var LABEL = { Thesis: 'New thesis', Publication: 'New publication' };
+  var LABEL = { Thesis: 'New thesis', Publication: 'New publication', Defense: 'Thesis defense' };
   var TIMED = { Defense: 1, Event: 1 };
   function label(it) { return LABEL[it.cat] || it.cat; }
   var A = { i: 0, timer: null, paused: false, root: null, type: 'all', list: [] };
 
-  function typeOf(it) { var t = it.type || 'News'; return t === 'Webinar' ? 'Event' : t; }
+  function typeOf(it) { var t = it.type || 'News'; return (t === 'Webinar' || t === 'Defense') ? 'Event' : t; }
   function today() {
     var d = new Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
@@ -267,7 +266,7 @@
     N.items.forEach(function (it) { counts[typeOf(it)] = (counts[typeOf(it)] || 0) + 1; });
     var share = SUBMIT ? '<button type="button" class="nw__share" data-nw-share>Share a story</button>' : '';
     var foot = '<p class="nw__foot">New theses and publications come from the database records. Shared stories are checked by a collaborator before they appear.' +
-      (SUBMIT ? ' Know of a news story, thesis defense, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
+      (SUBMIT ? ' Know of a news story, new thesis or publication, or an event? <button type="button" class="nw__link" data-nw-share>Share the link</button>.' : '') +
       '</p>';
     if (FOOT_UNDER) root.classList.add('nw--foot-under');
     root.querySelector('[data-news-body]').innerHTML =
@@ -322,9 +321,9 @@
     d.innerHTML =
       '<form method="dialog" class="nw-form" novalidate>' +
       '<h2 id="nw-dlg-h">Share a story</h2>' +
-      '<p class="nw-form__intro">Send us a link to a news story, thesis defense, new thesis, new publication or event. It should feature ' + esc(PEOPLE) + ' scholars, or for theses and publications, be by ' + esc(PEOPLE) + ' scholars or about ' + esc(PLACE) + '. A collaborator checks each link before it appears in this panel.</p>' +
+      '<p class="nw-form__intro">Send us a link to a news story, new thesis, new publication or event, including thesis defenses. It should feature ' + esc(PEOPLE) + ' scholars, or for theses and publications, be by ' + esc(PEOPLE) + ' scholars or about ' + esc(PLACE) + '. A collaborator checks each link before it appears in this panel.</p>' +
       '<label><span>Link to the story or announcement <span class="nw-req">(required)</span></span><input name="articleUrl" type="url" required maxlength="700" placeholder="https://"></label>' +
-      '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Defense">Thesis defense</option><option value="Thesis">New thesis</option><option value="Publication">New publication</option><option value="Event">Event (including webinars)</option></select></label>' +
+      '<label><span>What is it?</span><select name="type"><option value="News">News story</option><option value="Thesis">New thesis</option><option value="Publication">New publication</option><option value="Event">Event (including webinars and thesis defenses)</option></select></label>' +
       '<label><span>Scholar(s) or author(s)</span><input name="scholars" type="text" maxlength="300" placeholder="For example, ' + EXAMPLE + '"></label>' +
       '<div class="nw-form__row"><label><span>Your name <span class="nw-req">(required)</span></span><input name="submitterName" type="text" required maxlength="160" autocomplete="name"></label>' +
       '<label><span>Your email <span class="nw-req">(required)</span></span><input name="submitterEmail" type="email" required maxlength="240" autocomplete="email"></label></div>' +

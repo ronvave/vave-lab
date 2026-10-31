@@ -13,7 +13,7 @@
   var PLACE = host.getAttribute('data-place') || 'Tonga';
   var IDX = host.getAttribute('data-id-example') || 'TNG-S0000';
   var tab = document.querySelector('[data-tab="news-submissions"]');
-  var TYPES = [['News', 'News story'], ['Defense', 'Thesis defense'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars)']];
+  var TYPES = [['News', 'News story'], ['Thesis', 'New thesis'], ['Publication', 'New publication'], ['Event', 'Event (including webinars and thesis defenses)']];
   var OPEN = { Thesis: 1, Publication: 1 }, TIMED = { Defense: 1, Event: 1 };
   function typeKey(t) { return t === 'Webinar' ? 'Event' : (t || 'News'); }
   var CATS = ['Award', 'Appointment', 'Graduation', 'Milestone', 'Publication', 'Research', 'News']; // News = general news, last on purpose
