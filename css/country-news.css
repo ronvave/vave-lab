@@ -204,7 +204,7 @@
 .nw.cn .pn-person--more { padding-left: 28px; }
 .nw.cn .pn-person__name { color: #0000CD; }
 .nw.cn .pn-person b i, .nw.cn .pn-person i { color: #7B3F00; }
-.nw.cn .pn-person__inst { color: #ac1917; font-weight: 700; font-style: normal; }
+.nw.cn .pn-person__inst { color: #000; font-weight: 700; font-style: normal; }
 .nw.cn .pn-person__cc { color: #704776; font-weight: 700; font-style: normal; }
 /* No-photo tiles: teal textile, large serif initials, plumeria in the lower left */
 .nw.cn .nw__img:not(.is-split), .nw.cn .nw__img.is-split .nw-face {
