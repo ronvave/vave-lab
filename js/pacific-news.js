@@ -341,8 +341,8 @@
           esc(NAMES[r.c] + ': ' + v + ' ' + lbl[k].toLowerCase()) + '" aria-label="' + esc(NAMES[r.c] + ', ' + lbl[k] + ', ' + v) + '">' +
           '<span>' + txt + '</span></button>';
       }).join('');
-      return '<div class="pn-row' + (A.on[r.c] ? '' : ' is-off') + '"><span class="pn-row__lab">' + flag(r.c, 'pn-flag pn-flag--m') +
-        '<span>' + esc(NAMES[r.c]) + '</span></span><span class="pn-row__bar">' + (segs || '<span class="pn-row__none">No stories yet</span>') + '</span>' +
+      return '<div class="pn-row' + (A.on[r.c] ? '' : ' is-off') + '"><span class="pn-row__lab">' +
+        '<span>' + esc(NAMES[r.c]) + '</span>' + flag(r.c, 'pn-flag pn-flag--m') + '</span><span class="pn-row__bar">' + (segs || '<span class="pn-row__none">No stories yet</span>') + '</span>' +
         '<span class="pn-row__n">' + r.total + '</span></div>';
     }).join('');
     box.querySelectorAll('.pn-seg').forEach(function (b) {

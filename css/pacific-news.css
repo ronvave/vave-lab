@@ -56,7 +56,7 @@
 .pn-row.is-off .pn-row__bar { opacity: .3; }
 .pn-row.is-off .pn-row__lab { font-weight: 400; }
 .pn-row.is-off .pn-flag { filter: grayscale(1); opacity: .6; }
-.pn-row__lab { display: flex; align-items: center; gap: 8px; font: 700 .84rem Arial, Helvetica, sans-serif; color: #111; white-space: nowrap; }
+.pn-row__lab { display: flex; align-items: center; justify-content: flex-end; gap: 8px; text-align: right; font: 700 .84rem Arial, Helvetica, sans-serif; color: #111; white-space: nowrap; }
 .pn-row__bar { display: flex; height: 24px; background: #f1efe9; border-radius: 4px; overflow: hidden; }
 .pn-seg { display: flex; align-items: center; justify-content: center; min-width: 0; height: 100%; padding: 0; border: 0; cursor: pointer; color: #fff;
   font: 700 .74rem Arial, Helvetica, sans-serif; overflow: hidden; }
@@ -75,3 +75,9 @@
 
 /* Directory card highlight after "Open scholar card" */
 #ps-dir .db-scholar-card.nw-flash { outline: 3px solid #0b7479; outline-offset: 3px; }
+
+/* Story list: its own framed box, separated from the featured story */
+.pn .nw__grid { gap: 28px; }
+.pn .nw__list { padding: 10px; background: #dde9e8; border: 2px solid #0b7479; border-radius: 12px; }
+.pn.nw--foot-under .nw__list-items { inset: 10px; }
+.pn .nw__feat { box-shadow: 0 2px 10px rgba(0,0,0,.08); border-color: #cfd8d6; }
