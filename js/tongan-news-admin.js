@@ -203,6 +203,20 @@
         msg.textContent = r.status === 'already_resolved' ? 'Someone has already reviewed this link.' :
           decision === 'approve' ? 'Added to the News tab as ' + r.newsId + '. It appears on the dashboard after the next ' + PLACE + ' refresh.' : 'Rejected.';
         form.querySelectorAll('input,select,textarea,button').forEach(function (x) { x.disabled = true; });
+        // Take the reviewed card out of this view straight away (no Refresh needed).
+        // The All view keeps it, now marked with its new status.
+        var done = r.status === 'already_resolved' ? '' : decision === 'approve' ? 'Approved' : 'Rejected';
+        var label = (story.headline || row['Article URL'] || row['Submission ID']).slice(0, 90);
+        if (filter.value) {
+          c.remove();
+          var left = list.querySelectorAll('.tnews-card').length;
+          status.className = 'tonga-queue-status tonga-positive';
+          status.textContent = (done || 'Already reviewed by someone else') + ': ' + label + '. ' + (done === 'Approved' ? msg.textContent + ' ' : '') +
+            (left ? left + ' ' + filter.value.toLowerCase() + ' link' + (left === 1 ? '' : 's') + ' left.' : 'No ' + filter.value.toLowerCase() + ' links left.');
+          if (filter.value === 'Pending') setBadge(left);
+        } else if (done) {
+          var pill = c.querySelector('.tonga-status-pill'); if (pill) pill.textContent = done;
+        }
         counts();
       }).catch(function (e) {
         msg.classList.add('tonga-error'); msg.textContent = 'Not saved: ' + e.message;
