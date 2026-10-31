@@ -152,6 +152,19 @@
   var TIMED = { Defense: 1, Event: 1 };
   // News sub-categories for the News type dropdown, in menu order.
   var SUB_LABEL = { Appointment: 'Appointments', Award: 'Awards', Graduation: 'Graduations', Milestone: 'Milestones', Research: 'Research', News: 'Other news' };
+  function plural(v) {
+    // Sentence case (Journal articles, PhD theses), keeping acronyms like PhD.
+    v = String(v).split(' ').map(function (w, i) { return i && /^[A-Z][a-z]+$/.test(w) ? w.toLowerCase() : w; }).join(' ');
+    return /thesis$/i.test(v) ? v.replace(/thesis$/i, 'theses') : (/s$/i.test(v) ? v : v + 's');
+  }
+  var PT_RANK = { 'nw-pt--phd': 0, 'nw-pt--masters': 1, 'nw-pt--article': 0, 'nw-pt--book': 1, 'nw-pt--chapter': 2 };
+  function ptRank(v) { var r = PT_RANK[ptClass(v)]; return r === undefined ? 9 : r; }
+  var SUBS = {
+    News: { field: 'cat', all: 'News: all types', aria: 'News type', label: function (c) { return SUB_LABEL[c] || c; },
+      rank: function (c) { var k = Object.keys(SUB_LABEL).indexOf(c); return k < 0 ? 99 : k; } },
+    Thesis: { field: 'sub', all: 'New theses: all types', aria: 'Thesis type', label: plural, rank: ptRank },
+    Publication: { field: 'sub', all: 'New publications: all types', aria: 'Publication type', label: plural, rank: ptRank }
+  };
   function label(it) { return LABEL[it.cat] || it.cat; }
   function typeOf(it) { var t = it.type || 'News'; return (t === 'Webinar' || t === 'Defense') ? 'Event' : t; }
   function isEvent(it) { return !!TIMED[typeOf(it)]; }
@@ -332,21 +345,27 @@
     });
     var prev = keepStory && A.list[A.i];
     A.list = t.key === 'all' ? allView(items) : items.filter(function (it) { return typeOf(it) === t.key; });
-    var subWrap = root.querySelector('.pn-sub'), subSel = root.querySelector('[data-pn-sub]');
-    if (t.key === 'News') {
+    // News, New theses and New publications: the selected button turns into
+    // a dropdown of its sub-types (News by category; theses and publications
+    // by their type, e.g. PhD thesis, Journal article).
+    var sk = SUBS[t.key];
+    root.querySelectorAll('.pn-sub').forEach(function (w) {
+      var on = !!sk && w.dataset.pnSubFor === t.key;
+      w.hidden = !on;
+      root.querySelector('[data-nw-type="' + w.dataset.pnSubFor + '"]').hidden = on;
+    });
+    if (sk) {
+      var subSel = root.querySelector('.pn-sub[data-pn-sub-for="' + t.key + '"] select');
       var sc = {};
-      A.list.forEach(function (it) { sc[it.cat] = (sc[it.cat] || 0) + 1; });
+      A.list.forEach(function (it) { var v = it[sk.field] || ''; if (v) sc[v] = (sc[v] || 0) + 1; });
       if (A.sub && !sc[A.sub]) A.sub = '';
-      var cats = Object.keys(SUB_LABEL).filter(function (c) { return sc[c]; })
-        .concat(Object.keys(sc).filter(function (c) { return !SUB_LABEL[c]; }));
-      subSel.innerHTML = '<option value="">All news types (' + A.list.length + ')</option>' + cats.map(function (c) {
-        return '<option value="' + esc(c) + '"' + (c === A.sub ? ' selected' : '') + '>' + esc(SUB_LABEL[c] || c) + ' (' + sc[c] + ')</option>';
+      var cats = Object.keys(sc).sort(function (x, y) { return sk.rank(x) - sk.rank(y) || sc[y] - sc[x] || (x < y ? -1 : 1); });
+      subSel.innerHTML = '<option value="">' + esc(sk.all) + ' (' + A.list.length + ')</option>' + cats.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === A.sub ? ' selected' : '') + '>' + esc(sk.label(c)) + ' (' + sc[c] + ')</option>';
       }).join('');
-      subWrap.hidden = false;
-      if (A.sub) A.list = A.list.filter(function (it) { return it.cat === A.sub; });
+      if (A.sub) A.list = A.list.filter(function (it) { return it[sk.field] === A.sub; });
     } else {
       A.sub = '';
-      subWrap.hidden = true;
     }
     var many = A.list.length > 1;
     root.querySelector('.nw__list-items').innerHTML = listHtml(A.list);
@@ -506,9 +525,10 @@
       '<span class="pn-acts"><button type="button" class="pn-act" data-pn-all>' + ico('check') + 'Check all</button><button type="button" class="pn-act" data-pn-none>' + ico('clear') + 'Clear all</button></span></div></div>' +
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
-        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) + '<span class="nw__n">0</span></button>';
-      }).join('') + '</div>' +
-      '<label class="pn-sub" hidden><span class="pn-sub__lab">News type</span><select data-pn-sub aria-label="News type"></select></label>' + share + '</div>' +
+        return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) + '<span class="nw__n">0</span></button>' +
+          // When News is selected, the News button turns into the News type dropdown.
+          (SUBS[t.key] ? '<label class="pn-sub" data-pn-sub-for="' + t.key + '" hidden>' + ico(t.key) + '<select data-pn-sub aria-label="' + esc(SUBS[t.key].aria) + '"></select></label>' : '');
+      }).join('') + '</div>' + share + '</div>' +
       '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
       '<button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>' +
@@ -536,7 +556,7 @@
     root.querySelectorAll('[data-pn-scale]').forEach(function (b) {
       b.addEventListener('click', function () { A.scale = b.dataset.pnScale; chart(); });
     });
-    root.querySelector('[data-pn-sub]').addEventListener('change', function (e) { A.sub = e.target.value; refresh(); });
+    root.querySelectorAll('[data-pn-sub]').forEach(function (sel) { sel.addEventListener('change', function (e) { A.sub = e.target.value; refresh(); }); });
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
     ctrls.querySelector('[data-nw-next]').addEventListener('click', function () { show(A.i + 1); schedule(); });

@@ -138,9 +138,13 @@
 .pn-seg2 button.is-on { box-shadow: 0 2px 6px rgba(11,116,121,.3); }
 
 /* News type dropdown (shown when News is selected) */
-.pn-sub { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; padding: 4px 6px 4px 14px; background: #fff; border: 1px solid #e4d8c3; border-radius: 999px; box-shadow: 0 6px 18px rgba(80,55,20,.14); font: 700 .84rem Arial, Helvetica, sans-serif; color: #0d2b55; }
-.pn-sub[hidden] { display: none; }
-.pn-sub select { padding: 6px 28px 6px 12px; border: 1px solid #0b7479; border-radius: 999px; background: #fff; color: #111; font: 700 .84rem Arial, Helvetica, sans-serif; cursor: pointer; }
+/* News type dropdown takes the place of the News button when News is selected */
+.pn-sub { position: relative; display: inline-flex; align-items: center; gap: 0; background: #0b7479; border-radius: 999px; color: #fff; }
+.pn-sub[hidden], .nw__type[hidden] { display: none; }
+.pn-sub .pn-ico { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #fff; pointer-events: none; }
+.pn-sub::after { content: ""; position: absolute; right: 15px; top: 50%; width: 7px; height: 7px; margin-top: -6px; border-right: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(45deg); pointer-events: none; }
+.pn-sub select { appearance: none; -webkit-appearance: none; padding: 7px 38px 7px 40px; border: 0; border-radius: 999px; background: transparent; color: #fff; font: 700 .85rem Arial, Helvetica, sans-serif; cursor: pointer; }
+.pn-sub select option { color: #111; background: #fff; }
 .pn-sub select:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
 .pn-outlet { font-style: italic; }
 /* Legend starts above the left edge of the bars (label column 250px + 10px gap) */
