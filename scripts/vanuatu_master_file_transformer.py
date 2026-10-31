@@ -197,7 +197,18 @@ def transform(source, enrichment=None):
                 out[field]=[({'title':str(u.get('title',''))[:300],'url':u['url']} if isinstance(u,dict) else u) for u in r[field][:50] if (isinstance(u,str) and u.startswith(('http://','https://'))) or (isinstance(u,dict) and isinstance(u.get('url'),str) and u['url'].startswith(('http://','https://')) and len(str(u.get('title',''))) <= 300)]
         if out:
             public_enrichment[sid]=out
+    news = None
+    if 'News' in source:
+        # Only approved News fields reach country_news; stories need a public scholar
+        # (or a named author for an open thesis/publication) and Show on Dashboard = Yes.
+        import country_news
+        story_rows = [{**{f:r.get(f,'') for f in C.FIELDS['News'] if f in allowed['News']},'Show on Dashboard':r.get('Show on Dashboard','')}
+                      for r in rows(source['News'],['News ID','Scholar ID','Headline','Show on Dashboard'],'News') if str(r.get('News ID','')).strip()]
+        roster = [{'Scholar ID':r['Scholar ID'],'Scholar Name':r.get('Scholar Name','')} for r in people]
+        news = country_news.build(story_rows, roster, source='Vanuatu_Master_file', generator='scripts/vanuatu_master_file_transformer.py')['items'] if {'News ID','Scholar ID','Headline','Publication Date','Article URL'} <= allowed['News'] else []
     content = {'country':'Vanuatu','schemaVersion':1,'fields':{t:sorted(allowed[t]) for t in allowed},'tables':tables,'theses':theses,'enrichment':public_enrichment,'notices':['Only individually approved fields are exported. Restricted views display unavailable, not zero.']}
+    if news is not None:
+        content['news'] = news
     # No implicit public sidecars. Explicit separate owner approval is required.
     content['generation'] = hashlib.sha256(json.dumps(content,sort_keys=True,ensure_ascii=False).encode()).hexdigest()[:16]
     return content
@@ -238,6 +249,9 @@ def fetch_live():
             n,k=divmod(n-1,26);col=chr(65+k)+col
         escaped=name.replace("'","''")
         result[name] = api.spreadsheets().values().get(spreadsheetId=C.SPREADSHEET_ID,range=f"'{escaped}'!A1:{col}{sheets[name]['rowCount']}",valueRenderOption='UNFORMATTED_VALUE').execute().get('values',[])
+    if 'News' in sheets:
+        grid=sheets['News']
+        result['News']=api.spreadsheets().values().get(spreadsheetId=C.SPREADSHEET_ID,range=f"'News'!A1:W{grid['rowCount']}",valueRenderOption='FORMATTED_VALUE').execute().get('values',[])
     if 'Study Pathways' in sheets:
         grid=sheets['Study Pathways']
         result['Study Pathways']=api.spreadsheets().values().get(spreadsheetId=C.SPREADSHEET_ID,range=f"'Study Pathways'!A1:J{grid['rowCount']}",valueRenderOption='UNFORMATTED_VALUE').execute().get('values',[])

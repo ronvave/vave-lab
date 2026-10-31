@@ -144,12 +144,18 @@ function doPost(e) {
     var text=String(e&&e.postData&&e.postData.contents||'');
     if(text.length>900000)throw Error('Request too large.');
     var request=JSON.parse(text),props=PropertiesService.getScriptProperties();
+    // Public Panel A3 "Share a story" form: no secret; writes only to the private
+    // News Submissions queue (see vanuatu-news.gs). Replies in the form's own shape.
+    if(request.action==='submitNewsStory'){
+      try{return vanJson_(vanNewsSubmit_(request));}
+      catch(err){return vanJson_({status:'error',reason:'The link could not be sent. Please try again later.'});}
+    }
     var expected=props.getProperty('SHARED_SECRET')||'',received=String(request.secret||'');
     var diff=expected.length^received.length;
     for(var i=0;i<expected.length;i++)diff|=expected.charCodeAt(i)^(received.charCodeAt(i)||0);
     if(expected.length<32||diff||!Number.isFinite(request.clientTs)||Math.abs(Date.now()-request.clientTs)>300000)throw Error('Owner authentication failed.');
     vanHttpActor_={email:'ronvave@hawaii.edu',role:'owner'};
-    var routes={getVanuatuAdminState:getVanuatuAdminState,saveVanuatuMaster:saveVanuatuMaster,saveVanuatuEnrichment:saveVanuatuEnrichment,reviewVanuatuProposal:reviewVanuatuProposal,refreshVanuatuSnapshot:refreshVanuatuSnapshot};
+    var routes={getVanuatuAdminState:getVanuatuAdminState,saveVanuatuMaster:saveVanuatuMaster,saveVanuatuEnrichment:saveVanuatuEnrichment,reviewVanuatuProposal:reviewVanuatuProposal,refreshVanuatuSnapshot:refreshVanuatuSnapshot,readVanuatuNews:readVanuatuNews,previewVanuatuNewsLink:previewVanuatuNewsLink,resolveVanuatuNews:resolveVanuatuNews};
     if(!Object.prototype.hasOwnProperty.call(routes,request.method))throw Error('Unsupported Admin operation.');
     return vanJson_({ok:true,result:routes[request.method](request.payload)});
   }catch(error){return vanJson_({ok:false,error:String(error.message||error)});}

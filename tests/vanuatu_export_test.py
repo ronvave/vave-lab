@@ -49,6 +49,20 @@ class ExportTests(unittest.TestCase):
         self.assertEqual(T.approved_photo('data:image/svg+xml;base64,AAAA'),'')
         self.assertEqual(T.approved_photo('data:image/jpeg;base64,aGVsbG8='),'')
 
+    def test_news_stories_exact_allowlist(self):
+        s=fixture()
+        H=['News ID','Scholar ID','Scholar Display Name','Category','Headline','Outlet','Publication Date','Article URL','Summary','Show on Dashboard','Added By','Notes','Announcement Type']
+        s['News']=sheet([
+            {'News ID':'VAN-N0001','Scholar ID':'VAN-S0001','Category':'Award','Headline':'Public story','Outlet':'Daily Post','Publication Date':'2026-10-01','Article URL':'https://example.org/a','Summary':'Curated','Show on Dashboard':'Yes','Added By':'PRIVATE CURATOR','Notes':'PRIVATE NOTE'},
+            {'News ID':'VAN-N0002','Scholar ID':'VAN-S0002','Headline':'Non-public scholar','Publication Date':'2026-10-02','Article URL':'https://example.org/b','Show on Dashboard':'Yes'},
+            {'News ID':'VAN-N0003','Scholar ID':'VAN-S0001','Headline':'Not ticked','Publication Date':'2026-10-03','Article URL':'https://example.org/c','Show on Dashboard':'No'}],H)
+        self.assertNotIn('news',T.transform(fixture()))
+        self.assertEqual(T.transform(s)['news'],[])  # no News fields approved yet
+        s['Public Export Config'] += [['News',f,'Yes'] for f in ['News ID','Scholar ID','Category','Headline','Outlet','Publication Date','Article URL','Summary']] + [['News','Notes','Yes'],['News','Added By','Yes']]
+        news=T.transform(s)['news']
+        self.assertEqual([n['id'] for n in news],['VAN-N0001'])
+        self.assertEqual((news[0]['name'],news[0]['cat'],news[0]['sum']),('Fictional Scholar','Award','Curated'))
+        self.assertNotIn('PRIVATE',json.dumps(news))
     def test_minimal_exact_allowlist(self):
         b=T.transform(fixture());self.assertEqual(b['tables']['Scholars'],[{'Scholar ID':'VAN-S0001','Scholar Name':'Fictional Scholar'}]);self.assertEqual(b['tables']['Graduate Degrees'],[]);self.assertEqual(b['theses'],[{'Thesis / Dissertation Title':'Example thesis'}]);self.assertNotIn('PRIVATE',json.dumps(b))
     def test_prepared_null_rows_not_records(self):

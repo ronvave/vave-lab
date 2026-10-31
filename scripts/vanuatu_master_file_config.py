@@ -14,6 +14,8 @@ FIELDS = {
  'Institutions': ['Institution ID','Canonical Institution (C_Uni)','Country','City / Locality','Latitude','Longitude','Website'],
  'Study Pathways': ['Pathway ID','Scholar ID',"Master's Degree ID",'PhD Degree ID'],
  'Admin enrichment': ['photo','summary','sources','keywords','sector','institutionUrl','departmentUrl'],
+ # Panel A3 curated stories (News tab). Show on Dashboard is a publish switch, not an exported field.
+ 'News': ['News ID','Scholar ID','Scholar Display Name','Category','Headline','Outlet','Publication Date','Article URL','Image URL','Image Credit','Summary','Also Covered By','Announcement Type','Event Time','Event Location'],
 }
 REQUIRED = {
  'Scholars':['Scholar ID','Scholar Name','Identity Verification Status','Public Display Approved'],
@@ -23,7 +25,7 @@ REQUIRED = {
  'Research Geography':['Geography Record ID','Publication ID','Verification Status','Public Display Approved'],
  'Institutions':['Institution ID','Canonical Institution (C_Uni)','Active'],
 }
-FORBIDDEN = {'Identity Evidence','Identity Source URL','Record Notes','Community / Ancestral Notes','Scholar Share Token','Source Basis','Name Variants / Aliases','Submitter Email','Submitter Name','Attachments JSON','Evidence','Evidence / Notes','Coding Basis / Evidence','Source URL / Note'}
+FORBIDDEN = {'Added By','Added On','Notes','Identity Evidence','Identity Source URL','Record Notes','Community / Ancestral Notes','Scholar Share Token','Source Basis','Name Variants / Aliases','Submitter Email','Submitter Name','Attachments JSON','Evidence','Evidence / Notes','Coding Basis / Evidence','Source URL / Note'}
 STATUSES = {'Verified','Probable','Unresolved','Excluded','Pending','Rejected','Unknown / verify','Not checked'}
 PROVINCES = {'Torba','Sanma','Penama','Malampa','Shefa','Tafea'}
 COUNTRY_ALIASES = {'Nauru':'Naoero','Naoero':'Naoero','USA':'United States','United States of America':'United States','UK':'United Kingdom'}
