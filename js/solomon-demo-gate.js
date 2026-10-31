@@ -222,6 +222,7 @@
     'data/solomon-master-geography.json':    'data/solomon-master-geography.json.enc',
     'data/solomon-master-aggregates.json':   'data/solomon-master-aggregates.json.enc',
     'data/solomon-master-news.json':        'data/solomon-master-news.json.enc',
+    'data/solomon-master-positions.json': 'data/solomon-master-positions.json.enc',
     // Master-derived Panel B2 world-points payload. Built by
     // scripts/master_b2_worldpoints.py from the authoritative Master
     // Graduate Degrees snapshot. Drives the country → university →
