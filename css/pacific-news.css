@@ -108,7 +108,6 @@
 .pn-card { border-radius: 14px; padding: 12px; }
 .pn .nw__feat { border: 0; box-shadow: none; border-radius: 10px; background: #fff; }
 .pn .nw__img-wrap { position: relative; }
-.pn .nw__img-wrap::before { content: ""; position: absolute; z-index: 2; left: 0; top: 0; bottom: 0; width: 14px; background: linear-gradient(rgba(120,66,22,.55), rgba(120,66,22,.55)), url("../img/regional/pasifika-textile.webp") center / auto 100% #8a5426; box-shadow: 1px 0 0 rgba(255,255,255,.6); }
 .pn .nw__title { color: #0d2b55; font-size: 1.55rem; line-height: 1.2; }
 .pn .nw__meta { color: #111; font-weight: 400; font-size: .95rem; }
 .pn .nw__a { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 8px; }
@@ -137,3 +136,12 @@
 .pn-chart__h .pn-ico { width: 26px; height: 26px; color: #0b7479; stroke-width: 3; }
 .pn-legend i { border-radius: 50%; width: 13px; height: 13px; }
 .pn-seg2 button.is-on { box-shadow: 0 2px 6px rgba(11,116,121,.3); }
+
+/* News type dropdown (shown when News is selected) */
+.pn-sub { display: inline-flex; align-items: center; gap: 8px; margin-right: auto; padding: 4px 6px 4px 14px; background: #fff; border: 1px solid #e4d8c3; border-radius: 999px; box-shadow: 0 6px 18px rgba(80,55,20,.14); font: 700 .84rem Arial, Helvetica, sans-serif; color: #0d2b55; }
+.pn-sub[hidden] { display: none; }
+.pn-sub select { padding: 6px 28px 6px 12px; border: 1px solid #0b7479; border-radius: 999px; background: #fff; color: #111; font: 700 .84rem Arial, Helvetica, sans-serif; cursor: pointer; }
+.pn-sub select:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
+.pn-outlet { font-style: italic; }
+/* Legend starts above the left edge of the bars (label column 250px + 10px gap) */
+.pn-legend { padding-left: 260px; }

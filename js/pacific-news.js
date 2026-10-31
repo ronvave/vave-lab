@@ -148,6 +148,8 @@
   var TYPE_COLOR = { News: '#e39b2d', Thesis: '#228B22', Publication: '#0b7479', Event: '#7b4fb3' };
   var LABEL = { Thesis: 'New thesis', Publication: 'New publication', Defense: 'Thesis defense' };
   var TIMED = { Defense: 1, Event: 1 };
+  // News sub-categories for the News type dropdown, in menu order.
+  var SUB_LABEL = { Appointment: 'Appointments', Award: 'Awards', Graduation: 'Graduations', Milestone: 'Milestones', Research: 'Research', News: 'Other news' };
   function label(it) { return LABEL[it.cat] || it.cat; }
   function typeOf(it) { var t = it.type || 'News'; return (t === 'Webinar' || t === 'Defense') ? 'Event' : t; }
   function isEvent(it) { return !!TIMED[typeOf(it)]; }
@@ -192,6 +194,7 @@
   function feature(it) {
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
+    var pub = typeOf(it) === 'Publication';
     var meta = ev ? [it.name, it.when || dateLabel(it), it.where] : [it.name, it.outlet, dateLabel(it)];
     return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
       '<div class="nw__body">' + flagRow(it) +
@@ -199,7 +202,7 @@
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
-      '<div class="nw__meta">' + meta.filter(Boolean).map(esc).join(' · ') + '</div>' +
+      '<div class="nw__meta">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
@@ -270,7 +273,7 @@
         '<span class="nw__li-text"><span class="nw__lt">' + flags + (it.sub
           ? esc(shortName(it.name)) + ' <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
           : esc(it.name) + ' · ' + esc(label(it))) + '</span>' +
-        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)]).filter(Boolean).map(esc).join(' · ') + '</span></span>' + ico('chev') + '</button>';
+        '<span class="nw__ls">' + (isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (typeOf(it) === 'Publication' ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
     }).join('');
   }
 
@@ -290,6 +293,22 @@
     });
     var prev = keepStory && A.list[A.i];
     A.list = t.key === 'all' ? allView(items) : items.filter(function (it) { return typeOf(it) === t.key; });
+    var subWrap = root.querySelector('.pn-sub'), subSel = root.querySelector('[data-pn-sub]');
+    if (t.key === 'News') {
+      var sc = {};
+      A.list.forEach(function (it) { sc[it.cat] = (sc[it.cat] || 0) + 1; });
+      if (A.sub && !sc[A.sub]) A.sub = '';
+      var cats = Object.keys(SUB_LABEL).filter(function (c) { return sc[c]; })
+        .concat(Object.keys(sc).filter(function (c) { return !SUB_LABEL[c]; }));
+      subSel.innerHTML = '<option value="">All news types (' + A.list.length + ')</option>' + cats.map(function (c) {
+        return '<option value="' + esc(c) + '"' + (c === A.sub ? ' selected' : '') + '>' + esc(SUB_LABEL[c] || c) + ' (' + sc[c] + ')</option>';
+      }).join('');
+      subWrap.hidden = false;
+      if (A.sub) A.list = A.list.filter(function (it) { return it.cat === A.sub; });
+    } else {
+      A.sub = '';
+      subWrap.hidden = true;
+    }
     var many = A.list.length > 1;
     root.querySelector('.nw__list-items').innerHTML = listHtml(A.list);
     root.querySelectorAll('.nw__li').forEach(function (b) {
@@ -365,7 +384,7 @@
     }).join('');
     box.querySelectorAll('.pn-seg').forEach(function (b) {
       b.addEventListener('click', function () {
-        A.on = {}; A.on[b.dataset.c] = true; A.shared = false; A.type = b.dataset.t;
+        A.on = {}; A.on[b.dataset.c] = true; A.shared = false; A.type = b.dataset.t; A.sub = '';
         refresh();
         A.root.querySelector('.nw__grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
       });
@@ -406,7 +425,8 @@
       '<div class="nw__bar"><div class="nw__types" role="group" aria-label="Show announcements">' +
       TYPES.map(function (t) {
         return '<button type="button" class="nw__type" data-nw-type="' + t.key + '" aria-pressed="false">' + (t.key === 'all' ? '' : ico(t.key)) + esc(t.label) + '<span class="nw__n">0</span></button>';
-      }).join('') + '</div>' + share + '</div>' +
+      }).join('') + '</div>' +
+      '<label class="pn-sub" hidden><span class="pn-sub__lab">News type</span><select data-pn-sub aria-label="News type"></select></label>' + share + '</div>' +
       '<div class="nw__grid"><div class="nw__main"><div class="pn-card"><div class="nw__feat" aria-live="polite"></div>' +
       '<div class="nw__under"><div class="nw__ctrls">' +
       '<button type="button" class="nw__btn" data-nw-prev aria-label="Previous story">&lsaquo;</button>' +
@@ -434,6 +454,7 @@
     root.querySelectorAll('[data-pn-scale]').forEach(function (b) {
       b.addEventListener('click', function () { A.scale = b.dataset.pnScale; chart(); });
     });
+    root.querySelector('[data-pn-sub]').addEventListener('change', function (e) { A.sub = e.target.value; refresh(); });
     var ctrls = root.querySelector('.nw__ctrls');
     ctrls.querySelector('[data-nw-prev]').addEventListener('click', function () { show(A.i - 1); schedule(); });
     ctrls.querySelector('[data-nw-next]').addEventListener('click', function () { show(A.i + 1); schedule(); });
@@ -446,7 +467,7 @@
       schedule();
     });
     root.querySelectorAll('[data-nw-type]').forEach(function (b) {
-      b.addEventListener('click', function () { A.type = b.dataset.nwType; refresh(); });
+      b.addEventListener('click', function () { A.type = b.dataset.nwType; A.sub = ''; refresh(); });
     });
     root.querySelectorAll('.nw__bar [data-nw-share], .nw__foot [data-nw-share]').forEach(function (b) { b.addEventListener('click', openForm); });
     var grid = root.querySelector('.nw__grid');
