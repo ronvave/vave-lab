@@ -3959,6 +3959,7 @@
 </style><link rel="stylesheet" href="css/solomon-scholar-portal.css?v=85e25ca6">
 <script>if(new URLSearchParams(location.search).has("solomonProfile"))document.documentElement.classList.add("solomon-profile-loading");</script>
 <style>.solomon-profile-loading body{visibility:hidden}</style>  <link rel="stylesheet" href="css/solomon-panel-menu.css?v=44020c99">
+<link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
   <link rel="stylesheet" href="css/country-news.css?v=34efaf8c">
   <link rel="stylesheet" href="css/solomon-panel-hero.css?v=dcc55886">
 <link rel="stylesheet" href="css/country-positions.css?v=bb3440c0">
@@ -4507,13 +4508,32 @@
         </button>
       </div>
 
-      <!-- Panel B4 — Where Solomon Islands research has been undertaken. Sourced from the
+      <!-- B4 uses completed-degree Short Disciplines; independent of publication filters. -->
+      <section class="db-panel reveal db-panel--wide" data-panel="B4" id="graduate-disciplines" aria-labelledby="short-disciplines-heading">
+        <span class="db-panel__label">B4</span>
+        <h2 class="db-panel__title" id="short-disciplines-heading">Graduate research disciplines</h2>
+        <p class="db-panel__hint">The table defaults to Gender. Select Degree below to see the number of scholars with completed Master&rsquo;s and PhD degrees in each discipline.</p>
+        <div class="short-disciplines-toggle" role="group" aria-label="Summarise disciplines by">
+          <button type="button" data-discipline-view="gender" aria-pressed="true">Gender</button>
+          <button type="button" data-discipline-view="degree" aria-pressed="false">Degree</button>
+        </div>
+        <p data-disciplines-status role="status">Loading graduate research disciplines…</p>
+        <div class="short-disciplines-scroll" tabindex="0" role="region" aria-label="Graduate research disciplines table">
+          <table class="short-disciplines-table" aria-describedby="short-disciplines-caption" hidden>
+            <caption></caption><thead></thead><tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <p id="short-disciplines-caption" class="short-disciplines-caption db-panel__hint"></p>
+        <p class="short-disciplines-updated" data-disciplines-updated></p>
+      </section>
+
+      <!-- Panel B5 — Where Solomon Islands research has been undertaken. Sourced from the
            Master file Research Geography evidence bridge. Each verified country
            is a research location; items are bucketed as
            "Led by Solomon Islands" (first-author matches the master roster) or
            "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B4">
-        <span class="db-panel__label">B4</span>
+      <div class="db-panel reveal db-panel--wide" data-panel="B5" id="panel-nav-b4">
+        <span class="db-panel__label">B5</span>
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF SOLOMON ISLANDS RESEARCH</h2>
         <p class="db-panel__note" data-geography-coverage hidden></p>
         <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Solomon Islanders as first author; gold = others as first author (a Solomon Islander author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
@@ -5239,6 +5259,8 @@
 <link rel="stylesheet" href="css/panel-d-firsts.css?v=62461145">
 <script src="js/b5-location-table.js?v=c774fc03" defer></script>
 <script src="js/solomon-database-master.js?v=65287895" defer></script>
+<script src="js/solomon-short-disciplines.js?v=cb602c3a" defer></script>
+<script src="js/short-disciplines-style.js?v=ee30475b" defer></script>
 <script src="js/dashboard-profile-link.js?v=98de6580" defer></script>
 <script src="js/panel-d-firsts.js?v=da417e3c" data-country="sb" defer></script>
 <script src="js/solomon-panel-overrides.js?v=1ace0c6b" defer></script>
@@ -5345,7 +5367,7 @@
     }
   })();
 </script>
-<script src="js/solomon-panel-menu.js?v=5e7a68a6" defer></script>
+<script src="js/solomon-panel-menu.js?v=6c6e6c03" defer></script>
 <script src="js/country-news.js?v=9d6eb64e" data-src="data/solomon-master-news.json" data-photos="data/solomon-scholar-enrichment.json" data-people="Solomon Islander" data-place="Solomon Islands" data-example="Dr Tarcisius Kabutaulaka" data-foot-under="1" data-submit="https://script.google.com/macros/s/AKfycbw4iymIpI7y7ctyn3Iaufk--QIdwBlFToWwOG1CuI_EsD9YOMkNtCe7N_n_OEWhi7PyAg/exec" defer></script>
 <script src="js/solomon-panel-hero.js?v=02ad8d99" defer></script>
 <script src="js/fiji-text-contrast.js?v=fe96fe34" defer></script>

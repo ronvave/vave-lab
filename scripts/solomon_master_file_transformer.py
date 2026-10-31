@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any
 import country_news  # noqa: E402  (Panel A3 scholar news snapshot)
 import country_positions  # noqa: E402  (scholar card Positions snapshot)
+from solomon_short_disciplines import build_solomon_short_disciplines  # noqa: E402  (Panel B4)
 
 from solomon_master_file_config import (
     ALL_SOLOMON_GEOGRAPHY_LABELS,
@@ -785,6 +786,8 @@ def run(fetch_fn, out_dir: Path, check_only: bool = False) -> tuple[bool, dict]:
         scholars, publications, authorship, grad_degrees, mobility,
         researcher_authorship=researcher_authorship,
     )
+    # Panel B4: unique Scholar IDs with completed Master's/PhD by short discipline.
+    aggregates["shortDisciplines"] = build_solomon_short_disciplines(grad_degrees, scholars)
     t = aggregates["totals"]
     log(
         f"  -> scholars={t['scholars']} pubs={t['publications_total']} "
