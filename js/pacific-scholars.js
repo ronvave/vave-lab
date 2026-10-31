@@ -179,7 +179,7 @@
     const t = totals();
     const connected = D.sources.filter(s => s.file).length;
     const items = [
-      ['nat', ICONS.globe, fmt(connected), connected === D.sources.length ? 'Countries' : `of ${D.sources.length} countries connected`],
+      ['nat', ICONS.globe, fmt(connected), connected === D.sources.length ? 'Countries so far' : `of ${D.sources.length} countries connected`],
       ['sch', ICONS.people, fmt(t.scholars), 'Indigenous scholars'],
       ['ma', ICONS.cap, fmt(t.masters), "Completed Master's"],
       ['phd', ICONS.cap, fmt(t.phd), 'Completed PhDs'],
