@@ -75,7 +75,7 @@
     entries = entries.filter(([code]) => targets.has(code)); if (!entries.length) return;
     let pill;
     if (entries.length === 1) {
-      pill = link(entries[0][0], ({D:'Timeline',E:'Confederacy',F:'Profiles',G:'Publications',H:'About'})[group] || 'Panel ' + group); pill.title = entries[0][1];
+      pill = link(entries[0][0], ({D:'Timeline',E:'Province',F:'Profiles',G:'Publications',H:'About'})[group] || 'Panel ' + group); pill.title = entries[0][1];
       pill.setAttribute('aria-label','Panel ' + group + ': ' + entries[0][1]);
     } else {
       pill = document.createElement('button'); pill.type = 'button'; pill.textContent = 'Panel ' + group + ' ▾';
