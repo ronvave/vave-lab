@@ -226,44 +226,72 @@
         '<span><b class="pn-inst__name">' + esc(r[1]) + '</b>, ' + esc(r[2]) + '</span></span>';
     }).join('') + (more ? '<span class="pn-inst pn-inst--more">and ' + more + ' more</span>' : '') + '</span>';
   }
-  // One line per scholar under the title: home-country flag, name (bold blue),
-  // position (bold italic brown), institution (bold black). Same person once.
-  function peopleLine(it) {
+  // Unique people in a story, lead first. One person listed in two databases
+  // (for example Fiji and Tonga) is shown once, with the first photo found.
+  function storyPeople(it) {
     var ppl = Array.isArray(it.ppl) && it.ppl.length ? it.ppl : it.c.slice(0, 1).map(function (c) { return [c, it.sid, it.name]; });
     var seen = {}, rows = [];
     ppl.forEach(function (p) {
-      var key = p[1] || p[2];
-      if (seen[key]) return; seen[key] = 1;
-      rows.push(p);
+      var key = String(p[2] || p[1] || '').toLowerCase();
+      if (!key) return;
+      if (seen[key]) { if (!seen[key].ph) seen[key].ph = photoOf(p[1]); return; }
+      seen[key] = { c: p[0], sid: p[1], name: p[2], sc: DIR[p[1]] || {}, ph: photoOf(p[1]) };
+      rows.push(seen[key]);
     });
-    var shown = rows.slice(0, 3).map(function (p) {
-      var sc = DIR[p[1]] || {}, inst = sc.inst || NAMES[p[0]] || p[0];
-      return '<span class="pn-person">' + flag(p[0], 'pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(p[2]) + '</b>' +
-        (sc.role ? ', <b><i>' + esc(sc.role) + '</i></b>' : '') +
+    return rows;
+  }
+  function nameLink(r) {
+    return r.sid ? '<button type="button" class="pn-person__name pn-nlink" data-nw-sid="' + esc(r.sid) + '" data-nw-nm="' + esc(r.name) + '">' + esc(r.name) + '</button>'
+      : '<b class="pn-person__name">' + esc(r.name) + '</b>';
+  }
+  // One line per scholar under the title: home-country flag, name (bold blue,
+  // opens the scholar card), position (bold italic brown), institution badge.
+  function peopleLine(it) {
+    var rows = storyPeople(it);
+    var shown = rows.slice(0, 3).map(function (r) {
+      var inst = r.sc.inst || NAMES[r.c] || r.c;
+      return '<span class="pn-person">' + flag(r.c, 'pn-flag pn-flag--m') + '<span>' + nameLink(r) +
+        (r.sc.role ? ', <b><i>' + esc(r.sc.role) + '</i></b>' : '') +
         (inst ? ' <b class="pn-person__inst">' + ico('inst') + esc(inst) + '</b>' : '') + '</span></span>';
     });
     var rest = rows.length - shown.length;
     return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
   }
+  // Stories with 2+ scholars: one card per scholar (photo or initials, flag and
+  // name, position, institution). 2-6 scholars: three per row; 7 or more: four.
+  function peopleCards(it) {
+    return storyPeople(it).map(function (r) {
+      var inst = r.sc.inst || NAMES[r.c] || r.c;
+      return '<div class="pn-ac"><span class="pn-ac__ph"><span class="pn-ac__ini">' + esc(initials(r.name)) + '</span>' +
+        (r.ph ? '<img src="' + esc(r.ph) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '') + '</span>' +
+        '<span class="pn-ac__txt"><span class="pn-ac__nm">' + flag(r.c, 'pn-flag pn-ac__flag') + nameLink(r) + '</span>' +
+        (r.sc.role ? '<i class="pn-ac__role">' + esc(r.sc.role) + '</i>' : '') +
+        (inst ? '<span class="pn-ac__inst"><b class="pn-person__inst">' + ico('inst') + esc(inst) + '</b></span>' : '') +
+        '</span></div>';
+    }).join('');
+  }
+  function isCards(it) { return !it.ev && storyPeople(it).length >= 2; }
   function feature(it) {
     if (it.ev && window.VLEvent) return window.VLEvent.feature(it, { ico: ico, imgHtml: imgHtml, peopleLine: peopleLine });
     var credit = it.credit ? '<span class="nw__credit">Photo: ' + esc(it.credit) + '</span>' : '';
     var ev = isEvent(it), soon = ev && it.date >= today();
     var pub = typeOf(it) === 'Publication';
     var meta = ev ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)];
-    return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
+    var cards = isCards(it), n = cards ? storyPeople(it).length : 0;
+    return (cards ? '' : '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>') +
       '<div class="nw__body">' +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
-      '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>' +
-      '<div class="nw__meta">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
+      '<div class="nw__meta pn-src">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
+      (cards ? '<div class="pn-acs' + (n >= 7 ? ' pn-acs--4' : '') + '">' + peopleCards(it) + '</div>'
+        : '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>') +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
       '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + ico(typeOf(it) === 'Publication' || typeOf(it) === 'Thesis' ? 'Publication' : 'News') + esc(goLabel(it)) + ico('ext') + '</a>' +
-      (it.sid ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
+      (it.sid && !cards ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
       '</div></div>';
   }
   function emptyFeature(t) {
@@ -307,8 +335,12 @@
     feat.classList.remove('is-empty');
     feat.innerHTML = feature(it);
     if (it.ev && window.VLEvent) window.VLEvent.wireFeature(feat, it);
+    feat.classList.toggle('nw__feat--cards', isCards(it));
     var ob = feat.querySelector('[data-nw-open]');
     if (ob) ob.addEventListener('click', function () { openCard(it); });
+    feat.querySelectorAll('[data-nw-sid]').forEach(function (bn) {
+      bn.addEventListener('click', function () { openCard({ sid: bn.dataset.nwSid, full: bn.dataset.nwNm, name: bn.dataset.nwNm }); });
+    });
     root.querySelectorAll('.nw__li').forEach(function (b, k) {
       b.classList.toggle('is-on', k === A.i);
       b.setAttribute('aria-current', k === A.i ? 'true' : 'false');
