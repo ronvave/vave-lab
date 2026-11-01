@@ -555,6 +555,24 @@
     setMe('me-gender',         s['Gender'] || '');
     setMe('me-year-of-birth',  s['Year of Birth'] || '');
     setMe('me-alive',          s['Alive / Deceased'] || '');
+    // Retired checkbox (Master "Retired" column, TRUE/FALSE). The hidden
+    // #me-retired input carries the value; the visible box mirrors it.
+    // The Master cell is a tick box, which the write-back server reads as
+    // "true"/"false"; load it in that form so an untouched box is no change.
+    setMe('me-retired', /^(true|yes|y|1|x|retired)$/i.test(String(s['Retired'] == null ? '' : s['Retired']).trim()) ? 'true' : 'false');
+    (function () {
+      var hid = document.getElementById('me-retired'), box = document.getElementById('me-retired-box');
+      if (!hid || !box) return;
+      box.checked = hid.value === 'true';
+      if (!box._wired) {
+        box._wired = true;
+        box.addEventListener('change', function () {
+          var loaded = hid.getAttribute('data-loaded') || '';
+          var wasOn = loaded === 'true';
+          hid.value = box.checked === wasOn ? loaded : (box.checked ? 'TRUE' : 'FALSE');
+        });
+      }
+    })();
     setMe('me-year-of-death',  s['Year of Death'] || '');
     setMe('me-discipline',     s['Primary Discipline / Field'] || s['Discipline'] || s['Primary Discipline/Field'] || '');
     setMe('me-prov-paternal',  provPat);

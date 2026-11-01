@@ -240,6 +240,12 @@
   .tab-btn .tonga-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}
   .tab-btn .tonga-submission-badge[hidden]{display:none}
   </style>
+<style>
+  .form-group label.me-retired-check { display:inline-flex !important; width:auto; text-transform:none; letter-spacing:normal; font-size:.95rem; align-items:center; gap:10px; padding:10px 14px; border:1px solid var(--line, #d8d0b0); border-radius:10px; background:#fff; cursor:pointer; font-weight:600; color:#000; }
+  .me-retired-check input { width:20px; height:20px; accent-color:#0b7479; cursor:pointer; margin:0; }
+  .form-group label.me-retired-check:has(input:checked) { border-color:#0b7479; background:#e9f6f4; }
+  .me-retired-group .hint { margin-top:6px; font-size:.8rem; color:#000; }
+</style>
 </head>
 <body>
 
@@ -582,6 +588,11 @@
             <input type="text" id="me-year-of-death" data-ws="Scholars" data-field="Death Year" inputmode="numeric" pattern="^\d{4}$" maxlength="4" placeholder="e.g. 2021" />
           </div>
           <div class="form-group"><label>Primary discipline / field</label><input type="text" id="me-discipline" data-ws="Scholars" data-field="Primary Discipline" /></div>
+          <div class="form-group me-retired-group"><label for="me-retired-box">Retired</label>
+            <label class="me-retired-check"><input type="checkbox" id="me-retired-box" data-retired-box /> <span>This scholar has retired</span></label>
+            <input type="hidden" id="me-retired" data-ws="Scholars" data-field="Retired" />
+            <div class="hint">Shows a Retired pill on the scholar card. Not shown for deceased scholars.</div>
+          </div>
         </div>
       </fieldset>
 
@@ -733,7 +744,7 @@
 <script src="js/solomon-admin-insights-migration.js?v=ed7594a1" defer></script>
 <script src="js/solomon-admin-writeback-client.js?v=4a1044d6" defer></script>
 <script src="js/tongan-news-admin.js?v=0292a7eb" defer></script>
-<script src="js/admin-solomon-master.js?v=fcd0135d" defer></script>
+<script src="js/admin-solomon-master.js?v=acf7c815" defer></script>
 
 <script src="js/solomon-submissions-admin.js?v=8cc026c4" defer></script>
 </body>

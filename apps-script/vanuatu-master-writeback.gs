@@ -21,7 +21,7 @@ var VAN_LEGACY_={
  'Change Log':{'Changed At (UTC)':'Changed At'}
 };
 var VAN_FIELDS_={
- 'Scholars':['Scholar Name','Salutation','Family Name','Given Names','Gender','Year of Birth','Vital Status','Year of Death','Identity Verification Status','Identity Evidence','Identity Source URL','Identity Last Checked','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Public Display Approved','Review Status','Record Notes'],
+ 'Scholars':['Scholar Name','Salutation','Family Name','Given Names','Gender','Year of Birth','Vital Status','Year of Death','Identity Verification Status','Identity Evidence','Identity Source URL','Identity Last Checked','Paternal Province','Paternal Island','Paternal Area Council / Locality','Paternal Village / Community','Maternal Province','Maternal Island','Maternal Area Council / Locality','Maternal Village / Community','Primary Discipline / Field','Current Title / Role','Current Institution','Institution Country','Current Department / Unit','Current Profile URL','ORCID / Researcher ID','Google Scholar URL','Public Display Approved','Review Status','Record Notes','Retired'],
  'Graduate Degrees':['Degree Level','Degree Name','Field / Discipline','Broad Discipline','Original University Name (O_Uni)','Canonical University Name (C_Uni)','University Country','Start Year','Completion Year','Completion Status','Thesis / Dissertation Title','Thesis URL / Handle','Repository URL','Supervisor(s)','Evidence','Source URL','Verification Status','Public Display Approved','Record Notes'],
  'Positions':['Title / Role','Institution','Department / Unit','Institution Country','Start Year','End Year','Current?','Leadership Category','Leadership Level','Profile URL','Evidence','Source URL','Verification Status','Public Display Approved','Record Notes']
 };
@@ -80,7 +80,7 @@ function vanValidate_(table,field,value){
  if(/Province$/.test(field)&&v&&VAN_PROVINCES_.indexOf(v)<0)throw Error('Invalid province.');
  if(/Year/.test(field)&&v&&!/^\d{4}$/.test(v))throw Error('Year must be blank or four digits.');
  if(/URL|Handle/.test(field)&&v&&!/^https?:\/\/[^\s]+$/i.test(v))throw Error('URL must use http(s).');
- if(['Public Display Approved'].indexOf(field)>=0){if(!/^(true|false)$/i.test(v))throw Error('Approval flag must be true or false.');return /^true$/i.test(v);}
+ if(['Public Display Approved','Retired'].indexOf(field)>=0){if(!/^(true|false)$/i.test(v))throw Error(field+' must be true or false.');return /^true$/i.test(v);}
  return v;
 }
 function vanGeographyCheck_(record){
