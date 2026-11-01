@@ -1,0 +1,11 @@
+/* Regional summary "Did you know" strip (js/pacific-scholars-highlights.js) */
+.ps-hl-dyk { margin: 8px 0 0; display: flex; align-items: center; gap: 14px; background: #fff; border: 2px solid #0e3a7a; border-radius: 8px; padding: 9px 16px; color: #000; font: 600 1rem/1.35 Arial, Helvetica, sans-serif; min-height: 52px; }
+.ps-hl-dyk[hidden] { display: none; }
+.ps-hl-dyk__lab { flex: none; background: #0e3a7a; color: #fff; font: 900 .82rem Arial, Helvetica, sans-serif; letter-spacing: .06em; text-transform: uppercase; padding: 6px 10px; border-radius: 5px; }
+.ps-hl-dyk__flag { flex: none; width: 34px; height: 23px; border-radius: 3px; box-shadow: 0 0 0 1px rgba(0,0,0,.2); object-fit: cover; }
+.ps-hl-dyk__txt { flex: 1; min-width: 0; }
+.ps-hl-dyk__txt a { color: #0000CD; text-decoration: underline; font-weight: 800; }
+.ps-hl-dyk__nav { flex: none; display: flex; align-items: center; gap: 8px; }
+.ps-hl-dyk__nav button { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid #0e3a7a; background: #fff; color: #0e3a7a; font: 900 1.1rem/1 Arial, Helvetica, sans-serif; cursor: pointer; }
+.ps-hl-dyk__nav button:hover { background: #0e3a7a; color: #fff; }
+.ps-hl-dyk__n { font: 700 .82rem Arial, Helvetica, sans-serif; color: #000; min-width: 4.6em; text-align: center; }
