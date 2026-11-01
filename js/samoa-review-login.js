@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const CLIENT_ID='736953802264-krjcv9i8onhoesmg5fe6vhaie9lc7o4k.apps.googleusercontent.com';
-const ENDPOINT='https://script.google.com/macros/s/REPLACE_WITH_SAMOA_DEPLOYMENT/exec';
+const ENDPOINT='https://script.google.com/macros/s/AKfycbxqfcXlNQRmBQxzfOELop6hRmPls09QUw5ASEl-pv7u7xde_CdP1agJaHJkDltGcYjajw/exec';
 const $=id=>document.getElementById(id);
 let token='',expiresAt=0,expiryTimer,renewTimer,signingIn=false,identitySub='';
 function renew(messageText){$('sign-in').hidden=false;message(messageText||'Sign in again to continue saving. Your open review and selections are preserved.');$('db-status').textContent='sign-in required';}

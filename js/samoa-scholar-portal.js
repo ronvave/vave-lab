@@ -1,7 +1,7 @@
 /* Samoa scholar sharing and reviewed submissions. No admin credentials here. */
 (function(){
 'use strict';
-const ENDPOINT='https://script.google.com/macros/s/REPLACE_WITH_SAMOA_DEPLOYMENT/exec';
+const ENDPOINT='https://script.google.com/macros/s/AKfycbxqfcXlNQRmBQxzfOELop6hRmPls09QUw5ASEl-pv7u7xde_CdP1agJaHJkDltGcYjajw/exec';
 const CLANS=window.SAMOA_CLANS||[];
 const DIVISIONS=['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"];
 const PACIFIC=['American Samoa','Australia','Cook Islands','Fiji','French Polynesia','Guam','Kiribati','Marshall Islands','Micronesia (Federated States of)','Nauru','New Caledonia','New Zealand','Niue','Northern Mariana Islands','Palau','Papua New Guinea','Pitcairn','Samoa','Solomon Islands','Tokelau','Tuvalu','Vanuatu','Wallis and Futuna'];
