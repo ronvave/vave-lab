@@ -187,6 +187,10 @@ def work_country(v):
 def build_directory(dumps, country_meta):
     scholars, pubs, pub_index = [], [], {}
     counts = Counter()
+    # "Explain their research" kept in the Master itself (countries without
+    # their own dashboard enrichment, e.g. Samoa). regional_card_extras.py
+    # starts cardExtras from these; a country enrichment value still wins.
+    insights = {}
     for code, dump in dumps.items():
         roster, _ = b.roster(code, dump)
         inst_names = {}
@@ -341,6 +345,10 @@ def build_directory(dumps, country_meta):
                        s=disc, fld=field, sec=sector, wr=wr, sc=study_c, yb=yb, yd=yd, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
                        p=ps, fa=len(fa.get(sid, set()) & set(ps)), f=sorted(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
             rec.update({k: v for k, v in opt.items() if v not in ('', [], 0, None)})
+            kw = [k.strip()[:80] for k in re.split(r'\s*;\s*', first(r, 'Research Keywords (semicolon-separated)')) if k.strip()][:24]
+            sm = first(r, 'Research Summary (HTML)')[:8000]
+            if kw or sm:
+                insights[sid] = {k: v for k, v in (('kw', kw), ('sm', sm)) if v}
             rec['_k'] = fold(fam) + ' ' + fold(rec['n'])
             scholars.append(rec)
             counts[(code, 'included')] += 1
@@ -356,4 +364,4 @@ def build_directory(dumps, country_meta):
     meta = {code: dict(included=counts[(code, 'included')], notApproved=counts[(code, 'not approved')]) for code in dumps}
     order = [c[0] for c in country_meta]
     scholars.sort(key=lambda s: (order.index(s['c']), s.pop('_k')))
-    return dict(schema=1, scholars=scholars, pubs=pubs, coverage=meta)
+    return dict(schema=1, scholars=scholars, pubs=pubs, coverage=meta, insights=insights)

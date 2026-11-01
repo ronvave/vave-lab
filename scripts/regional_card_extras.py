@@ -97,7 +97,10 @@ def main():
     dirdata = json.loads(gzip.decompress(base64.b64decode(d['gz']))) if 'gz' in d else d
     ids = {s['id'] for s in dirdata.get('scholars', [])}
     deceased = {s['id'] for s in dirdata.get('scholars', []) if s.get('dec')}
-    extras, report = {}, []
+    # Start from keywords / summaries recorded in the Master files themselves
+    # (built into the directory by regional_directory.py).
+    extras = {k: dict(v) for k, v in (dirdata.get('insights') or {}).items() if k in ids and isinstance(v, dict)}
+    report = [f'Master insights: {len(extras)}']
     for code, rel, env, key, kind in SOURCES:
         cpw = os.environ.get(env)
         path = ROOT / rel
