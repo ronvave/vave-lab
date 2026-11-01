@@ -287,3 +287,30 @@
 .nw--tapa-fill .nw__img.is-wide::before { inset: 0; background: #fffcf7 url("../img/fiji/a3-tapa-light.webp") center / 420px auto repeat; filter: none; }
 /* Tonga: the space around a wide photo shows a light fine mat instead of the blurred fill. */
 .nw--mat-fill .nw__img.is-wide::before { inset: 0; background: #f6eedf url("../img/tonga/a3-fine-mat.webp") center / cover no-repeat; filter: none; }
+
+/* ---------- A3 scholar lines and author cards (Panel D flags and pills) ---------- */
+.nw.cn .pn-uf { display: inline-block; flex: none; width: 34px; height: 23px; border-radius: 3px; object-fit: cover; box-shadow: 0 0 0 1px rgba(0,0,0,.15); vertical-align: -5px; }
+.nw.cn .pn-ufx { display: inline-block; flex: none; width: 34px; }
+.nw.cn .pn-luf { display: inline-block; width: 22px; height: 15px; border-radius: 2px; object-fit: cover; box-shadow: 0 0 0 1px rgba(0,0,0,.15); vertical-align: -3px; }
+.nw.cn .pn-uc { display: inline-block; padding: 3px 9px; border-radius: 999px; font: 700 .72rem/1.2 Arial, Helvetica, sans-serif; letter-spacing: .03em; vertical-align: 1px; margin-left: 2px; font-style: normal; }
+.nw.cn .pn-person { align-items: center; gap: 9px; }
+.nw.cn .pn-nlink { all: unset; cursor: pointer; color: #0000CD; font-weight: 700; }
+.nw.cn .pn-nlink:hover { text-decoration: underline; }
+.nw.cn .pn-nlink:focus-visible { outline: 2px solid #0b7479; outline-offset: 2px; }
+.nw.cn .nw__feat--cards { grid-template-columns: 1fr; }
+.nw.cn .nw__feat--cards .nw__body { padding: 22px 26px; gap: 10px; }
+.nw.cn .pn-acs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 4px; }
+.nw.cn .pn-acs--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.nw.cn .pn-ac { border: 1px solid #e3ddd0; border-radius: 10px; overflow: hidden; background: #fff; display: flex; flex-direction: column; }
+.nw.cn .pn-ac__ph { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden;
+  background: linear-gradient(160deg, rgba(10,95,104,.15) 0%, rgba(6,72,82,.55) 55%, rgba(4,52,62,.8) 100%), #0b7479 url("../img/regional/pasifika-textile-teal.webp") left top / 420px auto repeat; }
+.nw.cn .pn-acs--4 .pn-ac__ph { aspect-ratio: 1 / 1; }
+.nw.cn .pn-ac__ph img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 25%; }
+.nw.cn .pn-ac__ini { font: 700 2.4rem/1 Georgia, 'Times New Roman', serif; color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,.35); }
+.nw.cn .pn-ac__txt { display: flex; flex-direction: column; gap: 3px; padding: 10px 12px 12px; font: 400 .9rem/1.4 Arial, Helvetica, sans-serif; color: #111; }
+.nw.cn .pn-acs--4 .pn-ac__txt { font-size: .82rem; }
+.nw.cn .pn-ac__nm { display: flex; align-items: center; gap: 8px; font-size: 1rem; }
+.nw.cn .pn-acs--4 .pn-ac__nm { display: block; overflow-wrap: anywhere; font-size: .92rem; }
+.nw.cn .pn-acs--4 .pn-ac__nm .pn-uf { display: block; margin: 0 0 6px; }
+.nw.cn .pn-ac__role { color: #7B3F00; font-weight: 700; }
+.nw.cn .pn-ac__inst .pn-person__inst { color: #000; }

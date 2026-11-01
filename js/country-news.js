@@ -142,6 +142,12 @@
         return photo[sid] || (e && e.photo) || '';
       }
       doc.items.forEach(function (it) {
+        // Author cards (2+ scholars): one photo per unique scholar, in story order.
+        if (Array.isArray(it.sids) && it.sids.length >= 2) {
+          var seenF = {};
+          it.cardFaces = it.sids.filter(function (id) { var k = String(id).toUpperCase(); if (seenF[k]) return false; seenF[k] = 1; return true; })
+            .map(function (id) { return { img: photoOf(id) }; });
+        }
         if (it.img || !it.sid) return;
         var u = photoOf(it.sid);
         if (u) { it.img = u; it.portrait = true; }
@@ -238,6 +244,56 @@
     var c = pr && String(pr.institutionCountry || '').split('/')[0].trim().toLowerCase();
     return (c && ISO3[c]) || '';
   }
+  // Institution-country flag and coloured 2-letter pill, as in the Panel D List view.
+  var I2 = { FJI: 'FJ', NZL: 'NZ', AUS: 'AU', USA: 'US', GBR: 'UK', CAN: 'CA', PNG: 'PG', TON: 'TO', SLB: 'SB', WSM: 'WS', VUT: 'VU', KIR: 'KI', TUV: 'TV',
+    NRU: 'NR', COK: 'CK', NIU: 'NU', MHL: 'MH', FSM: 'FM', PLW: 'PW', IRL: 'IE', JPN: 'JP', CHN: 'CN', TWN: 'TW', KOR: 'KR', IND: 'IN', MYS: 'MY', SGP: 'SG',
+    IDN: 'ID', PHL: 'PH', THA: 'TH', CHE: 'CH', ITA: 'IT', DEU: 'DE', FRA: 'FR', NLD: 'NL', NOR: 'NO', SWE: 'SE', ESP: 'ES', ZAF: 'ZA' };
+  var UNI_FLAGS = 'au ca ch ck cn de es fj fm fr gb id ie in it jp ki kr mh mt my nl no nr nu nz pg ph pw sb se sg th to tv tw us vu ws za'.split(' ');
+  var UC_PILL = { US: ['#F6BB1F', '#1a1206'], NZ: ['#1E8AE0', '#fff'], AU: ['#F07A3A', '#1a0b04'], UK: ['#6A47C9', '#fff'], FJ: ['#3BB273', '#04140b'], CA: ['#E0393E', '#fff'], PG: ['#8B4A22', '#fff'], MT: ['#8FA3BF', '#0b1626'], FR: ['#4F6BED', '#fff'] };
+  function cc2(pr) { var c = cc(pr); return c ? (I2[c] || '') : ''; }
+  function uniFlag(c2, cls) {
+    var f = c2 === 'UK' ? 'gb' : String(c2 || '').toLowerCase();
+    if (UNI_FLAGS.indexOf(f) < 0) return '';
+    return '<img class="' + (cls || 'pn-uf') + '" src="img/regional/flags-uni/' + f + '.png" alt="" width="34" height="23">';
+  }
+  function uniPill(c2) {
+    if (!c2) return '';
+    var c = UC_PILL[c2] || ['#8FA3BF', '#0b1626'];
+    return '<span class="pn-uc" style="background:' + c[0] + ';color:' + c[1] + '">' + esc(c2) + '</span>';
+  }
+  // Institution name without a bracketed country ("University of Canterbury (New Zealand)"),
+  // since the pill already shows the country. Display only; the record is unchanged.
+  function instName(inst) {
+    return String(inst || '').replace(/\s*\(([^)]+)\)\s*$/, function (m, c) { return ISO3[c.trim().toLowerCase()] ? '' : m; }).trim();
+  }
+  // Main title only: "Senior Lecturer in Accounting ..." -> "Senior Lecturer". A more specific
+  // alternative after " / " wins ("Manager / Pacific Regional Manager, ..." -> "Pacific Regional Manager").
+  var RANKS = ['Deputy Vice-Chancellor', 'Pro-Vice-Chancellor', 'Vice-Chancellor', 'Distinguished Professor', 'Emeritus Professor', 'Professor Emeritus',
+    'Associate Professor', 'Assistant Professor', 'Professor', 'Principal Lecturer', 'Senior Lecturer', 'Assistant Lecturer', 'Lecturer',
+    'Senior Research Fellow', 'Research Fellow', 'Postdoctoral Fellow', 'Postdoctoral Researcher', 'Head of Department', 'Head of School', 'Dean',
+    'Director', 'Regional Manager', 'Manager', 'Coordinator', 'Chief Executive', 'Chair', 'Tutor', 'Researcher'];
+  function rankIn(seg) {
+    var low = seg.toLowerCase(), best = null;
+    RANKS.forEach(function (r) {
+      var i = low.indexOf(r.toLowerCase());
+      if (i >= 0 && (!best || i < best[0] || (i === best[0] && r.length > best[1]))) best = [i, r.length];
+    });
+    if (!best) return '';
+    var lead = seg.slice(0, best[0]);
+    // Keep short leading words that belong to the title ("Pacific Regional Manager").
+    var phrase = (/^[A-Z][\w-]*( [A-Z][\w-]*){0,2} $/.test(lead) ? lead : '') + seg.substr(best[0], best[1]);
+    return phrase.trim();
+  }
+  function shortRole(t) {
+    t = String(t || '').trim();
+    if (!t) return '';
+    var segs = t.split(/\s+\/\s+/), first = rankIn(segs[0]);
+    for (var k = 1; k < segs.length && first; k++) {
+      var alt = rankIn(segs[k]);
+      if (alt && alt.length > first.length && alt.toLowerCase().slice(-first.length) === first.toLowerCase()) { first = alt; break; }
+    }
+    return first || t.split(/;|,| in | of |\s+\/\s+/)[0].trim();
+  }
   function profName(pr) {
     return pr ? String((pr.first || '') + ' ' + (pr.last || '')).replace(/\s+/g, ' ').trim() : '';
   }
@@ -271,29 +327,58 @@
       return hit ? withSal(hit, part) : part;
     }).join('');
   }
-  // One line per scholar under the title: flag, name (blue), position (brown
-  // italic), institution badge. Same person once; up to 3 then "and N others".
-  function peopleLine(it) {
+  // Unique scholar records for a story, in story order.
+  function storyPeople(it) {
     var P = profiles() || {};
     var ids = Array.isArray(it.sids) && it.sids.length ? it.sids : (it.sid ? [it.sid] : []);
     var seen = {}, rows = [];
     ids.forEach(function (id) {
       var k = String(id).toUpperCase();
       if (seen[k]) return; seen[k] = 1;
-      rows.push(P[k] || null);
+      rows.push({ id: k, pr: P[k] || null });
     });
+    return rows;
+  }
+  function personName(it, r, k) {
+    return r && r.pr ? withSal(r.pr, profName(r.pr)) : (k === 0 ? (it.full || it.name) : '');
+  }
+  function nameLink(nm, r) {
+    return r && r.id ? '<button type="button" class="pn-person__name pn-nlink" data-nw-sid="' + esc(r.id) + '" data-nw-nm="' + esc(nm) + '">' + esc(nm) + '</button>'
+      : '<b class="pn-person__name">' + esc(nm) + '</b>';
+  }
+  // One line per scholar under the title: institution-country flag, name (links to the
+  // scholar card), short position (brown italic), institution and country pill.
+  function peopleLine(it) {
+    var rows = storyPeople(it);
     if (!rows.length) rows = [null];
-    var shown = rows.slice(0, 3).map(function (pr, k) {
-      var nm = pr ? withSal(pr, profName(pr)) : (k === 0 ? (it.full || it.name) : '');
+    var shown = rows.slice(0, 3).map(function (r, k) {
+      var nm = personName(it, r, k), pr = r && r.pr;
       if (!nm) return '';
-      var role = pr && pr.title, inst = pr && pr.institution;
-      return '<span class="pn-person">' + flag('pn-flag pn-flag--m') + '<span><b class="pn-person__name">' + esc(nm) + '</b>' +
+      var role = pr && shortRole(pr.title), inst = pr && instName(pr.institution), c2 = cc2(pr);
+      return '<span class="pn-person">' + (uniFlag(c2, 'pn-uf') || '<span class="pn-ufx"></span>') + '<span>' + nameLink(nm, r) +
         (role ? ', <b><i>' + esc(role) + '</i></b>' : '') +
-        (inst ? (role ? ', ' : ' ') + '<b class="pn-person__inst">' + esc(inst) + '</b>' + (cc(pr) ? ' <b class="pn-person__cc">(' + cc(pr) + ')</b>' : '') : '') + '</span></span>';
+        (inst ? (role ? ', ' : ' ') + '<b class="pn-person__inst">' + esc(inst) + '</b>' + (c2 ? ' ' + uniPill(c2) : '') : '') + '</span></span>';
     });
     var rest = rows.length - shown.length;
     return shown.join('') + (rest > 0 ? '<span class="pn-person pn-person--more">and ' + rest + ' other' + (rest > 1 ? 's' : '') + '</span>' : '');
   }
+  // Stories with 2+ scholars: one card per scholar (photo, flag and name, short position,
+  // institution and pill). 2-6 scholars: three per row; 7 or more: four smaller cards per row.
+  function peopleCards(it) {
+    var rows = storyPeople(it), faces = it.cardFaces || [];
+    return rows.map(function (r, k) {
+      var nm = personName(it, r, k), pr = r.pr;
+      if (!nm) return '';
+      var role = pr && shortRole(pr.title), inst = pr && instName(pr.institution), c2 = cc2(pr), f = faces[k] || {};
+      return '<div class="pn-ac"><span class="pn-ac__ph"><span class="pn-ac__ini">' + esc(initials(nm.replace(/^(Prof|Dr|Mr|Mrs|Ms|Rev|Ratu|Adi)\.?\s+/g, ''))) + '</span>' +
+        (f.img ? '<img src="' + esc(f.img) + '" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">' : '') + '</span>' +
+        '<span class="pn-ac__txt"><span class="pn-ac__nm">' + uniFlag(c2, 'pn-uf') + nameLink(nm, r) + '</span>' +
+        (role ? '<i class="pn-ac__role">' + esc(role) + '</i>' : '') +
+        (inst ? '<span class="pn-ac__inst"><b class="pn-person__inst">' + esc(inst) + '</b>' + (c2 ? ' ' + uniPill(c2) : '') + '</span>' : '') +
+        '</span></div>';
+    }).join('');
+  }
+  function isCards(it) { return !it.ev && storyPeople(it).length >= 2; }
 
   // ------------------------------------------------------------ A3 panel
   // Toggle groups. "All" plus one button per announcement type; a type with
@@ -349,19 +434,22 @@
     var pub = typeOf(it) === 'Publication';
     var meta = ev ? [it.when || dateLabel(it), it.where] : [it.outlet, dateLabel(it)];
     var go = goLabel(it);
-    return '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>' +
+    var cards = isCards(it), n = cards ? storyPeople(it).length : 0;
+    var src = '<div class="nw__meta pn-src">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>';
+    return (cards ? '' : '<div class="nw__img-wrap">' + imgHtml(it, 'nw__img') + credit + '</div>') +
       '<div class="nw__body">' +
       '<span class="nw__chips"><span class="nw__chip nw__chip--' + esc(it.cat) + '">' + esc(label(it)) + '</span>' +
       (soon ? '<span class="nw__chip nw__chip--soon">Upcoming</span>' : '') +
       (it.sub ? '<span class="nw__chip nw__chip--sub ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>' : '') + '</span>' +
       '<h3 class="nw__title">' + esc(it.head) + '</h3>' +
-      '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>' +
-      '<div class="nw__meta">' + meta.filter(Boolean).map(function (m) { return pub && m === it.outlet ? '<i class="pn-outlet">' + esc(m) + '</i>' : esc(m); }).join(' · ') + '</div>' +
+      src +
+      (cards ? '<div class="pn-acs' + (n >= 7 ? ' pn-acs--4' : '') + '">' + peopleCards(it) + '</div>'
+        : '<div class="nw__meta pn-people">' + peopleLine(it) + '</div>') +
       (it.sum ? '<p class="nw__sum">' + esc(it.sum) + '</p>' : '') +
       (it.also ? '<div class="nw__also">Also covered by ' + esc(it.also) + '</div>' : '') +
       '<div class="nw__acts">' +
       '<a class="nw__a nw__a--p" href="' + esc(it.url) + '" target="_blank" rel="noopener">' + ico(typeOf(it) === 'Publication' || typeOf(it) === 'Thesis' ? 'Publication' : 'News') + esc(go) + ico('ext') + '</a>' +
-      (it.sid ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
+      (it.sid && !cards ? '<button type="button" class="nw__a" data-nw-open>' + ico('card') + 'Open scholar card</button>' : '') +
       '</div></div>';
   }
 
@@ -383,8 +471,12 @@
     feat.classList.remove('is-empty');
     feat.innerHTML = feature(it);
     if (it.ev && window.VLEvent) window.VLEvent.wireFeature(feat, it);
+    feat.classList.toggle('nw__feat--cards', isCards(it));
     var ob = feat.querySelector('[data-nw-open]');
     if (ob) ob.addEventListener('click', function () { openCard(it); });
+    feat.querySelectorAll('[data-nw-sid]').forEach(function (bn) {
+      bn.addEventListener('click', function () { openCard({ sid: bn.dataset.nwSid, full: bn.dataset.nwNm.replace(/^(Prof|Dr|Mr|Mrs|Ms|Rev|Ratu|Adi)\.?\s+/g, ''), name: bn.dataset.nwNm }); });
+    });
     root.querySelectorAll('.nw__li').forEach(function (b, k) {
       b.classList.toggle('is-on', k === A.i);
       b.setAttribute('aria-current', k === A.i ? 'true' : 'false');
@@ -403,11 +495,21 @@
     A.timer = setInterval(function () { show(A.i + 1); }, ROTATE_MS);
   }
 
+  // Story list: one small flag per institution country of the story's scholars.
+  function listFlags(it) {
+    var got = {}, out = '';
+    storyPeople(it).forEach(function (r) {
+      var c2 = cc2(r.pr);
+      if (!c2 || got[c2]) return; got[c2] = 1;
+      out += uniFlag(c2, 'pn-luf');
+    });
+    return out ? '<span class="pn-lflags">' + out + '</span>' : '';
+  }
   function listHtml(items) {
     return items.map(function (it, k) {
       var pub = typeOf(it) === 'Publication';
       return '<button type="button" class="nw__li" data-k="' + k + '">' + imgHtml(it, 'nw__av') +
-        '<span class="nw__li-text"><span class="nw__lt">' + (FLAG ? '<span class="pn-lflags">' + flag('pn-flag pn-flag--s') + '</span>' : '') + (it.sub
+        '<span class="nw__li-text"><span class="nw__lt">' + listFlags(it) + (it.sub
           ? '<span class="pn-lname">' + esc(listName(it, shortName(it.name))) + '</span> <span class="nw__lpill ' + ptClass(it.sub) + '">' + esc(it.sub) + '</span>'
           : '<span class="pn-lname">' + esc(listName(it, it.name)) + '</span> · ' + esc(it.ev && window.VLEvent ? window.VLEvent.listLabel(it) : label(it))) + '</span>' +
         '<span class="nw__ls">' + (it.ev && window.VLEvent ? [esc(window.VLEvent.listMeta(it))] : isEvent(it) ? [it.when || dateLabel(it), it.where].filter(Boolean).map(esc) : [it.outlet ? (pub ? '<i class="pn-outlet">' + esc(it.outlet) + '</i>' : esc(it.outlet)) : '', esc(dateLabel(it))].filter(Boolean)).join(' · ') + '</span></span>' + ico('chev') + '</button>';
