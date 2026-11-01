@@ -13,7 +13,17 @@
   const dirIds = () => { try { return new Set((window.PSDirectory && window.PSDirectory.scholars() || []).map(s => s.id)); } catch (e) { return new Set(); } };
   const findId = (code, person) => { try { return (window.PSDirectory && window.PSDirectory.findId && window.PSDirectory.findId(code, person)) || ''; } catch (e) { return ''; } };
   const link = (id, label) => id ? `<a href="#dir=${esc(id)}" title="Open this scholar's card in the Regional Scholar Directory">${esc(label)}</a>` : `<b>${esc(label)}</b>`;
-  const theUni = u => (/^(University|Australian National|National University|Victoria University|École)/i.test(u) ? 'the ' : '') + u;
+  const theUni = u => /^The /.test(u) ? 'the ' + u.slice(4) : (/^(University|Australian National|National University|Victoria University|École)/i.test(u) ? 'the ' : '') + u;
+  // Where the university is, so readers know the country (skipped when the
+  // name already says it).
+  const UC = { US: 'the United States', USA: 'the United States', NZ: 'New Zealand', NZL: 'New Zealand', AU: 'Australia', AUS: 'Australia', UK: 'the United Kingdom', GB: 'the United Kingdom', GBR: 'the United Kingdom', FJ: 'Fiji', FJI: 'Fiji', CA: 'Canada', CAN: 'Canada', PG: 'Papua New Guinea', PNG: 'Papua New Guinea', MT: 'Malta', FR: 'France', FRA: 'France', WSM: 'Samoa', TON: 'Tonga', SLB: 'Solomon Islands', VUT: 'Vanuatu', PLW: 'Palau', FSM: 'the Federated States of Micronesia', MHL: 'the Marshall Islands', KIR: 'Kiribati', TUV: 'Tuvalu', COK: 'the Cook Islands', JP: 'Japan', JPN: 'Japan', GUM: 'Guam' };
+  const ALIAS = { FSM: /micronesia|fsm/i };
+  const where = (uni, cc) => {
+    const c = UC[cc]; if (!c || !uni) return '';
+    const bare = c.replace(/^the /, '');
+    if (uni.toLowerCase().includes(bare.toLowerCase()) || (ALIAS[cc] && ALIAS[cc].test(uni))) return '';
+    return ' in ' + c;
+  };
   const uniOf = e => (e && e.u && e.u[0] && e.u[0][0]) || '';
 
   function stats() {
@@ -31,17 +41,17 @@
       const deg = m.stage === 'phd' ? 'PhD' : "Master's degree";
       const earliest = (m.stage === 'phd' ? firstByCountry : mFirst)[m.code] === m;
       const who = m.gender === 'female' ? 'woman' : 'man';
-      [{ person: m.person, uni: m.uni }].concat(m.also || []).forEach(p => {
+      [{ person: m.person, uni: m.uni, uc: m.uc }].concat(m.also || []).forEach(p => {
         const id = findId(m.code, p.person);
         const what = earliest ? `earned the earliest recorded ${deg} from ${esc(cname(m.code))}` : `became the first recorded ${who} from ${esc(cname(m.code))} to earn a ${deg}`;
-        out.push({ c: m.code, lead: earliest && m.stage === 'phd', y: m.year, html: `In ${m.year}, ${link(id, p.person)} ${what}, at ${esc(theUni(p.uni))}.` });
+        out.push({ c: m.code, lead: earliest && m.stage === 'phd', y: m.year, html: `In ${m.year}, ${link(id, p.person)} ${what}, at ${esc(theUni(p.uni))}${esc(where(p.uni, p.uc))}.` });
       });
     });
     const ids = dirIds();
     t.S.forEach(s => ['vc', 'chancellor'].forEach(k => {
       const e = s.r[k]; if (!e || !uniOf(e)) return;
       const id = ids.has(s.id) ? s.id : '';
-      out.push({ c: s.c, html: `${link(id, s.n)} of ${esc(cname(s.c))} ${e.cur ? 'serves' : 'has served'} as ${ROLE[k]} of ${esc(theUni(uniOf(e)))}.` });
+      out.push({ c: s.c, html: `${link(id, s.n)} of ${esc(cname(s.c))} ${e.cur ? 'serves' : 'has served'} as ${ROLE[k]} of ${esc(theUni(uniOf(e)))}${esc(where(uniOf(e), e.u[0][1]))}.` });
     }));
     // Mix the two kinds; the order changes each day, starting with the earliest PhD.
     const seed = Math.floor(Date.now() / 864e5);
