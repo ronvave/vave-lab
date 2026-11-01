@@ -71,20 +71,88 @@
     }).join('');
   }
 
+
+  // Link each directory scholar to their name in the author list, with their
+  // home-country circle flag in front. Matching is by surname plus first name
+  // or first initial; anyone not found (for example after "et al.") is added
+  // at the end so every linked scholar still appears.
+  const toks = n => fold(n).replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter(t => t.length > 1);
+  const NOISE = new Set(['dr', 'prof', 'professor', 'associate', 'assoc', 'mr', 'mrs', 'ms', 'ratu', 'adi', 'sir', 'rev', 'jr']);
+  const compact = n => fold(n).replace(/[^a-z]/g, '');
+  function authorParts(a) {
+    a = a.trim();
+    if (a.includes(',')) { const i = a.indexOf(','); return { last: a.slice(0, i), first: a.slice(i + 1) }; }
+    const t = a.split(/\s+/); return { last: t.slice(-1).join(' '), first: t.slice(0, -1).join(' ') };
+  }
+  function scoreMatch(a, sTok, sFull) {
+    const ap = authorParts(a), lt = toks(ap.last), lc = compact(ap.last);
+    if (!lt.length && lc.length < 2) return 0;
+    const lastOK = (lt.length && lt.every(t => sTok.has(t))) || (lc.length >= 4 && sFull.includes(lc));
+    if (!lastOK) return 0;
+    const fn = toks(ap.first).filter(t => !NOISE.has(t));
+    if (fn.some(t => sTok.has(t))) return 3;
+    const ini = fold(ap.first).replace(/[^a-z\s]/g, ' ').trim().split(/\s+/).filter(t => !NOISE.has(t)).map(t => t.charAt(0)).filter(Boolean)[0];
+    if (!ini) return 1;
+    return [...sTok].some(t => t.charAt(0) === ini) ? 2 : 0;
+  }
+  const smallFlag = (c, n) => `<img class="pub-aflag" src="img/regional/flags/${c.toLowerCase()}.png" alt="${esc(C[c] ? C[c].name : c)}" title="${esc((C[c] ? C[c].name : c) + ' scholar: ' + n)}" width="16" height="16" loading="lazy">`;
+  const schLink = (s, label) => `<a class="pub-alink" href="#dir=${encodeURIComponent(s.id)}" title="Open ${esc(s.n)}'s card in the Regional Scholar Directory">${smallFlag(s.c, s.n)}${esc(label)}</a>`;
+  function authorsHtml(it) {
+    const list = it.authors ? it.authors.split(/\s*;\s*/).filter(Boolean) : [];
+    const used = new Set(), hit = {};
+    // Same person listed in two country databases: link once (first entry).
+    const people = []; const seen = new Set();
+    for (const s of it.sch) { const k = fold(s.n); if (!seen.has(k)) { seen.add(k); people.push(s); } }
+    for (const s of people) {
+      const sTok = new Set(toks(s.n)), sFull = compact(s.n); let best = -1, bs = 0;
+      list.forEach((a, j) => { if (used.has(j)) return; const sc = scoreMatch(a, sTok, sFull); if (sc > bs) { bs = sc; best = j; } });
+      if (best >= 0 && bs >= 2) { used.add(best); hit[best] = s; }
+    }
+    // Fallback for name changes (for example a married surname in the record):
+    // a distinctive given name that appears for exactly one unlinked author.
+    for (const s of people) {
+      if (Object.values(hit).includes(s)) continue;
+      const given = toks(s.n).filter(t => t.length >= 6 && !NOISE.has(t));
+      const js = list.map((a, j) => j).filter(j => !used.has(j) && toks(authorParts(list[j]).first).some(t => given.includes(t)));
+      const all = list.filter(a => toks(authorParts(a).first).some(t => given.includes(t)));
+      if (js.length === 1 && all.length === 1) { used.add(js[0]); hit[js[0]] = s; }
+    }
+    const extra = people.filter(s => !Object.values(hit).includes(s));
+    const etal = /\s*et al\.?$/i;
+    let cut = !!it.p.more;
+    if (list.length && etal.test(list[list.length - 1])) { list[list.length - 1] = list[list.length - 1].replace(etal, ''); cut = true; }
+    const parts = list.map((a, j) => hit[j] ? schLink(hit[j], a) : esc(a));
+    const ex = extra.map(s => schLink(s, s.n));
+    const andList = a => a.length < 2 ? a.join('') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+    if (cut) return parts.join('; ') + ' et al.' + (ex.length ? ', including ' + andList(ex) : '');
+    return parts.concat(ex).join('; ');
+  }
+  function summaryHtml(it) {
+    const people = new Map();
+    for (const s of it.sch) { const k = fold(s.n); if (!people.has(k)) people.set(k, s); }
+    const byC = {};
+    for (const s of people.values()) byC[s.c] = (byC[s.c] || 0) + 1;
+    const cs = Object.keys(byC).sort((a, b) => byC[b] - byC[a] || order.indexOf(a) - order.indexOf(b));
+    const SHORTN = { MHL: 'Marshall Is', FSM: 'FSM' };
+    const nm = c => SHORTN[c] || (C[c] ? C[c].name : c);
+    return `<div class="pub__sch"><b>Total Pasifika scholars: ${people.size}</b>` +
+      cs.map(c => `<span class="pub-sum"><img class="pub-rflag" src="img/regional/flags-rect/${c.toLowerCase()}.webp" alt="" width="24" height="16" loading="lazy">${esc(nm(c))} <b>${byC[c]}</b></span>`).join('') + '</div>';
+  }
+
   function item(it) {
     const t = TYPE[it.type];
     const p = it.p;
     const meta = [it.yr || 'Year not recorded', it.journal ? `<i>${esc(it.journal)}</i>` : '', p.pb && p.pb !== it.journal ? esc(p.pb) : ''].filter(Boolean).join(' \u00b7 ');
-    const by = it.sch.map(s => `<a href="#dir=${encodeURIComponent(s.id)}" title="Open ${esc(s.n)}'s card in the Regional Scholar Directory">${esc(s.n)}</a>`).join(', ');
+    const title = it.link ? `<a class="pub__tlink" href="${esc(it.link.href)}" target="_blank" rel="noopener noreferrer" title="${it.link.label} (opens in a new tab)">${esc(p.ti)}</a>` : esc(p.ti);
+    const auth = (it.authors || it.sch.length) ? authorsHtml(it) : '';
     return `<article class="pub" style="--pub-c:${t.color}">
       <div class="pub__top">
         <div class="pub__badges">${flagHtml(it)}<span class="pub-badge" style="background:${t.color}">${esc(t.s)}</span>${it.link && it.link.doi ? '<span class="pub-badge pub-badge--doi">DOI</span>' : ''}${it.forth ? '<span class="pub-badge pub-badge--forth" title="Year after the current year, or marked forthcoming or in press">Forthcoming</span>' : ''}${it.first ? '<span class="pub-badge pub-badge--fa" title="A Pacific scholar in the directory is the first author">Indigenous first author</span>' : ''}</div>
-        ${it.link ? `<a class="pub-link" href="${esc(it.link.href)}" target="_blank" rel="noopener noreferrer" aria-label="${it.link.label} for ${esc(p.ti)} (opens in a new tab)">${it.link.label} \u2197</a>` : ''}
       </div>
-      <h3 class="pub__title">${esc(p.ti)}</h3>
-      ${it.authors ? `<div class="pub__authors">${esc(it.authors)}${p.more && !/et al\.?$/i.test(it.authors) ? ' et al.' : ''}</div>` : ''}
+      <h3 class="pub__title">${title}</h3>
+      ${auth ? `<div class="pub__authors">${auth}</div>` : ''}
       <div class="pub__meta">${meta}</div>
-      ${by ? `<div class="pub__sch">Scholar${it.sch.length > 1 ? 's' : ''} in the directory: ${by}</div>` : ''}
+      ${it.sch.length ? summaryHtml(it) : ''}
     </article>`;
   }
 

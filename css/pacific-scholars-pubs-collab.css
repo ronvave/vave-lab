@@ -97,3 +97,13 @@
 /* Forthcoming items (Panel E) */
 #ps-pubs .pub-badge--forth { background: #b5781a; }
 #ps-pubs .pub-group { margin: 18px 0 8px; padding-top: 12px; border-top: 2px solid #e0a52a; font-size: 1rem; color: #7a4f0e; }
+
+/* Panel E: linked title, flagged scholar names, Pasifika scholar summary */
+#ps-pubs .pub__tlink { color: #0000CD; text-decoration: underline; text-underline-offset: 2px; }
+#ps-pubs .pub__tlink:hover { text-decoration-thickness: 2px; }
+#ps-pubs .pub-alink { color: #005f6b; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+#ps-pubs .pub-aflag { width: 16px; height: 16px; border-radius: 50%; vertical-align: -3px; margin-right: 4px; box-shadow: 0 0 0 1px rgba(0,0,0,.15); }
+#ps-pubs .pub-sum { display: inline-flex; align-items: center; gap: 4px; margin-left: 14px; color: #111; }
+#ps-pubs .pub-rflag { width: 24px; height: 16px; object-fit: cover; border-radius: 2px; box-shadow: 0 0 0 1px rgba(0,0,0,.18); margin-right: 5px; }
+#ps-pubs .pub__sch b { color: #111; }
+#ps-pubs .pub__sch { color: #111; display: flex; flex-wrap: wrap; align-items: center; row-gap: 4px; }
