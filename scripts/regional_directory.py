@@ -28,6 +28,7 @@ from collections import Counter, defaultdict
 import build_regional_scholars as b
 
 norm, fold, first = b.norm, b.fold, b.first
+BOOL_TEXT = re.compile(r'^\s*(true|false)\s*$', re.I)
 
 # Local labels — only these four countries (user decision). Values are the
 # canonical spellings used by the live country dashboards.
@@ -345,8 +346,11 @@ def build_directory(dumps, country_meta):
                        s=disc, fld=field, sec=sector, wr=wr, sc=study_c, yb=yb, yd=yd, orcid=orcid_m.group(1) if orcid_m else '', gs=gs,
                        p=ps, fa=len(fa.get(sid, set()) & set(ps)), f=sorted(fa.get(sid, set()) & set(ps)), pu=pu, ph=ph, iu=iu, du=du)
             rec.update({k: v for k, v in opt.items() if v not in ('', [], 0, None)})
-            kw = [k.strip()[:80] for k in re.split(r'\s*;\s*', first(r, 'Research Keywords (semicolon-separated)')) if k.strip()][:24]
-            sm = first(r, 'Research Summary (HTML)')[:8000]
+            # Tick-box leftovers (TRUE / FALSE) are never keywords or summaries.
+            kw = [k.strip()[:80] for k in re.split(r'\s*;\s*', first(r, 'Research Keywords (semicolon-separated)'))
+                  if k.strip() and not BOOL_TEXT.match(k)][:24]
+            sm = first(r, 'Research Summary (HTML)')
+            sm = '' if BOOL_TEXT.match(sm) else sm[:8000]
             if kw or sm:
                 insights[sid] = {k: v for k, v in (('kw', kw), ('sm', sm)) if v}
             rec['_k'] = fold(fam) + ' ' + fold(rec['n'])
