@@ -65,7 +65,7 @@
   //                                          200,000 iters, 32 bytes)
   var VERIFIER_SALT = new TextEncoder().encode('vavelab-db-verifier-v1');
   var VERIFIER_HASH_HEX =
-    '21d8b195fbf582162da61ed7ec37d326f24c564a04b5e50c4f5d64da22df613a';
+    '338d7b662c8918e135d6161eede5346ce5ee1a96ecc7ddb98bdc149e20cbd0c0';
 
   // Every file the Samoan database fetches. Maps the plaintext .json URL
   // that samoa-database-adapter.js / admin-samoa-master.js request onto

@@ -63,7 +63,7 @@
   // prompt. See the module comment for the trade-off note. Kept as
   // base64 so a casual grep of the passcode doesn't hit; anyone with
   // devtools can still recover it. This is by design.
-  var BAKED_PASSCODE = atob('d3NtLTROeXdpdGN1b1V2Z0FrejRMeTJ3');
+  var BAKED_PASSCODE = atob('QXJhY2huaWRhZTEh');
 
   // Human-facing collaborator password, separate from the data-encryption key.
   var COLLABORATOR_PASSCODE = atob('d3NtLWMteGxLaXVzVnJXMHhxQWdoblQyMUI=');
