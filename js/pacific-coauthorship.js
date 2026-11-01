@@ -284,7 +284,8 @@
   function render() {
     G = buildGraph(S.scope, S.view, { iso: S.iso });
     G.m = measures(G, true);
-    kpis(); legend(); layout(); side(); topTable(); compare(); crossCountry(); methods();
+    G.field = matchFields(G);
+    kpis(); legend(); layout(); side(); groups(); topTable(); compare(); crossCountry(); methods();
     $('#co-names').innerHTML = G.nodes.filter(n => n.kind === 'p').map(n => `<option value="${esc(n.name)}">`).join('');
   }
 
@@ -312,6 +313,50 @@
     } else cov.hidden = true;
   }
 
+  // ---------- Research-field labels for research groups ----------
+  // A detected group takes the field whose anchor scholars it holds (at least 2); each field is used once.
+  function matchFields(g) {
+    const F = C.fields || [], m = g.m, out = [];
+    const sizes = m.commSizes || [];
+    const pid = n => (n.kind === 'x' ? null : C.people[n.idx][0]);
+    const cand = [];
+    F.forEach((f, fi) => {
+      const set = new Set(f.anchors), hits = new Map();
+      g.nodes.forEach(n => { const c = m.comm[n.i]; if (c >= 0 && (sizes[c] || 0) >= 3 && set.has(pid(n))) hits.set(c, (hits.get(c) || 0) + 1); });
+      hits.forEach((k, c) => { if (k >= 2) cand.push({ fi, c, k, share: k / f.anchors.length }); });
+    });
+    cand.sort((a, b) => b.k - a.k || b.share - a.share);
+    const usedF = new Set();
+    cand.forEach(x => { if (out[x.c] == null && !usedF.has(x.fi)) { out[x.c] = F[x.fi]; usedF.add(x.fi); } });
+    return out;
+  }
+  const groupName = c => (G.field && G.field[c] ? G.field[c].label : `Group ${c + 1}`);
+  function groups() {
+    const m = G.m, sizes = m.commSizes || [], el = $('#co-groups');
+    const list = [];
+    sizes.forEach((s, c) => { if (s >= 3) list.push(c); });
+    const yrs = S.from === C.minY && S.to === C.maxY ? 'all years' : `${S.from}–${S.to}`;
+    $('#co-grp-sub').textContent = `${list.length} research group${list.length === 1 ? '' : 's'} of 3 or more people in the ${NAME[S.scope] === 'Combined' ? 'combined' : NAME[S.scope]} network (${S.view === 'ext' ? 'with outside co-authors' : 'Indigenous scholars only'}, ${yrs}). Each card names the research field, the scholars with the most ties inside the group and its most recent joint publications.`;
+    if (!list.length) { el.innerHTML = '<p>No research groups of 3 or more for these settings.</p>'; return; }
+    const more = list.length > 15 ? list.length - 15 : 0;
+    el.innerHTML = list.slice(0, 15).map(c => {
+      const mem = G.nodes.filter(n => m.comm[n.i] === c);
+      const inDeg = n => [...G.adj[n.i].keys()].filter(j => m.comm[j] === c).length;
+      const key = mem.filter(n => n.kind === 'p').sort((a, b) => inDeg(b) - inDeg(a) || b.str - a.str).slice(0, 5);
+      const cc = {}; mem.forEach(n => { const k = n.kind === 'x' ? 'OUT' : n.c; cc[k] = (cc[k] || 0) + 1; });
+      const mix = CODES.filter(k => cc[k]).map(k => `${cc[k]} ${NAME[k]}`).concat(cc.OUT ? [`${cc.OUT} outside`] : []).join(' · ');
+      const cnt = new Map(); mem.forEach(n => new Set(n.pubs).forEach(pi => cnt.set(pi, (cnt.get(pi) || 0) + 1)));
+      const joint = [...cnt].filter(([, k]) => k >= 2).map(([pi]) => C.pubs[pi]).sort((a, b) => (b[1] || 0) - (a[1] || 0));
+      const f = G.field[c], col = c < COMM.length ? COMM[c] : '#b8c2cc';
+      return `<article class="co-grp"><h3><i style="background:${col}"></i><span>Group ${c + 1}${f ? ` · ${esc(f.label)}` : ''}</span></h3>
+        <p class="co-grp__meta">${fmt(sizes[c])} people · ${mix} · ${fmt(joint.length)} joint publication${joint.length === 1 ? '' : 's'}</p>
+        <p class="co-grp__desc">${f ? esc(f.desc) : 'No field description matches this group under these settings. Its publications are listed below.'}</p>
+        <p class="co-grp__key"><b>Most connected:</b> ${key.map(n => `<button type="button" class="co-name" data-i="${n.i}">${esc(n.name)}</button>`).join(', ')}</p>
+        <ul class="co-grp__pubs">${joint.slice(0, 3).map(p => `<li><em>${p[1] || 'n.d.'}</em> · ${esc(p[2])}</li>`).join('')}</ul></article>`;
+    }).join('') + (more ? `<p class="co-grp__more">The 15 largest groups are shown; ${more} smaller group${more === 1 ? '' : 's'} of 3 or more are not listed.</p>` : '');
+    el.querySelectorAll('button[data-i]').forEach(b => { b.onclick = () => { select(+b.dataset.i, true); $('#co-net-title').scrollIntoView({ behavior: 'smooth' }); }; });
+  }
+
   function nodeColor(n) {
     if (S.col === 'comm') { const c = G.m.comm[n.i]; return c >= 0 && c < COMM.length && (G.m.commSizes[c] || 0) >= 3 ? COMM[c] : '#b8c2cc'; }
     if (n.kind === 'x') return OUT;
@@ -321,7 +366,7 @@
     const el = $('#co-legend');
     if (S.col === 'comm') {
       const sizes = (G.m.commSizes || []).filter(s => s >= 3);
-      el.innerHTML = '<b>Research groups (largest first)</b>' + sizes.slice(0, COMM.length).map((s, i) => `<span><i style="background:${COMM[i]}"></i>Group ${i + 1} · ${s} people</span>`).join('') + (sizes.length > COMM.length ? `<span><i style="background:#b8c2cc"></i>Smaller groups</span>` : '');
+      el.innerHTML = '<b>Research groups (largest first)</b>' + sizes.slice(0, COMM.length).map((s, i) => `<span><i style="background:${COMM[i]}"></i>${esc(groupName(i))} · ${s}</span>`).join('') + (sizes.length > COMM.length ? `<span><i style="background:#b8c2cc"></i>Smaller groups</span>` : '');
       return;
     }
     const cs = S.scope === 'ALL' ? CODES : (S.view === 'ext' ? CODES : [S.scope]);
@@ -437,7 +482,7 @@
     const nbs = [...G.adj[S.sel].entries()].sort((a, b) => b[1] - a[1] || G.nodes[a[0]].name.localeCompare(G.nodes[b[0]].name));
     const pubs = n.pubs.filter((pi, k, arr) => arr.indexOf(pi) === k).map(pi => C.pubs[pi]).sort((a, b) => (b[1] || 0) - (a[1] || 0));
     const g = m.comm[S.sel];
-    el.innerHTML = `<h3>${esc(n.name)}</h3><p class="co-meta">${n.kind === 'x' ? 'Outside co-author' : `${esc(PEOPLE[n.c])} scholar · ${esc(NAME[n.c])} database`}${g >= 0 && (m.commSizes[g] || 0) >= 3 ? ` · Research group ${g + 1}` : ''}</p>
+    el.innerHTML = `<h3>${esc(n.name)}</h3><p class="co-meta">${n.kind === 'x' ? 'Outside co-author' : `${esc(PEOPLE[n.c])} scholar · ${esc(NAME[n.c])} database`}${g >= 0 && (m.commSizes[g] || 0) >= 3 ? ` · Group ${g + 1}: ${esc(groupName(g))}` : ''}</p>
       <div class="co-stats"><div><b>${n.deg}</b>co-authors</div><div><b>${n.str}</b>joint publications</div>
       ${n.kind === 'p' ? `<div><b>#${rankOf(m.btw, S.sel)}</b>for bridging</div><div><b>#${rankOf(m.eig, S.sel)}</b>for influence</div>` : ''}</div>
       <h4>Co-authors</h4><ul>${nbs.map(([j, w]) => { const o = G.nodes[j]; return `<li><button type="button" data-i="${j}">${esc(o.name)}</button> · ${o.kind === 'x' ? 'outside' : esc(NAME[o.c])} · ${w} publication${w === 1 ? '' : 's'}</li>`; }).join('') || '<li>None for these settings.</li>'}</ul>
@@ -499,7 +544,7 @@
       <li><b>Density</b>: ties present divided by all possible ties.</li>
       <li><b>Separate groups</b>: connected components; the largest group share is the share of connected people in the biggest one.</li>
       <li><b>Clustering</b>: average local clustering coefficient (how often two co-authors of a person have also published together).</li>
-      <li><b>Research groups</b>: communities found with the Louvain method on tie weights; modularity shows how clearly the network splits into groups (above 0.3 is usually clear).</li>
+      <li><b>Research groups</b>: communities found with the Louvain method on tie weights; modularity shows how clearly the network splits into groups (above 0.3 is usually clear). The field names and descriptions were written from the shared publication titles of each group in the combined network of Indigenous scholars, all years. With other settings, a group takes the field of the scholars it holds; a group that matches no field is shown by number only.</li>
       <li><b>Centralization</b>: Freeman degree centralization (0 = ties spread evenly, 1 = one person holds every tie).</li>
       <li><b>Bridging</b>: normalised betweenness centrality, the share of shortest paths between others that pass through the person.</li>
       <li><b>Influence</b>: eigenvector centrality on ties (each tie counted once, so one heavily shared pair does not dominate), scaled so the highest is 1; it is highest for people tied to other well-connected people, mostly within the largest group.</li></ul>

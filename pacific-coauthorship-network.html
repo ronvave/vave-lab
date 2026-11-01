@@ -11,7 +11,7 @@
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Ccircle cx=%2710%27 cy=%2712%27 r=%273%27 fill=%27%233fd0d8%27/%3E%3Ccircle cx=%2722%27 cy=%2711%27 r=%273%27 fill=%27%23f3c45a%27/%3E%3Ccircle cx=%2716%27 cy=%2722%27 r=%273%27 fill=%27%23e0464f%27/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="css/pacific-scholars.css?v=fcf688ea" />
-  <link rel="stylesheet" href="css/pacific-coauthorship.css?v=bd0a52f6" />
+  <link rel="stylesheet" href="css/pacific-coauthorship.css?v=e993cb68" />
 </head>
 <body class="ps-body co-body">
   <!-- Access gate: same encrypted Regional bundle and passcode as the Regional dashboard.
@@ -96,6 +96,11 @@
     </section>
 
     <!-- 4 · Most central scholars -->
+    <section class="co-panel" aria-labelledby="co-grp-title">
+      <div class="co-head"><h2 id="co-grp-title">Research groups by field</h2><p class="co-sub" id="co-grp-sub"></p></div>
+      <div class="co-grps" id="co-groups"></div>
+    </section>
+
     <section class="co-panel" aria-labelledby="co-top-title">
       <div class="co-head"><h2 id="co-top-title">Most connected scholars</h2><p class="co-sub">Indigenous scholars in the chosen network, ranked by the measure you pick. Click a name to show them on the map.</p></div>
       <div class="co-seg co-seg--sm" id="co-rank" role="radiogroup" aria-label="Rank by">
@@ -131,6 +136,6 @@
   </main>
 
   <script src="js/vendor/d3-force-bundle.min.js?v=766bf3a1" defer></script>
-  <script src="js/pacific-coauthorship.js?v=f03b4a16" defer></script>
+  <script src="js/pacific-coauthorship.js?v=ed0dc33a" defer></script>
 </body>
 </html>

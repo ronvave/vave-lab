@@ -77,6 +77,43 @@ def display(n):
     return re.sub(r'\s+', ' ', n)[:80]
 
 
+# Research-field descriptions for the co-authorship research groups. Written from the shared
+# publication titles of each group in the combined, Indigenous-only network (all years).
+# The page labels a detected group with the field whose anchor scholars it holds (2 or more).
+FIELDS = [
+    dict(label='Marine resources and fisheries', anchors=['ITK-S0126', 'ITK-S0315', 'ITK-S0266', 'ITK-S0312', 'ITK-S0058'],
+         desc='Indigenous fishing knowledge, women fishers and food security, sea turtles, locally managed marine areas, coral rehabilitation and the livelihoods of coastal communities in Fiji.'),
+    dict(label='Biodiversity and ecology', anchors=['ITK-S0292', 'ITK-S0135', 'ITK-S0293', 'ITK-S0040', 'ITK-S0341', 'ITK-S0167'],
+         desc='Field biology in Fiji: new species (damselflies, marine bacteria), moths and birds, mangrove carbon and land-cover change, invasive species lists and forest wildlife. Field-science papers carry long author lists, so this is the most tightly knit group.'),
+    dict(label='Indigenous economy and development', anchors=['ITK-S0331', 'ITK-S0057', 'ITK-S0195', 'ITK-S0262', 'ITK-S0213'],
+         desc='Indigenous agricultural innovation, climate finance and carbon markets, the blue economy and deep-sea mining, Indigenous accounting, culture and diabetes, and the Pacific media. Its papers reach into several other fields, which places it at the centre of the network.'),
+    dict(label='Infectious disease and sanitation', anchors=['ITK-S0191', 'ITK-S0385', 'ITK-S0181', 'ITK-S0433', 'ITK-S0229'],
+         desc='Public health and microbiology in Fiji: antimicrobial resistance in hospitals, meningococcal outbreaks, COVID-19 vaccine response, latrines and water contamination, and climate-sensitive water-related diseases.'),
+    dict(label='Nutrition and health policy', anchors=['ITK-S0339', 'ITK-S0128', 'ITK-S0199', 'ITK-S0209'],
+         desc='Salt and sugar intake, sugar-sweetened beverage taxes, diabetes care, food insecurity and diets during COVID-19, with Indigenous Pacific research methods and tourism research.'),
+    dict(label='Education and Indigenous knowledge', anchors=['ITK-S0132', 'ITK-S0352', 'ITK-S0144'],
+         desc='Teacher education and culturally inclusive teaching in Fiji, rural and remote schools, Indigenous Fijian knowledge of the vanua, mentoring, and traditional ecological knowledge.'),
+    dict(label='Climate, water and education', anchors=['ITK-S0313', 'ITK-S0189', 'ITK-S0091'],
+         desc='Climate change and Indigenous wellbeing, water security and sea-level rise, loss and damage, traditional food preservation for disasters, and climate change in Fijian education.'),
+    dict(label='Talanoa, vā and higher education', anchors=['TNG-S0071', 'TNG-S0165', 'TNG-S0243', 'TNG-S0051', 'TNG-S0087'],
+         desc='Indigenising research through talanoa and vā, Indigenous academics in the diaspora, Tongan leadership, social work and youth justice, and reports on kava policy, labour mobility and cultural adoption. Fijian scholars join through social work and wellbeing research.'),
+    dict(label='Tongan philosophy and arts', anchors=['TNG-S0092', 'TNG-S0009', 'TNG-S0002', 'TNG-S0252', 'TNG-S0006'],
+         desc='Tongan tā-vā (time-space) philosophy, sung and danced poetry, performance art, language shift, Tongan identity in global sport, and Pacific Indigenous perspectives in health research teaching.'),
+    dict(label='Solomon education and governance', anchors=['SOL-S0009', 'SOL-S0038', 'SOL-S0006', 'SOL-S0035', 'SOL-S0041', 'SOL-S0008'],
+         desc='School leadership education, environmental peacebuilding, sport and national unity, elections, oral research methods and student resilience in Solomon Islands. Fijian and Tongan education scholars join through Pacific leadership and talanoa research, making it the most international group.'),
+    dict(label='Solomon health and water', anchors=['SOL-S0070', 'SOL-S0015', 'SOL-S0014', 'SOL-S0069'],
+         desc='Dengue vector surveillance, rural water safety and faith-based water management, child health nursing and hospital care in Solomon Islands.'),
+    dict(label='Solomon conservation', anchors=['SOL-S0025', 'SOL-S0005', 'SOL-S0045', 'SOL-S0063'],
+         desc='Indigenous perspectives on conserving endemic species, new bird records, and small-scale fisheries under the 30 by 30 target.'),
+    dict(label='Pacific health in Aotearoa', anchors=['TNG-S0057', 'TNG-S0043', 'TNG-S0082', 'TNG-S0045'],
+         desc='Co-designing gout education resources with Pacific people in Aotearoa New Zealand.'),
+    dict(label='Science and ICT education', anchors=['ITK-S0008', 'ITK-S0042', 'ITK-S0291'],
+         desc='Teaching science and the use of ICT in Fijian education.'),
+    dict(label='Ocean and education in Tonga', anchors=['TNG-S0099', 'TNG-S0149', 'TNG-S0150'],
+         desc="Ocean zoning in coastal Tonga and migrant women's views of secondary education."),
+]
+
+
 def build(dumps, country_meta):
     dumps = {c: d for c, d in dumps.items() if c in CODES}
     directory = rd.build_directory(dumps, [m for m in country_meta if m[0] in CODES])
@@ -187,6 +224,6 @@ def build(dumps, country_meta):
     for k, i in ext_index.items():
         ext[i] = ext_forms[k].most_common(1)[0][0]
     coverage = {c: dict(cov[c]) for c in CODES}
-    data = dict(schema=1, countries=list(CODES), people=people, ext=ext, pubs=out_pubs, coverage=coverage)
+    data = dict(schema=1, countries=list(CODES), people=people, ext=ext, pubs=out_pubs, coverage=coverage, fields=FIELDS)
     raw = json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode()
     return dict(gz=base64.b64encode(gzip.compress(raw, 9, mtime=0)).decode(), n=len(people), pubs=len(out_pubs), ext=len(ext))
