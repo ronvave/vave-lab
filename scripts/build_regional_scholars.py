@@ -466,6 +466,12 @@ def news_section(dumps):
     return regional_news.build(dumps, COUNTRIES, sys.modules[__name__])
 
 
+def coauthor_section(dumps):
+    """Co-authorship networks page (Fiji, Tonga, Solomon Islands, Vanuatu)."""
+    import regional_coauthorship
+    return regional_coauthorship.build(dumps, COUNTRIES)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dump-dir', default='/tmp/regional-masters')
@@ -516,6 +522,7 @@ def main():
         directory=directory_section(dumps),
         studyMap=build_study_map(dumps, COUNTRIES),
         news=news_section(dumps),
+        coauthor=coauthor_section(dumps),
     )
     Path(a.out).write_text(json.dumps(out, ensure_ascii=False, separators=(',', ':')))
     print('wrote', a.out, len(Path(a.out).read_bytes()), 'bytes')

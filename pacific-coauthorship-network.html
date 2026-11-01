@@ -1,0 +1,136 @@
+<!-- Vave Lab Pacific Co-authorship Networks — Authored by Ron Vave, 2026 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pacific Co-authorship Networks — Vave Lab | UH Mānoa</title>
+  <meta name="description" content="Social network analysis of co-authorship by Indigenous scholars in the Fiji, Tonga, Solomon Islands and Vanuatu databases." />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2715%27 fill=%27%23072443%27/%3E%3Ccircle cx=%2710%27 cy=%2712%27 r=%273%27 fill=%27%233fd0d8%27/%3E%3Ccircle cx=%2722%27 cy=%2711%27 r=%273%27 fill=%27%23f3c45a%27/%3E%3Ccircle cx=%2716%27 cy=%2722%27 r=%273%27 fill=%27%23e0464f%27/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/pacific-scholars.css?v=fcf688ea" />
+  <link rel="stylesheet" href="css/pacific-coauthorship.css?v=bd0a52f6" />
+</head>
+<body class="ps-body co-body">
+  <!-- Access gate: same encrypted Regional bundle and passcode as the Regional dashboard.
+       Decryption happens in the browser; nothing is sent to a server. -->
+  <div class="ps-gate" id="ps-gate" role="dialog" aria-modal="true" aria-labelledby="ps-gate-title">
+    <form class="ps-gate__card" id="ps-gate-form" autocomplete="off">
+      <h1 id="ps-gate-title">Pacific Co-authorship Networks</h1>
+      <p>Pre-launch project material. Enter the Regional dashboard passcode to decrypt the data on this device. Nothing is sent to a server.</p>
+      <label for="ps-pass">Passcode</label>
+      <input id="ps-pass" name="passcode" type="password" required autocomplete="current-password" />
+      <button class="ps-btn" type="submit">Unlock</button>
+      <div class="ps-gate__err" id="ps-gate-err" role="alert" aria-live="assertive"></div>
+    </form>
+  </div>
+
+  <header class="co-hero">
+    <div class="ps-wrap co-hero__in">
+      <div>
+        <h1 class="co-hero__title">Pacific Co-authorship Networks</h1>
+        <p class="co-hero__lede">Social network analysis of co-authorship by Indigenous scholars in the Fiji, Tonga, Solomon Islands and Vanuatu databases, each on its own and all four combined.</p>
+      </div>
+      <a class="co-hero__link" href="pacific-scholars.html">Regional Pacific Scholars Dashboard</a>
+    </div>
+  </header>
+
+  <main class="ps-wrap co-main" id="co-main">
+    <!-- 1 · Controls -->
+    <section class="co-panel co-controls" aria-label="Network settings">
+      <div class="co-ctl">
+        <span class="co-ctl__lab" id="co-scope-lab">Network</span>
+        <div class="co-seg" id="co-scope" role="radiogroup" aria-labelledby="co-scope-lab"></div>
+      </div>
+      <div class="co-ctl">
+        <span class="co-ctl__lab" id="co-view-lab">Who is included</span>
+        <div class="co-seg" id="co-view" role="radiogroup" aria-labelledby="co-view-lab">
+          <button type="button" data-v="ind" aria-checked="true" role="radio">Indigenous scholars only</button>
+          <button type="button" data-v="ext" aria-checked="false" role="radio">With outside co-authors</button>
+        </div>
+      </div>
+      <div class="co-ctl">
+        <label class="co-ctl__lab" for="co-from">Years</label>
+        <select id="co-from"></select><span class="co-to">to</span><select id="co-to" aria-label="Last year"></select>
+      </div>
+      <div class="co-ctl">
+        <label class="co-ctl__lab" for="co-min">Tie shown when they share at least</label>
+        <select id="co-min"><option value="1">1 publication</option><option value="2">2 publications</option><option value="3">3 publications</option><option value="5">5 publications</option></select>
+      </div>
+      <div class="co-ctl">
+        <span class="co-ctl__lab" id="co-col-lab">Colour by</span>
+        <div class="co-seg" id="co-col" role="radiogroup" aria-labelledby="co-col-lab">
+          <button type="button" data-v="country" aria-checked="true" role="radio">Country</button>
+          <button type="button" data-v="comm" aria-checked="false" role="radio">Research group</button>
+        </div>
+      </div>
+      <label class="co-check"><input type="checkbox" id="co-iso" /> Show scholars with no co-author ties</label>
+    </section>
+
+    <!-- 2 · Headline measures for the chosen network -->
+    <section class="co-panel" aria-labelledby="co-kpi-title">
+      <div class="co-head"><h2 id="co-kpi-title">Network measures</h2><p class="co-sub" id="co-kpi-sub"></p></div>
+      <dl class="co-kpis" id="co-kpis"></dl>
+      <p class="co-warn" id="co-cover" hidden></p>
+    </section>
+
+    <!-- 3 · Network map and scholar details -->
+    <section class="co-panel co-netwrap" aria-labelledby="co-net-title">
+      <div class="co-head">
+        <h2 id="co-net-title">Co-authorship network</h2>
+        <div class="co-find"><label for="co-search">Find a scholar</label><input id="co-search" list="co-names" placeholder="Type a name" /><datalist id="co-names"></datalist></div>
+      </div>
+      <div class="co-net">
+        <div class="co-canvas" id="co-canvas">
+          <canvas id="co-cv" aria-label="Co-authorship network diagram. Circles are scholars; lines join scholars who published together."></canvas>
+          <div class="co-tip" id="co-tip" hidden></div>
+          <div class="co-legend" id="co-legend"></div>
+          <div class="co-zoom"><button type="button" id="co-zin" aria-label="Zoom in">+</button><button type="button" id="co-zout" aria-label="Zoom out">&minus;</button><button type="button" id="co-zfit">Fit</button></div>
+        </div>
+        <aside class="co-side" id="co-side" aria-live="polite">
+          <p class="co-side__hint">Click a circle to see the scholar's co-authors and shared publications. Circle size shows the number of co-authors. Drag to move, scroll to zoom.</p>
+        </aside>
+      </div>
+    </section>
+
+    <!-- 4 · Most central scholars -->
+    <section class="co-panel" aria-labelledby="co-top-title">
+      <div class="co-head"><h2 id="co-top-title">Most connected scholars</h2><p class="co-sub">Indigenous scholars in the chosen network, ranked by the measure you pick. Click a name to show them on the map.</p></div>
+      <div class="co-seg co-seg--sm" id="co-rank" role="radiogroup" aria-label="Rank by">
+        <button type="button" data-v="deg" aria-checked="true" role="radio">Co-authors</button>
+        <button type="button" data-v="str" aria-checked="false" role="radio">Joint publications</button>
+        <button type="button" data-v="btw" aria-checked="false" role="radio">Bridging (betweenness)</button>
+        <button type="button" data-v="eig" aria-checked="false" role="radio">Influence (eigenvector)</button>
+      </div>
+      <div class="co-tablewrap"><table class="co-table" id="co-top"></table></div>
+      <div id="co-extop"></div>
+    </section>
+
+    <!-- 5 · Separate and combined comparison -->
+    <section class="co-panel" aria-labelledby="co-cmp-title">
+      <div class="co-head"><h2 id="co-cmp-title">Separate and combined networks compared</h2><p class="co-sub" id="co-cmp-sub"></p></div>
+      <div class="co-tablewrap"><table class="co-table co-table--cmp" id="co-cmp"></table></div>
+    </section>
+
+    <!-- 6 · Ties between countries (combined network) -->
+    <section class="co-panel" aria-labelledby="co-x-title">
+      <div class="co-head"><h2 id="co-x-title">Ties between countries</h2><p class="co-sub">Combined network of Indigenous scholars only. Each cell counts the pairs of scholars who published together; the diagonal counts pairs from the same country.</p></div>
+      <div class="co-xgrid">
+        <div class="co-tablewrap"><table class="co-table co-table--x" id="co-x"></table></div>
+        <div id="co-xlist"></div>
+      </div>
+    </section>
+
+    <!-- 7 · Methods -->
+    <section class="co-panel co-methods" aria-labelledby="co-m-title">
+      <div class="co-head"><h2 id="co-m-title">How the networks are built</h2></div>
+      <div id="co-methods"></div>
+    </section>
+  </main>
+
+  <script src="js/vendor/d3-force-bundle.min.js?v=766bf3a1" defer></script>
+  <script src="js/pacific-coauthorship.js?v=f03b4a16" defer></script>
+</body>
+</html>
