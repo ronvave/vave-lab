@@ -1,7 +1,8 @@
 /**
- * samoa-master-writeback.gs — Samoa Scholar Database admin server.
+ * samoa-master-writeback.gs — Samoan Scholar Database admin server.
  *
- * Session 2026-08-31 systematic-repair rewrite:
+ * Session 2026-08-31 systematic-repair port from Samoa:
+ *   • Same Google-auth-native architecture as samoa-master-writeback.gs.
  *   • The browser-HMAC contract is retired. This project holds no
  *     SHARED_SECRET, admin-password hash, snapshot passcode, or any
  *     other client-held credential. doPost returns HTTP 410 Gone.
@@ -17,170 +18,109 @@
  * Script properties required: APPROVED_ADMIN_EMAIL, WRITE_ENABLED.
  * WRITE_ENABLED must be set to the literal string 'true' before any
  * apiUpdateRow call will actually mutate the sheet.
+ *
+ * MAPPING covers the three worksheets that were writable under the
+ * legacy Samoan HMAC admin: Scholars (34 editable fields), Positions
+ * (13 editable fields), Graduate Degrees (22 editable fields). All
+ * other tabs in the Samoan Master Sheet stay read-only until explicitly
+ * added here.
  */
 
 // ─────────────────────────────────────────────────────────────────────────
 // CONFIG
 // ─────────────────────────────────────────────────────────────────────────
 
-var SPREADSHEET_ID_HINT = '1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ';  // Samoa Master
-var SOURCE_TAG          = 'admin-master-webapp v2 (google-auth)';
+var SPREADSHEET_ID_HINT = '1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ';  // Samoan Master
+var SOURCE_TAG          = 'admin-samoa-master-webapp v2 (google-auth)';
 var LOCK_WAIT_MS        = 30 * 1000;
 var TIMEZONE            = 'Pacific/Honolulu';
 
 // High-consequence fields that ALWAYS get a confirmation prompt on write,
 // even when the intended value matches the current value. Keyed by
-// "<worksheet>.<field>" using the EXACT Samoa Master Sheet row-4 headers.
+// "<worksheet>.<field>" using the EXACT Samoan Master Sheet row-4 headers.
 var ALWAYS_CONFIRM = {
-  'Scholars.Living Status': true,
-  'Scholars.Review Status': true,
-  'Scholars.Roster Tier': true,
-  'Scholars.Inclusion Status': true
+  'Scholars.Alive / Deceased': true
 };
 
+var SAMOA_CLANS_ = ["Tuʻipelehake", "Kalaniuvalu", "Kau Falefā", "Kau Sinaʻe", "Ongo Haʻangana", "Haʻa Falefisi", "Haʻa Moheofo", "Haʻa Maʻafu", "Haʻa Lātūhifo", "Haʻa Ngata Motuʻa", "Haʻa Ngata Tupu", "Haʻa Havea Lahi", "Haʻa Havea Siʻi", "Haʻa Vaea", "Haʻa Fokololo ʻo e Hau", "Falehaʻakili", "Haʻa Matāpule", "Kau Nimatapu", "Haʻa Tufunga", "Kanolotoʻā ʻo e Hau"];
 var MAPPING = {
   version: '2.0-samoa',
   worksheets: {
     'Scholars': {
       keyColumn: 'Scholar ID',
       headerRow: 4,
-      allowMultiRow: false,
       fields: {
-        'Display Name': { type: 'string', maxLen: 240 },
-        'Family Name': { type: 'string', maxLen: 240 },
-        'Given Names': { type: 'string', maxLen: 240 },
-        'Title / Salutation': { type: 'string', maxLen: 240 },
-        'Gender': { type: 'enum', enum: ['Fafine', 'Tāne', 'Non-binary', 'Unspecified', 'Unclassified', ''] },
-        'Birth Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Living Status': { type: 'string', maxLen: 2000 },
-        'Death Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Photo URL': { type: 'url', maxLen: 500 },
-        'Samoan Status': { type: 'string', maxLen: 2000 },
-        'Inclusion Status': { type: 'string', maxLen: 2000 },
-        'Identity Source ID': { type: 'string', maxLen: 40 },
-        'Review Status': { type: 'string', maxLen: 120 },
-        'Roster Tier': { type: 'string', maxLen: 60 },
-        'Statistical Region (Paternal)': { type: 'string', maxLen: 2000 },
-        'Political/Census District (Paternal)': { type: 'string', maxLen: 2000 },
-        'Traditional Itūmālō (Paternal)': { type: 'string', maxLen: 2000 },
-        'Specific Island (Paternal)': { type: 'string', maxLen: 2000 },
-        'Village (Paternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Constituency (Paternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Version (Paternal)': { type: 'string', maxLen: 2000 },
-        'Paternal Geography Source ID': { type: 'string', maxLen: 40 },
-        'Statistical Region (Maternal)': { type: 'string', maxLen: 2000 },
-        'Political/Census District (Maternal)': { type: 'string', maxLen: 2000 },
-        'Traditional Itūmālō (Maternal)': { type: 'string', maxLen: 2000 },
-        'Specific Island (Maternal)': { type: 'string', maxLen: 2000 },
-        'Village (Maternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Constituency (Maternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Version (Maternal)': { type: 'string', maxLen: 2000 },
-        'Maternal Geography Source ID': { type: 'string', maxLen: 40 },
-        'Family / ʻĀiga (Paternal)': { type: 'string', maxLen: 240 },
-        'Family / ʻĀiga (Maternal)': { type: 'string', maxLen: 240 },
-        'Matai Title': { type: 'string', maxLen: 240 },
-        'Matai Title Village': { type: 'string', maxLen: 240 },
-        'Customary Affiliation': { type: 'string', maxLen: 2000 },
-        'Self-identified Home / Community': { type: 'string', maxLen: 2000 },
-        'Cultural Evidence Notes': { type: 'string', maxLen: 4000 },
-        'Primary Discipline': { type: 'string', maxLen: 2000 },
-        'Broad Discipline': { type: 'string', maxLen: 2000 },
-        'Current Role': { type: 'string', maxLen: 2000 },
-        'Current Institution ID': { type: 'string', maxLen: 40 },
-        'Current Department': { type: 'string', maxLen: 2000 },
-        'Current Country': { type: 'string', maxLen: 2000 },
-        'Highest Completed Degree': { type: 'string', maxLen: 2000 },
-        'Current Postgraduate Status': { type: 'string', maxLen: 2000 },
-        'ORCID': { type: 'string', maxLen: 2000 },
-        'Google Scholar URL': { type: 'url', maxLen: 500 },
-        'Scopus Author ID': { type: 'string', maxLen: 40 },
-        'Official Profile URL': { type: 'url', maxLen: 500 },
-        'ResearchGate URL': { type: 'url', maxLen: 500 },
-        'Personal Website': { type: 'string', maxLen: 2000 },
-        'Total Completed Degrees': { type: 'string', maxLen: 2000 },
-        'Total Publications': { type: 'string', maxLen: 2000 },
-        'Total First-Author Publications': { type: 'string', maxLen: 2000 },
-        'Total Awards': { type: 'string', maxLen: 2000 },
-        'Leadership Category': { type: 'string', maxLen: 2000 },
-        'Leadership Level': { type: 'string', maxLen: 2000 },
-        'Aliases (semicolon-separated)': { type: 'string', maxLen: 2000 },
-        'Source Basis': { type: 'string', maxLen: 240 },
-        'Notes (internal — never public)': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
+        // Title / Salutation is an authoritative scholar-level attribute.
+        // Blank means no title.
+        'Title / Salutation':      { type: 'enum',   enum: ['Dr','Prof','Rev','Rev Dr','Mr','Mrs','Ms',''] },
+        'Family Name':             { type: 'string', maxLen: 120 },
+        'Given Names':             { type: 'string', maxLen: 120 },
+        'Gender':                  { type: 'enum',   enum: ['Tāne','Fafine','Unknown',''] },
+        // Year of Birth: four-digit year, blank when unknown. Do not infer.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Birth':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
+        // Alive / Deceased is a controlled three-value vocabulary in the sheet
+        // (normalized 2026-08-22): Alive, Deceased, Unknown. A sheet-level data
+        // validation enforces the same enum.
+        'Alive / Deceased':        { type: 'enum',   enum: ['Alive','Deceased','Unknown',''] },
+        // Year of Death: four-digit year, blank for Alive or Unknown.
+        // Sheet stores as text; server accepts 4-digit strings.
+        'Year of Death':           { type: 'string', maxLen: 4, pattern: '^(\\d{4})?$' },
+        'Paternal Island Division':{ type: 'string', maxLen: 60 },
+        'District Paternal':       { type: 'string', maxLen: 80 },
+        'Specific Island Paternal':{ type: 'string', maxLen: 80 },
+        'Village/Town Paternal (Kolo)': { type: 'string', maxLen: 120 },
+        'Clan Paternal': { type: 'enum', enum: (typeof SAMOA_CLANS_ !== 'undefined' ? SAMOA_CLANS_ : []).concat(['']) },
+        'Clan Maternal': { type: 'enum', enum: (typeof SAMOA_CLANS_ !== 'undefined' ? SAMOA_CLANS_ : []).concat(['']) },
+        'Maternal Island Division':{ type: 'string', maxLen: 60 },
+        'District Maternal':       { type: 'string', maxLen: 80 },
+        'Specific Island Maternal':{ type: 'string', maxLen: 80 },
+        'Village/Town Maternal (Kolo)': { type: 'string', maxLen: 120 },
+        // Cultural/lineage fields are stored SEPARATELY from administrative
+        // geography (never derived from village/surname/title resemblance).
+        "Estate / Chiefly Affiliation Paternal (Tofi'a)": { type: 'string', maxLen: 200 },
+        "Estate / Chiefly Affiliation Maternal (Tofi'a)": { type: 'string', maxLen: 200 },
+        "Ha'a / Lineage Paternal": { type: 'string', maxLen: 200 },
+        "Ha'a / Lineage Maternal": { type: 'string', maxLen: 200 },
+        'Kāinga Paternal':         { type: 'string', maxLen: 200 },
+        'Kāinga Maternal':         { type: 'string', maxLen: 200 },
+        'Self-identified Home / Community Affiliation Paternal': { type: 'string', maxLen: 200 },
+        'Self-identified Home / Community Affiliation Maternal': { type: 'string', maxLen: 200 },
+        'Lineage / Provenance Notes': { type: 'string', maxLen: 2000 },
+        'Primary Discipline / Field': { type: 'string', maxLen: 120 },
+        'Current Title / Role':    { type: 'string', maxLen: 240 },
+        'Current Institution':     { type: 'string', maxLen: 200 },
+        'Institution Country':     { type: 'string', maxLen: 80 },
+        'Current Department / Unit':{ type: 'string', maxLen: 200 },
+        'Current PG Status':       { type: 'string', maxLen: 120 },
+        'Current Profile URL':     { type: 'url',    maxLen: 500 },
+        'ORCID / Researcher ID':   { type: 'string', maxLen: 200 },
+        'Google Scholar URL':      { type: 'url',    maxLen: 500 },
+        'Name Variants / Aliases': { type: 'string', maxLen: 500 },
+        'Record Notes':            { type: 'string', maxLen: 4000 }
       }
     },
-    'Part-Indigenous': {
-      keyColumn: 'Part-Indigenous ID',
+    'Positions': {
+      // Positions is edited per-row; row is identified by an explicit
+      // rowNumber field carried by the client (1-based sheet row).
+      keyColumn: 'Scholar ID',
       headerRow: 4,
-      allowMultiRow: false,
+      allowMultiRow: true,
       fields: {
-        'Display Name': { type: 'string', maxLen: 240 },
-        'Family Name': { type: 'string', maxLen: 240 },
-        'Given Names': { type: 'string', maxLen: 240 },
-        'Title / Salutation': { type: 'string', maxLen: 240 },
-        'Gender': { type: 'enum', enum: ['Fafine', 'Tāne', 'Non-binary', 'Unspecified', 'Unclassified', ''] },
-        'Birth Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Living Status': { type: 'string', maxLen: 2000 },
-        'Death Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Photo URL': { type: 'url', maxLen: 500 },
-        'Samoan Status': { type: 'string', maxLen: 2000 },
-        'Inclusion Status': { type: 'string', maxLen: 2000 },
-        'Identity Source ID': { type: 'string', maxLen: 40 },
-        'Review Status': { type: 'string', maxLen: 120 },
-        'Roster Tier': { type: 'string', maxLen: 60 },
-        'Statistical Region (Paternal)': { type: 'string', maxLen: 2000 },
-        'Political/Census District (Paternal)': { type: 'string', maxLen: 2000 },
-        'Traditional Itūmālō (Paternal)': { type: 'string', maxLen: 2000 },
-        'Specific Island (Paternal)': { type: 'string', maxLen: 2000 },
-        'Village (Paternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Constituency (Paternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Version (Paternal)': { type: 'string', maxLen: 2000 },
-        'Paternal Geography Source ID': { type: 'string', maxLen: 40 },
-        'Statistical Region (Maternal)': { type: 'string', maxLen: 2000 },
-        'Political/Census District (Maternal)': { type: 'string', maxLen: 2000 },
-        'Traditional Itūmālō (Maternal)': { type: 'string', maxLen: 2000 },
-        'Specific Island (Maternal)': { type: 'string', maxLen: 2000 },
-        'Village (Maternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Constituency (Maternal)': { type: 'string', maxLen: 2000 },
-        'Electoral Version (Maternal)': { type: 'string', maxLen: 2000 },
-        'Maternal Geography Source ID': { type: 'string', maxLen: 40 },
-        'Family / ʻĀiga (Paternal)': { type: 'string', maxLen: 240 },
-        'Family / ʻĀiga (Maternal)': { type: 'string', maxLen: 240 },
-        'Matai Title': { type: 'string', maxLen: 240 },
-        'Matai Title Village': { type: 'string', maxLen: 240 },
-        'Customary Affiliation': { type: 'string', maxLen: 2000 },
-        'Self-identified Home / Community': { type: 'string', maxLen: 2000 },
-        'Cultural Evidence Notes': { type: 'string', maxLen: 4000 },
-        'Primary Discipline': { type: 'string', maxLen: 2000 },
-        'Broad Discipline': { type: 'string', maxLen: 2000 },
-        'Current Role': { type: 'string', maxLen: 2000 },
-        'Current Institution ID': { type: 'string', maxLen: 40 },
-        'Current Department': { type: 'string', maxLen: 2000 },
-        'Current Country': { type: 'string', maxLen: 2000 },
-        'Highest Completed Degree': { type: 'string', maxLen: 2000 },
-        'Current Postgraduate Status': { type: 'string', maxLen: 2000 },
-        'ORCID': { type: 'string', maxLen: 2000 },
-        'Google Scholar URL': { type: 'url', maxLen: 500 },
-        'Scopus Author ID': { type: 'string', maxLen: 40 },
-        'Official Profile URL': { type: 'url', maxLen: 500 },
-        'ResearchGate URL': { type: 'url', maxLen: 500 },
-        'Personal Website': { type: 'string', maxLen: 2000 },
-        'Total Completed Degrees': { type: 'string', maxLen: 2000 },
-        'Total Publications': { type: 'string', maxLen: 2000 },
-        'Total First-Author Publications': { type: 'string', maxLen: 2000 },
-        'Total Awards': { type: 'string', maxLen: 2000 },
-        'Leadership Category': { type: 'string', maxLen: 2000 },
-        'Leadership Level': { type: 'string', maxLen: 2000 },
-        'Aliases (semicolon-separated)': { type: 'string', maxLen: 2000 },
-        'Source Basis': { type: 'string', maxLen: 240 },
-        'Notes (internal — never public)': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
+        'Institution':                                  { type: 'string', maxLen: 200 },
+        'Country':                                      { type: 'string', maxLen: 80 },
+        'Department / Unit':                            { type: 'string', maxLen: 200 },
+        'Academic / Professional Title (verbatim)':     { type: 'string', maxLen: 240 },
+        'Standardized Academic Rank':                   { type: 'string', maxLen: 120 },
+        'Leadership Title (verbatim)':                  { type: 'string', maxLen: 240 },
+        'Standardized Leadership Category':             { type: 'string', maxLen: 120 },
+        'Leadership Level':                             { type: 'string', maxLen: 60 },
+        'Role Status':                                  { type: 'string', maxLen: 60 },
+        'Start Year':                                   { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'End Year':                                     { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Source URL':                                   { type: 'url',    maxLen: 500 },
+        'Evidence / Notes':                             { type: 'string', maxLen: 2000 },
+        'Last Verified':                                { type: 'string', maxLen: 60 }
       }
     },
     'Graduate Degrees': {
@@ -188,463 +128,31 @@ var MAPPING = {
       headerRow: 4,
       allowMultiRow: true,
       fields: {
-        'Degree ID': { type: 'string', maxLen: 40 },
-        'Stage': { type: 'string', maxLen: 2000 },
-        'Degree Name': { type: 'string', maxLen: 240 },
-        'Field': { type: 'string', maxLen: 2000 },
-        'Broad Discipline': { type: 'string', maxLen: 2000 },
-        'Thesis Title': { type: 'string', maxLen: 4000 },
-        'Institution ID': { type: 'string', maxLen: 40 },
-        'Current Institution Name': { type: 'string', maxLen: 240 },
-        'Original Institution Name': { type: 'string', maxLen: 240 },
-        'Country': { type: 'string', maxLen: 80 },
-        'Start Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'End Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Completion Status': { type: 'string', maxLen: 120 },
-        'Repository URL': { type: 'url', maxLen: 500 },
-        'DOI / Handle': { type: 'url', maxLen: 500 },
-        'Thesis Publication ID': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
+        // Sheet-observed values: 'Master\u0027s' and 'PhD/Doctorate'. Keep
+        // string to avoid rejecting existing rows.
+        'Degree Stage':                { type: 'string', maxLen: 60 },
+        'Degree / Qualification':      { type: 'string', maxLen: 200 },
+        'Field / Discipline':          { type: 'string', maxLen: 200 },
+        'C_Uni name':                  { type: 'string', maxLen: 200 },
+        'O_Uni name':                  { type: 'string', maxLen: 200 },
+        'Country':                     { type: 'string', maxLen: 80 },
+        'International from Samoa?':   { type: 'enum',   enum: ['Yes','No','Unknown',''] },
+        'City':                        { type: 'string', maxLen: 120 },
+        'Region':                      { type: 'string', maxLen: 120 },
+        'Year / Status':               { type: 'string', maxLen: 60 },
+        'Completion Status':           { type: 'string', maxLen: 120 },
+        'Thesis / Research Title':     { type: 'string', maxLen: 500 },
+        'Thesis / Repository URL':     { type: 'url',    maxLen: 500 },
+        'Evidence URL 1':              { type: 'url',    maxLen: 500 },
+        'Evidence URL 2':              { type: 'url',    maxLen: 500 },
+        'Verification':                { type: 'string', maxLen: 2000 },
+        'Notes':                       { type: 'string', maxLen: 2000 },
+        'Start Year':                  { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Finish / Completion Year':    { type: 'int',    min: 1900, max: 2100, nullable: true },
+        'Duration (years)':            { type: 'string', maxLen: 40 },
+        'Study Date Evidence / Notes': { type: 'string', maxLen: 2000 }
       }
-    },
-    'Non-Completed Degrees': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Non-Completed Degree ID': { type: 'string', maxLen: 40 },
-        'Stage': { type: 'string', maxLen: 2000 },
-        'Degree Name': { type: 'string', maxLen: 240 },
-        'Field': { type: 'string', maxLen: 2000 },
-        'Broad Discipline': { type: 'string', maxLen: 2000 },
-        'Institution ID': { type: 'string', maxLen: 40 },
-        'Country': { type: 'string', maxLen: 80 },
-        'Start Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Expected End Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Status': { type: 'string', maxLen: 2000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Scholarships & Funding': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Funding ID': { type: 'string', maxLen: 40 },
-        'Program / Body': { type: 'string', maxLen: 2000 },
-        'Type': { type: 'string', maxLen: 2000 },
-        'Category': { type: 'string', maxLen: 2000 },
-        'Linked Degree ID': { type: 'string', maxLen: 40 },
-        'Linked Project': { type: 'string', maxLen: 2000 },
-        'Place': { type: 'string', maxLen: 2000 },
-        'Start Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'End Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Public Value': { type: 'string', maxLen: 2000 },
-        'Obligations / Bond': { type: 'string', maxLen: 2000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Interesting': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Fact ID': { type: 'string', maxLen: 40 },
-        'Milestone Type': { type: 'string', maxLen: 2000 },
-        'Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Description': { type: 'string', maxLen: 2000 },
-        'Verification Status': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Awards & Honours': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Award ID': { type: 'string', maxLen: 40 },
-        'Award Name': { type: 'string', maxLen: 240 },
-        'Awarding Body': { type: 'string', maxLen: 2000 },
-        'Category': { type: 'string', maxLen: 2000 },
-        'Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Country': { type: 'string', maxLen: 80 },
-        'Public Value / Prize': { type: 'string', maxLen: 2000 },
-        'Citation URL': { type: 'url', maxLen: 500 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Positions': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Position ID': { type: 'string', maxLen: 40 },
-        'Title': { type: 'string', maxLen: 240 },
-        'Institution ID': { type: 'string', maxLen: 40 },
-        'Department': { type: 'string', maxLen: 2000 },
-        'Country': { type: 'string', maxLen: 80 },
-        'Leadership Category': { type: 'string', maxLen: 2000 },
-        'Leadership Level': { type: 'string', maxLen: 2000 },
-        'Start Date': { type: 'string', maxLen: 60 },
-        'End Date': { type: 'string', maxLen: 60 },
-        'Current Flag': { type: 'string', maxLen: 2000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'M>PhD Mobility': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Mobility ID': { type: 'string', maxLen: 40 },
-        'Master\'s Institution ID': { type: 'string', maxLen: 40 },
-        'Master\'s Country': { type: 'string', maxLen: 2000 },
-        'Master\'s Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'PhD Institution ID': { type: 'string', maxLen: 40 },
-        'PhD Country': { type: 'string', maxLen: 2000 },
-        'PhD Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Gap Years': { type: 'string', maxLen: 2000 },
-        'Same Institution Flag': { type: 'string', maxLen: 2000 },
-        'Same Country Flag': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Derived At': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Publications': {
-      keyColumn: 'Publication ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'BibTeX Key': { type: 'string', maxLen: 40 },
-        'Type': { type: 'string', maxLen: 2000 },
-        'Title': { type: 'string', maxLen: 240 },
-        'Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Authors (as-published string)': { type: 'string', maxLen: 2000 },
-        'Journal / Publisher': { type: 'string', maxLen: 2000 },
-        'Volume': { type: 'string', maxLen: 2000 },
-        'Issue': { type: 'string', maxLen: 2000 },
-        'Pages': { type: 'string', maxLen: 2000 },
-        'DOI': { type: 'url', maxLen: 500 },
-        'URL': { type: 'url', maxLen: 500 },
-        'Abstract': { type: 'string', maxLen: 4000 },
-        'Zotero Key': { type: 'string', maxLen: 2000 },
-        'Full Text URL': { type: 'url', maxLen: 500 },
-        'Language': { type: 'string', maxLen: 2000 },
-        'Verification Status': { type: 'string', maxLen: 4000 },
-        'V2 Inclusion Flag': { type: 'string', maxLen: 2000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Authorship': {
-      keyColumn: 'Authorship ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Publication ID': { type: 'string', maxLen: 40 },
-        'Scholar ID': { type: 'string', maxLen: 40 },
-        'Published Name (as printed)': { type: 'string', maxLen: 240 },
-        'Author Position': { type: 'string', maxLen: 2000 },
-        'First Author Flag': { type: 'string', maxLen: 2000 },
-        'Corresponding Author Flag': { type: 'string', maxLen: 2000 },
-        'Affiliation (as printed)': { type: 'string', maxLen: 2000 },
-        'Match Method': { type: 'string', maxLen: 2000 },
-        'Verification Status': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Research Geography': {
-      keyColumn: 'Publication ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Geography ID': { type: 'string', maxLen: 40 },
-        'Country': { type: 'string', maxLen: 80 },
-        'Statistical Region': { type: 'string', maxLen: 120 },
-        'Political/Census District': { type: 'string', maxLen: 120 },
-        'Traditional Itūmālō (if explicit in paper)': { type: 'string', maxLen: 2000 },
-        'Specific Island': { type: 'string', maxLen: 120 },
-        'Village / Site': { type: 'string', maxLen: 2000 },
-        'Latitude': { type: 'string', maxLen: 2000 },
-        'Longitude': { type: 'string', maxLen: 2000 },
-        'Scale (Country / Region / District / Village / Site)': { type: 'string', maxLen: 2000 },
-        'Evidence (quote / page / figure)': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Verification Status': { type: 'string', maxLen: 4000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Institutions': {
-      keyColumn: 'Institution ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Canonical Name': { type: 'string', maxLen: 240 },
-        'Short Name': { type: 'string', maxLen: 240 },
-        'Type (University / Research Institute / Government / NGO / Industry / Other)': { type: 'string', maxLen: 2000 },
-        'Country': { type: 'string', maxLen: 80 },
-        'City': { type: 'string', maxLen: 120 },
-        'Latitude': { type: 'string', maxLen: 2000 },
-        'Longitude': { type: 'string', maxLen: 2000 },
-        'Parent Institution ID': { type: 'string', maxLen: 40 },
-        'Founded Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Aliases (semicolon-separated, includes historical names)': { type: 'string', maxLen: 2000 },
-        'Website': { type: 'string', maxLen: 2000 },
-        'Wikipedia URL': { type: 'url', maxLen: 500 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Source Register': {
-      keyColumn: 'Source ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Source Type': { type: 'string', maxLen: 2000 },
-        'Title': { type: 'string', maxLen: 240 },
-        'Author(s)': { type: 'string', maxLen: 2000 },
-        'Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Publisher / Body': { type: 'string', maxLen: 2000 },
-        'URL': { type: 'url', maxLen: 500 },
-        'DOI': { type: 'url', maxLen: 500 },
-        'Handle': { type: 'string', maxLen: 2000 },
-        'Access Date': { type: 'string', maxLen: 60 },
-        'Archive URL': { type: 'url', maxLen: 500 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Trust Tier (Primary / Secondary / Tertiary)': { type: 'string', maxLen: 2000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Matai & Customary Evidence Audit': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Audit ID': { type: 'string', maxLen: 40 },
-        'Matai Title': { type: 'string', maxLen: 240 },
-        'Title Village': { type: 'string', maxLen: 240 },
-        'Family / ʻĀiga': { type: 'string', maxLen: 240 },
-        'Customary Affiliation Statement': { type: 'string', maxLen: 2000 },
-        'Evidence URL / Citation': { type: 'url', maxLen: 500 },
-        'Reviewer': { type: 'string', maxLen: 2000 },
-        'Review Status': { type: 'string', maxLen: 120 },
-        'Review Date': { type: 'string', maxLen: 60 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'District Issues & Sources': {
-      keyColumn: 'District ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Issue ID': { type: 'string', maxLen: 40 },
-        'Issue Type': { type: 'string', maxLen: 2000 },
-        'Description': { type: 'string', maxLen: 2000 },
-        'Affected Villages': { type: 'string', maxLen: 2000 },
-        'Source URL': { type: 'url', maxLen: 500 },
-        'Reported By': { type: 'string', maxLen: 2000 },
-        'Status': { type: 'string', maxLen: 2000 },
-        'Resolution': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'District Research Relationships': {
-      keyColumn: 'District ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Relationship ID': { type: 'string', maxLen: 40 },
-        'Community Contact': { type: 'string', maxLen: 2000 },
-        'Research Focus': { type: 'string', maxLen: 2000 },
-        'Start Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'End Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Publications Attributable': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-      }
-    },
-    'Geography Evidence Audit': {
-      keyColumn: 'Audit ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Scholar ID or Publication ID': { type: 'string', maxLen: 40 },
-        'Geography Dimension': { type: 'string', maxLen: 2000 },
-        'Claimed Value': { type: 'string', maxLen: 2000 },
-        'Evidence Statement': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Reviewer': { type: 'string', maxLen: 2000 },
-        'Review Status': { type: 'string', maxLen: 120 },
-        'Review Date': { type: 'string', maxLen: 60 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'Cultural Affiliation Evidence Audit': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Audit ID': { type: 'string', maxLen: 40 },
-        'Affiliation Type': { type: 'string', maxLen: 2000 },
-        'Claimed Value': { type: 'string', maxLen: 2000 },
-        'Evidence Statement': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Reviewer': { type: 'string', maxLen: 2000 },
-        'Review Status': { type: 'string', maxLen: 120 },
-        'Review Date': { type: 'string', maxLen: 60 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'Scholarship Cohort Audit': {
-      keyColumn: 'Audit ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Program': { type: 'string', maxLen: 2000 },
-        'Awarding Body': { type: 'string', maxLen: 2000 },
-        'Cohort Year': { type: 'int', min: 1800, max: 2100, nullable: true },
-        'Awardees Recorded': { type: 'string', maxLen: 2000 },
-        'Awardees Expected': { type: 'string', maxLen: 2000 },
-        'Coverage %': { type: 'string', maxLen: 2000 },
-        'Gap Notes': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-      }
-    },
-    'USP Thesis Audit': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Audit ID': { type: 'string', maxLen: 40 },
-        'Degree ID': { type: 'string', maxLen: 40 },
-        'USP Repository URL': { type: 'url', maxLen: 500 },
-        'Located': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'USP Graduation Audit': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Audit ID': { type: 'string', maxLen: 40 },
-        'Degree ID': { type: 'string', maxLen: 40 },
-        'USP Graduation Programme URL': { type: 'url', maxLen: 500 },
-        'Confirmed': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'NUS Thesis Audit': {
-      keyColumn: 'Scholar ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Audit ID': { type: 'string', maxLen: 40 },
-        'Degree ID': { type: 'string', maxLen: 40 },
-        'NUS Repository URL': { type: 'url', maxLen: 500 },
-        'Located': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-      }
-    },
-    'Samoan Researchers': {
-      keyColumn: 'Researcher ID',
-      headerRow: 4,
-      allowMultiRow: false,
-      fields: {
-        'Display Name': { type: 'string', maxLen: 240 },
-        'Family Name': { type: 'string', maxLen: 240 },
-        'Given Names': { type: 'string', maxLen: 240 },
-        'Gender': { type: 'enum', enum: ['Fafine', 'Tāne', 'Non-binary', 'Unspecified', 'Unclassified', ''] },
-        'Samoan Status': { type: 'string', maxLen: 2000 },
-        'Identity Source ID': { type: 'string', maxLen: 40 },
-        'Current Role': { type: 'string', maxLen: 2000 },
-        'Current Institution ID': { type: 'string', maxLen: 40 },
-        'Current Country': { type: 'string', maxLen: 2000 },
-        'ORCID': { type: 'string', maxLen: 2000 },
-        'Google Scholar URL': { type: 'url', maxLen: 500 },
-        'Statistical Region (Paternal)': { type: 'string', maxLen: 2000 },
-        'Political/Census District (Paternal)': { type: 'string', maxLen: 2000 },
-        'Traditional Itūmālō (Paternal)': { type: 'string', maxLen: 2000 },
-        'Specific Island (Paternal)': { type: 'string', maxLen: 2000 },
-        'Village (Paternal)': { type: 'string', maxLen: 2000 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
-    'Researcher Authorship': {
-      keyColumn: 'Researcher Authorship ID',
-      headerRow: 4,
-      allowMultiRow: true,
-      fields: {
-        'Publication ID': { type: 'string', maxLen: 40 },
-        'Researcher ID': { type: 'string', maxLen: 40 },
-        'Published Name (as printed)': { type: 'string', maxLen: 240 },
-        'Author Position': { type: 'string', maxLen: 2000 },
-        'First Author Flag': { type: 'string', maxLen: 2000 },
-        'Affiliation (as printed)': { type: 'string', maxLen: 2000 },
-        'Match Method': { type: 'string', maxLen: 2000 },
-        'Verification Status': { type: 'string', maxLen: 4000 },
-        'Source ID': { type: 'string', maxLen: 40 },
-        'Notes': { type: 'string', maxLen: 4000 },
-        'Created At': { type: 'string', maxLen: 2000 },
-        'Created By': { type: 'string', maxLen: 2000 },
-        'Updated At': { type: 'string', maxLen: 2000 },
-        'Updated By': { type: 'string', maxLen: 2000 },
-      }
-    },
+    }
   }
 };
 
@@ -1067,7 +575,7 @@ function doGet(e) {
   tmpl.writeEnabledLabel = writeEnabled_() ? 'WRITE ENABLED' : 'READ-ONLY (WRITE_ENABLED=false)';
   tmpl.spreadsheetId     = SPREADSHEET_ID_HINT;
   return tmpl.evaluate()
-    .setTitle('Samoa Scholar Database — Admin')
+    .setTitle('Samoan Scholar Database — Admin')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
 }
 
@@ -1089,7 +597,7 @@ function doPost(e) {
 function _renderNotAuthorized_(actual, approved) {
   var body =
     '<!doctype html><html><head><meta charset="utf-8"/>' +
-    '<title>Not authorised — Samoa Admin</title>' +
+    '<title>Not authorised — Samoan Admin</title>' +
     '<style>body{font-family:system-ui,sans-serif;padding:2rem;max-width:640px;margin:auto;color:#111;}' +
     'code{background:#f4f4f4;padding:2px 6px;border-radius:4px;}</style>' +
     '</head><body>' +
@@ -1276,4 +784,84 @@ function apiReadChangeLog(limit) {
     });
   }
   return { status: 'ok', rows: rows, serverTs: Date.now() };
+}
+
+/**
+ * apiListScholars() — returns one row per scholar for the picker card:
+ *   { scholarId, name, islandDivision, discipline, currentInstitution, pubs, firstAuth }
+ *
+ * All values come from the live Scholars sheet (no cross-tab joins):
+ *   - Scholar ID, Scholar Name, Paternal Island Division / Maternal Island Division,
+ *     Primary Discipline / Field, Current Institution
+ *   - Linked Publication Count and First-Author Publication Count are read straight
+ *     from the precomputed columns the Master Sheet already maintains.
+ *
+ * Cached for 300s in CacheService so repeated picker loads do not rescan the sheet.
+ */
+function apiListScholars() {
+  _assertAuthorized_();
+  var CACHE_KEY = 'samoa-picker-v1';
+  var cache = CacheService.getUserCache();
+  var cached = cache.get(CACHE_KEY);
+  if (cached) {
+    try { return JSON.parse(cached); } catch (e) { /* fall through and recompute */ }
+  }
+  var ss = SpreadsheetApp.openById(SPREADSHEET_ID_HINT);
+  var sheet = ss.getSheetByName('Scholars');
+  if (!sheet) throw new Error('apiListScholars: Scholars sheet not found');
+  var headerRow = 4;
+  var lastCol   = sheet.getLastColumn();
+  var lastRow   = sheet.getLastRow();
+  if (lastRow <= headerRow) {
+    var empty = { status: 'ok', scholars: [], serverTs: Date.now() };
+    return empty;
+  }
+  var headers = sheet.getRange(headerRow, 1, 1, lastCol).getValues()[0] || [];
+  function _idx(name) {
+    for (var i = 0; i < headers.length; i++) {
+      if (String(headers[i] || '').trim() === name) return i;
+    }
+    return -1;
+  }
+  var iId   = _idx('Scholar ID');
+  var iName = _idx('Scholar Name');
+  var iPat  = _idx('Paternal Island Division');
+  var iMat  = _idx('Maternal Island Division');
+  var iDisc = _idx('Primary Discipline / Field');
+  var iInst = _idx('Current Institution');
+  var iPubs = _idx('Linked Publication Count');
+  var iFst  = _idx('First-Author Publication Count');
+  if (iId < 0 || iName < 0) {
+    throw new Error('apiListScholars: required columns "Scholar ID" and "Scholar Name" not found on Scholars sheet');
+  }
+  var body = sheet.getRange(headerRow + 1, 1, lastRow - headerRow, lastCol).getValues();
+  var out = [];
+  for (var r = 0; r < body.length; r++) {
+    var sid = String(body[r][iId] == null ? '' : body[r][iId]).trim();
+    if (!sid) continue;
+    var pat = iPat >= 0 ? String(body[r][iPat] == null ? '' : body[r][iPat]).trim() : '';
+    var mat = iMat >= 0 ? String(body[r][iMat] == null ? '' : body[r][iMat]).trim() : '';
+    // Prefer paternal (Samoan convention); fall back to maternal so blank paternal is not misleading.
+    var island = pat || mat;
+    function _num(v) { var n = parseInt(v, 10); return isNaN(n) ? 0 : n; }
+    out.push({
+      scholarId:          sid,
+      name:               iName >= 0 ? String(body[r][iName] || '').trim() : '',
+      islandDivision:     island,
+      discipline:         iDisc >= 0 ? String(body[r][iDisc] || '').trim() : '',
+      currentInstitution: iInst >= 0 ? String(body[r][iInst] || '').trim() : '',
+      pubs:               iPubs >= 0 ? _num(body[r][iPubs]) : 0,
+      firstAuth:          iFst  >= 0 ? _num(body[r][iFst])  : 0
+    });
+  }
+  // Sort by pubs desc, then name asc, so first paint matches the default picker sort.
+  out.sort(function (a, b) {
+    if (b.pubs !== a.pubs) return b.pubs - a.pubs;
+    return a.name.localeCompare(b.name);
+  });
+  var payload = { status: 'ok', scholars: out, serverTs: Date.now() };
+  try {
+    cache.put(CACHE_KEY, JSON.stringify(payload), 300);
+  } catch (e) { /* payload too large for cache; still return it */ }
+  return payload;
 }

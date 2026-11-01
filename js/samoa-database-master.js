@@ -1,6 +1,20 @@
 /*
- * Samoan Scholarly Research Database
- * Loads /data/samoan-zotero-snapshot.json, /data/samoa-districts.geojson, and
+ * Samoan Scholar Database
+ *
+ * Sister clone of js/itaukei-database-master.js (iTaukei). Preserves every
+ * chart/filter/calculation/tooltip in the original file exactly, with the
+ * following Samoa-specific relabeling applied throughout:
+ *   - Fiji's 3 chiefly confederacies (Tovata/Kubuna/Burebasaga) are NEVER
+ *     shown; Samoa's 4 Statistical Regions (Apia Urban Area / North West Upolu / Rest of Upolu / Savaii/
+ *     Apia Urban Area) are shown instead, labeled "Island Division".
+ *   - Fiji's 14 provinces are replaced by Samoa's 51 districts, labeled
+ *     "District".
+ *   - Village/Town (Kolo) and Specific Island are surfaced as their own
+ *     displayed fields (not derived from District).
+ *   - Gender display labels are Fafine/Tāne (the underlying iTaukei
+ *     silhouette imagery is kept for gender icons per user decision).
+ *   - "iTaukei" -> "Samoan" throughout UI text.
+ * Loads /data/samoa-zotero-snapshot.json, /data/samoa-districts.geojson, and
  * /data/world-universities.json, then renders an interactive map, charts, and filterable cards.
  * Every filter is reflected in the URL query string so a filtered view can be shared as a link.
  * A background live-fetch to api.zotero.org keeps the freshness badge accurate; failure never
@@ -9,17 +23,20 @@
 (function () {
   'use strict';
 
-  // Satellite-legible border colours - one per Samoa Statistical Region.
-  // Keyed by human region name (spaces + apostrophe) so JS uses quoted-string
-  // property access throughout.
-  const REGION_COLORS = {
-    'Apia Urban Area':  '#0891b2',
-    'North West Upolu': '#eab308',
-    'Rest of Upolu':    '#dc2626',
-    "Savai'i":          '#16a34a'
-  };
-  // Backwards-compat alias while callers are migrated to REGION_COLORS.
-  const CONF_COLORS = REGION_COLORS;
+  // Bright, satellite-legible border colors — one per Samoa Island Division
+  const CLANS = window.SAMOA_CLANS || [];
+  const geographyKey = value => String(value || '').normalize('NFC').replace(/[‘’ʻʼ`]/g, "'").trim();
+  function paternalDivision(profile) {
+    const value = geographyKey(profile && profile.paternalIslandDivision);
+    return value;
+  }
+  function paternalClan(profile) {
+    const value = String(profile && profile.paternalClan || '').trim();
+    return CLANS.find(name => geographyKey(name) === geographyKey(value)) || value;
+  }
+  // Stable palette keyed to the hierarchy position, never to count rank.
+  const clanColor = index => `hsl(${Math.round(index * 360 / 20)} 60% 38%)`;
+  const CONF_COLORS = {'Apia Urban Area': '#FF5A6E',"North West Upolu":  '#4ECDE6',"Rest of Upolu": '#FFD84A',"Savaii":    '#6FCF97'};
   const TYPE_LABELS = {
     journalArticle:  'Journal Article',
     thesisPhd:       'PhD Thesis',
@@ -44,25 +61,15 @@
     preprint:        'Preprints',
     document:        'Documents'
   };
-  const PIN_OFFSETS = {
-    'Ba':            [ 0.20, -0.15],
-    'Ra':            [ 0.18,  0.12],
-    'Nadroga/Navosa':[-0.15, -0.15],
-    'Naitasiri':     [ 0.05,  0.02],
-    'Namosi':        [-0.05, -0.10],
-    'Serua':         [-0.15,  0.02],
-    'Rewa':          [-0.10,  0.30],
-    'Tailevu':       [ 0.15,  0.35],
-    'Lomaiviti':     [ 0.05,  0.55],
-    'Kadavu':        [-0.35,  0.00],
-    'Bua':           [ 0.10, -0.35],
-    'Cakaudrove':    [ 0.10,  0.30],
-    'Macuata':       [ 0.30, -0.15],
-    'Lau':           [ 0.00,  0.30]
-  };
+  // Samoa district map-pin jitter. No pre-tuned per-district visual offsets
+  // exist yet for Samoa's geojson boundaries (unlike the hand-tuned Fiji
+  // offsets above); districts default to [0,0] (no jitter) until a Samoa
+  // cartographer supplies tuned values. Safe no-op: pins still render at
+  // their true centroid.
+  const PIN_OFFSETS = {"Vaimauga 2":      [0, 0],"Vaimauga 3":     [0, 0],'Vaimauga 4':          [0, 0],'Faleata 1':  [0, 0],'Vaimauga 1':         [0, 0],'Faleata 2':       [0, 0],'Faleata 3':        [0, 0],'Faleata 4':         [0, 0],'Sagaga 1':     [0, 0],'Sagaga 2':         [0, 0],"Sagaga 3":      [0, 0],'Sagaga 4':         [0, 0],'Aana Alofi 1':           [0, 0],'Aana Alofi 2':         [0, 0],'Aana alofi 3':            [0, 0],'Aana Alofi 4':        [0, 0],"Aiga i le Tai":       [0, 0],"Falelatai & Samatau":         [0, 0],"Lefaga & Faleaseela":          [0, 0],"Safata 1":    [0, 0],"Safata 2":     [0, 0],'Siumu':   [0, 0],"Falealili 1":      [0, 0],"Falealili 2":      [0, 0],"Lotofaga":     [0, 0],'Lepa':          [0, 0],'Aleipata Itupa i Luga':  [0, 0],'Aleipata Itupa i Lalo':         [0, 0],'Vaa o Fonoti':       [0, 0],'Anoamaa 1':        [0, 0],'Anoamaa 2':         [0, 0],'Faasaleleaga 1':     [0, 0],'Faasaleleaga 2':         [0, 0],"Faasaleleaga 3":      [0, 0],'Faasaleleaga 4':         [0, 0],'Faasaleleaga 5':           [0, 0],'Gagaemauga 1':         [0, 0],'Gagaemauga 2':            [0, 0],'Gagaifomauga 1':        [0, 0],"Gagaifomauga 2":       [0, 0],"Gagaifomauga 3":         [0, 0],"Vaisigano 1":          [0, 0],"Vaisigano 2":    [0, 0],"Falealupo":     [0, 0],'Alataua i Sisifo':   [0, 0],"Salega 1":      [0, 0],"Salega 2":      [0, 0],"Palauli 1":     [0, 0],'Palauli 2':          [0, 0],'Satupaitea':  [0, 0],'Palauli 3':         [0, 0]};
 
   // Filter keys we serialize to the URL
-  const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'district', 'paternal', 'university', 'year', 'scholar', 'b2Group', 'b2Authorship'];
+  const FILTER_KEYS = ['q', 'itemType', 'discipline', 'decade', 'province', 'paternal', 'university', 'year', 'scholar', 'b2Group', 'b2Authorship'];
 
   const TYPE_COLOR = {
     thesisPhd:      '#228B22',   // forest green — PhD
@@ -105,31 +112,25 @@
   // removes them from state.snapshot.items entirely.
   const TYPE_ORDER = ['thesisPhd','thesisMasters','journalArticle','bookSection','book','report'];
 
-  // Effective paternal-district for a scholar profile: prefer the explicit
-  // paternal district, but fall back to the maternal district when paternal
-  // is blank. Used for statistical region chips, Panel B2 grouping, and every place
-  // the dashboard describes a scholar's 'home' district. This handles the
-  // case where a scholar considers themselves Samoan via their mother
-  // (e.g. Aporosa Apo — Naduri village, Macuata District via mother).
-  // The admin form records `nonItaukeiDad` and `maternalDistrict` explicitly;
-  // the public dashboard doesn't need those flags separately, just the
-  // effective district.
+  // Public geography uses paternal values only; maternal data stays private.
   function effectivePaternalProvince(profile) {
     if (!profile) return '';
-    return (profile.paternalDistrict || profile.maternalDistrict || '').trim();
+    return (profile.paternalProvince || '').trim();
   }
 
   // ------------------------------------------------------------------
   // Shared scholar-geography formatter (V2 public display).
   //
-  // Renders one canonical locality string from village / island /
-  // district Master values. Display-only — never mutates the Master.
+  // Renders one canonical Samoan locality string from village / island /
+  // district Master values. Display-only — never mutates the Master. The
+  // legacy parameter/property name `province` is retained internally for
+  // compatibility, but public Samoan scholar cards append the correct
+  // Samoa-specific "District" suffix and never append "Province".
   //
-  //   village + island + district             → 'Malawai vlg (Gau Is), Lomaiviti District.'
-  //   village + district, island suppressed   → 'Naduri vlg, Macuata District.'      (Viti Levu / Vanua Levu)
-  //   village + district, no island           → 'Naduri vlg, Macuata District.'
-  //   village + island, no district           → 'Malawai vlg (Gau Is)'                (no trailing district)
-  //   district only                           → 'Lau District.'
+  //   village + island + district             → 'Te\'ekiu vlg (Apia Urban Area Is), Vaimauga 2 District.'
+  //   village + district, no island            → 'Te\'ekiu vlg, Vaimauga 2 District.'
+  //   village + island, no district            → 'Te\'ekiu vlg (Apia Urban Area Is)'
+  //   district only                            → 'Vaimauga 2 District.'
   //   outer island only                       → 'Gau Is'
   //   nothing meaningful                      → ''
   //
@@ -141,14 +142,11 @@
   // the stored value (case-insensitive, whole word) so re-suffixing with
   // ' Is' can never produce 'Moala Is Is' or 'Gau Island Is'.
   //
-  // The trailing period appears only when the string ends in 'District';
-  // 'Gau Is'-only or village-only forms stay unpunctuated so they read
+  // The trailing period appears when a district is shown; island-only or
+  // village-only forms stay unpunctuated so they read
   // cleanly in chips.
   // ------------------------------------------------------------------
-  // Samoa uses its own island composition (Upolu, Savaiʻi, Manono, Apolima).
-  // The suppress regex is retained as a defensive no-op against stale data
-  // rows leaking sister-database island names into a Samoa render.
-  const _MAINLAND_ISLANDS_SUPPRESS = /^(upolu|savai.i|manono|apolima)$/i;
+  const _MAINLAND_ISLANDS_SUPPRESS = /^(viti\s*levu|vanua\s*levu)$/i;
   const _GEO_SENTINELS = /^(unclassified|unknown|n\/?a|na|null|undefined|none|-|\.|_)$/i;
 
   function _cleanGeoField(v) {
@@ -159,43 +157,40 @@
   }
 
   function _normalizeIslandStem(v) {
-    // Trim any pre-existing ' Is', ' Is.', ' Island' suffix so we can
-    // append a single canonical ' Is' without stacking. Whole-word only.
-    return v.replace(/\s+(is\.?|island)$/i, '').trim();
+    // Scholar cards show the concise physical-island name. Master values may
+    // contain the explanatory qualifier "(main island)" or hierarchy suffix
+    // "Island Division"; neither belongs in the public locality line. Then
+    // trim any pre-existing Is/Island suffix so one canonical " Is" can be
+    // appended without stacking.
+    return v
+      .replace(/\s*\(\s*main\s+island\s*\)\s*/ig, ' ')
+      .replace(/\s+island\s+division$/i, '')
+      .replace(/\s+(is\.?|island)$/i, '')
+      .trim();
   }
 
-  function formatScholarGeography(village, island, district) {
+  function formatScholarGeography(village, island, province) {
     var v = _cleanGeoField(village);
     var i = _cleanGeoField(island);
-    var p = _cleanGeoField(district);
+    var p = _cleanGeoField(province);
 
-    // Suppress island name entirely for Samoa's two large mainlands.
+    // Suppress island name entirely for Fiji's two large mainlands.
     if (i && _MAINLAND_ISLANDS_SUPPRESS.test(i)) i = '';
-
-    // Apply district-qualified village labels for the 12 name-collisions
-    // where the same village name repeats across districts (helper is
-    // built by samoa-panel-overrides.js after bundle.geo has hydrated).
-    // When the raw village name is ambiguous AND we know the scholar's
-    // home district, render as "{village} — {district}" so the card face
-    // is never ambiguous. Never infer a district we do not have.
-    if (v && typeof window !== 'undefined' && typeof window.__samoaVillageLabel === 'function') {
-      try {
-        var maybeQualified = window.__samoaVillageLabel(v, p || '');
-        if (maybeQualified && maybeQualified !== v) v = maybeQualified;
-      } catch (labelErr) { /* fall through to raw name */ }
-    }
 
     var islandStem = i ? _normalizeIslandStem(i) : '';
     var vlgPart = v ? (v + ' vlg') : '';
     var islPart = islandStem ? (islandStem + ' Is') : '';
-    var provPart = p ? (p + ' District') : '';
+    // Samoa has districts, not provinces. The stored value is the district
+    // name; append the correct public suffix exactly once.
+    var districtStem = p.replace(/\s+(province|district)\.?$/i, '').trim();
+    var provPart = districtStem ? (districtStem + ' District') : '';
 
-    // 1. Village + District (with or without a shown island).
+    // 1. Village + Province (with or without a shown island).
     if (vlgPart && provPart) {
       var localityPart = islPart ? (vlgPart + ' (' + islPart + ')') : vlgPart;
       return localityPart + ', ' + provPart + '.';
     }
-    // 2. Village + Island, no district — no trailing comma / fake district.
+    // 2. Village + Island, no province — no trailing comma / fake province.
     if (vlgPart && islPart) {
       return vlgPart + ' (' + islPart + ')';
     }
@@ -207,7 +202,7 @@
     if (islPart && provPart) return islPart + ', ' + provPart + '.';
     // 5. District only.
     if (provPart) return provPart + '.';
-    // 6. Outer island only (Viti Levu / Vanua Levu already suppressed above).
+    // 6. Island only.
     if (islPart) return islPart;
     return '';
   }
@@ -221,8 +216,8 @@
   }
 
   // Find the top-level Zotero collection that groups every Samoan-authored
-  // sub-collection. Historically named 'Samoan authors (>3 papers)' but Ron
-  // has renamed it (e.g. '(>2 papers)'), so we match any top-level collection
+  // sub-collection. Named 'Samoan authors (>N papers)' by the Samoan adapter
+  // (js/samoa-database-adapter.js), so we match any top-level collection
   // whose name begins with 'Samoan authors' — that's still the unambiguous
   // root in this Zotero group. Returns null if no such collection exists.
   function findItaukeiRootCollection(cols) {
@@ -243,10 +238,10 @@
 
   const state = {
     snapshot: null,
-    districts: null,
+    provinces: null,
     universities: null,
-    graduateStudies: null,               // data/samoan-graduate-studies.json
-    mapScope: 'samoa',                    // 'samoa' | 'world' (Ron's 2nd tab set)
+    graduateStudies: null,               // data/itaukei-graduate-studies.json
+    mapScope: 'fiji',                    // 'fiji' | 'world' (Ron's 2nd tab set)
     worldView: 'study',                  // 'study' | 'publish'
     worldLayer: null,                    // Leaflet layer holding world-map markers
     mapView: 'all',                      // 'all' | 'lead' | 'coauth'
@@ -254,9 +249,9 @@
     // Panel D has its own independent type filter so the timeline can be
     // interrogated without disturbing Panels B/C. Also has its own authors
     // filter with four modes, driven by the pills next to the title:
-    //   'lead'   — Samoan is first-listed author
-    //   'coauth' — Samoan appears but is not first-listed
-    //   'both'   — lead + coauth (any Samoan involvement; default)
+    //   'lead'   — iTaukei is first-listed author
+    //   'coauth' — iTaukei appears but is not first-listed
+    //   'both'   — lead + coauth (any iTaukei involvement; default)
     //   'all'    — every publication in the database
     histTypeSet: new Set(TYPE_ORDER),
     histAuthors: 'lead',                 // 'lead' | 'coauth' | 'both' | 'all' — Panel D default: Samoan lead
@@ -267,7 +262,7 @@
       itemType: '',
       discipline: '',
       decade: '',
-      district: '',
+      province: '',
       paternal: '',
       university: '',
       year: '',
@@ -285,8 +280,9 @@
     // Maps built after loadAll()
     disciplineByColKey: new Map(),   // collectionKey -> discipline name (root)
     disciplinesByItem:  new Map(),   // itemKey -> Set(discipline)
-    provincesByItem:    new Map(),   // itemKey -> Set(district name)   (research-location view)
-    paternalByItem:     new Map(),   // itemKey -> Set(district name)
+    provincesByItem:    new Map(),   // itemKey -> Set(province name)   (research-location view)
+    islandDivisionsByItem: new Map(), // itemKey -> Set(Samoa Island Division)
+    paternalByItem:     new Map(),   // itemKey -> Set(province name)
     scholarByItem:      new Map(),   // itemKey -> Set(scholar leaderboard name)
     scholarKeyByName:   new Map(),   // scholar full name -> collectionKey
     provinceColKeyByName: { location: new Map(), paternal: new Map() }
@@ -323,14 +319,27 @@
   function sanitizeSummaryHtml(input) {
     if (input == null) return '';
     const src = String(input);
-    // Fast path: if the string contains no '<' at all, just escape.
-    if (src.indexOf('<') === -1) return escapeHtml(src);
+    // Fast path for ordinary prose. Markdown links need the parser below so
+    // `[descriptive text](https://example.org)` becomes a compact anchor
+    // instead of displaying the full URL on the public scholar card.
+    if (src.indexOf('<') === -1 && !/\[[^\]\n]+\]\(https?:\/\//i.test(src)) {
+      return escapeHtml(src);
+    }
 
     let out = '';
     let i = 0;
     const N = src.length;
     while (i < N) {
       const ch = src[i];
+      if (ch === '[') {
+        const mdLink = /^\[([^\]\n]+)\]\((https?:\/\/[^\s)]+)\)/i.exec(src.slice(i));
+        if (mdLink) {
+          out += '<a href="' + escapeAttr(mdLink[2]) + '" target="_blank" rel="noopener">' +
+                 escapeHtml(mdLink[1]) + '</a>';
+          i += mdLink[0].length;
+          continue;
+        }
+      }
       if (ch !== '<') {
         // Escape naked entity-sensitive chars but preserve typography.
         if (ch === '&') out += '&amp;';
@@ -386,22 +395,24 @@
     // MASTER-FILE ADAPTER OVERRIDE
     //
     // The production dashboard reads Zotero-shaped JSON. This preview
-    // reads Samoa_Master_file sanitized JSON and re-shapes it into
-    // the same in-memory contract via js/samoa-database-adapter.js.
+    // reads iTaukei_Master_file sanitized JSON and re-shapes it into
+    // the same in-memory contract via js/master-file-adapter.js.
     // Every downstream render function in this file continues to work
     // unchanged; only the data source is different.
     //
     // See docs/MASTER-FILE-REBUILD.md for the pipeline description.
     // ================================================================
-    if (!window.SamoaScholarDatabaseAdapter || typeof window.SamoaScholarDatabaseAdapter.load !== 'function') {
-      throw new Error('SamoaScholarDatabaseAdapter not loaded. Ensure js/samoa-database-adapter.js is included before samoan-database-master.js.');
+    if (!window.MasterFileAdapter || typeof window.MasterFileAdapter.load !== 'function') {
+      throw new Error('MasterFileAdapter not loaded. Ensure js/master-file-adapter.js is included before itaukei-database-master.js.');
     }
-    const bundle = await window.SamoaScholarDatabaseAdapter.load({ masterOnly: true });
+    // Include Admin enrichment so saved scholar photos and insights reach the cards.
+    const bundle = await window.MasterFileAdapter.load();
     // Preserve the raw Master JSON for panel-level overrides that need
-    // Master-specific data (14-district TOTAL columns, statistical region rows,
-    // Authorship-bridge Samoan classification, C_Uni-only aggregations).
+    // Master-specific data (14-province TOTAL columns, confederacy rows,
+    // Authorship-bridge iTaukei classification, C_Uni-only aggregations).
     state.master = bundle.master;
-    state.masterAdapter = window.SamoaScholarDatabaseAdapter;
+    state.countingMaster = bundle.countingMaster || bundle.master;
+    state.masterAdapter = window.MasterFileAdapter;
     const snap        = bundle.snap;
     const geo         = bundle.geo;
     const unis        = bundle.unis;
@@ -428,7 +439,7 @@
     //   file (Publications + Authorship worksheets); this filter is a
     //   display/calculation exclusion only.
     //   Master 'Publication Type' values that map to itemType=preprint
-    //   (via TYPE_MAP in samoa-database-adapter.js) are: 'Unpublished report'
+    //   (via TYPE_MAP in master-file-adapter.js) are: 'Unpublished report'
     //   and 'Unpublished'. Any pre-existing Zotero preprint is also caught.
     //
     // Documents: 2026-08-24 Ron directive (second). Items classified as
@@ -455,10 +466,8 @@
     // item filter.
     if (snap && Array.isArray(snap.items)) {
       const beforeCount = snap.items.length;
-      snap.items = snap.items.filter(it => it
-        && it.itemType !== 'conferencePaper'
-        && it.itemType !== 'preprint'
-        && it.itemType !== 'document');
+      snap.items = snap.items.filter(it => it &&
+        window.SamoaMasterFileAdapter.isCountedPublicationType(visualType(it)));
       state.hiddenConferencePapers = beforeCount - snap.items.length;
 
       // Client-side year backfill. The Python snapshot builder used to reject
@@ -483,7 +492,7 @@
       state.recoveredYears = recoveredYears;
     }
     state.snapshot = snap;
-    state.districts = geo;
+    state.provinces = geo;
     state.universities = unis;
     state.lastSync = sync;
     state.graduateStudies = grad;
@@ -521,14 +530,14 @@
     // "Tabunakawai, Kesaia" for pub counts and scholar-card totals.
     state.nameAliases = new Map(Object.entries((profiles && profiles.nameAliases) || {}));
 
-    // Explicit "not Samoan" blocklist — surnames + full names that have shown up
-    // in publications alongside Samoan co-authors but who are NOT themselves
-    // Samoan scholars. Persisted in data/scholar-profiles.json.notItaukeiAuthors
+    // Explicit "not iTaukei" blocklist — surnames + full names that have shown up
+    // in publications alongside iTaukei co-authors but who are NOT themselves
+    // iTaukei scholars. Persisted in data/scholar-profiles.json.notItaukeiAuthors
     // (curated by the admin dashboard). Applied as a veto in creatorIsItaukei so
     // that name-alias pollution or Zotero collection membership can't accidentally
-    // upgrade someone like Morris/McCabe/Mounsey to Samoan-lead. This list is the
+    // upgrade someone like Morris/McCabe/Mounsey to iTaukei-lead. This list is the
     // safeguard the Scholars master roster relies on: only names in the Scholars
-    // tab (progress roster) or admin scholar-profiles count as Samoan.
+    // tab (progress roster) or admin scholar-profiles count as iTaukei.
     state.notItaukeiCanonicalKeys = new Set(
       (Array.isArray(profiles && profiles.notItaukeiAuthors) ? profiles.notItaukeiAuthors : [])
         .map(n => (n || '').replace(/[\u2010\u2011\u2013\u2212]/g, '-').toLowerCase().replace(/[^a-z0-9]/g, ''))
@@ -560,7 +569,7 @@
         }
       }
     });
-    // Explicit hide-list — names the admin dashboard has removed from the Samoan list.
+    // Explicit hide-list — names the admin dashboard has removed from the iTaukei list.
     // These scholars will not appear as cards on the public dashboard even if they still
     // exist as Zotero collection subs. Persisted in data/scholar-profiles.json under
     // "hiddenScholars".
@@ -568,42 +577,32 @@
     // Scholar profiles come exclusively from this country’s Master file.
 
     state.provinceMetaByName = new Map();
-    provFlat.districts.forEach(p => state.provinceMetaByName.set(p.name, p));
+    provFlat.provinces.forEach(p => state.provinceMetaByName.set(p.name, p));
 
-    // Zotero C1 root and Non-provincial/Samoa sub-collection keys. Both come
-    // from data/samoa-districts.json (top-level). C1 root (RNKFUZ6M) parents the
-    // 14 provincial sub-collections plus '_Non-Provincial/Samoa' (AREH32KK) —
-    // Samoa-wide publications not tied to a single district. The non-provincial
+    // Zotero C1 root and Non-provincial/Fiji sub-collection keys. Both come
+    // from data/fiji-provinces.json (top-level). C1 root (RNKFUZ6M) parents the
+    // 14 provincial sub-collections plus '_Non-Provincial/Fiji' (AREH32KK) —
+    // Fiji-wide publications not tied to a single province. The non-provincial
     // key drives the bottom bar in Panel C1.
     state.c1RootKey = provFlat.zoteroCollectionKey_c1Root || null;
-    // Bundle key name is inherited from the shared master-file-adapter and
-    // carries a legacy `_nonProvincialFiji` suffix regardless of which
-    // sister database is being adapted. The value is the Samoa non-district
-    // Zotero bucket key; the legacy suffix is data-source metadata only.
-    // Read the new Samoa-native alias first if the adapter has been updated,
-    // then fall back to the shared key.
-    state.nonDistrictBucketKey =
-      provFlat.zoteroCollectionKey_nonDistrictBucket ||
-      provFlat.zoteroCollectionKey_nonProvincialSamoa ||
-      provFlat.zoteroCollectionKey_nonProvincialFiji ||
-      null;
+    state.nonProvincialFijiKey = provFlat.zoteroCollectionKey_nonProvincialFiji || null;
 
-    // District collection key lookups
+    // Province collection key lookups
     geo.features.forEach(f => {
       const p = f.properties;
       if (p.zoteroCollectionKey_publicationLocation) state.provinceColKeyByName.location.set(p.name, p.zoteroCollectionKey_publicationLocation);
       if (p.zoteroCollectionKey_paternalProvince)    state.provinceColKeyByName.paternal.set(p.name, p.zoteroCollectionKey_paternalProvince);
     });
 
-    // Samoan collection keys (used to compute the "Samoan author" badge).
-    // We treat an item as Samoan-authored if it sits in ANY of these trees:
-    //   1. 'Samoan authors (>N papers)' → direct child author sub-collections
-    //   2. 'By or with Samoan authors'
-    //   3. 'Samoan Thesis by Country/Universities' → country → university tree
-    //      (this catches ~1000 Samoan-graduate theses that don't have their own
+    // iTaukei collection keys (used to compute the "iTaukei author" badge).
+    // We treat an item as iTaukei-authored if it sits in ANY of these trees:
+    //   1. 'iTaukei authors (>N papers)' → direct child author sub-collections
+    //   2. 'By or with iTaukei authors'
+    //   3. 'iTaukei Thesis by Country/Universities' → country → university tree
+    //      (this catches ~1000 iTaukei-graduate theses that don't have their own
     //      author sub-collection under the >N-papers root)
     // The trees are collected via a recursive descendant walk so nested
-    // country/university sub-collections all resolve to Samoan.
+    // country/university sub-collections all resolve to iTaukei.
     const itaukeiParents = snap.collections.filter(c =>
       c.name === 'By or with Samoan authors' || c.name.startsWith('Samoan authors')
     );
@@ -615,7 +614,7 @@
     const byWith = snap.collections.find(c => c.name === 'By or with Samoan authors');
     if (byWith) itaukeiParentKeys.add(byWith.key);
 
-    // Recursively add every descendant under the Samoan Thesis tree.
+    // Recursively add every descendant under the iTaukei Thesis tree.
     // Match by stable Zotero key first so panel-prefix renames (e.g. 'B2-'
     // in front of the collection name) don't silently break the classifier.
     const thesisRoot = snap.collections.find(c => c.key === '9XHGQJE6')
@@ -664,8 +663,8 @@
     }
 
     // ---- Per-item derived tag indexes ----
-    // Build Samoan last-name set from the scholar leaderboard ("Last, First" → "Last").
-    // Used to identify Samoan lead-authored items via first-creator surname match.
+    // Build iTaukei last-name set from the scholar leaderboard ("Last, First" → "Last").
+    // Used to identify iTaukei lead-authored items via first-creator surname match.
     const itaukeiLastNames = new Set();
     state.scholarKeyByName.forEach((_, fullName) => {
       const last = fullName.split(',')[0].trim().toLowerCase();
@@ -673,19 +672,19 @@
     });
     state.itaukeiLastNames = itaukeiLastNames;
 
-    // ---- Samoan canonical-name set (master roster) ----
+    // ---- iTaukei canonical-name set (master roster) ----
     // For A2 KPI classification we do NOT use surname matching — that over-fires on
-    // non-Samoan people who happen to share an Samoan surname (e.g. James Fong,
+    // non-iTaukei people who happen to share an iTaukei surname (e.g. James Fong,
     // Sakiusa Fong, Patrick Fong are all different people; see docs/NAMES-DO-NOT-MERGE.md).
     // Instead, we resolve every Zotero creator through the admin nameAliases map
     // (variant → canonical) and check membership in the union of:
     //   (a) admin scholar canonicals (data/scholar-profiles.json .scholars[].name), and
     //   (b) progress-Sheet canonicals (master roster; ~474 rows, fetched at runtime).
-    // Field data (district, institution, degrees) still comes from admin only.
+    // Field data (province, institution, degrees) still comes from admin only.
     const itaukeiCanonicalKeys = new Set();
     const HYPH_RE = /[\u2010\u2011\u2013\u2212]/g;
     const keyifyName = s => (s || '').replace(HYPH_RE, '-').toLowerCase().replace(/[^a-z0-9]/g, '');
-    // Seed the canonical set with admin scholar-profile names (curated Samoan list).
+    // Seed the canonical set with admin scholar-profile names (curated iTaukei list).
     state.scholarProfilesByName.forEach((_, name) => {
       const k = keyifyName(name);
       if (k) itaukeiCanonicalKeys.add(k);
@@ -695,11 +694,11 @@
     // — ~473 rows). This is the source of truth per the July 2026 admin directive.
     (state.progressRosterKeys || []).forEach(k => itaukeiCanonicalKeys.add(k));
     // Only NOW merge nameAliases — and only for entries whose canonical (or variant)
-    // is already a known Samoan scholar. The aliases map is a general variant→canonical
-    // dictionary that also contains non-Samoan co-authors (Morris, McCabe, Mounsey,
-    // etc.) and would otherwise pollute the Samoan set. Filtering here keeps
+    // is already a known iTaukei scholar. The aliases map is a general variant→canonical
+    // dictionary that also contains non-iTaukei co-authors (Morris, McCabe, Mounsey,
+    // etc.) and would otherwise pollute the iTaukei set. Filtering here keeps
     // "Fong, Patrick Sakiusa" → "Fong, Patrick S." resolving while blocking
-    // "Morris, C." → "Morris, Cherie" from being treated as Samoan.
+    // "Morris, C." → "Morris, Cherie" from being treated as iTaukei.
     (state.nameAliases || new Map()).forEach((canonical, variant) => {
       const ck = keyifyName(canonical);
       const vk = keyifyName(variant);
@@ -708,7 +707,7 @@
         if (vk) itaukeiCanonicalKeys.add(vk);
       }
     });
-    // Final veto: remove any key that the admin has explicitly marked as NOT Samoan.
+    // Final veto: remove any key that the admin has explicitly marked as NOT iTaukei.
     // Belt-and-suspenders in case a name slipped into aliases or profiles by mistake.
     (state.notItaukeiCanonicalKeys || new Set()).forEach(k => itaukeiCanonicalKeys.delete(k));
     state.itaukeiCanonicalKeys = itaukeiCanonicalKeys;
@@ -722,7 +721,7 @@
       (it.collections || []).forEach(k => {
         const d = state.disciplineByColKey.get(k);
         if (d) disc.add(d);
-        // district lookups
+        // province lookups
         state.provinceColKeyByName.location.forEach((ck, name) => { if (ck === k) provs.add(name); });
         state.provinceColKeyByName.paternal.forEach((ck, name) => { if (ck === k) paternal.add(name); });
         // scholar lookups (reverse map: key -> name)
@@ -730,6 +729,7 @@
       });
       state.disciplinesByItem.set(it.key, disc);
       state.provincesByItem.set(it.key, provs);
+      state.islandDivisionsByItem.set(it.key, new Set(it._masterIslandDivisions || []));
       state.paternalByItem.set(it.key, paternal);
       state.scholarByItem.set(it.key, scholars);
     });
@@ -737,7 +737,7 @@
 
   // Resolve a Zotero creator ("Ron Vave", "R. Vave", "Nabobo-Baba, Unaisi", etc.)
   // against the union of admin canonicals AND progress-Sheet canonicals via nameAliases.
-  // Returns true only if the creator matches a KNOWN canonical Samoan scholar (not
+  // Returns true only if the creator matches a KNOWN canonical iTaukei scholar (not
   // just a shared surname). See docs/NAMES-DO-NOT-MERGE.md for the rationale.
   function creatorIsItaukei(name) {
     if (!name) return false;
@@ -766,23 +766,23 @@
     return false;
   }
 
-  // Classify item authorship w.r.t. Samoan scholars
-  //   returns 'lead'   — first-listed creator is Samoan
-  //           'coauth' — an Samoan author is present but not first
-  //           'none'   — no Samoan author on the record
+  // Classify item authorship w.r.t. iTaukei scholars
+  //   returns 'lead'   — first-listed creator is iTaukei
+  //           'coauth' — an iTaukei author is present but not first
+  //           'none'   — no iTaukei author on the record
   function itaukeiAuthorship(item) {
     // Master-file source of truth: the adapter records the real first-author
     // status on `item._masterAuthorship` (derived from the Authorship table's
     // `Is First Author?` / `Author Position === 1` columns). The Master
-    // authorship table only stores Samoan-scholar links, so creators[0]
+    // authorship table only stores iTaukei-scholar links, so creators[0]
     // cannot reliably indicate first-authorship for Master data. When present,
     // this flag wins over the creators-string heuristic below. See
-    // docs/MASTER-FILE-REBUILD.md and js/samoa-database-adapter.js.
+    // docs/MASTER-FILE-REBUILD.md and js/master-file-adapter.js.
     if (item && item._masterAuthorship) return item._masterAuthorship;
     const creators = item.creators || [];
     if (creators.length && creatorIsItaukei(creators[0])) return 'lead';
     if (isItaukei(item)) return 'coauth';
-    // Fall-back: creator-name match for items that are NOT in an Samoan Zotero collection
+    // Fall-back: creator-name match for items that are NOT in an iTaukei Zotero collection
     for (let i = 1; i < creators.length; i++) {
       if (creatorIsItaukei(creators[i])) return 'coauth';
     }
@@ -845,9 +845,9 @@
     });
   }
 
-  // Broad definition: item is "Samoan-authored" if it belongs to any Samoan
-  // Zotero collection, OR any of its creators' surnames match a known Samoan
-  // scholar (this catches the ~21 items authored by Samoan scholars that were
+  // Broad definition: item is "iTaukei-authored" if it belongs to any iTaukei
+  // Zotero collection, OR any of its creators' surnames match a known iTaukei
+  // scholar (this catches the ~21 items authored by iTaukei scholars that were
   // not tagged into a collection).
   function isItaukei(item) {
     if ((item.collections || []).some(k => state.itaukeiKeys.has(k))) return true;
@@ -891,12 +891,15 @@
     // everything (they narrow both the cards and the item list).
     state.scholarConfFilter = '';
     state.scholarProvFilter = '';
+    state.scholarClanFilter = '';
     state.scholarPage = 1;
     if (typeof computeScholarFilterNames === 'function') computeScholarFilterNames();
     const confSel = $('[data-scholar-conf-filter]');
     const provSel = $('[data-scholar-prov-filter]');
     if (confSel) confSel.value = '';
     if (provSel) provSel.value = '';
+    const clanSel = $('[data-scholar-clan]');
+    if (clanSel) clanSel.value = '';
     const search = $('[data-db-search]');
     if (search) search.value = '';
     $$('.db-filter[data-db-filter]').forEach(s => { s.value = ''; });
@@ -909,7 +912,7 @@
     renderHistogram();
     renderLeaders();          // to update active scholar highlight
     renderDonutLegendActive();
-    renderPanelB();           // re-render bar chart to update active-district highlight
+    renderPanelB();           // re-render bar chart to update active-province highlight
     updateClearAllButton();
   }
   function updateClearAllButton() {
@@ -917,7 +920,8 @@
     if (!btn) return;
     const any = FILTER_KEYS.some(k => state.filter[k] !== '' && state.filter[k] != null)
               || !!state.scholarConfFilter
-              || !!state.scholarProvFilter;
+              || !!state.scholarProvFilter
+              || !!state.scholarClanFilter;
     btn.classList.toggle('is-hidden', !any);
   }
 
@@ -960,8 +964,8 @@
   //
   // The top section is now split into two clearly-distinct blocks:
   //   1) Database overview   — statistics describing the ENTIRE indexed dataset.
-  //   2) Samoan scholarship — statistics filtered to Samoan-authored items and
-  //                            Samoan graduate research.
+  //   2) iTaukei scholarship — statistics filtered to iTaukei-authored items and
+  //                            iTaukei graduate research.
   // Numbers must never be duplicated across the two blocks unless they are
   // genuinely different measurements. Each label must state its unit clearly.
   function renderStats() {
@@ -1009,11 +1013,11 @@
     }));
     const uniqueAuthors = authorSet.size;
 
-    // Samoa districts studied — any district tagged on ≥1 publication.
+    // Fiji provinces studied — any province tagged on ≥1 publication.
     const provsStudied = new Set();
     state.provincesByItem.forEach(s => s.forEach(p => provsStudied.add(p)));
 
-    // ---- Samoan-scholarship counts ----
+    // ---- iTaukei-scholarship counts ----
     let itLed = 0, itCoauth = 0;
     items.forEach(it => {
       const r = itaukeiAuthorship(it);
@@ -1032,8 +1036,8 @@
     });
     const itTheses = itPhd + itMasters + itThesesOther;
 
-    // Samoan graduate-study universities and countries — from the graduate
-    // studies data (theses that appear in a scholar's Samoan sub-collection).
+    // iTaukei graduate-study universities and countries — from the graduate
+    // studies data (theses that appear in a scholar's iTaukei sub-collection).
     const grad = state.graduateStudies || { worldPoints: [] };
     const gradUnis = new Set(), gradCountries = new Set();
     (grad.worldPoints || []).forEach(wp => {
@@ -1052,10 +1056,10 @@
     setText('[data-kpi="db-works"]',     fmt(totalWorks));
     setText('[data-kpi="db-authors"]',   fmt(uniqueAuthors));
     setText('[data-kpi="db-theses"]',    fmt(totalTheses));
-    // A1 Universities/Countries — cover the ENTIRE database of theses (Samoan
-    // + non-Samoan author theses). Reads the raw thesis "university" field on
+    // A1 Universities/Countries — cover the ENTIRE database of theses (iTaukei
+    // + non-iTaukei author theses). Reads the raw thesis "university" field on
     // every Zotero item with itemType="thesis" and resolves to a country via
-    // (a) samoan-graduate-studies.json worldPoints, (b) world-universities.json,
+    // (a) itaukei-graduate-studies.json worldPoints, (b) world-universities.json,
     // (c) data/uni-country-overrides.json for names not covered by (a) or (b).
     // See docs/NAMES-DO-NOT-MERGE.md “A1 Panel — DB-wide universities/countries”.
     const dbUnis = new Set();
@@ -1090,9 +1094,9 @@
     }
     setText('[data-kpi="db-unis"]',      fmt(dbUnis.size));
     setText('[data-kpi="db-countries"]', fmt(dbCountries.size));
-    setText('[data-kpi="db-districts"]', fmt(provsStudied.size));
+    setText('[data-kpi="db-provinces"]', fmt(provsStudied.size));
 
-    // Samoan scholarship
+    // iTaukei scholarship
     setText('[data-kpi="it-works"]',     fmt(itWorks));
     setText('[data-kpi="it-led"]',       fmt(itLed));
     setText('[data-kpi="it-coauth"]',    fmt(itCoauth));
@@ -1104,7 +1108,7 @@
     const liveTotal = (sync && typeof sync.totalItems === 'number') ? sync.totalItems : totalWorks;
     setText('[data-db-live-total]', fmt(liveTotal));
     setText('[data-db-snap-total]', fmt(totalWorks));
-    setText('[data-db-samoan-count]', fmt(itWorks));
+    setText('[data-db-itaukei-count]', fmt(itWorks));
 
     const checkedIso = (sync && sync.lastChecked) || snap.generatedAt;
     const changedIso = (sync && sync.lastChanged) || snap.generatedAt;
@@ -1146,7 +1150,7 @@
     });
   }
 
-  // Dynamic paragraph + four insight blocks for the Samoan narrative card.
+  // Dynamic paragraph + four insight blocks for the iTaukei narrative card.
   function renderTopNarrative(x) {
     const pct = (n, d) => d > 0 ? Math.round((n / d) * 100) : 0;
     const bodyEl = document.querySelector('[data-narrative-body]');
@@ -1156,32 +1160,32 @@
       // Narrative wording — Ron-approved "Variant A" (Jul 2026). Do not
       // rewrite the sentence openers; the rotation is deliberate so no
       // two consecutive sentences begin with "Of the 1,606". See
-      // docs/NAMES-DO-NOT-MERGE.md “A2 narrative — Samoan scholarly
+      // docs/NAMES-DO-NOT-MERGE.md “A2 narrative — iTaukei scholarly
       // research at a glance” for the full pinned template.
       //
       // Openers, in order:
       //   1. Of the {totalWorks} publications in the database, ...
-      //   2. Within this Samoan-authored body of work, ...
+      //   2. Within this iTaukei-authored body of work, ...
       //   3. A further {itCoauth} ({pct}) are ...
       //   4. These {itWorks} publications include ...
       //   5. Together, this scholarship ...
       // Percentages are shown alongside every number — do not drop them.
       const parts = [];
       // Use the KPI's itTheses total (matches A2 card 4) rather than
-      // itPhd+itMasters, because a handful of Samoan theses lack a
+      // itPhd+itMasters, because a handful of iTaukei theses lack a
       // Master's/PhD level tag in Zotero and would otherwise be dropped.
       const itTheses = (typeof x.itTheses === 'number')
         ? x.itTheses
         : ((x.itMasters || 0) + (x.itPhd || 0) + (x.itThesesOther || 0));
       parts.push(`Of the ${fmt(x.totalWorks)} publications in the database, ${fmt(x.itWorks)} (${pct(x.itWorks, x.totalWorks)}%) are by or with Samoan authors.`);
       if (x.itWorks > 0) {
-        parts.push(`Within this Samoan-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by an Samoan first author \u2014 a substantial signal of research leadership.`);
+        parts.push(`Within this Samoan-authored body of work, ${fmt(x.itLed)} (${pct(x.itLed, x.itWorks)}%) are led by a Samoan first author \u2014 a substantial signal of research leadership.`);
         parts.push(`A further ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are co-authored with scholars of other ethnicities, from within Samoa and abroad, who are leading the authorship.`);
       }
       if (itTheses > 0) {
         parts.push(`These ${fmt(x.itWorks)} publications include ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}%) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 completed at ${fmt(x.gradUnis)} universities across ${fmt(x.gradCountries)} countries.`);
       }
-      parts.push('Together, this scholarship spans diverse fields and connects with communities across all 14 districts of Samoa.');
+      parts.push('Together, this scholarship spans diverse fields and connects with communities across Samoa and internationally.');
       bodyEl.textContent = parts.join(' ');
     }
     const setText = (sel, txt) => { const n = document.querySelector(sel); if (n) n.textContent = txt; };
@@ -1195,21 +1199,21 @@
       `${fmt(x.itWorks)} of ${fmt(x.totalWorks)} indexed works (${pct(x.itWorks, x.totalWorks)}%) include at least one identified Samoan author.`);
     setText('[data-insight="leadership"]',
       x.itWorks > 0
-        ? `${fmt(x.itLed)} of ${fmt(x.itWorks)} Samoan-involved works (${pct(x.itLed, x.itWorks)}%) are led by an Samoan first author; the remaining ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors.`
+        ? `${fmt(x.itLed)} of ${fmt(x.itWorks)} Samoan-involved works (${pct(x.itLed, x.itWorks)}%) are led by a Samoan first author; the remaining ${fmt(x.itCoauth)} (${pct(x.itCoauth, x.itWorks)}%) are as co-authors.`
         : 'No Samoan-authored works have been indexed yet.');
     setText('[data-insight="grad"]',
       x.itWorks > 0
         ? `Samoan scholars completed ${fmt(itTheses)} theses (${pct(itTheses, x.itWorks)}% of Samoan-involved works) \u2014 ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s \u2014 across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`
         : `Samoan scholars completed ${fmt(x.itPhd)} PhD and ${fmt(x.itMasters)} Master\u2019s theses across ${fmt(x.gradUnis)} universities in ${fmt(x.gradCountries)} countries.`);
     setText('[data-insight="geo"]',
-      `Samoan scholarship extends across ${fmt(x.gradCountries)} countries and connects with all 14 districts of Samoa.`);
+      `Samoan scholarship extends across ${fmt(x.gradCountries)} countries and connects with all 51 districts of Samoa.`);
   }
 
   // ============ MAP ============
   function initMap() {
     try {
       const map = L.map('db-map', {
-        center: [-17.8, 178.0],
+        center: [-13.75, -172.1],
         zoom: 7,
         minZoom: 6,
         maxZoom: 12,
@@ -1236,19 +1240,19 @@
       // stored default bounds and closes any open popup. Same defaults are
       // reused for inline and fullscreen — the bounds already frame Samoa
       // tightly, so both aspect ratios read well.
-      const fijiWrap = document.querySelector('[data-db-map-samoa-wrap]');
-      const fijiResetBtn = document.querySelector('[data-db-map-samoa-reset-btn]');
+      const fijiWrap = document.querySelector('[data-db-map-fiji-wrap]');
+      const fijiResetBtn = document.querySelector('[data-db-map-fiji-reset-btn]');
       if (fijiWrap && fijiResetBtn) {
         fijiResetBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
           const m = state.map; if (!m) return;
           m.closePopup();
-          const bounds = state.mapDefaultBounds || [[-19.6, 176.8], [-15.9, 180.9]];
+          const bounds = state.mapDefaultBounds || [[-14.1, -172.85], [-13.4, -171.35]];
           m.fitBounds(bounds, { padding: [4, 4], animate: true });
         });
       }
-      wireMapFullscreen('[data-db-map-samoa-wrap]', '[data-db-map-samoa-fs-btn]', () => state.map, {
+      wireMapFullscreen('[data-db-map-fiji-wrap]', '[data-db-map-fiji-fs-btn]', () => state.map, {
         onOpen: () => {
           const m = state.map; if (!m) return;
           state.mapPrevView = { center: m.getCenter(), zoom: m.getZoom() };
@@ -1257,9 +1261,9 @@
             try {
               const b = layer.getBounds();
               if (b && b.isValid()) m.fitBounds(b, { padding: [40, 40], animate: false });
-            } catch (_) { m.setView([-17.8, 178.0], 7); }
+            } catch (_) { m.setView([-13.75, -172.1], 7); }
           } else {
-            m.setView([-17.8, 178.0], 7);
+            m.setView([-13.75, -172.1], 7);
           }
         },
         onClose: () => {
@@ -1268,16 +1272,16 @@
         }
       });
 
-      // Panel A mapview toggle (Samoa sub-tabs)
-      $$('[data-mapscope-panel="samoa"] button').forEach(btn => {
+      // Panel A mapview toggle (Fiji sub-tabs)
+      $$('[data-mapscope-panel="fiji"] button').forEach(btn => {
         btn.addEventListener('click', () => {
-          $$('[data-mapscope-panel="samoa"] button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
+          $$('[data-mapscope-panel="fiji"] button').forEach(b => { b.classList.remove('is-active'); b.setAttribute('aria-selected','false'); });
           btn.classList.add('is-active'); btn.setAttribute('aria-selected','true');
           state.mapView = btn.dataset.mapview;
           renderPanelA();
         });
       });
-      // Panel A2 world-view sub-tabs (Where Samoan graduates study /
+      // Panel A2 world-view sub-tabs (Where iTaukei graduates study /
       // have published). Panel A1 no longer hosts a top-level scope toggle
       // — A2 is a separate standalone panel with its own Leaflet instance.
       $$('[data-mapscope-panel="world"] button').forEach(btn => {
@@ -1290,20 +1294,18 @@
         });
       });
 
-      // Initialise the standalone Panel A2 world map after Samoa is ready.
+      // Initialise the standalone Panel A2 world map after Fiji is ready.
       // Wrapped in try/catch because the world map is a progressive
       // enhancement — Panel A1 must still work if this fails.
       try { initWorldMap(); } catch (e) { console.error('World map init failed', e); }
-      // Initialise Panel B3 — Where Samoan research has been undertaken.
+      // Initialise Panel B3 — Where iTaukei research has been undertaken.
       try { initB3Map(); } catch (e) { console.error('B3 map init failed', e); }
 
-      // Bounds tuned to the crop in Ron's revision-notes screenshot: shows all
-      // three statistical regions (Viti Levu + Vanua Levu + Lau) without wasting
-      // vertical whitespace above Vanua Levu or below Kadavu.
-      // Tighter Samoa-focused framing (Ron's image-4 reference): Vanua Levu +
-      // Viti Levu + Lau grouped without wasted margins.
-      map.fitBounds([[-19.6, 176.8], [-15.9, 180.9]], { padding: [4, 4] });
-      state.mapDefaultBounds = [[-19.6, 176.8], [-15.9, 180.9]];
+      // Samoa-focused default framing: covers Apia Urban Area, North West Upolu, Rest of Upolu, Savaii,
+      // and Apia Urban Area without wasted margins (same box used as the fullscreen-
+      // reset fallback below, so both entry points agree).
+      map.fitBounds([[-14.1, -172.85], [-13.4, -171.35]], { padding: [4, 4] });
+      state.mapDefaultBounds = [[-14.1, -172.85], [-13.4, -171.35]];
     } catch (e) {
       console.error('Map init failed', e);
       const mapEl = $('#db-map');
@@ -1322,10 +1324,10 @@
     return items;
   }
 
-  // District publication breakdown (Panel A choropleth + statistical region legend numbers).
-  // Uses districts-researched collection membership.
-  function districtBreakdown(items) {
-    const geo = state.districts;
+  // Province publication breakdown (Panel A choropleth + confederacy legend numbers).
+  // Uses provinces-researched collection membership.
+  function provinceBreakdown(items) {
+    const geo = state.provinces;
     const result = new Map();
     geo.features.forEach(f => {
       const p = f.properties;
@@ -1338,7 +1340,7 @@
             bucket.total += 1;
             const vt = visualType(it);
             if (bucket[vt] != null) bucket[vt] += 1;
-            // Count unique Samoan leaderboard scholars tied to this district
+            // Count unique iTaukei leaderboard scholars tied to this province
             const scholarsForItem = state.scholarByItem.get(it.key);
             if (scholarsForItem) scholarsForItem.forEach(s => scholarSet.add(s));
           }
@@ -1352,7 +1354,7 @@
 
   // Warm palette — contrasts against the dark blue satellite ocean. Ron's
   // feedback was that the previous teal-on-teal scale blended into the water.
-  // These are the YlOrRd-style ColorBrewer stops adjusted for Samoa imagery.
+  // These are the YlOrRd-style ColorBrewer stops adjusted for Fiji imagery.
   function choroFill(n) {
     if (n === 0) return '#fff5eb';
     if (n <= 3) return '#fdd0a2';
@@ -1362,17 +1364,17 @@
   }
 
   // ============ WORLD MAP (Ron's 2nd tab set) ============
-  // Renders circle markers for universities where Samoan scholars have
+  // Renders circle markers for universities where iTaukei scholars have
   // completed graduate studies. Size + colour indicate scholar counts.
-  // Data comes from data/samoan-graduate-studies.json (see refresh-graduate-studies.py).
+  // Data comes from data/itaukei-graduate-studies.json (see refresh-graduate-studies.py).
   // -------- Right-hand panel for the World scope: countries → universities.
   // Aggregates worldPoints by country, sorts descending by total degrees, and
   // supports a drill-down into any country to reveal its universities. Clicks
   // are wired here; the map zoom is delegated to zoomToWorldCountry().
-  // Module-scope profile lookup used by the statistical region/district rollup so it
+  // Module-scope profile lookup used by the confederacy/province rollup so it
   // matches the popup's `lookupProfile` behaviour (direct hit → "First Last"
   // → "Last, First" flip → first-token strip). Kept small on purpose — the
-  // statistical region view only needs a Boolean + districts, no photo/village work.
+  // confederacy view only needs a Boolean + provinces, no photo/village work.
   function b2LookupScholarProfile(name) {
     const map = state && state.scholarProfilesByName;
     if (!map || !name) return null;
@@ -1395,18 +1397,18 @@
     return null;
   }
 
-  // Statistical Region · District rollup for Panel B2 tabulated summary.
+  // Confederacy · Province rollup for Panel B2 tabulated summary.
   // Traverses every worldPoints thesis and joins the scholar to a paternal
-  // (falling back to maternal) district via scholarProfilesByName, then
-  // groups by region. Scholars with no matched profile / no district
+  // (falling back to maternal) province via scholarProfilesByName, then
+  // groups by confederacy. Scholars with no matched profile / no province
   // are counted separately as "Unmatched" so no thesis is silently dropped.
   function buildB2ConfederacyRollup() {
-    // Statistical Region order matches the approved Panel B2 mockup.
-    const CONF_ORDER = ['Apia Urban Area', 'Rest of Upolu', 'North West Upolu'];
+    // Confederacy order matches the approved Panel B2 mockup.
+    const CONF_ORDER = ["Apia Urban Area",'North West Upolu',"Rest of Upolu","Savaii"];
     const grad = state.graduateStudies || { worldPoints: [] };
     const points = grad.worldPoints || [];
 
-    const provAgg = new Map();      // district name -> { masters, phd, conf }
+    const provAgg = new Map();      // province name -> { masters, phd, conf }
     const confAgg = new Map();      // conf name -> { masters, phd }
     CONF_ORDER.forEach(c => confAgg.set(c, { masters: 0, phd: 0 }));
     let unmatchedM = 0, unmatchedP = 0, unmatchedU = 0;
@@ -1432,9 +1434,9 @@
           else totalU += 1;
 
           const profile = b2LookupScholarProfile(nm);
-          const district = profile ? effectivePaternalProvince(profile) : '';
-          const conf = district ? DISTRICT_TO_REGION[district] : '';
-          if (!district || !conf) {
+          const province = profile ? effectivePaternalProvince(profile) : '';
+          const conf = province ? PROVINCE_TO_CONFEDERACY[province] : '';
+          if (!province || !conf) {
             if (g.kind === 'masters') unmatchedM += 1;
             else if (g.kind === 'phd') unmatchedP += 1;
             else unmatchedU += 1;
@@ -1447,7 +1449,7 @@
               if (g.kind === 'masters') c.masters += 1;
               else c.phd += 1;
             }
-            addToProv(district, conf, g.kind);
+            addToProv(province, conf, g.kind);
           }
         });
       });
@@ -1482,8 +1484,8 @@
     const { confRows, provRows, totals } = buildB2ConfederacyRollup();
     const parts = [];
 
-    // "BY STATISTICAL REGION" label is appended with running totals for the
-    // 3 statistical regions only (untagged is called out separately below).
+    // "BY CONFEDERACY" label is appended with running totals for the
+    // 3 confederacies only (untagged is called out separately below).
     // Order: Total | Masters | PhD, separated by | signs, per Ron's
     // instruction. Numbers refresh automatically because the label is
     // rebuilt on every render from confRows.
@@ -1504,8 +1506,8 @@
       '</div>'
     );
 
-    // Single white card holds all three statistical region rows + the
-    // Untagged row + the legend. Statistical Regions are sorted descending
+    // Single white card holds all three confederacy rows + the
+    // Untagged row + the legend. Confederacies are sorted descending
     // by total (Masters + PhD) so the largest is always on top; ties
     // break alphabetically.
     parts.push('<div class="db-world-conf-list__conf-card">');
@@ -1539,9 +1541,9 @@
     });
 
     // 4th row: Untagged theses (unmatched to a paternal/maternal
-    // district, and therefore to a region). Same visual pattern
-    // as the statistical region rows so Ron sees at a glance how many theses
-    // still need district data on the Scholars sheet. This row is
+    // province, and therefore to a confederacy). Same visual pattern
+    // as the confederacy rows so Ron sees at a glance how many theses
+    // still need province data on the Scholars sheet. This row is
     // ALWAYS shown — even when zero — so its absence never gets
     // mistaken for perfect coverage.
     const untaggedM = totals.unmatchedMasters || 0;
@@ -1577,9 +1579,9 @@
       '</div>'
     );
     parts.push('</div>');
-    parts.push('<div class="db-world-conf-list__prov-label">By District · descending by total</div>');
+    parts.push('<div class="db-world-conf-list__prov-label">By Province · descending by total</div>');
     if (provRows.length === 0) {
-      parts.push('<p class="db-conf-narrative">No districts matched yet.</p>');
+      parts.push('<p class="db-conf-narrative">No provinces matched yet.</p>');
     } else {
       parts.push('<div class="db-world-conf-list__prov-grid">');
       provRows.forEach(r => {
@@ -1601,7 +1603,7 @@
     }
 
     // Note only calls out non-Masters/PhD higher-degree theses now
-    // that the Untagged row surfaces missing-district Masters/PhD
+    // that the Untagged row surfaces missing-province Masters/PhD
     // theses visually. Coverage-grows reminder stays because it
     // tells Ron how to shrink the Untagged bar over time.
     const other = totals.other;
@@ -1610,12 +1612,31 @@
         '<p class="db-world-conf-list__note">' +
           '<b>Note.</b> ' +
           `${other} other higher-degree ${other === 1 ? 'thesis is' : 'theses are'} not included in the Masters/PhD tally. ` +
-          'The Untagged row shrinks as village and district fields are completed on the Scholars sheet.' +
+          'The Untagged row shrinks as village and province fields are completed on the Scholars sheet.' +
         '</p>'
       );
     }
 
     host.innerHTML = parts.join('');
+  }
+
+  function renderWorldPanelClanView(host) {
+    const counts = new Map(CLANS.map(name => [name, { masters: 0, phd: 0 }]));
+    const grad = state.graduateStudies || { worldPoints: [] };
+    (grad.worldPoints || []).forEach(point => {
+      [['masters', point.mastersScholars || []], ['phd', point.phdScholars || []]].forEach(([kind, names]) => {
+        names.forEach(name => {
+          const profile = b2LookupScholarProfile(name);
+          const clan = paternalClan(profile);
+          if (counts.has(clan)) counts.get(clan)[kind]++;
+        });
+      });
+    });
+    const html = CLANS.map((name, i) => {
+      const c = counts.get(name);
+      return `<div class="db-world-conf-list__prov-row"><span class="db-world-conf-list__prov-swatch" style="background:${clanColor(i)}"></span><span class="db-world-conf-list__prov-name">${escapeHtml(name)}</span><span class="db-world-conf-list__counts"><b>M</b> ${c.masters}<span class="pipe"></span><b>PhD</b> ${c.phd}<span class="pipe"></span><span class="db-world-total">Total ${c.masters + c.phd}</span></span></div>`;
+    }).join('');
+    host.innerHTML = '<div class="db-world-conf-list__prov-label">Completed degrees by paternal ʻāiga</div><div class="db-world-conf-list__prov-grid">' + html + '</div>';
   }
 
   function applyWorldListView() {
@@ -1629,11 +1650,24 @@
       btn.setAttribute('aria-selected', on ? 'true' : 'false');
       btn.tabIndex = on ? 0 : -1;
     });
+    // By Region view (shared Panel B2 table, Oct 2026).
+    const regionHost = window.B2StudyTable ? window.B2StudyTable.regionHost(listView) : null;
+    if (regionHost) regionHost.style.display = view === 'region' ? '' : 'none';
+    if (view === 'region') {
+      ['[data-world-search-wrap]', '[data-world-country-list]', '[data-world-narrative]', '[data-world-confederacy-list]', '[data-world-empty]']
+        .forEach(sel => { const el = listView.querySelector(sel); if (el) el.style.display = 'none'; });
+      const titleR = listView.querySelector('[data-world-list-title]');
+      const explainR = listView.querySelector('[data-world-list-explain]');
+      if (titleR) titleR.textContent = 'Regions of Samoan graduate study';
+      if (explainR) explainR.textContent = 'Completed Masters and PhD degrees grouped by world region. Click a region to list its countries, then click a country to zoom the map and filter Panels F and G.';
+      if (regionHost) window.B2StudyTable.renderRegions(regionHost, state._b2Countries || [], state._b2Points || [], { selected: state.worldSelectedCountry, onSelect: name => selectWorldCountry(name) });
+      return;
+    }
     const searchWrap = listView.querySelector('[data-world-search-wrap]');
     const countryList = listView.querySelector('[data-world-country-list]');
     const emptyEl = listView.querySelector('[data-world-empty]');
     const narrEl = listView.querySelector('[data-world-narrative]');
-    const confHost = listView.querySelector('[data-world-region-list]');
+    const confHost = listView.querySelector('[data-world-confederacy-list]');
     const titleEl = listView.querySelector('[data-world-list-title]');
     const explainEl = listView.querySelector('[data-world-list-explain]');
     const showCountry = view === 'country';
@@ -1644,11 +1678,12 @@
     if (emptyEl && !showCountry) emptyEl.style.display = 'none';
     if (titleEl) titleEl.textContent = showCountry
       ? 'Countries of Samoan graduate study'
-      : 'Samoan graduates by Statistical Region · District';
+      : view === 'clan' ? 'Samoan graduates by ʻāiga' : 'Samoan graduates by Statistical Region · District';
     if (explainEl) explainEl.textContent = showCountry
       ? 'Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.'
-      : 'Masters and PhD theses grouped by the scholar’s chiefly Statistical Region (North West Upolu, Apia Urban Area, Rest of Upolu), then broken down by home District in descending order by total.';
-    if (!showCountry && confHost) renderWorldPanelConfederacyView(confHost);
+      : view === 'clan' ? 'Completed Masters and PhD degrees grouped by the scholar’s recorded paternal ʻāiga.'
+      : 'Masters and PhD theses grouped by the scholar’s home Statistical Region (Apia Urban Area, North West Upolu, Rest of Upolu, Savaii), then broken down by home District in descending order by total.';
+    if (!showCountry && confHost) { if (view === 'clan') renderWorldPanelClanView(confHost); else renderWorldPanelConfederacyView(confHost); }
   }
 
   function bindWorldListTabs() {
@@ -1850,47 +1885,10 @@
     const emptyEl = document.querySelector('[data-world-empty]');
     if (emptyEl) emptyEl.style.display = (displayCountries.length === 0) ? '' : 'none';
 
-    displayCountries.forEach(c => {
-      const row = document.createElement('div');
-      row.className = 'db-world-country-row';
-      if (state.worldSelectedCountry === c.name) row.classList.add('is-filter-active');
-      // Country name is a real button so it stays keyboard-focusable and
-      // announces as interactive; the university count sits OUTSIDE the
-      // button so it isn't underlined and doesn't get read as part of the
-      // filter action's label.
-      const nameWrap = document.createElement('span');
-      nameWrap.className = 'db-world-country-row__name-wrap';
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.className = 'db-world-country-row__name';
-      btn.textContent = c.name;
-      btn.setAttribute('aria-label', 'Filter panels below by ' + c.name);
-      btn.addEventListener('click', () => selectWorldCountry(c.name));
-      nameWrap.appendChild(btn);
-      // University count in parentheses next to the country name.
-      // Number of unique universities the pipeline has for this country
-      // (each entry in c.unis is one distinct university leaf under the
-      // Zotero Thesis root). Rendered on every draw so it stays in sync
-      // with the 3-hour Zotero refresh / force sync.
-      const uniN = Array.isArray(c.unis) ? c.unis.length : 0;
-      const uniCount = document.createElement('span');
-      uniCount.className = 'db-world-country-row__uni-count';
-      // Gap between the name and the paren is handled by CSS margin-left
-      // (see .db-world-country-row__uni-count) so it survives inline-flex
-      // whitespace collapsing.
-      uniCount.textContent = `(${uniN})`;
-      uniCount.setAttribute('aria-label', `${uniN} ${uniN === 1 ? 'university' : 'universities'}`);
-      nameWrap.appendChild(uniCount);
-      row.appendChild(nameWrap);
-      const counts = document.createElement('span');
-      counts.className = 'db-world-country-row__counts';
-      counts.innerHTML =
-        `<b>Masters</b> ${c.masters} ` +
-        `<span class="pipe"></span> <b>PhD</b> ${c.phd} ` +
-        `<span class="pipe"></span> <span class="db-world-total">Total ${c.total}</span>`;
-      row.appendChild(counts);
-      listHost.appendChild(row);
-    });
+    // Shared two-column sortable table (js/b2-study-table.js).
+    if (window.B2StudyTable) {
+      window.B2StudyTable.renderCountries(listHost, displayCountries, { selected: state.worldSelectedCountry, onSelect: name => selectWorldCountry(name) });
+    }
 
     // Global totals for both the summary sentence below the panel AND the
     // Panel B2 title suffix. Kept as one computation so the two never drift.
@@ -1913,7 +1911,7 @@
     // -----------------------------------------------------------------
     // Panel B2 KPI tiles — 5 solid-fill tiles matching the A1/A2 family.
     // Numbers are always the full-database totals, regardless of
-    // country/university/statistical region/district selection. Ron's July 2026
+    // country/university/confederacy/province selection. Ron's July 2026
     // call: keep the tiles stable so they read as a global summary of the
     // whole indexed database, not a filter-follower.
     //
@@ -1929,7 +1927,7 @@
     // three name arrays — mastersScholars, phdScholars, unknownScholars — so
     // a scholar with both a Masters and a PhD, or two theses at the same
     // university, is counted once. Names are trimmed to avoid whitespace-only
-    // duplicates. This is the count of Samoan graduates represented on the
+    // duplicates. This is the count of iTaukei graduates represented on the
     // world map (matches graduate-studies totals.scholars in the pipeline).
     const scholarNames = new Set();
     for (const p of points) {
@@ -1957,8 +1955,16 @@
       if (numEl) numEl.textContent = String(value);
     });
 
-    // Apply the active list view (country vs region). This shows/hides
-    // the country list + search vs the statistical region rollup, and re-renders the
+    // Panel B2 table tallies (same full-database figures as the KPI tiles).
+    state._b2Countries = countries;
+    state._b2Points = points;
+    if (window.B2StudyTable) {
+      const kp = Object.fromEntries(kpiPairs);
+      window.B2StudyTable.setTallies(listView, { scholars: kp.scholars, masters: kp.masters, phd: kp.phd });
+    }
+
+    // Apply the active list view (country vs confederacy). This shows/hides
+    // the country list + search vs the confederacy rollup, and re-renders the
     // rollup so it reflects the latest scholarProfilesByName state.
     applyWorldListView();
   }
@@ -1974,19 +1980,19 @@
   // the map shows exactly ONE world copy (no wrap duplication). Latitude
   // band [-58, 62] keeps NZ and Iceland in frame while cropping the empty
   // polar caps; longitude band [30, 290] spans Africa east coast through
-  // the Pacific to USA east coast, keeping Samoa (178°E) near center. To
+  // the Pacific to USA east coast, keeping Fiji (178°E) near center. To
   // avoid Leaflet drawing duplicate marker copies, we stay under 360°.
   const WORLD_MAP_FS_FIT_BOUNDS = [[-58, 30], [62, 290]];
 
   // -------- World-filter helpers --------
   // When a country or university is clicked in Panel B2, we filter every
   // downstream data panel (B1, C1, C2, D, E, F, G) to only items authored by
-  // Samoan scholars whose graduate work took place in that country/uni.
+  // iTaukei scholars whose graduate work took place in that country/uni.
   //
   // `worldFilteredScholarSet()` returns the Set of scholar names to keep, or
   // `null` when no filter is active. `worldFilterItems(items)` narrows an
   // item array using state.scholarByItem lookups. Item retained when any of
-  // the item's tagged Samoan scholars is in the active-scholar set.
+  // the item's tagged iTaukei scholars is in the active-scholar set.
   function worldFilteredScholarSet() {
     const country = state.worldSelectedCountry;
     const uni = state.worldSelectedUniversity;
@@ -2033,8 +2039,8 @@
     const c = state.worldSelectedCountry;
     const u = state.worldSelectedUniversity;
     const worldActive = !!(c || u);
-    // Scholar-panel filter (name, keyword, sector, discipline, region,
-    // district, country/uni of study or work) also narrows Panel G below.
+    // Scholar-panel filter (name, keyword, sector, discipline, confederacy,
+    // province, country/uni of study or work) also narrows Panel G below.
     let scholarActive = false;
     try { scholarActive = anyScholarFilterActive && anyScholarFilterActive(); } catch (e) {}
     const active = worldActive || !!scholarActive;
@@ -2283,7 +2289,7 @@
     // Populated dynamically by the mouseover handler when a name is hovered.
     // Scholar sections live inside a bounded, scrollable container so the
     // popup stays compact even for countries with hundreds of scholars
-    // (Samoa, USP). The detail slot sits ABOVE the scroll container so it
+    // (Fiji, USP). The detail slot sits ABOVE the scroll container so it
     // remains visible regardless of scroll position.
     // Count row: fixed-size number + fixed-size sentence.
     // Number is a flex item, sentence wraps to 2 lines beside it. As digits
@@ -2402,7 +2408,7 @@
   // the map popup's inline detail slot AND the floating hover card that the
   // uni-detail scholar table shows. Format (Ron 2026-08-25):
   //   First Last (PhD): 2021
-  //   Naduri vlg, Macuata District.       [terracotta — paternal geography]
+  //   Naduri vlg, Macuata Province.       [terracotta — paternal geography]
   //   Thesis title in italics
   // Returns '' when we have nothing useful to show.
   function renderScholarDetailHTML(nm, point, sectionLevel) {
@@ -2416,10 +2422,10 @@
     // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
     const village  = (profile.paternalVillage  || '').trim();
     const island   = (profile.paternalIsland   || '').trim();
-    const district = (profile.paternalDistrict || '').trim();
+    const province = (profile.paternalProvince || '').trim();
     const slug     = (profile.slug || '').trim();
     let villageLine = '';
-    const geoLabel = formatScholarGeography(village, island, district);
+    const geoLabel = formatScholarGeography(village, island, province);
     if (geoLabel) {
       const label = escapeHtml(geoLabel);
       villageLine = slug
@@ -2582,7 +2588,7 @@
   }
 
   // If a popup extends past any edge of the map viewport (typically the top,
-  // for tall Samoa popups; or the right, when the marker sits near the
+  // for tall Fiji popups; or the right, when the marker sits near the
   // antimeridian), pan the map by exactly the overflow amount so every edge
   // of the popup sits inside the map with a small margin. Leaflet's built-in
   // autoPan handles small overflows but is unreliable for tall popups on the
@@ -2661,27 +2667,81 @@
     return x;
   }
 
+  // Frame dropdown selections to the marker copies actually rendered on the
+  // map. Using the current viewport centre to normalize longitude can select
+  // an adjacent wrapped copy of a country/region where no scholar markers
+  // exist, leaving a large empty map after filtering.
+  function _renderedWorldLatLngs(predicate) {
+    if (!state.worldLayer || !state.worldLayer.getLayers) return [];
+    return state.worldLayer.getLayers()
+      .filter(l => l && l._worldPoint && l._worldHome && predicate(l._worldPoint))
+      .map(l => [l._worldHome[0], l._worldHome[1]]);
+  }
+
   function zoomToWorldCountry(name) {
-    const grad = state.graduateStudies || { worldPoints: [] };
-    const pts = (grad.worldPoints || []).filter(p => p.country === name);
-    if (!pts.length || !state.worldMap) return;
-    // maxZoom bumped to 8 so country-level zoom actually shows the country,
-    // not the whole region (typing "Samoa" used to leave AU + NZ in frame).
-    // Longitudes normalized to the visible world-wrap so North American
-    // countries don't frame the empty left-hand copy of the map.
-    const latlngs = pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]);
+    if (!state.worldMap) return;
+    let latlngs = _renderedWorldLatLngs(p => p.country === name);
+    if (!latlngs.length) {
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const pts = (grad.worldPoints || []).filter(p => p.country === name);
+      const anchor = state.worldMapFullscreen ? 140 : state.worldMap.getCenter().lng;
+      const wrapToAnchor = lng => {
+        const candidates = [lng - 360, lng, lng + 360];
+        return candidates.reduce((best, x) =>
+          Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
+      };
+      latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+    }
+    if (!latlngs.length) return;
     if (latlngs.length === 1) {
       state.worldMap.setView(latlngs[0], 7, { animate: true });
     } else {
-      const bounds = L.latLngBounds(latlngs);
-      state.worldMap.fitBounds(bounds, { padding: [60, 60], maxZoom: 8, animate: true });
+      state.worldMap.fitBounds(L.latLngBounds(latlngs), {
+        padding: [60, 60], maxZoom: 8, animate: true
+      });
     }
   }
   function zoomToWorldUniversity(uniName) {
+    if (!state.worldMap) return;
+    const rendered = _renderedWorldLatLngs(p => p.university === uniName);
+    if (rendered.length) {
+      const grad = state.graduateStudies || { worldPoints: [] };
+      const p = (grad.worldPoints || []).find(x => x.university === uniName);
+      state.worldMap.setView(rendered[0], p ? (8) : 8, { animate: true });
+      return;
+    }
     const grad = state.graduateStudies || { worldPoints: [] };
     const p = (grad.worldPoints || []).find(x => x.university === uniName);
-    if (!p || !state.worldMap) return;
-    state.worldMap.setView([p.lat, _normLngForWorldMap(p.lng)], 8, { animate: true });
+    if (!p || !Number.isFinite(p.lat) || !Number.isFinite(p.lng)) return;
+    const anchor = state.worldMapFullscreen ? 140 : state.worldMap.getCenter().lng;
+    const candidates = [p.lng - 360, p.lng, p.lng + 360];
+    const lng = candidates.reduce((best, x) =>
+      Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, p.lng);
+    state.worldMap.setView([p.lat, lng], 8, { animate: true });
+  }
+
+  // Search must use the displayed marker, including its wrapped world copy.
+  // Match institution identity rather than coordinates: nearby universities
+  // can share coordinates, and the overlap layout can move a marker.
+  function worldMarkerForPoint(point) {
+    const layers = state.worldLayer && state.worldLayer.getLayers
+      ? state.worldLayer.getLayers() : [];
+    return layers.find(layer => {
+      const p = layer._worldPoint;
+      return p && p.university === point.university && p.country === point.country;
+    });
+  }
+
+  function worldSearchLatLng(point) {
+    const marker = worldMarkerForPoint(point);
+    if (marker) return marker.getLatLng();
+    // Before rendering, use the same fixed wrap anchor as renderWorldMap.
+    let lng = point.lng;
+    if (state.worldMapFullscreen) {
+      while (lng - 140 > 180) lng -= 360;
+      while (lng - 140 < -180) lng += 360;
+    }
+    return [point.lat, lng];
   }
 
   function wireWorldPanel() {
@@ -2844,10 +2904,10 @@
 
       if (matches.length === 1) {
         const p = matches[0];
-        m.setView([p.lat, p.lng], 7, { animate: true });
+        m.setView(worldSearchLatLng(p), 7, { animate: true });
         setTimeout(() => openMarkerPopupAt(m, p), 320);
       } else {
-        const bounds = L.latLngBounds(matches.map(p => [p.lat, p.lng]));
+        const bounds = L.latLngBounds(matches.map(worldSearchLatLng));
         m.fitBounds(bounds, { padding: [60, 60], maxZoom: 6, animate: true });
       }
     }
@@ -2855,18 +2915,10 @@
     // Find and open the popup for the circle marker at a given point, then
     // return the popup DOM node once it's rendered.
     function openMarkerPopupAt(m, p, cb) {
-      let opened = false;
-      m.eachLayer(layer => {
-        if (opened) return;
-        if (layer && layer.getLatLng && layer.getPopup) {
-          const ll = layer.getLatLng();
-          if (Math.abs(ll.lat - p.lat) < 1e-4 && Math.abs(ll.lng - p.lng) < 1e-4) {
-            layer.openPopup();
-            opened = true;
-            if (cb) setTimeout(() => cb(layer.getPopup().getElement()), 120);
-          }
-        }
-      });
+      const marker = worldMarkerForPoint(p);
+      if (!marker || !marker.getPopup()) return;
+      marker.openPopup();
+      if (cb) setTimeout(() => cb(marker.getPopup().getElement()), 120);
     }
 
     // Zoom to a point, open its popup, then dispatch mouseenter on the
@@ -2877,7 +2929,7 @@
     // scholar has multiple degrees at the same university.
     function zoomAndPreselect(m, point, scholarName, preferredLevel) {
       state.preselectPreferredLevel = preferredLevel || null;
-      m.setView([point.lat, point.lng], 6, { animate: true });
+      m.setView(worldSearchLatLng(point), 6, { animate: true });
       setTimeout(() => {
         openMarkerPopupAt(m, point, (popupEl) => {
           if (!popupEl) return;
@@ -2911,7 +2963,7 @@
     // row per canonical scholar. Each row shows the shortened name plus a
     // "(N)" degree-count badge when the scholar has multiple degrees; on
     // hover, a side panel expands to the right of the row listing those
-    // degrees as clickable buttons formatted "Master's: Samoa" (colon
+    // degrees as clickable buttons formatted "Master's: Fiji" (colon
     // separator). Rows with only one degree pick that degree on direct
     // click — no expansion needed.
     //
@@ -2972,7 +3024,7 @@
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = 'db-map-fs-search-dd__degree';
-          // Format: "Master's: Samoa" or "PhD: Australia" — colon separator.
+          // Format: "Master's: Fiji" or "PhD: Australia" — colon separator.
           btn.textContent = `${h.level}: ${h.point.country}`;
           btn.title = `${h.point.university} (${h.point.country})`;
           btn.addEventListener('click', (ev) => {
@@ -3105,12 +3157,12 @@
   }
 
   // Initialise the Panel A2 world map — a *separate* Leaflet instance from
-  // the Samoa choropleth. Uses the same Esri World Imagery basemap.
+  // the Fiji choropleth. Uses the same Esri World Imagery basemap.
   function initWorldMap() {
     const el = document.getElementById('db-map-world');
     if (!el || typeof L === 'undefined') return;
     // maxBounds is padded ~30° east/west of the true world edges so Leaflet's
-    // autoPan (used to keep large popups in view for Samoa, NZ, USA-west, etc.)
+    // autoPan (used to keep large popups in view for Fiji, NZ, USA-west, etc.)
     // has room to nudge the viewport without slamming against a hard wall.
     // The tile layer itself still uses noWrap:true + strict bounds, so the
     // map never appears duplicated.
@@ -3159,7 +3211,7 @@
     // interior) and lift the boxed-world constraints so Google's tiles
     // wrap seamlessly across the antimeridian — the user can drag left
     // or right and the map keeps going instead of hitting a wall or
-    // slicing Samoa. We also re-render the marker layer with duplicate
+    // slicing Fiji. We also re-render the marker layer with duplicate
     // copies at ±360° longitude so dots appear in every world copy.
     // Draw-a-rectangle-to-zoom was removed in favor of the fullscreen search box.
     wireMapFullscreen('[data-db-map-world-wrap]', '[data-db-map-fs-btn]', () => state.worldMap, {
@@ -3171,7 +3223,7 @@
         // (noWrap:false) so panning slightly beyond an edge doesn't leave
         // a blank backdrop, but we no longer allow the user to drag into
         // a second full world copy — which is what caused the duplicated
-        // Samoa / Sydney markers off the coasts of West Africa and
+        // Fiji / Sydney markers off the coasts of West Africa and
         // Central America. maxBoundsViscosity keeps the pan snappy.
         // Removed maxBounds in fullscreen — with a tight 260° lng window
         // and 170° lat window, Leaflet snaps zoom-out to fit both
@@ -3194,9 +3246,9 @@
         // where the world is only 512px wide, causing wrapped tiles to
         // paint ghost markers off West Africa (the wraparound bug we
         // shipped v12 to fix). Zoom 2 renders one clean world copy
-        // 1024px wide and 512px tall, centered on Samoa at 160°E.
+        // 1024px wide and 512px tall, centered on Fiji at 160°E.
         // Ron's preferred default: centre near 80°E at zoom 3 so Europe
-        // (Iceland/UK/Portugal) sits on the left, Samoa cluster sits
+        // (Iceland/UK/Portugal) sits on the left, Fiji cluster sits
         // centre-right, and the Pacific expanse on the right leaves room
         // for the wrapped Hawai‘i / US-mainland markers to appear when
         // the user pans east. Fills the whole viewport at 1500×900+.
@@ -3226,7 +3278,7 @@
         e.stopPropagation();
         const m = state.worldMap; if (!m) return;
         m.closePopup();
-        // Clear every fullscreen filter (region, district, sector,
+        // Clear every fullscreen filter (confederacy, province, sector,
         // work country, work institution) so Reset truly returns the map
         // to its clean-slate default.
         state.worldConfFilter = null;
@@ -3239,7 +3291,7 @@
         // subset the last search zoomed to.
         state.worldSearchScope = null;
         // Also empty the fullscreen search input so the visible box
-        // matches the cleared scope (otherwise "Samoa" would sit stale
+        // matches the cleared scope (otherwise "Fiji" would sit stale
         // in the box after Reset).
         const fsInput = document.querySelector('[data-db-map-fs-search]');
         if (fsInput) fsInput.value = '';
@@ -3250,7 +3302,7 @@
         renderWorldMap();
         try { refreshConfDropdownUi(); refreshSectorDropdownUi(); refreshWorkDropdownUi(); } catch (_) {}
         // Region dropdown lives inside the same fullscreen toolbar init as
-        // the statistical region dropdown — refresh its label/selection UI when
+        // the confederacy dropdown — refresh its label/selection UI when
         // Reset nukes the scope so the pill returns to "All regions".
         try {
           const rWrap = document.querySelector('[data-db-map-fs-region]');
@@ -3477,19 +3529,11 @@
   // opening the fullscreen "All institutions of work" dropdown.
   state.worldMode          = state.worldMode          || 'study';
 
-  // District → statistical region lookup (14 Samoan districts + Rotuma). Ra is in
-  // Apia Urban Area; Rotuma is North West Upolu-adjacent but historically listed under North West Upolu
-  // in the dashboard's statistical region tallies.
-  // District→Region lookup is hydrated at runtime from
-  // bundle.geo.politicalDistrictToRegion (Master Sheet Region-District
-  // Lookup). Do NOT hardcode district→region pairs here - single source
-  // of truth is the sheet.
-  let DISTRICT_TO_REGION = {};
-  function _hydrateDistrictToRegion(bundle) {
-    if (bundle && bundle.geo && bundle.geo.politicalDistrictToRegion) {
-      DISTRICT_TO_REGION = Object.assign({}, bundle.geo.politicalDistrictToRegion);
-    }
-  }
+  // District → Island Division lookup (23 Samoa districts, 2021 Census /
+  // Samoa Statistics Department). Samoa's official hierarchy has 5 Island
+  // Divisions; "Confederacy" is a Fijian-specific concept and is never
+  // used here.
+  const PROVINCE_TO_CONFEDERACY = {"Vaimauga 2":     'Apia Urban Area',"Vaimauga 3":    'Apia Urban Area','Vaimauga 4':         'Apia Urban Area','Faleata 1': 'Apia Urban Area','Vaimauga 1':        'North West Upolu','Faleata 2':      'North West Upolu','Faleata 3':       'North West Upolu','Faleata 4':        "North West Upolu",'Sagaga 1':    "North West Upolu",'Sagaga 2':        "North West Upolu","Sagaga 3":     "North West Upolu",'Sagaga 4':        "North West Upolu",'Aana Alofi 1':          "North West Upolu",'Aana Alofi 2':        "North West Upolu",'Aana alofi 3':           "North West Upolu",'Aana Alofi 4':       "North West Upolu","Aiga i le Tai":      "Rest of Upolu","Falelatai & Samatau":        "Rest of Upolu","Lefaga & Faleaseela":         "Rest of Upolu","Safata 1":   "Rest of Upolu","Safata 2":    "Rest of Upolu",'Siumu':  'Rest of Upolu',"Falealili 1":     'Rest of Upolu',"Falealili 2":     'Rest of Upolu',"Lotofaga":    'Rest of Upolu','Lepa':         'Rest of Upolu','Aleipata Itupa i Luga': 'Rest of Upolu','Aleipata Itupa i Lalo':        'Rest of Upolu','Vaa o Fonoti':      'Rest of Upolu','Anoamaa 1':       'Rest of Upolu','Anoamaa 2':        "Rest of Upolu",'Faasaleleaga 1':    "Savaii",'Faasaleleaga 2':        "Savaii","Faasaleleaga 3":     "Savaii",'Faasaleleaga 4':        "Savaii",'Faasaleleaga 5':          "Savaii",'Gagaemauga 1':        "Savaii",'Gagaemauga 2':           "Savaii",'Gagaifomauga 1':       "Savaii","Gagaifomauga 2":      "Savaii","Gagaifomauga 3":        "Savaii","Vaisigano 1":         "Savaii","Vaisigano 2":   "Savaii","Falealupo":    "Savaii",'Alataua i Sisifo':  'Savaii',"Salega 1":     'Savaii',"Salega 2":     'Savaii',"Palauli 1":    'Savaii','Palauli 2':         'Savaii','Satupaitea': 'Savaii','Palauli 3':        'Savaii'};
 
   // Alias-aware scholar-name → profile lookup. worldPoints store scholar
   // names in "First Last" order, while state.scholarProfilesByName is keyed
@@ -3540,21 +3584,21 @@
     return null;
   }
 
-  // Statistical Region for a scholar name (uses paternalDistrict, then maternalDistrict).
-  // Profile.region may be the literal string 'Unclassified' — treat that
-  // as "not set" so the district → statistical region fallback still fires.
+  // Confederacy for a scholar name (uses paternalProvince, then maternalProvince).
+  // Profile.confederacy may be the literal string 'Unclassified' — treat that
+  // as "not set" so the province → confederacy fallback still fires.
   function scholarConfProv(name) {
     const p = findProfileForScholarName(name);
-    const district = (p && (p.paternalDistrict || p.maternalDistrict) || '').trim();
-    let region = (p && p.region || '').trim();
-    if (!region || region.toLowerCase() === 'unclassified') {
-      region = DISTRICT_TO_REGION[district] || '';
+    const province = (p && (p.paternalProvince || p.maternalProvince) || '').trim();
+    let confederacy = (p && p.confederacy || '').trim();
+    if (!confederacy || confederacy.toLowerCase() === 'unclassified') {
+      confederacy = PROVINCE_TO_CONFEDERACY[province] || '';
     }
-    return { profile: p, district, region };
+    return { profile: p, province, confederacy };
   }
 
   // Return true if a scholar name passes ALL the active fullscreen filters
-  // (region, district, sector, work-country, work-institution).
+  // (confederacy, province, sector, work-country, work-institution).
   function scholarPassesWorldFilters(name) {
     const conf   = state.worldConfFilter;
     const prov   = state.worldProvFilter;
@@ -3563,10 +3607,10 @@
     const winst  = state.worldWorkInst;
     if (!conf && !prov && !sector && !wcty && !winst) return true;
 
-    const { profile, district, region } = scholarConfProv(name);
+    const { profile, province, confederacy } = scholarConfProv(name);
 
-    if (conf && region !== conf) return false;
-    if (prov && district !== prov) return false;
+    if (conf && confederacy !== conf) return false;
+    if (prov && province !== prov) return false;
     if (sector) {
       if (!profile || (profile.sector || '') !== sector) return false;
     }
@@ -3624,8 +3668,8 @@
   // Aggregate profiled scholars into one point per (country, institution).
   // Only profiles that have both `institution` and `institutionCountry`
   // contribute; unprofiled scholars are silently skipped (the coverage
-  // note in the toolbar explains the gap). Also applies the statistical region /
-  // district / sector filters so cross-filtering still works.
+  // note in the toolbar explains the gap). Also applies the confederacy /
+  // province / sector filters so cross-filtering still works.
   function buildWorkplacePoints() {
     const profiles = state.scholarProfilesByName;
     if (!profiles || !profiles.size) return [];
@@ -3646,7 +3690,7 @@
       // in the work dropdown, restrict the points to that selection.
       if (state.worldWorkCountry && country !== state.worldWorkCountry) return;
       if (state.worldWorkInst && inst !== state.worldWorkInst) return;
-      // Apply the cross-filters (statistical region / district / sector). These
+      // Apply the cross-filters (confederacy / province / sector). These
       // reuse the same predicate the Study view uses so filter behaviour
       // is consistent across modes.
       const nameFirstLast = `${p.first || ''} ${p.last || ''}`.trim();
@@ -3664,8 +3708,8 @@
     return Array.from(buckets.values());
   }
 
-  // The cross-filter predicate for Workplace mode. Runs the region,
-  // district, and sector checks against a scholar profile. Skips the
+  // The cross-filter predicate for Workplace mode. Runs the confederacy,
+  // province, and sector checks against a scholar profile. Skips the
   // work-country / work-institution filters because those are handled by
   // the workplace aggregation itself.
   function _scholarPassesCrossFilters(nameFirstLast, profile) {
@@ -3673,16 +3717,16 @@
     const prov = state.worldProvFilter;
     const sector = state.worldSectorFilter;
     if (conf) {
-      const c = (profile.region || '').trim();
+      const c = (profile.confederacy || '').trim();
       if (c !== conf) {
-        // Try inferring from district if statistical region was blank.
-        const pp = (profile.paternalDistrict || profile.maternalDistrict || '').trim();
-        if (!pp || DISTRICT_TO_REGION[pp] !== conf) return false;
+        // Try inferring from province if confederacy was blank.
+        const pp = (profile.paternalProvince || '').trim();
+        if (!pp || PROVINCE_TO_CONFEDERACY[pp] !== conf) return false;
       }
     }
     if (prov) {
-      const pp = (profile.paternalDistrict || '').trim();
-      const mp = (profile.maternalDistrict || '').trim();
+      const pp = (profile.paternalProvince || '').trim();
+      const mp = (profile.maternalProvince || '').trim();
       if (pp !== prov && mp !== prov) return false;
     }
     if (sector) {
@@ -3716,29 +3760,22 @@
 
   // -------- Workplace popup card --------
   // Matches the reference mockup uploaded 2026-07-09 (image-2 in the
-  // attachments): region -tinted top bar with the institution name,
+  // attachments): confederacy-tinted top bar with the institution name,
   // then a card per scholar showing photo + name + village line +
   // department + position. When multiple scholars share an institution
   // (rare so far but planned for SPC/USP), we stack cards separated by a
   // hairline divider inside a scrollable container so the popup stays
   // compact.
-  const _WORK_CONF_BAR = {
-    'Rest of Upolu': 'linear-gradient(90deg, #FF5A6E 0%, #c93e50 100%)',
-    'Apia Urban Area':     'linear-gradient(90deg, #4ECDE6 0%, #0891b2 100%)',
-    'North West Upolu':     'linear-gradient(90deg, #FFD84A 0%, #f7b500 100%)'
-  };
-  const _WORK_CONF_TEXT = {
-    // Apia Urban Area/Rest of Upolu bars are dark enough to carry white text; North West Upolu
+  const _WORK_CONF_BAR = {'Apia Urban Area': 'linear-gradient(90deg, #FF5A6E 0%, #c93e50 100%)',"North West Upolu":  'linear-gradient(90deg, #4ECDE6 0%, #0891b2 100%)',"Rest of Upolu": 'linear-gradient(90deg, #FFD84A 0%, #f7b500 100%)',"Savaii":    'linear-gradient(90deg, #6FCF97 0%, #2f9e5c 100%)'};
+  const _WORK_CONF_TEXT = {// Apia Urban Area / North West Upolu / Rest of Upolu / Savaii bars are dark enough to carry white
+    // text; Apia Urban Area
     // (bright yellow) needs near-black for AA contrast.
-    'Rest of Upolu': '#ffffff',
-    'Apia Urban Area':     '#ffffff',
-    'North West Upolu':     '#28251D'
-  };
+    'Apia Urban Area': '#ffffff',"North West Upolu":  '#ffffff',"Rest of Upolu": '#28251D',"Savaii":    '#ffffff'};
 
   function _workplaceProvinceForProfile(p) {
-    // Identity district is strictly paternal. See
+    // Identity province is strictly paternal. See
     // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
-    return (p.paternalDistrict || '').trim();
+    return (p.paternalProvince || '').trim();
   }
 
   function _workplaceVillageLine(p) {
@@ -3746,18 +3783,18 @@
     // See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
     const village = (p.paternalVillage || '').trim();
     const island  = (p.paternalIsland  || '').trim();
-    const pat = (p.paternalDistrict || '').trim();
-    const mat = (p.maternalDistrict || '').trim();
-    // V2 canonical primary line: 'Naroi vlg (Moala Is), Lau District.' or
-    // 'Naduri vlg, Macuata District.' (Viti/Vanua Levu suppressed). See
+    const pat = (p.paternalProvince || '').trim();
+    const mat = (p.maternalProvince || '').trim();
+    // V2 canonical primary line: 'Naroi vlg (Moala Is), Lau Province.' or
+    // 'Naduri vlg, Macuata Province.' (Viti/Vanua Levu suppressed). See
     // formatScholarGeography() near the top of this file for the full spec.
     const patMerged = formatScholarGeography(village, island, pat);
-    // Second-line maternal-side note when maternal district differs from
-    // paternal. We keep the statistical region tag on the maternal note so a
-    // mixed-heritage scholar still surfaces the maternal region.
+    // Second-line maternal-side note when maternal province differs from
+    // paternal. We keep the confederacy tag on the maternal note so a
+    // mixed-heritage scholar still surfaces the maternal confederacy.
     let matNote = '';
     if (mat && mat !== pat) {
-      const mconf = DISTRICT_TO_REGION[mat] || '';
+      const mconf = PROVINCE_TO_CONFEDERACY[mat] || '';
       matNote = mconf ? `maternal: ${mat} \u2013 ${mconf}` : `maternal: ${mat}`;
     }
     return { primary: patMerged, maternal: matNote };
@@ -3768,16 +3805,16 @@
     const total = scholars.length;
     const country = escapeHtml(point.country || '');
     const inst = escapeHtml(point.institution || '');
-    // Header/bar colour: use the majority-statistical region tint at the
+    // Header/bar colour: use the majority-confederacy tint at the
     // institution. Ties fall back to the neutral teal.
-    const confTally = { 'Rest of Upolu': 0, 'Apia Urban Area': 0, 'North West Upolu': 0 };
+    const confTally = {'Apia Urban Area': 0,"North West Upolu": 0,"Rest of Upolu": 0,"Savaii": 0};
     scholars.forEach(p => {
-      const c = (p.region || '').trim() || DISTRICT_TO_REGION[(p.paternalDistrict || '').trim()] || '';
+      const c = (p.confederacy || '').trim() || PROVINCE_TO_CONFEDERACY[(p.paternalProvince || '').trim()] || '';
       if (confTally[c] !== undefined) confTally[c] += 1;
     });
     let topConf = '';
     let topN = 0;
-    ['Rest of Upolu', 'Apia Urban Area', 'North West Upolu'].forEach(c => { if (confTally[c] > topN) { topConf = c; topN = confTally[c]; } });
+    ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].forEach(c => { if (confTally[c] > topN) { topConf = c; topN = confTally[c]; } });
     const bar = _WORK_CONF_BAR[topConf] || 'linear-gradient(90deg, #0e7490 0%, #062f35 100%)';
     const barText = _WORK_CONF_TEXT[topConf] || '#ffffff';
 
@@ -3791,9 +3828,9 @@
         : `<div class="db-work-popup__photo db-work-popup__photo--placeholder">${escapeHtml(((p.first || '')[0] || '') + ((p.last || '')[0] || '')).toUpperCase()}</div>`;
       const vline = _workplaceVillageLine(p);
       // Show the standard village-line only when we actually have a village.
-      // If the profile has a district but no village, mark it as “not yet
-      // added” and still show the district on a small suffix line so we
-      // never lose the statistical region context.
+      // If the profile has a province but no village, mark it as “not yet
+      // added” and still show the province on a small suffix line so we
+      // never lose the confederacy context.
       const hasVillage = !!((p.village || '').trim());
       let villageHtml;
       if (hasVillage) {
@@ -4040,7 +4077,7 @@
       return;
     }
 
-    // Where Samoan graduates study.
+    // Where iTaukei graduates study.
     // Fullscreen only: shift each marker to the wrap-copy closest to the
     // reference longitude (140°E) so Hawai‘i and US-mainland markers
     // render east of the antimeridian and are reachable by dragging the
@@ -4073,7 +4110,7 @@
       // onto a scholar name to reveal the thesis title — without the popup
       // vanishing en route or being closed by another marker's mouseover.
       // autoPan:true lets Leaflet nudge the map so the popup fits inside the
-      // viewport — critical for Samoa/NZ markers that sit near the right edge
+      // viewport — critical for Fiji/NZ markers that sit near the right edge
       // of the equator-centred world view.
       const popupOpts = {
         maxWidth: 460,
@@ -4104,7 +4141,7 @@
         wirePopupScholarHovers(el, p);
         wirePopupAutoClose(el, evt.popup, m);
         // Give autoPan a beat, then verify the popup is fully inside the map
-        // viewport. If it isn't (common for Samoa's huge popups near the map
+        // viewport. If it isn't (common for Fiji's huge popups near the map
         // edges), pan the map manually so the popup sits comfortably.
         setTimeout(() => nudgePopupIntoView(el, state.worldMap), 40);
       });
@@ -4200,7 +4237,7 @@
 
   // -------- Viewport-scoped stats + overlap-spider --------
   //
-  // When Ron types "Samoa" and hits Enter, the map zooms in but the toolbar
+  // When Ron types "Fiji" and hits Enter, the map zooms in but the toolbar
   // still says "14 Countries / 66 Universities / 308 Scholars". These
   // helpers rescope the counter to whatever is currently visible in the
   // viewport, and fan out overlapping circles so USP, FNU, and UoF are
@@ -4396,7 +4433,7 @@
   }
 
   // -------- Fullscreen dropdown UI helpers --------
-  // Rebuild the statistical region dropdown label + selection markers to reflect
+  // Rebuild the confederacy dropdown label + selection markers to reflect
   // the current filter state. Called on every filter change and on reset.
   function refreshConfDropdownUi() {
     const wrap = document.querySelector('[data-db-map-fs-conf]');
@@ -4406,7 +4443,7 @@
     const prov = state.worldProvFilter;
     if (prov && conf) label.textContent = `${conf} › ${prov}`;
     else if (conf)    label.textContent = `${conf} Statistical Region`;
-    else              label.textContent = 'All statistical regions';
+    else              label.textContent = 'All Statistical Regions';
     wrap.classList.toggle('is-filtered', !!(conf || prov));
     // Update per-row selection marks in the currently rendered lists.
     wrap.querySelectorAll('[data-conf-row]').forEach(r => {
@@ -4452,23 +4489,23 @@
     });
   }
 
-  // Compute scholar counts per statistical region and per district across the
+  // Compute scholar counts per confederacy and per province across the
   // *unfiltered* worldPoints. These populate the (N) badges next to each
-  // row in the statistical region panel. Recomputed on wire so future data
+  // row in the confederacy panel. Recomputed on wire so future data
   // updates flow through without rebuilding the dashboard.
   function computeConfederacyScholarCounts() {
-    const perConf = { 'Rest of Upolu': new Set(), 'Apia Urban Area': new Set(), 'North West Upolu': new Set(), Unclassified: new Set() };
-    const perProv = new Map(); // district -> Set of scholar names
+    const perConf = {'Apia Urban Area': new Set(),"North West Upolu": new Set(),"Rest of Upolu": new Set(),"Savaii": new Set(),Unclassified: new Set()};
+    const perProv = new Map(); // province -> Set of scholar names
     const grad = state.graduateStudies || { worldPoints: [] };
     (grad.worldPoints || []).forEach(p => {
       const names = [].concat(p.phdScholars || [], p.mastersScholars || [], p.unknownScholars || []);
       names.forEach(n => {
-        const { district, region } = scholarConfProv(n);
-        const cf = region || 'Unclassified';
+        const { province, confederacy } = scholarConfProv(n);
+        const cf = confederacy || 'Unclassified';
         if (perConf[cf]) perConf[cf].add(n); else perConf.Unclassified.add(n);
-        if (district) {
-          if (!perProv.has(district)) perProv.set(district, new Set());
-          perProv.get(district).add(n);
+        if (province) {
+          if (!perProv.has(province)) perProv.set(province, new Set());
+          perProv.get(province).add(n);
         }
       });
     });
@@ -4562,7 +4599,7 @@
       return api;
     }
 
-    // --- Statistical Region dropdown ---
+    // --- Confederacy dropdown ---
     const confWrap  = document.querySelector('[data-db-map-fs-conf]');
     const confBtn   = document.querySelector('[data-db-map-fs-conf-btn]');
     const confPanel = document.querySelector('[data-db-map-fs-conf-panel]');
@@ -4575,9 +4612,10 @@
       if (!confList) return;
       const { confCounts } = computeConfederacyScholarCounts();
       const rows = [];
-      // "All statistical regions" reset row at top.
-      rows.push({ key: '', label: 'All statistical regions', count: null, hasChildren: false });
-      ['Rest of Upolu', 'Apia Urban Area', 'North West Upolu'].forEach(cf => {
+      // "All Statistical Regions" reset row at top. This Samoa-specific public
+      // wording must never regress to the cloned Fiji label "confederacies".
+      rows.push({ key: '', label: 'All Statistical Regions', count: null, hasChildren: false });
+      ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].forEach(cf => {
         rows.push({ key: cf, label: cf, count: confCounts[cf] || 0, hasChildren: true });
       });
       const unc = confCounts['Unclassified'] || 0;
@@ -4603,23 +4641,23 @@
           if (!key) confDd && confDd.close();
         });
       });
-      // Initial district column: reflect current selection.
-      renderProvList(state.worldConfFilter || 'Rest of Upolu');
+      // Initial province column: reflect current selection.
+      renderProvList(state.worldConfFilter || 'Apia Urban Area');
     }
 
     function renderProvList(confKey) {
       if (!provList || !provTitle) return;
       if (!confKey || confKey === 'Unclassified') {
-        provTitle.textContent = confKey === 'Unclassified' ? 'Unclassified' : 'Districts';
+        provTitle.textContent = confKey === 'Unclassified' ? 'Unclassified' : 'Provinces';
         provList.innerHTML = confKey === 'Unclassified'
-          ? '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">No district data available.</div>'
-          : '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">Hover a statistical region to see its districts.</div>';
+          ? '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">No province data available.</div>'
+          : '<div style="padding:10px 12px;color:#71717a;font-size:0.9rem;">Hover a confederacy to see its provinces.</div>';
         return;
       }
-      provTitle.textContent = `Districts in ${confKey}`;
-      const districts = CONFEDERACY_PROVINCES[confKey] || [];
+      provTitle.textContent = `Provinces in ${confKey}`;
+      const provinces = CONFEDERACY_PROVINCES[confKey] || [];
       const { provCounts } = computeConfederacyScholarCounts();
-      const rows = districts.map(prov => ({ prov, count: provCounts[prov] || 0 }));
+      const rows = provinces.map(prov => ({ prov, count: provCounts[prov] || 0 }));
       provList.innerHTML = rows.map(r => `
         <button type="button" class="db-map-fs-conf__row" data-prov-row="${r.prov}">
           <span>${r.prov}</span>
@@ -4682,7 +4720,7 @@
     const workDd = wireDropdown(workWrap, workBtn, workPanel);
     // Clicking the work-dropdown button flips the map into Workplace mode
     // instantly. Any other dropdown (or the Reset button) flips it back to
-    // Study mode. Cross-filters (statistical region / sector) stay applied
+    // Study mode. Cross-filters (confederacy / sector) stay applied
     // across the flip so the user's selection carries over.
     if (workBtn) {
       workBtn.addEventListener('click', () => {
@@ -4779,7 +4817,7 @@
     }
 
     // --- Region › Country › University drilldown ---
-    // Progressive drilldown modeled on the statistical regions dropdown but three
+    // Progressive drilldown modeled on the confederacies dropdown but three
     // columns wide. Regions come from the WORLD_REGIONS constant; countries
     // and universities are pulled from graduate-studies.worldPoints so a
     // region with 0 present countries silently drops out.
@@ -4831,7 +4869,14 @@
           unisByCountry.get(p.country).add(p.university);
         }
         if (regionOfCountry.has(p.country)) return;
-        const region = p.region || fallbackRegionOf.get(p.country) || 'Other';
+        // Canonical dropdown taxonomy follows the Fiji dashboard. Prefer the
+        // explicit country mapping here so stale/legacy feed labels (for
+        // example "Pacific", "Other", or a misassigned North America) cannot
+        // strand a known country in the wrong region. Only genuinely unknown
+        // countries fall back to the feed's region.
+        const mappedRegion = fallbackRegionOf.get(p.country);
+        const rawRegion = mappedRegion || p.region || 'Other';
+        const region = rawRegion === 'Pacific' ? 'Oceania' : rawRegion;
         regionOfCountry.set(p.country, region);
       });
       // Group countries by resolved region, preserving the display order
@@ -5035,14 +5080,25 @@
     function zoomToRegion(countries) {
       const m = state.worldMap;
       if (!m) return;
-      const grad = state.graduateStudies || { worldPoints: [] };
       const set = new Set(countries);
-      const pts = (grad.worldPoints || []).filter(p => set.has(p.country));
-      if (!pts.length) return;
-      // Antimeridian fix: see _normLngForWorldMap. Framing raw longitudes
-      // for Americas would zoom to the empty left-hand US copy.
-      const bounds = L.latLngBounds(pts.map(p => [p.lat, _normLngForWorldMap(p.lng)]));
-      m.fitBounds(bounds, { padding: [80, 80], maxZoom: 5, animate: true });
+      let latlngs = _renderedWorldLatLngs(p => set.has(p.country));
+      if (!latlngs.length) {
+        const grad = state.graduateStudies || { worldPoints: [] };
+        const pts = (grad.worldPoints || []).filter(p => set.has(p.country) && Number.isFinite(p.lat) && Number.isFinite(p.lng));
+        const anchor = state.worldMapFullscreen ? 140 : m.getCenter().lng;
+        const wrapToAnchor = lng => {
+          const candidates = [lng - 360, lng, lng + 360];
+          return candidates.reduce((best, x) =>
+            Math.abs(x - anchor) < Math.abs(best - anchor) ? x : best, lng);
+        };
+        latlngs = pts.map(p => [p.lat, wrapToAnchor(p.lng)]);
+      }
+      if (!latlngs.length) return;
+      if (latlngs.length === 1) {
+        m.setView(latlngs[0], 5, { animate: true });
+      } else {
+        m.fitBounds(L.latLngBounds(latlngs), { padding: [80, 80], maxZoom: 5, animate: true });
+      }
     }
 
     // Reset the fullscreen map to its default whole-world framing.
@@ -5074,16 +5130,16 @@
   function renderChoropleth() {
     if (!state.map) return;
     if (state.provinceLayer) state.map.removeLayer(state.provinceLayer);
-    const geo = state.districts;
+    const geo = state.provinces;
     const filteredItems = itemsForMapView();
-    const counts = districtBreakdown(filteredItems);
+    const counts = provinceBreakdown(filteredItems);
     state.provinceLayer = L.geoJSON(geo, {
       style: (feature) => {
         const n = (counts.get(feature.properties.name) || { total: 0 }).total;
         return {
           fillColor: choroFill(n),
           fillOpacity: 0.92,
-          color: CONF_COLORS[feature.properties.region] || '#333',
+          color: CONF_COLORS[feature.properties.confederacy] || '#333',
           weight: 2.5, opacity: 1, lineJoin: 'round'
         };
       },
@@ -5113,7 +5169,7 @@
 
   function setProvinceFilterFromMap(name) {
     // Toggle behaviour used by polygon clicks
-    state.filter.district = state.filter.district === name ? '' : name;
+    state.filter.province = state.filter.province === name ? '' : name;
     state.filter.paternal = '';
     state.shown = state.pageSize;
     afterFilterChange();
@@ -5121,7 +5177,7 @@
 
   function filterAndScrollToProvince(name) {
     // Always SETS (does not toggle) — used by the popup pill
-    state.filter.district = name;
+    state.filter.province = name;
     state.filter.paternal = '';
     state.shown = state.pageSize;
     afterFilterChange();
@@ -5137,7 +5193,7 @@
     if (!link) return;
     ev.preventDefault();
     ev.stopPropagation();
-    const name = link.getAttribute('data-district');
+    const name = link.getAttribute('data-province');
     if (!name) return;
     if (state.map) state.map.closePopup();
     filterAndScrollToProvince(name);
@@ -5146,9 +5202,9 @@
   function makeProvincePopup(p, b) {
     const viewLabel = state.mapView === 'lead'
       ? 'Samoan lead-authored'
-      : (state.mapView === 'coauth' ? 'Co-authored with Samoan' : 'All publications on');
+      : (state.mapView === 'coauth' ? 'Co-authored with Samoan scholars' : 'All publications on');
     const rows = [];
-    const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.region]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
+    const push = (n, lbl) => { if (n > 0) rows.push(`<tr><td style="padding:2px 8px 2px 0;font-variant-numeric:tabular-nums;font-weight:700;color:${CONF_COLORS[p.confederacy]}">${n}</td><td style="padding:2px 0;color:#4b5563;">${lbl}</td></tr>`); };
     push(b.journalArticle,  b.journalArticle === 1 ? 'Journal Article' : 'Journal Articles');
     push(b.thesisPhd,       b.thesisPhd === 1 ? 'PhD Thesis' : 'PhD Theses');
     push(b.thesisMasters,   b.thesisMasters === 1 ? 'Masters Thesis' : 'Masters Theses');
@@ -5162,40 +5218,36 @@
     // at load time; this omission is belt-and-suspenders.
     const rowsHtml = rows.length ? `<table style="border-collapse:collapse;margin-top:6px;">${rows.join('')}</table>` : '<p class="db-popup-meta" style="opacity:0.6;">No items in this view</p>';
     const scholarLine = b.scholars > 0
-      ? `<p class="db-popup-meta" style="margin-top:8px;padding-top:6px;border-top:1px dashed #cbd5e1;"><span style="font-weight:700;color:${CONF_COLORS[p.region]};font-variant-numeric:tabular-nums;">${b.scholars}</span> Samoan scholar${b.scholars === 1 ? '' : 's'} on this map</p>`
+      ? `<p class="db-popup-meta" style="margin-top:8px;padding-top:6px;border-top:1px dashed #cbd5e1;"><span style="font-weight:700;color:${CONF_COLORS[p.confederacy]};font-variant-numeric:tabular-nums;">${b.scholars}</span> Samoan scholar${b.scholars === 1 ? '' : 's'} on this map</p>`
       : '';
-    // The filter link needs data-district so a delegated click handler can
+    // The filter link needs data-province so a delegated click handler can
     // pick it up — Leaflet re-renders popups on every open, so inline
     // onclick / direct listeners on this node don't survive.
     return `
       <div class="db-popup-title">${p.name} District</div>
-      <p class="db-popup-meta">${p.region} Statistical Region &middot; ${p.mainArea}</p>
+      <p class="db-popup-meta">${p.confederacy} Statistical Region &middot; ${p.mainArea}</p>
       <p class="db-popup-meta" style="margin-top:6px;"><span class="db-popup-count" style="font-size:1.5rem;">${b.total}</span> ${viewLabel} ${p.name}</p>
       ${rowsHtml}
       ${scholarLine}
-      <p style="margin:8px 0 0;"><a href="#" class="db-popup-filter-link" data-district="${p.name}" style="display:inline-block;font-size:0.82rem;color:#fff;background:#0e7490;padding:5px 10px;border-radius:999px;text-decoration:none;font-weight:600;">Filter items below ↓</a></p>
+      <p style="margin:8px 0 0;"><a href="#" class="db-popup-filter-link" data-province="${p.name}" style="display:inline-block;font-size:0.82rem;color:#fff;background:#0e7490;padding:5px 10px;border-radius:999px;text-decoration:none;font-weight:600;">Filter items below ↓</a></p>
     `;
   }
 
-  // ============ PANEL A — map + legend + statistical region tallies + sync ============
+  // ============ PANEL A — map + legend + confederacy tallies + sync ============
   function renderPanelA() {
     renderChoropleth();
 
     const items = state.snapshot.items;
     const provOfItem = state.provincesByItem;
 
-    // Statistical Region tallies. For each statistical region we track three counts:
+    // Confederacy tallies. For each confederacy we track three counts:
     //   total    — all Samoa-focused publications (district-tagged), regardless of authorship
-    //   samoan  — strictly Samoan-lead-authored items (first creator is Samoan)
-    //   coauth   — Samoan co-authored items (any Samoan author present, not first)
+    //   itaukei  — strictly iTaukei-lead-authored items (first creator is iTaukei)
+    //   coauth   — iTaukei co-authored items (any iTaukei author present, not first)
     // These feed both the two-line legend rows and the dynamic sidebar narrative.
-    const byConf = {
-      'Rest of Upolu': { total:0, samoan:0, coauth:0 },
-      'Apia Urban Area':     { total:0, samoan:0, coauth:0 },
-      'North West Upolu':     { total:0, samoan:0, coauth:0 }
-    };
+    const byConf = {'Apia Urban Area': { total:0, itaukei:0, coauth:0 },"North West Upolu":  { total:0, itaukei:0, coauth:0 },"Rest of Upolu": { total:0, itaukei:0, coauth:0 },"Savaii":    { total:0, itaukei:0, coauth:0 }};
     const confByProv = new Map();
-    state.districts.features.forEach(f => confByProv.set(f.properties.name, f.properties.region));
+    state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
     items.forEach(it => {
       const provs = provOfItem.get(it.key);
       if (!provs || !provs.size) return;
@@ -5204,7 +5256,7 @@
         const c = confByProv.get(p);
         if (!c || !byConf[c]) return;
         byConf[c].total  += 1;
-        if (role === 'lead')   byConf[c].samoan += 1;
+        if (role === 'lead')   byConf[c].itaukei += 1;
         if (role === 'coauth') byConf[c].coauth  += 1;
       });
     });
@@ -5218,22 +5270,22 @@
     const legendTitleEl = $('[data-db-map-legend-title]');
     if (legendTitleEl) legendTitleEl.textContent = legendTitles[state.mapView] || legendTitles.all;
 
-    // Dynamic explanation sentence for the statistical region summary.
+    // Dynamic explanation sentence for the confederacy summary.
     const explainSentences = {
-      all:    'All Samoa-focused publications, grouped by the statistical region of the district studied.',
-      lead:   'Publications led by an Samoan first author, grouped by the statistical region of the district studied.',
-      coauth: 'Publications co-authored with Samoan scholars, grouped by the statistical region of the district studied.'
+      all:    'All Samoa-focused publications, grouped by the Statistical Region of the district studied.',
+      lead:   'Publications led by a Samoan first author, grouped by the Statistical Region of the district studied.',
+      coauth: 'Publications co-authored with Samoan scholars, grouped by the Statistical Region of the district studied.'
     };
     const explainEl = $('[data-db-conf-explain]');
     if (explainEl) explainEl.textContent = explainSentences[state.mapView] || explainSentences.all;
 
-    // Populate the two-line statistical region rows. The primary number always reflects
-    // ALL Samoa-focused publications for that statistical region (so the reader gets a
+    // Populate the two-line confederacy rows. The primary number always reflects
+    // ALL Samoa-focused publications for that Island Division (so the reader gets a
     // stable point of reference). The secondary line adapts to the active
     // sub-tab so it complements what the map is currently showing.
     Object.keys(byConf).forEach(name => {
       const t = byConf[name].total;
-      const k = byConf[name].samoan;
+      const k = byConf[name].itaukei;
       const co = byConf[name].coauth;
       const totalEl = document.querySelector(`[data-conf-total="${name}"]`);
       const subEl   = document.querySelector(`[data-conf-sub="${name}"]`);
@@ -5243,7 +5295,7 @@
         if (state.mapView === 'lead') {
           secondary = `${k} Samoan-led · ${co} co-authored`;
         } else if (state.mapView === 'coauth') {
-          secondary = `${co} co-authored with Samoan · ${k} Samoan-led`;
+          secondary = `${co} co-authored with Samoan scholars · ${k} Samoan-led`;
         } else {
           secondary = `${k} Samoan-led publication${k === 1 ? '' : 's'}`;
         }
@@ -5251,36 +5303,37 @@
       }
     });
 
-    // Dynamic narrative sentence beneath the statistical region rows. Ranks the three
-    // statistical regions by total and reports the total Samoan-led count.
+    // Dynamic narrative sentence beneath the confederacy rows. Ranks the three
+    // confederacies by total and reports the total iTaukei-led count.
     const narrativeEl = $('[data-db-conf-narrative]');
     if (narrativeEl) {
       const ranked = Object.keys(byConf)
-        .map(n => ({ name: n, total: byConf[n].total, led: byConf[n].samoan, coauth: byConf[n].coauth }))
+        .map(n => ({ name: n, total: byConf[n].total, led: byConf[n].itaukei, coauth: byConf[n].coauth }))
         .sort((a, b) => b.total - a.total);
       const totalLed    = ranked.reduce((a, r) => a + r.led, 0);
       const totalCoauth = ranked.reduce((a, r) => a + r.coauth, 0);
       const [a, b, c] = ranked;
-      let s = `Samoa-focused publications are most concentrated in ${a.name} (${a.total.toLocaleString()}), followed by ${b.name} (${b.total.toLocaleString()}) and ${c.name} (${c.total.toLocaleString()}). `;
+      const _fmtR = r => `${r.name} (${r.total.toLocaleString()})`;
+      let s = `Samoa-focused publications are most concentrated in ${_fmtR(a)}` + (c ? `, followed by ${_fmtR(b)} and ${_fmtR(c)}. ` : b ? `, followed by ${_fmtR(b)}. ` : '. ');
       if (state.mapView === 'coauth') {
-        s += `Of these, ${totalCoauth.toLocaleString()} include an Samoan scholar as a co-author.`;
+        s += `Of these, ${totalCoauth.toLocaleString()} include a Samoan scholar as a co-author.`;
       } else if (state.mapView === 'lead') {
-        s += `Of these, ${totalLed.toLocaleString()} are led by an Samoan first author.`;
+        s += `Of these, ${totalLed.toLocaleString()} are led by a Samoan first author.`;
       } else {
-        s += `Of these, ${totalLed.toLocaleString()} are led by an Samoan first author.`;
+        s += `Of these, ${totalLed.toLocaleString()} are led by a Samoan first author.`;
       }
       narrativeEl.textContent = s;
     }
 
-    // Non-Samoa publications by Samoan authors: Samoan items with NO district tag
-    let nonDistrict = 0;
+    // Non-Fiji publications by iTaukei authors: iTaukei items with NO province tag
+    let nonFiji = 0;
     items.forEach(it => {
       if (!isItaukei(it)) return;
       const p = provOfItem.get(it.key);
-      if (!p || !p.size) nonDistrict += 1;
+      if (!p || !p.size) nonFiji += 1;
     });
     const nfEl = $('[data-db-nonfiji]');
-    if (nfEl) nfEl.textContent = nonDistrict;
+    if (nfEl) nfEl.textContent = nonFiji;
 
     // Sync inline — prefer the heartbeat timestamp so it advances every run
     const inline = $('[data-db-sync-inline]');
@@ -5328,8 +5381,8 @@
     }
 
     // ============ Authorship view ============
-    // Reuses B2's authorship rendering (single stacked bar per district,
-    // segmented by Samoan first / co-author / no Samoan identified).
+    // Reuses B2's authorship rendering (single stacked bar per province,
+    // segmented by iTaukei first / co-author / no iTaukei identified).
     // Chrome swap: hide the type-filter checkboxes + disable the Authors
     // dropdown, show the authorship legend + "Grouped by" label change.
     const typeFilter    = document.querySelector('[data-db-type-filter]');
@@ -5337,14 +5390,18 @@
     const authorshipLegend = document.querySelector('[data-b1-authorship-legend]');
     const groupedLabel  = document.querySelector('[data-b1-grouped-label]');
 
+    const b1Division = (state.b1GroupBy || 'division') !== 'district';
+
     if ((state.b1View || 'type') === 'authorship') {
       if (typeFilter) typeFilter.style.display = 'none';
       if (authorshipLegend) authorshipLegend.style.display = '';
       if (authorsSelect) authorsSelect.disabled = true;
-      if (groupedLabel) groupedLabel.textContent = 'Study district · Samoan authorship role';
+      if (groupedLabel) groupedLabel.textContent = (b1Division ? 'Statistical Region' : 'Study district') + ' · Samoan authorship role';
       host.innerHTML = '';
-      const rows = buildB2Rows_compareAuthorship();
-      renderAuthorshipInto(host, rows);
+      let rows = b1Division
+        ? buildC2DivisionRows_(true, 'all')
+        : buildB2Rows_compareAuthorship();
+      renderAuthorshipInto(host, rows, { disableClick: b1Division });
       host.classList.remove('db-bars--grouped');
       return;
     }
@@ -5353,25 +5410,25 @@
     if (typeFilter) typeFilter.style.display = '';
     if (authorshipLegend) authorshipLegend.style.display = 'none';
     if (authorsSelect) authorsSelect.disabled = false;
-    if (groupedLabel) groupedLabel.textContent = 'Study district';
+    if (groupedLabel) groupedLabel.textContent = b1Division ? 'Statistical Region' : 'Study district';
 
     host.innerHTML = '';
-    const provs = state.districts.features.map(f => f.properties);
+    const provs = state.provinces.features.map(f => f.properties);
     const byProv = new Map();
     provs.forEach(p => {
       byProv.set(p.name, {
-        conf: p.region,
+        conf: p.confederacy,
         total: 0,
         types: {}
       });
     });
-    // Panel B1 authors filter — defaults to Samoan-only. Toggled via the
+    // Panel B1 authors filter — defaults to iTaukei-only. Toggled via the
     // Authors dropdown in the meta row (see wirePanelB1).
-    const authorsMode = state.b1Authors || 'samoan';
+    const authorsMode = state.b1Authors || 'itaukei';
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
       if (!state.typeSet.has(vt)) return;
-      if (authorsMode === 'samoan' && !isItaukei(it)) return;
+      if (authorsMode === 'itaukei' && !isItaukei(it)) return;
       const ps = state.provincesByItem.get(it.key);
       if (!ps) return;
       ps.forEach(name => {
@@ -5382,21 +5439,27 @@
         }
       });
     });
-    const rows = provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
-                       .sort((a,b) => b.total - a.total);
+    let rows = b1Division
+      ? buildC2DivisionRows_(false, authorsMode)
+      : provs.map(p => Object.assign({ name: p.name }, byProv.get(p.name)))
+             .sort((a,b) => b.total - a.total);
     const maxTotal = Math.max(1, ...rows.map(r => r.total));
     rows.forEach(r => {
       const label = document.createElement('div');
       label.className = 'db-bars__prov';
-      if (state.filter.district === r.name) label.classList.add('is-active');
-      label.title = `${r.conf} Statistical Region`;
+      if (!b1Division && state.filter.province === r.name) label.classList.add('is-active');
+      label.title = b1Division ? `${r.name} Statistical Region` : `${r.conf} Statistical Region`;
       label.innerHTML = `<span>${r.name}</span><span class="db-bars__prov-dot" style="background:${CONF_COLORS[r.conf]};"></span>`;
-      label.addEventListener('click', () => {
-        state.filter.district = state.filter.district === r.name ? '' : r.name;
-        state.filter.paternal = '';
-        state.shown = state.pageSize;
-        afterFilterChange();
-      });
+      if (!b1Division) {
+        label.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      } else {
+        label.style.cursor = 'default';
+      }
       host.appendChild(label);
 
       const rowWrap = document.createElement('div');
@@ -5405,7 +5468,7 @@
       row.style.width = `${(r.total / maxTotal) * 100}%`;
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `${r.name} · ${r.total} items · ${r.conf}`;
+      row.title = b1Division ? `${r.name} · ${r.total} items` : `${r.name} · ${r.total} items · ${r.conf}`;
       TYPE_ORDER.forEach(t => {
         const n = r.types[t] || 0;
         if (n > 0) {
@@ -5417,12 +5480,16 @@
           row.appendChild(seg);
         }
       });
-      row.addEventListener('click', () => {
-        state.filter.district = state.filter.district === r.name ? '' : r.name;
-        state.filter.paternal = '';
-        state.shown = state.pageSize;
-        afterFilterChange();
-      });
+      if (!b1Division) {
+        row.addEventListener('click', () => {
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
+          state.filter.paternal = '';
+          state.shown = state.pageSize;
+          afterFilterChange();
+        });
+      } else {
+        row.style.cursor = 'default';
+      }
       rowWrap.appendChild(row);
       host.appendChild(rowWrap);
 
@@ -5432,28 +5499,25 @@
       host.appendChild(num);
     });
 
-    // ============ Non-provincial/Samoa bottom bar ============
-    // Aggregates publications that live in the Zotero '_Non-Provincial/Samoa'
-    // sub-collection under C1 (RNKFUZ6M/AREH32KK). These are Samoa-wide topics
-    // (e.g. national legislation, national mental health policy, nationwide
-    // studies) that aren't tied to a specific district. Membership is now a
-    // curator decision, not a title heuristic — the collection is the source
-    // of truth.
+    // ============ Non-district/Samoa bottom bar ============
+    // Aggregates publications with an explicit verified Research Geography
+    // row for "Samoa - no district specified". These are Samoa-wide topics
+    // (e.g. national legislation or policy) not tied to one district.
     //
-    // Rendering differs from the district bars in three key ways:
+    // Rendering differs from the province bars in three key ways:
     //   1. Anchored at the bottom regardless of ranking.
-    //   2. The bar is always drawn at 100% width of the longest visible district
+    //   2. The bar is always drawn at 100% width of the longest visible province
     //      bar (not scaled to its own raw count).
     //   3. Segments are % share of the category's own total — unchecking a type
     //      re-normalises the remaining segments back to 100%.
-    // No statistical region dot on the label; an "i" tooltip explains the category.
+    // No confederacy dot on the label; an "i" tooltip explains the category.
     const nonProv = { total: 0, types: {} };
-    const nonProvKey = state.nonDistrictBucketKey;
+    const nonProvKey = state.nonProvincialFijiKey;
     if (nonProvKey) {
       state.snapshot.items.forEach(it => {
         const vt = visualType(it);
         if (!state.typeSet.has(vt)) return;
-        if (authorsMode === 'samoan' && !isItaukei(it)) return;
+        if (authorsMode === 'itaukei' && !isItaukei(it)) return;
         const cols = it.collections || [];
         if (cols.indexOf(nonProvKey) === -1) return;
         nonProv.total += 1;
@@ -5462,14 +5526,14 @@
     }
 
     if (nonProv.total > 0) {
-      // Column 1 — label + info icon (no statistical region dot).
+      // Column 1 — label + info icon (no confederacy dot).
       const npLabel = document.createElement('div');
       npLabel.className = 'db-bars__prov db-bars__prov--nonprov';
       const tipText = 'Publications about Samoa broadly or national-level topics '
                     + '\u2014 such as legislation, policy, or nationwide studies '
                     + '\u2014 that are not tied to a specific district.';
-      npLabel.innerHTML = `<span>Non-provincial/Samoa</span>`
-        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-provincial/Samoa" title="${escapeAttr(tipText)}">i</span>`;
+      npLabel.innerHTML = `<span>Non-district/Samoa</span>`
+        + `<span class="db-bars__info" tabindex="0" role="button" aria-label="About Non-district/Samoa" title="${escapeAttr(tipText)}">i</span>`;
       host.appendChild(npLabel);
 
       // Column 2 — bar at 100% width, percentage-normalised segments.
@@ -5479,7 +5543,7 @@
       row.style.width = '100%';
       row.style.background = 'transparent';
       row.style.boxShadow = `inset 0 0 0 1.5px rgba(0,0,0,0.06)`;
-      row.title = `Non-provincial/Samoa \u00b7 ${nonProv.total} items`;
+      row.title = `Non-district/Samoa \u00b7 ${nonProv.total} items`;
       const segsPendingSizing = [];
       TYPE_ORDER.forEach(t => {
         const n = nonProv.types[t] || 0;
@@ -5499,7 +5563,7 @@
       rowWrap.appendChild(row);
       host.appendChild(rowWrap);
 
-      // Column 3 — total count on the right, same style as district rows.
+      // Column 3 — total count on the right, same style as province rows.
       const num = document.createElement('div');
       num.className = 'db-bars__total';
       num.textContent = nonProv.total;
@@ -5525,127 +5589,98 @@
     }
   }
 
-  // ============ PANEL E — publication-type breakdown ============
-  // Renders the six-category publication-type grid. PhD Thesis and
-  // Master's Thesis lead the list as first-class categories, followed by
-  // Journal Article, Book Chapter, Book, and Report. Each type card shows
-  // a count, a per-type share bar, and a clickable label that filters the
-  // scholar list (Panel F) and publications browser (Panel G) to items
-  // of that type. Reflects the current type-filter selection at the top
-  // of Panel B, so an unchecked type is greyed out (0 count) rather than
-  // hidden — keeping the panel structurally stable across filter changes.
-  //
-  // Region-ranked bars previously here have been retired; the same
-  // information is now surfaced via Panel C3 (Research Output by Home
-  // Political/Census District) and Panel B4 (world map).
-  const PUB_TYPE_ORDER_E = [
-    { key: 'thesisPhd',      label: 'PhD Thesis',      color: '#228B22' },
-    { key: 'thesisMasters',  label: "Master's Thesis", color: '#8FBC8F' },
-    { key: 'journalArticle', label: 'Journal Article', color: '#B8860B' },
-    { key: 'bookSection',    label: 'Book Chapter',    color: '#C08388' },
-    { key: 'book',           label: 'Book',            color: '#7a1419' },
-    { key: 'report',         label: 'Report',          color: '#1e40af' },
-  ];
-  function renderPanelE() {
-    const host = $('[data-db-pubtype-grid]');
+  // ============ PANEL D — confederacy small multiples ============
+  function renderPanelD() {
+    const host = $('[data-db-conf-grid]');
     if (!host) return;
     host.innerHTML = '';
-    const counts = new Map();
-    PUB_TYPE_ORDER_E.forEach(t => counts.set(t.key, 0));
+    const confs = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"];
+    const provs = state.provinces.features.map(f => f.properties);
+    const divisionRows = new Map(buildC2DivisionRows_(false, 'all').map(r => [r.name, r]));
+    const divisionOnly = new Map(confs.map(c => [c, 0]));
+    const perProvTotal = new Map();
+    provs.forEach(p => perProvTotal.set(p.name, 0));
     state.snapshot.items.forEach(it => {
-      const t = visualType(it);
-      if (!counts.has(t)) return;
-      counts.set(t, counts.get(t) + 1);
+      if (!state.typeSet.has(visualType(it))) return;
+      const ps = state.provincesByItem.get(it.key);
+      const districts = ps || new Set();
+      districts.forEach(name => perProvTotal.set(name, (perProvTotal.get(name)||0) + 1));
+      (state.islandDivisionsByItem.get(it.key) || new Set()).forEach(cf => {
+        if (divisionOnly.has(cf) && !Array.from(districts).some(d => PROVINCE_TO_CONFEDERACY[d] === cf)) {
+          divisionOnly.set(cf, divisionOnly.get(cf) + 1);
+        }
+      });
     });
-    const totalAll = Array.from(counts.values()).reduce((a,b) => a + b, 0) || 1;
-    const maxOne  = Math.max(1, ...counts.values());
-    PUB_TYPE_ORDER_E.forEach(t => {
-      const n = counts.get(t.key) || 0;
-      const share = (n / totalAll) * 100;
-      const barPct = (n / maxOne) * 100;
-      const dimmed = !state.typeSet.has(t.key) ? ' is-dimmed' : '';
-      const card = document.createElement('div');
-      card.className = `db-pubtype-card${dimmed}`;
-      card.innerHTML = `
-        <div class="db-pubtype-card__head">
-          <span class="db-pubtype-card__stripe" style="background:${t.color};"></span>
-          <span class="db-pubtype-card__name" data-pubtype="${t.key}">${t.label}</span>
-          <span class="db-pubtype-card__n">${n}</span>
+    confs.forEach(cf => {
+      const provInCf = provs.filter(p => p.confederacy === cf)
+        .map(p => ({ name: p.name, total: perProvTotal.get(p.name) || 0 }))
+        .sort((a,b) => b.total - a.total);
+      const sub = divisionRows.get(cf)?.total || 0;
+      const unassigned = divisionOnly.get(cf) || 0;
+      const max = Math.max(1, ...provInCf.map(p => p.total));
+      const panel = document.createElement('div');
+      panel.className = 'db-conf-panel';
+      panel.innerHTML = `
+        <div class="db-conf-panel__head">
+          <p class="db-conf-panel__name">${cf}</p>
+          <p class="db-conf-panel__total">${sub}</p>
         </div>
-        <div class="db-pubtype-card__bar"><span class="db-pubtype-card__fill" style="width:${barPct}%;background:${t.color};"></span></div>
-        <div class="db-pubtype-card__share">${share.toFixed(1)}% of catalogued output</div>
+        <div class="db-conf-panel__stripe" style="background:${CONF_COLORS[cf]};"></div>
+        <div class="db-conf-panel__provs"></div>
+        <p class="db-conf-panel__foot">${provInCf.length} districts · ${sub} distinct publications${unassigned ? ` · ${unassigned} with no district specified` : ''}. A publication may appear in more than one district.</p>
       `;
-      // Clicking the type name toggles a type-only filter on BOTH the
-      // leaderboard (Panel F) and the publications list (Panel G).
-      //
-      //   - Panel G reads state.filter.itemType and matches on both the raw
-      //     Zotero itemType and the visual sub-type (`thesisPhd` etc.),
-      //     so we set state.filter.itemType.
-      //   - Panel F reads state.typeSet (Set of visible types) for its
-      //     card-pill chip rendering and count aggregation. To scope Panel F
-      //     to a single type, we snapshot the previous typeSet, replace it
-      //     with a single-type Set, and restore it when the filter clears.
-      //   - The visual state (highlighted card, dimmed sibling cards) still
-      //     reads from state.filter.type so multiple call sites stay in sync.
-      const nameEl = card.querySelector('.db-pubtype-card__name');
-      if (nameEl) {
-        nameEl.style.cursor = 'pointer';
-        nameEl.title = 'Click to filter the leaderboard and publications list to this type';
-        nameEl.addEventListener('click', () => {
-          state.filter = state.filter || {};
-          const already = state.filter.type === t.key;
-          if (already) {
-            // Toggle off — restore full type visibility on both surfaces.
-            state.filter.type = '';
-            state.filter.itemType = '';
-            if (state._typeSetBeforePanelE) {
-              state.typeSet = state._typeSetBeforePanelE;
-              state._typeSetBeforePanelE = null;
-            }
-          } else {
-            // Toggle on — snapshot the current typeSet so we can restore it,
-            // then narrow to just this type. If the raw type is `thesis`, also
-            // include the two visual sub-types so PhD/Master's rows stay in.
-            if (!state._typeSetBeforePanelE) state._typeSetBeforePanelE = new Set(state.typeSet);
-            const scoped = new Set([t.key]);
-            if (t.key === 'thesis') { scoped.add('thesisPhd'); scoped.add('thesisMasters'); scoped.add('thesisUnknown'); }
-            state.typeSet = scoped;
-            state.filter.type = t.key;
-            state.filter.itemType = t.key;
-          }
-          // Reflect the change in the Panel-B type-checkbox row so the
-          // user can see which types are visible.
-          if (typeof syncChecked === 'function') { try { syncChecked(); } catch (e) {} }
-          // Mirror the change into the Panel G dropdown so the user sees
-          // the itemType filter as active.
-          const sel = document.querySelector('[data-db-filter="itemType"]');
-          if (sel) sel.value = state.filter.itemType || '';
+      const inner = panel.querySelector('.db-conf-panel__provs');
+      provInCf.forEach(p => {
+        const row = document.createElement('div');
+        row.className = 'db-conf-mini';
+        row.innerHTML = `
+          <span class="db-conf-mini__name" data-prov="${escapeAttr(p.name)}">${p.name}</span>
+          <span class="db-conf-mini__bar"><span class="db-conf-mini__fill" style="width:${(p.total/max)*100}%;background:${CONF_COLORS[cf]};"></span></span>
+          <span class="db-conf-mini__n">${p.total}</span>
+        `;
+        row.querySelector('.db-conf-mini__name').addEventListener('click', () => {
+          state.filter.province = state.filter.province === p.name ? '' : p.name;
+          state.filter.paternal = '';
           state.shown = state.pageSize;
           afterFilterChange();
         });
-      }
-      host.appendChild(card);
+        inner.appendChild(row);
+      });
+      host.appendChild(panel);
     });
   }
 
   // ============ Type-filter checkbox wiring ============
-  // Panel B1 title dropdown: switches the ranked-bar chart between Samoan
+  // Panel B1 title dropdown: switches the ranked-bar chart between iTaukei
   // authors (default) and all authors. Keeps the meta pill in sync.
   function wirePanelB1() {
     const sel = document.querySelector('[data-b1-authors]');
     if (sel) {
-      sel.value = state.b1Authors || 'samoan';
+      sel.value = state.b1Authors || 'itaukei';
       sel.addEventListener('change', () => {
-        state.b1Authors = sel.value === 'all' ? 'all' : 'samoan';
+        state.b1Authors = sel.value === 'all' ? 'all' : 'itaukei';
+        renderPanelB();
+      });
+    }
+    // "View" dropdown: switches the bars between one-per-district (default)
+    // and Island Division roll-up. Division mode aggregates the 51 districts
+    // into Samoa's 4 Statistical Regions and disables click-to-filter on the
+    // bars, since the click-to-filter state (state.filter.province) only
+    // understands district names.
+    const groupSel = document.querySelector('[data-b1-groupby]');
+    if (groupSel) {
+      groupSel.value = state.b1GroupBy || 'division';
+      groupSel.addEventListener('change', () => {
+        state.b1GroupBy = groupSel.value === 'division' ? 'division' : 'district';
         renderPanelB();
       });
     }
     // Panel B1 has two mutually exclusive views:
     //   "type"       — the default publication-type stacked bar
     //   "authorship" — reuses the visualization that used to live in B2's
-    //                  Authorship tab (Samoan first / co-author / no Samoan
-    //                  identified per district).
-    // The dropdown 'Authors: Samoan / All' is meaningful only in the type
+    //                  Authorship tab (iTaukei first / co-author / no iTaukei
+    //                  identified per province).
+    // The dropdown 'Authors: iTaukei / All' is meaningful only in the type
     // view; the authorship view always considers all authors by definition,
     // so we disable the dropdown while it's active.
     const b1Root = document.querySelector('[data-panel="B1"]');
@@ -5692,7 +5727,7 @@
       state.typeSet = new Set(visibleBoxes.filter(b => b.checked).map(b => b.value));
       visibleBoxes.forEach(b => b.closest('label').classList.toggle('is-checked', b.checked));
       renderPanelB();
-      renderPanelE();
+      renderPanelD();
       // Panel D histogram has its own type filter (state.histTypeSet) wired
       // by wireHistTypeFilter — do NOT rerender it here so Panel B toggles
       // no longer cascade into the timeline.
@@ -5833,7 +5868,7 @@
       p.addEventListener('mouseenter', () => p.setAttribute('opacity', '0.75'));
       p.addEventListener('mouseleave', () => p.setAttribute('opacity', '1'));
       p.addEventListener('click', () => {
-        state.filter.discipline = state.filter.discipline === name ? '' : name;
+        state.filter.discipline = state.filter.discipline === shortDisciplineName(name) ? '' : shortDisciplineName(name);
         state.shown = state.pageSize;
         const sel = $('[data-db-filter="discipline"]');
         if (sel) sel.value = state.filter.discipline;
@@ -5866,7 +5901,7 @@
         'data-discipline': name,
         style: 'display:flex;align-items:center;gap:6px;',
         onclick: () => {
-          state.filter.discipline = state.filter.discipline === name ? '' : name;
+          state.filter.discipline = state.filter.discipline === shortDisciplineName(name) ? '' : shortDisciplineName(name);
           state.shown = state.pageSize;
           const sel = $('[data-db-filter="discipline"]');
           if (sel) sel.value = state.filter.discipline;
@@ -5883,7 +5918,7 @@
   }
   function renderDonutLegendActive() {
     $$('#db-donut-legend > div').forEach(row => {
-      row.classList.toggle('is-active', row.getAttribute('data-discipline') === state.filter.discipline);
+      row.classList.toggle('is-active', shortDisciplineName(row.getAttribute('data-discipline')) === state.filter.discipline);
     });
   }
 
@@ -5911,8 +5946,15 @@
   function getPanelDData() {
     if (state.panelDDataCache) return state.panelDDataCache;
 
-    const master = state.master || {};
-    const scholars = Array.isArray(master.scholars) ? master.scholars : [];
+    const master = state.countingMaster || state.master || {};
+    // Ignore formula-bearing template rows pre-provisioned through row 1000.
+    // The roster is defined by distinct canonical WSM-S#### Scholar IDs.
+    const scholarsById = new Map();
+    (Array.isArray(master.scholars) ? master.scholars : []).forEach(s => {
+      const id = String(s['Scholar ID'] || '').trim();
+      if (/^WSM-S\d{4}$/.test(id) && !scholarsById.has(id)) scholarsById.set(id, s);
+    });
+    const scholars = Array.from(scholarsById.values());
     const gradDegrees = Array.isArray(master.gradDegrees) ? master.gradDegrees : [];
     const publications = Array.isArray(master.publications) ? master.publications : [];
     const authorship = Array.isArray(master.authorship) ? master.authorship : [];
@@ -5926,19 +5968,28 @@
       const t = String(v == null ? '' : v).trim();
       return t && t.toLowerCase() !== 'unclassified' ? t : '';
     };
+    // Samoa schema field names: the Samoa sheet has no 'Province Paternal'
+    // or 'Paternal Confederacy' column at all (see crosswalk §4) —
+    // 'District Paternal' IS the direct Fiji-Province equivalent (Samoa's
+    // official hierarchy has no layer between District and Village, so
+    // there is no separate tikina-level field to read here). 'province'
+    // holds that District Paternal value (kept under this key name for
+    // logic compatibility with the rest of this cloned file); 'district'
+    // is left blank (no Samoa sub-district-level field exists); 'confederacy'
+    // holds the Paternal Island Division value.
     const paternalInfoByScholarId = new Map(scholars.map(s => [
       String(s['Scholar ID'] || '').trim(),
       {
-        village:     cleanPaternal(s['Village Paternal']),
-        district:    cleanPaternal(s['District Paternal']),
-        district:    cleanPaternal(s['District Paternal']),
-        region: cleanPaternal(s['Paternal Statistical Region'])
+        village:     cleanPaternal(s["Village/Town Paternal (Kolo)"]),
+        district:    '',
+        province:    cleanPaternal(s['District Paternal']),
+        confederacy: cleanPaternal(s['Paternal Island Division'])
       }
     ]));
-    // Compose the Panel D Line-4/5 annotation from the four paternal fields.
+    // Compose the Panel D Line-4/5 annotation from the two paternal fields.
     // Ron's mockup wraps the geography onto TWO lines:
-    //   line 4: "Village vlg, District District,"     (village + district)
-    //   line 5: "District District (Statistical Region)"    (district + region)
+    //   line 4: "Village vlg,"                          (village)
+    //   line 5: "District District (Island Division)"   (district + island division)
     // This keeps callouts compact horizontally so they don't overflow onto
     // the neighboring bars. Any missing field is omitted along with its
     // trailing separator. If every field is blank/Unclassified both lines
@@ -5946,9 +5997,13 @@
     //
     // Returned shape:
     //   { topLine, bottomLine, joined }
-    //     - topLine    → line 4 (village + district)
-    //     - bottomLine → line 5 (district + region)
+    //     - topLine    → line 4 (village)
+    //     - bottomLine → line 5 (district + Island Division)
     //     - joined     → single-line form used only for tooltips
+    // NOTE: `info.district` is unused for Samoa (no Samoa sheet column
+    // maps to it — see composePaternal's caller above); `info.province`
+    // holds Samoa's District Paternal value and is displayed with the
+    // "District" label, never "Province".
     function composePaternal(info) {
       const out = { topLine: '', bottomLine: '', joined: '' };
       if (!info) return out;
@@ -5956,8 +6011,8 @@
       if (info.village)  topParts.push(`${info.village} vlg`);
       if (info.district) topParts.push(`${info.district} District`);
       const botParts = [];
-      if (info.district) botParts.push(`${info.district} District`);
-      if (info.region) botParts.push(`(${info.region})`);
+      if (info.province) botParts.push(`${info.province} District`);
+      if (info.confederacy) botParts.push(`(${info.confederacy})`);
       // Trailing comma on topLine when bottomLine follows (mockup shows
       // "Matokana vlg, Ono-i-Lau District," then wraps to line 5).
       out.topLine = topParts.join(', ');
@@ -5981,12 +6036,20 @@
     const isPhd = row => /phd|doctor/i.test(String(row['Degree Stage'] || ''));
     const isCompleted = row => String(row['Completion Status'] || '').trim().toLowerCase().startsWith('completed');
     const completedRows = gradDegrees.filter(row => isCompleted(row) && (isMasters(row) || isPhd(row)));
+    // Panel D list (js/panel-d-firsts.js) shows these same rows, so its count matches the KPI.
+    state.panelDCompletedRows = completedRows;
     const completedDatedRows = completedRows.map(row => ({ row, year: panelDParseYear(row['Finish / Completion Year']) })).filter(entry => entry.year != null);
+    // Samoa's Gender enum is stored on the Master sheet (and written by the
+    // Admin Panel / Apps Script) as the literal Samoan terms 'Tāne' (male)
+    // and 'Fafine' (female) per user decision -- not 'Male'/'Female' -- so
+    // `def.gender` below must match those literal stored values for the
+    // genderByScholarId lookups to actually match real data. The underlying
+    // iTaukei silhouette imagery for gender icons is kept unchanged per user decision.
     const milestoneDefinitions = [
-      { key: 'firstMaleMasters', label: "1st Male Master's", shortLabel: "1st male Master's", stage: 'masters', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemaleMasters', label: "1st Female Master's", shortLabel: "1st female Master's", stage: 'masters', gender: 'Female', color: '#B85450', isFemale: true },
-      { key: 'firstMalePhD', label: '1st Male PhD', shortLabel: '1st male PhD', stage: 'phd', gender: 'Male', color: '#2E7C8F', isFemale: false },
-      { key: 'firstFemalePhD', label: '1st Female PhD', shortLabel: '1st female PhD', stage: 'phd', gender: 'Female', color: '#B85450', isFemale: true }
+      { key: 'firstMaleMasters', label: "1st Tāne Master's", shortLabel: "1st tāne Master's", stage: 'masters', gender: 'Tāne', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemaleMasters', label: "1st Fafine Master's", shortLabel: "1st fafine Master's", stage: 'masters', gender: 'Fafine', color: '#B85450', isFemale: true },
+      { key: 'firstMalePhD', label: '1st Tāne PhD', shortLabel: '1st tāne PhD', stage: 'phd', gender: 'Tāne', color: '#2E7C8F', isFemale: false },
+      { key: 'firstFemalePhD', label: '1st Fafine PhD', shortLabel: '1st fafine PhD', stage: 'phd', gender: 'Fafine', color: '#B85450', isFemale: true }
     ];
     // Country name -> ISO-ish 2-letter code for compact milestone labels.
     // Covers every country currently in the Master-file `Country` column plus
@@ -5994,7 +6057,7 @@
     // first-two-letters uppercase (e.g. "Vanuatu" -> "VA") which is fine for
     // rare cases and easy for Ron to override by adding a row here.
     const COUNTRY_CODE = {
-      'Samoa': 'FJ',
+      'Fiji': 'FJ',
       'New Zealand': 'NZ',
       'Australia': 'AU',
       'United Kingdom': 'UK',
@@ -6009,7 +6072,7 @@
       'Solomon Islands': 'SB',
       'Vanuatu': 'VU',
       'Samoa': 'WS',
-      'Tonga': 'TO',
+      'Samoa': 'TO',
       'France': 'FR',
       'Germany': 'DE',
       'Netherlands': 'NL',
@@ -6038,15 +6101,17 @@
     function titleFor(stage, gender) {
       if (stage === 'phd') return 'Dr.';
       if (stage === 'masters') {
-        if (gender === 'Male') return 'Mr.';
-        if (gender === 'Female') return 'Ms';
+        if (gender === 'Tāne') return 'Mr.';
+        if (gender === 'Fafine') return 'Ms';
       }
       return '';
     }
-    // Milestone display line 1 (e.g. "1963: First male PhD"). Kept in one
-    // place so we can tweak wording without editing SVG code.
+    // Milestone display line 1 (e.g. "1963: First tāne PhD"). Kept in one
+    // place so we can tweak wording without editing SVG code. Display text
+    // uses Fafine/Tāne (Samoan) instead of female/male; the underlying
+    // `def.gender` enum stays 'Tāne'/'Fafine' to match the Master sheet.
     function milestoneHeadline(def) {
-      const who = def.gender === 'Male' ? 'male' : 'female';
+      const who = def.gender === 'Tāne' ? 'tāne' : 'fafine';
       const what = def.stage === 'phd' ? 'PhD' : "Masters";
       return `First ${who} ${what}`;
     }
@@ -6080,13 +6145,13 @@
           };
         })
         .sort((a, b) => a.year - b.year || a.name.localeCompare(b.name));
-      if (!candidates.length) throw new Error(`Panel D milestone data missing: ${def.key}`);
+      if (!candidates.length) return null;
       const year = candidates[0].year;
       const tied = candidates.filter(candidate => candidate.year === year);
       const chosen = tied[0];
       // Build display strings: title + FIRST-given + family, uni (CC).
       //
-      // Public chart name privacy rule (culturally required in Samoan
+      // Public chart name privacy rule (culturally required in iTaukei
       // context — see prompt v2): only the first token of Given Names is
       // rendered on the public chart. Middle names, additional given names,
       // initials, and any private/traditional names are omitted. This is a
@@ -6141,7 +6206,7 @@
         countryCode: cc,
         ties: tied
       };
-    });
+    }).filter(Boolean);
 
     const authorshipByPublication = new Map();
     authorship.forEach(row => {
@@ -6170,11 +6235,6 @@
       'd-countries': countries.size,
       'd-milestones': milestones.length
     };
-    const expectedKpis = { 'd-theses': 432, 'd-scholars': 472, 'd-masters': 315, 'd-phds': 117, 'd-unis': 101, 'd-countries': 22, 'd-milestones': 4 };
-    Object.entries(expectedKpis).forEach(([key, expected]) => {
-      if (kpis[key] !== expected) console.warn(`Panel D KPI data drift: ${key} is ${kpis[key]}, expected ${expected}.`);
-    });
-
     state.milestonesCache = milestones;
     state.panelDDataCache = {
       milestones,
@@ -6217,6 +6277,9 @@
   // authors filter (state.histAuthors, wired via wireHistAuthorsTabs) so
   // toggles here don't cascade into Panel B/C and vice versa.
   // The x-axis window is controlled by state.histRange (start/end year).
+  // Panel D firsts toolbar (js/panel-d-firsts.js) re-draws the chart after a
+  // Master's/PhD or gender toggle.
+  window.__panelDRerender = () => renderHistogram();
   function renderHistogram() {
     const items = state.snapshot.items;
     const authorsMode = state.histAuthors || 'both';
@@ -6259,7 +6322,7 @@
     if (note) {
       const headlineTotal = filteredItems.filter(it => headlineTypes.has(visualType(it))).length;
       const linkedTotal = linkedScholarIds.size || panelDData.linkedScholarFallback || 0;
-      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Samoan scholars. Women share is a 5-year rolling average of lead-author gender.`;
+      note.textContent = `One bar per year of publication. Unclassified items are excluded. A total of ${filteredItems.length} publication records (${headlineTotal} across the five headline categories) are linked to ${linkedTotal} Samoan scholars.`;
     }
 
     if (yearsAll.length) populateDecadeSelect(Math.min(...yearsAll), Math.max(...yearsAll));
@@ -6291,8 +6354,8 @@
 
     const W = 900, H = 340;
     // Padding widened on left (numeric labels + rotated axis title) and right
-    // (secondary %-axis + rotated "Women authorship" title).
-    const PAD_LEFT = 62, PAD_RIGHT = 74, PAD_TOP = 42, PAD_BOTTOM = 46;
+    // (secondary %-axis + rotated "Fafine authorship" title).
+    const PAD_LEFT = 62, PAD_RIGHT = 22, PAD_TOP = 42, PAD_BOTTOM = 46;
     const plotW = W - PAD_LEFT - PAD_RIGHT;
     const plotH = H - PAD_TOP - PAD_BOTTOM;
     // dataMin/dataMax define the domain the timeline can span. We widen the
@@ -6341,7 +6404,7 @@
       const x = PAD_LEFT + (startYear - yMin) * bandW;
       const width = (endYear - startYear) * bandW;
       svg.appendChild(panelDSvg('rect', { x, y: PAD_TOP, width, height: plotH, fill: decadeIndex % 2 === 0 ? '#ffffff' : 'rgba(120,90,60,0.06)' }));
-      svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${decade}s`));
+      svg.appendChild(panelDSvg('text', { x: x + width / 2, y: PAD_TOP - 4, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#9ca3af' }, `${decade}s`));
     }
 
     // Left y-axis: vertical line + ticks at 5 evenly-spaced values (0, 20, 40, 60, 80, 100 for niceMax=100).
@@ -6366,13 +6429,13 @@
       // Outward tick mark on the left axis
       svg.appendChild(panelDSvg('line', { x1: PAD_LEFT - 4, x2: PAD_LEFT, y1: y, y2: y, stroke: '#6b7280', 'stroke-width': '1' }));
       // Numeric label
-      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 7, y: y + 3.5, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
+      svg.appendChild(panelDSvg('text', { x: PAD_LEFT - 7, y: y + 3.5, 'text-anchor': 'end', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280' }, Number.isInteger(value) ? String(value) : value.toFixed(1)));
     }
     // Left y-axis title (rotated, like the mockup)
     svg.appendChild(panelDSvg('text', {
       x: PAD_LEFT - 42, y: PAD_TOP + plotH / 2,
       transform: `rotate(-90 ${PAD_LEFT - 42} ${PAD_TOP + plotH / 2})`,
-      'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '11', fill: '#6b7280'
+      'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '12', fill: '#6b7280'
     }, 'Number of publications'));
 
     for (let year = yMin; year <= yMax; year++) {
@@ -6399,69 +6462,8 @@
       });
     }
 
-    // Authorship-based 5-year rolling women share uses lead Scholar IDs from
-    // the Master publications table and honors both the active Panel D author
-    // mode AND the current source-type checkboxes — so unchecking types
-    // (e.g. leaving only Master's + PhD) recomputes the line against just
-    // those items, matching what the bars actually show.
-    const activeTypeSet = state.histTypeSet;
-    const genderCountsByYear = new Map();
-    filteredItems.forEach(item => {
-      const year = Number(item.year);
-      if (!Number.isInteger(year)) return;
-      // Only include items whose visual type is currently checked.
-      if (!activeTypeSet.has(visualType(item))) return;
-      const publication = panelDData.publicationById.get(String(item._masterPublicationId || '').trim());
-      const gender = publication ? panelDData.genderByScholarId.get(String(publication['Auth_Lead Scholar ID'] || '').trim()) : '';
-      if (gender !== 'Female' && gender !== 'Male') return;
-      const bucket = genderCountsByYear.get(year) || { Female: 0, Male: 0 };
-      bucket[gender] += 1;
-      genderCountsByYear.set(year, bucket);
-    });
-    const rollingWomen = new Map();
-    for (let year = dataMin; year <= dataMax; year++) {
-      let female = 0, male = 0;
-      for (let rollingYear = year - 4; rollingYear <= year; rollingYear++) {
-        const bucket = genderCountsByYear.get(rollingYear);
-        if (!bucket) continue;
-        female += bucket.Female;
-        male += bucket.Male;
-      }
-      if (female + male >= 3) rollingWomen.set(year, female / (female + male));
-    }
-    // Secondary (right) y-axis for the 5-year rolling women-authorship share.
-    // Ticks at 0/25/50/75/100% (was 0/50/100) matching the reference mockup.
-    const axisX = W - PAD_RIGHT + 4;
-    svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX, y1: PAD_TOP, y2: yZero, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-    [0, 25, 50, 75, 100].forEach(percent => {
-      const y = PAD_TOP + plotH * (1 - percent / 100);
-      svg.appendChild(panelDSvg('line', { x1: axisX, x2: axisX + 4, y1: y, y2: y, stroke: '#9ca3af', 'stroke-width': '0.7' }));
-      svg.appendChild(panelDSvg('text', { x: axisX + 7, y: y + 3.5, 'font-family': 'Arial', 'font-size': '10', fill: '#9ca3af' }, `${percent}%`));
-    });
-    svg.appendChild(panelDSvg('text', { x: W - 8, y: PAD_TOP + plotH / 2, transform: `rotate(-90 ${W - 8} ${PAD_TOP + plotH / 2})`, 'text-anchor': 'middle', 'font-family': 'Arial', 'font-size': '10', fill: '#6b7280' }, 'Women authorship (5-yr rolling)'));
-    let rollingRun = [];
-    const drawRollingRun = () => {
-      // Rolling women-authorship line drawn dashed, matching the mockup.
-      // Slight transparency (opacity 0.55) so it visually recedes behind the
-      // milestone callout text when the line crosses through a label region
-      // (e.g. the 1994 milestone sits directly on the rising curve). SVG
-      // z-order already puts milestones on top since they're appended after,
-      // but individual letter gaps let the dashed line show through —
-      // reducing opacity keeps the line readable without competing for
-      // attention with the label text.
-      // Dotted (1 3) rather than dashed so the 5-year rolling women-authorship
-      // line reads visually as a subtle trend indicator, not as a data series.
-      if (rollingRun.length > 1) svg.appendChild(panelDSvg('polyline', { points: rollingRun.join(' '), fill: 'none', stroke: '#B08D2F', 'stroke-width': '1.6', 'stroke-dasharray': '1 3', 'stroke-linecap': 'round', opacity: '0.7' }));
-      rollingRun = [];
-    };
-    for (let year = yMin; year <= yMax; year++) {
-      const share = rollingWomen.get(year);
-      if (share == null) { drawRollingRun(); continue; }
-      const x = PAD_LEFT + (year - yMin) * bandW + bandW / 2;
-      const y = PAD_TOP + plotH * (1 - share);
-      rollingRun.push(`${x},${y}`);
-    }
-    drawRollingRun();
+    // The 5-year rolling women-authorship line, its right-hand % axis and
+    // axis title were removed from Panel D (requested 2026-10-23).
 
     // Milestone callouts — floating inline in the low-bar whitespace, styled
     // after the mockup. Each callout is a 3-line block anchored to a small
@@ -6473,7 +6475,7 @@
     // update automatically whenever the Master file refresh promotes a new
     // scholar into a milestone slot.
     const visibleMilestones = panelDData.milestones
-      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax)
+      .filter(milestone => milestone.year >= yMin && milestone.year <= yMax && (typeof window.__panelDFirstsShow !== 'function' || window.__panelDFirstsShow(milestone)))
       .map(milestone => {
         const barTotal = (() => {
           const bucket = perYear.get(milestone.year);
@@ -6498,7 +6500,7 @@
     // rendered across visible milestones. Panel D always draws headline +
     // name + uni (3 lines). Milestones whose scholar has any paternal field
     // populated get TWO more lines (paternalTop, paternalBottom) that wrap
-    // village + district onto one line and district + statistical region onto the
+    // village + district onto one line and province + confederacy onto the
     // next. To keep tier stacking consistent, we size the block for 5 lines
     // whenever at least one milestone has any paternal data; otherwise we
     // keep the tighter 3-line block.
@@ -6572,6 +6574,44 @@
       entry.labelBaseY = baseY;
     });
 
+    // Final overlap fix-up pass. The tier system above spaces labels apart
+    // in most cases, but the per-milestone bar-top clearance nudge just
+    // before this ("walk the label upward until it clears the bar") can
+    // occasionally pull an adjacent-tier label back down close to its
+    // neighbour — this is exactly what caused the 1985 fafine Masters / 1988
+    // fafine PhD callouts to touch/overlap when both sit on short bars close
+    // together in the 1980s. Do one more sweep over every horizontally-close
+    // pair (x delta < LABEL_W_EST) and, if their label blocks would still
+    // touch vertically, push them apart by at least one full block height
+    // plus a comfortable padding gap.
+    // IMPORTANT: compare every pair whose x is close, not just neighbours in
+    // x-sorted order. A milestone that is horizontally *between* two other
+    // close-together milestones (e.g. 1986 sits between 1985 and 1988) can
+    // otherwise hide a real overlap between the two it's sandwiched between,
+    // since they'd never be checked against each other directly.
+    const OVERLAP_PAD = 10; // extra breathing room beyond the label's own height
+    const MIN_VERTICAL_GAP = LABEL_BLOCK_H + OVERLAP_PAD;
+    const xOf = entry => PAD_LEFT + (entry.milestone.year - yMin) * bandW + bandW / 2;
+    // Process labels from topmost (smallest baseY) to lowest, so each label
+    // is pushed down (never up) just enough to clear every already-placed,
+    // horizontally-close label above it. Processing in this order means a
+    // single pass is enough even when 3+ milestones chain together.
+    const byY = visibleMilestones.slice().sort((a, b) => a.labelBaseY - b.labelBaseY);
+    for (let i = 1; i < byY.length; i++) {
+      const cur = byY[i];
+      const xCur = xOf(cur);
+      let requiredBaseY = cur.labelBaseY;
+      for (let j = 0; j < i; j++) {
+        const other = byY[j];
+        if (Math.abs(xCur - xOf(other)) >= LABEL_W_EST) continue; // horizontally far apart, no risk
+        requiredBaseY = Math.max(requiredBaseY, other.labelBaseY + MIN_VERTICAL_GAP);
+      }
+      // Keep the label above the x-axis baseline; if the required position
+      // would run past it, clamp there instead (better a tight fit at the
+      // bottom than overlapping the axis).
+      cur.labelBaseY = Math.min(requiredBaseY, yZero - 8);
+    }
+
     visibleMilestones.forEach(({ milestone, labelBaseY, anchor }) => {
       const x = PAD_LEFT + (milestone.year - yMin) * bandW + bandW / 2;
       const isEnd = anchor === 'end';
@@ -6582,7 +6622,7 @@
       //   line 2 (nameY)       — "Dr./Mr./Ms Given Family"
       //   line 3 (uniY)        — "University name (CC)"
       //   line 4 (pat1Y)       — "Village vlg, District District,"
-      //   line 5 (pat2Y)       — "District District (Statistical Region)"
+      //   line 5 (pat2Y)       — "Province Province (Confederacy)"
       // Lines 4/5 only emit when the scholar has paternal fields populated.
       const topOffset = (LABEL_LINES - 1) * LABEL_LINE_H;
       const headlineY = labelBaseY - topOffset;
@@ -6813,7 +6853,7 @@
 
     // Reset link — clears every Panel D filter back to its default so users
     // can recover from any combination of author-mode / type / timeframe
-    // tweaks in one click. Defaults: authors = 'lead' (Samoan lead), types =
+    // tweaks in one click. Defaults: authors = 'lead' (iTaukei lead), types =
     // all checked, timeframe = All. Also reflects the state change in the DOM
     // so the tab pills and checkboxes visually snap back into place.
     const resetBtn = $('[data-hist-reset]');
@@ -6897,23 +6937,55 @@
     sel.dataset.built = '1';
     if (state.filter.decade) sel.value = state.filter.decade;
   }
+  // Match Fiji’s public publication-filter taxonomy; retain detailed card topics.
+  var SHORT_DISCIPLINES = [
+    'Earth, ocean and atmospheric sciences',
+    'Social sciences',
+    'Humanities',
+    'Education',
+    'Life and environmental sciences',
+    'Theology and religious studies',
+    'Health sciences',
+    'Engineering, technology and planning'
+  ];
+
+  function shortDisciplineName(value) {
+    var s = String(value || '').trim();
+    if (!s) return '';
+    if (SHORT_DISCIPLINES.indexOf(s) !== -1) return s;
+    var x = s.toLowerCase();
+    if (/theolog|religio|church|biblical|christian|pastoral|ecumen|methodist|anglican|faith|ministry/.test(x)) return 'Theology and religious studies';
+    if (/education|teaching|teacher|curriculum|pedagog|school|literacy|tvet|early childhood|educational/.test(x)) return 'Education';
+    if (/public health|medicine|medical|nursing|surgery|epidemi|health science|clinical|anaesth|cardiol|paediatr|obstetric|gynaec|dent|intensive care|emergency medicine|infectious|diabetes/.test(x)) return 'Health sciences';
+    if (/engineering|technology|information system|information technology|ict|computer|computing|digital|architecture|planning|gis|geomatic|survey|remote sensing|renewable energy|power|control|construction|mining/.test(x)) return 'Engineering, technology and planning';
+    if (/marine science|ocean|climate|atmospher|geograph|geolog|hydrolog|coastal process|earth science/.test(x)) return 'Earth, ocean and atmospheric sciences';
+    if (/environment|ecolog|biology|agricultur|forestry|fisher|aquaculture|horticultur|animal science|veterinary|plant|entomolog|ornitholog|microbiology|food science|phytochemical|soil|agroforestry|crop|livestock|conservation|biodiversity|chemistry|coral reef|natural products|water quality|pollution/.test(x)) return 'Life and environmental sciences';
+    if (/history|linguist|language|literature|archaeolog|heritage|art and design|museum|cultural research|philosoph|humanities/.test(x)) return 'Humanities';
+    return 'Social sciences';
+  }
+
   function populateDisciplineSelect() {
     const sel = $('[data-db-filter="discipline"]');
     if (!sel || sel.dataset.built === '1') return;
-    disciplineEntries.forEach(([name]) => {
+    sel.innerHTML = '<option value="">All disciplines</option>';
+    SHORT_DISCIPLINES.forEach(name => {
       const opt = document.createElement('option');
       opt.value = name; opt.textContent = name;
       sel.appendChild(opt);
     });
     sel.dataset.built = '1';
-    if (state.filter.discipline) sel.value = state.filter.discipline;
+    if (state.filter.discipline) {
+      state.filter.discipline = shortDisciplineName(state.filter.discipline);
+      sel.value = state.filter.discipline;
+    }
   }
 
   // ============ SCHOLAR CARDS (paginated, image-4 style) ============
   const SCHOLAR_PAGE_SIZE = 20;
   state.scholarPage = 1;
-  state.scholarConfFilter = '';  // '', '__untagged__', 'Rest of Upolu', 'Apia Urban Area', 'North West Upolu'
-  state.scholarProvFilter = '';  // '', '__untagged__', or a district name
+  state.scholarConfFilter = '';  // '', '__untagged__', 'Apia Urban Area', "Apia Urban Area", "Apia Urban Area", "Apia Urban Area", 'Apia Urban Area'
+  state.scholarProvFilter = '';  // '', '__untagged__', or a province name
+  state.scholarClanFilter = '';  // paternal clan, in the supplied hierarchy
   state.scholarNameSearch = '';  // free-text name search (case-insensitive substring)
   state.scholarKeywordSearch = ''; // research-keyword search across insights + publications
   state.scholarSectorFilter = ''; // '' or one of SECTORS
@@ -6922,18 +6994,6 @@
   state.scholarStudyUni = '';      // optional narrower selection within that country
   state.scholarWorkCountry = '';   // country selected in the Work combo
   state.scholarWorkUni = '';       // optional narrower selection within that country
-  // Samoa-native six-dimension geography filter slots (Session 4). Each is
-  // '', a domain-specific value, or '__unrecorded__' meaning "blank in the
-  // source". Values are never inferred: a scholar with a Village on record
-  // but no Itūmālō appears when Village is filtered but does NOT appear
-  // when Itūmālō is filtered to anything except '__unrecorded__'.
-  state.scholarVillageFilter = '';       // '' | V-#### composite id | plain village name | '__unrecorded__'
-  state.scholarIslandFilter = '';        // '' | Upolu | Manono | Apolima | Savai‘i | '__unrecorded__'
-  state.scholarItumaloFilter = '';       // '' | one of 11 constitutional Itūmālō | '__unrecorded__'
-  state.scholarConstituencyFilter = '';  // '' | version-namespaced constituency | '__unrecorded__'
-  // Panel G citation-format toggle. Governs both the per-item Copy-cite
-  // button and the Citation column in Export .csv.
-  state.citationFormat = 'apa';          // 'apa' | 'chicago' | 'mla'
   // Cache: scholar name → Set<discipline>. Populated lazily on first renderLeaders.
   state.scholarDisciplines = null;
 
@@ -6944,16 +7004,12 @@
       <path d="M12 120 C 12 85, 88 85, 88 120 Z" fill="#b6bcc2"/>
     </svg>`;
 
-  // District groupings per statistical region — used to rebuild the district dropdown
-  // when the statistical region dropdown changes.
-  // The 14 Samoan districts grouped by chiefly region.
-  // Sourced from samoa-districts.geojson (each feature has a `statistical region`
-  // property). Ra is part of Apia Urban Area — previously missed.
-  const CONFEDERACY_PROVINCES = {
-    'Rest of Upolu': ['Kadavu', 'Nadroga/Navosa', 'Namosi', 'Rewa', 'Serua'],
-    'Apia Urban Area':     ['Ba', 'Lomaiviti', 'Naitasiri', 'Ra', 'Tailevu'],
-    'North West Upolu':     ['Bua', 'Cakaudrove', 'Lau', 'Macuata']
-  };
+  // District groupings per Island Division — used to rebuild the district
+  // dropdown when the Island Division dropdown changes.
+  // The 23 Samoa districts grouped by Island Division.
+  // Sourced from samoa-districts.geojson (each feature has an
+  // `islandDivision` property).
+  const CONFEDERACY_PROVINCES = {'Apia Urban Area':   ["Vaimauga 2", "Vaimauga 3", "Vaimauga 4", "Faleata 1"],"North West Upolu":    ['Vaimauga 1', 'Faleata 2', 'Faleata 3', 'Faleata 4', 'Sagaga 1', 'Sagaga 2', 'Sagaga 3', 'Sagaga 4', 'Aana Alofi 1', 'Aana Alofi 2', 'Aana alofi 3', 'Aana Alofi 4'],"Rest of Upolu":   ['Aiga i le Tai', 'Falelatai & Samatau', 'Lefaga & Faleaseela', 'Safata 1', 'Safata 2', 'Siumu', 'Falealili 1', 'Falealili 2', 'Lotofaga', 'Lepa', 'Aleipata Itupa i Luga', 'Aleipata Itupa i Lalo', 'Vaa o Fonoti', 'Anoamaa 1', 'Anoamaa 2'],"Savaii":      ["Faasaleleaga 1", "Faasaleleaga 2", "Faasaleleaga 3", "Faasaleleaga 4", "Faasaleleaga 5", "Gagaemauga 1", "Gagaemauga 2", "Gagaifomauga 1", "Gagaifomauga 2", "Gagaifomauga 3", "Vaisigano 1", "Vaisigano 2", "Falealupo", "Alataua i Sisifo", "Salega 1", "Salega 2", "Palauli 1", "Palauli 2", "Satupaitea", "Palauli 3"]};
 
   // World-map Region › Country grouping. Regions are ordered so the Pacific
   // (Ron's home region and the largest cohort) sits at the top of the
@@ -6967,10 +7023,12 @@
   // ordering and grouping still work if the workflow ever emits a
   // pre-region-field snapshot.
   const WORLD_REGIONS = {
-    Pacific:         ['Samoa', 'Australia', 'New Zealand', 'Papua New Guinea'],
-    Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea'],
-    Europe:          ['UK', 'Germany', 'Sweden', 'Portugal', 'Malta'],
-    'North America': ['USA', 'Canada']
+    Oceania:         ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea', 'Tonga', 'Samoa', 'Solomon Islands', 'Vanuatu', 'Federated States of Micronesia', 'Kiribati', 'Marshall Islands', 'Naoero', 'Nauru', 'Palau', 'Tuvalu', 'Cook Islands', 'Niue', 'New Caledonia', 'French Polynesia'],
+    Asia:            ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea', 'Singapore'],
+    Europe:          ['United Kingdom', 'UK', 'Ireland', 'Germany', 'Sweden', 'Portugal', 'Malta', 'Norway', 'France', 'Netherlands', 'Belgium', 'Switzerland', 'Austria', 'Denmark', 'Finland', 'Spain', 'Italy'],
+    'North America': ['United States', 'USA', 'Canada'],
+    'Latin America and the Caribbean': ['Trinidad and Tobago', 'Cuba', 'Mexico', 'Brazil', 'Chile', 'Argentina'],
+    Africa:          ['South Africa', 'Ghana', 'Kenya', 'Nigeria', 'Uganda', 'Tanzania']
   };
 
   // =========================================================================
@@ -7010,7 +7068,7 @@
     ['Business, Economics & Accounting',   /(account|economic|business|enterprise|labour|labor|market|value chain|trade|sugar tax|sugar-sweetened beverage tax|food trade|tourism\b|tourist|hospitality|land bank|land back|sovereign wealth|poverty alleviation)/i],
     ['Education & Pedagogy',               /(educat|pedagog|curriculum|literacy|school\b|university\b|higher education|early childhood|teacher|student|youth (empowerment|advoca|political|mental))/i],
     ['Health & Medicine',                  /(health|medicine|medical|hospital|antimicrobial|antibiotic|carbapenem|acinetobacter|typhoid|malaria|diabetes|diabetic|obesity|obes\b|kava\b|ptsd|mental|non[- ]communicable|ncd\b|clinical|epidemiolog|nutrition|glycaemic|glycemic|maternal|filaria|dental|ciguatera|substance|pharmaceutical|drug discovery|drug development|antiparasitic|antimalar|antioxidant|body image)/i],
-    ['Indigenous Knowledge & Culture',     /(fa'a\s?samoa|faasamoa|samoan|indigenous knowledge|indigenous samoan|traditional (knowledge|practice|ecological|resource|medicine)|customary|storytelling|oral tradition|indigenous educ|indigenous methodolog|decolonis|decoloniz|cultural (identity|value|belief|loss|practice)|matai\b|aiga\b|nu'u\b|tofi\b|feagaiga|talanoa|funeral|funerary|kava (drink|circle|ceremonial))/i],
+    ['Indigenous Knowledge & Culture',     /(vanua|itaukei|i[- ]?taukei|indigenous knowledge|indigenous fijian|traditional (knowledge|practice|ecological|resource|medicine)|customary|storytelling|oral tradition|indigenous educ|indigenous methodolog|decolonis|decoloniz|cultural (identity|value|belief|loss|practice)|marama|fijian ethos|fijian way|bula vakavanua|funeral|funerary|kava (drink|circle|ceremonial))/i],
     ['Land, Water & Sanitation',           /(sanitation|water quality|drinking water|watershed|wash\b|faecal|latrine|septic|hygiene|water resource|water governance|blue carbon\b|mangrove|freshwater|river|catchment|coastal water|land tenure|land right|customary land|land trust|land bank|land back)/i],
     ['Marine & Environmental Science',     /(marine|coral|reef|ocean|fishery|fisher|fisherwoman|fisherwomen|lmma|locally managed marine|mangrove|coastal|blue economy|blue carbon|sea cucumber|octopus|clam\b|hawksbill|turtle|natural product|biodiscover|biodivers|ecolog|environment|ecosystem|climate|conservation|invasive|forest|habitat|species|entomol|beetle|damselfly|herpetofauna|avifauna|freshwater fish|aquaculture|larvicultur|rotifer|sponge)/i],
     ['Physical & Applied Sciences',        /(chemistry|chemical|electrochem|biosensor|nanoparticle|arsenic|polyaniline|redox|forensic|spectrometr|ion mobility|whole genome sequencing|genomic surveillance|molecular epidemiolog)/i],
@@ -7077,8 +7135,8 @@
     return out;
   }
 
-  // Set of scholar names whose card is currently visible under the statistical region/
-  // district dropdowns at the top of the leaderboard. Also used by the item
+  // Set of scholar names whose card is currently visible under the confederacy/
+  // province dropdowns at the top of the leaderboard. Also used by the item
   // list at the bottom so "filter to Ra" narrows both the cards AND the
   // publications shown below.
   state.scholarFilterNames = null; // null = no dropdown filter active
@@ -7089,22 +7147,22 @@
     if (!conf && !prov) { state.scholarFilterNames = null; return; }
 
     const provConf = new Map();
-    if (state.districts && state.districts.features) {
-      state.districts.features.forEach(f => provConf.set(f.properties.name, f.properties.region));
+    if (state.provinces && state.provinces.features) {
+      state.provinces.features.forEach(f => provConf.set(f.properties.name, f.properties.confederacy));
     }
 
     const names = new Set();
     (state.scholarProfilesByName || new Map()).forEach((profile, name) => {
       const p = effectivePaternalProvince(profile);
-      const c = p ? (provConf.get(p) || '') : '';
+      const c = paternalDivision(profile);
 
-      // Statistical Region check
+      // Confederacy check
       if (conf === '__untagged__') {
         if (c) return;
       } else if (conf) {
         if (c !== conf) return;
       }
-      // District check
+      // Province check
       if (prov === '__untagged__') {
         if (p) return;
       } else if (prov) {
@@ -7130,32 +7188,32 @@
     const provSel = $('[data-scholar-prov-filter]');
     if (!confSel || !provSel) return;
 
-    // Rebuild the district dropdown options based on the currently-selected
-    // statistical region (or show all districts if 'All statistical regions' is chosen).
+    // Rebuild the province dropdown options based on the currently-selected
+    // Island Division (or show every district when "All Statistical Regions" is chosen).
     function rebuildProvinceOptions() {
       const conf = state.scholarConfFilter;
       // Preserve the selected value if it's still valid
       const prevProv = state.scholarProvFilter;
-      let districts;
+      let provinces;
       if (!conf || conf === '__untagged__') {
-        districts = Object.values(CONFEDERACY_PROVINCES).flat().sort();
+        provinces = Object.values(CONFEDERACY_PROVINCES).flat().sort();
       } else {
-        districts = (CONFEDERACY_PROVINCES[conf] || []).slice().sort();
+        provinces = (CONFEDERACY_PROVINCES[conf] || []).slice().sort();
       }
-      // Build options: All, Untagged, then each district
+      // Build options: All, Untagged, then each province
       provSel.innerHTML =
-        '<option value="">All districts</option>' +
-        '<option value="__untagged__">Untagged (no district)</option>' +
-        districts.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join('');
+        '<option value="">All provinces</option>' +
+        '<option value="__untagged__">Untagged (no province)</option>' +
+        provinces.map(p => `<option value="${escapeAttr(p)}">${escapeHtml(p)}</option>`).join('');
       // Restore selection if still available; otherwise reset to All
-      if (prevProv && (prevProv === '__untagged__' || districts.includes(prevProv))) {
+      if (prevProv && (prevProv === '__untagged__' || provinces.includes(prevProv))) {
         provSel.value = prevProv;
       } else {
         provSel.value = '';
         state.scholarProvFilter = '';
       }
     }
-    // Initial build so the district list starts with all 14 districts
+    // Initial build so the province list starts with all 14 provinces
     rebuildProvinceOptions();
 
     confSel.addEventListener('change', () => {
@@ -7183,11 +7241,11 @@
     const grid = $('[data-db-leaders]');
     if (!grid) return;
 
-    // District → statistical region map (from samoa-districts.geojson) so we can
-    // classify each scholar's paternal district into a region.
+    // Province → confederacy map (from fiji-provinces.geojson) so we can
+    // classify each scholar's paternal province into a confederacy.
     const provConf = new Map();
-    if (state.districts && state.districts.features) {
-      state.districts.features.forEach(f => provConf.set(f.properties.name, f.properties.region));
+    if (state.provinces && state.provinces.features) {
+      state.provinces.features.forEach(f => provConf.set(f.properties.name, f.properties.confederacy));
     }
 
     // Build the sorted, enriched scholar list. Enrichment comes from
@@ -7197,17 +7255,17 @@
     const enrichedByName = state.scholarProfilesByName || new Map();
     const hidden = state.hiddenScholars || new Set();
     // Count the visible (non-hidden) scholars BEFORE any filters are applied.
-    // The Statistical Region Total pill uses this to show "N of M" once a filter narrows
+    // The Confederacy Total pill uses this to show "N of M" once a filter narrows
     // the result set. Hidden scholars are excluded from both numerator and
     // denominator so the ratio stays meaningful.
     const unfilteredTotal = derived.filter(r => !hidden.has(r.name)).length;
 
     // CANONICAL COUNT OVERRIDE (2026-08 rebuild):
     // Publication counts + first-authorship are derived directly from the
-    // Master `Authorship` table via SamoaScholarDatabaseAdapter.computePublicationTotals.
+    // Master `Authorship` table via MasterFileAdapter.computePublicationTotals.
     // This replaces the legacy Zotero-collection based counter (which was
     // deriving first-authorship from `creators[0]` and drifting when non-
-    // Samoan co-authors were dropped). Rows without a resolvable Scholar ID
+    // iTaukei co-authors were dropped). Rows without a resolvable Scholar ID
     // keep the derived counts as a graceful fallback.
     const _canonAdapter = state.masterAdapter;
     const _canonMaster  = state.master;
@@ -7270,7 +7328,7 @@
         }
 
         enriched._prov = effectivePaternalProvince(enrichment);
-        enriched._conf = enriched._prov ? (provConf.get(enriched._prov) || '') : '';
+        enriched._conf = paternalDivision(enrichment);
         return enriched;
       })
       // Scholar-card leaderboard sort order (see docs/NAMES-DO-NOT-MERGE.md
@@ -7301,19 +7359,22 @@
     state.scholarDisciplines = disciplineByName;
 
     // ------- Filter cascade (AND across every filter) -------
-    // Statistical Region
+    // Confederacy
     const confF = state.scholarConfFilter;
     if (confF === '__untagged__') {
       rows = rows.filter(r => !r._conf);
     } else if (confF) {
       rows = rows.filter(r => r._conf === confF);
     }
-    // District
+    // Province
     const provF = state.scholarProvFilter;
     if (provF === '__untagged__') {
       rows = rows.filter(r => !r._prov);
     } else if (provF) {
       rows = rows.filter(r => r._prov === provF);
+    }
+    if (state.scholarClanFilter) {
+      rows = rows.filter(r => paternalClan(r) === state.scholarClanFilter);
     }
     // Name search (case-insensitive substring; matches "Last, First" AND "First Last")
     const nameQ = (state.scholarNameSearch || '').trim().toLowerCase();
@@ -7381,61 +7442,14 @@
       });
     }
 
-    // Samoa-native six-dimension geography filters. Independent of each
-    // other and independent of Statistical Region / Political-Census
-    // District (which live in state.scholarConfFilter / scholarProvFilter
-    // above). A scholar with a Village on record but no Itūmālō, or an
-    // Electoral Constituency but no Specific Island, is NOT inferred to
-    // sit inside another dimension. Filter values are:
-    //   - Village: composite V-#### id from SBS Village Directory,
-    //     OR the sentinel '__unrecorded__' meaning "village blank".
-    //   - Specific Island: 'Upolu' | 'Manono' | 'Apolima' | 'Savai‘i',
-    //     OR '__unrecorded__' meaning "blank in SBS row".
-    //   - Itūmālō: one of the 11 constitutional Second-Schedule names.
-    //   - Constituency: version-namespaced string, e.g. '2019-Act:Aana Alofi 1'
-    //     or 'Pre-2019:Aʻana Alofi 1'.
-    if (state.scholarVillageFilter) {
-      const want = state.scholarVillageFilter;
-      rows = rows.filter(r => {
-        const p = enrichedByName.get(r.name) || {};
-        if (want === '__unrecorded__') return !p.villageId && !p.village;
-        return p.villageId === want || p.village === want;
-      });
-    }
-    if (state.scholarIslandFilter) {
-      const want = state.scholarIslandFilter;
-      rows = rows.filter(r => {
-        const p = enrichedByName.get(r.name) || {};
-        const isl = p.specificIsland || '';
-        if (want === '__unrecorded__') return !isl || isl === 'SPECIFIC_ISLAND_UNSURE';
-        return isl === want;
-      });
-    }
-    if (state.scholarItumaloFilter) {
-      const want = state.scholarItumaloFilter;
-      rows = rows.filter(r => {
-        const p = enrichedByName.get(r.name) || {};
-        if (want === '__unrecorded__') return !p.itumalo;
-        return p.itumalo === want;
-      });
-    }
-    if (state.scholarConstituencyFilter) {
-      const want = state.scholarConstituencyFilter;
-      rows = rows.filter(r => {
-        const p = enrichedByName.get(r.name) || {};
-        if (want === '__unrecorded__') return !p.constituency;
-        return p.constituency === want;
-      });
-    }
-
-    // Recompute the statistical region breakdown counts for the summary bar based on
+    // Recompute the confederacy breakdown counts for the summary bar based on
     // the CURRENTLY-visible scholar set. Called after filtering so counts
     // always reflect what the user is actually looking at.
     renderScholarSummary(rows, unfilteredTotal);
 
     // ------- Feed Panel G (All items) with the filtered scholar set -------
     // Any active Panel F filter (name search, keyword search, sector,
-    // discipline, region, district, country/uni of study or work)
+    // discipline, confederacy, province, country/uni of study or work)
     // narrows Panel G to publications authored by the currently-visible
     // scholars — so "funeral" in the keyword box also shrinks the item
     // list below to work on funerals. Panel G's own filters (title
@@ -7463,36 +7477,33 @@
   }
 
   // ============================================================
-  //  Summary bar — counts per statistical region on the CURRENT filter result
+  //  Summary bar — counts per confederacy on the CURRENT filter result
   // ============================================================
-  // Any scholar filter active? Used to decide whether the Statistical Region Total
+  // Any scholar filter active? Used to decide whether the Confederacy Total
   // pill shows "Total: N" (unfiltered) or "Total: N of M" (filtered).
   function anyScholarFilterActive() {
     return !!(state.scholarNameSearch && state.scholarNameSearch.trim())
         || !!(state.scholarKeywordSearch && state.scholarKeywordSearch.trim())
         || !!state.scholarConfFilter
         || !!state.scholarProvFilter
+        || !!state.scholarClanFilter
         || !!state.scholarSectorFilter
         || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
         || !!state.scholarStudyCountry || !!state.scholarStudyUni
-        || !!state.scholarWorkCountry  || !!state.scholarWorkUni
-        || !!state.scholarVillageFilter
-        || !!state.scholarIslandFilter
-        || !!state.scholarItumaloFilter
-        || !!state.scholarConstituencyFilter;
+        || !!state.scholarWorkCountry  || !!state.scholarWorkUni;
   }
 
   function renderScholarSummary(rows, unfilteredTotal) {
     const bar = document.querySelector('[data-scholar-summary]');
     if (!bar) return;
-    const counts = { 'Apia Urban Area': 0, 'North West Upolu': 0, 'Rest of Upolu': 0, Unclassified: 0 };
+    const counts = {"Apia Urban Area": 0,"North West Upolu": 0,'Rest of Upolu': 0,"Savaii": 0,Unclassified: 0};
     (rows || []).forEach(r => {
       const c = r._conf;
       if (c && counts[c] != null) counts[c] += 1;
       else counts.Unclassified += 1;
     });
     const total = (rows || []).length;
-    // Statistical Region Total pill:
+    // Confederacy Total pill:
     //   unfiltered  → "Total: N"
     //   filter live → "Total: matched of full" (e.g. "32 of 143")
     // Publications Total NEVER uses this pattern (see below).
@@ -7504,18 +7515,19 @@
         totalEl.textContent = String(total);
       }
     }
-    bar.querySelector('[data-count-apia]').textContent = String(counts['Apia Urban Area']);
-    bar.querySelector('[data-count-nwupolu]').textContent = String(counts['North West Upolu']);
-    bar.querySelector('[data-count-rupolu]').textContent = String(counts['Rest of Upolu']);
+    bar.querySelector('[data-count-apiaurbanarea]').textContent = String(counts["Apia Urban Area"]);
+    bar.querySelector('[data-count-northwestupolu]').textContent = String(counts["North West Upolu"]);
+    bar.querySelector('[data-count-restofupolu]').textContent = String(counts['Rest of Upolu']);
+    bar.querySelector('[data-count-savaii]').textContent = String(counts["Savaii"]);
     bar.querySelector('[data-count-unclass]').textContent = String(counts.Unclassified);
 
-    // Reorder Apia Urban Area/North West Upolu/Rest of Upolu chips by count descending, tie-broken
-    // alphabetically by statistical region name. Unclassified is anchored to the end
-    // of the row regardless of its count (it isn't a region, so it never
-    // enters the ranked sequence). Order recomputes on every render.
+    // Reorder Island Division chips by count descending, tie-broken
+    // alphabetically by division name. Unclassified is anchored to the end
+    // of the row regardless of its count (it isn't an Island Division, so it
+    // never enters the ranked sequence). Order recomputes on every render.
     const chipsHost = bar.querySelector('[data-scholar-summary-chips]');
     if (chipsHost) {
-      const CONFED = ['Apia Urban Area', 'North West Upolu', 'Rest of Upolu'];
+      const CONFED = ["Apia Urban Area","North West Upolu",'Rest of Upolu',"Savaii"];
       const ranked = CONFED.slice().sort((a, b) => {
         const diff = counts[b] - counts[a];
         return diff !== 0 ? diff : a.localeCompare(b);
@@ -7527,6 +7539,20 @@
       });
       const unclass = chipsHost.querySelector('[data-conf-chip="Unclassified"]');
       if (unclass) chipsHost.appendChild(unclass); // always last
+    }
+
+    const clanBar = document.querySelector('[data-scholar-clan-summary]');
+    if (clanBar) {
+      const clanCounts = new Map(CLANS.map(name => [name, 0]));
+      (rows || []).forEach(row => {
+        const name = paternalClan(row);
+        if (clanCounts.has(name)) clanCounts.set(name, clanCounts.get(name) + 1);
+      });
+      clanBar.querySelector('[data-count-clans-total]').textContent = String([...clanCounts.values()].reduce((a, b) => a + b, 0));
+      clanBar.querySelector('[data-scholar-clan-chips]').innerHTML = CLANS.map((name, i) => {
+        const hue = Math.round(i * 360 / CLANS.length);
+        return `<span class="dsf-chip dsf-chip--clan" style="background:hsl(${hue} 70% 88%);color:hsl(${hue} 65% 27%)"><span class="dsf-chip__dot" style="background:${clanColor(i)}"></span> ${escapeHtml(name)}: ${clanCounts.get(name)}</span>`;
+      }).join('');
     }
 
     // ---- Results II — sum publication types across the shown scholars ----
@@ -7622,17 +7648,17 @@
   // rules used in the admin so the public work filter is populated even
   // before Ron pushes the auto-seeded profile updates.
   const WORK_COUNTRY_RULES = [
-    // ---- Samoa (universities, museums, regional NGOs headquartered in Suva) ----
-    [/\bfiji national university\b|\bfnu\b/i, 'Samoa'],
-    [/\buniversity of the south pacific\b|\busp\b/i, 'Samoa'],
-    [/\bnature\s*samoa\b|\bfiji museum\b|\bblue prosperity samoa\b|\bwish samoa\b/i, 'Samoa'],
-    [/\bministry.*samoa|\bfiji.*ministry|\bsuva\b|\blautoka\b|\bnadi\b|\bnadroga\b/i, 'Samoa'],
+    // ---- Fiji (universities, museums, regional NGOs headquartered in Suva) ----
+    [/\bfiji national university\b|\bfnu\b/i, 'Fiji'],
+    [/\buniversity of the south pacific\b|\busp\b/i, 'Fiji'],
+    [/\bnature\s*fiji\b|\bfiji museum\b|\bblue prosperity fiji\b|\bwish fiji\b/i, 'Fiji'],
+    [/\bministry.*fiji|\bfiji.*ministry|\bsuva\b|\blautoka\b|\bnadi\b|\bnadroga\b/i, 'Fiji'],
     // Pacific-regional bodies + NGOs that are based in Suva even though the parent org is global.
-    [/\blocally managed marine area\b|\blmma\b|\bgiz pacific\b|\bpacific community\b|\bspc\b|\bsprep\b|\bffa\b|\bwwf pacific\b|\bwildlife conservation society.*samoa\b|\bconservation international.*(samoa|pacific)\b|\biucn oceania\b|\bcaritas.*samoa\b/i, 'Samoa'],
+    [/\blocally managed marine area\b|\blmma\b|\bgiz pacific\b|\bpacific community\b|\bspc\b|\bsprep\b|\bffa\b|\bwwf pacific\b|\bwildlife conservation society.*fiji\b|\bconservation international.*(fiji|pacific)\b|\biucn oceania\b|\bcaritas.*fiji\b/i, 'Fiji'],
     // Conservation International / WWF / WCS without a region suffix — assume the Pacific office.
-    [/\bconservation international\b|\bwildlife conservation society\b|\bwwf\b/i, 'Samoa'],
-    // Samoan government + hospitals + health service.
-    [/\bhealth service.*samoa\b|\blautoka hospital\b|\bcwm hospital\b|\bcolonial war memorial\b|\bfiji cdc\b/i, 'Samoa'],
+    [/\bconservation international\b|\bwildlife conservation society\b|\bwwf\b/i, 'Fiji'],
+    // Fijian government + hospitals + health service.
+    [/\bhealth service.*fiji\b|\blautoka hospital\b|\bcwm hospital\b|\bcolonial war memorial\b|\bfiji cdc\b/i, 'Fiji'],
     [/\buniversity of central lancashire\b|\bcentral lancashire\b|\buclan\b/i, 'United Kingdom'],
     [/\buniversity of southampton\b|\bimperial college\b|\boxford\b|\bcambridge\b|\b\(uk\)\b|\bunited kingdom\b/i, 'United Kingdom'],
     [/\buniversity of guam\b|\buog\b/i, 'Guam (USA territory)'],
@@ -7692,14 +7718,14 @@
   }
 
   function buildConfProvTree() {
-    // Same shape as country → unis: region → alphabetized districts.
+    // Same shape as country → unis: confederacy → alphabetized provinces.
     const tree = new Map();
-    ['Rest of Upolu', 'Apia Urban Area', 'North West Upolu'].sort().forEach(c => {
+    ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].sort().forEach(c => {
       tree.set(c, (CONFEDERACY_PROVINCES[c] || []).slice().sort((a, b) => a.localeCompare(b)));
     });
     // 'Unclassified' is anchored at the bottom — clicking it filters for
-    // Samoan scholars whose paternal district info isn't yet known.
-    // It has no child districts (no sub-tree).
+    // iTaukei scholars whose paternal province info isn't yet known.
+    // It has no child provinces (no sub-tree).
     tree.set('Unclassified', []);
     return tree;
   }
@@ -7715,7 +7741,7 @@
   }
 
   // ============================================================
-  //  Two-column combo control (Statistical Region/District, Study, Work)
+  //  Two-column combo control (Confederacy/Province, Study, Work)
   //  Left column = parents; right column = children of the hovered parent.
   //  Typing in the input filters both columns. Click parent → select parent;
   //  Click child → select parent + child.
@@ -7886,7 +7912,7 @@
       });
     }
 
-    // ---- Statistical Region / District combo ----
+    // ---- Confederacy / Province combo ----
     const confRoot   = document.querySelector('[data-scholar-conf-combo]');
     const confPanel  = document.querySelector('[data-scholar-conf-panel]');
     if (confRoot && confPanel) {
@@ -7897,8 +7923,8 @@
       const combo = initTwoColumnCombo({
         root: confRoot, input: null, panel: confPanel,
         colParent: colP, colChild: colC, colChildHeader: colCH,
-        tree, parentLabelSingular: 'Districts',
-        buildLabel: () => 'All statistical regions',
+        tree, parentLabelSingular: 'Provinces',
+        buildLabel: () => 'All Statistical Regions',
         isActive: () => {
           const c = state.scholarConfFilter, p = state.scholarProvFilter;
           // Map the internal '__untagged__' sentinel back to the friendly label.
@@ -7910,7 +7936,7 @@
         },
         onSelect: ({ parent, child }) => {
           // 'Unclassified' is the friendly label — the filter engine uses the
-          // internal '__untagged__' sentinel to mean "no paternal district".
+          // internal '__untagged__' sentinel to mean "no paternal province".
           state.scholarConfFilter = parent === 'Unclassified' ? '__untagged__' : (parent || '');
           state.scholarProvFilter = child || '';
           state.scholarPage = 1;
@@ -7925,6 +7951,19 @@
         renderLeaders();
         combo.refreshLabel();
       });
+    }
+
+    // ---- Paternal clan dropdown: retain the supplied hierarchical order ----
+    const clanSel = document.querySelector('[data-scholar-clan]');
+    if (clanSel) {
+      clanSel.innerHTML = '<option value="">All ʻĀiga</option>' +
+        CLANS.map(name => `<option value="${escapeAttr(name)}">${escapeHtml(name)}</option>`).join('');
+      clanSel.value = state.scholarClanFilter || '';
+      clanSel.onchange = () => {
+        state.scholarClanFilter = clanSel.value;
+        state.scholarPage = 1;
+        renderLeaders();
+      };
     }
 
     // ---- Sector dropdown (native <select>) ----
@@ -8083,6 +8122,7 @@
         state.scholarNameSearch = '';
         state.scholarKeywordSearch = '';
         state.scholarConfFilter = ''; state.scholarProvFilter = '';
+        state.scholarClanFilter = '';
         state.scholarSectorFilter = '';
         state.scholarDisciplineFilter.clear();
         state.scholarStudyCountry = ''; state.scholarStudyUni = '';
@@ -8103,7 +8143,7 @@
   // the informal >3-papers convention).
   //
   //   Source A: Zotero sub-collections under 'Samoan authors (>3 papers)'.
-  //             These are the primary Samoan-scholar collections curated in
+  //             These are the primary iTaukei-scholar collections curated in
   //             Zotero Desktop.
   //   Source B: Admin profiles whose scholar has no matching sub-collection.
   //             We fall back to matching publications by author name in the
@@ -8339,20 +8379,16 @@
     return rows;
   }
 
-  // Statistical Region → gradient stops for the banner + initials background.
-  // Matches Panel A/B/C statistical region colours.
-  const CONF_GRADIENT = {
-    'Rest of Upolu': { from: '#FF5A6E', to: '#c93e50' },
-    'Apia Urban Area':     { from: '#4ECDE6', to: '#0891b2' },
-    'North West Upolu':     { from: '#FFD84A', to: '#f7b500' }
-  };
+  // Confederacy → gradient stops for the banner + initials background.
+  // Matches Panel A/B/C confederacy colours.
+  const CONF_GRADIENT = {'Apia Urban Area': { from: '#FF5A6E', to: '#c93e50' },"North West Upolu":  { from: '#4ECDE6', to: '#0891b2' },"Rest of Upolu": { from: '#FFD84A', to: '#f7b500' },"Savaii":    { from: '#6FCF97', to: '#2f9e5c' }};
   const NEUTRAL_GRADIENT = { from: '#0e7490', to: '#062f35' };
 
   // Type styling matches the Panel B/C stacked-histogram palette.
   const TYPE_STYLES = {
     journalArticle: { color: '#B8860B', bg: '#f8efd6', border: '#e6c98a', s: 'Journal article',  p: 'Journal articles' },
     thesisPhd:      { color: '#228B22', bg: '#e5f4e5', border: '#a4d3a4', s: 'PhD thesis',       p: 'PhD theses' },
-    thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: 'Masters thesis',   p: 'Masters theses' },
+    thesisMasters:  { color: '#5f9c5f', bg: '#eef7ee', border: '#c9e2c9', s: "Master's thesis", p: "Master's theses" },
     thesisUnknown:  { color: '#4CAF50', bg: '#eaf5ea', border: '#b8dab8', s: 'Thesis',           p: 'Theses' },
     // Book Chapter uses the lighter tint (#C08388) to distinguish it from Book;
     // Book keeps the darker burgundy (#7a1419). Chip bg/border tints stay in
@@ -8374,16 +8410,16 @@
   //   the item filter, no chip would render.
   // 'conferencePaper' likewise remains in the list purely as a legacy
   //   safety net; conference papers are filtered out at load time too.
-  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report', 'conferencePaper'];
+  const CHIP_ORDER = ['journalArticle', 'bookSection', 'book', 'thesisPhd', 'thesisMasters', 'report'];
 
   // Country name → ISO 3166-1 alpha-2 code, used for flag icons in the card header.
   // Only countries that actually appear in the current dataset (or are
-  // reasonably likely to appear given the Samoan diaspora — Pacific + common
+  // reasonably likely to appear given the iTaukei diaspora — Pacific + common
   // graduate-study destinations) are enumerated. Names are matched exactly to
   // what `scholarWorkCountry(p)` returns (which mirrors the admin's Country of
   // Work datalist), plus a handful of common alternate spellings.
   const COUNTRY_ISO = {
-    'Samoa': 'fj', 'Australia': 'au', 'New Zealand': 'nz', 'Aotearoa': 'nz',
+    'Fiji': 'fj', 'Australia': 'au', 'New Zealand': 'nz', 'Aotearoa': 'nz',
     'United Kingdom': 'gb', 'UK': 'gb', 'Great Britain': 'gb', 'England': 'gb', 'Scotland': 'gb', 'Wales': 'gb',
     'USA': 'us', 'United States': 'us', 'United States of America': 'us', 'America': 'us',
     'Guam (USA territory)': 'gu', 'Guam': 'gu',
@@ -8393,7 +8429,7 @@
     'American Samoa': 'as',
     'Solomon Islands': 'sb', 'Tonga': 'to', 'Vanuatu': 'vu', 'Kiribati': 'ki',
     'Cook Islands': 'ck', 'French Polynesia': 'pf', 'New Caledonia': 'nc',
-    'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Tuvalu': 'tv',
+    'Niue': 'nu', 'Palau': 'pw', 'Nauru': 'nr', 'Naoero': 'nr', 'Tuvalu': 'tv',
     'Federated States of Micronesia': 'fm', 'Micronesia': 'fm', 'Marshall Islands': 'mh',
     'Japan': 'jp', 'Canada': 'ca', 'Germany': 'de',
     'India': 'in', 'China': 'cn', 'Malaysia': 'my', 'Singapore': 'sg',
@@ -8427,7 +8463,7 @@
   // ---- Memorial band (Panel F lifespan strip) --------------------------
   // Render the small dark plinth beneath the scholar photograph. Master-
   // mode dashboard: `profile.deceased`, `profile.yearOfBirth`, and
-  // `profile.yearOfDeath` are wired by js/samoa-database-adapter.js from the
+  // `profile.yearOfDeath` are wired by js/master-file-adapter.js from the
   // Master Scholars sheet (columns Alive / Deceased, Year of Birth, Year
   // of Death) with legacy sidecar admin-extras as fallback.
   //
@@ -8462,9 +8498,9 @@
   }
 
   function provinceToConfederacy(name) {
-    if (!name || !state.districts) return null;
-    const f = state.districts.features.find(x => x.properties.name === name);
-    return f ? f.properties.region : null;
+    if (!name || !state.provinces) return null;
+    const f = state.provinces.features.find(x => x.properties.name === name);
+    return f ? f.properties.confederacy : null;
   }
 
   function formatLastUpdate(iso) {
@@ -8512,41 +8548,47 @@
     // maternal fallback, no `effectivePaternalProvince`, no merged village.
     // See docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md and the corresponding
     // regression test for ITK-S0212 (Malelili Rokomatu — must render as
-    // "Naseyani vlg, Ra District." NOT "Naseyani vlg (Beqa Is), Ra District.").
+    // "Naseyani vlg, Ra." NOT "Naseyani vlg (Beqa Is), Ra.").
     const paternalGeography = {
       village:  (r.paternalVillage  || '').trim(),
-      island:   (r.paternalIsland   || '').trim(),
-      district: (r.paternalDistrict || '').trim()
+      // Prefer the specific island; when it is absent, retain the paternal
+      // Island Division as the public island label. formatScholarGeography()
+      // removes "(main island)" / "Island Division" and renders one " Is".
+      island:   (r.paternalIsland || r.paternalIslandDivision || '').trim(),
+      province: (r.paternalProvince || '').trim()
     };
     const village = paternalGeography.village;
-    const paternal = paternalGeography.district;
-    const region = provinceToConfederacy(paternal);
-    const gradient = (region && CONF_GRADIENT[region]) || NEUTRAL_GRADIENT;
-    const bannerLabel = region ? `${ region } Statistical Region` : 'Samoan Scholar';
+    const paternal = paternalGeography.province;
+    const paternalBannerDivision = paternalDivision(r);
+    const confederacy = Object.prototype.hasOwnProperty.call(CONF_GRADIENT, paternalBannerDivision) ? paternalBannerDivision : '';
+    const gradient = (confederacy && CONF_GRADIENT[confederacy]) || NEUTRAL_GRADIENT;
+    // Card banners use the concise Island name only. The underlying field is
+    // still the scholar's paternal Island Division; this is display-only.
+    const bannerLabel = confederacy || 'Samoan scholar';
     const institution = r.institution || '';
     const title = r.title || '';
     const lastUpdate = formatLastUpdate(r.lastUpdate);
     const t = r.types || {};
     const initials = ((first || last).slice(0, 1) + (last ? last.slice(0, 1) : '')).toUpperCase() || 'iT';
 
-    // Meta line format (V2 canonical, per Ron's 2026-08-24 spec):
-    //   village + outer island + district  →  'Malawai vlg (Gau Is), Lomaiviti District.'
-    //   village + Viti/Vanua Levu          →  'Naduri vlg, Macuata District.'      (island suppressed)
-    //   village only                       →  'Malawai vlg'
-    //   island only (outer)                →  'Gau Is'
-    //   district only                      →  'Lomaiviti District.'
-    //   nothing                            →  '<em>Village not yet added</em>' (empty-state chip)
-    //
-    // The 'vlg' + 'Is' abbreviations, the mainland-island suppression, the
-    // island-suffix normalization, and the sentinel/placeholder scrubbing
-    // are all handled by formatScholarGeography(); this renderer only wraps
-    // the string in a placeholder chip when it's empty. See the formatter
-    // definition near the top of this file.
-    const island = paternalGeography.island;
-    const geoLine = formatScholarGeography(village, island, paternal);
-    const metaHtml = geoLine
-      ? escapeHtml(geoLine)
-      : '<span class="db-scholar-card__meta--empty">Village not yet added</span>';
+    // Show only supplied village/clan fields, independently for each parent.
+    const cleanLocality = value => {
+      const text = String(value || '').trim();
+      return /^(?:unclassified|unknown|n\/?a|null|undefined|not provided|not yet added|none|-|—)$/i.test(text) ? '' : text;
+    };
+    const localityLine = (villageValue, clanValue) => {
+      const villageText = cleanLocality(villageValue);
+      const clanText = cleanLocality(clanValue);
+      return villageText
+        ? `${villageText} vlg${clanText ? ` (${clanText})` : ''}`
+        : clanText ? `(${clanText})` : '';
+    };
+    const paternalGeoLine = localityLine(r.paternalVillage, paternalClan(r));
+    const maternalGeoLine = localityLine(r.maternalVillage, r.maternalClan);
+    const metaHtml = [
+      paternalGeoLine ? `<span class="db-scholar-card__paternal-line">P: ${escapeHtml(paternalGeoLine)}</span>` : '',
+      maternalGeoLine ? `<span class="db-scholar-card__maternal-line">M: ${escapeHtml(maternalGeoLine)}</span>` : ''
+    ].filter(Boolean).join('<br>');
 
     // Institution: linked to r.institutionUrl (institution homepage) if present
     let institutionHtml;
@@ -8591,10 +8633,11 @@
     }).join('');
 
     const card = document.createElement('article');
-    const isNeutral = !region || !CONF_GRADIENT[region];
+    const isNeutral = !confederacy || !CONF_GRADIENT[confederacy];
     card.className = 'db-scholar-card'
       + (active ? ' is-active' : '')
       + (isNeutral ? ' db-scholar-card--neutral' : '');
+    if (r.scholarId) card.dataset.scholarId = String(r.scholarId).toUpperCase();
     card.title = `Click to filter items to ${r.name}’s papers`;
     card.style.setProperty('--conf-from', gradient.from);
     card.style.setProperty('--conf-to', gradient.to);
@@ -8606,6 +8649,7 @@
       // publication filter on this card.
       if (ev.target.closest('.db-scholar-card__gs, .db-scholar-card__orcid, .db-scholar-card__submit')) return;
       if (ev.target.closest('.db-scholar-card__info a')) return;
+      if (window.__samoaSharedScholar) return;
       state.filter.scholar = state.filter.scholar === r.name ? '' : r.name;
       state.shown = state.pageSize;
       afterFilterChange();
@@ -8614,9 +8658,9 @@
 
     // Photo (as background image) or initials fallback. Wrapped in a
     // photo-column container so the 'Submit info' button can stack directly
-    // beneath the photo without ever running under the statistical region banner
+    // beneath the photo without ever running under the confederacy banner
     // title (which sits in the same row and would otherwise be overlapped
-    // on shorter names or wider titles like a long statistical-region name).
+    // on shorter names or wider titles like BUREBASAGA CONFEDERACY).
     const photoInnerHtml = r.photo
       ? `<div class="db-scholar-card__photo" style="background-image:url('${escapeAttr(r.photo)}')"></div>`
       : `<div class="db-scholar-card__photo"><div class="db-scholar-card__initials">${escapeHtml(initials)}</div></div>`;
@@ -8678,7 +8722,7 @@
         ${photoHtml}
         <div class="db-scholar-card__info">
           <h3 class="db-scholar-card__name">${escapeHtml(displayName || (first + ' ' + last).trim())}</h3>
-          <div class="db-scholar-card__meta">${metaHtml}</div>
+          ${metaHtml ? `<div class="db-scholar-card__meta">${metaHtml}</div>` : ''}
           <div class="db-scholar-card__institution">${institutionHtml}</div>
           ${departmentHtml ? `<div class="db-scholar-card__department">${departmentHtml}</div>` : ''}
           ${title ? `<div class="db-scholar-card__title">${titleHtml}</div>` : ''}
@@ -8699,6 +8743,7 @@
     `;
     wireScholarInsight(card);
     wireScholarSubmit(card, r);
+    if (window.SamoaScholarPortal) window.SamoaScholarPortal.wireShare(card, r);
     return card;
   }
 
@@ -8711,15 +8756,15 @@
   // change — the multipart/form-data POST shape is portable.
   const SUBMIT_ENDPOINT = 'https://formsubmit.co/ronvave2011@gmail.com';
 
-  // Fill the paternal-district dropdown with the same district list the site
+  // Fill the paternal-province dropdown with the same province list the site
   // already ships. Called lazily on first modal open so the DOM is ready.
   let provinceOptionsFilled = false;
   function fillProvinceOptions() {
     if (provinceOptionsFilled) return;
     const sel = document.getElementById('db-sf-paternal');
     if (!sel) return;
-    const provList = (state.districts && state.districts.features)
-      ? state.districts.features.map(f => (f.properties && (f.properties.name || f.properties.NAME)) || '').filter(Boolean)
+    const provList = (state.provinces && state.provinces.features)
+      ? state.provinces.features.map(f => (f.properties && (f.properties.name || f.properties.NAME)) || '').filter(Boolean)
       : [];
     // Dedupe + sort so the UI stays sane even if the geojson has quirks.
     const uniq = Array.from(new Set(provList)).sort();
@@ -8736,7 +8781,9 @@
     if (!btn) return;
     btn.addEventListener('click', ev => {
       ev.stopPropagation();
-      openScholarSubmitModal(row);
+      if (window.SamoaScholarPortal) {
+        window.SamoaScholarPortal.openUpdate(row, state);
+      } else alert('The update form could not be loaded. Please refresh the page.');
     });
   }
 
@@ -8756,9 +8803,8 @@
 
     setVal('db-sf-salutation',   profile.salutation || '');
     setVal('db-sf-village',      profile.village || '');
-    setVal('db-sf-paternal',     profile.paternalDistrict || '');
+    setVal('db-sf-paternal',     profile.paternalProvince || '');
     setVal('db-sf-title',        profile.title || '');
-    { const rc = document.getElementById('db-sf-retired'); if (rc) rc.checked = profile.retired === true; }
     setVal('db-sf-institution',  profile.institution || '');
     setVal('db-sf-institution-url', profile.institutionUrl || '');
     setVal('db-sf-department',   profile.department || '');
@@ -8856,7 +8902,7 @@
         profile: {
           salutation:       form.querySelector('#db-sf-salutation').value.trim(),
           village:          form.querySelector('#db-sf-village').value.trim(),
-          paternalDistrict: form.querySelector('#db-sf-paternal').value.trim(),
+          paternalProvince: form.querySelector('#db-sf-paternal').value.trim(),
           title:            form.querySelector('#db-sf-title').value.trim(),
           institution:      form.querySelector('#db-sf-institution').value.trim(),
           institutionUrl:   form.querySelector('#db-sf-institution-url').value.trim(),
@@ -8865,8 +8911,7 @@
           profileUrl:       form.querySelector('#db-sf-profile-url').value.trim(),
           googleScholarUrl: form.querySelector('#db-sf-scholar-url').value.trim(),
           orcidUrl:         form.querySelector('#db-sf-orcid-url').value.trim(),
-          photo:            form.querySelector('#db-sf-photo').value.trim(),
-          retired:          !!(form.querySelector('#db-sf-retired') || {}).checked
+          photo:            form.querySelector('#db-sf-photo').value.trim()
         },
         masters: {
           university: form.querySelector('#db-sf-masters-uni').value.trim(),
@@ -9086,11 +9131,12 @@
     }
     if (f.discipline) {
       const set = state.disciplinesByItem.get(item.key);
-      if (!set || !set.has(f.discipline)) return false;
+      if (!set || !Array.from(set).some(name =>
+        name === f.discipline || shortDisciplineName(name) === f.discipline)) return false;
     }
-    if (f.district) {
+    if (f.province) {
       const set = state.provincesByItem.get(item.key);
-      if (!set || !set.has(f.district)) return false;
+      if (!set || !set.has(f.province)) return false;
     }
     if (f.paternal) {
       const set = state.paternalByItem.get(item.key);
@@ -9104,7 +9150,7 @@
       const set = state.scholarByItem.get(item.key);
       if (!set || !set.has(f.scholar)) return false;
     }
-    // Statistical Region/district dropdown filters on the scholar leaderboard also
+    // Confederacy/province dropdown filters on the scholar leaderboard also
     // narrow the item list below. An item passes if it belongs to at least one
     // scholar in the visible-cards set.
     if (state.scholarFilterNames) {
@@ -9162,6 +9208,149 @@
     }
   }
 
+  // Reviewed compound discipline labels. Split distinct topics, not every
+  // conjunction: established fields and shared modifiers need editorial care.
+  const PUBLICATION_TOPIC_PARTS = {
+    "accounting and public-sector governance": ["Accounting", "Public-Sector Governance"],
+    "anthropology & pacific studies": ["Anthropology", "Pacific Studies"],
+    "anti-corruption and governance": ["Anti-Corruption", "Governance"],
+    "aviation management and civil aviation regulation": ["Aviation management", "Civil aviation regulation"],
+    "biblical studies and indigenous theology": ["Biblical Studies", "Indigenous Theology"],
+    "climate change and development": ["Climate Change", "Development"],
+    "communication and samoa-american community leadership": ["Communication", "Samoan-American community leadership"],
+    "criminal justice and criminology": ["Criminal Justice", "Criminology"],
+    "curriculum and pedagogy": ["Curriculum", "Pedagogy"],
+    "development policy and economics": ["Development Policy", "Economics"],
+    "development studies and international affairs": ["Development Studies", "International Affairs"],
+    "economics and higher education leadership": ["Economics", "Higher Education Leadership"],
+    "economics and pacific development": ["Economics", "Pacific Development"],
+    "economics and public policy": ["Economics", "Public Policy"],
+    "education and information technology": ["Education", "Information Technology"],
+    "education and language planning": ["Education", "Language Planning"],
+    "education and pasifika health": ["Education", "Pasifika health"],
+    "education and community leadership": ["Education", "Community leadership"],
+    "educational leadership and policy": ["Educational leadership", "Education policy"],
+    "environmental management and development": ["Environmental management", "Development"],
+    "immunology and biomedical science": ["Immunology", "Biomedical Science"],
+    "indigenous pacific design and housing": ["Indigenous Pacific design", "Housing"],
+    "indigenous samoa pedagogy and pacific education": ["Indigenous Samoan pedagogy", "Pacific education"],
+    "indigenous samoa pedagogy and pacific research": ["Indigenous Samoan pedagogy", "Pacific research"],
+    "indigenous education and pacific research methodologies": ["Indigenous education", "Pacific research methodologies"],
+    "indigenous education and curriculum design": ["Indigenous education", "Curriculum design"],
+    "indigenous knowledge and decolonising curatorial practice": ["Indigenous knowledge", "Decolonising curatorial practice"],
+    "indigenous pedagogies and pacific/oceania studies": ["Indigenous pedagogies", "Pacific/Oceania studies"],
+    "indigenous pedagogy and ritual": ["Indigenous pedagogy", "Ritual"],
+    "indigenous relationality and gendered violence": ["Indigenous relationality", "Gendered violence"],
+    "indigenous research and long-term conditions": ["Indigenous research", "Long-term conditions"],
+    "internet measurement and pacific connectivity": ["Internet measurement", "Pacific connectivity"],
+    "literature and indigenous studies": ["Literature", "Indigenous Studies"],
+    "mathematics and computational modelling": ["Mathematics", "Computational modelling"],
+    "mathematics and computer science": ["Mathematics", "Computer science"],
+    "nursing and mental health": ["Nursing", "Mental Health"],
+    "pacer plus and pacific development": ["PACER Plus", "Pacific development"],
+    "pacific education and culture": ["Pacific education", "Pacific culture"],
+    "pacific history and samoa philosophy": ["Pacific History", "Samoan Philosophy"],
+    "pacific studies and education": ["Pacific Studies", "Education"],
+    "pacific and indigenous education": ["Pacific education", "Indigenous education"],
+    "pacific development and visual ethnography": ["Pacific development", "Visual ethnography"],
+    "pacific education and law": ["Pacific education", "Law"],
+    "pacific migration and diaspora studies": ["Pacific migration studies", "Pacific diaspora studies"],
+    "pacific nursing and indigenous research methods": ["Pacific nursing", "Indigenous research methods"],
+    "pacific pedagogies and family literacy": ["Pacific pedagogies", "Family literacy"],
+    "pacific wellbeing and creative scholarship": ["Pacific wellbeing", "Creative scholarship"],
+    "psalms and contextual theology": ["Psalms", "Contextual theology"],
+    "public administration and management": ["Public administration", "Management"],
+    "stem and community cultural wealth": ["STEM", "Community cultural wealth"],
+    "science & technology literacy": ["Science literacy", "Technology literacy"],
+    "social anthropology and pacific studies": ["Social Anthropology", "Pacific Studies"],
+    "tesol and applied linguistics": ["TESOL", "Applied Linguistics"],
+    "theology and church leadership": ["Theology", "Church leadership"],
+    "samoa constitutional law and legal education": ["Samoan constitutional law", "Legal education"],
+    "samoa diaspora and the uniting church in australia": ["Samoan diaspora", "The Uniting Church in Australia"],
+    "samoa research methods and tertiary learning": ["Samoan research methods", "Tertiary learning"],
+    "samoa tertiary achievement and student experience": ["Samoan tertiary achievement", "Student experience"],
+    "urban and indigenous planning": ["Urban planning", "Indigenous planning"],
+    "accountability and transparency": ["Accountability", "Transparency"],
+    "adolescent health and pacific health literacy": ["Adolescent health", "Pacific health literacy"],
+    "ageing and samoa wellbeing": ["Ageing", "Samoan wellbeing"],
+    "analytical and organic chemistry": ["Analytical chemistry", "Organic chemistry"],
+    "art and indigenous historiography": ["Art", "Indigenous historiography"],
+    "assessment and pacific education": ["Assessment", "Pacific education"],
+    "business and cultural diplomacy": ["Business", "Cultural diplomacy"],
+    "church ethics and diaspora church life": ["Church ethics", "Diaspora church life"],
+    "climate mobility and community wellbeing": ["Climate mobility", "Community wellbeing"],
+    "coastal management and climate change": ["Coastal management", "Climate change"],
+    "community-engaged research and pacific islander health equity": ["Community-engaged research", "Pacific Islander health equity"],
+    "contemporary pacific art and visual culture": ["Contemporary Pacific art", "Visual culture"],
+    "dairy proteins and pacific higher-education leadership": ["Dairy proteins", "Pacific higher-education leadership"],
+    "decoloniality and cultural sustainability": ["Decoloniality", "Cultural sustainability"],
+    "decolonization and queer theory": ["Decolonization", "Queer theory"],
+    "development and pacific regionalism": ["Development", "Pacific regionalism"],
+    "developmental origins of health and community co-design": ["Developmental origins of health", "Community co-design"],
+    "digital forensics and technology law": ["Digital forensics", "Technology law"],
+    "digital media and indigenous methodologies": ["Digital media", "Indigenous methodologies"],
+    "education and indigenous methodologies": ["Education", "Indigenous methodologies"],
+    "educational leadership and pacific education": ["Educational leadership", "Pacific education"],
+    "environment and climate change": ["Environment", "Climate change"],
+    "faith organizations and housing": ["Faith organizations", "Housing"],
+    "financial inclusion and digital economy policy": ["Financial inclusion", "Digital economy policy"],
+    "food practices and wellbeing": ["Food practices", "Wellbeing"],
+    "gambling harm and samoa studies": ["Gambling harm", "Samoan studies"],
+    "gerontology and social-work education leadership": ["Gerontology", "Social-work education leadership"],
+    "governance and pacific leadership": ["Governance", "Pacific leadership"],
+    "health policy and nursing leadership": ["Health policy", "Nursing leadership"],
+    "health promotion and behavioural sciences": ["Health promotion", "Behavioural sciences"],
+    "health promotion and community co-design": ["Health promotion", "Community co-design"],
+    "higher education and samoa-american women": ["Higher education", "Samoan-American women"],
+    "higher education persistence and indigenous methodology": ["Higher education persistence", "Indigenous methodology"],
+    "human capital and national development": ["Human capital", "National development"],
+    "humanitarian aid and crisis response": ["Humanitarian aid", "Crisis response"],
+    "immunogenetics and pacific health": ["Immunogenetics", "Pacific health"],
+    "infectious disease and pacific health equity": ["Infectious disease", "Pacific health equity"],
+    "injury prevention and pacific health": ["Injury prevention", "Pacific health"],
+    "international business and development projects": ["International business", "Development projects"],
+    "kaupapa māori and healthcare experiences": ["Kaupapa Māori", "Healthcare experiences"],
+    "kava-related practices and pacific wellbeing": ["Kava-related practices", "Pacific wellbeing"],
+    "literature and cultural criticism": ["Literature", "Cultural criticism"],
+    "marine natural products and natural products chemistry": ["Marine natural products", "Natural products chemistry"],
+    "mental health and culturally responsive practice": ["Mental health", "Culturally responsive practice"],
+    "migration and transnationalism": ["Migration", "Transnationalism"],
+    "ministry and cross-cultural supervision": ["Ministry", "Cross-cultural supervision"],
+    "ocean finance and tourism economics": ["Ocean finance", "Tourism economics"],
+    "plant nutrition and pacific agriculture": ["Plant nutrition", "Pacific agriculture"],
+    "plasma science and functional surface modification": ["Plasma science", "Functional surface modification"],
+    "poetry and decolonising pedagogy": ["Poetry", "Decolonising pedagogy"],
+    "politics and colonial change": ["Politics", "Colonial change"],
+    "polycultural capital and pacific communities": ["Polycultural capital", "Pacific communities"],
+    "preeclampsia and fetal growth restriction": ["Preeclampsia", "Fetal growth restriction"],
+    "pronunciation and second-language teaching": ["Pronunciation", "Second-language teaching"],
+    "public management and pacific governance": ["Public management", "Pacific governance"],
+    "race and indigenous knowledge": ["Race", "Indigenous knowledge"],
+    "reading and critical literacy": ["Reading", "Critical literacy"],
+    "regional development and democratic reform": ["Regional development", "Democratic reform"],
+    "reintegration and pacific islander criminology": ["Reintegration", "Pacific Islander criminology"],
+    "renewable energy and adaptation": ["Renewable energy", "Adaptation"],
+    "social policy and samoa family wellbeing": ["Social policy", "Samoan family wellbeing"],
+    "sociology and philosophy": ["Sociology", "Philosophy"],
+    "sovereignty and queer studies": ["Sovereignty", "Queer studies"],
+    "teacher professionalism and science education": ["Teacher professionalism", "Science education"],
+    "theoretical mathematics and pluripotential theory": ["Theoretical mathematics", "Pluripotential theory"],
+    "tobacco cessation and culturally responsive services": ["Tobacco cessation", "Culturally responsive services"],
+    "translation and language revitalisation": ["Translation", "Language revitalisation"],
+    "trauma and multicultural counseling": ["Trauma", "Multicultural counseling"],
+    "wellbeing and community-engaged research": ["Wellbeing", "Community-engaged research"],
+    "wellbeing and culturally responsive measurement": ["Wellbeing", "Culturally responsive measurement"]
+  };
+
+  function publicationTopicLabels(value) {
+    // Only spaced slashes/dashes are list separators: keep K–12,
+    // Pacific/Oceania and Indigenous/Pacific intact.
+    const parts = String(value || '').split(/\s*[,;|]\s*|\s+[/–—]\s+/);
+    return parts.map(topic => topic.trim()).filter(Boolean).flatMap(topic =>
+      PUBLICATION_TOPIC_PARTS[topic.toLowerCase()] || [topic]
+    );
+  }
+
   function renderItemCard(it) {
     // data-type uses the visual sub-type so the coloured left border reflects
     // PhD/Masters/base for theses.
@@ -9185,7 +9374,7 @@
       <span class="db-item__badge db-item__badge--type-${it.itemType}">${type}</span>
       ${doiUrl ? `<span class="db-item__badge db-item__badge--doi" title="Has DOI">DOI</span>` : ''}
       ${isOpenAccess(it) ? `<span class="db-item__badge db-item__badge--oa" title="Open-access or freely available online">OA</span>` : ''}
-      ${isItaukei(it) ? `<span class="db-item__badge db-item__badge--samoan">Samoan author</span>` : ''}
+      ${isItaukei(it) ? `<span class="db-item__badge db-item__badge--itaukei">Samoan author</span>` : ''}
     `;
     li.appendChild(topline);
 
@@ -9199,45 +9388,57 @@
     // Meta
     if (metaParts.length) li.appendChild(el('p', { className: 'db-item__meta', html: metaParts.join(' · ') }));
 
-    // Tag chips: districts + disciplines (clickable to filter)
+    // Tag chips: provinces + disciplines (clickable to filter)
     const tags = document.createElement('div');
     tags.className = 'db-item__tags';
-    const provSet = state.provincesByItem.get(it.key);
-    if (provSet && provSet.size) {
-      provSet.forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by district researched: ${name}`,
-          onclick: () => {
-            state.filter.district = name;
-            state.filter.paternal = '';
-            state.shown = state.pageSize;
-            afterFilterChange();
-          }
-        }, `📍 ${name}`);
-        tags.appendChild(chip);
-      });
-    }
+    const geographyLabels = new Map();
+    const addGeography = (name, country) => { const label=String(name||'').trim();if(label&&!geographyLabels.has(label))geographyLabels.set(label,country); };
+    (it._masterGeographyRows || []).forEach(g => {
+      if(g.country === 'Samoa'){
+        const local=[g.islandDivision,g.district,g.specificIsland,g.site].map(v=>String(v||'').trim()).filter(Boolean);
+        if(local.length)local.forEach(name=>addGeography(name,false));
+        else addGeography('Samoa — general / national study',true);
+      }else addGeography(g.country,true);
+    });
+    if(!geographyLabels.size)(state.provincesByItem.get(it.key)||new Set()).forEach(name=>addGeography(name,false));
+    geographyLabels.forEach((country,name)=>{
+      const chip=el('span',{className:'db-item__badge db-item__badge--tag',title:'Approved study location: '+name});
+      chip.dataset.approvedGeography='1';
+      if(!country&&(state.provincesByItem.get(it.key)||new Set()).has(name)){chip.classList.add('is-clickable');chip.onclick=()=>{state.filter.province=name;state.filter.paternal='';state.shown=state.pageSize;afterFilterChange();};}
+      if(country){
+        chip.innerHTML='<svg aria-hidden="true" viewBox="0 0 12 16" style="width:10px;height:13px;vertical-align:middle;margin-right:4px"><path d="M6 9v7" stroke="#82909c" stroke-width="1"/><circle cx="6" cy="5" r="4" fill="#1976d2"/><circle cx="4.8" cy="3.8" r="1.1" fill="#fff" opacity=".65"/></svg>';
+        chip.appendChild(document.createTextNode(name));
+      }else chip.textContent='📍 '+name;
+      tags.appendChild(chip);
+    });
     const discSet = state.disciplinesByItem.get(it.key);
     if (discSet && discSet.size) {
+      const displayedTopics = new Set();
       discSet.forEach(name => {
-        const chip = el('span', {
-          className: 'db-item__badge db-item__badge--tag is-clickable',
-          title: `Filter by discipline: ${name}`,
-          onclick: () => {
-            state.filter.discipline = name;
-            state.shown = state.pageSize;
-            const sel = $('[data-db-filter="discipline"]');
-            if (sel) sel.value = name;
-            afterFilterChange();
-          }
-        }, name);
-        tags.appendChild(chip);
+        // Separate legacy topic lists while preserving compound phrases and
+        // the original discipline key used by the existing filters.
+        publicationTopicLabels(name).forEach(topic => {
+          const topicKey = topic.toLocaleLowerCase();
+          if (displayedTopics.has(topicKey)) return;
+          displayedTopics.add(topicKey);
+          const chip = el('span', {
+            className: 'db-item__badge db-item__badge--tag is-clickable',
+            title: `Filter by discipline: ${shortDisciplineName(name)}`,
+            onclick: () => {
+              state.filter.discipline = shortDisciplineName(name);
+              state.shown = state.pageSize;
+              const sel = $('[data-db-filter="discipline"]');
+              if (sel) sel.value = state.filter.discipline;
+              afterFilterChange();
+            }
+          }, topic);
+          tags.appendChild(chip);
+        });
       });
     }
     if (tags.childNodes.length) li.appendChild(tags);
 
-    // Action links top-right (open + copy buttons)
+    // Action links top-right
     const actions = document.createElement('div');
     actions.className = 'db-item__actions';
     if (doiUrl) {
@@ -9245,63 +9446,9 @@
     } else if (it.url) {
       actions.innerHTML += `<a class="db-item__link" href="${escapeAttr(it.url)}" target="_blank" rel="noopener" title="Open source URL">Link ↗</a>`;
     }
-    // Per-item copy buttons — formatted citation (respects state.citationFormat)
-    // and BibTeX entry. Each button copies to clipboard and briefly shows a
-    // "Copied" state so the user knows the click landed.
-    const copyCite = el('button', {
-      type: 'button',
-      className: 'db-item__copy',
-      title: 'Copy the formatted citation for this item in the currently-selected style',
-      onclick: (ev) => {
-        const text = formatCitation(it, state.citationFormat || 'apa');
-        copyToClipboard(text, ev.currentTarget, 'Copied citation');
-      }
-    }, 'Copy cite');
-    actions.appendChild(copyCite);
-    const copyBib = el('button', {
-      type: 'button',
-      className: 'db-item__copy',
-      title: 'Copy this item as a BibTeX entry',
-      onclick: (ev) => {
-        const text = formatBibTeXEntry(it);
-        copyToClipboard(text, ev.currentTarget, 'Copied BibTeX');
-      }
-    }, 'Copy BibTeX');
-    actions.appendChild(copyBib);
     li.appendChild(actions);
 
     return li;
-  }
-
-  // ============ COPY-TO-CLIPBOARD HELPER ============
-  function copyToClipboard(text, buttonEl, feedback) {
-    const done = () => {
-      if (!buttonEl) return;
-      const prev = buttonEl.textContent;
-      buttonEl.textContent = feedback || 'Copied';
-      buttonEl.disabled = true;
-      setTimeout(() => {
-        buttonEl.textContent = prev;
-        buttonEl.disabled = false;
-      }, 1400);
-    };
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(done, () => fallback());
-    } else {
-      fallback();
-    }
-    function fallback() {
-      const ta = document.createElement('textarea');
-      ta.value = text;
-      ta.setAttribute('readonly', '');
-      ta.style.position = 'fixed';
-      ta.style.top = '-1000px';
-      document.body.appendChild(ta);
-      ta.select();
-      try { document.execCommand('copy'); } catch (e) {}
-      document.body.removeChild(ta);
-      done();
-    }
   }
 
   function isOpenAccess(it) {
@@ -9328,7 +9475,7 @@
     if (state.filter.discipline) add('Discipline:', state.filter.discipline, () => { const s = $('[data-db-filter="discipline"]'); if (s) s.value = ''; clearFilter('discipline'); });
     if (state.filter.decade)     add('Decade:',     `${state.filter.decade}s`, () => { const s = $('[data-db-filter="decade"]'); if (s) s.value = ''; clearFilter('decade'); });
     if (state.filter.year)       add('Year:',       String(state.filter.year), () => clearFilter('year'));
-    if (state.filter.district)   add('District:',   state.filter.district, () => clearFilter('district'));
+    if (state.filter.province)   add('Province:',   state.filter.province, () => clearFilter('province'));
     if (state.filter.paternal)   add('Paternal:',   state.filter.paternal, () => clearFilter('paternal'));
     if (state.filter.university) add('University:', state.filter.university, () => clearFilter('university'));
     if (state.filter.scholar)    add('Scholar:',    state.filter.scholar, () => clearFilter('scholar'));
@@ -9338,354 +9485,29 @@
     }
   }
 
-  // ============ CITATION FORMATTERS ============
-  //
-  // formatCitation() emits a single-line prose citation for the currently
-  // selected style (APA 7 → default; Chicago 17 author-date; MLA 9). All
-  // three implementations lean on the same normalised author list so the
-  // output is predictable for exports and copy-to-clipboard.
-  //
-  // formatBibTeXEntry() and formatRISEntry() emit a single record in their
-  // respective bibliographic-manager formats. These are used by the copy
-  // buttons on each item card AND by exportBib() / exportRis() below.
-  //
-  // formatCSVRow() emits one row for exportCsv(). Header row is emitted by
-  // exportCsv() directly.
-
-  function _bibKeyFor(it) {
-    const lastName = (it.creators && it.creators[0]) ? String(it.creators[0]).split(' ').pop() : 'anon';
-    return lastName.toLowerCase().replace(/\W/g, '') + (it.year || '');
-  }
-
-  // Split "Given Family" → { family, given }. If a creator record has no
-  // recognisable family name (single-token), we treat it as an organisation.
-  function _splitName(name) {
-    const s = String(name || '').trim();
-    if (!s) return { family: '', given: '' };
-    const parts = s.split(/\s+/);
-    if (parts.length === 1) return { family: parts[0], given: '' };
-    return { family: parts[parts.length - 1], given: parts.slice(0, -1).join(' ') };
-  }
-
-  function _apaAuthors(creators) {
-    if (!creators || !creators.length) return '';
-    const names = creators.map(_splitName).map(p => {
-      if (!p.given) return p.family;
-      const initials = p.given.split(/\s+/).map(g => g.charAt(0).toUpperCase() + '.').join(' ');
-      return `${p.family}, ${initials}`;
-    });
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]}, & ${names[1]}`;
-    if (names.length <= 20) return names.slice(0, -1).join(', ') + ', & ' + names[names.length - 1];
-    // APA 7: for 21+ authors, list first 19, then "...", then final author.
-    return names.slice(0, 19).join(', ') + ', ... ' + names[names.length - 1];
-  }
-
-  function _chicagoAuthors(creators) {
-    if (!creators || !creators.length) return '';
-    const names = creators.map((c, i) => {
-      const p = _splitName(c);
-      if (!p.given) return p.family;
-      // First author "Family, Given"; subsequent "Given Family".
-      return i === 0 ? `${p.family}, ${p.given}` : `${p.given} ${p.family}`;
-    });
-    if (names.length === 1) return names[0];
-    if (names.length === 2) return `${names[0]} and ${names[1]}`;
-    if (names.length <= 10) return names.slice(0, -1).join(', ') + ', and ' + names[names.length - 1];
-    // Chicago: for 11+ authors, list first 7 then "et al.".
-    return names.slice(0, 7).join(', ') + ', et al.';
-  }
-
-  function _mlaAuthors(creators) {
-    if (!creators || !creators.length) return '';
-    const first = _splitName(creators[0]);
-    const firstText = first.given ? `${first.family}, ${first.given}` : first.family;
-    if (creators.length === 1) return firstText;
-    if (creators.length === 2) {
-      const second = _splitName(creators[1]);
-      const secondText = second.given ? `${second.given} ${second.family}` : second.family;
-      return `${firstText}, and ${secondText}`;
-    }
-    // MLA 9: 3+ authors → first author + ", et al."
-    return `${firstText}, et al.`;
-  }
-
-  function _apaTitleCase(s) {
-    // APA: sentence case for article/chapter titles. We do a light touch:
-    // capitalise the first letter and leave the rest alone (Zotero titles
-    // are usually already sentence-cased).
-    const t = String(s || '').trim();
-    if (!t) return t;
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  }
-
-  function _apaThesisType(it) {
-    const vt = visualType(it);
-    if (vt === 'thesisPhd') return 'Doctoral dissertation';
-    if (vt === 'thesisMasters') return "Master's thesis";
-    return (it.thesisType || 'Thesis');
-  }
-
-  function formatCitationAPA(it) {
-    const authors = _apaAuthors(it.creators);
-    const year = it.year ? `(${it.year})` : '(n.d.)';
-    const title = _apaTitleCase(it.title || '');
-    const parts = [];
-    if (authors) parts.push(authors + '.');
-    parts.push(year + '.');
-    switch (visualType(it)) {
-      case 'journalArticle': {
-        parts.push(title + '.');
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
-        break;
-      }
-      case 'book': {
-        parts.push(`*${title}*.`);
-        if (it.publisher) parts.push(it.publisher + '.');
-        break;
-      }
-      case 'bookSection': {
-        parts.push(title + '.');
-        if (it.publicationTitle) parts.push(`In *${it.publicationTitle}*.`);
-        if (it.publisher) parts.push(it.publisher + '.');
-        break;
-      }
-      case 'thesisPhd':
-      case 'thesisMasters':
-      case 'thesisUnknown':
-      case 'thesis': {
-        parts.push(`*${title}*`);
-        parts.push(`[${_apaThesisType(it)}${it.university ? ', ' + it.university : ''}].`);
-        break;
-      }
-      case 'report': {
-        parts.push(`*${title}*`);
-        if (it.publisher || it.university) parts.push('(' + (it.publisher || it.university) + ').');
-        break;
-      }
-      default: {
-        parts.push(title + '.');
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
-      }
-    }
-    if (it.DOI) parts.push(`https://doi.org/${it.DOI}`);
-    else if (it.url) parts.push(it.url);
-    return parts.join(' ');
-  }
-
-  function formatCitationChicago(it) {
-    const authors = _chicagoAuthors(it.creators);
-    const parts = [];
-    if (authors) parts.push(authors + '.');
-    if (it.year) parts.push(it.year + '.');
-    switch (visualType(it)) {
-      case 'journalArticle': {
-        parts.push(`“${it.title}.”`);
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
-        break;
-      }
-      case 'book': {
-        parts.push(`*${it.title}*.`);
-        if (it.publisher) parts.push(it.publisher + '.');
-        break;
-      }
-      case 'bookSection': {
-        parts.push(`“${it.title}.”`);
-        if (it.publicationTitle) parts.push(`In *${it.publicationTitle}*.`);
-        if (it.publisher) parts.push(it.publisher + '.');
-        break;
-      }
-      case 'thesisPhd':
-      case 'thesisMasters':
-      case 'thesisUnknown':
-      case 'thesis': {
-        parts.push(`“${it.title}.”`);
-        parts.push(`${_apaThesisType(it)}, ${it.university || ''}.`.replace(/, \./, '.'));
-        break;
-      }
-      default: {
-        parts.push(`“${it.title}.”`);
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*.`);
-      }
-    }
-    if (it.DOI) parts.push(`https://doi.org/${it.DOI}.`);
-    else if (it.url) parts.push(it.url + '.');
-    return parts.join(' ');
-  }
-
-  function formatCitationMLA(it) {
-    const authors = _mlaAuthors(it.creators);
-    const parts = [];
-    if (authors) parts.push(authors + '.');
-    switch (visualType(it)) {
-      case 'journalArticle': {
-        parts.push(`“${it.title}.”`);
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*, ` + (it.year || 'n.d.') + '.');
-        else if (it.year) parts.push(it.year + '.');
-        break;
-      }
-      case 'book': {
-        parts.push(`*${it.title}*.`);
-        if (it.publisher) parts.push(it.publisher + ', ' + (it.year || 'n.d.') + '.');
-        else if (it.year) parts.push(it.year + '.');
-        break;
-      }
-      case 'bookSection': {
-        parts.push(`“${it.title}.”`);
-        if (it.publicationTitle) parts.push(`*${it.publicationTitle}*, ` + (it.publisher ? it.publisher + ', ' : '') + (it.year || 'n.d.') + '.');
-        break;
-      }
-      case 'thesisPhd':
-      case 'thesisMasters':
-      case 'thesisUnknown':
-      case 'thesis': {
-        parts.push(`*${it.title}*.`);
-        parts.push(`${it.year || 'n.d.'}. ${it.university || ''}, ${_apaThesisType(it)}.`);
-        break;
-      }
-      default: {
-        parts.push(`“${it.title}.”`);
-        if (it.year) parts.push(it.year + '.');
-      }
-    }
-    if (it.DOI) parts.push(`https://doi.org/${it.DOI}.`);
-    else if (it.url) parts.push(it.url + '.');
-    return parts.join(' ');
-  }
-
-  function formatCitation(it, fmt) {
-    switch ((fmt || 'apa').toLowerCase()) {
-      case 'chicago': return formatCitationChicago(it);
-      case 'mla':     return formatCitationMLA(it);
-      case 'apa':
-      default:        return formatCitationAPA(it);
-    }
-  }
-
-  function formatBibTeXEntry(it) {
-    // Use the visual sub-type so PhD Theses become @phdthesis and Master's
-    // Theses become @mastersthesis — both are recognised by BibTeX and by
-    // Zotero/EndNote/Mendeley on RIS-round-trip.
-    const bibTypeByVisual = {
-      thesisPhd: 'phdthesis',
-      thesisMasters: 'mastersthesis',
-      thesisUnknown: 'phdthesis',
-      thesis: 'phdthesis',
-      journalArticle: 'article',
-      bookSection: 'incollection',
-      book: 'book',
-      conferencePaper: 'inproceedings',
-      report: 'techreport',
-      preprint: 'misc',
-      document: 'misc'
-    };
-    const bibType = bibTypeByVisual[visualType(it)] || bibTypeByVisual[it.itemType] || 'misc';
-    const key = _bibKeyFor(it);
-    let out = `@${bibType}{${key},\n`;
-    out += `  title = {${(it.title || '').replace(/[{}]/g, '')}},\n`;
-    if (it.creators && it.creators.length) {
-      out += `  author = {${it.creators.map(c => c.replace(/[{}]/g, '')).join(' and ')}},\n`;
-    }
-    if (it.year) out += `  year = {${it.year}},\n`;
-    if (it.publicationTitle) out += `  ${bibType === 'incollection' ? 'booktitle' : 'journal'} = {${it.publicationTitle.replace(/[{}]/g, '')}},\n`;
-    if (it.university && (bibType === 'phdthesis' || bibType === 'mastersthesis' || bibType === 'techreport')) {
-      out += `  ${bibType === 'techreport' ? 'institution' : 'school'} = {${it.university.replace(/[{}]/g, '')}},\n`;
-    }
-    if (it.publisher) out += `  publisher = {${it.publisher.replace(/[{}]/g, '')}},\n`;
-    if (it.DOI) out += `  doi = {${it.DOI}},\n`;
-    if (it.url) out += `  url = {${it.url}},\n`;
-    out += `}`;
-    return out;
-  }
-
-  function formatRISEntry(it) {
-    // RIS is a line-based key-value format consumed by EndNote, Zotero, and
-    // Mendeley. Type codes map from Zotero's item types.
-    const risTypeByVisual = {
-      thesisPhd: 'THES',
-      thesisMasters: 'THES',
-      thesisUnknown: 'THES',
-      thesis: 'THES',
-      journalArticle: 'JOUR',
-      bookSection: 'CHAP',
-      book: 'BOOK',
-      conferencePaper: 'CPAPER',
-      report: 'RPRT',
-      preprint: 'UNPD',
-      document: 'GEN'
-    };
-    const ty = risTypeByVisual[visualType(it)] || risTypeByVisual[it.itemType] || 'GEN';
-    const lines = [];
-    lines.push('TY  - ' + ty);
-    if (it.title) lines.push('TI  - ' + it.title);
-    (it.creators || []).forEach(c => lines.push('AU  - ' + c));
-    if (it.year) lines.push('PY  - ' + it.year);
-    if (it.publicationTitle) {
-      if (ty === 'CHAP' || ty === 'CPAPER') lines.push('T2  - ' + it.publicationTitle);
-      else                                  lines.push('JO  - ' + it.publicationTitle);
-    }
-    if (it.publisher) lines.push('PB  - ' + it.publisher);
-    if (it.university && ty === 'THES') {
-      lines.push('PB  - ' + it.university);
-      // M3 = degree/type of work — preserves PhD vs Master's split on
-      // RIS-round-trip through Zotero/EndNote.
-      if (visualType(it) === 'thesisPhd') lines.push("M3  - PhD Thesis");
-      else if (visualType(it) === 'thesisMasters') lines.push("M3  - Master's Thesis");
-    }
-    if (it.DOI) lines.push('DO  - ' + it.DOI);
-    if (it.url) lines.push('UR  - ' + it.url);
-    lines.push('ER  - ');
-    return lines.join('\r\n');
-  }
-
-  function _csvEscape(v) {
-    const s = (v == null) ? '' : String(v);
-    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
-    return s;
-  }
-
-  function formatCSVRow(it, citationFmt) {
-    const key   = it.key || '';
-    const type  = TYPE_LABELS[visualType(it)] || TYPE_LABELS[it.itemType] || '';
-    const auth  = (it.creators || []).join('; ');
-    const cite  = formatCitation(it, citationFmt || 'apa');
-    const doi   = it.DOI || '';
-    const url   = it.url || '';
-    return [key, type, auth, it.year || '', it.title || '', it.publicationTitle || '', it.publisher || '', it.university || '', doi, url, cite]
-      .map(_csvEscape).join(',');
-  }
-
-  // ============ EXPORTS (.bib / .ris / .csv) ============
-  function _downloadBlob(text, mime, filename) {
-    const blob = new Blob([text], { type: mime });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename;
-    document.body.appendChild(a); a.click();
-    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
-  }
-
+  // ============ EXPORT .BIB ============
   function exportBib() {
     const items = currentItems().filter(itemMatches);
-    const out = items.map(formatBibTeXEntry).join('\n\n') + '\n';
-    _downloadBlob(out, 'application/x-bibtex', `samoan-research-${items.length}-items.bib`);
-  }
-
-  function exportRis() {
-    const items = currentItems().filter(itemMatches);
-    const out = items.map(formatRISEntry).join('\r\n\r\n') + '\r\n';
-    _downloadBlob(out, 'application/x-research-info-systems', `samoan-research-${items.length}-items.ris`);
-  }
-
-  function exportCsv() {
-    const items = currentItems().filter(itemMatches);
-    const fmt = state.citationFormat || 'apa';
-    const header = ['PublicationKey', 'Type', 'Authors', 'Year', 'Title', 'Container', 'Publisher', 'University', 'DOI', 'URL', 'Citation_' + fmt.toUpperCase()]
-      .map(_csvEscape).join(',');
-    const rows = items.map(it => formatCSVRow(it, fmt));
-    // Prepend UTF-8 BOM so Excel treats it as UTF-8 without asking.
-    const out = '\uFEFF' + header + '\n' + rows.join('\n') + '\n';
-    _downloadBlob(out, 'text/csv;charset=utf-8', `samoan-research-${items.length}-items.csv`);
+    let out = '';
+    items.forEach(it => {
+      const bibType = ({journalArticle:'article', thesis:'phdthesis', bookSection:'incollection', book:'book', conferencePaper:'inproceedings', report:'techreport', preprint:'misc', document:'misc'})[it.itemType] || 'misc';
+      const key = ((it.creators && it.creators[0]) ? it.creators[0].split(' ').pop() : 'anon').toLowerCase().replace(/\W/g,'') + (it.year || '');
+      out += `@${bibType}{${key},\n`;
+      out += `  title = {${(it.title || '').replace(/[{}]/g,'')}},\n`;
+      if (it.creators && it.creators.length) out += `  author = {${it.creators.map(c => c.replace(/[{}]/g,'')).join(' and ')}},\n`;
+      if (it.year) out += `  year = {${it.year}},\n`;
+      if (it.publicationTitle) out += `  journal = {${it.publicationTitle.replace(/[{}]/g,'')}},\n`;
+      if (it.university) out += `  school = {${it.university.replace(/[{}]/g,'')}},\n`;
+      if (it.DOI) out += `  doi = {${it.DOI}},\n`;
+      if (it.url) out += `  url = {${it.url}},\n`;
+      out += `}\n\n`;
+    });
+    const blob = new Blob([out], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `itaukei-research-${items.length}-items.bib`;
+    document.body.appendChild(a); a.click();
+    setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
   }
 
   // ============ WIRE UP CONTROLS ============
@@ -9721,27 +9543,12 @@
     });
     const bibBtn = $('[data-db-export="bib"]');
     if (bibBtn) bibBtn.addEventListener('click', exportBib);
-    const risBtn = $('[data-db-export="ris"]');
-    if (risBtn) risBtn.addEventListener('click', exportRis);
-    const csvBtn = $('[data-db-export="csv"]');
-    if (csvBtn) csvBtn.addEventListener('click', exportCsv);
-    const citeSel = $('[data-db-cite-format]');
-    if (citeSel) {
-      citeSel.value = state.citationFormat || 'apa';
-      citeSel.addEventListener('change', e => {
-        state.citationFormat = e.target.value || 'apa';
-        // No filter change; item cards already read the value dynamically
-        // through onclick handlers, so no re-render is needed. Re-render
-        // anyway so a subsequent CSV export title stays in sync visually.
-        try { renderItems(); } catch (err) {}
-      });
-    }
     const clearBtn = $('[data-db-clear]');
     if (clearBtn) clearBtn.addEventListener('click', clearAllFilters);
   }
 
   // ============ MASTER-FILE STATUS (V2) ============
-  // V2 preview: the authoritative data source is the Samoa_Master_file
+  // V2 preview: the authoritative data source is the iTaukei_Master_file
   // Google Sheet snapshot refreshed every 2h. We do NOT contact Zotero from
   // this build — Zotero is no longer this dashboard's data source of truth.
   // Show the current snapshot timestamp instead, and only mark the sync
@@ -9788,10 +9595,23 @@
       await loadAll();
     } catch (err) {
       console.error('Failed to load database data', err);
+      if (window.__samoaSharedScholar) { document.body.textContent='The scholar profile could not be loaded. Please reload.'; document.documentElement.classList.remove('samoa-profile-loading'); return; }
       setSyncBadge('error', 'Master-file snapshot unavailable', 'This country’s Master-file data could not be loaded. Please reload the page.');
       showFallbackBanner('snapshot-load-failed');
       const items = $('[data-db-items]');
       if (items) items.innerHTML = '<li class="db-item db-item__empty">Unable to load the Master-file snapshot. Please refresh the page in a moment.</li>';
+      return;
+    }
+    if (window.__samoaSharedScholar) {
+      try {
+        renderStats();
+        renderWorldPanel();
+        await window.SamoaScholarPortal.renderShared(state, renderScholarCard, renderItemCard);
+      } catch (error) {
+        document.body.replaceChildren(); const message=document.createElement('p');
+        message.textContent='Unable to load this scholar profile: '+error.message; document.body.append(message);
+      }
+      document.documentElement.classList.remove('samoa-profile-loading');
       return;
     }
     // Wire the shared "Submit info" modal once (button per card wires open handler).
@@ -9803,7 +9623,7 @@
     renderPanelB();
     renderPanelB2();
     wirePanelB2();
-    renderPanelE();
+    renderPanelD();
     renderHistogram();
     renderLeaders();
     wireScholarFilterRow();
@@ -9836,9 +9656,9 @@
     // MASTER-FILE HYDRATION SIGNAL
     //
     // Expose the internal state to overrides + external debug tools, and
-    // fire an event so js/samoa-panel-overrides.js can layer on the
-    // Master-file-specific requirements (14-district TOTAL columns per
-    // region, verbatim explanatory notes, timestamp badge).
+    // fire an event so js/master-file-panel-overrides.js can layer on the
+    // Master-file-specific requirements (14-province TOTAL columns per
+    // confederacy, verbatim explanatory notes, timestamp badge).
     // ================================================================
     window.__vavelabDbState = state;
     window.__masterHydrated = true;
@@ -9870,20 +9690,20 @@
   //  PANEL B2 — interactive multi-view chart
   // ============================================================
   // Four views:
-  //   samoa-focused        → Samoan first-author, Samoa-focused, group by paternal district
-  //   all-locations       → Samoan first-author, ANY location, group by paternal district
+  //   samoa-focused       → Samoan first-author, Samoa-focused, group by paternal district
+  //   all-locations       → iTaukei first-author, ANY location, group by paternal province
   //   all-authors         → any author, Samoa-focused, group by study district + Samoa-wide row
   //   authorship          → any author, Samoa-focused, group by study district, single stacked bar per district by authorship role
   //
   // Selected view + its type-filter checkboxes are persisted in URL hash so a
   // link like #b2=all-locations bookmarks the view.
   // B2 no longer has an Authorship tab (it moved to Panel B1). Remaining views
-  // all group by first-author paternal district; only the scope + author-set
+  // all group by first-author paternal province; only the scope + author-set
   // differ per tab. Title + description are now static in the HTML — only the
   // meta row (Grouped by / Scope / Authors) is refreshed per tab.
-  // Every remaining B2 tab groups by Samoan first-author paternal district.
-  // 'all-authors' was removed — that view aggregated by study district and
-  // clashed with B1's scope now that B1 owns the study-district chart.
+  // Every remaining B2 tab groups by iTaukei first-author paternal province.
+  // 'all-authors' was removed — that view aggregated by study province and
+  // clashed with B1's scope now that B1 owns the study-province chart.
   const B2_VIEWS = ['samoa-focused', 'all-locations'];
   const B2_META = {
     'samoa-focused': {
@@ -9916,9 +9736,9 @@
   const AUTHORSHIP_KEYS = ['itaukeiFirst', 'includesItaukei', 'noItaukei'];
 
   // Initial hydration from URL hash — e.g. #b2=all-authors
-  state.b1Authors = 'samoan';
+  state.b1Authors = 'itaukei';
   // Panel B1 view mode: 'type' (default) shows publication-type stacked bars;
-  // 'authorship' shows the Samoan-authorship stacked bar previously on B2.
+  // 'authorship' shows the iTaukei-authorship stacked bar previously on B2.
   state.b1View = 'type';
   state.worldSelectedCountry = null;
   state.worldSelectedUniversity = null;
@@ -9944,7 +9764,10 @@
     if (!m) return;
     // Migrate old slug from a prior release so pre-existing bookmarks still land
     // on the redesigned single-stacked-bar authorship view.
-    const slug = m[1] === 'compare-authorship' ? 'authorship' : m[1];
+    // Backward compatibility: old Samoan links inherited the iTaukei/Fiji
+    // slug. Accept it once, then renderPanelB2 rewrites the hash correctly.
+    const legacySlug = m[1] === 'fiji-focused' ? 'samoa-focused' : m[1];
+    const slug = legacySlug === 'compare-authorship' ? 'authorship' : legacySlug;
     if (B2_VIEWS.includes(slug)) state.b2View = slug;
   })();
 
@@ -9957,10 +9780,10 @@
     if (newHash !== window.location.hash) history.replaceState(null, '', newHash);
   }
 
-  // -------- shared: get Samoan scholar names + paternal-district lookup --------
-  function samoanScholarMaps() {
-    // Anyone with a saved profile record is considered an Samoan scholar.
-    // Their paternal district may or may not be filled.
+  // -------- shared: get iTaukei scholar names + paternal-province lookup --------
+  function iTaukeiScholarMaps() {
+    // Anyone with a saved profile record is considered an iTaukei scholar.
+    // Their paternal province may or may not be filled.
     const scholars = state.scholarProfilesByName || new Map();
     const paternalByName = new Map();
     scholars.forEach((p, name) => paternalByName.set(name, effectivePaternalProvince(p)));
@@ -9968,7 +9791,7 @@
   }
 
   // Determine the canonical scholar-name for a raw Zotero creator string.
-  // Returns null when the creator doesn't map to a known Samoan scholar.
+  // Returns null when the creator doesn't map to a known iTaukei scholar.
   function itaukeiName(creator, scholars) {
     if (!creator || typeof creator !== 'string') return null;
     let cn = creator.includes(',') ? creator.trim() : (function() {
@@ -9977,12 +9800,136 @@
       return `${parts[parts.length - 1]}, ${parts.slice(0, -1).join(' ')}`;
     })();
     if (!cn) return null;
-    return scholars.has(cn) ? cn : null;
+    if (scholars.has(cn)) return cn;
+    const aliases = state.nameAliases || new Map();
+    const alias = aliases.get(cn);
+    if (alias && scholars.has(alias)) return alias;
+    const keyify = state._keyifyName || (s => String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''));
+    const wanted = keyify(alias || cn);
+    for (const name of scholars.keys()) {
+      if (keyify(name) === wanted) return name;
+    }
+    return null;
+  }
+
+  // Resolve C3 authorship from the authoritative Master bridge carried by the
+  // adapter. Bibliographic creator strings remain a fallback for legacy data,
+  // but never override a Scholar-ID / Researcher-ID linkage.
+  function c3SamoaPeople_(it, scholars, role) {
+    const linked = Array.isArray(it && it._linkedSamoaPeople) ? it._linkedSamoaPeople : [];
+    const bridged = linked.filter(p => role === 'lead' ? !!p.isFirstAuthor : !p.isFirstAuthor);
+    const names = bridged.map(p => itaukeiName(p.name, scholars)).filter(Boolean);
+    if (names.length) return Array.from(new Set(names));
+    const creators = (it && it.creators) || [];
+    if (role === 'lead') {
+      const lead = itaukeiName(creators[0], scholars);
+      return lead ? [lead] : [];
+    }
+    return Array.from(new Set(creators.slice(1).map(c => itaukeiName(c, scholars)).filter(Boolean)));
+  }
+
+  // Samoa-focused is a property of the publication's verified Research
+  // Geography evidence. The author's home district is deliberately excluded:
+  // it describes the person, not where or what the publication studied.
+  function c3IsSamoaFocused_(it) {
+    const districts = state.provincesByItem.get(it.key);
+    if (districts && districts.size > 0) return true;
+    const nonDistrictKey = state.nonProvincialFijiKey;
+    return !!(nonDistrictKey && (it.collections || []).includes(nonDistrictKey));
   }
 
   // -------- shared: render horizontal bar rows into a host --------
   // rows: [{ name, total, types: {vt: n}, conf, isConfirmed }]
   // opts: { activeName, onClick(row), confDotColor(row), maxTotal }
+  // Generic row aggregator — collapses district-level rows (each carrying a
+  // `.conf` field with its Island Division) into 5 Island Division rows,
+  // summing every numeric field and every numeric sub-object (types/cats/
+  // leadTypes/coTypes) regardless of which buildB2Rows_* / district builder
+  // produced them. Rows with no `.conf` (e.g. "District not yet confirmed",
+  // "Fiji-wide / national") are treated as their own singleton bucket and
+  // passed through unchanged, preserved in their original relative order
+  // (they are already appended last by every caller). Used by both Panel C2
+  // (renderPanelB / renderAuthorshipInto) and Panel C3 (renderPanelB2 family)
+  // when their "Group by" control is set to Island Division.
+  function aggregateRowsByDivision_(rows) {
+    const groups = new Map();
+    const passthrough = [];
+    rows.forEach(r => {
+      const key = r.conf || null;
+      if (!key) { passthrough.push(r); return; }
+      let g = groups.get(key);
+      if (!g) {
+        g = { name: key, conf: key, isConfirmed: true };
+        groups.set(key, g);
+      }
+      Object.keys(r).forEach(k => {
+        if (k === 'name' || k === 'conf' || k === 'isConfirmed') return;
+        const v = r[k];
+        if (typeof v === 'number') {
+          g[k] = (g[k] || 0) + v;
+        } else if (v && typeof v === 'object' && !Array.isArray(v)) {
+          g[k] = g[k] || {};
+          Object.keys(v).forEach(kk => {
+            g[k][kk] = (g[k][kk] || 0) + (v[kk] || 0);
+          });
+        }
+      });
+    });
+    const out = Array.from(groups.values()).sort((a, b) => (b.total || 0) - (a.total || 0));
+    passthrough.forEach(p => out.push(p));
+    return out;
+  }
+
+  // C2 Island Division totals are COUNT DISTINCT Publication ID within each
+  // division, not the sum of district bars. A publication evidenced in two
+  // Apia Urban Area districts therefore contributes 1 to Apia Urban Area (while a study
+  // spanning Apia Urban Area and Apia Urban Area correctly contributes 1 to each division).
+  function buildC2DivisionRows_(authorshipView, authorsMode) {
+    const divisions = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"];
+    const rows = new Map(divisions.map(name => [name, {
+      name, conf: name, total: 0, types: {},
+      cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
+      isConfirmed: true
+    }]));
+    const nonDistrict = {
+      name: 'Non-district/Samoa', conf: null, total: 0, types: {},
+      cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
+      isConfirmed: false
+    };
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      // Both C2 tabs share C2's own publication-type state. Never read the
+      // independent C3 checkbox state here.
+      if (!state.typeSet.has(vt)) return;
+      if (!authorshipView && authorsMode === 'itaukei' && !isItaukei(it)) return;
+      const role = itaukeiAuthorship(it);
+      const cat = role === 'lead' ? 'itaukeiFirst'
+                : role === 'coauth' ? 'includesItaukei' : 'noItaukei';
+      if (authorshipView && state.nonProvincialFijiKey &&
+          (it.collections || []).includes(state.nonProvincialFijiKey)) {
+        nonDistrict.total += 1;
+        nonDistrict.types[vt] = (nonDistrict.types[vt] || 0) + 1;
+        nonDistrict.cats[cat] = (nonDistrict.cats[cat] || 0) + 1;
+      }
+      const districts = state.provincesByItem.get(it.key) || new Set();
+      const itemDivisions = new Set(state.islandDivisionsByItem.get(it.key) || []);
+      districts.forEach(d => {
+        const division = PROVINCE_TO_CONFEDERACY[d];
+        if (division) itemDivisions.add(division);
+      });
+      itemDivisions.forEach(division => {
+        const row = rows.get(division);
+        if (!row) return;
+        row.total += 1;
+        row.types[vt] = (row.types[vt] || 0) + 1;
+        row.cats[cat] = (row.cats[cat] || 0) + 1;
+      });
+    });
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (authorshipView && nonDistrict.total) out.push(nonDistrict);
+    return out;
+  }
+
   function renderPanelBBarsInto(host, rows, opts) {
     host.innerHTML = '';
     if (!rows.length) {
@@ -10032,10 +9979,10 @@
   // Returns [{ name, total, types, conf, isConfirmed }] sorted desc, plus a
   // final “District not yet confirmed” row when appropriate.
   function buildB2Rows_paternalGrouped(includeAllLocations) {
-    const { scholars, paternalByName } = samoanScholarMaps();
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
     const rows = new Map();
-    state.districts.features.forEach(f => {
-      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.region, total: 0, types: {}, isConfirmed: true });
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
     });
     const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
@@ -10043,22 +9990,10 @@
       const vt = visualType(it);
       if (!state.b2TypeSet.has(vt)) return;
 
-      // First creator must map to an Samoan scholar
-      const first = (it.creators || [])[0];
-      const scholar = itaukeiName(first, scholars);
+      if (itaukeiAuthorship(it) !== 'lead') return;
+      const scholar = c3SamoaPeople_(it, scholars, 'lead')[0];
       if (!scholar) return;
-
-      // Samoa-focused rule (view 1) = has at least one Samoa-district tag OR the
-      // scholar's paternal district is confirmed (paternal district acts as the
-      // “national Samoa” fallback bucket for Samoan-authored work). This is a
-      // pragmatic choice given the current data model.
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
-      if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(scholar)) {
-        // Samoa-focused view: skip items with no district tag AND no known
-        // paternal district (we cannot confidently classify these as Samoa).
-        return;
-      }
+      if (!includeAllLocations && !c3IsSamoaFocused_(it)) return;
 
       const paternal = paternalByName.get(scholar) || '';
       const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
@@ -10071,16 +10006,16 @@
     return out;
   }
 
-  // Co-author view: for each publication where NO Samoan author is first but
-  // at least one Samoan author appears elsewhere in the byline, add +1 to the
-  // paternal district of every Samoan co-author. Type filter respects
+  // Co-author view: for each publication where NO iTaukei author is first but
+  // at least one iTaukei author appears elsewhere in the byline, add +1 to the
+  // paternal province of every iTaukei co-author. Type filter respects
   // state.b2TypeSet, but PhD/Masters thesis are inherently single-author works
   // that don't apply here — the caller disables those checkboxes.
   function buildB2Rows_coauthor(includeAllLocations) {
-    const { scholars, paternalByName } = samoanScholarMaps();
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
     const rows = new Map();
-    state.districts.features.forEach(f => {
-      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.region, total: 0, types: {}, isConfirmed: true });
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {}, isConfirmed: true });
     });
     const unconfirmed = { name: 'District not yet confirmed', conf: null, total: 0, types: {}, isConfirmed: false };
 
@@ -10090,26 +10025,10 @@
       // Theses are single-author — don't count them here even if a stale
       // check state slips through the UI.
       if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
-      const creators = it.creators || [];
-      if (!creators.length) return;
-      const firstScholar = itaukeiName(creators[0], scholars);
-      if (firstScholar) return; // 1st-author view territory, not us
-
-      // Collect all Samoan co-authors on this paper
-      const coScholars = [];
-      for (let i = 1; i < creators.length; i++) {
-        const s = itaukeiName(creators[i], scholars);
-        if (s) coScholars.push(s);
-      }
+      if (itaukeiAuthorship(it) !== 'coauth') return;
+      const coScholars = c3SamoaPeople_(it, scholars, 'co');
       if (!coScholars.length) return;
-
-      // Samoa-focused rule: paper must have a Samoa district tag OR at least one
-      // co-author with a confirmed paternal district (i.e., an Samoan scholar
-      // contribution counts as Samoa-relevant even if the study site isn't tagged).
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
-      const anyPaternal = coScholars.some(s => paternalByName.get(s));
-      if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
+      if (!includeAllLocations && !c3IsSamoaFocused_(it)) return;
 
       coScholars.forEach(s => {
         const paternal = paternalByName.get(s) || '';
@@ -10124,21 +10043,21 @@
     return out;
   }
 
-  // Split view: for each paternal district, count both (a) publications where
-  // an Samoan person from that district is 1st author and (b) publications
-  // where an Samoan person from that district is a co-author (and the paper
-  // has no Samoan 1st author). One row per district with lead + co counts.
+  // Split view: for each paternal province, count both (a) publications where
+  // an iTaukei person from that province is 1st author and (b) publications
+  // where an iTaukei person from that province is a co-author (and the paper
+  // has no iTaukei 1st author). One row per province with lead + co counts.
   //
-  // Note: (a) counts each paper exactly once (against its lead's district),
-  // (b) counts each paper once per distinct co-author district (so a paper
+  // Note: (a) counts each paper exactly once (against its lead's province),
+  // (b) counts each paper once per distinct co-author province (so a paper
   // with two co-authors from Kadavu still adds only +1 to Kadavu, but adds
   // +1 to Lau too if one is from Lau).
   function buildB2Rows_split(includeAllLocations) {
-    const { scholars, paternalByName } = samoanScholarMaps();
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
     const rows = new Map();
-    state.districts.features.forEach(f => {
+    state.provinces.features.forEach(f => {
       rows.set(f.properties.name, {
-        name: f.properties.name, conf: f.properties.region,
+        name: f.properties.name, conf: f.properties.confederacy,
         lead: 0, co: 0, total: 0,
         leadTypes: {}, coTypes: {},
         isConfirmed: true
@@ -10154,16 +10073,12 @@
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
       if (!state.b2TypeSet.has(vt)) return;
-      const creators = it.creators || [];
-      if (!creators.length) return;
-
-      const firstScholar = itaukeiName(creators[0], scholars);
-      const provSet = state.provincesByItem.get(it.key);
-      const hasProvinceTag = provSet && provSet.size > 0;
+      const role = itaukeiAuthorship(it);
+      const firstScholar = role === 'lead' ? c3SamoaPeople_(it, scholars, 'lead')[0] : null;
 
       if (firstScholar) {
-        // 1st-author case — counts once against the first author's district.
-        if (!includeAllLocations && !hasProvinceTag && !paternalByName.get(firstScholar)) return;
+        // 1st-author case — counts once against the first author's province.
+        if (!includeAllLocations && !c3IsSamoaFocused_(it)) return;
         const paternal = paternalByName.get(firstScholar) || '';
         const bucket = paternal && rows.has(paternal) ? rows.get(paternal) : unconfirmed;
         bucket.lead += 1;
@@ -10172,17 +10087,13 @@
       } else {
         // Co-author case — theses are single-author; skip.
         if (vt === 'thesisPhd' || vt === 'thesisMasters') return;
-        const coScholars = [];
-        for (let i = 1; i < creators.length; i++) {
-          const s = itaukeiName(creators[i], scholars);
-          if (s) coScholars.push(s);
-        }
+        if (role !== 'coauth') return;
+        const coScholars = c3SamoaPeople_(it, scholars, 'co');
         if (!coScholars.length) return;
-        const anyPaternal = coScholars.some(s => paternalByName.get(s));
-        if (!includeAllLocations && !hasProvinceTag && !anyPaternal) return;
-        // Distinct paternal districts — avoid double-counting a paper for
-        // one district just because two of its co-authors happen to be
-        // from that district.
+        if (!includeAllLocations && !c3IsSamoaFocused_(it)) return;
+        // Distinct paternal provinces — avoid double-counting a paper for
+        // one province just because two of its co-authors happen to be
+        // from that province.
         const seen = new Set();
         coScholars.forEach(s => {
           const paternal = paternalByName.get(s) || '__unconfirmed__';
@@ -10202,12 +10113,68 @@
     return out;
   }
 
+  // Direct C3 Island Division builder. This avoids summing district rows,
+  // which double-counts one publication when multiple linked Samoan
+  // co-authors come from different districts in the same division.
+  function buildC3DivisionRows_(includeAllLocations, authMode) {
+    const { scholars, paternalByName } = iTaukeiScholarMaps();
+    const divisions = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"];
+    const rows = new Map(divisions.map(name => [name, {
+      name, conf: name, total: 0, types: {}, lead: 0, co: 0,
+      leadTypes: {}, coTypes: {}, isConfirmed: true
+    }]));
+    const unconfirmed = {
+      name: 'District not yet confirmed', conf: null, total: 0, types: {},
+      lead: 0, co: 0, leadTypes: {}, coTypes: {}, isConfirmed: false
+    };
+
+    state.snapshot.items.forEach(it => {
+      const vt = visualType(it);
+      if (!state.b2TypeSet.has(vt)) return;
+      if (!includeAllLocations && !c3IsSamoaFocused_(it)) return;
+      const role = itaukeiAuthorship(it);
+      if (authMode === 'first' && role !== 'lead') return;
+      if (authMode === 'co' && role !== 'coauth') return;
+      if (role !== 'lead' && role !== 'coauth') return;
+      if (role === 'coauth' && (vt === 'thesisPhd' || vt === 'thesisMasters')) return;
+
+      const peopleRole = role === 'lead' ? 'lead' : 'co';
+      const people = c3SamoaPeople_(it, scholars, peopleRole);
+      if (!people.length) return;
+      const itemDivisions = new Set();
+      let hasUnconfirmed = false;
+      people.forEach(name => {
+        const district = paternalByName.get(name) || '';
+        const division = PROVINCE_TO_CONFEDERACY[district];
+        if (division) itemDivisions.add(division);
+        else hasUnconfirmed = true;
+      });
+      const targets = Array.from(itemDivisions).map(d => rows.get(d));
+      if (hasUnconfirmed || !targets.length) targets.push(unconfirmed);
+      targets.forEach(bucket => {
+        if (role === 'lead') {
+          bucket.lead += 1;
+          bucket.leadTypes[vt] = (bucket.leadTypes[vt] || 0) + 1;
+        } else {
+          bucket.co += 1;
+          bucket.coTypes[vt] = (bucket.coTypes[vt] || 0) + 1;
+        }
+        bucket.total = bucket.lead + bucket.co;
+        bucket.types[vt] = (bucket.types[vt] || 0) + 1;
+      });
+    });
+
+    const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
+    if (unconfirmed.total) out.push(unconfirmed);
+    return out;
+  }
+
   function buildB2Rows_studyProvince_allAuthors() {
     const rows = new Map();
-    state.districts.features.forEach(f => {
-      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.region, total: 0, types: {} });
+    state.provinces.features.forEach(f => {
+      rows.set(f.properties.name, { name: f.properties.name, conf: f.properties.confederacy, total: 0, types: {} });
     });
-    const fijiWide = { name: 'Samoa-wide / national', conf: null, total: 0, types: {} };
+    const fijiWide = { name: 'Fiji-wide / national', conf: null, total: 0, types: {} };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
@@ -10222,8 +10189,8 @@
           }
         });
       }
-      // “Samoa-wide / national” needs a positive signal. Without an explicit
-      // Zotero tag we cannot fill this bucket for non-Samoan papers. Leaving
+      // “Fiji-wide / national” needs a positive signal. Without an explicit
+      // Zotero tag we cannot fill this bucket for non-iTaukei papers. Leaving
       // it visible (with 0) documents that the row exists once tagging arrives.
     });
 
@@ -10233,40 +10200,45 @@
   }
 
   function buildB2Rows_compareAuthorship() {
-    // For each Samoa district, count 3 authorship categories.
-    const { scholars } = samoanScholarMaps();
+    // For each Fiji province, count 3 authorship categories.
     const rows = new Map();
-    state.districts.features.forEach(f => {
+    state.provinces.features.forEach(f => {
       rows.set(f.properties.name, {
-        name: f.properties.name, conf: f.properties.region,
+        name: f.properties.name, conf: f.properties.confederacy,
         cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 },
         total: 0
       });
     });
-    const fijiWide = { name: 'Samoa-wide / national', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
+    const fijiWide = { name: 'Non-district/Samoa', conf: null, cats: { itaukeiFirst: 0, includesItaukei: 0, noItaukei: 0 }, total: 0 };
 
     state.snapshot.items.forEach(it => {
       const vt = visualType(it);
-      if (!state.b2TypeSet.has(vt)) return;
+      if (!state.typeSet.has(vt)) return;
       const provSet = state.provincesByItem.get(it.key);
-      if (!provSet || provSet.size === 0) return; // Only Samoa-focused rows for this view
+      const isNonDistrict = !!(state.nonProvincialFijiKey &&
+        (it.collections || []).includes(state.nonProvincialFijiKey));
+      if ((!provSet || provSet.size === 0) && !isNonDistrict) return;
 
-      const creators = it.creators || [];
-      const firstIsItaukei = !!itaukeiName(creators[0], scholars);
-      const anyItaukei = firstIsItaukei || creators.slice(1).some(c => itaukeiName(c, scholars));
+      const role = itaukeiAuthorship(it);
 
-      provSet.forEach(name => {
+      (provSet || new Set()).forEach(name => {
         const b = rows.get(name);
         if (!b) return;
-        if (firstIsItaukei) b.cats.itaukeiFirst += 1;
-        else if (anyItaukei) b.cats.includesItaukei += 1;
+        if (role === 'lead') b.cats.itaukeiFirst += 1;
+        else if (role === 'coauth') b.cats.includesItaukei += 1;
         else b.cats.noItaukei += 1;
         b.total = b.cats.itaukeiFirst + b.cats.includesItaukei + b.cats.noItaukei;
       });
+      if (isNonDistrict) {
+        if (role === 'lead') fijiWide.cats.itaukeiFirst += 1;
+        else if (role === 'coauth') fijiWide.cats.includesItaukei += 1;
+        else fijiWide.cats.noItaukei += 1;
+        fijiWide.total = fijiWide.cats.itaukeiFirst + fijiWide.cats.includesItaukei + fijiWide.cats.noItaukei;
+      }
     });
 
     const out = Array.from(rows.values()).sort((a, b) => b.total - a.total);
-    out.push(fijiWide);
+    if (fijiWide.total) out.push(fijiWide);
     return out;
   }
 
@@ -10286,7 +10258,7 @@
     sel.setAttribute('data-b2-authors', '');
     sel.setAttribute('aria-label', 'Filter authors');
     const opts = [
-      { value: 'samoan', label: 'Samoan authors' },
+      { value: 'itaukei', label: 'Samoan authors' },
       { value: 'all',     label: 'All authors' }
     ];
     opts.forEach(o => {
@@ -10322,7 +10294,7 @@
     metaEl.innerHTML = meta.meta.map(([k, v]) => `<span><em>${escapeHtml(k)}:</em> ${escapeHtml(v)}</span>`).join('');
 
     // Toggle tab active state + tabindex per aria-tablist pattern. The chart
-    // panel that owns these tabs is Panel C3 (the district multi-view chart).
+    // panel that owns these tabs is Panel C3 (the province multi-view chart).
     // Historically this selector said B2 and the active pill never updated —
     // fixed by scoping to the correct panel. Renumbered 2026-07-27 from C2
     // to C3 when Panel C1 (body composition) was inserted above.
@@ -10346,12 +10318,15 @@
     const includeAll = (view === 'all-locations');
     const auth = state.b2Authorship || 'first';
     const layout = state.b2Layout || 'compact';
+    const b2Division = (state.b2GroupBy || 'division') !== 'district';
     const blurbEl = $('[data-b2-blurb]');
     const layoutWrap = $('[data-b2-layout-wrap]');
     const authSel = $('[data-b2-authorship]');
     const layoutSel = $('[data-b2-layout]');
+    const groupSel = $('[data-b2-groupby]');
     if (authSel && authSel.value !== auth) authSel.value = auth;
     if (layoutSel && layoutSel.value !== layout) layoutSel.value = layout;
+    if (groupSel && groupSel.value !== (state.b2GroupBy || 'division')) groupSel.value = state.b2GroupBy || 'division';
     if (layoutWrap) layoutWrap.style.display = (auth === 'split') ? '' : 'none';
 
     // Toggle panel-level modifier for detailed layout so CSS can expand height / spacing.
@@ -10366,14 +10341,16 @@
 
     if (view === 'samoa-focused' || view === 'all-locations') {
       if (auth === 'first') {
-        const rows = buildB2Rows_paternalGrouped(includeAll);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'first')
+          : buildB2Rows_paternalGrouped(includeAll);
         renderPanelBBarsInto(barsEl, rows, {
-          activeName: state.filter.paternal || null,
+          activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-          onClick: r => {
+          onClick: b2Division ? null : r => {
             if (!r.isConfirmed) return;
             state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
-            state.filter.district = '';
+            state.filter.province = '';
             state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
             state.filter.b2Authorship = 'itaukeiFirst';
             state.shown = state.pageSize;
@@ -10383,14 +10360,16 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'first', includeAll, rows });
       } else if (auth === 'co') {
-        const rows = buildB2Rows_coauthor(includeAll);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'co')
+          : buildB2Rows_coauthor(includeAll);
         renderPanelBBarsInto(barsEl, rows, {
-          activeName: state.filter.paternal || null,
+          activeName: !b2Division ? (state.filter.paternal || null) : null,
           confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-          onClick: r => {
+          onClick: b2Division ? null : r => {
             if (!r.isConfirmed) return;
             state.filter.paternal = state.filter.paternal === r.name ? '' : r.name;
-            state.filter.district = '';
+            state.filter.province = '';
             state.filter.b2Group = state.filter.paternal ? 'paternal' : '';
             state.filter.b2Authorship = 'includesItaukei';
             state.shown = state.pageSize;
@@ -10400,7 +10379,9 @@
         barsEl.className = 'db-bars';
         renderPanelB2Blurb(blurbEl, { auth: 'co', includeAll, rows });
       } else if (auth === 'split') {
-        const rows = buildB2Rows_split(includeAll);
+        let rows = b2Division
+          ? buildC3DivisionRows_(includeAll, 'split')
+          : buildB2Rows_split(includeAll);
         if (layout === 'detailed') {
           renderPanelB2SplitDetailed(barsEl, rows);
         } else {
@@ -10409,15 +10390,16 @@
         renderPanelB2Blurb(blurbEl, { auth: 'split', layout, includeAll, rows });
       }
     } else if (view === 'all-authors') {
-      const rows = buildB2Rows_studyProvince_allAuthors();
+      let rows = buildB2Rows_studyProvince_allAuthors();
+      if (b2Division) rows = aggregateRowsByDivision_(rows);
       renderPanelBBarsInto(barsEl, rows, {
-        activeName: state.filter.district || null,
+        activeName: !b2Division ? (state.filter.province || null) : null,
         confDotColor: r => r.conf ? CONF_COLORS[r.conf] : '#94a3b8',
-        onClick: r => {
-          if (r.name === 'Samoa-wide / national') return; // no items tagged yet
-          state.filter.district = state.filter.district === r.name ? '' : r.name;
+        onClick: b2Division ? null : r => {
+          if (r.name === 'Fiji-wide / national') return; // no items tagged yet
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
           state.filter.paternal = '';
-          state.filter.b2Group = state.filter.district ? 'district' : '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
           state.filter.b2Authorship = '';
           state.shown = state.pageSize;
           afterFilterChange();
@@ -10426,16 +10408,16 @@
       barsEl.classList.remove('db-bars--grouped');
     }
 
-    // Authorship chrome (district note, legend, caveat) is no longer used in
+    // Authorship chrome (province note, legend, caveat) is no longer used in
     // B2 — the Authorship tab moved to Panel B1. Ensure it's hidden here.
     const hide = el => { if (el) el.style.display = 'none'; };
-    hide($('[data-b2-district-note]'));
+    hide($('[data-b2-province-note]'));
     hide($('[data-b2-authorship-controls]'));
     hide($('[data-b2-caveat]'));
   }
 
   // -------- Split view render helpers --------
-  // Compact: one bar per district, two-tone teal (lead + co).
+  // Compact: one bar per province, two-tone teal (lead + co).
   function renderPanelB2SplitCompact(host, rows) {
     host.innerHTML = '';
     host.className = 'db-bars db-bars--split';
@@ -10482,8 +10464,8 @@
     });
   }
 
-  // Detailed: two twin bars per district with publication-type colors.
-  // Grid: district | role | bar | totals (district + totals span both rows).
+  // Detailed: two twin bars per province with publication-type colors.
+  // Grid: province | role | bar | totals (province + totals span both rows).
   function renderPanelB2SplitDetailed(host, rows) {
     host.innerHTML = '';
     host.className = 'db-bars db-bars--split-detailed';
@@ -10491,7 +10473,7 @@
       host.innerHTML = '<div style="padding:16px;color:#64748b;font-size:0.9rem;">No items match the current filters.</div>';
       return;
     }
-    // Scale by the larger of lead/co so bars are comparable across districts.
+    // Scale by the larger of lead/co so bars are comparable across provinces.
     const maxSide = Math.max(1, ...rows.flatMap(r => [r.lead, r.co]));
 
     rows.forEach(r => {
@@ -10532,7 +10514,7 @@
       totals.innerHTML = `<span class="db-bars__totals-lead">${r.lead}</span><span class="db-bars__totals-co">${r.co}</span>`;
       host.appendChild(totals);
 
-      // Row 2: co-author (skip district + totals cells — they span from row 1)
+      // Row 2: co-author (skip province + totals cells — they span from row 1)
       const roleCo = document.createElement('div');
       roleCo.className = 'db-bars__role db-bars__role--co';
       roleCo.textContent = 'co';
@@ -10561,7 +10543,7 @@
   // -------- Interpretation blurb --------
   // Auto-generated text that summarises the current filtered view. Placed
   // above the chart, below the description. Updates on every filter / view /
-  // layout change. Uses <strong> for numbers/district names and <em> for
+  // layout change. Uses <strong> for numbers/province names and <em> for
   // interpretive framing so the sentence reads as commentary, not caption.
   function renderPanelB2Blurb(el, ctx) {
     if (!el) return;
@@ -10578,7 +10560,7 @@
     let html = '';
 
     if (auth === 'first') {
-      // Top-3 first-author districts
+      // Top-3 first-author provinces
       const sorted = confirmed.slice().sort((a, b) => b.total - a.total);
       const [p1, p2, p3] = sorted;
       if (!p1) { el.innerHTML = ''; return; }
@@ -10593,7 +10575,7 @@
       html = `${prov(p1.name)} tops Samoan co-authored publications ${scopeWord} at ${fmt(p1.total)}`;
       if (p2) html += `, followed by ${prov(p2.name)} (${fmt(p2.total)})`;
       if (p3) html += ` and ${prov(p3.name)} (${fmt(p3.total)})`;
-      html += ` — <em>districts whose scholars appear more often as collaborators than as lead authors on these works.</em>`;
+      html += ` — <em>provinces whose scholars appear more often as collaborators than as lead authors on these works.</em>`;
     } else if (auth === 'split') {
       // Find biggest lead-vs-co gaps in both directions.
       // Positive gap (co > lead): co-author role dominates.
@@ -10614,11 +10596,11 @@
         parts.push(`${prov(l1.name)}, by contrast, leads more than it co-authors (${fmt(l1.lead)} first-author versus ${fmt(l1.co)} co-authored)`);
       }
       if (!parts.length) {
-        // Fallback: describe the top district by total.
+        // Fallback: describe the top province by total.
         const top = confirmed.slice().sort((a, b) => b.total - a.total)[0];
         if (top) parts.push(`${prov(top.name)} has the highest combined presence with ${fmt(top.lead)} first-author and ${fmt(top.co)} co-authored papers`);
       }
-      html = parts.join('. ') + `. <em>These asymmetries hint at differing research pathways — some districts are more visible as collaborators, others as lead investigators.</em>`;
+      html = parts.join('. ') + `. <em>These asymmetries hint at differing research pathways — some provinces are more visible as collaborators, others as lead investigators.</em>`;
     }
     el.innerHTML = html;
   }
@@ -10709,7 +10691,8 @@
     tip.style.top  = `${Math.round(top)}px`;
   }
 
-  function renderAuthorshipInto(host, rows) {
+  function renderAuthorshipInto(host, rows, opts) {
+    const disableClick = !!(opts && opts.disableClick);
     host.innerHTML = '';
     hideAuthorshipTip();
     if (!rows.length) {
@@ -10719,10 +10702,11 @@
     const mode = state.b2AuthorshipMode || 'counts';
     const sort = state.b2AuthorshipSort || 'total';
 
-    // Sort rows. Samoa-wide / national always pinned to the end. Zero-total
+    // Sort rows. Fiji-wide / national always pinned to the end. Zero-total
     // rows keep their alphabetical fallback so the layout stays readable.
-    const sortable = rows.filter(r => r.name !== 'Samoa-wide / national');
-    const trailing = rows.filter(r => r.name === 'Samoa-wide / national');
+    const isNonDistrict = r => r.name === 'Fiji-wide / national' || r.name === 'Non-district/Samoa';
+    const sortable = rows.filter(r => !isNonDistrict(r));
+    const trailing = rows.filter(isNonDistrict);
     const shareOf = (r, key) => (r.total > 0 ? (r.cats[key] || 0) / r.total : 0);
     sortable.sort((a, b) => {
       if (sort === 'first-share') {
@@ -10738,23 +10722,23 @@
     const ordered = sortable.concat(trailing);
 
     const maxTotal = Math.max(1, ...ordered.map(r => r.total));
-    const activeProv = state.filter.district || null;
+    const activeProv = state.filter.province || null;
     const activeAuth = state.filter.b2Authorship || null;
 
     ordered.forEach(r => {
-      // Column 1 — district label + statistical region dot + total-only click target
+      // Column 1 — province label + confederacy dot + total-only click target
       const label = document.createElement('div');
       label.className = 'db-bars__prov';
       if (activeProv === r.name) label.classList.add('is-active');
       const dotColor = r.conf ? CONF_COLORS[r.conf] : '#94a3b8';
       label.innerHTML = `<span>${escapeHtml(r.name)}</span><span class="db-bars__prov-dot" style="background:${dotColor};"></span>`;
-      const canFilterProv = r.name !== 'Samoa-wide / national' && r.total > 0;
+      const canFilterProv = !disableClick && !isNonDistrict(r) && r.total > 0;
       if (canFilterProv) {
         label.style.cursor = 'pointer';
         label.addEventListener('click', () => {
-          state.filter.district = state.filter.district === r.name ? '' : r.name;
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
           state.filter.paternal = '';
-          state.filter.b2Group = state.filter.district ? 'district' : '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
           state.filter.b2Authorship = '';
           state.shown = state.pageSize;
           afterFilterChange();
@@ -10771,7 +10755,7 @@
       bar.style.width = `${barPct}%`;
 
       if (r.total === 0) {
-        // Draw an empty outline so the district still has a visual anchor.
+        // Draw an empty outline so the province still has a visual anchor.
         bar.style.width = '4px';
         bar.style.background = 'transparent';
         bar.style.boxShadow = 'inset 0 0 0 1.5px rgba(0,0,0,0.06)';
@@ -10804,20 +10788,20 @@
           seg.addEventListener('mouseleave', closeTip);
           seg.addEventListener('focus', openTip);
           seg.addEventListener('blur', closeTip);
-          const canFilterSeg = r.name !== 'Samoa-wide / national';
+          const canFilterSeg = !disableClick && !isNonDistrict(r);
           if (canFilterSeg) {
             seg.style.cursor = 'pointer';
             const onActivate = () => {
-              const sameProv = state.filter.district === r.name;
+              const sameProv = state.filter.province === r.name;
               const sameAuth = state.filter.b2Authorship === k;
               if (sameProv && sameAuth) {
-                state.filter.district = '';
+                state.filter.province = '';
                 state.filter.b2Authorship = '';
                 state.filter.b2Group = '';
               } else {
-                state.filter.district = r.name;
+                state.filter.province = r.name;
                 state.filter.paternal = '';
-                state.filter.b2Group = 'district';
+                state.filter.b2Group = 'province';
                 state.filter.b2Authorship = k;
               }
               state.shown = state.pageSize;
@@ -10839,16 +10823,16 @@
       rowWrap.appendChild(bar);
       host.appendChild(rowWrap);
 
-      // Column 3 — right-side total (also acts as a district filter target)
+      // Column 3 — right-side total (also acts as a province filter target)
       const num = document.createElement('div');
       num.className = 'db-bars__total';
       num.textContent = r.total;
       if (canFilterProv) {
         num.style.cursor = 'pointer';
         num.addEventListener('click', () => {
-          state.filter.district = state.filter.district === r.name ? '' : r.name;
+          state.filter.province = state.filter.province === r.name ? '' : r.name;
           state.filter.paternal = '';
-          state.filter.b2Group = state.filter.district ? 'district' : '';
+          state.filter.b2Group = state.filter.province ? 'province' : '';
           state.filter.b2Authorship = '';
           state.shown = state.pageSize;
           afterFilterChange();
@@ -10921,6 +10905,19 @@
       }
     });
 
+    // "View" dropdown: District (default, one bar per Samoa district) vs.
+    // Island Division (rolls the 51 districts up into Samoa's 5 Island
+    // Divisions and disables click-to-filter, since state.filter.province /
+    // .paternal only understand district names).
+    const groupSel = $('[data-b2-groupby]');
+    if (groupSel) {
+      groupSel.value = state.b2GroupBy || 'division';
+      groupSel.addEventListener('change', () => {
+        state.b2GroupBy = groupSel.value === 'division' ? 'division' : 'district';
+        renderPanelB2();
+      });
+    }
+
     // Authorship-view: Counts / Percentage toggle
     $$('[data-b2-mode]').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -10956,18 +10953,16 @@
   }
 
   // ============ IMPACT VIEW (Ron's presentation overlay) ============
-  // Publications grouped by paternal statistical region of the Samoan lead author,
+  // Publications grouped by paternal confederacy of the iTaukei lead author,
   // split by whether the item is Samoa-focused (has a Samoa-district tag) or
   // international-focused. Toggle filters restrict to PhD / Masters theses.
   function computeImpactData(filter) {
-    const conf = { 'Rest of Upolu': {samoa:0, intl:0, scholars:new Set()},
-                   'Apia Urban Area':     {samoa:0, intl:0, scholars:new Set()},
-                   'North West Upolu':     {samoa:0, intl:0, scholars:new Set()} };
+    const conf = {'Apia Urban Area': {fiji:0, intl:0, scholars:new Set()},"North West Upolu":  {fiji:0, intl:0, scholars:new Set()},"Rest of Upolu": {fiji:0, intl:0, scholars:new Set()},"Savaii":    {fiji:0, intl:0, scholars:new Set()}};
     const confByProv = new Map();
-    state.districts.features.forEach(f => confByProv.set(f.properties.name, f.properties.region));
+    state.provinces.features.forEach(f => confByProv.set(f.properties.name, f.properties.confederacy));
 
-    // Look up each Samoan scholar's paternal statistical region from their filled
-    // profile. Empty region = we can't attribute their work to a group.
+    // Look up each iTaukei scholar's paternal confederacy from their filled
+    // profile. Empty confederacy = we can't attribute their work to a group.
     const scholarConf = new Map();
     (state.scholarProfilesByName || new Map()).forEach((prof, name) => {
       const c = confByProv.get(effectivePaternalProvince(prof));
@@ -10979,8 +10974,8 @@
       // Filter to just theses of the requested level when the user picked one
       if (filter === 'phd' && it.thesisLevel !== 'phd') return;
       if (filter === 'masters' && it.thesisLevel !== 'masters') return;
-      // Determine the paternal statistical region from the lead Samoan author. We
-      // check the first creator first, then fall back to any Samoan author.
+      // Determine the paternal confederacy from the lead iTaukei author. We
+      // check the first creator first, then fall back to any iTaukei author.
       const creators = it.creators || [];
       let attributed = null, attributedName = null;
       for (let i = 0; i < creators.length; i++) {
@@ -10993,10 +10988,10 @@
       }
       if (!attributed) { unattributed += 1; return; }
       const provSet = state.provincesByItem.get(it.key);
-      const hasDistrict = provSet && provSet.size > 0;
+      const isFiji = provSet && provSet.size > 0;
       const bucket = conf[attributed];
       if (!bucket) return;
-      if (hasDistrict) bucket.samoa += 1; else bucket.intl += 1;
+      if (isFiji) bucket.fiji += 1; else bucket.intl += 1;
       bucket.scholars.add(attributedName);
     });
 
@@ -11021,31 +11016,27 @@
     if (!chart) return;
 
     // Headline numbers
-    const total = ['Rest of Upolu','Apia Urban Area','North West Upolu'].reduce((s, c) => s + data.conf[c].samoa + data.conf[c].intl, 0);
-    const samoa = ['Rest of Upolu','Apia Urban Area','North West Upolu'].reduce((s, c) => s + data.conf[c].samoa, 0);
-    const intl = total - samoa;
+    const total = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].reduce((s, c) => s + data.conf[c].fiji + data.conf[c].intl, 0);
+    const fiji = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].reduce((s, c) => s + data.conf[c].fiji, 0);
+    const intl = total - fiji;
     const allScholars = new Set();
-    ['Rest of Upolu','Apia Urban Area','North West Upolu'].forEach(c => data.conf[c].scholars.forEach(n => allScholars.add(n)));
+    ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].forEach(c => data.conf[c].scholars.forEach(n => allScholars.add(n)));
     $('[data-impact-total]').textContent = total.toLocaleString();
-    $('[data-impact-samoa]').textContent = samoa.toLocaleString();
+    $('[data-impact-fiji]').textContent = fiji.toLocaleString();
     $('[data-impact-intl]').textContent = intl.toLocaleString();
     $('[data-impact-scholars]').textContent = allScholars.size.toLocaleString();
 
     // Find max across all conf x scope for bar scaling
     const allValues = [];
-    ['Rest of Upolu','Apia Urban Area','North West Upolu'].forEach(c => { allValues.push(data.conf[c].samoa, data.conf[c].intl); });
+    ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].forEach(c => { allValues.push(data.conf[c].fiji, data.conf[c].intl); });
     const max = Math.max(1, ...allValues);
     const MAX_H = 220; // pixels
 
-    const confs = [
-      { name: 'Rest of Upolu', color: '#FF5A6E' },
-      { name: 'Apia Urban Area',     color: '#4ECDE6' },
-      { name: 'North West Upolu',     color: '#FFD84A' }
-    ];
+    const confs = [{ name: 'Apia Urban Area', color: '#FF5A6E' },{ name: "North West Upolu",    color: '#4ECDE6' },{ name: "Rest of Upolu",   color: '#FFD84A' },{ name: "Savaii",      color: '#6FCF97' }];
 
     chart.innerHTML = confs.map(c => {
       const d = data.conf[c.name];
-      const total = d.samoa + d.intl;
+      const total = d.fiji + d.intl;
       const scholarList = Array.from(d.scholars).sort().join('&#10;'); // linebreak-separated in tooltip
       return `
         <div class="impact-conf" style="border-top-color:${c.color};">
@@ -11053,8 +11044,8 @@
           <div class="impact-conf__total">${total} Publication${total === 1 ? '' : 's'} · ${d.scholars.size} scholar${d.scholars.size === 1 ? '' : 's'}</div>
           <div class="impact-conf__bars">
             <div class="impact-bar">
-              <div class="impact-bar__value">${d.samoa}</div>
-              <div class="impact-bar__col impact-bar__col--samoa" style="height:${Math.max(4, (d.samoa / max) * MAX_H)}px;" data-tooltip="${d.samoa} Samoa-focused item${d.samoa === 1 ? '' : 's'}"></div>
+              <div class="impact-bar__value">${d.fiji}</div>
+              <div class="impact-bar__col impact-bar__col--fiji" style="height:${Math.max(4, (d.fiji / max) * MAX_H)}px;" data-tooltip="${d.fiji} Samoa-focused item${d.fiji === 1 ? '' : 's'}"></div>
               <div class="impact-bar__label">Samoa-focused</div>
             </div>
             <div class="impact-bar">
@@ -11071,7 +11062,7 @@
     const filterLabel = filter === 'phd' ? 'PhD theses only'
                        : filter === 'masters' ? 'Masters theses only'
                        : 'all publication types';
-    let note = `Showing ${filterLabel}. “Samoa-focused” means the item is tagged to at least one Samoan district in the Master file; “International” means it isn’t. Statistical Region is attributed via the lead Samoan author’s paternal district.`;
+    let note = `Showing ${filterLabel}. “Samoa-focused” means the item is tagged to at least one Samoa district in the Master file; “International” means it isn’t. Statistical Region is attributed via the lead Samoan author’s paternal district.`;
     if (data.unattributed > 0) {
       note += ` ${data.unattributed} item${data.unattributed === 1 ? ' was' : 's were'} not attributed — the lead scholar’s paternal district hasn’t been filled in the admin dashboard yet.`;
     }
@@ -11114,24 +11105,25 @@
   }
 
   // ==========================================================================
-  // PANEL B3 — Where Samoan research has been undertaken
+  // PANEL B4 — Where Samoan research has been undertaken
   //
   // Data model:
-  //   The Zotero "Where study was done" collection (key V3HLPDPL) contains
-  //   one sub-collection per country. Every item in a country sub-collection
-  //   is a publication whose research was carried out in that country.
+  //   The adapter synthesises the V3HLPDPL collection tree from verified
+  //   rows in the Master file Research Geography worksheet. Every item in a
+  //   country collection is a publication whose research was carried out
+  //   there. Multiple site rows in one country are deduplicated by publication.
   //   For each item we compute the first-author's Samoan status via
   //   itaukeiAuthorship(item): 'lead' = Samoan first-author (rust bucket),
   //   'coauth' | 'none' = someone else first-authored (teal bucket).
   //
   //   The pill above the map toggles which count drives the marker size:
-  //     - With Samoan: total items with an Samoan author on the byline
+  //     - With Samoan: total items with a Samoan author on the byline
   //                     (lead + coauth). Both slices of the pie visible.
-  //     - Led by Samoan: only items where an Samoan is first author.
+  //     - Led by Samoan: only items where a Samoan is first author.
   //                       Pie collapses to the rust slice.
   //
   // Popup:
-  //   Two-tier scrollable citation list — Samoan as Lead (rust) then
+  //   Two-tier scrollable citation list — iTaukei as Lead (rust) then
   //   Others as Lead (teal). Hovering a citation chip fills a detail slot
   //   with the lead author's photo/name/year + publication title.
   // ==========================================================================
@@ -11140,14 +11132,14 @@
   // V3HLPDPL. If Ron adds a new country later, the runtime falls back to
   // WORLD_COUNTRY_APPROX (loose lookup on the country name).
   //
-  // Key = Zotero collection name (unchanged — do NOT rename "Samoa Districts"
+  // Key = Zotero collection name (unchanged — do NOT rename "Fiji Provinces"
   // in Zotero). displayName is what the UI shows; region drives the fullscreen
-  // dropdown. "Samoa Districts" renders as "Samoa (Districts)" everywhere.
+  // dropdown. "Fiji Provinces" renders as "Fiji (Provinces)" everywhere.
   const B3_COUNTRY_COORDS = {
-    'Samoa Districts': { lat: -17.7134, lng: 178.0650, mapCountry: 'Samoa', displayName: 'Samoa (Districts)', region: 'Pacific' },
+    'Fiji Provinces': { lat: -17.7134, lng: 178.0650, mapCountry: 'Fiji', displayName: 'Fiji (Provinces)', region: 'Pacific' },
     'Australia':      { lat: -25.2744, lng: 133.7751, region: 'Oceania' },
     'New Zealand':    { lat: -41.2865, lng: 174.7762, region: 'Oceania' },
-    'Tonga':          { lat: -21.1789, lng: -175.1982, region: 'Pacific' },
+    'Samoa':          { lat: -21.1789, lng: -175.1982, region: 'Pacific' },
     'Samoa':          { lat: -13.7590, lng: -172.1046, region: 'Pacific' },
     'Solomon Islands':{ lat:  -9.6457, lng: 160.1562, region: 'Pacific' },
     'Vanuatu':        { lat: -15.3767, lng: 166.9592, region: 'Pacific' },
@@ -11159,7 +11151,7 @@
     'Papua New Guinea': { lat: -6.3149, lng: 143.9555, region: 'Pacific' },
     'India':          { lat:  20.5937, lng:  78.9629, region: 'Asia' },
     'Philippines':    { lat:  12.8797, lng: 121.7740, region: 'Asia' },
-    'Nauru':          { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
+    'Naoero':         { lat:  -0.5228, lng: 166.9315, region: 'Pacific' },
     // Zotero collection is named 'FSM'; displayName expands it for the
     // country-row label and popup title.
     // FSM parent center is placed in empty ocean between Yap (west) and
@@ -11186,11 +11178,11 @@
     // Additional top-level country entries so every distinct Master
     // `Research Geography` Country value has an anchor coordinate. Adding
     // these explicitly (no fuzzy matching) keeps the country list in sync
-    // with the Master file. Samoa here is the country-center anchor for
+    // with the Master file. Fiji here is the country-center anchor for
     // studies coded at the country level (Master rows that name only
-    // 'Samoa' rather than a district).
+    // 'Fiji' rather than a province).
     'Canada':         { lat:  56.1304, lng: -106.3468, region: 'Americas' },
-    'Samoa':           { lat: -17.7134, lng:  178.0650, region: 'Pacific' },
+    'Fiji':           { lat: -17.7134, lng:  178.0650, region: 'Pacific' },
     'Ghana':          { lat:   7.9465, lng:   -1.0232, region: 'Africa' },
     'South Africa':   { lat: -30.5595, lng:   22.9375, region: 'Africa' },
     'Sri Lanka':      { lat:   7.8731, lng:   80.7718, region: 'Asia' },
@@ -11226,20 +11218,179 @@
     }
   };
 
-  // Display-name transform — the Zotero collection key is unchanged.
+  // Country naming policy: legacy source records remain readable, but B4
+  // groups both spellings under Naoero before deduplicating publications.
+  function b4CanonicalCountry(country) {
+    const name = String(country || '').trim();
+    return /^(nauru|naoero)$/i.test(name) ? 'Naoero' : name;
+  }
+
+  // Display-name transform — the source collection key is unchanged.
   function b3DisplayName(country) {
+    country = b4CanonicalCountry(country);
     const meta = B3_COUNTRY_COORDS[country];
     return (meta && meta.displayName) ? meta.displayName : country;
   }
   function b3RegionOf(country) {
+    country = b4CanonicalCountry(country);
     const meta = B3_COUNTRY_COORDS[country];
     return (meta && meta.region) ? meta.region : 'Other';
+  }
+
+  function applyMasterB4Coordinates() {
+    const rows = state.master && state.master.geographyCoordinates;
+    if (!Array.isArray(rows)) return;
+    const lookup = { country: new Map(), division: new Map(), island: new Map(), site: new Map() };
+    const norm = (value) => String(value || '').trim().toLowerCase()
+      .normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[ʻ’‘`]/g, "'");
+    rows.forEach(row => {
+      const status = String(row['Verification / Status'] || '').trim();
+      if (!(/^verified/i.test(status) || status.toLowerCase() === 'strong')) return;
+      const lat = Number(row.Latitude), lng = Number(row.Longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) {
+        console.warn('B4: invalid Master coordinate', row['Canonical Location Name'], row.Latitude, row.Longitude);
+        return;
+      }
+      const typeRaw = String(row['Location Type'] || '').trim();
+      const rawName = String(row['Canonical Location Name'] || row.Country || '').trim();
+      const name = typeRaw === 'Country' ? b4CanonicalCountry(rawName) : rawName;
+      if (!name) return;
+      const aliases = String(row['Alias Notes'] || '').split(';').map(x => x.trim()).filter(Boolean);
+      const coord = { lat, lng, name, type: typeRaw, country: String(row.Country || '').trim() };
+      let bucket = null;
+      if (typeRaw === 'Country') bucket = lookup.country;
+      else if (/island division/i.test(typeRaw)) bucket = lookup.division;
+      else if (/specific island|island$/i.test(typeRaw)) bucket = lookup.island;
+      else if (/village|town|site/i.test(typeRaw)) bucket = lookup.site;
+      if (bucket) [name].concat(aliases).forEach(alias => bucket.set(norm(alias), coord));
+      if (typeRaw === 'Country') {
+        const prior = B3_COUNTRY_COORDS[name] || {};
+        B3_COUNTRY_COORDS[name] = Object.assign({}, prior, {
+          lat, lng,
+          region: prior.region || 'Other',
+          _masterCoordinate: true
+        });
+        aliases.forEach(alias => { B3_COUNTRY_COORDS[alias] = B3_COUNTRY_COORDS[name]; });
+      }
+    });
+    state.b3MasterCoordinates = lookup;
+    state.b3CoordinateKey = norm;
+  }
+
+  // Leaflet does not automatically choose the nearest antimeridian copy when
+  // worldCopyJump is disabled. Keep Pacific markers close to the map's 165°E
+  // overview instead of plotting Samoa at the invisible -175° copy.
+  function b3WrappedLng(lng, reference) {
+    let out = Number(lng);
+    const ref = Number.isFinite(reference) ? reference : 165;
+    while (out - ref > 180) out -= 360;
+    while (out - ref < -180) out += 360;
+    return out;
+  }
+
+  const B3_SAMOA_DETAIL_ZOOM = 4;
+
+  function b3SamoaDetailRecords(countryRecord) {
+    if (!countryRecord || countryRecord.country !== 'Samoa') return [];
+    const lookup = state.b3MasterCoordinates || {};
+    const norm = state.b3CoordinateKey || (v => String(v || '').trim().toLowerCase());
+    const result = [];
+    const seen = new Set();
+    const addItems = (items, role) => items.forEach(item => {
+      // Read the live Master bridge directly. The item-level copy is retained
+      // as a fallback for older snapshots, but the bridge is authoritative and
+      // prevents a stale browser item from collapsing all evidence to Samoa.
+      const publicationId = String(item._masterPublicationId || item.key || '').trim();
+      const rawRows = ((state.master && state.master.geography) || []).filter(g =>
+        String(g['Publication ID / BibTeX Key'] || g['Publication ID'] || g['BibTeX Key'] || '').trim() === publicationId &&
+        String(g.Country || '').trim().toLowerCase() === 'samoa' &&
+        (/^verified/i.test(String(g.Verification || g['Verification / Status'] || '').trim()) ||
+          String(g.Verification || g['Verification / Status'] || '').trim().toLowerCase() === 'strong')
+      );
+      const rows = rawRows.length ? rawRows.map(g => ({
+        country: 'Samoa',
+        islandDivision: String(g['Island Division (auto from District)'] || '').trim(),
+        district: String(g.District || '').trim(),
+        specificIsland: String(g['Specific Island'] || '').trim(),
+        site: String(g['Village / Town / Site'] || '').trim(),
+        geographyType: String(g['Geography Type'] || '').trim()
+      })) : (item._masterGeographyRows || []).filter(g => g.country === 'Samoa');
+      rows.forEach(g => {
+        let coord = null, label = '', kind = '';
+        if (g.site && lookup.site) { coord = lookup.site.get(norm(g.site)); label = g.site; kind = 'site'; }
+        if (!coord && g.specificIsland && lookup.island) { coord = lookup.island.get(norm(g.specificIsland)); label = g.specificIsland; kind = 'island'; }
+        if (!coord && g.islandDivision && lookup.division) { coord = lookup.division.get(norm(g.islandDivision)); label = g.islandDivision; kind = 'division'; }
+        if (!coord && lookup.country) { coord = lookup.country.get(norm('Samoa')); label = 'Samoa-wide'; kind = 'country'; }
+        if (!coord) return;
+        const key = `${item.key}\u0001${kind}\u0001${norm(label)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        result.push({
+          country: 'Samoa', subLoc: label, lat: coord.lat, lng: coord.lng,
+          led: role === 'led' ? [item] : [], others: role === 'others' ? [item] : [],
+          total: 1, _b3Detail: true, _b3LocationType: kind
+        });
+      });
+    });
+    addItems(countryRecord.led || [], 'led');
+    addItems(countryRecord.others || [], 'others');
+    return result;
+  }
+
+  function b3ExpandedSamoaRecords(records) {
+    return records.flatMap(rec => {
+      if (rec.country !== 'Samoa') return [rec];
+      const details = b3SamoaDetailRecords(rec);
+      if (!details.length) return [rec];
+      // At island-detail zoom retain the country-level publication marker as
+      // well as every verified evidence row. Thus WSM-PUB0072 renders as five
+      // circles: one deduplicated publication marker + four geography rows.
+      return [Object.assign({}, rec, {
+        subLoc: `Samoa — ${rec.total} publication${rec.total === 1 ? '' : 's'}`,
+        _b3Detail: true,
+        _b3CountrySummary: true
+      })].concat(details);
+    });
+  }
+
+  function b3DetailedSamoaBounds(countryRecord) {
+    const details = b3SamoaDetailRecords(countryRecord);
+    if (!details.length) return null;
+    return L.latLngBounds(details.map(r => [r.lat, b3WrappedLng(r.lng, 165)]));
+  }
+
+  // Fit every populated country into the visible map with enough pixel room
+  // for the full marker circles. Longitudes are first moved onto the same
+  // Pacific-centred world copy; otherwise Leaflet treats the United States
+  // and Samoa as being almost a full world apart and clips one map edge.
+  function b3FitOverview(options) {
+    const bmap = state.b3Map;
+    if (!bmap) return;
+    const opts = options || {};
+    const summaries = b3CountrySummaries();
+    if (!summaries.length) return;
+    const referenceLng = 180;
+    const points = summaries.map(rec => [rec.lat, b3WrappedLng(rec.lng, referenceLng)]);
+    bmap.invalidateSize(false);
+    if (points.length === 1) {
+      bmap.setView(points[0], Math.min(opts.maxZoom || 4, 4), { animate: !!opts.animate });
+    } else {
+      const pad = Number(opts.padding) || 72;
+      bmap.fitBounds(L.latLngBounds(points), {
+        animate: !!opts.animate,
+        paddingTopLeft: [pad, pad],
+        paddingBottomRight: [pad, pad],
+        maxZoom: opts.maxZoom || 3.25
+      });
+    }
+    renderB3Layer();
   }
 
   function initB3Map() {
     const el = document.getElementById('db-map-b3');
     if (!el || typeof L === 'undefined') return;
     if (!state.snapshot) return; // fires again from data load path
+    applyMasterB4Coordinates();
 
     // ---- 1. Build sub-collection -> country name map ----
     // "Where study was done" root (V3HLPDPL). Every direct child is a country.
@@ -11252,7 +11403,7 @@
                    || null;
     if (!whereRoot) {
       const err = document.querySelector('[data-db-b3-map-error]');
-      if (err) { err.style.display = 'block'; err.textContent = 'Research-location data is unavailable in the Master file.'; }
+      if (err) { err.style.display = 'block'; err.textContent = 'Verified Research Geography data was not found in the Master-file snapshot.'; }
       return;
     }
     // countryOfKey[<any descendant key>] = <country name>
@@ -11266,8 +11417,9 @@
     const subLocOfKey = new Map();
     const countries = [];
     cols.filter(c => c.parent === whereRoot.key).forEach(country => {
-      countries.push(country.name);
-      countryOfKey.set(country.key, country.name);
+      const canonicalCountry = b4CanonicalCountry(country.name);
+      if (!countries.includes(canonicalCountry)) countries.push(canonicalCountry);
+      countryOfKey.set(country.key, canonicalCountry);
       subLocOfKey.set(country.key, null);
       const subDef = B3_SUBLOCATIONS[country.name] || null;
       // Recurse into descendants. A descendant whose name matches a known
@@ -11278,7 +11430,7 @@
       const stack = cols.filter(c => c.parent === country.key).map(c => ({ col: c, subLoc: subDef && subDef[c.name] ? c.name : null }));
       while (stack.length) {
         const { col, subLoc } = stack.shift();
-        countryOfKey.set(col.key, country.name);
+        countryOfKey.set(col.key, canonicalCountry);
         subLocOfKey.set(col.key, subLoc);
         cols.filter(x => x.parent === col.key).forEach(x => stack.push({
           col: x,
@@ -11289,7 +11441,7 @@
 
     // ---- 2. Bucket items by (country, subLocation) + lead/other ----
     // Each item picks up ALL matching (country, subLocation) pairs. An item
-    // filed in both Samoa and Australia counts for both; an item filed in
+    // filed in both Fiji and Australia counts for both; an item filed in
     // FSM/Chuuk counts toward Chuuk pie only (not the FSM main pie).
     // Bucket key: `${country}\u0001${subLoc || ''}`. subLoc = null → parent pie.
     const perBucket = new Map();
@@ -11359,7 +11511,9 @@
       worldCopyJump: false,
       minZoom: 1,
       maxZoom: 10,
-      maxBounds: [[-85, -210], [85, 210]],
+      // The Pacific-centred copy places the continental US near 261°E.
+      // Keep that copy pannable so its marker is not clamped against the edge.
+      maxBounds: [[-85, -300], [85, 300]],
       maxBoundsViscosity: 0.85
     });
     L.tileLayer('https://mt{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
@@ -11374,7 +11528,7 @@
     renderB3CountryList();
     updateB3Stats();
 
-    setTimeout(() => { if (state.b3Map) state.b3Map.invalidateSize(); }, 100);
+    setTimeout(() => { if (state.b3Map) b3FitOverview({ padding: 72, maxZoom: 3.25 }); }, 100);
 
     // Pill toggle
     document.querySelectorAll('[data-mapscope-panel="b3"] button').forEach(btn => {
@@ -11400,23 +11554,23 @@
     // frames all populated countries by default.
     wireMapFullscreen('[data-db-b3-map-wrap]', '[data-db-b3-fs-btn]', () => state.b3Map, {
       onOpen: () => {
-        // Fit fullscreen view to all currently-plotted markers so the label
-        // layer has room to breathe.
+        // Always open B4 on a Pacific-centred whole-world view. A tight
+        // fitBounds calculation over the very wide fullscreen canvas can
+        // crop the Americas or the eastern Pacific even though their markers
+        // are part of the current dataset. Starting at zoom 2 keeps every
+        // populated-country circle visible; toolbar filters and country-row
+        // clicks can still zoom into a smaller area afterwards.
         setTimeout(() => {
-          if (!state.b3Map || !state.b3Layer) return;
-          const layers = state.b3Layer.getLayers();
-          if (layers.length) {
-            const group = L.featureGroup(layers);
-            try { state.b3Map.fitBounds(group.getBounds().pad(0.2), { animate: false }); } catch (_) {}
-          }
+          if (!state.b3Map) return;
+          state.b3Map.invalidateSize({ animate: false });
+          state.b3Map.setView([0, 180], 2, { animate: false });
           renderB3Layer(); // recompute label placements at new zoom
         }, 180);
       },
       onClose: () => {
         setTimeout(() => {
           if (!state.b3Map) return;
-          state.b3Map.setView([-5, 165], 2.25, { animate: false });
-          renderB3Layer();
+          b3FitOverview({ padding: 72, maxZoom: 3.25 });
         }, 180);
       }
     });
@@ -11432,6 +11586,10 @@
       const fsBtn = document.querySelector('[data-db-b3-fs-btn]');
       if (fsBtn) fsBtn.click();
     });
+
+    // Swap between the deduplicated country bubble and individual Samoa
+    // evidence locations as the user crosses the island-detail zoom level.
+    bmap.on('zoomend', () => renderB3Layer());
 
     // ---- 5. Wire the fullscreen dropdown toolbar ----
     initB3ToolbarDropdowns();
@@ -11450,7 +11608,7 @@
   }
 
   // Fills and wires the fullscreen dropdown toolbar (Region › Country ›
-  // Statistical Region › District + Authorship). Each pick sets state.b3Filter,
+  // Confederacy › Province + Authorship). Each pick sets state.b3Filter,
   // then rerenders everything. Running tallies on each option reflect the
   // count that would remain if that option were the active leaf.
   function initB3ToolbarDropdowns() {
@@ -11523,51 +11681,52 @@
     }
 
     function paintConfProv() {
-      const hasDistrict = state.b3Filter.country === 'Samoa Districts';
-      confCol.hidden = !hasDistrict;
-      provCol.hidden = !hasDistrict;
-      if (!hasDistrict) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
+      const isSamoa = state.b3Filter.country === 'Samoa';
+      confCol.hidden = !isSamoa;
+      provCol.hidden = !isSamoa;
+      if (!isSamoa) { confList.innerHTML = ''; provList.innerHTML = ''; return; }
 
-      // Compute per-statistical region and per-district counts against the Samoa record.
-      const fijiRec = recs.find(r => r.country === 'Samoa Districts');
-      if (!fijiRec) return;
+      // Compute per-Island-Division and per-District counts against Samoa.
+      const samoaRec = recs.find(r => r.country === 'Samoa');
+      if (!samoaRec) return;
       const provOfItem = state.provincesByItem || new Map();
+      const divisionOfItem = state.islandDivisionsByItem || new Map();
       const auth = state.b3Filter.authorship;
-      const items = (auth === 'led') ? fijiRec.led
-                 : (auth === 'others') ? fijiRec.others
-                 : fijiRec.led.concat(fijiRec.others);
+      const items = (auth === 'led') ? samoaRec.led
+                 : (auth === 'others') ? samoaRec.others
+                 : samoaRec.led.concat(samoaRec.others);
 
       const confCount = new Map();
       const provCount = new Map();
       items.forEach(it => {
         const ps = provOfItem.get(it.key);
-        if (!ps) return;
-        ps.forEach(p => {
-          provCount.set(p, (provCount.get(p) || 0) + 1);
-          const c = DISTRICT_TO_REGION[p];
-          if (c) confCount.set(c, (confCount.get(c) || 0) + 1);
-        });
+        if (ps) ps.forEach(p => provCount.set(p, (provCount.get(p) || 0) + 1));
+        const divisions = divisionOfItem.get(it.key);
+        if (divisions) divisions.forEach(d => confCount.set(d, (confCount.get(d) || 0) + 1));
       });
 
-      const totalConf = Array.from(confCount.values()).reduce((a, b) => a + b, 0);
-      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.region ? 'is-active' : ''}" data-conf-pick="">All statistical regions <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
-      ['Rest of Upolu', 'Apia Urban Area', 'North West Upolu'].forEach(c => {
+      const totalConf = items.filter(it => {
+        const divisions = divisionOfItem.get(it.key);
+        return divisions && divisions.size;
+      }).length;
+      let cHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.confederacy ? 'is-active' : ''}" data-conf-pick="">All Statistical Regions <span class="db-map-fs-conf__row-count">${totalConf}</span></button>`;
+      ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"].forEach(c => {
         const n = confCount.get(c) || 0;
-        const active = state.b3Filter.region === c ? 'is-active' : '';
+        const active = state.b3Filter.confederacy === c ? 'is-active' : '';
         cHtml += `<button type="button" class="db-map-fs-conf__row ${active}" data-conf-pick="${escapeAttr(c)}">${escapeAttr(c)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
       });
       confList.innerHTML = cHtml;
 
-      // District list: filter by active statistical region if set.
-      const provOrder = Object.keys(DISTRICT_TO_REGION);
-      const filteredProvs = state.b3Filter.region
-        ? provOrder.filter(p => DISTRICT_TO_REGION[p] === state.b3Filter.region)
+      // District list: filter by active Island Division if set.
+      const provOrder = Object.keys(PROVINCE_TO_CONFEDERACY);
+      const filteredProvs = state.b3Filter.confederacy
+        ? provOrder.filter(p => PROVINCE_TO_CONFEDERACY[p] === state.b3Filter.confederacy)
         : provOrder;
       const provTotal = filteredProvs.reduce((a, p) => a + (provCount.get(p) || 0), 0);
-      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.district ? 'is-active' : ''}" data-prov-pick="">All districts <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
+      let pHtml = `<button type="button" class="db-map-fs-conf__row ${!state.b3Filter.province ? 'is-active' : ''}" data-prov-pick="">All districts <span class="db-map-fs-conf__row-count">${provTotal}</span></button>`;
       filteredProvs.forEach(p => {
         const n = provCount.get(p) || 0;
-        const active = state.b3Filter.district === p ? 'is-active' : '';
+        const active = state.b3Filter.province === p ? 'is-active' : '';
         pHtml += `<button type="button" class="db-map-fs-conf__row ${active}" data-prov-pick="${escapeAttr(p)}">${escapeAttr(p)} <span class="db-map-fs-conf__row-count">${n}</span></button>`;
       });
       provList.innerHTML = pHtml;
@@ -11580,14 +11739,14 @@
       const parts = [];
       if (state.b3Filter.region)      parts.push(state.b3Filter.region);
       if (state.b3Filter.country)     parts.push(b3DisplayName(state.b3Filter.country));
-      if (state.b3Filter.region) parts.push(state.b3Filter.region);
-      if (state.b3Filter.district)    parts.push(state.b3Filter.district);
+      if (state.b3Filter.confederacy) parts.push(state.b3Filter.confederacy);
+      if (state.b3Filter.province)    parts.push(state.b3Filter.province);
       regionLabel.textContent = parts.length ? parts.join(' › ') : 'All regions';
       // Enable Clear button only when at least one filter is set.
       const clearBtn = document.querySelector('[data-db-b3-clear]');
       if (clearBtn) {
         const hasFilter = !!(state.b3Filter.region || state.b3Filter.country ||
-                             state.b3Filter.region || state.b3Filter.district ||
+                             state.b3Filter.confederacy || state.b3Filter.province ||
                              state.b3Filter.authorship);
         clearBtn.disabled = !hasFilter;
       }
@@ -11608,8 +11767,8 @@
         e.stopPropagation();
         state.b3Filter.region      = null;
         state.b3Filter.country     = null;
-        state.b3Filter.region = null;
-        state.b3Filter.district    = null;
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province    = null;
         state.b3Filter.authorship  = null;
         // Close any open dropdowns for a clean reset.
         if (regionPanel) { regionPanel.hidden = true; regionBtn && regionBtn.setAttribute('aria-expanded', 'false'); }
@@ -11626,21 +11785,21 @@
         state.b3Filter.region = v;
         // Changing region invalidates the deeper selections.
         state.b3Filter.country = null;
-        state.b3Filter.region = null;
-        state.b3Filter.district = null;
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province = null;
       } else if (t.hasAttribute('data-country-pick')) {
         const v = t.getAttribute('data-country-pick') || null;
         state.b3Filter.country = v;
         // Changing country invalidates Samoa-only sub-selections.
-        state.b3Filter.region = null;
-        state.b3Filter.district = null;
+        state.b3Filter.confederacy = null;
+        state.b3Filter.province = null;
         // Auto-set region to match the country if not already scoped.
         if (v && !state.b3Filter.region) state.b3Filter.region = b3RegionOf(v);
       } else if (t.hasAttribute('data-conf-pick')) {
-        state.b3Filter.region = t.getAttribute('data-conf-pick') || null;
-        state.b3Filter.district = null;
+        state.b3Filter.confederacy = t.getAttribute('data-conf-pick') || null;
+        state.b3Filter.province = null;
       } else if (t.hasAttribute('data-prov-pick')) {
-        state.b3Filter.district = t.getAttribute('data-prov-pick') || null;
+        state.b3Filter.province = t.getAttribute('data-prov-pick') || null;
       }
       applyFilter();
     });
@@ -11710,7 +11869,7 @@
 
   // B3 palette. Amber-gold reads against both dark-blue ocean tiles and land
   // imagery; teal blended into the ocean and got lost. Update both here and
-  // in samoan-research-database.html (.b3-cite.is-others, .db-popup-scholar-
+  // in itaukei-research-database.html (.b3-cite.is-others, .db-popup-scholar-
   // header.is-others) if you change it.
   const B3_RUST = '#712B13';
   const B3_GOLD = '#E8AF34';
@@ -11720,8 +11879,8 @@
   state.b3Filter = state.b3Filter || {
     region: null,
     country: null,
-    region: null,
-    district: null,
+    confederacy: null,
+    province: null,
     authorship: null
   };
 
@@ -11778,13 +11937,14 @@
 
   // Apply the current filter to a records array (country records) and produce
   // filtered per-country buckets. When authorship='led' or 'others', the other
-  // bucket is emptied. When a Samoa district is active, non-Samoa records drop
+  // bucket is emptied. When a Samoa District is active, other countries drop
   // and the Samoa record is narrowed to items whose provincesByItem set
-  // contains that district. Statistical Region filter narrows the same way.
+  // contains that District. Island Division filters narrow the same way.
   function b3FilteredRecords() {
     const filter = state.b3Filter || {};
     const recs = state.b3Records || [];
     const provOfItem = state.provincesByItem || new Map();
+    const divisionOfItem = state.islandDivisionsByItem || new Map();
 
     return recs.map(rec => {
       // Region gate.
@@ -11795,28 +11955,23 @@
       let led = rec.led;
       let others = rec.others;
 
-      // Samoa-only: region/district narrowing. Applies only when the
-      // active country is Samoa Districts (or the Samoa-Districts branch of
-      // the drilldown is selected).
-      const hasDistrict = rec.country === 'Samoa Districts';
-      if (hasDistrict && (filter.region || filter.district)) {
+      // Samoa-only: Island-Division/District narrowing.
+      const isSamoa = rec.country === 'Samoa';
+      if (isSamoa && (filter.confederacy || filter.province)) {
         const matchItem = (it) => {
           const set = provOfItem.get(it.key);
-          if (!set || !set.size) return false;
-          if (filter.district) return set.has(filter.district);
-          if (filter.region) {
-            for (const p of set) {
-              if (DISTRICT_TO_REGION[p] === filter.region) return true;
-            }
-            return false;
+          if (filter.province) return !!(set && set.has(filter.province));
+          if (filter.confederacy) {
+            const divisions = divisionOfItem.get(it.key);
+            return !!(divisions && divisions.has(filter.confederacy));
           }
           return true;
         };
         led = led.filter(matchItem);
         others = others.filter(matchItem);
-      } else if (!hasDistrict && (filter.region || filter.district)) {
-        // Non-Samoa countries have no district tagging; drop them when the user
-        // is drilling into a Samoa sub-scope.
+      } else if (!isSamoa && (filter.confederacy || filter.province)) {
+        // Other countries have no Samoa District tagging; drop them when the
+        // user drills into a Samoa sub-scope.
         return null;
       }
 
@@ -11876,9 +12031,10 @@
     if (!bmap) return;
     if (state.b3Layer) { bmap.removeLayer(state.b3Layer); state.b3Layer = null; }
     if (state.b3LabelLayer) { bmap.removeLayer(state.b3LabelLayer); state.b3LabelLayer = null; }
-    const records = b3FilteredRecords();
+    let records = b3FilteredRecords();
+    if (bmap.getZoom() >= B3_SAMOA_DETAIL_ZOOM) records = b3ExpandedSamoaRecords(records);
     const mode = state.b3View || 'with';
-    // Radius by count of the toggled bucket. Samoa at 234 dwarfs everything so
+    // Radius by count of the toggled bucket. Fiji at 234 dwarfs everything so
     // we sqrt-scale to keep tail countries readable.
     const countFor = (r) => (mode === 'led') ? r.led.length : r.total;
     const maxN = Math.max(1, ...records.map(countFor));
@@ -11892,25 +12048,37 @@
       .filter(x => x.n > 0)
       .map(x => ({
         ...x,
-        radius: Math.max(6, Math.min(28, 6 + Math.sqrt(x.n / maxN) * 22))
+        radius: x.rec._b3Detail ? 7 : Math.max(6, Math.min(28, 6 + Math.sqrt(x.n / maxN) * 22))
       }))
       .sort((a, b) => b.radius - a.radius); // largest first
 
     const markers = [];
+    // The country summary and nationwide evidence share Samoa's canonical
+    // centroid. Offset only the summary marker slightly at detailed zoom so
+    // both remain separately clickable without falsifying a fieldwork site.
     withMeta.forEach(({ rec, radius }) => {
       const icon = b3MakePieIcon(rec, radius, mode);
       if (!icon) return;
       // Larger radius → lower zIndexOffset so smaller markers rise to the top.
       // Range: -1000 for the largest, up to 0 for the smallest.
       const zOffset = Math.round(-1000 * (radius / 30));
-      const m = L.marker([rec.lat, rec.lng], { icon, zIndexOffset: zOffset });
+      let plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      let plottedLat = rec.lat;
+      if (rec._b3CountrySummary) {
+        plottedLng += 0.035;
+        plottedLat += 0.025;
+      }
+      const m = L.marker([plottedLat, plottedLng], { icon, zIndexOffset: zOffset });
       m._b3Record = rec;
       m._b3Radius = radius;
       // Tag the marker's DOM element with the country name so QA/automation can
       // locate a specific pie without hunting through Leaflet internals.
       m.on('add', () => {
         const el = m.getElement && m.getElement();
-        if (el) el.setAttribute('data-b3-country', rec.country);
+        if (el) {
+          el.setAttribute('data-b3-country', rec.country);
+          if (rec.subLoc) el.setAttribute('data-b3-location', rec.subLoc);
+        }
       });
       const html = b3BuildCountryPopupHtml(rec);
       // maxWidth/minWidth are 1.5× the default world-popup dimensions so long
@@ -11961,8 +12129,11 @@
     if (!bmap) return;
     // Convert lat/lng → container px so we can compute rough label bboxes.
     const items = withMeta.map(({ rec, radius }) => {
-      const pt = bmap.latLngToContainerPoint([rec.lat, rec.lng]);
-      return { rec, radius, x: pt.x, y: pt.y };
+      let plottedLng = b3WrappedLng(rec.lng, bmap.getCenter().lng);
+      let plottedLat = rec.lat;
+      if (rec._b3CountrySummary) { plottedLng += 0.035; plottedLat += 0.025; }
+      const pt = bmap.latLngToContainerPoint([plottedLat, plottedLng]);
+      return { rec, radius, x: pt.x, y: pt.y, plottedLat, plottedLng };
     }).sort((a, b) => b.radius - a.radius);
 
     // Rough label bbox: assume ~7px per character, height ~16px, anchored at
@@ -11971,8 +12142,8 @@
     const overlaps = (a, b) => !(a.x1 < b.x0 || a.x0 > b.x1 || a.y1 < b.y0 || a.y0 > b.y1);
     const labelMarkers = [];
 
-    items.forEach(({ rec, radius, x, y }) => {
-      const text = b3DisplayName(rec.country);
+    items.forEach(({ rec, radius, x, y, plottedLat, plottedLng }) => {
+      const text = rec._b3Detail && rec.subLoc ? rec.subLoc : b3DisplayName(rec.country);
       const w = text.length * 7 + 6;
       const bbox = {
         x0: x + radius + 4,
@@ -11989,7 +12160,7 @@
         iconSize: [w, 20],
         iconAnchor: [-radius - 4, 10]  // offset to right of the pie
       });
-      labelMarkers.push(L.marker([rec.lat, rec.lng], {
+      labelMarkers.push(L.marker([plottedLat, plottedLng], {
         icon,
         interactive: false,
         keyboard: false,
@@ -12028,8 +12199,8 @@
     //   3+ authors→ "Grace et al. (2026)"
     //   0 authors → "Unknown (…)"
     // The et al. decision uses the TRUE bibliographic author count when known
-    // — never inferred from item.creators.length (which for Samoan co-authored
-    // works only counts the Samoan scholars linked in the Authorship
+    // — never inferred from item.creators.length (which for iTaukei co-authored
+    // works only counts the iTaukei scholars linked in the Authorship
     // worksheet plus the true first author, so it under-counts).
     const year = item.year || 'n.d.';
     const creators = item.creators || [];
@@ -12054,8 +12225,8 @@
     if (total === 2) {
       // Two-author citation is only rendered as "A & B" when we can name the
       // second author reliably. When bib count says 2 but we don't have a
-      // second name (e.g. two Samoan co-authors of a non-Samoan work would
-      // still only expose one non-Samoan lead via creators[0]), fall back
+      // second name (e.g. two iTaukei co-authors of a non-iTaukei work would
+      // still only expose one non-iTaukei lead via creators[0]), fall back
       // to "A et al." so we don't mis-name the second author.
       const second = (bibLead && creators[1]) || creators[1] || '';
       if (second) {
@@ -12074,7 +12245,7 @@
 
   function b3BuildCountryPopupHtml(rec) {
     const total = rec.led.length + rec.others.length;
-    // Render one section (Samoan-led OR others-led) as a single flowing
+    // Render one section (iTaukei-led OR others-led) as a single flowing
     // sentence: `Ali (2020); Bola et al. (2021); Cakau (2019)` with the
     // citation text alternating between two colors so the eye can pick out
     // where one citation ends and the next begins. Same visual pattern as
@@ -12121,8 +12292,8 @@
   // Wire hover-to-detail behaviour: hovering a citation chip fills the
   // .b3-work-detail slot with a Panel-B2-style card — a picture-fill vertical
   // strip on the left, and a body on the right containing the lead author's
-  // name + venue + title, plus a village/(district) – Statistical Region chip when
-  // the lead is Samoan and their profile has that data.
+  // name + venue + title, plus a village/(province) – Confederacy chip when
+  // the lead is iTaukei and their profile has that data.
   function b3WirePopupHovers(popupEl, rec) {
     if (!popupEl) return;
     const detail = popupEl.querySelector('[data-b3-work-detail]');
@@ -12132,23 +12303,17 @@
     const byKey = new Map();
     rec.led.forEach(it => byKey.set(it.key, { item: it, isLed: true }));
     rec.others.forEach(it => byKey.set(it.key, { item: it, isLed: false }));
-    // District → Statistical Region lookup (same table used by buildWorldPopupHtml
+    // Province → Confederacy lookup (same table used by buildWorldPopupHtml
     // above). Inlined so we don't reach for the module-scope constant that
     // isn't guaranteed to be in scope this early in the popup lifecycle.
-    const PROV_TO_CONF = {
-      Kadavu: 'Rest of Upolu', 'Nadroga/Navosa': 'Rest of Upolu', Namosi: 'Rest of Upolu',
-      Rewa: 'Rest of Upolu', Serua: 'Rest of Upolu',
-      Ba: 'Apia Urban Area', Lomaiviti: 'Apia Urban Area', Naitasiri: 'Apia Urban Area',
-      Ra: 'Apia Urban Area', Tailevu: 'Apia Urban Area',
-      Bua: 'North West Upolu', Cakaudrove: 'North West Upolu', Lau: 'North West Upolu', Macuata: 'North West Upolu'
-    };
+    const PROV_TO_CONF = {"Vaimauga 2": 'Apia Urban Area',"Vaimauga 3": 'Apia Urban Area','Vaimauga 4': 'Apia Urban Area','Faleata 1': 'Apia Urban Area','Vaimauga 1': 'North West Upolu','Faleata 2': 'North West Upolu','Faleata 3': 'North West Upolu','Faleata 4': "North West Upolu",'Sagaga 1': "North West Upolu",'Sagaga 2': "North West Upolu","Sagaga 3": "North West Upolu",'Sagaga 4': "North West Upolu",'Aana Alofi 1': "North West Upolu",'Aana Alofi 2': "North West Upolu",'Aana alofi 3': "North West Upolu",'Aana Alofi 4': "North West Upolu","Aiga i le Tai": "Rest of Upolu","Falelatai & Samatau": "Rest of Upolu","Lefaga & Faleaseela": "Rest of Upolu","Safata 1": "Rest of Upolu","Safata 2": "Rest of Upolu",Siumu: 'Rest of Upolu',"Falealili 1": 'Rest of Upolu',"Falealili 2": 'Rest of Upolu',"Lotofaga": 'Rest of Upolu',Lepa: 'Rest of Upolu','Aleipata Itupa i Luga': 'Rest of Upolu','Aleipata Itupa i Lalo': 'Rest of Upolu','Vaa o Fonoti': 'Rest of Upolu','Anoamaa 1': 'Rest of Upolu','Anoamaa 2': "Rest of Upolu",'Faasaleleaga 1': "Savaii",'Faasaleleaga 2': "Savaii","Faasaleleaga 3": "Savaii",'Faasaleleaga 4': "Savaii",'Faasaleleaga 5': "Savaii",'Gagaemauga 1': "Savaii",'Gagaemauga 2': "Savaii",'Gagaifomauga 1': "Savaii","Gagaifomauga 2": "Savaii","Gagaifomauga 3": "Savaii","Vaisigano 1": "Savaii","Vaisigano 2": "Savaii","Falealupo": "Savaii",'Alataua i Sisifo': 'Savaii',"Salega 1": 'Savaii',"Salega 2": 'Savaii',"Palauli 1": 'Savaii','Palauli 2': 'Savaii',Satupaitea: 'Savaii','Palauli 3': 'Savaii'};
     // Assemble the V2 hover-chip locality line from a scholar profile.
-    //   'Naroi vlg (Moala Is), Lau District.'   (outer islands)
-    //   'Naduri vlg, Macuata District.'         (Viti Levu / Vanua Levu — island suppressed)
+    //   'Naroi vlg (Moala Is), Lau Province.'   (outer islands)
+    //   'Naduri vlg, Macuata Province.'         (Viti Levu / Vanua Levu — island suppressed)
     // Delegates to the shared formatScholarGeography() defined at the top
     // of this file. The `prof` argument is a scholar profile-shaped object;
-    // if only village + district strings are available (legacy call site),
-    // pass `{ village, paternalDistrict: district }` — no island will be
+    // if only village + province strings are available (legacy call site),
+    // pass `{ village, paternalProvince: province }` — no island will be
     // shown, which matches the pre-V2 behaviour for those chips. Returns
     // '' when nothing meaningful can be rendered.
     function mergeVillageProvince(prof) {
@@ -12157,11 +12322,11 @@
       // docs/PANELF-PATERNAL-GEOGRAPHY-2026-08-25.md.
       const village  = prof.paternalVillage  || '';
       const island   = prof.paternalIsland   || '';
-      const district = prof.paternalDistrict || '';
-      return formatScholarGeography(village, island, district);
+      const province = prof.paternalProvince || '';
+      return formatScholarGeography(village, island, province);
     }
     // Track any active photo-rotation interval so we can clear it when the user
-    // moves to a different citation. Multiple Samoan co-authors rotate every 2s.
+    // moves to a different citation. Multiple iTaukei co-authors rotate every 2s.
     let photoRotationTimer = null;
     const clearPhotoRotation = () => {
       if (photoRotationTimer) { clearInterval(photoRotationTimer); photoRotationTimer = null; }
@@ -12174,55 +12339,83 @@
         const rec = byKey.get(key);
         if (!rec) { detail.classList.remove('is-active'); detail.innerHTML = ''; return; }
         const it = rec.item;
-        const firstAuthor = (it.creators && it.creators[0]) || 'Unknown';
+        // Preserve the true bibliographic lead even when that person is not
+        // Samoan. Indigenous people featured beside the lead come from the
+        // authoritative Scholar/Researcher authorship bridges below.
+        const firstAuthor = (it._bibLead || (it.creators && it.creators[0]) || 'Unknown').trim();
         const leadProfile = b3LookupProfile(firstAuthor);
         const year = it.year || '';
         const title = it.title || '(untitled)';
         const venue = it.publicationTitle || it.university || '';
-
-        // Collect Samoan co-authors (used only on Others-as-Lead entries per the
-        // July 2026 spec: elevate Samoan scholarship visually even when the paper
-        // isn't led by an Samoan scholar). Each entry keeps its profile so we can
-        // pull photo + village + district.
-        const itaukeiCoauthors = [];
-        if (!rec.isLed) {
-          const seen = new Set();
-          (it.creators || []).forEach((nm, idx) => {
-            if (idx === 0) return; // skip lead (already known non-Samoan on Others rows)
-            if (!creatorIsItaukei(nm)) return;
-            const prof = b3LookupProfile(nm);
-            // Dedupe on the profile canonical name (or the raw creator string when
-            // no profile exists) so a paper doesn't list the same person twice if
-            // Zotero recorded a name variant on both a first and last creator slot.
-            const dedupeKey = (prof && prof.name) ? prof.name : String(nm).toLowerCase();
-            if (seen.has(dedupeKey)) return;
-            seen.add(dedupeKey);
-            itaukeiCoauthors.push({ name: nm, profile: prof });
+        // Never rediscover Samoan participation from creators[]. That array is
+        // deliberately bibliographic and may contain only the non-Samoan lead.
+        // The adapter publishes the union of the Scholar Authorship and
+        // Researcher Authorship bridges as the authoritative identity payload.
+        const linkedPayload = Array.isArray(it._linkedSamoaPeople)
+          ? it._linkedSamoaPeople
+          : (Array.isArray(it._linkedSamoaScholarNames)
+              ? it._linkedSamoaScholarNames.map(name => ({ name, kind: 'scholar' }))
+              : []);
+        const linkedSamoaPeople = [];
+        const seenSamoaPeople = new Set();
+        linkedPayload.forEach(person => {
+          const rawName = String((person && person.name) || '').trim();
+          if (!rawName) return;
+          // Scholar ID is the authoritative identity key. Name matching is
+          // retained only for researcher rows and older snapshots that do not
+          // yet carry an ID. This prevents a bibliographic spelling variant
+          // from dropping the Samoan scholar's canonical name and portrait.
+          const profile = b3LookupProfile(rawName, person && person.id);
+          const keyName = String((profile && (profile.scholarId || profile.name)) ||
+            (person && person.id) || rawName).trim().toLowerCase();
+          if (seenSamoaPeople.has(keyName)) return;
+          seenSamoaPeople.add(keyName);
+          linkedSamoaPeople.push({
+            name: rawName,
+            profile,
+            kind: person.kind || 'scholar',
+            isFirstAuthor: person.isFirstAuthor === true
           });
-        }
+        });
+
+        // Others-led works feature every linked Samoan scholar/researcher.
+        // Samoan-led works prefer the bridge row explicitly marked first.
+        const featuredSamoaPeople = rec.isLed
+          ? (linkedSamoaPeople.filter(person => person.isFirstAuthor).length
+              ? linkedSamoaPeople.filter(person => person.isFirstAuthor)
+              : linkedSamoaPeople.slice(0, 1))
+          : linkedSamoaPeople;
+        const resolvedLeadProfile = leadProfile ||
+          (featuredSamoaPeople[0] && featuredSamoaPeople[0].profile) || null;
 
         // ---- Left photo strip ----
-        // Samoan-led:    use the lead's photo (unchanged behaviour).
-        // Others + 1 iT: permanent photo of the sole Samoan co-author.
-        // Others + >=2:  rotate through Samoan co-author photos every 2s.
+        // iTaukei-led:    use the lead's photo (unchanged behaviour).
+        // Others + 1 Samoan: permanent photo of the linked Samoan person.
+        // Others + >=2: rotate through available Samoan portraits every 2s.
         // Others + 0:    empty strip (same as before).
         let photoUrl = '';
         let rotationUrls = [];
         if (rec.isLed) {
-          photoUrl = (leadProfile && leadProfile.photo) ? leadProfile.photo : '';
-        } else if (itaukeiCoauthors.length) {
-          rotationUrls = itaukeiCoauthors.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
+          photoUrl = (resolvedLeadProfile && resolvedLeadProfile.photo) ||
+            (featuredSamoaPeople[0] && featuredSamoaPeople[0].profile && featuredSamoaPeople[0].profile.photo) || '';
+        } else if (featuredSamoaPeople.length) {
+          rotationUrls = featuredSamoaPeople.map(c => (c.profile && c.profile.photo) || '').filter(Boolean);
           photoUrl = rotationUrls[0] || '';
         }
 
         // ---- Header line: lead name + year + (for Others rows) inline Samoan
-        // co-authors, semicolon-separated with alternating tones, each followed
-        // by their (Village, District) chip. Uses the lead's name in bold/dark
+        // scholars/researchers, semicolon-separated with alternating tones, each followed
+        // by their (Village, Province) chip. Uses the lead's name in bold/dark
         // grey as the anchor so the reader still knows who first-authored.
-        const displayLead = leadProfile ? leadProfile.name : firstAuthor;
+        // Preserve a non-Samoan bibliographic lead exactly as recorded. For a
+        // Samoan-led work, prefer the canonical scholar profile resolved from
+        // the Authorship bridge so the elevated name and portrait stay paired.
+        const displayLead = rec.isLed && resolvedLeadProfile
+          ? resolvedLeadProfile.name
+          : firstAuthor;
         let coauthInline = '';
-        if (!rec.isLed && itaukeiCoauthors.length) {
-          const parts = itaukeiCoauthors.map((c, i) => {
+        if (!rec.isLed && featuredSamoaPeople.length) {
+          const parts = featuredSamoaPeople.map((c, i) => {
             const cls = (i % 2 === 0) ? 'is-alt-a' : 'is-alt-b';
             // Prefer the profile's canonical "Last, First" split; fall back to a
             // best-effort flip of the raw Zotero string.
@@ -12256,12 +12449,12 @@
           coauthInline = ' ' + parts.join('<span class="b3-work-detail__coauth-sep">;</span> ');
         }
 
-        // Village/(district) chip on the *lead* line — only shown for Samoan-led
-        // entries whose profile has village + district. Others-led rows carry the
+        // Village/(province) chip on the *lead* line — only shown for iTaukei-led
+        // entries whose profile has village + province. Others-led rows carry the
         // village info inline next to each co-author instead.
         let villageLine = '';
-        if (rec.isLed && leadProfile) {
-          const label = mergeVillageProvince(leadProfile);
+        if (rec.isLed && resolvedLeadProfile) {
+          const label = mergeVillageProvince(resolvedLeadProfile);
           if (label) {
             villageLine = `<div class="b3-work-detail__village">${escapeHtml(label)}</div>`;
           }
@@ -12289,7 +12482,7 @@
           `</div>`
         );
 
-        // If multiple Samoan co-authors, cycle photos every 2s. Skips missing
+        // If multiple Samoan people have portraits, cycle them every 2s. Skips missing
         // photos so the strip only shows real portraits and doesn't briefly
         // flash the empty tile between real images.
         if (rotationUrls.length > 1) {
@@ -12310,10 +12503,21 @@
 
   // Resolve a Zotero creator name to a scholar-profile record so we can pull
   // the photo. Tries direct lookup, then alias resolution.
-  function b3LookupProfile(creatorName) {
-    if (!creatorName) return null;
+  function b3LookupProfile(creatorName, scholarId) {
     const map = state.scholarProfilesByName;
     if (!map) return null;
+    // B4's Authorship bridge supplies a stable Scholar ID. Resolve it before
+    // consulting display-name spellings; profiles are held in a name-keyed
+    // map for legacy panels, so scan the small unique profile set here.
+    if (scholarId) {
+      const seenProfiles = new Set();
+      for (const profile of map.values()) {
+        if (!profile || seenProfiles.has(profile)) continue;
+        seenProfiles.add(profile);
+        if (String(profile.scholarId || '') === String(scholarId)) return profile;
+      }
+    }
+    if (!creatorName) return null;
     const aliases = state.nameAliases || new Map();
     // Direct hit
     if (map.has(creatorName)) return map.get(creatorName);
@@ -12376,40 +12580,21 @@
         // Prefer the parent country's center for the zoom; if the parent has
         // no items of its own and all items live in sub-locations, this still
         // frames the sub-location pies since the parent center is nearby.
-        state.b3Map.setView([summary.lat, summary.lng], 4.5, { animate: true });
+        if (name === 'Samoa') {
+          const detailBounds = b3DetailedSamoaBounds(summary);
+          if (detailBounds && detailBounds.isValid()) {
+            state.b3Map.fitBounds(detailBounds.pad(0.18), { animate: true, padding: [50, 50], maxZoom: 6 });
+          } else {
+            state.b3Map.setView([summary.lat, b3WrappedLng(summary.lng, 165)], 5, { animate: true });
+          }
+        } else {
+          state.b3Map.setView([summary.lat, b3WrappedLng(summary.lng, state.b3Map.getCenter().lng)], 4.5, { animate: true });
+        }
         // Open the popup for the first matching pie (parent, then sub-locs).
         const layers = state.b3Layer ? state.b3Layer.getLayers() : [];
         const m = layers.find(l => l._b3Record && l._b3Record.country === name);
-        if (m) setTimeout(() => m.openPopup(), 350);
+        if (m && name !== 'Samoa') setTimeout(() => m.openPopup(), 350);
       });
     });
   }
-
-  // ================================================================
-  // Samoa-native public hooks (for samoa-panel-overrides.js).
-  // Exposed as `window.samoaDb` so the overrides file can reach in
-  // and (a) mutate the filter-state slots that samoa-panel-overrides
-  // introduced this session, and (b) trigger renderLeaders() /
-  // renderItems() after a listbox selection. Keep the surface minimal.
-  // ================================================================
-  window.samoaDb = {
-    state: state,
-    renderLeaders: renderLeaders,
-    renderItems: (typeof renderItems === 'function') ? renderItems : null
-  };
-  window.__samoaSetScholarFilter = function(key, value){
-    if (!key) return;
-    state[key] = (value == null) ? '' : value;
-    state.scholarPage = 1;
-  };
-  window.__samoaSetDistrictRegions = function(map){
-    // The main JS builds its district→region map from state.districts.
-    // If bundle.geo provides a fresh authoritative map, replace the
-    // per-feature `region` property so downstream lookups pick it up.
-    if (!map || !state || !state.districts || !state.districts.features) return;
-    state.districts.features.forEach(f => {
-      const nm = f && f.properties && f.properties.name;
-      if (nm && map[nm]) f.properties.region = map[nm];
-    });
-  };
 })();

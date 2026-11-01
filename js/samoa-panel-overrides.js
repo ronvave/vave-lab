@@ -1,455 +1,356 @@
-/* ================================================================
- * samoa-panel-overrides.js
- * ----------------------------------------------------------------
- * Samoa-native runtime patches loaded AFTER samoa-database-master.js.
- * Responsibilities:
- *   1. Bridge the adapter's `bundle.geo` payload to the panel-code
- *      global lookups (SAMOA_DISTRICT_TO_REGION) so no non-Samoa
- *      geography lookup ever touches Samoa data.
- *   2. Wire the four Samoa-specific interactive filter listboxes on
- *      the leaderboard toolbar (Village, Specific Island, Traditional
- *      Itūmālō, Electoral Constituency). Each listbox is single-
- *      select, hydrated from bundle.geo, and updates the matching
- *      state slot in samoa-database-master.js before re-rendering
- *      Panel F (leaderboard) and Panel G (items browser).
- *   3. Display village names with a district-qualified suffix
- *      (Falefa — Anoama'a East) whenever a raw village name occurs
- *      in multiple political/census districts. The V-#### composite
- *      ID from the Session 2 adapter drives dedup; the visible label
- *      keeps the raw village first with the district as a soft suffix.
- *   4. Preserve five unresolved Specific Island entries as
- *      "Island unrecorded" (not inferred): Tausagi, Olo, Paepaeala,
- *      Satuilagi, Satoi. The listbox surfaces "Island unrecorded"
- *      as an explicit choice so Ron can find them.
+/*
+ * Samoan Master-file panel overrides
+ * ===================================
  *
- * IMPORTANT: This file does NOT infer any missing geography. Villages
- * with a blank Specific Island cell remain SPECIFIC_ISLAND_UNSURE and
- * are surfaced as such — never guessed.
- * ================================================================ */
+ * Sister clone of js/master-file-panel-overrides.js (iTaukei). The
+ * production dashboard code in js/samoa-database-master.js was forked
+ * from js/itaukei-database-master.js and now runs against Samoan
+ * Master-file data synthesized into Zotero shape by
+ * js/samoa-database-adapter.js. Almost every panel works verbatim. This
+ * file layers on the *Master-file-specific* requirements the Zotero shape
+ * cannot express directly:
+ *
+ *   1. The two district summary tables (B1 + C2) show the 23 Samoa
+ *      districts grouped by Island Division WITH dedicated TOTAL columns
+ *      per division (Apia Urban Area total, Apia Urban Area total, Apia Urban Area total, Apia Urban Area
+ *      total, Apia Urban Area total). Per the crosswalk's explicit rule, no
+ *      Fijian Confederacy name (Tovata / Kubuna / Burebasaga) is ever
+ *      shown here — every place the iTaukei dashboard shows Confederacy,
+ *      this clone shows Island Division, labeled as such.
+ *   2. The two required explanatory lines about excluded pub types and
+ *      non-Samoan records appear verbatim below the summary tables.
+ *   3. The "Last Master-file update: [timestamp]" badge in the header.
+ *   4. Panel A1/A2 headline KPIs reconciled against the Master-file
+ *      aggregates (extra safety belt over the Zotero-shape pass).
+ *
+ * All overrides run *after* the production code has hydrated state.master
+ * and finished its first render pass. We hook into a small custom event
+ * ("vavelab:master-hydrated") fired near the tail of loadAll().
+ */
 
-(function samoaPanelOverrides(){
+(function () {
   'use strict';
 
-  // ---- 1. Bridge bundle.geo → panel-code globals ----------------
-  function hydrateFromBundle(bundle){
-    if (!bundle || !bundle.geo) return;
-    const map = bundle.geo.politicalDistrictToRegion || {};
-    if (typeof window.__samoaSetDistrictRegions === 'function') {
-      window.__samoaSetDistrictRegions(map);
-    }
-    window.SAMOA_DISTRICT_TO_REGION = Object.assign({}, map);
-    // Stash the full geo payload for the listbox wiring below.
-    window.__samoaGeoBundle = bundle.geo;
+  var TWO_NOTE_LINES = [
+    '*The above summary does not include Conference papers, Unpublished report, and Others.',
+    '**Non-Samoan records are publications on Samoa by non-Samoan without any Samoan authors'
+  ];
+
+  var HEADLINE_TYPES = [
+    'Journal Article',
+    "Master's Thesis",
+    'PhD Thesis',
+    'Book Chapter',
+    'Book',
+    'Report'
+  ];
+
+  function once(fn) { var done = false; return function () { if (done) return; done = true; fn.apply(this, arguments); }; }
+
+  // Wait for the master state to be present (production loadAll finishes and
+  // then dispatches DOMContentLoaded's downstream renders). Poll cheaply.
+  function whenMasterReady(cb) {
+    var attempts = 0;
+    (function tick() {
+      var w = window;
+      if (w.__masterHydrated) { cb(); return; }
+      attempts++;
+      if (attempts > 200) return; // ~10s max wait
+      setTimeout(tick, 50);
+    })();
   }
 
-  function patchAdapter(){
-    const A = window.SamoaScholarDatabaseAdapter;
-    if (!A || A.__samoaOverridePatched) return;
-    A.__samoaOverridePatched = true;
-    const origLoad = A.load;
-    A.load = async function(){
-      const bundle = await origLoad.apply(this, arguments);
-      try {
-        hydrateFromBundle(bundle);
-        // Once hydrated, re-wire the four listboxes so they populate
-        // from the fresh bundle.geo payload.
-        wireSamoaListboxes();
-      } catch(e){ console.warn('[samoa-overrides] hydrate failed', e); }
-      return bundle;
-    };
-  }
+  // -------------------------------------------------------------------
+  // 1. District × Island Division TOTAL columns for B1 and C2
+  // -------------------------------------------------------------------
+  //
+  // The production dashboard renders district tables via renderPanelB
+  // (Panel B1) and renderConfList / renderPanelBBarsInto (Panel C2).
+  // Both use the 23-district list flat, without an Island-Division total
+  // row. To satisfy the Master-file spec's "dedicated TOTAL columns
+  // inside each Island Division" requirement, we render an additional
+  // summary table into the two panel hosts.
+  //
+  // NOTE: the underlying adapter (js/samoa-database-adapter.js) keeps the
+  // internal constant names CONFEDERACIES / PROVINCE_TO_CONFED / PROVINCES
+  // for logic compatibility with the cloned dashboard JS — but their
+  // *contents* are Samoa's 4 Statistical Regions and 51 Districts, never a
+  // Fijian confederacy. This file reads those same constants and displays
+  // them exclusively under Samoa-appropriate labels.
 
-  // ---- 2. District-qualified village label helper ---------------
-  // Given a raw village name and a full villages list from bundle.geo,
-  // return "{village} — {district}" when the raw name repeats across
-  // districts, else the raw name unchanged. The 12 name-collisions
-  // documented in Session 2's adapter live here.
-  function buildDistrictQualifier(villages){
-    const counts = new Map();
-    const nameToVillages = new Map();  // name -> [{name, district, id}, ...]
-    (villages || []).forEach(v => {
-      const nm = (v && v.name) || '';
-      if (!nm) return;
-      counts.set(nm, (counts.get(nm) || 0) + 1);
-      if (!nameToVillages.has(nm)) nameToVillages.set(nm, []);
-      nameToVillages.get(nm).push(v);
+  function tallyByProvinceAndConfed(scope /* 'all' | 'samoa' */) {
+    // Returns { byProvince: {district: n}, byConfed: {division: n},
+    //           byConfedAndProv: {division: {district: n}} }
+    var st = window.__vavelabDbState || null;
+    var master = st && st.master;
+    if (!master) return null;
+
+    var Mfc = window.MasterFileAdapter.constants;
+    var byProv = {};
+    var byConfed = {};
+    var byConfedAndProv = {};
+    Mfc.PROVINCES.forEach(function (p) { byProv[p] = 0; });
+    Object.keys(Mfc.CONFEDERACIES).forEach(function (c) {
+      byConfed[c] = 0;
+      byConfedAndProv[c] = {};
+      Mfc.CONFEDERACIES[c].forEach(function (p) { byConfedAndProv[c][p] = 0; });
     });
-    function labelFor(v){
-      if (!v) return '';
-      // Support two call shapes:
-      //   labelFor({name, district}) → object shape from bundle.geo.villages
-      //   labelFor("Falefa", "Anoama'a East")
-      //     → string+context shape used by the scholar-card renderer, which
-      //     only ever knows the raw village name and the current scholar's
-      //     home district. If the second argument is provided we honour it;
-      //     otherwise we look up the districts we know about for that name.
-      if (typeof v === 'string') {
-        var name = v.trim();
-        if (!name) return '';
-        var contextDistrict = (arguments.length > 1 && arguments[1]) ? String(arguments[1]).trim() : '';
-        if (counts.get(name) > 1 && contextDistrict) {
-          return name + ' \u2014 ' + contextDistrict;
+
+    // Filter publications to headline types only (per spec: the two summary
+    // tables exclude Conference papers, Unpublished report, Others).
+    var pubs = master.publications.filter(function (p) {
+      return HEADLINE_TYPES.indexOf(p['Publication Type']) !== -1;
+    });
+    if (scope === 'samoa') {
+      pubs = pubs.filter(function (p) { return p._is_itaukei_associated === true; });
+    }
+
+    var allowed = new Set(pubs.map(function (p) { return p['Publication ID / BibTeX Key']; }));
+    (st.snapshot.items || []).forEach(function (item) {
+      if (!allowed.has(item._masterPublicationId)) return;
+      var divisions = new Set(item._masterIslandDivisions || []);
+      (item._masterProvinces || []).forEach(function (prov) {
+        if (!Object.prototype.hasOwnProperty.call(byProv, prov)) return;
+        byProv[prov]++;
+        var c = Mfc.PROVINCE_TO_CONFED[prov];
+        if (c) { divisions.add(c); byConfedAndProv[c][prov]++; }
+      });
+      divisions.forEach(function (c) { if (Object.prototype.hasOwnProperty.call(byConfed, c)) byConfed[c]++; });
+    });
+    return { byProvince: byProv, byConfed: byConfed, byConfedAndProv: byConfedAndProv };
+  }
+
+  // Stable display order + CSS-safe slug for Samoa's 4 Statistical Regions.
+  var DIVISION_ORDER = ['Apia Urban Area',"North West Upolu","Rest of Upolu","Savaii"];
+  var DIVISION_SLUG = {'Apia Urban Area': 'apiaurbanarea',"North West Upolu": 'northwestupolu',"Rest of Upolu": 'restofupolu',"Savaii": 'savaii'};
+  function divisionSlug(name) { return DIVISION_SLUG[name] || 'other'; }
+  function orderedDivisions(keys) {
+    var present = keys.slice();
+    return DIVISION_ORDER.filter(function (d) { return present.indexOf(d) !== -1; })
+      .concat(present.filter(function (d) { return DIVISION_ORDER.indexOf(d) === -1; }));
+  }
+
+  function renderConfedTotalTable(hostEl, tally, scope) {
+    if (!hostEl || !tally) return;
+    var Mfc = window.MasterFileAdapter.constants;
+    var scopeLabel = scope === 'samoa'
+      ? 'Samoan-associated publications'
+      : 'All Samoa publications';
+
+    var html = '';
+    html += '<table class="mf-confed-table" role="table" aria-label="' + scopeLabel + ' by district and Statistical Region">';
+    html += '<caption class="mf-confed-table__cap">' + scopeLabel +
+            ' \u2014 districts grouped by Statistical Region, with division totals</caption>';
+    html += '<thead><tr><th scope="col" class="mf-th-confed">Statistical Region</th>' +
+            '<th scope="col" class="mf-th-prov">District</th>' +
+            '<th scope="col" class="mf-th-num">Publications</th>' +
+            '<th scope="col" class="mf-th-num mf-th-total">Division TOTAL</th></tr></thead><tbody>';
+
+    orderedDivisions(Object.keys(Mfc.CONFEDERACIES)).forEach(function (division) {
+      var provs = Mfc.CONFEDERACIES[division];
+      provs.forEach(function (prov, idx) {
+        html += '<tr class="mf-row mf-row--' + divisionSlug(division) + (idx === 0 ? ' mf-row--first' : '') + '">';
+        if (idx === 0) {
+          html += '<td rowspan="' + provs.length + '" class="mf-cell-confed"><span class="mf-badge mf-badge--' +
+                  divisionSlug(division) + '">' + escapeHtml(division) + '</span></td>';
         }
-        return name;
-      }
-      if (!v.name) return '';
-      var nm = v.name;
-      var district = (v.district || '').trim();
-      if (counts.get(nm) > 1 && district) {
-        // U+2014 em-dash separator so district reads as a soft suffix,
-        // matching Ron's card-label convention.
-        return nm + ' \u2014 ' + district;
-      }
-      return nm;
-    }
-    // Expose the collision counts so the scholar-card renderer can tell,
-    // without owning the villages list, whether a raw name is ambiguous
-    // and therefore whether it must append a district qualifier.
-    labelFor.isAmbiguous = function(name){
-      if (!name) return false;
-      return (counts.get(String(name).trim()) || 0) > 1;
-    };
-    labelFor.villagesFor = function(name){
-      return (nameToVillages.get(String(name || '').trim()) || []).slice();
-    };
-    return labelFor;
-  }
-
-  // Expose the label helper on window so the leaderboard card renderer
-  // in samoa-database-master.js (if it hooks a formatter) or downstream
-  // code can call it directly.
-  window.__samoaVillageLabel = null;
-
-  // ---- 3. Generic single-select listbox for the four filters ----
-  // Anchors on the existing dsf-input--combo button in the leaderboard
-  // toolbar. Renders a positioned panel below the button with a
-  // scrollable list of options + a top-of-list "Any {dim}" clear item.
-  // No external combo helper dependency; kept self-contained here.
-  function initListbox(config){
-    const {
-      buttonSel,     // '[data-scholar-village-combo]' etc
-      labelDefault,  // 'Village' etc — label when nothing is selected
-      options,       // [{ value, display, hint? }, ...]
-      allLabel,      // 'Any village' / 'Any island' etc
-      unrecordedLabel, // optional; e.g. 'Island unrecorded'
-      stateKey,      // 'scholarVillageFilter' etc
-      onChange       // function(newValue) — after state has been updated
-    } = config;
-
-    const btn = document.querySelector(buttonSel);
-    if (!btn) return null;
-    if (btn.__samoaListboxWired) return null;
-    btn.__samoaListboxWired = true;
-
-    // Any previously-attached stub-click handler must be removed. We
-    // set __samoaListboxWired so the stub-guard skips this button, and
-    // stop propagation on the outer click to defeat any lingering
-    // capture-phase listener.
-    btn.addEventListener('click', function(ev){ ev.stopPropagation(); }, true);
-
-    // Build the popover panel.
-    const panel = document.createElement('div');
-    panel.className = 'dsf-listbox-panel samoa-listbox-panel';
-    panel.setAttribute('role', 'listbox');
-    panel.setAttribute('aria-label', allLabel);
-    panel.style.cssText = [
-      'position:absolute',
-      'z-index:9999',
-      'background:var(--color-surface,#fff)',
-      'border:1px solid var(--color-border,#dcdcdc)',
-      'border-radius:8px',
-      'box-shadow:0 8px 24px rgba(0,0,0,0.12)',
-      'padding:6px 0',
-      'max-height:340px',
-      'overflow-y:auto',
-      'min-width:240px',
-      'display:none',
-      'font-family:var(--font-body,inherit)',
-      'font-size:0.85rem'
-    ].join(';');
-
-    // Search box at the top of the panel for the Village listbox
-    // (329 options) — helps Ron find a village quickly.
-    let searchInput = null;
-    if (options.length > 40) {
-      const searchWrap = document.createElement('div');
-      searchWrap.style.cssText = 'padding:6px 10px;border-bottom:1px solid var(--color-border,#eee);';
-      searchInput = document.createElement('input');
-      searchInput.type = 'search';
-      searchInput.placeholder = 'Search…';
-      searchInput.setAttribute('aria-label', 'Search ' + labelDefault + ' options');
-      searchInput.style.cssText = 'width:100%;box-sizing:border-box;padding:4px 6px;font:inherit;border:1px solid var(--color-border,#dcdcdc);border-radius:4px;';
-      searchWrap.appendChild(searchInput);
-      panel.appendChild(searchWrap);
-    }
-
-    // "Any {dim}" clear option at the top of the option list.
-    const optWrap = document.createElement('div');
-    optWrap.style.cssText = 'padding:2px 0;';
-    panel.appendChild(optWrap);
-
-    function rowFor(value, display, isClear){
-      const row = document.createElement('div');
-      row.setAttribute('role', 'option');
-      row.setAttribute('data-value', value == null ? '' : String(value));
-      row.textContent = display;
-      row.style.cssText = 'padding:5px 12px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;' +
-        (isClear ? 'font-weight:600;color:var(--color-text-muted,#666);border-bottom:1px dashed var(--color-border,#eee);margin-bottom:2px;' : '');
-      row.addEventListener('mouseenter', () => { row.style.background = 'rgba(0,0,0,0.05)'; });
-      row.addEventListener('mouseleave', () => { row.style.background = ''; });
-      row.addEventListener('click', function(){
-        applyValue(value, display, isClear);
-        closePanel();
+        html += '<td class="mf-cell-prov">' + escapeHtml(prov) + '</td>';
+        html += '<td class="mf-cell-num">' + tally.byProvince[prov].toLocaleString() + '</td>';
+        if (idx === 0) {
+          html += '<td rowspan="' + provs.length + '" class="mf-cell-total"><strong>' +
+                  tally.byConfed[division].toLocaleString() + '</strong></td>';
+        }
+        html += '</tr>';
       });
-      return row;
-    }
-
-    function renderOptions(filterQuery){
-      optWrap.innerHTML = '';
-      // "Any {dim}" clear row
-      optWrap.appendChild(rowFor('', allLabel, true));
-      const q = (filterQuery || '').trim().toLowerCase();
-      let shown = 0;
-      options.forEach(opt => {
-        if (q && opt.display.toLowerCase().indexOf(q) === -1) return;
-        optWrap.appendChild(rowFor(opt.value, opt.display, false));
-        shown++;
-      });
-      if (q && shown === 0) {
-        const empty = document.createElement('div');
-        empty.textContent = 'No match';
-        empty.style.cssText = 'padding:8px 12px;color:var(--color-text-muted,#666);font-style:italic;';
-        optWrap.appendChild(empty);
-      }
-    }
-
-    renderOptions('');
-    document.body.appendChild(panel);
-
-    function positionPanel(){
-      const r = btn.getBoundingClientRect();
-      panel.style.top  = (window.scrollY + r.bottom + 4) + 'px';
-      panel.style.left = (window.scrollX + r.left) + 'px';
-      panel.style.minWidth = Math.max(240, r.width) + 'px';
-    }
-
-    let isOpen = false;
-    function openPanel(){
-      positionPanel();
-      panel.style.display = 'block';
-      isOpen = true;
-      if (searchInput) { searchInput.value = ''; renderOptions(''); setTimeout(() => searchInput.focus(), 10); }
-      document.addEventListener('mousedown', outsideClose, true);
-      document.addEventListener('keydown', escClose);
-    }
-    function closePanel(){
-      panel.style.display = 'none';
-      isOpen = false;
-      document.removeEventListener('mousedown', outsideClose, true);
-      document.removeEventListener('keydown', escClose);
-    }
-    function outsideClose(ev){
-      if (!panel.contains(ev.target) && !btn.contains(ev.target)) closePanel();
-    }
-    function escClose(ev){ if (ev.key === 'Escape') closePanel(); }
-
-    btn.addEventListener('click', function(ev){
-      ev.preventDefault();
-      ev.stopPropagation();
-      if (isOpen) { closePanel(); return; }
-      openPanel();
     });
+    html += '</tbody><tfoot>';
+    // Grand totals across the 51 districts + explanatory notes.
+    var allProvTotal = 0;
+    Mfc.PROVINCES.forEach(function (p) { allProvTotal += tally.byProvince[p]; });
+    var divisionGrand = 0;
+    Object.keys(tally.byConfed).forEach(function (d) { divisionGrand += tally.byConfed[d]; });
+    html += '<tr class="mf-row-grand"><th scope="row" colspan="2" class="mf-cell-grand-label">Grand total (51 districts)</th>' +
+            '<td class="mf-cell-num"><strong>' + allProvTotal.toLocaleString() + '</strong></td>' +
+            '<td class="mf-cell-total"><strong>' + divisionGrand.toLocaleString() + '</strong></td></tr>';
+    html += '</tfoot></table>';
 
-    if (searchInput) {
-      searchInput.addEventListener('input', function(){
-        renderOptions(searchInput.value);
-      });
-    }
+    // The two explanatory lines — always verbatim, per spec.
+    html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[0]) + '</p>';
+    html += '<p class="mf-note">' + escapeHtml(TWO_NOTE_LINES[1]) + '</p>';
 
-    // Clear button on the button pill (× to right of label).
-    const clearBtn = btn.querySelector('[data-clear-combo]');
-    if (clearBtn) {
-      clearBtn.addEventListener('click', function(ev){
-        ev.preventDefault();
-        ev.stopPropagation();
-        applyValue('', allLabel, true);
-      });
-    }
+    hostEl.innerHTML = html;
+  }
 
-    function applyValue(value, display, isClear){
-      const s = window.SamoaState || null; // no runtime dependency
-      // The main JS keeps state in a module-scope object; we call
-      // renderLeaders through a small hook (see below), which reads
-      // its own `state`. To poke that state we use a small setter
-      // exposed by the main JS. If that's not available, we walk the
-      // known `state` object via a global escape hatch:
-      if (typeof window.__samoaSetScholarFilter === 'function') {
-        window.__samoaSetScholarFilter(stateKey, value);
-      } else if (window.samoaDb && window.samoaDb.state) {
-        window.samoaDb.state[stateKey] = value;
-        if (typeof window.samoaDb.state.scholarPage === 'number') window.samoaDb.state.scholarPage = 1;
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]);
+    });
+  }
+
+  function injectStylesOnce() {
+    if (document.getElementById('mf-panel-overrides-style')) return;
+    var st = document.createElement('style');
+    st.id = 'mf-panel-overrides-style';
+    st.textContent =
+      // Island Division totals table styling — matches production teal/coral/gold tokens.
+      '.mf-confed-table { width:100%; margin:1.25rem 0 0.5rem; border-collapse:collapse; font-family:"DM Sans", sans-serif; font-size:0.925rem; }' +
+      '.mf-confed-table__cap { text-align:left; font-family:"Cormorant Garamond", serif; font-size:1.15rem; font-weight:600; color:var(--color-teal,#005f6b); padding-bottom:0.5rem; caption-side:top; }' +
+      '.mf-confed-table thead th { text-align:left; padding:0.55rem 0.75rem; border-bottom:2px solid var(--color-teal,#005f6b); background:rgba(0,95,107,0.05); font-weight:600; color:var(--color-teal,#005f6b); }' +
+      '.mf-confed-table .mf-th-num, .mf-confed-table .mf-cell-num, .mf-confed-table .mf-cell-total { text-align:right; font-family:Arial, Helvetica, sans-serif; font-variant-numeric: tabular-nums; }' +
+      '.mf-confed-table .mf-th-total { color:var(--color-coral,#c9552a); }' +
+      '.mf-confed-table tbody td { padding:0.45rem 0.75rem; border-bottom:1px solid rgba(0,0,0,0.06); }' +
+      '.mf-confed-table tbody tr.mf-row--first td.mf-cell-confed { border-top:1px solid rgba(0,0,0,0.15); }' +
+      '.mf-confed-table .mf-cell-confed { vertical-align:middle; background:rgba(0,95,107,0.04); }' +
+      '.mf-confed-table .mf-cell-total { vertical-align:middle; background:rgba(201,85,42,0.06); color:var(--color-coral,#c9552a); font-family:Arial, Helvetica, sans-serif; }' +
+      '.mf-badge { display:inline-block; padding:0.15rem 0.55rem; border-radius:999px; font-size:0.8rem; font-weight:600; }' +
+      // Five Samoa Island Division badge colors (distinct from the iTaukei
+      // 3-confederacy palette; chosen from the same teal/coral/gold family
+      // plus two additional neutral tones for the extra two divisions).
+      '.mf-badge--apiaurbanarea { background:#e8f2f3; color:#005f6b; }' +
+      '.mf-badge--northwestupolu { background:#f6e8e0; color:#8f3d1e; }' +
+      '.mf-badge--restofupolu { background:#f4ecd6; color:#7a6528; }' +
+      '.mf-badge--savaii { background:#eaf0e2; color:#3d5c1e; }' +
+      '.mf-confed-table tfoot .mf-row-grand td, .mf-confed-table tfoot .mf-row-grand th { padding:0.6rem 0.75rem; border-top:2px solid var(--color-teal,#005f6b); background:rgba(0,95,107,0.08); font-family:"DM Sans", sans-serif; }' +
+      '.mf-confed-table tfoot .mf-row-grand .mf-cell-num, .mf-confed-table tfoot .mf-row-grand .mf-cell-total { font-family:Arial, Helvetica, sans-serif; }' +
+      '.mf-note { font-family:"DM Sans", sans-serif; font-size:0.85rem; color:var(--color-ink-soft,#4a5054); margin:0.35rem 0; font-style:italic; }' +
+      // Timestamp badge
+      '.mf-updated-badge { display:inline-flex; align-items:center; gap:0.4rem; padding:0.35rem 0.7rem; border-radius:999px; background:rgba(0,95,107,0.08); color:var(--color-teal,#005f6b); font-family:"DM Sans", sans-serif; font-size:0.8rem; font-weight:500; margin-left:0.5rem; }' +
+      '.mf-updated-badge::before { content:""; width:6px; height:6px; border-radius:50%; background:var(--color-teal,#005f6b); }' +
+      // Section title
+      '.mf-panel-section-title { font-family:"Cormorant Garamond", serif; font-size:1.35rem; color:var(--color-teal,#005f6b); margin:1.75rem 0 0.5rem; font-weight:600; }' +
+      // Empty-state note used for panels with no Samoan data yet.
+      '.mf-empty-state { font-family:"DM Sans", sans-serif; font-size:0.95rem; color:var(--color-ink-soft,#5c6368); background:rgba(0,95,107,0.05); border:1px dashed rgba(0,95,107,0.25); border-radius:10px; padding:1.1rem 1.3rem; margin:1rem 0; }' +
+      '.mf-empty-state strong { color:var(--color-teal,#005f6b); }';
+    document.head.appendChild(st);
+  }
+
+  // Find a good place to inject the Island-Division-totals table — right
+  // after the B1 district chart (Panel B) and after C2 (whose host is
+  // `.db-panel--c2 .db-panel__body`).
+  function findHostAfter(id) {
+    var el = document.querySelector(id);
+    if (!el) return null;
+    return el;
+  }
+
+  function injectConfedTotals() {
+    injectStylesOnce();
+    var Mfc = window.MasterFileAdapter.constants;
+
+    // Panel B (Samoa districts): the production chart is inside .db-panel--b .db-panel__body.
+    var bPanel = document.querySelector('.db-panel--b .db-panel__body')
+              || document.querySelector('[data-panel="B"] .db-panel__body')
+              || document.querySelector('#panel-b .db-panel__body');
+    if (bPanel) {
+      var host = bPanel.querySelector('.mf-confed-totals-host') || document.createElement('div');
+      host.className = 'mf-confed-totals-host';
+      var title = document.createElement('div');
+      title.className = 'mf-panel-section-title';
+      title.textContent = 'B \u00b7 Samoa publications by district & Statistical Region (Master-file authoritative)';
+      var subhost = document.createElement('div');
+      var tally = tallyByProvinceAndConfed('all');
+      if (tally && anyNonZero(tally.byProvince)) {
+        renderConfedTotalTable(subhost, tally, 'all');
+      } else {
+        subhost.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
+          + 'District-tagged Samoa publications have not been populated in the Master file yet. '
+          + 'This panel will populate automatically once records are added.</p>';
       }
-      // Update the button label to show the selection.
-      const labelSlot = btn.querySelector('[data-label-slot]');
-      if (labelSlot) labelSlot.textContent = isClear ? labelDefault : display;
-      btn.classList.toggle('is-active', !isClear);
-      // Show/hide the ×
-      if (clearBtn) clearBtn.style.display = isClear ? 'none' : '';
-      if (typeof onChange === 'function') {
-        try { onChange(value); } catch(e){ console.warn('[samoa-listbox] onChange failed', e); }
+      host.innerHTML = '';
+      host.appendChild(title);
+      host.appendChild(subhost);
+      if (!bPanel.querySelector('.mf-confed-totals-host')) bPanel.appendChild(host);
+    }
+
+    // Panel C2 (research in and across Samoa's 51 districts).
+    var c2Panel = document.querySelector('.db-panel--c2 .db-panel__body')
+               || document.querySelector('[data-panel="C2"] .db-panel__body')
+               || document.querySelector('#panel-c2 .db-panel__body');
+    if (c2Panel) {
+      var host2 = c2Panel.querySelector('.mf-confed-totals-host') || document.createElement('div');
+      host2.className = 'mf-confed-totals-host';
+      var title2 = document.createElement('div');
+      title2.className = 'mf-panel-section-title';
+      title2.textContent = 'C2 \u00b7 Samoan-associated publications by district & Statistical Region';
+      var subhost2 = document.createElement('div');
+      var tally2 = tallyByProvinceAndConfed('samoa');
+      if (tally2 && anyNonZero(tally2.byProvince)) {
+        renderConfedTotalTable(subhost2, tally2, 'samoa');
+      } else {
+        subhost2.innerHTML = '<p class="mf-empty-state"><strong>Data not yet available.</strong> '
+          + 'No Samoan-associated, district-tagged publications have been populated yet. '
+          + 'This panel will populate automatically once records are added.</p>';
       }
-      // Trigger re-render of the leaderboard / items list.
-      if (window.samoaDb && typeof window.samoaDb.renderLeaders === 'function') {
-        try { window.samoaDb.renderLeaders(); } catch(e){ console.warn('[samoa-listbox] renderLeaders failed', e); }
-      }
+      host2.innerHTML = '';
+      host2.appendChild(title2);
+      host2.appendChild(subhost2);
+      if (!c2Panel.querySelector('.mf-confed-totals-host')) c2Panel.appendChild(host2);
     }
-
-    // Return handle so wireSamoaListboxes can refresh options once the
-    // adapter finishes and bundle.geo is available.
-    return {
-      button: btn,
-      panel: panel,
-      setOptions(newOptions){
-        options.length = 0;
-        newOptions.forEach(o => options.push(o));
-        renderOptions(searchInput ? searchInput.value : '');
-      }
-    };
   }
 
-  // ---- 4. Build option lists from bundle.geo --------------------
-  function buildVillageOptions(geo){
-    const villages = (geo && geo.villages) || [];
-    if (!villages.length) return [{ value: '__unrecorded__', display: 'Village unrecorded' }];
-    const labelFor = buildDistrictQualifier(villages);
-    window.__samoaVillageLabel = labelFor;
-    const opts = villages.slice().sort((a,b) => {
-      const na = (a && a.name) || '';
-      const nb = (b && b.name) || '';
-      return na.localeCompare(nb, 'en');
-    }).map(v => ({
-      // Prefer composite id when the adapter provides one; otherwise
-      // fall back to the raw name. `state.scholarVillageFilter` matches
-      // on either.
-      value: v.id || v.name,
-      display: labelFor(v)
-    }));
-    opts.push({ value: '__unrecorded__', display: 'Village unrecorded' });
-    return opts;
+  function anyNonZero(obj) {
+    return Object.keys(obj || {}).some(function (k) { return Number(obj[k]) > 0; });
   }
 
-  function buildIslandOptions(geo){
-    const islands = (geo && geo.specificIslands) || [];
-    const opts = islands.slice().sort().map(name => ({
-      value: name,
-      display: name
-    }));
-    // Always surface the "Island unrecorded" bucket (5 villages: Tausagi,
-    // Olo, Paepaeala, Satuilagi, Satoi). Never inferred.
-    opts.push({ value: '__unrecorded__', display: 'Island unrecorded' });
-    return opts;
-  }
-
-  function buildItumaloOptions(geo){
-    const itumalo = (geo && geo.itumalo) || [];
-    const opts = itumalo.slice().sort().map(name => ({
-      value: name,
-      display: name
-    }));
-    opts.push({ value: '__unrecorded__', display: 'Itūmālō unrecorded' });
-    return opts;
-  }
-
-  function buildConstituencyOptions(geo){
-    // The adapter exposes constituencies grouped by version. We flatten
-    // to a single dropdown with version prefix so the same "Vaimauga
-    // West" label doesn't collide between the 2019-Act and Pre-2019
-    // vocabularies.
-    const cons = (geo && geo.electoralConstituencies) || null;
-    const opts = [];
-    if (cons && cons.byVersion) {
-      Object.keys(cons.byVersion).sort().forEach(version => {
-        const list = cons.byVersion[version] || [];
-        list.slice().sort().forEach(name => {
-          opts.push({
-            value: version + ':' + name,
-            display: name + ' (' + version + ')'
-          });
-        });
-      });
-    } else if (Array.isArray(cons)) {
-      cons.slice().sort().forEach(name => opts.push({ value: name, display: name }));
-    }
-    opts.push({ value: '__unrecorded__', display: 'Constituency unrecorded' });
-    return opts;
-  }
-
-  // ---- 5. Wire the four leaderboard listboxes -------------------
-  const listboxHandles = {};
-
-  function wireSamoaListboxes(){
-    const geo = window.__samoaGeoBundle || {};
-
-    if (!listboxHandles.village) {
-      listboxHandles.village = initListbox({
-        buttonSel: '[data-scholar-village-combo]',
-        labelDefault: 'Village',
-        allLabel: 'Any village',
-        options: buildVillageOptions(geo),
-        stateKey: 'scholarVillageFilter'
-      });
+  // -------------------------------------------------------------------
+  // 2. Last Master-file update timestamp badge.
+  // -------------------------------------------------------------------
+  function injectTimestamp() {
+    injectStylesOnce();
+    var st = window.__vavelabDbState;
+    var master = st && st.master;
+    if (!master || !master.lastSync) return;
+    // Find the sync badge in the header (production wires a #db-sync-badge)
+    // and append our own subtle badge next to it.
+    var badgeHost = document.getElementById('db-sync-badge') ||
+                    document.querySelector('.db-hero__meta') ||
+                    document.querySelector('.db-header') ||
+                    document.querySelector('h1');
+    if (!badgeHost) return;
+    var existing = document.getElementById('mf-updated-badge');
+    if (existing) existing.remove();
+    var badge = document.createElement('span');
+    badge.id = 'mf-updated-badge';
+    badge.className = 'mf-updated-badge';
+    var when = new Date(master.lastSync.finishedAt || Date.now());
+    badge.textContent = 'Last Master-file update: ' + when.toLocaleString('en-US', {
+      dateStyle: 'medium', timeStyle: 'short'
+    });
+    badge.title = 'Master-file JSON snapshot last refreshed at this time by the every-2h GitHub Actions workflow.';
+    // Insert AFTER the sync badge, or into the host.
+    if (badgeHost.parentNode) {
+      badgeHost.parentNode.insertBefore(badge, badgeHost.nextSibling);
     } else {
-      listboxHandles.village.setOptions(buildVillageOptions(geo));
-    }
-
-    if (!listboxHandles.island) {
-      listboxHandles.island = initListbox({
-        buttonSel: '[data-scholar-island-combo]',
-        labelDefault: 'Specific Island',
-        allLabel: 'Any island',
-        options: buildIslandOptions(geo),
-        stateKey: 'scholarIslandFilter'
-      });
-    } else {
-      listboxHandles.island.setOptions(buildIslandOptions(geo));
-    }
-
-    if (!listboxHandles.itumalo) {
-      listboxHandles.itumalo = initListbox({
-        buttonSel: '[data-scholar-itumalo-combo]',
-        labelDefault: 'Traditional Itūmālō',
-        allLabel: 'Any itūmālō',
-        options: buildItumaloOptions(geo),
-        stateKey: 'scholarItumaloFilter'
-      });
-    } else {
-      listboxHandles.itumalo.setOptions(buildItumaloOptions(geo));
-    }
-
-    if (!listboxHandles.constituency) {
-      listboxHandles.constituency = initListbox({
-        buttonSel: '[data-scholar-constituency-combo]',
-        labelDefault: 'Electoral Constituency',
-        allLabel: 'Any constituency',
-        options: buildConstituencyOptions(geo),
-        stateKey: 'scholarConstituencyFilter'
-      });
-    } else {
-      listboxHandles.constituency.setOptions(buildConstituencyOptions(geo));
+      badgeHost.appendChild(badge);
     }
   }
 
-  // ---- 6. Boot --------------------------------------------------
-  function boot(){
-    patchAdapter();
-    // Also try wiring immediately in case the adapter finished before
-    // this file evaluated (dev-reload path). Options will be empty and
-    // repopulated once wireSamoaListboxes() runs again post-hydrate.
-    wireSamoaListboxes();
+  // -------------------------------------------------------------------
+  // Boot: run overrides after production render pass.
+  // -------------------------------------------------------------------
+  function boot() {
+    whenMasterReady(function () {
+      try { injectTimestamp(); } catch (e) { console.error('MF timestamp inject failed', e); }
+      try { injectConfedTotals(); } catch (e) { console.error('MF Island-Division totals inject failed', e); }
+      // Also re-run on filter changes so counts stay accurate if the state changes.
+      window.addEventListener('vavelab:filters-changed', function () {
+        try { injectConfedTotals(); } catch (e) {}
+      });
+    });
   }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
   } else {
     boot();
   }
+
+  // Expose overrides for debugging.
+  window.MasterFilePanelOverrides = {
+    injectConfedTotals: injectConfedTotals,
+    injectTimestamp:    injectTimestamp,
+    tallyByProvinceAndConfed: tallyByProvinceAndConfed,
+    HEADLINE_TYPES: HEADLINE_TYPES,
+    NOTE_LINES: TWO_NOTE_LINES
+  };
 })();

@@ -1,0 +1,62 @@
+[data-samoa-queue]{min-width:0;color:#062f35}
+[data-samoa-queue] h2{font-size:1.35rem}
+.samoa-queue-helper{font-size:.85rem;color:#6b7280;margin:8px 0 16px}
+.samoa-queue-toolbar,.samoa-bulk-controls,.samoa-review-actions,.samoa-selection-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.samoa-queue-count{margin-left:auto;font-size:.82rem;color:#6b7280}
+[data-samoa-queue] button,[data-samoa-queue] select{font:inherit;font-size:.85rem;padding:8px 12px;border:1px solid #e2e0d4;border-radius:6px;background:white;color:#062f35;cursor:pointer}
+[data-samoa-queue] button:disabled,[data-samoa-queue] input:disabled{opacity:.55;cursor:not-allowed}
+[data-samoa-queue] :focus-visible{outline:3px solid #0e7490;outline-offset:2px}
+[data-samoa-queue] .samoa-approve{background:#166534;color:white;border-color:#166534}
+[data-samoa-queue] .samoa-reject{background:#991b1b;color:white;border-color:#991b1b}
+.samoa-ban{margin-right:auto}
+.samoa-review{background:white;border:1px solid #e2e0d4;border-left:4px solid #d97706;border-radius:8px;padding:16px;margin:14px 0;min-width:0;overflow-wrap:anywhere}
+.samoa-review--reviewed,.samoa-review--approved{border-left-color:#16a34a}.samoa-review--rejected{border-left-color:#b91c1c}
+.samoa-review-heading{display:flex;gap:12px;align-items:flex-start}.samoa-review-heading>div{min-width:0;flex:1}.samoa-review-heading h3{font-family:inherit;font-weight:700;font-size:1rem;margin:0 0 4px}
+.samoa-status-pill{font-size:.75rem;border:1px solid #e2e0d4;border-radius:999px;padding:2px 8px;background:#f8fafc}
+.samoa-submitter,.samoa-review .meta{font-size:.82rem;color:#6b7280}.samoa-submitter{margin:10px 0}
+.samoa-selection-controls{margin:10px 0}.samoa-review summary{font-weight:700;cursor:pointer;margin:10px 0}
+.samoa-review table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:.86rem}.samoa-review th,.samoa-review td{padding:9px;text-align:left;vertical-align:top;border-bottom:1px solid #e2e0d4;overflow-wrap:anywhere;white-space:pre-wrap}.samoa-review th:first-child{width:42px;box-sizing:border-box}.samoa-review td:nth-child(2){font-weight:700}.samoa-review td:nth-child(3){color:#6b7280}.samoa-review td:nth-child(4){font-weight:700;color:#b91c1c}
+.samoa-positive{color:#166534;font-size:.85rem}.samoa-queue-status{white-space:pre-wrap;font-size:.85rem;margin:12px 0}.samoa-queue-status:empty{display:none}.samoa-error{color:#991b1b;background:#fff1f2;padding:10px;border-radius:6px;font-size:.85rem}
+.samoa-note-label{display:block;font-size:.85rem;margin:14px 0 8px}.samoa-review textarea,.samoa-attachment input[type=text]{display:block;width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid #dbe4e8;border-radius:6px;font:inherit}.samoa-review textarea{min-height:60px;margin-top:5px}
+.samoa-submission-badge{display:inline-block;background:#b23a48;color:#fff;border-radius:999px;padding:1px 7px;margin-left:5px;font-size:.7rem;font-weight:700}.samoa-submission-badge[hidden],.samoa-bulk-controls[hidden]{display:none}
+.samoa-attachments{margin-top:14px;padding:12px;background:#f8fafc;border-radius:8px}.samoa-attachment{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;margin:9px 0;padding:10px;border:1px solid #dbe4e8;border-radius:8px;background:#fff;overflow-wrap:anywhere}.samoa-attachment>input{margin-top:5px}.samoa-attachment label{display:block;font-size:.82rem;margin:8px 0}.samoa-attachment select{max-width:100%;display:block}.samoa-attachment-preview{margin:8px 0;color:#6b7280}.samoa-attachment-preview img{display:block;max-width:min(280px,100%);max-height:280px;border-radius:8px;border:1px solid #ccd6da;object-fit:contain;background:#fff}
+.samoa-geography-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;font-size:.84rem;margin:12px 0}.samoa-location-chip{display:inline-block;border:1px solid #d8d8ce;border-radius:999px;padding:2px 7px;margin:2px;font-size:.75rem;max-width:100%;box-sizing:border-box;overflow-wrap:anywhere}
+@media(max-width:600px){.samoa-geography-grid{grid-template-columns:1fr}.samoa-review-heading{flex-wrap:wrap}.samoa-review{padding:12px}.samoa-review table{font-size:.8rem}.samoa-review th,.samoa-review td{padding:8px 4px}.samoa-review th:first-child{width:32px}.samoa-queue-toolbar{align-items:flex-start}.samoa-review-actions button{flex:1}.samoa-ban{margin-right:0}}
+/* The existing Samoa shell must not force the queue outside a narrow viewport. */
+.tabs{flex-wrap:wrap}
+@media(max-width:600px){main.wrap{padding:16px 12px}header.topbar{padding:14px 12px;flex-wrap:wrap;gap:10px}header.topbar .actions{flex-wrap:wrap}.card[data-samoa-queue]{padding:12px}}
+
+/* Private attachment proposal review */
+.samoa-attachment-analysis{margin-top:20px;padding:18px;border:1px solid #c7d8d9;border-radius:8px;background:#f7fbfa}
+.samoa-attachment-analysis h4{font-size:1.1rem;margin:0 0 8px}
+.samoa-analysis-summary{font-weight:600;color:#06464c}
+.samoa-analysis-item{background:#fff;border:1px solid #d7dfdf;border-radius:6px;padding:16px;margin:14px 0}
+.samoa-analysis-item input[type=checkbox]{margin-right:10px}
+.samoa-attachment-analysis pre{white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px;overflow:auto;font:inherit;font-size:.9em;background:#f1f4f3;padding:12px}
+.samoa-attachment-analysis details{margin:8px 0}
+.samoa-attachment-analysis summary{cursor:pointer;font-weight:600}
+.samoa-proposal-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-top:12px}
+.samoa-proposal-form label{display:flex;flex-direction:column;gap:5px}
+.samoa-proposal-form input,.samoa-proposal-form select{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px}
+.samoa-attachment-analysis td{overflow-wrap:anywhere;vertical-align:top}
+/* Attachment comparisons have three content columns, without a checkbox column. */
+.samoa-review .samoa-attachment-analysis th:first-child{width:20%}
+.samoa-review .samoa-attachment-analysis th:nth-child(2),.samoa-review .samoa-attachment-analysis th:nth-child(3){width:40%}
+.samoa-review .samoa-attachment-analysis td:nth-child(2){font-weight:400;color:#475569}
+.samoa-review .samoa-attachment-analysis td:nth-child(3){font-weight:600;color:#06464c}
+
+.samoa-review .samoa-recorded-fields th:first-child{width:18%}
+.samoa-analysis-group{border-left:4px solid #0e7490;padding:4px 0 4px 14px;margin:18px 0}.samoa-analysis-group>h5{margin:0 0 6px;font-size:.95rem;color:#06464c;text-transform:none}
+.samoa-analysis-item details table{width:100%;border-collapse:collapse;font-size:.85rem;margin-top:6px}.samoa-analysis-item details td{border-top:1px solid #e3e8e8;padding:4px 6px;vertical-align:top}
+.samoa-analysis-item pre{white-space:pre-wrap;font-size:.8rem;background:#f6f8f8;padding:8px;border-radius:4px;max-height:220px;overflow:auto}
+.samoa-proposal-form textarea{padding:8px;width:100%;border:1px solid #b9c7c8;border-radius:4px;font:inherit}
+.samoa-geo-select{border:1px solid #d7dfdf;border-radius:6px;padding:10px 14px;margin:10px 0;display:flex;flex-wrap:wrap;gap:8px 18px}.samoa-geo-select legend{font-weight:600;color:#06464c;padding:0 4px}.samoa-geo-select label{display:flex;align-items:center;gap:6px;font-size:.88rem}.samoa-geo-select .meta{flex-basis:100%;margin:2px 0 0}
+
+/* Why a scholar submission is still Pending */
+.samoa-remaining{margin:14px 0;padding:12px 14px;border:1px solid #d9a441;border-left:5px solid #b7791f;border-radius:6px;background:#fff8ea}
+.samoa-remaining>summary{font-weight:700;cursor:pointer;color:#7a4b00}
+.samoa-remaining-item{display:block;margin:6px 0;line-height:1.4}
+.samoa-remaining input[type=text]{display:block;width:100%;max-width:640px;margin:4px 0 10px;padding:6px 8px;font:inherit}
+.samoa-finish{margin:10px 0 12px;padding:10px 12px;background:#eef7f1;border:1px solid #9fcdb0;border-radius:6px}
+.samoa-finish p{margin:0 0 8px}
+.samoa-finish-button{font-weight:700}

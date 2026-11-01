@@ -1,11 +1,14 @@
-<!-- Vave Lab Samoan Research Database — Authored by Ron Vave, 2026 -->
+<!-- Vave Lab Samoan Scholar Database — Sister clone of the iTaukei Research Database. Authored by Ron Vave, 2026 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>if(new URLSearchParams(location.search).has('samoaProfile'))document.documentElement.classList.add('samoa-profile-loading');</script>
+<style>.samoa-profile-loading body{visibility:hidden}</style>
+<link rel="stylesheet" href="css/samoa-scholar-portal.css?v=74163459">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Samoan Scholarly Research Database — Prof. Ron Vave | UH Mānoa</title>
-  <meta name="description" content="A curated database of scholarly research by and about Samoan (Indigenous Samoan) postgraduates and researchers — across 51 political/census districts of Samoa, 60+ universities, and 13 countries. Maintained by Professor Ron Vave, UH Mānoa." />
+  <title>Samoan Scholar Dashboard — Assistant Professor Ron Vave | UH Mānoa</title>
+  <meta name="description" content="A curated database of scholarly research by and about Samoan and part-Samoan postgraduates and researchers — across the 4 Statistical Regions and 51 districts of Samoa, universities worldwide, and multiple countries. Maintained by Assistant Professor Ron Vave, UH Mānoa." />
   <meta name="copyright" content="© 2026 Ron Vave / Vave Lab. All rights reserved." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -22,7 +25,11 @@
     /* Tighten the first section's top padding — the site-wide default leaves
        a large gap between the site banner and the intro paragraph on this page. */
     main > .section:first-of-type { padding-block-start: var(--space-4); }
-    .db-lede { max-width: 780px; color: var(--color-text-muted); font-size: 1.05rem; line-height: 1.6; }
+    .db-lede { max-width: none; color: #111; font-size: 1.05rem; line-height: 1.6; }
+    .db-lede a { color: #0b6b7a; font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; text-decoration-color: rgba(11,107,122,.45); }
+    .db-lede a:hover, .db-lede a:focus-visible { color: #064f5c; text-decoration-color: currentColor; background: rgba(11,107,122,.08); border-radius: 3px; }
+    [data-theme="dark"] .db-lede { color: #f3f4f6; }
+    [data-theme="dark"] .db-lede a { color: #5fd3e0; text-decoration-color: rgba(95,211,224,.5); }
 
     /* Sync freshness badge */
     .db-sync-row {
@@ -105,7 +112,7 @@
       border: 1px solid rgba(14,116,144,0.20);
       border-radius: var(--radius-xl);
     }
-    .db-section--samoan { background: rgba(14,116,144,0.07); border-color: rgba(14,116,144,0.20); }
+    .db-section--itaukei { background: rgba(14,116,144,0.07); border-color: rgba(14,116,144,0.20); }
     .db-section__head { margin-bottom: var(--space-3); padding-right: 48px; /* clear the A1/A2 badge in the top-right corner */ }
     .db-section__label {
       font-family: Arial, Helvetica, 'Helvetica Neue', sans-serif;
@@ -201,7 +208,7 @@
         Theses           → amber   (A1 card 3, A2 card 4)
         Universities     → blue    (A1 card 4, A2 card 5)
         Countries        → purple  (A1 card 5, A2 card 6)
-        Samoa political/census districts   → pink    (A1 card 6 only)
+        Samoa districts  → pink    (A1 card 6 only)
         A1 unique authors→ rust    (A1 card 2)
         A2 Lead author   → rust    (echoes authors)
         A2 Co-author     → olive   (Option 1 — A2 only)
@@ -355,7 +362,7 @@
 
     /* Panel C/D — stacked-by-type histogram.
        The SVG viewBox height grows when milestone footnote lines are
-       drawn inside the SVG (see js/samoan-database-master.js). Cap at
+       drawn inside the SVG (see js/samoa-database-master.js). Cap at
        420px so a heavy renames list can't visually overtake the plot,
        but let the SVG size itself for the common 0- or 2-line case. */
     #db-source-histogram { max-height: 420px; width: 100%; display: block; }
@@ -594,6 +601,10 @@
       border:1px solid var(--color-border);
       background:#fff; box-shadow:0 1px 3px rgba(0,0,0,0.06);
     }
+    .db-panel__embed > iframe {
+      display:block; width:100%; border:0;
+    }
+    #db-embed-b3-chord > iframe { height:760px; }
     .db-panel__embed-click {
       position:absolute; inset:0; z-index:2; cursor: zoom-in;
       /* Transparent overlay only along the chart edges so the iframe still
@@ -672,7 +683,7 @@
     .db-map-a-wrap > div:first-child {
       display: flex; flex-direction: column;
     }
-    /* The Samoa map wrapper flex-grows to fill the stretched left column,
+    /* The Fiji map wrapper flex-grows to fill the stretched left column,
        and #db-map inside it fills the wrapper 100%. Reuses the shared
        .db-map-world-wrap class (position:relative + fullscreen rules)
        so both maps share behaviour. */
@@ -687,7 +698,7 @@
       border-radius: var(--radius-md);
       background: #d6ecf0;
     }
-    /* When fullscreen, the Samoa map's own inner height rules must not
+    /* When fullscreen, the Fiji map's own inner height rules must not
        fight the fullscreen container. */
     .db-map-world-wrap.is-fullscreen #db-map {
       min-height: 0; height: 100%;
@@ -697,7 +708,7 @@
        reference image), and the country/university/scholar list stacks
        underneath in a light legend panel. */
     .db-panel--wide { grid-column: 1 / -1; }
-    /* Panel B3 (Samoan scholarly mobility chord chart) sits on a pure-white
+    /* Panel B3 (Samoan scholarly mobility — data not yet available) sits on a pure-white
        background so the chart and legend read cleanly against the neighbouring
        cream panels — matches the flat, uniform look Ron requested (like B2). */
     [data-panel="B3"] { background:#ffffff; }
@@ -788,7 +799,7 @@
       top: 14px; right: 14px;
     }
     /* Fullscreen-only floating toolbar. Sits top-center as a horizontal row
-       containing: search box → statistical region/political/census district filter → stat readout.
+       containing: search box → confederacy/province filter → stat readout.
        Centered as a group so no single control is off-axis. Hidden inline
        and revealed only when the wrap enters fullscreen. */
     .db-map-fs-toolbar {
@@ -989,9 +1000,9 @@
       outline: none;
     }
 
-    /* Statistical Region / Political/Census District filter dropdown — second toolbar cell. Button
-       toggles a two-column panel: left column lists statistical regions with
-       scholar counts; hovering a statistical region reveals its political/census districts in the
+    /* Confederacy / Province filter dropdown — second toolbar cell. Button
+       toggles a two-column panel: left column lists confederacies with
+       scholar counts; hovering a confederacy reveals its provinces in the
        right column. Selecting either applies a filter to the map. */
     .db-map-fs-conf {
       position: relative;
@@ -1136,7 +1147,7 @@
     }
 
     /* Stat readout (Countries / Universities / Scholars) — third toolbar
-       cell. Updates live as the search + statistical region filters change. */
+       cell. Updates live as the search + confederacy filters change. */
     .db-map-fs-stats {
       display: inline-flex;
       align-items: stretch;
@@ -1224,7 +1235,7 @@
     body.db-map-fullscreen-lock { overflow: hidden; }
     .db-world-panel-wide {
       /* Panels B2 & B3 aside — light cool off-white matches the approved
-         Panel B2 statistical region mockup. */
+         Panel B2 confederacy mockup. */
       background: #F4F8F9;
       border-radius: var(--radius-md);
       padding: var(--space-4);
@@ -1240,7 +1251,7 @@
        (near-black), so comma-separated "Last, First" pairs are easy to scan. */
     .db-scholar-list { line-height: 1.55; }
     /* Bounded scroll container for scholar sections inside world-map popups.
-       Caps the popup height so countries with lots of scholars (Samoa: 186)
+       Caps the popup height so countries with lots of scholars (e.g. Samoa)
        don't produce a popup taller than the map itself. The thesis-detail
        slot sits above this container and stays visible while scrolling. */
     .db-popup-scroll {
@@ -1316,7 +1327,7 @@
     .b3-work-detail__body { flex: 1; min-width: 0; }
     .b3-work-detail__name { font-weight: 700; color: #222; font-size: 0.92rem; }
     .b3-work-detail__year { color: #666; font-weight: 500; margin-left: 4px; }
-    /* Village + (political/census district) – Statistical Region chip. Same look as the B2 hover
+    /* Village + (province) – Confederacy chip. Same look as the B2 hover
        chip: teal text, no underline. Only shown for Samoan-led entries. */
     .b3-work-detail__village {
       color: #01696F;
@@ -1340,7 +1351,7 @@
     .b3-work-detail__coauth.is-alt-a { color: #712B13; }
     .b3-work-detail__coauth.is-alt-b { color: #1B474D; }
     .b3-work-detail__coauth-sep { color: #171614; font-weight: 500; margin: 0 2px; }
-    /* Village/(political/census district) chip inline next to each co-author name. Teal to
+    /* Village/(province) chip inline next to each co-author name. Teal to
        match the existing village chip on Samoan-led hovers. */
     .b3-work-detail__coauth-chip {
       color: #01696F;
@@ -1353,8 +1364,8 @@
     /* Header row above the country list. Same 4-column template as each row. */
     .b3-country-table-head {
       display: grid;
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px;
-      column-gap: 10px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px;
+      column-gap: 8px;
       align-items: baseline;
       padding: 6px 0 6px;
       border-bottom: 1px solid rgba(15,23,42,0.18);
@@ -1370,11 +1381,11 @@
        middle rule/gap between the two halves mirrors the column-rule on
        .db-world-grid so the header visually aligns with each list column. */
     .b3-country-table-head--two-up {
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px 16px minmax(0,1fr) 44px 44px 44px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px 16px minmax(0,1fr) 72px 52px 44px;
     }
     @media (max-width: 720px) {
       .b3-country-table-head--two-up {
-        grid-template-columns: minmax(0,1fr) 44px 44px 44px;
+        grid-template-columns: minmax(0,1fr) 72px 52px 44px;
       }
       .b3-country-table-head--two-up > span:nth-child(n+5) { display: none; }
     }
@@ -1389,8 +1400,8 @@
        → others count (R, gold) → total (R, bold). The parent .db-world-grid keeps
        CSS column-count:2 so the list flows into two side-by-side blocks. */
     .b3-country-list .db-world-country-row {
-      grid-template-columns: minmax(0,1fr) 44px 44px 44px;
-      column-gap: 10px;
+      grid-template-columns: minmax(0,1fr) 72px 52px 44px;
+      column-gap: 8px;
     }
     .b3-country-list .db-world-country-row__num {
       font-variant-numeric: tabular-nums lining-nums;
@@ -1470,8 +1481,8 @@
       font-size: 0.85rem; color: var(--color-text);
       margin-top: 5px; font-variant-numeric: tabular-nums;
     }
-    /* Statistical Region legend row — one line per statistical region:
-         [swatch]  REST OF UPOLU  107 Publications [14 Samoan as Lead author]
+    /* Confederacy legend row — one line per confederacy:
+         [swatch]  SAMOATAPU  107 Publications [14 Samoan as Lead author]
        Uses flex so the parts stay on a single line and truncate if the
        sidebar is narrow. */
     .db-conf-row {
@@ -1504,9 +1515,9 @@
     .db-conf-row__stat--lead { color: #3d5a35; }
     .db-conf-row__stat strong { color: #0f172a; font-weight: 700; font-size: 0.98rem; }
 
-    /* One-line statistical region row: big colored swatch — name — large total —
+    /* One-line confederacy row: big colored swatch — name — large total —
        pipe — descriptive Samoan count. Uses grid so the columns line up
-       vertically across all three statistical regions. */
+       vertically across all three confederacies. */
     .db-conf-row--one-line {
       display: grid;
       grid-template-columns: 22px auto auto 1px 1fr;
@@ -1581,7 +1592,7 @@
     .db-sync-inline b { color: var(--color-text); font-weight: 600; }
 
     /* Panel B — ranked bars. Label column is fixed-width and generous enough to
-       accommodate the longest Samoa-political/census district name ('Nadroga/Navosa') without
+       accommodate the longest Samoa-district name  without
        clipping. Text is right-aligned inside the column (see .db-bars__prov). */
     .db-bars { display: grid; grid-template-columns: 180px 1fr 44px; gap: 6px; row-gap: 5px; align-items: center; }
     .db-bars__prov {
@@ -1592,7 +1603,7 @@
     .db-bars__prov:hover { color: var(--color-primary); }
     .db-bars__prov.is-active { color: var(--color-primary); }
     .db-bars__prov-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    /* Small 'i' info icon used only on the Non-provincial/Samoa bar label */
+    /* Small 'i' info icon used only on the Non-provincial/Fiji bar label */
     .db-bars__info {
       display: inline-flex; align-items: center; justify-content: center;
       width: 14px; height: 14px; border-radius: 50%;
@@ -1602,7 +1613,7 @@
       margin-left: 3px; flex-shrink: 0;
     }
     .db-bars__info:hover, .db-bars__info:focus-visible { background: #0891b2; outline: none; }
-    /* Non-provincial/Samoa label — same layout as political/census district labels but no click behaviour. */
+    /* Non-provincial/Fiji label — same layout as province labels but no click behaviour. */
     .db-bars__prov--nonprov { cursor: default; }
     .db-bars__prov--nonprov:hover { color: var(--color-text); }
     .db-bars__row {
@@ -1611,11 +1622,11 @@
       transition: transform .1s;
     }
     .db-bars__row:hover { transform: translateX(2px); }
-    /* Non-provincial/Samoa bar behaviour — doesn't act as a filter target */
+    /* Non-provincial/Fiji bar behaviour — doesn't act as a filter target */
     .db-bars__row--nonprov { cursor: default; }
     .db-bars__row--nonprov:hover { transform: none; }
     .db-bars__seg { display: block; height: 100%; }
-    /* Percentage label rendered inside wider Non-provincial/Samoa segments */
+    /* Percentage label rendered inside wider Non-provincial/Fiji segments */
     .db-bars__seg--nonprov {
       display: inline-flex; align-items: center; justify-content: center;
       color: #fff; font-size: 0.72rem; font-weight: 700;
@@ -1663,9 +1674,7 @@
     .db-hist-legend span { display: inline-flex; align-items: center; gap: 4px; }
     .db-hist-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
 
-    /* Legacy Panel E — statistical region multiples (retained for reference;
-       replaced by publication-type breakdown below). Kept because a couple of
-       B2 authorship-view sub-elements share the same .db-conf-* prefix. */
+    /* Panel D — confederacy multiples */
     .db-conf-grid {
       display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
     }
@@ -1708,46 +1717,6 @@
     }
     .db-conf-panel__foot {
       margin-top: 8px; padding-top: 6px; border-top: 1px dashed var(--color-border);
-      font-size: 0.7rem; color: var(--color-text-muted);
-    }
-
-    /* Panel E — publication-type breakdown (PhD Thesis + Master's Thesis lead) */
-    .db-pubtype-grid {
-      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
-    }
-    @media (max-width: 720px) { .db-pubtype-grid { grid-template-columns: 1fr; } }
-    .db-pubtype-card {
-      border: 1px solid var(--color-border); border-radius: var(--radius-md);
-      padding: 12px 12px 10px; background: var(--color-surface);
-      transition: opacity .15s ease, background .15s ease;
-    }
-    .db-pubtype-card.is-dimmed { opacity: .38; }
-    .db-pubtype-card__head {
-      display: grid; grid-template-columns: 6px 1fr auto;
-      align-items: center; gap: 8px; margin-bottom: 6px;
-    }
-    .db-pubtype-card__stripe {
-      display: block; width: 6px; height: 22px; border-radius: 2px;
-    }
-    .db-pubtype-card__name {
-      font-family: var(--font-display); font-size: 1rem; font-weight: 600;
-      color: var(--color-text); cursor: pointer;
-    }
-    .db-pubtype-card__name:hover {
-      color: var(--color-primary); text-decoration: underline; text-underline-offset: 2px;
-    }
-    .db-pubtype-card__n {
-      font-family: var(--font-display); font-weight: 700;
-      font-variant-numeric: tabular-nums;
-      font-size: 1.1rem; color: var(--color-text);
-    }
-    .db-pubtype-card__bar {
-      height: 8px; border-radius: 2px;
-      background: rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 6px;
-    }
-    .db-pubtype-card__fill { display: block; height: 100%; }
-    .db-pubtype-card__share {
       font-size: 0.7rem; color: var(--color-text-muted);
     }
 
@@ -1811,7 +1780,7 @@
       outline: 3px solid var(--color-primary);
       outline-offset: -1px;
     }
-    /* Statistical Region color banner */
+    /* Confederacy color banner */
     .db-scholar-card__banner {
       height: 78px;
       background: linear-gradient(135deg, var(--conf-from, #0e7490) 0%, var(--conf-to, #062f35) 100%);
@@ -1825,10 +1794,10 @@
       color: #111;
       line-height: 1;
     }
-    /* Neutral banner ("SAMOAN SCHOLAR") uses white text for contrast on the dark teal gradient */
+    /* Neutral banner ("ITAUKEI SCHOLAR") uses white text for contrast on the dark teal gradient */
     .db-scholar-card--neutral .db-scholar-card__conf-label { color: #fff; }
     /* Photo + Submit-info button stack: keeps them visually locked together
-       under the statistical region banner, at the same 110px width so they always
+       under the confederacy banner, at the same 110px width so they always
        align regardless of the info column height. */
     .db-scholar-card__photo-col {
       display: flex; flex-direction: column; align-items: center;
@@ -1836,7 +1805,7 @@
     }
     /* Submit info button — lets scholars (or those close to them) propose
        corrections. Sits directly under the profile photo so it never runs
-       into wider statistical region titles like “APIA URBAN AREA STATISTICAL REGION”.
+       into wider confederacy titles like “BUREBASAGA CONFEDERACY”.
        Blue fill (#185FA5) rather than a dark neutral so it stays visually
        distinct from the dark memorial date band shown under deceased
        scholars' photos — the button must not be confused with, or read as,
@@ -1881,7 +1850,7 @@
        square photo above it, rounded only on the bottom corners so it reads
        as an attached base rather than a floating pill. Rendered only when
        the profile is flagged `deceased: true` (see renderCardMemorialBand
-       in samoan-database.js). Text is either the full lifespan
+       in itaukei-database.js). Text is either the full lifespan
        ("1942 - 2024"), death year only ("d. 2024"), or the fallback
        "In memoriam" when yearOfDeath is somehow missing. */
     /* Deceased-scholar photo border override — swaps the default white photo
@@ -2194,7 +2163,7 @@
     .db-item__badge--type-conferencePaper { background: #92400e; color: #fff; }
     .db-item__badge--type-preprint        { background: #4b5563; color: #fff; }
     .db-item__badge--type-document        { background: #6b7280; color: #fff; }
-    .db-item__badge--samoan      { background: #3d5a35; color: #fff; }
+    .db-item__badge--itaukei      { background: #3d5a35; color: #fff; }
     .db-item__badge--doi          { background: #0f172a; color: #fff; }
     .db-item__badge--oa           { background: #16a34a; color: #fff; }
     .db-item__badge--tag          {
@@ -2216,21 +2185,9 @@
       transition: background .12s ease, color .12s ease;
     }
     .db-item__link:hover { background: var(--color-primary); color: #fff; }
-    .db-item__copy {
-      display: inline-flex; align-items: center;
-      padding: 4px 10px; border-radius: 999px;
-      background: transparent; color: var(--color-primary);
-      border: 1px solid var(--color-primary-highlight);
-      font-size: 0.75rem; font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: background .12s ease, color .12s ease, border-color .12s ease;
-    }
-    .db-item__copy:hover { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
-    .db-item__copy:disabled { opacity: 0.75; cursor: default; }
     @media (max-width: 640px) {
       .db-item { padding-right: var(--space-4); }
-      .db-item__actions { position: static; margin-top: 8px; flex-wrap: wrap; }
+      .db-item__actions { position: static; margin-top: 8px; }
     }
     .db-item__empty {
       padding: var(--space-6); text-align: center;
@@ -2272,12 +2229,13 @@
       border-radius: var(--radius-md); font-size: 0.85rem; line-height: 1.5;
       color: var(--color-text); white-space: pre-wrap; margin-top: var(--space-2);
     }
+    .db-cite--in-about { background: none; border: 0; box-shadow: none; border-radius: 0; padding: 0; margin-top: var(--space-4); }
     .db-updated {
       font-size: 0.82rem; color: var(--color-text-muted);
       margin-top: var(--space-4); text-align: center;
     }
 
-    /* Political/Census District data pins (on satellite basemap) */
+    /* Province data pins (on satellite basemap) */
     .db-prov-pin-wrap { background: transparent; border: none; }
     .db-prov-pin {
       position: relative;
@@ -2366,7 +2324,7 @@
     }
 
     /* ============ Workplace-mode popup card ============ */
-    /* Matches the reference mockup Ron shared 2026-07-09: a statistical region-
+    /* Matches the reference mockup Ron shared 2026-07-09: a confederacy-
        tinted top bar with the institution + country, then per-scholar
        cards showing photo + name + village line + department + position. */
     .db-world-popup--work .leaflet-popup-content { margin: 0; padding: 0; }
@@ -2601,7 +2559,7 @@
 
     /* ---- Split view: detailed (twin bars with type colors) ---- */
     /* !important overrides the panel-B .db-bars 3-column template above.
-       Two-bar rows per political/census district need extra vertical breathing room, so
+       Two-bar rows per province need extra vertical breathing room, so
        row-gap is generous and bar height is bumped for readability. */
     .db-bars.db-bars--split-detailed {
       display: grid !important;
@@ -2610,8 +2568,8 @@
       align-items: center;
       row-gap: 8px !important;
     }
-    /* Political/Census District label: allow wrap so long labels like
-       “Political/Census District not yet confirmed” stay inside their 170px column. */
+    /* Province label: allow wrap so long labels like
+       “District not yet confirmed” stay inside their 170px column. */
     .db-bars--split-detailed .db-bars__prov {
       grid-column: 1; grid-row: span 2;
       display: flex; align-items: center; justify-content: flex-end;
@@ -2663,14 +2621,14 @@
        comfortably. */
     .db-panel[data-panel="C3"].is-detailed .db-b2-blurb { margin-bottom: 10px; }
 
-    /* ---- Authorship view (compact, one-bar-per-political/census district) ---- */
-    .db-b2-district-note {
+    /* ---- Authorship view (compact, one-bar-per-province) ---- */
+    .db-b2-province-note {
       font-size: 0.85rem; color: #334155;
       margin: -6px 0 12px; padding: 6px 10px;
       background: rgba(14,116,144,0.06); border-radius: 6px;
       display: inline-block;
     }
-    .db-b2-district-note span[aria-hidden] {
+    .db-b2-province-note span[aria-hidden] {
       color: #0e7490; margin-right: 4px; font-weight: 700;
     }
 
@@ -2924,7 +2882,7 @@
       text-transform: uppercase; letter-spacing: 0.07em;
     }
 
-    /* Grouped bar chart per statistical region */
+    /* Grouped bar chart per confederacy */
     .impact-chart {
       display: grid; grid-template-columns: repeat(3, 1fr);
       gap: 22px; margin: 30px 0 24px;
@@ -2967,7 +2925,7 @@
       cursor: default;
       position: relative;
     }
-    .impact-bar__col--samoa { background: linear-gradient(180deg, #0e7490, #075366); }
+    .impact-bar__col--fiji { background: linear-gradient(180deg, #0e7490, #075366); }
     .impact-bar__col--intl { background: linear-gradient(180deg, #c2410c, #7c2d12); }
     .impact-bar__label {
       margin-top: 8px; font-size: 0.8rem;
@@ -3118,7 +3076,7 @@
       color: var(--color-text-muted); font-size: 0.9rem; font-style: italic;
     }
 
-    /* Statistical Region · Political/Census District view for Panel B2 tabulated summary.
+    /* Confederacy · Province view for Panel B2 tabulated summary.
        Aligned with the Panel C1 legend: sage-green (#8FBC8F) for Masters and
        forest-green (#228B22) for PhD. */
     .db-world-conf-list {
@@ -3137,7 +3095,7 @@
       text-transform: uppercase; color: var(--wclist-ink);
       margin: 0 0 6px;
     }
-    /* Total | Masters | PhD suffix appended to the BY STATISTICAL REGION
+    /* Total | Masters | PhD suffix appended to the BY CONFEDERACY
        label. Same case + weight as the label itself so the two read
        as one line; kept black per Ron's “never small grey text” rule. */
     .db-world-conf-list__label-totals {
@@ -3145,15 +3103,15 @@
       font-variant-numeric: tabular-nums;
       margin-left: 6px;
     }
-    /* Untagged row: same layout as a statistical region row, with a hairline
+    /* Untagged row: same layout as a confederacy row, with a hairline
        separator on top so it visually sits apart from the 3
-       statistical regions without needing its own card. */
+       confederacies without needing its own card. */
     .db-world-conf-list__conf-row--untagged {
       border-top: 1px dashed var(--wclist-rule);
       margin-top: 4px;
       padding-top: 10px;
     }
-    /* Single grouped card holding all three statistical region rows plus the legend. */
+    /* Single grouped card holding all three confederacy rows plus the legend. */
     .db-world-conf-list__conf-card {
       background: #fff;
       border: 1px solid var(--wclist-rule);
@@ -3209,7 +3167,7 @@
     .db-world-conf-list__legend em {
       font-style: italic; color: var(--wclist-ink);
     }
-    /* Panel B2 summary — one-size-up bumps to match the statistical region/political/census district
+    /* Panel B2 summary — one-size-up bumps to match the confederacy/province
        name hierarchy. Scoped so Panel B3 country list stays unchanged. */
     [data-panel="B2"] .db-world-conf-list__legend { font-size: 0.88rem; }
     [data-panel="B2"] .db-world-conf-list__label,
@@ -3223,7 +3181,7 @@
       border-bottom: 1px solid var(--wclist-rule-strong);
       padding-bottom: 4px;
     }
-    /* Two-column political/census district flow (single column at narrow widths). */
+    /* Two-column province flow (single column at narrow widths). */
     .db-world-conf-list__prov-grid {
       column-count: 2;
       column-gap: 32px;
@@ -3365,7 +3323,7 @@
     /* Village line: rendered on its own row underneath the name so the photo
        has a clean 3-line block (name / village / thesis) to size against.
        Uses the primary color of the name row (no underline) so the village +
-       political/census district + statistical region reads as one continuous label. */
+       province + confederacy reads as one continuous label. */
     .db-popup-scholar-detail__village {
       display: block;
       color: #6B2011; /* deep terracotta */
@@ -3626,6 +3584,10 @@
       line-height: 1.55; color: var(--color-text);
     }
     .db-scholar-card__insight-summary--empty { font-style: italic; color: var(--color-text-muted); }
+    .db-scholar-card__insight-summary a {
+      color: var(--color-primary); font-weight: 500;
+      text-decoration: underline; text-underline-offset: 2px;
+    }
     .db-scholar-card__insight-section + .db-scholar-card__insight-section {
       margin-top: 12px; padding-top: 10px;
       border-top: 1px dashed var(--color-border);
@@ -3646,7 +3608,7 @@
     .db-conf-mini              { font-size: 0.88rem; }
     .db-conf-mini__n           { font-size: 0.92rem; }
     .db-map-scope-note         { font-size: 0.95rem !important; }
-    .db-b2-district-note       { font-size: 0.92rem; }
+    .db-b2-province-note       { font-size: 0.92rem; }
     .db-b2-caveat              { font-size: 0.9rem;  }
     .db-b2-legend              { font-size: 0.92rem; }
     .db-b2-sort                { font-size: 0.9rem;  }
@@ -3678,7 +3640,7 @@
       font-style: normal !important;
     }
     /* =====================================================================
-       ==== Scholar-filter row (search + statistical region/prov combo + sector +
+       ==== Scholar-filter row (search + confederacy/prov combo + sector +
        ==== discipline multi + study combo + work combo + summary bar) ====
        ===================================================================== */
     .db-leaderboard__head { display: block; position: relative; }
@@ -3836,13 +3798,15 @@
     .dsf-chip__dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
     /* Total pill — black fill, white text so it stands out from the coloured breakdown chips. */
     .dsf-chip--total       { background: #0f172a; color: #ffffff; font-weight: 700; }
-    .dsf-chip--region-apia      { background: #cffafe; color: #155e75; }
-    .dsf-chip--region-nwupolu      { background: #fef3c7; color: #92400e; }
-    .dsf-chip--region-rupolu  { background: #fecaca; color: #991b1b; }
+    .dsf-chip--apiaurbanarea       { background: #cffafe; color: #155e75; }
+    .dsf-chip--northwestupolu      { background: #fef3c7; color: #92400e; }
+    .dsf-chip--restofupolu   { background: #fecaca; color: #991b1b; }
+    .dsf-chip--savaii         { background: #d9f2e3; color: #1e5631; }
     .dsf-chip--unclass     { background: #d1e8ea; color: #062f35; }
-    .dsf-chip--region-apia     .dsf-chip__dot { background: #0891b2; }
-    .dsf-chip--region-nwupolu     .dsf-chip__dot { background: #eab308; }
-    .dsf-chip--region-rupolu .dsf-chip__dot { background: #dc2626; }
+    .dsf-chip--apiaurbanarea      .dsf-chip__dot { background: #0891b2; }
+    .dsf-chip--northwestupolu     .dsf-chip__dot { background: #eab308; }
+    .dsf-chip--restofupolu  .dsf-chip__dot { background: #dc2626; }
+    .dsf-chip--savaii        .dsf-chip__dot { background: #2f9e5c; }
     .dsf-chip--unclass    .dsf-chip__dot { background: #062f35; }
 
     /* ---- Results II — publication-type breakdown of currently-filtered scholars ---- */
@@ -3970,24 +3934,23 @@
   .footer-bottom .legal-footer a{ color:var(--color-gold,#e8c98a); text-decoration:underline; text-underline-offset:2px; }
   .footer-bottom .legal-footer a:hover{ color:#fff; }
   .footer-bottom .legal-footer__sep{ opacity:.45; margin:0 6px; }
-
-    /* Samoa statistical-region chip colours (4 regions + Unclassified) */
-    .dsf-chip--region-apia     { background: #cffafe; color: #155e75; }
-    .dsf-chip--region-nwupolu  { background: #fef3c7; color: #92400e; }
-    .dsf-chip--region-rupolu   { background: #fecaca; color: #991b1b; }
-    .dsf-chip--region-savaii   { background: #dcfce7; color: #14532d; }
-    .dsf-chip--unclass         { background: #e5e7eb; color: #374151; }
-    .dsf-chip--region-apia     .dsf-chip__dot { background: #0891b2; }
-    .dsf-chip--region-nwupolu  .dsf-chip__dot { background: #eab308; }
-    .dsf-chip--region-rupolu   .dsf-chip__dot { background: #dc2626; }
-    .dsf-chip--region-savaii   .dsf-chip__dot { background: #16a34a; }
-    .dsf-chip--unclass         .dsf-chip__dot { background: #9ca3af; }
-
+  /* Static fallback for the "data not yet available" empty-state boxes
+     (Panel B3 and any other Samoa panel with no data yet). Also defined
+     dynamically by js/samoa-panel-overrides.js; kept here too so panels
+     that render before that script's injectStylesOnce() runs still look
+     correct on first paint. */
+  .mf-empty-state{ font-family:"DM Sans",system-ui,sans-serif; font-size:0.95rem; color:var(--color-ink-soft,#5c6368); background:rgba(0,95,107,0.05); border:1px dashed rgba(0,95,107,0.25); border-radius:10px; padding:1.1rem 1.3rem; margin:1rem 0; }
+  .mf-empty-state strong{ color:var(--color-teal,#005f6b); }
 </style>
+  <link rel="stylesheet" href="css/samoa-panel-menu.css?v=44020c99">
+  <link rel="stylesheet" href="css/country-positions.css?v=bb3440c0">
+  <link rel="stylesheet" href="css/country-news.css?v=669696c5">
+<link rel="stylesheet" href="css/itaukei-short-disciplines.css?v=68fe98c9">
 <link rel="stylesheet" href="css/scholar-card-tabs.css?v=fbfbfa72">
-<link rel="stylesheet" href="css/scholar-card-buttons.css?v=ef8453b7">
   <link rel="icon" type="image/png" sizes="32x32" href="img/favicons/flag-wsm-32.png">
   <link rel="icon" type="image/png" sizes="64x64" href="img/favicons/flag-wsm-64.png">
+  <link rel="stylesheet" href="css/samoa-panel-hero.css?v=e5da3510">
+  <link rel="stylesheet" href="css/samoa-country-flags.css?v=563eb25f">
 </head>
 <body>
 
@@ -3995,8 +3958,8 @@
   <div class="container">
     <div class="nav-inner">
       <a href="index.html" class="nav-logo" aria-label="Vave Lab home">
-        <img src="img/ron-vave-portrait.jpg" alt="Prof. Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid var(--color-primary-highlight);" />
-        Prof. Ron Vave
+        <img src="img/ron-vave-portrait.jpg" alt="Assistant Professor Ron Vave" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:center top;border:2px solid var(--color-primary-highlight);" />
+        Assistant Professor Ron Vave
       </a>
       <nav aria-label="Main navigation">
         <ul class="nav-links" role="list">
@@ -4061,14 +4024,14 @@
 <section class="page-banner" aria-label="Page header">
   <div class="container page-banner__inner" style="display:flex;align-items:center;justify-content:space-between;">
     <div>
-      <p class="page-banner__eyebrow">Public Resource · Curated by Prof. Ron Vave</p>
-      <h1 class="page-banner__title">Samoan Scholarly Research Database</h1>
+      <p class="page-banner__eyebrow">Public Resource · Curated by Assistant Professor Ron Vave</p>
+      <h1 class="page-banner__title">Samoan Scholar Dashboard</h1>
     </div>
     <img src="img/uh-manoa-white.png" alt="University of Hawaiʻi at Mānoa" style="height:100px;width:auto;opacity:0.85;" loading="lazy" />
   </div>
 </section>
 
-<!-- Icon symbol library used by KPI cards, insight tiles and statistical region narrative.
+<!-- Icon symbol library used by KPI cards, insight tiles and confederacy narrative.
      Line-art (Lucide-style), inherits `color` so it stays consistent with the teal palette. -->
 <svg width="0" height="0" style="position:absolute;" aria-hidden="true" focusable="false">
   <defs>
@@ -4104,6 +4067,9 @@
       <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 1 1 16 0z"/>
       <circle cx="12" cy="10" r="3"/>
     </symbol>
+    <symbol id="i-award" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="8" r="6"/><path d="M8.2 12.7 7 22l5-3 5 3-1.2-9.3"/>
+    </symbol>
     <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
     </symbol>
@@ -4136,7 +4102,7 @@
 
     <div class="db-hero reveal">
       <p class="db-lede">
-        This database has been curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener" style="color:#0E7490;text-decoration:underline;text-underline-offset:3px;">Professor Ron Vave</a>, an <em>Samoan</em> (Indigenous Samoan) faculty member at the University of Hawaiʻi at Mānoa, in an effort to highlight and elevate the scholarly research and contributions of Samoan postgraduates and researchers &mdash; in Samoa and around the world. It is not comprehensive, and is slowly being added to over time as a passion, side project. Beyond elevating our Samoan researchers and their publications, the hope is that it will help with networking and collaboration &mdash; and perhaps mentorship for up-and-coming Samoan students thinking of pursuing postgraduate studies, academia, or research more broadly.
+        The Samoan Scholars Database & Dashboard is a sister project to the Tongan and Fijian Scholars Databases & Dashboards, curated by <a href="index.html">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa. It highlights the scholarly research and contributions of Samoan postgraduates and researchers, in Samoa and around the world.
       </p>
 
       <!-- Compact live-status pill row -->
@@ -4146,7 +4112,7 @@
           <span data-db-sync-text>Loading…</span>
         </span>
         <span class="db-pill"><b>Master file:</b>&nbsp;<span data-db-snap-total>—</span>&nbsp;publications indexed</span>
-        <span class="db-pill"><span data-db-samoan-count>—</span>&nbsp;works with Samoan authors</span>
+        <span class="db-pill"><span data-db-itaukei-count>—</span>&nbsp;works with Samoan authors</span>
         <span class="db-pill db-pill--muted" data-db-updated-pill>Updated —</span>
         <span class="db-sync-note" data-db-sync-note></span>
       </div>
@@ -4185,16 +4151,16 @@
           </div>
           <div class="db-kpi db-kpi--solid db-kpi--pink">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-pin"/></svg></div>
-            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-districts">—</div><div class="db-kpi__label">Samoa political/census districts studied</div></div>
+            <div class="db-kpi__body"><div class="db-kpi__num" data-kpi="db-provinces">—</div><div class="db-kpi__label">Samoa districts studied</div></div>
           </div>
         </div>
       </section>
 
       <!-- Samoan scholarship: statistics filtered to publications involving Samoan scholars -->
-      <section class="db-section db-section--samoan has-panel-badge" aria-labelledby="db-section-samoan">
+      <section class="db-section db-section--itaukei has-panel-badge" aria-labelledby="db-section-itaukei">
         <span class="db-panel__label">A2</span>
         <header class="db-section__head">
-          <div class="db-section__label" id="db-section-samoan">Samoan scholarship</div>
+          <div class="db-section__label" id="db-section-itaukei">Samoan scholarship</div>
           <p class="db-section__hint">Statistics filtered to works and graduate research involving identified Samoan scholars.</p>
         </header>
         <div class="db-kpis">
@@ -4239,68 +4205,38 @@
         </div>
       </section>
 
+      <!-- Panel A3 — Celebrating Samoan scholars. Curated news stories from the
+           Master's News tab (js/country-news.js). Hidden until a story loads. -->
+      <section class="nw has-panel-badge nw--fit-wide" data-news-panel aria-labelledby="db-section-news" hidden>
+        <span class="db-panel__label">A3</span>
+        <header class="db-section__head nw__head">
+          <h2 class="db-section__label nw__h" id="db-section-news">Celebrating Samoan scholars</h2>
+          <p class="db-section__hint nw__hint">News, new theses and publications, and events featuring Samoan scholars or Samoa. Stories rotate every 8 seconds.</p>
+        </header>
+        <div data-news-body></div>
+      </section>
+
     </div>
 
-    <!-- About / inclusion criteria -->
-    <details class="db-about reveal has-panel-badge">
-      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">A3</span></summary>
-      <div class="db-about__body">
-        <div class="db-about-grid">
-          <div>
-            <h4>What's included</h4>
-            <p>Scholarly publications where Samoa or Samoans are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
-            <ul>
-              <li>Peer-reviewed journal articles, book chapters, and books</li>
-              <li>Master's, PhD, and equivalent higher-degree theses</li>
-              <li>Technical reports and conference papers from recognised institutions</li>
-              <li>Preprints archived on established repositories</li>
-            </ul>
-            <p>Special emphasis on work authored or co-authored by <em>Samoan</em> (Indigenous Samoan) scholars, regardless of subject discipline.</p>
-
-            <h4>How tags are assigned</h4>
-            <ul>
-              <li><strong>Political/Census District researched</strong> &mdash; assigned to the political/census district(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-political/census district studies are tagged to each relevant political/census district.</li>
-              <li><strong>Paternal political/census district</strong> &mdash; applied only to Samoan first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
-              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
-            </ul>
-          </div>
-          <div>
-            <h4>Update cadence</h4>
-            <p>The Samoa Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
-
-            <h4>Known gaps &amp; caveats</h4>
-            <ul>
-              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
-              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
-              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
-              <li>Some paternal-political/census district assignments remain provisional pending author confirmation; entries without a paternal-political/census district tag are treated as unclassified in that view.</li>
-            </ul>
-
-            <h4>Feedback</h4>
-            <p>Corrections, additions, and suggestions are welcome &mdash; email <a href="mailto:ronvave@hawaii.edu">ronvave@hawaii.edu</a> or use the <em>Contribute</em> panel below.</p>
-          </div>
-        </div>
-      </div>
-    </details>
 
     <!-- ============ Where the research is — 2×2 dashboard ============ -->
     <div class="db-dashboard">
 
-      <!-- Panel B1 — Samoa-focused choropleth map (political/census district view) -->
+      <!-- Panel B1 — Samoa-focused choropleth map (district view) -->
       <div class="db-panel reveal" data-panel="B1">
         <span class="db-panel__label">B1</span>
-        <h2 class="db-panel__title">Where the research is — Samoa, by political/census district</h2>
-        <p class="db-panel__hint">Samoa-focused publications counted by the political/census district studied. Use the sub-tabs to switch between all publications, Samoan lead-author, and Samoan co-authored views.</p>
-        <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="samoa">
+        <h2 class="db-panel__title">Where the research is — Samoa, by district</h2>
+        <p class="db-panel__hint">Samoa-focused publications counted by the district studied. Use the sub-tabs to switch between all publications, Samoan lead-author, and Samoan co-authored views.</p>
+        <div class="db-map-toggle" role="tablist" aria-label="Map view" data-mapscope-panel="fiji">
           <button type="button" class="is-active" data-mapview="all" aria-selected="true">All publications on Samoa</button>
           <button type="button" data-mapview="lead" aria-selected="false">By Samoan lead-author</button>
           <button type="button" data-mapview="coauth" aria-selected="false">Co-authored with Samoan</button>
         </div>
         <div class="db-map-a-wrap">
           <div>
-            <div class="db-map-world-wrap" data-db-map-samoa-wrap>
-              <div id="db-map" role="application" aria-label="Samoa choropleth map of publications by political/census district"></div>
-              <button type="button" class="db-map-reset-btn" data-db-map-samoa-reset-btn
+            <div class="db-map-world-wrap" data-db-map-fiji-wrap>
+              <div id="db-map" role="application" aria-label="Samoa choropleth map of publications by district"></div>
+              <button type="button" class="db-map-reset-btn" data-db-map-fiji-reset-btn
                       aria-label="Reset map view"
                       title="Reset map to default view">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -4308,7 +4244,7 @@
                 </svg>
                 <span>Reset</span>
               </button>
-              <button type="button" class="db-map-fs-btn" data-db-map-samoa-fs-btn
+              <button type="button" class="db-map-fs-btn" data-db-map-fiji-fs-btn
                       aria-label="Expand map to full screen"
                       title="Expand map to full screen (Esc to exit)"
                       aria-pressed="false">
@@ -4319,9 +4255,9 @@
             </div>
             <div class="db-map-error" data-db-map-error>Map couldn't load — the rest of the page is still available.</div>
           </div>
-          <aside class="db-map-legend-panel" data-mapscope-panel="samoa">
+          <aside class="db-map-legend-panel" data-mapscope-panel="fiji">
             <div>
-              <h4 data-db-map-legend-title>All Samoa-focused publications by study political/census district</h4>
+              <h4 data-db-map-legend-title>All Samoa-focused publications by study district</h4>
               <div class="db-choro-scale">
                 <span style="background:#fff5eb;border:1px solid #f2d9b8;"></span>
                 <span style="background:#fdd0a2;"></span>
@@ -4332,29 +4268,36 @@
               <div class="db-choro-scale-labels"><span>0</span><span>3</span><span>6</span><span>9</span><span>13+</span></div>
             </div>
             <div>
-              <h4>Publications by study statistical region</h4>
-              <p class="db-conf-explain" data-db-conf-explain>All Samoa-focused publications, grouped by the statistical region of the political/census district studied.</p>
+              <h4>Publications by study Statistical Region</h4>
+              <p class="db-conf-explain" data-db-conf-explain>All Samoa-focused publications, grouped by the Statistical Region of the district studied.</p>
               <div data-db-conf-legend>
                 <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#FF5A6E;"></span>
-                  <span class="db-conf-row__name">Rest of Upolu</span>
-                  <span class="db-conf-row__total" data-region-total="Rest of Upolu">—</span>
+                  <span class="db-conf-row__name">Apia Urban Area</span>
+                  <span class="db-conf-row__total" data-conf-total="Apia Urban Area">—</span>
                   <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-region-sub="Rest of Upolu">—</span>
+                  <span class="db-conf-row__sub" data-conf-sub="Apia Urban Area">—</span>
                 </div>
                 <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#4ECDE6;"></span>
-                  <span class="db-conf-row__name">Apia Urban Area</span>
-                  <span class="db-conf-row__total" data-region-total="Apia Urban Area">—</span>
+                  <span class="db-conf-row__name">North West Upolu</span>
+                  <span class="db-conf-row__total" data-conf-total="North West Upolu">—</span>
                   <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-region-sub="Apia Urban Area">—</span>
+                  <span class="db-conf-row__sub" data-conf-sub="North West Upolu">—</span>
                 </div>
                 <div class="db-conf-row db-conf-row--one-line">
                   <span class="db-conf-row__sw" style="background:#FFD84A;"></span>
-                  <span class="db-conf-row__name">North West Upolu</span>
-                  <span class="db-conf-row__total" data-region-total="North West Upolu">—</span>
+                  <span class="db-conf-row__name">Rest of Upolu</span>
+                  <span class="db-conf-row__total" data-conf-total="Rest of Upolu">—</span>
                   <span class="db-conf-row__pipe" aria-hidden="true"></span>
-                  <span class="db-conf-row__sub" data-region-sub="North West Upolu">—</span>
+                  <span class="db-conf-row__sub" data-conf-sub="Rest of Upolu">—</span>
+                </div>
+                <div class="db-conf-row db-conf-row--one-line">
+                  <span class="db-conf-row__sw" style="background:#6FCF97;"></span>
+                  <span class="db-conf-row__name">Savaii</span>
+                  <span class="db-conf-row__total" data-conf-total="Savaii">—</span>
+                  <span class="db-conf-row__pipe" aria-hidden="true"></span>
+                  <span class="db-conf-row__sub" data-conf-sub="Savaii">—</span>
                 </div>
               </div>
               <p class="db-conf-narrative" data-db-conf-narrative>—</p>
@@ -4378,11 +4321,11 @@
         <p class="db-panel__hint">Master&rsquo;s and PhD degrees completed by Samoan scholars around the world. Hover a country marker to see who studied there. Click a country in the list to zoom in; click a university to zoom further and see the scholars by degree.</p>
         <!-- Panel B2 KPI tiles — mirror the A1/A2 solid-tile family so B2 reads as
              part of the same visual system. Numbers are populated by
-             renderWorldPanel() in js/samoan-database.js from the same
+             renderWorldPanel() in js/itaukei-database.js from the same
              graduate-studies data the map/list already use, so they stay in sync
              with database growth. Tiles always reflect the full-database
              totals — they intentionally do not respond to country / university
-             / statistical region / political/census district selection. -->
+             / confederacy / province selection. -->
         <div class="db-kpis db-kpis--b2" data-b2-kpis>
           <div class="db-kpi db-kpi--solid db-kpi--teal">
             <div class="db-kpi__icon" aria-hidden="true"><svg><use href="#i-book"/></svg></div>
@@ -4410,8 +4353,7 @@
           </div>
         </div>
         <div class="db-map-toggle" role="tablist" aria-label="World view" data-mapscope-panel="world">
-          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where Samoan graduates study</button>
-          <button type="button" data-worldview="publish" aria-selected="false" disabled title="Coming soon — admin-tagged publications">Where Samoan have published</button>
+          <button type="button" class="is-active" data-worldview="study" aria-selected="true">Where Samoan graduates studied</button>
         </div>
         <p class="db-map-scope-note" data-mapscope-note="world" style="font-size:0.85rem;color:var(--color-text-muted);margin:4px 0 8px;">
           <strong>Note:</strong> Only theses that appear in a scholar&rsquo;s Samoan sub-collection are counted (i.e. theses by research, and published papers tagged to a scholar).
@@ -4421,7 +4363,7 @@
             <div id="db-map-world" role="application" aria-label="World map of Samoan graduate studies"></div>
             <!-- Fullscreen-only floating toolbar. Hidden inline (via CSS) and
                  revealed when .db-map-world-wrap.is-fullscreen is set. Holds
-                 the search box, the statistical region/political/census district filter, and the
+                 the search box, the confederacy/province filter, and the
                  (countries / universities / scholars) stat readout — all
                  centered as a single row across the top of the fullscreen
                  map. -->
@@ -4432,7 +4374,7 @@
                 <button type="button" class="db-map-fs-search__clear" data-db-map-fs-search-clear aria-label="Clear search" style="display:none;">×</button>
               </label>
               <!-- Region › Country › University drilldown. Same visual language
-                   as the "All statistical regions" dropdown but three columns wide.
+                   as the "All Island Divisions" dropdown but three columns wide.
                    Selecting any level zooms the map and rescopes the stats
                    counters via state.worldSearchScope. -->
               <div class="db-map-fs-conf db-map-fs-region" data-db-map-fs-region>
@@ -4457,7 +4399,7 @@
               </div>
               <div class="db-map-fs-conf" data-db-map-fs-conf>
                 <button type="button" class="db-map-fs-conf__btn" data-db-map-fs-conf-btn aria-haspopup="true" aria-expanded="false">
-                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All statistical regions</span>
+                  <span class="db-map-fs-conf__label" data-db-map-fs-conf-label>All Statistical Regions</span>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
                 <div class="db-map-fs-conf__panel" data-db-map-fs-conf-panel role="menu" hidden>
@@ -4466,7 +4408,7 @@
                     <div class="db-map-fs-conf__list" data-db-map-fs-conf-list></div>
                   </div>
                   <div class="db-map-fs-conf__col db-map-fs-conf__col--prov" data-db-map-fs-conf-prov-col>
-                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Political/Census Districts</div>
+                    <div class="db-map-fs-conf__col-title" data-db-map-fs-conf-prov-title>Districts</div>
                     <div class="db-map-fs-conf__list" data-db-map-fs-conf-prov-list></div>
                   </div>
                 </div>
@@ -4518,8 +4460,10 @@
               <h4 data-world-list-title>Countries of Samoan graduate study</h4>
               <p class="db-conf-explain" data-world-list-explain>Click a country to zoom the map and filter the scholar and publication lists (Panels F and G) to just that country. Then click a university to narrow further.</p>
               <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 tabulated summary" data-world-list-tabs>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="region" aria-selected="false" tabindex="-1">By Region</button>
                 <button type="button" role="tab" class="db-b2-tab is-active" data-world-list-tab="country" aria-selected="true" tabindex="0">By Country</button>
-                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="region" aria-selected="false" tabindex="-1">By Statistical Region &amp; Political/Census District</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="confederacy" aria-selected="false" tabindex="-1">By Statistical Region &amp; District</button>
+                <button type="button" role="tab" class="db-b2-tab" data-world-list-tab="clan" aria-selected="false" tabindex="-1">By ʻĀiga</button>
               </div>
               <label class="db-world-search" data-world-search-wrap>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
@@ -4529,7 +4473,7 @@
               <div class="db-world-country-list db-world-grid" data-world-country-list></div>
               <p class="db-world-empty" data-world-empty style="display:none;">No countries, universities, or scholars match that search.</p>
               <p class="db-conf-narrative" data-world-narrative>—</p>
-              <div class="db-world-conf-list" data-world-region-list style="display:none;"></div>
+              <div class="db-world-conf-list" data-world-confederacy-list style="display:none;"></div>
             </div>
             <div data-world-detail-view style="display:none;">
               <a href="#" class="db-world-back" data-world-back><span aria-hidden="true">←</span>&nbsp;Back to all countries</a>
@@ -4551,7 +4495,7 @@
       </div>
 
       <!-- Panel B3 — Samoan scholarly mobility (region ↔ country ↔ university).
-           Renders samoan-chord-flanked.html via <iframe>: the chord chart
+           Renders itaukei-chord-flanked.html via <iframe>: the chord chart
            sits centred with the university-key legend flanking it left and
            right, vertically centred against the chart. Extra items only wrap
            to a bottom strip when both side columns are full at chart height.
@@ -4563,21 +4507,11 @@
         <p class="db-panel__hint">Where Samoan scholars have pursued their Master&rsquo;s and PhD studies. Ribbons flow from region → country → university (or vice versa). Hover a segment to see the numbered scholar list. Click the chart (or the expand icon in the top-right corner) to open a full-screen view.</p>
         <div class="db-panel__embed" id="db-embed-b3-chord">
           <button type="button" class="db-panel__embed-expand" aria-label="Open chord chart full screen" title="Full screen">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <polyline points="15 3 21 3 21 9"></polyline>
-              <polyline points="9 21 3 21 3 15"></polyline>
-              <line x1="21" y1="3" x2="14" y2="10"></line>
-              <line x1="3" y1="21" x2="10" y2="14"></line>
-            </svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
           </button>
-          <iframe
-            src="samoan-chord-flanked.html?embedded=1&v=a999232a"
-            title="Samoan scholarly mobility (chord chart)"
-            loading="lazy"
-            style="width:100%;height:680px;border:0;display:block;"
-            referrerpolicy="same-origin"
-            sandbox="allow-same-origin allow-scripts allow-popups"
-          ></iframe>
+          <iframe src="samoa-chord-flanked.html?embedded=1&amp;cohort=samoa&amp;v=6b59c429"
+                  title="Samoan scholarly mobility (chord chart)"
+                  loading="lazy" referrerpolicy="no-referrer"></iframe>
           <div class="db-panel__embed-click" data-embed-target="db-embed-b3-chord" aria-hidden="true"></div>
         </div>
         <button type="button" class="db-panel__embed-close" data-embed-close="db-embed-b3-chord" aria-label="Close full-screen chord chart">
@@ -4586,23 +4520,42 @@
         </button>
       </div>
 
-      <!-- Panel B4 — Where Samoan research has been undertaken. Sourced from the
-           Zotero "Where study was done" collection (V3HLPDPL). Each country sub-
-           collection under it is a research location; items are bucketed as
+      <!-- B4 uses completed-degree Short Disciplines; independent of publication filters. -->
+      <section class="db-panel reveal db-panel--wide" data-panel="B4" id="graduate-disciplines" aria-labelledby="short-disciplines-heading">
+        <span class="db-panel__label">B4</span>
+        <h2 class="db-panel__title" id="short-disciplines-heading">Graduate research disciplines</h2>
+        <p class="db-panel__hint">The table defaults to Gender. Select Degree below to see the number of scholars with completed Master&rsquo;s and PhD degrees in each discipline.</p>
+        <div class="short-disciplines-toggle" role="group" aria-label="Summarise disciplines by">
+          <button type="button" data-discipline-view="gender" aria-pressed="true">Gender</button>
+          <button type="button" data-discipline-view="degree" aria-pressed="false">Degree</button>
+        </div>
+        <p data-disciplines-status role="status">Loading graduate research disciplines…</p>
+        <div class="short-disciplines-scroll" tabindex="0" role="region" aria-label="Graduate research disciplines table">
+          <table class="short-disciplines-table" aria-describedby="short-disciplines-caption" hidden>
+            <caption></caption><thead></thead><tbody></tbody><tfoot></tfoot>
+          </table>
+        </div>
+        <p id="short-disciplines-caption" class="short-disciplines-caption db-panel__hint"></p>
+        <p class="short-disciplines-updated" data-disciplines-updated></p>
+      </section>
+
+      <!-- Panel B5 — Where Samoan research has been undertaken. Sourced from the
+           Master file Research Geography evidence bridge. Each verified country
+           is a research location; items are bucketed as
            "Led by Samoan" (first-author matches the master roster) or
            "Others as Lead". Pie marker per country shows the split. -->
-      <div class="db-panel reveal db-panel--wide" data-panel="B4">
-        <span class="db-panel__label">B4</span>
+      <div class="db-panel reveal db-panel--wide" data-panel="B5" id="panel-nav-b4">
+        <span class="db-panel__label">B5</span>
         <h2 class="db-panel__title">GLOBAL LOCATIONS OF SAMOAN RESEARCH</h2>
-        <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Samoan as first author; gold = others as first author (an Samoan author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
+        <p class="db-panel__hint">Publications organised by the country where the research was carried out. Rust = Samoan as first author; gold = others as first author (a Samoan author is still on the paper). Hover a pie to see the citation list; hover a citation to see the work detail. Click the map (or the expand icon) for the full-screen view.</p>
         <p class="db-map-scope-note" data-mapscope-note="b3" style="font-size:0.85rem;color:var(--color-text-muted);margin:8px 0 8px;">
-          <strong>Note:</strong> Only publications with a research location recorded in this country’s Master file are counted. Use the dropdowns in the full-screen view to filter by region, country, or authorship.
+          <strong>Note:</strong> Only publications with verified study-location evidence in the Master file&rsquo;s Research Geography worksheet are counted. Use the dropdowns in the full-screen view to filter by region, country, or authorship.
         </p>
         <div class="db-world-wide">
           <div class="db-map-world-wrap" data-db-b3-map-wrap>
             <div id="db-map-b3" role="application" aria-label="World map of Samoan research locations"></div>
             <div class="db-map-fs-toolbar" data-db-b3-fs-toolbar>
-              <!-- Region › Country › (Samoa only) Statistical Region › Political/Census District drilldown.
+              <!-- Region › Country › (Samoa only) Island Division › District drilldown.
                    Selecting any level filters the pie markers on the map and
                    the country list below to publications catalogued in that
                    scope. Same visual language as the B2 dropdown. -->
@@ -4625,12 +4578,12 @@
                     <div class="db-map-fs-conf__list" data-db-b3-conf-list></div>
                   </div>
                   <div class="db-map-fs-conf__col" data-db-b3-prov-col hidden>
-                    <div class="db-map-fs-conf__col-title">Political/Census District</div>
+                    <div class="db-map-fs-conf__col-title">District</div>
                     <div class="db-map-fs-conf__list" data-db-b3-prov-list></div>
                   </div>
                 </div>
               </div>
-              <!-- Authorship filter (All / Samoan led / Other led). Same widget
+              <!-- Authorship filter (All / iTaukei led / Other led). Same widget
                    as the region dropdown but single-column. -->
               <div class="db-map-fs-conf" data-db-b3-auth>
                 <button type="button" class="db-map-fs-conf__btn" data-db-b3-auth-btn aria-haspopup="true" aria-expanded="false">
@@ -4691,25 +4644,25 @@
               <p class="db-conf-explain">Click a country to zoom the map. Hover a country marker to see the citation list; hover a citation for the work detail.</p>
               <div class="b3-country-table-head b3-country-table-head--two-up" data-b3-country-thead>
                 <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where an Samoan is the first author">Samoan</span>
-                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (an Samoan may still be on the byline)">Others</span>
+                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Samoan is the first author">Samoan led</span>
+                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Samoan may still be on the byline)">Others</span>
                 <span class="b3-country-table-head__num b3-cell--total">Total</span>
                 <span class="b3-country-table-head__spacer" aria-hidden="true"></span>
                 <span class="b3-country-table-head__name">Country</span>
-                <span class="b3-country-table-head__num b3-cell--led" title="Publications where an Samoan is the first author">Samoan</span>
-                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (an Samoan may still be on the byline)">Others</span>
+                <span class="b3-country-table-head__num b3-cell--led" title="Publications where a Samoan is the first author">Samoan led</span>
+                <span class="b3-country-table-head__num b3-cell--others" title="Publications where someone else is the first author (a Samoan may still be on the byline)">Others</span>
                 <span class="b3-country-table-head__num b3-cell--total">Total</span>
               </div>
               <div class="db-world-country-list db-world-grid b3-country-list" data-b3-country-list></div>
             </div>
             <div class="db-sync-inline">
-              <b>Note:</b> A publication is &ldquo;Samoan led&rdquo; when the first-listed author matches the master Samoan roster. Everything else counts under &ldquo;Others&rdquo; even if an Samoan author appears further down the byline.
+              <b>Note:</b> A publication is &ldquo;Samoan led&rdquo; when the first-listed author matches the master Samoan roster. Everything else counts under &ldquo;Others&rdquo; even if a Samoan author appears further down the byline.
             </div>
           </aside>
         </div>
       </div>
 
-      <!-- Panel C1 — Body composition of Samoan scholars by gender. Aggregated
+      <!-- Panel C1 — Body composition of iTaukei scholars by gender. Aggregated
            counts (scholars, Masters, PhD, journal, book, book-section) are
            stored encrypted at data/body-composition.json.enc; the embedded
            page decrypts opportunistically via db-gate when the visitor is
@@ -4728,8 +4681,8 @@
             </svg>
           </button>
           <iframe
-            src="samoan-body-composition.html?embedded=1&src=master&v=mf22"
-            title="Samoan body composition by gender"
+            src="samoa-body-composition.html?embedded=1&src=master&v=2"
+            title="Samoan body composition by gender — data not yet available"
             loading="lazy"
             style="width:100%;height:820px;border:0;display:block;"
             referrerpolicy="same-origin"
@@ -4743,7 +4696,7 @@
         </button>
       </div>
 
-      <!-- Panel C2 — ranked bar chart, political/census district-tagged research (study location) -->
+      <!-- Panel C2 — ranked bar chart, province-tagged research (study location) -->
       <div class="db-panel reveal" data-panel="C2">
         <span class="db-panel__label">C2</span>
         <!-- Panel B1 tab row: publication-type stack (default) vs. authorship stack.
@@ -4752,13 +4705,17 @@
           <button type="button" role="tab" class="db-b2-tab is-active" data-b1-tab="type" aria-selected="true" tabindex="0">By publication type</button>
           <button type="button" role="tab" class="db-b2-tab" data-b1-tab="authorship" aria-selected="false" tabindex="-1">Authorship</button>
         </div>
-        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Samoa's 51 Political/Census Districts</h2>
-        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Samoa's 51 political/census districts based on where the study or fieldwork took place, plus a “Non-provincial/Samoa” category for research on Samoa-wide topics (e.g. national legislation, national mental health policy) not tied to one political/census district. Default view shows Samoan authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
+        <h2 class="db-panel__title" data-b1-title>Published Research In and Across Samoa's 51 Districts</h2>
+        <p class="db-panel__hint" data-b1-hint>Publications counted in each of Samoa's 51 districts based on where the study or fieldwork took place, plus a “Non-district/Samoa” category for research on Samoa-wide topics (e.g. national legislation, national mental health policy) not tied to one district. Default view shows Samoan authors; use the dropdown to switch to all authors regardless of ethnicity or citizenship.</p>
         <div class="db-panel__meta">
-          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study political/census district</span></span>
+          <span><em>Grouped by:</em> <span data-b1-grouped-label>Study district</span></span>
           <span><em>Authors:</em> <select class="db-meta-select" data-b1-authors aria-label="Filter authors">
-            <option value="samoan">Samoan authors</option>
+            <option value="itaukei">Samoan authors</option>
             <option value="all">All authors</option>
+          </select></span>
+          <span><em>View:</em> <select class="db-meta-select" data-b1-groupby aria-label="Group bars by district or Statistical Region">
+            <option value="district">District</option>
+            <option value="division" selected>Statistical Region</option>
           </select></span>
         </div>
         <!-- Authorship-view only: legend for the three coloured segments, shown
@@ -4786,24 +4743,24 @@
         </div>
       </div>
 
-      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal political/census district -->
+      <!-- Panel C3 — interactive multi-view chart, grouped by author's paternal district -->
       <div class="db-panel reveal" data-panel="C3">
         <span class="db-panel__label">C3</span>
         <div class="db-b2-view-hint" aria-hidden="true">Pick a research scope — click a pill to switch</div>
         <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel B2 view">
-          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="samoa-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Samoa topics or set in Samoa">Samoa-focused</button>
+          <button type="button" role="tab" class="db-b2-tab is-active" data-b2-tab="fiji-focused" aria-selected="true" aria-controls="db-b2-panel" tabindex="0" title="Only publications about Samoa topics or set in Samoa">Samoa-focused</button>
           <button type="button" role="tab" class="db-b2-tab" data-b2-tab="all-locations" aria-selected="false" aria-controls="db-b2-panel" tabindex="-1" title="All publications by Samoan authors, including non-Samoa topics">Samoa + International</button>
         </div>
         <div id="db-b2-panel" role="tabpanel">
-          <h2 class="db-panel__title" data-b2-title>Research Output by Samoan Author's Home Political/Census District</h2>
-          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Samoan first author’s own paternal political/census district. Default scope shows Samoa-focused publications; switch to “Samoa + International” to include research on non-Samoa topics and locations too.</p>
+          <h2 class="db-panel__title" data-b2-title>Research Output by Samoan Author's Home District</h2>
+          <p class="db-panel__hint" data-b2-hint>Unlike the panel above, this chart isn’t about where the research took place — it’s grouped by the Samoan first author’s own paternal district. Default scope shows Samoa-focused publications; switch to “Samoa + International” to include research on non-Samoa topics and locations too.</p>
           <div class="db-panel__meta" data-b2-meta></div>
           <!-- Authorship + Layout dropdowns. Styled as teal pills so users can
                tell they're interactive. The Layout dropdown only appears when
                the split view is active (see JS). -->
           <div class="db-b2-view-hint" aria-hidden="true">Change how the data is grouped — click a pill to open its dropdown</div>
           <div class="db-b2-view-controls">
-            <label class="db-b2-view-select" title="Choose whose publications to show: only papers where an Samoan person is 1st author, only papers where they're a co-author but not 1st, or both roles side by side.">
+            <label class="db-b2-view-select" title="Choose whose publications to show: only papers where a Samoan person is 1st author, only papers where they're a co-author but not 1st, or both roles side by side.">
               <span class="db-b2-view-select__label">Authorship</span>
               <select data-b2-authorship>
                 <option value="first">Samoan as 1st author</option>
@@ -4811,11 +4768,18 @@
                 <option value="split">1st author + co-author, split</option>
               </select>
             </label>
-            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per political/census district. Detailed splits each political/census district into 1st-author and co-author rows with publication-type colours.">
+            <label class="db-b2-view-select" data-b2-layout-wrap style="display:none;" title="Compact shows a single two-tone bar per district. Detailed splits each district into 1st-author and co-author rows with publication-type colours.">
               <span class="db-b2-view-select__label">Layout</span>
               <select data-b2-layout>
                 <option value="compact">Compact (single bar)</option>
                 <option value="detailed">Detailed (with publication types)</option>
+              </select>
+            </label>
+            <label class="db-b2-view-select" title="District shows one bar per Samoan district. Statistical Region combines the 51 districts into Samoa's 4 Statistical Regions (Apia Urban Area, North West Upolu, Rest of Upolu, Savaii) and disables click-to-filter on the bars.">
+              <span class="db-b2-view-select__label">View</span>
+              <select data-b2-groupby>
+                <option value="district">District</option>
+                <option value="division" selected>Statistical Region</option>
               </select>
             </label>
           </div>
@@ -4823,14 +4787,14 @@
                view. Placed above the chart, below the description, per user
                preference. Updates live on every control change. -->
           <div class="db-b2-blurb" data-b2-blurb></div>
-          <!-- Authorship-view only: sentence that clarifies the political/census district semantics -->
-          <p class="db-b2-district-note" data-b2-district-note style="display:none;">
-            <span aria-hidden="true">ⓘ</span> Political/Census District refers to where the research was conducted.
+          <!-- Authorship-view only: sentence that clarifies the province semantics -->
+          <p class="db-b2-province-note" data-b2-province-note style="display:none;">
+            <span aria-hidden="true">ⓘ</span> District refers to where the research was conducted.
           </p>
           <details class="db-b2-info">
-            <summary>How is “political/census district” defined in this panel?</summary>
-            <p>In the <strong>Samoa-focused</strong> and <strong>All locations</strong> views, political/census district means the <em>paternal political/census district of the Samoan first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, political/census district means the <em>location of the research</em>.</p>
-            <p>A publication covering more than one research political/census district may be counted once in each tagged political/census district.</p>
+            <summary>How is “district” defined in this panel?</summary>
+            <p>In the <strong>Samoa-focused</strong> and <strong>All locations</strong> views, district means the <em>paternal district of the Samoan first author</em>. In the <strong>All authors</strong> and <strong>Authorship</strong> views, district means the <em>location of the research</em>.</p>
+            <p>A publication covering more than one research district may be counted once in each tagged district.</p>
           </details>
           <!-- Authorship-view only: legend + counts/percent toggle + sort control -->
           <div class="db-b2-authorship-controls" data-b2-authorship-controls style="display:none;">
@@ -4855,7 +4819,7 @@
             </div>
           </div>
           <div class="db-bars" data-b2-bars></div>
-          <!-- Authorship-view only: methodological caveat about "no Samoan author identified" -->
+          <!-- Authorship-view only: methodological caveat about "no iTaukei author identified" -->
           <p class="db-b2-caveat" data-b2-caveat style="display:none;">
             <span aria-hidden="true">ⓘ</span> “No Samoan author identified” means that no Samoan author has yet been identified in the current database. It does not necessarily establish that no Samoan person contributed to the research.
           </p>
@@ -4878,15 +4842,15 @@
       <div class="db-panel reveal" data-panel="D">
         <span class="db-panel__label">D</span>
         <div class="db-panel__titlebar">
-          <h2 class="db-panel__title">Publications over time, by source type</h2>
+          <h2 class="db-panel__title">Master’s and <span style="text-transform:none">PhD</span> degrees over time</h2>
           <div class="db-panel-b2__tabs" role="tablist" aria-label="Panel D authors filter" data-hist-authors-tabs>
             <button type="button" role="tab" class="db-b2-tab is-active" data-hist-authors="lead" aria-selected="true" tabindex="0" title="Only publications where the first-listed author is Samoan">Samoan lead</button>
-            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="coauth" aria-selected="false" tabindex="-1" title="Only publications where an Samoan author appears but is not first-listed">Samoan coauthor</button>
+            <button type="button" role="tab" class="db-b2-tab" data-hist-authors="coauth" aria-selected="false" tabindex="-1" title="Only publications where a Samoan author appears but is not first-listed">Samoan coauthor</button>
             <button type="button" role="tab" class="db-b2-tab" data-hist-authors="both" aria-selected="false" tabindex="-1" title="Publications with any Samoan author (lead or coauthor)">Samoan both</button>
             <button type="button" role="tab" class="db-b2-tab" data-hist-authors="all" aria-selected="false" tabindex="-1" title="All publications in the database regardless of author ethnicity">All authors</button>
           </div>
         </div>
-        <p class="db-panel__hint">Each year’s bar stacks the source-type breakdown. Hover a segment for the exact split. Click to filter items below to that year. Use the checkboxes to toggle source types independently of Panel B.</p>
+        <p class="db-panel__hint">Explore completed Master’s and PhD degrees by year, scholar, field of study, university, island, ʻāiga and gender. Switch between Timeline and List views for milestones or individual degree records.</p>
         <div class="db-type-filter" data-hist-type-filter>
           <label><input type="checkbox" value="thesisPhd" checked><i style="background:#228B22;"></i> PhD Thesis</label>
           <label><input type="checkbox" value="thesisMasters" checked><i style="background:#8FBC8F;"></i> Master&rsquo;s Thesis</label>
@@ -4951,17 +4915,17 @@
         </div>
       </div>
 
-      <!-- Panel E — publication-type breakdown (PhD Thesis + Master's Thesis first-class) -->
+      <!-- Panel E — confederacy multiples -->
       <div class="db-panel reveal" data-panel="E">
         <span class="db-panel__label">E</span>
-        <h2 class="db-panel__title">By publication type</h2>
-        <p class="db-panel__hint">Breakdown of research output by publication type across all Samoan scholars in the database. PhD and Master's theses appear first as first-class categories — they represent the postgraduate scholarship pathway central to this dataset. Regional ranking previously here now lives in Panel C3 (Research Output by Home Political/Census District) and Panel B4 (world map).</p>
-        <div class="db-pubtype-grid" data-db-pubtype-grid></div>
+        <h2 class="db-panel__title">By island</h2>
+        <p class="db-panel__hint">Ranked within each island. Reflects your item-type selection in panel B.</p>
+        <div class="db-conf-grid" data-db-conf-grid></div>
       </div>
 
     </div>
 
-    <!-- Samoan scholars — paginated profile cards -->
+    <!-- iTaukei scholars — paginated profile cards -->
     <div class="db-leaderboard reveal has-panel-badge">
       <span class="db-panel__label">F</span>
       <div class="db-leaderboard__head">
@@ -4977,11 +4941,15 @@
             <input type="search" placeholder="Search by research keyword…" data-scholar-keyword-search aria-label="Search scholars by research keyword, publication title, or topic" />
           </label>
 
-          <button type="button" class="dsf-input dsf-input--combo" data-scholar-region-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>All statistical regions</span>
+          <button type="button" class="dsf-input dsf-input--combo" data-scholar-conf-combo aria-haspopup="listbox">
+            <span class="dsf-input__label" data-label-slot>All Statistical Regions</span>
             <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
             <span class="dsf-input__caret">▾</span>
           </button>
+
+          <select class="dsf-input dsf-input--select" data-scholar-clan aria-label="Filter by paternal ʻāiga">
+            <option value="">All ʻĀiga</option>
+          </select>
 
           <select class="dsf-input dsf-input--select" data-scholar-sector aria-label="Filter by sector">
             <option value="">All sectors</option>
@@ -5005,51 +4973,17 @@
             <span class="dsf-input__caret">▾</span>
           </button>
 
-          <!--
-            Samoa-native six-dimension geography filters.
-            Village, Specific Island, Traditional Itūmālō, and Electoral
-            Constituency each get their OWN filter widget. None is derived
-            from another; a scholar can (for example) have their village
-            recorded but their traditional itūmālō left blank. These four
-            widgets ship in Session 3 as filter chrome; the click-open
-            listing behaviour + district-qualified village IDs land in
-            Session 4 when Panel D / E / F work reaches the same pass.
-          -->
-          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-village-combo aria-haspopup="listbox" title="Filter by Village (329 unique names across 341 SBS Village Directory rows; duplicates resolved by district-qualified Village ID)">
-            <span class="dsf-input__label" data-label-slot>Village</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-input dsf-input--combo" data-scholar-island-combo aria-haspopup="listbox" title="Filter by Specific Island (only 4 populated islands in SBS Village Directory: Upolu, Manono, Apolima, Savai‘i)">
-            <span class="dsf-input__label" data-label-slot>Specific Island</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-input dsf-input--combo" data-scholar-itumalo-combo aria-haspopup="listbox" title="Filter by Traditional Itūmālō (11 Second-Schedule constitutional districts)">
-            <span class="dsf-input__label" data-label-slot>Traditional Itūmālō</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
-          <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-constituency-combo aria-haspopup="listbox" title="Filter by Electoral Constituency. Time-versioned: 2019-Act carries 51 constituencies (for the 2021 and 2026 general elections), Pre-2019 carries 43 (historical).">
-            <span class="dsf-input__label" data-label-slot>Electoral Constituency</span>
-            <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
-            <span class="dsf-input__caret">▾</span>
-          </button>
-
           <button type="button" class="dsf-clear-all" data-scholar-clear-all>Clear all</button>
         </div>
 
-        <!-- Statistical Region / Political/Census District combo panel -->
-        <div class="dsf-combo-panel" data-scholar-region-panel role="listbox">
+        <!-- Island Division / District combo panel -->
+        <div class="dsf-combo-panel" data-scholar-conf-panel role="listbox">
           <div class="dsf-combo-col dsf-combo-col--first">
             <div class="dsf-combo-col__head">Statistical Region</div>
             <div data-parent-col></div>
           </div>
           <div class="dsf-combo-col">
-            <div class="dsf-combo-col__head" data-child-header>Political/Census Districts</div>
+            <div class="dsf-combo-col__head" data-child-header>Districts</div>
             <div data-child-col></div>
           </div>
         </div>
@@ -5088,16 +5022,23 @@
           </div>
         </div>
 
-        <!-- Summary bar (Total + Apia Urban Area + North West Upolu + Rest of Upolu + Unclassified) -->
+        <!-- Summary bar (Total + Samoa's 4 Statistical Regions + Unclassified) -->
         <div class="dsf-summary" data-scholar-summary>
           <strong>Statistical Region</strong>
           <span class="dsf-chip dsf-chip--total">Total: <span data-count-total>0</span></span>
           <div class="dsf-summary__chips" data-scholar-summary-chips>
-            <span class="dsf-chip dsf-chip--region-apia"     data-region-chip="Apia Urban Area"><span class="dsf-chip__dot"></span> Apia Urban Area: <span data-count-region-apia>0</span></span>
-            <span class="dsf-chip dsf-chip--region-nwupolu"     data-region-chip="North West Upolu"><span class="dsf-chip__dot"></span> North West Upolu: <span data-count-region-nwupolu>0</span></span>
-            <span class="dsf-chip dsf-chip--region-rupolu" data-region-chip="Rest of Upolu"><span class="dsf-chip__dot"></span> Rest of Upolu: <span data-count-region-rupolu>0</span></span>
-            <span class="dsf-chip dsf-chip--unclass"    data-region-chip="Unclassified"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-region-unclass>0</span></span>
+            <span class="dsf-chip dsf-chip--apiaurbanarea"     data-conf-chip="Apia Urban Area"><span class="dsf-chip__dot"></span> Apia Urban Area: <span data-count-apiaurbanarea>0</span></span>
+            <span class="dsf-chip dsf-chip--northwestupolu"     data-conf-chip="North West Upolu"><span class="dsf-chip__dot"></span> North West Upolu: <span data-count-northwestupolu>0</span></span>
+            <span class="dsf-chip dsf-chip--restofupolu" data-conf-chip="Rest of Upolu"><span class="dsf-chip__dot"></span> Rest of Upolu: <span data-count-restofupolu>0</span></span>
+            <span class="dsf-chip dsf-chip--savaii" data-conf-chip="Savaii"><span class="dsf-chip__dot"></span> Savaii: <span data-count-savaii>0</span></span>
+            <span class="dsf-chip dsf-chip--unclass"    data-conf-chip="Unclassified"><span class="dsf-chip__dot"></span> Unclassified: <span data-count-unclass>0</span></span>
           </div>
+        </div>
+
+        <div class="dsf-summary dsf-summary--clans" data-scholar-clan-summary>
+          <strong>ʻĀiga</strong>
+          <span class="dsf-chip dsf-chip--total" title="Scholars with a recorded paternal ʻāiga">Total: <span data-count-clans-total>0</span></span>
+          <div class="dsf-summary__chips" data-scholar-clan-chips></div>
         </div>
 
         <!-- Results II — publication-type breakdown of the filtered scholars' works -->
@@ -5145,14 +5086,7 @@
           <select class="db-filter" data-db-filter="decade" aria-label="Filter by decade">
             <option value="">All decades</option>
           </select>
-          <select class="db-filter" data-db-cite-format aria-label="Citation format" title="Choose the citation style used for copy-to-clipboard and .csv export">
-            <option value="apa">APA 7</option>
-            <option value="chicago">Chicago 17 (author-date)</option>
-            <option value="mla">MLA 9</option>
-          </select>
           <button type="button" class="db-clear-btn is-hidden" data-db-clear>Clear all</button>
-          <button type="button" class="db-filter" data-db-export="ris" title="Export the currently filtered items as RIS (reference managers)">Export .ris</button>
-          <button type="button" class="db-filter" data-db-export="csv" title="Export the currently filtered items as CSV">Export .csv</button>
         </div>
       </div>
       <div class="db-chips-row" id="db-filter-chips" data-db-chips></div>
@@ -5160,19 +5094,54 @@
       <button type="button" class="db-load-more" data-db-load-more style="display:none;">Show 25 more</button>
     </div>
 
-    <!-- Cite + contribute -->
-    <div class="db-context">
-      <div class="db-cite reveal">
-        <h3>Cite this database</h3>
-        <p style="margin:0;color:var(--color-text-muted);font-size:0.9rem;">If you use this database in your research or teaching, please cite it as:</p>
-        <code>Vave, R. (2026). Samoan Scholarly Research: A curated database of scholarly publications on Samoa and Samoans. Master-file database. Retrieved from https://ronvave.github.io/vave-lab/samoa-research-database-master.html</code>
+    <!-- Panel H — About / inclusion criteria (end of page) -->
+    <details class="db-about reveal has-panel-badge">
+      <summary>About this database &middot; Inclusion criteria &amp; methodology<span class="db-panel__label">H</span></summary>
+      <div class="db-about__body">
+        <p><strong>Counting note:</strong> Indigenous Samoan scholar and graduate-degree totals follow this database’s Samoan-paternal criterion. Some retained scholar profiles are excluded from these totals; their profiles, qualifications and publications remain available.</p>
+        <div class="db-about-grid">
+          <div>
+            <h4>What's included</h4>
+            <p>Scholarly publications where Samoa or Samoas are the primary geographic, cultural, or thematic focus, and where at least one of the following applies:</p>
+            <ul>
+              <li>Peer-reviewed journal articles, book chapters, and books</li>
+              <li>Master's, PhD, and equivalent higher-degree theses</li>
+              <li>Technical reports and conference papers from recognised institutions</li>
+              <li>Preprints archived on established repositories</li>
+            </ul>
+            <p>Special emphasis on work authored or co-authored by <em>Samoan</em> scholars, regardless of subject discipline.</p>
+
+            <h4>How tags are assigned</h4>
+            <ul>
+              <li><strong>District researched</strong> &mdash; assigned to the district(s) explicitly named as fieldwork or study sites in the abstract, methods, or first paragraph. Multi-district studies are tagged to each relevant district.</li>
+              <li><strong>Paternal district</strong> &mdash; applied only to Samoan first-authors, derived from author biographical statements, personal communication with the author where possible, and public genealogical records.</li>
+              <li><strong>Discipline</strong> &mdash; a single primary discipline based on the publishing journal, thesis department, or dominant methodological framing. Cross-cutting works are placed under the strongest thematic fit.</li>
+            </ul>
+          </div>
+          <div>
+            <h4>Update cadence</h4>
+            <p>The Samoa Master file is the sole source of scholar, publication, degree, and research-location data for this dashboard. Updates appear after the Master-file refresh is published.</p>
+
+            <h4>Known gaps &amp; caveats</h4>
+            <ul>
+              <li>Pre-1970s materials and colonial-era grey literature are underrepresented.</li>
+              <li>Unpublished traditional-knowledge documentation held by communities is deliberately excluded pending appropriate protocols.</li>
+              <li>Non-English publications from regional universities and Pacific-language journals may be missing where the item is not indexed by major databases.</li>
+              <li>Some paternal-province assignments remain provisional pending author confirmation; entries without a paternal-province tag are treated as unclassified in that view.</li>
+            </ul>
+
+            <h4>Feedback</h4>
+            <p>Corrections, additions, and suggestions are welcome.</p>
+            <p><a href="mailto:ronvave@hawaii.edu?subject=Samoan%20Scholar%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0ADistrict(s)%20covered%3A%20%0APaternal%20district%20of%201st%20author%20(if%20Samoa)%3A%20%0A" class="btn btn--primary" style="display:inline-block;color:#fff;text-decoration:none;">Email a suggestion</a></p>
+          </div>
+        </div>
+        <div class="db-cite db-cite--in-about">
+          <h4>Cite this database</h4>
+          <p>If you use this database in your research or teaching, please cite it as:</p>
+          <code>Vave, R. (2026). Samoan Scholar Dashboard. Vave Lab, University of Hawaiʻi at Mānoa.</code>
+        </div>
       </div>
-      <div class="db-contribute reveal">
-        <h3>Contribute · Suggest an item</h3>
-        <p style="margin:0 0 var(--space-3);color:var(--color-text-muted);font-size:0.9rem;">Missing a publication? Written by an Samoan scholar we haven't indexed yet? Email the citation (or DOI) and we'll add it.</p>
-        <a href="mailto:ronvave@hawaii.edu?subject=Samoan%20Research%20Database%20%E2%80%94%20suggested%20item&body=Please%20add%20the%20following%20to%20the%20database%3A%0A%0ATitle%3A%20%0AAuthor(s)%3A%20%0AYear%3A%20%0AJournal%2FThesis%2FBook%3A%20%0ADOI%2FURL%3A%20%0AProvince(s)%20covered%3A%20%0APaternal%20district%20of%201st%20author%20(if%20Samoan)%3A%20%0A" class="btn btn--primary" style="display:inline-block;">Email a suggestion</a>
-      </div>
-    </div>
+    </details>
 
     <p class="db-updated" data-db-updated></p>
 
@@ -5186,9 +5155,9 @@
     <button type="button" class="impact-close" data-impact-close aria-label="Close impact view">×</button>
 
     <header class="impact-header">
-      <div class="impact-header__eyebrow">Presentation view · Samoan Scholarly Research Database</div>
+      <div class="impact-header__eyebrow">Presentation view · Samoan Scholar Database</div>
       <h2 id="impact-title" class="impact-header__title">Samoan research impact <span>across the Pacific</span></h2>
-      <p class="impact-header__sub">Publications grouped by paternal <em>statistical region</em>, split by whether the research is <strong>Samoa-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
+      <p class="impact-header__sub">Publications grouped by paternal <em>Statistical Region</em>, split by whether the research is <strong>Samoa-focused</strong> or <strong>international-focused</strong>. Toggle to isolate PhD or Masters theses.</p>
     </header>
 
     <div class="impact-filters" role="tablist" aria-label="Filter">
@@ -5203,7 +5172,7 @@
         <div class="impact-headline__label">Total items in view</div>
       </div>
       <div class="impact-headline__stat">
-        <div class="impact-headline__num" data-impact-samoa>—</div>
+        <div class="impact-headline__num" data-impact-fiji>—</div>
         <div class="impact-headline__label">Samoa-focused</div>
       </div>
       <div class="impact-headline__stat">
@@ -5217,7 +5186,7 @@
     </div>
 
     <div class="impact-chart" data-impact-chart>
-      <!-- Populated by JS: three grouped column pairs (Samoa vs Intl) per statistical region -->
+      <!-- Populated by JS: three grouped column pairs (Fiji vs Intl) per confederacy -->
     </div>
 
     <div class="impact-legend">
@@ -5233,7 +5202,7 @@
   <div class="container">
     <div class="footer-grid">
       <div class="footer-brand">
-        <p class="footer-brand__name">Prof. Ron Vave</p>
+        <p class="footer-brand__name">Assistant Professor Ron Vave</p>
         <p class="footer-brand__tagline">Researching ocean governance, indigenous resource management, and cultural ecosystem services across the Pacific.</p>
         <div class="footer-social">
           <a href="https://scholar.google.com/citations?user=kQp4VUoAAAAJ" target="_blank" rel="noopener">Scholar</a>
@@ -5285,14 +5254,14 @@
   </div>
 </footer>
 
-<script src="js/samoa-main.js?v=2804f8c7"></script>
+<script src="js/samoa-main.js?v=2cf4b3f9"></script>
 <!-- ==== Submit-info modal (for scholars to propose corrections) ==== -->
 <div class="db-submit-modal" id="db-submit-modal" role="dialog" aria-modal="true" aria-labelledby="db-submit-modal-title">
   <div class="db-submit-modal__dialog">
     <h2 id="db-submit-modal-title">Update info for this scholar</h2>
     <p class="db-submit-modal__sub" id="db-submit-modal-sub"></p>
     <div class="db-submit-modal__notice">
-      <strong>Please read:</strong> corrections are reviewed by the Vave Lab team before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves — friends, family, or students can also submit on their behalf.
+      <strong>Please read:</strong> corrections are reviewed by the dashboard curator, before the public profile is updated, so changes will not appear immediately. Ideally, edits should be submitted by the scholar themselves. However, friends, family, students and colleagues can also submit updates on their behalf.
     </div>
 
     <form id="db-submit-form" enctype="multipart/form-data" novalidate>
@@ -5335,15 +5304,19 @@
             </select>
           </div>
           <div>
-            <label for="db-sf-village">Village</label>
-            <input type="text" id="db-sf-village" name="village" placeholder="e.g. Tubou" />
+            <label for="db-sf-village">Village/Town (Village)</label>
+            <input type="text" id="db-sf-village" name="village" placeholder="e.g. village name" />
           </div>
           <div>
-            <label for="db-sf-paternal">Paternal Political/Census District</label>
+            <label for="db-sf-paternal">Paternal District</label>
             <select id="db-sf-paternal" name="paternal_province">
               <option value="">(select)</option>
             </select>
             <small>Statistical Region is derived automatically.</small>
+          </div>
+          <div>
+            <label for="db-sf-specific-island">Specific Island (Paternal)</label>
+            <input type="text" id="db-sf-specific-island" name="specific_island" placeholder="e.g. Vaimauga 2, Vaimauga 3, Vaimauga 4" />
           </div>
           <div>
             <label for="db-sf-title">Professional title</label>
@@ -5352,10 +5325,6 @@
           <div style="grid-column: 1 / -1;">
             <label for="db-sf-institution">Institution</label>
             <input type="text" id="db-sf-institution" name="institution" />
-          </div>
-          <div style="grid-column: 1 / -1;" class="db-sf-retired-row">
-            <label for="db-sf-retired" style="display:flex;align-items:center;gap:8px;cursor:pointer;"><input type="checkbox" id="db-sf-retired" name="retired" value="Yes" style="width:auto;margin:0;" /> Retired</label>
-            <small>Tick if this scholar has retired. After review, a small Retired label shows on the lower edge of their photo.</small>
           </div>
           <div>
             <label for="db-sf-institution-url">Institution URL</label>
@@ -5445,13 +5414,13 @@
 </div>
 
 <!-- =====================================================================
-     Samoan Scholarly Research Database — MASTER-FILE PREVIEW (V2)
+     Samoan Scholar Database — MASTER-FILE PREVIEW (V2)
 
      This preview file is IDENTICAL in look/feel to the production dashboard
-     (`samoan-research-database.html`) but its data layer is driven by the
-     Samoa_Master_file Google Sheet instead of Zotero.
+     (`itaukei-research-database.html`) but its data layer is driven by the
+     Samoan Master file Google Sheet instead of Zotero.
 
-     The `js/samoan-database-master.js` bundle fetches Master-file
+     The `js/samoa-database-master.js` bundle fetches Master-file
      sanitized JSON snapshots (produced by refresh-master-file.yml every 2h)
      and reshapes them into the same state.snapshot shape the existing
      panel code expects, so the majority of panels render identically.
@@ -5462,37 +5431,24 @@
 
      Do NOT link this file from site navigation until Ron approves swap.
 ===================================================================== -->
-<script src="js/samoa-demo-gate.js?v=e59d6c90" defer></script>
-<script src="js/samoa-database-adapter.js?v=3e1e2f87" defer></script>
-<script src="js/samoa-database-master.js?v=f499096a" defer></script>
-<script src="js/samoa-panel-overrides.js?v=2ff4a9c2" defer></script>
-
-<script>
-  /* -------- samoaDemoGate → dbGate bridge ---------------------------------
-     The panel renderers in samoa-database-master.js were adapted from the
-     shared sister-database codebase and reference `window.dbGate`. Samoa's demo-gate
-     module exports `window.samoaDemoGate`; its `_asDbGate()` method
-     returns a minimal read-only shim (fetchJson + isUnlocked) that the
-     panel code needs to fetch encrypted data files. This IIFE installs
-     that shim on `window.dbGate` so the existing panel code paths work
-     unchanged, while keeping the Samoa-native gate as the source of truth. */
-  (function bridgeDbGate(){
-    function install(){
-      if (window.samoaDemoGate && typeof window.samoaDemoGate._asDbGate === 'function') {
-        // Preserve boot() (which the panel code also calls) - it lives on
-        // samoaDemoGate itself, so we compose the two.
-        var shim = window.samoaDemoGate._asDbGate();
-        shim.boot = function(cb){ return window.samoaDemoGate.boot(cb); };
-        window.dbGate = shim;
-      }
-    }
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', install);
-    } else {
-      install();
-    }
-  })();
-</script>
+<script src="js/samoa-demo-gate.js?v=ecd3d0ef" defer></script>
+<script src="js/samoa-clans.js?v=6581cd93" defer></script>
+<script src="js/samoa-database-adapter.js?v=2017a624" defer></script>
+<script src="js/samoa-countries.js?v=bda8ef6b" defer></script>
+<script src="js/samoa-country-inputs.js?v=453d6735" defer></script>
+<script src="js/samoa-scholar-portal.js?v=90efdfe2" defer></script>
+<link rel="stylesheet" href="css/b2-study-table.css?v=3735df41">
+<script src="js/b2-study-table.js?v=9a3c151c" defer></script>
+<link rel="stylesheet" href="css/b5-location-table.css?v=5c414dea">
+<link rel="stylesheet" href="css/scholar-card-buttons.css?v=ef8453b7">
+<link rel="stylesheet" href="css/panel-d-firsts.css?v=62461145">
+<script src="js/b5-location-table.js?v=c774fc03" defer></script>
+<script src="js/samoa-database-master.js?v=668190a6" defer></script>
+<script src="js/dashboard-profile-link.js?v=98de6580" defer></script>
+<script src="js/panel-d-firsts.js?v=da417e3c" data-country="to" defer></script>
+<script src="js/samoa-short-disciplines.js?v=fe7280f9" defer></script>
+<script src="js/short-disciplines-style.js?v=ee30475b" defer></script>
+<script src="js/samoa-panel-overrides.js?v=99dcc0a9" defer></script>
 <script>
   /* -------- Iframe-embed panel fullscreen (B3 chord, C1 body composition) --
      Two panels ship a .db-panel__embed wrapper with an expand button and a
@@ -5551,6 +5507,9 @@
     }
     function onKey(ev){
       if (ev.key === 'Escape'){
+        var sourceDoc = ev.target && ev.target.ownerDocument;
+        var openMenu = sourceDoc && sourceDoc.querySelector('.mobility-filters details[open]');
+        if (openMenu) { openMenu.open = false; ev.preventDefault(); ev.stopPropagation(); return; }
         document.querySelectorAll('.db-panel__embed.is-fullscreen').forEach(function(w){
           toggleFullscreen(w, false);
         });
@@ -5571,11 +5530,22 @@
           var doc = iframe.contentDocument;
           if (!doc) return;
           doc.addEventListener('click', function(ev){
+            // B3 outside-click dismisses an open filter before any expansion.
+            // Once expanded, only Close full screen or Escape should exit.
+            if (wrap.id === 'db-embed-b3-chord') {
+              var openMenus = doc.querySelectorAll('.mobility-filters details[open]');
+              if (!ev.target.closest('.mobility-filters') && openMenus.length) {
+                openMenus.forEach(function(menu){ menu.open = false; });
+                return;
+              }
+              if (wrap.classList.contains('is-fullscreen')) return;
+            }
             // Ignore clicks on real interactive controls inside the embedded
             // page (buttons, inputs, links) — they should behave normally.
-            if (ev.target.closest('button, a, input, select, textarea, label')) return;
+            if (ev.target.closest('button, a, input, select, textarea, label, summary, .mobility-filters')) return;
             toggleFullscreen(wrap, !wrap.classList.contains('is-fullscreen'));
           });
+          doc.addEventListener('keydown', onKey);
           doc.body && (doc.body.style.cursor = 'zoom-in');
         } catch(e){ /* cross-origin (shouldn't happen here) */ }
       }
@@ -5596,6 +5566,15 @@
     }
   })();
 </script>
+<script src="js/samoa-panel-menu.js?v=2a60028c" defer></script>
+<script src="js/country-positions.js?v=7cb0d9ea" data-src="data/samoa-master-positions.json" data-people="Samoan" defer></script>
+<script src="js/vendor/qrcode-generator.js?v=18ae399f" defer></script>
+<script src="js/news-event.js?v=bffe319a" defer></script>
+<script src="js/country-news.js?v=eaef5c50" data-src="data/samoa-master-news.json" data-flag="wsm" data-split-photos="1" data-people="Samoan" data-place="Samoa" data-foot-under="1" defer></script>
+<script src="js/position-display-field.js?v=fc3380d8" defer></script>
 <script src="js/scholar-card-tabs.js?v=efda3195" defer></script>
+<script src="js/samoa-panel-hero.js?v=460b32a2" defer></script>
+<script src="js/samoa-country-flags.js?v=20d60c3d" defer></script>
+<script src="js/samoa-text-contrast.js?v=84f6a4da" defer></script>
 </body>
 </html>

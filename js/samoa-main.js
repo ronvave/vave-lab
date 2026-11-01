@@ -1,16 +1,5 @@
 /* =============================================
-   VAVE LAB — Samoa dashboard main JS
-   =============================================
-   Jurisdiction-neutral utility file:
-     - Theme toggle (light/dark)
-     - Sticky-header scroll shadow
-     - Mobile hamburger menu
-     - Active-nav-link highlight
-     - Scroll-reveal animation
-   No Samoa-specific data or geography logic lives here.
-   Byte-identical (below this header) to the sister-jurisdiction
-   equivalents — the dashboard-specific behaviour lives in
-   js/samoa-database-master.js.
+   VAVE LAB — Main JavaScript
    ============================================= */
 
 // ── Theme toggle ──────────────────────────────

@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
-"""Sister clone of scripts/decrypt_data.py for the Samoa Scholar Database.
+"""Sister clone of scripts/decrypt_data.py for the Samoan Scholar Database.
 
-Reads AES-GCM-encrypted data/samoa-*.json.enc back to plaintext. Same wire
-format as samoa_encrypt_data.py. NEVER touches non-Samoa jurisdictions.
+Decrypt one or more .enc data files back to plaintext.
+
+Used by the GitHub Actions refresh workflow to bootstrap gitignored files
+(fiji-provinces.geojson, world-universities.json, etc.) that the refresh
+scripts need but that no longer ship in the repo as plaintext.
+
+Blob format matches scripts/encrypt_data.py:
+
+  file bytes = magic(4) || salt(16) || iv(12) || ciphertext+tag
+
+Usage:
+  # Decrypt everything on the TARGETS list (if the .enc exists)
+  VAVELAB_SAMOA_PASSCODE=... python3 scripts/samoa_decrypt_data.py --all
+
+  # Decrypt a specific file
+  VAVELAB_SAMOA_PASSCODE=... python3 scripts/samoa_decrypt_data.py samoa-districts.geojson
 """
 from __future__ import annotations
 
@@ -21,101 +35,97 @@ ITERATIONS = 200_000
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 
-# Match samoa_encrypt_data.TARGETS
+# Kept in sync with encrypt_data.py so --all works symmetrically.
 TARGETS = [
-    "samoa-districts.geojson",
+    "samoa-zotero-snapshot.json",
     "samoa-world-universities.json",
+    "samoa-districts.json",
+    "samoa-scholar-profiles.json",
+    "samoa-last-sync.json",
+    "samoa-graduate-studies.json",
+    "samoa-scholar-insights.json",
+    "samoa-districts.geojson",
     "samoa-workplace-coords.json",
     "samoa-uni-country-overrides.json",
     "samoa-auto-resolved.json",
-    "samoa-last-master-sync.json",
-    "samoa-scholar-insights.json",
     "samoa-master-scholars.json",
-    "samoa-master-part-indigenous.json",
     "samoa-master-publications.json",
     "samoa-master-authorship.json",
-    "samoa-master-researcher-authorship.json",
     "samoa-master-grad-degrees.json",
     "samoa-master-mobility.json",
     "samoa-master-geography.json",
+    "samoa-master-positions.json",
+    "samoa-master-news.json",
     "samoa-master-geography-coordinates.json",
     "samoa-master-aggregates.json",
     "samoa-master-worldpoints.json",
-    "samoa-body-composition-master.json",
+    "samoa-last-master-sync.json",
 ]
 
-_FORBIDDEN_PREFIXES = ("itaukei-", "tongan-", "tonga-", "solomon-")
 
-
-def _get_passcode() -> bytes:
-    pw = os.environ.get("VAVELAB_SAMOA_PASSCODE")
-    if not pw:
-        raise SystemExit(
-            "VAVELAB_SAMOA_PASSCODE not set. Refusing to decrypt without a passcode."
-        )
-    return pw.encode("utf-8")
-
-
-def _refuse_cross_system(name: str) -> None:
-    if any(name.startswith(p) for p in _FORBIDDEN_PREFIXES):
-        raise SystemExit(
-            f"REFUSING TO DECRYPT {name!r}: this looks like a non-Samoa target."
-        )
-
-
-def _derive_key(passcode: bytes, salt: bytes) -> bytes:
+def derive_key(passcode: str, salt: bytes) -> bytes:
     kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
         iterations=ITERATIONS,
     )
-    return kdf.derive(passcode)
+    return kdf.derive(passcode.encode("utf-8"))
 
 
-def decrypt_one(name: str, passcode: bytes) -> Path:
-    _refuse_cross_system(name)
+def decrypt_blob(blob: bytes, passcode: str) -> bytes:
+    if len(blob) < 4 + 16 + 12 + 16 or blob[:4] != MAGIC:
+        raise ValueError("not a Vave-Lab encrypted blob")
+    salt = blob[4:20]
+    iv = blob[20:32]
+    ct = blob[32:]
+    key = derive_key(passcode, salt)
+    return AESGCM(key).decrypt(iv, ct, associated_data=None)
+
+
+def decrypt_one(name: str, passcode: str) -> bool:
     src = DATA_DIR / (name + ".enc")
+    dst = DATA_DIR / name
     if not src.exists():
-        raise FileNotFoundError(f"Ciphertext not found: {src}")
-    data = src.read_bytes()
-    if data[:4] != MAGIC:
-        raise ValueError(f"{src}: bad magic (not an IVAV blob)")
-    salt = data[4:20]
-    iv = data[20:32]
-    ct = data[32:]
-    key = _derive_key(passcode, salt)
-    aes = AESGCM(key)
-    plaintext = aes.decrypt(iv, ct, None)
-    out = DATA_DIR / name
-    out.write_bytes(plaintext)
-    return out
+        print(f"  skip {name}: no {src.name}", file=sys.stderr)
+        return False
+    plaintext = decrypt_blob(src.read_bytes(), passcode)
+    dst.write_bytes(plaintext)
+    print(f"  decrypted {src.name} \u2192 {name} ({len(plaintext):>7,} B)")
+    return True
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--all", action="store_true", help="Decrypt every known TARGETS file.")
-    ap.add_argument("files", nargs="*", help="Specific filenames to decrypt.")
+    ap.add_argument("names", nargs="*", help="File names under data/ to decrypt")
+    ap.add_argument("--all", action="store_true", help="Decrypt every known target")
     args = ap.parse_args()
 
-    pw = _get_passcode()
-    names = TARGETS if args.all else args.files
+    passcode = os.environ.get("VAVELAB_SAMOA_PASSCODE")
+    if not passcode:
+        print("ERROR: set VAVELAB_SAMOA_PASSCODE in the environment.", file=sys.stderr)
+        return 1
+
+    names = TARGETS if args.all else args.names
     if not names:
-        ap.print_help()
+        ap.print_usage()
         return 2
 
     ok = 0
+    missing = 0
     for name in names:
-        try:
-            out = decrypt_one(name, pw)
-            print(f"decrypted -> {out.relative_to(ROOT)}")
+        src = DATA_DIR / (name + ".enc")
+        if not src.exists():
+            missing += 1
+        if decrypt_one(name, passcode):
             ok += 1
-        except FileNotFoundError as e:
-            print(f"skip: {e}", file=sys.stderr)
-        except Exception as e:
-            print(f"error: {name}: {e}", file=sys.stderr)
-    print(f"\n{ok}/{len(names)} decrypted.")
-    return 0 if ok else 1
+    print(f"decrypted {ok}/{len(names)} file(s)")
+    # In --all mode, tolerate a target that hasn't been encrypted yet
+    # (bootstrap case for new files like data/auto-resolved.json).
+    # Individual-name invocations still fail loudly.
+    if args.all:
+        return 0 if ok + missing == len(names) else 1
+    return 0 if ok == len(names) else 1
 
 
 if __name__ == "__main__":

@@ -1,0 +1,191 @@
+{
+  "key": "fsm",
+  "KEY": "FSM",
+  "prefix": "FSM",
+  "iso3": "fsm",
+  "iso2": "fm",
+  "masterId": "1UYhthbTDVosC6_6zcwXH_k2WNjTo1ijs2oYQe8FOzqI",
+  "masterTitle": "FSM Scholars Master File",
+  "country": "FSM",
+  "countryValue": "Federated States of Micronesia",
+  "countryInSentence": "the FSM",
+  "countryPossessive": "the FSM's",
+  "adjective": "FSM",
+  "adjectiveUpper": "FSM",
+  "dashboardTitle": "FSM Scholar Dashboard",
+  "partTab": "Part-Micronesian",
+  "levels": {
+    "division": {
+      "singular": "State",
+      "plural": "States"
+    },
+    "district": {
+      "singular": "Municipality",
+      "plural": "Municipalities"
+    },
+    "clan": {
+      "singular": "Clan",
+      "plural": "Clans"
+    },
+    "village": {
+      "singular": "Village",
+      "plural": "Villages"
+    }
+  },
+  "lineage": {
+    "paternal": "Community affiliation 1",
+    "maternal": "Community affiliation 2"
+  },
+  "divisions": {
+    "Yap": [
+      "Rumung",
+      "Maap",
+      "Gagil",
+      "Tamil",
+      "Fanif",
+      "Weloy",
+      "Dalipebinaw",
+      "Kanifay",
+      "Rull",
+      "Gilman",
+      "Eauripik",
+      "Elato",
+      "Fais",
+      "Faraulep",
+      "Ifalik",
+      "Lamotrek",
+      "Ngulu",
+      "Satawal",
+      "Sorol",
+      "Ulithi",
+      "Woleai"
+    ],
+    "Chuuk": [
+      "Eot",
+      "Fala-Beguets",
+      "Paata",
+      "Polle",
+      "Romanum",
+      "Tol",
+      "Udot",
+      "Wonei",
+      "Fono",
+      "Piis-Penau",
+      "Weno",
+      "Fefan",
+      "Param",
+      "Tonowas",
+      "Tsis",
+      "Uman",
+      "Etal",
+      "Kutu",
+      "Losap",
+      "Lukunor",
+      "Moch",
+      "Nama",
+      "Namoluk",
+      "Oneop",
+      "Pis-Losap",
+      "Satawan",
+      "Ta",
+      "Fananu",
+      "Magur",
+      "Murilo",
+      "Nomwin",
+      "Onari",
+      "Ono",
+      "Pisaras",
+      "Poluwat",
+      "Pulap",
+      "Pulusuk",
+      "Ruo",
+      "Tamatam",
+      "Ulul"
+    ],
+    "Pohnpei": [
+      "Madolenihmw",
+      "Nett",
+      "Sokehs",
+      "Kitti",
+      "Kolonia",
+      "U",
+      "Mwoakilloa",
+      "Pingelap",
+      "Sapwuahfik",
+      "Nukuoro",
+      "Kapingamarangi"
+    ],
+    "Kosrae": [
+      "Lelu",
+      "Malem",
+      "Utwe",
+      "Tafunsak"
+    ]
+  },
+  "divisionNote": "States and municipalities come from the FSM Master Lookups tab (official FSM Government list).",
+  "map": {
+    "bounds": [
+      [
+        0.5,
+        137.0
+      ],
+      [
+        10.5,
+        163.5
+      ]
+    ],
+    "center": [
+      6.9,
+      150.0
+    ],
+    "zoom": 5
+  },
+  "geojson": {
+    "source": "geoboundaries",
+    "file": "/tmp/kit/gb_FSM_2.json",
+    "nameProp": "shapeName",
+    "aliases": {
+      "Tonoas": "Tonowas",
+      "Puluwat": "Poluwat",
+      "Pulawat": "Poluwat",
+      "Mokil": "Mwoakilloa",
+      "Ngatik": "Sapwuahfik",
+      "Dalipebenau": "Dalipebinaw",
+      "Dilapebenau": "Dalipebinaw",
+      "Gilmaan": "Gilman",
+      "Uh": "U",
+      "Makur": "Magur",
+      "Neoch": "Moch",
+      "Onoun": "Ulul",
+      "Walung": "Tafunsak",
+      "Fefen": "Fefan",
+      "Siis": "Tsis",
+      "Parem": "Param",
+      "PiisPenau": "Piis-Penau",
+      "Pollap": "Pulap",
+      "Murillo": "Murilo",
+      "Tomil": "Tamil",
+      "Sapwuafik": "Sapwuahfik",
+      "Mwokilloa": "Mwoakilloa",
+      "Houk": "Pulusuk",
+      "Polowat": "Poluwat",
+      "Satowan": "Satawan",
+      "Nema": "Nama",
+      "Ettal": "Etal",
+      "Kuttu": "Kutu",
+      "Lekinoch": "Lukunor",
+      "Onou": "Ono"
+    },
+    "attribution": "geoBoundaries Open Database (William & Mary geoLab), FSM ADM2 release 9469f09, CC BY 3.0 IGO."
+  },
+  "art": {
+    "header": "img/regional/fsm.webp",
+    "headerCredit": "View of Pohnpei Island from Ant Atoll, Patrick Nunn, CC BY-SA 4.0 (Wikimedia Commons)",
+    "flag": "img/regional/flags/fsm.png"
+  },
+  "people": "FSM",
+  "genderLabels": null,
+  "citation": "Vave, R. (2026). FSM Scholar Dashboard. Vave Lab, University of Hawaiʻi at Mānoa.",
+  "intro": "The FSM Scholars Database & Dashboard is a sister project to the Tongan and Fijian Scholars Databases & Dashboards, curated by <a href=\"index.html\">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa. It highlights the scholarly research and contributions of postgraduates and researchers from the Federated States of Micronesia (Yap, Chuuk, Pohnpei and Kosrae), in the FSM and around the world.",
+  "timezone": "Pacific/Pohnpei"
+}

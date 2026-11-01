@@ -1,0 +1,51 @@
+name: Rotate Samoa dashboard passcode
+
+# Manual only. Moves the Samoa dashboard onto the passcode stored in the
+# VAVELAB_SAMOA_PASSCODE repository secret: re-encrypts data/samoa-*.enc,
+# updates the gate files, refreshes cache-busting, commits to main, then starts
+# the validated Pages deploy. The passcode never appears in logs.
+# Optional secret VAVELAB_SAMOA_COLLAB_PASSCODE sets the collaborator passcode.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  # Shared with the Samoa refresh so the two never overlap.
+  group: refresh-samoa-master-file
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography
+      - name: Re-encrypt Samoa data and update gate files
+        id: rotate
+        env:
+          VAVELAB_SAMOA_PASSCODE: ${{ secrets.VAVELAB_SAMOA_PASSCODE }}
+          VAVELAB_SAMOA_COLLAB_PASSCODE: ${{ secrets.VAVELAB_SAMOA_COLLAB_PASSCODE }}
+        run: |
+          out=$(python3 scripts/country_kit/rotate_country_passcode.py samoa)
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Commit and deploy
+        if: steps.rotate.outputs.result == 'rotated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/bust_cache.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data js *.html
+          git commit -m "Samoa dashboard: rotate passcode"
+          git push origin HEAD:main
+          gh workflow run deploy-pages-validated.yml --ref main

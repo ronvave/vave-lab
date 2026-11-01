@@ -1,0 +1,144 @@
+{
+  "key": "samoa",
+  "KEY": "SAMOA",
+  "prefix": "WSM",
+  "iso3": "wsm",
+  "iso2": "ws",
+  "masterId": "1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ",
+  "masterTitle": "Samoan Scholars Master File",
+  "country": "Samoa",
+  "countryValue": "Samoa",
+  "countryInSentence": "Samoa",
+  "countryPossessive": "Samoa's",
+  "adjective": "Samoan",
+  "adjectiveUpper": "SAMOAN",
+  "dashboardTitle": "Samoan Scholar Dashboard",
+  "partTab": "Part-Indigenous",
+  "levels": {
+    "division": {
+      "singular": "Statistical Region",
+      "plural": "Statistical Regions"
+    },
+    "district": {
+      "singular": "District",
+      "plural": "Districts"
+    },
+    "clan": {
+      "singular": "ʻĀiga",
+      "plural": "ʻĀiga"
+    },
+    "village": {
+      "singular": "Village",
+      "plural": "Villages"
+    }
+  },
+  "lineage": {
+    "paternal": "Paternal",
+    "maternal": "Maternal"
+  },
+  "villageExample": null,
+  "divisions": {
+    "Apia Urban Area": [
+      "Vaimauga 2",
+      "Vaimauga 3",
+      "Vaimauga 4",
+      "Faleata 1"
+    ],
+    "North West Upolu": [
+      "Vaimauga 1",
+      "Faleata 2",
+      "Faleata 3",
+      "Faleata 4",
+      "Sagaga 1",
+      "Sagaga 2",
+      "Sagaga 3",
+      "Sagaga 4",
+      "Aana Alofi 1",
+      "Aana Alofi 2",
+      "Aana alofi 3",
+      "Aana Alofi 4"
+    ],
+    "Rest of Upolu": [
+      "Aiga i le Tai",
+      "Falelatai & Samatau",
+      "Lefaga & Faleaseela",
+      "Safata 1",
+      "Safata 2",
+      "Siumu",
+      "Falealili 1",
+      "Falealili 2",
+      "Lotofaga",
+      "Lepa",
+      "Aleipata Itupa i Luga",
+      "Aleipata Itupa i Lalo",
+      "Vaa o Fonoti",
+      "Anoamaa 1",
+      "Anoamaa 2"
+    ],
+    "Savaii": [
+      "Faasaleleaga 1",
+      "Faasaleleaga 2",
+      "Faasaleleaga 3",
+      "Faasaleleaga 4",
+      "Faasaleleaga 5",
+      "Gagaemauga 1",
+      "Gagaemauga 2",
+      "Gagaifomauga 1",
+      "Gagaifomauga 2",
+      "Gagaifomauga 3",
+      "Vaisigano 1",
+      "Vaisigano 2",
+      "Falealupo",
+      "Alataua i Sisifo",
+      "Salega 1",
+      "Salega 2",
+      "Palauli 1",
+      "Palauli 2",
+      "Satupaitea",
+      "Palauli 3"
+    ]
+  },
+  "divisionNote": "Statistical Regions and the 51 Political/Census Districts come from the Samoa Master 'Region-District Lookup' tab (SBS 2021 Census).",
+  "map": {
+    "bounds": [
+      [
+        -14.1,
+        -172.85
+      ],
+      [
+        -13.4,
+        -171.35
+      ]
+    ],
+    "center": [
+      -13.75,
+      -172.1
+    ],
+    "zoom": 9
+  },
+  "geojson": {
+    "source": "geoboundaries",
+    "file": "/tmp/kit/wsm/adm2.geojson",
+    "nameProp": "shapeName",
+    "aliases": {
+      "Lefaga & Faleseela": "Lefaga & Faleaseela",
+      "Satuipaitea": "Satupaitea",
+      "Aleipata itupa i Lalo": "Aleipata Itupa i Lalo",
+      "Aleipata itupa i Luga": "Aleipata Itupa i Luga"
+    },
+    "attribution": "geoBoundaries gbOpen WSM ADM2 (Pacific Data Hub, SPC SDD), CC BY 4.0. These are the 43 pre-2021 census districts; most of the 51 current districts have no published boundary yet."
+  },
+  "art": {
+    "header": "img/regional/wsm.webp",
+    "headerCredit": "Regional card image (credit to confirm)",
+    "flag": "img/regional/flags/wsm.png"
+  },
+  "people": "Samoan",
+  "genderLabels": {
+    "male": "Tāne",
+    "female": "Fafine"
+  },
+  "citation": "Vave, R. (2026). Samoan Scholar Dashboard. Vave Lab, University of Hawaiʻi at Mānoa.",
+  "intro": "The Samoan Scholars Database & Dashboard is a sister project to the Tongan and Fijian Scholars Databases & Dashboards, curated by <a href=\"index.html\">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa. It highlights the scholarly research and contributions of Samoan postgraduates and researchers, in Samoa and around the world.",
+  "timezone": "Pacific/Apia"
+}

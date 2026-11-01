@@ -1,0 +1,51 @@
+name: Rotate __COUNTRY__ dashboard passcode
+
+# Manual only. Moves the __COUNTRY__ dashboard onto the passcode stored in the
+# VAVELAB___KEY___PASSCODE repository secret: re-encrypts data/__key__-*.enc,
+# updates the gate files, refreshes cache-busting, commits to main, then starts
+# the validated Pages deploy. The passcode never appears in logs.
+# Optional secret VAVELAB___KEY___COLLAB_PASSCODE sets the collaborator passcode.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  # Shared with the __COUNTRY__ refresh so the two never overlap.
+  group: refresh-__key__-master-file
+  cancel-in-progress: false
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install --quiet cryptography
+      - name: Re-encrypt __COUNTRY__ data and update gate files
+        id: rotate
+        env:
+          VAVELAB___KEY___PASSCODE: ${{ secrets.VAVELAB___KEY___PASSCODE }}
+          VAVELAB___KEY___COLLAB_PASSCODE: ${{ secrets.VAVELAB___KEY___COLLAB_PASSCODE }}
+        run: |
+          out=$(python3 scripts/country_kit/rotate_country_passcode.py __key__)
+          echo "$out"
+          echo "result=$out" >> "$GITHUB_OUTPUT"
+      - name: Commit and deploy
+        if: steps.rotate.outputs.result == 'rotated'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 scripts/bust_cache.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A data js *.html
+          git commit -m "__COUNTRY__ dashboard: rotate passcode"
+          git push origin HEAD:main
+          gh workflow run deploy-pages-validated.yml --ref main

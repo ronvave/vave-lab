@@ -1,310 +1,501 @@
 /**
- * samoa-db-gate.js  —  Passcode gate for the Samoa Scholar Database.
+ * Passcode gate for the Samoan Scholar Database.
  *
- * Independent implementation for the Samoa Scholar Database. No aliases,
- * no cross-jurisdiction imports.
+ * This is a fully separate, sister clone of js/db-gate.js built for the
+ * Samoan Scholar Database admin/dashboard system. It uses its own brand-new
+ * passcode and its own VERIFIER_HASH_HEX \u2014 it never reuses the iTaukei
+ * passcode, hash, or ENC_FILES map. It is not read by, and does not read,
+ * the iTaukei localStorage session key.
  *
- * Wire format (identical shape to sister jurisdictions' encrypted files but
- * NEVER interchangeable — every Samoa .enc file uses this Samoa-only
- * passcode-derived key):
+ * The page ships with encrypted data files (.enc). Nothing renders until the
+ * visitor enters the correct passcode; that passcode is then used to derive
+ * per-file AES-GCM keys and decrypt each file client-side. A correct entry
+ * caches the passcode in localStorage for 30 days so approved devices skip
+ * the prompt on future visits.
+ *
+ * ── Design (per-file salt, no shared invariant) ──
+ * Each .enc file is fully self-describing:
  *
  *   magic (4) || salt (16) || iv (12) || ciphertext+tag
  *   magic  = "IVAV"
  *   KDF    = PBKDF2-HMAC-SHA256, 200,000 iterations, 32-byte key
  *   cipher = AES-GCM (16-byte tag included in the tail)
  *
- * Design notes:
- *   • Each .enc file carries its own salt, so any writer (this page, the
- *     admin surface, the refresh workflow) can re-encrypt one file with a
- *     fresh random salt without invalidating any other.
- *   • Derived AES keys are cached in memory for the tab lifetime, so
- *     PBKDF2 is paid at most once per file per page load.
- *   • A correct passcode is verified against VERIFIER_HASH_HEX
- *     (PBKDF2 of the passcode with a fixed verifier salt) before we
- *     cache anything. Successful entries store {p: b64(passcode), exp}
- *     in localStorage under a Samoa-only key.
- *   • This gate is the ONLY code path that reads samoalab.db.session.v1;
- *     no sister jurisdiction reads or writes that key.
+ * We derive a fresh AES key from (passcode, salt-from-that-file) for every
+ * decrypt. There is NO shared-salt invariant across files, so writers (this
+ * page, the auto-refresh workflow, the admin browser) can each re-encrypt a
+ * single file with a fresh random salt without breaking the others. Derived
+ * per-file keys are cached in-memory for the session so we only pay the
+ * PBKDF2 cost once per file per page load.
+ *
+ * ── 30-day session ──
+ * We prove the passcode is correct with a static verifier hash before
+ * caching it:
+ *
+ *   VERIFIER_HASH = PBKDF2-HMAC-SHA256(passcode, "vavelab-db-verifier-v1",
+ *                                     200,000 iters, 32 bytes)
+ *
+ * The correct-passcode hash is baked into this file as VERIFIER_HASH_HEX.
+ * On successful match we stash { p: b64(passcode), exp } in localStorage
+ * with a 30-day expiry so the visitor is not prompted again. Explicit
+ * "Lock now" clears the entry.
  */
-(function (global) {
+(function () {
   'use strict';
 
-  // ── Samoa-only storage + verifier constants ─────────────────────────────
   var STORAGE_KEY = 'samoalab.db.session.v1';
-  var STORAGE_TTL_DAYS = 30;
-  var STORAGE_TTL_MS = STORAGE_TTL_DAYS * 24 * 60 * 60 * 1000;
+  var REMEMBER_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+  var PBKDF2_ITERATIONS = 200000;
+  var MAGIC = new Uint8Array([0x49, 0x56, 0x41, 0x56]); // "IVAV"
 
-  // PBKDF2 verifier used to check a candidate passcode WITHOUT decrypting
-  // any file. Fixed verifier salt is namespaced to this Samoa build.
-  //   VERIFIER_HASH_HEX = PBKDF2-HMAC-SHA256(passcode,
-  //                                          "samoalab-db-verifier-v1",
-  //                                          100000, 32-byte hex)
-  //   passcode          = Zoopilus1!    (Samoa-only public dashboard passcode)
-  //   salt (hex)        = 7e873db22bc77cf2f63d8a50988156df   (per-user salt for verifier)
+  // Verifier constants — used to prove a passcode is correct BEFORE we try
+  // to decrypt any file, so a wrong entry fails fast with a clear message.
+  // Brand-new Samoan passcode + brand-new hash — NOT the iTaukei
+  // verifier and NOT derived from the iTaukei passcode.
   //
-  // Design detail: the verifier uses a shorter iteration count than the
-  // per-file KDF (100k vs 200k) and a Samoa-specific label so the verifier
-  // hash cannot be replayed against sister-jurisdiction files, even if
-  // someone were foolish enough to reuse a passcode.
-  var VERIFIER_SALT_HEX = '7e873db22bc77cf2f63d8a50988156df';
-  var VERIFIER_HASH_HEX = '155c793753f9ffed2db3b51b4e6dda6eb0085fa899c80b946c9c2e1bf37fd0b3';
-  var VERIFIER_ITERATIONS = 100000;
+  // IMPORTANT: this MUST be the same data-decryption passcode baked into
+  // js/samoa-demo-gate.js's BAKED_PASSCODE, because both gates decrypt
+  // the SAME on-disk data/samoa-master-*.json.enc files (mirrors the
+  // iTaukei system, where db-gate.js's verifier and demo-gate.js's
+  // BAKED_PASSCODE are the same value). This is intentionally NOT the
+  // separate admin-login passcode (PASSWORD_HASH in
+  // admin-samoa-master.js), which is its own independent gate.
+  //   passcode = the country data passcode (GitHub secret, never in comments)
+  //   VERIFIER_HASH_HEX = PBKDF2-HMAC-SHA256(passcode, "vavelab-db-verifier-v1",
+  //                                          200,000 iters, 32 bytes)
+  var VERIFIER_SALT = new TextEncoder().encode('vavelab-db-verifier-v1');
+  var VERIFIER_HASH_HEX =
+    '21d8b195fbf582162da61ed7ec37d326f24c564a04b5e50c4f5d64da22df613a';
 
-  // Per-file KDF parameters — used by decryptFile() below.
-  var FILE_ITERATIONS = 200000;
-  var FILE_KEY_BITS = 256;
-
-  // ── ENC_FILES  ──────────────────────────────────────────────────────────
-  // Plain-path → encrypted-path map. The public dashboard fetches by plain
-  // path; this gate transparently rewrites to the .enc path and decrypts.
-  //
-  // All paths live under data/samoa-*  —  the encryptor and decryptor both
-  // refuse to touch any file not matching a Samoa prefix (see
-  // scripts/samoa_encrypt_data.py::_FORBIDDEN_PREFIXES).
+  // Every file the Samoan database fetches. Maps the plaintext .json URL
+  // that samoa-database-adapter.js / admin-samoa-master.js request onto
+  // the on-disk .enc URL. All Samoan-prefixed \u2014 never overlaps with the
+  // iTaukei ENC_FILES map.
   var ENC_FILES = {
-    // Master-file snapshot (produced by refresh-samoa-master-file.yml)
-    'data/samoa-master-scholars.json':               'data/samoa-master-scholars.json.enc',
-    'data/samoa-master-publications.json':           'data/samoa-master-publications.json.enc',
-    'data/samoa-master-authorship.json':             'data/samoa-master-authorship.json.enc',
-    'data/samoa-master-researcher-authorship.json':  'data/samoa-master-researcher-authorship.json.enc',
-    'data/samoa-master-grad-degrees.json':           'data/samoa-master-grad-degrees.json.enc',
-    'data/samoa-master-mobility.json':               'data/samoa-master-mobility.json.enc',
-    'data/samoa-master-geography.json':              'data/samoa-master-geography.json.enc',
-    'data/samoa-master-aggregates.json':             'data/samoa-master-aggregates.json.enc',
-    'data/samoa-master-worldpoints.json':            'data/samoa-master-worldpoints.json.enc',
-    'data/samoa-last-master-sync.json':              'data/samoa-last-master-sync.json.enc',
-
-    // Six-dimension geography lookups (see samoa_geo/ for source-of-truth CSVs)
-    'data/samoa-regions.json':                       'data/samoa-regions.json.enc',
-    'data/samoa-political-districts.json':           'data/samoa-political-districts.json.enc',
-    'data/samoa-villages.json':                      'data/samoa-villages.json.enc',
-    'data/samoa-specific-islands.json':              'data/samoa-specific-islands.json.enc',
-    'data/samoa-traditional-itumalo.json':           'data/samoa-traditional-itumalo.json.enc',
-    'data/samoa-electoral-constituencies.json':      'data/samoa-electoral-constituencies.json.enc',
-    'data/samoa-village-coordinates.json':           'data/samoa-village-coordinates.json.enc',
-
-    // Admin-owned enrichment (Scholar-ID keyed)
-    'data/samoa-scholar-enrichment.json':            'data/samoa-scholar-enrichment.json.enc',
-    'data/samoa-scholar-insights-master.json':       'data/samoa-scholar-insights-master.json.enc'
+    'data/samoa-zotero-snapshot.json': 'data/samoa-zotero-snapshot.json.enc',
+    'data/samoa-districts.geojson':      'data/samoa-districts.geojson.enc',
+    'data/world-universities.json':      'data/world-universities.json.enc',
+    'data/samoa-districts.json':         'data/samoa-districts.json.enc',
+    'data/samoa-scholar-profiles.json': 'data/samoa-scholar-profiles.json.enc',
+    'data/samoa-last-sync.json':        'data/samoa-last-sync.json.enc',
+    'data/samoa-graduate-studies.json': 'data/samoa-graduate-studies.json.enc',
+    'data/samoa-scholar-insights.json': 'data/samoa-scholar-insights.json.enc',
+    // Panel C1 body-composition chart — gender x publication-type aggregates.
+    'data/samoa-body-composition.json': 'data/samoa-body-composition.json.enc',
+    // V2 (Master-file) variant — served to the iframe when the parent passes
+    // ?src=master. Same schema as the V1 file; the aggregates are derived
+    // from the Master authorship join instead of the Zotero snapshot.
+    'data/samoa-body-composition-master.json': 'data/samoa-body-composition-master.json.enc',
+    // ===== Master-file rebuild (V2) =====
+    // These are consumed by samoa-research-database-master.html /
+    // js/samoa-database-master.js and refreshed by the Samoan variant of
+    // the every-2h refresh-master-file.yml workflow. The plaintext .json
+    // paths are gitignored; only the .enc blobs are committed.
+    'data/samoa-master-scholars.json':     'data/samoa-master-scholars.json.enc',
+    'data/samoa-master-publications.json': 'data/samoa-master-publications.json.enc',
+    'data/samoa-master-authorship.json':   'data/samoa-master-authorship.json.enc',
+    'data/samoa-master-researcher-authorship.json':
+      'data/samoa-master-researcher-authorship.json.enc',
+    'data/samoa-master-grad-degrees.json': 'data/samoa-master-grad-degrees.json.enc',
+    'data/samoa-master-mobility.json':     'data/samoa-master-mobility.json.enc',
+    'data/samoa-master-geography.json':    'data/samoa-master-geography.json.enc',
+    'data/samoa-master-positions.json':    'data/samoa-master-positions.json.enc',
+    'data/samoa-master-news.json':         'data/samoa-master-news.json.enc',
+    'data/samoa-master-aggregates.json':   'data/samoa-master-aggregates.json.enc',
+    'data/samoa-master-worldpoints.json':  'data/samoa-master-worldpoints.json.enc',
+    'data/samoa-last-master-sync.json':    'data/samoa-last-master-sync.json.enc',
+    // Admin V2 supplementary layers (Scholar-ID keyed). Optional; adapter
+    // treats HTTP 404 on the .enc as an empty document so an admin can save
+    // once to create the file.
+    'data/samoa-scholar-enrichment.json':      'data/samoa-scholar-enrichment.json.enc',
+    'data/samoa-scholar-insights-master.json': 'data/samoa-scholar-insights-master.json.enc'
   };
 
-  // ── State ────────────────────────────────────────────────────────────────
-  var currentPasscode = null;              // populated after unlock()
-  var cachedFileKeys = Object.create(null); // path → CryptoKey (per-file)
+  // In-memory state once the visitor is verified. Never leaves the page.
+  //   cachedPasscode: string — the passcode itself, kept in memory so we can
+  //     derive a fresh per-file AES key on demand.
+  //   keyBySaltHex: Map<hex-salt-string, CryptoKey> — memoises PBKDF2 output
+  //     for each file's salt so we only pay the cost once per file per page
+  //     load, no matter how many times itaukei-database.js re-fetches.
+  var cachedPasscode = null;
+  var keyBySaltHex = Object.create(null);
 
-  // ── Byte utilities ───────────────────────────────────────────────────────
-  function hexToBytes(hex) {
-    if (hex.length % 2 !== 0) throw new Error('samoa-db-gate: bad hex length');
-    var out = new Uint8Array(hex.length / 2);
-    for (var i = 0; i < out.length; i++) {
-      out[i] = parseInt(hex.substr(i * 2, 2), 16);
-    }
-    return out;
+  // ---------- Low-level crypto ----------
+
+  function bytesEqual(a, b) {
+    if (a.length !== b.length) return false;
+    for (var i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+    return true;
   }
 
   function bytesToHex(bytes) {
-    var out = '';
+    var hex = '';
     for (var i = 0; i < bytes.length; i++) {
-      var h = bytes[i].toString(16);
-      out += (h.length === 1 ? '0' : '') + h;
+      hex += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
     }
-    return out;
+    return hex;
   }
 
-  function b64Encode(str) {
-    // UTF-8 safe base64 (per MDN "Base64 in JavaScript" pattern)
-    return btoa(unescape(encodeURIComponent(str)));
+  function b64encode(buf) {
+    var bytes = new Uint8Array(buf);
+    var s = '';
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s);
   }
-  function b64Decode(b64) {
-    return decodeURIComponent(escape(atob(b64)));
+  function b64decode(str) {
+    var s = atob(str);
+    var bytes = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) bytes[i] = s.charCodeAt(i);
+    return bytes;
   }
 
-  // ── PBKDF2 helpers ───────────────────────────────────────────────────────
-  function importPasscode(passcode) {
-    return crypto.subtle.importKey(
+  function bust(url) {
+    return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+  }
+
+  // PBKDF2(passcode, salt) → 256-bit raw key material. We derive a
+  // WebCrypto AES-GCM key from that material so it can be used directly
+  // with crypto.subtle.decrypt / encrypt.
+  async function deriveAesKey(passcode, salt) {
+    var baseKey = await crypto.subtle.importKey(
       'raw',
       new TextEncoder().encode(passcode),
       { name: 'PBKDF2' },
       false,
-      ['deriveBits', 'deriveKey']
+      ['deriveKey']
+    );
+    return crypto.subtle.deriveKey(
+      { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      baseKey,
+      { name: 'AES-GCM', length: 256 },
+      false, // no need to export — we re-derive on demand
+      ['decrypt', 'encrypt']
     );
   }
 
-  function verifyPasscode(passcode) {
-    // Compute PBKDF2 of the candidate with the fixed verifier salt and
-    // compare (constant-time-ish) against VERIFIER_HASH_HEX.
-    return importPasscode(passcode).then(function (baseKey) {
-      return crypto.subtle.deriveBits(
-        {
-          name: 'PBKDF2',
-          salt: hexToBytes(VERIFIER_SALT_HEX),
-          iterations: VERIFIER_ITERATIONS,
-          hash: 'SHA-256'
-        },
-        baseKey,
-        256
-      );
-    }).then(function (derived) {
-      var hex = bytesToHex(new Uint8Array(derived));
-      // Constant-time compare (avoids early-exit timing signal).
-      if (hex.length !== VERIFIER_HASH_HEX.length) return false;
-      var diff = 0;
-      for (var i = 0; i < hex.length; i++) {
-        diff |= hex.charCodeAt(i) ^ VERIFIER_HASH_HEX.charCodeAt(i);
-      }
-      return diff === 0;
-    });
+  // Verifier hash of a passcode, used to fail fast on the wrong entry
+  // without touching any encrypted file.
+  async function verifierHashHex(passcode) {
+    var baseKey = await crypto.subtle.importKey(
+      'raw',
+      new TextEncoder().encode(passcode),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveBits']
+    );
+    var bits = await crypto.subtle.deriveBits(
+      { name: 'PBKDF2', salt: VERIFIER_SALT, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      baseKey,
+      256
+    );
+    return bytesToHex(new Uint8Array(bits));
   }
 
-  function deriveFileKey(passcode, salt) {
-    return importPasscode(passcode).then(function (baseKey) {
-      return crypto.subtle.deriveKey(
-        {
-          name: 'PBKDF2',
-          salt: salt,
-          iterations: FILE_ITERATIONS,
-          hash: 'SHA-256'
-        },
-        baseKey,
-        { name: 'AES-GCM', length: FILE_KEY_BITS },
-        false,
-        ['decrypt', 'encrypt']
-      );
-    });
+  // Get (or lazily derive + memoise) the AES-GCM key for one file's salt.
+  async function keyForSalt(saltBytes) {
+    if (!cachedPasscode) {
+      throw new Error('Database is locked \u2014 no passcode in memory.');
+    }
+    var hex = bytesToHex(saltBytes);
+    if (keyBySaltHex[hex]) return keyBySaltHex[hex];
+    var key = await deriveAesKey(cachedPasscode, saltBytes);
+    keyBySaltHex[hex] = key;
+    return key;
   }
 
-  // ── Session persistence ─────────────────────────────────────────────────
-  function storeSession(passcode) {
-    try {
-      var payload = JSON.stringify({
-        p: b64Encode(passcode),
-        exp: Date.now() + STORAGE_TTL_MS
-      });
-      localStorage.setItem(STORAGE_KEY, payload);
-    } catch (e) { /* private mode, quota, etc. — non-fatal */ }
+  // Read an IVAV blob (ArrayBuffer or Uint8Array) and return { key, iv, ct }
+  // ready to hand to crypto.subtle.decrypt.
+  function parseBlob(blob) {
+    var bytes = blob instanceof Uint8Array ? blob : new Uint8Array(blob);
+    if (bytes.length < 4 + 16 + 12 + 16) throw new Error('Encrypted blob too short.');
+    if (!bytesEqual(bytes.slice(0, 4), MAGIC)) throw new Error('Not an IVAV blob.');
+    return {
+      salt: bytes.slice(4, 20),
+      iv: bytes.slice(20, 32),
+      ct: bytes.slice(32)
+    };
   }
 
-  function loadSession() {
+  async function decryptBlob(blob) {
+    var parts = parseBlob(blob);
+    var key = await keyForSalt(parts.salt);
+    var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: parts.iv }, key, parts.ct);
+    return new TextDecoder().decode(plainBuf);
+  }
+
+  // Encrypt a UTF-8 string into an IVAV blob using a FRESH random salt +
+  // fresh random IV. Because per-file salts are independent, this can be
+  // used to update any one .enc file without touching the others.
+  async function encryptString(plaintext) {
+    if (!cachedPasscode) {
+      throw new Error('Database is locked \u2014 no passcode in memory.');
+    }
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var key = await deriveAesKey(cachedPasscode, salt);
+    var body = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv },
+      key,
+      new TextEncoder().encode(plaintext)
+    );
+    var bodyBytes = new Uint8Array(body);
+    var out = new Uint8Array(4 + 16 + 12 + bodyBytes.length);
+    out.set(MAGIC, 0);
+    out.set(salt, 4);
+    out.set(iv, 20);
+    out.set(bodyBytes, 32);
+    // Memoise so a subsequent decrypt of the same freshly-uploaded file
+    // (e.g. after admin push, if the page refetches) is instant.
+    keyBySaltHex[bytesToHex(salt)] = key;
+    return out; // Uint8Array, ready to upload as bytes
+  }
+
+  // ---------- Session persistence ----------
+
+  function loadStoredSession() {
     try {
       var raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
-      var obj = JSON.parse(raw);
-      if (!obj || typeof obj.p !== 'string' || typeof obj.exp !== 'number') return null;
-      if (Date.now() > obj.exp) {
+      var parsed = JSON.parse(raw);
+      if (!parsed || !parsed.p || !parsed.exp) return null;
+      if (parsed.exp < Date.now()) {
         localStorage.removeItem(STORAGE_KEY);
         return null;
       }
-      return b64Decode(obj.p);
-    } catch (e) { return null; }
+      return parsed;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function storeSession(passcode) {
+    // We base64-encode the passcode as light obfuscation against casual
+    // devtools inspection. Anyone with hands-on device access inside the
+    // 30-day window can still recover it — that's the accepted trade-off
+    // for skipping the prompt on every visit.
+    var record = {
+      p: b64encode(new TextEncoder().encode(passcode)),
+      exp: Date.now() + REMEMBER_MS
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
   }
 
   function clearSession() {
-    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
-    currentPasscode = null;
-    cachedFileKeys = Object.create(null);
+    localStorage.removeItem(STORAGE_KEY);
+    cachedPasscode = null;
+    keyBySaltHex = Object.create(null);
   }
 
-  // ── Public: unlock() ─────────────────────────────────────────────────────
-  // Attempts to unlock with the supplied passcode. Resolves to true on
-  // success (and persists the session), false on incorrect passcode.
-  function unlock(passcode) {
-    if (typeof passcode !== 'string' || !passcode.length) {
-      return Promise.resolve(false);
+  // Verify a passcode against the static verifier hash. Returns true on
+  // match, false otherwise. This is deterministic and touches NO network.
+  async function verifyPasscode(passcode) {
+    var got = await verifierHashHex(passcode);
+    return got === VERIFIER_HASH_HEX;
+  }
+
+  // ---------- Public fetch API used by itaukei-database.js + admin.js ----------
+
+  async function fetchJsonEncrypted(url) {
+    var encUrl = ENC_FILES[url];
+    if (!encUrl) {
+      // Not an encrypted target — fall through to a normal fetch (e.g. Google
+      // Sheets CSVs pulled by admin.html).
+      var r0 = await fetch(bust(url), { cache: 'no-store' });
+      if (!r0.ok) throw new Error('Fetch failed: ' + url + ' (' + r0.status + ')');
+      return r0.json();
     }
-    return verifyPasscode(passcode).then(function (ok) {
-      if (ok) {
-        currentPasscode = passcode;
-        cachedFileKeys = Object.create(null);
-        storeSession(passcode);
+    if (!cachedPasscode) throw new Error('Database is locked \u2014 no passcode.');
+    var res = await fetch(bust(encUrl), { cache: 'no-store' });
+    if (!res.ok) throw new Error('Fetch failed: ' + encUrl + ' (' + res.status + ')');
+    var text = await decryptBlob(await res.arrayBuffer());
+    return JSON.parse(text);
+  }
+
+  // Admin helper: encrypt an updated plaintext JSON body for upload. Uses a
+  // fresh per-file salt so pushing this file DOES NOT need to be coordinated
+  // with any other .enc file already on origin — every file is independent.
+  async function encryptForUpload(plaintext) {
+    return encryptString(plaintext);
+  }
+
+  // ---------- Lock-screen UI ----------
+
+  function buildLockScreenHtml() {
+    return ''
+      + '<section class="db-gate" role="dialog" aria-modal="true" aria-labelledby="db-gate-title">'
+      +   '<div class="db-gate__panel">'
+      +     '<div class="db-gate__badge" aria-hidden="true">'
+      +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
+      +     '</div>'
+      +     '<h1 id="db-gate-title" class="db-gate__title">Preview access</h1>'
+      +     '<p class="db-gate__lede">This Samoan Scholar Database is being previewed with a small group of colleagues while feedback is gathered. If Prof. Ron Vave has shared a passcode with you, enter it below.</p>'
+      +     '<form class="db-gate__form" novalidate>'
+      +       '<label for="db-gate-input" class="db-gate__label">Passcode</label>'
+      +       '<input id="db-gate-input" type="password" autocomplete="current-password" spellcheck="false" autocapitalize="off" required />'
+      +       '<button type="submit" class="db-gate__submit"><span data-gate-submit-label>Unlock database</span></button>'
+      +       '<p class="db-gate__error" data-gate-error hidden></p>'
+      +       '<p class="db-gate__hint">Access is remembered on this device for 30 days.</p>'
+      +     '</form>'
+      +     '<p class="db-gate__foot">Curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Prof. Ron Vave</a> \u00b7 University of Hawai\u02bbi at M\u0101noa</p>'
+      +   '</div>'
+      + '</section>';
+  }
+
+  function injectLockScreenStyles() {
+    if (document.getElementById('db-gate-styles')) return;
+    var css = ''
+      + '.db-gate{min-height:calc(100vh - 80px);display:flex;align-items:center;justify-content:center;padding:var(--space-4,32px) var(--space-3,24px);background:linear-gradient(180deg,#f8f5f0 0%,#efe8dc 60%,#e8ded0 100%);}'
+      + '.db-gate__panel{width:100%;max-width:460px;background:#fff;border:1px solid rgba(15,57,33,0.12);border-radius:14px;padding:36px 32px 28px;box-shadow:0 20px 50px -22px rgba(15,57,33,0.28),0 6px 16px -8px rgba(15,57,33,0.14);text-align:center;}'
+      + '.db-gate__badge{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:rgba(14,116,144,0.10);color:#0F3921;margin:0 auto 18px;}'
+      + '.db-gate__title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;font-size:1.9rem;line-height:1.15;margin:0 0 10px;color:#0F3921;letter-spacing:-0.01em;}'
+      + '.db-gate__lede{margin:0 0 22px;color:#4a5b52;font-size:0.98rem;line-height:1.55;}'
+      + '.db-gate__form{display:flex;flex-direction:column;gap:12px;text-align:left;}'
+      + '.db-gate__label{font-family:"DM Sans",system-ui,sans-serif;font-weight:600;font-size:0.78rem;letter-spacing:0.08em;text-transform:uppercase;color:#0F3921;}'
+      + '.db-gate__form input[type="password"]{-webkit-appearance:none;appearance:none;width:100%;padding:12px 14px;font-family:"DM Sans",system-ui,sans-serif;font-size:1rem;border:1.5px solid rgba(15,57,33,0.20);border-radius:10px;background:#fbfaf7;color:#0F3921;transition:border-color 0.15s ease,box-shadow 0.15s ease;}'
+      + '.db-gate__form input[type="password"]:focus{outline:none;border-color:#0E7490;box-shadow:0 0 0 3px rgba(14,116,144,0.18);}'
+      + '.db-gate__submit{margin-top:6px;padding:12px 18px;border:none;border-radius:10px;background:#0F3921;color:#fff;font-family:"DM Sans",system-ui,sans-serif;font-weight:600;font-size:0.98rem;letter-spacing:0.01em;cursor:pointer;transition:background 0.15s ease,transform 0.05s ease;}'
+      + '.db-gate__submit:hover{background:#12442a;}'
+      + '.db-gate__submit:active{transform:translateY(1px);}'
+      + '.db-gate__submit:disabled{opacity:0.7;cursor:progress;}'
+      + '.db-gate__error{margin:2px 0 0;color:#8B3A0F;font-size:0.9rem;font-weight:500;}'
+      + '.db-gate__hint{margin:8px 0 0;color:#7a8880;font-size:0.83rem;text-align:center;}'
+      + '.db-gate__foot{margin:22px 0 0;color:#7a8880;font-size:0.82rem;}'
+      + '.db-gate__foot a{color:#0E7490;text-decoration:underline;text-underline-offset:3px;}'
+      + '.db-gate-locknow{position:fixed;bottom:16px;right:16px;padding:8px 14px;font-family:"DM Sans",system-ui,sans-serif;font-size:0.82rem;font-weight:600;color:#0F3921;background:#fff;border:1px solid rgba(15,57,33,0.20);border-radius:999px;cursor:pointer;box-shadow:0 6px 16px -8px rgba(15,57,33,0.20);z-index:9999;}'
+      + '.db-gate-locknow:hover{background:#f5efe4;}'
+      + 'body.db-gate-locked main > *:not(.db-gate){display:none !important;}'
+      + 'body.db-gate-locked [data-db-hide-when-locked]{display:none !important;}';
+    var style = document.createElement('style');
+    style.id = 'db-gate-styles';
+    style.textContent = css;
+    document.head.appendChild(style);
+  }
+
+  function injectLockNowButton() {
+    if (document.getElementById('db-gate-locknow')) return;
+    var btn = document.createElement('button');
+    btn.id = 'db-gate-locknow';
+    btn.className = 'db-gate-locknow';
+    btn.type = 'button';
+    btn.textContent = 'Lock now';
+    btn.title = 'Clear the 30-day session on this device and require the passcode again.';
+    btn.addEventListener('click', function () {
+      clearSession();
+      // Full reload — simplest way to re-boot the gate and unmount panels.
+      location.reload();
+    });
+    document.body.appendChild(btn);
+  }
+
+  function renderLockScreen(onUnlock) {
+    injectLockScreenStyles();
+    document.body.classList.add('db-gate-locked');
+    var main = document.querySelector('main');
+    if (!main) return;
+    var wrap = document.createElement('div');
+    wrap.innerHTML = buildLockScreenHtml();
+    var gate = wrap.firstElementChild;
+    main.insertBefore(gate, main.firstChild);
+
+    var input = gate.querySelector('#db-gate-input');
+    var form = gate.querySelector('form');
+    var errEl = gate.querySelector('[data-gate-error]');
+    var btn = form.querySelector('button');
+    var btnLabel = form.querySelector('[data-gate-submit-label]');
+    setTimeout(function () { input.focus(); }, 60);
+
+    form.addEventListener('submit', async function (ev) {
+      ev.preventDefault();
+      var pass = (input.value || '').trim();
+      if (!pass) return;
+      errEl.hidden = true;
+      btn.disabled = true;
+      btnLabel.textContent = 'Unlocking\u2026';
+      try {
+        var ok = await verifyPasscode(pass);
+        if (!ok) throw new Error('bad-passcode');
+        cachedPasscode = pass;
+        storeSession(pass);
+        injectLockNowButton();
+        gate.style.transition = 'opacity 0.25s ease';
+        gate.style.opacity = '0';
+        setTimeout(function () {
+          gate.remove();
+          document.body.classList.remove('db-gate-locked');
+          onUnlock();
+        }, 240);
+      } catch (e) {
+        errEl.textContent = 'That passcode did not unlock the database. Please try again.';
+        errEl.hidden = false;
+        btnLabel.textContent = 'Unlock database';
+        btn.disabled = false;
+        input.select();
       }
-      return ok;
     });
   }
 
-  // ── Public: tryResume() ──────────────────────────────────────────────────
-  // Reads localStorage; returns the cached passcode string if valid, else
-  // null. Does NOT re-verify against VERIFIER_HASH_HEX — that verification
-  // already happened when the session was created.
-  function tryResume() {
-    var pw = loadSession();
-    if (!pw) return null;
-    currentPasscode = pw;
-    cachedFileKeys = Object.create(null);
-    return pw;
-  }
+  // ---------- Boot ----------
 
-  // ── Public: isUnlocked() ─────────────────────────────────────────────────
-  function isUnlocked() { return currentPasscode !== null; }
+  async function boot(onReady) {
+    // Ensure lock CSS is available immediately so hidden real content stays hidden.
+    injectLockScreenStyles();
+    document.body.classList.add('db-gate-locked');
 
-  // ── Public: decryptFile(plainPath) → Promise<Uint8Array plaintext> ──────
-  // Fetches ENC_FILES[plainPath], parses the IVAV magic|salt|iv|ct header,
-  // derives (passcode, salt) → AES-GCM key, decrypts, returns raw bytes.
-  //
-  // The caller is responsible for JSON.parse / new TextDecoder().decode()
-  // as appropriate for the file.
-  function decryptFile(plainPath) {
-    if (!currentPasscode) {
-      return Promise.reject(new Error('samoa-db-gate: not unlocked'));
-    }
-    var encPath = ENC_FILES[plainPath];
-    if (!encPath) {
-      return Promise.reject(new Error('samoa-db-gate: unknown file ' + plainPath));
-    }
-
-    return fetch(encPath, { cache: 'no-store' }).then(function (resp) {
-      if (!resp.ok) throw new Error('samoa-db-gate: fetch failed ' + encPath + ' ' + resp.status);
-      return resp.arrayBuffer();
-    }).then(function (buf) {
-      var bytes = new Uint8Array(buf);
-      if (bytes.length < 4 + 16 + 12 + 16) {
-        throw new Error('samoa-db-gate: file too short ' + encPath);
+    var stored = loadStoredSession();
+    if (stored) {
+      try {
+        var pass = new TextDecoder().decode(b64decode(stored.p));
+        // Re-verify against the static hash — cheap sanity check that the
+        // stored value is still the current passcode (e.g. hasn't been
+        // rotated in a new build).
+        var ok = await verifyPasscode(pass);
+        if (ok) {
+          cachedPasscode = pass;
+          document.body.classList.remove('db-gate-locked');
+          injectLockNowButton();
+          onReady();
+          return;
+        }
+        // Stored passcode no longer matches — passcode was rotated. Fall
+        // through to a fresh lock screen.
+        clearSession();
+      } catch (e) {
+        clearSession();
       }
-      // Magic check — "IVAV"
-      if (bytes[0] !== 0x49 || bytes[1] !== 0x56 || bytes[2] !== 0x41 || bytes[3] !== 0x56) {
-        throw new Error('samoa-db-gate: bad magic in ' + encPath);
-      }
-      var salt = bytes.slice(4, 4 + 16);
-      var iv = bytes.slice(4 + 16, 4 + 16 + 12);
-      var ct = bytes.slice(4 + 16 + 12);
-
-      // Cache the derived key per plain path so a repeated fetch of the
-      // same file is cheap. Cache is invalidated on unlock() and clear().
-      var cached = cachedFileKeys[plainPath];
-      var keyPromise = cached
-        ? Promise.resolve(cached)
-        : deriveFileKey(currentPasscode, salt).then(function (k) {
-            cachedFileKeys[plainPath] = k;
-            return k;
-          });
-
-      return keyPromise.then(function (key) {
-        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ct);
-      }).then(function (ptBuf) {
-        return new Uint8Array(ptBuf);
-      });
-    });
+    }
+    renderLockScreen(onReady);
   }
 
-  // ── Public: decryptFileJSON(plainPath) → Promise<Object> ────────────────
-  function decryptFileJSON(plainPath) {
-    return decryptFile(plainPath).then(function (bytes) {
-      return JSON.parse(new TextDecoder().decode(bytes));
-    });
+  // Best-effort unlock using localStorage only. Doesn't touch the UI — no
+  // lock screen is shown even if there is no stored session. Useful for
+  // side-panel pages (e.g. itaukei-body-composition.html embedded as an
+  // iframe in the research database) that want to opportunistically decrypt
+  // an .enc file when the visitor is already unlocked, without ever
+  // prompting a passcode of their own. Returns true if a valid session was
+  // adopted and future fetchJson() calls will decrypt cleanly.
+  async function tryUnlockFromStorage() {
+    if (cachedPasscode) return true;
+    var stored = loadStoredSession();
+    if (!stored) return false;
+    try {
+      var pass = new TextDecoder().decode(b64decode(stored.p));
+      var ok = await verifyPasscode(pass);
+      if (!ok) { clearSession(); return false; }
+      cachedPasscode = pass;
+      return true;
+    } catch (e) {
+      clearSession();
+      return false;
+    }
   }
 
-  // ── Public: listFiles() ─────────────────────────────────────────────────
-  function listFiles() { return Object.keys(ENC_FILES); }
-
-  // ── Export ──────────────────────────────────────────────────────────────
-  global.samoaDbGate = {
-    unlock: unlock,
-    tryResume: tryResume,
-    isUnlocked: isUnlocked,
-    decryptFile: decryptFile,
-    decryptFileJSON: decryptFileJSON,
+  // Expose the API for itaukei-database.js and admin.js.
+  window.dbGate = {
+    boot: boot,
+    fetchJson: fetchJsonEncrypted,
     clearSession: clearSession,
-    listFiles: listFiles,
-    // Introspection for tests only
-    _STORAGE_KEY: STORAGE_KEY
+    encryptForUpload: encryptForUpload,
+    isUnlocked: function () { return !!cachedPasscode; },
+    tryUnlockFromStorage: tryUnlockFromStorage
   };
-})(typeof window !== 'undefined' ? window : this);
+})();

@@ -1,41 +1,17 @@
 """
-Central configuration for the Samoa Scholar Database Master file → dashboard-
-snapshot pipeline.
+Central configuration for the Samoan Master file → dashboard-snapshot pipeline.
 
-Configuration for the Samoa Scholar Database pipeline. Points at the Samoa
-spreadsheet ID and never any other jurisdiction's sheet:
-
-Isolation guard: this module refuses to run if SPREADSHEET_ID is any of the
-sister-system spreadsheet IDs enumerated in _FORBIDDEN_SPREADSHEET_IDS below.
-  Samoa sheet:    set below                                     (this file's target)
+Sister clone of scripts/master_file_config.py (iTaukei). Points at the
+Samoan spreadsheet ID, never the read-only iTaukei sheet
+(1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg).
 
 This module is the single source of truth for:
 - Spreadsheet ID
 - Sheet names and header-row offsets
 - Public-field allowlists (which columns are safe to publish)
 - Publication type taxonomy
-- Statistical Region → Political/Census District mapping
-- Traditional itūmālō lookup (constitutional, kept separate from census)
-- Electoral Constituency lookup (time-versioned)
-- Specific Island vocabulary (independent, never derived from district)
+- Island Division → districts mapping (never a Fijian confederacy)
 - Guide-required constants
-
-CRITICAL — six independent geography dimensions
------------------------------------------------
-Samoa's blueprint (Samoa-Scholarly-Database-Master-Schema-Build-Blueprint.docx,
-Prof. Ron Vave, 2026-08-30) requires that these six systems be preserved as
-separate lookup dimensions. This module exposes them as six independent Python
-constants — never collapsed into a single hierarchy:
-
-  1. STATISTICAL_REGIONS          - 4 SBS census regions
-  2. REGION_TO_DISTRICTS          - SBS Political/Census districts by region
-  3. VILLAGES                     - SBS Village Directory (loaded from workbook)
-  4. SPECIFIC_ISLANDS             - independent island vocabulary
-  5. TRADITIONAL_ITUMALO          - 11 constitutional traditional districts
-  6. ELECTORAL_CONSTITUENCIES     - time-versioned electoral constituencies
-
-Any code that tries to substitute one for another (e.g. traditional itūmālō
-for a census district) must be rejected in review.
 """
 from __future__ import annotations
 
@@ -43,13 +19,7 @@ from __future__ import annotations
 # Source spreadsheet
 # =============================================================================
 
-# NOTE: this constant is populated when Ron creates the Samoa Master Sheet and
-# copies its spreadsheet ID here. Until then, the pipeline is inert — the
-# transformer refuses to run against a placeholder. The guard at the bottom
-# of this file also refuses any spreadsheet ID enumerated in
-# _FORBIDDEN_SPREADSHEET_IDS to prevent accidental cross-system writes.
-SPREADSHEET_ID = "1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ"
-
+SPREADSHEET_ID = "1X-RZSWKbzG-oY7anCYaR54Ev8h2G8yl0SXy6jMNhCHQ"  # Samoan sheet — NEVER the iTaukei sheet (1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg)
 SPREADSHEET_HUMAN_URL = (
     f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/edit"
 )
@@ -57,45 +27,45 @@ SPREADSHEET_HUMAN_URL = (
 # =============================================================================
 # Sheet-name → (header_row_1indexed, first_data_row_1indexed) mapping
 # Row 1 is a title banner, row 2 is a description, row 3 is either blank or
-# a group-label row (only for Publications), row 4 is the real header.
+# a confederacy-group label row, row 4 is the real header.
 # =============================================================================
 
 SHEETS = {
     "Scholars": {"header_row": 4, "first_data": 5},
-    # Part-Indigenous: mixed-heritage scholars kept in a separate roster so
-    # V2 headline counts / cards / geography summaries stay a clean Indigenous
-    # roster. Headline inclusion of this tier is an explicit dashboard filter.
-    "Part-Indigenous": {"header_row": 4, "first_data": 5},
+    # Part-Samoan: scholars whose father is NOT Samoan (mother is). Because
+    # Samoan identity in this database follows the same patrilineal rule as
+    # the iTaukei system, these are excluded from every V2 dashboard surface
+    # (map popups, uni-detail lists, KPIs, aggregates, publications,
+    # discipline breakdowns, etc.). The transformer reads this sheet only to
+    # build the exclusion set of Scholar IDs.
+    "Part-Samoan": {"header_row": 4, "first_data": 5},
     "Graduate Degrees": {"header_row": 4, "first_data": 5},
     "Non-Completed Degrees": {"header_row": 4, "first_data": 5},
     "Scholarships & Funding": {"header_row": 4, "first_data": 5},
     "Awards & Honours": {"header_row": 4, "first_data": 5},
     "Positions": {"header_row": 4, "first_data": 5},
-    "M>PhD Mobility": {"header_row": 4, "first_data": 5},
+    "M>PhD mobility": {"header_row": 4, "first_data": 5},
     "Publications": {
         "header_row": 4,
         "first_data": 5,
-        "group_row": 3,  # Statistical Region group labels (never itūmālō)
+        "group_row": 3,  # Island Division group labels (never confederacy)
     },
     "Authorship": {"header_row": 4, "first_data": 5},
+    # Non-Samoan researcher authorship links (WSM-R IDs). Used together
+    # with `Authorship` to decide whether a publication is
+    # Samoan-associated in Panel C2's Samoan view.
     "Researcher Authorship": {"header_row": 4, "first_data": 5},
     "Research Geography": {"header_row": 4, "first_data": 5},
     "Research Geography Coordinates": {"header_row": 4, "first_data": 5},
     "Institutions": {"header_row": 4, "first_data": 5},
-    "Regions Lookup": {"header_row": 4, "first_data": 5},
-    "Region-District Lookup": {"header_row": 4, "first_data": 5},
-    "Village Geography Lookup": {"header_row": 4, "first_data": 5},
-    "Traditional Itūmālō Lookup": {"header_row": 4, "first_data": 5},
-    "Electoral Constituency Lookup": {"header_row": 4, "first_data": 5},
-    "Source Register": {"header_row": 4, "first_data": 5},
-    "Change Log": {"header_row": 4, "first_data": 5},
-    "Coauthor Network": {"header_row": 4, "first_data": 5},
-    "Samoan Researchers": {"header_row": 4, "first_data": 5},
+    # Panel A4 "Celebrating Samoan scholars": curated news stories. Optional
+    # tab; a missing tab yields an empty news snapshot.
+    "News": {"header_row": 4, "first_data": 5},
     "Dashboard": {"header_row": None, "first_data": 4},  # freeform QA sheet
 }
 
 # =============================================================================
-# Publication type taxonomy — blueprint §5.3
+# Publication type taxonomy — guide §7 headline total
 # =============================================================================
 
 HEADLINE_PUBLICATION_TYPES = [
@@ -106,179 +76,288 @@ HEADLINE_PUBLICATION_TYPES = [
     "Book",
 ]
 
-# Present in the Master Sheet but excluded from V2 headline counts, chips,
-# and lists (Samoa V2 policy: preprints and unresolved 'Document' items).
+# Full publication-type universe — anything not in HEADLINE_PUBLICATION_TYPES
+# is excluded from the "publication count" totals but may still be shown in
+# panels that opt-in (like the full type breakdown table).
 OTHER_PUBLICATION_TYPES_SEEN = [
     "Report",
-    "Conference Paper",
-    "Preprint",       # V2-excluded
-    "Unpublished",    # V2-excluded pending reclassification
+    "Conference paper",
+    "Unpublished report",
     "Other",
 ]
 
 # =============================================================================
-# Six geography dimensions — kept SEPARATE
-# -----------------------------------------------------------------------------
-# 1. Statistical Regions (SBS census spine top)
-# 2. Region → SBS Political/Census District mapping
-# 3. Traditional Itūmālō (constitutional; parallel dimension)
-# 4. Specific Island (independent field; never inferred from district)
-# 5. Electoral Constituencies (time-versioned)
-# 6. Villages — sourced from the workbook's Village Geography Lookup tab
-#    (not embedded here because it is ~340 rows)
+# Confederacies (guide §9)
 # =============================================================================
 
-# ---------- (1) Statistical Regions ----------
-STATISTICAL_REGIONS = [
-    "Apia Urban Area",
-    "North-West Upolu",
-    "Rest of Upolu",
-    "Savai'i",
-]
+# Samoa's 4 Statistical Regions -> 51 districts (2021 Census, Samoa
+# Statistics Department). "CONFEDERACIES" name kept for structural parity
+# with the iTaukei config module; values are Samoa Island Divisions, never
+# a Fijian confederacy.
+CONFEDERACIES = {"Apia Urban Area": ["Vaimauga 2", "Vaimauga 3", "Vaimauga 4", "Faleata 1"],"North West Upolu": ["Vaimauga 1", "Faleata 2", "Faleata 3", "Faleata 4", "Sagaga 1", "Sagaga 2", "Sagaga 3", "Sagaga 4", "Aana Alofi 1", "Aana Alofi 2", "Aana alofi 3", "Aana Alofi 4"],"Rest of Upolu": ["Aiga i le Tai", "Falelatai & Samatau", "Lefaga & Faleaseela", "Safata 1", "Safata 2", "Siumu", "Falealili 1", "Falealili 2", "Lotofaga", "Lepa", "Aleipata Itupa i Luga", "Aleipata Itupa i Lalo", "Vaa o Fonoti", "Anoamaa 1", "Anoamaa 2"],"Savaii": ["Faasaleleaga 1", "Faasaleleaga 2", "Faasaleleaga 3", "Faasaleleaga 4", "Faasaleleaga 5", "Gagaemauga 1", "Gagaemauga 2", "Gagaifomauga 1", "Gagaifomauga 2", "Gagaifomauga 3", "Vaisigano 1", "Vaisigano 2", "Falealupo", "Alataua i Sisifo", "Salega 1", "Salega 2", "Palauli 1", "Palauli 2", "Satupaitea", "Palauli 3"],
+}
 
-# ---------- (2) Region → SBS Political/Census District ----------
-# Populated by the transformer from the "Region-District Lookup" tab of the
-# Master Sheet. The default value here is the authoritative SBS 2021 Census
-# structure and is regenerated on every refresh. Do not hardcode edits here;
-# fix the lookup tab instead.
+# Ordered 51 districts (Apia Urban Area → Apia Urban Area → Apia Urban Area → Apia Urban Area → Apia Urban Area) —
+# the wide-format order used in the Publications sheet columns and the
+# Dashboard sheet.
+PROVINCES = [p for provinces in CONFEDERACIES.values() for p in provinces]
+assert len(PROVINCES) == 51
+
+# Special "districts" — extra columns in Publications sheet
+PROVINCE_FIJI_UNSPECIFIED = "Samoa - no district specified"
+PROVINCE_UNSURE = "Unsure"
+
+ALL_FIJI_GEOGRAPHY_LABELS = (
+    PROVINCES + [PROVINCE_FIJI_UNSPECIFIED, PROVINCE_UNSURE]
+)
+
+# Reverse lookup: province → confederacy
+PROVINCE_TO_CONFEDERACY = {
+    prov: conf for conf, provs in CONFEDERACIES.items() for prov in provs
+}
+
+# =============================================================================
+# Public-field allowlists (guide §22)
 #
-# The complete list of ~43 SBS districts is loaded at runtime — see
-# scripts/samoa_master_file_transformer.py.
-REGION_TO_DISTRICTS: dict[str, list[str]] = {
-    "Apia Urban Area": [],
-    "North-West Upolu": [],
-    "Rest of Upolu": [],
-    "Savai'i": [],
+# Any Scholars/Publications/Graduate-Degrees field NOT listed here is
+# stripped before writing sanitized JSON. This is the primary sanitization
+# gate — never publish a private field.
+# =============================================================================
+
+SCHOLAR_PUBLIC_FIELDS = [
+    "Scholar ID",
+    "Scholar Name",
+    "Title / Salutation",
+    "Family Name",
+    "Given Names",
+    "Gender",
+    "Year of Birth",
+    "Alive / Deceased",
+    "Year of Death",
+    "Retired",
+    # Current Samoa hierarchy (Village/Town → District → Specific Island →
+    # Island Division). Legacy names remain below so older exports continue
+    # to pass the same public-field gate during a rolling deployment.
+    "Paternal Island Division",
+    "Specific Island Paternal",
+    "Village/Town Paternal (Kolo)",
+    "Clan Paternal",
+    "Maternal Island Division",
+    "Specific Island Maternal",
+    "Village/Town Maternal (Kolo)",
+    "Clan Maternal",
+    "Paternal Confederacy",
+    "Province Paternal",
+    "District Paternal",
+    "Island Paternal",
+    "Village Paternal",
+    "Province Maternal",
+    "District Maternal",
+    "Island Maternal",
+    "Village Maternal",
+    "Primary Discipline / Field",
+    "Current Title / Role",
+    "Current Institution",
+    "Institution Country",
+    "Current Department / Unit",
+    "Highest Completed Degree",
+    "Current PG Status",
+    "Degree Episodes",
+    "International Degree Episodes",
+    "Samoa Degree Episodes",
+    "Fiji Degree Episodes",
+    "Funding Episodes",
+    "Awards Count",
+    "Gold Medals / Prizes Count",
+    "Linked Publication Count",
+    "First-Author Publication Count",
+    "Current Leadership Category",
+    "Current Leadership Level",
+    "Current Profile URL",
+    "ORCID / Researcher ID",
+    "Google Scholar URL",
+    "Roster Tier",
+]
+
+# Notes/Vanua-notes/Review-status/BibTeX-match are private
+SCHOLAR_PRIVATE_FIELDS = [
+    "Lineage / Provenance Notes",
+    "Vanua / Provenance Notes",
+    "Review Status",
+    "Source Basis",
+    "BibTeX Author Match (roster)",
+    "BibTeX Author Occurrences (roster)",
+    "Name Variants / Aliases",
+    "Record Notes",
+]
+
+PUBLICATION_PUBLIC_FIELDS = [
+    "Publication ID / BibTeX Key",
+    "Entry Type",
+    "Publication Type",
+    "Title",
+    "Year",
+    "Journal / Book Title",
+    "Publisher / Institution / School",
+    "DOI",
+    "URL",
+    "Keywords",
+    "Tagged Samoa?",
+    "Tagged Samoan?",
+    "Thesis Level",
+    "Linked Samoan Scholar Count",
+    "Auth_Lead Scholar ID",
+    "Co-Auth_Scholar IDs",
+    "Record Source",
+    "Source Database / Repository",
+    # Bibliographic authorship (from BibTeX/Zotero, not Authorship worksheet).
+    # B4 citation uses these to render Last (Year) / Last & Last (Year) /
+    # Last et al. (Year) using the true first author of the record.
+    "Bibliographic Lead Author",
+    "Bibliographic Author Count",
+    # 51 districts + Samoa unspecified + Unsure — one-hot columns
+    *PROVINCES,
+    PROVINCE_FIJI_UNSPECIFIED,
+    PROVINCE_UNSURE,
+]
+
+PUBLICATION_PRIVATE_FIELDS = [
+    "Abstract",  # copyright-sensitive
+    "Discovery / Source URL",  # provenance
+    "Deduplication Key",
+]
+
+AUTHORSHIP_PUBLIC_FIELDS = [
+    "Authorship ID",
+    "Scholar ID",
+    "Scholar Name",
+    "Publication ID / BibTeX Key",
+    "Author Name as Recorded",
+    "Author Position",
+    "Is First Author?",
+]
+
+# Non-Samoan researcher authorship. Ron uses this sheet to record
+# publication‑researcher links (WSM-R IDs) for non‑Samoan collaborators
+# whose Scholar ID does not appear in `Scholars`. Panel C2 Samoan view
+# accepts either an `Authorship` (Scholar) or `Researcher Authorship`
+# (Researcher) link as the Samoan-associated signal.
+RESEARCHER_AUTHORSHIP_PUBLIC_FIELDS = [
+    "Researcher Authorship ID",
+    "Researcher ID",
+    "Researcher Name",
+    "Publication ID / BibTeX Key",
+    "Author Name as Recorded",
+    "Author Position",
+    "Is First Author?",
+]
+
+# Graduate Degrees: C_Uni public, O_Uni allowed in tooltips/metadata ONLY
+# (never aggregated, mapped, filtered, or counted). Ron clarified this on
+# 2026-08-21: O_Uni is historical institutional metadata, not private, but
+# must never drive counts/aggregations/maps/mobility.
+GRAD_DEGREE_PUBLIC_FIELDS = [
+    "Degree ID",
+    "Scholar ID",
+    "Scholar Name",
+    "Degree Stage",
+    "Degree / Qualification",
+    "Field / Discipline",
+    "Short Discipline",
+    "C_Uni name",  # canonical for all counts/aggregations
+    "O_Uni name",  # historical only — for tooltip/profile display
+    "Country",
+    "International from Samoa?",
+    "City",
+    "Region",
+    "Year / Status",
+    "Completion Status",
+    "Thesis / Research Title",
+    "Start Year",
+    "Finish / Completion Year",
+    "Duration (years)",
+]
+
+GRAD_DEGREE_PRIVATE_FIELDS = [
+    "Thesis / Repository URL",
+    "Evidence URL 1",
+    "Evidence URL 2",
+    "Verification",
+    "Notes",
+    "Study Date Evidence / Notes",
+]
+
+# M>PhD mobility: coords/university fields — these are already aggregated
+# for the chord/sankey and are safe to publish. Info links + Notes are private.
+MOBILITY_PUBLIC_FIELDS = [
+    "Scholar ID",  # canonical ID; legacy scholar_id is never padded or inferred
+    "scholar_id",
+    "New?",
+    "m_uni",
+    "m_in",
+    "m_city",
+    "m_country",
+    "m_region",
+    "m_lon",
+    "m_lat",
+    "m_year",
+    "p_uni",
+    "p_in",
+    "p_city",
+    "p_country",
+    "p_region",
+    "p_lon",
+    "p_lat",
+    "p_year",
+]
+
+MOBILITY_PRIVATE_FIELDS = ["m_title", "p_title", "Info link1", "Info link2", "Notes"]
+
+# Awards / Funding / Positions — allowlists (subset of columns; assume the
+# rest are private until Ron whitelists them).
+AWARD_PUBLIC_FIELDS = [
+    "Scholar ID",
+    "Award Name",
+    "Award Category",
+    "Year",
+    "Country",
+    "Institution / Awarding Body",
+]
+
+FUNDING_PUBLIC_FIELDS = [
+    "Scholar ID",
+    "Funding Name",
+    "Funding Type",
+    "Year",
+    "Country",
+    "Awarding Body / Institution",
+]
+
+POSITION_PUBLIC_FIELDS = [
+    "Scholar ID",
+    "Position Title",
+    "Institution",
+    "Country",
+    "Start Year",
+    "End Year",
+    "Is Current?",
+]
+
+# =============================================================================
+# Output snapshot filenames — these are what the dashboard fetches (encrypted
+# to .enc by the encryption script, plaintext gitignored)
+# =============================================================================
+
+OUTPUT_FILES = {
+    "scholars": "data/samoa-master-scholars.json",
+    "publications": "data/samoa-master-publications.json",
+    "authorship": "data/samoa-master-authorship.json",
+    "researcher_authorship": "data/samoa-master-researcher-authorship.json",
+    "grad_degrees": "data/samoa-master-grad-degrees.json",
+    "mobility": "data/samoa-master-mobility.json",
+    "geography": "data/samoa-master-geography.json",
+    "aggregates": "data/samoa-master-aggregates.json",
+    "snapshot": "data/samoa-master-snapshot.json",  # compat wrapper
+    "last_sync": "data/samoa-last-master-sync.json",
 }
 
-# ---------- (3) Traditional Itūmālō (constitutional, 11 districts) ----------
-# From the Constitution of the Independent State of Samoa, Second Schedule.
-# Parallel to the SBS statistical spine; NEVER substituted for census district.
-TRADITIONAL_ITUMALO = [
-    # Upolu / offshore
-    "Tuamasaga",
-    "A'ana",
-    "Aiga-i-le-Tai",
-    "Va'a-o-Fonoti",
-    "Atua",
-    # Savai'i
-    "Fa'asaleleaga",
-    "Gaga'emauga",
-    "Gaga'ifomauga",
-    "Vaisigano",
-    "Satupa'itea",
-    "Palauli",
-]
-assert len(TRADITIONAL_ITUMALO) == 11
-
-# ---------- (4) Specific Island (independent) ----------
-# Kept as its own vocabulary because a village's district does not uniquely
-# determine which island it sits on (Manono and Apolima villages sit within
-# Aiga-i-le-Tai; the four offshore islets of Aleipata sit within Aleipata
-# districts). Never derive island from district name.
-SPECIFIC_ISLANDS = [
-    "Upolu",
-    "Savai'i",
-    "Manono",
-    "Apolima",
-    "Nu'utele",
-    "Nu'ulua",
-    "Namu'a",
-    "Fanuatapu",
-]
-
-# ---------- (5) Electoral Constituencies ----------
-# Loaded at runtime from the "Electoral Constituency Lookup" tab. Time-versioned
-# because the Electoral Constituencies Act 2019 replaced the earlier structure.
-# The dashboard filter must always display the election-year alongside the name.
-ELECTORAL_VERSIONS = [
-    "2019-Act (Electoral Constituencies Act 2019)",
-    "Pre-2019",
-]
-
-# =============================================================================
-# Cross-country label for the discipline breakdown panel
-# =============================================================================
-
-BROAD_DISCIPLINES = [
-    "Natural & Environmental Sciences",
-    "Health & Medical Sciences",
-    "Social Sciences",
-    "Humanities",
-    "Education",
-    "Law & Policy",
-    "Business & Economics",
-    "Engineering & Technology",
-    "Arts",
-    "Interdisciplinary",
-    "Unclassified",
-]
-
-# =============================================================================
-# Public-field allowlist
-# =============================================================================
-# Only the fields listed here may appear in encrypted snapshots destined for
-# GitHub Pages. Everything else stays inside the Master workbook.
-PUBLIC_ALLOWLIST_SCHOLARS = [
-    "Scholar ID", "Display Name", "Family Name", "Given Names",
-    "Title / Salutation", "Gender", "Living Status", "Birth Year", "Death Year",
-    "Photo URL",
-    # Public geography = paternal only (owner-confirmed 2026-08-30)
-    "Statistical Region (Paternal)", "Political/Census District (Paternal)",
-    "Traditional Itūmālō (Paternal)", "Specific Island (Paternal)",
-    "Village (Paternal)", "Electoral Constituency (Paternal)",
-    "Electoral Version (Paternal)",
-    # Career
-    "Primary Discipline", "Broad Discipline", "Current Role",
-    "Current Institution ID", "Current Department", "Current Country",
-    "Highest Completed Degree", "Current Postgraduate Status",
-    # Profiles
-    "ORCID", "Google Scholar URL", "Scopus Author ID",
-    "Official Profile URL", "ResearchGate URL", "Personal Website",
-    # Derived
-    "Total Completed Degrees", "Total Publications",
-    "Total First-Author Publications", "Total Awards",
-    "Leadership Category", "Leadership Level",
-    # Aliases (used for search)
-    "Aliases (semicolon-separated)",
-]
-
-PUBLIC_DENY_FIELDS_SCHOLARS = [
-    # Never public — maternal geography and cultural affiliation are
-    # confidential per the Samoa public-boundary policy (paternal default only).
-    "Statistical Region (Maternal)", "Political/Census District (Maternal)",
-    "Traditional Itūmālō (Maternal)", "Specific Island (Maternal)",
-    "Village (Maternal)", "Electoral Constituency (Maternal)",
-    "Electoral Version (Maternal)",
-    "Maternal Geography Source ID",
-    "Family / ʻĀiga (Paternal)", "Family / ʻĀiga (Maternal)",
-    "Matai Title", "Matai Title Village", "Customary Affiliation",
-    "Self-identified Home / Community", "Cultural Evidence Notes",
-    "Notes (internal — never public)",
-    "Review Status", "Inclusion Status",
-    "Identity Source ID", "Paternal Geography Source ID",
-]
-
-# =============================================================================
-# Cross-system safety guardrail — refuse to run if SPREADSHEET_ID looks wrong
-# =============================================================================
-
-_FORBIDDEN_SPREADSHEET_IDS = {
-    "1nJvMWLS8jnCOKtRoqdDpEW3s3j9TSAclXBO1txVFxdg",  # iTaukei
-    "1lh6wOFcg2GiFe2YylgxM5cvLOdumdbCrHDLQk87rjRI",  # Tongan
-}
-
-
-def assert_samoa_spreadsheet() -> None:
-    """Called at the top of every transformer entry point."""
-    if SPREADSHEET_ID in _FORBIDDEN_SPREADSHEET_IDS:
-        raise SystemExit(
-            f"REFUSING TO RUN: SPREADSHEET_ID={SPREADSHEET_ID!r} is a "
-            f"non-Samoa sister system. Update scripts/samoa_master_file_config.py "
-            f"to point at the Samoa Master Sheet ID."
-        )
-    if SPREADSHEET_ID.startswith("SET_ME_") or SPREADSHEET_ID.strip() == "":
-        raise SystemExit(
-            "REFUSING TO RUN: Samoa Master Sheet ID has not been set yet. "
-            "Edit scripts/samoa_master_file_config.py after creating the sheet."
-        )

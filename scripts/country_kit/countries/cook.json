@@ -1,0 +1,94 @@
+{
+  "key": "cook",
+  "KEY": "COOK",
+  "prefix": "COK",
+  "iso3": "cok",
+  "iso2": "ck",
+  "masterId": "1oPBnQHzjRNnmzS5_md5Lagmk_jQorqCRd3zhyKM1iC8",
+  "masterTitle": "Cook Islands Scholars Master File",
+  "country": "Cook Islands",
+  "countryValue": "Cook Islands",
+  "countryInSentence": "the Cook Islands",
+  "countryPossessive": "the Cook Islands'",
+  "adjective": "Cook Islands",
+  "adjectiveUpper": "COOK ISLANDS",
+  "dashboardTitle": "Cook Islands Scholar Dashboard",
+  "partTab": "Part-Cook Islands Māori",
+  "levels": {
+    "division": {
+      "singular": "Island Group",
+      "plural": "Island Groups"
+    },
+    "district": {
+      "singular": "Island",
+      "plural": "Islands"
+    },
+    "clan": {
+      "singular": "Puna",
+      "plural": "Puna"
+    },
+    "village": {
+      "singular": "Tapere",
+      "plural": "Tapere"
+    }
+  },
+  "lineage": {
+    "paternal": "Paternal",
+    "maternal": "Maternal"
+  },
+  "divisions": {
+    "Southern Group": [
+      "Rarotonga",
+      "Aitutaki",
+      "Atiu",
+      "Mangaia",
+      "Mauke",
+      "Mitiaro",
+      "Palmerston"
+    ],
+    "Northern Group": [
+      "Manihiki",
+      "Penrhyn / Tongareva",
+      "Pukapuka",
+      "Rakahanga",
+      "Nassau"
+    ]
+  },
+  "divisionNote": "Island group membership follows the usual Cook Islands Southern/Northern grouping; the Master Lookups tab lists islands without a parent group, so Ron should confirm (especially Palmerston).",
+  "map": {
+    "bounds": [
+      [
+        -22.2,
+        -166.2
+      ],
+      [
+        -8.6,
+        -156.9
+      ]
+    ],
+    "center": [
+      -15.5,
+      -161.5
+    ],
+    "zoom": 5
+  },
+  "geojson": {
+    "source": "gadm",
+    "file": "/tmp/kit/gadm_COK_1.json",
+    "nameProp": "NAME_1",
+    "aliases": {
+      "Penhryn": "Penrhyn / Tongareva"
+    },
+    "attribution": "GADM 4.1 (gadm.org), Cook Islands level 1. Licence: free for academic and non-commercial use; redistribution needs GADM permission. Replace with an openly licensed source before launch."
+  },
+  "art": {
+    "header": "img/regional/cok.webp",
+    "headerCredit": "Rarotonga landscape, Barbara Ratusznik/AusAID, CC BY 2.0 (Wikimedia Commons)",
+    "flag": "img/regional/flags/cok.png"
+  },
+  "people": "Cook Islands",
+  "genderLabels": null,
+  "citation": "Vave, R. (2026). Cook Islands Scholar Dashboard. Vave Lab, University of Hawaiʻi at Mānoa.",
+  "intro": "The Cook Islands Scholars Database & Dashboard is a sister project to the Tongan and Fijian Scholars Databases & Dashboards, curated by <a href=\"index.html\">Assistant Professor Ron Vave</a> at the University of Hawaiʻi at Mānoa. It highlights the scholarly research and contributions of Cook Islands postgraduates and researchers, in the Cook Islands and around the world.",
+  "timezone": "Pacific/Rarotonga"
+}

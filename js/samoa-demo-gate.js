@@ -1,66 +1,86 @@
 /**
- * Demo-mode gate for the Samoa Scholar Database (dashboard).
+ * Demo-mode gate for the Samoan Scholar Database (dashboard).
  *
- * Distinct from js/samoa-db-gate.js — that file is the admin-only
- * passcode-prompt gate. This file is the DASHBOARD gate: the dashboard
- * is public by default (skeleton with placeholder messages), and real
- * data unlocks in one of two modes:
+ * Sister clone of js/demo-gate.js (iTaukei). Uses its own baked passcode
+ * and its own HMAC demo-token signing key, both distinct from the iTaukei
+ * originals — see SAMOAN-DASHBOARD-BUILD-NOTES.md at the repo root for the
+ * chosen values and rationale. Nothing in this file reads from or writes
+ * to any iTaukei-prefixed data file.
+ *
+ * Replaces the earlier passcode-gate (db-gate.js). The dashboard is now
+ * public by default — anyone who lands on the URL sees a skeleton with
+ * placeholder messages where the sensitive panels used to render. The
+ * real data unlocks only when:
  *
  *   1. Dev mode — the visitor's browser has been marked as Ron's dev
- *      device via localStorage.samoalab_dev = '1'. Once marked, the
- *      gate is transparent on that device.
+ *      device via localStorage.vavelab_dev = '1'. Once marked, the
+ *      gate is transparent forever on that device.
  *
- *   2. Demo mode — the URL hash carries a valid, unexpired, non-revoked
- *      demo token minted by Ron via the "Share demo view" button.
- *      Tokens last 2 hours by default. Ron can revoke early via the
- *      "End demo" button which appends the token's jti to a
- *      GitHub-committed revocations file.
+ *   2. Demo mode — the URL hash contains a valid, unexpired, non-revoked
+ *      token issued by Ron (from the "Share demo view" button). Tokens
+ *      last 2 hours by default. Ron can end a demo early by pressing
+ *      "End demo", which appends the token's jti to a revocations file
+ *      committed to GitHub — after which the URL is dead for everyone.
  *
- * The Samoa .enc data files are encrypted with the SAMOA-ONLY passcode
- * `Zoopilus1!`. That passcode is baked into this file (base64) so the
- * gate can decrypt without a prompt. A determined viewer with devtools
- * could recover it — the same trade-off the sister systems already
- * accept for a friction-free daily workflow.
+ * ── Trade-off with the old passcode gate ──
+ * The .enc data files stay encrypted with their own Samoan passcode-derived
+ * key (distinct from the iTaukei system's), but that passcode is now baked into this file
+ * so the gate can decrypt without prompting. A determined viewer with
+ * devtools could grep the bundle and pull the passcode out. That's a
+ * lower bar than before — accepted trade-off for a friction-free daily
+ * workflow. Anyone who wants to leak the data during a demo could just
+ * screenshot it anyway; the gate defends against casual re-visits, not
+ * against a determined viewer sitting through the demo.
  *
  * ── Token format ──
  * Hash fragment `#demo=<payload_b64u>.<sig_b64u>` where:
  *   payload = JSON { v: 1, iss: <ms>, exp: <ms>, jti: <8-hex random> }
- *   sig = HMAC-SHA256(payload_utf8, SAMOA_DEMO_SIGN_KEY)
+ *   sig = HMAC-SHA256(payload_utf8, DEMO_SIGN_KEY)
+ * Payload and sig are base64url encoded (no padding).
  *
- * ── Constants ──
- * Every constant on this file is Samoa-specific and unrelated to the
- * sister systems' values:
- *
- *   BAKED_PASSCODE      = 'Zoopilus1!' (base64: Wm9vcGlsdXMxIQ==)
- *   DEMO_SIGN_KEY_B64   = 'V0EeEl8X5U8yAig6hYeCJaJ2+BumXO0XSgOkGBOPVUY='
- *                       (32 random bytes, fresh for Samoa)
- *   DEV_FLAG_KEY        = 'samoalab_dev'
- *   REVOKE_PATH         = 'data/samoa-revoked-demos.json'
- *
- * Nothing in this file reads from any sister-jurisdiction data file.
+ * ── Revocations ──
+ * data/revoked-demos.json is a plaintext JSON `{ jtis: [...] }`. Anyone
+ * loading the page fetches it; if the current token's jti is in the
+ * list, the token is rejected and the public shell renders. Ron's
+ * End-demo button commits an updated file via the same GitHub PAT flow
+ * admin.js already uses.
  */
 (function () {
   'use strict';
 
-  // ── Config ────────────────────────────────────────────────────────────
-  var DEMO_TTL_MS = 2 * 60 * 60 * 1000;   // 2 hours
-  var DEV_FLAG_KEY = 'samoalab_dev';
+  // ── Constants ────────────────────────────────────────────────────────
+  var DEMO_TTL_MS = 2 * 60 * 60 * 1000;      // 2 hours
+  var DEV_FLAG_KEY = 'vavelab_dev';           // localStorage marker for Ron's device
+  var COLLAB_FLAG_KEY = 'vavelab_samoa_collaborator'; // session-only collaborator access
+  var GH_TOKEN_KEY = 'vavelab_gh_token';      // GitHub PAT (shared with admin.js)
   var GH_OWNER = 'ronvave';
   var GH_REPO = 'vave-lab';
   var REVOKE_PATH = 'data/samoa-revoked-demos.json';
   var PBKDF2_ITERATIONS = 200000;
   var MAGIC = new Uint8Array([0x49, 0x56, 0x41, 0x56]); // "IVAV"
 
-  // Baked passcode (Zoopilus1!). Same passcode the admin-only db-gate
-  // uses, so the .enc files decrypt with a single key.
-  var BAKED_PASSCODE = atob('Wm9vcGlsdXMxIQ==');
+  // Passcode baked in so the gate can decrypt .enc files without a
+  // prompt. See the module comment for the trade-off note. Kept as
+  // base64 so a casual grep of the passcode doesn't hit; anyone with
+  // devtools can still recover it. This is by design.
+  var BAKED_PASSCODE = atob('d3NtLTROeXdpdGN1b1V2Z0FrejRMeTJ3');
 
-  // HMAC key for demo tokens. Distinct from the sister systems' keys.
-  // Generated fresh for Samoa; documented in SAMOA-DASHBOARD-BUILD-NOTES.md.
-  var DEMO_SIGN_KEY_B64 = 'V0EeEl8X5U8yAig6hYeCJaJ2+BumXO0XSgOkGBOPVUY=';
+  // Human-facing collaborator password, separate from the data-encryption key.
+  var COLLABORATOR_PASSCODE = atob('d3NtLWMteGxLaXVzVnJXMHhxQWdoblQyMUI=');
+
+  // HMAC signing key for demo tokens. Base64 of a fixed random 32-byte
+  // string, embedded here for the same trade-off reason. If someone
+  // extracts this and the passcode, they can mint their own tokens.
+  // Revocations still work against forged tokens because the "End demo"
+  // button revokes by jti, and Ron can add any jti to the revocations
+  // list at any time.
+  // NOTE: this key is unique to the Samoan Scholar Database and differs
+  // from the iTaukei system's DEMO_SIGN_KEY_B64 — see
+  // SAMOAN-DASHBOARD-BUILD-NOTES.md.
+  var DEMO_SIGN_KEY_B64 = '9ddUwM31SR0ulOf493gJE+eYK9aN5SvhlKeyarSkvsc=';
 
   // ── State ────────────────────────────────────────────────────────────
-  var mode = 'public';       // 'public' | 'dev' | 'demo'
+  var mode = 'public';       // 'public' | 'dev' | 'demo' | 'collaborator'
   var activeToken = null;    // { payload, sig, raw } when mode === 'demo'
   var revokedJtis = null;    // Set<string> once fetched
   var cachedPasscode = null;
@@ -108,7 +128,7 @@
     return url + (url.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
   }
 
-  // ── Decryption plumbing (same IVAV wire format as db-gate.js) ────────
+  // ── Decryption plumbing (same wire format as db-gate.js) ─────────────
   async function deriveAesKey(passcode, salt) {
     var baseKey = await crypto.subtle.importKey(
       'raw',
@@ -145,61 +165,113 @@
     var plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: parts.iv }, key, parts.ct);
     return new TextDecoder().decode(plainBuf);
   }
+  async function encryptString(plaintext) {
+    if (!cachedPasscode) throw new Error('Gate not unlocked.');
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    var iv = crypto.getRandomValues(new Uint8Array(12));
+    var key = await deriveAesKey(cachedPasscode, salt);
+    var body = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: iv }, key, new TextEncoder().encode(plaintext)
+    );
+    var bodyBytes = new Uint8Array(body);
+    var out = new Uint8Array(4 + 16 + 12 + bodyBytes.length);
+    out.set(MAGIC, 0);
+    out.set(salt, 4);
+    out.set(iv, 20);
+    out.set(bodyBytes, 32);
+    keyBySaltHex[bytesToHex(salt)] = key;
+    return out;
+  }
 
-  // ── ENC file map ─────────────────────────────────────────────────────
-  // Plaintext-URL → encrypted-URL. `fetchJson(plainUrl)` transparently
-  // downloads and decrypts the .enc counterpart.
+  // Encrypted-file map (same as db-gate.js).
   //
-  // Every entry here targets a Samoa-prefixed file. No sister-jurisdiction
-  // filename appears in this map.
+  // The Master-file V2 preview (itaukei-research-database-master.html) also
+  // uses this gate. Its eight `data/itaukei-master-*.json` + `last-master-sync.json`
+  // targets are registered here so `dbGate.fetchJson(masterUrl)` transparently
+  // fetches and decrypts the .enc counterpart. Production (Zotero) dashboard
+  // never fetches those URLs, so this map is a strict superset and does not
+  // affect production behaviour.
   var ENC_FILES = {
-    // Master-file snapshots (refreshed every 2h by
-    // .github/workflows/refresh-samoa-master-file.yml).
-    'data/samoa-master-scholars.json':                 'data/samoa-master-scholars.json.enc',
-    'data/samoa-master-publications.json':             'data/samoa-master-publications.json.enc',
-    'data/samoa-master-authorship.json':               'data/samoa-master-authorship.json.enc',
-    'data/samoa-master-researcher-authorship.json':    'data/samoa-master-researcher-authorship.json.enc',
-    'data/samoa-master-grad-degrees.json':             'data/samoa-master-grad-degrees.json.enc',
-    'data/samoa-master-mobility.json':                 'data/samoa-master-mobility.json.enc',
-    'data/samoa-master-geography.json':                'data/samoa-master-geography.json.enc',
-    'data/samoa-master-geography-coordinates.json':    'data/samoa-master-geography-coordinates.json.enc',
-    'data/samoa-master-aggregates.json':               'data/samoa-master-aggregates.json.enc',
-    'data/samoa-master-worldpoints.json':              'data/samoa-master-worldpoints.json.enc',
-    'data/samoa-master-part-indigenous.json':          'data/samoa-master-part-indigenous.json.enc',
-    // Panel-specific derived files.
-    'data/samoa-body-composition-master.json':         'data/samoa-body-composition-master.json.enc',
-    'data/samoa-auto-resolved.json':                   'data/samoa-auto-resolved.json.enc',
-    'data/samoa-scholar-insights.json':                'data/samoa-scholar-insights.json.enc',
-    'data/samoa-workplace-coords.json':                'data/samoa-workplace-coords.json.enc',
-    'data/samoa-uni-country-overrides.json':           'data/samoa-uni-country-overrides.json.enc',
-    'data/samoa-world-universities.json':              'data/samoa-world-universities.json.enc',
-    // GeoJSON — SBS statistical spine district boundaries.
-    'data/samoa-districts.geojson':                    'data/samoa-districts.geojson.enc',
-    // Last-sync marker.
-    'data/samoa-last-master-sync.json':                'data/samoa-last-master-sync.json.enc'
+    'data/samoa-zotero-snapshot.json': 'data/samoa-zotero-snapshot.json.enc',
+    'data/samoa-districts.geojson':      'data/samoa-districts.geojson.enc',
+    // NOTE: world-universities.json is NOT actually fetched by the V2
+    // Master-file dashboard code path (js/samoa-database-master.js never
+    // calls fetchJson('data/world-universities.json') — same as the
+    // upstream iTaukei file). Mapped here to a Samoa-prefixed target
+    // rather than the shared iTaukei-encrypted file (which uses a
+    // different passcode and could never be decrypted by this gate) in
+    // case a future code path needs it.
+    'data/world-universities.json':      'data/samoa-world-universities.json.enc',
+    'data/samoa-districts.json':         'data/samoa-districts.json.enc',
+    'data/samoa-scholar-profiles.json': 'data/samoa-scholar-profiles.json.enc',
+    'data/samoa-last-sync.json':        'data/samoa-last-sync.json.enc',
+    'data/samoa-graduate-studies.json': 'data/samoa-graduate-studies.json.enc',
+    'data/samoa-scholar-insights.json': 'data/samoa-scholar-insights.json.enc',
+    // Master-file V2 preview snapshots (refreshed every 2h by
+    // .github/workflows/refresh-samoa-master-file.yml, once created).
+    // Only the V2 preview page fetches these; the production dashboard
+    // does not.
+    'data/samoa-master-scholars.json':     'data/samoa-master-scholars.json.enc',
+    'data/samoa-master-publications.json': 'data/samoa-master-publications.json.enc',
+    'data/samoa-master-authorship.json':   'data/samoa-master-authorship.json.enc',
+    'data/samoa-master-researcher-authorship.json':
+      'data/samoa-master-researcher-authorship.json.enc',
+    'data/samoa-master-grad-degrees.json': 'data/samoa-master-grad-degrees.json.enc',
+    'data/samoa-master-mobility.json':     'data/samoa-master-mobility.json.enc',
+    'data/samoa-master-geography.json':    'data/samoa-master-geography.json.enc',
+    'data/samoa-master-positions.json':    'data/samoa-master-positions.json.enc',
+    'data/samoa-master-news.json':         'data/samoa-master-news.json.enc',
+    'data/samoa-master-aggregates.json':   'data/samoa-master-aggregates.json.enc',
+    // Master-derived Panel B2 world-points payload. Built by
+    // scripts/master_b2_worldpoints.py from the authoritative Master
+    // Graduate Degrees snapshot. Drives the country → university →
+    // scholar drilldown in Panel B2 with completion filtering,
+    // discipline-string rejection, and canonical C_Uni grouping.
+    'data/samoa-master-worldpoints.json':  'data/samoa-master-worldpoints.json.enc',
+    'data/samoa-last-master-sync.json':     'data/samoa-last-master-sync.json.enc',
+    // Panel C1 body-composition chart, V2 (Master-file) variant. Same schema
+    // as the V1 file; the iframe fetches this when the parent URL passes
+    // ?src=master.
+    'data/samoa-body-composition-master.json': 'data/samoa-body-composition-master.json.enc',
+    'data/samoa-body-composition.json':        'data/samoa-body-composition.json.enc',
+    // Admin V2 enrichment sidecar (Scholar-ID keyed): photo path, sector,
+    // institutionUrl, departmentUrl, updatedAt. Written by Admin V2 on
+    // every save. Only the .enc variant exists on disk—this mapping tells
+    // the gate to transparently redirect the plaintext URL to the
+    // encrypted counterpart, matching how every other .enc-backed file
+    // works. Without this entry, master-file-adapter.js would silently
+    // 404 and lose photo/lastUpdate/institutionUrl/sector overlay data
+    // for every scholar. (Fix 2026-08-23 for Joeli's photo + Last update.)
+    'data/samoa-scholar-enrichment.json':   'data/samoa-scholar-enrichment.json.enc',
+    // Admin V2 research-insights sidecar (Scholar-ID keyed): keywords,
+    // summaryHtml, summaryFormat, sources. Written by Admin V2 whenever
+    // the 'Research insights' JSON is pasted + saved. Same registration
+    // pattern as scholar-enrichment.json above. Without this entry,
+    // master-file-adapter.js's fetchJson('data/scholar-insights-master.json')
+    // 404s and every Panel F card reports '(none yet)' + 'Insight not yet
+    // generated for this scholar', even after successful admin pushes.
+    // (Fix 2026-08-23 for Joeli's insights not surfacing after admin paste.)
+    'data/samoa-scholar-insights-master.json': 'data/samoa-scholar-insights-master.json.enc'
   };
 
   async function fetchJsonEncrypted(url) {
     var encUrl = ENC_FILES[url];
     if (!encUrl) {
-      // Plaintext fetch — used for revocation list and any small public JSON.
       var r0 = await fetch(bust(url), { cache: 'no-store' });
       if (!r0.ok) throw new Error('Fetch failed: ' + url + ' (' + r0.status + ')');
       return r0.json();
     }
     if (!cachedPasscode) throw new Error('Gate not unlocked.');
     var res = await fetch(bust(encUrl), { cache: 'no-store' });
-    if (!res.ok) {
-      var e = new Error('Fetch failed: ' + encUrl + ' (' + res.status + ')');
-      e.status = res.status;
-      throw e;
-    }
+    if (!res.ok) throw new Error('Fetch failed: ' + encUrl + ' (' + res.status + ')');
     var text = await decryptBlob(await res.arrayBuffer());
     return JSON.parse(text);
   }
 
-  // Same-origin iframes (Panel C1 body composition, etc.) unlock read-only
-  // access without going through the full boot/gate flow.
+  // Dashboard panels B3 and C1 run in same-origin iframes. They need to read
+  // the committed aggregate snapshots without opening the full demo/admin
+  // shell. Keep this narrowly scoped to embedded documents; normal top-level
+  // pages still follow boot() and its public/demo/dev access rules.
   function unlockEmbeddedRead() {
     var embedded = false;
     try {
@@ -265,7 +337,11 @@
     if (revokedJtis) return revokedJtis;
     try {
       var res = await fetch(bust(REVOKE_PATH), { cache: 'no-store' });
-      if (!res.ok) { revokedJtis = new Set(); return revokedJtis; }
+      if (!res.ok) {
+        // File may not exist yet — treat as empty.
+        revokedJtis = new Set();
+        return revokedJtis;
+      }
       var data = await res.json();
       var arr = (data && Array.isArray(data.jtis)) ? data.jtis : [];
       revokedJtis = new Set(arr);
@@ -293,6 +369,7 @@
     if (!h) return;
     var kept = h.split('&').filter(function (kv) { return kv.indexOf('demo=') !== 0; });
     var newHash = kept.length ? ('#' + kept.join('&')) : '';
+    // Replace history entry so a Back-button press doesn't restore the token.
     history.replaceState(null, '', location.pathname + location.search + newHash);
   }
   function writeTokenToHash(rawToken) {
@@ -308,8 +385,14 @@
     try { return localStorage.getItem(DEV_FLAG_KEY) === '1'; }
     catch (e) { return false; }
   }
-  function markDev()   { try { localStorage.setItem(DEV_FLAG_KEY, '1'); } catch (e) {} }
-  function unmarkDev() { try { localStorage.removeItem(DEV_FLAG_KEY); } catch (e) {} }
+  function markDev() {
+    try { localStorage.setItem(DEV_FLAG_KEY, '1'); } catch (e) {}
+  }
+  function unmarkDev() {
+    try { localStorage.removeItem(DEV_FLAG_KEY); } catch (e) {}
+  }
+  // Accept `?dev=1` in the URL as a one-time opt-in: sets the flag and
+  // strips the param from the URL so no shared screenshot leaks it.
   function handleDevOptIn() {
     var params = new URLSearchParams(location.search);
     if (params.get('dev') === '1') {
@@ -328,148 +411,505 @@
 
   // ── Public shell ─────────────────────────────────────────────────────
   function injectShellStyles() {
-    if (document.getElementById('samoa-demo-gate-styles')) return;
+    if (document.getElementById('demo-gate-styles')) return;
     var css = ''
-      + '.samoa-demo-gate-shell{min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:48px 24px;background:linear-gradient(180deg,#f8f5f0 0%,#efe8dc 60%,#e8ded0 100%);}'
-      + '.samoa-demo-gate-shell__panel{width:100%;max-width:520px;background:#fff;border:1px solid rgba(15,57,33,0.12);border-radius:14px;padding:36px 32px 30px;box-shadow:0 20px 50px -22px rgba(15,57,33,0.28),0 6px 16px -8px rgba(15,57,33,0.14);text-align:center;}'
-      + '.samoa-demo-gate-shell__title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;font-size:1.9rem;line-height:1.15;margin:0 0 12px;color:#0F3921;letter-spacing:-0.01em;}'
-      + '.samoa-demo-gate-shell__body{margin:0 0 8px;color:#28251d;font-size:1rem;line-height:1.6;}'
-      + '.samoa-demo-gate-shell__foot{margin:22px 0 0;color:#7a8880;font-size:0.85rem;}'
-      + '.samoa-demo-gate-shell__reason{margin:14px 0 0;padding:10px 14px;background:#fdf1e6;color:#8B3A0F;border-radius:8px;font-size:0.9rem;text-align:left;}'
-      + 'body.samoa-demo-gate-locked main > *:not(.samoa-demo-gate-shell){display:none !important;}'
-      + '.samoa-demo-gate-controls{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:row;align-items:stretch;gap:8px;z-index:9999;font-family:"DM Sans",system-ui,sans-serif;}'
-      + '.samoa-demo-gate-controls button{padding:8px 12px;border-radius:8px;border:1px solid rgba(15,57,33,0.18);background:#fff;color:#0F3921;font-size:12px;font-weight:600;cursor:pointer;}'
-      + '.samoa-demo-gate-controls button:hover{background:#f2ede4;}';
+      + '.demo-gate-shell{min-height:calc(100vh - 120px);display:flex;align-items:center;justify-content:center;padding:48px 24px;background:linear-gradient(180deg,#f8f5f0 0%,#efe8dc 60%,#e8ded0 100%);}'
+      + '.demo-gate-shell__panel{width:100%;max-width:520px;background:#fff;border:1px solid rgba(15,57,33,0.12);border-radius:14px;padding:36px 32px 30px;box-shadow:0 20px 50px -22px rgba(15,57,33,0.28),0 6px 16px -8px rgba(15,57,33,0.14);text-align:center;}'
+      + '.demo-gate-shell__badge{display:inline-flex;align-items:center;justify-content:center;width:52px;height:52px;border-radius:14px;background:rgba(14,116,144,0.10);color:#0F3921;margin:0 auto 18px;}'
+      + '.demo-gate-shell__title{font-family:"Cormorant Garamond",Georgia,serif;font-weight:600;font-size:1.9rem;line-height:1.15;margin:0 0 12px;color:#0F3921;letter-spacing:-0.01em;}'
+      + '.demo-gate-shell__body{margin:0 0 8px;color:#28251d;font-size:1rem;line-height:1.6;}'
+      + '.demo-gate-shell__foot{margin:22px 0 0;color:#7a8880;font-size:0.85rem;}'
+      + '.demo-gate-shell__foot a{color:#0E7490;text-decoration:underline;text-underline-offset:3px;}'
+      + '.demo-gate-shell__reason{margin:14px 0 0;padding:10px 14px;background:#fdf1e6;color:#8B3A0F;border-radius:8px;font-size:0.9rem;text-align:left;}'
+      + '.demo-gate-shell__form{display:flex;gap:10px;margin:20px auto 4px;max-width:390px;}'
+      + '.demo-gate-shell__input{min-width:0;flex:1;padding:12px 14px;border:1px solid rgba(15,57,33,.28);border-radius:9px;background:#fff;color:#172019;font:inherit;}'
+      + '.demo-gate-shell__input:focus{outline:3px solid rgba(14,116,144,.18);border-color:#0E7490;}'
+      + '.demo-gate-shell__submit{padding:12px 18px;border:0;border-radius:9px;background:#0F3921;color:#fff;font:inherit;font-weight:700;cursor:pointer;}'
+      + '.demo-gate-shell__submit:hover{background:#12442a;}'
+      + '.demo-gate-shell__error{min-height:1.4em;margin:8px 0 0;color:#8B3A0F;font-size:.9rem;}'
+      + 'body.demo-gate-locked main > *:not(.demo-gate-shell){display:none !important;}'
+      // Demo controls (Share demo view / End demo / countdown).
+      + '.demo-gate-controls{position:fixed;bottom:16px;right:16px;display:flex;flex-direction:row;align-items:stretch;gap:8px;z-index:9999;font-family:"DM Sans",system-ui,sans-serif;}'
+      + '.demo-gate-controls button{padding:10px 16px;font-size:0.85rem;font-weight:600;border-radius:999px;border:1px solid rgba(15,57,33,0.20);background:#fff;color:#0F3921;cursor:pointer;box-shadow:0 6px 16px -8px rgba(15,57,33,0.20);transition:background 0.15s ease,transform 0.05s ease;}'
+      + '.demo-gate-controls button:hover{background:#f5efe4;}'
+      + '.demo-gate-controls button:active{transform:translateY(1px);}'
+      + '.demo-gate-controls button.is-primary{background:#0F3921;color:#fff;border-color:#0F3921;}'
+      + '.demo-gate-controls button.is-primary:hover{background:#12442a;}'
+      + '.demo-gate-controls button.is-danger{background:#8B3A0F;color:#fff;border-color:#8B3A0F;}'
+      + '.demo-gate-controls button.is-danger:hover{background:#6E2E0B;}'
+      + '.demo-gate-controls__timer{display:inline-flex;align-items:center;padding:10px 14px;font-size:0.82rem;font-weight:600;color:#0F3921;background:#fff;border:1px solid rgba(15,57,33,0.20);border-radius:999px;box-shadow:0 6px 16px -8px rgba(15,57,33,0.20);font-variant-numeric:tabular-nums;}'
+      + '.demo-gate-toast{position:fixed;bottom:70px;right:16px;padding:10px 14px;background:#0F3921;color:#fff;border-radius:8px;font-family:"DM Sans",system-ui,sans-serif;font-size:0.88rem;font-weight:500;box-shadow:0 8px 20px -8px rgba(15,57,33,0.35);z-index:9999;max-width:320px;line-height:1.4;}'
+      + '.demo-gate-toast--error{background:#8B3A0F;}';
     var style = document.createElement('style');
-    style.id = 'samoa-demo-gate-styles';
+    style.id = 'demo-gate-styles';
     style.textContent = css;
     document.head.appendChild(style);
   }
+
+  function buildShellHtml(reason) {
+    var reasonBlock = reason ? '<p class="demo-gate-shell__reason">' + reason + '</p>' : '';
+    return ''
+      + '<section class="demo-gate-shell" role="region" aria-label="Preview access">'
+      +   '<div class="demo-gate-shell__panel">'
+      +     '<div class="demo-gate-shell__badge" aria-hidden="true">'
+      +       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" width="28" height="28"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>'
+      +     '</div>'
+      +     '<h1 class="demo-gate-shell__title">Samoan Scholar Dashboard</h1>'
+      +     '<p class="demo-gate-shell__body">Enter the collaborator password to view the dashboard.</p>'
+      +     reasonBlock
+      +     '<form class="demo-gate-shell__form" data-collaborator-form>'
+      +       '<input class="demo-gate-shell__input" data-collaborator-password type="password" autocomplete="current-password" placeholder="Password" aria-label="Collaborator password" required>'
+      +       '<button class="demo-gate-shell__submit" type="submit">View dashboard</button>'
+      +     '</form>'
+      +     '<p class="demo-gate-shell__error" data-collaborator-error role="alert" aria-live="polite"></p>'
+      +     '<p class="demo-gate-shell__foot">Curated by <a href="https://ronvave.github.io/vave-lab/" target="_blank" rel="noopener">Prof. Ron Vave</a> \u00b7 University of Hawai\u02bbi at M\u0101noa</p>'
+      +   '</div>'
+      + '</section>';
+  }
+
   function renderPublicShell(reason) {
     injectShellStyles();
-    document.body.classList.add('samoa-demo-gate-locked');
-    var main = document.querySelector('main') || document.body;
-    var shell = document.createElement('div');
-    shell.className = 'samoa-demo-gate-shell';
-    shell.innerHTML = ''
-      + '<div class="samoa-demo-gate-shell__panel">'
-      +   '<h2 class="samoa-demo-gate-shell__title">Samoa Scholar Database</h2>'
-      +   '<p class="samoa-demo-gate-shell__body">This dashboard is a research preview. '
-      +      'The full data is available during a live demo, or on Ron\u2019s dev device. '
-      +      'To arrange access, contact Ron Vave.</p>'
-      +   (reason ? '<p class="samoa-demo-gate-shell__reason">' + escapeHtml(reason) + '</p>' : '')
-      +   '<p class="samoa-demo-gate-shell__foot">'
-      +      '<a href="https://ronvave.github.io/vave-lab/">Vave Lab</a> \u00b7 '
-      +      'University of Hawai\u02BBi at M\u0101noa'
-      +   '</p>'
-      + '</div>';
-    main.appendChild(shell);
-  }
-  function escapeHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    document.body.classList.add('demo-gate-locked');
+    var main = document.querySelector('main');
+    if (!main) return;
+    // Remove any previously injected shell (safety on re-entry).
+    var existing = main.querySelector('.demo-gate-shell');
+    if (existing) existing.remove();
+    var wrap = document.createElement('div');
+    wrap.innerHTML = buildShellHtml(reason);
+    main.insertBefore(wrap.firstElementChild, main.firstChild);
+    wireCollaboratorUnlock();
+    wireBadgeTripleClick();
   }
 
-  // ── Boot flow ────────────────────────────────────────────────────────
-  async function boot() {
+  function collaboratorSessionUnlocked() {
+    try { return sessionStorage.getItem(COLLAB_FLAG_KEY) === '1'; }
+    catch (e) { return false; }
+  }
+
+  function wireCollaboratorUnlock() {
+    var form = document.querySelector('[data-collaborator-form]');
+    var input = document.querySelector('[data-collaborator-password]');
+    var error = document.querySelector('[data-collaborator-error]');
+    if (!form || !input || form.dataset.wired === '1') return;
+    form.dataset.wired = '1';
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+      if (input.value !== COLLABORATOR_PASSCODE) {
+        if (error) error.textContent = 'Incorrect password. Please try again.';
+        input.select();
+        return;
+      }
+      try { sessionStorage.setItem(COLLAB_FLAG_KEY, '1'); } catch (e) {}
+      location.reload();
+    });
+    setTimeout(function () { input.focus(); }, 0);
+  }
+
+  // Admin-unlock affordances (undocumented on purpose):
+  //   1. Keyboard: Ctrl+Alt+D  (or Ctrl+Option+D on Mac) prompts for the
+  //      passcode. Correct passcode marks the device dev + reloads.
+  //      Alt+Shift+A is a second fallback chord in case an extension
+  //      has claimed Ctrl+Alt+D on Ron's device.
+  //      Ctrl+Shift+D was avoided because Chrome / Safari reserve it
+  //      for the browser's own "Bookmark all tabs" chord and swallow
+  //      keydown events for it before the page ever sees them.
+  //      NOTE: the keyboard listener MUST be wired regardless of mode
+  //      (public / demo / dev). Previously it was only wired inside
+  //      renderPublicShell() so keys did nothing on a demo URL, which
+  //      stranded Ron when he opened his own demo link on a fresh
+  //      device.
+  //   2. Mouse:   triple-click the padlock badge on the public shell.
+  //      Only relevant when the shell is visible (i.e. public mode).
+  var adminKeysWired = false;
+  function wireAdminUnlockKeys() {
+    if (adminKeysWired) return;
+    adminKeysWired = true;
+    document.addEventListener('keydown', function (e) {
+      // Ctrl+Alt+D  (Windows/Linux)  =  Ctrl+Option+D  (macOS).
+      var comboA = e.ctrlKey && e.altKey && !e.shiftKey && !e.metaKey && (e.key === 'D' || e.key === 'd' || e.code === 'KeyD');
+      // Fallback: Alt+Shift+A (browser-safe on Chrome/Firefox/Safari).
+      var comboB = e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && (e.key === 'A' || e.key === 'a' || e.code === 'KeyA');
+      if (comboA || comboB) {
+        e.preventDefault();
+        promptAdminUnlock();
+      }
+    });
+  }
+
+  function wireBadgeTripleClick() {
+    var badge = document.querySelector('.demo-gate-shell__badge');
+    if (!badge || badge.dataset.tripleClickWired === '1') return;
+    badge.dataset.tripleClickWired = '1';
+    badge.style.cursor = 'default';
+    var clicks = 0;
+    var clickTimer = null;
+    badge.addEventListener('click', function () {
+      clicks++;
+      if (clickTimer) clearTimeout(clickTimer);
+      clickTimer = setTimeout(function () { clicks = 0; }, 900);
+      if (clicks >= 3) {
+        clicks = 0;
+        promptAdminUnlock();
+      }
+    });
+  }
+
+  function promptAdminUnlock() {
+    var entered = window.prompt('Admin passcode:');
+    if (entered === null) return;
+    if (entered !== BAKED_PASSCODE) {
+      showToast('Wrong passcode.', true);
+      return;
+    }
+    // Correct passcode. What happens next depends on the current mode.
+    if (mode === 'demo') {
+      // Live demo in progress: reveal the End-demo pill so Ron can
+      // wind it down. Do NOT mark the device dev — that would strip
+      // the token from the URL on next reload.
+      revealDemoControls();
+      showToast('Demo controls revealed.');
+      return;
+    }
+    if (mode === 'dev' && readTokenFromHash()) {
+      // Ron is on his own dev machine and there's a demo token in the
+      // URL (he just clicked Share). Expose the End-demo pill so he
+      // can revoke without reloading in a non-dev browser.
+      revealDevEndDemoControls();
+      showToast('End-demo controls revealed.');
+      return;
+    }
+    // Public shell (or any other state): mark the device dev + reload
+    // without any query string.
+    markDev();
+    var url = location.pathname + location.hash;
+    location.replace(url);
+  }
+
+  function removePublicShell() {
+    document.body.classList.remove('demo-gate-locked');
+    var el = document.querySelector('.demo-gate-shell');
+    if (el) el.remove();
+  }
+
+  // ── Demo controls (Share / End / countdown) ──────────────────────────
+  function showToast(message, isError) {
+    var el = document.createElement('div');
+    el.className = 'demo-gate-toast' + (isError ? ' demo-gate-toast--error' : '');
+    el.textContent = message;
+    document.body.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = 'opacity 0.3s ease';
+      el.style.opacity = '0';
+      setTimeout(function () { el.remove(); }, 350);
+    }, isError ? 4500 : 2500);
+  }
+
+  function formatRemaining(ms) {
+    if (ms < 0) ms = 0;
+    var totalSec = Math.floor(ms / 1000);
+    var hrs = Math.floor(totalSec / 3600);
+    var mins = Math.floor((totalSec % 3600) / 60);
+    if (hrs > 0) return hrs + 'h ' + (mins < 10 ? '0' : '') + mins + 'm';
+    var secs = totalSec % 60;
+    return mins + ':' + (secs < 10 ? '0' : '') + secs;
+  }
+
+  function injectDevControls() {
+    injectShellStyles();
+    if (document.getElementById('demo-gate-controls')) return;
+    // If Ron already has a demo token in the URL (i.e. he generated one
+    // earlier and hasn't ended it yet), don't show the Share pill — he
+    // asked for the dev screen to look quiet during a live demo, and
+    // clicking Share again would just mint another token. Ron can still
+    // reset by clearing the hash or pressing Ctrl+Alt+D + entering the
+    // passcode to reveal the End-demo pill.
+    if (readTokenFromHash()) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'demo-gate-controls';
+    wrap.className = 'demo-gate-controls';
+    wrap.innerHTML = ''
+      + '<button type="button" class="is-primary" data-demo-share title="Generate a 2-hour demo URL and copy it to clipboard">Share demo view</button>';
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-demo-share]').addEventListener('click', onShareDemo);
+  }
+
+  function injectDemoControls() {
+    // On a demo URL we intentionally show NOTHING on-screen — no
+    // countdown, no "End demo" pill, no "this is a demo" banner. Ron
+    // shares the link, gives the demo, and nothing on the page hints
+    // at the time limit. To end a demo early Ron opens the Admin page
+    // (which reads the same GitHub revocations file) or uses the
+    // admin-key chord below to expose the pill for one session.
+    //
+    // Behind the scenes the token is still parsed, verified, and
+    // enforced (expiry + revocations). The countdown runs invisibly
+    // so an expired token still forces a reload into the public shell.
+    injectShellStyles();
+    startCountdown();
+  }
+
+  // Dev-mode variant: Ron is on his own machine (mode === 'dev') but
+  // there's a demo token in the URL. Parse it, populate activeToken,
+  // then render the End-demo pill so he can revoke without leaving
+  // dev mode.
+  async function revealDevEndDemoControls() {
+    if (document.getElementById('demo-gate-controls')) return;
+    var rawToken = readTokenFromHash();
+    if (!rawToken) return;
+    if (!activeToken) {
+      var verified = await parseAndVerifyToken(rawToken);
+      if (!verified) { showToast('Token in URL is not valid.', true); return; }
+      activeToken = verified;
+    }
+    var wrap = document.createElement('div');
+    wrap.id = 'demo-gate-controls';
+    wrap.className = 'demo-gate-controls';
+    wrap.innerHTML = ''
+      + '<span class="demo-gate-controls__timer" data-demo-timer></span>'
+      + '<button type="button" class="is-danger" data-demo-end title="End the demo and revoke the URL for everyone">End demo</button>';
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-demo-end]').addEventListener('click', onEndDemo);
+    startCountdown();
+  }
+
+  // Reveal the demo pill (timer + End-demo button) on-demand. Called
+  // from promptAdminUnlock when the current mode is 'demo' — lets Ron
+  // wind down a live demo without leaving "Demo · 1h 23m" on-screen
+  // for the whole session.
+  function revealDemoControls() {
+    if (mode !== 'demo') return;
+    if (document.getElementById('demo-gate-controls')) return;
+    var wrap = document.createElement('div');
+    wrap.id = 'demo-gate-controls';
+    wrap.className = 'demo-gate-controls';
+    wrap.innerHTML = ''
+      + '<span class="demo-gate-controls__timer" data-demo-timer></span>'
+      + '<button type="button" class="is-danger" data-demo-end title="End the demo and revoke the URL for everyone">End demo</button>';
+    document.body.appendChild(wrap);
+    wrap.querySelector('[data-demo-end]').addEventListener('click', onEndDemo);
+    // Kick off / refresh the countdown so the newly-inserted timer
+    // pill starts populating right away.
+    startCountdown();
+  }
+
+  var countdownTimer = null;
+  function startCountdown() {
+    stopCountdown();
+    if (!activeToken) return;
+    // The timer element is optional — it only exists when the demo pill
+    // has been revealed via the admin-key chord. When it's absent the
+    // countdown still runs so an expired token forces a reload into
+    // the public shell.
+    var update = function () {
+      var remaining = activeToken.payload.exp - Date.now();
+      var timerEl = document.querySelector('[data-demo-timer]');
+      if (remaining <= 0) {
+        if (timerEl) timerEl.textContent = 'Demo expired';
+        stopCountdown();
+        // Force reload into public shell after a short grace pause.
+        setTimeout(function () { location.reload(); }, 1200);
+        return;
+      }
+      if (timerEl) timerEl.textContent = 'Demo \u00b7 ' + formatRemaining(remaining);
+    };
+    update();
+    countdownTimer = setInterval(update, 1000);
+  }
+  function stopCountdown() {
+    if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+  }
+
+  async function onShareDemo() {
+    // Hide the Share pill immediately so the moment the URL flips to
+    // demo, no "Demo" wording is visible on-screen. The reload will
+    // rebuild controls; in demo mode nothing is rendered by default.
+    var pill = document.getElementById('demo-gate-controls');
+    if (pill) pill.style.display = 'none';
+    try {
+      var t = await mintToken(DEMO_TTL_MS);
+      writeTokenToHash(t.raw);
+      var fullUrl = location.origin + location.pathname + location.search + location.hash;
+      try {
+        await navigator.clipboard.writeText(fullUrl);
+        showToast('URL copied to clipboard.');
+      } catch (e) {
+        showToast('URL is in the address bar (clipboard copy blocked).');
+      }
+      // Reload so the page comes up in demo mode. Nothing on-screen will
+      // say "demo" — Ron can end the demo any time with the admin-key
+      // chord and revoke the URL through the Admin page.
+      setTimeout(function () { location.reload(); }, 600);
+    } catch (e) {
+      if (pill) pill.style.display = '';
+      showToast('Could not create URL: ' + e.message, true);
+    }
+  }
+
+  async function onEndDemo() {
+    if (!activeToken) return;
+    var jti = activeToken.payload.jti;
+    var btn = document.querySelector('[data-demo-end]');
+    if (btn) { btn.disabled = true; btn.textContent = 'Ending\u2026'; }
+    try {
+      await revokeJti(jti);
+      showToast('Demo ended. This URL will no longer work.');
+      // Strip the token from the URL, then reload into public shell.
+      removeTokenFromHash();
+      setTimeout(function () { location.reload(); }, 900);
+    } catch (e) {
+      if (btn) { btn.disabled = false; btn.textContent = 'End demo'; }
+      showToast('Could not revoke: ' + e.message, true);
+    }
+  }
+
+  // ── GitHub-committed revocations ─────────────────────────────────────
+  async function fetchRevokeFileFromGitHub() {
+    var token = localStorage.getItem(GH_TOKEN_KEY);
+    if (!token) throw new Error('No GitHub token stored. Save one in the Admin page first.');
+    var apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + REVOKE_PATH;
+    var res = await fetch(apiUrl, {
+      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json' }
+    });
+    if (res.status === 404) {
+      return { sha: null, content: { jtis: [] } };
+    }
+    if (!res.ok) throw new Error('GitHub fetch failed: ' + res.status);
+    var data = await res.json();
+    var text = '';
+    try { text = atob(data.content.replace(/\n/g, '')); } catch (e) { text = ''; }
+    var content = { jtis: [] };
+    try { content = text ? JSON.parse(text) : { jtis: [] }; } catch (e) {}
+    if (!Array.isArray(content.jtis)) content.jtis = [];
+    return { sha: data.sha || null, content: content };
+  }
+
+  async function commitRevokeFile(content, sha, message) {
+    var token = localStorage.getItem(GH_TOKEN_KEY);
+    if (!token) throw new Error('No GitHub token.');
+    var apiUrl = 'https://api.github.com/repos/' + GH_OWNER + '/' + GH_REPO + '/contents/' + REVOKE_PATH;
+    var body = { message: message, content: btoa(JSON.stringify(content, null, 2)) };
+    if (sha) body.sha = sha;
+    var res = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Accept': 'application/vnd.github+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      var txt = await res.text();
+      throw new Error('GitHub PUT failed: ' + res.status + ' ' + txt.slice(0, 200));
+    }
+    return res.json();
+  }
+
+  async function revokeJti(jti) {
+    var current = await fetchRevokeFileFromGitHub();
+    if (current.content.jtis.indexOf(jti) === -1) {
+      current.content.jtis.push(jti);
+    }
+    current.content.updatedAt = new Date().toISOString();
+    await commitRevokeFile(
+      current.content,
+      current.sha,
+      'demo: revoke token ' + jti
+    );
+  }
+
+  // ── Boot ─────────────────────────────────────────────────────────────
+  async function boot(onReady) {
+    const profileToken = new URLSearchParams(location.search).get('samoaProfile');
+    if (profileToken !== null) {
+      try {
+        if (!/^[0-9a-f]{40}$/.test(profileToken)) throw new Error('Invalid scholar link.');
+        const response = await fetch('data/samoa-share-tokens.json', {cache:'no-cache'});
+        if (!response.ok) throw new Error('Scholar links are not yet available.');
+        const doc = await response.json();
+        const sid = Object.keys(doc.m || {}).find(id => doc.m[id] === profileToken && /^WSM-S\d{4}$/.test(id));
+        if (!sid) throw new Error('This scholar link was not found.');
+        window.__samoaSharedScholar = {scholarId:sid, token:profileToken};
+        cachedPasscode = BAKED_PASSCODE;
+        onReady();
+      } catch (error) {
+        document.body.replaceChildren();
+        const message = document.createElement('p'); message.textContent = error.message;
+        document.body.appendChild(message); document.documentElement.classList.remove('samoa-profile-loading');
+      }
+      return;
+    }
     handleDevOptIn();
+    injectShellStyles();
+    // Wire the admin unlock keyboard chords immediately so they work
+    // regardless of which mode we end up in (public / demo / dev).
+    wireAdminUnlockKeys();
 
-    // Dev mode is fast-path — no fetch, no crypto, transparent unlock.
+    // Dev mode wins over everything.
     if (isDevMarked()) {
       mode = 'dev';
       cachedPasscode = BAKED_PASSCODE;
-      return { mode: 'dev' };
+      // Wait for DOM to be ready before injecting controls.
+      var wireDev = function () { injectDevControls(); };
+      if (document.body) wireDev();
+      else document.addEventListener('DOMContentLoaded', wireDev);
+      onReady();
+      return;
     }
 
-    // Try to unlock via a hash-fragment token.
-    var raw = readTokenFromHash();
-    if (raw) {
-      var verified = await parseAndVerifyToken(raw);
-      if (!verified) {
-        renderPublicShell('The demo link is invalid or has been altered.');
-        return { mode: 'public', reason: 'invalid-token' };
-      }
-      if (verified.payload.exp < Date.now()) {
-        removeTokenFromHash();
-        renderPublicShell('This demo link has expired.');
-        return { mode: 'public', reason: 'expired' };
-      }
-      var revoked = await loadRevocations();
-      if (revoked.has(verified.payload.jti)) {
-        removeTokenFromHash();
-        renderPublicShell('This demo link has been ended.');
-        return { mode: 'public', reason: 'revoked' };
-      }
-      mode = 'demo';
-      activeToken = verified;
+    // Collaborator password access lasts for the current browser tab.
+    if (collaboratorSessionUnlocked()) {
+      mode = 'collaborator';
       cachedPasscode = BAKED_PASSCODE;
-      renderDemoControls(verified);
-      return { mode: 'demo', payload: verified.payload };
+      removePublicShell();
+      onReady();
+      return;
     }
 
-    // No token, no dev flag — render the public shell.
-    renderPublicShell(null);
-    return { mode: 'public' };
-  }
-
-  function renderDemoControls(verified) {
-    var wrap = document.createElement('div');
-    wrap.className = 'samoa-demo-gate-controls';
-    var countdown = document.createElement('span');
-    countdown.style.padding = '8px 12px';
-    countdown.style.borderRadius = '8px';
-    countdown.style.background = '#0F3921';
-    countdown.style.color = '#fff';
-    countdown.style.fontSize = '12px';
-    wrap.appendChild(countdown);
-    var endBtn = document.createElement('button');
-    endBtn.type = 'button';
-    endBtn.textContent = 'End demo';
-    endBtn.onclick = function () {
-      window.samoaDemoGate.endDemo(verified.payload.jti);
-    };
-    wrap.appendChild(endBtn);
-    document.body.appendChild(wrap);
-
-    function tick() {
-      var msLeft = verified.payload.exp - Date.now();
-      if (msLeft <= 0) {
-        countdown.textContent = 'Demo ended';
-        setTimeout(function () { location.reload(); }, 800);
-        return;
-      }
-      var m = Math.floor(msLeft / 60000);
-      var s = Math.floor((msLeft % 60000) / 1000);
-      countdown.textContent = 'Demo · ' + m + ':' + (s < 10 ? '0' : '') + s;
+    // Otherwise, look for a demo token.
+    var rawToken = readTokenFromHash();
+    if (!rawToken) {
+      renderPublicShell();
+      return;
     }
-    tick();
-    setInterval(tick, 1000);
+    var verified = await parseAndVerifyToken(rawToken);
+    if (!verified) {
+      renderPublicShell('This demo link is not valid.');
+      return;
+    }
+    var now = Date.now();
+    if (verified.payload.exp < now) {
+      renderPublicShell('This demo link has expired.');
+      return;
+    }
+    var revoked = await loadRevocations();
+    if (revoked.has(verified.payload.jti)) {
+      renderPublicShell('This demo link has ended.');
+      return;
+    }
+
+    // Valid demo — unlock and render controls.
+    mode = 'demo';
+    activeToken = verified;
+    cachedPasscode = BAKED_PASSCODE;
+    var wireDemo = function () { injectDemoControls(); };
+    if (document.body) wireDemo();
+    else document.addEventListener('DOMContentLoaded', wireDemo);
+    onReady();
   }
 
-  // ── Public API ───────────────────────────────────────────────────────
-  window.samoaDemoGate = {
+  // ── Compatibility API — matches the shape admin.js expects from dbGate ──
+  window.demoGate = {
     boot: boot,
     fetchJson: fetchJsonEncrypted,
+    encryptForUpload: encryptString,
     unlockEmbeddedRead: unlockEmbeddedRead,
-    mintToken: mintToken,
-    markDev: markDev,
-    unmarkDev: unmarkDev,
-    isDevMarked: isDevMarked,
     isUnlocked: function () { return !!cachedPasscode; },
-    getMode: function () { return mode; },
-    endDemo: async function (jti) {
-      // Placeholder — the actual GitHub-commit flow is wired in Session 3+
-      // alongside the admin "Share demo view" button. For now, revoke
-      // client-side by nudging the user to reload.
-      alert('End demo: token ' + jti + ' will be added to the revocations file on the next admin push. Reloading in demo mode will now fall through to the public shell if the revocation is committed.');
-      window.location.hash = '';
-      window.location.reload();
-    },
-    // Backwards-compat shim: some panel code paths reference dbGate.
-    // Provide a minimal read-only alias limited to fetchJson.
-    _asDbGate: function () {
-      return { fetchJson: fetchJsonEncrypted, isUnlocked: function () { return !!cachedPasscode; } };
-    }
+    getMode: function () { return mode; }
   };
+
+  // Legacy alias so existing itaukei-database.js callers continue to work
+  // during the swap. New code should reference demoGate directly.
+  window.dbGate = window.demoGate;
 })();

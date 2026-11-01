@@ -1,33 +1,31 @@
-name: Refresh Samoa Master File snapshot
+name: Refresh Samoan Master File snapshot
 
-# Refresh workflow for the Samoa Master Sheet snapshot. Runs every 2 hours
-# (at :10 past every second hour, chosen to be offset from other repo
-# cron runs to keep commit-race odds on main low) and on manual dispatch,
-# including the Samoa Admin Panel's
+# Sister workflow to refresh-master-file.yml (iTaukei). Runs every 2 hours
+# (offset 5 minutes after the iTaukei run to reduce commit-race odds on
+# main) and on manual dispatch — including the Samoan Admin Panel's
 # "Refresh from Sheet" / "Force refresh" buttons, which call the GitHub
 # Actions dispatch API for this workflow.
 #
-# Reads the Samoa Master Sheet via a service account,
-# transforms + sanitizes, encrypts, and commits. Guardrails: only touches
-# data/samoa-* files; refuses to run against any spreadsheet ID enumerated
-# in scripts/samoa_master_file_config.py::_FORBIDDEN_SPREADSHEET_IDS.
+# Reads the Samoan Scholars Master Sheet via a service account (read-only),
+# reshapes it with scripts/country_kit/governance_dump.py,
+# transforms + sanitizes, encrypts, and commits. NEVER touches
+# data/itaukei-* files, itaukei_* scripts, or refresh-master-file.yml.
 #
 # Requires GitHub Secrets:
 #   GOOGLE_SERVICE_ACCOUNT_JSON  — raw JSON of a Google Cloud service account
-#                                   key for the Samoa Master Sheet;
-#                                   must be granted Editor on the Samoa
+#                                   key (shared with the iTaukei workflow);
+#                                   needs Viewer access on the Samoan
 #                                   Master Sheet separately (see docs)
 #   VAVELAB_SAMOA_PASSCODE      — passcode used to derive AES-GCM key for
-#                                   Samoa data files (distinct from
-#                                   Samoa-only value)
+#                                   Samoan data files (distinct from
+#                                   VAVELAB_PASSCODE)
 #
 # Deferred parity item: this workflow intentionally omits a
-# reconcile QA step (deliberately deferred until the Dashboard tab QA
-# layout is confirmed). Any future reconcile script must be built directly
-# against Samoa Master Sheet row/column positions
-# Master-file Dashboard tab; the Samoa Dashboard tab's layout has not
+# master_file_reconcile.py-equivalent QA step. The iTaukei reconcile
+# script is hard-coded to specific row/column positions on the iTaukei
+# Master-file Dashboard tab; the Samoan Dashboard tab's layout has not
 # been confirmed to match, so a strict reconcile step would be guessing.
-# This can be added later once the Samoa Dashboard sheet's QA layout is
+# This can be added later once the Samoan Dashboard sheet's QA layout is
 # confirmed.
 
 on:
@@ -35,14 +33,19 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/refresh-samoa-master-file.yml"
+      - "scripts/country_kit/governance_dump.py"
+      - "scripts/country_kit/countries/samoa.json"
       - "scripts/samoa_master_file_config.py"
       - "scripts/samoa_master_file_transformer.py"
+      - "scripts/country_news.py"
+      - "scripts/samoa_short_disciplines.py"
+      - "scripts/master_short_disciplines.py"
       - "scripts/samoa_encrypt_data.py"
       - "scripts/samoa_decrypt_data.py"
       - "js/samoa-database-adapter.js"
       - "js/samoa-database-master.js"
   schedule:
-    - cron: "10 */2 * * *"   # every 2 hours, 10 min after the hour (UTC)
+    - cron: "5 */2 * * *"   # every 2 hours, 5 min after the hour (UTC)
   workflow_dispatch:
     inputs:
       force_commit:
@@ -69,6 +72,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
+          # Refreshes, including reruns, must build on the latest published snapshot.
+          ref: main
           persist-credentials: true
           fetch-depth: 0
 
@@ -94,7 +99,7 @@ jobs:
             python3 scripts/samoa_decrypt_data.py --all || \
               echo "Bootstrap decrypt failed (first run?); continuing"
           else
-            echo "No prior Samoa Master-file snapshot; first run"
+            echo "No prior Samoan Master-file snapshot; first run"
           fi
 
       - name: Stash previous plaintext for diff
@@ -111,30 +116,23 @@ jobs:
             data/samoa-master-grad-degrees.json \
             data/samoa-master-mobility.json \
             data/samoa-master-geography.json \
+            data/samoa-master-positions.json \
+            data/samoa-master-news.json \
             data/samoa-master-geography-coordinates.json \
             data/samoa-master-worldpoints.json \
             data/samoa-body-composition-master.json; do
             [ -f "$f" ] && cp "$f" "/tmp/prev/$(basename "$f")" || true
           done
 
-      - name: Autofill missing university coordinates
+      - name: Fetch, sanitize, and transform Samoan Master file
         env:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
           set -euo pipefail
-          # Coordinate enrichment is helpful for Panel B2, but a temporary
-          # Sheets write-permission failure must not block the read-only B4
-          # Research Geography snapshot refresh.
-          # python3 scripts/samoa_autofill_university_coords.py  # not yet implemented for Samoa || \
-            echo "University-coordinate autofill unavailable; continuing with Master snapshot refresh"
-
-      - name: Fetch, sanitize, and transform Samoa Master file
-        env:
-          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-        run: |
-          set -euo pipefail
+          python3 scripts/country_kit/governance_dump.py samoa --dump-dir /tmp/samoa-dump > /dev/null
           python3 scripts/samoa_master_file_transformer.py \
-            --mode=production \
+            --mode=local \
+            --dump-dir=/tmp/samoa-dump \
             --out-dir=data
 
       - name: Diff vs previous snapshot
@@ -172,6 +170,8 @@ jobs:
             samoa-master-grad-degrees.json
             samoa-master-mobility.json
             samoa-master-geography.json
+            samoa-master-positions.json
+            samoa-master-news.json
             samoa-master-geography-coordinates.json
             samoa-master-aggregates.json
             samoa-master-worldpoints.json
@@ -209,7 +209,7 @@ jobs:
           python3 scripts/samoa_encrypt_data.py "${TARGETS[@]}"
 
       - name: Commit
-        if: ${{ github.event.inputs.dry_run != 'true' && steps.changed.outputs.content_changed_count != '0' }}
+        if: ${{ github.event.inputs.dry_run != 'true' }}
         env:
           FORCE_COMMIT: ${{ github.event.inputs.force_commit }}
           DELTA_PCT: ${{ steps.diff.outputs.delta_pct }}
@@ -221,19 +221,20 @@ jobs:
             data/samoa-master-*.json.enc \
             data/samoa-body-composition-master.json.enc \
             data/samoa-last-master-sync.json.enc
+          if [ -f data/samoa-share-tokens.json ]; then git add data/samoa-share-tokens.json; fi
           if git diff --cached --quiet; then
             echo "No changes to commit (unexpected — plaintext_changed said yes)"
             exit 0
           fi
-          MSG="chore: Samoa Master-file heartbeat"
+          MSG="chore: Samoan Master-file heartbeat"
           if [ "${DELTA_PCT}" != "0" ] && [ "$(python3 -c "print(float('$DELTA_PCT') >= 2.0)")" = "True" ]; then
-            MSG="Auto-refresh: Samoa Master-file snapshot (delta ${DELTA_PCT}%)"
+            MSG="Auto-refresh: Samoan Master-file snapshot (delta ${DELTA_PCT}%)"
           fi
           if [ "${FORCE_COMMIT}" = "true" ]; then
             MSG="${MSG} [manual]"
           fi
           git commit -m "$MSG"
-          # Rebase-retry push to survive concurrent commits
+          # Rebase-retry push (pattern from the iTaukei / Zotero workflows)
           for attempt in 1 2 3; do
             git pull --rebase origin main && git push origin main && exit 0
             echo "Push attempt $attempt failed; retrying..."
@@ -241,3 +242,7 @@ jobs:
           done
           echo "Failed to push after 3 attempts"
           exit 1
+
+# Refresh after ResearchSpace publication import, 2026-10-12.
+
+# Refresh after complete seven-repository reconciliation and duplicate audit, 2026-10-12.
