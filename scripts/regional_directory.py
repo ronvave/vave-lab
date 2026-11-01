@@ -309,6 +309,18 @@ def build_directory(dumps, country_meta):
             # Titles later in a name (e.g. Samoan matai title + Dr) are kept.
             lead, rec['n'] = split_lead_title(rec['n'])
             sal = salutation(r) or lead
+            if code == 'WSM':
+                # Samoa (approved 2026-11-01): Column B is shown as written.
+                # Column E is added only when B carries no title, shortened
+                # the same way (Professor variants -> Prof, Revd Dr -> Rev Dr);
+                # other salutations (Lecturer, matai titles) are not added.
+                if lead or title_set(rec['n']):
+                    sal = lead
+                else:
+                    e = fold(salutation(r))
+                    sal = ('Rev Dr' if 'rev' in e and 'dr' in e.split() else
+                           'Prof' if 'prof' in e else
+                           'Dr' if e in ('dr', 'dr.', 'doctor') else '')
             sal = re.sub(r'(?i)^professor$', 'Prof', sal.strip())
             # Samoan names often carry the title after the matai title
             # ("Folasāitu Professor Julia Ioane"): keep that order, show
