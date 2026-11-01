@@ -1963,7 +1963,7 @@
     const profiles = state.scholarProfilesByName || new Map();
     const set = new Set();
     profiles.forEach((p, name) => {
-      const grad = [p && p.masters, p && p.phd].filter(Boolean);
+      const grad = studyDegrees(p);
       const matched = grad.some(g => {
         if (country && g.country !== country) return false;
         if (uni && g.university !== uni) return false;
@@ -2027,6 +2027,7 @@
     // existing plumbing narrows the scholar cards to those who studied here.
     state.scholarStudyCountry = state.worldSelectedCountry || '';
     state.scholarStudyUni = state.worldSelectedUniversity || '';
+    if (state.scholarStudyCountry) state.scholarStudyRegion = '';
     // renderLeaders() now feeds Panel G itself (see the scholarFilterNames
     // block at the end of that function), so we don't need a separate
     // renderItems() call here — that would double-render.
@@ -6955,6 +6956,8 @@
   state.scholarKeywordSearch = ''; // research-keyword search across insights + publications
   state.scholarSectorFilter = ''; // '' or one of SECTORS
   state.scholarDisciplineFilter = new Set();  // AND across checked disciplines
+  state.scholarStudyRegion = '';   // world region selected in the Study combo
+  state.scholarWorkRegion = '';    // world region selected in the Work combo
   state.scholarStudyCountry = '';  // country selected in the Study combo
   state.scholarStudyUni = '';      // optional narrower selection within that country
   state.scholarWorkCountry = '';   // country selected in the Work combo
@@ -7387,12 +7390,21 @@
       const wantU = state.scholarStudyUni;
       rows = rows.filter(r => {
         const p = enrichedByName.get(r.name) || {};
-        const items = [p.masters, p.phd].filter(Boolean);
-        return items.some(g => g.country === wantC && (!wantU || g.university === wantU));
+        return studyDegrees(p).some(g => g.country === wantC && (!wantU || g.university === wantU));
       });
+    } else if (state.scholarStudyRegion) {
+      const wantR = state.scholarStudyRegion;
+      rows = rows.filter(r => studyDegrees(enrichedByName.get(r.name) || {}).some(g => regionOfCountry(g.country) === wantR));
     }
     // Share the menu's canonical location and institution resolution. Keep
     // counts and publication filtering aligned, including misplaced employers.
+    if (!state.scholarWorkCountry && state.scholarWorkRegion) {
+      const wantR = state.scholarWorkRegion;
+      rows = rows.filter(r => {
+        const c = scholarWorkCountry(enrichedByName.get(r.name) || {});
+        return !!c && regionOfCountry(c) === wantR;
+      });
+    }
     if (state.scholarWorkCountry) {
       const wantC = state.scholarWorkCountry;
       const wantU = state.scholarWorkUni;
@@ -7449,6 +7461,7 @@
         || !!state.scholarProvFilter
         || !!state.scholarSectorFilter
         || (state.scholarDisciplineFilter && state.scholarDisciplineFilter.size > 0)
+        || !!state.scholarStudyRegion || !!state.scholarWorkRegion
         || !!state.scholarStudyCountry || !!state.scholarStudyUni
         || !!state.scholarWorkCountry  || !!state.scholarWorkUni;
   }
@@ -7570,13 +7583,84 @@
   //  Countries and universities are extracted from the enrichment profiles
   //  and returned as alphabetized country → [unis] maps for the combos.
   // ============================================================
+  // A scholar's Master's and PhD study places. Profiles carry flat fields
+  // (mastersCountry, mastersUniversity, phdCountry, phdUniversity); older
+  // snapshots used nested { masters: {country, university} } objects.
+  function studyDegrees(p) {
+    if (!p) return [];
+    const out = [];
+    [['masters', 'mastersCountry', 'mastersUniversity'], ['phd', 'phdCountry', 'phdUniversity']].forEach(([k, ck, uk]) => {
+      const g = p[k] && typeof p[k] === 'object' ? p[k] : null;
+      let country = String((g && g.country) || p[ck] || '').trim();
+      let university = String((g && g.university) || p[uk] || '').trim();
+      // A university typed into the country cell ("The University of the
+      // South Pacific") is moved to its real country.
+      const known = studyPointFor(country);
+      if (known) { if (!university) university = known.university; country = known.country; }
+      // Field-of-study text in the university cell (misaligned rows) is not
+      // listed as a university.
+      if (university && !looksLikeInstitution(university, country)) university = '';
+      if (country || university) out.push({ country, university });
+    });
+    return out;
+  }
+
+  function studyPointFor(name) {
+    const n = String(name || '').trim().toLowerCase().replace(/^the\s+/, '');
+    if (!n) return null;
+    const pts = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
+    return pts.find(x => x.university && String(x.university).toLowerCase().replace(/^the\s+/, '') === n) || null;
+  }
+  function looksLikeInstitution(u, country) {
+    const pts = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
+    if (pts.some(x => x.university === u && (!country || x.country === country))) return true;
+    return /universit|college|institut|school|polytechn|academy|seminary|centre|center|faculty|campus|graduate|\bcrc\b/i.test(u);
+  }
+
+  // World region of a country, for the Region › Country › University
+  // dropdowns. The graduate-studies file's region wins; this table covers
+  // countries that only appear as places of work.
+  const REGION_ORDER = ['Oceania', 'Asia', 'Europe', 'Americas', 'Africa'];
+  const COUNTRY_REGION_JS = {
+    Oceania: ['Fiji', 'Australia', 'New Zealand', 'Papua New Guinea', 'Tonga', 'Samoa', 'American Samoa', 'Solomon Islands', 'Vanuatu',
+      'Kiribati', 'Tuvalu', 'Nauru', 'Cook Islands', 'Niue', 'Palau', 'Marshall Islands', 'Federated States of Micronesia', 'Guam',
+      'New Caledonia', 'French Polynesia', 'Micronesia', 'Wallis and Futuna', 'Tokelau', 'Northern Mariana Islands', 'Hawaii'],
+    Asia: ['China', 'India', 'Indonesia', 'Japan', 'Philippines', 'South Korea', 'Taiwan', 'Malaysia', 'Singapore', 'Thailand',
+      'Vietnam', 'Hong Kong', 'Bangladesh', 'Pakistan', 'Sri Lanka', 'Nepal', 'United Arab Emirates', 'Qatar', 'Saudi Arabia', 'Israel', 'Timor-Leste'],
+    Europe: ['United Kingdom', 'UK', 'England', 'Scotland', 'Wales', 'Northern Ireland', 'Ireland', 'Germany', 'Italy', 'Malta', 'Portugal',
+      'Sweden', 'France', 'Netherlands', 'Belgium', 'Switzerland', 'Norway', 'Denmark', 'Finland', 'Spain', 'Austria', 'Greece'],
+    Americas: ['United States', 'USA', 'Canada', 'Mexico', 'Cuba', 'Trinidad and Tobago', 'Jamaica', 'Brazil', 'Chile', 'Argentina', 'Peru', 'Colombia'],
+    Africa: ['South Africa', 'Kenya', 'Nigeria', 'Ghana', 'Egypt', 'Ethiopia']
+  };
+  function regionOfCountry(c) {
+    c = String(c || '').replace(/\s*\([^)]*\)\s*$/, '').trim();
+    if (!c) return '';
+    const pts = (state.graduateStudies && state.graduateStudies.worldPoints) || [];
+    const hit = pts.find(x => x.country === c && x.region && x.region !== 'Other');
+    if (hit) return hit.region === 'Pacific' ? 'Oceania' : hit.region;
+    for (const r of REGION_ORDER) if (COUNTRY_REGION_JS[r].includes(c)) return r;
+    return 'Other';
+  }
+  // country -> [unis] map regrouped as region -> (country -> [unis]), regions in REGION_ORDER.
+  function groupTreeByRegion(countryTree) {
+    const by = new Map();
+    countryTree.forEach((unis, c) => {
+      const r = regionOfCountry(c);
+      if (!by.has(r)) by.set(r, new Map());
+      by.get(r).set(c, unis);
+    });
+    const order = [...REGION_ORDER.filter(r => by.has(r)),
+      ...[...by.keys()].filter(r => !REGION_ORDER.includes(r) && r !== 'Other').sort(),
+      ...(by.has('Other') ? ['Other'] : [])];
+    return new Map(order.map(r => [r, by.get(r)]));
+  }
+
   function buildStudyTree() {
     const tree = new Map();
     (state.scholarProfilesByName || new Map()).forEach(p => {
-      [p.masters, p.phd].forEach(g => {
-        if (!g) return;
-        const c = (g.country || '').trim();
-        const u = (g.university || '').trim();
+      studyDegrees(p).forEach(g => {
+        const c = g.country;
+        const u = g.university;
         if (!c) return;
         if (!tree.has(c)) tree.set(c, new Set());
         if (u) tree.get(c).add(u);
@@ -7872,6 +7956,97 @@
   //  Typing in the input filters both columns. Click parent → select parent;
   //  Click child → select parent + child.
   // ============================================================
+  // ============================================================
+  //  Three-column combo (Study, Work): Region › Country › University.
+  //  Hover a region to see its countries, hover a country to see its
+  //  universities. Clicking any item selects it (and its parents).
+  // ============================================================
+  function initThreeColumnCombo({ root, panel, tree, buildLabel, onSelect, isActive }) {
+    const colR = panel.querySelector('[data-region-col]');
+    const colC = panel.querySelector('[data-parent-col]');
+    const colU = panel.querySelector('[data-child-col]');
+    const headC = panel.querySelector('[data-country-header]');
+    const headU = panel.querySelector('[data-child-header]');
+    let hovR = null, hovC = null;
+    function item(label, count, caret) {
+      const el = document.createElement('div');
+      el.className = 'dsf-combo-item';
+      el.dataset.value = label;
+      el.innerHTML = `<span class="dsf-combo-item__label">${escapeHtml(label)}</span>` +
+        `<span class="dsf-combo-item__count">${count ? `(${count})` : ''}</span>` +
+        (caret ? '<span class="dsf-combo-caret">\u25B8</span>' : '');
+      return el;
+    }
+    function mark(col, v) { col.querySelectorAll('.dsf-combo-item').forEach(el => el.classList.toggle('is-highlighted', el.dataset.value === v)); }
+    function renderRegions() {
+      colR.innerHTML = '';
+      tree.forEach((countries, r) => {
+        const el = item(r, countries.size, true);
+        el.addEventListener('mouseenter', () => { hovR = r; hovC = null; mark(colR, r); renderCountries(); renderUnis(); });
+        el.addEventListener('click', () => { onSelect({ region: r, country: '', uni: '' }); close(); });
+        colR.appendChild(el);
+      });
+      mark(colR, hovR);
+    }
+    function renderCountries() {
+      colC.innerHTML = '';
+      const countries = hovR ? tree.get(hovR) : null;
+      if (headC) headC.textContent = hovR ? `Countries in ${hovR}` : 'Countries';
+      if (!countries) return;
+      countries.forEach((unis, c) => {
+        const el = item(c, unis.length, unis.length > 0);
+        el.addEventListener('mouseenter', () => { hovC = c; mark(colC, c); renderUnis(); });
+        el.addEventListener('click', () => { onSelect({ region: hovR, country: c, uni: '' }); close(); });
+        colC.appendChild(el);
+      });
+      mark(colC, hovC);
+    }
+    function renderUnis() {
+      colU.innerHTML = '';
+      const unis = hovR && hovC ? (tree.get(hovR).get(hovC) || []) : [];
+      if (headU) headU.textContent = hovC && unis.length ? `Universities in ${hovC}` : 'Universities';
+      unis.forEach(u => {
+        const el = item(u, 0, false);
+        el.addEventListener('click', () => { onSelect({ region: hovR, country: hovC, uni: u }); close(); });
+        colU.appendChild(el);
+      });
+    }
+    function open() {
+      positionPanelBelow(root, panel);
+      panel.classList.add('is-visible'); root.classList.add('is-open');
+      if (!hovR) {
+        hovR = [...tree.keys()][0] || null;
+        const cs = hovR ? [...tree.get(hovR).keys()] : [];
+        hovC = cs[0] || null;
+      }
+      renderRegions(); renderCountries(); renderUnis();
+      document.addEventListener('mousedown', closeOnOutside, true);
+      document.addEventListener('keydown', onEsc);
+    }
+    function close() {
+      panel.classList.remove('is-visible'); root.classList.remove('is-open');
+      document.removeEventListener('mousedown', closeOnOutside, true);
+      document.removeEventListener('keydown', onEsc);
+    }
+    function closeOnOutside(ev) { if (!root.contains(ev.target) && !panel.contains(ev.target)) close(); }
+    function onEsc(ev) { if (ev.key === 'Escape') close(); }
+    root.addEventListener('click', ev => {
+      if (ev.target.closest('[data-clear-combo]')) return;
+      if (panel.classList.contains('is-visible')) return;
+      open();
+    });
+    function refreshLabel() {
+      const a = isActive();
+      root.classList.toggle('is-active', a.active);
+      const slot = root.querySelector('[data-label-slot]');
+      if (slot) slot.textContent = a.value || buildLabel();
+      const badge = root.querySelector('[data-clear-combo]');
+      if (badge) badge.style.display = a.active ? '' : 'none';
+    }
+    refreshLabel();
+    return { refreshLabel, close };
+  }
+
   function initTwoColumnCombo({
     root, input, panel, colParent, colChild, colChildHeader,
     tree, parentLabelSingular, buildLabel, onSelect, isActive
@@ -8152,29 +8327,25 @@
       refreshDiscLabel();
     }
 
-    // ---- Country / University of study combo ----
+    // ---- Region / Country / University of study combo ----
     const studyRoot  = document.querySelector('[data-scholar-study-combo]');
     const studyPanel = document.querySelector('[data-scholar-study-panel]');
     if (studyRoot && studyPanel) {
-      const input = studyRoot.querySelector('[data-scholar-study-input]');
-      const colP = studyPanel.querySelector('[data-parent-col]');
-      const colC = studyPanel.querySelector('[data-child-col]');
-      const colCH = studyPanel.querySelector('[data-child-header]');
-      const tree = buildStudyTree();
-      const combo = initTwoColumnCombo({
-        root: studyRoot, input, panel: studyPanel,
-        colParent: colP, colChild: colC, colChildHeader: colCH,
-        tree, parentLabelSingular: 'Universities',
-        buildLabel: () => 'Countries / Universities of study',
+      const combo = initThreeColumnCombo({
+        root: studyRoot, panel: studyPanel,
+        tree: groupTreeByRegion(buildStudyTree()),
+        buildLabel: () => 'Regions / Countries / Universities of study',
         isActive: () => {
-          const c = state.scholarStudyCountry, u = state.scholarStudyUni;
+          const r = state.scholarStudyRegion, c = state.scholarStudyCountry, u = state.scholarStudyUni;
           if (c && u) return { active: true, value: `${c} › ${u}` };
           if (c) return { active: true, value: c };
+          if (r) return { active: true, value: r };
           return { active: false, value: '' };
         },
-        onSelect: ({ parent, child }) => {
-          state.scholarStudyCountry = parent || '';
-          state.scholarStudyUni = child || '';
+        onSelect: ({ region, country, uni }) => {
+          state.scholarStudyRegion = region || '';
+          state.scholarStudyCountry = country || '';
+          state.scholarStudyUni = uni || '';
           state.scholarPage = 1;
           renderLeaders();
           combo.refreshLabel();
@@ -8182,37 +8353,32 @@
       });
       studyRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
         ev.stopPropagation();
-        state.scholarStudyCountry = ''; state.scholarStudyUni = '';
-        if (input) input.value = '';
+        state.scholarStudyRegion = ''; state.scholarStudyCountry = ''; state.scholarStudyUni = '';
         state.scholarPage = 1;
         renderLeaders();
         combo.refreshLabel();
       });
     }
 
-    // ---- Country / University of work combo ----
+    // ---- Region / Country / University of work combo ----
     const workRoot  = document.querySelector('[data-scholar-work-combo]');
     const workPanel = document.querySelector('[data-scholar-work-panel]');
     if (workRoot && workPanel) {
-      const input = workRoot.querySelector('[data-scholar-work-input]');
-      const colP = workPanel.querySelector('[data-parent-col]');
-      const colC = workPanel.querySelector('[data-child-col]');
-      const colCH = workPanel.querySelector('[data-child-header]');
-      const tree = buildWorkTree();
-      const combo = initTwoColumnCombo({
-        root: workRoot, input, panel: workPanel,
-        colParent: colP, colChild: colC, colChildHeader: colCH,
-        tree, parentLabelSingular: 'Universities',
-        buildLabel: () => 'Countries / Universities of work',
+      const combo = initThreeColumnCombo({
+        root: workRoot, panel: workPanel,
+        tree: groupTreeByRegion(buildWorkTree()),
+        buildLabel: () => 'Regions / Countries / Universities of work',
         isActive: () => {
-          const c = state.scholarWorkCountry, u = state.scholarWorkUni;
+          const r = state.scholarWorkRegion, c = state.scholarWorkCountry, u = state.scholarWorkUni;
           if (c && u) return { active: true, value: `${c} › ${u}` };
           if (c) return { active: true, value: c };
+          if (r) return { active: true, value: r };
           return { active: false, value: '' };
         },
-        onSelect: ({ parent, child }) => {
-          state.scholarWorkCountry = parent || '';
-          state.scholarWorkUni = child || '';
+        onSelect: ({ region, country, uni }) => {
+          state.scholarWorkRegion = region || '';
+          state.scholarWorkCountry = country || '';
+          state.scholarWorkUni = uni || '';
           state.scholarPage = 1;
           renderLeaders();
           combo.refreshLabel();
@@ -8220,8 +8386,7 @@
       });
       workRoot.querySelector('[data-clear-combo]').addEventListener('click', ev => {
         ev.stopPropagation();
-        state.scholarWorkCountry = ''; state.scholarWorkUni = '';
-        if (input) input.value = '';
+        state.scholarWorkRegion = ''; state.scholarWorkCountry = ''; state.scholarWorkUni = '';
         state.scholarPage = 1;
         renderLeaders();
         combo.refreshLabel();
@@ -8237,6 +8402,7 @@
         state.scholarConfFilter = ''; state.scholarProvFilter = '';
         state.scholarSectorFilter = '';
         state.scholarDisciplineFilter.clear();
+        state.scholarStudyRegion = ''; state.scholarWorkRegion = '';
         state.scholarStudyCountry = ''; state.scholarStudyUni = '';
         state.scholarWorkCountry = ''; state.scholarWorkUni = '';
         state.scholarPage = 1;

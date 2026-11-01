@@ -3705,6 +3705,10 @@
       min-width: 220px; max-height: 360px; overflow-y: auto;
     }
     .dsf-combo-col--first { border-right: 1px solid var(--color-border, #d8d0b0); background: #fdfbf0; }
+    .dsf-combo-panel--3 { max-width: 900px; }
+    .dsf-combo-panel--3 .dsf-combo-col { min-width: 200px; }
+    .dsf-combo-panel--3 .dsf-combo-col--first { min-width: 170px; }
+    .dsf-combo-col--mid { border-right: 1px solid var(--color-border, #d8d0b0); background: #fffdf6; }
     .dsf-combo-col__head {
       font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
       color: #6b7280; font-weight: 600; padding: 4px 14px 8px;
@@ -4930,13 +4934,13 @@
           </button>
 
           <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-study-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>Countries / Universities of study</span>
+            <span class="dsf-input__label" data-label-slot>Regions / Countries / Universities of study</span>
             <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
             <span class="dsf-input__caret">▾</span>
           </button>
 
           <button type="button" class="dsf-input dsf-input--combo dsf-input--wide" data-scholar-work-combo aria-haspopup="listbox">
-            <span class="dsf-input__label" data-label-slot>Countries / Universities of work</span>
+            <span class="dsf-input__label" data-label-slot>Regions / Countries / Universities of work</span>
             <span class="dsf-input__clear" data-clear-combo aria-label="Clear" style="display:none;">×</span>
             <span class="dsf-input__caret">▾</span>
           </button>
@@ -4967,9 +4971,13 @@
         </div>
 
         <!-- Study combo panel -->
-        <div class="dsf-combo-panel" data-scholar-study-panel role="listbox">
+        <div class="dsf-combo-panel dsf-combo-panel--3" data-scholar-study-panel role="listbox">
           <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Country of study</div>
+            <div class="dsf-combo-col__head">Region of study</div>
+            <div data-region-col></div>
+          </div>
+          <div class="dsf-combo-col dsf-combo-col--mid">
+            <div class="dsf-combo-col__head" data-country-header>Countries</div>
             <div data-parent-col></div>
           </div>
           <div class="dsf-combo-col">
@@ -4979,9 +4987,13 @@
         </div>
 
         <!-- Work combo panel -->
-        <div class="dsf-combo-panel" data-scholar-work-panel role="listbox">
+        <div class="dsf-combo-panel dsf-combo-panel--3" data-scholar-work-panel role="listbox">
           <div class="dsf-combo-col dsf-combo-col--first">
-            <div class="dsf-combo-col__head">Country of work</div>
+            <div class="dsf-combo-col__head">Region of work</div>
+            <div data-region-col></div>
+          </div>
+          <div class="dsf-combo-col dsf-combo-col--mid">
+            <div class="dsf-combo-col__head" data-country-header>Countries</div>
             <div data-parent-col></div>
           </div>
           <div class="dsf-combo-col">
@@ -5399,7 +5411,7 @@
 <link rel="stylesheet" href="css/scholar-card-buttons.css?v=ef8453b7">
 <link rel="stylesheet" href="css/panel-d-firsts.css?v=62461145">
 <script src="js/b5-location-table.js?v=c774fc03" defer></script>
-<script src="js/itaukei-database-master.js?v=d26ac4f0" defer></script>
+<script src="js/itaukei-database-master.js?v=36ee3441" defer></script>
 <script src="js/dashboard-profile-link.js?v=98de6580" defer></script>
 <script src="js/panel-d-firsts.js?v=da417e3c" data-country="fj" defer></script>
 <script src="js/itaukei-short-disciplines.js?v=7bba448c" defer></script>
