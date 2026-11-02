@@ -207,6 +207,14 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
   content: ""; position: absolute; left: 0; bottom: 0; width: 42%; aspect-ratio: 446 / 480; pointer-events: none;
   background: url("../img/regional/plumeria-cluster.webp") left bottom / contain no-repeat; }
 .pn .nw__img.is-split .nw-face:not(:has(img))::after { width: 80%; max-width: 160px; }
+/* 2026-11-02: golden woven palm mat and plumeria-fern cluster for no-photo tiles. */
+.pn .nw__img:not(.is-split), .pn .nw__img.is-split .nw-face, .pn .pn-ac__ph {
+  background: linear-gradient(160deg, rgba(70,40,8,.08) 0%, rgba(62,34,6,.40) 55%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 520px auto repeat; }
+.pn .nw__img:not(.is-split):not(:has(img))::after, .pn .nw__img.is-split .nw-face:not(:has(img))::after {
+  aspect-ratio: 520 / 607; background-image: url("../img/fiji/a3-plumeria-fern.webp"); }
+.pn .nw__av:not(.is-split):not(:has(img)), .pn .nw__av.is-split .nw-face:not(:has(img)) {
+  background: linear-gradient(160deg, rgba(62,34,6,.45) 0%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 180px auto repeat; }
+.pn .nw__av__ini { text-shadow: 0 1px 3px rgba(0,0,0,.55); }
 .pn-person b i, .pn-person i { color: #7B3F00; }
 .pn-inst { font-weight: 400; }
 .pn-inst__name { color: #0000CD; font-weight: 700; }
@@ -237,3 +245,6 @@ button.pn-hm__cell:hover { outline: 2px solid #0d2b55; outline-offset: -2px; }
 .pn .pn-acs--4 .pn-ac__inst .pn-person__inst { font-size: .74rem; }
 /* Story list: the type pill sits on its own line under the names */
 .pn .nw__lt .nw__lpill { display: table; margin: 3px 0 1px; }
+
+/* Keep A2 author-card no-photo tiles on the palm mat (overrides the teal rule above). */
+.pn .pn-ac__ph { background: linear-gradient(160deg, rgba(70,40,8,.08) 0%, rgba(62,34,6,.40) 55%, rgba(45,24,4,.68) 100%), #b07a30 url("../img/regional/a2-palm-mat.webp") left top / 520px auto repeat; }
