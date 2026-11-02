@@ -104,12 +104,12 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
 .db-about.tph-panel { overflow: hidden; }
 .db-about.tph-panel[open] > summary.tph-hero { margin-bottom: 14px !important; }
 
-/* Woven mat background on every panel body, softened with a light veil so
-   text and charts in front of it stay crisp. */
+/* Tapa background on every panel body, lightened with a veil so text and
+   charts in front of it stay crisp (the menu bar shows it unveiled). */
 .tph-panel {
   background:
-    linear-gradient(rgba(251,248,242,.64), rgba(251,248,242,.64)),
-    url("../img/samoa/mat-background.webp") center top / 1400px auto repeat !important;
+    linear-gradient(rgba(255,252,247,.5), rgba(255,252,247,.5)),
+    url("../img/samoa/tapa-background.webp?v=1") center top / 1200px auto repeat !important;
 }
 /* Former grey inner areas let the mat through, with a slightly stronger veil. */
 .tph-panel .db-world-panel-wide,

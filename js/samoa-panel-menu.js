@@ -19,7 +19,7 @@
     panel.classList.add('panel-menu-target'); targets.set(code, panel);
   });
   const navStyle = document.createElement('style');
-  navStyle.textContent = '.site-header { z-index: 6000 !important; background: var(--color-bg) !important; } .db-panel-menu { z-index: 5000 !important; background: linear-gradient(rgba(251,248,242,.64), rgba(251,248,242,.64)), url(img/samoa/mat-background.webp) center / 1400px auto repeat !important; border-top: 1px solid rgba(236, 210, 173, .55); border-bottom: 1px solid rgba(236, 210, 173, .9); box-shadow: 0 5px 16px rgba(89, 64, 34, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(65, 49, 37, .97) !important; border-color: rgba(236, 210, 173, .27); }';
+  navStyle.textContent = '.site-header { z-index: 6000 !important; background: var(--color-bg) !important; } .db-panel-menu { z-index: 5000 !important; background: url(img/samoa/tapa-background.webp?v=1) center / 1200px auto repeat !important; border-top: 1px solid rgba(236, 210, 173, .55); border-bottom: 1px solid rgba(236, 210, 173, .9); box-shadow: 0 5px 16px rgba(89, 64, 34, .11); } [data-theme="dark"] .db-panel-menu { background: rgba(65, 49, 37, .97) !important; border-color: rgba(236, 210, 173, .27); }';
   document.head.appendChild(navStyle);
   const nav = document.createElement('nav');
   nav.className = 'db-panel-menu'; nav.setAttribute('aria-label','Dashboard panels'); nav.hidden = false;
