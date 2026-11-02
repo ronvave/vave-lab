@@ -191,7 +191,14 @@ async function renderShared(state,renderCard,renderItem){
   main.append(panel);
  }}
  const source=document.querySelector('[data-panel="B2"]');
- if(source){const summary=el('section',null,main);summary.className='db-section samoa-summary';el('h2','SAMOAN GRADUATES — GLOBAL DATABASE',summary).className='db-section__label';const value=k=>source.querySelector('[data-b2-kpi="'+k+'"]')?.textContent||'0';el('p',`The database currently records ${value('theses')} Master’s and PhD theses completed by ${value('scholars')} Samoan scholars across ${value('unis')} universities in ${value('countries')} countries, comprising ${value('masters')} Master’s theses and ${value('phd')} PhD theses.`,summary).className='db-section__hint';const tiles=source.querySelector('[data-b2-kpis]');if(tiles)summary.append(tiles.cloneNode(true));}
+ if(source){const summary=el('section',null,main);summary.className='db-section tph-panel samoa-summary samoa-summary--b2';const value=k=>source.querySelector('[data-b2-kpi="'+k+'"]')?.textContent||'0';
+  // Same image header as A1/A2 above (and the Fiji profile page): flag thumbprint, title, summary and header art.
+  const heroModel=main.querySelector('.samoa-summary .tph-hero'),hero=el('div',null,summary);hero.className='tph-hero';if(heroModel)hero.setAttribute('style',heroModel.getAttribute('style')||'');
+  const art=el('span',null,hero);art.className='tph-art';art.setAttribute('aria-hidden','true');const artModel=heroModel&&heroModel.querySelector('.tph-art');if(artModel)art.setAttribute('style',artModel.getAttribute('style')||'');
+  const flag=el('img',null,hero);flag.className='tph-flag';flag.src='img/samoa/flag-fingerprint.webp?v=3';flag.alt='';flag.setAttribute('aria-hidden','true');
+  const text=el('div',null,hero);text.className='tph-text';el('div','SAMOAN GRADUATES — GLOBAL DATABASE',text).className='db-section__label';
+  el('p',`The database currently records ${value('theses')} Master’s and PhD theses completed by ${value('scholars')} Samoan scholars across ${value('unis')} universities in ${value('countries')} countries, comprising ${value('masters')} Master’s theses and ${value('phd')} PhD theses.`,text).className='db-section__hint';
+  const tiles=source.querySelector('[data-b2-kpis]');if(tiles)summary.append(tiles.cloneNode(true));}
  const card=renderCard(row);main.append(card);card.title='Scholar profile';
  const ids=new Set((state.master.authorship||[]).filter(a=>a['Scholar ID']===scholarId).map(a=>a['Publication ID / BibTeX Key']));const items=state.snapshot.items.filter(it=>ids.has(it._masterPublicationId));
  const pubHead=el('section',null,main);pubHead.className='samoa-portal-intro samoa-publications-head';el('h2','Publications currently linked to this scholar',pubHead);

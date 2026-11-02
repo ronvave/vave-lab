@@ -261,11 +261,11 @@ def extract_publications(rows: list[list]) -> list[dict]:
             p["Publication Type"] = "PhD Thesis"
         elif type_key in {"master's thesis", "masters thesis", "master thesis"}:
             p["Publication Type"] = "Master's Thesis"
-        elif type_key in {"other thesis", "thesis"}:
+        elif type_key in {"other thesis", "thesis", "thesis / dissertation", "dissertation"}:
             p["Publication Type"] = "Other Thesis"
-        elif type_key == "journal article / protocol":
+        elif type_key in {"journal article / protocol", "journal article", "article"}:
             p["Publication Type"] = "Journal Article"
-        elif type_key in {"book chapter", "encyclopedia entry", "encyclopedia entry / book chapter"}:
+        elif type_key in {"book chapter", "chapter", "encyclopedia entry", "encyclopedia entry / book chapter"}:
             p["Publication Type"] = "Book Chapter"
         elif type_key in {"book", "edited book", "book / monograph", "monograph", "book / translation", "poetry collection", "booklet"}:
             p["Publication Type"] = "Book"
@@ -840,6 +840,28 @@ def run(
     grad_degrees_all = extract_grad_degrees(fetch_fn("Graduate Degrees"))
     grad_degrees = [g for g in grad_degrees_all if g.get("Scholar ID") not in part_samoa_ids]
     log(f"  → {len(grad_degrees)} degree episodes (pre-filter {len(grad_degrees_all)})")
+
+    # Unlevelled theses ("Thesis") take their level from the scholar's
+    # Graduate Degrees row with the same thesis title. Unmatched theses
+    # stay "Other Thesis"; nothing is guessed.
+    def _title_key(t) -> str:
+        return re.sub(r"[^a-z0-9]", "", str(t or "").lower())
+    _stage_by_title: dict[str, set] = {}
+    for g in grad_degrees_all:
+        tk = _title_key(g.get("Thesis / Research Title"))
+        stage = str(g.get("Degree Stage") or "").lower()
+        level = "PhD Thesis" if re.search(r"phd|doctor", stage) else ("Master's Thesis" if "master" in stage else "")
+        if tk and level:
+            _stage_by_title.setdefault(tk, set()).add(level)
+    _levelled = 0
+    for p in publications:
+        if p.get("Publication Type") != "Other Thesis":
+            continue
+        levels = _stage_by_title.get(_title_key(p.get("Title")), set())
+        if len(levels) == 1:
+            p["Publication Type"] = levels.pop()
+            _levelled += 1
+    log(f"  → thesis level set from Graduate Degrees for {_levelled} publication(s)")
 
     log("Fetching university coordinate lookup...")
     university_coords = extract_university_coordinates(fetch_fn("Lookups"))
