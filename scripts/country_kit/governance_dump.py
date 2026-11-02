@@ -47,7 +47,9 @@ ALIASES = {
     "O_Uni name": ["Original Institution Name", "Original University Name (O_Uni)"],
     "Country": ["University Country", "Country", "Institution Country"],
     "International from Tonga?": ["International?"],
-    "Finish / Completion Year": ["Completion Year"],
+    # Samoa keeps degree years in "End Year" (filled for every dated degree);
+    # its later "Completion Year" column is only a fallback.
+    "Finish / Completion Year": ["End Year", "Completion Year"],
     "Thesis / Research Title": ["Thesis Title", "Thesis / Dissertation Title"],
     "Thesis / Repository URL": ["Thesis URL / Handle", "Repository URL"],
     "Evidence URL 1": ["Source URL"],
@@ -106,6 +108,9 @@ ALIASES = {
     "Department / Unit": ["Department"],
     "Start Year": ["Start Year", "Start Date"],
     "End Year": ["End Year", "End Date"],
+    # Awards & Honours "Year"; Scholarships & Funding "Award Year", else "Start Year".
+    "Award Year": ["Year"],
+    "Award Year(s)": ["Award Year", "Start Year"],
     "Geography Record ID": ["Geography ID"],
     "Coding Basis / Evidence": ["Evidence (quote / page / figure)"],
     "Original Name / Alias": ["Aliases (semicolon-separated, includes historical names)"],
@@ -362,6 +367,12 @@ def _g(r, *names):
     return ""
 
 
+def _cy(d):
+    """Degree completion year: End Year (Samoa layout), else Completion Year."""
+    m = re.search(r"\d{4}", str(_g(d, "End Year", "Completion Year")))
+    return m.group(0) if m else ""
+
+
 def write_lookups_and_mobility(cfg, gov, dump, report):
     """Lookups!University coords from Institutions, and an M>PhD mobility table
     derived from Graduate Degrees (latest Master's before each PhD)."""
@@ -416,10 +427,10 @@ def write_lookups_and_mobility(cfg, gov, dump, report):
         mas = [d for d in ds if re.match(r"(?i)master", _g(d, "Degree Level", "Stage"))]
         if not phds or not mas:
             continue
-        p = sorted(phds, key=lambda d: d.get("Completion Year") or "9999")[0]
-        py = p.get("Completion Year") or "9999"
-        mm = [m for m in mas if (m.get("Completion Year") or "0") <= py] or mas
-        m = sorted(mm, key=lambda d: d.get("Completion Year") or "0")[-1]
+        p = sorted(phds, key=lambda d: _cy(d) or "9999")[0]
+        py = _cy(p) or "9999"
+        mm = [m for m in mas if (_cy(m) or "0") <= py] or mas
+        m = sorted(mm, key=lambda d: _cy(d) or "0")[-1]
 
         def side(d):
             rec = by_id.get(d.get("Institution ID")) or by_name.get(_g(d, "Canonical University Name (C_Uni)", "Current Institution Name").strip().lower()) or {}
@@ -430,7 +441,7 @@ def write_lookups_and_mobility(cfg, gov, dump, report):
                     "region": d.get("Region") or rec.get("region", ""),
                     "lon": "" if rec.get("lon") is None else str(rec["lon"]),
                     "lat": "" if rec.get("lat") is None else str(rec["lat"]),
-                    "year": d.get("Completion Year", ""), "title": ""}
+                    "year": _cy(d), "title": ""}
         ms, ps = side(m), side(p)
         sc = names.get(sid, {})
         row = {"Scholar ID": sid, "Degree(s)": "Master's > PhD", "scholar_id": sid,

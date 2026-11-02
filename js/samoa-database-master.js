@@ -6596,6 +6596,17 @@
     // is pushed down (never up) just enough to clear every already-placed,
     // horizontally-close label above it. Processing in this order means a
     // single pass is enough even when 3+ milestones chain together.
+    // Horizontal footprint of each label from its anchor and longest line, so
+    // a left-anchored label (grows right) and a right-anchored one (grows
+    // left) are caught even when their dots are far apart.
+    const spanOf = entry => {
+      const m = entry.milestone;
+      const lines = [[`${m.year}: ${m.headline || m.shortLabel || ''}`, 11 * 0.56], [m.personLine || '', 10 * 0.52], [m.uniLine || '', 9.5 * 0.52]];
+      const w = Math.max(LABEL_W_EST * 0.5, ...lines.map(([t, k]) => String(t).length * k)) + 12;
+      const x = xOf(entry);
+      return entry.anchor === 'end' ? [x - w, x] : [x, x + w];
+    };
+    const spansTouch = (a, b) => { const p = spanOf(a), q = spanOf(b); return p[0] < q[1] && q[0] < p[1]; };
     const byY = visibleMilestones.slice().sort((a, b) => a.labelBaseY - b.labelBaseY);
     for (let i = 1; i < byY.length; i++) {
       const cur = byY[i];
@@ -6603,7 +6614,7 @@
       let requiredBaseY = cur.labelBaseY;
       for (let j = 0; j < i; j++) {
         const other = byY[j];
-        if (Math.abs(xCur - xOf(other)) >= LABEL_W_EST) continue; // horizontally far apart, no risk
+        if (!spansTouch(cur, other)) continue; // horizontally apart, no risk
         requiredBaseY = Math.max(requiredBaseY, other.labelBaseY + MIN_VERTICAL_GAP);
       }
       // Keep the label above the x-axis baseline; if the required position
