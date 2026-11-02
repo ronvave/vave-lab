@@ -216,6 +216,14 @@
   content: ""; position: absolute; left: 0; bottom: 0; width: 42%; aspect-ratio: 446 / 480; pointer-events: none;
   background: url("../img/regional/plumeria-cluster.webp") left bottom / contain no-repeat; }
 .nw.cn .nw__img.is-split .nw-face:not(:has(img))::after { width: 80%; max-width: 160px; }
+/* Fiji: no-photo tiles use Ron's green woven palm mat instead of the teal textile. */
+.nw.cn.nw--palm-tiles .nw__img:not(.is-split), .nw.cn.nw--palm-tiles .nw__img.is-split .nw-face, .nw.cn.nw--palm-tiles .pn-ac__ph {
+  background: linear-gradient(160deg, rgba(18,58,22,.10) 0%, rgba(14,50,20,.45) 55%, rgba(8,38,14,.72) 100%), #3f7a2a url("../img/fiji/a3-palm-mat.webp") left top / 520px auto repeat; }
+.nw.cn.nw--palm-tiles .nw__img:not(.is-split):not(:has(img))::after, .nw.cn.nw--palm-tiles .nw__img.is-split .nw-face:not(:has(img))::after {
+  aspect-ratio: 520 / 607; background-image: url("../img/fiji/a3-plumeria-fern.webp"); }
+.nw.cn.nw--palm-tiles .nw__av:not(.is-split):not(:has(img)), .nw.cn.nw--palm-tiles .nw__av.is-split .nw-face:not(:has(img)) {
+  background: linear-gradient(160deg, rgba(14,50,20,.5) 0%, rgba(8,38,14,.72) 100%), #3f7a2a url("../img/fiji/a3-palm-mat.webp") left top / 180px auto repeat; }
+.nw.cn.nw--palm-tiles .nw__av__ini { text-shadow: 0 1px 3px rgba(0,0,0,.55); }
 
 /* News, New theses and New publications: the selected button becomes its sub-type dropdown (as Regional A2) */
 .nw.cn .pn-sub { position: relative; display: inline-flex; align-items: center; background: #0b7479; border-radius: 999px; color: #fff; }
