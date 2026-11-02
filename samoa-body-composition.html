@@ -471,7 +471,7 @@ if (document.body.classList.contains('is-embedded')) {
   // up the new chart width — buildOption() reads chartDom.clientWidth to
   // scale the silhouettes into fullscreen. A bare chart.resize() only re-
   // lays out the axes; the pictorialBar symbolSize is baked in at setOption.
-  let lastRenderW = 0;
+  let lastRenderW = 0, lastRenderH = 0;
   const RENDER_EPSILON = 24;  // px — avoid rebuilds on 1-2 px jitter
   const rerenderIfNeeded = () => {
     try {
@@ -480,9 +480,10 @@ if (document.body.classList.contains('is-embedded')) {
       chart.resize();
       // Only re-run buildOption if we crossed a meaningful width change AND
       // we have data on screen (render() sets window.__lastBcData).
-      if (Math.abs(w - lastRenderW) >= RENDER_EPSILON && window.__lastBcData) {
-        lastRenderW = w;
-        chart.setOption(buildOption(window.__lastBcData), true);
+      const h = chartDom.clientHeight || 0;
+      if ((Math.abs(w - lastRenderW) >= RENDER_EPSILON || Math.abs(h - lastRenderH) >= RENDER_EPSILON) && window.__lastBcData) {
+        lastRenderW = w; lastRenderH = h;
+        setBcOption(window.__lastBcData);
       }
     } catch(e){}
   };
@@ -491,6 +492,18 @@ if (document.body.classList.contains('is-embedded')) {
   if (window.ResizeObserver) {
     new ResizeObserver(rerenderIfNeeded).observe(chartDom);
   }
+}
+/* Set the option, then measure the plot height and rebuild once if it
+   changed, so BODY_W (master mode) matches the figures' real aspect. */
+function setBcOption(data){
+  chart.setOption(buildOption(data), true);
+  try {
+    const r = chart.getModel().getComponent("grid", 0).coordinateSystem.getRect();
+    if (r && r.height > 0 && (!window.__bcPlotH || Math.abs(r.height - window.__bcPlotH) > 2)) {
+      window.__bcPlotH = r.height;
+      if (IS_MASTER) chart.setOption(buildOption(data), true);
+    }
+  } catch(e){}
 }
 const statusEl = document.getElementById("status");
 const capEl = document.getElementById("cap");
@@ -536,7 +549,11 @@ function buildOption(data){
   //   * fullscreen (≥ 1400px):            BODY_W = 260
   //   * in between:                        linear interpolation
   const chartW = (chartDom && chartDom.clientWidth) || 1160;
+  // 2026-11-02: master mode sizes the width from the measured plot height
+  // so the traced figures keep their true proportions at every size,
+  // including full screen (previously they stretched tall and thin).
   const BODY_W = (function(){
+    if (IS_MASTER && window.__bcPlotH) return Math.round(window.__bcPlotH * 0.86 * 150 / 360);
     if (chartW <= 900)  return 150;
     if (chartW >= 1400) return 260;
     // Linear interpolation between the two anchors.
@@ -830,7 +847,7 @@ function render(data, label){
   // option (and re-scale BODY_W) when the container width crosses the
   // fullscreen threshold. See the is-embedded resize block above.
   window.__lastBcData = data;
-  chart.setOption(buildOption(data), true);
+  setBcOption(data);
   const w = data.Woman||{}, m = data.Man||{};
   const wp = TYPES.reduce((s,t)=>s+(Number(w[t.key])||0),0);
   const mp = TYPES.reduce((s,t)=>s+(Number(m[t.key])||0),0);
