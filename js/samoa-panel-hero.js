@@ -20,6 +20,13 @@
     // so text stops just before it.
     var pr = Math.round(hero.offsetHeight * 1.55) + 30;
     hero.style.setProperty('padding-right', pr + 'px', hero.tagName === 'SUMMARY' ? 'important' : '');
+    // Move the dancer about halfway towards the panel badge (top-right).
+    // The picture keeps its 2665 x 724 shape at the header height; her centre
+    // sits about 51% of its width from the right edge, and the badge centre is
+    // about 28px from the header's right edge. The whole picture (with its
+    // fade) slides right; the header clips what passes its edge.
+    var artW = hero.offsetHeight * 2665 / 724;
+    art.style.right = '-' + Math.max(0, Math.round((artW * 0.51 - 28) / 2)) + 'px';
   }
   function addArt(hero) {
     var a = document.createElement('span'); a.className = 'tph-art'; a.setAttribute('aria-hidden', 'true');
