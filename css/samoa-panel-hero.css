@@ -108,7 +108,7 @@ summary.tph-hero { padding-top: 14px !important; padding-bottom: 14px !important
    charts in front of it stay crisp (the menu bar shows it unveiled). */
 .tph-panel {
   background:
-    linear-gradient(rgba(255,252,247,.25), rgba(255,252,247,.25)),
+    linear-gradient(rgba(255,252,247,.75), rgba(255,252,247,.75)),
     url("../img/samoa/tapa-background.webp?v=1") center top / 1200px auto repeat !important;
 }
 /* Former grey inner areas let the mat through, with a slightly stronger veil. */
