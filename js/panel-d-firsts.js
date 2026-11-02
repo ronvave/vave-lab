@@ -77,11 +77,13 @@
   var LBL = { masters: "Master's", phd: 'PhD' };
   var UI = { view: 'time', stage: 'both', gender: 'both', key: 'year', dir: 1, excl: {} };
 
-  // Tonga stores gender in Tongan (Tangata = male, Fefine = female).
+  // Tonga stores gender in Tongan (Tangata = male, Fefine = female) and
+  // Samoa in Samoan (Tāne = male, Fafine = female); macrons are ignored.
   function gnorm(v) {
     var g = str(v).toLowerCase();
-    if (g === 'male' || g === 'm' || g === 'tangata') return 'male';
-    if (g === 'female' || g === 'f' || g === 'fefine') return 'female';
+    if (g.normalize) g = g.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    if (g === 'male' || g === 'm' || g === 'tangata' || g === 'tane') return 'male';
+    if (g === 'female' || g === 'f' || g === 'fefine' || g === 'fafine') return 'female';
     return g;
   }
   window.__panelDFirstsShow = function (m) {
