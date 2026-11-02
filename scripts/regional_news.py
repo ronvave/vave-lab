@@ -69,6 +69,8 @@ def _country_items(code: str, dump: dict, B) -> tuple[list, dict, dict]:
         label = B.ELIGIBLE_PUB.get(t) or (B.FIJI_EXTRA_PUB.get(t) if code == "FJI" else None)
         if label not in TYPE_NAME:
             continue
+        if cn.is_forthcoming(r):  # A2 lists published works only
+            continue
         pubs.append({
             "Publication ID / BibTeX Key": pid,
             "Publication Type": TYPE_NAME[label],

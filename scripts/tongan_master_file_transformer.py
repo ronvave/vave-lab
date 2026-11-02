@@ -957,9 +957,11 @@ def run(
         log(f"  → News tab unavailable ({str(exc)[:120]}); publishing an empty news list")
         _news_rows = []
     _, _news_dicts = rows_to_dicts(_news_rows, SHEETS["News"]["header_row"], SHEETS["News"]["first_data"])
+    # Panel A3 "New publications" lists published works only; forthcoming
+    # books wait until they are published. Panel G and the cards still list them.
     news_payload = country_news.build(
         _news_dicts, scholars, source="Tongan Scholars Master File", generator="scripts/tongan_master_file_transformer.py",
-        publications=publications, authorship=authorship,
+        publications=[p for p in publications if not country_news.is_forthcoming(p)], authorship=authorship,
     )
     log(f"  → {len(news_payload['items'])} published news stories")
 

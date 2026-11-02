@@ -122,6 +122,17 @@ def _year(v):
     return int(m.group(1)) if m else None
 
 
+def is_forthcoming(p: dict, today=None) -> bool:
+    """True for works not yet published: Publication Status Forthcoming or
+    In press, or a year after the current one. Used by Samoa and Tonga A3 and
+    Regional A2 so these wait until they are published."""
+    status = _s(p.get("Publication Status")).lower()
+    if status in ("forthcoming", "in press"):
+        return True
+    y = _year(p.get("Year"))
+    return bool(y and y > (today or datetime.now()).year)
+
+
 def _bib_name(v) -> str:
     """'Fotu, Belinda' -> 'Belinda Fotu'; other forms are kept as written."""
     s = _s(v)
