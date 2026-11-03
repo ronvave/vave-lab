@@ -1,6 +1,6 @@
 """Regional Panel A2 "Celebrating Pasifika scholars".
 
-Builds one story list for all 11 country databases from the Master dumps the
+Builds one story list for all 12 country databases from the Master dumps the
 Regional rebuild already pulls:
 
   * curated News tab rows (Fiji, Tonga, Solomon Islands today), and

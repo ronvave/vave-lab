@@ -26,7 +26,8 @@
     PLW: { label: 'Palauan Scholar', from: '#56CCF2', to: '#1f8fbf', ink: '#111' },
     COK: { label: 'Cook Islands Scholar', from: '#1e3a8a', to: '#172554', ink: '#fff' },
     MHL: { label: 'Marshallese Scholar', from: '#B48CE6', to: '#7c4dbd', ink: '#fff' },
-    FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' }
+    FSM: { label: 'Micronesian Scholar', from: '#0e7490', to: '#062f35', ink: '#fff' },
+    HAW: { label: 'Native Hawaiian Scholar', from: '#c0392b', to: '#7f1d12', ink: '#fff' }
   };
   // Share copies this link: the scholar's card on the regional dashboard, with
   // Explain their research opened (after the regional passcode).

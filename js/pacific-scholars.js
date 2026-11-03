@@ -16,15 +16,15 @@
 
   const COLORS = {
     FJI: '#2f86d6', TON: '#e0464f', SLB: '#14a99a', VUT: '#e9a40f', WSM: '#3a63d8', FSM: '#7b4fd8',
-    KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a',
+    KIR: '#13a9c4', MHL: '#d93a7a', TUV: '#22a663', COK: '#a463e6', PLW: '#ef7d1a', HAW: '#9c3b1b',
   };
-  const SHORT = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Is.', VUT: 'Vanuatu', WSM: 'Samoa', FSM: 'FSM', KIR: 'Kiribati', MHL: 'Marshall Is.', TUV: 'Tuvalu', COK: 'Cook Is.', PLW: 'Palau' };
+  const SHORT = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Is.', VUT: 'Vanuatu', WSM: 'Samoa', FSM: 'FSM', KIR: 'Kiribati', MHL: 'Marshall Is.', TUV: 'Tuvalu', COK: 'Cook Is.', PLW: 'Palau', HAW: 'Hawaiʻi' };
   const CARD_SUB = {};
   // Card titles. Long names get a smaller size so every title stays on one line.
   const CARD_NAME = { FSM: 'FSM' };
   const CARD_LONG = { SLB: 1, MHL: 1 };
   // Crop point for each card photo (x y), matched to the approved mock-up.
-  const CARD_FOCUS = { FJI: '40% 50%', TON: '50% 45%', VUT: '45% 55%', SLB: '45% 60%', WSM: '50% 22%', COK: '45% 25%', MHL: '30% 50%', FSM: '55% 45%', TUV: '50% 50%', KIR: '25% 35%', PLW: '50% 60%' };
+  const CARD_FOCUS = { FJI: '40% 50%', TON: '50% 45%', VUT: '45% 55%', SLB: '45% 60%', WSM: '50% 22%', COK: '45% 25%', MHL: '30% 50%', FSM: '55% 45%', TUV: '50% 50%', KIR: '25% 35%', PLW: '50% 60%', HAW: '50% 55%' };
   const METRICS = {
     scholars: { key: 'scholars', label: 'Scholars', unit: 'Indigenous scholars', def: 'Scholars = unique Indigenous scholar on each country\u2019s included roster.' },
     phd: { key: 'phd', label: 'PhDs', unit: 'completed PhDs / doctorates', def: 'PhDs = completed PhD and doctorate degree records held by those scholars.' },
@@ -289,7 +289,7 @@
   }
 
   // ================= A1 COUNTRY CARDS =================
-  const GREET = { TON: 'M\u0101l\u014d e lelei', FJI: 'Bula vinaka', WSM: 'Talofa lava', SLB: 'Halo olgeta', VUT: 'Halo', COK: 'Kia orana', FSM: 'Kaselehlie', KIR: 'Mauri', TUV: 'Talofa', MHL: 'Iakwe', PLW: 'Alii' };
+  const GREET = { TON: 'M\u0101l\u014d e lelei', FJI: 'Bula vinaka', WSM: 'Talofa lava', SLB: 'Halo olgeta', VUT: 'Halo', COK: 'Kia orana', FSM: 'Kaselehlie', KIR: 'Mauri', TUV: 'Talofa', MHL: 'Iakwe', PLW: 'Alii', HAW: 'Aloha' };
   const B_HEAD = { scholars: 'Indigenous Scholars by Country', phd: 'Completed PhDs by Country', masters: "Completed Master's by Country" };
   const B_UNIT = { scholars: 'Indigenous scholars', phd: 'completed PhDs', masters: "completed Master's" };
   const B_MINI = { scholars: 'Scholars', phd: 'PhDs', masters: "Master's" };
@@ -352,7 +352,7 @@
   // Badge anchors are measured in image pixels at the end of each label (side 'r') or
   // before its flag (side 'l'); badges live in the same coordinate space so they zoom with the image.
   const MAP_IMG = { src: 'img/regional/pacific-map.webp', w: 2400, h: 1891 };
-  const MAP_ANCHOR = {"PLW": [454, 478, 'r'], "FSM": [774, 320, 'r'], "MHL": [1433, 422, 'r'], "KIR": [1783, 596, 'r'], "SLB": [1127, 776, 'r'], "TUV": [1606, 800, 'r'], "WSM": [1844, 907, 'r'], "FJI": [1358, 967, 'r'], "TON": [1567, 1221, 'r'], "COK": [2138, 1253, 'r'], "VUT": [749, 1023, 'l']};
+  const MAP_ANCHOR = {"PLW": [454, 478, 'r'], "FSM": [774, 320, 'r'], "MHL": [1433, 422, 'r'], "KIR": [1783, 596, 'r'], "SLB": [1127, 776, 'r'], "TUV": [1606, 800, 'r'], "WSM": [1844, 907, 'r'], "FJI": [1358, 967, 'r'], "TON": [1567, 1221, 'r'], "COK": [2138, 1253, 'r'], "VUT": [749, 1023, 'l'], "HAW": [1580, 108, 'l']};
   let mapSvg, mk = {};
   function setupMap() {
     const host = $('#ps-map');
@@ -950,7 +950,7 @@
 
   // ----- Mock-ups B (where positions are held) and C (highest academic rank) -----
   const WR = { scale: 'pct' };
-  const HOMEN = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Islands', WSM: 'Samoa', VUT: 'Vanuatu', TUV: 'Tuvalu', KIR: 'Kiribati', PLW: 'Palau', COK: 'Cook Islands', MHL: 'Marshall Islands', FSM: 'Federated States of Micronesia' };
+  const HOMEN = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Islands', WSM: 'Samoa', VUT: 'Vanuatu', TUV: 'Tuvalu', KIR: 'Kiribati', PLW: 'Palau', COK: 'Cook Islands', MHL: 'Marshall Islands', FSM: 'Federated States of Micronesia', HAW: 'Hawaiʻi' };
   const RANKC = { prof: '#0a2d52', assoc: '#145a8a', senlec: '#1f86b8', asst: '#19b5c4', lec: '#5fd0d6', asstlec: '#9fe2e3', rf: '#e0a52a', adj: '#b3bfcc' };
   const RANKDARK = new Set(['lec', 'asstlec', 'adj']);
   let posGroups = [];
@@ -1546,7 +1546,7 @@
       <p>The October 5 table header states “542 Masters and 278 PhDs across 11 countries”, but its own rows sum to 910 Master's and 461 PhDs (542 + 278 equals Fiji + Tonga only). Publication columns on October 5 counted all item types; this dashboard uses each country's headline publication categories, so the publication columns are not directly comparable.</p>`;
   }
   function openDialog(which) {
-    if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together eleven country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>
+    if (which === 'about') show('About this Dashboard', `<p>The Regional Pacific Scholars Dashboard brings together twelve country scholarly databases led by Asst Prof Ron Vave (Center for Pacific Islands Studies, University of Hawaiʻi at Mānoa) with partner institutions across the region. It celebrates Indigenous Pacific scholars, their completed postgraduate degrees and their research.</p><p>All country databases are <strong>pre-launch, confidential project materials</strong>. This page shows aggregates and a minimal search index only; it never exposes raw Master files, contact details, geography, genealogy or unpublished notes. Country dashboards keep their own passcodes.</p><p>Data bundle generated ${esc(new Date(D.generated).toLocaleString())}. Timestamps show in your local time zone; the data are stored in UTC.</p>
       <h3>From learning to impact</h3><ol class="ps-steps ps-steps--dlg"><li>Postgraduate study</li><li>Research &amp; publication</li><li>Community &amp; policy impact</li><li>Stronger Pacific futures</li></ol>
       <p class="ps-quote">“Pacific knowledge for a resilient, healthy and prosperous ocean region.”</p><p>An illustrative pathway, not a measured outcome. This dashboard does not quantify impact.</p>`);
     if (which === 'cite') {

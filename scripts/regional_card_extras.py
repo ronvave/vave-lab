@@ -34,11 +34,13 @@ SOURCES = [
     ('TON', 'data/tongan-scholar-enrichment.json.enc', 'VAVELAB_TONGAN_PASSCODE', 'scholars', 'enrich'),
     ('SLB', 'data/solomon-scholar-enrichment.json.enc', 'VAVELAB_SOLOMON_PASSCODE', 'scholars', 'enrich'),
     ('VUT', 'data/vanuatu-master-bundle.json.enc', 'VAVELAB_VANUATU_PASSCODE', 'enrichment', 'enrich'),
+    ('HAW', 'data/hawaii-scholar-enrichment.json.enc', 'VAVELAB_HAWAII_PASSCODE', 'scholars', 'enrich'),
     # "Explain their research" (Admin V2 insights, Scholar-ID keyed). Vanuatu
     # keeps keywords + summary inside its enrichment rows (handled above).
     ('FJI', 'data/scholar-insights-master.json.enc', 'VAVELAB_PASSCODE', 'scholars', 'insights'),
     ('TON', 'data/tongan-scholar-insights-master.json.enc', 'VAVELAB_TONGAN_PASSCODE', 'scholars', 'insights'),
     ('SLB', 'data/solomon-scholar-insights-master.json.enc', 'VAVELAB_SOLOMON_PASSCODE', 'scholars', 'insights'),
+    ('HAW', 'data/hawaii-scholar-insights-master.json.enc', 'VAVELAB_HAWAII_PASSCODE', 'scholars', 'insights'),
 ]
 PHOTO_PATH = re.compile(r'^(?:\./)?(img/scholars/[A-Za-z0-9._-]+\.(?:jpe?g|png|webp))$', re.I)
 HTTPS = re.compile(r'^https://[^\s"\'<>]+$', re.I)

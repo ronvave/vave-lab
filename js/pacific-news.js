@@ -27,9 +27,9 @@
     TON: (me && me.dataset.submitTon) || '',
     SLB: (me && me.dataset.submitSlb) || ''
   };
-  var ORDER = ['FJI', 'TON', 'SLB', 'WSM', 'VUT', 'TUV', 'KIR', 'PLW', 'COK', 'MHL', 'FSM'];
+  var ORDER = ['FJI', 'TON', 'SLB', 'WSM', 'VUT', 'TUV', 'KIR', 'PLW', 'COK', 'MHL', 'FSM', 'HAW'];
   var NAMES = { FJI: 'Fiji', TON: 'Tonga', SLB: 'Solomon Islands', WSM: 'Samoa', VUT: 'Vanuatu', TUV: 'Tuvalu',
-    KIR: 'Kiribati', PLW: 'Palau', COK: 'Cook Islands', MHL: 'Marshall Islands', FSM: 'Federated States of Micronesia' };
+    KIR: 'Kiribati', PLW: 'Palau', COK: 'Cook Islands', MHL: 'Marshall Islands', FSM: 'Federated States of Micronesia', HAW: 'Hawaiʻi' };
   var SHORT = { FSM: 'FSM', MHL: 'Marshall Islands' };
   var AUTO_IN_ALL = { Publication: 5, Thesis: 3 };   // per lead country, as on the country panels
 

@@ -47,7 +47,14 @@ COUNTRIES = [
     ('COK', 'Cook Islands', '1oPBnQHzjRNnmzS5_md5Lagmk_jQorqCRd3zhyKM1iC8', None, 'none'),
     ('MHL', 'Marshall Islands', '1Ys80AYWishhDSDZFG5B49MfDJopgCmLR3dbSCJqtB5w', None, 'none'),
     ('FSM', 'Federated States of Micronesia', '1UYhthbTDVosC6_6zcwXH_k2WNjTo1ijs2oYQe8FOzqI', None, 'none'),
+    ('HAW', 'Hawaiʻi', '1fgiLq8YG1tfSEcfOZ_XOiUFZkLZ9CH4tQObkROF0_Fw', 'hawaii-research-database-master.html', 'live'),
 ]
+
+# Countries read through their own public-release gate (scripts/country_kit/
+# governance_dump.py) instead of the raw Master tabs, so the Regional bundle
+# only ever sees rows and fields the country dashboard itself publishes.
+GATED = {'HAW': 'hawaii'}
+REGIONAL_TABS = ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions', 'News')
 
 # October 5 2026, 9 am HST checkpoint (from the tabulated summary image).
 OCT5 = {
@@ -153,9 +160,9 @@ def first(r, *keys):
 
 def gender(v):
     v = fold(v)
-    if v in ('female', 'fefine', 'fafine', 'marama', 'woman', 'f'):
+    if v in ('female', 'fefine', 'fafine', 'marama', 'woman', 'f', 'wahine'):
         return 'female'
-    if v in ('male', 'tangata', 'tane', 'turaga', 'man', 'm'):
+    if v in ('male', 'tangata', 'tane', 'turaga', 'man', 'm', 'kane'):
         return 'male'
     return 'unknown'
 
@@ -228,6 +235,12 @@ def roster(code, dump):
         elif code == 'TON':
             if 'excluded from indigenous tongan counts' in fold(r.get('Roster Tier')):
                 excluded_reason['Retained profile; excluded from Indigenous Tongan counts'] += 1
+                continue
+        elif code == 'HAW':
+            # Rows already passed the Hawaiʻi public gate (Public Display
+            # Approved + verified identity); mirror the dashboard's count rule.
+            if 'excluded from indigenous native hawaiian counts' in fold(r.get('Roster Tier')):
+                excluded_reason['Retained profile; excluded from Indigenous Native Hawaiian counts'] += 1
                 continue
         elif code in ('SLB', 'WSM'):
             if fold(r.get('Inclusion Status')) != 'included':
@@ -416,10 +429,45 @@ def _sa_clients():
     return build('sheets', 'v4', credentials=creds, cache_discovery=False), build('drive', 'v3', credentials=creds, cache_discovery=False)
 
 
+def pull_gated(dump_dir: Path, code, sa_info=None):
+    """Write {code}.json from the country's public-release gate output."""
+    import os, shutil, tempfile
+    if sa_info is not None:
+        os.environ['GOOGLE_SERVICE_ACCOUNT_JSON'] = json.dumps(sa_info)
+    sys.path.insert(0, str(ROOT / 'scripts' / 'country_kit'))
+    import governance_dump
+    tmp = Path(tempfile.mkdtemp(prefix=f'gate-{code}-'))
+    try:
+        governance_dump.build(GATED[code], tmp)
+        data = {}
+        for f in sorted(tmp.glob('*.json')):
+            sheet = f.stem.replace('_', ' ')
+            if sheet in REGIONAL_TABS or sheet.startswith('Part-'):
+                rows = json.loads(f.read_text())['rows']
+                # The gate keeps only rows with Public Display Approved = Yes,
+                # then blanks that column; record the approval it applied.
+                h = rows[3] if len(rows) > 3 else []
+                if 'Public Display Approved' in h:
+                    i = h.index('Public Display Approved')
+                    for r in rows[4:]:
+                        if r and norm(r[0]):
+                            r.extend([''] * (i + 1 - len(r)))
+                            r[i] = 'TRUE'
+                data[sheet] = rows
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    json.dump({'titles': list(data), 'data': data}, open(dump_dir / f'{code}.json', 'w'))
+
+
 def pull_sa(dump_dir: Path, sheets, drive):
     dump_dir.mkdir(parents=True, exist_ok=True)
     meta = {}
     for code, name, sid, *_ in COUNTRIES:
+        if code in GATED:
+            pull_gated(dump_dir, code, json.loads(__import__('os').environ['REGIONAL_GOOGLE_SERVICE_ACCOUNT_JSON']))
+            meta[code] = drive.files().get(fileId=sid, fields='modifiedTime,name', supportsAllDrives=True).execute()
+            print('pulled', code, '(public gate)', flush=True)
+            continue
         titles = [s['properties']['title'] for s in sheets.spreadsheets().get(spreadsheetId=sid, fields='sheets.properties.title').execute()['sheets']]
         want = [t for t in titles if t in ('Scholars', 'Graduate Degrees', 'Publications', 'Authorship', 'Positions', 'Institutions', 'News') or t.startswith('Part-')]
         vr = sheets.spreadsheets().values().batchGet(spreadsheetId=sid, ranges=want).execute()['valueRanges']
@@ -436,6 +484,12 @@ def pull(dump_dir: Path):
     dump_dir.mkdir(parents=True, exist_ok=True)
     meta = {}
     for code, name, sid, *_ in COUNTRIES:
+        if code in GATED:
+            pull_gated(dump_dir, code)
+            meta[code] = json.loads(subprocess.run(['gws', 'drive', 'files', 'get', '--params', json.dumps(
+                {'fileId': sid, 'fields': 'modifiedTime,name'})], capture_output=True, text=True, check=True).stdout)
+            print('pulled', code, '(public gate)', flush=True)
+            continue
         info = json.loads(subprocess.run(['gws', 'sheets', 'spreadsheets', 'get', '--params', json.dumps(
             {'spreadsheetId': sid, 'fields': 'sheets.properties.title'})], capture_output=True, text=True, check=True).stdout)
         titles = [s['properties']['title'] for s in info['sheets']]
@@ -461,7 +515,7 @@ def directory_section(dumps):
 
 
 def news_section(dumps):
-    """Panel A2 "Celebrating Pasifika scholars" stories (all 11 countries)."""
+    """Panel A2 "Celebrating Pasifika scholars" stories (all 12 countries)."""
     import regional_news
     return regional_news.build(dumps, COUNTRIES, sys.modules[__name__])
 

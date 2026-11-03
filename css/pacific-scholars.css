@@ -1057,7 +1057,7 @@ section[data-panel] { scroll-margin-top: 70px; }
 .ps-a1b__seg button { color: #10224a; }
 .ps-a1b__seg button[aria-checked="true"] { background: #0e2a6b; color: #fff; }
 .ps-a1b__hint { font-weight: 400; color: #45597a; }
-.ps-a1b__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 10px; }
+.ps-a1b__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px; }
 .ps-b-card { position: relative; display: flex; flex-direction: column; background: #fff; border-radius: 10px; overflow: hidden; border-top: 6px solid var(--c); box-shadow: 0 3px 10px rgba(16,34,74,.14); transition: opacity .2s, box-shadow .2s; }
 .ps-b-card:hover { box-shadow: 0 6px 16px rgba(16,34,74,.24); }
 .ps-b-card.is-selected { outline: 3px solid #e3a51b; outline-offset: 2px; }
@@ -1080,7 +1080,7 @@ section[data-panel] { scroll-margin-top: 70px; }
 .ps-b-card__mini b { font-size: 1.05rem; font-weight: 900; color: #0e1f45; }
 .ps-b-card__mini--a { background: #fbefb8; }
 .ps-b-card__mini--b { background: #e2edf8; }
-.ps-b-card__btn { margin: auto 6px 8px; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 34px; padding: 4px 2px; border-radius: 7px; font-size: .72rem; white-space: nowrap; font-weight: 700; text-align: center; color: #fff; text-decoration: none; background: color-mix(in srgb, var(--c) 88%, #000); }
+.ps-b-card__btn { margin: auto 6px 8px; display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 34px; padding: 4px 2px; border-radius: 7px; font-size: .72rem; line-height: 1.15; white-space: normal; font-weight: 700; text-align: center; color: #fff; text-decoration: none; background: color-mix(in srgb, var(--c) 88%, #000); }
 a.ps-b-card__btn:hover { filter: brightness(1.1); }
 a.ps-b-card__btn:focus-visible { outline: 3px solid #e3a51b; outline-offset: 2px; }
 .ps-b-card--darktext a.ps-b-card__btn { background: #f6d561; color: #10224a; }

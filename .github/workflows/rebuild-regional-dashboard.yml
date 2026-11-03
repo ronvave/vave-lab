@@ -1,6 +1,6 @@
 name: Rebuild regional dashboard
 
-# Every 2 hours (30 min after the country refreshes) and on demand. Re-reads all 11 country Master files (read-only scopes,
+# Every 2 hours (30 min after the country refreshes) and on demand. Re-reads all 12 country Master files (read-only scopes,
 # service account with Viewer access), rebuilds the regional bundle in the
 # runner (Vanuatu dashboard service account, Viewer on all 11), encrypts it with REGIONAL_PASSCODE, adds photos/links from the
 # country bundles, and compares it with the live data/regional-scholars.json.enc.
@@ -67,6 +67,7 @@ jobs:
           VAVELAB_TONGAN_PASSCODE: ${{ secrets.VAVELAB_TONGAN_PASSCODE }}
           VAVELAB_SOLOMON_PASSCODE: ${{ secrets.VAVELAB_SOLOMON_PASSCODE }}
           VAVELAB_VANUATU_PASSCODE: ${{ secrets.VAVELAB_VANUATU_PASSCODE }}
+          VAVELAB_HAWAII_PASSCODE: ${{ secrets.VAVELAB_HAWAII_PASSCODE }}
         run: python3 scripts/regional_card_extras.py
       - name: Compare with the live bundle (counts only)
         id: cmp
